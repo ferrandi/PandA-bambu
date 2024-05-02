@@ -121,15 +121,6 @@ REF_FORWARD_DECL(TreeFlexLexer);
   assign_tree_reindex_to_member(data->curr_tree_nodeRef, &obj_node::field, data->curr_NODE_ID, data->TreeM);
 
 /**
- * Macro used to set a generic field of a generic object.
- * @param curr is the current object reference.
- * @param obj_node is the type of the object to which the field is setted.
- * @param field is the name of the member of the obj_node to be setted. The type of field member has to be tree_nodeRef.
-*/
-#define NS2(curr, obj_node, field) \
-  assign_tree_reindex_to_member(curr, &obj_node::field, data->curr_NODE_ID, data->TreeM);
-
-/**
  * Macro used to set a generic field with a generic value of a generic object.
  * @param obj_node is the type of the object to which the field is setted.
  * @param field is the name of the member of the obj_node to be setted.
@@ -137,6 +128,9 @@ REF_FORWARD_DECL(TreeFlexLexer);
 */
 #define NSV(obj_node, field, value) \
     assign_value_to_member(data->curr_tree_nodeRef, &obj_node::field, value);
+
+#define NSV_SRCP(field, value) \
+    assign_value_to_srcp_member(data->curr_tree_nodeRef, &srcp::field, value);
 
 /**
  * Macro used to set a generic field with a generic value of a generic object.
@@ -320,7 +314,14 @@ template <class obj_node, class TRef, class value_t>
 inline void assign_value_to_member(const TRef& curr, value_t obj_node::*field, const value_t value)
 {
    THROW_ASSERT(curr, "");
-   ((dynamic_cast<obj_node*>(curr.get()))->*field) = value;
+   ((static_cast<obj_node*>(curr.get()))->*field) = value;
+}
+
+template <class TRef, class value_t>
+inline void assign_value_to_srcp_member(const TRef& curr, value_t srcp::*field, const value_t value)
+{
+   THROW_ASSERT(curr, "");
+   ((dynamic_cast<srcp*>(curr.get()))->*field) = value;
 }
 
 template <class obj_node, class TRef>
@@ -328,7 +329,7 @@ inline void assign_tree_reindex_to_member(const TRef& curr, tree_nodeRef obj_nod
                                           const unsigned int tree_index, const tree_managerRef TM)
 {
    THROW_ASSERT(curr, "");
-   ((dynamic_cast<obj_node*>(curr.get()))->*field) = TM->GetTreeReindex(tree_index);
+   ((static_cast<obj_node*>(curr.get()))->*field) = TM->GetTreeReindex(tree_index);
 }
 
 inline void create_Ref_bloc(refcount<bloc> BisonParserData::*field, const BisonParserDataRef data,
@@ -365,21 +366,21 @@ inline void add_attr_node(const tree_nodeRef& curr, const unsigned int tree_inde
 template <class function_decl>
 inline void add_op_name(const tree_nodeRef& curr, const std::string& token_s)
 {
-   (dynamic_cast<function_decl*>(curr.get()))->add(token_s);
+   (static_cast<function_decl*>(curr.get()))->add(token_s);
 }
 
 template <class obj_node, class TRef, typename R>
 inline void addv(const TRef& curr, R (obj_node::*add_function)(const tree_nodeRef&), const unsigned int tree_index,
                   const tree_managerRef TM)
 {
-   ((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index));
+   ((static_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index));
 }
 
 template <class obj_node, class TRef, typename R>
 inline void addv2(const TRef& curr, R (obj_node::*add_function)(const tree_nodeRef&, const tree_nodeRef&),
                   const unsigned int tree_index_1, const unsigned int tree_index_2, const tree_managerRef TM)
 {
-   ((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index_1),
+   ((static_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index_1),
                                                             TM->GetTreeReindex(tree_index_2));
 }
 
@@ -387,26 +388,26 @@ template <class obj_node, class TRef, typename R>
 inline void addv3(const TRef& curr, R (obj_node::*add_function)(const tree_nodeRef&, int),
                   const unsigned int tree_index, const int value, const tree_managerRef TM)
 {
-   ((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index), value);
+   ((static_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index), value);
 }
 
 template <class obj_node, class TRef, typename R>
 inline void add_unsigned(const TRef& curr, R (obj_node::*add_function)(const tree_nodeRef&, unsigned int),
                            const unsigned int tree_index, const unsigned int value, const tree_managerRef TM)
 {
-   ((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index), value);
+   ((static_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index), value);
 }
 
 template <class obj_node, class TRefCurr, class TRef, typename R>
 inline void addo(const TRefCurr& curr, R (obj_node::*add_function)(const TRef&), const TRef& obj)
 {
-   ((dynamic_cast<obj_node*>(curr.get()))->*add_function)(obj);
+   ((static_cast<obj_node*>(curr.get()))->*add_function)(obj);
 }
 
 inline void add_access_binf(const tree_nodeRef& curr, const unsigned int binf_index,
                               const TreeVocabularyTokenTypes_TokenEnum enum_access, const tree_managerRef TM)
 {
-   (dynamic_cast<binfo*>(curr.get()))->add_access_binf(TM->GetTreeReindex(binf_index), enum_access);
+   (static_cast<binfo*>(curr.get()))->add_access_binf(TM->GetTreeReindex(binf_index), enum_access);
 }
 
 inline void do_fun_decl(const bool& in, const int& cnib, const int& cni, const BisonParserDataRef data,
@@ -419,7 +420,7 @@ template <class type_node>
 inline void do_qual(const tree_nodeRef& curr, const int& value)
 {
    THROW_ASSERT(curr, "");
-   ((dynamic_cast<type_node*>(curr.get()))->qual) = static_cast<TreeVocabularyTokenTypes_TokenEnum>(value);
+   ((static_cast<type_node*>(curr.get()))->qual) = static_cast<TreeVocabularyTokenTypes_TokenEnum>(value);
 }
 
 #ifndef __clang_analyzer__
@@ -1029,19 +1030,19 @@ bool pred;
                         | var_decl_definition var_decl_definitions
                         ;
 
-   var_decl_definition : TOK_BISON_DEF_STMT node_id {GetPointer<var_decl>(data->curr_tree_nodeRef)->defs.insert(data->TreeM->GetTreeReindex(data->curr_NODE_ID));};
+   var_decl_definition : TOK_BISON_DEF_STMT node_id {GetPointerS<var_decl>(data->curr_tree_nodeRef)->defs.insert(data->TreeM->GetTreeReindex(data->curr_NODE_ID));};
 
    var_decl_uses : /*empty*/
                  | var_decl_use var_decl_uses
                  ;
 
-   var_decl_use : TOK_BISON_USE_STMT node_id {GetPointer<var_decl>(data->curr_tree_nodeRef)->uses.insert(data->TreeM->GetTreeReindex(data->curr_NODE_ID));};
+   var_decl_use : TOK_BISON_USE_STMT node_id {GetPointerS<var_decl>(data->curr_tree_nodeRef)->uses.insert(data->TreeM->GetTreeReindex(data->curr_NODE_ID));};
 
    var_decl_addressings : /*empty*/
                         | var_decl_addressing var_decl_addressings
                         ;
 
-   var_decl_addressing : TOK_BISON_ADDR_STMT node_id {GetPointer<var_decl>(data->curr_tree_nodeRef)->addressings.insert(data->TreeM->GetTreeReindex(data->curr_NODE_ID));};
+   var_decl_addressing : TOK_BISON_ADDR_STMT node_id {GetPointerS<var_decl>(data->curr_tree_nodeRef)->addressings.insert(data->TreeM->GetTreeReindex(data->curr_NODE_ID));};
 
    //string_cst:	TOK_BISON_STRING_CST^ (type)? strg lngt;
    wstring_cst : TOK_BISON_STRING_CST{CTN(string_cst)}  type_opt{OPT($3, NS(string_cst,type))}  strg{NSV(string_cst, strg, data->curr_string)}  lngt{NSV(string_cst, lngt, std::stoi(data->curr_string_number))};
@@ -1360,24 +1361,24 @@ bool pred;
                     predicate_opt           {OPT($9, NS(gimple_assign, predicate))}
                     gimple_modify_uses      {;}
                     gimple_modify_clbs      {;}
-                    clobber_opt             {OPT($15,GetPointer<gimple_assign>(data->curr_tree_nodeRef)->clobber = true;)}
-                    temporary_address_opt   {OPT($17,GetPointer<gimple_assign>(data->curr_tree_nodeRef)->temporary_address = true;)}
+                    clobber_opt             {OPT($15,GetPointerS<gimple_assign>(data->curr_tree_nodeRef)->clobber = true;)}
+                    temporary_address_opt   {OPT($17,GetPointerS<gimple_assign>(data->curr_tree_nodeRef)->temporary_address = true;)}
                   ;
 
    gimple_modify_uses : /*empty*/
                   | gimple_modify_use gimple_modify_uses
                   ;
 
-   gimple_modify_use : TOK_BISON_USE string_id {GetPointer<gimple_assign>(data->curr_tree_nodeRef)->use_set->Add(data->curr_string);}
-                     | TOK_BISON_USE_VARS node_id {GetPointer<gimple_assign>(data->curr_tree_nodeRef)->use_set->Add(data->TreeM->GetTreeReindex(data->curr_NODE_ID));}
+   gimple_modify_use : TOK_BISON_USE string_id {GetPointerS<gimple_assign>(data->curr_tree_nodeRef)->use_set->Add(data->curr_string);}
+                     | TOK_BISON_USE_VARS node_id {GetPointerS<gimple_assign>(data->curr_tree_nodeRef)->use_set->Add(data->TreeM->GetTreeReindex(data->curr_NODE_ID));}
                      ;
 
    gimple_modify_clbs : /*empty*/
                   | gimple_modify_clb gimple_modify_clbs
                   ;
 
-   gimple_modify_clb : TOK_BISON_CLB string_id {GetPointer<gimple_assign>(data->curr_tree_nodeRef)->clobbered_set->Add(data->curr_string);}
-                 | TOK_BISON_CLB_VARS node_id {GetPointer<gimple_assign>(data->curr_tree_nodeRef)->clobbered_set->Add(data->TreeM->GetTreeReindex(data->curr_NODE_ID));}
+   gimple_modify_clb : TOK_BISON_CLB string_id {GetPointerS<gimple_assign>(data->curr_tree_nodeRef)->clobbered_set->Add(data->curr_string);}
+                 | TOK_BISON_CLB_VARS node_id {GetPointerS<gimple_assign>(data->curr_tree_nodeRef)->clobbered_set->Add(data->TreeM->GetTreeReindex(data->curr_NODE_ID));}
                  ;
 
   //gt_expr:	TOK_BISON_GT_EXPR^ binary_expr;
@@ -1630,8 +1631,8 @@ bool pred;
                  | ptr_info ptr_info_opt
                  ;
 
-    ptr_info : TOK_BISON_USE string_id {GetPointer<ssa_name>(data->curr_tree_nodeRef)->use_set->Add(data->curr_string);}
-             | TOK_BISON_USE_VARS node_id {GetPointer<ssa_name>(data->curr_tree_nodeRef)->use_set->Add(data->TreeM->GetTreeReindex(data->curr_NODE_ID));}
+    ptr_info : TOK_BISON_USE string_id {GetPointerS<ssa_name>(data->curr_tree_nodeRef)->use_set->Add(data->curr_string);}
+             | TOK_BISON_USE_VARS node_id {GetPointerS<ssa_name>(data->curr_tree_nodeRef)->use_set->Add(data->TreeM->GetTreeReindex(data->curr_NODE_ID));}
              ;
 
    tok_ssa_name_def: tok_volatile_ssa_name | def_stmt_list;
@@ -1756,7 +1757,7 @@ bool pred;
                    | gimple_phi_tuples gimple_phi_tuples_pair
                    ;
 
-   gimple_phi_tuples_pair : def edge{GetPointer<gimple_phi>(data->curr_tree_nodeRef)->AddDefEdge(data->TreeM, gimple_phi::DefEdge(data->TreeM->GetTreeReindex(data->curr_NODE_ID), static_cast<unsigned>(std::stoul(data->curr_string_number))));}
+   gimple_phi_tuples_pair : def edge{GetPointerS<gimple_phi>(data->curr_tree_nodeRef)->AddDefEdge(data->TreeM, gimple_phi::DefEdge(data->TreeM->GetTreeReindex(data->curr_NODE_ID), static_cast<unsigned>(std::stoul(data->curr_string_number))));}
    ;
 
    //gimple_phi:       TOK_BISON_GIMPLE_PHI^ res (def edge)* (TOK_BISON_VIRTUAL)?;
@@ -1923,16 +1924,16 @@ bool pred;
                    | gimple_call_use gimple_call_uses
                    ;
 
-   gimple_call_use : TOK_BISON_USE string_id {GetPointer<gimple_call>(data->curr_tree_nodeRef)->use_set->Add(data->curr_string);}
-                  | TOK_BISON_USE_VARS node_id {GetPointer<gimple_call>(data->curr_tree_nodeRef)->use_set->Add(data->TreeM->GetTreeReindex(data->curr_NODE_ID));}
+   gimple_call_use : TOK_BISON_USE string_id {GetPointerS<gimple_call>(data->curr_tree_nodeRef)->use_set->Add(data->curr_string);}
+                  | TOK_BISON_USE_VARS node_id {GetPointerS<gimple_call>(data->curr_tree_nodeRef)->use_set->Add(data->TreeM->GetTreeReindex(data->curr_NODE_ID));}
                   ;
 
    gimple_call_clbs : /*empty*/
                    | gimple_call_clb gimple_call_clbs
                    ;
 
-   gimple_call_clb : TOK_BISON_CLB string_id {GetPointer<gimple_call>(data->curr_tree_nodeRef)->clobbered_set->Add(data->curr_string);}
-                  | TOK_BISON_CLB_VARS node_id {GetPointer<gimple_call>(data->curr_tree_nodeRef)->clobbered_set->Add(data->TreeM->GetTreeReindex(data->curr_NODE_ID));}
+   gimple_call_clb : TOK_BISON_CLB string_id {GetPointerS<gimple_call>(data->curr_tree_nodeRef)->clobbered_set->Add(data->curr_string);}
+                  | TOK_BISON_CLB_VARS node_id {GetPointerS<gimple_call>(data->curr_tree_nodeRef)->clobbered_set->Add(data->TreeM->GetTreeReindex(data->curr_NODE_ID));}
                   ;
 
    //bit_field_ref:  TOK_BISON_BIT_FIELD_REF^ ternary_expr;
@@ -2273,7 +2274,7 @@ bool pred;
       wfrem_expr: TOK_BISON_FREM_EXPR{CTN(frem_expr)}  wbinary_expr;
 
       //srcp: TOK_BISON_SRCP^ TOK_BISON_STRING TOK_BISON_NUMBER;
-       wsrcp_opt     : /*empty*/| TOK_BISON_SRCP string_id{NSV(srcp, include_name, data->curr_string)} number_id{NSV(srcp, line_number, static_cast<unsigned>(std::stoul(data->curr_string_number)))} number_id{NSV(srcp, column_number, static_cast<unsigned>(std::stoul(data->curr_string_number)))};
+       wsrcp_opt     : /*empty*/| TOK_BISON_SRCP string_id{NSV_SRCP(include_name, data->curr_string)} number_id{NSV_SRCP(line_number, static_cast<unsigned>(std::stoul(data->curr_string_number)))} number_id{NSV_SRCP(column_number, static_cast<unsigned>(std::stoul(data->curr_string_number)))};
 
 
 

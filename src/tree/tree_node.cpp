@@ -43,34 +43,30 @@
  * Last modified by $Author$
  *
  */
+#include "tree_node.hpp"
 
-/// Autoheader include
-#include "config_HAVE_TREE_MANIPULATION_BUILT.hpp"
-#include "config_HAVE_TREE_PARSER_BUILT.hpp"
-
-/// parser/compiler include
-#include "token_interface.hpp"
-
-#include <ostream> // for operator<<
-
-/// Tree include
-#include "dbgPrintHelper.hpp" // for INDENT_DBG_MEX
+#include "dbgPrintHelper.hpp"
 #include "gimple_writer.hpp"
-#include "string_manipulation.hpp" // for STR
+#include "string_manipulation.hpp"
+#include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-/// Utility include
 #include <boost/preprocessor/facilities/empty.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
+
 #include <iostream>
+#include <ostream>
 #include <unordered_map>
 #include <utility>
 
 #include "config_HAVE_ASSERTS.hpp"
+#include "config_HAVE_TREE_MANIPULATION_BUILT.hpp"
+#include "config_HAVE_TREE_PARSER_BUILT.hpp"
+
+// #define CHECK_VIRTUAL_USES
 
 /// forward declaration macro
 #define VISIT_TREE_NODE_MACRO(r, data, elem)          \
@@ -1270,15 +1266,14 @@ TreeNodeSet ssa_name::CGetDefStmts() const
 
 void ssa_name::AddUseStmt(const tree_nodeRef& use_stmt)
 {
-#ifndef NDEBUG
-   size_t vuse_count = 0;
+   use_stmts[use_stmt]++;
+#ifdef CHECK_VIRTUAL_USES
    if(virtual_flag)
    {
+      size_t vuse_count = 0;
       const auto gn = GetPointerS<const gimple_node>(use_stmt);
-      vuse_count += static_cast<size_t>(std::count_if(gn->vuses.begin(), gn->vuses.end(),
-                                                      [&](const tree_nodeRef& tn) { return tn->index == index; }));
-      vuse_count += static_cast<size_t>(std::count_if(gn->vovers.begin(), gn->vovers.end(),
-                                                      [&](const tree_nodeRef& tn) { return tn->index == index; }));
+      vuse_count += gn->vuses.count(tree_nodeRef(this, null_deleter()));
+      vuse_count += gn->vovers.count(tree_nodeRef(this, null_deleter()));
       vuse_count += static_cast<size_t>(gn->memuse && gn->memuse->index == index);
       if(use_stmt->get_kind() == gimple_phi_K)
       {
@@ -1287,35 +1282,32 @@ void ssa_name::AddUseStmt(const tree_nodeRef& use_stmt)
              std::count_if(gp->CGetDefEdgesList().begin(), gp->CGetDefEdgesList().end(),
                            [&](const gimple_phi::DefEdge& de) { return de.first->index == index; }));
       }
-   }
-#endif
-   use_stmts[use_stmt]++;
-#ifndef NDEBUG
-   if(virtual_flag && use_stmts.count(use_stmt) > vuse_count)
-   {
-      std::cout << "vssa: " << ToString() << std::endl;
-      const auto gn = GetPointerS<const gimple_node>(use_stmt);
-      if(gn->vdef)
+      if(use_stmts.count(use_stmt) > vuse_count)
       {
-         std::cout << "vdef: " << gn->vdef->ToString() << std::endl;
+         std::cerr << "vssa: " << ToString() << std::endl;
+         const auto gn = GetPointerS<const gimple_node>(use_stmt);
+         if(gn->vdef)
+         {
+            std::cerr << "vdef: " << gn->vdef->ToString() << std::endl;
+         }
+         for(const auto& vuse : gn->vuses)
+         {
+            std::cerr << "vuse: " << vuse->ToString() << std::endl;
+         }
+         for(const auto& vover : gn->vovers)
+         {
+            std::cerr << "vover: " << vover->ToString() << std::endl;
+         }
+         if(gn->memdef)
+         {
+            std::cerr << "memdef: " << gn->memdef->ToString() << std::endl;
+         }
+         if(gn->memuse)
+         {
+            std::cerr << "memuse: " << gn->memuse->ToString() << std::endl;
+         }
+         THROW_UNREACHABLE("Virtual ssa used more than " + STR(vuse_count) + " time - " + use_stmt->ToString());
       }
-      for(const auto& vuse : gn->vuses)
-      {
-         std::cout << "vuse: " << vuse->ToString() << std::endl;
-      }
-      for(const auto& vover : gn->vovers)
-      {
-         std::cout << "vover: " << vover->ToString() << std::endl;
-      }
-      if(gn->memdef)
-      {
-         std::cout << "memdef: " << gn->memdef->ToString() << std::endl;
-      }
-      if(gn->memuse)
-      {
-         std::cout << "memuse: " << gn->memuse->ToString() << std::endl;
-      }
-      THROW_UNREACHABLE("Virtual ssa used more than " + STR(vuse_count) + " time - " + use_stmt->ToString());
    }
 #endif
 }

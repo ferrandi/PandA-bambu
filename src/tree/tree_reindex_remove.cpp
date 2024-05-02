@@ -92,28 +92,28 @@ void tree_reindex_remove::fix_reference(tree_nodeRef& tn) const
    }
 }
 
-#define node_fix_reference(field, type) fix_reference(GetPointer<type>(source_tn)->field)
+#define node_fix_reference(field, type) fix_reference(GetPointerS<type>(source_tn)->field)
 
-#define seq_fix_reference(list_field, type)                      \
-   if(!GetPointer<type>(source_tn)->list_field.empty())          \
-   {                                                             \
-      for(auto& field : GetPointer<type>(source_tn)->list_field) \
-      {                                                          \
-         fix_reference(field);                                   \
-      }                                                          \
+#define seq_fix_reference(list_field, type)                       \
+   if(!GetPointerS<type>(source_tn)->list_field.empty())          \
+   {                                                              \
+      for(auto& field : GetPointerS<type>(source_tn)->list_field) \
+      {                                                           \
+         fix_reference(field);                                    \
+      }                                                           \
    }
 
-#define set_fix_reference(set_field, type)                      \
-   if(!GetPointer<type>(source_tn)->set_field.empty())          \
-   {                                                            \
-      TreeNodeSet fix_set;                                      \
-      for(auto& field : GetPointer<type>(source_tn)->set_field) \
-      {                                                         \
-         tree_nodeRef tn = field;                               \
-         fix_reference(tn);                                     \
-         fix_set.insert(tn);                                    \
-      }                                                         \
-      GetPointer<type>(source_tn)->set_field = fix_set;         \
+#define set_fix_reference(set_field, type)                       \
+   if(!GetPointerS<type>(source_tn)->set_field.empty())          \
+   {                                                             \
+      TreeNodeSet fix_set;                                       \
+      for(auto& field : GetPointerS<type>(source_tn)->set_field) \
+      {                                                          \
+         tree_nodeRef tn = field;                                \
+         fix_reference(tn);                                      \
+         fix_set.insert(tn);                                     \
+      }                                                          \
+      GetPointerS<type>(source_tn)->set_field = fix_set;         \
    }
 
 void tree_reindex_remove::operator()(const srcp* obj, unsigned int& mask)
@@ -257,9 +257,9 @@ void tree_reindex_remove::operator()(const binfo* obj, unsigned int& mask)
    THROW_ASSERT(obj == source_tn.get(), "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
    node_fix_reference(type, binfo);
-   if(!GetPointer<binfo>(source_tn)->list_of_access_binf.empty())
+   if(!GetPointerS<binfo>(source_tn)->list_of_access_binf.empty())
    {
-      for(auto& [tok, field] : GetPointer<binfo>(source_tn)->list_of_access_binf)
+      for(auto& [tok, field] : GetPointerS<binfo>(source_tn)->list_of_access_binf)
       {
          fix_reference(field);
       }
@@ -346,9 +346,9 @@ void tree_reindex_remove::operator()(const constructor* obj, unsigned int& mask)
    THROW_ASSERT(obj == source_tn.get(), "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
    node_fix_reference(type, constructor);
-   if(!GetPointer<constructor>(source_tn)->list_of_idx_valu.empty())
+   if(!GetPointerS<constructor>(source_tn)->list_of_idx_valu.empty())
    {
-      for(auto& [idx, valu] : GetPointer<constructor>(source_tn)->list_of_idx_valu)
+      for(auto& [idx, valu] : GetPointerS<constructor>(source_tn)->list_of_idx_valu)
       {
          fix_reference(idx);
          fix_reference(valu);
@@ -498,10 +498,10 @@ void tree_reindex_remove::operator()(const gimple_phi* obj, unsigned int& mask)
    tree_node_mask::operator()(obj, mask);
 
    node_fix_reference(res, gimple_phi);
-   if(!GetPointer<gimple_phi>(source_tn)->list_of_def_edge.empty())
+   if(!GetPointerS<gimple_phi>(source_tn)->list_of_def_edge.empty())
    {
       gimple_phi::DefEdgeList fix_set;
-      for(auto& [def, edge] : GetPointer<gimple_phi>(source_tn)->list_of_def_edge)
+      for(auto& [def, edge] : GetPointerS<gimple_phi>(source_tn)->list_of_def_edge)
       {
          fix_reference(def);
       }
@@ -591,18 +591,18 @@ void tree_reindex_remove::operator()(const ssa_name* obj, unsigned int& mask)
    node_fix_reference(var, ssa_name);
    seq_fix_reference(use_set->variables, ssa_name);
 
-   const auto defs = GetPointer<ssa_name>(source_tn)->CGetDefStmts();
+   const auto defs = GetPointerS<ssa_name>(source_tn)->CGetDefStmts();
    for(auto it = defs.begin(); it != defs.end(); ++it)
    {
       tree_nodeRef fix = *it;
       fix_reference(fix);
       if(it == defs.begin())
       {
-         GetPointer<ssa_name>(source_tn)->SetDefStmt(fix);
+         GetPointerS<ssa_name>(source_tn)->SetDefStmt(fix);
       }
       else
       {
-         GetPointer<ssa_name>(source_tn)->AddDefStmt(fix);
+         GetPointerS<ssa_name>(source_tn)->AddDefStmt(fix);
       }
    }
 
@@ -615,7 +615,7 @@ void tree_reindex_remove::operator()(const statement_list* obj, unsigned int& ma
    THROW_ASSERT(obj == source_tn.get(), "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
    seq_fix_reference(list_of_stmt, statement_list);
-   for(const auto& [bbi, bb] : GetPointer<statement_list>(source_tn)->list_of_bloc)
+   for(const auto& [bbi, bb] : GetPointerS<statement_list>(source_tn)->list_of_bloc)
    {
       for(auto& field : bb->list_of_phi)
       {
@@ -841,7 +841,7 @@ void tree_reindex_remove::operator()(const gimple_multi_way_if* obj, unsigned in
    THROW_ASSERT(obj == source_tn.get(), "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
    THROW_ASSERT(source_tn, "");
-   for(auto& [cond, edge] : GetPointer<gimple_multi_way_if>(source_tn)->list_of_cond)
+   for(auto& [cond, edge] : GetPointerS<gimple_multi_way_if>(source_tn)->list_of_cond)
    {
       fix_reference(cond);
    }

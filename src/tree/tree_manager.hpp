@@ -472,12 +472,6 @@ class tree_manager
     * @return true in case fd is a top function
     */
    bool is_top_function(const function_decl* fd) const;
-
-   /**
-    * @brief check_ssa_uses check if the uses of a ssa are correct
-    * @return true in case all the ssa uses are correct, false otherwise.
-    */
-   bool check_ssa_uses(unsigned int fun_id) const;
 };
 using tree_managerRef = refcount<tree_manager>;
 using tree_managerConstRef = refcount<const tree_manager>;

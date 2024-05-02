@@ -67,7 +67,7 @@
       remap.insert({tn->index, (node_id)});                 \
       auto tnn = new tree_node_name(node_id);               \
       tree_nodeRef cur = tree_nodeRef(tnn);                 \
-      if(dynamic_cast<function_decl*>(tnn))                 \
+      if(tnn->get_kind() == function_decl_K)                \
       {                                                     \
          TM->add_function(node_id, cur);                    \
       }                                                     \
@@ -741,6 +741,7 @@ void tree_node_dup::operator()(const tree_reindex* obj, unsigned int&)
 
 void tree_node_dup::operator()(const attr* obj, unsigned int& mask)
 {
+   // NOTE: const_cast below is "safe" since the following assert must be true
    THROW_ASSERT(obj == dynamic_cast<attr*>(curr_tree_node_ptr), "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
    // cppcheck-suppress unusedVariable
@@ -762,102 +763,104 @@ void tree_node_dup::operator()(const attr* obj, unsigned int& mask)
 #define ATTR_MACRO(r, data, elem)                                                                                   \
    attr_p = GetPointer<attr>(source_tn)->list_attr.find(TOK(elem)) != GetPointer<attr>(source_tn)->list_attr.end(); \
    if(attr_p)                                                                                                       \
-      dynamic_cast<attr*>(curr_tree_node_ptr)->list_attr.insert(TOK(elem));
+      const_cast<attr*>(obj)->list_attr.insert(TOK(elem));
 
    BOOST_PP_SEQ_FOR_EACH(ATTR_MACRO, BOOST_PP_EMPTY, ATTR_SEQ);
 #undef ATTR_MACRO
 #undef ATTR_SEQ
 }
 
-#define SET_NODE_ID(field, type)                                                 \
-   if(GetPointer<type>(source_tn)->field)                                        \
-   {                                                                             \
-      unsigned int node_id = GetPointer<type>(source_tn)->field->index;          \
-      if(remap.find(node_id) != remap.end())                                     \
-      {                                                                          \
-         node_id = remap.find(node_id)->second;                                  \
-      }                                                                          \
-      else                                                                       \
-      {                                                                          \
-         tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;               \
-         tree_nodeRef saved_source_tn = source_tn;                               \
-         node_id = create_tree_node(GetPointer<type>(source_tn)->field, mode);   \
-         curr_tree_node_ptr = saved_curr_tree_node_ptr;                          \
-         source_tn = saved_source_tn;                                            \
-      }                                                                          \
-      dynamic_cast<type*>(curr_tree_node_ptr)->field = TM->GetTreeNode(node_id); \
+#define SET_NODE_ID(field, type)                                                \
+   if(GetPointerS<type>(source_tn)->field)                                      \
+   {                                                                            \
+      unsigned int node_id = GetPointerS<type>(source_tn)->field->index;        \
+      if(remap.find(node_id) != remap.end())                                    \
+      {                                                                         \
+         node_id = remap.find(node_id)->second;                                 \
+      }                                                                         \
+      else                                                                      \
+      {                                                                         \
+         tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;              \
+         tree_nodeRef saved_source_tn = source_tn;                              \
+         node_id = create_tree_node(GetPointerS<type>(source_tn)->field, mode); \
+         curr_tree_node_ptr = saved_curr_tree_node_ptr;                         \
+         source_tn = saved_source_tn;                                           \
+      }                                                                         \
+      static_cast<type*>(curr_tree_node_ptr)->field = TM->GetTreeNode(node_id); \
    }
 
-#define SEQ_SET_NODE_ID(list_field, type)                                                         \
-   if(!GetPointer<type>(source_tn)->list_field.empty())                                           \
-   {                                                                                              \
-      for(auto const& field : GetPointer<type>(source_tn)->list_field)                            \
-      {                                                                                           \
-         unsigned int node_id = field->index;                                                     \
-         if(remap.find(node_id) != remap.end())                                                   \
-            node_id = remap.find(node_id)->second;                                                \
-         else                                                                                     \
-         {                                                                                        \
-            tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;                             \
-            tree_nodeRef saved_source_tn = source_tn;                                             \
-            node_id = create_tree_node(field, mode);                                              \
-            curr_tree_node_ptr = saved_curr_tree_node_ptr;                                        \
-            source_tn = saved_source_tn;                                                          \
-         }                                                                                        \
-         dynamic_cast<type*>(curr_tree_node_ptr)->list_field.push_back(TM->GetTreeNode(node_id)); \
-      }                                                                                           \
+#define SEQ_SET_NODE_ID(list_field, type)                                                        \
+   if(!GetPointerS<type>(source_tn)->list_field.empty())                                         \
+   {                                                                                             \
+      for(auto const& field : GetPointerS<type>(source_tn)->list_field)                          \
+      {                                                                                          \
+         unsigned int node_id = field->index;                                                    \
+         if(remap.find(node_id) != remap.end())                                                  \
+            node_id = remap.find(node_id)->second;                                               \
+         else                                                                                    \
+         {                                                                                       \
+            tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;                            \
+            tree_nodeRef saved_source_tn = source_tn;                                            \
+            node_id = create_tree_node(field, mode);                                             \
+            curr_tree_node_ptr = saved_curr_tree_node_ptr;                                       \
+            source_tn = saved_source_tn;                                                         \
+         }                                                                                       \
+         static_cast<type*>(curr_tree_node_ptr)->list_field.push_back(TM->GetTreeNode(node_id)); \
+      }                                                                                          \
    }
 
-#define SET_SET_NODE_ID(list_field, type)                                                      \
-   if(!GetPointer<type>(source_tn)->list_field.empty())                                        \
-   {                                                                                           \
-      for(const auto& i : GetPointer<type>(source_tn)->list_field)                             \
-      {                                                                                        \
-         unsigned int node_id = i->index;                                                      \
-         if(remap.find(node_id) != remap.end())                                                \
-            node_id = remap.find(node_id)->second;                                             \
-         else                                                                                  \
-         {                                                                                     \
-            tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;                          \
-            tree_nodeRef saved_source_tn = source_tn;                                          \
-            node_id = create_tree_node(i, mode);                                               \
-            curr_tree_node_ptr = saved_curr_tree_node_ptr;                                     \
-            source_tn = saved_source_tn;                                                       \
-         }                                                                                     \
-         dynamic_cast<type*>(curr_tree_node_ptr)->list_field.insert(TM->GetTreeNode(node_id)); \
-      }                                                                                        \
+#define SET_SET_NODE_ID(list_field, type)                                                     \
+   if(!GetPointerS<type>(source_tn)->list_field.empty())                                      \
+   {                                                                                          \
+      for(const auto& i : GetPointerS<type>(source_tn)->list_field)                           \
+      {                                                                                       \
+         unsigned int node_id = i->index;                                                     \
+         if(remap.find(node_id) != remap.end())                                               \
+            node_id = remap.find(node_id)->second;                                            \
+         else                                                                                 \
+         {                                                                                    \
+            tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;                         \
+            tree_nodeRef saved_source_tn = source_tn;                                         \
+            node_id = create_tree_node(i, mode);                                              \
+            curr_tree_node_ptr = saved_curr_tree_node_ptr;                                    \
+            source_tn = saved_source_tn;                                                      \
+         }                                                                                    \
+         static_cast<type*>(curr_tree_node_ptr)->list_field.insert(TM->GetTreeNode(node_id)); \
+      }                                                                                       \
    }
 
-#define LSEQ_SET_NODE_ID(list_field, type)                                                                             \
-   if(!GetPointer<type>(source_tn)->list_field.empty())                                                                \
-   {                                                                                                                   \
-      std::list<tree_nodeRef>::const_iterator vend = GetPointer<type>(source_tn)->list_field.end();                    \
-      for(std::list<tree_nodeRef>::const_iterator i = GetPointer<type>(source_tn)->list_field.begin(); i != vend; ++i) \
-      {                                                                                                                \
-         unsigned int node_id = (*i)->index;                                                                           \
-         if(remap.find(node_id) != remap.end())                                                                        \
-            node_id = remap.find(node_id)->second;                                                                     \
-         else                                                                                                          \
-         {                                                                                                             \
-            tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;                                                  \
-            tree_nodeRef saved_source_tn = source_tn;                                                                  \
-            node_id = create_tree_node(*i, mode);                                                                      \
-            curr_tree_node_ptr = saved_curr_tree_node_ptr;                                                             \
-            source_tn = saved_source_tn;                                                                               \
-         }                                                                                                             \
-         dynamic_cast<type*>(curr_tree_node_ptr)->list_field.push_back(TM->GetTreeNode(node_id));                      \
-      }                                                                                                                \
+#define LSEQ_SET_NODE_ID(list_field, type)                                                                         \
+   if(!GetPointerS<type>(source_tn)->list_field.empty())                                                           \
+   {                                                                                                               \
+      std::list<tree_nodeRef>::const_iterator vend = GetPointerS<type>(source_tn)->list_field.end();               \
+      for(std::list<tree_nodeRef>::const_iterator i = GetPointerS<type>(source_tn)->list_field.begin(); i != vend; \
+          ++i)                                                                                                     \
+      {                                                                                                            \
+         unsigned int node_id = (*i)->index;                                                                       \
+         if(remap.find(node_id) != remap.end())                                                                    \
+            node_id = remap.find(node_id)->second;                                                                 \
+         else                                                                                                      \
+         {                                                                                                         \
+            tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;                                              \
+            tree_nodeRef saved_source_tn = source_tn;                                                              \
+            node_id = create_tree_node(*i, mode);                                                                  \
+            curr_tree_node_ptr = saved_curr_tree_node_ptr;                                                         \
+            source_tn = saved_source_tn;                                                                           \
+         }                                                                                                         \
+         static_cast<type*>(curr_tree_node_ptr)->list_field.push_back(TM->GetTreeNode(node_id));                   \
+      }                                                                                                            \
    }
 
-#define SET_VALUE(field, type) (dynamic_cast<type*>(curr_tree_node_ptr)->field = GetPointer<type>(source_tn)->field)
+#define SET_VALUE(field, type) (static_cast<type*>(curr_tree_node_ptr)->field = GetPointerS<type>(source_tn)->field)
 
 void tree_node_dup::operator()(const srcp* obj, unsigned int& mask)
 {
+   // NOTE: const_cast below are "safe" since the following assert must be true
    THROW_ASSERT(obj == dynamic_cast<srcp*>(curr_tree_node_ptr), "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   SET_VALUE(include_name, srcp);
-   SET_VALUE(line_number, srcp);
-   SET_VALUE(column_number, srcp);
+   const_cast<srcp*>(obj)->include_name = GetPointer<srcp>(source_tn)->include_name;
+   const_cast<srcp*>(obj)->line_number = GetPointer<srcp>(source_tn)->line_number;
+   const_cast<srcp*>(obj)->column_number = GetPointer<srcp>(source_tn)->column_number;
 }
 
 void tree_node_dup::operator()(const WeightedNode* obj, unsigned int& mask)
@@ -1020,15 +1023,15 @@ void tree_node_dup::operator()(const binfo* obj, unsigned int& mask)
    SET_NODE_ID(type, binfo);
    SET_VALUE(virt_flag, binfo);
    SET_VALUE(bases, binfo);
-   if(!GetPointer<binfo>(source_tn)->list_of_access_binf.empty())
+   if(!GetPointerS<binfo>(source_tn)->list_of_access_binf.empty())
    {
-      auto vend = GetPointer<binfo>(source_tn)->list_of_access_binf.end();
-      for(auto i = GetPointer<binfo>(source_tn)->list_of_access_binf.begin(); i != vend; ++i)
+      auto vend = GetPointerS<binfo>(source_tn)->list_of_access_binf.end();
+      for(auto i = GetPointerS<binfo>(source_tn)->list_of_access_binf.begin(); i != vend; ++i)
       {
          unsigned int node_id = i->second->index;
          THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index");
          node_id = remap.find(node_id)->second;
-         dynamic_cast<binfo*>(curr_tree_node_ptr)->add_access_binf(TM->GetTreeNode(node_id), i->first);
+         static_cast<binfo*>(curr_tree_node_ptr)->add_access_binf(TM->GetTreeNode(node_id), i->first);
       }
    }
 }
@@ -1128,10 +1131,10 @@ void tree_node_dup::operator()(const constructor* obj, unsigned int& mask)
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
    SET_NODE_ID(type, constructor);
-   if(!GetPointer<constructor>(source_tn)->list_of_idx_valu.empty())
+   if(!GetPointerS<constructor>(source_tn)->list_of_idx_valu.empty())
    {
-      auto vend = GetPointer<constructor>(source_tn)->list_of_idx_valu.end();
-      for(auto i = GetPointer<constructor>(source_tn)->list_of_idx_valu.begin(); i != vend; ++i)
+      auto vend = GetPointerS<constructor>(source_tn)->list_of_idx_valu.end();
+      for(auto i = GetPointerS<constructor>(source_tn)->list_of_idx_valu.begin(); i != vend; ++i)
       {
          unsigned int node_id1 = i->first ? i->first->index : 0;
          unsigned int node_id2 = i->second->index;
@@ -1163,12 +1166,12 @@ void tree_node_dup::operator()(const constructor* obj, unsigned int& mask)
          }
          if(node_id1)
          {
-            dynamic_cast<constructor*>(curr_tree_node_ptr)
+            static_cast<constructor*>(curr_tree_node_ptr)
                 ->add_idx_valu(TM->GetTreeNode(node_id1), TM->GetTreeNode(node_id2));
          }
          else
          {
-            dynamic_cast<constructor*>(curr_tree_node_ptr)->add_valu(TM->GetTreeNode(node_id2));
+            static_cast<constructor*>(curr_tree_node_ptr)->add_valu(TM->GetTreeNode(node_id2));
          }
       }
    }
@@ -1211,12 +1214,12 @@ void tree_node_dup::operator()(const function_decl* obj, unsigned int& mask)
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
    SET_VALUE(operator_flag, function_decl);
-   if(!GetPointer<function_decl>(source_tn)->list_of_op_names.empty())
+   if(!GetPointerS<function_decl>(source_tn)->list_of_op_names.empty())
    {
-      auto vend = GetPointer<function_decl>(source_tn)->list_of_op_names.end();
-      for(auto i = GetPointer<function_decl>(source_tn)->list_of_op_names.begin(); i != vend; ++i)
+      auto vend = GetPointerS<function_decl>(source_tn)->list_of_op_names.end();
+      for(auto i = GetPointerS<function_decl>(source_tn)->list_of_op_names.begin(); i != vend; ++i)
       {
-         dynamic_cast<function_decl*>(curr_tree_node_ptr)->add(*i);
+         static_cast<function_decl*>(curr_tree_node_ptr)->add(*i);
       }
    }
 
@@ -1380,7 +1383,7 @@ void tree_node_dup::operator()(const gimple_phi* obj, unsigned int& mask)
    tree_node_mask::operator()(obj, mask);
 
    SET_NODE_ID(res, gimple_phi);
-   for(const auto& def_edge : GetPointer<gimple_phi>(source_tn)->CGetDefEdgesList())
+   for(const auto& def_edge : GetPointerS<gimple_phi>(source_tn)->CGetDefEdgesList())
    {
       unsigned int node_id = def_edge.first->index;
       if(mode)
@@ -1408,13 +1411,13 @@ void tree_node_dup::operator()(const gimple_phi* obj, unsigned int& mask)
          }
       }
 
-      dynamic_cast<gimple_phi*>(curr_tree_node_ptr)
+      static_cast<gimple_phi*>(curr_tree_node_ptr)
           ->AddDefEdge(TM, gimple_phi::DefEdge(TM->GetTreeNode(node_id), get_bbi(def_edge.second)));
    }
    SET_VALUE(virtual_flag, gimple_phi);
    if(use_counting)
    {
-      dynamic_cast<gimple_phi*>(curr_tree_node_ptr)->SetSSAUsesComputed();
+      static_cast<gimple_phi*>(curr_tree_node_ptr)->SetSSAUsesComputed();
    }
 }
 
@@ -1510,7 +1513,7 @@ void tree_node_dup::operator()(const ssa_name* obj, unsigned int& mask)
    SET_NODE_ID(var, ssa_name);
    if(mode)
    {
-      dynamic_cast<ssa_name*>(curr_tree_node_ptr)->vers = TM->get_next_vers();
+      static_cast<ssa_name*>(curr_tree_node_ptr)->vers = TM->get_next_vers();
    }
    else
    {
@@ -1527,7 +1530,7 @@ void tree_node_dup::operator()(const ssa_name* obj, unsigned int& mask)
    SET_VALUE(volatile_flag, ssa_name);
    SET_VALUE(virtual_flag, ssa_name);
    SET_VALUE(default_flag, ssa_name);
-   for(const auto& def_stmt : GetPointer<ssa_name>(source_tn)->CGetDefStmts())
+   for(const auto& def_stmt : GetPointerS<ssa_name>(source_tn)->CGetDefStmts())
    {
       if(mode)
       {
@@ -1545,11 +1548,11 @@ void tree_node_dup::operator()(const ssa_name* obj, unsigned int& mask)
             curr_tree_node_ptr = saved_curr_tree_node_ptr;
             source_tn = saved_source_tn;
          }
-         dynamic_cast<ssa_name*>(curr_tree_node_ptr)->AddDefStmt(TM->GetTreeNode(node_id));
+         static_cast<ssa_name*>(curr_tree_node_ptr)->AddDefStmt(TM->GetTreeNode(node_id));
       }
       else
       {
-         dynamic_cast<ssa_name*>(curr_tree_node_ptr)->AddDefStmt(def_stmt);
+         static_cast<ssa_name*>(curr_tree_node_ptr)->AddDefStmt(def_stmt);
       }
    }
    if(!mode)
@@ -1887,9 +1890,9 @@ void tree_node_dup::operator()(const gimple_multi_way_if* obj, unsigned int& mas
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
    THROW_ASSERT(source_tn, "");
-   if(!GetPointer<gimple_multi_way_if>(source_tn)->list_of_cond.empty())
+   if(!GetPointerS<gimple_multi_way_if>(source_tn)->list_of_cond.empty())
    {
-      for(const auto& cond : GetPointer<gimple_multi_way_if>(source_tn)->list_of_cond)
+      for(const auto& cond : GetPointerS<gimple_multi_way_if>(source_tn)->list_of_cond)
       {
          if(cond.first)
          {
@@ -1916,12 +1919,12 @@ void tree_node_dup::operator()(const gimple_multi_way_if* obj, unsigned int& mas
                node_id = remap.find(node_id)->second;
                THROW_ASSERT(node_id, "");
             }
-            dynamic_cast<gimple_multi_way_if*>(curr_tree_node_ptr)
+            static_cast<gimple_multi_way_if*>(curr_tree_node_ptr)
                 ->add_cond(TM->GetTreeNode(node_id), get_bbi(cond.second));
          }
          else
          {
-            dynamic_cast<gimple_multi_way_if*>(curr_tree_node_ptr)->add_cond(tree_nodeRef(), get_bbi(cond.second));
+            static_cast<gimple_multi_way_if*>(curr_tree_node_ptr)->add_cond(tree_nodeRef(), get_bbi(cond.second));
          }
       }
    }
@@ -1955,12 +1958,12 @@ void tree_node_dup::operator()(const omp_parallel_pragma* obj, unsigned int& mas
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
    SET_VALUE(is_shortcut, omp_parallel_pragma);
-   if(!GetPointer<omp_parallel_pragma>(source_tn)->clauses.empty())
+   if(!GetPointerS<omp_parallel_pragma>(source_tn)->clauses.empty())
    {
-      auto vend = GetPointer<omp_parallel_pragma>(source_tn)->clauses.end();
-      for(auto i = GetPointer<omp_parallel_pragma>(source_tn)->clauses.begin(); i != vend; ++i)
+      auto vend = GetPointerS<omp_parallel_pragma>(source_tn)->clauses.end();
+      for(auto i = GetPointerS<omp_parallel_pragma>(source_tn)->clauses.begin(); i != vend; ++i)
       {
-         dynamic_cast<omp_parallel_pragma*>(curr_tree_node_ptr)->clauses[i->first] = i->second;
+         static_cast<omp_parallel_pragma*>(curr_tree_node_ptr)->clauses[i->first] = i->second;
       }
    }
 }
@@ -1969,12 +1972,12 @@ void tree_node_dup::operator()(const omp_for_pragma* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   if(!GetPointer<omp_for_pragma>(source_tn)->clauses.empty())
+   if(!GetPointerS<omp_for_pragma>(source_tn)->clauses.empty())
    {
-      auto vend = GetPointer<omp_for_pragma>(source_tn)->clauses.end();
-      for(auto i = GetPointer<omp_for_pragma>(source_tn)->clauses.begin(); i != vend; ++i)
+      auto vend = GetPointerS<omp_for_pragma>(source_tn)->clauses.end();
+      for(auto i = GetPointerS<omp_for_pragma>(source_tn)->clauses.begin(); i != vend; ++i)
       {
-         dynamic_cast<omp_for_pragma*>(curr_tree_node_ptr)->clauses[i->first] = i->second;
+         static_cast<omp_for_pragma*>(curr_tree_node_ptr)->clauses[i->first] = i->second;
       }
    }
 }
@@ -1983,12 +1986,12 @@ void tree_node_dup::operator()(const omp_simd_pragma* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   if(!GetPointer<omp_simd_pragma>(source_tn)->clauses.empty())
+   if(!GetPointerS<omp_simd_pragma>(source_tn)->clauses.empty())
    {
-      auto vend = GetPointer<omp_simd_pragma>(source_tn)->clauses.end();
-      for(auto i = GetPointer<omp_simd_pragma>(source_tn)->clauses.begin(); i != vend; ++i)
+      auto vend = GetPointerS<omp_simd_pragma>(source_tn)->clauses.end();
+      for(auto i = GetPointerS<omp_simd_pragma>(source_tn)->clauses.begin(); i != vend; ++i)
       {
-         dynamic_cast<omp_simd_pragma*>(curr_tree_node_ptr)->clauses[i->first] = i->second;
+         static_cast<omp_simd_pragma*>(curr_tree_node_ptr)->clauses[i->first] = i->second;
       }
    }
 }
@@ -1997,12 +2000,12 @@ void tree_node_dup::operator()(const omp_declare_simd_pragma* obj, unsigned int&
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   if(!GetPointer<omp_declare_simd_pragma>(source_tn)->clauses.empty())
+   if(!GetPointerS<omp_declare_simd_pragma>(source_tn)->clauses.empty())
    {
-      auto vend = GetPointer<omp_declare_simd_pragma>(source_tn)->clauses.end();
-      for(auto i = GetPointer<omp_declare_simd_pragma>(source_tn)->clauses.begin(); i != vend; ++i)
+      auto vend = GetPointerS<omp_declare_simd_pragma>(source_tn)->clauses.end();
+      for(auto i = GetPointerS<omp_declare_simd_pragma>(source_tn)->clauses.begin(); i != vend; ++i)
       {
-         dynamic_cast<omp_declare_simd_pragma*>(curr_tree_node_ptr)->clauses[i->first] = i->second;
+         static_cast<omp_declare_simd_pragma*>(curr_tree_node_ptr)->clauses[i->first] = i->second;
       }
    }
 }
@@ -2011,12 +2014,12 @@ void tree_node_dup::operator()(const omp_target_pragma* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   if(!GetPointer<omp_target_pragma>(source_tn)->clauses.empty())
+   if(!GetPointerS<omp_target_pragma>(source_tn)->clauses.empty())
    {
-      auto vend = GetPointer<omp_target_pragma>(source_tn)->clauses.end();
-      for(auto i = GetPointer<omp_target_pragma>(source_tn)->clauses.begin(); i != vend; ++i)
+      auto vend = GetPointerS<omp_target_pragma>(source_tn)->clauses.end();
+      for(auto i = GetPointerS<omp_target_pragma>(source_tn)->clauses.begin(); i != vend; ++i)
       {
-         dynamic_cast<omp_target_pragma*>(curr_tree_node_ptr)->clauses[i->first] = i->second;
+         static_cast<omp_target_pragma*>(curr_tree_node_ptr)->clauses[i->first] = i->second;
       }
    }
 }
@@ -2025,12 +2028,12 @@ void tree_node_dup::operator()(const omp_critical_pragma* obj, unsigned int& mas
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   if(!GetPointer<omp_critical_pragma>(source_tn)->clauses.empty())
+   if(!GetPointerS<omp_critical_pragma>(source_tn)->clauses.empty())
    {
-      auto vend = GetPointer<omp_critical_pragma>(source_tn)->clauses.end();
-      for(auto i = GetPointer<omp_critical_pragma>(source_tn)->clauses.begin(); i != vend; ++i)
+      auto vend = GetPointerS<omp_critical_pragma>(source_tn)->clauses.end();
+      for(auto i = GetPointerS<omp_critical_pragma>(source_tn)->clauses.begin(); i != vend; ++i)
       {
-         dynamic_cast<omp_critical_pragma*>(curr_tree_node_ptr)->clauses[i->first] = i->second;
+         static_cast<omp_critical_pragma*>(curr_tree_node_ptr)->clauses[i->first] = i->second;
       }
    }
 }
@@ -2039,12 +2042,12 @@ void tree_node_dup::operator()(const omp_task_pragma* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   if(!GetPointer<omp_task_pragma>(source_tn)->clauses.empty())
+   if(!GetPointerS<omp_task_pragma>(source_tn)->clauses.empty())
    {
-      auto vend = GetPointer<omp_task_pragma>(source_tn)->clauses.end();
-      for(auto i = GetPointer<omp_task_pragma>(source_tn)->clauses.begin(); i != vend; ++i)
+      auto vend = GetPointerS<omp_task_pragma>(source_tn)->clauses.end();
+      for(auto i = GetPointerS<omp_task_pragma>(source_tn)->clauses.begin(); i != vend; ++i)
       {
-         dynamic_cast<omp_task_pragma*>(curr_tree_node_ptr)->clauses[i->first] = i->second;
+         static_cast<omp_task_pragma*>(curr_tree_node_ptr)->clauses[i->first] = i->second;
       }
    }
 }
