@@ -252,15 +252,13 @@ REF_FORWARD_DECL(TreeFlexLexer);
 
 struct BisonParserData
 {
-   BisonParserData(const ParameterConstRef _Param, size_t _max_tree_node_count, int _debug_level)
-         : Param(_Param), max_tree_node_count(_max_tree_node_count), debug_level(_debug_level)
+   BisonParserData(const ParameterConstRef _Param, int _debug_level)
+         : Param(_Param), debug_level(_debug_level)
    {
    }
    
    // the set of parameter
    const ParameterConstRef Param;
-
-   const size_t max_tree_node_count;
 
    /// debug level
    int debug_level;
@@ -438,7 +436,7 @@ bool pred;
 %token <value> NODE_ID
 %token <text> TOK_BISON_STRING
 %token <text> TOK_BISON_NUMBER
-%token TOK_BISON_COMPILER_VERSION TOK_BISON_PLUGIN_VERSION
+%token TOK_BISON_COMPILER_VERSION TOK_BISON_PLUGIN_VERSION TOK_BISON_NODE_COUNT
 %token TOK_BISON_ERROR_MARK TOK_BISON_IDENTIFIER_NODE TOK_BISON_TREE_LIST TOK_BISON_TREE_VEC
 %token TOK_BISON_BLOCK TOK_BISON_VOID_TYPE TOK_BISON_INTEGER_TYPE TOK_BISON_REAL_TYPE
 %token TOK_BISON_COMPLEX_TYPE TOK_BISON_TYPE_ARGUMENT_PACK TOK_BISON_NONTYPE_ARGUMENT_PACK TOK_BISON_EXPR_PACK_EXPANSION TOK_BISON_VECTOR_TYPE TOK_BISON_ENUMERAL_TYPE TOK_BISON_BOOLEAN_TYPE
@@ -587,13 +585,12 @@ bool pred;
    version : TOK_BISON_COMPILER_VERSION
              string_id { CompilerWrapper::bambu_ir_info = STOK(TOK_COMPILER_VERSION) + ": \"" + data->curr_string + "\"\n"; }
              TOK_BISON_PLUGIN_VERSION
-             string_id
+             string_id { CompilerWrapper::bambu_ir_info += STOK(TOK_PLUGIN_VERSION) + ": \"" + data->curr_string + "\"\n"; }
+             TOK_BISON_NODE_COUNT
+             number_id
              {
-                CompilerWrapper::bambu_ir_info += STOK(TOK_PLUGIN_VERSION) + ": \"" + data->curr_string + "\"\n";
                 data->TreeM = tree_managerRef(new tree_manager(data->Param));
-                
-                // TODO: add token with total nodes count to avoid reading the file two times to count lines
-                data->TreeM->add_reserve(data->max_tree_node_count);
+                data->TreeM->add_reserve(std::stoul(data->curr_string_number));
              }
              ;
 
@@ -2741,14 +2738,9 @@ extern tree_managerRef tree_parseY(const ParameterConstRef Param, std::string fn
    fileIO_istreamRef sname = fileIO_istream_open(fn);
    if(sname->fail())
       THROW_ERROR(std::string("FILE does not exist: ") + fn);
-   
-   // TODO: remove this and add a token at the beginning of the file to tell how many tree nodes are there
-   const auto max_tree_node_count = 
-      std::count(std::istreambuf_iterator<char>(*sname), std::istreambuf_iterator<char>(), '\n');
-   sname = fileIO_istream_open(fn);
 
    const TreeFlexLexerRef lexer(new TreeFlexLexer(sname.get(), nullptr));
-   const BisonParserDataRef data(new BisonParserData(Param, max_tree_node_count, Param->get_class_debug_level("tree_parse")));
+   const BisonParserDataRef data(new BisonParserData(Param, Param->get_class_debug_level("tree_parse")));
 #if YYDEBUG
    yydebug = 1;
 #endif

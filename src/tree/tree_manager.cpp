@@ -273,8 +273,10 @@ unsigned int tree_manager::function_index_mngl(const std::string& function_name)
 void tree_manager::print(std::ostream& os) const
 {
    raw_writer RW(os);
+   auto node_count_str = std::to_string(tree_nodes.size());
+   node_count_str = std::string(10 - node_count_str.size(), ' ') + node_count_str;
 
-   os << CompilerWrapper::bambu_ir_info;
+   os << CompilerWrapper::bambu_ir_info << "NODE_COUNT: " << node_count_str << "\n";
 #if TREE_MANAGER_CONTAINER_UNORDERED
    CustomOrderedMap<unsigned int, tree_nodeRef> ordered_tree_nodes(tree_nodes.begin(), tree_nodes.end());
    for(const auto& [idx, tn] : ordered_tree_nodes)
