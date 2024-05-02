@@ -795,17 +795,6 @@ void tree_node_factory::operator()(const type_node* obj, unsigned int& mask)
    SET_VALUE_OPT(TOK_ALGN, algn, type_node);
 }
 
-void tree_node_factory::operator()(const memory_tag* obj, unsigned int& mask)
-{
-   THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
-   tree_node_mask::operator()(obj, mask);
-
-   // TREE_NOT_YET_IMPLEMENTED(TOK_ALIAS);
-   // std::vector<tree_nodeRef>::const_iterator vend = obj->list_of_aliases.end();
-   // for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_aliases.begin(); i != vend; i++)
-   //   write_when_not_null(STOK(TOK_ALIAS), *i);
-}
-
 void tree_node_factory::operator()(const cst_node* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");

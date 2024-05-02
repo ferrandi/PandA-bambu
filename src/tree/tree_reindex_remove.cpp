@@ -207,13 +207,6 @@ void tree_reindex_remove::operator()(const type_node* obj, unsigned int& mask)
    node_fix_reference(scpe, type_node);
 }
 
-void tree_reindex_remove::operator()(const memory_tag* obj, unsigned int& mask)
-{
-   THROW_ASSERT(obj == source_tn.get(), "wrong factory setup");
-   tree_node_mask::operator()(obj, mask);
-   seq_fix_reference(list_of_aliases, memory_tag);
-}
-
 void tree_reindex_remove::operator()(const cst_node* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == source_tn.get(), "wrong factory setup");

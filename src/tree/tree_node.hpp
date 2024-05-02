@@ -88,7 +88,7 @@ enum class TreeVocabularyTokenTypes_TokenEnum;
 
 #define NON_LEAF_TREE_NODES                                                                                            \
    (tree_node)(WeightedNode)(attr)(srcp)(PointToSolution)(decl_node)(expr_node)(gimple_node)(unary_expr)(binary_expr)( \
-       ternary_expr)(quaternary_expr)(type_node)(memory_tag)(cst_node)
+       ternary_expr)(quaternary_expr)(type_node)(cst_node)
 
 /// sequence of all objects
 #define VISITED_OBJ_SEQ1 \
@@ -99,20 +99,20 @@ enum class TreeVocabularyTokenTypes_TokenEnum;
            PANDA_EXTENSION_TREE_NODES
 
 /// sequence of obj that have to be specialized
-#define OBJ_SPECIALIZED_SEQ                                                                                           \
-   (tree_node)(WeightedNode)(attr)(srcp)(decl_node)(expr_node)(gimple_node)(unary_expr)(binary_expr)(ternary_expr)(   \
-       quaternary_expr)(type_node)(memory_tag)(cst_node)(error_mark)(array_type)(gimple_asm)(baselink)(gimple_bind)(  \
-       binfo)(block)(call_expr)(aggr_init_expr)(gimple_call)(case_label_expr)(cast_expr)(complex_cst)(complex_type)(  \
-       gimple_cond)(const_decl)(constructor)(enumeral_type)(expr_stmt)(field_decl)(function_decl)(function_type)(     \
-       gimple_assign)(gimple_goto)(handler)(identifier_node)(integer_cst)(integer_type)(gimple_label)(lut_expr)(      \
-       method_type)(namespace_decl)(overload)(parm_decl)(gimple_phi)(pointer_type)(real_cst)(real_type)(record_type)( \
-       reference_type)(result_decl)(gimple_return)(return_stmt)(type_pack_expansion)(expr_pack_expansion)(scope_ref)( \
-       ssa_name)(statement_list)(string_cst)(gimple_switch)(template_decl)(template_parm_index)(tree_list)(tree_vec)( \
-       try_block)(type_decl)(union_type)(var_decl)(vector_cst)(vector_type)(type_argument_pack)(                      \
-       nontype_argument_pack)(target_expr)(target_mem_ref)(target_mem_ref461)(bloc)(null_node)(gimple_pragma)(        \
-       issue_pragma)(blackbox_pragma)(profiling_pragma)(statistical_profiling)(map_pragma)(call_hw_pragma)(           \
-       call_point_hw_pragma)(omp_pragma)(omp_critical_pragma)(omp_declare_simd_pragma)(omp_for_pragma)(               \
-       omp_parallel_pragma)(omp_sections_pragma)(omp_parallel_sections_pragma)(omp_section_pragma)(omp_simd_pragma)(  \
+#define OBJ_SPECIALIZED_SEQ                                                                                            \
+   (tree_node)(WeightedNode)(attr)(srcp)(decl_node)(expr_node)(gimple_node)(unary_expr)(binary_expr)(ternary_expr)(    \
+       quaternary_expr)(type_node)(cst_node)(error_mark)(array_type)(gimple_asm)(baselink)(gimple_bind)(binfo)(block)( \
+       call_expr)(aggr_init_expr)(gimple_call)(case_label_expr)(cast_expr)(complex_cst)(complex_type)(gimple_cond)(    \
+       const_decl)(constructor)(enumeral_type)(expr_stmt)(field_decl)(function_decl)(function_type)(gimple_assign)(    \
+       gimple_goto)(handler)(identifier_node)(integer_cst)(integer_type)(gimple_label)(lut_expr)(method_type)(         \
+       namespace_decl)(overload)(parm_decl)(gimple_phi)(pointer_type)(real_cst)(real_type)(record_type)(               \
+       reference_type)(result_decl)(gimple_return)(return_stmt)(type_pack_expansion)(expr_pack_expansion)(scope_ref)(  \
+       ssa_name)(statement_list)(string_cst)(gimple_switch)(template_decl)(template_parm_index)(tree_list)(tree_vec)(  \
+       try_block)(type_decl)(union_type)(var_decl)(vector_cst)(vector_type)(type_argument_pack)(                       \
+       nontype_argument_pack)(target_expr)(target_mem_ref)(target_mem_ref461)(bloc)(null_node)(gimple_pragma)(         \
+       issue_pragma)(blackbox_pragma)(profiling_pragma)(statistical_profiling)(map_pragma)(call_hw_pragma)(            \
+       call_point_hw_pragma)(omp_pragma)(omp_critical_pragma)(omp_declare_simd_pragma)(omp_for_pragma)(                \
+       omp_parallel_pragma)(omp_sections_pragma)(omp_parallel_sections_pragma)(omp_section_pragma)(omp_simd_pragma)(   \
        omp_target_pragma)(omp_task_pragma)(gimple_while)(gimple_for)(gimple_multi_way_if)(tree_reindex)
 
 #define OBJ_NOT_SPECIALIZED_SEQ                                                                                  \
@@ -1302,44 +1302,6 @@ struct type_node : public tree_node
       GETID(unql),
       GETID(size),
       GETID(scpe)
-   };
-};
-
-/**
- * Memory tags used in tree-ssa to represent memory locations in virtual SSA
- */
-struct memory_tag : public decl_node
-{
-   /// constructor
-   explicit memory_tag(unsigned int i) : decl_node(i)
-   {
-   }
-
-   /**
-    * list of aliases associated with the memory tag.
-    */
-   std::vector<tree_nodeRef> list_of_aliases;
-
-   /**
-    * Add an alias to the list of aliases.
-    * @param a is a NODE_ID.
-    */
-   void add_alias(const tree_nodeRef a)
-   {
-      list_of_aliases.push_back(a);
-   }
-
-   /**
-    * virtual function used to traverse the tree_node data structure.
-    * @param v is a reference to the tree_node visitor class
-    */
-   void visit(tree_node_visitor* const v) const override;
-
-   /// visitor enum
-   enum
-   {
-      GETID(decl_node) = 0,
-      GETID(list_of_aliases)
    };
 };
 

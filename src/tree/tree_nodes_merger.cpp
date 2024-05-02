@@ -177,14 +177,6 @@ void tree_node_reached::operator()(const type_node* obj, unsigned int& mask)
    CHECK_AND_ADD(obj->scpe, type_node::scpe);
 }
 
-void tree_node_reached::operator()(const memory_tag* obj, unsigned int& mask)
-{
-   tree_node_mask::operator()(obj, mask);
-   auto vend = obj->list_of_aliases.end();
-   for(auto i = obj->list_of_aliases.begin(); i != vend; ++i)
-      CHECK_AND_ADD(*i, memory_tag::list_of_aliases);
-}
-
 void tree_node_reached::operator()(const cst_node* obj, unsigned int& mask)
 {
    tree_node_mask::operator()(obj, mask);

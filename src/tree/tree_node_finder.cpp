@@ -175,15 +175,6 @@ void tree_node_finder::operator()(const type_node* obj, unsigned int& mask)
               CHECK_VALUE_OPT(TOK_SYSTEM, obj->system_flag) and CHECK_VALUE_OPT(TOK_ALGN, obj->algn);
 }
 
-void tree_node_finder::operator()(const memory_tag* obj, unsigned int& mask)
-{
-   tree_node_mask::operator()(obj, mask);
-   TREE_NOT_YET_IMPLEMENTED(TOK_ALIAS);
-   // std::vector<tree_nodeRef>::const_iterator vend = obj->list_of_aliases.end();
-   // for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_aliases.begin(); i != vend; i++)
-   //   write_when_not_null(STOK(TOK_ALIAS), *i);
-}
-
 void tree_node_finder::operator()(const cst_node* obj, unsigned int& mask)
 {
    tree_node_mask::operator()(obj, mask);

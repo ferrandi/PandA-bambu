@@ -803,12 +803,6 @@ void GimpleWriter::operator()(const type_node* obj, unsigned int& mask)
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const memory_tag* obj, unsigned int& mask)
-{
-   mask = NO_VISIT;
-   obj->decl_node::visit(this);
-}
-
 void GimpleWriter::operator()(const cst_node* obj, unsigned int& mask)
 {
    mask = NO_VISIT;

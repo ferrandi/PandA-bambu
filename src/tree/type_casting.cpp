@@ -170,14 +170,6 @@ void type_casting::operator()(const type_node* obj, unsigned int& mask)
    }
 }
 
-void type_casting::operator()(const memory_tag* obj, unsigned int& mask)
-{
-   if(visited.find(obj->index) != visited.end())
-   {
-      mask = NO_VISIT;
-   }
-}
-
 void type_casting::operator()(const cst_node* obj, unsigned int& mask)
 {
    if(visited.find(obj->index) != visited.end())

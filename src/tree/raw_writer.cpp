@@ -326,17 +326,6 @@ void raw_writer::operator()(const type_node* obj, unsigned int& mask)
    }
 }
 
-void raw_writer::operator()(const memory_tag* obj, unsigned int& mask)
-{
-   mask = NO_VISIT;
-   obj->decl_node::visit(this);
-   auto vend = obj->list_of_aliases.end();
-   for(auto i = obj->list_of_aliases.begin(); i != vend; ++i)
-   {
-      write_when_not_null(STOK(TOK_ALIAS), *i);
-   }
-}
-
 void raw_writer::operator()(const cst_node* obj, unsigned int& mask)
 {
    mask = NO_VISIT;

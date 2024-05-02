@@ -1239,7 +1239,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
    /// a decl_node local to a function_decl (scpe is a function_decl) is not added to the symbol table
    /// a decl_node local to a type_node without name is not added to the symbol table
    /// a static decl_node is not added to the symbol table
-   /// memory_tag, parm_decl, result_decl are not added to the symbol table
+   /// parm_decl, result_decl are not added to the symbol table
    /// declaration with type_node local to a function are not considered
    /// the key of the declaration symbol table is structured as "name--scope"
    /// the value of the declaration symbol table is the nodeID of the tree_node in the tree_manager
@@ -1886,8 +1886,8 @@ bool tree_manager::check_for_decl(const tree_nodeRef& tn, const tree_managerRef&
                      "---check_for_decl is considering: " + GetPointer<identifier_node>(dn->name)->strg + ":" +
                          dn->include_name);
    }
-   /// check for memory_tag, parm_decl, result_decl
-   if(GetPointer<memory_tag>(tn) || dn->get_kind() == parm_decl_K || dn->get_kind() == result_decl_K)
+   /// check for parm_decl, result_decl
+   if(dn->get_kind() == parm_decl_K || dn->get_kind() == result_decl_K)
    {
       return true;
    }

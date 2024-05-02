@@ -412,14 +412,6 @@ void type_node::visit(tree_node_visitor* const v) const
    VISIT_MEMBER(mask, scpe, visit(v));
 }
 
-void memory_tag::visit(tree_node_visitor* const v) const
-{
-   unsigned int mask = ALL_VISIT;
-   (*v)(this, mask);
-   VISIT_SC(mask, decl_node, visit(v));
-   SEQ_VISIT_MEMBER(mask, list_of_aliases, tree_node, visit, tree_node_visitor, v);
-}
-
 void cst_node::visit(tree_node_visitor* const v) const
 {
    unsigned int mask = ALL_VISIT;

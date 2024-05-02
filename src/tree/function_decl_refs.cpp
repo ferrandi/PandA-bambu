@@ -134,14 +134,6 @@ void function_decl_refs::operator()(const type_node* obj, unsigned int& mask)
    }
 }
 
-void function_decl_refs::operator()(const memory_tag* obj, unsigned int& mask)
-{
-   if(visited.find(obj->index) != visited.end())
-   {
-      mask = NO_VISIT;
-   }
-}
-
 void function_decl_refs::operator()(const cst_node* obj, unsigned int& mask)
 {
    if(visited.find(obj->index) != visited.end())

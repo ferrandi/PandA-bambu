@@ -966,13 +966,6 @@ void tree_node_dup::operator()(const type_node* obj, unsigned int& mask)
    SET_VALUE(algn, type_node);
 }
 
-void tree_node_dup::operator()(const memory_tag* obj, unsigned int& mask)
-{
-   THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
-   tree_node_mask::operator()(obj, mask);
-   SEQ_SET_NODE_ID(list_of_aliases, memory_tag);
-}
-
 void tree_node_dup::operator()(const cst_node* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
