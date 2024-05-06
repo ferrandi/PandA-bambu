@@ -290,7 +290,7 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
                                     const DesignFlowStep::RelationshipType relationship_type)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing relationships of " + GetName());
-   const auto hls_flow_step_factory = GetPointer<const HLSFlowStepFactory>(CGetDesignFlowStepFactory());
+   const auto hls_flow_step_factory = GetPointerS<const HLSFlowStepFactory>(CGetDesignFlowStepFactory());
    const auto DFM = design_flow_manager.lock();
    const auto DFG = DFM->CGetDesignFlowGraph();
    const auto CGM = HLSMgr->CGetCallGraphManager();
@@ -310,7 +310,7 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
          case HLSFlowStep_Relationship::TOP_FUNCTION:
          {
             const auto frontend_flow_step_factory =
-                GetPointer<const FrontendFlowStepFactory>(DFM->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
+                GetPointerS<const FrontendFlowStepFactory>(DFM->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
             const auto call_graph_computation_step =
                 DFM->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
             const auto cg_design_flow_step =
@@ -338,7 +338,7 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
          case HLSFlowStep_Relationship::ALL_FUNCTIONS:
          {
             const auto frontend_flow_step_factory =
-                GetPointer<const FrontendFlowStepFactory>(DFM->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
+                GetPointerS<const FrontendFlowStepFactory>(DFM->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
             const auto call_graph_computation_step =
                 DFM->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
             const auto cg_design_flow_step =

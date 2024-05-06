@@ -80,7 +80,7 @@ void FrontendFlowStep::CreateSteps(
     const application_managerConstRef application_manager, DesignFlowStepSet& relationships)
 {
    const auto design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
-   const auto frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(
+   const auto frontend_flow_step_factory = GetPointerS<const FrontendFlowStepFactory>(
        design_flow_manager->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
    for(const auto& [step_type, rel_type] : frontend_relationships)
    {

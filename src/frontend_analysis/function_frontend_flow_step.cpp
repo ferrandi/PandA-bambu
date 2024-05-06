@@ -117,7 +117,7 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
    const auto DFM = design_flow_manager.lock();
    const auto DFG = DFM->CGetDesignFlowGraph();
    const auto CGM = AppM->CGetCallGraphManager();
-   const auto frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(CGetDesignFlowStepFactory());
+   const auto frontend_flow_step_factory = GetPointerS<const FrontendFlowStepFactory>(CGetDesignFlowStepFactory());
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> frontend_relationships =
        ComputeFrontendRelationships(relationship_type);
 
@@ -263,9 +263,9 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) cons
    BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(bb_graph_info, parameters));
    BBGraphRef GCC_bb_graph(new BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR));
    CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;
-   const tree_nodeConstRef function_tree_node = AppM->get_tree_manager()->GetTreeNode(function_id);
-   const auto fd = GetPointer<const function_decl>(function_tree_node);
-   const auto sl = GetPointer<const statement_list>(fd->body);
+   const auto function_tree_node = AppM->get_tree_manager()->GetTreeNode(function_id);
+   const auto fd = GetPointerS<const function_decl>(function_tree_node);
+   const auto sl = GetPointerS<const statement_list>(fd->body);
    /// add vertices
    for(const auto& [bbi, bb] : sl->list_of_bloc)
    {
@@ -299,7 +299,7 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) cons
          THROW_ASSERT(inverse_vertex_map.find(succ) != inverse_vertex_map.end(), "BB" + STR(succ) + " does not exist");
          if(bb->CGetStmtList().size() and bb->CGetStmtList().back()->get_kind() == gimple_multi_way_if_K)
          {
-            const auto gmwi = GetPointer<const gimple_multi_way_if>(bb->CGetStmtList().back());
+            const auto gmwi = GetPointerS<const gimple_multi_way_if>(bb->CGetStmtList().back());
             CustomSet<unsigned int> conds;
             for(const auto& gmwi_cond : gmwi->list_of_cond)
             {
@@ -320,7 +320,7 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) cons
             const EdgeInfoRef edge_info(new BBEdgeInfo());
             for(auto cond : conds)
             {
-               GetPointer<BBEdgeInfo>(edge_info)->add_nodeID(cond, CFG_SELECTOR);
+               GetPointerS<BBEdgeInfo>(edge_info)->add_nodeID(cond, CFG_SELECTOR);
             }
             GCC_bb_graphs_collection->InternalAddEdge(inverse_vertex_map[bbi], inverse_vertex_map[succ], CFG_SELECTOR,
                                                       edge_info);
@@ -348,7 +348,7 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) cons
    {
       for(const auto& phi : bb->CGetPhiList())
       {
-         const auto gp = GetPointer<const gimple_phi>(phi);
+         const auto gp = GetPointerS<const gimple_phi>(phi);
          THROW_ASSERT(gp->CGetDefEdgesList().size() == bb->list_of_pred.size(),
                       "BB" + STR(bb->number) + " has " + STR(bb->list_of_pred.size()) +
                           " incoming edges but contains " + STR(phi));

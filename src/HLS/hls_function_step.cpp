@@ -140,7 +140,7 @@ void HLSFunctionStep::ComputeRelationships(DesignFlowStepSet& design_flow_step_s
                                            const DesignFlowStep::RelationshipType relationship_type)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing relationships of " + GetName());
-   const auto hls_flow_step_factory = GetPointer<const HLSFlowStepFactory>(CGetDesignFlowStepFactory());
+   const auto hls_flow_step_factory = GetPointerS<const HLSFlowStepFactory>(CGetDesignFlowStepFactory());
    const auto DFM = design_flow_manager.lock();
    const auto DFG = DFM->CGetDesignFlowGraph();
    const auto CGM = HLSMgr->CGetCallGraphManager();

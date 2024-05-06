@@ -192,10 +192,10 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long
    else if(tree_helper::IsComplexType(node_type))
    {
       const auto cc = GetPointerS<const complex_cst>(node);
-      const auto rcc = GetPointer<const real_cst>(cc->real);
       std::string trimmed_value_r;
-      if(rcc)
+      if(cc->real->get_kind() == real_cst_K)
       {
+         const auto rcc = GetPointerS<const real_cst>(cc->real);
          std::string C_value_r = rcc->valr;
          if(C_value_r == "Inf")
          {
@@ -207,10 +207,10 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long
       {
          trimmed_value_r = convert_to_binary(tree_helper::GetConstValue(cc->real), precision / 2);
       }
-      const auto icc = GetPointer<const real_cst>(cc->imag);
       std::string trimmed_value_i;
-      if(icc)
+      if(cc->imag->get_kind() == real_cst_K)
       {
+         const auto icc = GetPointerS<const real_cst>(cc->imag);
          std::string C_value_i = icc->valr;
          if(C_value_i == "Inf")
          {
@@ -296,8 +296,8 @@ bool HLS_manager::is_register_compatible(unsigned int var) const
 bool HLS_manager::is_reading_writing_function(unsigned funID) const
 {
    auto fun_node = TM->GetTreeNode(funID);
-   auto fd = GetPointer<function_decl>(fun_node);
-   THROW_ASSERT(fd, "unexpected condition");
+   THROW_ASSERT(fun_node->get_kind() == function_decl_K, "unexpected condition");
+   auto fd = GetPointerS<function_decl>(fun_node);
    return fd->reading_memory || fd->writing_memory;
 }
 
