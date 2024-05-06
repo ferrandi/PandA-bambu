@@ -856,7 +856,7 @@ void allocation::BuildProxyFunctionVHDL(functional_unit* current_fu)
 
 void allocation::BuildProxyFunction(functional_unit* current_fu)
 {
-   const auto writer = static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
+   const auto writer = parameters->getOption<HDLWriter_Language>(OPT_writer_language);
    switch(writer)
    {
       case HDLWriter_Language::VHDL:

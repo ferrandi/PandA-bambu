@@ -708,8 +708,7 @@ typedef int unsigned ptr_t;
              parameters->getOption<std::string>(OPT_simulator) == "ICARUS" ||
              parameters->getOption<std::string>(OPT_simulator) == "XSIM";
          if(!simulator_supports_dumpvars_directive ||
-            (static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)) ==
-             HDLWriter_Language::VHDL) ||
+            (parameters->getOption<HDLWriter_Language>(OPT_writer_language) == HDLWriter_Language::VHDL) ||
             HLSMgr->RDiscr->selected_vcd_signals.empty())
          {
             tb_writer->write("`define GENERATE_VCD\n");
