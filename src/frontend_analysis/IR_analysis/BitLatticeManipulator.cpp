@@ -176,7 +176,7 @@ std::deque<bit_lattice> BitLatticeManipulator::constructor_bitstring(const tree_
          }
          sign_reduce_bitstring(cur_bitstring, ssa_is_signed);
       }
-      else if(el->get_kind() == constructor_K && GetPointer<const array_type>(GetPointerS<const constructor>(el)->type))
+      else if(el->get_kind() == constructor_K && GetPointerS<const constructor>(el)->type->get_kind() == array_type_K)
       {
          THROW_ASSERT(array_dims.size() > 1 || c->type->get_kind() == record_type_K,
                       "invalid nested constructors:" + ctor_tn->ToString() + " " + STR(array_dims.size()));

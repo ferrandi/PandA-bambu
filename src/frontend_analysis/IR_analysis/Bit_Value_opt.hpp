@@ -40,7 +40,6 @@
  * Last modified by $Author$
  *
  */
-
 #ifndef BIT_VALUE_OPT_HPP
 #define BIT_VALUE_OPT_HPP
 
@@ -77,10 +76,10 @@ class Bit_Value_opt : public FunctionFrontendFlowStep
     * @param fd is the function declaration
     * @param TM is the tree manager
     */
-   void optimize(const function_decl* fd, tree_managerRef TM, tree_manipulationRef IRman);
+   void optimize(const function_decl* fd, const tree_managerRef& TM, const tree_manipulationRef& IRman);
 
-   void propagateValue(const ssa_name* ssa, tree_managerRef TM, tree_nodeRef old_val, tree_nodeRef new_val,
-                       const std::string callSiteString);
+   void propagateValue(const tree_managerRef& TM, const tree_nodeRef& old_val, const tree_nodeRef& new_val,
+                       const std::string& callSiteString);
 
  public:
    /**
@@ -110,6 +109,6 @@ class Bit_Value_opt : public FunctionFrontendFlowStep
     */
    bool HasToBeExecuted() const override;
 
-   static void constrainSSA(ssa_name* op_ssa, tree_managerRef TM);
+   static void constrainSSA(ssa_name* op_ssa, const tree_managerRef& TM);
 };
 #endif /* Bit_Value_opt_HPP */

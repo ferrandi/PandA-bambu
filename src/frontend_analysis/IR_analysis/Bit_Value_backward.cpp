@@ -36,27 +36,21 @@
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  * @author Michele Fiortio <michele.fiorito@polimi.it>
  */
-
-// include class header
 #include "Bit_Value.hpp"
 
-// include from tree/
+#include "application_manager.hpp"
 #include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
+#include "dbgPrintHelper.hpp"
+#include "function_behavior.hpp"
+#include "math_function.hpp"
+#include "string_manipulation.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-// behavior includes
-#include "application_manager.hpp"
-#include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-
-// include boost range adaptors
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
-#include "math_function.hpp"  // for ceil_log2
-#include "string_manipulation.hpp"
 #include <boost/range/adaptors.hpp>
 
 std::deque<bit_lattice> Bit_Value::get_current_or_best(const tree_nodeConstRef& tn) const
@@ -214,9 +208,9 @@ void Bit_Value::backward()
       {
          const auto s = stmt;
          push_back(s);
-         THROW_ASSERT(GetPointer<const gimple_node>(s)->bb_index == bb->number,
+         THROW_ASSERT(GetPointerS<const gimple_node>(s)->bb_index == bb->number,
                       "BB" + STR(bb->number) + " contains statement from BB" +
-                          STR(GetPointer<const gimple_node>(s)->bb_index) + " - " + s->get_kind_text() + " - " +
+                          STR(GetPointerS<const gimple_node>(s)->bb_index) + " - " + s->get_kind_text() + " - " +
                           STR(s));
       }
       for(const auto& stmt : boost::adaptors::reverse(bb->CGetPhiList()))
@@ -228,9 +222,9 @@ void Bit_Value::backward()
             if(IsHandledByBitvalue(gp->res))
             {
                push_back(s);
-               THROW_ASSERT(GetPointer<const gimple_node>(s)->bb_index == bb->number,
+               THROW_ASSERT(GetPointerS<const gimple_node>(s)->bb_index == bb->number,
                             "BB" + STR(bb->number) + " contains statement from BB" +
-                                STR(GetPointer<const gimple_node>(s)->bb_index) + " - " + s->get_kind_text() + " - " +
+                                STR(GetPointerS<const gimple_node>(s)->bb_index) + " - " + s->get_kind_text() + " - " +
                                 STR(s));
             }
          }
@@ -254,9 +248,9 @@ void Bit_Value::backward()
       {
          THROW_UNREACHABLE("Unexpected statement kind: " + stmt->get_kind_text() + " - " + STR(stmt));
       }
-      const auto lhs_ssa = GetPointer<const ssa_name>(lhs);
-      if(lhs_ssa)
+      if(lhs->get_kind() == ssa_name_K)
       {
+         const auto lhs_ssa = GetPointerS<const ssa_name>(lhs);
          if(!IsHandledByBitvalue(lhs))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -329,7 +323,7 @@ void Bit_Value::backward()
 std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, unsigned int res_nid) const
 {
    std::deque<bit_lattice> res;
-   if(GetPointer<const cst_node>(TM->GetTreeNode(res_nid)))
+   if(tree_helper::IsConstant(TM->GetTreeNode(res_nid)))
    {
       return res;
    }
@@ -698,7 +692,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       case truth_xor_expr_K:
       case widen_mult_expr_K:
       {
-         const auto operation = GetPointer<const binary_expr>(rhs);
+         const auto operation = GetPointerS<const binary_expr>(rhs);
 
          auto op0_nid = operation->op0->index;
          THROW_ASSERT(best.count(op0_nid), "");
@@ -995,7 +989,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       case ternary_mp_expr_K:
       case ternary_mm_expr_K:
       {
-         const auto operation = GetPointer<const ternary_expr>(rhs);
+         const auto operation = GetPointerS<const ternary_expr>(rhs);
 
          auto op0_nid = operation->op0->index;
          THROW_ASSERT(best.count(op0_nid), "");

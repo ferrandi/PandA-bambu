@@ -68,7 +68,8 @@
 BitValueIPA::BitValueIPA(const application_managerRef AM, const DesignFlowManagerConstRef dfm,
                          const ParameterConstRef par)
     : ApplicationFrontendFlowStep(AM, BIT_VALUE_IPA, dfm, par),
-      BitLatticeManipulator(AM->get_tree_manager(), parameters->get_class_debug_level(GET_CLASS(*this)))
+      BitLatticeManipulator(AM->get_tree_manager(), parameters->get_class_debug_level(GET_CLASS(*this))),
+      last_ver_sum(0)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -119,13 +120,13 @@ void BitValueIPA::ComputeRelationships(DesignFlowStepSet& relationships,
    if(relationship_type == INVALIDATION_RELATIONSHIP)
    {
       const auto DFM = design_flow_manager.lock();
+      const auto DFG = DFM->CGetDesignFlowGraph();
       for(const auto& i : fun_id_to_restart)
       {
          const auto step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, i);
          const auto frontend_step = DFM->GetDesignFlowStep(step_signature);
          THROW_ASSERT(frontend_step != NULL_VERTEX, "step is not present");
-         const auto design_flow_graph = DFM->CGetDesignFlowGraph();
-         const auto design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+         const auto design_flow_step = DFG->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
          relationships.insert(design_flow_step);
       }
       fun_id_to_restart.clear();
@@ -134,8 +135,7 @@ void BitValueIPA::ComputeRelationships(DesignFlowStepSet& relationships,
          const auto step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, i);
          const auto frontend_step = DFM->GetDesignFlowStep(step_signature);
          THROW_ASSERT(frontend_step != NULL_VERTEX, "step is not present");
-         const auto design_flow_graph = DFM->CGetDesignFlowGraph();
-         const auto design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+         const auto design_flow_step = DFG->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
          relationships.insert(design_flow_step);
       }
       fun_id_to_restart_caller.clear();
@@ -145,16 +145,14 @@ void BitValueIPA::ComputeRelationships(DesignFlowStepSet& relationships,
 
 bool BitValueIPA::HasToBeExecuted() const
 {
-   std::map<unsigned int, unsigned int> cur_bitvalue_ver;
-   std::map<unsigned int, unsigned int> cur_bb_ver;
    const auto CGMan = AppM->CGetCallGraphManager();
+   unsigned int curr_ver_sum = 0;
    for(const auto i : CGMan->GetReachedBodyFunctions())
    {
       const auto FB = AppM->CGetFunctionBehavior(i);
-      cur_bitvalue_ver[i] = FB->GetBitValueVersion();
-      cur_bb_ver[i] = FB->GetBBVersion();
+      curr_ver_sum += FB->GetBBVersion() + FB->GetBitValueVersion();
    }
-   return cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver;
+   return curr_ver_sum > last_ver_sum;
 }
 
 DesignFlowStep_Status BitValueIPA::Exec()
@@ -187,7 +185,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
    EdgeIterator e_it, e_it_end;
    for(boost::tie(e_it, e_it_end) = boost::edges(*subgraph); e_it != e_it_end; ++e_it)
    {
-      const auto* info = Cget_edge_info<FunctionEdgeInfo, const CallGraph>(*e_it, *subgraph);
+      const auto info = subgraph->CGetFunctionEdgeInfo(*e_it);
       if(info->indirect_call_points.size())
       {
          return DesignFlowStep_Status::UNCHANGED;
@@ -202,12 +200,12 @@ DesignFlowStep_Status BitValueIPA::Exec()
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                      "-->Analyzing function \"" + fu_name + "\": id = " + STR(fu_id));
       const auto fu_node = TM->GetTreeNode(fu_id);
-      const auto fd = GetPointer<function_decl>(fu_node);
-      THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
+      const auto fd = GetPointerS<function_decl>(fu_node);
+      THROW_ASSERT(fd->body, "Node is not a function or it hasn't a body");
       const auto fu_type = tree_helper::CGetType(fu_node);
       THROW_ASSERT(fu_type->get_kind() == function_type_K || fu_type->get_kind() == method_type_K,
                    "node " + STR(fu_id) + " is " + fu_type->get_kind_text());
-      const auto ft = GetPointer<const function_type>(fu_type);
+      const auto ft = GetPointerS<const function_type>(fu_type);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                      "is_root = " + STR(root_fun_ids.find(fu_id) != root_fun_ids.end()));
 
@@ -267,12 +265,12 @@ DesignFlowStep_Status BitValueIPA::Exec()
                      "-->Analyzing function \"" + fu_name + "\": id = " + STR(fu_id));
 
       const auto fu_node = TM->GetTreeNode(fu_id);
-      const auto fd = GetPointer<const function_decl>(fu_node);
-      THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
+      const auto fd = GetPointerS<const function_decl>(fu_node);
+      THROW_ASSERT(fd->body, "Node is not a function or it hasn't a body");
       const auto fu_type = tree_helper::CGetType(fu_node);
       THROW_ASSERT(fu_type->get_kind() == function_type_K || fu_type->get_kind() == method_type_K,
                    "node " + STR(fu_id) + " is " + fu_type->get_kind_text());
-      const auto ft = GetPointer<const function_type>(fu_type);
+      const auto ft = GetPointerS<const function_type>(fu_type);
       const auto fret_type_node = ft->retn;
 
       if(root_fun_ids.find(fu_id) == root_fun_ids.end())
@@ -329,7 +327,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                   if(call_node->get_kind() == gimple_assign_K)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "gimple_assign");
-                     const auto ga = GetPointer<const gimple_assign>(call_node);
+                     const auto ga = GetPointerS<const gimple_assign>(call_node);
                      THROW_ASSERT(ga, STR(i) + " is not a gimple assign");
                      if(ga->op0->get_kind() == ssa_name_K)
                      {
@@ -473,11 +471,11 @@ DesignFlowStep_Status BitValueIPA::Exec()
                         const auto call_node = TM->GetTreeNode(i);
                         if(call_node->get_kind() == gimple_assign_K)
                         {
-                           const auto ga = GetPointer<const gimple_assign>(call_node);
+                           const auto ga = GetPointerS<const gimple_assign>(call_node);
                            THROW_ASSERT(ga->op1->get_kind() == call_expr_K || ga->op1->get_kind() == aggr_init_expr_K,
                                         "unexpected pattern");
 
-                           const auto ce = GetPointer<const call_expr>(ga->op1);
+                           const auto ce = GetPointerS<const call_expr>(ga->op1);
                            const auto actual_parms = ce->args;
                            THROW_ASSERT(ce->args.size() == fd->list_of_args.size(),
                                         "actual parameters: " + STR(ce->args.size()) +
@@ -518,7 +516,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                         }
                         else if(call_node->get_kind() == gimple_call_K)
                         {
-                           const auto gc = GetPointer<const gimple_call>(call_node);
+                           const auto gc = GetPointerS<const gimple_call>(call_node);
                            const auto actual_parms = gc->args;
                            THROW_ASSERT(gc->args.size() == fd->list_of_args.size(),
                                         "actual parameters: " + STR(gc->args.size()) +
@@ -630,7 +628,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
          const auto fu_type = tree_helper::CGetType(tn);
          THROW_ASSERT(fu_type->get_kind() == function_type_K || fu_type->get_kind() == method_type_K,
                       "node " + STR(tn_id) + " is " + fu_type->get_kind_text());
-         const auto ft = GetPointer<const function_type>(fu_type);
+         const auto ft = GetPointerS<const function_type>(fu_type);
          const auto fret_type_node = ft->retn;
          size = tree_helper::TypeSize(fret_type_node);
          restart_fun_id = fd->index;
@@ -715,11 +713,11 @@ DesignFlowStep_Status BitValueIPA::Exec()
       FB->UpdateBitValueVersion();
    }
 
+   last_ver_sum = 0;
    for(const auto& i : CGMan->GetReachedBodyFunctions())
    {
       const auto FB = AppM->CGetFunctionBehavior(i);
-      last_bitvalue_ver[i] = FB->GetBitValueVersion();
-      last_bb_ver[i] = FB->GetBBVersion();
+      last_ver_sum += FB->GetBBVersion() + FB->GetBitValueVersion();
    }
    return fun_id_to_restart.empty() ? DesignFlowStep_Status::UNCHANGED : DesignFlowStep_Status::SUCCESS;
 }
