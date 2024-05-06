@@ -83,28 +83,12 @@ fanout_opt::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType 
    {
       case(INVALIDATION_RELATIONSHIP):
       {
-         switch(GetStatus())
+         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
          {
-            case DesignFlowStep_Status::SUCCESS:
+            if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
             {
-               if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
-               {
-                  relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
-               }
-               break;
+               relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
             }
-            case DesignFlowStep_Status::SKIPPED:
-            case DesignFlowStep_Status::UNCHANGED:
-            case DesignFlowStep_Status::UNEXECUTED:
-            case DesignFlowStep_Status::UNNECESSARY:
-            {
-               break;
-            }
-            case DesignFlowStep_Status::ABORTED:
-            case DesignFlowStep_Status::EMPTY:
-            case DesignFlowStep_Status::NONEXISTENT:
-            default:
-               THROW_UNREACHABLE("");
          }
          break;
       }

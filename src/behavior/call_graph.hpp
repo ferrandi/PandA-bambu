@@ -73,6 +73,8 @@ struct FunctionInfo : public NodeInfo
     */
    FunctionInfo();
 };
+using FunctionInfoRef = refcount<FunctionInfo>;
+using FunctionInfoConstRef = refcount<const FunctionInfo>;
 
 /**
  * Information associated with a call_graph edge.
@@ -182,12 +184,39 @@ class CallGraph : public graph
    ~CallGraph() override;
 
    /**
+    * Return the info associated with a node
+    * @param node is the node to be considered
+    */
+   inline FunctionInfoConstRef CGetFunctionNodeInfo(const vertex node) const
+   {
+      return std::static_pointer_cast<const FunctionInfo>(graph::CGetNodeInfo(node));
+   }
+
+   /**
+    * Return the info associated with a node
+    * @param node is the node to be considered
+    */
+   inline FunctionInfoRef GetFunctionNodeInfo(const vertex node)
+   {
+      return std::static_pointer_cast<FunctionInfo>(graph::GetNodeInfo(node));
+   }
+
+   /**
     * Return the info associated with an edge
     * @param edge is the edge to be considered
     */
    inline FunctionEdgeInfoConstRef CGetFunctionEdgeInfo(const EdgeDescriptor edge) const
    {
-      return RefcountCast<const FunctionEdgeInfo>(graph::CGetEdgeInfo(edge));
+      return std::static_pointer_cast<const FunctionEdgeInfo>(graph::CGetEdgeInfo(edge));
+   }
+
+   /**
+    * Return the info associated with an edge
+    * @param edge is the edge to be considered
+    */
+   inline FunctionEdgeInfoRef GetFunctionEdgeInfo(const EdgeDescriptor edge)
+   {
+      return std::static_pointer_cast<FunctionEdgeInfo>(graph::GetEdgeInfo(edge));
    }
 
    /**
@@ -196,7 +225,7 @@ class CallGraph : public graph
     */
    inline CallGraphInfoConstRef CGetCallGraphInfo() const
    {
-      return RefcountCast<const CallGraphInfo>(graph::CGetGraphInfo());
+      return std::static_pointer_cast<const CallGraphInfo>(graph::CGetGraphInfo());
    }
 
    /**
@@ -205,7 +234,7 @@ class CallGraph : public graph
     */
    inline CallGraphInfoRef GetCallGraphInfo()
    {
-      return RefcountCast<CallGraphInfo>(graph::GetGraphInfo());
+      return std::static_pointer_cast<CallGraphInfo>(graph::GetGraphInfo());
    }
 
    /**

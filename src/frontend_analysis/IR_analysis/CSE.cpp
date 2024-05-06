@@ -131,29 +131,13 @@ CSE::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relatio
       }
       case(INVALIDATION_RELATIONSHIP):
       {
-         switch(GetStatus())
+         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
          {
-            case DesignFlowStep_Status::SUCCESS:
+            relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
+            if(restart_phi_opt)
             {
-               relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
-               if(restart_phi_opt)
-               {
-                  relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
-               }
-               break;
+               relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
             }
-            case DesignFlowStep_Status::SKIPPED:
-            case DesignFlowStep_Status::UNCHANGED:
-            case DesignFlowStep_Status::UNEXECUTED:
-            case DesignFlowStep_Status::UNNECESSARY:
-            {
-               break;
-            }
-            case DesignFlowStep_Status::ABORTED:
-            case DesignFlowStep_Status::EMPTY:
-            case DesignFlowStep_Status::NONEXISTENT:
-            default:
-               THROW_UNREACHABLE("");
          }
          break;
       }

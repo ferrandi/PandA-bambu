@@ -140,7 +140,7 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
    const BehavioralHelperConstRef helper = function_behavior->CGetBehavioralHelper();
    const operations_graph_constructorRef& ogc = function_behavior->ogc;
    const BasicBlocksGraphConstructorRef bbgc = function_behavior->bbgc;
-   const auto root_functions = AppM->CGetCallGraphManager()->GetRootFunctions();
+   const auto& root_functions = AppM->CGetCallGraphManager()->GetRootFunctions();
 
    /// entry and exit computation
    clean_start_nodes();
@@ -456,7 +456,7 @@ void operations_cfg_computation::init_start_nodes(const std::string& start_node)
 void operations_cfg_computation::connect_start_nodes(const operations_graph_constructorRef ogc, const std::string& next,
                                                      bool true_edge, bool false_edge, unsigned int nodeid)
 {
-   const auto root_functions = AppM->CGetCallGraphManager()->GetRootFunctions();
+   const auto& root_functions = AppM->CGetCallGraphManager()->GetRootFunctions();
    for(const auto& Start_node : start_nodes)
    {
       /// Mark first operation of the application

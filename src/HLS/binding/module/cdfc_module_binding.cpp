@@ -755,7 +755,7 @@ CdfcGraphInfo::CdfcGraphInfo(const CustomUnorderedMap<vertex, vertex>& _c2s, con
 }
 
 CdfcGraphsCollection::CdfcGraphsCollection(const CdfcGraphInfoRef cdfc_graph_info, const ParameterConstRef _parameters)
-    : graphs_collection(RefcountCast<GraphInfo>(cdfc_graph_info), _parameters)
+    : graphs_collection(std::static_pointer_cast<GraphInfo>(cdfc_graph_info), _parameters)
 {
 }
 
@@ -1941,9 +1941,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             /// add vertex to the clique covering solver
             for(const auto v : partition.second)
             {
-               const auto el1_name = GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, v)]) + "(" +
-                                     sdg->CGetOpNodeInfo(c2s[boost::get(boost::vertex_index, *CG, v)])->GetOperation() +
-                                     ")";
+               const auto op_info = sdg->CGetOpNodeInfo(c2s[boost::get(boost::vertex_index, *CG, v)]);
+               const auto el1_name = op_info->vertex_name + "(" + op_info->GetOperation() + ")";
                module_clique->add_vertex(c2s[boost::get(boost::vertex_index, *CG, v)], el1_name);
             }
 
@@ -1990,7 +1989,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                if(src > tgt)
                {
 #else
-               if(GET_NAME(dfg, src) > GET_NAME(dfg, tgt))
+               if(dfg->CGetOpNodeInfo(src)->vertex_name > dfg->CGetOpNodeInfo(tgt)->vertex_name)
                {
 #endif
                   continue; /// only one edge is needed to build the undirected compatibility graph
@@ -2124,7 +2123,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
 #if HAVE_UNORDERED
                      if(src > tgt)
 #else
-                     if(GET_NAME(dfg, src) > GET_NAME(dfg, tgt))
+                     if(dfg->CGetOpNodeInfo(src)->vertex_name > dfg->CGetOpNodeInfo(tgt)->vertex_name)
 #endif
                      {
                         continue; /// only one edge is needed to build the undirected compatibility graph

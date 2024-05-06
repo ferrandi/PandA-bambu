@@ -200,12 +200,11 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    std::map<vertex, std::list<vertex>> global_executing_ops, global_starting_ops, global_ending_ops, global_onfly_ops;
 
    const auto CGM = HLSMgr->CGetCallGraphManager();
-   const auto top_functions = CGM->GetRootFunctions();
-   const auto needMemoryMappedRegisters = top_functions.count(funId) ?
-                                              parameters->getOption<bool>(OPT_memory_mapped_top) :
-                                              HLSMgr->hasToBeInterfaced(funId);
+   const bool is_top = CGM->GetRootFunctions().count(funId);
+   const auto needMemoryMappedRegisters =
+       is_top ? parameters->getOption<bool>(OPT_memory_mapped_top) : HLSMgr->hasToBeInterfaced(funId);
    auto has_registered_inputs = HLS->registered_inputs && !needMemoryMappedRegisters;
-   if(top_functions.count(funId) && parameters->getOption<std::string>(OPT_registered_inputs) == "top")
+   if(is_top && parameters->getOption<std::string>(OPT_registered_inputs) == "top")
    {
       has_registered_inputs = true;
    }
@@ -237,7 +236,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       size_t n_call_sites = 0;
       for(boost::tie(ie_it, ie_it_end) = boost::in_edges(current_vertex, *subgraph); ie_it != ie_it_end; ++ie_it)
       {
-         const auto* info = Cget_edge_info<FunctionEdgeInfo, const CallGraph>(*ie_it, *subgraph);
+         const auto info = subgraph->CGetFunctionEdgeInfo(*ie_it);
          n_call_sites += info->direct_call_points.size() + info->indirect_call_points.size();
       }
       HLS->call_sites_number = n_call_sites;

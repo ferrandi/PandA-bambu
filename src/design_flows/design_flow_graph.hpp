@@ -190,7 +190,7 @@ class DesignFlowGraph : public graph
     */
    inline DesignFlowStepInfoRef GetDesignFlowStepInfo(const vertex step)
    {
-      return std::reinterpret_pointer_cast<DesignFlowStepInfo>(graph::GetNodeInfo(step));
+      return std::static_pointer_cast<DesignFlowStepInfo>(graph::GetNodeInfo(step));
    }
 
    /**
@@ -200,7 +200,7 @@ class DesignFlowGraph : public graph
     */
    inline DesignFlowStepInfoConstRef CGetDesignFlowStepInfo(const vertex step) const
    {
-      return std::reinterpret_pointer_cast<const DesignFlowStepInfo>(graph::CGetNodeInfo(step));
+      return std::static_pointer_cast<const DesignFlowStepInfo>(graph::CGetNodeInfo(step));
    }
 
    /**
@@ -209,7 +209,7 @@ class DesignFlowGraph : public graph
     */
    inline DesignFlowGraphInfoRef GetDesignFlowGraphInfo()
    {
-      return std::reinterpret_pointer_cast<DesignFlowGraphInfo>(graph::GetGraphInfo());
+      return std::static_pointer_cast<DesignFlowGraphInfo>(graph::GetGraphInfo());
    }
 
    /**
@@ -218,7 +218,7 @@ class DesignFlowGraph : public graph
     */
    inline DesignFlowGraphInfoConstRef CGetDesignFlowGraphInfo() const
    {
-      return std::reinterpret_pointer_cast<const DesignFlowGraphInfo>(graph::CGetGraphInfo());
+      return std::static_pointer_cast<const DesignFlowGraphInfo>(graph::CGetGraphInfo());
    }
 
    /**

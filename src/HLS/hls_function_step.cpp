@@ -35,6 +35,7 @@
  * @brief Base class for all HLS algorithms
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
 #include "hls_function_step.hpp"
@@ -54,65 +55,59 @@
 #include "tree_manager.hpp"
 #include "utility.hpp"
 
+CustomMap<unsigned int, unsigned int> HLSFunctionStep::curr_ver;
+
 HLSFunctionStep::HLSFunctionStep(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
                                  const DesignFlowManagerConstRef _design_flow_manager,
                                  const HLSFlowStep_Type _hls_flow_step_type,
                                  const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
     : HLS_step(ComputeSignature(_hls_flow_step_type, _hls_flow_step_specialization, _funId), _Param, _HLSMgr,
                _design_flow_manager, _hls_flow_step_type, _hls_flow_step_specialization),
+      last_ver_sum(0),
       funId(_funId),
       bb_version(0),
       bitvalue_version(0),
       memory_version(0)
 {
+   THROW_ASSERT(funId, "unexpected case");
+   curr_ver[funId] = 0;
 }
 
 HLSFunctionStep::~HLSFunctionStep() = default;
 
+static inline unsigned int compute_sum(const CustomMap<unsigned int, unsigned int>& ver_map,
+                                       const CustomSet<unsigned int>& functions)
+{
+   unsigned int sum = 0;
+   for(const auto f_id : functions)
+   {
+      sum += ver_map.at(f_id);
+   }
+   return sum;
+}
+
 bool HLSFunctionStep::HasToBeExecuted() const
 {
-   CallGraphManagerConstRef CGMan = HLSMgr->CGetCallGraphManager();
-   const auto funcs = CGMan->GetReachedBodyFunctions();
-   THROW_ASSERT(funId, "unexpected case");
-   if(funcs.find(funId) == funcs.end())
+   const auto CGM = HLSMgr->CGetCallGraphManager();
+   if(!CGM->GetReachedBodyFunctions().count(funId))
    {
       return false;
    }
-   auto FB = HLSMgr->GetFunctionBehavior(funId);
-   if(bb_version == 0 or bb_version != FB->GetBBVersion())
+   const auto FB = HLSMgr->GetFunctionBehavior(funId);
+   if(!bb_version || !bitvalue_version || !memory_version || bb_version != FB->GetBBVersion() ||
+      bitvalue_version != FB->GetBitValueVersion() || memory_version != HLSMgr->GetMemVersion())
    {
       return true;
    }
-   if(bitvalue_version == 0 or bitvalue_version != FB->GetBitValueVersion())
-   {
-      return true;
-   }
-   if(memory_version == 0 or memory_version != HLSMgr->GetMemVersion())
-   {
-      return true;
-   }
-   std::map<unsigned int, unsigned int> cur_bb_ver;
-   std::map<unsigned int, unsigned int> cur_bitvalue_ver;
-   const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
-   THROW_ASSERT(funId, "unexpected case");
-   const auto called_functions = call_graph_manager->GetReachedFunctionsFrom(funId);
-   for(auto const called_function : called_functions)
-   {
-      if(called_function == funId)
-      {
-         continue;
-      }
-      const FunctionBehaviorConstRef FBCalled = HLSMgr->CGetFunctionBehavior(called_function);
-      cur_bb_ver[called_function] = FBCalled->GetBBVersion();
-      cur_bitvalue_ver[called_function] = FBCalled->GetBitValueVersion();
-   }
-   return cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver;
+
+   const auto called_functions = CGM->GetReachedFunctionsFrom(funId);
+   const auto curr_ver_sum = compute_sum(curr_ver, called_functions);
+   return curr_ver_sum > last_ver_sum;
 }
 
 void HLSFunctionStep::Initialize()
 {
    HLS_step::Initialize();
-   THROW_ASSERT(funId, "unexpected case");
    HLS = HLSMgr->get_HLS(funId);
 }
 
@@ -147,8 +142,8 @@ void HLSFunctionStep::ComputeRelationships(DesignFlowStepSet& design_flow_step_s
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing relationships of " + GetName());
    const auto hls_flow_step_factory = GetPointer<const HLSFlowStepFactory>(CGetDesignFlowStepFactory());
    const auto DFM = design_flow_manager.lock();
-   const auto design_flow_graph = DFM->CGetDesignFlowGraph();
-   const auto call_graph_manager = HLSMgr->CGetCallGraphManager();
+   const auto DFG = DFM->CGetDesignFlowGraph();
+   const auto CGM = HLSMgr->CGetCallGraphManager();
    const auto TreeM = HLSMgr->get_tree_manager();
    const auto HLS_D = HLSMgr->get_HLS_device();
    const auto TM = HLS_D->get_technology_manager();
@@ -161,7 +156,7 @@ void HLSFunctionStep::ComputeRelationships(DesignFlowStepSet& design_flow_step_s
       {
          case HLSFlowStep_Relationship::CALLED_FUNCTIONS:
          {
-            const auto called_functions = call_graph_manager->GetReachedFunctionsFrom(funId);
+            const auto called_functions = CGM->GetReachedFunctionsFrom(funId);
             for(auto const function : called_functions)
             {
                if(function != funId)
@@ -169,7 +164,7 @@ void HLSFunctionStep::ComputeRelationships(DesignFlowStepSet& design_flow_step_s
                   const auto hls_step =
                       DFM->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(step_type, step_spec, function));
                   const auto design_flow_step =
-                      hls_step ? design_flow_graph->CGetDesignFlowStepInfo(hls_step)->design_flow_step :
+                      hls_step ? DFG->CGetDesignFlowStepInfo(hls_step)->design_flow_step :
                                  hls_flow_step_factory->CreateHLSFlowStep(step_type, function, step_spec);
                   design_flow_step_set.insert(design_flow_step);
                }
@@ -181,7 +176,7 @@ void HLSFunctionStep::ComputeRelationships(DesignFlowStepSet& design_flow_step_s
             const auto hls_step =
                 DFM->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(step_type, step_spec, funId));
             const auto design_flow_step = hls_step ?
-                                              design_flow_graph->CGetDesignFlowStepInfo(hls_step)->design_flow_step :
+                                              DFG->CGetDesignFlowStepInfo(hls_step)->design_flow_step :
                                               hls_flow_step_factory->CreateHLSFlowStep(step_type, funId, step_spec);
             design_flow_step_set.insert(design_flow_step);
             break;
@@ -204,24 +199,13 @@ void HLSFunctionStep::ComputeRelationships(DesignFlowStepSet& design_flow_step_s
 
 DesignFlowStep_Status HLSFunctionStep::Exec()
 {
-   DesignFlowStep_Status status;
-   status = InternalExec();
-   THROW_ASSERT(funId, "unexpected case");
-   auto FB = HLSMgr->GetFunctionBehavior(funId);
+   const auto status = InternalExec();
+   const auto FB = HLSMgr->GetFunctionBehavior(funId);
    bb_version = FB->GetBBVersion();
    bitvalue_version = FB->GetBitValueVersion();
+   curr_ver[funId] = bb_version + bitvalue_version;
    memory_version = HLSMgr->GetMemVersion();
-   const auto call_graph_manager = HLSMgr->CGetCallGraphManager();
-   const auto called_functions = call_graph_manager->GetReachedFunctionsFrom(funId);
-   for(auto const called_function : called_functions)
-   {
-      if(called_function == funId)
-      {
-         continue;
-      }
-      const auto FBCalled = HLSMgr->CGetFunctionBehavior(called_function);
-      last_bb_ver[called_function] = FBCalled->GetBBVersion();
-      last_bitvalue_ver[called_function] = FBCalled->GetBitValueVersion();
-   }
+   const auto called_functions = HLSMgr->CGetCallGraphManager()->GetReachedFunctionsFrom(funId);
+   last_ver_sum = compute_sum(curr_ver, called_functions);
    return status;
 }

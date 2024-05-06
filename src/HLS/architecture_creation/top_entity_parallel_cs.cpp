@@ -113,8 +113,7 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const std::string function_name = FB->CGetBehavioralHelper()->get_function_name();
    std::string module_name = function_name;
-   const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   bool is_top = top_functions.find(funId) != top_functions.end();
+   const bool is_top = HLSMgr->CGetCallGraphManager()->GetRootFunctions().count(funId);
    if(is_top)
    {
       module_name = "_" + function_name;

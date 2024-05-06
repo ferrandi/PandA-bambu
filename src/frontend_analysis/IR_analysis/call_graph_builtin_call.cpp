@@ -256,23 +256,19 @@ void CallGraphBuiltinCall::buildTypeToDeclaration()
 {
    if(!typeToDeclarationBuilt)
    {
-      tree_managerRef TM = AppM->get_tree_manager();
-      const CallGraphManagerRef CGM = AppM->GetCallGraphManager();
-      const auto root_functions = CGM->GetRootFunctions();
+      const auto TM = AppM->get_tree_manager();
       CustomUnorderedSet<unsigned int> allFunctions;
       function_decl_refs fdr_visitor(allFunctions);
-      for(const auto root_function : root_functions)
+      for(const auto root_function : AppM->GetCallGraphManager()->GetRootFunctions())
       {
-         tree_nodeRef rf = TM->GetTreeNode(root_function);
-         rf->visit(&fdr_visitor);
+         TM->GetTreeNode(root_function)->visit(&fdr_visitor);
       }
       for(unsigned int allFunction : allFunctions)
       {
          std::string functionName = tree_helper::name_function(TM, allFunction);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Analyzing function " + STR(allFunction) + " " + functionName);
-         tree_nodeRef function = TM->GetTreeNode(allFunction);
-         auto* funDecl = GetPointer<function_decl>(function);
+         auto* funDecl = GetPointer<function_decl>(TM->GetTreeNode(allFunction));
          std::string type = tree_helper::print_type(TM, funDecl->type->index);
          if(funDecl->body && functionName != "__start_pragma__" && functionName != "__close_pragma__" &&
             !starts_with(functionName, "__pragma__"))

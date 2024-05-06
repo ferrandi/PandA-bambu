@@ -40,21 +40,15 @@
  * Last modified by $Author$
  *
  */
-
 #include "BitValueRange.hpp"
 
 #include "Parameter.hpp"
-
-// Behavior include
-#include "function_behavior.hpp"
-
-/// design_flows includes
+#include "dbgPrintHelper.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "frontend_flow_step_factory.hpp"
-
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "function_behavior.hpp"
+#include "string_manipulation.hpp"
 
 BitValueRange::BitValueRange(const ParameterConstRef _parameters, const application_managerRef _AppM,
                              unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)

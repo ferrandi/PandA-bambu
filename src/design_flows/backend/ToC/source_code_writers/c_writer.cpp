@@ -154,7 +154,7 @@ CWriter::~CWriter() = default;
 CWriterRef CWriter::CreateCWriter(const CBackendInformationConstRef c_backend_info, const HLS_managerConstRef hls_man,
                                   const IndentedOutputStreamRef indented_output_stream)
 {
-   const auto app_man = RefcountCast<const application_manager>(hls_man);
+   const auto app_man = std::static_pointer_cast<const application_manager>(hls_man);
    switch(c_backend_info->type)
    {
       case(CBackendInformation::CB_BBP):

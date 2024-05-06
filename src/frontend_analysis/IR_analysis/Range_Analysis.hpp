@@ -76,13 +76,13 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
    bool requireESSA;
    int execution_mode;
 
-   bool finalize(ConstraintGraphRef);
-
- protected:
    /// stores the function ids of the functions whose Dead Code need to be restarted
    CustomOrderedSet<unsigned int> fun_id_to_restart;
-   std::map<unsigned int, unsigned int> last_bitvalue_ver;
-   std::map<unsigned int, unsigned int> last_bb_ver;
+
+   /* Sum of reached body functions' bb+bitvalue versions after last Exec call */
+   unsigned int last_ver_sum;
+
+   bool finalize(ConstraintGraphRef);
 
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;

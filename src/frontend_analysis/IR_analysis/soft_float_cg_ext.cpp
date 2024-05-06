@@ -419,22 +419,9 @@ soft_float_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
       }
       case(INVALIDATION_RELATIONSHIP):
       {
-         switch(GetStatus())
+         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
          {
-            case DesignFlowStep_Status::SUCCESS:
-            {
-               relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
-               break;
-            }
-            case DesignFlowStep_Status::ABORTED:
-            case DesignFlowStep_Status::EMPTY:
-            case DesignFlowStep_Status::NONEXISTENT:
-            case DesignFlowStep_Status::SKIPPED:
-            case DesignFlowStep_Status::UNCHANGED:
-            case DesignFlowStep_Status::UNEXECUTED:
-            case DesignFlowStep_Status::UNNECESSARY:
-            default:
-               break;
+            relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
          }
          break;
       }

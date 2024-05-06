@@ -147,7 +147,7 @@ memory_allocation::memory_allocation(const ParameterConstRef _parameters, const 
                    HLSFlowStepSpecializationConstRef(new MemoryAllocationSpecialization(
                        _parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy),
                        _parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type)))),
-      /// NOTE: hls_flow_step_specialization and not _hls_flow_step_specialization is correct
+      last_ver_sum(0),
       memory_version(0)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -692,31 +692,29 @@ void memory_allocation::allocate_parameters(unsigned int functionId, memoryRef R
 
 bool memory_allocation::HasToBeExecuted() const
 {
-   if(memory_version == 0 or memory_version != HLSMgr->GetMemVersion())
+   if(!memory_version || memory_version != HLSMgr->GetMemVersion())
    {
       return true;
    }
-   std::map<unsigned int, unsigned int> cur_bb_ver;
-   std::map<unsigned int, unsigned int> cur_bitvalue_ver;
+   unsigned int curr_ver_sum = 0;
    const auto CGMan = HLSMgr->CGetCallGraphManager();
    for(const auto i : CGMan->GetReachedBodyFunctions())
    {
       const auto FB = HLSMgr->CGetFunctionBehavior(i);
-      cur_bb_ver[i] = FB->GetBBVersion();
-      cur_bitvalue_ver[i] = FB->GetBitValueVersion();
+      curr_ver_sum += FB->GetBBVersion() + FB->GetBitValueVersion();
    }
-   return cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver;
+   return curr_ver_sum > last_ver_sum;
 }
 
 DesignFlowStep_Status memory_allocation::Exec()
 {
    const auto status = InternalExec();
    const auto CGMan = HLSMgr->CGetCallGraphManager();
+   last_ver_sum = 0;
    for(const auto i : CGMan->GetReachedBodyFunctions())
    {
       const auto FB = HLSMgr->CGetFunctionBehavior(i);
-      last_bb_ver[i] = FB->GetBBVersion();
-      last_bitvalue_ver[i] = FB->GetBitValueVersion();
+      last_ver_sum += FB->GetBBVersion() + FB->GetBitValueVersion();
    }
    memory_version = HLSMgr->GetMemVersion();
    return status;

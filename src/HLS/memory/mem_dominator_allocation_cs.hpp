@@ -63,7 +63,7 @@ class mem_dominator_allocation_cs : public mem_dominator_allocation
     * Execute the step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status Exec() override;
+   DesignFlowStep_Status InternalExec() override;
 };
 
 #endif // MEM_DOMINATOR_ALLOCATION_CS_H

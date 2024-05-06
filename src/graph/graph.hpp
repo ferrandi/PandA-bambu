@@ -573,7 +573,7 @@ info_object* get_node_info(typename boost::graph_traits<Graph>::vertex_descripto
    THROW_ASSERT(GetPointer<info_object>(info) != nullptr,
                 "Function get_node_info: the vertices associated with the graph used are not derived from "
                 "info_object\n\tCheck the actual type of info_object and the type of the node of Graph");
-   return GetPointer<info_object>(info);
+   return GetPointerS<info_object>(info);
 }
 
 /**
@@ -590,7 +590,7 @@ const info_object* Cget_node_info(typename boost::graph_traits<Graph>::vertex_de
    THROW_ASSERT(!info || dynamic_cast<const info_object*>(info) != nullptr,
                 "Function Cget_node_info: the nodes associated with the graph used are not derived from "
                 "info_object\n\tCheck the actual type of info_object and the type of the node of Graph");
-   return info ? dynamic_cast<const info_object*>(info) : nullptr;
+   return info ? static_cast<const info_object*>(info) : nullptr;
 }
 
 #define GET_NODE_INFO(data, NodeInfo, vertex_index) get_node_info<NodeInfo>(vertex_index, *(data))
@@ -616,7 +616,7 @@ info_object* get_edge_info(typename boost::graph_traits<Graph>::edge_descriptor 
    THROW_ASSERT(GetPointer<info_object>(info) != nullptr,
                 "Function get_edge_info: the edges associated with the graph used are not derived from "
                 "info_object\n\tCheck the actual type of info_object and the type of the edge of Graph");
-   return GetPointer<info_object>(info);
+   return GetPointerS<info_object>(info);
 }
 /**
  * Function returning the edge information associated with the specified edge.
@@ -632,7 +632,7 @@ const info_object* Cget_edge_info(typename boost::graph_traits<Graph>::edge_desc
    THROW_ASSERT(!info || dynamic_cast<const info_object*>(info) != nullptr,
                 "Function Cget_edge_info: the edges associated with the graph used are not derived from "
                 "info_object\n\tCheck the actual type of info_object and the type of the edge of Graph");
-   return info ? dynamic_cast<const info_object*>(info) : nullptr;
+   return info ? static_cast<const info_object*>(info) : nullptr;
 }
 
 #define GET_EDGE_INFO(data, edge_info, edge_index) get_edge_info<edge_info>(edge_index, *(data))
