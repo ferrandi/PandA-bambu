@@ -854,7 +854,9 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
    /// currently all the operations introduced after the allocation has been performed are bounded
    if(ga)
    {
-      const auto right_kind = ga->op1->get_kind();
+#if HAVE_ASSERTS
+      const auto right_kind = GetPointerS<const gimple_assign>(tn)->op1->get_kind();
+#endif
       /// currently all the operations introduced after the allocation has been performed are bounded
       // BEAWARE: when adding operations here, check they are correctly handled by GetTimeLatency and GetCycleLatency
       THROW_ASSERT(GetPointer<const cst_node>(ga->op1) || right_kind == ssa_name_K || right_kind == cond_expr_K ||
@@ -2337,8 +2339,7 @@ double AllocationInformation::GetPhiConnectionLatency(const unsigned int stateme
 double AllocationInformation::GetCondExprTimeLatency(const unsigned int operation_index) const
 {
    const auto tn = TreeM->GetTreeNode(operation_index);
-   const auto gp = GetPointer<const gimple_phi>(tn);
-   THROW_ASSERT(gp, "Tree node is " + STR(tn));
+   THROW_ASSERT(tn->get_kind() == gimple_phi_K, "Tree node is " + STR(tn));
    /// Computing time of cond_expr as time of cond_expr_FU - setup_time
    /// In this way we are correctly estimating only phi with two inputs
    const auto type = tree_helper::CGetType(tn);
