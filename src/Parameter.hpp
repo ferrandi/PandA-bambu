@@ -618,6 +618,20 @@ inline long long Parameter::getOption(const enum enum_option name) const
 }
 
 template <>
+inline long Parameter::getOption(const enum enum_option name) const
+{
+   THROW_ASSERT(enum_options.find(name) != enum_options.end(), "Option \"" + option_name.at(name) + "\" not stored");
+   return std::stol(enum_options.find(name)->second);
+}
+
+template <>
+inline int Parameter::getOption(const enum enum_option name) const
+{
+   THROW_ASSERT(enum_options.find(name) != enum_options.end(), "Option \"" + option_name.at(name) + "\" not stored");
+   return std::stoi(enum_options.find(name)->second);
+}
+
+template <>
 inline unsigned long long Parameter::getOption(const enum enum_option name) const
 {
    THROW_ASSERT(enum_options.find(name) != enum_options.end(), "Option \"" + option_name.at(name) + "\" not stored");
@@ -625,27 +639,30 @@ inline unsigned long long Parameter::getOption(const enum enum_option name) cons
 }
 
 template <>
-inline long Parameter::getOption(const enum enum_option name) const
-{
-   return static_cast<long>(getOption<long long>(name));
-}
-
-template <>
-inline int Parameter::getOption(const enum enum_option name) const
-{
-   return static_cast<int>(getOption<long long>(name));
-}
-
-template <>
 inline unsigned long Parameter::getOption(const enum enum_option name) const
 {
-   return static_cast<unsigned long>(getOption<unsigned long long>(name));
+   THROW_ASSERT(enum_options.find(name) != enum_options.end(), "Option \"" + option_name.at(name) + "\" not stored");
+   return std::stoul(enum_options.find(name)->second);
 }
 
 template <>
 inline unsigned int Parameter::getOption(const enum enum_option name) const
 {
-   return static_cast<unsigned int>(getOption<unsigned long long>(name));
+   return static_cast<unsigned int>(getOption<unsigned long>(name));
+}
+
+template <>
+inline double Parameter::getOption(const enum enum_option name) const
+{
+   THROW_ASSERT(enum_options.find(name) != enum_options.end(), "Option \"" + option_name.at(name) + "\" not stored");
+   return std::stod(enum_options.find(name)->second);
+}
+
+template <>
+inline std::filesystem::path Parameter::getOption(const enum enum_option name) const
+{
+   THROW_ASSERT(enum_options.find(name) != enum_options.end(), "Option \"" + option_name.at(name) + "\" not stored");
+   return std::filesystem::path(enum_options.find(name)->second);
 }
 
 template <>
@@ -664,5 +681,54 @@ template <>
 inline std::vector<std::string> Parameter::getOption(const enum enum_option name) const
 {
    return string_to_container<std::vector<std::string>>(getOption<std::string>(name), STR_CST_string_separator);
+}
+
+template <>
+inline long long Parameter::GetParameter(const std::string& name) const
+{
+   THROW_ASSERT(panda_parameters.find(name) != panda_parameters.end(), "Parameter \"" + name + "\" not stored");
+   return std::stoll(panda_parameters.find(name)->second);
+}
+
+template <>
+inline long Parameter::GetParameter(const std::string& name) const
+{
+   THROW_ASSERT(panda_parameters.find(name) != panda_parameters.end(), "Parameter \"" + name + "\" not stored");
+   return std::stol(panda_parameters.find(name)->second);
+}
+
+template <>
+inline int Parameter::GetParameter(const std::string& name) const
+{
+   THROW_ASSERT(panda_parameters.find(name) != panda_parameters.end(), "Parameter \"" + name + "\" not stored");
+   return std::stoi(panda_parameters.find(name)->second);
+}
+
+template <>
+inline unsigned long long Parameter::GetParameter(const std::string& name) const
+{
+   THROW_ASSERT(panda_parameters.find(name) != panda_parameters.end(), "Parameter \"" + name + "\" not stored");
+   return std::stoull(panda_parameters.find(name)->second);
+}
+
+template <>
+inline unsigned long Parameter::GetParameter(const std::string& name) const
+{
+   THROW_ASSERT(panda_parameters.find(name) != panda_parameters.end(), "Parameter \"" + name + "\" not stored");
+   return std::stoul(panda_parameters.find(name)->second);
+}
+
+template <>
+inline unsigned int Parameter::GetParameter(const std::string& name) const
+{
+   THROW_ASSERT(panda_parameters.find(name) != panda_parameters.end(), "Parameter \"" + name + "\" not stored");
+   return static_cast<unsigned int>(GetParameter<unsigned long>(name));
+}
+
+template <>
+inline double Parameter::GetParameter(const std::string& name) const
+{
+   THROW_ASSERT(panda_parameters.find(name) != panda_parameters.end(), "Parameter \"" + name + "\" not stored");
+   return std::stod(panda_parameters.find(name)->second);
 }
 #endif

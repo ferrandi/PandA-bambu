@@ -57,7 +57,7 @@
 HDLVarDeclFix::HDLVarDeclFix(const application_managerRef _AppM, unsigned int _function_id,
                              const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
     : VarDeclFix(_AppM, _function_id, _design_flow_manager, _parameters, HDL_VAR_DECL_FIX),
-      hdl_writer_type(static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)))
+      hdl_writer_type(parameters->getOption<HDLWriter_Language>(OPT_writer_language))
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }

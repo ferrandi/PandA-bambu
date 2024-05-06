@@ -324,8 +324,7 @@ void ModuleGeneratorManager::specialize_fu(const std::string& fu_name, vertex ve
       const auto writer = [&]() -> HDLWriter_Language {
          /// default language
          const auto np = fu_module->get_NP_functionality();
-         const auto required_language =
-             static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
+         const auto required_language = parameters->getOption<HDLWriter_Language>(OPT_writer_language);
          if(required_language == HDLWriter_Language::VERILOG &&
             np->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR))
          {
@@ -498,8 +497,7 @@ void ModuleGeneratorManager::create_generic_module(const std::string& fu_name, v
    const auto writer = [&]() -> HDLWriter_Language {
       /// default language
       const auto np = fu_module->get_NP_functionality();
-      const auto required_language =
-          static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
+      const auto required_language = parameters->getOption<HDLWriter_Language>(OPT_writer_language);
       if(required_language == HDLWriter_Language::VERILOG &&
          np->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR))
       {

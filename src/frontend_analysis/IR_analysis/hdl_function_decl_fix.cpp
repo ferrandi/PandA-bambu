@@ -79,8 +79,7 @@ DesignFlowStep_Status HDLFunctionDeclFix::Exec()
 {
    bool changed_tree = false;
    const tree_managerRef TM = AppM->get_tree_manager();
-   const auto hdl_writer_type =
-       static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
+   const auto hdl_writer_type = parameters->getOption<HDLWriter_Language>(OPT_writer_language);
    const auto hdl_writer = language_writer::create_writer(
        hdl_writer_type, GetPointer<HLS_manager>(AppM)->get_HLS_device()->get_technology_manager(), parameters);
    const auto hdl_reserved_names = hdl_writer->GetHDLReservedNames();

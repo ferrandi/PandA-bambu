@@ -678,8 +678,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
              "size_par_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name(),
              CONSTANT_STD, LIBRARY_STD, circuit, TechM);
          const std::string parameter_value =
-             (static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)) ==
-              HDLWriter_Language::VHDL) ?
+             (parameters->getOption<HDLWriter_Language>(OPT_writer_language) == HDLWriter_Language::VHDL) ?
                  std::string("\"") +
                      NumberToBinaryString(STD_GET_SIZE(in_par->get_typeRef()), STD_GET_SIZE(in_par->get_typeRef())) +
                      std::string("\"") :
@@ -1172,8 +1171,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                 "zeroParam_" + FUName + "_" + parameterName, CONSTANT_STD, LIBRARY_STD, circuit, TechM);
             const auto constZeroOutPort = constZeroParam->find_member("out1", port_o_K, constZeroParam);
             const auto parameter_value =
-                (static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)) ==
-                 HDLWriter_Language::VHDL) ?
+                (parameters->getOption<HDLWriter_Language>(OPT_writer_language) == HDLWriter_Language::VHDL) ?
                     std::string("\"") + NumberToBinaryString(0, STD_GET_SIZE(parameterPort->get_typeRef())) +
                         std::string("\"") :
                     "0";

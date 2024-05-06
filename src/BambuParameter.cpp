@@ -3556,7 +3556,7 @@ void BambuParameter::CheckParameters()
       THROW_ERROR("--discrepancy-hw is only compatible with classic FSM controllers");
    }
    if(isOption(OPT_discrepancy_hw) && getOption<bool>(OPT_discrepancy_hw) &&
-      static_cast<HDLWriter_Language>(getOption<unsigned int>(OPT_writer_language)) != HDLWriter_Language::VERILOG)
+      getOption<HDLWriter_Language>(OPT_writer_language) != HDLWriter_Language::VERILOG)
    {
       THROW_ERROR("--discrepancy-hw is only compatible with Verilog");
    }

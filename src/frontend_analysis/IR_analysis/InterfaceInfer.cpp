@@ -1949,7 +1949,7 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
       }
 
       CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "in1 in2 in3");
-      const auto writer = static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
+      const auto writer = parameters->getOption<HDLWriter_Language>(OPT_writer_language);
       if(if_name == "none" && writer == HDLWriter_Language::VHDL)
       {
          CM->add_NP_functionality(interface_top, NP_functionality::VHDL_GENERATOR,
