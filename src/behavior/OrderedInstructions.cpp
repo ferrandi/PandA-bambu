@@ -91,9 +91,10 @@ OrderedBasicBlock::OrderedBasicBlock(const blocRef& BasicB)
 
 bool OrderedBasicBlock::dominates(const tree_nodeConstRef& A, const tree_nodeConstRef& B)
 {
-   THROW_ASSERT(GetPointer<const gimple_node>(A)->bb_index == GetPointer<const gimple_node>(B)->bb_index,
+   THROW_ASSERT(GetPointerS<const gimple_node>(A)->bb_index == GetPointerS<const gimple_node>(B)->bb_index,
                 "Instructions must be in the same basic block!");
-   THROW_ASSERT(GetPointer<const gimple_node>(A)->bb_index == BB->number, "Instructions must be in the tracked block!");
+   THROW_ASSERT(GetPointerS<const gimple_node>(A)->bb_index == BB->number,
+                "Instructions must be in the tracked block!");
 
    // Phi statements always comes before non-phi statements
    if(A->get_kind() == gimple_phi_K && B->get_kind() != gimple_phi_K)
@@ -183,8 +184,8 @@ bool OrderedInstructions::dominates(const tree_nodeConstRef& InstA, const tree_n
    THROW_ASSERT(InstA, "Instruction A cannot be null");
    THROW_ASSERT(InstB, "Instruction B cannot be null");
 
-   const auto BBIA = GetPointer<const gimple_node>(InstA)->bb_index;
-   const auto BBIB = GetPointer<const gimple_node>(InstB)->bb_index;
+   const auto BBIA = GetPointerS<const gimple_node>(InstA)->bb_index;
+   const auto BBIB = GetPointerS<const gimple_node>(InstB)->bb_index;
 
    // Use ordered basic block to do dominance check in case the 2 instructions
    // are in the same basic block.
@@ -201,7 +202,7 @@ bool OrderedInstructions::dominates(const tree_nodeConstRef& InstA, const tree_n
          THROW_ASSERT(BB->number == BBIA,
                       "Intermediate BB not allowed here"); // Intermediate BB shadows its incoming BB, thus its index
                                                            // is different from associated vertex
-         OBB = OBBMap.insert({BBIA, absl::make_unique<OrderedBasicBlock>(BB)}).first;
+         OBB = OBBMap.insert({BBIA, std::make_unique<OrderedBasicBlock>(BB)}).first;
       }
       return OBB->second->dominates(InstA, InstB);
    }

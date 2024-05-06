@@ -77,7 +77,7 @@ vertex operations_graph_constructor::getIndex(const std::string& source)
       return index_map.find(source)->second;
    }
    NodeInfoRef node_info(new OpNodeInfo());
-   GetPointer<OpNodeInfo>(node_info)->vertex_name = source;
+   GetPointerS<OpNodeInfo>(node_info)->vertex_name = source;
    const vertex v_og = og->AddVertex(node_info);
    index_map[source] = v_og;
    return index_map[source];
@@ -137,7 +137,7 @@ void operations_graph_constructor::AddOperation(const tree_managerRef TM, const 
    const unsigned int updated_node_id = op_graph->GetOpNodeInfo(current)->GetNodeId();
    if(updated_node_id != 0 && updated_node_id != ENTRY_ID && updated_node_id != EXIT_ID)
    {
-      GetPointer<gimple_node>(TM->GetTreeNode(updated_node_id))->operation = operation_t;
+      GetPointerS<gimple_node>(TM->GetTreeNode(updated_node_id))->operation = operation_t;
    }
    GET_NODE_INFO(og, OpNodeInfo, current)->bb_index = bb_index;
    if(src == ENTRY)

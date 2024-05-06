@@ -752,119 +752,119 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
 #if HAVE_I386_GCC49_COMPILER
          if(std::string(optarg_param) == "I386_GCC49")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC49));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC49);
             break;
          }
 #endif
 #if HAVE_I386_GCC5_COMPILER
          if(std::string(optarg_param) == "I386_GCC5")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC5));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC5);
             break;
          }
 #endif
 #if HAVE_I386_GCC6_COMPILER
          if(std::string(optarg_param) == "I386_GCC6")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC6));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC6);
             break;
          }
 #endif
 #if HAVE_I386_GCC7_COMPILER
          if(std::string(optarg_param) == "I386_GCC7")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC7));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC7);
             break;
          }
 #endif
 #if HAVE_I386_GCC8_COMPILER
          if(std::string(optarg_param) == "I386_GCC8")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC8));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC8);
             break;
          }
 #endif
 #if HAVE_I386_CLANG4_COMPILER
          if(std::string(optarg_param) == "I386_CLANG4")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG4));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG4);
             break;
          }
 #endif
 #if HAVE_I386_CLANG5_COMPILER
          if(std::string(optarg_param) == "I386_CLANG5")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG5));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG5);
             break;
          }
 #endif
 #if HAVE_I386_CLANG6_COMPILER
          if(std::string(optarg_param) == "I386_CLANG6")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG6));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG6);
             break;
          }
 #endif
 #if HAVE_I386_CLANG7_COMPILER
          if(std::string(optarg_param) == "I386_CLANG7")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG7));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG7);
             break;
          }
 #endif
 #if HAVE_I386_CLANG8_COMPILER
          if(std::string(optarg_param) == "I386_CLANG8")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG8));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG8);
             break;
          }
 #endif
 #if HAVE_I386_CLANG9_COMPILER
          if(std::string(optarg_param) == "I386_CLANG9")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG9));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG9);
             break;
          }
 #endif
 #if HAVE_I386_CLANG10_COMPILER
          if(std::string(optarg_param) == "I386_CLANG10")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG10));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG10);
             break;
          }
 #endif
 #if HAVE_I386_CLANG11_COMPILER
          if(std::string(optarg_param) == "I386_CLANG11")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG11));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG11);
             break;
          }
 #endif
 #if HAVE_I386_CLANG12_COMPILER
          if(std::string(optarg_param) == "I386_CLANG12")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG12));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG12);
             break;
          }
 #endif
 #if HAVE_I386_CLANG13_COMPILER
          if(std::string(optarg_param) == "I386_CLANG13")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG13));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG13);
             break;
          }
 #endif
 #if HAVE_I386_CLANG16_COMPILER
          if(std::string(optarg_param) == "I386_CLANG16")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG16));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG16);
             break;
          }
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
          if(std::string(optarg_param) == "I386_CLANGVVD")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD);
             break;
          }
 #endif
@@ -903,7 +903,7 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       }
       case INPUT_OPT_USE_RAW:
       {
-         setOption(OPT_input_format, static_cast<int>(Parameters_FileFormat::FF_RAW));
+         setOption(OPT_input_format, Parameters_FileFormat::FF_RAW);
          break;
       }
       case INPUT_OPT_WRITE_GCC_XML:

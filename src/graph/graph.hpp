@@ -170,7 +170,7 @@ info_object* get_raw_edge_info(typename boost::graph_traits<Graph>::edge_descrip
    THROW_ASSERT(GetPointer<info_object>(info) != nullptr,
                 "Function get_raw_edge_info: the edges associated with the graph used are not derived from "
                 "info_object\n\tCheck the actual type of info_object and the type of the edge of Graph");
-   return GetPointer<info_object>(info);
+   return GetPointerS<info_object>(info);
 }
 /**
  * Function returning the edge information associated with the specified edge.
