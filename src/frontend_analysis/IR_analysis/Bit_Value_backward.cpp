@@ -105,8 +105,9 @@ std::deque<bit_lattice> Bit_Value::backward_chain(const tree_nodeConstRef& ssa_n
       }
       else if(user_kind == gimple_return_K)
       {
-         const auto gr = GetPointerS<const gimple_return>(user_stmt);
-         THROW_ASSERT(gr->op, "ssa id " + STR(ssa_nid) + "used in empty return statement: " + STR(gr));
+         THROW_ASSERT(GetPointerS<const gimple_return>(user_stmt)->op,
+                      "ssa id " + STR(ssa_nid) +
+                          "used in empty return statement: " + STR(GetPointerS<const gimple_return>(user_stmt)));
          const auto res_it = current.find(function_id);
          if(res_it != current.end())
          {
@@ -250,7 +251,6 @@ void Bit_Value::backward()
       }
       if(lhs->get_kind() == ssa_name_K)
       {
-         const auto lhs_ssa = GetPointerS<const ssa_name>(lhs);
          if(!IsHandledByBitvalue(lhs))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -258,7 +258,7 @@ void Bit_Value::backward()
                                " not considered");
             continue;
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Propagation for " + lhs_ssa->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Propagation for " + STR(lhs));
          auto res = backward_chain(lhs);
          if(update_current(res, lhs))
          {
