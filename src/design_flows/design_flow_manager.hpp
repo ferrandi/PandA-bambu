@@ -172,13 +172,14 @@ class DesignFlowManager final
    /// Second key is the edge
    /// Value is the selector
    CustomMap<size_t, CustomUnorderedMapStable<EdgeDescriptor, int>> edge_history;
+#endif
 
    /// The name of each vertex (we have to store since it is possible that it cannot be recomputed at the end - for
    /// example because the corresponding task graph has been deallocated)
    CustomMap<vertex, std::string> step_names;
 
    /// The accumulated times of each step
-   CustomMap<vertex, long> accumulated_execution_time;
+   CustomMap<vertex, long long> accumulated_execution_time;
 
    /// The number of times each step is executed with success
    CustomMap<vertex, size_t> success_executions;
@@ -188,7 +189,6 @@ class DesignFlowManager final
 
    /// The number of times the execution of a step is skipped
    CustomMap<vertex, size_t> skipped_executions;
-#endif
 
    /// The set of input parameters
    const ParameterConstRef parameters;

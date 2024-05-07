@@ -187,24 +187,28 @@ DesignFlowManager::DesignFlowManager(const ParameterConstRef _parameters)
        DesignFlowStepRef(
            new AuxDesignFlowStep("Entry", DESIGN_FLOW_ENTRY, DesignFlowManagerConstRef(this, nullDel), parameters)),
        false);
+   if(
 #ifndef NDEBUG
-   if(debug_level >= DEBUG_LEVEL_PARANOIC || parameters->IsParameter("profile_steps"))
+       debug_level >= DEBUG_LEVEL_PARANOIC ||
+#endif
+       parameters->IsParameter("profile_steps"))
    {
       step_names[design_flow_graph_info->entry] = "Entry";
    }
-#endif
    const auto entry_info = design_flow_graph->GetDesignFlowStepInfo(design_flow_graph_info->entry);
    entry_info->status = DesignFlowStep_Status::EMPTY;
    design_flow_graph_info->exit = design_flow_graphs_collection->AddDesignFlowStep(
        DesignFlowStepRef(
            new AuxDesignFlowStep("Exit", DESIGN_FLOW_EXIT, DesignFlowManagerConstRef(this, nullDel), parameters)),
        false);
+   if(
 #ifndef NDEBUG
-   if(debug_level >= DEBUG_LEVEL_PARANOIC || parameters->IsParameter("profile_steps"))
+       debug_level >= DEBUG_LEVEL_PARANOIC ||
+#endif
+       parameters->IsParameter("profile_steps"))
    {
       step_names[design_flow_graph_info->exit] = "Exit";
    }
-#endif
 }
 
 DesignFlowManager::~DesignFlowManager() = default;
@@ -281,12 +285,14 @@ void DesignFlowManager::RecursivelyAddSteps(
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---This step does not exist");
          step_vertex = design_flow_graphs_collection->AddDesignFlowStep(design_flow_step, unnecessary);
+         if(
 #ifndef NDEBUG
-         if(debug_level >= DEBUG_LEVEL_PARANOIC || parameters->IsParameter("profile_steps"))
+             debug_level >= DEBUG_LEVEL_PARANOIC ||
+#endif
+             parameters->IsParameter("profile_steps"))
          {
             step_names[step_vertex] = design_flow_step->GetName();
          }
-#endif
       }
 
       DesignFlowStepSet relationships;
@@ -455,17 +461,13 @@ void DesignFlowManager::Exec()
    size_t skipped_passes = 0;
    size_t graph_changes = 0;
    long design_flow_manager_time = 0;
-   const auto dump_statistics = parameters->IsParameter("dfm_statistics");
+   const auto profile_dfm = parameters->IsParameter("dfm_statistics");
+   const auto profile_steps = parameters->IsParameter("profile_steps");
+   const auto disable_invalidations = parameters->IsParameter("disable-invalidations");
    while(possibly_ready.size())
    {
       const auto initial_number_vertices = boost::num_vertices(*design_flow_graphs_collection);
       const auto initial_number_edges = boost::num_edges(*design_flow_graphs_collection);
-      long before_time = 0;
-      if(dump_statistics)
-      {
-         START_TIME(before_time);
-      }
-      step_counter++;
 #ifndef NDEBUG
       if(debug_level >= DEBUG_LEVEL_PARANOIC)
       {
@@ -478,6 +480,12 @@ void DesignFlowManager::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
       }
 #endif
+      long before_time = 0;
+      if(profile_dfm)
+      {
+         START_TIME(before_time);
+      }
+      step_counter++;
       const vertex next = [&]() -> vertex {
          size_t offset = 0;
 #if !HAVE_UNORDERED
@@ -498,18 +506,6 @@ void DesignFlowManager::Exec()
       const auto& step = dfs_info->design_flow_step;
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                      "-->Beginning iteration number " + STR(step_counter) + " - Considering step " + step->GetName());
-#ifndef NDEBUG
-      if(debug_level >= DEBUG_LEVEL_PARANOIC)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Other ready steps are");
-         for(const auto& [step_key, ready_step] : possibly_ready)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                           "---" + design_flow_graph->CGetDesignFlowStepInfo(ready_step)->design_flow_step->GetName());
-         }
-         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
-      }
-#endif
 
       /// Now check if next is actually ready
       /// First of all check if there are new dependence to add
@@ -590,6 +586,11 @@ void DesignFlowManager::Exec()
             }
          }
       }
+      if(profile_dfm)
+      {
+         STOP_TIME(before_time);
+         design_flow_manager_time += before_time;
+      }
       if(!current_ready)
       {
 #ifndef NDEBUG
@@ -619,11 +620,6 @@ void DesignFlowManager::Exec()
          }
          continue;
       }
-      if(dump_statistics)
-      {
-         STOP_TIME(before_time);
-         design_flow_manager_time += before_time;
-      }
       if(dfs_info->status == DesignFlowStep_Status::UNNECESSARY)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
@@ -637,11 +633,7 @@ void DesignFlowManager::Exec()
 #endif
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "-->Starting execution of " + step->GetName());
          long step_execution_time = 0;
-         if(OUTPUT_LEVEL_VERY_PEDANTIC <= output_level
-#ifndef NDEBUG
-            || parameters->IsParameter("profile_steps")
-#endif
-         )
+         if(OUTPUT_LEVEL_VERY_PEDANTIC <= output_level || profile_steps)
          {
             START_TIME(step_execution_time);
          }
@@ -656,11 +648,7 @@ void DesignFlowManager::Exec()
          {
             step->PrintFinalIR();
          }
-         if(OUTPUT_LEVEL_VERY_PEDANTIC <= output_level
-#ifndef NDEBUG
-            || parameters->IsParameter("profile_steps")
-#endif
-         )
+         if(OUTPUT_LEVEL_VERY_PEDANTIC <= output_level || profile_steps)
          {
             STOP_TIME(step_execution_time);
          }
@@ -671,8 +659,7 @@ void DesignFlowManager::Exec()
              ""
 #endif
              ;
-#ifndef NDEBUG
-         if(parameters->IsParameter("profile_steps"))
+         if(profile_steps)
          {
             accumulated_execution_time[next] += step_execution_time;
             if(dfs_info->status == DesignFlowStep_Status::SUCCESS)
@@ -684,7 +671,6 @@ void DesignFlowManager::Exec()
                unchanged_executions[next]++;
             }
          }
-#endif
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
                         "<--Ended execution of " + step->GetName() +
                             (dfs_info->status == DesignFlowStep_Status::UNCHANGED ?
@@ -700,20 +686,18 @@ void DesignFlowManager::Exec()
          INDENT_OUT_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Skipping execution of " + step->GetName());
          dfs_info->status = DesignFlowStep_Status::UNCHANGED;
          skipped_passes++;
-#ifndef NDEBUG
-         if(parameters->IsParameter("profile_steps"))
+         if(profile_steps)
          {
             skipped_executions[next]++;
          }
-#endif
       }
       long after_time = 0;
-      if(dump_statistics)
+      if(profile_dfm)
       {
          START_TIME(after_time);
       }
       bool invalidations = false;
-      if(!parameters->IsParameter("disable-invalidations"))
+      if(!disable_invalidations)
       {
          /// Add steps and edges from post dependencies
          INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Adding post-dependencies of " + step->GetName());
@@ -843,6 +827,11 @@ void DesignFlowManager::Exec()
       {
          design_flow_graphs_collection->RemoveSelector(to_be_removed, DesignFlowGraph::AUX_SELECTOR);
       }
+      if(profile_dfm)
+      {
+         STOP_TIME(after_time);
+         design_flow_manager_time += after_time;
+      }
 #ifndef NDEBUG
       if(debug_level >= DEBUG_LEVEL_PARANOIC)
       {
@@ -861,14 +850,9 @@ void DesignFlowManager::Exec()
          }
       }
 #endif
-      if(dump_statistics)
-      {
-         STOP_TIME(after_time);
-         design_flow_manager_time += after_time;
-      }
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                      "<--Ended iteration number " + STR(step_counter) + " - Step " + step->GetName());
-      if(dump_statistics)
+      if(profile_dfm)
       {
          const auto final_number_vertices = boost::num_vertices(*design_flow_graphs_collection);
          const auto final_number_edges = boost::num_edges(*design_flow_graphs_collection);
@@ -952,7 +936,7 @@ void DesignFlowManager::Exec()
       feedback_design_flow_graph->WriteDot("Design_Flow_Error");
       THROW_UNREACHABLE("Design flow didn't end");
    }
-   if(dump_statistics)
+   if(profile_dfm)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "-->DesignFlowManager - Final summary");
       INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "---Vertices: " + STR(boost::num_vertices(*design_flow_graph)));
@@ -964,8 +948,7 @@ void DesignFlowManager::Exec()
                      "---Pass engine time: " + print_cpu_time(design_flow_manager_time) + " seconds");
       INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "<--");
    }
-#ifndef NDEBUG
-   if(parameters->IsParameter("profile_steps"))
+   if(profile_steps)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "-->Steps execution statistics");
       for(const auto& [step, ex_time] : accumulated_execution_time)
@@ -977,7 +960,6 @@ void DesignFlowManager::Exec()
       }
       INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "<--");
    }
-#endif
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Total number of iterations: " + STR(step_counter));
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Ended execution of design flow");
 }
@@ -1163,7 +1145,7 @@ void DesignFlowManager::WriteLoopDot() const
                          DesignFlowGraph::DEPENDENCE_SELECTOR | DesignFlowGraph::PRECEDENCE_SELECTOR |
                              DesignFlowGraph::AUX_SELECTOR | DesignFlowGraph::DEPENDENCE_FEEDBACK_SELECTOR,
                          vertices)
-             .WriteDot("DesignFlowLoop_" + STR(scc_id) + ".dot");
+             .WriteDot("DesignFlowLoop_" + STR(scc_id));
       }
    }
 }
