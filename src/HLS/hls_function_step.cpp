@@ -70,7 +70,6 @@ HLSFunctionStep::HLSFunctionStep(const ParameterConstRef _Param, const HLS_manag
       memory_version(0)
 {
    THROW_ASSERT(funId, "unexpected case");
-   curr_ver[funId] = 0;
 }
 
 HLSFunctionStep::~HLSFunctionStep() = default;
@@ -81,7 +80,11 @@ static inline unsigned int compute_sum(const CustomMap<unsigned int, unsigned in
    unsigned int sum = 0;
    for(const auto f_id : functions)
    {
-      sum += ver_map.at(f_id);
+      const auto v_it = ver_map.find(f_id);
+      if(v_it != ver_map.end())
+      {
+         sum += v_it->second;
+      }
    }
    return sum;
 }
