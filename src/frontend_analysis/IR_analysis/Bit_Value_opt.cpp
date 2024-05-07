@@ -650,7 +650,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, const tree_managerRef& TM,
             }
             else
             {
-               const auto bw_op0 = tree_helper::Size(lhs_type);
+               const auto bw_op0 = tree_helper::Size(lhs_node);
                const auto bw_op1 = tree_helper::Size(rhs_node);
 
                if(bw_op1 <= bw_op0)
