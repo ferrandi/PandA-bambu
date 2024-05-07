@@ -113,18 +113,16 @@ class MemoryAllocationSpecialization : public HLSFlowStepSpecialization
  */
 class memory_allocation : public HLS_step
 {
+ private:
+   /* Sum of reached body functions' bb+bitvalue versions after last Exec call */
+   unsigned int last_ver_sum;
+
  protected:
    /// list of functions to be analyzed
    CustomOrderedSet<unsigned int> func_list;
 
    /// The version of memory representation on which this step was applied
    unsigned int memory_version;
-
-   /// The version of BB IR representation on which this step was applied
-   std::map<unsigned int, unsigned int> last_bb_ver;
-
-   /// The version of bit value IR representation on which this step was applied
-   std::map<unsigned int, unsigned int> last_bitvalue_ver;
 
    /**
     * Prepares the data structures for the memory allocation
@@ -177,13 +175,13 @@ class memory_allocation : public HLS_step
     * Check if this step has actually to be executed
     * @return true if the step has to be executed
     */
-   bool HasToBeExecuted() const override;
+   bool HasToBeExecuted() const final;
 
    /**
     * Execute the step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status Exec() override;
+   DesignFlowStep_Status Exec() final;
 };
 
 #endif

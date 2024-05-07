@@ -38,12 +38,13 @@
  *
  */
 #include "taste_interface_generation.hpp"
+
 #include "Parameter.hpp"
 #include "aadl_information.hpp"
 #include "add_library.hpp"
 #include "behavioral_helper.hpp"
 #include "custom_set.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "fileIO.hpp"
@@ -54,13 +55,14 @@
 #include "memory.hpp"
 #include "memory_cs.hpp"
 #include "state_transition_graph_manager.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "string_manipulation.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "taste_constants.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 #include "tree_manager.hpp"
+
 #include <string>
 #include <tuple>
 #include <utility>

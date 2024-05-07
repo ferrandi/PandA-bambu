@@ -92,8 +92,7 @@ DesignFlowStep_Status minimal_interface::InternalExec()
 
    const auto FB = HLSMgr->CGetFunctionBehavior(funId);
    const auto BH = FB->CGetBehavioralHelper();
-   const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   const auto is_top = top_functions.find(BH->get_function_index()) != top_functions.end();
+   const bool is_top = HLSMgr->CGetCallGraphManager()->GetRootFunctions().count(BH->get_function_index());
    const auto wrappedObj = SM->get_circ();
    const auto module_name = is_top ? BH->get_function_name() : wrappedObj->get_id() + "_minimal_interface";
 
@@ -149,13 +148,12 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
    const auto channels_number = FB->GetChannelsNumber();
    const auto channels_type = FB->GetChannelsType();
    const auto memory_allocation_policy = FB->GetMemoryAllocationPolicy();
-   const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   const auto Has_intern_shared_data =
-       HLSMgr->Rmem->has_intern_shared_data() ||
-       (memory_allocation_policy == MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
-       (memory_allocation_policy == MemoryAllocation_Policy::NO_BRAM) ||
-       (top_function_ids.count(funId) ? parameters->getOption<bool>(OPT_memory_mapped_top) :
-                                        HLSMgr->hasToBeInterfaced(funId));
+   const auto Has_intern_shared_data = HLSMgr->Rmem->has_intern_shared_data() ||
+                                       (memory_allocation_policy == MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
+                                       (memory_allocation_policy == MemoryAllocation_Policy::NO_BRAM) ||
+                                       (HLSMgr->CGetCallGraphManager()->GetRootFunctions().count(funId) ?
+                                            parameters->getOption<bool>(OPT_memory_mapped_top) :
+                                            HLSMgr->hasToBeInterfaced(funId));
    bool with_master = false;
    bool with_slave = false;
    for(auto i = 0U; i < GetPointerS<module>(wrappedObj)->get_in_port_size(); ++i)

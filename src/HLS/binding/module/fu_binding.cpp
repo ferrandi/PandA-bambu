@@ -1111,8 +1111,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    }
 
    const auto cg_man = HLSMgr->CGetCallGraphManager();
-   const auto top_function_ids = cg_man->GetRootFunctions();
-   if(top_function_ids.find(HLS->functionId) != top_function_ids.end() &&
+   if(cg_man->GetRootFunctions().count(HLS->functionId) &&
       (cg_man->ExistsAddressedFunction() ||
        HLSMgr->unused_interfaces.find(HLS->functionId) != HLSMgr->unused_interfaces.end()))
    {

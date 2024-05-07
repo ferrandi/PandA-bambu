@@ -324,7 +324,7 @@ class CdfcGraph : public graph
     */
    inline CdfcEdgeInfoConstRef CGetCdfcEdgeInfo(const EdgeDescriptor e) const
    {
-      return RefcountCast<const CdfcEdgeInfo>(graph::CGetEdgeInfo(e));
+      return std::static_pointer_cast<const CdfcEdgeInfo>(graph::CGetEdgeInfo(e));
    }
 
    /**

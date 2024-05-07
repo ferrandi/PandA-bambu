@@ -319,7 +319,7 @@ class StateTransitionGraphsCollection : public graphs_collection
                                  const TransitionInfoRef info)
    {
       THROW_ASSERT(not ExistsEdge(source, target), "Trying to create an already existing edge");
-      return InternalAddEdge(source, target, selector, RefcountCast<EdgeInfo>(info));
+      return InternalAddEdge(source, target, selector, std::static_pointer_cast<EdgeInfo>(info));
    }
 };
 /// refcount definition of the class
@@ -359,7 +359,7 @@ struct StateTransitionGraph : public graph
     */
    inline StateInfoRef GetStateInfo(const vertex state)
    {
-      return RefcountCast<StateInfo>(graph::GetNodeInfo(state));
+      return std::static_pointer_cast<StateInfo>(graph::GetNodeInfo(state));
    }
 
    /**
@@ -368,7 +368,7 @@ struct StateTransitionGraph : public graph
     */
    inline StateInfoConstRef CGetStateInfo(const vertex state) const
    {
-      return RefcountCast<const StateInfo>(graph::CGetNodeInfo(state));
+      return std::static_pointer_cast<const StateInfo>(graph::CGetNodeInfo(state));
    }
 
    /**
@@ -397,7 +397,7 @@ struct StateTransitionGraph : public graph
     */
    inline TransitionInfoRef GetTransitionInfo(const EdgeDescriptor transition)
    {
-      return RefcountCast<TransitionInfo>(graph::GetEdgeInfo(transition));
+      return std::static_pointer_cast<TransitionInfo>(graph::GetEdgeInfo(transition));
    }
 
    /**
@@ -406,7 +406,7 @@ struct StateTransitionGraph : public graph
     */
    inline TransitionInfoConstRef CGetTransitionInfo(const EdgeDescriptor transition) const
    {
-      return RefcountCast<const TransitionInfo>(graph::CGetEdgeInfo(transition));
+      return std::static_pointer_cast<const TransitionInfo>(graph::CGetEdgeInfo(transition));
    }
 
    /**
@@ -415,7 +415,7 @@ struct StateTransitionGraph : public graph
     */
    inline StateTransitionGraphInfoRef GetStateTransitionGraphInfo()
    {
-      return RefcountCast<StateTransitionGraphInfo>(graph::GetGraphInfo());
+      return std::static_pointer_cast<StateTransitionGraphInfo>(graph::GetGraphInfo());
    }
 
    /**
@@ -424,7 +424,7 @@ struct StateTransitionGraph : public graph
     */
    inline StateTransitionGraphInfoConstRef CGetStateTransitionGraphInfo() const
    {
-      return RefcountCast<const StateTransitionGraphInfo>(graph::CGetGraphInfo());
+      return std::static_pointer_cast<const StateTransitionGraphInfo>(graph::CGetGraphInfo());
    }
 
    /**

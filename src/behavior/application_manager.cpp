@@ -43,37 +43,42 @@
  */
 #include "application_manager.hpp"
 
+#include "Parameter.hpp"
+#include "UnfoldedFunctionInfo.hpp"
+#include "behavioral_helper.hpp"
+#include "call_graph.hpp"
+#include "call_graph_manager.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
+#include "ext_tree_node.hpp"
+#include "function_behavior.hpp"
+#include "loops.hpp"
+#include "op_graph.hpp"
+#include "string_manipulation.hpp"
+#include "tree_common.hpp"
+#include "tree_helper.hpp"
+#include "tree_manager.hpp"
+#include "tree_node.hpp"
+#include "tree_reindex.hpp"
+
 #include "config_HAVE_FROM_DISCREPANCY_BUILT.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 
-#include <limits> // for numeric_limits
 #if HAVE_FROM_DISCREPANCY_BUILT
-#include "Discrepancy.hpp" // for Discrepancy
+#include "Discrepancy.hpp"
 #endif
-#include "Parameter.hpp"            // for Parameter, OPT_cfg_max_tra...
-#include "UnfoldedFunctionInfo.hpp" // for FunctionBehaviorConstRef
-#include "behavioral_helper.hpp"    // for OpGraphConstRef, tree_nodeRef
-#include "call_graph.hpp"           // for CallGraph, CallGraphInfo
-#include "call_graph_manager.hpp"   // for CallGraphManager, CallGrap...
-#include "dbgPrintHelper.hpp"       // for DEBUG_LEVEL_NONE, INDENT_O...
-#include "exceptions.hpp"           // for THROW_ASSERT, THROW_ERROR
-#include "ext_tree_node.hpp"        // for gimple_while
-#include "function_behavior.hpp"    // for FunctionBehavior, Function...
-#include "loops.hpp"                // for FunctionBehaviorRef
-#include "op_graph.hpp"             // for ENTRY_ID, EXIT_ID, OpGraph
+
 #if HAVE_PRAGMA_BUILT
-#include "pragma_manager.hpp" // for pragma_manager, pragma_man...
+#include "pragma_manager.hpp"
 #endif
-#include "string_manipulation.hpp" // for STR GET_CLASS
-#include "tree_common.hpp"         // for target_mem_ref461_K, targe...
-#include "tree_helper.hpp"
-#include "tree_manager.hpp" // for ParameterConstRef, tree_no...
-#include "tree_node.hpp"    // for tree_nodeRef, tree_node
-#include "tree_reindex.hpp"
+
+#include <limits>
 
 application_manager::application_manager(const FunctionExpanderConstRef function_expander,
                                          const bool _allow_recursive_functions, const ParameterConstRef _Param)
-    : TM(new tree_manager(_Param)),
+    : cfg_transformations(0),
+      cfg_max_transformations(_Param->getOption<size_t>(OPT_max_transformations)),
+      TM(new tree_manager(_Param)),
       call_graph_manager(new CallGraphManager(function_expander, _allow_recursive_functions, TM, _Param)),
       Param(_Param),
       address_bitsize(_Param->isOption(OPT_addr_bus_bitsize) ?
@@ -82,7 +87,6 @@ application_manager::application_manager(const FunctionExpanderConstRef function
 #if HAVE_PRAGMA_BUILT
       PM(new pragma_manager(application_managerRef(this, null_deleter()), _Param)),
 #endif
-      cfg_transformations(0),
       debug_level(_Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE))
 #if HAVE_FROM_DISCREPANCY_BUILT
       ,
@@ -121,11 +125,9 @@ const CallGraphManagerConstRef application_manager::CGetCallGraphManager() const
 
 bool application_manager::hasToBeInterfaced(unsigned int funId) const
 {
-   const auto root_functions = CGetCallGraphManager()->GetRootFunctions();
-   const auto addressed_functions = CGetCallGraphManager()->GetAddressedFunctions();
-
    // all the root functions and the reached addressed functions must be interfaced
-   return root_functions.count(funId) || addressed_functions.count(funId);
+   return CGetCallGraphManager()->GetRootFunctions().count(funId) ||
+          CGetCallGraphManager()->GetAddressedFunctions().count(funId);
 }
 
 FunctionBehaviorRef application_manager::GetFunctionBehavior(unsigned int index)
@@ -338,27 +340,9 @@ void application_manager::clean_written_objects()
    written_objects.clear();
 }
 
-bool application_manager::ApplyNewTransformation() const
+#ifndef NDEBUG
+void application_manager::RegisterTransformation(const std::string& step, const tree_nodeConstRef& tn)
 {
-#ifndef NDEBUG
-   return cfg_transformations < Param->getOption<size_t>(OPT_max_transformations);
-#else
-   return true;
-#endif
-}
-
-void application_manager::RegisterTransformation(const std::string&
-#ifndef NDEBUG
-                                                     step
-#endif
-                                                 ,
-                                                 const tree_nodeConstRef
-#ifndef NDEBUG
-                                                     tn
-#endif
-)
-{
-#ifndef NDEBUG
    std::string tn_str = "";
    if(tn)
    {
@@ -367,15 +351,15 @@ void application_manager::RegisterTransformation(const std::string&
                     tree_helper::print_function_name(get_tree_manager(), GetPointerS<const function_decl>(tn))) :
                    tn->ToString();
    }
-   THROW_ASSERT(cfg_transformations < Param->getOption<size_t>(OPT_max_transformations),
+   THROW_ASSERT(cfg_transformations < cfg_max_transformations,
                 step + " - " + tn_str + " Transformations " + STR(cfg_transformations));
    cfg_transformations++;
-   if(Param->getOption<size_t>(OPT_max_transformations) != std::numeric_limits<size_t>::max())
+   if(cfg_max_transformations != std::numeric_limits<size_t>::max())
    {
       INDENT_OUT_MEX(0, 0, "---Transformation " + STR(cfg_transformations) + " - " + step + " - " + tn_str);
    }
-#endif
 }
+#endif
 
 unsigned application_manager::getSSAFromParm(unsigned int functionID, unsigned parm_index) const
 {

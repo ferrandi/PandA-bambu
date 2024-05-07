@@ -115,7 +115,8 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
                                                     const DesignFlowStep::RelationshipType relationship_type)
 {
    const auto DFM = design_flow_manager.lock();
-   const auto design_flow_graph = DFM->CGetDesignFlowGraph();
+   const auto DFG = DFM->CGetDesignFlowGraph();
+   const auto CGM = AppM->CGetCallGraphManager();
    const auto frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(CGetDesignFlowStepFactory());
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> frontend_relationships =
        ComputeFrontendRelationships(relationship_type);
@@ -139,8 +140,8 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
                     DFM->GetStatus(step_sig) == DesignFlowStep_Status::SUCCESS ||
                     DFM->GetStatus(step_sig) == DesignFlowStep_Status::UNCHANGED))
                {
-                  design_flow_graph->WriteDot("Design_Flow_Error");
-                  const auto design_flow_step_info = design_flow_graph->CGetDesignFlowStepInfo(symbolic_step);
+                  DFG->WriteDot("Design_Flow_Error");
+                  const auto design_flow_step_info = DFG->CGetDesignFlowStepInfo(symbolic_step);
                   THROW_UNREACHABLE("Symbolic step " + design_flow_step_info->design_flow_step->GetName() +
                                     " is not unexecuted");
                }
@@ -151,19 +152,18 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
       }
    }
 
+   const auto ACG = CGM->CGetAcyclicCallGraph();
+   const auto function_v = CGM->GetVertex(function_id);
    for(const auto& [step_type, rel_type] : frontend_relationships)
    {
       switch(rel_type)
       {
          case(CALLED_FUNCTIONS):
          {
-            const auto call_graph_manager = AppM->CGetCallGraphManager();
-            const auto acyclic_call_graph = call_graph_manager->CGetAcyclicCallGraph();
-            const auto function_vertex = call_graph_manager->GetVertex(function_id);
-            BOOST_FOREACH(EdgeDescriptor oe, boost::out_edges(function_vertex, *acyclic_call_graph))
+            for(const auto& oe : boost::make_iterator_range(boost::out_edges(function_v, *ACG)))
             {
-               const auto target = boost::target(oe, *acyclic_call_graph);
-               const auto called_function = call_graph_manager->get_function(target);
+               const auto target = boost::target(oe, *ACG);
+               const auto called_function = CGM->get_function(target);
                if(function_id != called_function &&
                   AppM->CGetFunctionBehavior(called_function)->CGetBehavioralHelper()->has_implementation())
                {
@@ -172,8 +172,7 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
                   DesignFlowStepRef design_flow_step;
                   if(function_frontend_flow_step)
                   {
-                     design_flow_step =
-                         design_flow_graph->CGetDesignFlowStepInfo(function_frontend_flow_step)->design_flow_step;
+                     design_flow_step = DFG->CGetDesignFlowStepInfo(function_frontend_flow_step)->design_flow_step;
                   }
                   else
                   {
@@ -187,13 +186,10 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
          }
          case(CALLING_FUNCTIONS):
          {
-            const auto call_graph_manager = AppM->CGetCallGraphManager();
-            const auto acyclic_call_graph = call_graph_manager->CGetAcyclicCallGraph();
-            const auto function_vertex = call_graph_manager->GetVertex(function_id);
-            BOOST_FOREACH(EdgeDescriptor ie, boost::in_edges(function_vertex, *acyclic_call_graph))
+            for(const auto& ie : boost::make_iterator_range(boost::in_edges(function_v, *ACG)))
             {
-               const auto source = boost::source(ie, *acyclic_call_graph);
-               const auto calling_function = call_graph_manager->get_function(source);
+               const auto source = boost::source(ie, *ACG);
+               const auto calling_function = CGM->get_function(source);
                if(calling_function != function_id)
                {
                   const auto function_frontend_flow_step =
@@ -201,8 +197,7 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
                   DesignFlowStepRef design_flow_step;
                   if(function_frontend_flow_step)
                   {
-                     design_flow_step =
-                         design_flow_graph->CGetDesignFlowStepInfo(function_frontend_flow_step)->design_flow_step;
+                     design_flow_step = DFG->CGetDesignFlowStepInfo(function_frontend_flow_step)->design_flow_step;
                   }
                   else
                   {
@@ -221,7 +216,7 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
             DesignFlowStepRef design_flow_step;
             if(prec_step)
             {
-               design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(prec_step)->design_flow_step;
+               design_flow_step = DFG->CGetDesignFlowStepInfo(prec_step)->design_flow_step;
             }
             else
             {
@@ -247,29 +242,14 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
 
 DesignFlowStep_Status FunctionFrontendFlowStep::Exec()
 {
-   DesignFlowStep_Status status;
-   if(!HasToBeExecuted0())
+   if(!function_id || AppM->CGetCallGraphManager()->GetReachedBodyFunctions().count(function_id))
    {
-      status = DesignFlowStep_Status::UNCHANGED;
+      const auto status = InternalExec();
+      bb_version = function_behavior->GetBBVersion();
+      bitvalue_version = function_behavior->GetBitValueVersion();
+      return status;
    }
-   else
-   {
-      status = InternalExec();
-   }
-   bb_version = function_behavior->GetBBVersion();
-   bitvalue_version = function_behavior->GetBitValueVersion();
-   return status;
-}
-
-bool FunctionFrontendFlowStep::HasToBeExecuted0() const
-{
-   CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
-   const auto funcs = CGMan->GetReachedBodyFunctions();
-   if(function_id and funcs.find(function_id) == funcs.end())
-   {
-      return false;
-   }
-   return true;
+   return DesignFlowStep_Status::UNCHANGED;
 }
 
 bool FunctionFrontendFlowStep::HasToBeExecuted() const

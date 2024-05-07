@@ -114,14 +114,14 @@ void InitializeHLS::Initialize()
 DesignFlowStep_Status InitializeHLS::InternalExec()
 {
    HLS = HLS_manager::create_HLS(HLSMgr, funId);
-   HLS->controller_type = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_controller_architecture));
+   HLS->controller_type = parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture);
    if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
    {
       HLS->controller_type = HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR;
    }
-   HLS->module_binding_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_fu_binding_algorithm));
-   HLS->liveness_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_liveness_algorithm));
-   HLS->chaining_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_chaining_algorithm));
+   HLS->module_binding_algorithm = parameters->getOption<HLSFlowStep_Type>(OPT_fu_binding_algorithm);
+   HLS->liveness_algorithm = parameters->getOption<HLSFlowStep_Type>(OPT_liveness_algorithm);
+   HLS->chaining_algorithm = parameters->getOption<HLSFlowStep_Type>(OPT_chaining_algorithm);
 
    return DesignFlowStep_Status::SUCCESS;
 }

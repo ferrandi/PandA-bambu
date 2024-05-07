@@ -95,7 +95,7 @@ static void Unfold(const HLS_managerRef& HLSMgr)
 {
    // check that there is only one root function
    const auto CGM = HLSMgr->CGetCallGraphManager();
-   const auto root_functions = CGM->GetRootFunctions();
+   const auto& root_functions = CGM->GetRootFunctions();
    THROW_ASSERT(root_functions.size() == 1, STR(root_functions.size()));
    const auto root_function = *(root_functions.begin());
    const auto CG = CGM->CGetCallGraph();

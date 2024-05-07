@@ -145,27 +145,10 @@ MultipleEntryIfReduction::ComputeFrontendRelationships(const DesignFlowStep::Rel
       }
       case(INVALIDATION_RELATIONSHIP):
       {
-         switch(GetStatus())
+         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
          {
-            case DesignFlowStep_Status::SUCCESS:
-            {
-               relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
-               relationships.insert(std::make_pair(SIMPLE_CODE_MOTION, SAME_FUNCTION));
-               break;
-            }
-            case DesignFlowStep_Status::SKIPPED:
-            case DesignFlowStep_Status::UNCHANGED:
-            case DesignFlowStep_Status::UNEXECUTED:
-            case DesignFlowStep_Status::UNNECESSARY:
-            {
-               break;
-            }
-            case DesignFlowStep_Status::ABORTED:
-            case DesignFlowStep_Status::EMPTY:
-            case DesignFlowStep_Status::NONEXISTENT:
-               break;
-            default:
-               THROW_UNREACHABLE("");
+            relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
+            relationships.insert(std::make_pair(SIMPLE_CODE_MOTION, SAME_FUNCTION));
          }
          break;
       }

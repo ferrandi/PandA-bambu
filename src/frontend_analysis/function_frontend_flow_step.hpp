@@ -65,12 +65,6 @@ enum class FunctionFrontendFlowStep_Movable
 
 class FunctionFrontendFlowStep : public FrontendFlowStep
 {
- private:
-   /**
-    * Check if this function is reachable from the top functions
-    */
-   bool HasToBeExecuted0() const;
-
  protected:
    /// The function behavior of the function to be analyzed
    const FunctionBehaviorRef function_behavior;

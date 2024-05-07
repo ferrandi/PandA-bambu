@@ -381,7 +381,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
                    ))
                {
                   fun_dom_map[called_fu_name].insert(vert_dominator);
-                  const auto info = Cget_edge_info<FunctionEdgeInfo, const CallGraph>(eo, *subgraph);
+                  const auto info = subgraph->CGetFunctionEdgeInfo(eo);
 
                   if(info->direct_call_points.size())
                   {
@@ -429,8 +429,8 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
             {
                const auto tgt = boost::target(eo, *subgraph);
                const auto tgt_fu_name = functions::GetFUName(CGM->get_function(tgt), HLSMgr);
-               const auto n_call_points = static_cast<unsigned int>(
-                   Cget_edge_info<FunctionEdgeInfo, const CallGraph>(eo, *subgraph)->direct_call_points.size());
+               const auto n_call_points =
+                   static_cast<unsigned int>(subgraph->CGetFunctionEdgeInfo(eo)->direct_call_points.size());
                if(num_instances.find(tgt_fu_name) == num_instances.end())
                {
                   num_instances[tgt_fu_name] = cur_instances * n_call_points;

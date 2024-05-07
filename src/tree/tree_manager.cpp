@@ -183,11 +183,10 @@ tree_nodeRef tree_manager::GetFunction(const std::string& function_name) const
    for(const auto& [idx, fdecl] : function_decl_nodes)
    {
       const auto fd = GetPointerS<const function_decl>(fdecl);
-      const auto id_name = fd->name;
       std::string simple_name, mangled_name;
-      if(id_name->get_kind() == identifier_node_K)
+      if(fd->name->get_kind() == identifier_node_K)
       {
-         const auto in = GetPointerS<const identifier_node>(id_name);
+         const auto in = GetPointerS<const identifier_node>(fd->name);
          if(!in->operator_flag)
          {
             simple_name = in->strg;
@@ -195,10 +194,9 @@ tree_nodeRef tree_manager::GetFunction(const std::string& function_name) const
       }
       if(fd->mngl)
       {
-         tree_nodeRef mangled_id_name = fd->mngl;
-         if(mangled_id_name->get_kind() == identifier_node_K)
+         if(fd->mngl->get_kind() == identifier_node_K)
          {
-            const auto in = GetPointerS<identifier_node>(mangled_id_name);
+            const auto in = GetPointerS<identifier_node>(fd->mngl);
             if(!in->operator_flag)
             {
                mangled_name = in->strg;
@@ -301,8 +299,8 @@ tree_nodeRef tree_manager::create_tree_node(const unsigned int node_id, enum kin
 {
    tree_node_factory TNF(tree_node_schema, *this);
    const auto tn = TNF.create_tree_node(node_id, tree_node_type);
-   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param),
-                  "---Created tree node " + STR(node_id) + ": " + STR(tn));
+   // INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param),
+   //                "---Created tree node " + STR(node_id) + ": " + STR(tn));
    return tn;
 }
 
@@ -383,6 +381,10 @@ unsigned int tree_manager::find(enum kind tree_node_type,
    return 0;
 }
 
+#ifndef NDEBUG
+static unsigned int __replace_tree_node_debug_level = DEBUG_LEVEL_NONE;
+#endif
+
 void tree_manager::ReplaceTreeNode(const tree_nodeRef& stmt, const tree_nodeRef& old_node, const tree_nodeRef& new_node)
 {
    THROW_ASSERT(GetPointer<const gimple_node>(stmt), "Replacing ssa name starting from " + stmt->ToString());
@@ -391,13 +393,19 @@ void tree_manager::ReplaceTreeNode(const tree_nodeRef& stmt, const tree_nodeRef&
    /// Temporary variable used to pass first argument of RecursiveReplaceTreeNode by reference. Since it is a
    /// gimple_node it has not to be replaced
    tree_nodeRef temp = stmt;
+#ifndef NDEBUG
+   // __replace_tree_node_debug_level = GET_FUNCTION_DEBUG_LEVEL(Param);
+#endif
    RecursiveReplaceTreeNode(temp, old_node, new_node, stmt, false);
+#ifndef NDEBUG
+   // __replace_tree_node_debug_level = DEBUG_LEVEL_NONE;
+#endif
 }
 
 void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef old_node, const tree_nodeRef& new_node,
-                                            const tree_nodeRef& stmt, const bool definition) // NOLINT
+                                            const tree_nodeRef& stmt, const bool definition)
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param),
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, __replace_tree_node_debug_level,
                   "-->Replacing " + old_node->ToString() + " (" + old_node->get_kind_text() + ") with " +
                       new_node->ToString() + "(" + new_node->get_kind_text() +
                       ") starting from node: " + tn->ToString() + "(" + tn->get_kind_text() + ")");
@@ -452,14 +460,14 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
             if(gp && gp->res->index == old_node->index && !GetPointer<cst_node>(new_node))
             {
                THROW_ASSERT(new_node->get_kind() == ssa_name_K, new_node->get_kind_text());
-               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param),
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, __replace_tree_node_debug_level,
                               "---Setting " + STR(stmt) + " as new define statement of " + STR(new_node));
                GetPointerS<ssa_name>(new_node)->SetDefStmt(stmt);
             }
          }
       }
       tn = new_node;
-      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param),
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, __replace_tree_node_debug_level,
                      "<--Replaced " + old_node->ToString() + " (" + old_node->get_kind_text() + ") with " +
                          new_node->ToString() + "(" + new_node->get_kind_text() + ") New statement: " + tn->ToString());
       return;
@@ -467,7 +475,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
    const auto gn = GetPointer<gimple_node>(tn);
    if(gn)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param), "-->Checking virtuals");
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, __replace_tree_node_debug_level, "-->Checking virtuals");
       if(gn->memdef)
       {
          RecursiveReplaceTreeNode(gn->memdef, old_node, new_node, stmt, true);
@@ -504,7 +512,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
       {
          RecursiveReplaceTreeNode(gn->vdef, old_node, new_node, stmt, true);
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param), "<--Checked virtuals");
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, __replace_tree_node_debug_level, "<--Checked virtuals");
    }
    switch(tn->get_kind())
    {
@@ -793,7 +801,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
       default:
          THROW_ERROR(std::string("Node not supported (") + STR(tn->index) + std::string("): ") + tn->get_kind_text());
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param),
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, __replace_tree_node_debug_level,
                   "<--Replaced " + old_node->ToString() + " (" + old_node->get_kind_text() + ") with " +
                       new_node->ToString() + "(" + new_node->get_kind_text() + ") New statement: " + tn->ToString());
 }
@@ -2070,7 +2078,7 @@ unsigned int tree_manager::get_next_vers()
          }
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param), "---Created ssa " + STR(next_vers));
+   // INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param), "---Created ssa " + STR(next_vers));
    return ++next_vers;
 }
 
@@ -2182,37 +2190,28 @@ bool tree_manager::is_CPP() const
 
 bool tree_manager::is_top_function(const function_decl* fd) const
 {
-   if(fd->name)
+   if(fd->name && fd->name->get_kind() == identifier_node_K)
    {
-      tree_nodeRef id_name = fd->name;
-      std::string simple_name;
-      if(id_name->get_kind() == identifier_node_K)
+      const auto in = GetPointerS<identifier_node>(fd->name);
+      if(!in->operator_flag)
       {
-         const auto in = GetPointerS<identifier_node>(id_name);
-         if(!in->operator_flag)
+         if(Param->isOption(OPT_top_functions_names))
          {
-            simple_name = in->strg;
-         }
-         if(!simple_name.empty())
-         {
-            if(Param->isOption(OPT_top_functions_names))
+            const auto top_functions_names = Param->getOption<std::list<std::string>>(OPT_top_functions_names);
+            for(const auto& top_function_name : top_functions_names)
             {
-               const auto top_functions_names = Param->getOption<std::list<std::string>>(OPT_top_functions_names);
-               for(const auto& top_function_name : top_functions_names)
-               {
-                  if(simple_name == top_function_name)
-                  {
-                     return true;
-                  }
-               }
-            }
-            if(Param->isOption(OPT_top_design_name))
-            {
-               const auto top_rtldesign_function = Param->getOption<std::string>(OPT_top_design_name);
-               if(simple_name == top_rtldesign_function)
+               if(in->strg == top_function_name)
                {
                   return true;
                }
+            }
+         }
+         if(Param->isOption(OPT_top_design_name))
+         {
+            const auto top_rtldesign_function = Param->getOption<std::string>(OPT_top_design_name);
+            if(in->strg == top_rtldesign_function)
+            {
+               return true;
             }
          }
       }

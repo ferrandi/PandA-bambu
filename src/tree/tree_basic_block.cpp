@@ -433,7 +433,7 @@ void bloc::RemoveStmt(const tree_nodeRef statement, const application_managerRef
          const auto cg = CGM->CGetCallGraph();
          CustomOrderedSet<EdgeDescriptor> to_remove;
          const auto call_id = statement->index;
-         BOOST_FOREACH(EdgeDescriptor oe, boost::out_edges(fun_cg_vertex, *cg))
+         for(const auto& oe : boost::make_iterator_range(boost::out_edges(fun_cg_vertex, *cg)))
          {
             const auto& direct_calls = cg->CGetFunctionEdgeInfo(oe)->direct_call_points;
             auto call_it = direct_calls.find(call_id);

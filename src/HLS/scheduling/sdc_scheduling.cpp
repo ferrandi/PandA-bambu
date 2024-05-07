@@ -564,10 +564,7 @@ bool SDCScheduling::HasToBeExecuted() const
    {
       return Scheduling::HasToBeExecuted();
    }
-   else
-   {
-      return false;
-   }
+   return false;
 }
 
 DesignFlowStep_Status SDCScheduling::InternalExec()

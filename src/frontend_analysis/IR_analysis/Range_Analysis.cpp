@@ -6570,7 +6570,8 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
       ,
       solverType(st_Cousot),
       requireESSA(true),
-      execution_mode(RA_EXEC_NORMAL)
+      execution_mode(RA_EXEC_NORMAL),
+      last_ver_sum(0)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
    const auto opts =
@@ -6770,16 +6771,15 @@ bool RangeAnalysis::HasToBeExecuted() const
    {
       return false;
    }
-   std::map<unsigned int, unsigned int> cur_bitvalue_ver;
-   std::map<unsigned int, unsigned int> cur_bb_ver;
+
    const auto CGMan = AppM->CGetCallGraphManager();
+   unsigned int curr_ver_sum = 0;
    for(const auto i : CGMan->GetReachedBodyFunctions())
    {
       const auto FB = AppM->CGetFunctionBehavior(i);
-      cur_bitvalue_ver[i] = FB->GetBitValueVersion();
-      cur_bb_ver[i] = FB->GetBBVersion();
+      curr_ver_sum += FB->GetBBVersion() + FB->GetBitValueVersion();
    }
-   return cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver;
+   return curr_ver_sum > last_ver_sum;
 }
 
 void RangeAnalysis::Initialize()
@@ -6976,7 +6976,7 @@ bool RangeAnalysis::finalize(ConstraintGraphRef CG)
    }
 #endif
 
-   const auto rbf = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
+   const auto& rbf = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
    const auto cgm = AppM->CGetCallGraphManager();
    const auto cg = cgm->CGetCallGraph();
 #ifndef NDEBUG
@@ -6996,20 +6996,12 @@ bool RangeAnalysis::finalize(ConstraintGraphRef CG)
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
+   last_ver_sum = 0;
    for(const auto f : rbf)
    {
       const auto FB = AppM->GetFunctionBehavior(f);
-      auto isInBit = fun_id_to_restart.count(f);
-      if(isInBit)
-      {
-         last_bb_ver[f] = FB->GetBBVersion();
-         last_bitvalue_ver[f] = FB->UpdateBitValueVersion();
-      }
-      else
-      {
-         last_bb_ver[f] = FB->GetBBVersion();
-         last_bitvalue_ver[f] = FB->GetBitValueVersion();
-      }
+      const auto isInBit = fun_id_to_restart.count(f);
+      last_ver_sum += FB->GetBBVersion() + (isInBit ? FB->UpdateBitValueVersion() : FB->GetBitValueVersion());
    }
    return !fun_id_to_restart.empty();
 }

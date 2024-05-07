@@ -361,7 +361,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    std::set<func_id_t> top_functions;
    CustomMap<top_id_t, std::vector<func_id_t>> function_allocation_order;
 
-   const auto root_functions = CGM->GetRootFunctions();
+   const auto& root_functions = CGM->GetRootFunctions();
    top_functions.insert(root_functions.begin(), root_functions.end());
    const auto subgraph_from = [&](const vertex& top_vertex, bool is_addr = false, bool include_shared = true) {
       const auto top_function = CGM->get_function(top_vertex);
@@ -951,8 +951,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             }
             else
             {
-               const auto n_call_points = static_cast<unsigned int>(
-                   Cget_edge_info<FunctionEdgeInfo, const CallGraph>(e, *top_cg)->direct_call_points.size());
+               const auto n_call_points =
+                   static_cast<unsigned int>(top_cg->CGetFunctionEdgeInfo(e)->direct_call_points.size());
                if(!num_instances.at(top_id).count(tgt))
                {
                   num_instances.at(top_id)[tgt] = cur_instances * n_call_points;
