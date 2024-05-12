@@ -167,8 +167,9 @@ void HLSFunctionStep::ComputeRelationships(DesignFlowStepSet& design_flow_step_s
                   const auto hls_step =
                       DFM->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(step_type, step_spec, function));
                   const auto design_flow_step =
-                      hls_step ? DFG->CGetDesignFlowStepInfo(hls_step)->design_flow_step :
-                                 hls_flow_step_factory->CreateHLSFlowStep(step_type, function, step_spec);
+                      hls_step != DesignFlowGraph::null_vertex() ?
+                          DFG->CGetNodeInfo(hls_step)->design_flow_step :
+                          hls_flow_step_factory->CreateHLSFlowStep(step_type, function, step_spec);
                   design_flow_step_set.insert(design_flow_step);
                }
             }
@@ -178,8 +179,8 @@ void HLSFunctionStep::ComputeRelationships(DesignFlowStepSet& design_flow_step_s
          {
             const auto hls_step =
                 DFM->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(step_type, step_spec, funId));
-            const auto design_flow_step = hls_step ?
-                                              DFG->CGetDesignFlowStepInfo(hls_step)->design_flow_step :
+            const auto design_flow_step = hls_step != DesignFlowGraph::null_vertex() ?
+                                              DFG->CGetNodeInfo(hls_step)->design_flow_step :
                                               hls_flow_step_factory->CreateHLSFlowStep(step_type, funId, step_spec);
             design_flow_step_set.insert(design_flow_step);
             break;

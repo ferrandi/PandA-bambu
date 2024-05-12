@@ -504,12 +504,12 @@ void SDCScheduling::ComputeRelationships(DesignFlowStepSet& relationship,
       if(relationship_type == INVALIDATION_RELATIONSHIP)
       {
          {
-            vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(
+            auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(
                 FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SDC_CODE_MOTION, funId));
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
             const DesignFlowStepRef design_flow_step =
-                frontend_step != NULL_VERTEX ?
-                    design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
+                frontend_step != DesignFlowGraph::null_vertex() ?
+                    design_flow_graph->CGetNodeInfo(frontend_step)->design_flow_step :
                     GetPointer<const FrontendFlowStepFactory>(
                         design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND))
                         ->CreateFunctionFrontendFlowStep(FrontendFlowStepType::SDC_CODE_MOTION, funId);

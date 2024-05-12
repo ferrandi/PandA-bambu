@@ -134,9 +134,9 @@ DesignFlowStep_Status SDCCodeMotion::InternalExec()
    /// Retrieve result of sdc scheduling
    const auto sdc_scheduling_step = design_flow_manager.lock()->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(
        HLSFlowStep_Type::SDC_SCHEDULING, HLSFlowStepSpecializationConstRef(), function_id));
-   THROW_ASSERT(sdc_scheduling_step, "SDC scheduling hls step not found");
-   const auto sdc_scheduling = GetPointer<const SDCScheduling>(
-       design_flow_graph->CGetDesignFlowStepInfo(sdc_scheduling_step)->design_flow_step);
+   THROW_ASSERT(sdc_scheduling_step != DesignFlowGraph::null_vertex(), "SDC scheduling hls step not found");
+   const auto sdc_scheduling =
+       GetPointer<const SDCScheduling>(design_flow_graph->CGetNodeInfo(sdc_scheduling_step)->design_flow_step);
    const auto& movements_list = sdc_scheduling->movements_list;
    if(movements_list.empty())
    {

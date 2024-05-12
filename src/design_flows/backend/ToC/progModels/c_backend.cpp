@@ -144,10 +144,8 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
                const auto call_graph_computation_step =
                    DFMgr->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
                const auto cg_design_flow_step =
-                   call_graph_computation_step ?
-                       DFMgr->CGetDesignFlowGraph()
-                           ->CGetDesignFlowStepInfo(call_graph_computation_step)
-                           ->design_flow_step :
+                   call_graph_computation_step != DesignFlowGraph::null_vertex() ?
+                       DFMgr->CGetDesignFlowGraph()->CGetNodeInfo(call_graph_computation_step)->design_flow_step :
                        frontend_step_factory->CreateApplicationFrontendFlowStep(COMPLETE_CALL_GRAPH);
                relationships.insert(cg_design_flow_step);
 
@@ -200,10 +198,8 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
                   const auto call_graph_computation_step =
                       DFMgr->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
                   const auto cg_design_flow_step =
-                      call_graph_computation_step ?
-                          DFMgr->CGetDesignFlowGraph()
-                              ->CGetDesignFlowStepInfo(call_graph_computation_step)
-                              ->design_flow_step :
+                      call_graph_computation_step != DesignFlowGraph::null_vertex() ?
+                          DFMgr->CGetDesignFlowGraph()->CGetNodeInfo(call_graph_computation_step)->design_flow_step :
                           frontend_step_factory->CreateApplicationFrontendFlowStep(COMPLETE_CALL_GRAPH);
                   relationships.insert(cg_design_flow_step);
 
@@ -223,11 +219,10 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
                             HLSFunctionStep::ComputeSignature(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW,
                                                               HLSFlowStepSpecializationConstRef(), top_fnode->index));
                         const auto hls_top_function_step =
-                            hls_top_function ? DFMgr->CGetDesignFlowGraph()
-                                                   ->CGetDesignFlowStepInfo(hls_top_function)
-                                                   ->design_flow_step :
-                                               hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW,
-                                                                                   top_fnode->index);
+                            hls_top_function != DesignFlowGraph::null_vertex() ?
+                                DFMgr->CGetDesignFlowGraph()->CGetNodeInfo(hls_top_function)->design_flow_step :
+                                hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW,
+                                                                    top_fnode->index);
                         relationships.insert(hls_top_function_step);
                      }
                   }

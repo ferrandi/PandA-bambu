@@ -113,8 +113,8 @@ void HLSFunctionBitValue::ComputeRelationships(DesignFlowStepSet& relationship,
              ApplicationFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE_IPA));
          const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
          const auto design_flow_step =
-             frontend_step != NULL_VERTEX ?
-                 design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
+             frontend_step != DesignFlowGraph::null_vertex() ?
+                 design_flow_graph->CGetNodeInfo(frontend_step)->design_flow_step :
                  GetPointer<const FrontendFlowStepFactory>(
                      design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND))
                      ->CreateApplicationFrontendFlowStep(FrontendFlowStepType::BIT_VALUE_IPA);
@@ -124,8 +124,8 @@ void HLSFunctionBitValue::ComputeRelationships(DesignFlowStepSet& relationship,
           FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE_OPT, funId));
       const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
       const auto design_flow_step =
-          frontend_step != NULL_VERTEX ?
-              design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
+          frontend_step != DesignFlowGraph::null_vertex() ?
+              design_flow_graph->CGetNodeInfo(frontend_step)->design_flow_step :
               GetPointer<const FrontendFlowStepFactory>(
                   design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND))
                   ->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE_OPT, funId);
@@ -147,8 +147,8 @@ DesignFlowStep_Status HLSFunctionBitValue::InternalExec()
           FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, funId));
       const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
       const auto design_flow_step =
-          frontend_step != NULL_VERTEX ?
-              design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
+          frontend_step != DesignFlowGraph::null_vertex() ?
+              design_flow_graph->CGetNodeInfo(frontend_step)->design_flow_step :
               GetPointer<const FrontendFlowStepFactory>(
                   design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND))
                   ->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE, funId);

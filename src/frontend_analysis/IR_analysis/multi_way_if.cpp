@@ -119,11 +119,11 @@ multi_way_if::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTyp
                /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
                const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(
                    FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
-               if(update_schedule)
+               if(update_schedule != DesignFlowGraph::null_vertex())
                {
                   const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
                   const DesignFlowStepRef design_flow_step =
-                      design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
+                      design_flow_graph->CGetNodeInfo(update_schedule)->design_flow_step;
                   if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() !=
                      function_behavior->GetBBVersion())
                   {
@@ -801,11 +801,11 @@ bool multi_way_if::HasToBeExecuted() const
          /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
          const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(
              FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
-         if(update_schedule)
+         if(update_schedule != DesignFlowGraph::null_vertex())
          {
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
             const DesignFlowStepRef design_flow_step =
-                design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
+                design_flow_graph->CGetNodeInfo(update_schedule)->design_flow_step;
             if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() !=
                function_behavior->GetBBVersion())
             {
@@ -833,12 +833,12 @@ bool multi_way_if::HasToBeExecuted() const
    {
       const auto vectorize_vertex =
           design_flow_manager.lock()->GetDesignFlowStep(ComputeSignature(FrontendFlowStepType::VECTORIZE, function_id));
-      if(vectorize_vertex == NULL_VERTEX)
+      if(vectorize_vertex == DesignFlowGraph::null_vertex())
       {
          return false;
       }
       const auto vectorize_step =
-          design_flow_manager.lock()->CGetDesignFlowGraph()->CGetDesignFlowStepInfo(vectorize_vertex)->design_flow_step;
+          design_flow_manager.lock()->CGetDesignFlowGraph()->CGetNodeInfo(vectorize_vertex)->design_flow_step;
       if(GetPointer<const FunctionFrontendFlowStep>(vectorize_step)->CGetBBVersion() == 0)
       {
          return false;

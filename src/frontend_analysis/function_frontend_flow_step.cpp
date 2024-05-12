@@ -132,7 +132,7 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
          {
             const auto symbolic_signature = SymbolicApplicationFrontendFlowStep::ComputeSignature(step_type);
             const auto symbolic_step = DFM->GetDesignFlowStep(symbolic_signature);
-            if(symbolic_step)
+            if(symbolic_step != DesignFlowGraph::null_vertex())
             {
 #ifndef NDEBUG
                const auto step_sig = FunctionFrontendFlowStep::ComputeSignature(step_type, function_id);
@@ -141,7 +141,7 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
                     DFM->GetStatus(step_sig) == DesignFlowStep_Status::UNCHANGED))
                {
                   DFG->WriteDot("Design_Flow_Error");
-                  const auto design_flow_step_info = DFG->CGetDesignFlowStepInfo(symbolic_step);
+                  const auto design_flow_step_info = DFG->CGetNodeInfo(symbolic_step);
                   THROW_UNREACHABLE("Symbolic step " + design_flow_step_info->design_flow_step->GetName() +
                                     " is not unexecuted");
                }
@@ -170,9 +170,9 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
                   const auto function_frontend_flow_step =
                       DFM->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(step_type, called_function));
                   DesignFlowStepRef design_flow_step;
-                  if(function_frontend_flow_step)
+                  if(function_frontend_flow_step != DesignFlowGraph::null_vertex())
                   {
-                     design_flow_step = DFG->CGetDesignFlowStepInfo(function_frontend_flow_step)->design_flow_step;
+                     design_flow_step = DFG->CGetNodeInfo(function_frontend_flow_step)->design_flow_step;
                   }
                   else
                   {
@@ -195,9 +195,9 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
                   const auto function_frontend_flow_step =
                       DFM->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(step_type, calling_function));
                   DesignFlowStepRef design_flow_step;
-                  if(function_frontend_flow_step)
+                  if(function_frontend_flow_step != DesignFlowGraph::null_vertex())
                   {
-                     design_flow_step = DFG->CGetDesignFlowStepInfo(function_frontend_flow_step)->design_flow_step;
+                     design_flow_step = DFG->CGetNodeInfo(function_frontend_flow_step)->design_flow_step;
                   }
                   else
                   {
@@ -214,9 +214,9 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
             const auto prec_step =
                 DFM->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(step_type, function_id));
             DesignFlowStepRef design_flow_step;
-            if(prec_step)
+            if(prec_step != DesignFlowGraph::null_vertex())
             {
-               design_flow_step = DFG->CGetDesignFlowStepInfo(prec_step)->design_flow_step;
+               design_flow_step = DFG->CGetNodeInfo(prec_step)->design_flow_step;
             }
             else
             {
@@ -340,7 +340,7 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) cons
    /// add a connection between entry and exit thus avoiding problems with non terminating code
    GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[bloc::ENTRY_BLOCK_ID], inverse_vertex_map[bloc::EXIT_BLOCK_ID],
                                      CFG_SELECTOR);
-   BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR).WriteDot(filename);
+   GCC_bb_graph->WriteDot(filename);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written " + filename);
    /// add edges
 #ifndef NDEBUG

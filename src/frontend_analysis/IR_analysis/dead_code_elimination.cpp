@@ -181,10 +181,10 @@ void dead_code_elimination::fix_sdc_motion(DesignFlowManagerConstRef design_flow
    const auto design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
    const auto sdc_scheduling_step = design_flow_manager->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(
        HLSFlowStep_Type::SDC_SCHEDULING, HLSFlowStepSpecializationConstRef(), function_id));
-   if(sdc_scheduling_step)
+   if(sdc_scheduling_step != DesignFlowGraph::null_vertex())
    {
       const auto sdc_scheduling =
-          GetPointer<SDCScheduling>(design_flow_graph->CGetDesignFlowStepInfo(sdc_scheduling_step)->design_flow_step);
+          GetPointer<SDCScheduling>(design_flow_graph->CGetNodeInfo(sdc_scheduling_step)->design_flow_step);
       const auto removed_index = removedStmt->index;
       sdc_scheduling->movements_list.remove_if(
           [&](const std::vector<unsigned int>& mv) { return mv[0] == removed_index; });

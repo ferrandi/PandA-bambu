@@ -113,10 +113,10 @@ void GenerateFuList::ComputeRelationships(DesignFlowStepSet& relationship,
          {
             const auto technology_flow_signature =
                 TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_FILE_TECHNOLOGY);
-            const vertex technology_flow_step = DFM->GetDesignFlowStep(technology_flow_signature);
+            const auto technology_flow_step = DFM->GetDesignFlowStep(technology_flow_signature);
             const DesignFlowStepRef technology_design_flow_step =
-                technology_flow_step ?
-                    design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
+                technology_flow_step != DesignFlowGraph::null_vertex() ?
+                    design_flow_graph->CGetNodeInfo(technology_flow_step)->design_flow_step :
                     technology_flow_step_factory->CreateTechnologyFlowStep(
                         TechnologyFlowStep_Type::LOAD_FILE_TECHNOLOGY);
             relationship.insert(technology_design_flow_step);
@@ -124,10 +124,10 @@ void GenerateFuList::ComputeRelationships(DesignFlowStepSet& relationship,
          {
             const auto technology_flow_signature =
                 TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY);
-            const vertex technology_flow_step = DFM->GetDesignFlowStep(technology_flow_signature);
+            const auto technology_flow_step = DFM->GetDesignFlowStep(technology_flow_signature);
             const DesignFlowStepRef technology_design_flow_step =
-                technology_flow_step ?
-                    design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
+                technology_flow_step != DesignFlowGraph::null_vertex() ?
+                    design_flow_graph->CGetNodeInfo(technology_flow_step)->design_flow_step :
                     technology_flow_step_factory->CreateTechnologyFlowStep(
                         TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY);
             relationship.insert(technology_design_flow_step);
@@ -136,10 +136,10 @@ void GenerateFuList::ComputeRelationships(DesignFlowStepSet& relationship,
          {
             const auto technology_flow_signature =
                 TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::WRITE_TECHNOLOGY);
-            const vertex technology_flow_step = DFM->GetDesignFlowStep(technology_flow_signature);
+            const auto technology_flow_step = DFM->GetDesignFlowStep(technology_flow_signature);
             const DesignFlowStepRef technology_design_flow_step =
-                technology_flow_step ?
-                    design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
+                technology_flow_step != DesignFlowGraph::null_vertex() ?
+                    design_flow_graph->CGetNodeInfo(technology_flow_step)->design_flow_step :
                     technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::WRITE_TECHNOLOGY);
             relationship.insert(technology_design_flow_step);
          }

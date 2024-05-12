@@ -166,12 +166,12 @@ bool MultipleEntryIfReduction::HasToBeExecuted() const
    }
    const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(
        FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SIMPLE_CODE_MOTION, function_id));
-   if(!frontend_step)
+   if(frontend_step == DesignFlowGraph::null_vertex())
    {
       return false;
    }
    const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-   const auto design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+   const auto design_flow_step = design_flow_graph->CGetNodeInfo(frontend_step)->design_flow_step;
    return GetPointerS<const simple_code_motion>(design_flow_step)->IsScheduleBased();
 }
 

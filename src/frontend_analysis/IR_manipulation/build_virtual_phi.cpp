@@ -97,15 +97,15 @@ void BuildVirtualPhi::ComputeRelationships(DesignFlowStepSet& relationship,
       }
       case INVALIDATION_RELATIONSHIP:
       {
-         if(design_flow_manager.lock()->GetStatus(GetSignature()) == DesignFlowStep_Status::SUCCESS &&
+         if(GetStatus() == DesignFlowStep_Status::SUCCESS &&
             AppM->CGetFunctionBehavior(function_id)->is_simple_pipeline())
          {
             const auto step_signature =
                 FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SIMPLE_CODE_MOTION, function_id);
             const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
-            THROW_ASSERT(frontend_step != NULL_VERTEX, "step is not present");
+            THROW_ASSERT(frontend_step != DesignFlowGraph::null_vertex(), "step is not present");
             const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const auto design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+            const auto design_flow_step = design_flow_graph->CGetNodeInfo(frontend_step)->design_flow_step;
             relationship.insert(design_flow_step);
          }
          break;

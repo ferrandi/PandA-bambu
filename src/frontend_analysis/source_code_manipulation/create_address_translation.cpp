@@ -84,7 +84,7 @@ CreateAddressTranslation::ComputeFrontendRelationships(const DesignFlowStep::Rel
       }
       case(INVALIDATION_RELATIONSHIP):
       {
-         if(design_flow_manager.lock()->GetStatus(GetSignature()) == DesignFlowStep_Status::SUCCESS)
+         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
          {
             relationships.insert(std::make_pair(CREATE_TREE_MANAGER, WHOLE_APPLICATION));
          }

@@ -103,11 +103,11 @@ commutative_expr_restructuring::ComputeFrontendRelationships(
                /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
                const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(
                    FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
-               if(update_schedule)
+               if(update_schedule != DesignFlowGraph::null_vertex())
                {
                   const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
                   const DesignFlowStepRef design_flow_step =
-                      design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
+                      design_flow_graph->CGetNodeInfo(update_schedule)->design_flow_step;
                   if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() !=
                      function_behavior->GetBBVersion())
                   {
@@ -480,11 +480,10 @@ bool commutative_expr_restructuring::HasToBeExecuted() const
       /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
       const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(
           FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
-      if(update_schedule)
+      if(update_schedule != DesignFlowGraph::null_vertex())
       {
          const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const DesignFlowStepRef design_flow_step =
-             design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
+         const DesignFlowStepRef design_flow_step = design_flow_graph->CGetNodeInfo(update_schedule)->design_flow_step;
          if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() !=
             function_behavior->GetBBVersion())
          {

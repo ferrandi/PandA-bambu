@@ -734,14 +734,12 @@ void TasteInterfaceGeneration::ComputeRelationships(DesignFlowStepSet& relations
           HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)),
           reg_status_function->index);
       const auto reg_status_vertex = design_flow_manager.lock()->GetDesignFlowStep(reg_status_signature);
-      const auto reg_status_step = reg_status_vertex != NULL_VERTEX ?
-                                       design_flow_manager.lock()
-                                           ->CGetDesignFlowGraph()
-                                           ->CGetDesignFlowStepInfo(reg_status_vertex)
-                                           ->design_flow_step :
-                                       hls_flow_step_factory->CreateHLSFlowStep(
-                                           HLSFlowStep_Type::ADD_LIBRARY, reg_status_function->index,
-                                           HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)));
+      const auto reg_status_step =
+          reg_status_vertex != DesignFlowGraph::null_vertex() ?
+              design_flow_manager.lock()->CGetDesignFlowGraph()->CGetNodeInfo(reg_status_vertex)->design_flow_step :
+              hls_flow_step_factory->CreateHLSFlowStep(
+                  HLSFlowStep_Type::ADD_LIBRARY, reg_status_function->index,
+                  HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)));
       relationship.insert(reg_status_step);
 
       const auto endianess_inversion_function = TM->GetFunction(STR_CST_taste_endianess_inversion);
@@ -752,10 +750,10 @@ void TasteInterfaceGeneration::ComputeRelationships(DesignFlowStepSet& relations
       const auto endianess_inversion_vertex =
           design_flow_manager.lock()->GetDesignFlowStep(endianess_inversion_signature);
       const auto endianess_inversion_step =
-          endianess_inversion_vertex != NULL_VERTEX ?
+          endianess_inversion_vertex != DesignFlowGraph::null_vertex() ?
               design_flow_manager.lock()
                   ->CGetDesignFlowGraph()
-                  ->CGetDesignFlowStepInfo(endianess_inversion_vertex)
+                  ->CGetNodeInfo(endianess_inversion_vertex)
                   ->design_flow_step :
               hls_flow_step_factory->CreateHLSFlowStep(
                   HLSFlowStep_Type::ADD_LIBRARY, endianess_inversion_function->index,
@@ -768,10 +766,10 @@ void TasteInterfaceGeneration::ComputeRelationships(DesignFlowStepSet& relations
           HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)),
           endianess_check_function->index);
       const auto endianess_check_vertex = design_flow_manager.lock()->GetDesignFlowStep(endianess_check_signature);
-      const auto endianess_check_step = endianess_check_vertex != NULL_VERTEX ?
+      const auto endianess_check_step = endianess_check_vertex != DesignFlowGraph::null_vertex() ?
                                             design_flow_manager.lock()
                                                 ->CGetDesignFlowGraph()
-                                                ->CGetDesignFlowStepInfo(endianess_check_vertex)
+                                                ->CGetNodeInfo(endianess_check_vertex)
                                                 ->design_flow_step :
                                             hls_flow_step_factory->CreateHLSFlowStep(
                                                 HLSFlowStep_Type::ADD_LIBRARY, endianess_check_function->index,
@@ -786,10 +784,10 @@ void TasteInterfaceGeneration::ComputeRelationships(DesignFlowStepSet& relations
       const auto output_multiplexer_vertex =
           design_flow_manager.lock()->GetDesignFlowStep(output_multiplexer_signature);
       const auto output_multiplexer_step =
-          output_multiplexer_vertex != NULL_VERTEX ?
+          output_multiplexer_vertex != DesignFlowGraph::null_vertex() ?
               design_flow_manager.lock()
                   ->CGetDesignFlowGraph()
-                  ->CGetDesignFlowStepInfo(output_multiplexer_vertex)
+                  ->CGetNodeInfo(output_multiplexer_vertex)
                   ->design_flow_step :
               hls_flow_step_factory->CreateHLSFlowStep(
                   HLSFlowStep_Type::ADD_LIBRARY, output_multiplexer_function->index,
@@ -804,10 +802,10 @@ void TasteInterfaceGeneration::ComputeRelationships(DesignFlowStepSet& relations
              memory_enabling_function->index);
          const auto memory_enabling_vertex = design_flow_manager.lock()->GetDesignFlowStep(memory_enabling_signature);
          const auto memory_enabling_step =
-             memory_enabling_vertex != NULL_VERTEX ?
+             memory_enabling_vertex != DesignFlowGraph::null_vertex() ?
                  design_flow_manager.lock()
                      ->CGetDesignFlowGraph()
-                     ->CGetDesignFlowStepInfo(memory_enabling_vertex)
+                     ->CGetNodeInfo(memory_enabling_vertex)
                      ->design_flow_step :
                  hls_flow_step_factory->CreateHLSFlowStep(
                      HLSFlowStep_Type::ADD_LIBRARY, memory_enabling_function->index,
@@ -820,14 +818,12 @@ void TasteInterfaceGeneration::ComputeRelationships(DesignFlowStepSet& relations
              HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)),
              data_size_function->index);
          const auto data_size_vertex = design_flow_manager.lock()->GetDesignFlowStep(data_size_signature);
-         const auto data_size_step = data_size_vertex != NULL_VERTEX ?
-                                         design_flow_manager.lock()
-                                             ->CGetDesignFlowGraph()
-                                             ->CGetDesignFlowStepInfo(data_size_vertex)
-                                             ->design_flow_step :
-                                         hls_flow_step_factory->CreateHLSFlowStep(
-                                             HLSFlowStep_Type::ADD_LIBRARY, data_size_function->index,
-                                             HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)));
+         const auto data_size_step =
+             data_size_vertex != DesignFlowGraph::null_vertex() ?
+                 design_flow_manager.lock()->CGetDesignFlowGraph()->CGetNodeInfo(data_size_vertex)->design_flow_step :
+                 hls_flow_step_factory->CreateHLSFlowStep(
+                     HLSFlowStep_Type::ADD_LIBRARY, data_size_function->index,
+                     HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)));
          relationship.insert(data_size_step);
 
          const auto address_translation_function = TM->GetFunction(STR_CST_taste_address_translation + function_name);
@@ -838,10 +834,10 @@ void TasteInterfaceGeneration::ComputeRelationships(DesignFlowStepSet& relations
          const auto address_translation_vertex =
              design_flow_manager.lock()->GetDesignFlowStep(address_translation_signature);
          const auto address_translation_step =
-             address_translation_vertex != NULL_VERTEX ?
+             address_translation_vertex != DesignFlowGraph::null_vertex() ?
                  design_flow_manager.lock()
                      ->CGetDesignFlowGraph()
-                     ->CGetDesignFlowStepInfo(address_translation_vertex)
+                     ->CGetNodeInfo(address_translation_vertex)
                      ->design_flow_step :
                  hls_flow_step_factory->CreateHLSFlowStep(
                      HLSFlowStep_Type::ADD_LIBRARY, address_translation_function->index,

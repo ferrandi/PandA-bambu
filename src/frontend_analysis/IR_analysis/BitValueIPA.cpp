@@ -125,8 +125,8 @@ void BitValueIPA::ComputeRelationships(DesignFlowStepSet& relationships,
       {
          const auto step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, i);
          const auto frontend_step = DFM->GetDesignFlowStep(step_signature);
-         THROW_ASSERT(frontend_step != NULL_VERTEX, "step is not present");
-         const auto design_flow_step = DFG->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+         THROW_ASSERT(frontend_step != DesignFlowGraph::null_vertex(), "step is not present");
+         const auto design_flow_step = DFG->CGetNodeInfo(frontend_step)->design_flow_step;
          relationships.insert(design_flow_step);
       }
       fun_id_to_restart.clear();
@@ -134,8 +134,8 @@ void BitValueIPA::ComputeRelationships(DesignFlowStepSet& relationships,
       {
          const auto step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, i);
          const auto frontend_step = DFM->GetDesignFlowStep(step_signature);
-         THROW_ASSERT(frontend_step != NULL_VERTEX, "step is not present");
-         const auto design_flow_step = DFG->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+         THROW_ASSERT(frontend_step != DesignFlowGraph::null_vertex(), "step is not present");
+         const auto design_flow_step = DFG->CGetNodeInfo(frontend_step)->design_flow_step;
          relationships.insert(design_flow_step);
       }
       fun_id_to_restart_caller.clear();

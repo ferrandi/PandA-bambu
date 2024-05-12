@@ -113,11 +113,10 @@ CondExprRestructuring::ComputeFrontendRelationships(const DesignFlowStep::Relati
                /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
                const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(
                    FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
-               if(update_schedule)
+               if(update_schedule != DesignFlowGraph::null_vertex())
                {
                   const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-                  const auto design_flow_step =
-                      design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
+                  const auto design_flow_step = design_flow_graph->CGetNodeInfo(update_schedule)->design_flow_step;
                   if(GetPointerS<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() !=
                      function_behavior->GetBBVersion())
                   {
@@ -160,10 +159,10 @@ bool CondExprRestructuring::HasToBeExecuted() const
       /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
       const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(
           FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
-      if(update_schedule)
+      if(update_schedule != DesignFlowGraph::null_vertex())
       {
          const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const auto design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
+         const auto design_flow_step = design_flow_graph->CGetNodeInfo(update_schedule)->design_flow_step;
          if(GetPointerS<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() !=
             function_behavior->GetBBVersion())
          {

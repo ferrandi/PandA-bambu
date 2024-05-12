@@ -112,7 +112,7 @@ dead_code_eliminationIPA::ComputeFrontendRelationships(const DesignFlowStep::Rel
 void dead_code_eliminationIPA::ComputeRelationships(DesignFlowStepSet& relationships,
                                                     const DesignFlowStep::RelationshipType relationship_type)
 {
-   if(relationship_type == INVALIDATION_RELATIONSHIP)
+   if(relationship_type == INVALIDATION_RELATIONSHIP && GetStatus() == DesignFlowStep_Status::SUCCESS)
    {
       const auto DFM = design_flow_manager.lock();
       const auto DFG = DFM->CGetDesignFlowGraph();
@@ -127,21 +127,19 @@ void dead_code_eliminationIPA::ComputeRelationships(DesignFlowStepSet& relations
          {
             const auto step_signature = FunctionFrontendFlowStep::ComputeSignature(step_type, i);
             const auto frontend_step = DFM->GetDesignFlowStep(step_signature);
-            THROW_ASSERT(frontend_step != NULL_VERTEX, "step is not present");
-            const auto design_flow_step = DFG->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+            THROW_ASSERT(frontend_step != DesignFlowGraph::null_vertex(), "step is not present");
+            const auto design_flow_step = DFG->CGetNodeInfo(frontend_step)->design_flow_step;
             relationships.insert(design_flow_step);
          }
       }
-      fun_id_to_restart.clear();
       for(const auto i : fun_id_to_restartParm)
       {
          const auto step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::PARM2SSA, i);
          const auto frontend_step = DFM->GetDesignFlowStep(step_signature);
-         THROW_ASSERT(frontend_step != NULL_VERTEX, "step is not present");
-         const auto design_flow_step = DFG->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+         THROW_ASSERT(frontend_step != DesignFlowGraph::null_vertex(), "step is not present");
+         const auto design_flow_step = DFG->CGetNodeInfo(frontend_step)->design_flow_step;
          relationships.insert(design_flow_step);
       }
-      fun_id_to_restartParm.clear();
    }
    ApplicationFrontendFlowStep::ComputeRelationships(relationships, relationship_type);
 }

@@ -116,8 +116,8 @@ void FixVdef::ComputeRelationships(DesignFlowStepSet& relationship,
              TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          const auto technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
          const auto technology_design_flow_step =
-             technology_flow_step ?
-                 design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
+             technology_flow_step != DesignFlowGraph::null_vertex() ?
+                 design_flow_graph->CGetNodeInfo(technology_flow_step)->design_flow_step :
                  technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          relationship.insert(technology_design_flow_step);
          break;

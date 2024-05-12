@@ -91,8 +91,8 @@ void FrontendFlowStep::CreateSteps(
             const auto call_graph_computation_step = design_flow_manager->GetDesignFlowStep(
                 ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
             const auto cg_design_flow_step =
-                call_graph_computation_step ?
-                    design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step :
+                call_graph_computation_step != DesignFlowGraph::null_vertex() ?
+                    design_flow_graph->CGetNodeInfo(call_graph_computation_step)->design_flow_step :
                     frontend_flow_step_factory->CreateApplicationFrontendFlowStep(FUNCTION_ANALYSIS);
             relationships.insert(cg_design_flow_step);
             const auto functions_with_body = application_manager->CGetCallGraphManager()->GetReachedBodyFunctions();
@@ -101,8 +101,8 @@ void FrontendFlowStep::CreateSteps(
                const auto sdf_step = design_flow_manager->GetDesignFlowStep(
                    FunctionFrontendFlowStep::ComputeSignature(step_type, function_with_body_id));
                const auto design_flow_step =
-                   sdf_step ?
-                       design_flow_graph->CGetDesignFlowStepInfo(sdf_step)->design_flow_step :
+                   sdf_step != DesignFlowGraph::null_vertex() ?
+                       design_flow_graph->CGetNodeInfo(sdf_step)->design_flow_step :
                        frontend_flow_step_factory->CreateFunctionFrontendFlowStep(step_type, function_with_body_id);
                relationships.insert(design_flow_step);
             }
@@ -113,9 +113,9 @@ void FrontendFlowStep::CreateSteps(
             const auto sdf_signature = ApplicationFrontendFlowStep::ComputeSignature(step_type);
             const auto sdf_step = design_flow_manager->GetDesignFlowStep(sdf_signature);
             DesignFlowStepRef design_flow_step;
-            if(sdf_step)
+            if(sdf_step != DesignFlowGraph::null_vertex())
             {
-               design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(sdf_step)->design_flow_step;
+               design_flow_step = design_flow_graph->CGetNodeInfo(sdf_step)->design_flow_step;
             }
             else
             {
