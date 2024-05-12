@@ -246,7 +246,7 @@ int main(int argc, char* argv_orig[])
                 Param->getOption<std::filesystem::path>(OPT_output_temporary_directory);
             const auto temp_path = output_temporary_directory / "archives";
             std::filesystem::create_directories(temp_path);
-            std::string command;
+            std::string command = "cd " + temp_path.string() + "\n";
             for(const auto& archive_file : archive_files)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reading " + archive_file);
@@ -255,9 +255,10 @@ int main(int argc, char* argv_orig[])
                   THROW_ERROR("File " + archive_file + " does not exist");
                }
 
-               command += " ar --output=" + temp_path.string() + " x " + archive_file + " &\n";
+               command += " ar x " + std::filesystem::path(archive_file).lexically_proximate(temp_path).string() +
+                          " || touch error &\n";
             }
-            command += " wait";
+            command += " wait\n if [ -e \"error\" ]; then exit -1; fi";
             if(IsError(PandaSystem(Param, command)))
             {
                THROW_ERROR("ar returns an error during archive extraction.");
