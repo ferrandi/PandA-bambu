@@ -192,7 +192,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
             }
 
             if(!splitted.empty() && (fu_name == splitted.at(0) || splitted.at(0) == "*" ||
-                                     (splitted.at(0).max_size() > 1 && splitted.at(0).at(0) == '*' &&
+                                     (splitted.at(0).size() > 1 && splitted.at(0).at(0) == '*' &&
                                       fu_name.find(splitted.at(0).substr(1)) == 0)))
             {
                functions_constrained.insert(funid);

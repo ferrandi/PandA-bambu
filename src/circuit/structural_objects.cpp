@@ -4196,7 +4196,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          const xml_text_node* text = EnodeC->get_child_text();
          if(!text)
          {
-            THROW_WARNING("description is missing for " + EnodeC->get_name());
+            THROW_WARNING("description is missing for " + _owner->get_id());
          }
          else
          {
@@ -4209,7 +4209,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          const xml_text_node* text = EnodeC->get_child_text();
          if(!text)
          {
-            THROW_WARNING("copyright is missing for " + EnodeC->get_name());
+            THROW_WARNING("copyright is missing for " + _owner->get_id()));
          }
          else
          {
@@ -4222,7 +4222,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          const xml_text_node* text = EnodeC->get_child_text();
          if(!text)
          {
-            THROW_WARNING("authors are missing for " + EnodeC->get_name());
+            THROW_WARNING("authors are missing for " + _owner->get_id());
          }
          else
          {
@@ -4235,7 +4235,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          const xml_text_node* text = EnodeC->get_child_text();
          if(!text)
          {
-            THROW_WARNING("license is missing for " + EnodeC->get_name());
+            THROW_WARNING("license is missing for " + _owner->get_id());
          }
          else
          {
@@ -4248,7 +4248,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          const xml_text_node* text = EnodeC->get_child_text();
          if(!text)
          {
-            THROW_WARNING("specialization identifier is missing for " + EnodeC->get_name());
+            THROW_WARNING("specialization identifier is missing for " + _owner->get_id());
          }
          else
          {
@@ -4261,7 +4261,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          const xml_text_node* text = EnodeC->get_child_text();
          if(!text)
          {
-            THROW_WARNING("multi_unit_multiplicity identifier is missing for " + EnodeC->get_name());
+            THROW_WARNING("multi_unit_multiplicity identifier is missing for " + _owner->get_id());
          }
          else
          {
@@ -4275,7 +4275,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          const xml_text_node* text = EnodeC->get_child_text();
          if(!text)
          {
-            THROW_WARNING("keep_hierarchy identifier is missing for " + EnodeC->get_name());
+            THROW_WARNING("keep_hierarchy identifier is missing for " + _owner->get_id());
          }
          else
          {
