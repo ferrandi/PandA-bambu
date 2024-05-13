@@ -162,9 +162,15 @@ void BBGraph::WriteDot(const std::filesystem::path& file_name, const CustomUnord
                        const int) const
 {
    const auto bb_graph_info = CGetBBGraphInfo();
-   const auto function_name = bb_graph_info->AppM->CGetFunctionBehavior(bb_graph_info->function_index)
-                                  ->CGetBehavioralHelper()
-                                  ->get_function_name();
+   auto function_name = bb_graph_info->AppM->CGetFunctionBehavior(bb_graph_info->function_index)
+                            ->CGetBehavioralHelper()
+                            ->get_function_name();
+   if(function_name.size() > 256)
+   {
+      THROW_WARNING("Function name too long: " + function_name +
+                    ".\nChanged to the the function index:" + STR(bb_graph_info->function_index));
+      function_name = STR(bb_graph_info->function_index);
+   }
    const auto output_directory =
        collection->parameters->getOption<std::filesystem::path>(OPT_dot_directory) / function_name;
    std::filesystem::create_directories(output_directory);

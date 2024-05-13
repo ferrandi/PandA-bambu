@@ -337,8 +337,15 @@ OpGraph::~OpGraph() = default;
 void OpGraph::WriteDot(const std::filesystem::path& file_name, const int detail_level) const
 {
    const BehavioralHelperConstRef helper = CGetOpGraphInfo()->BH;
+   auto function_name = helper->get_function_name();
+   if(function_name.size() > 256)
+   {
+      THROW_WARNING("Function name too long: " + function_name +
+                    ".\nChanged to the function index:" + STR(helper->get_function_index()));
+      function_name = STR(helper->get_function_index());
+   }
    const auto output_directory =
-       collection->parameters->getOption<std::filesystem::path>(OPT_dot_directory) / helper->get_function_name();
+       collection->parameters->getOption<std::filesystem::path>(OPT_dot_directory) / function_name;
    std::filesystem::create_directories(output_directory);
    const auto full_name = output_directory / file_name;
    const VertexWriterConstRef op_label_writer(new OpWriter(this, detail_level));
