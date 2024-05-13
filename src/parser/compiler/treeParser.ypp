@@ -2284,7 +2284,7 @@ bool pred;
       wfshl_expr : TOK_BISON_FSHL_EXPR{CTN(fshl_expr)}  wternary_expr;
 
       //fshr_expr:	TOK_BISON_FHSR_EXPR^ ternary_expr;
-      wfshr_expr : TOK_BISON_FSHR_EXPR{CTN(fshl_expr)}  wternary_expr;
+      wfshr_expr : TOK_BISON_FSHR_EXPR{CTN(fshr_expr)}  wternary_expr;
 
       //extractvalue_expr:	TOK_BISON_EXTRACTVALUE_EXPR^ binary_expr;
       wextractvalue_expr : TOK_BISON_EXTRACTVALUE_EXPR{CTN(extractvalue_expr)}  wbinary_expr;

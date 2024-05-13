@@ -50,6 +50,9 @@
 #include <clang/AST/RecordLayout.h>
 #include <clang/AST/RecursiveASTVisitor.h>
 #include <clang/AST/Type.h>
+#if __clang_major__ >= 11
+#include <clang/Analysis/CallGraph.h>
+#endif
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Frontend/FrontendPluginRegistry.h>
 #include <clang/Lex/LexDiagnostic.h>
@@ -869,6 +872,8 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
             bool hasModule = false;
             LLVM_DEBUG(dbgs() << "DATAFLOW: " << functionSym << "\n");
             forceNoInline(FD);
+
+#if __clang_major__ < 11
             for(auto* stmt : FD->getBody()->children())
             {
                if(auto callExpr = dyn_cast<CallExpr>(stmt))
@@ -889,11 +894,27 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
                   }
                }
             }
+#else
+            CallGraph CG;
+            CG.addToCallGraph(FD);
+            for(auto callee : *CG.getOrInsertNode(FD))
+            {
+               auto calleeDecl = (*callee).getDecl()->getAsFunction();
+               if(calleeDecl && !calleeDecl->isConstexpr())
+               {
+                  LLVM_DEBUG(dbgs() << " -> " << MangledName(calleeDecl) << "\n");
+                  GetFuncAttr(calleeDecl).attrs[key_loc_t("dataflow_module", SourceLocation())] = "1";
+                  GetFuncAttr(calleeDecl).attrs[key_loc_t("inline", SourceLocation())] = "off";
+                  forceNoInline(calleeDecl);
+                  hasModule = true;
+               }
+            }
             if(!hasModule)
             {
                ReportError(FD->getLocation(), "Dataflow function has no valid submodule");
                return;
             }
+#endif
          }
       }
    }
