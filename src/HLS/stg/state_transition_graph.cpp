@@ -395,7 +395,15 @@ void StateTransitionGraph::WriteDot(const std::filesystem::path& file_name, cons
    }
    std::filesystem::create_directories(output_directory);
    const OpGraphConstRef op_function_graph = CGetStateTransitionGraphInfo()->op_function_graph;
-   const auto complete_file_name = output_directory / op_function_graph->CGetOpGraphInfo()->BH->get_function_name();
+   auto helper = op_function_graph->CGetOpGraphInfo()->BH;
+   auto function_name = helper->get_function_name();
+   if(function_name.size() > 256)
+   {
+      THROW_WARNING("Function name too long: " + function_name +
+                    ".\nChanged to the function index:" + STR(helper->get_function_index()));
+      function_name = STR(helper->get_function_index());
+   }
+   const auto complete_file_name = output_directory / function_name;
    std::filesystem::create_directories(complete_file_name);
    const VertexWriterConstRef state_writer(new StateWriter(this, op_function_graph, detail_level));
    const EdgeWriterConstRef transition_writer(new TransitionWriter(this, op_function_graph, detail_level));

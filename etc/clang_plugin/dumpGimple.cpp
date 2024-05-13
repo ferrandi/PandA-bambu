@@ -1813,7 +1813,7 @@ namespace llvm
             return (CallID == llvm::Intrinsic::sadd_sat || CallID == llvm::Intrinsic::ssub_sat
 #if __clang_major__ > 11
                     || CallID == llvm::Intrinsic::smax || CallID == llvm::Intrinsic::smin ||
-                    CallID == llvm::Intrinsic::umax || CallID == llvm::Intrinsic::umin || CallID == llvm::Intrinsic::abs
+                    CallID == llvm::Intrinsic::abs
 #endif
             );
          }
