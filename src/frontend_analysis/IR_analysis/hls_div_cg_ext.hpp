@@ -70,6 +70,7 @@ class hls_div_cg_ext : public FunctionFrontendFlowStep
 
    bool use64bitMul;
    bool use32bitMul;
+   bool doSoftDiv;
 
    /**
     * Recursive examine tree node
