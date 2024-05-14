@@ -93,7 +93,8 @@ hls_div_cg_ext::hls_div_cg_ext(const ParameterConstRef _parameters, const applic
     : FunctionFrontendFlowStep(_AppM, _function_id, HLS_DIV_CG_EXT, _design_flow_manager, _parameters),
       TreeM(_AppM->get_tree_manager()),
       use64bitMul(false),
-      use32bitMul(false)
+      use32bitMul(false),
+      doSoftDiv(_parameters->isOption(OPT_hls_div) && _parameters->getOption<std::string>(OPT_hls_div) != "none")
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -117,6 +118,8 @@ hls_div_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::RelationshipT
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
+         relationships.insert(std::make_pair(CSE_STEP, SAME_FUNCTION));
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -242,7 +245,7 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
          modified |= recursive_examinate(be->op0, current_statement, tree_man);
          modified |= recursive_examinate(be->op1, current_statement, tree_man);
 
-         if(be_type == exact_div_expr_K || be_type == trunc_div_expr_K || be_type == trunc_mod_expr_K)
+         if(doSoftDiv && (be_type == exact_div_expr_K || be_type == trunc_div_expr_K || be_type == trunc_mod_expr_K))
          {
             const auto expr_type = tree_helper::CGetType(be->op0);
             const auto bitsize0 = ceil_pow2(tree_helper::Size(be->op0));
@@ -285,7 +288,7 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                modified = true;
             }
          }
-         else if(be_type == frem_expr_K)
+         else if(doSoftDiv && be_type == frem_expr_K)
          {
             const auto expr_type = tree_helper::CGetType(be->op0);
             THROW_ASSERT(GET_CONST_NODE(expr_type)->get_kind() == real_type_K, "unexpected case");
