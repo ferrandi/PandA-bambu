@@ -108,7 +108,7 @@
 #include "fanout_opt.hpp"
 #include "hdl_function_decl_fix.hpp"
 #include "hdl_var_decl_fix.hpp"
-#include "hls_div_cg_ext.hpp"
+#include "hls_soft_cg_ext.hpp"
 #include "loops_analysis_bambu.hpp"
 #include "loops_computation.hpp"
 #include "lut_transformation.hpp"
@@ -227,7 +227,7 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
       case FIX_STRUCTS_PASSED_BY_VALUE:
       case FIX_VDEF:
       case HDL_VAR_DECL_FIX:
-      case HLS_DIV_CG_EXT:
+      case HLS_SOFT_CG_EXT:
       case HWCALL_INJECTION:
       case IR_LOWERING:
       case LOOP_COMPUTATION:
@@ -431,7 +431,7 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       case FIX_STRUCTS_PASSED_BY_VALUE:
       case FIX_VDEF:
       case HDL_VAR_DECL_FIX:
-      case HLS_DIV_CG_EXT:
+      case HLS_SOFT_CG_EXT:
       case HWCALL_INJECTION:
       case IR_LOWERING:
       case LOOP_COMPUTATION:
@@ -666,9 +666,9 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       {
          return DesignFlowStepRef(new HDLVarDeclFix(AppM, function_id, design_flow_manager.lock(), parameters));
       }
-      case HLS_DIV_CG_EXT:
+      case HLS_SOFT_CG_EXT:
       {
-         return DesignFlowStepRef(new hls_div_cg_ext(parameters, AppM, function_id, design_flow_manager.lock()));
+         return DesignFlowStepRef(new hls_soft_cg_ext(parameters, AppM, function_id, design_flow_manager.lock()));
       }
       case HWCALL_INJECTION:
       {
