@@ -168,7 +168,7 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/fanout_opt.hpp\
      frontend_analysis/IR_analysis/hdl_function_decl_fix.hpp \
      frontend_analysis/IR_analysis/hdl_var_decl_fix.hpp \
-     frontend_analysis/IR_analysis/hls_div_cg_ext.hpp \
+     frontend_analysis/IR_analysis/hls_soft_cg_ext.hpp \
      frontend_analysis/IR_analysis/loops_analysis_bambu.hpp \
      frontend_analysis/IR_analysis/lut_transformation.hpp \
      frontend_analysis/IR_analysis/multi_way_if.hpp \
@@ -214,7 +214,7 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/fanout_opt.cpp\
      frontend_analysis/IR_analysis/hdl_function_decl_fix.cpp \
      frontend_analysis/IR_analysis/hdl_var_decl_fix.cpp \
-     frontend_analysis/IR_analysis/hls_div_cg_ext.cpp \
+     frontend_analysis/IR_analysis/hls_soft_cg_ext.cpp \
      frontend_analysis/IR_analysis/loops_analysis_bambu.cpp \
      frontend_analysis/IR_analysis/lut_transformation.cpp \
      frontend_analysis/IR_analysis/multi_way_if.cpp \
