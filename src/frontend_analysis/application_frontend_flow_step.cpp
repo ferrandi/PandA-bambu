@@ -109,7 +109,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case FUNCTION_CALL_TYPE_CLEANUP:
       case FUNCTION_CALL_OPT:
       case HDL_VAR_DECL_FIX:
-      case HLS_DIV_CG_EXT:
+      case HLS_SOFT_CG_EXT:
       case HWCALL_INJECTION:
       case IR_LOWERING:
       case LOOP_COMPUTATION:

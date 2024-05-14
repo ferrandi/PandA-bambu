@@ -263,7 +263,7 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "HDLFunctionDeclFix";
       case(HDL_VAR_DECL_FIX):
          return "HDLVarDeclFix";
-      case(HLS_DIV_CG_EXT):
+      case(HLS_SOFT_CG_EXT):
          return "HLSDivCGExt";
       case(HWCALL_INJECTION):
          return "HWCallInjection";

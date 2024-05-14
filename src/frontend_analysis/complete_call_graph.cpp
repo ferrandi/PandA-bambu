@@ -72,7 +72,7 @@ CompleteCallGraph::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
          relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          if(parameters->isOption(OPT_hls_div) && parameters->getOption<std::string>(OPT_hls_div) != "none")
          {
-            relationships.insert(std::make_pair(HLS_DIV_CG_EXT, ALL_FUNCTIONS));
+            relationships.insert(std::make_pair(HLS_SOFT_CG_EXT, ALL_FUNCTIONS));
          }
          if(parameters->isOption(OPT_soft_float) && parameters->getOption<bool>(OPT_soft_float))
          {
