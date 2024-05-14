@@ -4209,7 +4209,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          const xml_text_node* text = EnodeC->get_child_text();
          if(!text)
          {
-            THROW_WARNING("copyright is missing for " + _owner->get_id()));
+            THROW_WARNING("copyright is missing for " + _owner->get_id());
          }
          else
          {
