@@ -141,6 +141,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case SIMPLE_CODE_MOTION:
       case SOFT_FLOAT_CG_EXT:
       case SWITCH_FIX:
+      case TREE2FUN:
       case UN_COMPARISON_LOWERING:
 #if HAVE_ILP_BUILT
       case UPDATE_SCHEDULE:

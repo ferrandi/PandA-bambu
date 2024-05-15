@@ -411,6 +411,7 @@ soft_float_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, CALLED_FUNCTIONS));
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(TREE2FUN, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):

@@ -78,6 +78,7 @@ CompleteCallGraph::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
          {
             relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
          }
+         relationships.insert(std::make_pair(TREE2FUN, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, ALL_FUNCTIONS));
          break;
       }

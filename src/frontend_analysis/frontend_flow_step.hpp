@@ -169,6 +169,7 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
    SOFT_FLOAT_CG_EXT,
    STRING_CST_FIX,
    SWITCH_FIX,
+   TREE2FUN,
    UN_COMPARISON_LOWERING,
    UNROLLING_DEGREE,
 #if HAVE_ILP_BUILT

@@ -344,6 +344,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "StringCstFix";
       case(SWITCH_FIX):
          return "SwitchFix";
+      case(TREE2FUN):
+         return "Tree2Fun";
       case UN_COMPARISON_LOWERING:
          return "UnComparisonLowering";
       case(UNROLLING_DEGREE):

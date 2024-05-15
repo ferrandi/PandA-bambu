@@ -143,6 +143,7 @@
 #include "split_return.hpp"
 #include "string_cst_fix.hpp"
 #include "switch_fix.hpp"
+#include "tree2fun.hpp"
 #include "un_comparison_lowering.hpp"
 #if HAVE_ILP_BUILT
 #include "update_schedule.hpp"
@@ -259,6 +260,7 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
       case SOFT_FLOAT_CG_EXT:
       case SCALAR_SSA_DATA_FLOW_ANALYSIS:
       case SWITCH_FIX:
+      case TREE2FUN:
 #if HAVE_ILP_BUILT
       case UPDATE_SCHEDULE:
 #endif
@@ -463,6 +465,7 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       case SOFT_FLOAT_CG_EXT:
       case SCALAR_SSA_DATA_FLOW_ANALYSIS:
       case SWITCH_FIX:
+      case TREE2FUN:
       case UN_COMPARISON_LOWERING:
       case UNROLLING_DEGREE:
 #if HAVE_ILP_BUILT
@@ -795,6 +798,10 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       case SWITCH_FIX:
       {
          return DesignFlowStepRef(new SwitchFix(AppM, function_id, design_flow_manager.lock(), parameters));
+      }
+      case TREE2FUN:
+      {
+         return DesignFlowStepRef(new tree2fun(parameters, AppM, function_id, design_flow_manager.lock()));
       }
       case UN_COMPARISON_LOWERING:
       {
