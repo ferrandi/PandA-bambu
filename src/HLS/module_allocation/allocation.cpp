@@ -40,57 +40,58 @@
 
 #include "allocation.hpp"
 
-#include "HDL_manager.hpp"            // for structural_managerRef, langu...
-#include "ModuleGeneratorManager.hpp" // for structural_objectRef, struct...
-#include "NP_functionality.hpp"       // for NP_functionalityRef
-#include "Parameter.hpp"              // for ParameterConstRef
-#include "allocation_information.hpp" // for technology_nodeRef, node_kin...
+#include "HDL_manager.hpp"
+#include "ModuleGeneratorManager.hpp"
+#include "NP_functionality.hpp"
+#include "Parameter.hpp"
+#include "allocation_information.hpp"
 #include "application_frontend_flow_step.hpp"
 #include "area_info.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp" // for HAVE_EXPERIMENTAL
-#include "config_HAVE_FLOPOCO.hpp"      // for HAVE_FLOPOCO
-#include "cpu_time.hpp"                 // for START_TIME, STOP_TIME
+#include "cpu_time.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_VERY_PEDANTIC
+#include "dbgPrintHelper.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-#include "design_flow_step_factory.hpp" // for DesignFlowManagerConstRef
-#include "exceptions.hpp"               // for THROW_ASSERT, THROW_ERROR
+#include "design_flow_step_factory.hpp"
+#include "exceptions.hpp"
 #include "frontend_flow_step_factory.hpp"
 #include "function_frontend_flow_step.hpp"
 #include "functions.hpp"
 #include "generic_device.hpp"
-#include "hls.hpp"             // for HLS_constraintsRef
-#include "hls_constraints.hpp" // for ENCODE_FU_LIB
+#include "hls.hpp"
+#include "hls_constraints.hpp"
 #include "hls_device.hpp"
-#include "hls_flow_step_factory.hpp" // for HLS_managerRef
+#include "hls_flow_step_factory.hpp"
 #include "language_writer.hpp"
-#include "library_manager.hpp" // for library_managerRef, library_...
+#include "library_manager.hpp"
 #include "memory.hpp"
 #include "memory_allocation.hpp"
-#include "op_graph.hpp"            // for STORE, ADDR_EXPR, ASSERT_EXPR
-#include "schedule.hpp"            // for FunctionBehaviorConstRef
-#include "string_manipulation.hpp" // for STR GET_CLASS
+#include "op_graph.hpp"
+#include "schedule.hpp"
+#include "string_manipulation.hpp"
 #include "structural_manager.hpp"
-#include "structural_objects.hpp" // for PROXY_PREFIX, module, CLOCK_...
-#include "technology_manager.hpp" // for PROXY_LIBRARY, WORK_LIBRARY
-#include "technology_node.hpp"    // for functional_unit, operation
-#include "time_info.hpp"          // for ParameterConstRef
+#include "structural_objects.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include "time_info.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp" // for GET_NODE, GET_INDEX_NODE
 #include "tree_reindex.hpp"
-#include "typed_node_info.hpp" // for GET_NAME, ENTRY, EXIT, GET_TYPE
-#include "utility.hpp"         // for INFINITE_UINT, ASSERT_PARAMETER
+#include "typed_node_info.hpp"
+#include "utility.hpp"
+
 #include <algorithm>
-#include <cstddef> // for size_t
-#include <limits>  // for numeric_limits
+#include <cstddef>
+#include <limits>
 #include <tuple>
 #include <utility>
 #include <vector>
+
+#include "config_HAVE_FLOPOCO.hpp"
 
 static bool is_other_port(const structural_objectRef& port)
 {
@@ -275,9 +276,6 @@ technology_nodeRef allocation::extract_bambu_provided(const std::string& library
       auto* ref_op = GetPointer<operation>(op_vec[0]);
       cop->operation_name = op_name;
       cop->time_m = ref_op->time_m;
-#if HAVE_EXPERIMENTAL
-      cop->power_m = ref_op->power_m;
-#endif
       cop->commutative = curr_op->commutative;
       cop->bounded = ref_op->bounded;
       cop->supported_types = curr_op->supported_types;
@@ -1211,12 +1209,10 @@ bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, tec
    {
       return true;
    }
-#if !HAVE_EXPERIMENTAL
    if(GetPointer<functional_unit>(current_fu)->functional_unit_name == "MEMORY_CTRL_P1N")
    {
       return true;
    }
-#endif
 
    const auto channel_type_to_be_used = HLSMgr->CGetFunctionBehavior(funId)->GetChannelsType();
    if(channels_type.size())

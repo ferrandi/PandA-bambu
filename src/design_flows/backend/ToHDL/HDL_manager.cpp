@@ -41,59 +41,43 @@
  * Last modified by $Author$
  *
  */
-/// Header include
 #include "HDL_manager.hpp"
 
-/// Autoheader include
-#include "config_HAVE_ASSERTS.hpp" // for HAVE_ASSERTS
-#include "config_HAVE_EXPERIMENTAL.hpp"
+#include "NP_functionality.hpp"
+#include "Parameter.hpp"
+#include "VHDL_writer.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
+#include "design_flow_manager.hpp"
+#include "exceptions.hpp"
+#include "fileIO.hpp"
+#include "generic_device.hpp"
+#include "hls_manager.hpp"
+#include "string_manipulation.hpp"
+#include "structural_manager.hpp"
+#include "structural_objects.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include "verilog_writer.hpp"
+
+#include "config_HAVE_ASSERTS.hpp"
 #include "config_HAVE_FLOPOCO.hpp"
 #include "config_PACKAGE_BUGREPORT.hpp"
 #include "config_PACKAGE_NAME.hpp"
 #include "config_PACKAGE_VERSION.hpp"
 
-#include "NP_functionality.hpp"
-#include "structural_manager.hpp"
-#include "structural_objects.hpp"
-
-#include "generic_device.hpp"
-
 #if HAVE_FLOPOCO
 #include "flopoco_wrapper.hpp"
 #endif
 
-#include "Parameter.hpp"
-#include "dbgPrintHelper.hpp"
-#include "exceptions.hpp"
-
-#include <boost/tokenizer.hpp>
-#include <fstream>
-#include <iosfwd>
-
-/// boost include
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
+#include <boost/tokenizer.hpp>
 
-/// design_flows include
-#include "design_flow_manager.hpp"
-
-/// design_flows/backend/ToHDL includes
-#include "VHDL_writer.hpp"
-#include "verilog_writer.hpp"
-
-/// HLS include
-#include "hls_manager.hpp"
-
-/// STL include
-#include "custom_map.hpp"
-#include "custom_set.hpp"
+#include <fstream>
+#include <iosfwd>
 #include <utility>
-
-/// technology includes
-#include "fileIO.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-#include "technology_manager.hpp"
-#include "technology_node.hpp"
 
 HDL_manager::HDL_manager(const HLS_managerRef _HLSMgr, const generic_deviceRef _device, const structural_managerRef _SM,
                          const ParameterConstRef _parameters)
@@ -294,32 +278,6 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
             {
                THROW_ERROR("VHDL implementation of " + component->get_path() + " is not available");
             }
-#if HAVE_EXPERIMENTAL
-            else
-            {
-               const auto module_type = mod->get_typeRef()->id_type;
-               const auto fu = GetPointer<functional_unit>(TM->get_fu(module_type, TM->get_library(module_type)));
-               if(module_type.find("gimple_asm") == std::string::npos and
-                  module_type.find("__builtin_trap") == std::string::npos and
-                  module_type.find("return_value_mm_register") == std::string::npos and
-                  module_type.find("notify_caller_minimal") == std::string::npos and
-                  module_type.find("memory_mapped_register") == std::string::npos and
-                  module_type.find("status_register") == std::string::npos and
-                  module_type.find("__builtin_wait_call") == std::string::npos and
-                  module_type.find("PROXY_CTRL") == std::string::npos and
-                  module_type.find("PRINTF") == std::string::npos and
-                  module_type.find("trunc_") == std::string::npos and
-                  module_type.find("__builtin_memstore") == std::string::npos and module_type != "ui_mult_expr_FU" and
-                  module_type != "mult_expr_FU" and module_type.find("ADDRESS_DECODING_LOGIC") == std::string::npos and
-                  module_type.find("BRAM") == std::string::npos and module_type != "STD_N21_BYTEMUX" and
-                  module_type != "STD_LIVE_VALUE_TABLE" and module_type.find("MEMORY_CTRL") == std::string::npos and
-                  module_type != "register_SARSE" and module_type.find("DISTRAM") == std::string::npos and
-                  (not fu or (fu->memory_type == "" or fu->memory_ctrl_type == "")))
-               {
-                  // THROW_UNREACHABLE("VHDL implementation of " + module_type + " not found");
-               }
-            }
-#endif
             component_language[HDLWriter_Language::VERILOG].push_back(component);
          }
          else if(np && (np->exist_NP_functionality(NP_functionality::VHDL_PROVIDED) ||

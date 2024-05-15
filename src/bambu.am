@@ -57,16 +57,6 @@ if BUILD_LIB_ILP
   bambu_CPPFLAGS += \
         -I$(top_srcdir)/src/ilp
 
-if BUILD_LIB_EXPERIMENTAL
-  bambu_CPPFLAGS += \
-        -I$(top_srcdir)/src/parser/estimation \
-        -I$(top_srcdir)/src/parser/discrepancy \
-        -I$(top_srcdir)/src/design_flows/backend/ToDataFile \
-        -I$(top_srcdir)/src/HLS/export \
-        -I$(top_srcdir)/src/HLS/virtual_components \
-        -I$(top_srcdir)/src/wrapper/synthesis/xilinx/edk
-endif
-
 if BUILD_LIB_HOST_PROFILING
   bambu_CPPFLAGS += \
         -I$(top_srcdir)/src/frontend_analysis/behavior_analysis

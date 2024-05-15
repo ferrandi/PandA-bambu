@@ -39,25 +39,13 @@
  *
  */
 #include "BambuParameter.hpp"
+
 #include "allocation_constants.hpp"
 #include "cdfc_module_binding.hpp"
 #include "chaining.hpp"
 #include "clique_covering.hpp"
 #include "compiler_constants.hpp"
 #include "compiler_wrapper.hpp"
-#include "config_HAVE_COIN_OR.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
-#include "config_HAVE_FLOPOCO.hpp"
-#include "config_HAVE_GLPK.hpp"
-#include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-#include "config_HAVE_I386_CLANG16_COMPILER.hpp"
-#include "config_HAVE_ILP_BUILT.hpp"
-#include "config_HAVE_LIBRARY_CHARACTERIZATION_BUILT.hpp"
-#include "config_HAVE_LP_SOLVE.hpp"
-#include "config_HAVE_VCD_BUILT.hpp"
-#include "config_PANDA_DATA_INSTALLDIR.hpp"
-#include "config_PANDA_LIB_INSTALLDIR.hpp"
-#include "config_SKIP_WARNING_SECTIONS.hpp"
 #include "constant_strings.hpp"
 #include "cpu_time.hpp"
 #include "datapath_creator.hpp"
@@ -74,6 +62,19 @@
 #include "technology_node.hpp"
 #include "tree_helper.hpp"
 #include "utility.hpp"
+
+#include "config_HAVE_COIN_OR.hpp"
+#include "config_HAVE_FLOPOCO.hpp"
+#include "config_HAVE_GLPK.hpp"
+#include "config_HAVE_HOST_PROFILING_BUILT.hpp"
+#include "config_HAVE_I386_CLANG16_COMPILER.hpp"
+#include "config_HAVE_ILP_BUILT.hpp"
+#include "config_HAVE_LIBRARY_CHARACTERIZATION_BUILT.hpp"
+#include "config_HAVE_LP_SOLVE.hpp"
+#include "config_HAVE_VCD_BUILT.hpp"
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
+#include "config_PANDA_LIB_INSTALLDIR.hpp"
+#include "config_SKIP_WARNING_SECTIONS.hpp"
 
 #if HAVE_HOST_PROFILING_BUILT
 #include "host_profiling.hpp"
@@ -518,19 +519,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            PERIOD          - Actual clock period\n"
       << "            REGISTERS       - number of registers\n"
       << "\n"
-#if HAVE_EXPERIMENTAL
-      << "    --evaluation-mode[=type]\n"
-      << "        Perform evaluation of the results:\n"
-      << "            EXACT:  based on actual synthesis and simulation (default)\n"
-      << "            LINEAR: based on linear regression. Unlike EXACT it supports\n"
-      << "                    only the evaluation of the following objectives:\n"
-      << "                    - AREA\n"
-      << "                    - CLOCK_SLACK\n"
-      << "                    - TIME\n"
-      << "\n"
-      << "    --timing-violation\n"
-      << "        Aborts if synthesized circuit does not meet the timing.\n\n"
-#endif
       << std::endl;
 
    // RTL synthesis options
@@ -986,10 +974,6 @@ int BambuParameter::Exec()
       {"constraints", required_argument, nullptr, 'C'},
       /// evaluation options
       {"evaluation", optional_argument, nullptr, OPT_EVALUATION},
-#if HAVE_EXPERIMENTAL
-      {"evaluation-mode", required_argument, nullptr, OPT_EVALUATION_MODE},
-      {"timing-simulation", no_argument, nullptr, 0},
-#endif
       {"timing-violation", no_argument, nullptr, OPT_TIMING_VIOLATION},
       {"assert-debug", no_argument, nullptr, 0},
       {"device-name", required_argument, nullptr, OPT_DEVICE_NAME},
@@ -2376,16 +2360,6 @@ int BambuParameter::Exec()
          }
       }
    }
-
-#if HAVE_EXPERIMENTAL
-   if(isOption(OPT_gcc_write_xml))
-   {
-      const auto filenameXML = getOption<std::filesystem::path>(OPT_gcc_write_xml);
-      write_xml_configuration_file(filenameXML);
-      PRINT_MSG("Configuration saved into file \"" + filenameXML.string() + "\"");
-      return EXIT_SUCCESS;
-   }
-#endif
 
    std::string cat_args;
 
