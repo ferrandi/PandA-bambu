@@ -64,8 +64,8 @@
 #include "tree_reindex.hpp"
 #include <string>
 
-tree2fun::tree2fun(const ParameterConstRef _parameters, const application_managerRef _AppM,
-                                 unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+tree2fun::tree2fun(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id,
+                   const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, TREE2FUN, _design_flow_manager, _parameters),
       TreeM(_AppM->get_tree_manager())
 {
@@ -126,7 +126,7 @@ DesignFlowStep_Status tree2fun::InternalExec()
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "-->Examine " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
-         modified |= recursive_examinate(stmt, stmt, tree_man);
+         modified |= recursive_transform(stmt, stmt, tree_man);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "<--Examined " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
       }
@@ -140,8 +140,8 @@ DesignFlowStep_Status tree2fun::InternalExec()
    return DesignFlowStep_Status::UNCHANGED;
 }
 
-bool tree2fun::recursive_examinate(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement,
-                                          const tree_manipulationRef tree_man)
+bool tree2fun::recursive_transform(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement,
+                                   const tree_manipulationRef tree_man)
 {
    THROW_ASSERT(current_tree_node->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    bool modified = false;
@@ -164,11 +164,11 @@ bool tree2fun::recursive_examinate(const tree_nodeRef& current_tree_node, const 
       case gimple_assign_K:
       {
          const auto gm = GetPointerS<gimple_assign>(curr_tn);
-         modified |= recursive_examinate(gm->op0, current_statement, tree_man);
-         modified |= recursive_examinate(gm->op1, current_statement, tree_man);
+         modified |= recursive_transform(gm->op0, current_statement, tree_man);
+         modified |= recursive_transform(gm->op1, current_statement, tree_man);
          if(gm->predicate)
          {
-            modified |= recursive_examinate(gm->predicate, current_statement, tree_man);
+            modified |= recursive_transform(gm->predicate, current_statement, tree_man);
          }
          break;
       }
@@ -178,7 +178,7 @@ bool tree2fun::recursive_examinate(const tree_nodeRef& current_tree_node, const 
          while(current)
          {
             modified |=
-                recursive_examinate(GetPointer<tree_list>(GET_NODE(current))->valu, current_statement, tree_man);
+                recursive_transform(GetPointer<tree_list>(GET_NODE(current))->valu, current_statement, tree_man);
             current = GetPointer<tree_list>(GET_NODE(current))->chan;
          }
          break;
@@ -186,15 +186,15 @@ bool tree2fun::recursive_examinate(const tree_nodeRef& current_tree_node, const 
       case CASE_UNARY_EXPRESSION:
       {
          const auto ue = GetPointerS<unary_expr>(curr_tn);
-         modified |= recursive_examinate(ue->op, current_statement, tree_man);
+         modified |= recursive_transform(ue->op, current_statement, tree_man);
          break;
       }
       case CASE_BINARY_EXPRESSION:
       {
          const auto be = GetPointerS<binary_expr>(curr_tn);
          const auto be_type = be->get_kind();
-         modified |= recursive_examinate(be->op0, current_statement, tree_man);
-         modified |= recursive_examinate(be->op1, current_statement, tree_man);
+         modified |= recursive_transform(be->op0, current_statement, tree_man);
+         modified |= recursive_transform(be->op1, current_statement, tree_man);
          if(be_type == frem_expr_K)
          {
             const auto expr_type = tree_helper::CGetType(be->op0);
@@ -220,32 +220,32 @@ bool tree2fun::recursive_examinate(const tree_nodeRef& current_tree_node, const 
       case CASE_TERNARY_EXPRESSION:
       {
          const ternary_expr* te = GetPointer<ternary_expr>(curr_tn);
-         modified |= recursive_examinate(te->op0, current_statement, tree_man);
+         modified |= recursive_transform(te->op0, current_statement, tree_man);
          if(te->op1)
          {
-            modified |= recursive_examinate(te->op1, current_statement, tree_man);
+            modified |= recursive_transform(te->op1, current_statement, tree_man);
          }
          if(te->op2)
          {
-            modified |= recursive_examinate(te->op2, current_statement, tree_man);
+            modified |= recursive_transform(te->op2, current_statement, tree_man);
          }
          break;
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
          const quaternary_expr* qe = GetPointer<quaternary_expr>(curr_tn);
-         modified |= recursive_examinate(qe->op0, current_statement, tree_man);
+         modified |= recursive_transform(qe->op0, current_statement, tree_man);
          if(qe->op1)
          {
-            modified |= recursive_examinate(qe->op1, current_statement, tree_man);
+            modified |= recursive_transform(qe->op1, current_statement, tree_man);
          }
          if(qe->op2)
          {
-            modified |= recursive_examinate(qe->op2, current_statement, tree_man);
+            modified |= recursive_transform(qe->op2, current_statement, tree_man);
          }
          if(qe->op3)
          {
-            modified |= recursive_examinate(qe->op3, current_statement, tree_man);
+            modified |= recursive_transform(qe->op3, current_statement, tree_man);
          }
          break;
       }
@@ -254,7 +254,7 @@ bool tree2fun::recursive_examinate(const tree_nodeRef& current_tree_node, const 
          const constructor* co = GetPointer<constructor>(curr_tn);
          for(const auto& iv : co->list_of_idx_valu)
          {
-            modified |= recursive_examinate(iv.second, current_statement, tree_man);
+            modified |= recursive_transform(iv.second, current_statement, tree_man);
          }
          break;
       }

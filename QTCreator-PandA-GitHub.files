@@ -2125,8 +2125,8 @@ src/frontend_analysis/IR_analysis/hdl_function_decl_fix.cpp
 src/frontend_analysis/IR_analysis/hdl_function_decl_fix.hpp
 src/frontend_analysis/IR_analysis/hdl_var_decl_fix.cpp
 src/frontend_analysis/IR_analysis/hdl_var_decl_fix.hpp
-src/frontend_analysis/IR_analysis/hls_soft_cg_ext.cpp
-src/frontend_analysis/IR_analysis/hls_soft_cg_ext.hpp
+src/frontend_analysis/IR_analysis/soft_int_cg_ext.cpp
+src/frontend_analysis/IR_analysis/soft_int_cg_ext.hpp
 src/frontend_analysis/IR_analysis/InterfaceInfer.cpp
 src/frontend_analysis/IR_analysis/InterfaceInfer.hpp
 src/frontend_analysis/IR_analysis/loops_analysis_bambu.cpp

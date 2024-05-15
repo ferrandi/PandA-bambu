@@ -71,7 +71,7 @@ class tree2fun : public FunctionFrontendFlowStep
    /**
     * Recursively examine tree node
     */
-   bool recursive_examinate(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement,
+   bool recursive_transform(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement,
                             const tree_manipulationRef tree_man);
 
    /**
@@ -90,7 +90,7 @@ class tree2fun : public FunctionFrontendFlowStep
     * @param design_flow_manager is the design flow manager
     */
    tree2fun(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int _function_id,
-                  const DesignFlowManagerConstRef design_flow_manager);
+            const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

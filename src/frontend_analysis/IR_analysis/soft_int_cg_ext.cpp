@@ -31,7 +31,7 @@
  *
  */
 /**
- * @file hls_soft_cg_ext.cpp
+ * @file soft_int_cg_ext.cpp
  * @brief Step that extends the call graph with software implementation of integer operators.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -39,7 +39,7 @@
  */
 
 /// Header include
-#include "hls_soft_cg_ext.hpp"
+#include "soft_int_cg_ext.hpp"
 
 #include "Parameter.hpp"
 #include "application_manager.hpp"
@@ -65,9 +65,9 @@
 #include "tree_reindex.hpp"
 #include <string>
 
-hls_soft_cg_ext::hls_soft_cg_ext(const ParameterConstRef _parameters, const application_managerRef _AppM,
+soft_int_cg_ext::soft_int_cg_ext(const ParameterConstRef _parameters, const application_managerRef _AppM,
                                  unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, HLS_SOFT_CG_EXT, _design_flow_manager, _parameters),
+    : FunctionFrontendFlowStep(_AppM, _function_id, SOFT_INT_CG_EXT, _design_flow_manager, _parameters),
       TreeM(_AppM->get_tree_manager()),
       use64bitMul(false),
       use32bitMul(false),
@@ -76,10 +76,10 @@ hls_soft_cg_ext::hls_soft_cg_ext(const ParameterConstRef _parameters, const appl
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-hls_soft_cg_ext::~hls_soft_cg_ext() = default;
+soft_int_cg_ext::~soft_int_cg_ext() = default;
 
 const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
-hls_soft_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+soft_int_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -115,7 +115,7 @@ hls_soft_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::Relationship
    return relationships;
 }
 
-DesignFlowStep_Status hls_soft_cg_ext::InternalExec()
+DesignFlowStep_Status soft_int_cg_ext::InternalExec()
 {
    const tree_manipulationRef tree_man(new tree_manipulation(TreeM, parameters, AppM));
 
@@ -152,7 +152,7 @@ DesignFlowStep_Status hls_soft_cg_ext::InternalExec()
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "-->Examine " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
-         modified |= recursive_examinate(stmt, stmt, tree_man);
+         modified |= recursive_transform(stmt, stmt, tree_man);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "<--Examined " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
       }
@@ -166,7 +166,7 @@ DesignFlowStep_Status hls_soft_cg_ext::InternalExec()
    return DesignFlowStep_Status::UNCHANGED;
 }
 
-bool hls_soft_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement,
+bool soft_int_cg_ext::recursive_transform(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement,
                                           const tree_manipulationRef tree_man)
 {
    THROW_ASSERT(current_tree_node->get_kind() == tree_reindex_K, "Node is not a tree reindex");
@@ -190,11 +190,11 @@ bool hls_soft_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node,
       case gimple_assign_K:
       {
          const auto gm = GetPointerS<gimple_assign>(curr_tn);
-         modified |= recursive_examinate(gm->op0, current_statement, tree_man);
-         modified |= recursive_examinate(gm->op1, current_statement, tree_man);
+         modified |= recursive_transform(gm->op0, current_statement, tree_man);
+         modified |= recursive_transform(gm->op1, current_statement, tree_man);
          if(gm->predicate)
          {
-            modified |= recursive_examinate(gm->predicate, current_statement, tree_man);
+            modified |= recursive_transform(gm->predicate, current_statement, tree_man);
          }
          break;
       }
@@ -204,7 +204,7 @@ bool hls_soft_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node,
          while(current)
          {
             modified |=
-                recursive_examinate(GetPointer<tree_list>(GET_NODE(current))->valu, current_statement, tree_man);
+                recursive_transform(GetPointer<tree_list>(GET_NODE(current))->valu, current_statement, tree_man);
             current = GetPointer<tree_list>(GET_NODE(current))->chan;
          }
          break;
@@ -212,15 +212,15 @@ bool hls_soft_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node,
       case CASE_UNARY_EXPRESSION:
       {
          const auto ue = GetPointerS<unary_expr>(curr_tn);
-         modified |= recursive_examinate(ue->op, current_statement, tree_man);
+         modified |= recursive_transform(ue->op, current_statement, tree_man);
          break;
       }
       case CASE_BINARY_EXPRESSION:
       {
          const auto be = GetPointerS<binary_expr>(curr_tn);
          const auto be_type = be->get_kind();
-         modified |= recursive_examinate(be->op0, current_statement, tree_man);
-         modified |= recursive_examinate(be->op1, current_statement, tree_man);
+         modified |= recursive_transform(be->op0, current_statement, tree_man);
+         modified |= recursive_transform(be->op1, current_statement, tree_man);
 
          if(doSoftDiv && (be_type == exact_div_expr_K || be_type == trunc_div_expr_K || be_type == trunc_mod_expr_K))
          {
@@ -308,32 +308,32 @@ bool hls_soft_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node,
       case CASE_TERNARY_EXPRESSION:
       {
          const ternary_expr* te = GetPointer<ternary_expr>(curr_tn);
-         modified |= recursive_examinate(te->op0, current_statement, tree_man);
+         modified |= recursive_transform(te->op0, current_statement, tree_man);
          if(te->op1)
          {
-            modified |= recursive_examinate(te->op1, current_statement, tree_man);
+            modified |= recursive_transform(te->op1, current_statement, tree_man);
          }
          if(te->op2)
          {
-            modified |= recursive_examinate(te->op2, current_statement, tree_man);
+            modified |= recursive_transform(te->op2, current_statement, tree_man);
          }
          break;
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
          const quaternary_expr* qe = GetPointer<quaternary_expr>(curr_tn);
-         modified |= recursive_examinate(qe->op0, current_statement, tree_man);
+         modified |= recursive_transform(qe->op0, current_statement, tree_man);
          if(qe->op1)
          {
-            modified |= recursive_examinate(qe->op1, current_statement, tree_man);
+            modified |= recursive_transform(qe->op1, current_statement, tree_man);
          }
          if(qe->op2)
          {
-            modified |= recursive_examinate(qe->op2, current_statement, tree_man);
+            modified |= recursive_transform(qe->op2, current_statement, tree_man);
          }
          if(qe->op3)
          {
-            modified |= recursive_examinate(qe->op3, current_statement, tree_man);
+            modified |= recursive_transform(qe->op3, current_statement, tree_man);
          }
          break;
       }
@@ -342,7 +342,7 @@ bool hls_soft_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node,
          const constructor* co = GetPointer<constructor>(curr_tn);
          for(const auto& iv : co->list_of_idx_valu)
          {
-            modified |= recursive_examinate(iv.second, current_statement, tree_man);
+            modified |= recursive_transform(iv.second, current_statement, tree_man);
          }
          break;
       }

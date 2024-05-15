@@ -263,8 +263,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "HDLFunctionDeclFix";
       case(HDL_VAR_DECL_FIX):
          return "HDLVarDeclFix";
-      case(HLS_SOFT_CG_EXT):
-         return "HLSDivCGExt";
       case(HWCALL_INJECTION):
          return "HWCallInjection";
 #if HAVE_HOST_PROFILING_BUILT
@@ -336,6 +334,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "SimpleCodeMotion";
       case(SOFT_FLOAT_CG_EXT):
          return "SoftFloatCgExt";
+      case(SOFT_INT_CG_EXT):
+         return "SoftIntCGExt";
       case(SCALAR_SSA_DATA_FLOW_ANALYSIS):
          return "ScalarSsaDataFlowAnalysis";
       case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP):
