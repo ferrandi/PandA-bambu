@@ -145,31 +145,36 @@ struct graph_base : public Graph
 
    ~graph_base() = default;
 
-   template <std::enable_if_t<!is_shared_ptr<vertex_property>::value>* = nullptr>
-   vertex_descriptor AddVertex(const vertex_property& v_info)
+   template <typename vertex_property_t = vertex_property>
+   std::enable_if_t<!is_shared_ptr<vertex_property_t>::value, vertex_descriptor>
+   AddVertex(const vertex_property_t& v_info)
    {
       return boost::add_vertex(v_info, *this);
    }
 
-   template <std::enable_if_t<is_shared_ptr<vertex_property>::value>* = nullptr>
-   vertex_descriptor AddVertex(const vertex_property& v_info)
+   template <typename vertex_property_t = vertex_property>
+   std::enable_if_t<is_shared_ptr<vertex_property_t>::value, vertex_descriptor>
+   AddVertex(const vertex_property_t& v_info)
    {
       THROW_ASSERT(v_info, "Vertex without associated info.");
       return boost::add_vertex(v_info, *this);
    }
 
-   template <std::enable_if_t<!is_shared_ptr<vertex_property>::value &&
-                              std::is_default_constructible<vertex_property>::value>* = nullptr>
-   vertex_descriptor AddVertex()
+   template <typename vertex_property_t = vertex_property>
+   std::enable_if_t<!is_shared_ptr<vertex_property_t>::value && std::is_default_constructible<vertex_property_t>::value,
+                    vertex_descriptor>
+   AddVertex()
    {
-      return AddVertex(vertex_property());
+      return AddVertex(vertex_property_t());
    }
 
-   template <std::enable_if_t<is_shared_ptr<vertex_property>::value &&
-                              std::is_default_constructible<get_shared_ptr_t<vertex_property>>::value>* = nullptr>
-   vertex_descriptor AddVertex()
+   template <typename vertex_property_t = vertex_property>
+   std::enable_if_t<is_shared_ptr<vertex_property_t>::value &&
+                        std::is_default_constructible<get_shared_ptr_t<vertex_property_t>>::value,
+                    vertex_descriptor>
+   AddVertex()
    {
-      return AddVertex(vertex_property(new get_shared_ptr_t<vertex_property>));
+      return AddVertex(vertex_property(new get_shared_ptr_t<vertex_property_t>));
    }
 
    void RemoveVertex(vertex_descriptor v)
@@ -177,16 +182,18 @@ struct graph_base : public Graph
       boost::remove_vertex(v, *this);
    }
 
-   template <std::enable_if_t<!is_shared_ptr<edge_property>::value>* = nullptr>
-   edge_descriptor AddEdge(vertex_descriptor src, vertex_descriptor tgt, const edge_property& e_info)
+   template <typename edge_property_t = edge_property>
+   std::enable_if_t<!is_shared_ptr<edge_property_t>::value, edge_descriptor>
+   AddEdge(vertex_descriptor src, vertex_descriptor tgt, const edge_property& e_info)
    {
       auto [e, inserted] = boost::add_edge(src, tgt, e_info, *this);
       THROW_ASSERT(inserted, "Trying to insert an already existing edge");
       return e;
    }
 
-   template <std::enable_if_t<is_shared_ptr<edge_property>::value>* = nullptr>
-   edge_descriptor AddEdge(vertex_descriptor src, vertex_descriptor tgt, const edge_property& e_info)
+   template <typename edge_property_t = edge_property>
+   std::enable_if_t<is_shared_ptr<edge_property_t>::value, edge_descriptor>
+   AddEdge(vertex_descriptor src, vertex_descriptor tgt, const edge_property_t& e_info)
    {
       THROW_ASSERT(e_info, "Edge without associated info.");
       auto [e, inserted] = boost::add_edge(src, tgt, e_info, *this);
@@ -194,18 +201,21 @@ struct graph_base : public Graph
       return e;
    }
 
-   template <std::enable_if_t<!is_shared_ptr<edge_property>::value &&
-                              std::is_default_constructible<edge_property>::value>* = nullptr>
-   edge_descriptor AddEdge(vertex_descriptor src, vertex_descriptor tgt)
+   template <typename edge_property_t = edge_property>
+   std::enable_if_t<!is_shared_ptr<edge_property_t>::value && std::is_default_constructible<edge_property_t>::value,
+                    edge_descriptor>
+   AddEdge(vertex_descriptor src, vertex_descriptor tgt)
    {
-      return AddEdge(src, tgt, edge_property());
+      return AddEdge(src, tgt, edge_property_t());
    }
 
-   template <std::enable_if_t<is_shared_ptr<edge_property>::value &&
-                              std::is_default_constructible<get_shared_ptr_t<edge_property>>::value>* = nullptr>
-   edge_descriptor AddEdge(vertex_descriptor src, vertex_descriptor tgt)
+   template <typename edge_property_t = edge_property>
+   std::enable_if_t<is_shared_ptr<edge_property_t>::value &&
+                        std::is_default_constructible<get_shared_ptr_t<edge_property_t>>::value,
+                    edge_descriptor>
+   AddEdge(vertex_descriptor src, vertex_descriptor tgt)
    {
-      return AddEdge(src, tgt, edge_property(new get_shared_ptr_t<edge_property>));
+      return AddEdge(src, tgt, edge_property_t(new get_shared_ptr_t<edge_property_t>));
    }
 
    inline void RemoveEdge(edge_descriptor e)
@@ -232,38 +242,40 @@ struct graph_base : public Graph
       return e;
    }
 
-   template <std::enable_if_t<!std::is_empty<vertex_property>::value>* = nullptr>
-   auto& GetNodeInfo(vertex_descriptor node)
+   template <typename vertex_property_t = vertex_property>
+   std::enable_if_t<!std::is_empty<vertex_property_t>::value, vertex_property_t>& GetNodeInfo(vertex_descriptor node)
    {
       return (*this)[node];
    }
 
-   template <std::enable_if_t<!std::is_empty<vertex_property>::value>* = nullptr>
-   add_const_ref_t<vertex_property> CGetNodeInfo(vertex_descriptor node) const
+   template <typename vertex_property_t = vertex_property>
+   std::enable_if_t<!std::is_empty<vertex_property_t>::value, add_const_ref_t<vertex_property_t>>
+   CGetNodeInfo(vertex_descriptor node) const
    {
       return (*this)[node];
    }
 
-   template <std::enable_if_t<!std::is_empty<edge_property>::value>* = nullptr>
-   auto& GetEdgeInfo(edge_descriptor edge)
+   template <typename edge_property_t = edge_property>
+   std::enable_if_t<!std::is_empty<edge_property_t>::value, edge_property_t>& GetEdgeInfo(edge_descriptor edge)
    {
       return (*this)[edge];
    }
 
-   template <std::enable_if_t<!std::is_empty<edge_property>::value>* = nullptr>
-   add_const_ref_t<edge_property> CGetEdgeInfo(edge_descriptor edge) const
+   template <typename edge_property_t = edge_property>
+   std::enable_if_t<!std::is_empty<edge_property_t>::value, add_const_ref_t<edge_property_t>>
+   CGetEdgeInfo(edge_descriptor edge) const
    {
       return (*this)[edge];
    }
 
-   template <std::enable_if_t<!std::is_empty<graph_property>::value>* = nullptr>
-   auto& GetGraphInfo()
+   template <typename graph_property_t = graph_property>
+   std::enable_if_t<!std::is_empty<graph_property_t>::value, graph_property_t>& GetGraphInfo()
    {
       return (*this)[boost::graph_bundle];
    }
 
-   template <std::enable_if_t<!std::is_empty<graph_property>::value>* = nullptr>
-   add_const_ref_t<graph_property> CGetGraphInfo() const
+   template <typename graph_property_t = graph_property>
+   std::enable_if_t<!std::is_empty<graph_property_t>::value, add_const_ref_t<graph_property_t>> CGetGraphInfo() const
    {
       return (*this)[boost::graph_bundle];
    }
