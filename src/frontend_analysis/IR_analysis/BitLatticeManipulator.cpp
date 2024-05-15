@@ -218,7 +218,7 @@ std::deque<bit_lattice> BitLatticeManipulator::string_cst_bitstring(const tree_n
    return current_inf;
 }
 
-bool BitLatticeManipulator::IsHandledByBitvalue(const tree_nodeConstRef& tn) const
+bool BitLatticeManipulator::IsHandledByBitvalue(const tree_nodeConstRef& tn)
 {
    const auto type = tree_helper::CGetType(tn);
    return !(tree_helper::IsRealType(type) || tree_helper::IsComplexType(type) || tree_helper::IsVectorType(type) ||
