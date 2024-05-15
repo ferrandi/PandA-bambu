@@ -111,8 +111,8 @@ std::deque<bit_lattice> Bit_Value::backward_chain(const tree_nodeConstRef& ssa_n
       }
       else if(user_kind == gimple_return_K)
       {
-         const auto gr = GetPointerS<const gimple_return>(user_stmt);
-         THROW_ASSERT(gr->op, "ssa id " + STR(ssa_nid) + "used in empty return statement: " + STR(gr));
+         THROW_ASSERT(GetPointerS<const gimple_return>(user_stmt)->op,
+                      "ssa id " + STR(ssa_nid) + "used in empty return statement: " + STR(gr));
          const auto res_it = current.find(function_id);
          if(res_it != current.end())
          {
