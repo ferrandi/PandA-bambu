@@ -23,7 +23,6 @@ build/config_headers/config_HAVE_DESIGN_FLOWS_BUILT.hpp
 build/config_headers/config_HAVE_DESIGN_OPTIMIZER.hpp
 build/config_headers/config_HAVE_DLFCN_H.hpp
 build/config_headers/config_HAVE_EUCALYPTUS_BUILT.hpp
-build/config_headers/config_HAVE_EXPERIMENTAL.hpp
 build/config_headers/config_HAVE_FLEX_2_5_34_OR_GREATER.hpp
 build/config_headers/config_HAVE_FLEX_2_5_35_OR_GREATER.hpp
 build/config_headers/config_HAVE_FLOAT_H.hpp

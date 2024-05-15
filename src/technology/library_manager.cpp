@@ -44,19 +44,19 @@
  */
 #include "library_manager.hpp"
 
-#include "config_HAVE_CIRCUIT_BUILT.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 #include "Parameter.hpp"
 #include "area_info.hpp"
 #include "constant_strings.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "parse_technology.hpp"
 #include "polixml.hpp"
 #include "technology_node.hpp"
+
 #include <iosfwd>
 #include <utility>
+
+#include "config_HAVE_CIRCUIT_BUILT.hpp"
 
 attribute::attribute(const std::vector<attributeRef>& _content)
 {
@@ -387,10 +387,6 @@ void library_manager::update(const technology_nodeRef& fu_node)
          GetPointer<operation>(op_fu)->portsize_parameters = op->portsize_parameters;
       }
       GetPointer<operation>(op_fu)->bounded = op->bounded;
-#if HAVE_EXPERIMENTAL
-      if(op->power_m)
-         GetPointer<operation>(op_fu)->power_m = op->power_m;
-#endif
    }
 
 #if HAVE_CIRCUIT_BUILT
