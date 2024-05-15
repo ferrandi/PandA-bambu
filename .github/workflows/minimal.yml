@@ -689,7 +689,7 @@ jobs:
     env:
       outname: panda_bench_yosys
       script: ./examples/panda_bench_yosys.sh
-      NPROC: 4
+      OMP_NUM_THREADS: 4
       J: 5
     steps:
       - name: Checkout repository
