@@ -1582,10 +1582,8 @@ unsigned int tree_helper::get_type_index(const tree_managerConstRef& TM, const u
    is_a_function = false;
    vec_size = 0;
    const auto T = TM->GetTreeNode(index);
-   THROW_ASSERT(T, "this index does not exist: " + STR(index));
    auto Type = CGetType(T);
    THROW_ASSERT(Type, "expected a type index " + STR(index) + " " + T->ToString());
-   Type = Type;
    const auto type_index = Type->index;
    if(Type->get_kind() == pointer_type_K)
    {
@@ -1899,7 +1897,7 @@ tree_nodeConstRef tree_helper::CGetElements(const tree_nodeConstRef& type)
 std::string tree_helper::get_type_name(const tree_managerConstRef& TM, const unsigned int index)
 {
    const auto type = CGetType(TM->GetTreeNode(index));
-   THROW_ASSERT(GetPointer<const type_node>(type), "Node type not type_node");
+   THROW_ASSERT(type, "Node type not type_node");
    const auto tn = GetPointerS<const type_node>(type);
    if(tn->name)
    {

@@ -411,10 +411,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
             }
             recursive_examinate(GetPointerS<tree_list>(current)->valu, already_visited);
             current = GetPointerS<tree_list>(current)->chan;
-            if(current)
-            {
-               current = current;
-            }
          }
          break;
       }
