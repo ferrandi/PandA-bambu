@@ -63,7 +63,31 @@ REF_FORWARD_DECL(DesignFlowInfo);
 enum class DesignFlowStep_Status;
 class SdfGraph;
 
+class DesignFlowStepInfo
+{
+ public:
+   /// The step corresponding to a vertex
+   const DesignFlowStepRef design_flow_step;
+
+   /// Status of a step
+   DesignFlowStep_Status status;
+
+   DesignFlowStepInfo(const DesignFlowStepRef& _design_flow_step, const bool unnecessary);
+};
+
 using DesignFlowEdge = unsigned char;
+
+class DesignFlowInfo
+{
+ public:
+   using vertex_descriptor =
+       boost::adjacency_list_traits<boost::vecS, boost::vecS, boost::bidirectionalS>::vertex_descriptor;
+   /// The entry vertex of the graph
+   vertex_descriptor entry;
+
+   /// The exit vertex of the graph
+   vertex_descriptor exit;
+};
 
 class DesignFlowGraph
     : public graph_base<boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, DesignFlowStepInfoRef,
@@ -139,28 +163,6 @@ H AbslHashValue(const H& h, const DesignFlowGraph::edge_descriptor& m)
 {
    return H::combine(h, m.m_source, m.m_target);
 }
-
-class DesignFlowInfo
-{
- public:
-   /// The entry vertex of the graph
-   DesignFlowGraph::vertex_descriptor entry;
-
-   /// The exit vertex of the graph
-   DesignFlowGraph::vertex_descriptor exit;
-};
-
-class DesignFlowStepInfo
-{
- public:
-   /// The step corresponding to a vertex
-   const DesignFlowStepRef design_flow_step;
-
-   /// Status of a step
-   DesignFlowStep_Status status;
-
-   DesignFlowStepInfo(const DesignFlowStepRef& _design_flow_step, const bool unnecessary);
-};
 
 /**
  * Functor used to write the content of the design flow step to dotty file
