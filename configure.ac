@@ -269,7 +269,7 @@ AC_ARG_ENABLE(experimental,        [  --enable-experimental        compile the s
 
 
 #etc/ext stuff
-AC_ARG_ENABLE(flopoco,             [  --enable-flopoco             compile FloPoCo external library],                     [panda_USE_FLOPOCO="$enableval"])
+AC_ARG_ENABLE(flopoco,             [  --enable-flopoco             compile FloPoCo external library],                     [panda_USE_FLOPOCO="$enableval"], [panda_USE_FLOPOCO="no"])
 
 
 
