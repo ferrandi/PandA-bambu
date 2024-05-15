@@ -122,12 +122,6 @@ class BitLatticeManipulator
    std::deque<bit_lattice> string_cst_bitstring(const tree_nodeRef& strcst_tn, unsigned int ssa_node_id) const;
 
    /**
-    * Returns true if the type identified by type_id is handled by bitvalue
-    * analysis
-    */
-   bool IsHandledByBitvalue(const tree_nodeConstRef& tn) const;
-
-   /**
     * Mixes the content of current and best using the sup operation, storing
     * the result in the best map.
     * Returns true if the best map was updated, false otherwise.
@@ -156,5 +150,13 @@ class BitLatticeManipulator
     * Destructor
     */
    virtual ~BitLatticeManipulator();
+
+   /**
+    * Check if given tree_node type is supported by the BitValue inference
+    * @param tn tree_node to check
+    * @return true Given tree_node type is supported
+    * @return false Given tree_node type is not supported
+    */
+   static bool IsHandledByBitvalue(const tree_nodeConstRef& tn);
 };
 #endif
