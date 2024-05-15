@@ -6,7 +6,7 @@ on:
       package-name:
         description: "Bambu AppImage name"
         required: true
-        default: "bambu-gcc7_clang11"
+        default: "bambu-gcc8_clang16"
       branch:
         description: "Repository branch to build from"
         required: false
@@ -14,7 +14,7 @@ on:
       compilers:
         description: "Comma separated list of compilers to include"
         required: true
-        default: "gcc-7,clang-12"
+        default: "gcc-8,clang-12,clang-16"
       build-compiler:
         description: "Compiler used to build bambu (if not already included in compilers)"
         required: false
@@ -22,7 +22,7 @@ on:
       configure:
         description: "Bambu configuration options"
         required: true
-        default: "--enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8 --with-gcc8=/bin/false"
+        default: "--enable-glpk --enable-opt --with-opt-level=2 --enable-release --disable-asserts CC=gcc-8 CXX=g++-8"
 
   workflow_call:
     inputs:
