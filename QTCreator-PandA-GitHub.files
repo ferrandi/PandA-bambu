@@ -2167,6 +2167,8 @@ src/frontend_analysis/IR_analysis/string_cst_fix.cpp
 src/frontend_analysis/IR_analysis/string_cst_fix.hpp
 src/frontend_analysis/IR_analysis/switch_fix.cpp
 src/frontend_analysis/IR_analysis/switch_fix.hpp
+src/frontend_analysis/IR_analysis/tree2fun.cpp
+src/frontend_analysis/IR_analysis/tree2fun.hpp
 src/frontend_analysis/IR_analysis/update_schedule.cpp
 src/frontend_analysis/IR_analysis/update_schedule.hpp
 src/frontend_analysis/IR_analysis/use_counting.cpp

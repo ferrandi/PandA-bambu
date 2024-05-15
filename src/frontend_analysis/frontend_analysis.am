@@ -182,6 +182,7 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/simple_code_motion.hpp \
      frontend_analysis/IR_analysis/soft_float_cg_ext.hpp \
      frontend_analysis/IR_analysis/split_return.hpp \
+     frontend_analysis/IR_analysis/tree2fun.hpp \
      frontend_analysis/IR_analysis/vectorize.hpp \
      frontend_analysis/IR_analysis/virtual_phi_nodes_split.hpp
   lib_IR_analysis_la_SOURCES += \
@@ -228,6 +229,7 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/simple_code_motion.cpp \
      frontend_analysis/IR_analysis/soft_float_cg_ext.cpp \
      frontend_analysis/IR_analysis/split_return.cpp \
+     frontend_analysis/IR_analysis/tree2fun.cpp \
      frontend_analysis/IR_analysis/vectorize.cpp \
      frontend_analysis/IR_analysis/virtual_phi_nodes_split.cpp
    lib_IR_analysis_la_CPPFLAGS += \

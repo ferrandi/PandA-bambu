@@ -137,6 +137,7 @@ BambuFrontendFlow::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
          relationships.insert(std::make_pair(SPLIT_RETURN, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(STRING_CST_FIX, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(SWITCH_FIX, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(TREE2FUN, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(LOOPS_ANALYSIS_BAMBU, WHOLE_APPLICATION));
 
          relationships.insert(std::make_pair(MULTI_WAY_IF, WHOLE_APPLICATION));
