@@ -7,10 +7,8 @@
       <step id="bash_flow" config="bash_flowC"/>
    </flow>
    <bash config="bash_flowC">
-      <cmd name=": ${NPROC:=1}"/>
-      <cmd name="export NPROC"/>
-      <cmd name=": ${NUM_CORES:=${NPROC}}"/>
-      <cmd name="export NUM_CORES"/>
+      <cmd name=": ${OMP_NUM_THREADS:=1}"/>
+      <cmd name="export OMP_NUM_THREADS"/>
       <cmd name="export SCRIPTS_DIR=${PANDA_DATA_INSTALLDIR}/scripts/"/>
       <cmd name="export UTILS_DIR=${PANDA_DATA_INSTALLDIR}/util/"/>
       <cmd name="export PLATFORM_DIR=${PANDA_DATA_INSTALLDIR}/${PLATFORM}/"/>
@@ -194,10 +192,8 @@
       <cmd name="EOT"/>
    </bash>
    <bash config="bash_flow">
-      <cmd name=": ${NPROC:=1}"/>
-      <cmd name="export NPROC"/>
-      <cmd name=": ${NUM_CORES:=${NPROC}}"/>
-      <cmd name="export NUM_CORES"/>
+      <cmd name=": ${OMP_NUM_THREADS:=1}"/>
+      <cmd name="export OMP_NUM_THREADS"/>
       <cmd name="export SCRIPTS_DIR=${PANDA_DATA_INSTALLDIR}/scripts/"/>
       <cmd name="export UTILS_DIR=${PANDA_DATA_INSTALLDIR}/util/"/>
       <cmd name="export PLATFORM_DIR=${PANDA_DATA_INSTALLDIR}/${PLATFORM}/"/>
