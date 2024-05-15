@@ -854,15 +854,17 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
    /// currently all the operations introduced after the allocation has been performed are bounded
    if(ga)
    {
+#if HAVE_ASSERTS
       const auto right_kind = GET_CONST_NODE(ga->op1)->get_kind();
+#endif
       /// currently all the operations introduced after the allocation has been performed are bounded
       // BEAWARE: when adding operations here, check they are correctly handled by GetTimeLatency and GetCycleLatency
-      THROW_ASSERT(GetPointer<const cst_node>(GET_CONST_NODE(ga->op1)) || right_kind == ssa_name_K ||
-                       right_kind == cond_expr_K || right_kind == vec_cond_expr_K || right_kind == convert_expr_K ||
-                       right_kind == nop_expr_K || right_kind == bit_ior_concat_expr_K ||
-                       right_kind == extract_bit_expr_K || right_kind == lut_expr_K || right_kind == truth_not_expr_K ||
-                       right_kind == bit_not_expr_K || right_kind == negate_expr_K || right_kind == bit_xor_expr_K ||
-                       right_kind == bit_ior_expr_K || right_kind == bit_and_expr_K || right_kind == truth_and_expr_K ||
+      THROW_ASSERT(tree_helper::IsConstant(ga->op1) || right_kind == ssa_name_K || right_kind == cond_expr_K ||
+                       right_kind == vec_cond_expr_K || right_kind == convert_expr_K || right_kind == nop_expr_K ||
+                       right_kind == bit_ior_concat_expr_K || right_kind == extract_bit_expr_K ||
+                       right_kind == lut_expr_K || right_kind == truth_not_expr_K || right_kind == bit_not_expr_K ||
+                       right_kind == negate_expr_K || right_kind == bit_xor_expr_K || right_kind == bit_ior_expr_K ||
+                       right_kind == bit_and_expr_K || right_kind == truth_and_expr_K ||
                        right_kind == truth_or_expr_K || right_kind == truth_xor_expr_K || right_kind == lshift_expr_K ||
                        right_kind == rshift_expr_K || right_kind == widen_mult_expr_K || right_kind == mult_expr_K ||
                        right_kind == plus_expr_K || right_kind == minus_expr_K || right_kind == ternary_plus_expr_K ||
@@ -2338,8 +2340,7 @@ double AllocationInformation::GetPhiConnectionLatency(const unsigned int stateme
 double AllocationInformation::GetCondExprTimeLatency(const unsigned int operation_index) const
 {
    const auto tn = TreeM->CGetTreeReindex(operation_index);
-   const auto gp = GetPointer<const gimple_phi>(GET_CONST_NODE(tn));
-   THROW_ASSERT(gp, "Tree node is " + STR(tn));
+   THROW_ASSERT(GET_CONST_NODE(tn)->get_kind() == gimple_phi_K, "Tree node is " + STR(tn));
    /// Computing time of cond_expr as time of cond_expr_FU - setup_time
    /// In this way we are correctly estimating only phi with two inputs
    const auto type = tree_helper::CGetType(tn);
