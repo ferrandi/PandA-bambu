@@ -39,17 +39,16 @@
  */
 #ifndef TECHNOLOGY_NODE_HPP
 #define TECHNOLOGY_NODE_HPP
-
-#include "config_HAVE_CIRCUIT_BUILT.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 #include "refcount.hpp"
 #include "simple_indent.hpp"
 #include "utility.hpp"
+
 #include <map>
 #include <ostream>
 #include <string>
 #include <vector>
+
+#include "config_HAVE_CIRCUIT_BUILT.hpp"
 
 /**
  * @name forward declarations
@@ -368,11 +367,6 @@ struct operation : public technology_node
 
    /// class representing the timing information associated with this operation
    time_infoRef time_m;
-
-#if HAVE_EXPERIMENTAL
-   /// This variable stores the power information of the component with respect to this operation
-   power_modelRef power_m;
-#endif
 
    /// property of commutativity
    bool commutative;
