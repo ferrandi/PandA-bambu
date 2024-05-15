@@ -49,7 +49,6 @@
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 void type_casting::operator()(const mem_ref* obj, unsigned int& mask)
 {

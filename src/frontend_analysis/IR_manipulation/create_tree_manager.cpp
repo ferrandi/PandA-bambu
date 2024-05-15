@@ -61,7 +61,6 @@
 #include "technology_node.hpp"
 #include "time_info.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 #include "utility.hpp"
 
 #include "config_HAVE_FROM_AADL_ASN_BUILT.hpp"

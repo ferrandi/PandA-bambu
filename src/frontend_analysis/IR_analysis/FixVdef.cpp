@@ -56,7 +56,6 @@
 #include "tree_basic_block.hpp"             // for bloc
 #include "tree_manager.hpp"                 // for tree_manager
 #include "tree_node.hpp"                    // for gimple_assign
-#include "tree_reindex.hpp"
 
 FixVdef::FixVdef(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id,
                  const DesignFlowManagerConstRef _design_flow_manager)

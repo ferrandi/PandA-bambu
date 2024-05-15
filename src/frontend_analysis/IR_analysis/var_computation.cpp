@@ -63,7 +63,6 @@
 #include "ext_tree_node.hpp"
 #include "tree_helper.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 /// Utility include
 #include "dbgPrintHelper.hpp"

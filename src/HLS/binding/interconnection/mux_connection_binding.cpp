@@ -82,7 +82,6 @@
 #include "technology_node.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 #include "utility.hpp"
 
 #define USE_ALIGNMENT_INFO 1

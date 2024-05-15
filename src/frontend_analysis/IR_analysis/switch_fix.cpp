@@ -54,7 +54,6 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 SwitchFix::SwitchFix(const application_managerRef _AppM, unsigned int _function_id,
                      const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)

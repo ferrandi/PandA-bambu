@@ -51,7 +51,6 @@
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 
 #if HAVE_PRAGMA_BUILT
 #include "pragma_manager.hpp"

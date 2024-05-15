@@ -55,7 +55,6 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 #if HAVE_ILP_BUILT
 #include "allocation_information.hpp"

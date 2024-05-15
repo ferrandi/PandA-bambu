@@ -56,7 +56,6 @@
 #include "structural_objects.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 
 BuiltinWaitCallNModuleGenerator::BuiltinWaitCallNModuleGenerator(const HLS_managerRef& _HLSMgr) : Registrar(_HLSMgr)
 {

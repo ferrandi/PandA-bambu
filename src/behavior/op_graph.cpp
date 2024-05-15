@@ -49,7 +49,6 @@
 #include "exceptions.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 #include <boost/tuple/tuple.hpp>
 

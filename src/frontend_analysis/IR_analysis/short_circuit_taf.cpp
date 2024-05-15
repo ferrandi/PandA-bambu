@@ -92,7 +92,6 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 /// utility includes
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_

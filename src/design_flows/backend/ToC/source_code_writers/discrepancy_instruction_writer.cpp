@@ -48,7 +48,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 discrepancy_instruction_writer::discrepancy_instruction_writer(const application_managerConstRef _app_man,
                                                                const IndentedOutputStreamRef _indented_output_stream,

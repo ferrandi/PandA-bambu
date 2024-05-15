@@ -58,7 +58,6 @@
 #include "technology_node.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 
 VcdSignalSelection::VcdSignalSelection(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                                        const DesignFlowManagerConstRef _design_flow_manager)

@@ -51,7 +51,6 @@
 #include "tree_basic_block.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 BasicBlocksProfilingCWriter::BasicBlocksProfilingCWriter(const HLS_managerConstRef _HLSMgr,
                                                          const InstructionWriterRef _instruction_writer,

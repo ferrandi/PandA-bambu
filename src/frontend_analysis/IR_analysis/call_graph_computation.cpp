@@ -58,7 +58,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 call_graph_computation::call_graph_computation(const ParameterConstRef _parameters, const application_managerRef _AppM,
                                                const DesignFlowManagerConstRef _design_flow_manager)

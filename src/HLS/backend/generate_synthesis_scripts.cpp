@@ -47,7 +47,6 @@
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 #include "utility.hpp"
 
 #include <tuple>

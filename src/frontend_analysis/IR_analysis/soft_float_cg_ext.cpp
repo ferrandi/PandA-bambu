@@ -65,7 +65,6 @@
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_node_dup.hpp"
-#include "tree_reindex.hpp"
 #include "utility.hpp"
 #include "var_pp_functor.hpp"
 

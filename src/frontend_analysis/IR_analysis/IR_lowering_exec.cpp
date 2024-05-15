@@ -56,13 +56,12 @@
 #include "tree_manager.hpp"                // for tree_manager
 #include "tree_manipulation.hpp"           // for tree_nodeRef
 #include "tree_node.hpp"                   // for gimple_assign
-#include "tree_reindex.hpp"
-#include <algorithm> // for max, min
-#include <cstring>   // for memset, size_t
-#include <iterator>  // for next
-#include <string>    // for operator+, alloc...
-#include <utility>   // for pair
-#include <vector>    // for vector
+#include <algorithm>                       // for max, min
+#include <cstring>                         // for memset, size_t
+#include <iterator>                        // for next
+#include <string>                          // for operator+, alloc...
+#include <utility>                         // for pair
+#include <vector>                          // for vector
 
 /// Compute the inverse of X mod 2**n, i.e., find Y such that X * Y is
 /// congruent to 1 (mod 2**N).

@@ -64,7 +64,6 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 #include <fstream>
 
 SplitReturn::SplitReturn(const ParameterConstRef _parameters, const application_managerRef _AppM,

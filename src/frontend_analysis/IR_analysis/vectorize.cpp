@@ -72,7 +72,6 @@
 /// Skipping warnings due to operator() redefinition
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
 #include "tree_node_dup.hpp"
-#include "tree_reindex.hpp"
 
 #include "dbgPrintHelper.hpp"
 #include "string_manipulation.hpp"

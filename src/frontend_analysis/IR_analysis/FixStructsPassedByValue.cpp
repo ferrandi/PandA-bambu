@@ -52,7 +52,6 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 FixStructsPassedByValue::FixStructsPassedByValue(const ParameterConstRef params, const application_managerRef AM,
                                                  unsigned int fun_id, const DesignFlowManagerConstRef dfm)

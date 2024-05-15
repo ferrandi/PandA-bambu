@@ -73,9 +73,8 @@
 #include "tree_manager.hpp"                 // for tree_manager
 #include "tree_manipulation.hpp"            // for tree_manipulation, Param...
 #include "tree_node.hpp"                    // for tree_nodeRef, gimple_assign
-#include "tree_reindex.hpp"
-#include <cmath>   // for ceil
-#include <cstddef> // for size_t
+#include <cmath>                            // for ceil
+#include <cstddef>                          // for size_t
 #include <limits>
 #include <vector> // for vector
 

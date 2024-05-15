@@ -55,7 +55,6 @@
 #include "hls_manager.hpp"
 #include "structural_manager.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 
 #include <list>
 #include <string>

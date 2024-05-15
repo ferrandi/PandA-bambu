@@ -737,7 +737,7 @@ void DesignFlowManager::Exec()
          {
             const auto relationship_signature = relationship->GetSignature();
             const auto relationship_vertex = GetDesignFlowStep(relationship_signature);
-            THROW_ASSERT(relationship_vertex, "Missing vertex " + relationship_signature);
+            THROW_ASSERT(relationship_vertex, "Missing vertex " + relationship->GetName());
             if(design_flow_graph->IsReachable(relationship_vertex, next))
             {
 #ifndef NDEBUG

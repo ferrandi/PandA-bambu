@@ -62,7 +62,6 @@
 #include "indented_output_stream.hpp"
 #include "string_manipulation.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 #include "utility.hpp"
 
 CBackend::CBackend(const CBackendInformationConstRef _c_backend_information,

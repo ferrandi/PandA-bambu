@@ -62,7 +62,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 operations_cfg_computation::operations_cfg_computation(const ParameterConstRef _parameters,
                                                        const application_managerRef _AppM, unsigned int _function_id,

@@ -61,7 +61,6 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 
 UpdateSchedule::UpdateSchedule(const application_managerRef _AppM, unsigned int _function_id,
                                const DesignFlowManagerConstRef _design_flow_manager,

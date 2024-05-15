@@ -62,7 +62,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
-#include "tree_reindex.hpp"
 
 bool virtual_phi_nodes_split::tree_dumped = false;
 

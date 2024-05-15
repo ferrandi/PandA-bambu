@@ -47,7 +47,6 @@
 #include "exceptions.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 bool OrderedBasicBlock::instComesBefore(const tree_nodeConstRef& A, const tree_nodeConstRef& B)
 {

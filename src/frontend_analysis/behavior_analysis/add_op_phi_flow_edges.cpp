@@ -58,7 +58,6 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 AddOpPhiFlowEdges::AddOpPhiFlowEdges(const application_managerRef _AppM, const unsigned int _function_id,
                                      const DesignFlowManagerConstRef _design_flow_manager,

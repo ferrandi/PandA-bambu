@@ -70,7 +70,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 #include "typed_node_info.hpp"
 
 #include <algorithm>

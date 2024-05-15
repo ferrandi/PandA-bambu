@@ -154,7 +154,6 @@ tree_nodeRef tree_manager::GetTreeNode(const unsigned int i) const
 {
    const auto it = tree_nodes.find(i);
    THROW_ASSERT(it != tree_nodes.end(), "Tree node with index " + STR(i) + " not found");
-   THROW_ASSERT(it->second, "Tree node with index " + STR(i) + " is nullptr");
    return it->second;
 }
 

@@ -74,9 +74,8 @@
 #include "tree_basic_block.hpp"    // for bloc, tree_nodeRef
 #include "tree_common.hpp"         // for aggr_init_expr_K
 #include "tree_node.hpp"           // for tree_node, CASE_BINA...
-#include "tree_reindex.hpp"
-#include "typed_node_info.hpp" // for GET_TYPE, GET_NAME
-#include "var_pp_functor.hpp"  // for std_var_pp_functor
+#include "typed_node_info.hpp"     // for GET_TYPE, GET_NAME
+#include "var_pp_functor.hpp"      // for std_var_pp_functor
 
 BBWriter::BBWriter(const BBGraph* _g, CustomUnorderedSet<vertex> _annotated)
     : VertexWriter(_g, 0),

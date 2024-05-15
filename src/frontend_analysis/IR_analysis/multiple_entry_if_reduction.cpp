@@ -109,10 +109,6 @@
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_node_dup.hpp"
-#include "tree_reindex.hpp"
-
-REF_FORWARD_DECL(tree_node_dup);
-
 #define MAX_DOUBLE std::numeric_limits<double>::max();
 
 MultipleEntryIfReduction::MultipleEntryIfReduction(const ParameterConstRef _parameters,
@@ -415,11 +411,11 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Fixed phis");
       CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, unsigned int>> remaps;
-      CustomMap<unsigned int, tree_node_dupRef> tree_node_dups;
-      for(const auto& copy : copy_ids)
-      {
-         tree_node_dups[copy.second] = tree_node_dupRef(new tree_node_dup(remaps[copy.second], AppM));
-      }
+      CustomMap<unsigned int, std::unique_ptr<tree_node_dup>> tree_node_dups;
+      std::transform(copy_ids.begin(), copy_ids.end(), std::inserter(tree_node_dups, tree_node_dups.end()),
+                     [&](const auto& copy) -> decltype(tree_node_dups)::value_type {
+                        return {copy.second, std::make_unique<tree_node_dup>(remaps[copy.second], AppM)};
+                     });
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Modified basic block graph");
 
       /// Build list of phis + gimple_nodes

@@ -56,7 +56,6 @@
 #include "profiling_information.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 
 EdgeCWriter::EdgeCWriter(const HLS_managerConstRef _HLSMgr, const InstructionWriterRef _instruction_writer,
                          const IndentedOutputStreamRef _indented_output_stream)

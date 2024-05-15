@@ -58,7 +58,6 @@
 #include "string_manipulation.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 #include "utility.hpp"
 #include "xml_document.hpp"
 #include "xml_dom_parser.hpp"

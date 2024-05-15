@@ -73,7 +73,6 @@
 
 /// tree include
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 /**
  * Alignment utility function

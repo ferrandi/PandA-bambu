@@ -86,7 +86,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
-#include "tree_reindex.hpp"
 
 #include "basic_block.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
