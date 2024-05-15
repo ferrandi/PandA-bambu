@@ -458,7 +458,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, std
           << "  WRAPPER_SRC=\"${SIM_DIR}/mdpi_wrapper.cpp\" \\\n"
           << "  PP_SRC=\"" << pp_srcs << "\" \\\n"
           << "  TB_SRCS=\"" << tb_srcs << "\" \\\n"
-          << "  -j " << std::thread::hardware_concurrency() << "\n\n";
+          << "  -j ${OMP_NUM_THREADS:-" << std::thread::hardware_concurrency() << "}\n\n";
 
    return cflags;
 }
