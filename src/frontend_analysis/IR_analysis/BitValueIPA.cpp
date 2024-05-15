@@ -311,7 +311,6 @@ DesignFlowStep_Status BitValueIPA::Exec()
                break;
             }
 
-            const auto fu_signed = signed_var.find(fu_id) != signed_var.cend();
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Backward");
 
             current.insert(std::make_pair(fu_id, best.at(fu_id)));
@@ -354,7 +353,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                         const auto s = GetPointerS<const ssa_name>(GET_CONST_NODE(ga->op0));
                         THROW_ASSERT(IsHandledByBitvalue(ga->op0), "ssa is not handled by bitvalue");
                         THROW_ASSERT(
-                            tree_helper::IsSignedIntegerType(ga->op0) == fu_signed,
+                            tree_helper::IsSignedIntegerType(ga->op0) == static_cast<bool>(signed_var.count(fu_id)),
                             "function " +
                                 AppM->CGetFunctionBehavior(caller_id)->CGetBehavioralHelper()->get_function_name() +
                                 " calls function " + fu_name +
