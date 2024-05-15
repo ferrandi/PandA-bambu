@@ -48,10 +48,14 @@
 #include <ostream>
 #include <utility>
 
-AuxDesignFlowStep::AuxDesignFlowStep(const std::string& _name, AuxDesignFlowStepType _type,
-                                     const DesignFlowManagerConstRef _design_flow_manager,
+static inline std::string GetTypeString(AuxDesignFlowStepType t)
+{
+   return t == DESIGN_FLOW_ENTRY ? "Entry" : "Exit";
+}
+
+AuxDesignFlowStep::AuxDesignFlowStep(AuxDesignFlowStepType _type, const DesignFlowManagerConstRef _design_flow_manager,
                                      const ParameterConstRef _parameters)
-    : DesignFlowStep(ComputeSignature(_type), _design_flow_manager, _parameters), type(_type), name(_name)
+    : DesignFlowStep(ComputeSignature(_type), _design_flow_manager, _parameters), type(_type)
 {
 }
 
@@ -73,12 +77,12 @@ DesignFlowStep_Status AuxDesignFlowStep::Exec()
 
 std::string AuxDesignFlowStep::GetName() const
 {
-   return "AUX::" + name;
+   return "AUX::" + GetTypeString(type);
 }
 
 void AuxDesignFlowStep::WriteDot(std::ostream& out) const
 {
-   out << "shape=Msquare, label=\"" << name << "\"";
+   out << "shape=Msquare, label=\"" << GetTypeString(type) << "\"";
 }
 
 DesignFlowStepFactoryConstRef AuxDesignFlowStep::CGetDesignFlowStepFactory() const

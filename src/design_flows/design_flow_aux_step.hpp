@@ -62,22 +62,18 @@ class AuxDesignFlowStep : public DesignFlowStep
    /// The type of this auxiliary design flow step
    const AuxDesignFlowStepType type;
 
-   /// The name of this auxiliary design flow step
-   const std::string name;
-
    void ComputeRelationships(DesignFlowStepSet& relationship,
                              const DesignFlowStep::RelationshipType relationship_type) override;
 
  public:
    /**
     * Constructor
-    * @param name is the name of the step
     * @param type is the type of the step
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   AuxDesignFlowStep(const std::string& name, AuxDesignFlowStepType type,
-                     const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   AuxDesignFlowStep(AuxDesignFlowStepType type, const DesignFlowManagerConstRef design_flow_manager,
+                     const ParameterConstRef parameters);
 
    ~AuxDesignFlowStep() override;
 

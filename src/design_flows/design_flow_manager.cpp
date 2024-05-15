@@ -179,9 +179,9 @@ DesignFlowManager::DesignFlowManager(const ParameterConstRef _parameters)
       debug_level(_parameters->get_class_debug_level(GET_CLASS(*this)))
 {
    const DesignFlowStepRef entry_step(
-       new AuxDesignFlowStep("Entry", DESIGN_FLOW_ENTRY, DesignFlowManagerConstRef(this, null_deleter{}), parameters));
+       new AuxDesignFlowStep(DESIGN_FLOW_ENTRY, DesignFlowManagerConstRef(this, null_deleter{}), parameters));
    const DesignFlowStepRef exit_step(
-       new AuxDesignFlowStep("Exit", DESIGN_FLOW_EXIT, DesignFlowManagerConstRef(this, null_deleter{}), parameters));
+       new AuxDesignFlowStep(DESIGN_FLOW_EXIT, DesignFlowManagerConstRef(this, null_deleter{}), parameters));
    const auto& design_flow_graph_info = design_flow_graph->GetGraphInfo();
    design_flow_graph_info->entry = design_flow_graph->AddDesignFlowStep(entry_step, false);
    design_flow_graph->GetNodeInfo(design_flow_graph_info->entry)->status = DesignFlowStep_Status::EMPTY;
