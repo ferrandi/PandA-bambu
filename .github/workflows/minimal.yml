@@ -689,8 +689,8 @@ jobs:
     env:
       outname: panda_bench_yosys
       script: ./examples/panda_bench_yosys.sh
-      nproc: 4
-      parallel: 5
+      OMP_NUM_THREADS: 4
+      J: 5
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -716,8 +716,6 @@ jobs:
           export PATH=\$PWD/bin:\$PATH
           export APPDIR=\$PWD/squashfs-root
           export LD_LIBRARY_PATH=\$APPDIR/usr/lib/:\$APPDIR/lib/x86_64-linux-gnu/
-          export NPROC=${{env.nproc}}
-          export J=${{env.parallel}}
           mkdir ${{env.report-dir}}
           echo "test-reports-dir=$PWD/${{env.report-dir}}" >> \$GITHUB_OUTPUT
           ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
