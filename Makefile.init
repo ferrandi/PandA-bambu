@@ -41,7 +41,7 @@ checkCompile :
 	make -f etc/scripts/Makeall all CHECKS_FILE=./check_compilation
 
 J ?= $(shell grep -c ^processor /proc/cpuinfo)
-CONFIGURE_OPTIONS:=--enable-flopoco --enable-opt --enable-release
+CONFIGURE_OPTIONS:=--enable-opt --enable-release
 export LM_LICENSE_FILE=
 
 dist :
