@@ -168,7 +168,6 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/fanout_opt.hpp\
      frontend_analysis/IR_analysis/hdl_function_decl_fix.hpp \
      frontend_analysis/IR_analysis/hdl_var_decl_fix.hpp \
-     frontend_analysis/IR_analysis/hls_soft_cg_ext.hpp \
      frontend_analysis/IR_analysis/loops_analysis_bambu.hpp \
      frontend_analysis/IR_analysis/lut_transformation.hpp \
      frontend_analysis/IR_analysis/multi_way_if.hpp \
@@ -181,6 +180,7 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/short_circuit_taf.hpp \
      frontend_analysis/IR_analysis/simple_code_motion.hpp \
      frontend_analysis/IR_analysis/soft_float_cg_ext.hpp \
+     frontend_analysis/IR_analysis/soft_int_cg_ext.hpp \
      frontend_analysis/IR_analysis/split_return.hpp \
      frontend_analysis/IR_analysis/tree2fun.hpp \
      frontend_analysis/IR_analysis/vectorize.hpp \
@@ -215,7 +215,6 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/fanout_opt.cpp\
      frontend_analysis/IR_analysis/hdl_function_decl_fix.cpp \
      frontend_analysis/IR_analysis/hdl_var_decl_fix.cpp \
-     frontend_analysis/IR_analysis/hls_soft_cg_ext.cpp \
      frontend_analysis/IR_analysis/loops_analysis_bambu.cpp \
      frontend_analysis/IR_analysis/lut_transformation.cpp \
      frontend_analysis/IR_analysis/multi_way_if.cpp \
@@ -228,6 +227,7 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/short_circuit_taf.cpp \
      frontend_analysis/IR_analysis/simple_code_motion.cpp \
      frontend_analysis/IR_analysis/soft_float_cg_ext.cpp \
+     frontend_analysis/IR_analysis/soft_int_cg_ext.cpp \
      frontend_analysis/IR_analysis/split_return.cpp \
      frontend_analysis/IR_analysis/tree2fun.cpp \
      frontend_analysis/IR_analysis/vectorize.cpp \

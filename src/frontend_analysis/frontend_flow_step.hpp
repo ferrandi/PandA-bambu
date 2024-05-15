@@ -129,7 +129,7 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
    FIX_VDEF,
    HDL_FUNCTION_DECL_FIX,
    HDL_VAR_DECL_FIX,
-   HLS_SOFT_CG_EXT,
+   SOFT_INT_CG_EXT,
    HWCALL_INJECTION,
    INTERFACE_INFER,
    IR_LOWERING,
