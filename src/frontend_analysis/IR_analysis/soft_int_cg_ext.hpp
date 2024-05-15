@@ -31,14 +31,14 @@
  *
  */
 /**
- * @file hls_soft_cg_ext.hpp
+ * @file soft_int_cg_ext.hpp
  * @brief Step that extends the call graph with software implementation of integer operators.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-#ifndef HLS_SOFT_CG_EXT_HPP
-#define HLS_SOFT_CG_EXT_HPP
+#ifndef SOFT_INT_CG_EXT_HPP
+#define SOFT_INT_CG_EXT_HPP
 
 /// Superclass include
 #include "function_frontend_flow_step.hpp"
@@ -51,7 +51,7 @@
  * @name forward declarations
  */
 //@{
-REF_FORWARD_DECL(hls_soft_cg_ext);
+REF_FORWARD_DECL(soft_int_cg_ext);
 REF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_manipulation);
 REF_FORWARD_DECL(tree_node);
@@ -60,7 +60,7 @@ REF_FORWARD_DECL(tree_node);
 /**
  * Add to the call graph the function calls associated with the integer division and modulus operations.
  */
-class hls_soft_cg_ext : public FunctionFrontendFlowStep
+class soft_int_cg_ext : public FunctionFrontendFlowStep
 {
  private:
    /// Already visited tree node (used to avoid infinite recursion)
@@ -75,7 +75,7 @@ class hls_soft_cg_ext : public FunctionFrontendFlowStep
    /**
     * Recursive examine tree node
     */
-   bool recursive_examinate(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement,
+   bool recursive_transform(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement,
                             const tree_manipulationRef tree_man);
 
    /**
@@ -93,13 +93,13 @@ class hls_soft_cg_ext : public FunctionFrontendFlowStep
     * @param fun_id is the function index
     * @param design_flow_manager is the design flow manager
     */
-   hls_soft_cg_ext(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int _function_id,
-                  const DesignFlowManagerConstRef design_flow_manager);
+   soft_int_cg_ext(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int _function_id,
+                   const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor
     */
-   ~hls_soft_cg_ext() override;
+   ~soft_int_cg_ext() override;
 
    /**
     * Fixes the var_decl duplication.
