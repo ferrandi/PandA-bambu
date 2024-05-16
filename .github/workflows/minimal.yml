@@ -241,7 +241,7 @@ jobs:
         include:
           - setup: gcc-4.9
             script: generic_gcc_regression_simple_eg_ext_pipelined.sh
-            args: -c=--compiler=I386_GCC49 -c=--reset-type=sync -c=--simulator=VERILATOR -c=--verilator-parallel=4
+            args: -c=--compiler=I386_GCC49 -c=--reset-type=sync -c=--simulator=VERILATOR -c=--verilator-parallel=2
           - setup: clang-4.0
             script: generic_gcc_regression_simple_eg.sh
             args: -c=--compiler=I386_CLANG4 -c=--simulator=MODELSIM 
@@ -250,16 +250,16 @@ jobs:
             args: -c=--compiler=I386_CLANG6 -c=--simulator=XSIM 
           - setup: clang-7
             script: generic_gcc_regression_simple_bambu.sh
-            args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR -c=--verilator-parallel=4
+            args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR -c=--verilator-parallel=2
           - setup: clang-11
             script: generic_gcc_regression_simple_bambu.sh
-            args: -c=--compiler=I386_CLANG11 -c=--simulator=VERILATOR -c=--verilator-parallel=4
+            args: -c=--compiler=I386_CLANG11 -c=--simulator=VERILATOR -c=--verilator-parallel=2
           - setup: clang-13
             script: generic_gcc_regression_simple_eg_ext_pipelined.sh
-            args: -c=--compiler=I386_CLANG13 -c=--simulator=VERILATOR -c=--verilator-parallel=4
+            args: -c=--compiler=I386_CLANG13 -c=--simulator=VERILATOR -c=--verilator-parallel=2
           - setup: clang-16
             script: generic_gcc_regression_simple_eg_ext_pipelined.sh
-            args: -c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR -c=-Wno-int-conversion -c=--verilator-parallel=4
+            args: -c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR -c=-Wno-int-conversion -c=--verilator-parallel=2
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -565,17 +565,17 @@ jobs:
           - setup: gcc-4.9
             args: -c=--compiler=I386_GCC49 -c=--simulator=MODELSIM 
           - setup: clang-4.0
-            args: -c=--compiler=I386_CLANG4 -c=--simulator=VERILATOR -c=--verilator-parallel=4
+            args: -c=--compiler=I386_CLANG4 -c=--simulator=VERILATOR -c=--verilator-parallel=2
           - setup: clang-6.0
-            args: -c=--compiler=I386_CLANG6 -c=--simulator=VERILATOR -c=--verilator-parallel=4
+            args: -c=--compiler=I386_CLANG6 -c=--simulator=VERILATOR -c=--verilator-parallel=2
           - setup: clang-7
-            args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR -c=--verilator-parallel=4
+            args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR -c=--verilator-parallel=2
           - setup: clang-11
             args: -c=--compiler=I386_CLANG11 -c=--simulator=MODELSIM 
           - setup: clang-13
-            args: -c=--compiler=I386_CLANG13 -c=--simulator=VERILATOR -c=--verilator-parallel=4
+            args: -c=--compiler=I386_CLANG13 -c=--simulator=VERILATOR -c=--verilator-parallel=2
           - setup: clang-16
-            args: -c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR -c=--verilator-parallel=4
+            args: -c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR -c=--verilator-parallel=2
     env:
       script: generic_libm-tests.sh
       args: -c=--speculative-sdc-scheduling
