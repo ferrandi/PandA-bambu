@@ -134,7 +134,7 @@ int EucalyptusParameter::Exec()
    exit_code = PARAMETER_NOTPARSED;
 
    /// variable used into option parsing
-   int option_index;
+   int opt, option_index;
 
    // Short option. An option character in this string can be followed by a colon (`:') to indicate that it
    // takes a required argument. If an option character is followed by two colons (`::'), its argument is optional;
@@ -164,17 +164,9 @@ int EucalyptusParameter::Exec()
       return EXIT_SUCCESS;
    }
 
-   while(true)
+   while((opt = getopt_long(argc, argv, short_options, long_options, &option_index)) != -1)
    {
-      int next_option = getopt_long(argc, argv, short_options, long_options, &option_index);
-
-      // no more options are available
-      if(next_option == -1)
-      {
-         break;
-      }
-
-      switch(next_option)
+      switch(opt)
       {
          case INPUT_OPT_CHARACTERIZE:
          {
@@ -295,7 +287,7 @@ int EucalyptusParameter::Exec()
          default:
          {
             bool exit_success = false;
-            bool res = ManageDefaultOptions(next_option, optarg, exit_success);
+            bool res = ManageDefaultOptions(opt, optarg, exit_success);
             if(exit_success)
             {
                return EXIT_SUCCESS;
