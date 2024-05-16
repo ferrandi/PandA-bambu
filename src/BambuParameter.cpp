@@ -922,7 +922,7 @@ int BambuParameter::Exec()
    /// flag to check if scheduling algorithm has been already chosen
    bool scheduling_set_p = false;
    /// variable used into option parsing
-   int option_index;
+   int opt, option_index;
 
    // Bambu short option. An option character in this string can be followed by a colon (`:') to indicate that it
    // takes a required argument. If an option character is followed by two colons (`::'), its argument is optional;
@@ -1098,17 +1098,9 @@ int BambuParameter::Exec()
       return EXIT_SUCCESS;
    }
 
-   while(true)
+   while((opt = getopt_long(argc, argv, short_options, long_options, &option_index)) != -1)
    {
-      int next_option = getopt_long(argc, argv, short_options, long_options, &option_index);
-
-      // no more options are available
-      if(next_option == -1)
-      {
-         break;
-      }
-
-      switch(next_option)
+      switch(opt)
       {
          /// general options
          case OPT_TOP_FNAME:
@@ -2344,10 +2336,10 @@ int BambuParameter::Exec()
          default:
          {
             bool exit_success = false;
-            bool res = ManageGccOptions(next_option, optarg);
+            bool res = ManageGccOptions(opt, optarg);
             if(res)
             {
-               res = ManageDefaultOptions(next_option, optarg, exit_success);
+               res = ManageDefaultOptions(opt, optarg, exit_success);
             }
             if(exit_success)
             {

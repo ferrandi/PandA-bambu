@@ -153,10 +153,9 @@ SpiderParameter::SpiderParameter(const std::string& _program_name, int _argc, ch
 
 int SpiderParameter::Exec()
 {
-   exit_code = PARAMETER_NOTPARSED;
+   int opt;
 
-   /// variable used into option parsing
-   int option_index;
+   exit_code = PARAMETER_NOTPARSED;
 
    const char* const short_options = COMMON_SHORT_OPTIONS_STRING "I:O:p:";
 
@@ -182,17 +181,9 @@ int SpiderParameter::Exec()
       PrintUsage(std::cerr);
       return EXIT_SUCCESS;
    }
-   while(true)
+   while((opt = getopt_long(argc, argv, short_options, long_options, nullptr)) != -1)
    {
-      int next_option = getopt_long(argc, argv, short_options, long_options, &option_index);
-
-      // no more options are available
-      if(next_option == -1)
-      {
-         break;
-      }
-
-      switch(next_option)
+      switch(opt)
       {
          case 'I':
          {
@@ -258,7 +249,7 @@ int SpiderParameter::Exec()
          default:
          {
             bool exit_success = false;
-            bool res = ManageDefaultOptions(next_option, optarg, exit_success);
+            bool res = ManageDefaultOptions(opt, optarg, exit_success);
             if(exit_success)
             {
                return EXIT_SUCCESS;

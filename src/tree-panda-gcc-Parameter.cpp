@@ -89,10 +89,8 @@ tree_panda_gcc_parameter::~tree_panda_gcc_parameter() = default;
 
 int tree_panda_gcc_parameter::Exec()
 {
+   int opt;
    exit_code = PARAMETER_NOTPARSED;
-
-   /// variable used into option parsing
-   int option_index;
 
    const char* const short_options = COMMON_SHORT_OPTIONS_STRING "o:Ss::x:tn:cM::i:C:ru:e:T:" GCC_SHORT_OPTIONS_STRING;
 
@@ -116,17 +114,9 @@ int tree_panda_gcc_parameter::Exec()
       return EXIT_SUCCESS;
    }
 
-   while(true)
+   while((opt = getopt_long_only(argc, argv, short_options, long_options, nullptr)) != -1)
    {
-      int next_option = getopt_long_only(argc, argv, short_options, long_options, &option_index);
-
-      // no more options are available
-      if(next_option == -1)
-      {
-         break;
-      }
-
-      switch(next_option)
+      switch(opt)
       {
          case 'o':
             setOption(OPT_output_file, std::string(optarg));
@@ -304,10 +294,10 @@ int tree_panda_gcc_parameter::Exec()
          default:
          {
             bool exit_success = false;
-            bool res = ManageGccOptions(next_option, optarg);
+            bool res = ManageGccOptions(opt, optarg);
             if(res)
             {
-               res = ManageDefaultOptions(next_option, optarg, exit_success);
+               res = ManageDefaultOptions(opt, optarg, exit_success);
             }
             if(exit_success)
             {
