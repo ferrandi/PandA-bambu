@@ -45,7 +45,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 /// utility includes
 #include "dbgPrintHelper.hpp"
@@ -88,8 +87,8 @@ void MemoryInitializationCWriter::Process(const std::string& content)
    tree_nodeConstRef base_type;
    /// Second, according to the type let's how many elements have to have been processed
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "---Currently writing " + GET_CONST_NODE(status.back().first)->get_kind_text());
-   switch(GET_CONST_NODE(status.back().first)->get_kind())
+                  "---Currently writing " + status.back().first->get_kind_text());
+   switch(status.back().first->get_kind())
    {
       case pointer_type_K:
       case integer_type_K:
@@ -117,8 +116,7 @@ void MemoryInitializationCWriter::Process(const std::string& content)
       case type_argument_pack_K:
       case type_pack_expansion_K:
       case vector_type_K:
-         THROW_ERROR("Unexpected type in initializing parameter/variable: " +
-                     GET_CONST_NODE(status.back().first)->get_kind_text());
+         THROW_ERROR("Unexpected type in initializing parameter/variable: " + status.back().first->get_kind_text());
          break;
       case aggr_init_expr_K:
       case binfo_K:
@@ -147,13 +145,12 @@ void MemoryInitializationCWriter::Process(const std::string& content)
       case CASE_TERNARY_EXPRESSION:
       case CASE_UNARY_EXPRESSION:
       default:
-         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC,
-                          "Not supported node: " + GET_CONST_NODE(status.back().first)->get_kind_text());
+         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + status.back().first->get_kind_text());
    }
    THROW_ASSERT(base_type, "");
    std::string binary_value = "";
    unsigned long long size = 0;
-   switch(GET_CONST_NODE(base_type)->get_kind())
+   switch(base_type->get_kind())
    {
       case void_type_K:
       case boolean_type_K:
@@ -191,8 +188,7 @@ void MemoryInitializationCWriter::Process(const std::string& content)
       case type_argument_pack_K:
       case type_pack_expansion_K:
       case vector_type_K:
-         THROW_ERROR("Unexpected type in initializing parameter/variable: " +
-                     GET_CONST_NODE(base_type)->get_kind_text());
+         THROW_ERROR("Unexpected type in initializing parameter/variable: " + base_type->get_kind_text());
          break;
       case aggr_init_expr_K:
       case binfo_K:
@@ -221,8 +217,7 @@ void MemoryInitializationCWriter::Process(const std::string& content)
       case CASE_TERNARY_EXPRESSION:
       case CASE_UNARY_EXPRESSION:
       default:
-         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC,
-                          "Not supported node: " + GET_CONST_NODE(base_type)->get_kind_text());
+         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + base_type->get_kind_text());
    }
    THROW_ASSERT(binary_value.size() % 8 == 0, "");
    written_bytes += binary_value.size() / 8;

@@ -37,8 +37,6 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "graph.hpp"
 
 void graphs_collection::RemoveVertex(boost::graph_traits<boost_graphs_collection>::vertex_descriptor v)
@@ -61,7 +59,6 @@ boost::graph_traits<boost_graphs_collection>::vertex_descriptor graphs_collectio
    boost::property_map<boost_graphs_collection, boost::vertex_index_t>::type index_map =
        boost::get(boost::vertex_index_t(), *this);
    index_map[new_vertex] = index;
-   NodeInfoRef& node_info = (*this)[new_vertex];
-   node_info = info;
+   (*this)[new_vertex] = info;
    return new_vertex;
 }

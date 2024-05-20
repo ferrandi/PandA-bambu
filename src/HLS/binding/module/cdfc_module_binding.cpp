@@ -207,14 +207,14 @@ CDFCModuleBindingSpecialization::CDFCModuleBindingSpecialization(
 {
 }
 
-std::string CDFCModuleBindingSpecialization::GetKindText() const
+std::string CDFCModuleBindingSpecialization::GetName() const
 {
    return CliqueCovering_AlgorithmToString(clique_covering_algorithm);
 }
 
-std::string CDFCModuleBindingSpecialization::GetSignature() const
+HLSFlowStepSpecialization::context_t CDFCModuleBindingSpecialization::GetSignatureContext() const
 {
-   return STR(static_cast<unsigned int>(clique_covering_algorithm));
+   return ComputeSignatureContext(CDFC_MODULE_BINDING, static_cast<unsigned char>(clique_covering_algorithm));
 }
 
 void cdfc_module_binding::initialize_connection_relation(connection_relation& con_rel,
@@ -227,7 +227,7 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "-->Considering operation " + GET_NAME(data, current_v) + " " +
-                         STR(TreeM->CGetTreeNode(data->CGetOpNodeInfo(current_v)->GetNodeId())));
+                         STR(TreeM->GetTreeNode(data->CGetOpNodeInfo(current_v)->GetNodeId())));
       std::vector<HLS_manager::io_binding_type> vars_read = HLSMgr->get_required_values(HLS->functionId, current_v);
       size_t n_ports = vars_read.size();
       con_rel[current_v].resize(n_ports);
@@ -237,7 +237,7 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
          auto tree_var = std::get<0>(vars_read[port_index]);
          if(tree_var != 0)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(TreeM->CGetTreeNode(tree_var)));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(TreeM->GetTreeNode(tree_var)));
             CustomOrderedSet<std::pair<conn_code, std::pair<unsigned int, vertex>>>& con_rel_per_vertex_per_port_index =
                 con_rel[current_v][port_index];
             const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(current_v);
@@ -755,7 +755,7 @@ CdfcGraphInfo::CdfcGraphInfo(const CustomUnorderedMap<vertex, vertex>& _c2s, con
 }
 
 CdfcGraphsCollection::CdfcGraphsCollection(const CdfcGraphInfoRef cdfc_graph_info, const ParameterConstRef _parameters)
-    : graphs_collection(RefcountCast<GraphInfo>(cdfc_graph_info), _parameters)
+    : graphs_collection(std::static_pointer_cast<GraphInfo>(cdfc_graph_info), _parameters)
 {
 }
 
@@ -1421,7 +1421,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING)
          {
             regb =
-                GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
+                GetPointer<const HLSFlowStepFactory>(
+                    design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::HLS))
                     ->CreateHLSFlowStep(
                         HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId,
                         HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(
@@ -1429,7 +1430,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          }
          else
          {
-            regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
+            regb = GetPointer<const HLSFlowStepFactory>(
+                       design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::HLS))
                        ->CreateHLSFlowStep(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm),
                                            funId);
          }
@@ -1869,20 +1871,20 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                if(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm) ==
                   HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING)
                {
-                  regb =
-                      GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
-                          ->CreateHLSFlowStep(
-                              HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId,
-                              HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(
-                                  parameters->getOption<CliqueCovering_Algorithm>(
-                                      OPT_weighted_clique_register_algorithm))));
+                  regb = GetPointer<const HLSFlowStepFactory>(
+                             design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::HLS))
+                             ->CreateHLSFlowStep(
+                                 HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId,
+                                 HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(
+                                     parameters->getOption<CliqueCovering_Algorithm>(
+                                         OPT_weighted_clique_register_algorithm))));
                }
                else
                {
-                  regb =
-                      GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
-                          ->CreateHLSFlowStep(
-                              parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm), funId);
+                  regb = GetPointer<const HLSFlowStepFactory>(
+                             design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::HLS))
+                             ->CreateHLSFlowStep(
+                                 parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm), funId);
                }
                regb->Initialize();
                regb->Exec();
@@ -1939,9 +1941,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             /// add vertex to the clique covering solver
             for(const auto v : partition.second)
             {
-               const auto el1_name = GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, v)]) + "(" +
-                                     sdg->CGetOpNodeInfo(c2s[boost::get(boost::vertex_index, *CG, v)])->GetOperation() +
-                                     ")";
+               const auto op_info = sdg->CGetOpNodeInfo(c2s[boost::get(boost::vertex_index, *CG, v)]);
+               const auto el1_name = op_info->vertex_name + "(" + op_info->GetOperation() + ")";
                module_clique->add_vertex(c2s[boost::get(boost::vertex_index, *CG, v)], el1_name);
             }
 
@@ -1988,7 +1989,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                if(src > tgt)
                {
 #else
-               if(GET_NAME(dfg, src) > GET_NAME(dfg, tgt))
+               if(dfg->CGetOpNodeInfo(src)->vertex_name > dfg->CGetOpNodeInfo(tgt)->vertex_name)
                {
 #endif
                   continue; /// only one edge is needed to build the undirected compatibility graph
@@ -2122,7 +2123,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
 #if HAVE_UNORDERED
                      if(src > tgt)
 #else
-                     if(GET_NAME(dfg, src) > GET_NAME(dfg, tgt))
+                     if(dfg->CGetOpNodeInfo(src)->vertex_name > dfg->CGetOpNodeInfo(tgt)->vertex_name)
 #endif
                      {
                         continue; /// only one edge is needed to build the undirected compatibility graph
@@ -2280,7 +2281,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                      {
                         INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
                                        "---" + GET_NAME(sdg, current_vert) + "(" +
-                                           TreeM->get_tree_node_const(node_id)->ToString() + ") bound to " +
+                                           TreeM->GetTreeNode(node_id)->ToString() + ") bound to " +
                                            allocation_information->get_string_name(fu_unit) + "(" +
                                            STR(numModule[fu_unit]) + ")");
                      }
@@ -2300,7 +2301,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                      {
                         INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
                                        "---" + GET_NAME(sdg, current_vert) + "(" +
-                                           TreeM->get_tree_node_const(node_id)->ToString() + ") bound to " +
+                                           TreeM->GetTreeNode(node_id)->ToString() + ") bound to " +
                                            allocation_information->get_string_name(fu_unit) + "(" + STR(num) + ")");
                      }
                   }

@@ -67,15 +67,9 @@ class AddLibrarySpecialization : public HLSFlowStepSpecialization
     */
    explicit AddLibrarySpecialization(const bool interfaced);
 
-   /**
-    * Return the string representation of this
-    */
-   std::string GetKindText() const override;
+   std::string GetName() const override;
 
-   /**
-    * Return the contribution to the signature of a step given by the specialization
-    */
-   std::string GetSignature() const override;
+   context_t GetSignatureContext() const override;
 };
 
 class add_library : public HLSFunctionStep
@@ -85,8 +79,7 @@ class add_library : public HLSFunctionStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   HLSRelationships ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**

@@ -40,18 +40,22 @@
  * Last modified by $Author$
  *
  */
-
 #ifndef APPLICATION_FRONTEND_FLOW_STEP_HPP
 #define APPLICATION_FRONTEND_FLOW_STEP_HPP
+#include "custom_set.hpp"
+#include "design_flow_step.hpp"
+#include "frontend_flow_step.hpp"
 
-#include "custom_set.hpp"         // for unordered_set
-#include "design_flow_step.hpp"   // for DesignFlowManagerConstRef, DesignF...
-#include "frontend_flow_step.hpp" // for FrontendFlowStepType, FrontendFlow...
-#include <string>                 // for string
-#include <utility>                // for pair
+#include <string>
+#include <utility>
 
 class ApplicationFrontendFlowStep : public FrontendFlowStep
 {
+ protected:
+   ApplicationFrontendFlowStep(signature_t signature, const application_managerRef AppM,
+                               const FrontendFlowStepType frontend_flow_step_type,
+                               const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+
  public:
    /**
     * Constructor
@@ -63,39 +67,19 @@ class ApplicationFrontendFlowStep : public FrontendFlowStep
    ApplicationFrontendFlowStep(const application_managerRef AppM, const FrontendFlowStepType frontend_flow_step_type,
                                const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-   /**
-    * Destructor
-    */
    ~ApplicationFrontendFlowStep() override;
 
-   /**
-    * Execute this step
-    * @return the exit status of this step
-    */
    DesignFlowStep_Status Exec() override = 0;
 
-   /**
-    * Return the signature of this step
-    */
-   std::string GetSignature() const override;
+   virtual std::string GetName() const override;
 
-   /**
-    * Return the name of this design step
-    * @return the name of the pass (for debug purpose)
-    */
-   std::string GetName() const override;
+   bool HasToBeExecuted() const override;
 
    /**
     * Compute the signature of a function frontend flow step
     * @param frontend_flow_step_type is the type of frontend flow
     * @return the corresponding signature
     */
-   static const std::string ComputeSignature(const FrontendFlowStepType frontend_flow_step_type);
-
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
+   static signature_t ComputeSignature(const FrontendFlowStepType frontend_flow_step_type);
 };
 #endif

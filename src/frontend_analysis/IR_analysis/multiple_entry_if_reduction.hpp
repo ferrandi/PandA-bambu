@@ -79,7 +79,7 @@
 #include "function_frontend_flow_step.hpp"
 
 #include "refcount.hpp"
-#include "tree_basic_block.hpp"
+
 /**
  * @name forward declarations
  */
@@ -122,7 +122,7 @@ class MultipleEntryIfReduction : public FunctionFrontendFlowStep
    /// Estimate the area cost of the statements of a basic block
    double GetAreaCost(const std::list<tree_nodeRef>& list_of_stmt) const;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:

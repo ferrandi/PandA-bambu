@@ -50,6 +50,7 @@
 #include <memory>
 
 CONSTREF_FORWARD_DECL(BBGraph);
+CONSTREF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(bloc);
 REF_FORWARD_DECL(tree_node);
 struct gimple_node;
@@ -57,7 +58,7 @@ struct gimple_node;
 class OrderedBasicBlock
 {
    /// Map a instruction to its position in a BasicBlock.
-   CustomMap<const struct gimple_node*, unsigned> NumberedInsts;
+   CustomMap<unsigned int, unsigned int> NumberedInsts;
 
    /// Keep track of last instruction inserted into \p NumberedInsts.
    /// It speeds up queries for uncached instructions by providing a start point
@@ -75,7 +76,7 @@ class OrderedBasicBlock
 
    /// Given no cached results, find if \p A comes before \p B in \p BB.
    /// Cache and number out instruction while walking \p BB.
-   bool instComesBefore(const struct gimple_node* A, const struct gimple_node* B);
+   bool instComesBefore(const tree_nodeConstRef& A, const tree_nodeConstRef& B);
 
  public:
    explicit OrderedBasicBlock(const blocRef& BasicB);
@@ -85,7 +86,7 @@ class OrderedBasicBlock
    /// cached instruction positions and ignores other basic blocks, being
    /// only relevant to compare relative instructions positions inside \p BB.
    /// Returns false for A == B.
-   bool dominates(const struct gimple_node* A, const struct gimple_node* B);
+   bool dominates(const tree_nodeConstRef& A, const tree_nodeConstRef& B);
 };
 
 class OrderedInstructions
@@ -103,7 +104,7 @@ class OrderedInstructions
    bool dominates(const unsigned int BBIA, const unsigned int BBIB) const;
 
    /// Return true if first instruction dominates the second.
-   bool dominates(const struct gimple_node* InstA, const struct gimple_node* InstB) const;
+   bool dominates(const tree_nodeConstRef& A, const tree_nodeConstRef& B) const;
 
    /// Invalidate the OrderedBasicBlock cache when its basic block changes.
    /// i.e. If an instruction is deleted or added to the basic block, the user

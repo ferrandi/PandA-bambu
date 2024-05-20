@@ -40,95 +40,82 @@
  * Last modified by $Author$
  *
  */
-/// header include
 #include "hls_step.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// behavior include
+#include "application_frontend_flow_step.hpp"
+#include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-
-/// design_flows include
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-/// frontend_analysis includes
-#include "application_frontend_flow_step.hpp"
 #include "frontend_flow_step_factory.hpp"
-
-/// HLS include
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_device.hpp"
 #include "hls_flow_step_factory.hpp"
 #include "hls_function_step.hpp"
 #include "hls_manager.hpp"
-
-/// HLS/memory include
 #include "memory.hpp"
-
-/// STL includes
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-#include <tuple>
-
-/// technology include
 #include "technology_manager.hpp"
-
-/// tree include
-#include "behavioral_helper.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
+
+#include <tuple>
 
 HLSFlowStepSpecialization::HLSFlowStepSpecialization() = default;
 
 HLSFlowStepSpecialization::~HLSFlowStepSpecialization() = default;
 
-HLS_step::HLS_step(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+HLSFlowStepSpecialization::context_t HLSFlowStepSpecialization::ComputeSignatureContext(SpecializationClass spec_class,
+                                                                                        unsigned char context)
+{
+   return static_cast<context_t>(static_cast<context_t>(spec_class) << 8U | context);
+}
+
+HLS_step::HLS_step(signature_t _signature, const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                    const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type,
                    const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
-    : DesignFlowStep(_design_flow_manager, _parameters),
+    : DesignFlowStep(_signature, _design_flow_manager, _parameters),
       HLSMgr(_HLSMgr),
       hls_flow_step_type(_hls_flow_step_type),
       hls_flow_step_specialization(_hls_flow_step_specialization)
 {
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-HLS_step::ComputeHLSRelationships(const DesignFlowStep::RelationshipType) const
+HLS_step::HLS_step(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                   const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type,
+                   const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
+    : HLS_step(ComputeSignature(_hls_flow_step_type, _hls_flow_step_specialization), _parameters, _HLSMgr,
+               _design_flow_manager, _hls_flow_step_type, _hls_flow_step_specialization)
 {
-   return CustomUnorderedSet<
-       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>();
+}
+
+HLS_step::HLSRelationships HLS_step::ComputeHLSRelationships(const DesignFlowStep::RelationshipType) const
+{
+   return HLSRelationships();
 }
 
 HLS_step::~HLS_step() = default;
 
 CustomUnorderedMap<std::string, HLSFlowStep_Type> HLS_step::command_line_name_to_enum;
 
-std::string HLS_step::GetSignature() const
+DesignFlowStep::signature_t
+HLS_step::ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
+                           const HLSFlowStepSpecializationConstRef hls_flow_step_specialization)
 {
-   return ComputeSignature(hls_flow_step_type, hls_flow_step_specialization);
-}
-
-const std::string HLS_step::ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
-                                             const HLSFlowStepSpecializationConstRef hls_flow_step_specialization)
-{
-   return "HLS::" + EnumToName(hls_flow_step_type) +
-          (hls_flow_step_specialization ? "::" + hls_flow_step_specialization->GetSignature() : "");
+   return DesignFlowStep::ComputeSignature(
+       HLS, static_cast<unsigned short>(hls_flow_step_type),
+       hls_flow_step_specialization ? hls_flow_step_specialization->GetSignatureContext() : 0);
 }
 
 std::string HLS_step::GetName() const
 {
-   return "HLS::" + GetKindText();
-}
-
-std::string HLS_step::GetKindText() const
-{
-   return EnumToName(hls_flow_step_type) +
-          (hls_flow_step_specialization ? "(" + hls_flow_step_specialization->GetKindText() + ")" : "");
+   return "HLS::" + EnumToName(hls_flow_step_type) +
+          (hls_flow_step_specialization ? "(" + hls_flow_step_specialization->GetName() + ")" : "");
 }
 
 std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type)
@@ -303,98 +290,98 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
                                     const DesignFlowStep::RelationshipType relationship_type)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing relationships of " + GetName());
-   const auto* hls_flow_step_factory = GetPointer<const HLSFlowStepFactory>(CGetDesignFlowStepFactory());
-   const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-   const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
-   CustomOrderedSet<unsigned int> functions = call_graph_manager->GetReachedBodyFunctions();
-   const tree_managerRef TreeM = HLSMgr->get_tree_manager();
-   const HLS_deviceRef HLS_D = HLSMgr->get_HLS_device();
-   const technology_managerRef TM = HLS_D->get_technology_manager();
+   const auto hls_flow_step_factory = GetPointerS<const HLSFlowStepFactory>(CGetDesignFlowStepFactory());
+   const auto DFM = design_flow_manager.lock();
+   const auto DFG = DFM->CGetDesignFlowGraph();
+   const auto CGM = HLSMgr->CGetCallGraphManager();
+   const auto& functions = CGM->GetReachedBodyFunctions();
+   const auto TreeM = HLSMgr->get_tree_manager();
+   const auto HLS_D = HLSMgr->get_HLS_device();
+   const auto TM = HLS_D->get_technology_manager();
 
    /// check if __builtin_memcpy has to be synthesized
-   if(HLSMgr->Rmem && HLSMgr->Rmem->has_implicit_memcpy())
+   const auto memcpy_function =
+       HLSMgr->Rmem && HLSMgr->Rmem->has_implicit_memcpy() ? TreeM->GetFunction(MEMCPY)->index : 0;
+   const auto steps_to_be_created = ComputeHLSRelationships(relationship_type);
+   for(auto const& [step_type, step_spec, rel_type] : steps_to_be_created)
    {
-      const auto memcpy_function = TreeM->GetFunction(MEMCPY);
-      functions.insert(memcpy_function->index);
-   }
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-       steps_to_be_created = ComputeHLSRelationships(relationship_type);
-   for(auto const& step_to_be_created : steps_to_be_created)
-   {
-      switch(std::get<2>(step_to_be_created))
+      switch(rel_type)
       {
-         case HLSFlowStep_Relationship::ALL_FUNCTIONS:
+         case HLSFlowStep_Relationship::TOP_FUNCTION:
          {
-            const auto frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(
-                design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
-            const auto call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(
-                ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
+            const auto frontend_flow_step_factory =
+                GetPointerS<const FrontendFlowStepFactory>(DFM->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
+            const auto call_graph_computation_step =
+                DFM->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
             const auto cg_design_flow_step =
-                call_graph_computation_step ?
-                    design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step :
+                call_graph_computation_step != DesignFlowGraph::null_vertex() ?
+                    DFG->CGetNodeInfo(call_graph_computation_step)->design_flow_step :
                     frontend_flow_step_factory->CreateApplicationFrontendFlowStep(COMPLETE_CALL_GRAPH);
             design_flow_step_set.insert(cg_design_flow_step);
-            for(auto const function : functions)
+            /// Root function cannot be computed at the beginning
+            if(boost::num_vertices(*(CGM->CGetCallGraph())) == 0)
             {
-               std::string function_name = tree_helper::NormalizeTypename(tree_helper::name_function(TreeM, function));
-               /// FIXME: temporary deactivated
-               if(false) // function already implemented
-               {
-                  continue;
-               }
-               vertex hls_step = design_flow_manager.lock()->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(
-                   std::get<0>(step_to_be_created), std::get<1>(step_to_be_created), function));
-               const DesignFlowStepRef design_flow_step =
-                   hls_step ? design_flow_graph->CGetDesignFlowStepInfo(hls_step)->design_flow_step :
-                              hls_flow_step_factory->CreateHLSFlowStep(std::get<0>(step_to_be_created), function,
-                                                                       std::get<1>(step_to_be_created));
+               break;
+            }
+            // TODO: top function and root functions are not the same, here OPT_top_functions_names should be used
+            for(const auto top_function : CGM->GetRootFunctions())
+            {
+               const auto hls_step =
+                   DFM->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(step_type, step_spec, top_function));
+               const auto design_flow_step =
+                   hls_step != DesignFlowGraph::null_vertex() ?
+                       DFG->CGetNodeInfo(hls_step)->design_flow_step :
+                       hls_flow_step_factory->CreateHLSFlowStep(step_type, top_function, step_spec);
                design_flow_step_set.insert(design_flow_step);
             }
             break;
          }
-         case HLSFlowStep_Relationship::SAME_FUNCTION:
-         case HLSFlowStep_Relationship::CALLED_FUNCTIONS:
+         case HLSFlowStep_Relationship::ALL_FUNCTIONS:
          {
-            /// Managed in HLSFunctionStep::ComputeRelationships
-            break;
-         }
-         case HLSFlowStep_Relationship::TOP_FUNCTION:
-         {
-            const auto* frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(
-                design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
-            const vertex call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(
-                ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
-            const DesignFlowStepRef cg_design_flow_step =
-                call_graph_computation_step ?
-                    design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step :
+            const auto frontend_flow_step_factory =
+                GetPointerS<const FrontendFlowStepFactory>(DFM->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
+            const auto call_graph_computation_step =
+                DFM->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
+            const auto cg_design_flow_step =
+                call_graph_computation_step != DesignFlowGraph::null_vertex() ?
+                    DFG->CGetNodeInfo(call_graph_computation_step)->design_flow_step :
                     frontend_flow_step_factory->CreateApplicationFrontendFlowStep(COMPLETE_CALL_GRAPH);
             design_flow_step_set.insert(cg_design_flow_step);
-            /// Root function cannot be computed at the beginning
-            if(boost::num_vertices(*(call_graph_manager->CGetCallGraph())) == 0)
+            for(auto const function : functions)
             {
-               break;
+               const auto hls_step =
+                   DFM->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(step_type, step_spec, function));
+               const auto design_flow_step =
+                   hls_step != DesignFlowGraph::null_vertex() ?
+                       DFG->CGetNodeInfo(hls_step)->design_flow_step :
+                       hls_flow_step_factory->CreateHLSFlowStep(step_type, function, step_spec);
+               design_flow_step_set.insert(design_flow_step);
             }
-            for(const auto top_function : call_graph_manager->GetRootFunctions())
+            if(memcpy_function)
             {
-               vertex hls_step = design_flow_manager.lock()->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(
-                   std::get<0>(step_to_be_created), std::get<1>(step_to_be_created), top_function));
-               const DesignFlowStepRef design_flow_step =
-                   hls_step ? design_flow_graph->CGetDesignFlowStepInfo(hls_step)->design_flow_step :
-                              hls_flow_step_factory->CreateHLSFlowStep(std::get<0>(step_to_be_created), top_function,
-                                                                       std::get<1>(step_to_be_created));
+               const auto hls_step =
+                   DFM->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(step_type, step_spec, memcpy_function));
+               const auto design_flow_step =
+                   hls_step != DesignFlowGraph::null_vertex() ?
+                       DFG->CGetNodeInfo(hls_step)->design_flow_step :
+                       hls_flow_step_factory->CreateHLSFlowStep(step_type, memcpy_function, step_spec);
                design_flow_step_set.insert(design_flow_step);
             }
             break;
          }
          case HLSFlowStep_Relationship::WHOLE_APPLICATION:
          {
-            vertex hls_step = design_flow_manager.lock()->GetDesignFlowStep(
-                HLS_step::ComputeSignature(std::get<0>(step_to_be_created), std::get<1>(step_to_be_created)));
-            const DesignFlowStepRef design_flow_step =
-                hls_step ? design_flow_graph->CGetDesignFlowStepInfo(hls_step)->design_flow_step :
-                           hls_flow_step_factory->CreateHLSFlowStep(std::get<0>(step_to_be_created), 0,
-                                                                    std::get<1>(step_to_be_created));
+            const auto hls_step = DFM->GetDesignFlowStep(HLS_step::ComputeSignature(step_type, step_spec));
+            const auto design_flow_step = hls_step != DesignFlowGraph::null_vertex() ?
+                                              DFG->CGetNodeInfo(hls_step)->design_flow_step :
+                                              hls_flow_step_factory->CreateHLSFlowStep(step_type, 0, step_spec);
             design_flow_step_set.insert(design_flow_step);
+            break;
+         }
+         case HLSFlowStep_Relationship::SAME_FUNCTION:
+         case HLSFlowStep_Relationship::CALLED_FUNCTIONS:
+         {
+            /// Managed in HLSFunctionStep::ComputeRelationships
             break;
          }
          default:
@@ -406,5 +393,5 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
 
 DesignFlowStepFactoryConstRef HLS_step::CGetDesignFlowStepFactory() const
 {
-   return design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS");
+   return design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::HLS);
 }

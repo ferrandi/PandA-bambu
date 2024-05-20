@@ -63,7 +63,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 #include <algorithm>
 #include <string>
@@ -78,7 +77,7 @@ MemoryAllocationSpecialization::MemoryAllocationSpecialization(
 {
 }
 
-std::string MemoryAllocationSpecialization::GetKindText() const
+std::string MemoryAllocationSpecialization::GetName() const
 {
    std::string ret;
    switch(memory_allocation_policy)
@@ -126,10 +125,14 @@ std::string MemoryAllocationSpecialization::GetKindText() const
    return ret;
 }
 
-std::string MemoryAllocationSpecialization::GetSignature() const
+HLSFlowStepSpecialization::context_t MemoryAllocationSpecialization::GetSignatureContext() const
 {
-   return STR(static_cast<unsigned int>(memory_allocation_policy)) +
-          "::" + STR(static_cast<unsigned int>(memory_allocation_channels_type));
+   THROW_ASSERT(static_cast<unsigned long long>(memory_allocation_policy) < (1 << 4) &&
+                    static_cast<unsigned long long>(memory_allocation_channels_type) < (1 << 4),
+                "Signature clash may occurr.");
+   return ComputeSignatureContext(
+       MEMORY_ALLOCATION, static_cast<unsigned char>(static_cast<unsigned char>(memory_allocation_policy) << 4U) |
+                              static_cast<unsigned char>(memory_allocation_channels_type));
 }
 
 memory_allocation::memory_allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
@@ -143,7 +146,7 @@ memory_allocation::memory_allocation(const ParameterConstRef _parameters, const 
                    HLSFlowStepSpecializationConstRef(new MemoryAllocationSpecialization(
                        _parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy),
                        _parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type)))),
-      /// NOTE: hls_flow_step_specialization and not _hls_flow_step_specialization is correct
+      last_ver_sum(0),
       memory_version(0)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -151,10 +154,10 @@ memory_allocation::memory_allocation(const ParameterConstRef _parameters, const 
 
 memory_allocation::~memory_allocation() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 memory_allocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -317,7 +320,7 @@ void memory_allocation::finalize_memory_allocation()
       for(unsigned int p : parm_decl_stored)
       {
          maximum_bus_size =
-             std::max(maximum_bus_size, tree_helper::SizeAlloc(tree_helper::CGetType(TreeM->CGetTreeReindex(p))));
+             std::max(maximum_bus_size, tree_helper::SizeAlloc(tree_helper::CGetType(TreeM->GetTreeNode(p))));
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "param with maximum_bus_size=" + STR(maximum_bus_size));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
@@ -325,7 +328,7 @@ void memory_allocation::finalize_memory_allocation()
       const auto g = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
       graph::vertex_iterator v, v_end;
       const auto TM = HLSMgr->get_tree_manager();
-      const auto fnode = TM->CGetTreeReindex(fun_id);
+      const auto fnode = TM->GetTreeNode(fun_id);
       CustomUnorderedSet<vertex> RW_stmts;
       if(HLSMgr->design_interface_io.find(fname) != HLSMgr->design_interface_io.end())
       {
@@ -359,7 +362,7 @@ void memory_allocation::finalize_memory_allocation()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing operation " + GET_NAME(g, *v));
          if(GET_TYPE(g, *v) & (TYPE_LOAD | TYPE_STORE))
          {
-            const auto curr_tn = TreeM->CGetTreeNode(g->CGetOpNodeInfo(*v)->GetNodeId());
+            const auto curr_tn = TreeM->GetTreeNode(g->CGetOpNodeInfo(*v)->GetNodeId());
             const auto me = GetPointer<const gimple_assign>(curr_tn);
             THROW_ASSERT(me, "only gimple_assign's are allowed as memory operations");
             tree_nodeRef expr;
@@ -387,10 +390,9 @@ void memory_allocation::finalize_memory_allocation()
                !HLSMgr->Rmem->is_private_memory(var->index) && parameters->isOption(OPT_expose_globals) &&
                parameters->getOption<bool>(OPT_expose_globals))
             {
-               const auto vd = GetPointer<const var_decl>(GET_CONST_NODE(var));
-               if(vd &&
-                  (((!vd->scpe || GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K) && !vd->static_flag) ||
-                   tree_helper::IsVolatile(var) || call_graph_manager->ExistsAddressedFunction()))
+               const auto vd = GetPointer<const var_decl>(var);
+               if(vd && (((!vd->scpe || vd->scpe->get_kind() == translation_unit_decl_K) && !vd->static_flag) ||
+                         tree_helper::IsVolatile(var) || call_graph_manager->ExistsAddressedFunction()))
                {
                   has_intern_shared_data =
                       true; /// an external component can access the var possibly (global and volatile vars)
@@ -400,14 +402,14 @@ void memory_allocation::finalize_memory_allocation()
             if(GET_TYPE(g, *v) & TYPE_STORE)
             {
                const auto size_var = std::get<0>(var_read[0]);
-               const auto size_type = tree_helper::CGetType(TreeM->CGetTreeReindex(size_var));
+               const auto size_type = tree_helper::CGetType(TreeM->GetTreeNode(size_var));
                value_bitsize = tree_helper::SizeAlloc(size_type);
                PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "store with value_bitsize=" + STR(value_bitsize));
             }
             else
             {
                const auto size_var = HLSMgr->get_produced_value(fun_id, *v);
-               const auto size_type = tree_helper::CGetType(TreeM->CGetTreeReindex(size_var));
+               const auto size_type = tree_helper::CGetType(TreeM->GetTreeNode(size_var));
                value_bitsize = tree_helper::SizeAlloc(size_type);
                PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "load with value_bitsize=" + STR(value_bitsize));
             }
@@ -436,16 +438,16 @@ void memory_allocation::finalize_memory_allocation()
                const auto var = std::get<0>(*vr_it);
                if(var && tree_helper::is_a_pointer(TreeM, var))
                {
-                  const auto var_node = TreeM->CGetTreeReindex(var);
+                  const auto var_node = TreeM->GetTreeNode(var);
                   const auto type_node = tree_helper::CGetType(var_node);
                   tree_nodeRef type_node_ptd;
-                  if(GET_CONST_NODE(type_node)->get_kind() == pointer_type_K)
+                  if(type_node->get_kind() == pointer_type_K)
                   {
-                     type_node_ptd = GetPointerS<const pointer_type>(GET_CONST_NODE(type_node))->ptd;
+                     type_node_ptd = GetPointerS<const pointer_type>(type_node)->ptd;
                   }
-                  else if(GET_CONST_NODE(type_node)->get_kind() == reference_type_K)
+                  else if(type_node->get_kind() == reference_type_K)
                   {
-                     type_node_ptd = GetPointerS<const reference_type>(GET_CONST_NODE(type_node))->refd;
+                     type_node_ptd = GetPointerS<const reference_type>(type_node)->refd;
                   }
                   else
                   {
@@ -654,7 +656,7 @@ void memory_allocation::allocate_parameters(unsigned int functionId, memoryRef R
                   "---Base Address: " + STR(Rmem->get_parameter_base_address(functionId, functionId)));
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
                   "---Size: " + STR(compute_n_bytes(tree_helper::SizeAlloc(
-                                    tree_helper::CGetType(HLSMgr->get_tree_manager()->CGetTreeReindex(functionId))))));
+                                    tree_helper::CGetType(HLSMgr->get_tree_manager()->GetTreeNode(functionId))))));
    // Allocate every parameter on chip.
    const auto& topParams = behavioral_helper->get_parameters();
    for(auto itr = topParams.begin(), end = topParams.end(); itr != end; ++itr)
@@ -668,7 +670,7 @@ void memory_allocation::allocate_parameters(unsigned int functionId, memoryRef R
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
                      "---Base Address: " + STR(Rmem->get_parameter_base_address(functionId, *itr)));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
-                     "---Size: " + STR(tree_helper::SizeAlloc(HLSMgr->get_tree_manager()->CGetTreeReindex(*itr)) / 8u));
+                     "---Size: " + STR(tree_helper::SizeAlloc(HLSMgr->get_tree_manager()->GetTreeNode(*itr)) / 8u));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl, "<--");
    }
 
@@ -680,40 +682,38 @@ void memory_allocation::allocate_parameters(unsigned int functionId, memoryRef R
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl, "---Id: " + STR(function_return));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
                      "---Base Address: " + STR(Rmem->get_parameter_base_address(functionId, function_return)));
-      INDENT_OUT_MEX(
-          OUTPUT_LEVEL_VERBOSE, out_lvl,
-          "---Size: " + STR(tree_helper::SizeAlloc(HLSMgr->get_tree_manager()->CGetTreeReindex(function_return)) / 8u));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
+                     "---Size: " +
+                         STR(tree_helper::SizeAlloc(HLSMgr->get_tree_manager()->GetTreeNode(function_return)) / 8u));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl, "<--");
    }
 }
 
 bool memory_allocation::HasToBeExecuted() const
 {
-   if(memory_version == 0 or memory_version != HLSMgr->GetMemVersion())
+   if(!memory_version || memory_version != HLSMgr->GetMemVersion())
    {
       return true;
    }
-   std::map<unsigned int, unsigned int> cur_bb_ver;
-   std::map<unsigned int, unsigned int> cur_bitvalue_ver;
+   unsigned int curr_ver_sum = 0;
    const auto CGMan = HLSMgr->CGetCallGraphManager();
    for(const auto i : CGMan->GetReachedBodyFunctions())
    {
       const auto FB = HLSMgr->CGetFunctionBehavior(i);
-      cur_bb_ver[i] = FB->GetBBVersion();
-      cur_bitvalue_ver[i] = FB->GetBitValueVersion();
+      curr_ver_sum += FB->GetBBVersion() + FB->GetBitValueVersion();
    }
-   return cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver;
+   return curr_ver_sum > last_ver_sum;
 }
 
 DesignFlowStep_Status memory_allocation::Exec()
 {
    const auto status = InternalExec();
    const auto CGMan = HLSMgr->CGetCallGraphManager();
+   last_ver_sum = 0;
    for(const auto i : CGMan->GetReachedBodyFunctions())
    {
       const auto FB = HLSMgr->CGetFunctionBehavior(i);
-      last_bb_ver[i] = FB->GetBBVersion();
-      last_bitvalue_ver[i] = FB->GetBitValueVersion();
+      last_ver_sum += FB->GetBBVersion() + FB->GetBitValueVersion();
    }
    memory_version = HLSMgr->GetMemVersion();
    return status;

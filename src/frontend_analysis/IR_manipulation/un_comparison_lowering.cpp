@@ -56,7 +56,6 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 UnComparisonLowering::UnComparisonLowering(const application_managerRef _AppM, unsigned int _function_id,
                                            const DesignFlowManagerConstRef _design_flow_manager,
@@ -68,7 +67,7 @@ UnComparisonLowering::UnComparisonLowering(const application_managerRef _AppM, u
 
 UnComparisonLowering::~UnComparisonLowering() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 UnComparisonLowering::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -101,27 +100,27 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
    bool modified = false;
    const auto TreeM = AppM->get_tree_manager();
    const auto tree_man = tree_manipulationRef(new tree_manipulation(TreeM, parameters, AppM));
-   const auto curr_tn = TreeM->CGetTreeNode(function_id);
-   const auto Scpe = TreeM->CGetTreeReindex(function_id);
+   const auto curr_tn = TreeM->GetTreeNode(function_id);
+   const auto Scpe = TreeM->GetTreeNode(function_id);
    const auto fd = GetPointerS<const function_decl>(curr_tn);
-   const auto sl = GetPointerS<const statement_list>(GET_CONST_NODE(fd->body));
+   const auto sl = GetPointerS<const statement_list>(fd->body);
    for(const auto& block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block.first));
       for(const auto& stmt : block.second->CGetStmtList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + stmt->ToString());
-         if(GET_CONST_NODE(stmt)->get_kind() != gimple_assign_K)
+         if(stmt->get_kind() != gimple_assign_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped" + STR(stmt));
             continue;
          }
-         const auto ga = GetPointerS<const gimple_assign>(GET_CONST_NODE(stmt));
-         const auto rhs_kind = GET_CONST_NODE(ga->op1)->get_kind();
+         const auto ga = GetPointerS<const gimple_assign>(stmt);
+         const auto rhs_kind = ga->op1->get_kind();
          if(rhs_kind == unlt_expr_K || rhs_kind == unge_expr_K || rhs_kind == ungt_expr_K || rhs_kind == unle_expr_K ||
             rhs_kind == ltgt_expr_K)
          {
-            const auto be = GetPointerS<const binary_expr>(GET_CONST_NODE(ga->op1));
+            const auto be = GetPointerS<const binary_expr>(ga->op1);
             const auto srcp_string = be->include_name + ":" + STR(be->line_number) + ":" + STR(be->column_number);
             kind new_kind = error_mark_K;
             if(rhs_kind == unlt_expr_K)
@@ -157,17 +156,15 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
             block.second->PushBefore(new_ga, stmt, AppM);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(new_ga));
             const auto new_not = tree_man->create_unary_operation(
-                booleanType, GetPointerS<const gimple_assign>(GET_CONST_NODE(new_ga))->op0, srcp_string,
-                truth_not_expr_K);
-            if(GET_INDEX_CONST_NODE(be->type) != GET_INDEX_CONST_NODE(booleanType))
+                booleanType, GetPointerS<const gimple_assign>(new_ga)->op0, srcp_string, truth_not_expr_K);
+            if(be->type->index != booleanType->index)
             {
                const auto new_ga_not = tree_man->CreateGimpleAssign(
                    booleanType, TreeM->CreateUniqueIntegerCst(0, booleanType),
                    TreeM->CreateUniqueIntegerCst(1, booleanType), new_not, function_id, srcp_string);
                block.second->PushBefore(new_ga_not, stmt, AppM);
                const auto new_nop = tree_man->create_unary_operation(
-                   be->type, GetPointerS<const gimple_assign>(GET_CONST_NODE(new_ga_not))->op0, srcp_string,
-                   nop_expr_K);
+                   be->type, GetPointerS<const gimple_assign>(new_ga_not)->op0, srcp_string, nop_expr_K);
                TreeM->ReplaceTreeNode(stmt, ga->op1, new_nop);
             }
             else

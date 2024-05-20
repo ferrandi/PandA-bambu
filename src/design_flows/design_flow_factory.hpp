@@ -37,12 +37,11 @@
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
  */
-
 #ifndef DESIGN_FLOW_FACTORY_HPP
 #define DESIGN_FLOW_FACTORY_HPP
+#include "design_flow_step_factory.hpp"
 
-#include "design_flow_step_factory.hpp" // for DesignFlowStepRef, DesignFlo...
-#include <string>                       // for string
+#include <string>
 
 enum class DesignFlow_Type;
 
@@ -56,28 +55,15 @@ class DesignFlowFactory : public DesignFlowStepFactory
     */
    DesignFlowFactory(const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-   /**
-    * Destructor
-    */
    ~DesignFlowFactory() override;
 
-   /**
-    * Return the prefix of the steps created by the factory
-    */
-   const std::string GetPrefix() const override;
-
-   /**
-    * Return a step given the signature
-    * @param signature is the signature of the step to be created
-    * @return the created step
-    */
-   DesignFlowStepRef CreateFlowStep(const std::string& signature) const override;
+   DesignFlowStepRef CreateFlowStep(DesignFlowStep::signature_t signature) const override;
 
    /**
     * Create a design flow
     * @param design_flow_type is the type of design flow to be created
     * @return the step corresponding to the design flow
     */
-   const DesignFlowStepRef CreateDesignFlow(const DesignFlow_Type design_flow_type) const;
+   DesignFlowStepRef CreateDesignFlow(const DesignFlow_Type design_flow_type) const;
 };
 #endif

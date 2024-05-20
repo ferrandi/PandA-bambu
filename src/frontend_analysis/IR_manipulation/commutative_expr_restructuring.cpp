@@ -76,11 +76,10 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 #define EPSILON 0.0001
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 commutative_expr_restructuring::ComputeFrontendRelationships(
     const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -103,11 +102,11 @@ commutative_expr_restructuring::ComputeFrontendRelationships(
                /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
                const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(
                    FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
-               if(update_schedule)
+               if(update_schedule != DesignFlowGraph::null_vertex())
                {
                   const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
                   const DesignFlowStepRef design_flow_step =
-                      design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
+                      design_flow_graph->CGetNodeInfo(update_schedule)->design_flow_step;
                   if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() !=
                      function_behavior->GetBBVersion())
                   {
@@ -148,14 +147,14 @@ commutative_expr_restructuring::~commutative_expr_restructuring() = default;
 
 bool commutative_expr_restructuring::IsCommExprGimple(const tree_nodeConstRef tn) const
 {
-   const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(tn));
+   const auto ga = GetPointer<const gimple_assign>(tn);
    if(!ga)
    {
       return false;
    }
-   auto opKind = GET_NODE(ga->op1)->get_kind();
+   auto opKind = ga->op1->get_kind();
    auto Type = tree_helper::CGetType(ga->op0);
-   if(!GetPointer<const integer_type>(GET_CONST_NODE(Type)))
+   if(!GetPointer<const integer_type>(Type))
    {
       return false;
    }
@@ -167,10 +166,10 @@ bool commutative_expr_restructuring::IsCommExprGimple(const tree_nodeConstRef tn
 tree_nodeRef commutative_expr_restructuring::IsCommExprChain(const tree_nodeConstRef tn, const bool first,
                                                              bool is_third_node) const
 {
-   const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(tn));
-   const auto be = GetPointer<const binary_expr>(GET_NODE(ga->op1));
-   const auto operand = first ? GET_NODE(be->op0) : GET_NODE(be->op1);
-   const auto other_operand = first ? GET_NODE(be->op1) : GET_NODE(be->op0);
+   const auto ga = GetPointer<const gimple_assign>(tn);
+   const auto be = GetPointer<const binary_expr>(ga->op1);
+   const auto operand = first ? be->op0 : be->op1;
+   const auto other_operand = first ? be->op1 : be->op0;
    const auto sn = GetPointer<const ssa_name>(operand);
    if(tree_helper::is_constant(TM, other_operand->index))
    {
@@ -184,7 +183,7 @@ tree_nodeRef commutative_expr_restructuring::IsCommExprChain(const tree_nodeCons
    {
       return tree_nodeRef();
    }
-   const auto def = GetPointer<const gimple_assign>(GET_NODE(sn->CGetDefStmt()));
+   const auto def = GetPointer<const gimple_assign>(sn->CGetDefStmt());
    if(!def)
    {
       return tree_nodeRef();
@@ -193,7 +192,7 @@ tree_nodeRef commutative_expr_restructuring::IsCommExprChain(const tree_nodeCons
    {
       return tree_nodeRef();
    }
-   if(GET_NODE(def->op1)->get_kind() != GET_NODE(ga->op1)->get_kind())
+   if(def->op1->get_kind() != ga->op1->get_kind())
    {
       return tree_nodeRef();
    }
@@ -214,8 +213,8 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
    static size_t counter = 0;
 
    const tree_manipulationConstRef tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
-   auto* fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* fd = GetPointer<function_decl>(TM->GetTreeNode(function_id));
+   auto* sl = GetPointer<statement_list>(fd->body);
    for(const auto& block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
@@ -264,18 +263,18 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not chained with two commutative expression");
             continue;
          }
-         const auto first_ga = GetPointer<const gimple_assign>(GET_NODE(*stmt));
-         auto comm_expr_kind = GET_NODE(first_ga->op1)->get_kind();
-         auto comm_expr_kind_text = GET_NODE(first_ga->op1)->get_kind_text();
-         const auto first_be = GetPointer<const binary_expr>(GET_NODE(first_ga->op1));
+         const auto first_ga = GetPointer<const gimple_assign>(*stmt);
+         auto comm_expr_kind = first_ga->op1->get_kind();
+         auto comm_expr_kind_text = first_ga->op1->get_kind_text();
+         const auto first_be = GetPointer<const binary_expr>(first_ga->op1);
 
-         const auto second_ga = GetPointer<const gimple_assign>(GET_NODE(second_stmt));
-         THROW_ASSERT(GET_NODE(second_ga->op1)->get_kind() == comm_expr_kind, "unexpected condition");
-         const auto second_be = GetPointer<const binary_expr>(GET_NODE(second_ga->op1));
+         const auto second_ga = GetPointer<const gimple_assign>(second_stmt);
+         THROW_ASSERT(second_ga->op1->get_kind() == comm_expr_kind, "unexpected condition");
+         const auto second_be = GetPointer<const binary_expr>(second_ga->op1);
 
-         const auto third_ga = GetPointer<const gimple_assign>(GET_NODE(third_stmt));
-         THROW_ASSERT(GET_NODE(third_ga->op1)->get_kind() == comm_expr_kind, "unexpected condition");
-         const auto third_be = GetPointer<const binary_expr>(GET_NODE(third_ga->op1));
+         const auto third_ga = GetPointer<const gimple_assign>(third_stmt);
+         THROW_ASSERT(third_ga->op1->get_kind() == comm_expr_kind, "unexpected condition");
+         const auto third_be = GetPointer<const binary_expr>(third_ga->op1);
 
          const double old_time = schedule->GetEndingTime(first_ga->index);
 
@@ -294,10 +293,10 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Analyzing when " + STR(operand.first) + " used in " + STR(operand.second) + " is ready");
-            const auto sn = GetPointer<const ssa_name>(GET_NODE(operand.first));
+            const auto sn = GetPointer<const ssa_name>(operand.first);
             if(sn)
             {
-               const auto def_operand = GetPointer<const gimple_node>(GET_NODE(sn->CGetDefStmt()));
+               const auto def_operand = GetPointer<const gimple_node>(sn->CGetDefStmt());
                if(def_operand->bb_index == block.first)
                {
                   const auto def_stmt = sn->CGetDefStmt();
@@ -357,24 +356,23 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
 
          /// Create the ssa in the left part
          tree_nodeRef var = nullptr;
-         if(GET_NODE(first_value)->get_kind() == ssa_name_K && GET_NODE(second_value)->get_kind() == ssa_name_K)
+         if(first_value->get_kind() == ssa_name_K && second_value->get_kind() == ssa_name_K)
          {
-            const auto sn1 = GetPointer<const ssa_name>(GET_NODE(first_value));
-            const auto sn2 = GetPointer<const ssa_name>(GET_NODE(second_value));
+            const auto sn1 = GetPointer<const ssa_name>(first_value);
+            const auto sn2 = GetPointer<const ssa_name>(second_value);
             if(sn1->var && sn2->var && sn1->var->index == sn2->var->index)
             {
                var = sn1->var;
             }
          }
-         const auto first_ga_op0 = GetPointer<ssa_name>(GET_NODE(first_ga->op0));
+         const auto first_ga_op0 = GetPointer<ssa_name>(first_ga->op0);
          const auto ssa_node = tree_man->create_ssa_name(var, type_node, first_ga_op0->min, first_ga_op0->max);
-         GetPointer<ssa_name>(GET_CONST_NODE(ssa_node))->bit_values = first_ga_op0->bit_values;
+         GetPointer<ssa_name>(ssa_node)->bit_values = first_ga_op0->bit_values;
 
          /// Create the assign
          const auto gimple_assign_node =
              tree_man->create_gimple_modify_stmt(ssa_node, comm_expr_node, function_id, BUILTIN_SRCP);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Created " + GET_CONST_NODE(gimple_assign_node)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + gimple_assign_node->ToString());
          /// Set the bit value for the intermediate ssa to correctly update execution time
          block.second->PushBefore(gimple_assign_node, *stmt, AppM);
          new_tree_nodes.push_back(gimple_assign_node);
@@ -387,14 +385,13 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          /// Create the assign
          const auto root_gimple_node =
              tree_man->create_gimple_modify_stmt(first_ga->op0, root_comm_expr, function_id, BUILTIN_SRCP);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Created " + GET_CONST_NODE(root_gimple_node)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + root_gimple_node->ToString());
          block.second->Replace(*stmt, root_gimple_node, true, AppM);
          new_tree_nodes.push_back(root_gimple_node);
          AppM->RegisterTransformation(GetName(), root_gimple_node);
 
          /// Check that the second commutative expression is actually dead
-         THROW_ASSERT(GetPointer<const ssa_name>(GET_CONST_NODE(second_ga->op0))->CGetUseStmts().size() == 0, "");
+         THROW_ASSERT(GetPointer<const ssa_name>(second_ga->op0)->CGetUseStmts().size() == 0, "");
 
          /// Remove the intermediate commutative expression
          block.second->RemoveStmt(second_stmt, AppM);
@@ -412,7 +409,7 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
                            "---Written BB_Inside_" + GetName() + "_" + STR(counter) + ".dot");
             counter++;
          }
-         const double new_time = schedule->GetEndingTime(GET_INDEX_CONST_NODE(root_gimple_node));
+         const double new_time = schedule->GetEndingTime(root_gimple_node->index);
          if(new_time + EPSILON > old_time)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Error in estimation");
@@ -482,11 +479,10 @@ bool commutative_expr_restructuring::HasToBeExecuted() const
       /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
       const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(
           FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
-      if(update_schedule)
+      if(update_schedule != DesignFlowGraph::null_vertex())
       {
          const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const DesignFlowStepRef design_flow_step =
-             design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
+         const DesignFlowStepRef design_flow_step = design_flow_graph->CGetNodeInfo(update_schedule)->design_flow_step;
          if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() !=
             function_behavior->GetBBVersion())
          {

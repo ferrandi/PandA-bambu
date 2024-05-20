@@ -39,7 +39,6 @@
  */
 #ifndef GENERATE_FU_LIST_HPP
 #define GENERATE_FU_LIST_HPP
-
 #include "functional_unit_step.hpp"
 #include "refcount.hpp"
 #include "to_data_file_step.hpp"
@@ -61,6 +60,9 @@ class GenerateFuList : public ToDataFileStep, public FunctionalUnitStep
    /// The current entry for list of functional units
    std::string current_list;
 
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
+
  public:
    /**
     * The constructor
@@ -71,53 +73,12 @@ class GenerateFuList : public ToDataFileStep, public FunctionalUnitStep
    GenerateFuList(const generic_deviceRef _device, const DesignFlowManagerConstRef design_flow_manager,
                   const ParameterConstRef parameters);
 
-   /**
-    * Execute the step
-    * @return the exit status of this step
-    */
    DesignFlowStep_Status Exec() override;
 
-   /**
-    * Compute the relationships of a step with other steps
-    * @param dependencies is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& relationship,
-                             const DesignFlowStep::RelationshipType relationship_type) override;
-
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
    bool HasToBeExecuted() const override;
 
-   /**
-    * Return a unified identifier of this design step
-    * @return the signature of the design step
-    */
-   std::string GetSignature() const override;
-
-   /**
-    * Return the name of this design step
-    * @return the name of the pass (for debug purpose)
-    */
-   std::string GetName() const override;
-
-   /**
-    * Return the factory to create this type of steps
-    */
    DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 
-   /**
-    * Analyze the single cell
-    * @param fu is the cell
-    * @param prec is the precision
-    * @param portsize_parameters is the size of parameters
-    * @param portsize_index
-    * @param pipe_parameters
-    * @param stage_index
-    * @param constPort is the index of the constant port
-    */
    void AnalyzeCell(functional_unit* fu, const unsigned int prec, const std::vector<std::string>& portsize_parameters,
                     const size_t portsize_index, const std::vector<std::string>& pipe_parameters,
                     const size_t stage_index, const unsigned int constPort, const bool is_commutative,

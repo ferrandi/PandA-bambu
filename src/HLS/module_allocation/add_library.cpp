@@ -42,52 +42,46 @@
  *
  */
 #include "add_library.hpp"
-#include "Parameter.hpp" // for ParameterConstRef
+
+#include "Parameter.hpp"
+#include "allocation_information.hpp"
+#include "area_info.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
-#include "dbgPrintHelper.hpp" // for INDENT_DBG_MEX, DEBUG_LEVEL_VERY_...
-#include "exceptions.hpp"     // for THROW_ASSERT, THROW_UNREACHABLE
-#include "hls.hpp"            // for HLS_managerRef
-#include "hls_device.hpp"     // for generic_deviceRef
-#include "hls_manager.hpp"    // for HLS_managerRef
-#include "library_manager.hpp"
-#include "string_manipulation.hpp" // for STR GET_CLASS
-#include "technology_manager.hpp"  // for WORK_LIBRARY
-#include "technology_node.hpp"     // for functional_unit, operation (ptr o...
-
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
 #include "fu_binding.hpp"
+#include "hls.hpp"
 #include "hls_constraints.hpp"
+#include "hls_device.hpp"
+#include "hls_manager.hpp"
+#include "library_manager.hpp"
 #include "memory.hpp"
+#include "omp_functions.hpp"
 #include "reg_binding.hpp"
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
-
-#include "area_info.hpp"
-#include "omp_functions.hpp"
+#include "string_manipulation.hpp"
+#include "structural_manager.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
 #include "time_info.hpp"
 
-/// circuit include
-#include "structural_manager.hpp"
-
-/// HLS/module_allocation include
-#include "allocation_information.hpp"
-
-/// STL includes
-#include "custom_set.hpp"
 #include <tuple>
 
 AddLibrarySpecialization::AddLibrarySpecialization(const bool _interfaced) : interfaced(_interfaced)
 {
 }
 
-std::string AddLibrarySpecialization::GetKindText() const
+std::string AddLibrarySpecialization::GetName() const
 {
    return interfaced ? "Interfaced" : "";
 }
 
-std::string AddLibrarySpecialization::GetSignature() const
+HLSFlowStepSpecialization::context_t AddLibrarySpecialization::GetSignatureContext() const
 {
-   return interfaced ? "Interfaced" : "";
+   return ComputeSignatureContext(ADD_LIBRARY, interfaced);
 }
 
 add_library::add_library(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned _funId,
@@ -101,15 +95,14 @@ add_library::add_library(const ParameterConstRef _parameters, const HLS_managerR
 
 add_library::~add_library() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 add_library::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    const auto* const add_library_specialization =
        GetPointer<const AddLibrarySpecialization>(hls_flow_step_specialization);
    THROW_ASSERT(hls_flow_step_specialization, "Empty specialization type");
-   THROW_ASSERT(add_library_specialization,
-                "Wrong specialization type: " + hls_flow_step_specialization->GetKindText());
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   THROW_ASSERT(add_library_specialization, "Wrong specialization type: " + hls_flow_step_specialization->GetName());
+   HLSRelationships ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

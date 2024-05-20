@@ -56,7 +56,6 @@
 #include "profiling_information.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 
 EdgeCWriter::EdgeCWriter(const HLS_managerConstRef _HLSMgr, const InstructionWriterRef _instruction_writer,
                          const IndentedOutputStreamRef _indented_output_stream)
@@ -879,7 +878,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Operation is a multiif");
             unsigned int node_id = cfgGraph->CGetOpNodeInfo(last_stmt)->GetNodeId();
-            const tree_nodeRef node = TM->get_tree_node_const(node_id);
+            const tree_nodeRef node = TM->GetTreeNode(node_id);
             THROW_ASSERT(node->get_kind() == gimple_multi_way_if_K, "unexpected node");
             auto* gmwi = GetPointer<gimple_multi_way_if>(node);
             std::map<unsigned int, bool> add_elseif_to_goto;
@@ -912,7 +911,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                   if(cond.first)
                   {
                      indented_output_stream->Append("else if(");
-                     indented_output_stream->Append(behavioral_helper->PrintVariable(GET_INDEX_NODE(cond.first)));
+                     indented_output_stream->Append(behavioral_helper->PrintVariable(cond.first->index));
                      indented_output_stream->Append(")\n");
                   }
                   else
@@ -1127,7 +1126,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                      }
 
                      indented_output_stream->Append("case " +
-                                                    behavioral_helper->PrintConstant(TM->CGetTreeReindex(*eIdBeg)));
+                                                    behavioral_helper->PrintConstant(TM->GetTreeNode(*eIdBeg)));
                   }
                   indented_output_stream->Append(":\n");
                }

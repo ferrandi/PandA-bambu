@@ -36,45 +36,37 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Michele Fiortio <michele.fiorito@polimi.it>
  */
-
-// include class header
 #include "Bit_Value.hpp"
 
 #include "Dominance.hpp"
 #include "Parameter.hpp"
-#include "basic_block.hpp"
-#include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-
-// include from tree/
 #include "Range.hpp"
 #include "application_manager.hpp"
+#include "basic_block.hpp"
+#include "call_graph_manager.hpp"
+#include "dbgPrintHelper.hpp"
+#include "function_behavior.hpp"
+#include "string_manipulation.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
-#include "string_manipulation.hpp"
 #include <boost/range/adaptors.hpp>
-#include <unordered_set>
 
 std::deque<bit_lattice> Bit_Value::get_current(const tree_nodeConstRef& tn) const
 {
-   const auto nid = GET_INDEX_CONST_NODE(tn);
-   const auto node = GET_CONST_NODE(tn);
-   if(node->get_kind() == ssa_name_K || node->get_kind() == parm_decl_K)
+   if(tn->get_kind() == ssa_name_K || tn->get_kind() == parm_decl_K)
    {
-      THROW_ASSERT(current.count(nid), "");
-      return current.at(nid);
+      THROW_ASSERT(current.count(tn->index), "");
+      return current.at(tn->index);
    }
-   else if(GetPointer<const cst_node>(node))
+   else if(tree_helper::IsConstant(tn))
    {
-      THROW_ASSERT(best.count(nid), "");
-      return best.at(nid);
+      THROW_ASSERT(best.count(tn->index), "");
+      return best.at(tn->index);
    }
-   THROW_UNREACHABLE("Unexpected node kind: " + node->get_kind_text());
+   THROW_UNREACHABLE("Unexpected node kind: " + tn->get_kind_text());
    return std::deque<bit_lattice>();
 }
 
@@ -101,7 +93,7 @@ void Bit_Value::forward()
    {
       for(const auto& phi : bb->CGetPhiList())
       {
-         const auto phi_node = GET_CONST_NODE(phi);
+         const auto phi_node = phi;
          const auto gp = GetPointerS<const gimple_phi>(phi_node);
          if(!gp->virtual_flag)
          {
@@ -113,7 +105,7 @@ void Bit_Value::forward()
       }
       for(const auto& stmt : bb->CGetStmtList())
       {
-         const auto stmt_node = GET_CONST_NODE(stmt);
+         const auto stmt_node = stmt;
          if(stmt_node->get_kind() == gimple_assign_K)
          {
             const auto ga = GetPointerS<const gimple_assign>(stmt_node);
@@ -138,10 +130,10 @@ void Bit_Value::forward()
       if(stmt_kind == gimple_assign_K)
       {
          const auto ga = GetPointerS<const gimple_assign>(stmt_node);
-         const auto output_nid = GET_INDEX_CONST_NODE(ga->op0);
-         const auto ssa = GetPointer<const ssa_name>(GET_CONST_NODE(ga->op0));
-         if(ssa)
+         const auto output_nid = ga->op0->index;
+         if(ga->op0->get_kind() == ssa_name_K)
          {
+            const auto ssa = GetPointerS<const ssa_name>(ga->op0);
             if(!IsHandledByBitvalue(ga->op0) || ssa->CGetUseStmts().empty())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -151,7 +143,7 @@ void Bit_Value::forward()
             }
             bool hasRequiredValues = true;
             std::vector<std::tuple<unsigned int, unsigned int>> vars_read;
-            tree_helper::get_required_values(vars_read, TM->GetTreeNode(stmt_node->index));
+            tree_helper::get_required_values(vars_read, stmt_node);
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Requires " + STR(vars_read.size()) + " values");
             for(const auto& var_pair : vars_read)
             {
@@ -160,19 +152,19 @@ void Bit_Value::forward()
                {
                   continue;
                }
-               const auto use_node = TM->CGetTreeNode(use_node_id);
+               const auto use_node = TM->GetTreeNode(use_node_id);
                if(!IsHandledByBitvalue(use_node))
                {
                   continue;
                }
-               const auto ssa_use = GetPointer<const ssa_name>(use_node);
 
-               if(ssa_use && !current.count(use_node_id))
+               if(use_node->get_kind() == ssa_name_K && !current.count(use_node_id))
                {
+                  const auto ssa_use = GetPointerS<const ssa_name>(use_node);
                   const auto def_stmt = ssa_use->CGetDefStmt();
-                  if(GET_CONST_NODE(def_stmt)->get_kind() == gimple_nop_K)
+                  if(def_stmt->get_kind() == gimple_nop_K)
                   {
-                     THROW_ASSERT(!ssa_use->var || GET_CONST_NODE(ssa_use->var)->get_kind() != parm_decl_K,
+                     THROW_ASSERT(!ssa_use->var || ssa_use->var->get_kind() != parm_decl_K,
                                   "Function parameter bitvalue must be defined before");
                      current.insert(
                          std::make_pair(use_node_id, create_bitstring_from_constant(0, tree_helper::TypeSize(use_node),
@@ -183,8 +175,8 @@ void Bit_Value::forward()
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                     "---Input " + ssa_use->ToString() + " definition has not been analyzed yet");
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---Definition statement added to queue: " + GET_CONST_NODE(def_stmt)->ToString());
-                     push_back(GET_CONST_NODE(def_stmt));
+                                    "---Definition statement added to queue: " + def_stmt->ToString());
+                     push_back(def_stmt);
                      hasRequiredValues = false;
                      continue;
                   }
@@ -200,7 +192,7 @@ void Bit_Value::forward()
                                  "---current updated: " + bitstring_to_string(current.at(output_nid)));
                   for(const auto& next_node : ssa->CGetUseStmts())
                   {
-                     push_back(GET_CONST_NODE(next_node.first));
+                     push_back(next_node.first);
                   }
                }
             }
@@ -208,7 +200,7 @@ void Bit_Value::forward()
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                               "---Inputs not fully analyzed by the forward Bit Value Analysis. Operation  " +
-                                  GET_NODE(ga->op0)->ToString() + " postponed");
+                                  ga->op0->ToString() + " postponed");
                push_back(stmt_node);
             }
          }
@@ -218,8 +210,8 @@ void Bit_Value::forward()
          const auto gp = GetPointerS<const gimple_phi>(stmt_node);
          THROW_ASSERT(!gp->virtual_flag, "unexpected case");
 
-         const auto output_nid = GET_INDEX_CONST_NODE(gp->res);
-         const auto ssa = GetPointerS<const ssa_name>(GET_CONST_NODE(gp->res));
+         const auto output_nid = gp->res->index;
+         const auto ssa = GetPointerS<const ssa_name>(gp->res);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "phi: " + STR(stmt_node->index));
          if(!IsHandledByBitvalue(gp->res) || ssa->CGetUseStmts().empty())
          {
@@ -238,7 +230,7 @@ void Bit_Value::forward()
 #endif
          for(const auto& def_edge : gp->CGetDefEdgesList())
          {
-            const auto def_id = GET_INDEX_CONST_NODE(def_edge.first);
+            const auto def_id = def_edge.first->index;
             if(def_id == output_nid)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -248,14 +240,14 @@ void Bit_Value::forward()
             }
             if(current.find(def_id) == current.end())
             {
-               const auto def_node = GET_CONST_NODE(def_edge.first);
-               const auto def_ssa = GetPointer<const ssa_name>(def_node);
-               if(def_ssa)
+               const auto def_node = def_edge.first;
+               if(def_node->get_kind() == ssa_name_K)
                {
+                  const auto def_ssa = GetPointerS<const ssa_name>(def_node);
                   const auto def_stmt = def_ssa->CGetDefStmt();
-                  if(GET_CONST_NODE(def_stmt)->get_kind() == gimple_nop_K)
+                  if(def_stmt->get_kind() == gimple_nop_K)
                   {
-                     THROW_ASSERT(!def_ssa->var || GET_CONST_NODE(def_ssa->var)->get_kind() != parm_decl_K,
+                     THROW_ASSERT(!def_ssa->var || def_ssa->var->get_kind() != parm_decl_K,
                                   "Function parameter bitvalue must be defined before");
                      current.insert(
                          std::make_pair(def_id, create_bitstring_from_constant(0, tree_helper::TypeSize(def_node),
@@ -267,8 +259,8 @@ void Bit_Value::forward()
                                     "---Skipping " + STR(def_node) +
                                         " no current has been yet computed for this ssa var");
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---Definition statement added to queue: " + GET_CONST_NODE(def_stmt)->ToString());
-                     push_back(GET_CONST_NODE(def_stmt));
+                                    "---Definition statement added to queue: " + def_stmt->ToString());
+                     push_back(def_stmt);
                      allInputs = false;
                      continue;
                   }
@@ -305,7 +297,7 @@ void Bit_Value::forward()
                               "---current updated: " + bitstring_to_string(current.at(output_nid)));
                for(const auto& next_node : ssa->CGetUseStmts())
                {
-                  push_back(GET_NODE(next_node.first));
+                  push_back(next_node.first);
                }
             }
          }
@@ -320,7 +312,7 @@ void Bit_Value::forward()
          {
             const auto gr = GetPointerS<const gimple_return>(stmt_node);
             THROW_ASSERT(gr->op, "Empty return should not be a use of any ssa");
-            if(GET_CONST_NODE(gr->op)->get_kind() == ssa_name_K && IsHandledByBitvalue(gr->op))
+            if(gr->op->get_kind() == ssa_name_K && IsHandledByBitvalue(gr->op))
             {
                const auto res = get_current(gr->op);
                THROW_ASSERT(res.size(), "");
@@ -336,16 +328,19 @@ void Bit_Value::forward()
          const auto ga = GetPointerS<const gimple_asm>(stmt_node);
          if(ga->out)
          {
-            auto tl = GetPointer<const tree_list>(GET_CONST_NODE(ga->out));
+            auto tl = GetPointerS<const tree_list>(ga->out);
             THROW_ASSERT(tl->valu, "only the first output and so only single output gimple_asm are supported");
-            const auto ssa = GetPointer<const ssa_name>(GET_CONST_NODE(tl->valu));
-            if(ssa && !ssa->CGetUseStmts().empty() && IsHandledByBitvalue(tl->valu))
+            if(tl->valu->get_kind() == ssa_name_K)
             {
-               const auto output_nid = GET_INDEX_CONST_NODE(tl->valu);
-               THROW_ASSERT(best.count(output_nid), "");
-               current[output_nid] = best.at(output_nid);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---current updated: " + bitstring_to_string(current.at(output_nid)));
+               const auto ssa = GetPointerS<const ssa_name>(tl->valu);
+               if(!ssa->CGetUseStmts().empty() && IsHandledByBitvalue(tl->valu))
+               {
+                  const auto output_nid = tl->valu->index;
+                  THROW_ASSERT(best.count(output_nid), "");
+                  current[output_nid] = best.at(output_nid);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---current updated: " + bitstring_to_string(current.at(output_nid)));
+               }
             }
          }
       }
@@ -358,7 +353,7 @@ void Bit_Value::forward()
    // Update current to perform sup with best after all return statements bitvalues have been propagated
    if(current.count(function_id))
    {
-      update_current(current.at(function_id), TM->CGetTreeNode(function_id));
+      update_current(current.at(function_id), TM->GetTreeNode(function_id));
    }
 }
 
@@ -369,7 +364,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
    const auto& rhs = ga->op1;
    const auto lhs_signed = IsSignedIntegerType(lhs);
    const auto lhs_size = tree_helper::TypeSize(lhs);
-   const auto rhs_kind = GET_CONST_NODE(rhs)->get_kind();
+   const auto rhs_kind = rhs->get_kind();
    switch(rhs_kind)
    {
       case ssa_name_K:
@@ -380,7 +375,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       }
       case addr_expr_K:
       {
-         const auto ae = GetPointerS<const addr_expr>(GET_CONST_NODE(rhs));
+         const auto ae = GetPointerS<const addr_expr>(rhs);
          const auto address_size = AppM->get_address_bitsize();
          const auto is_pretty_print_used =
              parameters->isOption(OPT_pretty_print) ||
@@ -406,7 +401,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       case truth_not_expr_K:
       case view_convert_expr_K:
       {
-         const auto operation = GetPointer<const unary_expr>(GET_CONST_NODE(rhs));
+         const auto operation = GetPointerS<const unary_expr>(rhs);
 
          if(!IsHandledByBitvalue(operation->op))
          {
@@ -419,7 +414,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          const auto op_signed = IsSignedIntegerType(operation->op);
          auto op_bitstring = get_current(operation->op);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                        "---forward_transfer, operand(" + STR(GET_INDEX_NODE(operation->op)) +
+                        "---forward_transfer, operand(" + STR(operation->op->index) +
                             "): " + bitstring_to_string(op_bitstring));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---=> " + tree_node::GetString(rhs_kind));
 
@@ -580,7 +575,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       case widen_mult_expr_K:
       case extract_bit_expr_K:
       {
-         const auto operation = GetPointerS<const binary_expr>(GET_CONST_NODE(rhs));
+         const auto operation = GetPointerS<const binary_expr>(rhs);
 
          if(!IsHandledByBitvalue(operation->op0))
          {
@@ -608,11 +603,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
 
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---forward_transfer");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                        "---   operand0(" + STR(GET_INDEX_NODE(operation->op0)) +
-                            "): " + bitstring_to_string(op0_bitstring));
+                        "---   operand0(" + STR(operation->op0->index) + "): " + bitstring_to_string(op0_bitstring));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                        "---   operand1(" + STR(GET_INDEX_NODE(operation->op1)) +
-                            "): " + bitstring_to_string(op1_bitstring));
+                        "---   operand1(" + STR(operation->op1->index) + "): " + bitstring_to_string(op1_bitstring));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---=> " + tree_node::GetString(rhs_kind));
 
          if(rhs_kind == bit_and_expr_K)
@@ -942,11 +935,11 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          }
          else if(rhs_kind == lrotate_expr_K)
          {
-            if(GET_CONST_NODE(operation->op1)->get_kind() == ssa_name_K)
+            if(operation->op1->get_kind() == ssa_name_K)
             {
                res = create_u_bitstring(lhs_size);
             }
-            else if(GET_CONST_NODE(operation->op1)->get_kind() == integer_cst_K)
+            else if(operation->op1->get_kind() == integer_cst_K)
             {
                const auto arg2_value = tree_helper::GetConstValue(operation->op1);
 
@@ -969,7 +962,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          }
          else if(rhs_kind == lshift_expr_K)
          {
-            if(GET_CONST_NODE(operation->op1)->get_kind() == ssa_name_K)
+            if(operation->op1->get_kind() == ssa_name_K)
             {
                const auto bsize_elev2 = 1ULL << op1_bitstring.size();
                if(lhs_size < bsize_elev2 || lhs_size < bsize_elev2 + op0_bitstring.size())
@@ -981,7 +974,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                   res = create_u_bitstring(static_cast<unsigned int>(op0_bitstring.size() + bsize_elev2));
                }
             }
-            else if(GET_CONST_NODE(operation->op1)->get_kind() == integer_cst_K)
+            else if(operation->op1->get_kind() == integer_cst_K)
             {
                const auto cst_val = tree_helper::GetConstValue(operation->op1);
                if(cst_val < 0)
@@ -1316,11 +1309,11 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          }
          else if(rhs_kind == rrotate_expr_K)
          {
-            if(GET_CONST_NODE(operation->op1)->get_kind() == ssa_name_K)
+            if(operation->op1->get_kind() == ssa_name_K)
             {
                res = create_u_bitstring(lhs_size);
             }
-            else if(GET_CONST_NODE(operation->op1)->get_kind() == integer_cst_K)
+            else if(operation->op1->get_kind() == integer_cst_K)
             {
                const auto op1_value = tree_helper::GetConstValue(operation->op1);
 
@@ -1343,11 +1336,11 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          }
          else if(rhs_kind == rshift_expr_K)
          {
-            if(GET_CONST_NODE(operation->op1)->get_kind() == ssa_name_K)
+            if(operation->op1->get_kind() == ssa_name_K)
             {
                res = create_u_bitstring(static_cast<unsigned int>(op0_bitstring.size()));
             }
-            else if(GET_CONST_NODE(operation->op1)->get_kind() == integer_cst_K)
+            else if(operation->op1->get_kind() == integer_cst_K)
             {
                const auto cst_val = tree_helper::GetConstValue(operation->op1);
                if(cst_val < 0)
@@ -1459,7 +1452,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          }
          else if(rhs_kind == extract_bit_expr_K)
          {
-            THROW_ASSERT(GET_CONST_NODE(operation->op1)->get_kind() == integer_cst_K, "unexpected condition");
+            THROW_ASSERT(operation->op1->get_kind() == integer_cst_K, "unexpected condition");
             const auto cst_val = tree_helper::GetConstValue(operation->op1);
             THROW_ASSERT(cst_val >= 0, "unexpected condition");
 
@@ -1505,7 +1498,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       case fshl_expr_K:
       case fshr_expr_K:
       {
-         const auto operation = GetPointer<const ternary_expr>(GET_CONST_NODE(rhs));
+         const auto operation = GetPointerS<const ternary_expr>(rhs);
 
          if(!IsHandledByBitvalue(operation->op0))
          {
@@ -1544,14 +1537,11 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
 
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---forward_transfer");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                        "---   operand0(" + STR(GET_INDEX_NODE(operation->op0)) +
-                            "): " + bitstring_to_string(op0_bitstring));
+                        "---   operand0(" + STR(operation->op0->index) + "): " + bitstring_to_string(op0_bitstring));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                        "---   operand1(" + STR(GET_INDEX_NODE(operation->op1)) +
-                            "): " + bitstring_to_string(op1_bitstring));
+                        "---   operand1(" + STR(operation->op1->index) + "): " + bitstring_to_string(op1_bitstring));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                        "---   operand2(" + STR(GET_INDEX_NODE(operation->op2)) +
-                            "): " + bitstring_to_string(op2_bitstring));
+                        "---   operand2(" + STR(operation->op2->index) + "): " + bitstring_to_string(op2_bitstring));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---=> " + tree_node::GetString(rhs_kind));
 
          if(rhs_kind == bit_ior_concat_expr_K)
@@ -1756,11 +1746,11 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          }
          else if(rhs_kind == fshl_expr_K)
          {
-            if(GET_CONST_NODE(operation->op2)->get_kind() == ssa_name_K)
+            if(operation->op2->get_kind() == ssa_name_K)
             {
                res = create_u_bitstring(lhs_size);
             }
-            else if(GET_CONST_NODE(operation->op2)->get_kind() == integer_cst_K)
+            else if(operation->op2->get_kind() == integer_cst_K)
             {
                THROW_ASSERT(tree_helper::GetConstValue(operation->op2) >= 0, "");
                const auto offset = static_cast<unsigned int>(tree_helper::GetConstValue(operation->op2) %
@@ -1785,11 +1775,11 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          }
          else if(rhs_kind == fshr_expr_K)
          {
-            if(GET_CONST_NODE(operation->op2)->get_kind() == ssa_name_K)
+            if(operation->op2->get_kind() == ssa_name_K)
             {
                res = create_u_bitstring(lhs_size);
             }
-            else if(GET_CONST_NODE(operation->op2)->get_kind() == integer_cst_K)
+            else if(operation->op2->get_kind() == integer_cst_K)
             {
                THROW_ASSERT(tree_helper::GetConstValue(operation->op2) >= 0, "");
                const auto offset = static_cast<unsigned int>(tree_helper::GetConstValue(operation->op2) %
@@ -1859,7 +1849,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          if(call_it != direct_call_id_to_called_id.end())
          {
             const auto called_id = call_it->second;
-            const auto tn = TM->CGetTreeNode(called_id);
+            const auto tn = TM->GetTreeNode(called_id);
             THROW_ASSERT(tn->get_kind() == function_decl_K, "node " + STR(called_id) + " is not a function_decl");
             const auto* fd = GetPointerS<const function_decl>(tn);
             if(fd->bit_values.empty())

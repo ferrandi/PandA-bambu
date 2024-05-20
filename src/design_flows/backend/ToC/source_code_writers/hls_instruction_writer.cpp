@@ -54,7 +54,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 #include "utility.hpp"
 #include "var_pp_functor.hpp"
 
@@ -76,7 +75,7 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
    const auto FB = AppM->CGetFunctionBehavior(function_id);
    const auto BH = FB->CGetBehavioralHelper();
    const auto fname = BH->GetMangledFunctionName();
-   auto fdecl = tree_helper::PrintType(TM, TM->CGetTreeReindex(function_id), false, true, false, nullptr,
+   auto fdecl = tree_helper::PrintType(TM, TM->GetTreeNode(function_id), false, true, false, nullptr,
                                        var_pp_functorConstRef(new std_var_pp_functor(BH)));
 
    const auto HLSMgr = GetPointer<const HLS_manager>(AppM);

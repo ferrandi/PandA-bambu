@@ -40,13 +40,13 @@
  */
 #ifndef DESIGN_FLOW_HPP
 #define DESIGN_FLOW_HPP
-
 #include "design_flow_step.hpp"
-#include <string> // for string
+
+#include <string>
 
 enum class DesignFlow_Type
 {
-   NON_DETERMINISTIC_FLOWS
+   NON_DETERMINISTIC_FLOWS = 0
 };
 
 class DesignFlow : public DesignFlowStep
@@ -55,6 +55,9 @@ class DesignFlow : public DesignFlowStep
    /// The type of this design flow
    const DesignFlow_Type design_flow_type;
 
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
+
  public:
    /**
     * Constructor
@@ -62,52 +65,30 @@ class DesignFlow : public DesignFlowStep
     * @param design_flow_type is the type of the flow
     * @param parameters is the set of the parameters
     */
-   DesignFlow(const DesignFlowManagerConstRef design_flow_manager, const DesignFlow_Type design_flow_type,
+   DesignFlow(const DesignFlowManagerConstRef design_flow_manager, DesignFlow_Type design_flow_type,
               const ParameterConstRef parameters);
 
-   /**
-    * Destructor
-    */
    ~DesignFlow() override;
 
-   /**
-    * Compute the relationships of a step with other steps
-    * @param relationship is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& relationship,
-                             const DesignFlowStep::RelationshipType relationship_type) override;
+   std::string GetName() const override;
+
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
+
+   bool HasToBeExecuted() const override;
 
    /**
     * Compute the signature of a step
     * @param design_flow_type is the type of design flow
     * @return the signature corresponding to the design flow
     */
-   static std::string ComputeSignature(const DesignFlow_Type design_flow_type);
-
-   /**
-    * Return the signature of this step
-    */
-   std::string GetSignature() const override;
-
-   /**
-    * Return the name of this design step
-    * @return the name of the pass (for debug purpose)
-    */
-   std::string GetName() const override;
+   static signature_t ComputeSignature(DesignFlow_Type design_flow_type);
 
    /**
     * Return the name of the type
     * @param design_flow_type is the type of the design flow
     * @return the name
     */
-   static const std::string EnumToKindText(const DesignFlow_Type design_flow_type);
-
-   /**
-    * Return the factory to create this type of steps
-    * @return the factory to create frontend flow step
-    */
-   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
+   static std::string EnumToKindText(const DesignFlow_Type design_flow_type);
 
    /**
     * Given the name of design flow, return the enum
@@ -115,11 +96,5 @@ class DesignFlow : public DesignFlowStep
     * @return the corresponding enum
     */
    static DesignFlow_Type KindTextToEnum(const std::string& name);
-
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
 };
 #endif

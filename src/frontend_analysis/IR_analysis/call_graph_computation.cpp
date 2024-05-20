@@ -58,7 +58,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 call_graph_computation::call_graph_computation(const ParameterConstRef _parameters, const application_managerRef _AppM,
                                                const DesignFlowManagerConstRef _design_flow_manager)
@@ -69,7 +68,7 @@ call_graph_computation::call_graph_computation(const ParameterConstRef _paramete
 
 call_graph_computation::~call_graph_computation() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 call_graph_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -140,8 +139,8 @@ DesignFlowStep_Status call_graph_computation::Exec()
       if(fnode)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Root function " + STR(GET_INDEX_CONST_NODE(fnode)) + " - " + symbol);
-         functions.insert(GET_INDEX_CONST_NODE(fnode));
+                        "---Root function " + STR(fnode->index) + " - " + symbol);
+         functions.insert(fnode->index);
       }
    }
    CGM->SetRootFunctions(functions);
@@ -158,9 +157,9 @@ DesignFlowStep_Status call_graph_computation::Exec()
          continue;
       }
       // avoid nested functions
-      const auto fun = TM->CGetTreeNode(f_id);
+      const auto fun = TM->GetTreeNode(f_id);
       const auto fd = GetPointerS<const function_decl>(fun);
-      if(fd->scpe && GET_NODE(fd->scpe)->get_kind() == function_decl_K)
+      if(fd->scpe && fd->scpe->get_kind() == function_decl_K)
       {
          THROW_ERROR_CODE(NESTED_FUNCTIONS_EC, "Nested functions not yet supported " + STR(f_id));
       }

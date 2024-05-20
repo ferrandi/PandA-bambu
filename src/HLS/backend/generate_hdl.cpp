@@ -55,7 +55,6 @@
 #include "hls_manager.hpp"
 #include "structural_manager.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 
 #include <list>
 #include <string>
@@ -67,10 +66,10 @@ generate_hdl::generate_hdl(const ParameterConstRef _parameters, const HLS_manage
 {
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 generate_hdl::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -114,7 +113,7 @@ DesignFlowStep_Status generate_hdl::Exec()
    for(const auto& symbol : top_symbols)
    {
       const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(symbol);
-      top_circuits.push_back(HLSMgr->get_HLS(GET_INDEX_CONST_NODE(top_fnode))->top->get_circ());
+      top_circuits.push_back(HLSMgr->get_HLS(top_fnode->index)->top->get_circ());
    }
 
    HM.hdl_gen(file_name, top_circuits, HLSMgr->hdl_files, HLSMgr->aux_files, false);

@@ -55,7 +55,6 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 #if HAVE_ILP_BUILT
 #include "allocation_information.hpp"
@@ -79,7 +78,7 @@ PhiOpt::PhiOpt(const application_managerRef _AppM, unsigned int _function_id,
 
 PhiOpt::~PhiOpt() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
 PhiOpt::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -115,8 +114,8 @@ void PhiOpt::Initialize()
    bb_modified = false;
    TM = AppM->get_tree_manager();
    tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
-   const auto fd = GetPointerS<const function_decl>(TM->CGetTreeNode(function_id));
-   sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   const auto fd = GetPointerS<const function_decl>(TM->GetTreeNode(function_id));
+   sl = GetPointerS<statement_list>(fd->body);
 #if HAVE_ILP_BUILT
    if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING &&
       GetPointer<const HLS_manager>(AppM) && GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
@@ -141,8 +140,8 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          std::list<tree_nodeRef> phis_to_be_removed;
          for(const auto& phi : block.second->CGetPhiList())
          {
-            const auto gp = GetPointer<const gimple_phi>(GET_CONST_NODE(phi));
-            const auto sn = GetPointer<const ssa_name>(GET_CONST_NODE(gp->res));
+            const auto gp = GetPointer<const gimple_phi>(phi);
+            const auto sn = GetPointer<const ssa_name>(gp->res);
             if(sn->CGetUseStmts().empty())
             {
                phis_to_be_removed.push_back(phi);
@@ -197,11 +196,11 @@ DesignFlowStep_Status PhiOpt::InternalExec()
                /// Check that ssa defined by phi are used only once
                for(const auto& phi : block.second->CGetPhiList())
                {
-                  const auto gp = GetPointer<const gimple_phi>(GET_CONST_NODE(phi));
-                  const auto sn = GetPointer<const ssa_name>(GET_CONST_NODE(gp->res));
+                  const auto gp = GetPointer<const gimple_phi>(phi);
+                  const auto sn = GetPointer<const ssa_name>(gp->res);
                   for(const auto& use : sn->CGetUseStmts())
                   {
-                     const auto gn = GetPointer<const gimple_node>(GET_CONST_NODE(use.first));
+                     const auto gn = GetPointer<const gimple_node>(use.first);
                      if(gn->get_kind() != gimple_phi_K)
                      {
                         return false;
@@ -325,8 +324,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
                             " Phis=" + STR(block->CGetPhiList().size()));
 
          /// Remove nop
-         if(block->CGetStmtList().size() == 1 &&
-            GET_CONST_NODE(block->CGetStmtList().front())->get_kind() == gimple_nop_K)
+         if(block->CGetStmtList().size() == 1 && block->CGetStmtList().front()->get_kind() == gimple_nop_K)
          {
             block->RemoveStmt(block->CGetStmtList().front(), AppM);
             bb_modified = true;
@@ -465,10 +463,10 @@ DesignFlowStep_Status PhiOpt::InternalExec()
    {
       for(const auto& statement : block.second->CGetStmtList())
       {
-         const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(statement));
-         if(ga && GET_CONST_NODE(ga->op1)->get_kind() == cond_expr_K)
+         const auto* ga = GetPointer<const gimple_assign>(statement);
+         if(ga && ga->op1->get_kind() == cond_expr_K)
          {
-            const auto* ce = GetPointer<const cond_expr>(GET_CONST_NODE(ga->op1));
+            const auto* ce = GetPointer<const cond_expr>(ga->op1);
             if(ce && ce->op1->index == ce->op2->index)
             {
                ces_to_be_removed.insert(statement);
@@ -528,7 +526,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
       TreeNodeSet to_be_removeds;
       for(const auto& stmt : block.second->CGetStmtList())
       {
-         const auto gn = GetPointerS<gimple_node>(GET_NODE(stmt));
+         const auto gn = GetPointerS<gimple_node>(stmt);
          if(gn->get_kind() != gimple_nop_K || !gn->vdef ||
             (gn->vovers.find(gn->vdef) != gn->vovers.end() && gn->vovers.size() > 1) ||
             (gn->vovers.find(gn->vdef) == gn->vovers.end() && (!gn->vovers.empty())))
@@ -547,7 +545,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          }
          if(AppM->ApplyNewTransformation())
          {
-            const auto virtual_ssa = GetPointerS<ssa_name>(GET_NODE(gn->vdef));
+            const auto virtual_ssa = GetPointerS<ssa_name>(gn->vdef);
             THROW_ASSERT(virtual_ssa && virtual_ssa->virtual_flag, "unexpected condition");
 
             /// If there is only a single vuse replace vdef with vuse in all the uses of vdef
@@ -569,11 +567,11 @@ DesignFlowStep_Status PhiOpt::InternalExec()
                const auto canBeProp = [&]() -> bool {
                   for(const auto& use_stmt : virtual_ssa->CGetUseStmts())
                   {
-                     if(GET_CONST_NODE(use_stmt.first)->get_kind() == gimple_phi_K)
+                     if(use_stmt.first->get_kind() == gimple_phi_K)
                      {
                         return false;
                      }
-                     if(GET_INDEX_CONST_NODE(use_stmt.first) == GET_INDEX_CONST_NODE(stmt))
+                     if(use_stmt.first->index == stmt->index)
                      {
                         return false;
                      }
@@ -583,7 +581,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
                if(canBeProp)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "-->Virtual ssa " + GET_CONST_NODE(gn->vdef)->ToString() + " not used in any phi");
+                                 "-->Virtual ssa " + gn->vdef->ToString() + " not used in any phi");
                   ReplaceVirtualUses(gn->vdef, gn->vuses);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Removing gimple nop " + STR(gn->index));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -662,7 +660,7 @@ void PhiOpt::ApplyDiffNothing(const unsigned int bb_index)
       /// Fix gimple_multi_way_if
       if(pred_block->CGetStmtList().size())
       {
-         auto pred_last_stmt = GET_NODE(pred_block->CGetStmtList().back());
+         auto pred_last_stmt = pred_block->CGetStmtList().back();
          if(pred_last_stmt->get_kind() == gimple_multi_way_if_K)
          {
             const auto gmwi = GetPointerS<gimple_multi_way_if>(pred_last_stmt);
@@ -682,7 +680,7 @@ void PhiOpt::ApplyDiffNothing(const unsigned int bb_index)
    /// Fix phis
    for(const auto& phi : succ_block->CGetPhiList())
    {
-      const auto gp = GetPointerS<gimple_phi>(GET_NODE(phi));
+      const auto gp = GetPointerS<gimple_phi>(phi);
       gimple_phi::DefEdgeList new_list_of_def_edge;
       auto curr_value = tree_nodeRef();
 
@@ -735,7 +733,7 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
       /// The value coming from false edge
       tree_nodeRef false_value = nullptr;
 
-      const auto gp = GetPointerS<gimple_phi>(GET_NODE(phi));
+      const auto gp = GetPointerS<gimple_phi>(phi);
 
       /// The type of the expression
       const auto type_node = tree_helper::CGetType(gp->res);
@@ -755,28 +753,26 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
       }
       THROW_ASSERT(true_value, "True value not found");
       THROW_ASSERT(false_value, "False value not found");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---From true edge " + GET_CONST_NODE(true_value)->ToString());
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---From false edge " + GET_CONST_NODE(false_value)->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---From true edge " + true_value->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---From false edge " + false_value->ToString());
 
       tree_nodeRef gimple_node;
 
       /// Create the ssa with the new input of the phi
       tree_nodeRef var = nullptr;
-      if(GET_CONST_NODE(true_value)->get_kind() == ssa_name_K && GET_CONST_NODE(false_value)->get_kind() == ssa_name_K)
+      if(true_value->get_kind() == ssa_name_K && false_value->get_kind() == ssa_name_K)
       {
-         const auto sn1 = GetPointerS<const ssa_name>(GET_CONST_NODE(true_value));
-         const auto sn2 = GetPointerS<const ssa_name>(GET_CONST_NODE(false_value));
+         const auto sn1 = GetPointerS<const ssa_name>(true_value);
+         const auto sn2 = GetPointerS<const ssa_name>(false_value);
          if(sn1->var && sn2->var && sn1->var->index == sn2->var->index)
          {
             var = sn1->var;
          }
       }
-      const auto gp_res = GetPointer<const ssa_name>(GET_CONST_NODE(gp->res));
+      const auto gp_res = GetPointer<const ssa_name>(gp->res);
       const auto ssa_node =
           tree_man->create_ssa_name(var, type_node, gp_res->min, gp_res->max, false, gp->virtual_flag);
-      GetPointerS<ssa_name>(GET_NODE(ssa_node))->bit_values = gp_res->bit_values;
+      GetPointerS<ssa_name>(ssa_node)->bit_values = gp_res->bit_values;
       if(gp->virtual_flag)
       {
          /// Create a nop with virtual operands
@@ -785,8 +781,8 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
          gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
          const auto gimple_node_id = TM->new_tree_node_id();
          TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
-         gimple_node = TM->GetTreeReindex(gimple_node_id);
-         const auto gn = GetPointer<gimple_nop>(GET_NODE(gimple_node));
+         gimple_node = TM->GetTreeNode(gimple_node_id);
+         const auto gn = GetPointer<gimple_nop>(gimple_node);
          gn->SetVdef(ssa_node);
          gn->AddVuse(true_value);
          gn->AddVuse(false_value);
@@ -795,18 +791,17 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
       {
          /// Create the cond expr
          auto condition_type = tree_helper::CGetType(condition);
-         auto isAVectorType = tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(condition_type));
+         auto isAVectorType = tree_helper::is_a_vector(TM, condition_type->index);
          const auto cond_expr_node =
              tree_man->create_ternary_operation(type_node, condition, true_value, false_value, BUILTIN_SRCP,
                                                 (isAVectorType ? vec_cond_expr_K : cond_expr_K));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Created cond_expr " + GET_CONST_NODE(cond_expr_node)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created cond_expr " + cond_expr_node->ToString());
 
          /// Create the assign
          gimple_node = tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP);
       }
       pred_block->PushBack(gimple_node, AppM);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + GET_CONST_NODE(gimple_node)->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + gimple_node->ToString());
 
       /// Updating the phi
       gimple_phi::DefEdgeList new_list_of_def_edge;
@@ -851,7 +846,7 @@ void PhiOpt::ApplyIfNothing(const unsigned int bb_index)
    const auto& succ_block = sl->list_of_bloc.at(curr_block->list_of_succ.front());
    for(const auto& phi : succ_block->CGetPhiList())
    {
-      const auto gp = GetPointerS<gimple_phi>(GET_NODE(phi));
+      const auto gp = GetPointerS<gimple_phi>(phi);
       for(auto& def_edge : gp->CGetDefEdgesList())
       {
          if(def_edge.second == curr_block->number)
@@ -897,7 +892,7 @@ void PhiOpt::ApplyGimpleNothing(const unsigned int bb_index)
    const auto& succ_block = sl->list_of_bloc.at(curr_block->list_of_succ.front());
    for(const auto& phi : succ_block->CGetPhiList())
    {
-      const auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
+      const auto gp = GetPointer<gimple_phi>(phi);
       for(auto& def_edge : gp->CGetDefEdgesList())
       {
          if(def_edge.second == curr_block->number)
@@ -952,7 +947,7 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
       /// The value coming from false edge
       tree_nodeRef false_value = nullptr;
 
-      const auto gp = GetPointerS<gimple_phi>(GET_NODE(phi));
+      const auto gp = GetPointerS<gimple_phi>(phi);
 
       /// The type of the expression
       const auto type_node = tree_helper::CGetType(gp->res);
@@ -978,18 +973,16 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
       }
       THROW_ASSERT(true_value, "True value not found");
       THROW_ASSERT(false_value, "False value not found");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---From true edge " + GET_CONST_NODE(true_value)->ToString());
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---From false edge " + GET_CONST_NODE(false_value)->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---From true edge " + true_value->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---From false edge " + false_value->ToString());
 
       if(gp->virtual_flag)
       {
-         const auto virtual_ssa = GetPointerS<ssa_name>(GET_NODE(gp->res));
+         const auto virtual_ssa = GetPointerS<ssa_name>(gp->res);
          bool create_gimple_nop = false;
          for(const auto& use_stmt : virtual_ssa->CGetUseStmts())
          {
-            if(GET_NODE(use_stmt.first)->get_kind() == gimple_phi_K)
+            if(use_stmt.first->get_kind() == gimple_phi_K)
             {
                create_gimple_nop = true;
             }
@@ -1007,7 +1000,7 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
             gn->SetVdef(gp->res);
             gn->AddVuse(true_value);
             gn->AddVuse(false_value);
-            succ_block->PushFront(TM->GetTreeReindex(gimple_node_id), AppM);
+            succ_block->PushFront(TM->GetTreeNode(gimple_node_id), AppM);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Created " + gn->ToString());
          }
          else
@@ -1025,19 +1018,17 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
       {
          /// Create the cond expr
          auto condition_type = tree_helper::CGetType(condition);
-         auto isAVectorType = tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(condition_type));
+         auto isAVectorType = tree_helper::is_a_vector(TM, condition_type->index);
          const auto cond_expr_node =
              tree_man->create_ternary_operation(type_node, condition, true_value, false_value, BUILTIN_SRCP,
                                                 (isAVectorType ? vec_cond_expr_K : cond_expr_K));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Created cond_expr " + GET_CONST_NODE(cond_expr_node)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created cond_expr " + cond_expr_node->ToString());
 
          /// Create the assign
          const auto gimple_node =
              tree_man->create_gimple_modify_stmt(gp->res, cond_expr_node, function_id, BUILTIN_SRCP);
          succ_block->PushFront(gimple_node, AppM);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--Created " + GET_CONST_NODE(gimple_node)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Created " + gimple_node->ToString());
       }
    }
 
@@ -1074,8 +1065,9 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
    auto first_edge = false;
 
    /// The gimple multi way if
-   THROW_ASSERT(GET_NODE(pred_stmt_list.back())->get_kind() == gimple_multi_way_if_K, "");
-   const auto gmwi = GetPointerS<gimple_multi_way_if>(GET_NODE(pred_stmt_list.back()));
+   THROW_ASSERT(pred_stmt_list.back()->get_kind() == gimple_multi_way_if_K, "");
+   const auto gmwi_node = pred_stmt_list.back();
+   const auto gmwi = GetPointerS<gimple_multi_way_if>(gmwi_node);
 
    /// Temporary remove gimple multi way if
    pred_block->RemoveStmt(pred_stmt_list.back(), AppM);
@@ -1136,7 +1128,7 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
       {
          if(second_condition.first)
          {
-            new_list_of_cond.push_front(gimple_phi::DefEdge(TM->GetTreeReindex(new_cond), succ_block->number));
+            new_list_of_cond.push_front(gimple_phi::DefEdge(TM->GetTreeNode(new_cond), succ_block->number));
          }
          else
          {
@@ -1168,7 +1160,7 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
       /// The value coming from the second edge
       tree_nodeRef second_value = nullptr;
 
-      auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
+      auto gp = GetPointer<gimple_phi>(phi);
 
       /// The type of the expression
       const auto type_node = tree_helper::CGetType(gp->res);
@@ -1187,20 +1179,19 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
 
       /// Create the ssa with the new input of the phi
       tree_nodeRef var;
-      if(GET_CONST_NODE(first_value)->get_kind() == ssa_name_K &&
-         GET_CONST_NODE(second_value)->get_kind() == ssa_name_K)
+      if(first_value->get_kind() == ssa_name_K && second_value->get_kind() == ssa_name_K)
       {
-         const auto sn1 = GetPointer<const ssa_name>(GET_CONST_NODE(first_value));
-         const auto sn2 = GetPointer<const ssa_name>(GET_CONST_NODE(second_value));
+         const auto sn1 = GetPointer<const ssa_name>(first_value);
+         const auto sn2 = GetPointer<const ssa_name>(second_value);
          if(sn1->var && sn2->var && sn1->var->index == sn2->var->index)
          {
             var = sn1->var;
          }
       }
-      const auto gp_res = GetPointer<const ssa_name>(GET_NODE(gp->res));
+      const auto gp_res = GetPointer<const ssa_name>(gp->res);
       const auto ssa_node =
           tree_man->create_ssa_name(var, type_node, gp_res->min, gp_res->max, false, gp->virtual_flag);
-      GetPointer<ssa_name>(GET_NODE(ssa_node))->bit_values = gp_res->bit_values;
+      GetPointer<ssa_name>(ssa_node)->bit_values = gp_res->bit_values;
       tree_nodeRef gimple_node;
       if(gp->virtual_flag)
       {
@@ -1210,8 +1201,8 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
          gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
          const auto gimple_node_id = TM->new_tree_node_id();
          TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
-         gimple_node = TM->GetTreeReindex(gimple_node_id);
-         auto gn = GetPointer<gimple_nop>(GET_NODE(gimple_node));
+         gimple_node = TM->GetTreeNode(gimple_node_id);
+         auto gn = GetPointer<gimple_nop>(gimple_node);
          gn->SetVdef(ssa_node);
          gn->AddVuse(first_value);
          gn->AddVuse(second_value);
@@ -1220,7 +1211,7 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
       {
          /// Create the cond expr
          auto condition_type = tree_helper::CGetType(first_condition.first);
-         auto isAVectorType = tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(condition_type));
+         auto isAVectorType = tree_helper::is_a_vector(TM, condition_type->index);
          const auto cond_expr_node =
              tree_man->create_ternary_operation(type_node, first_condition.first, first_value, second_value,
                                                 BUILTIN_SRCP, (isAVectorType ? vec_cond_expr_K : cond_expr_K));
@@ -1254,7 +1245,7 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
    /// Readding gimple multi way if it has more than two exits
    if(gmwi->list_of_cond.size() >= 2)
    {
-      pred_block->PushBack(TM->GetTreeReindex(gmwi->index), AppM);
+      pred_block->PushBack(gmwi_node, AppM);
    }
 
    /// Refactoring of the cfg - updating the predecessor
@@ -1277,8 +1268,8 @@ void PhiOpt::ApplyMultiNothing(const unsigned int bb_index)
    const auto& pred_block = sl->list_of_bloc.at(curr_block->list_of_pred.front());
    const auto& succ_block = sl->list_of_bloc.at(curr_block->list_of_succ.front());
 
-   THROW_ASSERT(GET_NODE(pred_block->CGetStmtList().back())->get_kind() == gimple_multi_way_if_K, "");
-   const auto gmwi = GetPointerS<gimple_multi_way_if>(GET_NODE(pred_block->CGetStmtList().back()));
+   THROW_ASSERT(pred_block->CGetStmtList().back()->get_kind() == gimple_multi_way_if_K, "");
+   const auto gmwi = GetPointerS<gimple_multi_way_if>(pred_block->CGetStmtList().back());
    for(auto& cond : gmwi->list_of_cond)
    {
       if(cond.second == bb_index)
@@ -1290,7 +1281,7 @@ void PhiOpt::ApplyMultiNothing(const unsigned int bb_index)
 
    for(const auto& phi : succ_block->CGetPhiList())
    {
-      const auto gp = GetPointerS<gimple_phi>(GET_NODE(phi));
+      const auto gp = GetPointerS<gimple_phi>(phi);
       for(auto& def_edge : gp->CGetDefEdgesList())
       {
          if(def_edge.second == curr_block->number)
@@ -1329,8 +1320,9 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
    auto first_edge = false;
 
    /// The gimple multi way if
-   THROW_ASSERT(GET_NODE(pred_stmt_list.back())->get_kind() == gimple_multi_way_if_K, "");
-   const auto gmwi = GetPointerS<gimple_multi_way_if>(GET_NODE(pred_stmt_list.back()));
+   THROW_ASSERT(pred_stmt_list.back()->get_kind() == gimple_multi_way_if_K, "");
+   const auto gmwi_node = pred_stmt_list.back();
+   const auto gmwi = GetPointerS<gimple_multi_way_if>(gmwi_node);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Multi way if is " + gmwi->ToString());
 
    /// Temporary remove gimple multi way if
@@ -1420,7 +1412,7 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
       /// The value coming from the second edge
       tree_nodeRef second_value = nullptr;
 
-      const auto gp = GetPointerS<gimple_phi>(GET_NODE(phi));
+      const auto gp = GetPointerS<gimple_phi>(phi);
 
       /// The type of the expression
       const auto type_node = tree_helper::CGetType(gp->res);
@@ -1444,10 +1436,10 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
       bool create_gimple_nop = false;
       if(gp->virtual_flag)
       {
-         const auto virtual_ssa = GetPointerS<ssa_name>(GET_NODE(gp->res));
+         const auto virtual_ssa = GetPointerS<ssa_name>(gp->res);
          for(const auto& use_stmt : virtual_ssa->CGetUseStmts())
          {
-            if(GET_CONST_NODE(use_stmt.first)->get_kind() == gimple_phi_K)
+            if(use_stmt.first->get_kind() == gimple_phi_K)
             {
                create_gimple_nop = true;
             }
@@ -1460,8 +1452,8 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
             gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
             gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
             TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
-            new_gimple_node = TM->GetTreeReindex(gimple_node_id);
-            const auto gn = GetPointerS<gimple_nop>(GET_NODE(new_gimple_node));
+            new_gimple_node = TM->GetTreeNode(gimple_node_id);
+            const auto gn = GetPointerS<gimple_nop>(new_gimple_node);
             gn->SetVdef(gp->res);
             gn->AddVuse(first_value);
             gn->AddVuse(second_value);
@@ -1478,7 +1470,7 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
       {
          /// Create the cond expr
          auto condition_type = tree_helper::CGetType(first_condition.first);
-         auto isAVectorType = tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(condition_type));
+         auto isAVectorType = tree_helper::is_a_vector(TM, condition_type->index);
          const auto cond_expr_node =
              tree_man->create_ternary_operation(type_node, first_condition.first, first_value, second_value,
                                                 BUILTIN_SRCP, (isAVectorType ? vec_cond_expr_K : cond_expr_K));
@@ -1490,14 +1482,14 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
       {
          succ_block->PushFront(new_gimple_node, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Added gimple assignment " + GET_CONST_NODE(new_gimple_node)->ToString());
+                        "---Added gimple assignment " + new_gimple_node->ToString());
       }
    }
 
    /// Readd multi way if
    if(gmwi->list_of_cond.size() >= 2)
    {
-      pred_block->PushBack(TM->GetTreeReindex(gmwi->index), AppM);
+      pred_block->PushBack(gmwi_node, AppM);
    }
 
    while(succ_block->CGetPhiList().size())
@@ -1560,7 +1552,7 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
    const auto phi_size = succ_block->list_of_pred.size();
    for(const auto& phi : succ_block->CGetPhiList())
    {
-      const auto gp = GetPointerS<const gimple_phi>(GET_CONST_NODE(phi));
+      const auto gp = GetPointerS<const gimple_phi>(phi);
       if(phi_size != gp->CGetDefEdgesList().size())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -1580,7 +1572,7 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
       }
       if(pred_block->CGetStmtList().size())
       {
-         const auto pred_last_stmt = GET_CONST_NODE(pred_block->CGetStmtList().back());
+         const auto pred_last_stmt = pred_block->CGetStmtList().back();
          if(pred_last_stmt->get_kind() == gimple_cond_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -1620,7 +1612,7 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Unknown because predecessor is empty");
          return PhiOpt_PatternType::UNKNOWN;
       }
-      const auto pred_last_stmt = GET_CONST_NODE(pred_block->CGetStmtList().back());
+      const auto pred_last_stmt = pred_block->CGetStmtList().back();
       if(pred_last_stmt->get_kind() == gimple_cond_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Empty then or empty else");
@@ -1682,7 +1674,7 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Unknown because predecessor is empty");
       return PhiOpt_PatternType::UNKNOWN;
    }
-   const auto pred_last_stmt = GET_CONST_NODE(pred_block->CGetStmtList().back());
+   const auto pred_last_stmt = pred_block->CGetStmtList().back();
    if(pred_last_stmt->get_kind() == gimple_cond_K)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Empty nested then || empty else");
@@ -1691,8 +1683,7 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
    if(pred_last_stmt->get_kind() == gimple_multi_way_if_K)
    {
       /// Successor is ending if of the function
-      if(succ_block->CGetStmtList().size() == 1 &&
-         GetPointer<const gimple_return>(GET_CONST_NODE(succ_block->CGetStmtList().front())))
+      if(succ_block->CGetStmtList().size() == 1 && GetPointer<const gimple_return>(succ_block->CGetStmtList().front()))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Empty path to phi to be merged");
          return PhiOpt_PatternType::MULTI_MERGE;
@@ -1704,8 +1695,8 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
          /// Simulate to add the cond expr and check if there are problems with timing
 
          /// The gimple multi way if
-         THROW_ASSERT(GET_CONST_NODE(pred_block->CGetStmtList().back())->get_kind() == gimple_multi_way_if_K, "");
-         const auto gmwi = GetPointerS<const gimple_multi_way_if>(GET_CONST_NODE(pred_block->CGetStmtList().back()));
+         THROW_ASSERT(pred_block->CGetStmtList().back()->get_kind() == gimple_multi_way_if_K, "");
+         const auto gmwi = GetPointerS<const gimple_multi_way_if>(pred_block->CGetStmtList().back());
 
          /// The first condition
          auto condition = tree_nodeRef();
@@ -1733,7 +1724,7 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
             /// True if bb_index is on the first edge
             auto first_edge = false;
 
-            const auto gp = GetPointerS<const gimple_phi>(GET_CONST_NODE(phi));
+            const auto gp = GetPointerS<const gimple_phi>(phi);
 
             /// The type of the expression
             const auto type_node = tree_helper::CGetType(gp->res);
@@ -1753,7 +1744,7 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
 
             /// Create the cond expr
             auto condition_type = tree_helper::CGetType(condition);
-            auto isAVectorType = tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(condition_type));
+            auto isAVectorType = tree_helper::is_a_vector(TM, condition_type->index);
             const auto cond_expr_node =
                 tree_man->create_ternary_operation(type_node, condition, first_value, second_value, BUILTIN_SRCP,
                                                    (isAVectorType ? vec_cond_expr_K : cond_expr_K));
@@ -1765,7 +1756,7 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
                 tree_man->create_gimple_modify_stmt(first_value, cond_expr_node, function_id, BUILTIN_SRCP);
 
             /// Created statement is not added to the predecessor
-            if(schedule && schedule->CanBeMoved(GET_INDEX_CONST_NODE(gimple_assign_node), pred_block->number) !=
+            if(schedule && schedule->CanBeMoved(gimple_assign_node->index, pred_block->number) !=
                                FunctionFrontendFlowStep_Movable::MOVABLE)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -1794,11 +1785,11 @@ void PhiOpt::SinglePhiOptimization(const unsigned int bb_index)
    for(const auto& phi : boost::adaptors::reverse(curr_block->CGetPhiList()))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fixing using of ssa defined in " + phi->ToString());
-      const auto gp = GetPointerS<const gimple_phi>(GET_CONST_NODE(phi));
+      const auto gp = GetPointerS<const gimple_phi>(phi);
       const auto& left_part = gp->res;
       THROW_ASSERT(gp->CGetDefEdgesList().size() == 1, "");
       const auto right_part = gp->CGetDefEdgesList().front().first;
-      const auto left_ssa = GetPointerS<const ssa_name>(GET_CONST_NODE(gp->res));
+      const auto left_ssa = GetPointerS<const ssa_name>(gp->res);
       /// Building temp set of use stmts (to avoid invalidation during loop execution and to skip phi)
       TreeNodeSet use_stmts;
       for(const auto& use_stmt : left_ssa->CGetUseStmts())
@@ -1865,7 +1856,7 @@ void PhiOpt::ChainOptimization(const unsigned int bb_index)
          succ_succ_block->list_of_pred.push_back(curr_block->number);
          for(const auto& phi : succ_succ_block->CGetPhiList())
          {
-            const auto gp = GetPointerS<gimple_phi>(GET_NODE(phi));
+            const auto gp = GetPointerS<gimple_phi>(phi);
             for(auto& def_edge : gp->CGetDefEdgesList())
             {
                if(def_edge.second == succ_block->number)
@@ -1909,7 +1900,7 @@ void PhiOpt::MergePhi(const unsigned int bb_index)
    for(const auto& phi : succ_block->CGetPhiList())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fixing " + phi->ToString());
-      auto gp = GetPointerS<gimple_phi>(GET_NODE(phi));
+      auto gp = GetPointerS<gimple_phi>(phi);
       gimple_phi::DefEdgeList new_list_of_def_edge;
       for(auto def_edge : gp->CGetDefEdgesList())
       {
@@ -1917,11 +1908,11 @@ void PhiOpt::MergePhi(const unsigned int bb_index)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Found " + def_edge.first->ToString() + " coming from BB" + STR(def_edge.second));
-            const auto def_to_be_removed = GET_CONST_NODE(def_edge.first);
+            const auto def_to_be_removed = def_edge.first;
             if(def_to_be_removed->get_kind() == ssa_name_K)
             {
                const auto def_stmt = GetPointerS<const ssa_name>(def_to_be_removed)->CGetDefStmt();
-               const auto phi_to_be_removed = GetPointer<const gimple_phi>(GET_CONST_NODE(def_stmt));
+               const auto phi_to_be_removed = GetPointer<const gimple_phi>(def_stmt);
                if(phi_to_be_removed && phi_to_be_removed->bb_index == bb_index)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -1942,9 +1933,8 @@ void PhiOpt::MergePhi(const unsigned int bb_index)
                else
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---" + def_edge.first->ToString() + " is defined in a " +
-                                     GET_CONST_NODE(def_stmt)->get_kind_text() + " in BB" +
-                                     STR(GetPointer<const gimple_node>(GET_CONST_NODE(def_stmt))->bb_index));
+                                 "---" + def_edge.first->ToString() + " is defined in a " + def_stmt->get_kind_text() +
+                                     " in BB" + STR(GetPointer<const gimple_node>(def_stmt)->bb_index));
                   for(auto predecessor : curr_block->list_of_pred)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -1980,7 +1970,7 @@ void PhiOpt::MergePhi(const unsigned int bb_index)
    const auto curr_phis = curr_block->CGetPhiList();
    for(const auto& phi : curr_phis)
    {
-      const auto gp = GetPointerS<gimple_phi>(GET_NODE(phi));
+      const auto gp = GetPointerS<gimple_phi>(phi);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding " + gp->ToString());
       for(auto predecessor : succ_block->list_of_pred)
       {
@@ -2014,9 +2004,9 @@ void PhiOpt::MergePhi(const unsigned int bb_index)
       if(pred_block->CGetStmtList().size())
       {
          const auto& last_stmt = pred_block->CGetStmtList().back();
-         if(GET_NODE(last_stmt)->get_kind() == gimple_multi_way_if_K)
+         if(last_stmt->get_kind() == gimple_multi_way_if_K)
          {
-            const auto gmw = GetPointerS<gimple_multi_way_if>(GET_NODE(last_stmt));
+            const auto gmw = GetPointerS<gimple_multi_way_if>(last_stmt);
             for(auto& cond : gmw->list_of_cond)
             {
                if(cond.second == bb_index)
@@ -2042,12 +2032,12 @@ void PhiOpt::MergePhi(const unsigned int bb_index)
 void PhiOpt::RemoveCondExpr(const tree_nodeRef statement)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing " + statement->ToString());
-   THROW_ASSERT(GET_CONST_NODE(statement)->get_kind() == gimple_assign_K, "");
-   const auto ga = GetPointerS<const gimple_assign>(GET_CONST_NODE(statement));
-   const auto sn = GetPointer<const ssa_name>(GET_CONST_NODE(ga->op0));
-   THROW_ASSERT(sn, "cond expression defines " + GET_CONST_NODE(ga->op0)->ToString());
-   THROW_ASSERT(GET_CONST_NODE(ga->op1)->get_kind() == cond_expr_K, "");
-   const auto new_sn = GetPointerS<const cond_expr>(GET_CONST_NODE(ga->op1))->op1;
+   THROW_ASSERT(statement->get_kind() == gimple_assign_K, "");
+   const auto ga = GetPointerS<const gimple_assign>(statement);
+   const auto sn = GetPointer<const ssa_name>(ga->op0);
+   THROW_ASSERT(sn, "cond expression defines " + ga->op0->ToString());
+   THROW_ASSERT(ga->op1->get_kind() == cond_expr_K, "");
+   const auto new_sn = GetPointerS<const cond_expr>(ga->op1)->op1;
    const auto uses = sn->CGetUseStmts();
    for(const auto& use : uses)
    {
@@ -2060,12 +2050,12 @@ void PhiOpt::RemoveCondExpr(const tree_nodeRef statement)
 
 void PhiOpt::ReplaceVirtualUses(const tree_nodeRef& old_vssa, const TreeNodeSet& new_vssa) const
 {
-   const auto virtual_ssa = GetPointerS<ssa_name>(GET_NODE(old_vssa));
+   const auto virtual_ssa = GetPointerS<ssa_name>(old_vssa);
    while(virtual_ssa->CGetUseStmts().size())
    {
       const auto use_stmt = virtual_ssa->CGetUseStmts().begin()->first;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " use stmt " + GET_NODE(use_stmt)->ToString());
-      const auto gn = GetPointerS<gimple_node>(GET_NODE(use_stmt));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " use stmt " + use_stmt->ToString());
+      const auto gn = GetPointerS<gimple_node>(use_stmt);
       const auto has_vuses = gn->vuses.find(old_vssa) != gn->vuses.end();
       const auto has_vovers = gn->vovers.find(old_vssa) != gn->vovers.end();
       THROW_ASSERT(has_vuses || has_vovers,
@@ -2087,18 +2077,18 @@ void PhiOpt::ReplaceVirtualUses(const tree_nodeRef& old_vssa, const TreeNodeSet&
       {
          if(has_vuses)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---add vuse " + GET_CONST_NODE(vssa)->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---add vuse " + vssa->ToString());
             if(gn->AddVuse(vssa))
             {
-               GetPointerS<ssa_name>(GET_NODE(vssa))->AddUseStmt(use_stmt);
+               GetPointerS<ssa_name>(vssa)->AddUseStmt(use_stmt);
             }
          }
          if(has_vovers)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---add vover " + GET_CONST_NODE(vssa)->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---add vover " + vssa->ToString());
             if(gn->AddVover(vssa))
             {
-               GetPointerS<ssa_name>(GET_NODE(vssa))->AddUseStmt(use_stmt);
+               GetPointerS<ssa_name>(vssa)->AddUseStmt(use_stmt);
             }
          }
       }

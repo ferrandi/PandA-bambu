@@ -381,22 +381,22 @@ void SpiderParameter::CheckParameters()
                break;
          }
       }
-      setOption(OPT_input_format, static_cast<int>(input_format));
+      setOption(OPT_input_format, input_format);
    }
    else
    {
       Parameters_FileFormat input_format = GetFileFormat(getOption<std::string>(OPT_input_format), true);
-      setOption(OPT_input_format, static_cast<int>(input_format));
+      setOption(OPT_input_format, input_format);
    }
    if(!isOption(OPT_output_format))
    {
       Parameters_FileFormat output_format = GetFileFormat(getOption<std::string>(OPT_output_file), false);
-      setOption(OPT_output_format, static_cast<int>(output_format));
+      setOption(OPT_output_format, output_format);
    }
    else
    {
       Parameters_FileFormat output_format = GetFileFormat(getOption<std::string>(OPT_output_format), false);
-      setOption(OPT_output_format, static_cast<int>(output_format));
+      setOption(OPT_output_format, output_format);
    }
 #if HAVE_TECHNOLOGY_BUILT
    for(const auto& input_file : getOption<CustomSet<std::string>>(OPT_input_file))

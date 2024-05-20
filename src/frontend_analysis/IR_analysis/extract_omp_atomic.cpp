@@ -61,7 +61,6 @@
 #include "tree_basic_block.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 /// utility include
 #include "dbgPrintHelper.hpp"
@@ -77,7 +76,7 @@ ExtractOmpAtomic::ExtractOmpAtomic(const application_managerRef _AppM, unsigned 
 
 ExtractOmpAtomic::~ExtractOmpAtomic() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 ExtractOmpAtomic::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    const auto TM = AppM->get_tree_manager();
@@ -124,18 +123,17 @@ DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
       tree_nodeRef gimple_to_be_removed;
       for(const auto& stmt : block->CGetStmtList())
       {
-         const auto* pn = GetPointer<gimple_pragma>(GET_NODE(stmt));
-         if(pn && pn->scope && GetPointer<omp_pragma>(GET_NODE(pn->scope)))
+         const auto* pn = GetPointer<gimple_pragma>(stmt);
+         if(pn && pn->scope && GetPointer<omp_pragma>(pn->scope))
          {
-            const auto oa = GetPointer<omp_atomic_pragma>(GET_NODE(pn->directive));
+            const auto oa = GetPointer<omp_atomic_pragma>(pn->directive);
             if(oa)
             {
                if(block->list_of_pred.size() == 1 && block->list_of_pred.front() == BB_ENTRY &&
                   stmt == block->CGetStmtList().front())
                {
                   gimple_to_be_removed = stmt;
-                  GetPointer<function_decl>(AppM->get_tree_manager()->get_tree_node_const(function_id))->omp_atomic =
-                      true;
+                  GetPointer<function_decl>(AppM->get_tree_manager()->GetTreeNode(function_id))->omp_atomic = true;
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found Atomic Omp function");
                   changed = true;
                }

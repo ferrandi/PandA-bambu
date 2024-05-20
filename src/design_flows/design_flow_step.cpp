@@ -41,17 +41,21 @@
  *
  */
 #include "design_flow_step.hpp"
-#include "Parameter.hpp"           // for Parameter, OPT_debug_level
-#include "design_flow_manager.hpp" // for DesignFlowStepRef, DesignF...
-#include <ostream>                 // for operator<<, basic_ostream
 
-DesignFlowStep::DesignFlowStep(const DesignFlowManagerConstRef _design_flow_manager,
+#include "Parameter.hpp"
+#include "design_flow_manager.hpp"
+
+#include <ostream>
+#include <string>
+
+DesignFlowStep::DesignFlowStep(signature_t _signature, const DesignFlowManagerConstRef _design_flow_manager,
                                const ParameterConstRef _parameters)
     : composed(false),
       design_flow_manager(_design_flow_manager),
       parameters(_parameters),
       debug_level(parameters->getOption<int>(OPT_debug_level)),
-      output_level(parameters->getOption<int>(OPT_output_level))
+      output_level(parameters->getOption<int>(OPT_output_level)),
+      signature(_signature)
 {
 }
 
@@ -72,6 +76,16 @@ void DesignFlowStep::Initialize()
 {
 }
 
+DesignFlowStep::signature_t DesignFlowStep::GetSignature() const
+{
+   return signature;
+}
+
+std::string DesignFlowStep::GetName() const
+{
+   return "DesignFlowStep::" + STR(signature);
+}
+
 int DesignFlowStep::CGetDebugLevel() const
 {
    return debug_level;
@@ -90,15 +104,35 @@ void DesignFlowStep::PrintFinalIR() const
 {
 }
 
-#if not HAVE_UNORDERED
-DesignFlowStepSorter::DesignFlowStepSorter() = default;
-
-bool DesignFlowStepSorter::operator()(const DesignFlowStepRef x, const DesignFlowStepRef y) const
+DesignFlowStep::signature_t DesignFlowStep::ComputeSignature(StepClass step_class, unsigned short step_type,
+                                                             unsigned long long context)
 {
-   return x->GetName() < y->GetName();
+   THROW_ASSERT(context < (1ULL << 40U), "Only 40-bits context is allowed.");
+   return static_cast<signature_t>(step_class) << 56U | static_cast<signature_t>(step_type) << 40U |
+          (context & 0xFFFFFFFFFFULL);
 }
 
-DesignFlowStepSet::DesignFlowStepSet() : std::set<DesignFlowStepRef, DesignFlowStepSorter>(DesignFlowStepSorter())
+DesignFlowStep::StepClass DesignFlowStep::GetStepClass(signature_t signature)
 {
+   return static_cast<StepClass>(signature >> 56U);
 }
-#endif
+
+unsigned short DesignFlowStep::GetStepType(signature_t signature)
+{
+   return static_cast<unsigned short>(signature >> 40U);
+}
+
+unsigned long long DesignFlowStep::GetSignatureContext(signature_t signature)
+{
+   return signature & 0xFFFFFFFFFFULL;
+}
+
+size_t DesignFlowStepHash::operator()(const DesignFlowStepRef& step) const
+{
+   return step->GetSignature();
+}
+
+bool DesignFlowStepEqual::operator()(const DesignFlowStepRef& x, const DesignFlowStepRef& y) const
+{
+   return x->GetSignature() == y->GetSignature();
+}

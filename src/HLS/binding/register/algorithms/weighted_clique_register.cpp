@@ -42,31 +42,20 @@
  */
 #include "weighted_clique_register.hpp"
 
-#include <filesystem>
-
+#include "Parameter.hpp"
+#include "behavioral_helper.hpp"
+#include "cdfc_module_binding.hpp"
 #include "check_clique.hpp"
 #include "clique_covering.hpp"
+#include "cpu_time.hpp"
 #include "filter_clique.hpp"
-
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "liveness.hpp"
 #include "reg_binding.hpp"
-
-///. include
-#include "Parameter.hpp"
-
-/// HLS/binding/module include
-#include "cdfc_module_binding.hpp"
-
-/// HLS/binding/storage_value_insertion includes
 #include "storage_value_information.hpp"
 
-/// tree include
-#include "behavioral_helper.hpp"
-
-/// utility include
-#include "cpu_time.hpp"
+#include <filesystem>
 
 WeightedCliqueRegisterBindingSpecialization::WeightedCliqueRegisterBindingSpecialization(
     const CliqueCovering_Algorithm _clique_covering_algorithm)
@@ -74,14 +63,14 @@ WeightedCliqueRegisterBindingSpecialization::WeightedCliqueRegisterBindingSpecia
 {
 }
 
-std::string WeightedCliqueRegisterBindingSpecialization::GetKindText() const
+std::string WeightedCliqueRegisterBindingSpecialization::GetName() const
 {
    return CliqueCovering_AlgorithmToString(clique_covering_algorithm);
 }
 
-std::string WeightedCliqueRegisterBindingSpecialization::GetSignature() const
+HLSFlowStepSpecialization::context_t WeightedCliqueRegisterBindingSpecialization::GetSignatureContext() const
 {
-   return STR(static_cast<unsigned int>(clique_covering_algorithm));
+   return ComputeSignatureContext(WEIGHTED_CLIQUE_REGISTER, static_cast<unsigned char>(clique_covering_algorithm));
 }
 
 weighted_clique_register::weighted_clique_register(

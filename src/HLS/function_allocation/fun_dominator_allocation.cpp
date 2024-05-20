@@ -95,22 +95,23 @@ void fun_dominator_allocation::ComputeRelationships(DesignFlowStepSet& relations
       {
          const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
          const auto frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(
-             design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
+             design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
          const auto frontend_flow_signature = ApplicationFrontendFlowStep::ComputeSignature(BAMBU_FRONTEND_FLOW);
          const auto frontend_flow_step = design_flow_manager.lock()->GetDesignFlowStep(frontend_flow_signature);
          const auto design_flow_step =
-             frontend_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(frontend_flow_step)->design_flow_step :
-                                  frontend_flow_step_factory->CreateApplicationFrontendFlowStep(BAMBU_FRONTEND_FLOW);
+             frontend_flow_step != DesignFlowGraph::null_vertex() ?
+                 design_flow_graph->CGetNodeInfo(frontend_flow_step)->design_flow_step :
+                 frontend_flow_step_factory->CreateApplicationFrontendFlowStep(BAMBU_FRONTEND_FLOW);
          relationship.insert(design_flow_step);
 
          const auto technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(
-             design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+             design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::TECHNOLOGY));
          const auto technology_flow_signature =
              TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          const auto technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
          const auto technology_design_flow_step =
-             technology_flow_step ?
-                 design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
+             technology_flow_step != DesignFlowGraph::null_vertex() ?
+                 design_flow_graph->CGetNodeInfo(technology_flow_step)->design_flow_step :
                  technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          relationship.insert(technology_design_flow_step);
          break;
@@ -253,7 +254,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       const auto BH = function_behavior->CGetBehavioralHelper();
       const auto fname = BH->get_function_name();
       if(tree_helper::is_a_nop_function_decl(
-             GetPointerS<const function_decl>(HLSMgr->get_tree_manager()->CGetTreeNode(funID))))
+             GetPointerS<const function_decl>(HLSMgr->get_tree_manager()->GetTreeNode(funID))))
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                         "---Warning: " + fname + " is empty or the compiler killed all the statements");
@@ -381,7 +382,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
                    ))
                {
                   fun_dom_map[called_fu_name].insert(vert_dominator);
-                  const auto info = Cget_edge_info<FunctionEdgeInfo, const CallGraph>(eo, *subgraph);
+                  const auto info = subgraph->CGetFunctionEdgeInfo(eo);
 
                   if(info->direct_call_points.size())
                   {
@@ -429,8 +430,8 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
             {
                const auto tgt = boost::target(eo, *subgraph);
                const auto tgt_fu_name = functions::GetFUName(CGM->get_function(tgt), HLSMgr);
-               const auto n_call_points = static_cast<unsigned int>(
-                   Cget_edge_info<FunctionEdgeInfo, const CallGraph>(eo, *subgraph)->direct_call_points.size());
+               const auto n_call_points =
+                   static_cast<unsigned int>(subgraph->CGetFunctionEdgeInfo(eo)->direct_call_points.size());
                if(num_instances.find(tgt_fu_name) == num_instances.end())
                {
                   num_instances[tgt_fu_name] = cur_instances * n_call_points;

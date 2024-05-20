@@ -43,34 +43,30 @@
  * Last modified by $Author$
  *
  */
+#include "tree_node.hpp"
 
-/// Autoheader include
-#include "config_HAVE_TREE_MANIPULATION_BUILT.hpp"
-#include "config_HAVE_TREE_PARSER_BUILT.hpp"
-
-/// parser/compiler include
-#include "token_interface.hpp"
-
-#include <ostream> // for operator<<
-
-/// Tree include
-#include "dbgPrintHelper.hpp" // for INDENT_DBG_MEX
+#include "dbgPrintHelper.hpp"
 #include "gimple_writer.hpp"
-#include "string_manipulation.hpp" // for STR
+#include "string_manipulation.hpp"
+#include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-/// Utility include
 #include <boost/preprocessor/facilities/empty.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
+
 #include <iostream>
+#include <ostream>
 #include <unordered_map>
 #include <utility>
 
 #include "config_HAVE_ASSERTS.hpp"
+#include "config_HAVE_TREE_MANIPULATION_BUILT.hpp"
+#include "config_HAVE_TREE_PARSER_BUILT.hpp"
+
+// #define CHECK_VIRTUAL_USES
 
 /// forward declaration macro
 #define VISIT_TREE_NODE_MACRO(r, data, elem)          \
@@ -315,24 +311,24 @@ gimple_node::gimple_node(unsigned int i)
 
 void gimple_node::SetVdef(const tree_nodeRef& _vdef)
 {
-   THROW_ASSERT(!GET_CONST_NODE(_vdef) || (GET_CONST_NODE(_vdef)->get_kind() == ssa_name_K &&
-                                           GetPointerS<const ssa_name>(GET_CONST_NODE(_vdef))->virtual_flag),
+   THROW_ASSERT(!GET_CONST_PTD_NODE(_vdef) ||
+                    (_vdef->get_kind() == ssa_name_K && GetPointerS<const ssa_name>(_vdef)->virtual_flag),
                 "");
    vdef = _vdef;
 }
 
 bool gimple_node::AddVuse(const tree_nodeRef& vuse)
 {
-   THROW_ASSERT(!GET_CONST_NODE(vuse) || (GET_CONST_NODE(vuse)->get_kind() == ssa_name_K &&
-                                          GetPointerS<const ssa_name>(GET_CONST_NODE(vuse))->virtual_flag),
+   THROW_ASSERT(!GET_CONST_PTD_NODE(vuse) ||
+                    (vuse->get_kind() == ssa_name_K && GetPointerS<const ssa_name>(vuse)->virtual_flag),
                 "");
    return vuses.insert(vuse).second;
 }
 
 bool gimple_node::AddVover(const tree_nodeRef& vover)
 {
-   THROW_ASSERT(!GET_CONST_NODE(vover) || (GET_CONST_NODE(vover)->get_kind() == ssa_name_K &&
-                                           GetPointerS<const ssa_name>(GET_CONST_NODE(vover))->virtual_flag),
+   THROW_ASSERT(!GET_CONST_PTD_NODE(vover) ||
+                    (vover->get_kind() == ssa_name_K && GetPointerS<const ssa_name>(vover)->virtual_flag),
                 "");
    return vovers.insert(vover).second;
 }
@@ -345,9 +341,9 @@ void gimple_node::visit(tree_node_visitor* const v) const
    VISIT_SC(mask, srcp, visit(v));
    VISIT_MEMBER(mask, memuse, visit(v));
    VISIT_MEMBER(mask, memdef, visit(v));
-   SEQ_VISIT_MEMBER(mask, vuses, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, vuses, visit(v));
    VISIT_MEMBER(mask, vdef, visit(v));
-   SEQ_VISIT_MEMBER(mask, vovers, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, vovers, visit(v));
    VISIT_MEMBER(mask, use_set, visit(v));
    VISIT_MEMBER(mask, clobbered_set, visit(v));
    VISIT_MEMBER(mask, scpe, visit(v));
@@ -412,14 +408,6 @@ void type_node::visit(tree_node_visitor* const v) const
    VISIT_MEMBER(mask, scpe, visit(v));
 }
 
-void memory_tag::visit(tree_node_visitor* const v) const
-{
-   unsigned int mask = ALL_VISIT;
-   (*v)(this, mask);
-   VISIT_SC(mask, decl_node, visit(v));
-   SEQ_VISIT_MEMBER(mask, list_of_aliases, tree_node, visit, tree_node_visitor, v);
-}
-
 void cst_node::visit(tree_node_visitor* const v) const
 {
    unsigned int mask = ALL_VISIT;
@@ -467,7 +455,7 @@ void gimple_bind::visit(tree_node_visitor* const v) const
    unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
    VISIT_SC(mask, expr_node, visit(v));
-   SEQ_VISIT_MEMBER(mask, list_of_vars, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, list_of_vars, visit(v));
    VISIT_MEMBER(mask, body, visit(v));
 }
 
@@ -570,7 +558,7 @@ std::string PointToSolution::ToString() const
    }
    for(const auto& var : variables)
    {
-      res += GET_NODE(var)->ToString() + " ";
+      res += var->ToString() + " ";
    }
    return res;
 }
@@ -579,7 +567,7 @@ void PointToSolution::visit(tree_node_visitor* const v) const
 {
    unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
-   SEQ_VISIT_MEMBER(mask, variables, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, variables, visit(v));
 }
 
 void call_expr::visit(tree_node_visitor* const v) const
@@ -588,7 +576,7 @@ void call_expr::visit(tree_node_visitor* const v) const
    (*v)(this, mask);
    VISIT_SC(mask, expr_node, visit(v));
    VISIT_MEMBER(mask, fn, visit(v));
-   SEQ_VISIT_MEMBER(mask, args, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, args, visit(v));
 }
 
 call_expr::call_expr(const unsigned int i) : expr_node(i)
@@ -622,7 +610,7 @@ void gimple_call::visit(tree_node_visitor* const v) const
    (*v)(this, mask);
    VISIT_SC(mask, gimple_node, visit(v));
    VISIT_MEMBER(mask, fn, visit(v));
-   SEQ_VISIT_MEMBER(mask, args, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, args, visit(v));
 }
 
 void gimple_call::AddArg(const tree_nodeRef& arg)
@@ -769,7 +757,7 @@ void function_decl::visit(tree_node_visitor* const v) const
    VISIT_MEMBER(mask, fn, visit(v));
    VISIT_MEMBER(mask, tmpl_parms, visit(v));
    VISIT_MEMBER(mask, tmpl_args, visit(v));
-   SEQ_VISIT_MEMBER(mask, list_of_args, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, list_of_args, visit(v));
    VISIT_MEMBER(mask, body, visit(v));
    VISIT_MEMBER(mask, inline_body, visit(v));
 }
@@ -1000,10 +988,10 @@ void gimple_phi::AddDefEdge(const tree_managerRef& TM, const DefEdge& def_edge)
    list_of_def_edge.push_back(def_edge);
    if(updated_ssa_uses && bb_index != 0)
    {
-      const auto sn = GetPointer<ssa_name>(GET_NODE(def_edge.first));
+      const auto sn = GetPointer<ssa_name>(def_edge.first);
       if(sn)
       {
-         sn->AddUseStmt(TM->GetTreeReindex(index));
+         sn->AddUseStmt(TM->GetTreeNode(index));
       }
    }
 }
@@ -1021,19 +1009,19 @@ void gimple_phi::ReplaceDefEdge(const tree_managerRef& TM, const DefEdge& old_de
       {
          if(updated_ssa_uses && bb_index != 0)
          {
-            auto sn = GetPointer<ssa_name>(GET_NODE(def_edge.first));
+            auto sn = GetPointer<ssa_name>(def_edge.first);
             if(sn)
             {
-               sn->RemoveUse(TM->GetTreeReindex(index));
+               sn->RemoveUse(TM->GetTreeNode(index));
             }
          }
          def_edge = new_def_edge;
          if(updated_ssa_uses && bb_index != 0)
          {
-            auto sn = GetPointer<ssa_name>(GET_NODE(def_edge.first));
+            auto sn = GetPointer<ssa_name>(def_edge.first);
             if(sn)
             {
-               sn->AddUseStmt(TM->GetTreeReindex(index));
+               sn->AddUseStmt(TM->GetTreeNode(index));
             }
          }
          break;
@@ -1064,10 +1052,10 @@ void gimple_phi::RemoveDefEdge(const tree_managerRef& TM, const DefEdge& to_be_r
       {
          if(updated_ssa_uses && bb_index != 0)
          {
-            const auto sn = GetPointer<ssa_name>(GET_NODE(to_be_removed.first));
+            const auto sn = GetPointer<ssa_name>(to_be_removed.first);
             if(sn)
             {
-               sn->RemoveUse(TM->GetTreeReindex(index));
+               sn->RemoveUse(TM->GetTreeNode(index));
             }
          }
          list_of_def_edge.erase(def_edge);
@@ -1123,8 +1111,8 @@ void record_type::visit(tree_node_visitor* const v) const
    (*v)(this, mask);
    VISIT_SC(mask, type_node, visit(v));
    VISIT_MEMBER(mask, vfld, visit(v));
-   SEQ_VISIT_MEMBER(mask, list_of_flds, tree_node, visit, tree_node_visitor, v);
-   SEQ_VISIT_MEMBER(mask, list_of_fncs, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, list_of_flds, visit(v));
+   SEQ_VISIT_MEMBER(mask, list_of_fncs, visit(v));
    VISIT_MEMBER(mask, ptd, visit(v));
    VISIT_MEMBER(mask, cls, visit(v));
    VISIT_MEMBER(mask, bfld, visit(v));
@@ -1138,14 +1126,14 @@ std::string record_type::get_maybe_name() const
    type_decl* td = nullptr;
    if(name)
    {
-      td = GetPointer<type_decl>(GET_NODE(name));
+      td = GetPointer<type_decl>(name);
    }
    if(td)
    {
       identifier_node* in = nullptr;
       if(td->name)
       {
-         in = GetPointer<identifier_node>(GET_NODE(td->name));
+         in = GetPointer<identifier_node>(td->name);
       }
       if(in)
       {
@@ -1162,7 +1150,7 @@ tree_nodeRef record_type::get_field(integer_cst_t offset)
    field_decl* fd;
    for(i = 0; i < list_of_flds.size(); i++)
    {
-      fd = GetPointer<field_decl>(GET_NODE(list_of_flds[i]));
+      fd = GetPointer<field_decl>(list_of_flds[i]);
       if(fd)
       {
          fld_offset = fd->offset();
@@ -1247,13 +1235,13 @@ void ssa_name::visit(tree_node_visitor* const v) const
    VISIT_SC(mask, tree_node, visit(v));
    VISIT_MEMBER(mask, type, visit(v));
    VISIT_MEMBER(mask, var, visit(v));
-   SEQ_VISIT_MEMBER(mask, def_stmts, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, def_stmts, visit(v));
    VISIT_MEMBER(mask, min, visit(v));
    VISIT_MEMBER(mask, max, visit(v));
    VISIT_MEMBER(mask, use_set, visit(v));
 }
 
-const tree_nodeRef ssa_name::CGetDefStmt() const
+tree_nodeRef ssa_name::CGetDefStmt() const
 {
 #if HAVE_ASSERTS
    if(def_stmts.size() != 1)
@@ -1271,60 +1259,55 @@ const tree_nodeRef ssa_name::CGetDefStmt() const
    return *(def_stmts.begin());
 }
 
-const TreeNodeSet ssa_name::CGetDefStmts() const
+TreeNodeSet ssa_name::CGetDefStmts() const
 {
    return def_stmts;
 }
 
 void ssa_name::AddUseStmt(const tree_nodeRef& use_stmt)
 {
-#ifndef NDEBUG
-   size_t vuse_count = 0;
+   use_stmts[use_stmt]++;
+#ifdef CHECK_VIRTUAL_USES
    if(virtual_flag)
    {
-      const auto gn = GetPointerS<const gimple_node>(GET_CONST_NODE(use_stmt));
-      vuse_count += static_cast<size_t>(std::count_if(gn->vuses.begin(), gn->vuses.end(),
-                                                      [&](const tree_nodeRef& tn) { return tn->index == index; }));
-      vuse_count += static_cast<size_t>(std::count_if(gn->vovers.begin(), gn->vovers.end(),
-                                                      [&](const tree_nodeRef& tn) { return tn->index == index; }));
+      size_t vuse_count = 0;
+      const auto gn = GetPointerS<const gimple_node>(use_stmt);
+      vuse_count += gn->vuses.count(tree_nodeRef(this, null_deleter()));
+      vuse_count += gn->vovers.count(tree_nodeRef(this, null_deleter()));
       vuse_count += static_cast<size_t>(gn->memuse && gn->memuse->index == index);
-      if(GET_CONST_NODE(use_stmt)->get_kind() == gimple_phi_K)
+      if(use_stmt->get_kind() == gimple_phi_K)
       {
-         const auto gp = GetPointerS<const gimple_phi>(GET_CONST_NODE(use_stmt));
+         const auto gp = GetPointerS<const gimple_phi>(use_stmt);
          vuse_count += static_cast<size_t>(
              std::count_if(gp->CGetDefEdgesList().begin(), gp->CGetDefEdgesList().end(),
                            [&](const gimple_phi::DefEdge& de) { return de.first->index == index; }));
       }
-   }
-#endif
-   use_stmts[use_stmt]++;
-#ifndef NDEBUG
-   if(virtual_flag && use_stmts.count(use_stmt) > vuse_count)
-   {
-      std::cout << "vssa: " << ToString() << std::endl;
-      const auto gn = GetPointerS<const gimple_node>(GET_CONST_NODE(use_stmt));
-      if(gn->vdef)
+      if(use_stmts.count(use_stmt) > vuse_count)
       {
-         std::cout << "vdef: " << GET_CONST_NODE(gn->vdef)->ToString() << std::endl;
+         std::cerr << "vssa: " << ToString() << std::endl;
+         const auto gn = GetPointerS<const gimple_node>(use_stmt);
+         if(gn->vdef)
+         {
+            std::cerr << "vdef: " << gn->vdef->ToString() << std::endl;
+         }
+         for(const auto& vuse : gn->vuses)
+         {
+            std::cerr << "vuse: " << vuse->ToString() << std::endl;
+         }
+         for(const auto& vover : gn->vovers)
+         {
+            std::cerr << "vover: " << vover->ToString() << std::endl;
+         }
+         if(gn->memdef)
+         {
+            std::cerr << "memdef: " << gn->memdef->ToString() << std::endl;
+         }
+         if(gn->memuse)
+         {
+            std::cerr << "memuse: " << gn->memuse->ToString() << std::endl;
+         }
+         THROW_UNREACHABLE("Virtual ssa used more than " + STR(vuse_count) + " time - " + use_stmt->ToString());
       }
-      for(const auto& vuse : gn->vuses)
-      {
-         std::cout << "vuse: " << GET_CONST_NODE(vuse)->ToString() << std::endl;
-      }
-      for(const auto& vover : gn->vovers)
-      {
-         std::cout << "vover: " << GET_CONST_NODE(vover)->ToString() << std::endl;
-      }
-      if(gn->memdef)
-      {
-         std::cout << "memdef: " << GET_CONST_NODE(gn->memdef)->ToString() << std::endl;
-      }
-      if(gn->memuse)
-      {
-         std::cout << "memuse: " << GET_CONST_NODE(gn->memuse)->ToString() << std::endl;
-      }
-      THROW_UNREACHABLE("Virtual ssa used more than " + STR(vuse_count) + " time - " +
-                        GET_CONST_NODE(use_stmt)->ToString());
    }
 #endif
 }
@@ -1387,7 +1370,7 @@ void statement_list::visit(tree_node_visitor* const v) const
    unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
    VISIT_SC(mask, tree_node, visit(v));
-   SEQ_VISIT_MEMBER(mask, list_of_stmt, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, list_of_stmt, visit(v));
    auto mend = list_of_bloc.end();
    for(auto i = list_of_bloc.begin(); i != mend; ++i)
    {
@@ -1471,7 +1454,7 @@ void tree_vec::visit(tree_node_visitor* const v) const
    unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
    VISIT_SC(mask, tree_node, visit(v));
-   SEQ_VISIT_MEMBER(mask, list_of_op, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, list_of_op, visit(v));
 }
 
 void try_block::visit(tree_node_visitor* const v) const
@@ -1498,8 +1481,8 @@ void union_type::visit(tree_node_visitor* const v) const
    unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
    VISIT_SC(mask, type_node, visit(v));
-   SEQ_VISIT_MEMBER(mask, list_of_flds, tree_node, visit, tree_node_visitor, v);
-   SEQ_VISIT_MEMBER(mask, list_of_fncs, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, list_of_flds, visit(v));
+   SEQ_VISIT_MEMBER(mask, list_of_fncs, visit(v));
    VISIT_MEMBER(mask, binf, visit(v));
 }
 
@@ -1534,7 +1517,7 @@ void vector_cst::visit(tree_node_visitor* const v) const
    unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
    VISIT_SC(mask, cst_node, visit(v));
-   SEQ_VISIT_MEMBER(mask, list_of_valu, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, list_of_valu, visit(v));
 }
 
 void vector_type::visit(tree_node_visitor* const v) const
@@ -1608,38 +1591,3 @@ void expr_pack_expansion::visit(tree_node_visitor* const v) const
    VISIT_MEMBER(mask, param_packs, visit(v));
    VISIT_MEMBER(mask, arg, visit(v));
 }
-
-#if HAVE_UNORDERED
-TreeNodeConstEqualTo::TreeNodeConstEqualTo()
-{
-}
-
-bool TreeNodeConstEqualTo::operator()(const tree_nodeConstRef x, const tree_nodeConstRef y) const
-{
-   return x->index == y->index;
-}
-
-#endif
-
-TreeNodeConstSorter::TreeNodeConstSorter() = default;
-
-bool TreeNodeConstSorter::operator()(const tree_nodeConstRef& x, const tree_nodeConstRef& y) const
-{
-   return x->index < y->index;
-}
-
-#if !HAVE_UNORDERED
-TreeNodeSorter::TreeNodeSorter() = default;
-bool TreeNodeSorter::operator()(const tree_nodeRef& x, const tree_nodeRef& y) const
-{
-   return x->index < y->index;
-}
-
-TreeNodeSet::TreeNodeSet() : OrderedSetStd<tree_nodeRef, TreeNodeSorter>()
-{
-}
-
-TreeNodeConstSet::TreeNodeConstSet() : OrderedSetStd<tree_nodeConstRef, TreeNodeConstSorter>()
-{
-}
-#endif

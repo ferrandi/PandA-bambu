@@ -102,26 +102,21 @@ const std::string revision_hash = {
 #include "revision_hash.hpp"
 };
 
-#define OPTION_NAME(r, data, elem) option_name[BOOST_PP_CAT(OPT_, elem)] = #elem;
+#define __TO_STRING_HELPER(r, data, elem) {BOOST_PP_CAT(OPT_, elem), "OPT_" BOOST_PP_STRINGIZE(elem)},
+
+const CustomMap<enum enum_option, std::string> Parameter::option_name = {
+    BOOST_PP_SEQ_FOR_EACH(__TO_STRING_HELPER, BOOST_PP_EMPTY, BAMBU_OPTIONS)
+        BOOST_PP_SEQ_FOR_EACH(__TO_STRING_HELPER, BOOST_PP_EMPTY, EUCALIPTUS_OPTIONS)
+            BOOST_PP_SEQ_FOR_EACH(__TO_STRING_HELPER, BOOST_PP_EMPTY, FRAMEWORK_OPTIONS)
+                BOOST_PP_SEQ_FOR_EACH(__TO_STRING_HELPER, BOOST_PP_EMPTY, COMPILER_OPTIONS)
+                    BOOST_PP_SEQ_FOR_EACH(__TO_STRING_HELPER, BOOST_PP_EMPTY, SPIDER_OPTIONS)
+                        BOOST_PP_SEQ_FOR_EACH(__TO_STRING_HELPER, BOOST_PP_EMPTY, SYNTHESIS_OPTIONS)
+                            BOOST_PP_SEQ_FOR_EACH(__TO_STRING_HELPER, BOOST_PP_EMPTY, TREE_PANDA_COMPILER_OPTIONS)};
 
 Parameter::Parameter(const std::string& _program_name, int _argc, char** const _argv, int _debug_level)
     : argc(_argc), argv(_argv), debug_level(_debug_level)
 {
    setOption(OPT_program_name, _program_name);
-   BOOST_PP_SEQ_FOR_EACH(OPTION_NAME, BOOST_PP_EMPTY, BAMBU_OPTIONS)
-   BOOST_PP_SEQ_FOR_EACH(OPTION_NAME, BOOST_PP_EMPTY, EUCALIPTUS_OPTIONS)
-   BOOST_PP_SEQ_FOR_EACH(OPTION_NAME, BOOST_PP_EMPTY, FRAMEWORK_OPTIONS)
-   BOOST_PP_SEQ_FOR_EACH(OPTION_NAME, BOOST_PP_EMPTY, COMPILER_OPTIONS)
-   BOOST_PP_SEQ_FOR_EACH(OPTION_NAME, BOOST_PP_EMPTY, SPIDER_OPTIONS)
-   BOOST_PP_SEQ_FOR_EACH(OPTION_NAME, BOOST_PP_EMPTY, SYNTHESIS_OPTIONS)
-   BOOST_PP_SEQ_FOR_EACH(OPTION_NAME, BOOST_PP_EMPTY, TREE_PANDA_COMPILER_OPTIONS)
-   // This part has been added since boost macro does not expand correctly
-   std::map<enum enum_option, std::string>::iterator it, it_end = option_name.end();
-   for(it = option_name.begin(); it != it_end; it++)
-   {
-      it->second = "OPT_" + it->second.substr(19);
-      it->second = it->second.substr(0, it->second.find(')'));
-   }
    SetCommonDefaults();
 }
 
@@ -130,7 +125,6 @@ Parameter::Parameter(const Parameter& other)
       argv(other.argv),
       Options(other.Options),
       enum_options(other.enum_options),
-      option_name(other.option_name),
       debug_classes(other.debug_classes),
       debug_level(other.debug_level)
 {
@@ -299,14 +293,13 @@ void Parameter::SetCommonDefaults()
 void Parameter::print(std::ostream& os) const
 {
    os << "List of parameters: " << std::endl;
-   for(const auto& Option : Options)
+   for(const auto& [key, val] : Options)
    {
-      os << Option.first << ": " << Option.second << std::endl;
+      os << key << ": " << val << std::endl;
    }
-   std::map<enum enum_option, std::string>::const_iterator option, option_end = enum_options.end();
-   for(option = enum_options.begin(); option != option_end; ++option)
+   for(const auto& [ekey, val] : enum_options)
    {
-      os << option_name.find(option->first)->second << ": " << option->second << std::endl;
+      os << option_name.at(ekey) << ": " << val << std::endl;
    }
    os << " === " << std::endl;
 }
@@ -754,119 +747,119 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
 #if HAVE_I386_GCC49_COMPILER
          if(std::string(optarg_param) == "I386_GCC49")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC49));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC49);
             break;
          }
 #endif
 #if HAVE_I386_GCC5_COMPILER
          if(std::string(optarg_param) == "I386_GCC5")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC5));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC5);
             break;
          }
 #endif
 #if HAVE_I386_GCC6_COMPILER
          if(std::string(optarg_param) == "I386_GCC6")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC6));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC6);
             break;
          }
 #endif
 #if HAVE_I386_GCC7_COMPILER
          if(std::string(optarg_param) == "I386_GCC7")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC7));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC7);
             break;
          }
 #endif
 #if HAVE_I386_GCC8_COMPILER
          if(std::string(optarg_param) == "I386_GCC8")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC8));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC8);
             break;
          }
 #endif
 #if HAVE_I386_CLANG4_COMPILER
          if(std::string(optarg_param) == "I386_CLANG4")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG4));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG4);
             break;
          }
 #endif
 #if HAVE_I386_CLANG5_COMPILER
          if(std::string(optarg_param) == "I386_CLANG5")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG5));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG5);
             break;
          }
 #endif
 #if HAVE_I386_CLANG6_COMPILER
          if(std::string(optarg_param) == "I386_CLANG6")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG6));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG6);
             break;
          }
 #endif
 #if HAVE_I386_CLANG7_COMPILER
          if(std::string(optarg_param) == "I386_CLANG7")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG7));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG7);
             break;
          }
 #endif
 #if HAVE_I386_CLANG8_COMPILER
          if(std::string(optarg_param) == "I386_CLANG8")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG8));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG8);
             break;
          }
 #endif
 #if HAVE_I386_CLANG9_COMPILER
          if(std::string(optarg_param) == "I386_CLANG9")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG9));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG9);
             break;
          }
 #endif
 #if HAVE_I386_CLANG10_COMPILER
          if(std::string(optarg_param) == "I386_CLANG10")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG10));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG10);
             break;
          }
 #endif
 #if HAVE_I386_CLANG11_COMPILER
          if(std::string(optarg_param) == "I386_CLANG11")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG11));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG11);
             break;
          }
 #endif
 #if HAVE_I386_CLANG12_COMPILER
          if(std::string(optarg_param) == "I386_CLANG12")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG12));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG12);
             break;
          }
 #endif
 #if HAVE_I386_CLANG13_COMPILER
          if(std::string(optarg_param) == "I386_CLANG13")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG13));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG13);
             break;
          }
 #endif
 #if HAVE_I386_CLANG16_COMPILER
          if(std::string(optarg_param) == "I386_CLANG16")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG16));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG16);
             break;
          }
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
          if(std::string(optarg_param) == "I386_CLANGVVD")
          {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD));
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD);
             break;
          }
 #endif
@@ -905,7 +898,7 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       }
       case INPUT_OPT_USE_RAW:
       {
-         setOption(OPT_input_format, static_cast<int>(Parameters_FileFormat::FF_RAW));
+         setOption(OPT_input_format, Parameters_FileFormat::FF_RAW);
          break;
       }
       case INPUT_OPT_WRITE_GCC_XML:
@@ -1283,24 +1276,6 @@ void Parameter::PrintGccOptionsUsage(std::ostream& os) const
 }
 #endif
 
-template <>
-CustomSet<std::string> Parameter::getOption(const enum enum_option name) const
-{
-   return string_to_container<CustomSet<std::string>>(getOption<std::string>(name), STR_CST_string_separator);
-}
-
-template <>
-std::list<std::string> Parameter::getOption(const enum enum_option name) const
-{
-   return string_to_container<std::list<std::string>>(getOption<std::string>(name), STR_CST_string_separator);
-}
-
-template <>
-std::vector<std::string> Parameter::getOption(const enum enum_option name) const
-{
-   return string_to_container<std::vector<std::string>>(getOption<std::string>(name), STR_CST_string_separator);
-}
-
 const std::vector<std::string> Parameter::CGetArgv() const
 {
    std::vector<std::string> ret;
@@ -1309,138 +1284,4 @@ const std::vector<std::string> Parameter::CGetArgv() const
       ret.push_back(std::string(argv[arg]));
    }
    return ret;
-}
-
-#if HAVE_HOST_PROFILING_BUILT
-template <>
-HostProfiling_Method Parameter::getOption(const enum enum_option name) const
-{
-   return static_cast<HostProfiling_Method>(getOption<int>(name));
-}
-#endif
-
-#if HAVE_FROM_C_BUILT
-template <>
-CompilerWrapper_CompilerTarget Parameter::getOption(const enum enum_option name) const
-{
-   return static_cast<CompilerWrapper_CompilerTarget>(getOption<int>(name));
-}
-#endif
-
-template <>
-Parameters_FileFormat Parameter::getOption(const enum enum_option name) const
-{
-   return static_cast<Parameters_FileFormat>(getOption<int>(name));
-}
-
-#if HAVE_FROM_C_BUILT
-template <>
-CompilerWrapper_OptimizationSet Parameter::getOption(const enum enum_option name) const
-{
-   return static_cast<CompilerWrapper_OptimizationSet>(getOption<int>(name));
-}
-template <>
-void Parameter::setOption(const enum enum_option name, const CompilerWrapper_OptimizationSet value)
-{
-   enum_options[name] = std::to_string(static_cast<int>(value));
-}
-#endif
-
-#if HAVE_TO_C_BUILT
-template <>
-ActorGraphBackend_Type Parameter::getOption(const enum enum_option name) const
-{
-   return static_cast<ActorGraphBackend_Type>(getOption<int>(name));
-}
-#endif
-#if HAVE_HLS_BUILT
-template <>
-HLSFlowStep_Type Parameter::getOption(const enum enum_option name) const
-{
-   return static_cast<HLSFlowStep_Type>(getOption<int>(name));
-}
-
-template <>
-void Parameter::setOption(const enum enum_option name, const HLSFlowStep_Type hls_flow_step_type)
-{
-   enum_options[name] = std::to_string(static_cast<int>(hls_flow_step_type));
-}
-
-template <>
-MemoryAllocation_Policy Parameter::getOption(const enum enum_option name) const
-{
-   return static_cast<MemoryAllocation_Policy>(getOption<int>(name));
-}
-
-template <>
-void Parameter::setOption(const enum enum_option name, const MemoryAllocation_Policy memory_allocation_policy)
-{
-   enum_options[name] = std::to_string(static_cast<int>(memory_allocation_policy));
-}
-
-template <>
-MemoryAllocation_ChannelsType Parameter::getOption(const enum enum_option name) const
-{
-   return static_cast<MemoryAllocation_ChannelsType>(getOption<int>(name));
-}
-
-template <>
-void Parameter::setOption(const enum enum_option name,
-                          const MemoryAllocation_ChannelsType memory_allocation_channels_type)
-{
-   enum_options[name] = std::to_string(static_cast<int>(memory_allocation_channels_type));
-}
-
-template <>
-CliqueCovering_Algorithm Parameter::getOption(const enum enum_option name) const
-{
-   return static_cast<CliqueCovering_Algorithm>(getOption<int>(name));
-}
-
-template <>
-void Parameter::setOption(const enum enum_option name, const CliqueCovering_Algorithm clique_covering_algorithm)
-{
-   enum_options[name] = std::to_string(static_cast<int>(clique_covering_algorithm));
-}
-
-template <>
-Evaluation_Mode Parameter::getOption(const enum enum_option name) const
-{
-   return static_cast<Evaluation_Mode>(getOption<int>(name));
-}
-
-template <>
-void Parameter::setOption(const enum enum_option name, const Evaluation_Mode evaluation_mode)
-{
-   enum_options[name] = std::to_string(static_cast<int>(evaluation_mode));
-}
-
-template <>
-ParametricListBased_Metric Parameter::getOption(const enum enum_option name) const
-{
-   return static_cast<ParametricListBased_Metric>(getOption<int>(name));
-}
-
-template <>
-void Parameter::setOption(const enum enum_option name, const ParametricListBased_Metric parametric_list_based_metric)
-{
-   enum_options[name] = std::to_string(static_cast<int>(parametric_list_based_metric));
-}
-
-template <>
-SDCScheduling_Algorithm Parameter::getOption(const enum enum_option name) const
-{
-   return static_cast<SDCScheduling_Algorithm>(getOption<int>(name));
-}
-
-template <>
-void Parameter::setOption(const enum enum_option name, const SDCScheduling_Algorithm sdc_scheduling_algorithm)
-{
-   enum_options[name] = std::to_string(static_cast<int>(sdc_scheduling_algorithm));
-}
-
-#endif
-bool Parameter::IsParameter(const std::string& name) const
-{
-   return panda_parameters.find(name) != panda_parameters.end();
 }

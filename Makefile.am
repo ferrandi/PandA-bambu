@@ -57,8 +57,8 @@ dist-hook:
 	rm $(distdir)/configure
 	rm $(distdir)/depcomp
 	rm $(distdir)/etc/macros/ltversion.m4
-	rm $(distdir)/ext/abseil-cpp/aclocal.m4
-	rm $(distdir)/ext/abseil-cpp/configure
+	rm $(distdir)/ext/abseil/aclocal.m4
+	rm $(distdir)/ext/abseil/configure
 	rm $(distdir)/ext/flopoco/aclocal.m4
 	rm $(distdir)/ext/flopoco/configure
 	rm $(distdir)/ext/flopoco/m4/ltversion.m4

@@ -43,12 +43,12 @@
 
 #ifndef DESIGN_FLOW_STEP_FACTORY_HPP
 #define DESIGN_FLOW_STEP_FACTORY_HPP
-
+#include "design_flow_step.hpp"
 #include "refcount.hpp"
-#include <string> // for string
+
+#include <string>
 
 CONSTREF_FORWARD_DECL(DesignFlowManager);
-REF_FORWARD_DECL(DesignFlowStep);
 CONSTREF_FORWARD_DECL(Parameter);
 
 class DesignFlowStepFactory
@@ -63,30 +63,33 @@ class DesignFlowStepFactory
    /// The debug level
    int debug_level;
 
- public:
+   const DesignFlowStep::StepClass step_class;
+
    /**
     * Constructor
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   DesignFlowStepFactory(const DesignFlowManagerConstRef& design_flow_manager, const ParameterConstRef& parameters);
+   DesignFlowStepFactory(DesignFlowStep::StepClass step_class, const DesignFlowManagerConstRef& design_flow_manager,
+                         const ParameterConstRef& parameters);
 
-   /**
-    * Destructor
-    */
+ public:
    virtual ~DesignFlowStepFactory();
 
    /**
-    * Return the prefix of the steps created by the factory
+    * Return the class of the steps created by the factory
     */
-   virtual const std::string GetPrefix() const = 0;
+   inline DesignFlowStep::StepClass GetClass() const
+   {
+      return step_class;
+   }
 
    /**
     * Return a step given the signature
     * @param signature is the signature of the step to be created
     * @return the created step
     */
-   virtual DesignFlowStepRef CreateFlowStep(const std::string& signature) const;
+   virtual DesignFlowStepRef CreateFlowStep(DesignFlowStep::signature_t signature) const;
 };
 using DesignFlowStepFactoryRef = refcount<DesignFlowStepFactory>;
 #endif

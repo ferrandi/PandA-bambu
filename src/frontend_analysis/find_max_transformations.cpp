@@ -60,7 +60,7 @@ FindMaxTransformations::FindMaxTransformations(const application_managerRef _App
 
 FindMaxTransformations::~FindMaxTransformations() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 FindMaxTransformations::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType) const
 {
    return CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>();

@@ -41,7 +41,6 @@
  */
 #ifndef UTILITY_HPP
 #define UTILITY_HPP
-
 #include "panda_types.hpp"
 #include "string_manipulation.hpp"
 

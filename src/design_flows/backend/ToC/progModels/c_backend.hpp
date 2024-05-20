@@ -74,14 +74,6 @@ CONSTREF_FORWARD_DECL(tree_node);
  */
 class CBackend : public DesignFlowStep
 {
- protected:
-   const CWriterRef writer;
-
-   const application_managerConstRef AppM;
-
-   void ComputeRelationships(DesignFlowStepSet& relationship,
-                             const DesignFlowStep::RelationshipType relationship_type) override;
-
  private:
    // CBackendStepFactory is the only class allowed to construct CBackend
    friend class CBackendStepFactory;
@@ -99,6 +91,14 @@ class CBackend : public DesignFlowStep
             const DesignFlowManagerConstRef design_flow_manager, const application_managerConstRef AppM,
             const ParameterConstRef _parameters);
 
+ protected:
+   const CWriterRef writer;
+
+   const application_managerConstRef AppM;
+
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
+
  public:
    const CBackendInformationConstRef c_backend_info;
 
@@ -108,16 +108,14 @@ class CBackend : public DesignFlowStep
 
    DesignFlowStep_Status Exec() override;
 
-   std::string GetSignature() const final;
-
-   std::string GetName() const final;
-
    DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
+
+   std::string GetName() const override;
 
    /**
     * Compute the signature for a c backend step
     */
-   static std::string ComputeSignature(const CBackendInformationConstRef type);
+   static signature_t ComputeSignature(const CBackendInformationConstRef type);
 };
 using CBackendRef = refcount<CBackend>;
 using CBackendConstRef = refcount<const CBackend>;

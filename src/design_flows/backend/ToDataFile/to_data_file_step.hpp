@@ -39,20 +39,14 @@
  */
 #ifndef TO_DATA_FILE_STEP_HPP
 #define TO_DATA_FILE_STEP_HPP
-
-/// Autoheader include
-#include "config_HAVE_CIRCUIT_BUILT.hpp"
-
-/// Superclass include
 #include "design_flow_step.hpp"
-
-/// STD include
-#include <string>
-
-/// utility include
 #include "refcount.hpp"
 
-enum class ToDataFileStep_Type
+#include <string>
+
+#include "config_HAVE_CIRCUIT_BUILT.hpp"
+
+enum class ToDataFileStep_Type : unsigned short
 {
    UNKNOWN = 0,
 #if HAVE_CIRCUIT_BUILT
@@ -66,6 +60,9 @@ class ToDataFileStep : public virtual DesignFlowStep
    /// The type of step
    ToDataFileStep_Type to_data_file_step_type;
 
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override = 0;
+
  public:
    /**
     * Constructor
@@ -76,18 +73,18 @@ class ToDataFileStep : public virtual DesignFlowStep
    ToDataFileStep(const DesignFlowManagerConstRef design_flow_manager,
                   const ToDataFileStep_Type _to_data_file_step_type, const ParameterConstRef parameters);
 
-   /**
-    * Return a unified identifier of this design step
-    * @return the signature of the design step
-    */
-   std::string GetSignature() const override;
+   std::string GetName() const override;
+
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
+
+   bool HasToBeExecuted() const override;
 
    /**
     * Given a to data file step type, return the name of the type
     * @param to_data_file_step is the type to be considered
     * @return the name of the type
     */
-   static const std::string EnumToName(const ToDataFileStep_Type to_data_file_step);
+   static std::string EnumToName(const ToDataFileStep_Type to_data_file_step);
 
    /**
     * Given the name of data file step type, return the enum
@@ -101,31 +98,6 @@ class ToDataFileStep : public virtual DesignFlowStep
     * @param to_data_file_step_type is the type of the step
     * @return the corresponding signature
     */
-   static const std::string ComputeSignature(const ToDataFileStep_Type to_data_file_step_type);
-
-   /**
-    * Return the name of this design step
-    * @return the name of the pass (for debug purpose)
-    */
-   std::string GetName() const override;
-
-   /**
-    * Compute the relationships of a step with other steps
-    * @param dependencies is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& relationship,
-                             const DesignFlowStep::RelationshipType relationship_type) override = 0;
-
-   /**
-    * Return the factory to create this type of steps
-    */
-   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
-
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
+   static signature_t ComputeSignature(const ToDataFileStep_Type to_data_file_step_type);
 };
 #endif

@@ -58,7 +58,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 /// utility include
 #include "dbgPrintHelper.hpp"
@@ -103,7 +102,7 @@ void MemoryInitializationWriterBase::GoUp()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--GoUp - New status is " + PrintStatus());
 
    /// Second, according to the type let's how many elements have to have been processed
-   switch(GET_CONST_NODE(status.back().first)->get_kind())
+   switch(status.back().first->get_kind())
    {
       case array_type_K:
       { /// parameters cannot have this type, but global variables can
@@ -148,8 +147,7 @@ void MemoryInitializationWriterBase::GoUp()
       case type_pack_expansion_K:
       case vector_type_K:
       case void_type_K:
-         THROW_ERROR("Unexpected type in initializing parameter/variable: " +
-                     GET_CONST_NODE(status.back().first)->get_kind_text());
+         THROW_ERROR("Unexpected type in initializing parameter/variable: " + status.back().first->get_kind_text());
          break;
       case aggr_init_expr_K:
       case binfo_K:
@@ -178,14 +176,12 @@ void MemoryInitializationWriterBase::GoUp()
       case CASE_TERNARY_EXPRESSION:
       case CASE_UNARY_EXPRESSION:
       default:
-         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC,
-                          "Not supported node: " + GET_CONST_NODE(status.back().first)->get_kind_text());
+         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + status.back().first->get_kind_text());
    }
    if(expected_size != 0 && (expected_size != status.back().second))
    {
-      THROW_ERROR("Missing data in C initialization for node of type " +
-                  GET_CONST_NODE(status.back().first)->get_kind_text() + " " + STR(expected_size) + " vs. " +
-                  STR(status.back().second));
+      THROW_ERROR("Missing data in C initialization for node of type " + status.back().first->get_kind_text() + " " +
+                  STR(expected_size) + " vs. " + STR(status.back().second));
    }
 }
 
@@ -208,8 +204,8 @@ void MemoryInitializationWriterBase::GoDown()
       {
          return tree_helper::CGetPointedType(type_node);
       }
-      THROW_ERROR("Unexpected nested initialization " + GET_CONST_NODE(type_node)->get_kind_text() +
-                  " - Current status is " + PrintStatus());
+      THROW_ERROR("Unexpected nested initialization " + type_node->get_kind_text() + " - Current status is " +
+                  PrintStatus());
       return tree_nodeConstRef();
    }();
    status.push_back(std::make_pair(new_type, 0));
@@ -240,7 +236,7 @@ void MemoryInitializationWriterBase::GoNext()
    else
    {
       THROW_ASSERT(tree_helper::IsArrayEquivType(upper_type) || tree_helper::IsPointerType(upper_type),
-                   GET_CONST_NODE(upper_type)->get_kind_text());
+                   upper_type->get_kind_text());
       status[status.size() - 2].second++;
       status[status.size() - 1].second = 0;
    }
@@ -256,7 +252,7 @@ const std::string MemoryInitializationWriterBase::PrintStatus() const
       {
          ret += ":";
       }
-      ret += GET_CONST_NODE(level.first)->get_kind_text() + "[" + STR(level.second) + "]";
+      ret += level.first->get_kind_text() + "[" + STR(level.second) + "]";
    }
    return ret;
 }

@@ -65,7 +65,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 #include "var_pp_functor.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
@@ -117,13 +116,13 @@ bool mem_dominator_allocation::is_internal_obj(unsigned int var_id, unsigned int
    }
    if(!multiple_top_call_graph)
    {
-      const auto tn = TM->CGetTreeNode(var_id);
+      const auto tn = TM->GetTreeNode(var_id);
       switch(memory_allocation_policy)
       {
          case MemoryAllocation_Policy::LSS:
          {
             const auto vd = GetPointer<const var_decl>(tn);
-            if(vd && (vd->static_flag || (vd->scpe && GET_CONST_NODE(vd->scpe)->get_kind() != translation_unit_decl_K)))
+            if(vd && (vd->static_flag || (vd->scpe && vd->scpe->get_kind() != translation_unit_decl_K)))
             {
                is_internal = true;
             }
@@ -140,7 +139,7 @@ bool mem_dominator_allocation::is_internal_obj(unsigned int var_id, unsigned int
          case MemoryAllocation_Policy::GSS:
          {
             const auto vd = GetPointer<const var_decl>(tn);
-            if(vd && (vd->static_flag || !vd->scpe || GET_CONST_NODE(vd->scpe)->get_kind() == translation_unit_decl_K))
+            if(vd && (vd->static_flag || !vd->scpe || vd->scpe->get_kind() == translation_unit_decl_K))
             {
                is_internal = true;
             }
@@ -361,7 +360,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    std::set<func_id_t> top_functions;
    CustomMap<top_id_t, std::vector<func_id_t>> function_allocation_order;
 
-   const auto root_functions = CGM->GetRootFunctions();
+   const auto& root_functions = CGM->GetRootFunctions();
    top_functions.insert(root_functions.begin(), root_functions.end());
    const auto subgraph_from = [&](const vertex& top_vertex, bool is_addr = false, bool include_shared = true) {
       const auto top_function = CGM->get_function(top_vertex);
@@ -562,7 +561,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          }
          if(GET_TYPE(g, v) & (TYPE_LOAD | TYPE_STORE))
          {
-            const auto curr_tn = TM->CGetTreeNode(g->CGetOpNodeInfo(v)->GetNodeId());
+            const auto curr_tn = TM->GetTreeNode(g->CGetOpNodeInfo(v)->GetNodeId());
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "-->Analyzing statement " + GET_NAME(g, v) + ": " + STR(curr_tn));
             const auto me = GetPointer<const gimple_assign>(curr_tn);
@@ -609,7 +608,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             {
                THROW_ASSERT(var, "");
                THROW_ASSERT(function_behavior->is_variable_mem(var),
-                            "unexpected condition: " + STR(TM->CGetTreeNode(var)) + " is not a memory variable");
+                            "unexpected condition: " + STR(TM->GetTreeNode(var)) + " is not a memory variable");
                if(HLSMgr->Rmem->has_sds_var(var) && !HLSMgr->Rmem->is_sds_var(var))
                {
                   continue;
@@ -617,7 +616,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable is " + STR(var));
                THROW_ASSERT(g->CGetOpNodeInfo(v), "unexpected condition");
                const auto node_id = g->CGetOpNodeInfo(v)->GetNodeId();
-               const auto node = TM->CGetTreeNode(node_id);
+               const auto node = TM->GetTreeNode(node_id);
                const auto gm = GetPointer<const gimple_assign>(node);
                THROW_ASSERT(gm, "only gimple_assign's are allowed as memory operations");
                unsigned long long value_bitsize;
@@ -625,14 +624,14 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                if(GET_TYPE(g, v) & TYPE_STORE)
                {
                   auto n_last_zerobits = 0u;
-                  if(GET_NODE(gm->op0)->get_kind() == mem_ref_K)
+                  if(gm->op0->get_kind() == mem_ref_K)
                   {
-                     const auto mr = GetPointer<mem_ref>(GET_NODE(gm->op0));
-                     THROW_ASSERT(GetPointer<integer_cst>(GET_NODE(mr->op1)), "unexpected condition");
+                     const auto mr = GetPointer<mem_ref>(gm->op0);
+                     THROW_ASSERT(GetPointer<integer_cst>(mr->op1), "unexpected condition");
                      THROW_ASSERT(tree_helper::GetConstValue(mr->op1) == 0, "unexpected condition");
-                     if(GET_NODE(mr->op0)->get_kind() == ssa_name_K)
+                     if(mr->op0->get_kind() == ssa_name_K)
                      {
-                        const auto ssa_addr = GetPointer<const ssa_name>(GET_CONST_NODE(mr->op0));
+                        const auto ssa_addr = GetPointer<const ssa_name>(mr->op0);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "---STORE SSA pointer " + mr->op0->ToString() +
                                            " bit_values=" + ssa_addr->bit_values);
@@ -662,15 +661,14 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   }
                   else
                   {
-                     THROW_ERROR("unexpected condition" + GET_CONST_NODE(gm->op0)->get_kind_text() + " " +
-                                 gm->ToString());
+                     THROW_ERROR("unexpected condition" + gm->op0->get_kind_text() + " " + gm->ToString());
                   }
                   alignment = (1ull << n_last_zerobits) * 8;
                   const auto var_read = HLSMgr->get_required_values(fun_id, v);
                   const auto size_var = std::get<0>(var_read[0]);
-                  const auto size_type = tree_helper::CGetType(TM->CGetTreeReindex(size_var));
+                  const auto size_type = tree_helper::CGetType(TM->GetTreeNode(size_var));
                   value_bitsize = tree_helper::SizeAlloc(size_type);
-                  const auto fd = GetPointer<const field_decl>(GET_CONST_NODE(size_type));
+                  const auto fd = GetPointer<const field_decl>(size_type);
                   if(!fd || !fd->is_bitfield())
                   {
                      value_bitsize = std::max(8ull, value_bitsize);
@@ -680,14 +678,14 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                else
                {
                   auto n_last_zerobits = 0u;
-                  if(GET_CONST_NODE(gm->op1)->get_kind() == mem_ref_K)
+                  if(gm->op1->get_kind() == mem_ref_K)
                   {
-                     const auto mr = GetPointer<const mem_ref>(GET_CONST_NODE(gm->op1));
-                     THROW_ASSERT(GetPointer<const integer_cst>(GET_CONST_NODE(mr->op1)), "unexpected condition");
+                     const auto mr = GetPointer<const mem_ref>(gm->op1);
+                     THROW_ASSERT(GetPointer<const integer_cst>(mr->op1), "unexpected condition");
                      THROW_ASSERT(tree_helper::GetConstValue(mr->op1) == 0, "unexpected condition");
-                     if(GET_CONST_NODE(mr->op0)->get_kind() == ssa_name_K)
+                     if(mr->op0->get_kind() == ssa_name_K)
                      {
-                        const auto ssa_addr = GetPointer<const ssa_name>(GET_CONST_NODE(mr->op0));
+                        const auto ssa_addr = GetPointer<const ssa_name>(mr->op0);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "---LOAD SSA pointer " + mr->op0->ToString() +
                                            " bit_values=" + ssa_addr->bit_values);
@@ -717,14 +715,13 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   }
                   else
                   {
-                     THROW_ERROR("unexpected condition " + GET_CONST_NODE(gm->op1)->get_kind_text() + " " +
-                                 gm->ToString());
+                     THROW_ERROR("unexpected condition " + gm->op1->get_kind_text() + " " + gm->ToString());
                   }
                   alignment = (1ull << n_last_zerobits) * 8;
                   const auto size_var = HLSMgr->get_produced_value(fun_id, v);
-                  const auto size_type = tree_helper::CGetType(TM->CGetTreeReindex(size_var));
+                  const auto size_type = tree_helper::CGetType(TM->GetTreeNode(size_var));
                   value_bitsize = tree_helper::SizeAlloc(size_type);
-                  const auto fd = GetPointer<const field_decl>(GET_CONST_NODE(size_type));
+                  const auto fd = GetPointer<const field_decl>(size_type);
                   if(!fd || !fd->is_bitfield())
                   {
                      value_bitsize = std::max(8ull, value_bitsize);
@@ -733,7 +730,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
 
                if(var_size.find(var) == var_size.end())
                {
-                  const auto type_node = tree_helper::CGetType(TM->CGetTreeReindex(var));
+                  const auto type_node = tree_helper::CGetType(TM->GetTreeNode(var));
                   const auto is_a_struct_union =
                       ((tree_helper::IsStructType(type_node) || tree_helper::IsUnionType(type_node)) &&
                        !tree_helper::IsArrayEquivType(type_node)) ||
@@ -876,7 +873,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             if(GET_TYPE(g, v) & (TYPE_LOAD | TYPE_STORE))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing statement " + GET_NAME(g, v));
-               const auto curr_tn = TM->CGetTreeNode(g->CGetOpNodeInfo(v)->GetNodeId());
+               const auto curr_tn = TM->GetTreeNode(g->CGetOpNodeInfo(v)->GetNodeId());
                const auto me = GetPointer<const gimple_assign>(curr_tn);
                THROW_ASSERT(me, "only gimple_assign's are allowed as memory operations");
                tree_nodeRef expr;
@@ -953,8 +950,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             }
             else
             {
-               const auto n_call_points = static_cast<unsigned int>(
-                   Cget_edge_info<FunctionEdgeInfo, const CallGraph>(e, *top_cg)->direct_call_points.size());
+               const auto n_call_points =
+                   static_cast<unsigned int>(top_cg->CGetFunctionEdgeInfo(e)->direct_call_points.size());
                if(!num_instances.at(top_id).count(tgt))
                {
                   num_instances.at(top_id)[tgt] = cur_instances * n_call_points;
@@ -993,7 +990,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          THROW_ASSERT(var_id, "null var index unexpected");
          const auto& uses = var_uses.second;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Finding common dominator for " + STR(TM->CGetTreeReindex(var_id)) + " (id: " + STR(var_id) +
+                        "-->Finding common dominator for " + STR(TM->GetTreeNode(var_id)) + " (id: " + STR(var_id) +
                             ", uses: " + STR(uses.size()) + ")");
          CustomSet<unsigned int> filtered_top_functions;
          for(const auto& reachable_vertex : reachable_vertices)
@@ -1121,8 +1118,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "<--Found common dominator for " +
                             HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name() + " -> " +
-                            STR(TM->CGetTreeReindex(var_id)) + " (scope: " + (is_internal ? "internal" : "external") +
-                            ")");
+                            STR(TM->GetTreeNode(var_id)) + " (scope: " + (is_internal ? "internal" : "external") + ")");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                      "<--Analyzed top function: " +
@@ -1152,8 +1148,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   const auto cur_function_behavior = HLSMgr->CGetFunctionBehavior(*wiu_it);
                   if(cur_function_behavior->get_dynamic_address().find(var_id) !=
                          cur_function_behavior->get_dynamic_address().end() ||
-                     (GetPointer<const var_decl>(TM->CGetTreeNode(var_id)) &&
-                      GetPointerS<const var_decl>(TM->CGetTreeNode(var_id))->addr_taken))
+                     (GetPointer<const var_decl>(TM->GetTreeNode(var_id)) &&
+                      GetPointerS<const var_decl>(TM->GetTreeNode(var_id))->addr_taken))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "---Found dynamic use of variable: " +
@@ -1191,7 +1187,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                          HLSMgr->get_written_objects().end() /// read only memory
                   )
                   {
-                     if(!GetPointer<const gimple_call>(TM->CGetTreeNode(var_id)))
+                     if(!GetPointer<const gimple_call>(TM->GetTreeNode(var_id)))
                      {
                         HLSMgr->Rmem->add_private_memory(var_id);
                      }
@@ -1201,7 +1197,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                      if(var_map.at(top_id).at(var_id).size() == 1 && where_used.at(top_id).at(var_id).size() == 1 &&
                         !is_dynamic_address_used &&                              /// we never have &(var_id_object)
                         (*(where_used.at(top_id).at(var_id).begin()) == f_id) && /// used in a single place
-                        !GetPointer<const gimple_call>(TM->CGetTreeNode(var_id)))
+                        !GetPointer<const gimple_call>(TM->GetTreeNode(var_id)))
                      {
                         HLSMgr->Rmem->add_private_memory(var_id);
                      }
@@ -1209,7 +1205,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   else
                   {
                      if(!is_dynamic_address_used && /// we never have &(var_id_object)
-                        !GetPointer<const gimple_call>(TM->CGetTreeNode(var_id)))
+                        !GetPointer<const gimple_call>(TM->GetTreeNode(var_id)))
                      {
                         HLSMgr->Rmem->add_private_memory(var_id);
                      }
@@ -1229,7 +1225,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var_id) + " not sds-C");
                }
             }
-            const auto vd = GetPointer<const var_decl>(TM->CGetTreeNode(var_id));
+            const auto vd = GetPointer<const var_decl>(TM->GetTreeNode(var_id));
             if((HLSMgr->get_written_objects().find(var_id) == HLSMgr->get_written_objects().end()) &&
                (!is_dynamic_address_used || (vd && vd->readonly_flag)))
             {
@@ -1269,7 +1265,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                THROW_ASSERT(var_id, "null var index unexpected");
                if(pair.second && (!HLSMgr->Rmem->is_private_memory(var_id) || null_pointer_check))
                {
-                  const auto curr_size = compute_n_bytes(tree_helper::SizeAlloc(TM->CGetTreeReindex(var_id)));
+                  const auto curr_size = compute_n_bytes(tree_helper::SizeAlloc(TM->GetTreeNode(var_id)));
                   max_byte_size = std::max(static_cast<unsigned long long>(curr_size), max_byte_size);
                }
             }
@@ -1296,7 +1292,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          {
             const auto var_id = mem_map.first;
             THROW_ASSERT(var_id, "null var index unexpected");
-            const auto var_node = TM->CGetTreeReindex(var_id);
+            const auto var_node = TM->GetTreeNode(var_id);
             const auto is_internal = mem_map.second;
             auto is_dynamic_address_used = false;
 
@@ -1317,8 +1313,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                                  "---Analyzing function " +
                                      cur_function_behavior->CGetBehavioralHelper()->get_function_name());
                   if(cur_function_behavior->get_dynamic_address().count(var_id) ||
-                     (GetPointer<const var_decl>(GET_CONST_NODE(var_node)) &&
-                      GetPointerS<const var_decl>(GET_CONST_NODE(var_node))->addr_taken))
+                     (GetPointer<const var_decl>(var_node) && GetPointerS<const var_decl>(var_node)->addr_taken))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, dbg_lvl,
                                     "---Found dynamic use of variable: " +
@@ -1385,8 +1380,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                Rmem->add_external_variable(var_id, BH->PrintVariable(var_id));
                is_dynamic_address_used = true;
             }
-            const auto is_packed =
-                GetPointer<const decl_node>(GET_CONST_NODE(var_node)) && tree_helper::IsPackedType(var_node);
+            const auto is_packed = GetPointer<const decl_node>(var_node) && tree_helper::IsPackedType(var_node);
             Rmem->set_packed_vars(is_packed);
 
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl, "---Id: " + STR(var_id));
@@ -1426,7 +1420,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             {
                INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
                               "---The variable is always accessed with the same data size");
-               const auto vd = GetPointer<const var_decl>(GET_CONST_NODE(var_node));
+               const auto vd = GetPointer<const var_decl>(var_node);
                if(vd && vd->bit_values.size() != 0)
                {
                   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
@@ -1442,9 +1436,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                size_t max_references = 0;
                for(const auto& fun_vertex_set : var_referring_vertex_map.at(var_id))
                {
-                  max_references = max_references > static_cast<size_t>(fun_vertex_set.second.size()) ?
-                                       max_references :
-                                       static_cast<size_t>(fun_vertex_set.second.size());
+                  max_references =
+                      max_references > fun_vertex_set.second.size() ? max_references : fun_vertex_set.second.size();
                }
                Rmem->set_maximum_references(var_id, max_references);
                INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
@@ -1455,9 +1448,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                size_t max_loads = 0;
                for(const auto& fun_vertex_set : var_load_vertex_map.at(var_id))
                {
-                  max_loads = max_loads > static_cast<size_t>(fun_vertex_set.second.size()) ?
-                                  max_loads :
-                                  static_cast<size_t>(fun_vertex_set.second.size());
+                  max_loads = max_loads > fun_vertex_set.second.size() ? max_loads : fun_vertex_set.second.size();
                }
                Rmem->set_maximum_loads(var_id, max_loads);
                INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,

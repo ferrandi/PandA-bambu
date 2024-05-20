@@ -68,7 +68,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 #include "utility.hpp"
 
 #include <algorithm>
@@ -95,10 +94,10 @@ TestbenchGeneration::TestbenchGeneration(const ParameterConstRef _parameters, co
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 TestbenchGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -136,7 +135,7 @@ void TestbenchGeneration::Initialize()
    const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
    THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
    const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(top_symbols.front());
-   const auto top_hls = HLSMgr->get_HLS(GET_INDEX_CONST_NODE(top_fnode));
+   const auto top_hls = HLSMgr->get_HLS(top_fnode->index);
    cir = top_hls->top->get_circ();
    THROW_ASSERT(GetPointer<const module>(cir), "Not a module");
    mod = GetPointer<const module>(cir);
@@ -187,7 +186,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
       THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
       const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(top_symbols.front());
-      return GET_INDEX_CONST_NODE(top_fnode);
+      return top_fnode->index;
    }();
    const auto top_fb = HLSMgr->CGetFunctionBehavior(top_id);
    const auto top_bh = top_fb->CGetBehavioralHelper();
@@ -272,10 +271,10 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       std::list<structural_objectRef> master_ports;
       for(const auto& par : top_bh->GetParameters())
       {
-         const auto par_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(par));
+         const auto par_name = top_bh->PrintVariable(par->index);
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Parameter " + par_name);
          const auto par_bitsize = tree_helper::SizeAlloc(par);
-         const auto par_symbol = HLSMgr->Rmem->get_symbol(GET_INDEX_CONST_NODE(par), top_id);
+         const auto par_symbol = HLSMgr->Rmem->get_symbol(par->index, top_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
                         "---Interface: " + STR(par_bitsize) + "-bits memory mapped at " +
                             STR(par_symbol->get_address()));
@@ -290,12 +289,12 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
       }
 
-      const auto return_type = tree_helper::GetFunctionReturnType(HLSMgr->get_tree_manager()->CGetTreeReindex(top_id));
+      const auto return_type = tree_helper::GetFunctionReturnType(HLSMgr->get_tree_manager()->GetTreeNode(top_id));
       if(return_type)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Return value port");
          const auto return_bitsize = tree_helper::SizeAlloc(return_type);
-         const auto return_symbol = HLSMgr->Rmem->get_symbol(GET_INDEX_CONST_NODE(return_type), top_id);
+         const auto return_symbol = HLSMgr->Rmem->get_symbol(return_type->index, top_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
                         "---Interface: " + STR(return_bitsize) + "-bits memory mapped at " +
                             STR(return_symbol->get_address()));
@@ -386,7 +385,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       size_t idx = 0;
       for(const auto& arg : top_bh->GetParameters())
       {
-         const auto arg_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
+         const auto arg_name = top_bh->PrintVariable(arg->index);
          const auto& parm_attrs = func_arch->parms.at(arg_name);
          const auto& bundle_name = parm_attrs.at(FunctionArchitecture::parm_bundle);
          const auto& iface_attrs = func_arch->ifaces.at(bundle_name);
@@ -708,8 +707,7 @@ typedef int unsigned ptr_t;
              parameters->getOption<std::string>(OPT_simulator) == "ICARUS" ||
              parameters->getOption<std::string>(OPT_simulator) == "XSIM";
          if(!simulator_supports_dumpvars_directive ||
-            (static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)) ==
-             HDLWriter_Language::VHDL) ||
+            (parameters->getOption<HDLWriter_Language>(OPT_writer_language) == HDLWriter_Language::VHDL) ||
             HLSMgr->RDiscr->selected_vcd_signals.empty())
          {
             tb_writer->write("`define GENERATE_VCD\n");
@@ -789,9 +787,9 @@ std::vector<std::string> TestbenchGeneration::print_var_init(const tree_managerC
                                                              const memoryRef mem)
 {
    std::vector<std::string> init_els;
-   const auto tn = TM->CGetTreeReindex(var);
+   const auto tn = TM->GetTreeNode(var);
    const auto init_node = [&]() -> tree_nodeRef {
-      const auto vd = GetPointer<const var_decl>(GET_CONST_NODE(tn));
+      const auto vd = GetPointer<const var_decl>(tn);
       if(vd && vd->init)
       {
          return vd->init;
@@ -799,17 +797,16 @@ std::vector<std::string> TestbenchGeneration::print_var_init(const tree_managerC
       return nullptr;
    }();
 
-   if(init_node && (!GetPointer<const constructor>(GET_CONST_NODE(init_node)) ||
-                    GetPointerS<const constructor>(GET_CONST_NODE(init_node))->list_of_idx_valu.size()))
+   if(init_node &&
+      (!GetPointer<const constructor>(init_node) || GetPointerS<const constructor>(init_node)->list_of_idx_valu.size()))
    {
       fu_binding::write_init(TM, tn, init_node, init_els, mem, 0);
    }
-   else if(GET_CONST_NODE(tn)->get_kind() == string_cst_K || GET_CONST_NODE(tn)->get_kind() == integer_cst_K ||
-           GET_CONST_NODE(tn)->get_kind() == real_cst_K)
+   else if(tn->get_kind() == string_cst_K || tn->get_kind() == integer_cst_K || tn->get_kind() == real_cst_K)
    {
       fu_binding::write_init(TM, tn, tn, init_els, mem, 0);
    }
-   else if(!GetPointer<gimple_call>(GET_CONST_NODE(tn)))
+   else if(!GetPointer<gimple_call>(tn))
    {
       if(tree_helper::IsArrayType(tn))
       {
@@ -834,8 +831,8 @@ unsigned long long TestbenchGeneration::generate_init_file(const std::string& da
    std::stringstream init_bits;
    std::ofstream useless;
    unsigned long long vec_size = 0, elts_size = 0;
-   const auto var_type = tree_helper::CGetType(TM->CGetTreeReindex(var));
-   const auto bitsize_align = GetPointer<const type_node>(GET_CONST_NODE(var_type))->algn;
+   const auto var_type = tree_helper::CGetType(TM->GetTreeNode(var));
+   const auto bitsize_align = GetPointer<const type_node>(var_type)->algn;
    THROW_ASSERT((bitsize_align % 8) == 0, "Alignment is not byte aligned.");
    fu_binding::fill_array_ref_memory(init_bits, useless, var, vec_size, elts_size, mem, TM, false, bitsize_align);
 

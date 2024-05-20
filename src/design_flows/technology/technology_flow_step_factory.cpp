@@ -37,11 +37,8 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "technology_flow_step_factory.hpp"
 
-/// technology includes
 #include "fix_characterization.hpp"
 #include "load_builtin_technology.hpp"
 #include "load_default_technology.hpp"
@@ -53,16 +50,11 @@
 TechnologyFlowStepFactory::TechnologyFlowStepFactory(const technology_managerRef _TM, const generic_deviceRef _target,
                                                      const DesignFlowManagerConstRef _design_flow_manager,
                                                      const ParameterConstRef _parameters)
-    : DesignFlowStepFactory(_design_flow_manager, _parameters), TM(_TM), target(_target)
+    : DesignFlowStepFactory(DesignFlowStep::TECHNOLOGY, _design_flow_manager, _parameters), TM(_TM), target(_target)
 {
 }
 
 TechnologyFlowStepFactory::~TechnologyFlowStepFactory() = default;
-
-const std::string TechnologyFlowStepFactory::GetPrefix() const
-{
-   return "Technology";
-}
 
 DesignFlowStepRef
 TechnologyFlowStepFactory::CreateTechnologyFlowStep(const TechnologyFlowStep_Type technology_flow_step_type) const

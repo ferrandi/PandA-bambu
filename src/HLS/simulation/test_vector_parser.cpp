@@ -58,7 +58,6 @@
 #include "string_manipulation.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 #include "utility.hpp"
 #include "xml_document.hpp"
 #include "xml_dom_parser.hpp"
@@ -75,10 +74,10 @@ TestVectorParser::TestVectorParser(const ParameterConstRef _parameters, const HL
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 TestVectorParser::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -187,7 +186,7 @@ TestVectorParser::ParseXMLFile(const std::filesystem::path& input_xml_filename) 
    const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
    THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
    const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(top_symbols.front());
-   const auto BH = HLSMgr->CGetFunctionBehavior(GET_INDEX_CONST_NODE(top_fnode))->CGetBehavioralHelper();
+   const auto BH = HLSMgr->CGetFunctionBehavior(top_fnode->index)->CGetBehavioralHelper();
 
    if(!std::filesystem::exists(input_xml_filename))
    {

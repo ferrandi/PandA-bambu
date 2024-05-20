@@ -1,5 +1,6 @@
 COMPILER_VERSION: "GCC 4.5.3"
 PLUGIN_VERSION: "0.12"
+NODE_COUNT:        103
 
 ;; Function test (test)
 
