@@ -35,109 +35,76 @@
  * @brief Wrapper of design_flow
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
-
 #ifndef DESIGN_FLOW_MANAGER_HPP
 #define DESIGN_FLOW_MANAGER_HPP
-
 #include "custom_map.hpp"
-#include "graph.hpp"    // for vertex, Paramete...
-#include "refcount.hpp" // for REF_FORWARD_DECL
-#include <cstddef>      // for size_t
-#include <functional>   // for binary_function
-#include <set>          // for set
-#include <string>       // for string
+#include "custom_set.hpp"
+#include "design_flow_graph.hpp"
+#include "design_flow_step.hpp"
+#include "graph.hpp"
+#include "refcount.hpp"
 
-class DesignFlowStepSet;
+#include <cstddef>
+#include <set>
+#include <string>
+
 CONSTREF_FORWARD_DECL(DesignFlowGraph);
 REF_FORWARD_DECL(DesignFlowGraph);
 REF_FORWARD_DECL(DesignFlowGraphsCollection);
-REF_FORWARD_DECL(DesignFlowStep);
 enum class DesignFlowStep_Status;
 CONSTREF_FORWARD_DECL(DesignFlowStepFactory);
 REF_FORWARD_DECL(DesignFlowStepInfo);
 REF_FORWARD_DECL(Parameter);
 
-/**
- * The key comparison functor for design flow step; it puts necessary steps before unnecessary ones;
- * in this way steps which depend on unnecessary steps are executed later
- */
-class DesignFlowStepNecessitySorter : std::binary_function<vertex, vertex, bool>
-{
- private:
-   /// The design flow graph
-   const DesignFlowGraphConstRef design_flow_graph;
-
- public:
-   /**
-    * Constructor
-    * @param design_flow_graph is the graph to which design flow steps belong
-    */
-   explicit DesignFlowStepNecessitySorter(const DesignFlowGraphConstRef _design_flow_graph);
-
-   /**
-    * Compare position of two vertices
-    * @param x is the first vertex
-    * @param y is the second vertex
-    * @return true if x is necessary and y is unnecessary
-    */
-   bool operator()(const vertex x, const vertex y) const;
-};
+class DesignFlowStepPrioritySet;
 
 class DesignFlowManager final
 {
+ public:
+   using vertex_descriptor = DesignFlowGraph::vertex_descriptor;
+   using edge_descriptor = DesignFlowGraph::edge_descriptor;
+
  private:
-   /// NOTE: static should be removed when all the design flow managers will be merged
-   /// Counter of current iteration
-   static size_t step_counter;
-
-   /// The bulk graph of steps composing the design flow
-   const DesignFlowGraphsCollectionRef design_flow_graphs_collection;
-
    /// The graph of steps composing the design flow
    const DesignFlowGraphRef design_flow_graph;
 
+#ifndef NDEBUG
    /// The design flow graph with feedback edges
-   const DesignFlowGraphConstRef feedback_design_flow_graph;
+   const DesignFlowGraphRef feedback_design_flow_graph;
+   CustomUnorderedMap<vertex_descriptor, vertex_descriptor> dfg_to_feedback;
+#endif
 
    /// The set of potentially ready steps; when a step is added to set is ready to be executed, but it can become
    /// unready because of new added vertices
-   std::set<vertex, DesignFlowStepNecessitySorter> possibly_ready;
+   DesignFlowStepPrioritySet* possibly_ready;
 
    /// The registered factories
-   CustomUnorderedMap<std::string, DesignFlowStepFactoryConstRef> design_flow_step_factories;
+   CustomUnorderedMap<DesignFlowStep::StepClass, DesignFlowStepFactoryConstRef> design_flow_step_factories;
 
-#ifndef NDEBUG
-   /// This structure stores "history of design flow graph manager - vertices"
-   /// First key is the iteration
-   /// Second key is the vertex
-   /// If a vertex is not present in a iteration, it was not yet been created
-   /// The first value is the status
-   CustomMap<size_t, CustomMap<vertex, DesignFlowStep_Status>> vertex_history;
+   /// Counter of current iteration
+   size_t step_counter;
 
-   /// This structure stores "history of design flow graph manager - edges"
-   /// First key is the iteration
-   /// Second key is the edge
-   /// Value is the selector
-   CustomMap<size_t, CustomUnorderedMapStable<EdgeDescriptor, int>> edge_history;
+   struct StepProfilingInfo
+   {
+      const std::string name;
+      long long accumulated_execution_time{0};
+      size_t success{0};
+      size_t unchanged{0};
+      size_t skipped{0};
+      size_t direct_invalidations{0};
+      size_t total_invalidations{0};
+
+      StepProfilingInfo(const std::string& _name) : name(_name)
+      {
+      }
+   };
 
    /// The name of each vertex (we have to store since it is possible that it cannot be recomputed at the end - for
    /// example because the corresponding task graph has been deallocated)
-   CustomMap<vertex, std::string> step_names;
-
-   /// The accumulated times of each step
-   CustomMap<vertex, long> accumulated_execution_time;
-
-   /// The number of times each step is executed with success
-   CustomMap<vertex, size_t> success_executions;
-
-   /// The number of times each step is executed with unchanged exit
-   CustomMap<vertex, size_t> unchanged_executions;
-
-   /// The number of times the execution of a step is skipped
-   CustomMap<vertex, size_t> skipped_executions;
-#endif
+   CustomMap<vertex_descriptor, StepProfilingInfo> step_prof_info;
 
    /// The set of input parameters
    const ParameterConstRef parameters;
@@ -146,7 +113,17 @@ class DesignFlowManager final
    const int output_level;
 
    /// The debug level
-   int debug_level;
+   const int debug_level;
+
+   vertex_descriptor AddDesignFlowStep(const DesignFlowStepRef& design_flow_step, bool unnecessary);
+
+   void AddDesignFlowDependence(vertex_descriptor src, vertex_descriptor tgt, DesignFlowEdge type);
+
+   void RemoveDesignFlowDependence(DesignFlowGraph::edge_descriptor e);
+
+   DesignFlowEdge AddType(edge_descriptor e, DesignFlowEdge type);
+
+   DesignFlowEdge RemoveType(edge_descriptor e, DesignFlowEdge type);
 
    /**
     * Recursively add steps and corresponding dependencies to the design flow
@@ -154,76 +131,91 @@ class DesignFlowManager final
     * @param unnecessary specify if the steps have to be added only as a possible precedence of other steps (i.e., they
     * could be not executed if no step depends on them)
     */
-   void RecursivelyAddSteps(const DesignFlowStepSet& steps, const bool unnecessary);
+   void RecursivelyAddSteps(const DesignFlowStepSet& steps, const bool unnecessary,
+                            CustomUnorderedSet<std::pair<DesignFlowStep::signature_t, bool>>& already_visited);
+
+   inline void RecursivelyAddSteps(const DesignFlowStepSet& steps, const bool unnecessary)
+   {
+      CustomUnorderedSet<std::pair<DesignFlowStep::signature_t, bool>> already_visited;
+      RecursivelyAddSteps(steps, unnecessary, already_visited);
+   }
 
    /**
     * Recursively remove executed flag starting from a vertex
     * @param starting_vertex is the starting vertex
     * @param force_execution specifies if a skipped vertex has to be changed into a unexecuted
+    * @return size_t de-executed steps
     */
-   void DeExecute(const vertex starting_vertex, bool force_execution);
+   size_t DeExecute(const vertex_descriptor starting_vertex, bool force_execution,
+                    CustomUnorderedSet<vertex_descriptor>& already_visited);
 
-   /**
-    * Connect source and sink vertices to entry and exit
-    */
-   void Consolidate();
+   inline size_t DeExecute(const vertex_descriptor starting_vertex, bool force_execution)
+   {
+      CustomUnorderedSet<vertex_descriptor> already_visited;
+      return DeExecute(starting_vertex, force_execution, already_visited);
+   }
 
 #ifndef NDEBUG
    void WriteLoopDot() const;
 #endif
 
  public:
-   /**
-    * Constructor
-    */
    explicit DesignFlowManager(const ParameterConstRef parameters);
 
-   /**
-    * Destructor
-    */
-   virtual ~DesignFlowManager();
+   ~DesignFlowManager();
 
    /**
     * Execute the design flow
     */
-   void virtual Exec() final;
+   void Exec();
 
    /**
     * Add step and corresponding dependencies to the design flow
     * @param step is the step to be added
     */
-   void AddStep(const DesignFlowStepRef step);
+   inline void AddStep(const DesignFlowStepRef step)
+   {
+      DesignFlowStepSet steps;
+      steps.insert(step);
+      RecursivelyAddSteps(steps, false);
+   }
 
    /**
     * Add steps and corresponding dependencies to the design flow
     * @param steps is the set of steps to be added
     */
-   void AddSteps(const DesignFlowStepSet& steps);
+   inline void AddSteps(const DesignFlowStepSet& steps)
+   {
+      RecursivelyAddSteps(steps, false);
+   }
 
    /**
     * Return the design flow graph
     * @return the design flow graph
     */
-   const DesignFlowGraphConstRef CGetDesignFlowGraph() const;
+   DesignFlowGraphConstRef CGetDesignFlowGraph() const;
 
    /**
     * Return the vertex associated with a design step if exists, NULL_VERTEX otherwise
     * @param signature is the signature of the design step
     */
-   vertex GetDesignFlowStep(const std::string& signature) const;
+   inline vertex_descriptor GetDesignFlowStep(DesignFlowStep::signature_t signature) const
+   {
+      return design_flow_graph->GetDesignFlowStep(signature);
+   }
 
    /**
     * Return the status of a design step (if it does not exist return NONEXISTENT)
     * @param signature is the signature of the design step
     */
-   DesignFlowStep_Status GetStatus(const std::string& signature) const;
+   DesignFlowStep_Status GetStatus(DesignFlowStep::signature_t signature) const;
 
    /**
-    * Return the factory which can create design flow step with signature beginning with prefix
-    * @param prefix is the beginning of the steps that the factory should be created
+    * Return the factory which can create design flow step with given step class
+    * @param step_class is step class of the factory
     * @return the corresponding factory
     */
-   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory(const std::string& prefix) const;
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory(DesignFlowStep::StepClass step_class) const;
 
    /**
     * Register a design flow step factory
@@ -236,7 +228,7 @@ class DesignFlowManager final
     * @param signature is the signature of the step to be created
     * @return the created design flow step
     */
-   const DesignFlowStepRef CreateFlowStep(const std::string& signature) const;
+   DesignFlowStepRef CreateFlowStep(DesignFlowStep::signature_t signature) const;
 };
 
 using DesignFlowManagerRef = refcount<DesignFlowManager>;

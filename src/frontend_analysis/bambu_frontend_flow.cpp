@@ -75,7 +75,7 @@ BambuFrontendFlow::BambuFrontendFlow(const application_managerRef _AppM,
 
 BambuFrontendFlow::~BambuFrontendFlow() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 BambuFrontendFlow::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -111,8 +111,7 @@ BambuFrontendFlow::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
             relationships.insert(std::make_pair(FUNCTION_CALL_OPT, WHOLE_APPLICATION));
          }
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, WHOLE_APPLICATION));
-         if(static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)) ==
-            HDLWriter_Language::VHDL)
+         if(parameters->getOption<HDLWriter_Language>(OPT_writer_language) == HDLWriter_Language::VHDL)
          {
             relationships.insert(std::make_pair(HDL_FUNCTION_DECL_FIX, WHOLE_APPLICATION));
          }

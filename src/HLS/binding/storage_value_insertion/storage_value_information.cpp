@@ -109,7 +109,7 @@ void StorageValueInformation::Initialize()
                if(tree_helper::is_ssa_name(TreeM, scalar_def) and not tree_helper::is_virtual(TreeM, scalar_def) and
                   not tree_helper::is_parameter(TreeM, scalar_def))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_NONE, 0, STR(TreeM->CGetTreeNode(scalar_def)));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_NONE, 0, STR(TreeM->GetTreeNode(scalar_def)));
                }
             }
             THROW_UNREACHABLE("More than one definition");
@@ -138,7 +138,7 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
    unsigned int var2 = get_variable_index(storage_value_index2);
    THROW_ASSERT(vw2vertex.find(var1) != vw2vertex.end(), "variable not in the map " + STR(var1));
    THROW_ASSERT(vw2vertex.find(var2) != vw2vertex.end(),
-                "variable " + STR(HLS_mgr->get_tree_manager()->CGetTreeNode(var2)) + " not in the map");
+                "variable " + STR(HLS_mgr->get_tree_manager()->GetTreeNode(var2)) + " not in the map");
    vertex v1 = vw2vertex.find(var1)->second;
    bool is_a_phi1 = (GET_TYPE(data, v1) & TYPE_PHI) != 0;
    vertex v2 = vw2vertex.find(var2)->second;
@@ -146,10 +146,10 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
 
    // compute the successors of v1 e v2
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
-                  "-->Evaluation storage values (vars): [" + STR(HLS_mgr->get_tree_manager()->CGetTreeNode(var1)) +
+                  "-->Evaluation storage values (vars): [" + STR(HLS_mgr->get_tree_manager()->GetTreeNode(var1)) +
                       "]"
                       " and [" +
-                      STR(HLS_mgr->get_tree_manager()->CGetTreeNode(var2)) + "]");
+                      STR(HLS_mgr->get_tree_manager()->GetTreeNode(var2)) + "]");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
                   "---vertex names: [" + GET_NAME(data, v1) +
                       "]"
@@ -367,8 +367,8 @@ bool StorageValueInformation::are_value_bitsize_compatible(unsigned int storage_
    const auto var1_nid = get_variable_index(storage_value_index1);
    const auto var2_nid = get_variable_index(storage_value_index2);
    const auto TM = HLS_mgr->get_tree_manager();
-   const auto var1 = TM->CGetTreeReindex(var1_nid);
-   const auto var2 = TM->CGetTreeReindex(var2_nid);
+   const auto var1 = TM->GetTreeNode(var1_nid);
+   const auto var2 = TM->GetTreeNode(var2_nid);
    const auto isInt1 = tree_helper::IsSignedIntegerType(var1);
    const auto isInt2 = tree_helper::IsSignedIntegerType(var2);
    const auto isReal1 = tree_helper::IsRealType(var1);

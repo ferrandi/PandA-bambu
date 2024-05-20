@@ -66,7 +66,7 @@ ScalarSsaDataDependenceComputation::ScalarSsaDataDependenceComputation(
 
 ScalarSsaDataDependenceComputation::~ScalarSsaDataDependenceComputation() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 ScalarSsaDataDependenceComputation::ComputeFrontendRelationships(
     const DesignFlowStep::RelationshipType relationship_type) const
 {

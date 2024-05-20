@@ -37,44 +37,29 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-/// Header include
 #include "parser_flow_step_factory.hpp"
 
-/// Autoheader includes
-#include "config_HAVE_FROM_AADL_ASN_BUILT.hpp"
-
-/// parser include
 #include "parser_flow_step.hpp"
 
-#if HAVE_FROM_AADL_ASN_BUILT
-/// parser/aadl include
-#include "aadl_parser.hpp"
+#include "config_HAVE_FROM_AADL_ASN_BUILT.hpp"
 
-/// parser/asn include
+#if HAVE_FROM_AADL_ASN_BUILT
+#include "aadl_parser.hpp"
 #include "asn_parser.hpp"
 #endif
 
 ParserFlowStepFactory::ParserFlowStepFactory(const DesignFlowManagerConstRef _design_flow_manager,
                                              const application_managerRef _AppM, const ParameterConstRef _parameters)
-    : DesignFlowStepFactory(_design_flow_manager, _parameters), AppM(_AppM)
+    : DesignFlowStepFactory(DesignFlowStep::PARSER, _design_flow_manager, _parameters), AppM(_AppM)
 {
 }
 
 ParserFlowStepFactory::~ParserFlowStepFactory() = default;
 
-const std::string ParserFlowStepFactory::GetPrefix() const
+DesignFlowStepRef ParserFlowStepFactory::CreateParserStep(ParserFlowStep_Type parser_type,
+                                                          const std::string& file_name) const
 {
-   return "Parser";
-}
-
-DesignFlowStepRef ParserFlowStepFactory::CreateFlowStep(const std::string& signature) const
-{
-   THROW_ASSERT(signature.find(GetPrefix() + "::") == 0, signature);
-   const auto step_to_be_created = signature.substr(GetPrefix().size() + 2);
-   const auto parser_flow_step_type =
-       static_cast<ParserFlowStep_Type>(std::stoi(step_to_be_created.substr(0, step_to_be_created.find("::"))));
-   const auto file_name = step_to_be_created.substr(step_to_be_created.find("::") + 2);
-   switch(parser_flow_step_type)
+   switch(parser_type)
    {
 #if HAVE_FROM_AADL_ASN_BUILT
       case ParserFlowStep_Type::AADL:

@@ -79,11 +79,275 @@ CONSTREF_FORWARD_DECL(UVertexWriter);
 CONSTREF_FORWARD_DECL(VertexWriter);
 //@}
 
-using boost_raw_graph =
-    boost::adjacency_list<boost::listS, boost::listS, boost::bidirectionalS,
-                          boost::property<boost::vertex_index_t, std::size_t, NodeInfoRef>, EdgeInfoRef, GraphInfoRef>;
+template <typename T>
+struct is_shared_ptr : std::false_type
+{
+   typedef void ptd_type;
+};
 
-struct RawGraph : public boost_raw_graph
+template <typename T>
+struct is_shared_ptr<std::shared_ptr<T>> : std::true_type
+{
+   typedef T ptd_type;
+};
+
+template <typename T>
+using get_shared_ptr_t = typename is_shared_ptr<T>::ptd_type;
+
+template <typename T>
+struct add_const_ref
+{
+   typedef std::add_lvalue_reference_t<std::add_const_t<T>> type;
+};
+
+template <typename T>
+struct add_const_ref<std::shared_ptr<T>>
+{
+   typedef std::shared_ptr<std::add_const_t<T>> type;
+};
+
+template <typename T>
+using add_const_ref_t = typename add_const_ref<T>::type;
+
+template <class Graph>
+struct graph_base : public Graph
+{
+   using vertex_descriptor = typename boost::graph_traits<Graph>::vertex_descriptor;
+   using vertex_property = typename boost::vertex_property_type<Graph>::type;
+   using edge_descriptor = typename boost::graph_traits<Graph>::edge_descriptor;
+   using edge_property = typename boost::edge_property_type<Graph>::type;
+   using graph_property = typename boost::graph_property_type<Graph>::type;
+
+   template <typename... Args>
+   explicit graph_base(const graph_property& g_info, Args&&... args) : Graph(std::forward<Args>(args)...)
+   {
+      (*this)[boost::graph_bundle] = g_info;
+   }
+
+   template <typename graph_property_t = graph_property,
+             std::enable_if_t<std::is_default_constructible<graph_property_t>::value &&
+                                  !is_shared_ptr<graph_property_t>::value,
+                              bool> = true,
+             typename... Args>
+   explicit graph_base(Args&&... args) : Graph(std::forward<Args>(args)...)
+   {
+   }
+
+   template <typename graph_property_t = graph_property,
+             std::enable_if_t<is_shared_ptr<graph_property_t>::value &&
+                                  std::is_default_constructible<get_shared_ptr_t<graph_property_t>>::value,
+                              bool> = true,
+             typename... Args>
+   explicit graph_base(Args&&... args) : Graph(std::forward<Args>(args)...)
+   {
+      (*this)[boost::graph_bundle] = graph_property_t(new get_shared_ptr_t<graph_property_t>);
+   }
+
+   ~graph_base() = default;
+
+   template <typename vertex_property_t = vertex_property>
+   std::enable_if_t<!is_shared_ptr<vertex_property_t>::value, vertex_descriptor>
+   AddVertex(const vertex_property_t& v_info)
+   {
+      return boost::add_vertex(v_info, *this);
+   }
+
+   template <typename vertex_property_t = vertex_property>
+   std::enable_if_t<is_shared_ptr<vertex_property_t>::value, vertex_descriptor>
+   AddVertex(const vertex_property_t& v_info)
+   {
+      THROW_ASSERT(v_info, "Vertex without associated info.");
+      return boost::add_vertex(v_info, *this);
+   }
+
+   template <typename vertex_property_t = vertex_property>
+   std::enable_if_t<!is_shared_ptr<vertex_property_t>::value && std::is_default_constructible<vertex_property_t>::value,
+                    vertex_descriptor>
+   AddVertex()
+   {
+      return AddVertex(vertex_property_t());
+   }
+
+   template <typename vertex_property_t = vertex_property>
+   std::enable_if_t<is_shared_ptr<vertex_property_t>::value &&
+                        std::is_default_constructible<get_shared_ptr_t<vertex_property_t>>::value,
+                    vertex_descriptor>
+   AddVertex()
+   {
+      return AddVertex(vertex_property(new get_shared_ptr_t<vertex_property_t>));
+   }
+
+   void RemoveVertex(vertex_descriptor v)
+   {
+      boost::remove_vertex(v, *this);
+   }
+
+   template <typename edge_property_t = edge_property>
+   std::enable_if_t<!is_shared_ptr<edge_property_t>::value, edge_descriptor>
+   AddEdge(vertex_descriptor src, vertex_descriptor tgt, const edge_property& e_info)
+   {
+      auto [e, inserted] = boost::add_edge(src, tgt, e_info, *this);
+      THROW_ASSERT(inserted, "Trying to insert an already existing edge");
+      return e;
+   }
+
+   template <typename edge_property_t = edge_property>
+   std::enable_if_t<is_shared_ptr<edge_property_t>::value, edge_descriptor>
+   AddEdge(vertex_descriptor src, vertex_descriptor tgt, const edge_property_t& e_info)
+   {
+      THROW_ASSERT(e_info, "Edge without associated info.");
+      auto [e, inserted] = boost::add_edge(src, tgt, e_info, *this);
+      THROW_ASSERT(inserted, "Trying to insert an already existing edge");
+      return e;
+   }
+
+   template <typename edge_property_t = edge_property>
+   std::enable_if_t<!is_shared_ptr<edge_property_t>::value && std::is_default_constructible<edge_property_t>::value,
+                    edge_descriptor>
+   AddEdge(vertex_descriptor src, vertex_descriptor tgt)
+   {
+      return AddEdge(src, tgt, edge_property_t());
+   }
+
+   template <typename edge_property_t = edge_property>
+   std::enable_if_t<is_shared_ptr<edge_property_t>::value &&
+                        std::is_default_constructible<get_shared_ptr_t<edge_property_t>>::value,
+                    edge_descriptor>
+   AddEdge(vertex_descriptor src, vertex_descriptor tgt)
+   {
+      return AddEdge(src, tgt, edge_property_t(new get_shared_ptr_t<edge_property_t>));
+   }
+
+   inline void RemoveEdge(edge_descriptor e)
+   {
+      boost::remove_edge(boost::source(e, *this), boost::target(e, *this), *this);
+   }
+
+   inline void RemoveEdge(vertex_descriptor src, vertex_descriptor tgt)
+   {
+      auto [e, found] = boost::edge(src, tgt, *this);
+      THROW_ASSERT(found, "Edge not found");
+      boost::remove_edge(boost::source(e, *this), boost::target(e, *this), *this);
+   }
+
+   inline bool ExistsEdge(const vertex_descriptor src, const vertex_descriptor tgt) const
+   {
+      return boost::edge(src, tgt, *this).second;
+   }
+
+   inline edge_descriptor CGetEdge(const vertex_descriptor src, const vertex_descriptor tgt) const
+   {
+      auto [e, found] = boost::edge(src, tgt, *this);
+      THROW_ASSERT(found, "Edge does not exist in this graph");
+      return e;
+   }
+
+   template <typename vertex_property_t = vertex_property>
+   std::enable_if_t<!std::is_empty<vertex_property_t>::value, vertex_property_t>& GetNodeInfo(vertex_descriptor node)
+   {
+      return (*this)[node];
+   }
+
+   template <typename vertex_property_t = vertex_property>
+   std::enable_if_t<!std::is_empty<vertex_property_t>::value, add_const_ref_t<vertex_property_t>>
+   CGetNodeInfo(vertex_descriptor node) const
+   {
+      return (*this)[node];
+   }
+
+   template <typename edge_property_t = edge_property>
+   std::enable_if_t<!std::is_empty<edge_property_t>::value, edge_property_t>& GetEdgeInfo(edge_descriptor edge)
+   {
+      return (*this)[edge];
+   }
+
+   template <typename edge_property_t = edge_property>
+   std::enable_if_t<!std::is_empty<edge_property_t>::value, add_const_ref_t<edge_property_t>>
+   CGetEdgeInfo(edge_descriptor edge) const
+   {
+      return (*this)[edge];
+   }
+
+   template <typename graph_property_t = graph_property>
+   std::enable_if_t<!std::is_empty<graph_property_t>::value, graph_property_t>& GetGraphInfo()
+   {
+      return (*this)[boost::graph_bundle];
+   }
+
+   template <typename graph_property_t = graph_property>
+   std::enable_if_t<!std::is_empty<graph_property_t>::value, add_const_ref_t<graph_property_t>> CGetGraphInfo() const
+   {
+      return (*this)[boost::graph_bundle];
+   }
+
+   bool IsReachable(const vertex_descriptor x, const vertex_descriptor y) const
+   {
+      std::list<vertex_descriptor> running_vertices;
+      std::set<vertex_descriptor> encountered_vertices;
+      running_vertices.push_back(x);
+      encountered_vertices.insert(x);
+      while(!running_vertices.empty())
+      {
+         const auto current = running_vertices.front();
+         running_vertices.pop_front();
+         for(const auto& oe : boost::make_iterator_range(boost::out_edges(current, *this)))
+         {
+            const auto tgt = boost::target(oe, *this);
+            if(tgt == y)
+            {
+               return true;
+            }
+            if(encountered_vertices.insert(tgt).second)
+            {
+               running_vertices.push_back(tgt);
+            }
+         }
+      }
+      return false;
+   }
+
+   std::vector<std::list<vertex_descriptor>> GetStronglyConnectedComponents() const
+   {
+      std::vector<std::list<vertex_descriptor>> sccs;
+      std::map<vertex_descriptor, size_t> _vtoc;
+      boost::associative_property_map<std::map<vertex_descriptor, size_t>> vtoc(_vtoc);
+      const auto sccs_count = boost::strong_components(*this, vtoc);
+      sccs.resize(sccs_count);
+      for(const auto v : boost::make_iterator_range(boost::vertices(*this)))
+      {
+         sccs.at(vtoc[v]).push_back(v);
+      }
+      return sccs;
+   }
+
+   template <typename VertexPropertiesWriter, typename EdgePropertiesWriter, typename GraphPropertiesWriter>
+   inline void WriteDot(const std::filesystem::path& filename, VertexPropertiesWriter vpw, EdgePropertiesWriter epw,
+                        GraphPropertiesWriter gpw) const
+   {
+      std::ofstream fs(filename);
+      boost::write_graphviz(fs, *this, vpw, epw, gpw);
+   }
+
+   template <typename VertexPropertiesWriter, typename EdgePropertiesWriter>
+   inline void WriteDot(const std::filesystem::path& filename, VertexPropertiesWriter vpw,
+                        EdgePropertiesWriter epw) const
+   {
+      boost::default_writer gpw;
+      WriteDot(filename, vpw, epw, gpw);
+   }
+
+   template <typename VertexPropertiesWriter>
+   inline void WriteDot(const std::filesystem::path& filename, VertexPropertiesWriter vpw) const
+   {
+      boost::default_writer epw;
+      boost::default_writer gpw;
+      WriteDot(filename, vpw, epw, gpw);
+   }
+};
+
+struct RawGraph : public boost::adjacency_list<boost::listS, boost::listS, boost::bidirectionalS,
+                                               boost::property<boost::vertex_index_t, std::size_t, NodeInfoRef>,
+                                               EdgeInfoRef, GraphInfoRef>
 {
  public:
    /**
@@ -95,26 +359,20 @@ struct RawGraph : public boost_raw_graph
       (*this)[boost::graph_bundle] = g_info;
    }
 
-   /**
-    * Destructor
-    */
-   ~RawGraph() = default;
-
-   inline boost::graph_traits<boost_raw_graph>::vertex_descriptor AddVertex(const NodeInfoRef v_info)
+   inline boost::graph_traits<RawGraph>::vertex_descriptor AddVertex(const NodeInfoRef v_info)
    {
       size_t index = boost::num_vertices(*this);
-      boost::graph_traits<boost_raw_graph>::vertex_descriptor new_v = boost::add_vertex(*this);
+      auto new_v = boost::add_vertex(*this);
       (*this)[new_v] = v_info;
       boost::get(boost::vertex_index_t(), *this)[new_v] = index;
       return new_v;
    };
 
-   inline void RemoveVertex(boost::graph_traits<boost_raw_graph>::vertex_descriptor v)
+   inline void RemoveVertex(boost::graph_traits<RawGraph>::vertex_descriptor v)
    {
       boost::remove_vertex(v, *this);
-      boost::property_map<boost_raw_graph, boost::vertex_index_t>::type index_map =
-          boost::get(boost::vertex_index_t(), *this);
-      boost::graph_traits<boost_raw_graph>::vertex_iterator v_it, v_it_end;
+      auto index_map = boost::get(boost::vertex_index_t(), *this);
+      boost::graph_traits<RawGraph>::vertex_iterator v_it, v_it_end;
       size_t index = 0;
       for(boost::tie(v_it, v_it_end) = boost::vertices(*this); v_it != v_it_end; v_it++, index++)
       {
@@ -122,11 +380,11 @@ struct RawGraph : public boost_raw_graph
       }
    }
 
-   inline boost::graph_traits<boost_raw_graph>::edge_descriptor
-   AddEdge(boost::graph_traits<boost_raw_graph>::vertex_descriptor src,
-           boost::graph_traits<boost_raw_graph>::vertex_descriptor tgt, const EdgeInfoRef e_info)
+   inline boost::graph_traits<RawGraph>::edge_descriptor AddEdge(boost::graph_traits<RawGraph>::vertex_descriptor src,
+                                                                 boost::graph_traits<RawGraph>::vertex_descriptor tgt,
+                                                                 const EdgeInfoRef e_info)
    {
-      boost::graph_traits<boost_raw_graph>::edge_descriptor e;
+      boost::graph_traits<RawGraph>::edge_descriptor e;
       bool found;
       boost::tie(e, found) = boost::edge(src, tgt, *this);
       THROW_ASSERT(not found, "Trying to insert an already existing edge");
@@ -135,15 +393,15 @@ struct RawGraph : public boost_raw_graph
       return e;
    }
 
-   inline void RemoveEdge(boost::graph_traits<boost_raw_graph>::edge_descriptor e)
+   inline void RemoveEdge(boost::graph_traits<RawGraph>::edge_descriptor e)
    {
       boost::remove_edge(boost::source(e, *this), boost::target(e, *this), *this);
    }
 
-   inline void RemoveEdge(boost::graph_traits<boost_raw_graph>::vertex_descriptor src,
-                          boost::graph_traits<boost_raw_graph>::vertex_descriptor tgt)
+   inline void RemoveEdge(boost::graph_traits<RawGraph>::vertex_descriptor src,
+                          boost::graph_traits<RawGraph>::vertex_descriptor tgt)
    {
-      boost::graph_traits<boost_raw_graph>::edge_descriptor e;
+      boost::graph_traits<RawGraph>::edge_descriptor e;
       bool found;
       boost::tie(e, found) = boost::edge(src, tgt, *this);
       THROW_ASSERT(found, "Edge not found");
@@ -170,7 +428,7 @@ info_object* get_raw_edge_info(typename boost::graph_traits<Graph>::edge_descrip
    THROW_ASSERT(GetPointer<info_object>(info) != nullptr,
                 "Function get_raw_edge_info: the edges associated with the graph used are not derived from "
                 "info_object\n\tCheck the actual type of info_object and the type of the edge of Graph");
-   return GetPointer<info_object>(info);
+   return GetPointerS<info_object>(info);
 }
 /**
  * Function returning the edge information associated with the specified edge.
@@ -573,7 +831,7 @@ info_object* get_node_info(typename boost::graph_traits<Graph>::vertex_descripto
    THROW_ASSERT(GetPointer<info_object>(info) != nullptr,
                 "Function get_node_info: the vertices associated with the graph used are not derived from "
                 "info_object\n\tCheck the actual type of info_object and the type of the node of Graph");
-   return GetPointer<info_object>(info);
+   return GetPointerS<info_object>(info);
 }
 
 /**
@@ -590,7 +848,7 @@ const info_object* Cget_node_info(typename boost::graph_traits<Graph>::vertex_de
    THROW_ASSERT(!info || dynamic_cast<const info_object*>(info) != nullptr,
                 "Function Cget_node_info: the nodes associated with the graph used are not derived from "
                 "info_object\n\tCheck the actual type of info_object and the type of the node of Graph");
-   return info ? dynamic_cast<const info_object*>(info) : nullptr;
+   return info ? static_cast<const info_object*>(info) : nullptr;
 }
 
 #define GET_NODE_INFO(data, NodeInfo, vertex_index) get_node_info<NodeInfo>(vertex_index, *(data))
@@ -616,7 +874,7 @@ info_object* get_edge_info(typename boost::graph_traits<Graph>::edge_descriptor 
    THROW_ASSERT(GetPointer<info_object>(info) != nullptr,
                 "Function get_edge_info: the edges associated with the graph used are not derived from "
                 "info_object\n\tCheck the actual type of info_object and the type of the edge of Graph");
-   return GetPointer<info_object>(info);
+   return GetPointerS<info_object>(info);
 }
 /**
  * Function returning the edge information associated with the specified edge.
@@ -632,7 +890,7 @@ const info_object* Cget_edge_info(typename boost::graph_traits<Graph>::edge_desc
    THROW_ASSERT(!info || dynamic_cast<const info_object*>(info) != nullptr,
                 "Function Cget_edge_info: the edges associated with the graph used are not derived from "
                 "info_object\n\tCheck the actual type of info_object and the type of the edge of Graph");
-   return info ? dynamic_cast<const info_object*>(info) : nullptr;
+   return info ? static_cast<const info_object*>(info) : nullptr;
 }
 
 #define GET_EDGE_INFO(data, edge_info, edge_index) get_edge_info<edge_info>(edge_index, *(data))
@@ -769,13 +1027,24 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
  protected:
    /**
     * Get the node property
+    * @param node is the vertex whose property is asked
+    * @return the associated property
+    */
+   inline NodeInfoRef GetNodeInfo(typename boost::graph_traits<graphs_collection>::vertex_descriptor node)
+   {
+      NodeInfoRef info = (*this)[node];
+      THROW_ASSERT(info, "Node without associate info");
+      return info;
+   }
+
+   /**
+    * Get the node property
     * @param node is the node whose property is asked
     * @return the associated property
     */
-   inline const NodeInfoConstRef
-   CGetNodeInfo(typename boost::graph_traits<graphs_collection>::vertex_descriptor node) const
+   inline NodeInfoConstRef CGetNodeInfo(typename boost::graph_traits<graphs_collection>::vertex_descriptor node) const
    {
-      const NodeInfoRef info = (*this)[node];
+      const NodeInfoConstRef info = (*this)[node];
       THROW_ASSERT(info, "Node without associate info");
       return info;
    }
@@ -802,9 +1071,8 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
     * @param target is the target vertex of the edge
     * @return the associated property
     */
-   inline const EdgeInfoConstRef
-   CGetEdgeInfo(typename boost::graph_traits<graphs_collection>::vertex_descriptor source,
-                typename boost::graph_traits<graphs_collection>::vertex_descriptor target) const
+   inline EdgeInfoConstRef CGetEdgeInfo(typename boost::graph_traits<graphs_collection>::vertex_descriptor source,
+                                        typename boost::graph_traits<graphs_collection>::vertex_descriptor target) const
    {
       bool found;
       typename boost::graph_traits<graphs_collection>::edge_descriptor edge;
@@ -818,7 +1086,7 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
     * @param edge is the edge whose property is asked
     * @return the associated property
     */
-   inline EdgeInfoRef GetEdgeInfo(typename boost::graph_traits<graphs_collection>::edge_descriptor edge) const
+   inline EdgeInfoRef GetEdgeInfo(typename boost::graph_traits<graphs_collection>::edge_descriptor edge)
    {
       const EdgeInfoRef info = (*this)[edge].info;
       THROW_ASSERT(info, "Info not associated with the edge");
@@ -1003,39 +1271,25 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
       CustomUnorderedSet<boost::graph_traits<graphs_collection>::vertex_descriptor> encountered_vertices;
       running_vertices.push_back(x);
       encountered_vertices.insert(x);
-      while(not running_vertices.empty())
+      while(!running_vertices.empty())
       {
-         const boost::graph_traits<graphs_collection>::vertex_descriptor current = running_vertices.front();
+         const auto current = running_vertices.front();
          running_vertices.pop_front();
-         boost::graph_traits<graph>::out_edge_iterator oe, oe_end;
-         for(boost::tie(oe, oe_end) = boost::out_edges(current, *this); oe != oe_end; oe++)
+         BOOST_FOREACH(typename boost::graph_traits<graphs_collection>::edge_descriptor oe,
+                       boost::out_edges(current, *this))
          {
-            const boost::graph_traits<graphs_collection>::vertex_descriptor target = boost::target(*oe, *this);
+            const auto target = boost::target(oe, *this);
             if(target == y)
             {
                return true;
             }
-            if(encountered_vertices.find(target) == encountered_vertices.end())
+            if(encountered_vertices.insert(target).second)
             {
-               encountered_vertices.insert(target);
                running_vertices.push_back(target);
             }
          }
       }
       return false;
-   }
-
-   /**
-    * FIXME: this method should become protected and called by equivalent method in subclasses
-    * Get the node property
-    * @param node is the vertex whose property is asked
-    * @return the associated property
-    */
-   inline NodeInfoRef GetNodeInfo(typename boost::graph_traits<graphs_collection>::vertex_descriptor node)
-   {
-      NodeInfoRef info = (*this)[node];
-      THROW_ASSERT(info, "Node without associate info");
-      return info;
    }
 
    /**
@@ -1054,7 +1308,7 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
     * Get the graph property
     * @return the property associated with the graph
     */
-   inline const GraphInfoConstRef CGetGraphInfo() const
+   inline GraphInfoConstRef CGetGraphInfo() const
    {
       GraphInfoRef info = boost_CGetOpGraph_property(*this);
       return info;

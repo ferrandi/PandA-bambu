@@ -42,29 +42,41 @@
  */
 #include "application_frontend_flow_step.hpp"
 
-#include "config_HAVE_FROM_PRAGMA_BUILT.hpp"    // for HAVE_FROM_PRA...
-#include "config_HAVE_HOST_PROFILING_BUILT.hpp" // for HAVE_HOST_PRO...
-#include "config_HAVE_ILP_BUILT.hpp"            // for HAVE_ILP_BUILT
-#include "config_HAVE_TASTE.hpp"                // for HAVE_TASTE
+#include "Parameter.hpp"
+#include "exceptions.hpp"
+#include "string_manipulation.hpp"
+#include "symbolic_application_frontend_flow_step.hpp"
 
-#include "Parameter.hpp"                               // for Parameter
-#include "exceptions.hpp"                              // for THROW_UNREACH...
-#include "string_manipulation.hpp"                     // for GET_CLASS
-#include "symbolic_application_frontend_flow_step.hpp" // for SymbolicAppli...
-#include <iostream>                                    // for ios_base::fai...
+#include <iostream>
+
+#include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
+#include "config_HAVE_HOST_PROFILING_BUILT.hpp"
+#include "config_HAVE_ILP_BUILT.hpp"
+#include "config_HAVE_TASTE.hpp"
+
+ApplicationFrontendFlowStep::ApplicationFrontendFlowStep(DesignFlowStep::signature_t _signature,
+                                                         const application_managerRef _AppM,
+                                                         const FrontendFlowStepType _frontend_flow_step_type,
+                                                         const DesignFlowManagerConstRef _design_flow_manager,
+                                                         const ParameterConstRef _parameters)
+    : FrontendFlowStep(_signature, _AppM, _frontend_flow_step_type, _design_flow_manager, _parameters)
+{
+   debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
+}
 
 ApplicationFrontendFlowStep::ApplicationFrontendFlowStep(const application_managerRef _AppM,
                                                          const FrontendFlowStepType _frontend_flow_step_type,
                                                          const DesignFlowManagerConstRef _design_flow_manager,
                                                          const ParameterConstRef _parameters)
-    : FrontendFlowStep(_AppM, _frontend_flow_step_type, _design_flow_manager, _parameters)
+    : ApplicationFrontendFlowStep(ComputeSignature(_frontend_flow_step_type), _AppM, _frontend_flow_step_type,
+                                  _design_flow_manager, _parameters)
 {
-   debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 ApplicationFrontendFlowStep::~ApplicationFrontendFlowStep() = default;
 
-const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFlowStepType frontend_flow_step_type)
+DesignFlowStep::signature_t
+ApplicationFrontendFlowStep::ComputeSignature(const FrontendFlowStepType frontend_flow_step_type)
 {
    switch(frontend_flow_step_type)
    {
@@ -186,18 +198,15 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case(STRING_CST_FIX):
       case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP):
       {
-         return "Frontend::" + STR(frontend_flow_step_type);
+         return DesignFlowStep::ComputeSignature(APPLICATION_FRONTEND,
+                                                 static_cast<unsigned short>(frontend_flow_step_type), 0);
       }
 
       default:
-         THROW_UNREACHABLE("Frontend flow step type does not exist");
+         break;
    }
-   return "";
-}
-
-std::string ApplicationFrontendFlowStep::GetSignature() const
-{
-   return ComputeSignature(frontend_flow_step_type);
+   THROW_UNREACHABLE("Frontend flow step type does not exist");
+   return 0;
 }
 
 std::string ApplicationFrontendFlowStep::GetName() const

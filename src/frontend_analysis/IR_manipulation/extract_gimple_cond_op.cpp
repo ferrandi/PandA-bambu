@@ -54,7 +54,6 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 /// utility include
 #include "dbgPrintHelper.hpp"
@@ -76,7 +75,7 @@ void ExtractGimpleCondOp::Initialize()
    bb_modified = false;
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
 ExtractGimpleCondOp::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -109,16 +108,16 @@ DesignFlowStep_Status ExtractGimpleCondOp::InternalExec()
    const auto TM = AppM->get_tree_manager();
    const auto tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
    const auto fd = GetPointer<function_decl>(TM->GetTreeNode(function_id));
-   const auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   const auto sl = GetPointer<statement_list>(fd->body);
    for(const auto& block : sl->list_of_bloc)
    {
       const auto& stmt_list = block.second->CGetStmtList();
       if(stmt_list.size())
       {
          const auto last_stmt = stmt_list.back();
-         auto gc = GetPointer<gimple_cond>(GET_NODE(last_stmt));
+         auto gc = GetPointer<gimple_cond>(last_stmt);
          if(gc && (!tree_helper::IsBooleanType(gc->op0) ||
-                   (GET_NODE(gc->op0)->get_kind() != ssa_name_K && !GetPointer<cst_node>(GET_NODE(gc->op0)))))
+                   (gc->op0->get_kind() != ssa_name_K && !GetPointer<cst_node>(gc->op0))))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---fixing gimple cond: " + last_stmt->ToString());
             auto new_gc_cond = tree_man->ExtractCondition(last_stmt, block.second, function_id);

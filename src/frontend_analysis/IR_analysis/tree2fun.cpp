@@ -32,13 +32,11 @@
  */
 /**
  * @file tree2fun.cpp
- * @brief Step that extends the call graph with software implementation of integer operators.
+ * @brief Step that replace some tree node expression with function call
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-
-/// Header include
 #include "tree2fun.hpp"
 
 #include "Parameter.hpp"
@@ -61,8 +59,6 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
-#include <string>
 
 tree2fun::tree2fun(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id,
                    const DesignFlowManagerConstRef _design_flow_manager)
@@ -74,7 +70,7 @@ tree2fun::tree2fun(const ParameterConstRef _parameters, const application_manage
 
 tree2fun::~tree2fun() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 tree2fun::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -116,7 +112,7 @@ DesignFlowStep_Status tree2fun::InternalExec()
    const auto curr_tn = TreeM->GetTreeNode(function_id);
    const auto fname = tree_helper::GetFunctionName(TreeM, curr_tn);
    const auto fd = GetPointerS<function_decl>(curr_tn);
-   const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   const auto sl = GetPointerS<statement_list>(fd->body);
 
    bool modified = false;
    for(const auto& idx_bb : sl->list_of_bloc)
@@ -125,10 +121,10 @@ DesignFlowStep_Status tree2fun::InternalExec()
       for(const auto& stmt : BB->CGetStmtList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Examine " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
+                        "-->Examine " + STR(stmt->index) + " " + stmt->ToString());
          modified |= recursive_transform(stmt, stmt, tree_man);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--Examined " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
+                        "<--Examined " + STR(stmt->index) + " " + stmt->ToString());
       }
    }
 
@@ -140,12 +136,10 @@ DesignFlowStep_Status tree2fun::InternalExec()
    return DesignFlowStep_Status::UNCHANGED;
 }
 
-bool tree2fun::recursive_transform(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement,
+bool tree2fun::recursive_transform(const tree_nodeRef& curr_tn, const tree_nodeRef& current_statement,
                                    const tree_manipulationRef tree_man)
 {
-   THROW_ASSERT(current_tree_node->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    bool modified = false;
-   const tree_nodeRef curr_tn = GET_NODE(current_tree_node);
    const auto get_current_srcp = [curr_tn]() -> std::string {
       const auto srcp_tn = GetPointer<const srcp>(curr_tn);
       if(srcp_tn)
@@ -174,12 +168,11 @@ bool tree2fun::recursive_transform(const tree_nodeRef& current_tree_node, const 
       }
       case tree_list_K:
       {
-         tree_nodeRef current = current_tree_node;
+         tree_nodeRef current = curr_tn;
          while(current)
          {
-            modified |=
-                recursive_transform(GetPointer<tree_list>(GET_NODE(current))->valu, current_statement, tree_man);
-            current = GetPointer<tree_list>(GET_NODE(current))->chan;
+            modified |= recursive_transform(GetPointerS<tree_list>(current)->valu, current_statement, tree_man);
+            current = GetPointerS<tree_list>(current)->chan;
          }
          break;
       }
@@ -198,7 +191,7 @@ bool tree2fun::recursive_transform(const tree_nodeRef& current_tree_node, const 
          if(be_type == frem_expr_K)
          {
             const auto expr_type = tree_helper::CGetType(be->op0);
-            THROW_ASSERT(GET_CONST_NODE(expr_type)->get_kind() == real_type_K, "unexpected case");
+            THROW_ASSERT(expr_type->get_kind() == real_type_K, "unexpected case");
             const auto bitsize = tree_helper::Size(expr_type);
             const std::string fu_name = bitsize == 32 ? "fmodf" : "fmod";
             const auto called_function = TreeM->GetFunction(fu_name);
@@ -208,10 +201,10 @@ bool tree2fun::recursive_transform(const tree_nodeRef& current_tree_node, const 
             const std::vector<tree_nodeRef> args = {be->op0, be->op1};
             const auto ce = tree_man->CreateCallExpr(called_function, args, get_current_srcp());
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced " + STR(current_statement));
-            TreeM->ReplaceTreeNode(current_statement, current_tree_node, ce);
+            TreeM->ReplaceTreeNode(current_statement, curr_tn, ce);
             CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index,
-                                                    GET_INDEX_CONST_NODE(current_statement),
-                                                    FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
+                                                    current_statement->index, FunctionEdgeInfo::CallType::direct_call,
+                                                    DEBUG_LEVEL_NONE);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---      -> " + STR(current_statement));
             modified = true;
          }
@@ -219,7 +212,7 @@ bool tree2fun::recursive_transform(const tree_nodeRef& current_tree_node, const 
       }
       case CASE_TERNARY_EXPRESSION:
       {
-         const ternary_expr* te = GetPointer<ternary_expr>(curr_tn);
+         const auto te = GetPointerS<ternary_expr>(curr_tn);
          modified |= recursive_transform(te->op0, current_statement, tree_man);
          if(te->op1)
          {
@@ -233,7 +226,7 @@ bool tree2fun::recursive_transform(const tree_nodeRef& current_tree_node, const 
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
-         const quaternary_expr* qe = GetPointer<quaternary_expr>(curr_tn);
+         const auto qe = GetPointerS<quaternary_expr>(curr_tn);
          modified |= recursive_transform(qe->op0, current_statement, tree_man);
          if(qe->op1)
          {
@@ -251,7 +244,7 @@ bool tree2fun::recursive_transform(const tree_nodeRef& current_tree_node, const 
       }
       case constructor_K:
       {
-         const constructor* co = GetPointer<constructor>(curr_tn);
+         const auto co = GetPointerS<constructor>(curr_tn);
          for(const auto& iv : co->list_of_idx_valu)
          {
             modified |= recursive_transform(iv.second, current_statement, tree_man);

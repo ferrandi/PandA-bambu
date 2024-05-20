@@ -68,7 +68,7 @@ class dead_code_eliminationIPA : public ApplicationFrontendFlowStep
     */
    CustomOrderedSet<unsigned int> fun_id_to_restartParm;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    void ComputeRelationships(DesignFlowStepSet& relationships,

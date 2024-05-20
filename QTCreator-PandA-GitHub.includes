@@ -38,7 +38,7 @@ ext/Coin-Cbc/Clp/src
 ext/Coin-Cbc/CoinUtils/src
 ext/Coin-Cbc/Osi/src/Osi
 ext/Coin-Cbc/ThirdParty/Glpk
-ext/abseil-cpp
+ext/abseil/abseil-cpp
 ext/flopoco/src
 ext/flopoco/src/FPExpAttic
 ext/flopoco/src/FPExpressions

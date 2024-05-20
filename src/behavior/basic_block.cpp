@@ -137,7 +137,7 @@ BBGraphInfo::BBGraphInfo(const application_managerConstRef _AppM, const unsigned
 }
 
 BBGraphsCollection::BBGraphsCollection(const BBGraphInfoRef bb_graph_info, const ParameterConstRef _parameters)
-    : graphs_collection(RefcountCast<GraphInfo>(bb_graph_info), _parameters)
+    : graphs_collection(std::static_pointer_cast<GraphInfo>(bb_graph_info), _parameters)
 {
 }
 

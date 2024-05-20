@@ -37,8 +37,6 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-
-/// Header include
 #include "mult_expr_fracturing.hpp"
 
 #include "Parameter.hpp"
@@ -77,9 +75,7 @@ mult_expr_fracturing::mult_expr_fracturing(const application_managerRef AM, cons
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-mult_expr_fracturing::~mult_expr_fracturing() = default;
-
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 mult_expr_fracturing::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -111,14 +107,15 @@ void mult_expr_fracturing::ComputeRelationships(DesignFlowStepSet& relationships
 {
    if(relationship_type == INVALIDATION_RELATIONSHIP)
    {
+      const auto DFM = design_flow_manager.lock();
+      const auto DFG = DFM->CGetDesignFlowGraph();
       for(const auto& i : fun_id_to_restart)
       {
          const auto step_signature =
              FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::FUNCTION_CALL_TYPE_CLEANUP, i);
-         const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
-         THROW_ASSERT(frontend_step != NULL_VERTEX, "step " + step_signature + " is not present");
-         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const auto design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+         const auto frontend_step = DFM->GetDesignFlowStep(step_signature);
+         THROW_ASSERT(frontend_step != DesignFlowGraph::null_vertex(), "step is not present");
+         const auto design_flow_step = DFG->CGetNodeInfo(frontend_step)->design_flow_step;
          relationships.insert(design_flow_step);
       }
       fun_id_to_restart.clear();
@@ -141,7 +138,7 @@ DesignFlowStep_Status mult_expr_fracturing::Exec()
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                      "-->Analyzing function \"" + fname + "\": id = " + STR(function_id));
       const auto fd = GetPointerS<function_decl>(curr_tn);
-      const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+      const auto sl = GetPointerS<statement_list>(fd->body);
       use64bitMul = false;
       use32bitMul = false;
 
@@ -175,10 +172,10 @@ DesignFlowStep_Status mult_expr_fracturing::Exec()
          for(const auto& stmt : BB->CGetStmtList())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "-->Examine " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
+                           "-->Examine " + STR(stmt->index) + " " + stmt->ToString());
             modified |= recursive_transform(function_id, stmt, stmt, tree_man);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "<--Examined " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
+                           "<--Examined " + STR(stmt->index) + " " + stmt->ToString());
          }
       }
 
@@ -197,13 +194,11 @@ DesignFlowStep_Status mult_expr_fracturing::Exec()
    return fun_id_to_restart.empty() ? DesignFlowStep_Status::UNCHANGED : DesignFlowStep_Status::SUCCESS;
 }
 
-bool mult_expr_fracturing::recursive_transform(unsigned int function_id, const tree_nodeRef& current_tree_node,
+bool mult_expr_fracturing::recursive_transform(unsigned int function_id, const tree_nodeRef& curr_tn,
                                                const tree_nodeRef& current_statement,
                                                const tree_manipulationRef tree_man)
 {
-   THROW_ASSERT(current_tree_node->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    bool modified = false;
-   const tree_nodeRef curr_tn = GET_NODE(current_tree_node);
    const auto get_current_srcp = [curr_tn]() -> std::string {
       const auto srcp_tn = GetPointer<const srcp>(curr_tn);
       if(srcp_tn)
@@ -232,12 +227,12 @@ bool mult_expr_fracturing::recursive_transform(unsigned int function_id, const t
       }
       case tree_list_K:
       {
-         tree_nodeRef current = current_tree_node;
+         tree_nodeRef current = curr_tn;
          while(current)
          {
-            modified |= recursive_transform(function_id, GetPointer<tree_list>(GET_NODE(current))->valu,
-                                            current_statement, tree_man);
-            current = GetPointer<tree_list>(GET_NODE(current))->chan;
+            modified |=
+                recursive_transform(function_id, GetPointer<tree_list>(current)->valu, current_statement, tree_man);
+            current = GetPointer<tree_list>(current)->chan;
          }
          break;
       }
@@ -265,14 +260,13 @@ bool mult_expr_fracturing::recursive_transform(unsigned int function_id, const t
 
             auto doTransf = false;
             std::string fname;
-            if(use64bitMul && GET_CONST_NODE(expr_type)->get_kind() == integer_type_K && bitsize == 64)
+            if(use64bitMul && expr_type->get_kind() == integer_type_K && bitsize == 64)
             {
                const auto unsignedp = tree_helper::IsUnsignedIntegerType(expr_type);
                fname = unsignedp ? "__umul64" : "__mul64";
                doTransf = true;
             }
-            if(use32bitMul && GET_CONST_NODE(expr_type)->get_kind() == integer_type_K && bitsize == 32 &&
-               bitsizeIN == 32)
+            if(use32bitMul && expr_type->get_kind() == integer_type_K && bitsize == 32 && bitsizeIN == 32)
             {
                const auto unsignedp = tree_helper::IsUnsignedIntegerType(expr_type);
                fname = unsignedp ? "__umul32" : "__mul32";
@@ -288,9 +282,9 @@ bool mult_expr_fracturing::recursive_transform(unsigned int function_id, const t
                const std::vector<tree_nodeRef> args = {be->op0, be->op1};
                const auto ce = tree_man->CreateCallExpr(called_function, args, get_current_srcp());
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced " + STR(current_statement));
-               TreeM->ReplaceTreeNode(current_statement, current_tree_node, ce);
+               TreeM->ReplaceTreeNode(current_statement, curr_tn, ce);
                CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index,
-                                                       GET_INDEX_CONST_NODE(current_statement),
+                                                       current_statement->index,
                                                        FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---      -> " + STR(current_statement));
                modified = true;

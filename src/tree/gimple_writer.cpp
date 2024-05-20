@@ -238,9 +238,9 @@ void GimpleWriter::operator()(const unary_expr* obj, unsigned int& mask)
       default:
          THROW_UNREACHABLE("");
    }
-   if(GET_NODE(obj->op)->get_kind() == function_decl_K)
+   if(obj->op->get_kind() == function_decl_K)
    {
-      GetPointer<function_decl>(GET_NODE(obj->op))->name->visit(this);
+      GetPointer<function_decl>(obj->op)->name->visit(this);
    }
    else
    {
@@ -283,7 +283,7 @@ void GimpleWriter::operator()(const binary_expr* obj, unsigned int& mask)
       }
       case mem_ref_K:
       {
-         if(GET_NODE(obj->op1)->get_kind() == integer_cst_K)
+         if(obj->op1->get_kind() == integer_cst_K)
          {
             const auto offset = tree_helper::GetConstValue(obj->op1);
             if(offset == 0)
@@ -294,7 +294,7 @@ void GimpleWriter::operator()(const binary_expr* obj, unsigned int& mask)
             else
             {
                os << "MEM[(";
-               GET_CONST_NODE(tree_helper::CGetType(obj->op1))->visit(this);
+               tree_helper::CGetType(obj->op1)->visit(this);
                os << ")";
                obj->op0->visit(this);
                os << ") + ";
@@ -525,7 +525,7 @@ void GimpleWriter::operator()(const ternary_expr* obj, unsigned int& mask)
       }
       case component_ref_K:
       {
-         const indirect_ref* ir = GetPointer<indirect_ref>(GET_NODE(obj->op0));
+         const indirect_ref* ir = GetPointer<indirect_ref>(obj->op0);
          if(ir)
          {
             ir->op->visit(this);
@@ -803,12 +803,6 @@ void GimpleWriter::operator()(const type_node* obj, unsigned int& mask)
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const memory_tag* obj, unsigned int& mask)
-{
-   mask = NO_VISIT;
-   obj->decl_node::visit(this);
-}
-
 void GimpleWriter::operator()(const cst_node* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
@@ -828,8 +822,8 @@ void GimpleWriter::operator()(const array_type* obj, unsigned int& mask)
    obj->elts->visit(this);
    os << "[";
    /// Computing size
-   tree_nodeRef array_length = GET_NODE(obj->size);
-   tree_nodeRef array_element = GET_NODE(obj->elts);
+   tree_nodeRef array_length = obj->size;
+   tree_nodeRef array_element = obj->elts;
    if(array_length->get_kind() == integer_cst_K)
    {
       const auto tn = GetPointer<type_node>(array_element);
@@ -874,10 +868,10 @@ void GimpleWriter::operator()(const block* obj, unsigned int& mask)
 void GimpleWriter::operator()(const call_expr* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
-   const addr_expr* ae = GetPointer<addr_expr>(GET_NODE(obj->fn));
+   const addr_expr* ae = GetPointer<addr_expr>(obj->fn);
    if(ae)
    {
-      const function_decl* fd = GetPointer<function_decl>(GET_NODE(ae->op));
+      const function_decl* fd = GetPointer<function_decl>(ae->op);
       if(fd)
       {
          fd->name->visit(this);
@@ -897,7 +891,7 @@ void GimpleWriter::operator()(const call_expr* obj, unsigned int& mask)
    }
    else
    {
-      const ssa_name* sn = GetPointer<ssa_name>(GET_NODE(obj->fn));
+      const ssa_name* sn = GetPointer<ssa_name>(obj->fn);
       if(sn)
       {
          sn->visit(this);
@@ -920,10 +914,10 @@ void GimpleWriter::operator()(const call_expr* obj, unsigned int& mask)
 void GimpleWriter::operator()(const aggr_init_expr* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
-   const addr_expr* ae = GetPointer<addr_expr>(GET_NODE(obj->fn));
+   const addr_expr* ae = GetPointer<addr_expr>(obj->fn);
    if(ae)
    {
-      const function_decl* fd = GetPointer<function_decl>(GET_NODE(ae->op));
+      const function_decl* fd = GetPointer<function_decl>(ae->op);
       if(fd)
       {
          fd->name->visit(this);
@@ -943,7 +937,7 @@ void GimpleWriter::operator()(const aggr_init_expr* obj, unsigned int& mask)
    }
    else
    {
-      const ssa_name* sn = GetPointer<ssa_name>(GET_NODE(obj->fn));
+      const ssa_name* sn = GetPointer<ssa_name>(obj->fn);
       if(sn)
       {
          sn->visit(this);
@@ -972,10 +966,10 @@ void GimpleWriter::operator()(const gimple_call* obj, unsigned int& mask)
 {
    obj->gimple_node::visit(this);
    mask = NO_VISIT;
-   const addr_expr* ae = GetPointer<addr_expr>(GET_NODE(obj->fn));
+   const addr_expr* ae = GetPointer<addr_expr>(obj->fn);
    if(ae)
    {
-      const function_decl* fd = GetPointer<function_decl>(GET_NODE(ae->op));
+      const function_decl* fd = GetPointer<function_decl>(ae->op);
       if(fd)
       {
          fd->name->visit(this);
@@ -1113,7 +1107,7 @@ void GimpleWriter::operator()(const function_decl* obj, unsigned int& mask)
       {
          os << ", ";
       }
-      const parm_decl* pd = GetPointer<parm_decl>(GET_NODE(*arg));
+      const parm_decl* pd = GetPointer<parm_decl>(*arg);
       pd->type->visit(this);
       os << " ";
       pd->name->visit(this);
@@ -1270,7 +1264,7 @@ void GimpleWriter::operator()(const real_type* obj, unsigned int& mask)
 void GimpleWriter::operator()(const record_type* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
-   if(not obj->name or GET_CONST_NODE(obj->name)->get_kind() != type_decl_K)
+   if(not obj->name or obj->name->get_kind() != type_decl_K)
    {
       os << "struct ";
    }
@@ -1351,8 +1345,7 @@ void GimpleWriter::operator()(const statement_list* obj, unsigned int& mask)
       {
          continue;
       }
-      if(block.second->CGetStmtList().empty() ||
-         GET_CONST_NODE(block.second->CGetStmtList().front())->get_kind() != gimple_label_K)
+      if(block.second->CGetStmtList().empty() || block.second->CGetStmtList().front()->get_kind() != gimple_label_K)
       {
          os << "<bb " << block.first << ">:" << std::endl;
       }
@@ -1363,7 +1356,7 @@ void GimpleWriter::operator()(const statement_list* obj, unsigned int& mask)
       }
       for(const auto& stmt : block.second->CGetStmtList())
       {
-         const auto statement = GET_CONST_NODE(stmt);
+         const auto statement = stmt;
          /// We print only MEMUSE and MEMDEF as VUSE and VDEF like gcc -fdump-tree-all
          if(GetPointer<const gimple_node>(statement) && GetPointer<const gimple_node>(statement)->memuse)
          {
@@ -1389,10 +1382,9 @@ void GimpleWriter::operator()(const statement_list* obj, unsigned int& mask)
          THROW_ASSERT(obj->list_of_bloc.count(block.second->true_edge),
                       "Could not find BB" + STR(block.second->true_edge));
          const auto& next_true = obj->list_of_bloc.at(block.second->true_edge);
-         if(next_true->CGetStmtList().size() &&
-            GET_CONST_NODE(next_true->CGetStmtList().front())->get_kind() == gimple_label_K)
+         if(next_true->CGetStmtList().size() && next_true->CGetStmtList().front()->get_kind() == gimple_label_K)
          {
-            const auto le = GetPointer<const gimple_label>(GET_CONST_NODE(next_true->CGetStmtList().front()));
+            const auto le = GetPointer<const gimple_label>(next_true->CGetStmtList().front());
             os << " (";
             le->op->visit(this);
             os << ")";
@@ -1403,10 +1395,9 @@ void GimpleWriter::operator()(const statement_list* obj, unsigned int& mask)
          THROW_ASSERT(obj->list_of_bloc.count(block.second->false_edge),
                       "Could not find BB" + STR(block.second->false_edge));
          const auto& next_false = obj->list_of_bloc.at(block.second->false_edge);
-         if(next_false->CGetStmtList().size() &&
-            GET_CONST_NODE(next_false->CGetStmtList().back())->get_kind() == gimple_label_K)
+         if(next_false->CGetStmtList().size() && next_false->CGetStmtList().back()->get_kind() == gimple_label_K)
          {
-            const auto le = GetPointer<const gimple_label>(GET_CONST_NODE(next_false->CGetStmtList().front()));
+            const auto le = GetPointer<const gimple_label>(next_false->CGetStmtList().front());
             os << " (";
             le->op->visit(this);
             os << ")";
@@ -1421,9 +1412,9 @@ void GimpleWriter::operator()(const statement_list* obj, unsigned int& mask)
             os << "  goto <bb " << succ_index << ">";
             THROW_ASSERT(obj->list_of_bloc.count(succ_index), "Could not find BB" + STR(succ_index));
             const auto& next = obj->list_of_bloc.at(succ_index);
-            if(next->CGetStmtList().size() && GET_CONST_NODE(next->CGetStmtList().back())->get_kind() == gimple_label_K)
+            if(next->CGetStmtList().size() && next->CGetStmtList().back()->get_kind() == gimple_label_K)
             {
-               const auto le = GetPointer<const gimple_label>(GET_CONST_NODE(next->CGetStmtList().front()));
+               const auto le = GetPointer<const gimple_label>(next->CGetStmtList().front());
                os << " (";
                le->op->visit(this);
                os << ")";

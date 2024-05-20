@@ -53,8 +53,7 @@ REF_FORWARD_DECL(function_allocation);
 class function_allocation : public HLS_step
 {
  protected:
-   virtual const CustomUnorderedSet<
-       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   virtual HLSRelationships
    ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:

@@ -413,8 +413,10 @@ void DumpGimpleInit(char* _outdir_name)
 static void DumpVersion(FILE* stream)
 {
    int version = __GNUC__, minor = __GNUC_MINOR__, patchlevel = __GNUC_PATCHLEVEL__;
-   fprintf(stream, "COMPILER_VERSION: \"GCC %d.%d.%d\"\nPLUGIN_VERSION: \"" PANDA_PLUGIN_VERSION "\"\n", version, minor,
-           patchlevel);
+   fseek(stream, 0, SEEK_SET);
+   fprintf(stream,
+           "COMPILER_VERSION: \"GCC %d.%d.%d\"\nPLUGIN_VERSION: \"" PANDA_PLUGIN_VERSION "\"\nNODE_COUNT: %10u\n",
+           version, minor, patchlevel, di_local_index);
 }
 
 /**
@@ -425,7 +427,9 @@ static void DumpVersion(FILE* stream)
  */
 void SerializeGimpleBegin(char* name)
 {
-   serialize_gimple_info.stream = fopen(name, serialize_state < 0 ? "w" : "a");
+   serialize_gimple_info.stream = fopen(name, serialize_state < 0 ? "w" : "r+");
+   if(serialize_state >= 0)
+      fseek(serialize_gimple_info.stream, 0, SEEK_END);
    serialize_gimple_info.node = 0;
    serialize_gimple_info.column = 0;
    serialize_gimple_info.queue = 0;
@@ -608,6 +612,7 @@ void SerializeGimpleEnd()
       free(dq);
    }
    serialize_gimple_info.cfg_list = 0;
+   DumpVersion(serialize_gimple_info.stream);
    fclose(serialize_gimple_info.stream);
 }
 

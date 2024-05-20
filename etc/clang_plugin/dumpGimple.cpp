@@ -4089,7 +4089,12 @@ namespace llvm
 
    void DumpGimpleRaw::DumpVersion(llvm::raw_fd_ostream& stream)
    {
-      stream << "COMPILER_VERSION: \"Clang " __clang_version__ "\"\nPLUGIN_VERSION: \"" PANDA_PLUGIN_VERSION "\"\n";
+      auto node_count_str = std::to_string(last_used_index);
+      node_count_str = std::string(10 - node_count_str.size(), ' ') + node_count_str;
+      stream.seek(0);
+      stream << "COMPILER_VERSION: \"Clang " __clang_version__ "\"\nPLUGIN_VERSION: \"" PANDA_PLUGIN_VERSION
+                "\"\nNODE_COUNT: "
+             << node_count_str << "\n";
    }
 
    void DumpGimpleRaw::serialize_int(const char* field, int i)
@@ -6515,6 +6520,8 @@ namespace llvm
          PtoSets_AA = nullptr;
       }
 #endif
+
+      DumpVersion(stream);
 
       // M.print(llvm::errs(), nullptr);
       return res;

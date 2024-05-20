@@ -42,15 +42,20 @@
  */
 #include "design_flow_aux_step.hpp"
 
-#include "exceptions.hpp" // for THROW_UNREACHABLE
+#include "exceptions.hpp"
 #include "string_manipulation.hpp"
-#include <ostream> // for operator<<, basic_ostream
+
+#include <ostream>
 #include <utility>
 
-AuxDesignFlowStep::AuxDesignFlowStep(std::string _name, const AuxDesignFlowStepType _type,
-                                     const DesignFlowManagerConstRef _design_flow_manager,
+static inline std::string GetTypeString(AuxDesignFlowStepType t)
+{
+   return t == DESIGN_FLOW_ENTRY ? "Entry" : "Exit";
+}
+
+AuxDesignFlowStep::AuxDesignFlowStep(AuxDesignFlowStepType _type, const DesignFlowManagerConstRef _design_flow_manager,
                                      const ParameterConstRef _parameters)
-    : DesignFlowStep(_design_flow_manager, _parameters), type(_type), name(std::move(_name))
+    : DesignFlowStep(ComputeSignature(_type), _design_flow_manager, _parameters), type(_type)
 {
 }
 
@@ -60,9 +65,9 @@ void AuxDesignFlowStep::ComputeRelationships(DesignFlowStepSet&, const DesignFlo
 {
 }
 
-const std::string AuxDesignFlowStep::ComputeSignature(const std::string& name, const AuxDesignFlowStepType type)
+DesignFlowStep::signature_t AuxDesignFlowStep::ComputeSignature(const AuxDesignFlowStepType type)
 {
-   return "AUX::" + STR(type) + "::" + name;
+   return DesignFlowStep::ComputeSignature(AUX, type, 0);
 }
 
 DesignFlowStep_Status AuxDesignFlowStep::Exec()
@@ -72,17 +77,12 @@ DesignFlowStep_Status AuxDesignFlowStep::Exec()
 
 std::string AuxDesignFlowStep::GetName() const
 {
-   return name;
-}
-
-std::string AuxDesignFlowStep::GetSignature() const
-{
-   return ComputeSignature(name, type);
+   return "AUX::" + GetTypeString(type);
 }
 
 void AuxDesignFlowStep::WriteDot(std::ostream& out) const
 {
-   out << "shape=Msquare, label=\"" << name << "\"";
+   out << "shape=Msquare, label=\"" << GetTypeString(type) << "\"";
 }
 
 DesignFlowStepFactoryConstRef AuxDesignFlowStep::CGetDesignFlowStepFactory() const

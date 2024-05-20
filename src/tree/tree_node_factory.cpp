@@ -40,32 +40,30 @@
  * Last modified by $Author$
  *
  */
+#include "tree_node_factory.hpp"
 
-/// parser/compiler include
-#include "token_interface.hpp"
-
-/// tree includes
 #include "ext_tree_node.hpp"
+#include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_node_factory.hpp"
 #include "tree_reindex.hpp"
 #include "utility.hpp"
 
 #define CREATE_TREE_NODE_CASE_BODY(tree_node_name, node_id) \
    {                                                        \
       auto tnn = new tree_node_name(node_id);               \
-      tree_nodeRef cur = tree_nodeRef(tnn);                 \
-      TM.AddTreeNode(node_id, cur);                         \
+      cur = tree_nodeRef(tnn);                              \
+      TM.AddTreeNode(cur);                                  \
       curr_tree_node_ptr = tnn;                             \
       tnn->visit(this);                                     \
       curr_tree_node_ptr = nullptr;                         \
       break;                                                \
    }
 
-void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_node_type)
+tree_nodeRef tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_node_type)
 {
+   tree_nodeRef cur;
    switch(tree_node_type)
    {
       case abs_expr_K:
@@ -552,7 +550,6 @@ void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_no
          CREATE_TREE_NODE_CASE_BODY(null_node, node_id)
       case identifier_node_K: /// special care is reserved for identifier_nodes
       {
-         tree_nodeRef cur;
          if(tree_node_schema.find(TOK(TOK_STRG)) != tree_node_schema.end())
          {
             cur = tree_nodeRef(new identifier_node(node_id, tree_node_schema.find(TOK(TOK_STRG))->second, &TM));
@@ -566,7 +563,7 @@ void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_no
          {
             THROW_ERROR("Incorrect schema for identifier_node: no TOK_STRG nor TOK_OPERATOR");
          }
-         TM.AddTreeNode(node_id, cur);
+         TM.AddTreeNode(cur);
          break;
       }
       case widen_sum_expr_K:
@@ -612,20 +609,23 @@ void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_no
       default:
          THROW_UNREACHABLE("");
    }
+   THROW_ASSERT(cur, "");
+   return cur;
 }
 
 void tree_node_factory::operator()(const tree_node* obj, unsigned int&)
 {
-   THROW_ERROR("tree_node not supported: " + std::string(obj->get_kind_text()));
+   THROW_ERROR("tree_node not supported: " + obj->get_kind_text());
 }
 
 void tree_node_factory::operator()(const tree_reindex* obj, unsigned int&)
 {
-   THROW_ERROR("tree_node not supported: " + std::string(obj->get_kind_text()));
+   THROW_ERROR("tree_node not supported: " + obj->get_kind_text());
 }
 
 void tree_node_factory::operator()(const attr* obj, unsigned int& mask)
 {
+   // NOTE: const_cast below is "safe" since the following assert must be true
    THROW_ASSERT(obj == dynamic_cast<attr*>(curr_tree_node_ptr), "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
    // cppcheck-suppress unusedVariable
@@ -647,7 +647,7 @@ void tree_node_factory::operator()(const attr* obj, unsigned int& mask)
 #define ATTR_MACRO(r, data, elem)                                       \
    attr_p = tree_node_schema.find(TOK(elem)) != tree_node_schema.end(); \
    if(attr_p)                                                           \
-      dynamic_cast<attr*>(curr_tree_node_ptr)->list_attr.insert(TOK(elem));
+      const_cast<attr*>(obj)->list_attr.insert(TOK(elem));
 
    BOOST_PP_SEQ_FOR_EACH(ATTR_MACRO, BOOST_PP_EMPTY, ATTR_SEQ);
 #undef ATTR_MACRO
@@ -658,7 +658,7 @@ void tree_node_factory::operator()(const attr* obj, unsigned int& mask)
    if(tree_node_schema.find(TOK(token)) != tree_node_schema.end())                                 \
    {                                                                                               \
       auto node_id = static_cast<unsigned>(std::stoul(tree_node_schema.find(TOK(token))->second)); \
-      dynamic_cast<type*>(curr_tree_node_ptr)->field = TM.GetTreeReindex(node_id);                 \
+      static_cast<type*>(curr_tree_node_ptr)->field = TM.GetTreeReindex(node_id);                  \
    }
 
 #define SET_NODE_ID(token, field, type)                                                            \
@@ -666,20 +666,20 @@ void tree_node_factory::operator()(const attr* obj, unsigned int& mask)
       THROW_ASSERT(tree_node_schema.find(TOK(token)) != tree_node_schema.end(),                    \
                    std::string("tree_node_schema must have ") + STOK(token) + " value");           \
       auto node_id = static_cast<unsigned>(std::stoul(tree_node_schema.find(TOK(token))->second)); \
-      dynamic_cast<type*>(curr_tree_node_ptr)->field = TM.GetTreeReindex(node_id);                 \
+      static_cast<type*>(curr_tree_node_ptr)->field = TM.GetTreeReindex(node_id);                  \
    }
 
 #define SET_VALUE_OPT(token, field, type)                                                        \
    if(tree_node_schema.find(TOK(token)) != tree_node_schema.end())                               \
    {                                                                                             \
-      dynamic_cast<type*>(curr_tree_node_ptr)->field =                                           \
+      static_cast<type*>(curr_tree_node_ptr)->field =                                            \
           boost::lexical_cast<decltype(type::field)>(tree_node_schema.find(TOK(token))->second); \
    }
 
 #define SET_VALUE(token, field, type)                                                 \
    THROW_ASSERT(tree_node_schema.find(TOK(token)) != tree_node_schema.end(),          \
                 std::string("tree node schema must have ") + STOK(token) + " value"); \
-   dynamic_cast<type*>(curr_tree_node_ptr)->field =                                   \
+   static_cast<type*>(curr_tree_node_ptr)->field =                                    \
        boost::lexical_cast<decltype(type::field)>(tree_node_schema.find(TOK(token))->second);
 
 #define TREE_NOT_YET_IMPLEMENTED(token)                                      \
@@ -692,6 +692,7 @@ void tree_node_factory::operator()(const WeightedNode*, unsigned int&)
 
 void tree_node_factory::operator()(const srcp* obj, unsigned int& mask)
 {
+   // NOTE: const_cast below are "safe" since the following assert must be true
    THROW_ASSERT(obj == dynamic_cast<srcp*>(curr_tree_node_ptr), "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
    THROW_ASSERT(tree_node_schema.find(TOK(TOK_SRCP)) != tree_node_schema.end(),
@@ -699,11 +700,10 @@ void tree_node_factory::operator()(const srcp* obj, unsigned int& mask)
    const std::string& srcp_str = tree_node_schema.find(TOK(TOK_SRCP))->second;
    std::string::size_type colon_pos2 = srcp_str.rfind(':');
    std::string::size_type colon_pos = srcp_str.rfind(':', colon_pos2 - 1);
-   dynamic_cast<srcp*>(curr_tree_node_ptr)->include_name = srcp_str.substr(0, colon_pos);
-   dynamic_cast<srcp*>(curr_tree_node_ptr)->line_number =
+   const_cast<srcp*>(obj)->include_name = srcp_str.substr(0, colon_pos);
+   const_cast<srcp*>(obj)->line_number =
        static_cast<unsigned>(std::stoul(srcp_str.substr(colon_pos + 1, colon_pos2 - colon_pos - 1)));
-   dynamic_cast<srcp*>(curr_tree_node_ptr)->column_number =
-       static_cast<unsigned>(std::stoul(srcp_str.substr(colon_pos2 + 1)));
+   const_cast<srcp*>(obj)->column_number = static_cast<unsigned>(std::stoul(srcp_str.substr(colon_pos2 + 1)));
 }
 
 void tree_node_factory::operator()(const decl_node* obj, unsigned int& mask)
@@ -784,7 +784,7 @@ void tree_node_factory::operator()(const type_node* obj, unsigned int& mask)
    tree_node_mask::operator()(obj, mask);
    if(tree_node_schema.find(TOK(TOK_QUAL)) != tree_node_schema.end())
    {
-      dynamic_cast<type_node*>(curr_tree_node_ptr)->qual = static_cast<TreeVocabularyTokenTypes_TokenEnum>(
+      static_cast<type_node*>(curr_tree_node_ptr)->qual = static_cast<TreeVocabularyTokenTypes_TokenEnum>(
           static_cast<unsigned>(std::stoul(tree_node_schema.find(TOK(TOK_QUAL))->second)));
    }
    SET_NODE_ID_OPT(TOK_NAME, name, type_node);
@@ -794,17 +794,6 @@ void tree_node_factory::operator()(const type_node* obj, unsigned int& mask)
    SET_VALUE_OPT(TOK_SYSTEM, packed_flag, type_node);
    SET_VALUE_OPT(TOK_SYSTEM, system_flag, type_node);
    SET_VALUE_OPT(TOK_ALGN, algn, type_node);
-}
-
-void tree_node_factory::operator()(const memory_tag* obj, unsigned int& mask)
-{
-   THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
-   tree_node_mask::operator()(obj, mask);
-
-   // TREE_NOT_YET_IMPLEMENTED(TOK_ALIAS);
-   // std::vector<tree_nodeRef>::const_iterator vend = obj->list_of_aliases.end();
-   // for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_aliases.begin(); i != vend; i++)
-   //   write_when_not_null(STOK(TOK_ALIAS), *i);
 }
 
 void tree_node_factory::operator()(const cst_node* obj, unsigned int& mask)
@@ -893,7 +882,7 @@ void tree_node_factory::operator()(const call_expr* obj, unsigned int& mask)
           string_to_container<std::vector<unsigned int>>(tree_node_schema.find(TOK(TOK_ARG))->second, "_");
       for(const auto arg : args)
       {
-         dynamic_cast<call_expr*>(curr_tree_node_ptr)->args.push_back(TM.GetTreeReindex(arg));
+         static_cast<call_expr*>(curr_tree_node_ptr)->args.push_back(TM.GetTreeReindex(arg));
       }
    }
 }
@@ -917,7 +906,7 @@ void tree_node_factory::operator()(const gimple_call* obj, unsigned int& mask)
           string_to_container<std::vector<unsigned int>>(tree_node_schema.find(TOK(TOK_ARG))->second, "_");
       for(const auto arg : args)
       {
-         dynamic_cast<gimple_call*>(curr_tree_node_ptr)->args.push_back(TM.GetTreeReindex(arg));
+         static_cast<gimple_call*>(curr_tree_node_ptr)->args.push_back(TM.GetTreeReindex(arg));
       }
    }
 }
@@ -1524,10 +1513,17 @@ void tree_node_factory::operator()(const target_mem_ref461* obj, unsigned int& m
 
 void tree_node_factory::operator()(const bloc* obj, unsigned int& mask)
 {
+#define SET_BLOC_VALUE_OPT(token, field)                                                         \
+   if(tree_node_schema.find(TOK(token)) != tree_node_schema.end())                               \
+   {                                                                                             \
+      dynamic_cast<bloc*>(curr_tree_node_ptr)->field =                                           \
+          boost::lexical_cast<decltype(bloc::field)>(tree_node_schema.find(TOK(token))->second); \
+   }
+
    tree_node_mask::operator()(obj, mask);
    // WRITE_UFIELD(os, obj->number);
-   SET_VALUE_OPT(TOK_HPL, hpl, bloc);
-   SET_VALUE_OPT(TOK_LOOP_ID, loop_id, bloc);
+   SET_BLOC_VALUE_OPT(TOK_HPL, hpl);
+   SET_BLOC_VALUE_OPT(TOK_LOOP_ID, loop_id);
    TREE_NOT_YET_IMPLEMENTED(TOK_PRED);
    // std::vector<int>::const_iterator vend1 = obj->list_of_pred.end();
    // for (std::vector<int>::const_iterator i = obj->list_of_pred.begin(); i != vend1; i++)
@@ -1542,8 +1538,8 @@ void tree_node_factory::operator()(const bloc* obj, unsigned int& mask)
    //      WRITE_NFIELD(os, STOK(TOK_SUCC), STOK(TOK_EXIT));
    // else
    //   WRITE_NFIELD(os, STOK(TOK_SUCC), *i);
-   SET_VALUE_OPT(TOK_TRUE_EDGE, true_edge, bloc);
-   SET_VALUE_OPT(TOK_FALSE_EDGE, false_edge, bloc);
+   SET_BLOC_VALUE_OPT(TOK_TRUE_EDGE, true_edge);
+   SET_BLOC_VALUE_OPT(TOK_FALSE_EDGE, false_edge);
    TREE_NOT_YET_IMPLEMENTED(TOK_PHI);
    // std::vector<tree_nodeRef>::const_iterator vend3 = obj->list_of_phi.end();
    // for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_phi.begin(); i != vend3; i++)
@@ -1552,6 +1548,8 @@ void tree_node_factory::operator()(const bloc* obj, unsigned int& mask)
    TREE_NOT_YET_IMPLEMENTED(TOK_STMT);
    // for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_stmt.begin(); i != vend4; i++)
    //   write_when_not_null(STOK(TOK_STMT), *i);
+
+#undef SET_BLOC_VALUE_OPT
 }
 
 void tree_node_factory::operator()(const gimple_while* obj, unsigned int& mask)

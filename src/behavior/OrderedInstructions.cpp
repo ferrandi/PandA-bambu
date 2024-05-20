@@ -47,11 +47,10 @@
 #include "exceptions.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
-bool OrderedBasicBlock::instComesBefore(const struct gimple_node* A, const struct gimple_node* B)
+bool OrderedBasicBlock::instComesBefore(const tree_nodeConstRef& A, const tree_nodeConstRef& B)
 {
-   const struct gimple_node* Inst = nullptr;
+   unsigned int idx = 0;
    THROW_ASSERT(!(LastInstFound == BBInst.end() && NextInstPos != 0), "Instruction supposed to be in NumberedInsts");
 
    // Start the search with the instruction found in the last lookup round.
@@ -65,18 +64,18 @@ bool OrderedBasicBlock::instComesBefore(const struct gimple_node* A, const struc
    // Number all instructions up to the point where we find 'A' or 'B'.
    for(; II != IE; ++II)
    {
-      Inst = GetPointer<const gimple_node>(GET_CONST_NODE(*II));
-      NumberedInsts[Inst] = NextInstPos++;
-      if(Inst == A || Inst == B)
+      idx = (*II)->index;
+      NumberedInsts[idx] = NextInstPos++;
+      if(idx == A->index || idx == B->index)
       {
          break;
       }
    }
 
    THROW_ASSERT(II != IE, "Instruction not found?");
-   THROW_ASSERT((Inst == A || Inst == B), "Should find A or B");
+   THROW_ASSERT((idx == A->index || idx == B->index), "Should find A or B");
    LastInstFound = II;
-   return Inst != B;
+   return idx != B->index;
 }
 
 OrderedBasicBlock::OrderedBasicBlock(const blocRef& BasicB)
@@ -85,14 +84,16 @@ OrderedBasicBlock::OrderedBasicBlock(const blocRef& BasicB)
    unsigned int phiPos = 0U;
    for(const auto& gp : BasicB->CGetPhiList())
    {
-      NumberedInsts.insert({GetPointer<const gimple_node>(GET_CONST_NODE(gp)), phiPos++});
+      NumberedInsts.insert({gp->index, phiPos++});
    }
 }
 
-bool OrderedBasicBlock::dominates(const struct gimple_node* A, const struct gimple_node* B)
+bool OrderedBasicBlock::dominates(const tree_nodeConstRef& A, const tree_nodeConstRef& B)
 {
-   THROW_ASSERT(A->bb_index == B->bb_index, "Instructions must be in the same basic block!");
-   THROW_ASSERT(A->bb_index == BB->number, "Instructions must be in the tracked block!");
+   THROW_ASSERT(GetPointerS<const gimple_node>(A)->bb_index == GetPointerS<const gimple_node>(B)->bb_index,
+                "Instructions must be in the same basic block!");
+   THROW_ASSERT(GetPointerS<const gimple_node>(A)->bb_index == BB->number,
+                "Instructions must be in the tracked block!");
 
    // Phi statements always comes before non-phi statements
    if(A->get_kind() == gimple_phi_K && B->get_kind() != gimple_phi_K)
@@ -110,8 +111,8 @@ bool OrderedBasicBlock::dominates(const struct gimple_node* A, const struct gimp
    // have numbered NB as well if it didn't. The same is true for NB. If it
    // exists, but NA does not, NA must come after it. If neither exist, we need
    // to number the block and cache the results instComesBefore.
-   const auto NAI = NumberedInsts.find(A);
-   const auto NBI = NumberedInsts.find(B);
+   const auto NAI = NumberedInsts.find(A->index);
+   const auto NBI = NumberedInsts.find(B->index);
    if(NAI != NumberedInsts.end() && NBI != NumberedInsts.end())
    {
       return NAI->second < NBI->second;
@@ -177,13 +178,13 @@ bool OrderedInstructions::dominates(const unsigned int BBIA, const unsigned int 
    return false;
 }
 
-bool OrderedInstructions::dominates(const struct gimple_node* InstA, const struct gimple_node* InstB) const
+bool OrderedInstructions::dominates(const tree_nodeConstRef& InstA, const tree_nodeConstRef& InstB) const
 {
    THROW_ASSERT(InstA, "Instruction A cannot be null");
    THROW_ASSERT(InstB, "Instruction B cannot be null");
 
-   const auto BBIA = InstA->bb_index;
-   const auto BBIB = InstB->bb_index;
+   const auto BBIA = GetPointerS<const gimple_node>(InstA)->bb_index;
+   const auto BBIB = GetPointerS<const gimple_node>(InstB)->bb_index;
 
    // Use ordered basic block to do dominance check in case the 2 instructions
    // are in the same basic block.
@@ -200,7 +201,7 @@ bool OrderedInstructions::dominates(const struct gimple_node* InstA, const struc
          THROW_ASSERT(BB->number == BBIA,
                       "Intermediate BB not allowed here"); // Intermediate BB shadows its incoming BB, thus its index
                                                            // is different from associated vertex
-         OBB = OBBMap.insert({BBIA, absl::make_unique<OrderedBasicBlock>(BB)}).first;
+         OBB = OBBMap.insert({BBIA, std::make_unique<OrderedBasicBlock>(BB)}).first;
       }
       return OBB->second->dominates(InstA, InstB);
    }

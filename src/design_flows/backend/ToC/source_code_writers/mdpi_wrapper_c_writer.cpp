@@ -56,7 +56,6 @@
 #include "testbench_generation.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 #include "utility.hpp"
 #include "var_pp_functor.hpp"
 
@@ -111,7 +110,7 @@ using namespace __AC_NAMESPACE;
    const auto top_symbols = Param->getOption<std::vector<std::string>>(OPT_top_functions_names);
    THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
    const auto top_fnode = TM->GetFunction(top_symbols.front());
-   const auto fd = GetPointerS<const function_decl>(GET_CONST_NODE(top_fnode));
+   const auto fd = GetPointerS<const function_decl>(top_fnode);
    const auto top_fname = tree_helper::GetMangledFunctionName(fd);
    const auto& parms = HLSMgr->module_arch->GetArchitecture(top_fname)->parms;
 
@@ -167,7 +166,7 @@ void MdpiWrapperCWriter::InternalWriteFile()
    const auto top_symbols = Param->getOption<std::vector<std::string>>(OPT_top_functions_names);
    THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
    const auto top_fnode = TM->GetFunction(top_symbols.front());
-   const auto top_fb = HLSMgr->CGetFunctionBehavior(GET_INDEX_CONST_NODE(top_fnode));
+   const auto top_fb = HLSMgr->CGetFunctionBehavior(top_fnode->index);
    const auto top_bh = top_fb->CGetBehavioralHelper();
    const auto top_fname = top_bh->get_function_name();
    const auto top_fname_mngl = top_bh->GetMangledFunctionName();
@@ -219,7 +218,7 @@ void MdpiWrapperCWriter::InternalWriteFile()
          size_t param_idx = 0;
          for(const auto& param : top_bh->GetParameters())
          {
-            const auto parm_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(param));
+            const auto parm_name = top_bh->PrintVariable(param->index);
             std::cmatch what;
             if(std::regex_search(param_size_str.c_str(), what, std::regex("\\b" + parm_name + ":(\\d+)")))
             {
@@ -266,7 +265,7 @@ void MdpiWrapperCWriter::InternalWriteFile()
    {
       for(const auto& arg : top_params)
       {
-         const auto parm_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
+         const auto parm_name = top_bh->PrintVariable(arg->index);
          THROW_ASSERT(func_arch->parms.find(parm_name) != func_arch->parms.end(),
                       "Attributes missing for parameter " + parm_name + " in function " + top_fname);
          const auto& parm_attrs = func_arch->parms.at(parm_name);
@@ -623,7 +622,7 @@ static size_t __m_call_count = 0;
 )");
 
    // write C code used to print initialization values for the HDL simulator's memory
-   WriteSimulatorInitMemory(GET_INDEX_CONST_NODE(top_fnode));
+   WriteSimulatorInitMemory(top_fnode->index);
 
    indented_output_stream->Append(top_decl);
    indented_output_stream->Append("{\n");

@@ -105,7 +105,7 @@ if BUILD_LIB_PRAGMA
    lib_bambu_la_LIBADD += libpragma.la
 endif
 
-lib_bambu_la_LIBADD += $(top_builddir)/ext/abseil-cpp/libabseil.la
+lib_bambu_la_LIBADD += $(top_builddir)/ext/abseil/libabseil.la
 
 bambu_LDADD = lib_bambu.la @PTHREAD_HACK@
 

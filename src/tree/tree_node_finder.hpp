@@ -43,18 +43,16 @@
 #ifndef TREE_NODE_FINDER_HPP
 #define TREE_NODE_FINDER_HPP
 
-#include "custom_map.hpp"      // for map
-#include "token_interface.hpp" // for TreeVocabula...
-#include <string>              // for string
-
-/// Tree include
+#include "custom_map.hpp"
+#include "refcount.hpp"
+#include "token_interface.hpp"
 #include "tree_node.hpp"
 #include "tree_node_mask.hpp"
 
-/// Utility include
-#include "refcount.hpp"
 #include <boost/preprocessor/facilities/empty.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
+
+#include <string>
 
 /**
  * @name forward declarations

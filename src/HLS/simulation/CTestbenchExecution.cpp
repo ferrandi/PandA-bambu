@@ -78,8 +78,8 @@ void CTestbenchExecution::ComputeRelationships(DesignFlowStepSet& relationship,
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         const auto c_backend_factory =
-             GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
+         const auto c_backend_factory = GetPointer<const CBackendStepFactory>(
+             design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::C_BACKEND));
          relationship.insert(c_backend_factory->CreateCBackendStep(c_backend_info));
       }
       case PRECEDENCE_RELATIONSHIP:

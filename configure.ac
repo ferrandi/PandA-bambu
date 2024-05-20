@@ -573,13 +573,13 @@ fi
 
 ################################# ABSEIL stuff ################################
 if test "x$panda_USE_ABSEIL" = xyes; then
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/abseil-cpp $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'"
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/abseil $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'"
    if test $? != 0; then
       AC_MSG_ERROR("Error in abseil configuration")
    fi
    AC_DEFINE(HAVE_ABSEIL, 1, "Define if abseil is used")
-   ABSEIL_DIR="$TOPSRCDIR/ext/abseil-cpp"
-   ABSEIL_OBJDIR="ext/abseil-cpp"
+   ABSEIL_DIR="$TOPSRCDIR/ext/abseil/abseil-cpp"
+   ABSEIL_OBJDIR="ext/abseil"
 fi
 AM_CONDITIONAL(BUILD_ABSEIL, test "x$panda_USE_ABSEIL" = xyes)
 AC_SUBST(ABSEIL_DIR)

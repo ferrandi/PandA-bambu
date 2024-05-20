@@ -40,11 +40,8 @@
 
 #ifndef PARSER_FLOW_STEP_FACTORY_HPP
 #define PARSER_FLOW_STEP_FACTORY_HPP
-
-/// Superclass include
 #include "design_flow_step_factory.hpp"
-
-/// utility include
+#include "parser_flow_step.hpp"
 #include "refcount.hpp"
 
 REF_FORWARD_DECL(application_manager);
@@ -66,21 +63,15 @@ class ParserFlowStepFactory : public DesignFlowStepFactory
    ParserFlowStepFactory(const DesignFlowManagerConstRef design_flow_manager, const application_managerRef AppM,
                          const ParameterConstRef parameters);
 
-   /**
-    * Destructor
-    */
    ~ParserFlowStepFactory() override;
 
    /**
-    * Return the prefix of the steps created by the factory
+    * @brief Create a parset step of given type
+    *
+    * @param parser_type Parser step type
+    * @param file_name Filename associated to the parser
+    * @return DesignFlowStepRef
     */
-   const std::string GetPrefix() const override;
-
-   /**
-    * Return a step given the signature
-    * @param signature is the signature of the step to be created
-    * @return the created step
-    */
-   DesignFlowStepRef CreateFlowStep(const std::string& signature) const override;
+   DesignFlowStepRef CreateParserStep(ParserFlowStep_Type parser_type, const std::string& file_name) const;
 };
 #endif

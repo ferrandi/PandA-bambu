@@ -43,18 +43,16 @@
 #ifndef TREE_NODE_FACTORY_HPP
 #define TREE_NODE_FACTORY_HPP
 
-#include "custom_map.hpp"      // for map
-#include "token_interface.hpp" // for TreeVocabula...
-#include <string>              // for string
-
-/// Tree include
+#include "custom_map.hpp"
+#include "refcount.hpp"
+#include "token_interface.hpp"
 #include "tree_node.hpp"
 #include "tree_node_mask.hpp"
 
-/// Utility include
-#include "refcount.hpp"
 #include <boost/preprocessor/facilities/empty.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
+
+#include <string>
 
 /**
  * @name forward declarations
@@ -91,7 +89,7 @@ struct tree_node_factory : public tree_node_mask
     * TNF.create_tree_node(identifier_node_id, TOK(TOK_IDENTIFIER_NODE));
     * * will add an identifier node to the tree_manager TM.
     */
-   void create_tree_node(const unsigned int node_id, enum kind);
+   tree_nodeRef create_tree_node(const unsigned int node_id, enum kind);
 
  private:
    /// tree_node_schema expresses the value of the fields of the tree node we would like to create.

@@ -50,14 +50,13 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 #include <boost/algorithm/string.hpp>
 
 HDLVarDeclFix::HDLVarDeclFix(const application_managerRef _AppM, unsigned int _function_id,
                              const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
     : VarDeclFix(_AppM, _function_id, _design_flow_manager, _parameters, HDL_VAR_DECL_FIX),
-      hdl_writer_type(static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)))
+      hdl_writer_type(parameters->getOption<HDLWriter_Language>(OPT_writer_language))
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -99,17 +98,15 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
 
    for(const auto& arg : fd->list_of_args)
    {
-      auto a = GetPointer<parm_decl>(GET_NODE(arg));
-      auto argName = GET_NODE(a->name);
-      THROW_ASSERT(GetPointer<identifier_node>(argName), "unexpected condition");
-      const std::string parm_name = GetPointer<identifier_node>(argName)->strg;
+      auto a = GetPointer<parm_decl>(arg);
+      THROW_ASSERT(GetPointer<identifier_node>(a->name), "unexpected condition");
+      const std::string parm_name = GetPointer<identifier_node>(a->name)->strg;
       recursive_examinate(arg, already_examinated_decls, already_examinated_names, already_examinated_type_names,
                           already_visited_ae);
       if(HLSMgr)
       {
-         argName = GET_NODE(a->name);
-         THROW_ASSERT(GetPointer<identifier_node>(argName), "unexpected condition");
-         const std::string parm_name_new = GetPointer<identifier_node>(argName)->strg;
+         THROW_ASSERT(GetPointer<identifier_node>(a->name), "unexpected condition");
+         const std::string parm_name_new = GetPointer<identifier_node>(a->name)->strg;
          const auto func_arch = HLSMgr->module_arch->GetArchitecture(fname);
          if(func_arch && parm_name != parm_name_new)
          {

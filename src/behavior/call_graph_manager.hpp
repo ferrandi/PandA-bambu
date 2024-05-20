@@ -218,7 +218,7 @@ class CallGraphManager
     * Returns the root functions (i.e., the functions that are not called by any other ones
     * @return the set of top function
     */
-   CustomSet<unsigned int> GetRootFunctions() const;
+   const CustomSet<unsigned int>& GetRootFunctions() const;
 
    /**
     * Returns the source code functions called by the root functions

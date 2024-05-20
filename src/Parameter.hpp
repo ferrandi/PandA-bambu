@@ -35,8 +35,6 @@
  * @brief this class is used to manage the command-line or XML options. It has to be specialized with respect to the
  * tool
  *
- *
- *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
@@ -49,14 +47,13 @@
 #include "exceptions.hpp"
 #include "refcount.hpp"
 #include "string_manipulation.hpp"
+#include "utility.hpp"
 
 #include "config_HAVE_BAMBU_RESULTS_XML.hpp"
 #include "config_HAVE_FROM_AADL_ASN_BUILT.hpp"
 #include "config_HAVE_FROM_C_BUILT.hpp"
 #include "config_HAVE_HLS_BUILT.hpp"
-#include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
-#include "config_HAVE_TO_C_BUILT.hpp"
 #include "config_RELEASE.hpp"
 
 #include <boost/algorithm/string.hpp>
@@ -72,22 +69,6 @@
 
 /// forward decl of xml Element
 class xml_element;
-#if HAVE_HLS_BUILT
-enum class CliqueCovering_Algorithm;
-enum class Evaluation_Mode;
-enum class HLSFlowStep_Type;
-enum class MemoryAllocation_ChannelsType;
-enum class MemoryAllocation_Policy;
-enum class ParametricListBased_Metric;
-enum class SDCScheduling_Algorithm;
-#endif
-#if HAVE_HOST_PROFILING_BUILT
-enum class HostProfiling_Method;
-#endif
-#if HAVE_FROM_C_BUILT
-enum class ActorGraphBackend_Type;
-enum class CompilerWrapper_CompilerTarget;
-#endif
 
 /// An integer value to return if parameters have been right parsed
 #define PARAMETER_PARSED INT_MIN
@@ -165,20 +146,6 @@ enum enum_option
                    BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, SPIDER_OPTIONS)
                        BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, SYNTHESIS_OPTIONS)
                            BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, TREE_PANDA_COMPILER_OPTIONS)
-};
-
-class OptionMap : public std::map<std::string, std::string>
-{
- public:
-   /**
-    * Constructor
-    */
-   OptionMap() = default;
-
-   /**
-    * Destructor
-    */
-   ~OptionMap() = default;
 };
 
 #define DEFAULT_OPT_BASE 512
@@ -311,16 +278,16 @@ class Parameter
    char** const argv;
 
    /// Map between the name of the option and the related string-form value
-   OptionMap Options;
+   CustomMap<std::string, std::string> Options;
 
    /// Map between the name of a parameter and the related string-form value
    CustomMap<std::string, std::string> panda_parameters;
 
    /// Map between an enum option and the related string-form value
-   std::map<enum enum_option, std::string> enum_options;
+   CustomMap<enum enum_option, std::string> enum_options;
 
    /// Name of the enum options
-   std::map<enum enum_option, std::string> option_name;
+   static const CustomMap<enum enum_option, std::string> option_name;
 
    /// Classes to be debugged
    CustomUnorderedSet<std::string> debug_classes;
@@ -451,47 +418,20 @@ class Parameter
    /**
     * Returns the value of an option
     * @param name is the name of the option
-    * @param variable is the variable where the value of the option will be saved
-    */
-   template <typename G>
-   void getOption(const std::string& name, G& variable) const
-   {
-      THROW_ASSERT(Options.find(name) != Options.end(), "Option \"" + name + "\" not stored");
-      variable = boost::lexical_cast<G>(Options.find(name)->second);
-   }
-
-   /**
-    * Returns the value of an option
-    * @param name is the name of the option
-    * @param variable is the variable where the value of the option will be saved
-    */
-   template <typename G>
-   void getOption(const char* name, G& variable) const
-   {
-      getOption(std::string(name), variable);
-   }
-
-   /**
-    * Returns the value of an option
-    * @param name is the name of the option
     * @param return the value of the option
     */
-   template <typename G>
-   G getOption(const std::string& name) const
+   template <typename G, std::enable_if_t<!std::is_enum<G>::value, bool> = true>
+   inline G getOption(const std::string& name) const
    {
       THROW_ASSERT(Options.find(name) != Options.end(), "Option \"" + name + "\" not stored");
       return boost::lexical_cast<G>(Options.find(name)->second);
    }
 
-   /**
-    * Returns the value of an option
-    * @param name is the name of the option
-    * @param return the value of the option
-    */
-   template <typename G>
-   G getOption(const char* name) const
+   template <typename G, std::enable_if_t<std::is_enum<G>::value, bool> = true>
+   inline G getOption(const std::string& name) const
    {
-      return getOption<G>(std::string(name));
+      THROW_ASSERT(Options.find(name) != Options.end(), "Option \"" + name + "\" not stored");
+      return static_cast<G>(std::stoll(Options.find(name)->second));
    }
 
    /**
@@ -499,12 +439,18 @@ class Parameter
     * @param name is the name of the option
     * @param return the value of the option
     */
-   template <typename G>
-   G getOption(const enum enum_option name) const
+   template <typename G, std::enable_if_t<!std::is_enum<G>::value, bool> = true>
+   inline G getOption(const enum enum_option name) const
    {
-      THROW_ASSERT(enum_options.find(name) != enum_options.end(),
-                   "Option \"" + (option_name.find(name))->second + "\" not stored");
+      THROW_ASSERT(enum_options.find(name) != enum_options.end(), "Option \"" + option_name.at(name) + "\" not stored");
       return boost::lexical_cast<G>(enum_options.find(name)->second);
+   }
+
+   template <typename G, std::enable_if_t<std::is_enum<G>::value, bool> = true>
+   inline G getOption(const enum enum_option name) const
+   {
+      THROW_ASSERT(enum_options.find(name) != enum_options.end(), "Option \"" + option_name.at(name) + "\" not stored");
+      return static_cast<G>(std::stoll(enum_options.find(name)->second));
    }
 
    /**
@@ -512,21 +458,16 @@ class Parameter
     * @param name is the name of the option
     * @param value is the value of the option to be saved
     */
-   template <typename G>
+   template <typename G, std::enable_if_t<!std::is_enum<G>::value, bool> = true>
    void setOption(const std::string& name, const G value)
    {
       Options[name] = STR(value);
    }
 
-   /**
-    * Sets the value of an option
-    * @param name is the name of the option
-    * @param value is the value of the option to be saved
-    */
-   template <typename G>
-   void setOption(const char* name, const G value)
+   template <typename G, std::enable_if_t<std::is_enum<G>::value, bool> = true>
+   void setOption(const std::string& name, const G value)
    {
-      Options[std::string(name)] = STR(value);
+      Options[name] = std::to_string(static_cast<long long>(value));
    }
 
    /**
@@ -534,20 +475,16 @@ class Parameter
     * @param name is the name of the option
     * @param value is the value of the option to be saved
     */
-   template <typename G>
-   void setOption(const enum enum_option name, const G value)
+   template <typename G, std::enable_if_t<!std::is_enum<G>::value, bool> = true>
+   inline void setOption(const enum enum_option name, const G value)
    {
       enum_options[name] = STR(value);
    }
 
-   /**
-    * Tests if an option has been stored
-    * @param name is the name of the option
-    * @return true if the option is in the map, false otherwise
-    */
-   bool isOption(const std::string& name) const
+   template <typename G, std::enable_if_t<std::is_enum<G>::value, bool> = true>
+   inline void setOption(const enum enum_option name, const G value)
    {
-      return Options.find(name) != Options.end();
+      enum_options[name] = std::to_string(static_cast<long long>(value));
    }
 
    /**
@@ -555,9 +492,9 @@ class Parameter
     * @param name is the name of the option
     * @return true if the option is in the map, false otherwise
     */
-   bool isOption(const char* name) const
+   inline bool isOption(const std::string& name) const
    {
-      return isOption(std::string(name));
+      return Options.count(name);
    }
 
    /**
@@ -565,9 +502,9 @@ class Parameter
     * @param name is the name of the option
     * @return true if the option is in the map, false otherwise
     */
-   bool isOption(const enum enum_option name) const
+   inline bool isOption(const enum enum_option name) const
    {
-      return enum_options.find(name) != enum_options.end();
+      return enum_options.count(name);
    }
 
    /**
@@ -575,14 +512,9 @@ class Parameter
     * @param name is the name of the option
     * @return true if the option has been eliminated, false otherwise
     */
-   bool removeOption(const enum enum_option name)
+   inline bool removeOption(const enum enum_option name)
    {
-      if(!isOption(name))
-      {
-         return false;
-      }
-      enum_options.erase(name);
-      return true;
+      return enum_options.erase(name);
    }
 
    /**
@@ -590,24 +522,9 @@ class Parameter
     * @param name is the name of the option
     * @return true if the option has been eliminated, false otherwise
     */
-   bool removeOption(const char* name)
+   inline bool removeOption(const std::string& name)
    {
-      return removeOption(std::string(name));
-   }
-
-   /**
-    * Remove an option
-    * @param name is the name of the option
-    * @return true if the option has been eliminated, false otherwise
-    */
-   bool removeOption(const std::string& name)
-   {
-      if(!isOption(name))
-      {
-         return false;
-      }
-      Options.erase(name);
-      return true;
+      return Options.erase(name);
    }
 
    /**
@@ -668,7 +585,7 @@ class Parameter
     * @param return the value of the parameter
     */
    template <typename G>
-   G GetParameter(const std::string& name) const
+   inline G GetParameter(const std::string& name) const
    {
       THROW_ASSERT(panda_parameters.find(name) != panda_parameters.end(), "Parameter \"" + name + "\" not stored");
       return boost::lexical_cast<G>(panda_parameters.find(name)->second);
@@ -679,7 +596,10 @@ class Parameter
     * @param name is the name of the parameter
     * @return true if the parameter has been set
     */
-   bool IsParameter(const std::string& name) const;
+   inline bool IsParameter(const std::string& name) const
+   {
+      return panda_parameters.count(name);
+   }
 
    /**
     * Return argv
@@ -687,75 +607,128 @@ class Parameter
    const std::vector<std::string> CGetArgv() const;
 };
 
-template <>
-CustomSet<std::string> Parameter::getOption(const enum enum_option name) const;
-
-template <>
-std::list<std::string> Parameter::getOption(const enum enum_option name) const;
-
-template <>
-std::vector<std::string> Parameter::getOption(const enum enum_option name) const;
-
-#if HAVE_HOST_PROFILING_BUILT
-template <>
-HostProfiling_Method Parameter::getOption(const enum enum_option name) const;
-#endif
-
-template <>
-Parameters_FileFormat Parameter::getOption(const enum enum_option name) const;
-
-#if HAVE_FROM_C_BUILT
-template <>
-CompilerWrapper_CompilerTarget Parameter::getOption(const enum enum_option name) const;
-#endif
-
-#if HAVE_FROM_C_BUILT
-enum class CompilerWrapper_OptimizationSet;
-template <>
-CompilerWrapper_OptimizationSet Parameter::getOption(const enum enum_option name) const;
-template <>
-void Parameter::setOption(const enum enum_option name, const CompilerWrapper_OptimizationSet value);
-#endif
-
-#if HAVE_TO_C_BUILT
-template <>
-ActorGraphBackend_Type Parameter::getOption(const enum enum_option name) const;
-#endif
-
-#if HAVE_HLS_BUILT
-template <>
-HLSFlowStep_Type Parameter::getOption(const enum enum_option name) const;
-template <>
-void Parameter::setOption(const enum enum_option name, const HLSFlowStep_Type hls_flow_step_type);
-
-template <>
-MemoryAllocation_Policy Parameter::getOption(const enum enum_option name) const;
-template <>
-void Parameter::setOption(const enum enum_option name, const MemoryAllocation_Policy memory_allocation_policy);
-
-template <>
-MemoryAllocation_ChannelsType Parameter::getOption(const enum enum_option name) const;
-template <>
-void Parameter::setOption(const enum enum_option name,
-                          const MemoryAllocation_ChannelsType memory_allocation_channels_type);
-
-template <>
-CliqueCovering_Algorithm Parameter::getOption(const enum enum_option name) const;
-template <>
-void Parameter::setOption(const enum enum_option name, const CliqueCovering_Algorithm clique_covering_algorithm);
-
-template <>
-Evaluation_Mode Parameter::getOption(const enum enum_option name) const;
-template <>
-void Parameter::setOption(const enum enum_option name, const Evaluation_Mode evaluation_mode);
-
-template <>
-ParametricListBased_Metric Parameter::getOption(const enum enum_option name) const;
-template <>
-void Parameter::setOption(const enum enum_option name, const ParametricListBased_Metric parametric_list_based_metric);
-#endif
-
 using ParameterRef = refcount<Parameter>;
 using ParameterConstRef = refcount<const Parameter>;
 
+template <>
+inline long long Parameter::getOption(const enum enum_option name) const
+{
+   THROW_ASSERT(enum_options.find(name) != enum_options.end(), "Option \"" + option_name.at(name) + "\" not stored");
+   return std::stoll(enum_options.find(name)->second);
+}
+
+template <>
+inline long Parameter::getOption(const enum enum_option name) const
+{
+   THROW_ASSERT(enum_options.find(name) != enum_options.end(), "Option \"" + option_name.at(name) + "\" not stored");
+   return std::stol(enum_options.find(name)->second);
+}
+
+template <>
+inline int Parameter::getOption(const enum enum_option name) const
+{
+   THROW_ASSERT(enum_options.find(name) != enum_options.end(), "Option \"" + option_name.at(name) + "\" not stored");
+   return std::stoi(enum_options.find(name)->second);
+}
+
+template <>
+inline unsigned long long Parameter::getOption(const enum enum_option name) const
+{
+   THROW_ASSERT(enum_options.find(name) != enum_options.end(), "Option \"" + option_name.at(name) + "\" not stored");
+   return std::stoull(enum_options.find(name)->second);
+}
+
+template <>
+inline unsigned long Parameter::getOption(const enum enum_option name) const
+{
+   THROW_ASSERT(enum_options.find(name) != enum_options.end(), "Option \"" + option_name.at(name) + "\" not stored");
+   return std::stoul(enum_options.find(name)->second);
+}
+
+template <>
+inline unsigned int Parameter::getOption(const enum enum_option name) const
+{
+   return static_cast<unsigned int>(getOption<unsigned long>(name));
+}
+
+template <>
+inline double Parameter::getOption(const enum enum_option name) const
+{
+   THROW_ASSERT(enum_options.find(name) != enum_options.end(), "Option \"" + option_name.at(name) + "\" not stored");
+   return std::stod(enum_options.find(name)->second);
+}
+
+template <>
+inline std::filesystem::path Parameter::getOption(const enum enum_option name) const
+{
+   THROW_ASSERT(enum_options.find(name) != enum_options.end(), "Option \"" + option_name.at(name) + "\" not stored");
+   return std::filesystem::path(enum_options.find(name)->second);
+}
+
+template <>
+inline CustomSet<std::string> Parameter::getOption(const enum enum_option name) const
+{
+   return string_to_container<CustomSet<std::string>>(getOption<std::string>(name), STR_CST_string_separator);
+}
+
+template <>
+inline std::list<std::string> Parameter::getOption(const enum enum_option name) const
+{
+   return string_to_container<std::list<std::string>>(getOption<std::string>(name), STR_CST_string_separator);
+}
+
+template <>
+inline std::vector<std::string> Parameter::getOption(const enum enum_option name) const
+{
+   return string_to_container<std::vector<std::string>>(getOption<std::string>(name), STR_CST_string_separator);
+}
+
+template <>
+inline long long Parameter::GetParameter(const std::string& name) const
+{
+   THROW_ASSERT(panda_parameters.find(name) != panda_parameters.end(), "Parameter \"" + name + "\" not stored");
+   return std::stoll(panda_parameters.find(name)->second);
+}
+
+template <>
+inline long Parameter::GetParameter(const std::string& name) const
+{
+   THROW_ASSERT(panda_parameters.find(name) != panda_parameters.end(), "Parameter \"" + name + "\" not stored");
+   return std::stol(panda_parameters.find(name)->second);
+}
+
+template <>
+inline int Parameter::GetParameter(const std::string& name) const
+{
+   THROW_ASSERT(panda_parameters.find(name) != panda_parameters.end(), "Parameter \"" + name + "\" not stored");
+   return std::stoi(panda_parameters.find(name)->second);
+}
+
+template <>
+inline unsigned long long Parameter::GetParameter(const std::string& name) const
+{
+   THROW_ASSERT(panda_parameters.find(name) != panda_parameters.end(), "Parameter \"" + name + "\" not stored");
+   return std::stoull(panda_parameters.find(name)->second);
+}
+
+template <>
+inline unsigned long Parameter::GetParameter(const std::string& name) const
+{
+   THROW_ASSERT(panda_parameters.find(name) != panda_parameters.end(), "Parameter \"" + name + "\" not stored");
+   return std::stoul(panda_parameters.find(name)->second);
+}
+
+template <>
+inline unsigned int Parameter::GetParameter(const std::string& name) const
+{
+   THROW_ASSERT(panda_parameters.find(name) != panda_parameters.end(), "Parameter \"" + name + "\" not stored");
+   return static_cast<unsigned int>(GetParameter<unsigned long>(name));
+}
+
+template <>
+inline double Parameter::GetParameter(const std::string& name) const
+{
+   THROW_ASSERT(panda_parameters.find(name) != panda_parameters.end(), "Parameter \"" + name + "\" not stored");
+   return std::stod(panda_parameters.find(name)->second);
+}
 #endif

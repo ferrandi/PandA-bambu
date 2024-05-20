@@ -511,8 +511,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          }
          if((GET_TYPE(data, roc) & TYPE_PHI) != 0)
          {
-            const auto phi_node =
-                HLSMgr->get_tree_manager()->get_tree_node_const(data->CGetOpNodeInfo(roc)->GetNodeId());
+            const auto phi_node = HLSMgr->get_tree_manager()->GetTreeNode(data->CGetOpNodeInfo(roc)->GetNodeId());
             for(const auto& def_edge : GetPointer<const gimple_phi>(phi_node)->CGetDefEdgesList())
             {
                unsigned int tree_var = def_edge.first->index;
@@ -623,8 +622,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
             {
                unsigned int written_phi = HLSMgr->get_produced_value(HLS->functionId, eoc);
                bool postponed_phi = false;
-               const auto phi_node =
-                   HLSMgr->get_tree_manager()->get_tree_node_const(data->CGetOpNodeInfo(eoc)->GetNodeId());
+               const auto phi_node = HLSMgr->get_tree_manager()->GetTreeNode(data->CGetOpNodeInfo(eoc)->GetNodeId());
                for(const auto& def_edge : GetPointer<const gimple_phi>(phi_node)->CGetDefEdgesList())
                {
                   unsigned int tree_temp = def_edge.first->index;
