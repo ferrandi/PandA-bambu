@@ -223,7 +223,7 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
    bool multiFileP =
        !tb && parameters->IsParameter("enable-multifiles") && parameters->GetParameter<bool>("enable-multifiles");
    /// default language
-   auto language = static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
+   auto language = parameters->getOption<HDLWriter_Language>(OPT_writer_language);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  Everything seems ok. Let's start with the real job.");
 

@@ -74,7 +74,6 @@
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 #include "utility.hpp"
 #include "var_pp_functor.hpp"
 
@@ -87,54 +86,47 @@
 #include "basic_blocks_profiling_c_writer.hpp"
 #endif
 
-#if HAVE_UNORDERED
+#if SIZE_WIDTH < 64
 #include <boost/functional/hash/hash.hpp>
+#endif
 
 /// Hash function for std::pair<tree_nodeRef, tree_nodeRef>
-namespace std
+struct TreeNodesPairHash
 {
-   template <>
-   struct hash<std::pair<tree_nodeRef, tree_nodeRef>>
-       : public std::unary_function<std::pair<tree_nodeRef, tree_nodeRef>, std::size_t>
+   size_t operator()(const std::pair<tree_nodeRef, tree_nodeRef>& val) const
    {
-      std::size_t operator()(const std::pair<tree_nodeRef, tree_nodeRef>& val) const
-      {
-         std::size_t hash_value = 0;
-         boost::hash_combine(hash_value, val.first);
-         boost::hash_combine(hash_value, val.second);
-         return hash_value;
-      }
-   };
-} // namespace std
-class TreeNodesPairSet : public CustomUnorderedSet<std::pair<tree_nodeRef, tree_nodeRef>>
-{
-};
+      size_t hash_value = 0;
+#if SIZE_WIDTH < 64
+      boost::hash_combine(hash_value, val.first);
+      boost::hash_combine(hash_value, val.second);
 #else
-class TreeNodesPairSorter
-    : public std::binary_function<std::pair<tree_nodeRef, tree_nodeRef>, std::pair<tree_nodeRef, tree_nodeRef>, bool>
-{
- public:
-   /**
-    * Compare position of two const tree nodes
-    * @param x is the first pair
-    * @param y is the second pair
-    * @return true if x is less than y
-    */
-   bool operator()(const std::pair<tree_nodeRef, tree_nodeRef>& x, const std::pair<tree_nodeRef, tree_nodeRef>& y) const
-   {
-      if(x.first->index == y.first->index)
-      {
-         return x.second->index < y.second->index;
-      }
-      else
-      {
-         return x.first->index < y.first->index;
-      }
+      hash_value = (static_cast<size_t>(val.second->index) << 32) | val.first->index;
+#endif
+      return hash_value;
    }
 };
-class TreeNodesPairSet : public OrderedSetStd<std::pair<tree_nodeRef, tree_nodeRef>, TreeNodesPairSorter>
+
+struct TreeNodesPairEqual
 {
+   bool operator()(const std::pair<tree_nodeRef, tree_nodeRef>& x, const std::pair<tree_nodeRef, tree_nodeRef>& y) const
+   {
+      return x.first->index == y.first->index && x.second->index == y.second->index;
+   }
 };
+
+struct TreeNodesPairSorter
+{
+   bool operator()(const std::pair<tree_nodeRef, tree_nodeRef>& x, const std::pair<tree_nodeRef, tree_nodeRef>& y) const
+   {
+      return x.first->index == y.first->index ? x.second->index < y.second->index : x.first->index < y.first->index;
+   }
+};
+
+#if HAVE_UNORDERED
+using TreeNodesPairSet =
+    CustomUnorderedSet<std::pair<tree_nodeRef, tree_nodeRef>, TreeNodesPairHash, TreeNodesPairEqual>;
+#else
+using TreeNodesPairSet = CustomOrderedSet<std::pair<tree_nodeRef, tree_nodeRef>, TreeNodesPairSorter>;
 #endif
 
 CWriter::CWriter(const HLS_managerConstRef _HLSMgr, const InstructionWriterRef _instruction_writer,
@@ -161,7 +153,7 @@ CWriter::~CWriter() = default;
 CWriterRef CWriter::CreateCWriter(const CBackendInformationConstRef c_backend_info, const HLS_managerConstRef hls_man,
                                   const IndentedOutputStreamRef indented_output_stream)
 {
-   const auto app_man = RefcountCast<const application_manager>(hls_man);
+   const auto app_man = std::static_pointer_cast<const application_manager>(hls_man);
    switch(c_backend_info->type)
    {
       case(CBackendInformation::CB_BBP):
@@ -380,13 +372,13 @@ void CWriter::WriteHeader()
       const auto FB = HLSMgr->CGetFunctionBehavior(f_id);
       const auto BH = FB->CGetBehavioralHelper();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing includes for " + BH->get_function_name());
-      AnalyzeInclude(TM->CGetTreeReindex(f_id), BH, includes_to_write, already_visited);
+      AnalyzeInclude(TM->GetTreeNode(f_id), BH, includes_to_write, already_visited);
 
       TreeNodeConstSet decl_nodes;
       const auto& tmp_vars = GetLocalVariables(f_id);
       for(const auto& tmp_var : tmp_vars)
       {
-         decl_nodes.insert(TM->CGetTreeReindex(tmp_var));
+         decl_nodes.insert(TM->GetTreeNode(tmp_var));
       }
       const auto funParams = BH->GetParameters();
       decl_nodes.insert(funParams.begin(), funParams.end());
@@ -475,7 +467,7 @@ void CWriter::WriteGlobalDeclarations()
                      "-->Writing external function prototype: " + f_bh->get_function_name());
       if(f_bh->function_has_to_be_printed(fid))
       {
-         DeclareFunctionTypes(TM->CGetTreeReindex(fid));
+         DeclareFunctionTypes(TM->GetTreeNode(fid));
          WriteFunctionDeclaration(fid);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -499,7 +491,7 @@ void CWriter::WriteGlobalDeclarations()
 
       if(f_bh->function_has_to_be_printed(fid))
       {
-         DeclareFunctionTypes(TM->CGetTreeReindex(fid));
+         DeclareFunctionTypes(TM->GetTreeNode(fid));
          WriteFunctionDeclaration(fid);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -994,7 +986,7 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Operation is a multiif");
             unsigned int node_id = local_rec_cfgGraph->CGetOpNodeInfo(last_stmt)->GetNodeId();
-            const tree_nodeRef node = TM->get_tree_node_const(node_id);
+            const tree_nodeRef node = TM->GetTreeNode(node_id);
             THROW_ASSERT(node->get_kind() == gimple_multi_way_if_K, "unexpected node");
             auto* gmwi = GetPointer<gimple_multi_way_if>(node);
             std::map<unsigned int, bool> add_elseif_to_goto;
@@ -1026,8 +1018,7 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
                   if(cond.first)
                   {
                      indented_output_stream->Append("else if(");
-                     indented_output_stream->Append(
-                         local_rec_behavioral_helper->PrintVariable(GET_INDEX_NODE(cond.first)));
+                     indented_output_stream->Append(local_rec_behavioral_helper->PrintVariable(cond.first->index));
                      indented_output_stream->Append(")\n");
                   }
                   else
@@ -1108,7 +1099,7 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
                      }
 
                      indented_output_stream->Append(
-                         "case " + local_rec_behavioral_helper->PrintConstant(TM->CGetTreeReindex(*eIdBeg)));
+                         "case " + local_rec_behavioral_helper->PrintConstant(TM->GetTreeNode(*eIdBeg)));
                   }
                   indented_output_stream->Append(":\n");
                }
@@ -1466,8 +1457,8 @@ void CWriter::DeclareType(const tree_nodeConstRef& varType, const BehavioralHelp
 
    // Check that the variable really needs the declaration of a new type
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Declaration of type " + type_name + " (" + GET_CONST_NODE(varType)->ToString() + " - " +
-                      GET_CONST_NODE(real_var_type)->ToString() + ") in function " + routine_name);
+                  "-->Declaration of type " + type_name + " (" + varType->ToString() + " - " +
+                      real_var_type->ToString() + ") in function " + routine_name);
 
    if(!globally_declared_types.count(type_name) && !locally_declared_types.count(type_name))
    {
@@ -1502,7 +1493,7 @@ void CWriter::DeclareType(const tree_nodeConstRef& varType, const BehavioralHelp
          DeclareType(type_to_be_declared, BH, locally_declared_types);
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Declared type " + GET_CONST_NODE(varType)->ToString());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Declared type " + varType->ToString());
 }
 
 void CWriter::DeclareVariable(const tree_nodeConstRef& curVar, CustomSet<unsigned int>& already_declared_variables,
@@ -1525,8 +1516,7 @@ void CWriter::DeclareVariable(const tree_nodeConstRef& curVar, CustomSet<unsigne
                         "For variable " + STR(curVar) + " recursing on " + STR(initVar));
          if(!already_declared_variables.count(initVar) && !globallyDeclVars.count(initVar))
          {
-            DeclareVariable(TM->CGetTreeReindex(initVar), already_declared_variables, locally_declared_types, BH,
-                            varFunc);
+            DeclareVariable(TM->GetTreeNode(initVar), already_declared_variables, locally_declared_types, BH, varFunc);
          }
       }
    }
@@ -1540,7 +1530,7 @@ void CWriter::DeclareVariable(const tree_nodeConstRef& curVar, CustomSet<unsigne
          indented_output_stream->Append("//declaring variable " + STR(curVar) + " - type: " + STR(variable_type) +
                                         "\n");
       }
-      if(GetPointer<const function_decl>(GET_CONST_NODE(curVar)))
+      if(GetPointer<const function_decl>(curVar))
       {
          instrWriter->declareFunction(curVar->index);
          indented_output_stream->Append(";\n");
@@ -1575,14 +1565,14 @@ void CWriter::DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declare
       {
          return false;
       }
-      const tree_nodeRef node = TreeMan->get_tree_node_const(obj);
+      const tree_nodeRef node = TreeMan->GetTreeNode(obj);
       if(node->get_kind() == parm_decl_K)
       {
          return false;
       }
       auto* sa = GetPointer<ssa_name>(node);
-      if(sa && (sa->volatile_flag || (GET_NODE(sa->CGetDefStmt())->get_kind() == gimple_nop_K)) && sa->var &&
-         (GET_NODE(sa->var)->get_kind() == parm_decl_K))
+      if(sa && (sa->volatile_flag || (sa->CGetDefStmt()->get_kind() == gimple_nop_K)) && sa->var &&
+         (sa->var->get_kind() == parm_decl_K))
       {
          return false;
       }
@@ -1595,7 +1585,7 @@ void CWriter::DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declare
    {
       if(is_to_declare(var))
       {
-         DeclareVariable(TM->CGetTreeReindex(var), already_declared_variables, already_declared_types, BH, varFunc);
+         DeclareVariable(TM->GetTreeNode(var), already_declared_variables, already_declared_types, BH, varFunc);
       }
    }
    var_pp_functorRef variableFunctor(new std_var_pp_functor(BH));
@@ -1661,23 +1651,22 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
       const BBNodeInfoConstRef si = bb_fcfgGraph->CGetBBNodeInfo(s);
       for(const auto& phi_op : si->block->CGetPhiList())
       {
-         if(phi_instructions.find(GET_INDEX_NODE(phi_op)) == phi_instructions.end())
+         if(phi_instructions.find(phi_op->index) == phi_instructions.end())
          {
             continue;
          }
-         auto* pn = GetPointer<gimple_phi>(GET_NODE(phi_op));
+         auto* pn = GetPointer<gimple_phi>(phi_op);
          tree_nodeRef dest = pn->res;
-         unsigned int dest_i = GET_INDEX_NODE(pn->res);
+         unsigned int dest_i = pn->res->index;
          bool is_virtual = pn->virtual_flag;
          if(!is_virtual)
          {
             bb_dest_definition[dest_i] = si->block->number;
-            for(const auto& def_edge : pn->CGetDefEdgesList())
+            for(const auto& [src, edge_id] : pn->CGetDefEdgesList())
             {
-               if(def_edge.second == bi_id)
+               if(edge_id == bi_id)
                {
-                  tree_nodeRef src = def_edge.first;
-                  unsigned int src_i = GET_INDEX_NODE(def_edge.first);
+                  unsigned int src_i = src->index;
                   copy_set.insert(std::pair<tree_nodeRef, tree_nodeRef>(src, dest));
                   map[src_i] = src_i;
                   map[dest_i] = dest_i;
@@ -1692,12 +1681,14 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
    /// Pass two: Set up the worklist of initial copies
    for(auto cs_it = copy_set.begin(); cs_it != copy_set.end();)
    {
-      auto current_it = cs_it;
-      ++cs_it;
-      if(used_by_another.find(GET_INDEX_NODE(current_it->second)) == used_by_another.end())
+      if(used_by_another.find(cs_it->second->index) == used_by_another.end())
       {
-         worklist.insert(*current_it);
-         copy_set.erase(current_it);
+         worklist.insert(*cs_it);
+         cs_it = copy_set.erase(cs_it);
+      }
+      else
+      {
+         ++cs_it;
       }
    }
 
@@ -1707,11 +1698,10 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
       TreeNodesPairSet worklist_restart;
       do
       {
-         for(auto& wl : worklist)
+         for(auto& [src, dest] : worklist)
          {
-            tree_nodeRef src = GET_NODE(wl.first);
-            unsigned int src_i = GET_INDEX_NODE(wl.first);
-            unsigned int dest_i = GET_INDEX_NODE(wl.second);
+            unsigned int src_i = src->index;
+            unsigned int dest_i = dest->index;
             /// if dest \belongs live\_out(b)
             /// wrt the original algorithm an optimization has been added: in case b does not dominate any other node we
             /// can skip the creation of t
@@ -1762,14 +1752,16 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
             basic_block_tail[bi_id] += copy_statement;
             // map[src_i] = dest_i;
 
-            for(auto cs1_it = copy_set.begin(); cs1_it != copy_set.end();)
+            for(auto cs_it = copy_set.begin(); cs_it != copy_set.end();)
             {
-               auto current1_it = cs1_it;
-               ++cs1_it;
-               if(src == current1_it->second)
+               if(src == cs_it->second)
                {
-                  worklist_restart.insert(*current1_it);
-                  copy_set.erase(current1_it);
+                  worklist_restart.insert(*cs_it);
+                  cs_it = copy_set.erase(cs_it);
+               }
+               else
+               {
+                  ++cs_it;
                }
             }
          }
@@ -1777,36 +1769,28 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
          worklist_restart.clear();
       } while(!worklist.empty());
 
-      auto cs2_it_end = copy_set.end();
-      auto cs2_it = copy_set.begin();
-      if(cs2_it != cs2_it_end)
+      if(copy_set.size())
       {
-         auto current2_it = cs2_it;
-         unsigned int dest_i = GET_INDEX_NODE(current2_it->second);
+         const auto begin_it = copy_set.begin();
+         unsigned int dest_i = begin_it->second->index;
          /// check if dest_i is source of any other pair in copy_set
          /// this optimization is not described in the original algorithm
-         ++cs2_it;
-         bool add_temporary = false;
-         for(; cs2_it != cs2_it_end; ++cs2_it)
+         for(auto cs_it = std::next(begin_it); cs_it != copy_set.end(); ++cs_it)
          {
-            if(GET_INDEX_NODE(cs2_it->first) == dest_i)
+            if(cs_it->first->index == dest_i)
             {
-               add_temporary = true;
+               /// create a new symbol
+               unsigned int t_i = create_new_identifier(symbol_table);
+               /// insert a copy from dest to a new temp t at the end of b
+               basic_block_tail[bi_id] += symbol_table.at(t_i) + " = " + (*variableFunctor)(dest_i) + ";\n";
+               created_variables[t_i] = dest_i;
+               map[t_i] = t_i;
+               map[dest_i] = t_i;
                break;
             }
          }
-         if(add_temporary)
-         {
-            /// create a new symbol
-            unsigned int t_i = create_new_identifier(symbol_table);
-            /// insert a copy from dest to a new temp t at the end of b
-            basic_block_tail[bi_id] += symbol_table.find(t_i)->second + " = " + (*variableFunctor)(dest_i) + ";\n";
-            created_variables[t_i] = dest_i;
-            map[t_i] = t_i;
-            map[dest_i] = t_i;
-         }
-         worklist.insert(*current2_it);
-         copy_set.erase(current2_it);
+         worklist.insert(*begin_it);
+         copy_set.erase(begin_it);
       }
    }
 }
@@ -1931,7 +1915,7 @@ void CWriter::WriteBuiltinWaitCall()
       {
          indented_output_stream->Append(I.first + " " + I.second + " = va_arg(ap, " + I.first + ");\n");
       }
-      const auto returnType_node = tree_helper::GetFunctionReturnType(TM->CGetTreeReindex(id));
+      const auto returnType_node = tree_helper::GetFunctionReturnType(TM->GetTreeNode(id));
       std::string returnType;
       if(returnType_node)
       {

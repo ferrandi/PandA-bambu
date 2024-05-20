@@ -43,25 +43,27 @@
 
 #ifndef DESIGN_FLOW_GRAPH_HPP
 #define DESIGN_FLOW_GRAPH_HPP
+#include "custom_map.hpp"
+#include "design_flow_step.hpp"
+#include "edge_info.hpp"
+#include "graph.hpp"
+#include "graph_info.hpp"
+#include "node_info.hpp"
+#include "refcount.hpp"
 
-#include "edge_info.hpp"  // for EdgeInfo, EdgeIn...
-#include "graph.hpp"      // for vertex, EdgeDesc...
-#include "graph_info.hpp" // for GraphInfo
-#include "node_info.hpp"  // for NodeInfo
-#include "refcount.hpp"   // for refcount, Refcou...
-#include <cstddef>        // for size_t
-#include <iosfwd>         // for ostream
-#include <string>         // for string
-
-#include "custom_map.hpp" // for unordered_map
+#include <cstddef>
+#include <iosfwd>
+#include <string>
 
 CONSTREF_FORWARD_DECL(Parameter);
-REF_FORWARD_DECL(DesignFlowGraphsCollection);
-REF_FORWARD_DECL(DesignFlowStep);
+CONSTREF_FORWARD_DECL(DesignFlowStepInfo);
+CONSTREF_FORWARD_DECL(DesignFlowInfo);
+REF_FORWARD_DECL(DesignFlowStepInfo);
+REF_FORWARD_DECL(DesignFlowInfo);
 enum class DesignFlowStep_Status;
 class SdfGraph;
 
-struct DesignFlowStepInfo : public NodeInfo
+class DesignFlowStepInfo
 {
  public:
    /// The step corresponding to a vertex
@@ -70,274 +72,138 @@ struct DesignFlowStepInfo : public NodeInfo
    /// Status of a step
    DesignFlowStep_Status status;
 
-   /**
-    * Constructor
-    */
-   DesignFlowStepInfo(const DesignFlowStepRef _design_flow_step, const bool unnecessary);
+   DesignFlowStepInfo(const DesignFlowStepRef& _design_flow_step, const bool unnecessary);
 };
-using DesignFlowStepInfoRef = refcount<DesignFlowStepInfo>;
-using DesignFlowStepInfoConstRef = refcount<const DesignFlowStepInfo>;
 
-struct DesignFlowDependenceInfo : public EdgeInfo
+using DesignFlowEdge = unsigned char;
+
+class DesignFlowInfo
 {
  public:
-   /**
-    * Constructor
-    */
-   DesignFlowDependenceInfo();
-
-   /**
-    * Destructor
-    */
-   ~DesignFlowDependenceInfo() override;
-};
-using DesignFlowDependenceInfoRef = refcount<DesignFlowDependenceInfo>;
-using DesignFlowDependenceInfoConstRef = refcount<const DesignFlowDependenceInfo>;
-
-struct DesignFlowGraphInfo : public GraphInfo
-{
- public:
+   using vertex_descriptor =
+       boost::adjacency_list_traits<boost::vecS, boost::vecS, boost::bidirectionalS>::vertex_descriptor;
    /// The entry vertex of the graph
-   vertex entry;
+   vertex_descriptor entry;
 
    /// The exit vertex of the graph
-   vertex exit;
+   vertex_descriptor exit;
 };
-using DesignFlowGraphInfoRef = refcount<DesignFlowGraphInfo>;
-using DesignFlowGraphInfoConstRef = refcount<const DesignFlowGraphInfo>;
 
-class DesignFlowGraphsCollection : public graphs_collection
+class DesignFlowGraph
+    : public graph_base<boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, DesignFlowStepInfoRef,
+                                              DesignFlowEdge, DesignFlowInfoRef>>
 {
- protected:
-   /// Map a signature of a step to the corresponding vertex
-   CustomUnorderedMap<std::string, vertex> signature_to_vertex;
-
  public:
-   /**
-    * Constructor
-    */
-   explicit DesignFlowGraphsCollection(const ParameterConstRef parameters);
+   using self = DesignFlowGraph;
+   using graph_t = graph_base<boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS,
+                                                    DesignFlowStepInfoRef, DesignFlowEdge, DesignFlowInfoRef>>;
+   using vertex_descriptor = self::vertex_descriptor;
+   using edge_descriptor = self::edge_descriptor;
 
-   /**
-    * Destructor
-    */
-   ~DesignFlowGraphsCollection() override;
-
-   /**
-    * Return the vertex associated with a design step if exists, NULL_VERTEX otherwise
-    * @param signature is the signature of the design step
-    */
-   vertex GetDesignFlowStep(const std::string& signature) const;
-
-   /**
-    * Add a design flow dependence
-    * @param source is the source of the dependence
-    * @param target is the target of the dependence
-    */
-   inline EdgeDescriptor AddDesignFlowDependence(const vertex source, const vertex target, const int selector)
+   enum EdgeType : DesignFlowEdge
    {
-      if(ExistsEdge(source, target))
-      {
-         return AddSelector(source, target, selector);
-      }
-      else
-      {
-         return InternalAddEdge(source, target, selector, EdgeInfoRef(new DesignFlowDependenceInfo()));
-      }
-   }
+      DEPENDENCE = 1,
+      PRECEDENCE = 2,
+      AUXILIARY = 4,
+      FEEDBACK = 8
+   };
 
    /**
     * Add a design step
     * @param design_flow_step is the step to be added
     * @param unnecessary specifiy is the step is necessary or not
     */
-   vertex AddDesignFlowStep(const DesignFlowStepRef design_flow_step, const bool unnecessary);
-};
-using DesignFlowGraphsCollectionRef = refcount<DesignFlowGraphsCollection>;
-using DesignFlowGraphsCollectionConstRef = refcount<const DesignFlowGraphsCollection>;
-
-class DesignFlowGraph : public graph
-{
- public:
-   /// The dependence selector
-   static const int DEPENDENCE_SELECTOR;
-
-   /// The condition selector
-   static const int PRECEDENCE_SELECTOR;
-
-   /// The auxiliary selector
-   static const int AUX_SELECTOR;
-
-   /// The dependence feedback selector
-   static const int DEPENDENCE_FEEDBACK_SELECTOR;
-
-   /**
-    * The type of view of design flow graph
-    */
-   enum Type
-   {
-      ALL, /**< Graph with all the edges */
-   };
-
-   /**
-    * Constructor
-    * @param design_flow_graphs_collection is the graph collection
-    * @param selector is the selector used in this view
-    */
-   DesignFlowGraph(const DesignFlowGraphsCollectionRef design_flow_graphs_collection, const int _selector);
-
-   /**
-    * Constructor
-    * @param design_flow_graphs_collection is the graph collection
-    * @param selector is the selector used in this view
-    * @param vertices is the set of vertices to be considered
-    */
-   DesignFlowGraph(const DesignFlowGraphsCollectionRef design_flow_graphs_collection, const int _selector,
-                   const CustomUnorderedSet<vertex>& vertices);
-
-   /**
-    * Destructor
-    */
-   ~DesignFlowGraph() override;
+   vertex_descriptor AddDesignFlowStep(const DesignFlowStepRef& design_flow_step, bool unnecessary);
 
    /**
     * Return the vertex associated with a design step if exists, NULL_VERTEX otherwise
     * @param signature is the signature of the design step
     */
-   vertex GetDesignFlowStep(const std::string& signature) const;
+   vertex_descriptor GetDesignFlowStep(DesignFlowStep::signature_t signature) const;
 
-   /**
-    * @param step is the vertex
-    * @return the info associated with the vertex
-    */
-   inline DesignFlowStepInfoRef GetDesignFlowStepInfo(const vertex step)
-   {
-      return RefcountCast<DesignFlowStepInfo>(graph::GetNodeInfo(step));
-   }
+   void AddDesignFlowDependence(vertex_descriptor src, vertex_descriptor tgt, DesignFlowEdge type);
 
-   /**
-    * Return the info associated with a step
-    * @param step is the vertex
-    * @return the info associated with the vertex
-    */
-   inline const DesignFlowStepInfoConstRef CGetDesignFlowStepInfo(const vertex step) const
-   {
-      return RefcountCast<const DesignFlowStepInfo>(graph::CGetNodeInfo(step));
-   }
+   DesignFlowEdge AddType(edge_descriptor e, DesignFlowEdge type);
 
-   /**
-    * Return the info associated with the graph
-    * @return the info associated with the graph
-    */
-   inline DesignFlowGraphInfoRef GetDesignFlowGraphInfo()
-   {
-      return RefcountCast<DesignFlowGraphInfo>(graph::GetGraphInfo());
-   }
-
-   /**
-    * Return the info associated with the graph
-    * @return the info associated with the graph
-    */
-   inline const DesignFlowGraphInfoConstRef CGetDesignFlowGraphInfo() const
-   {
-      return RefcountCast<const DesignFlowGraphInfo>(graph::CGetGraphInfo());
-   }
+   DesignFlowEdge RemoveType(edge_descriptor e, DesignFlowEdge type);
 
    /**
     * Write this graph in dot format
     * @param file_name is the file where the graph has to be printed
-    * @param detail_level is the detail level of the printed graph
     */
-   void WriteDot(const std::filesystem::path& file_name, const int detail_level = 0) const;
+   void WriteDot(std::filesystem::path file_name) const;
 
-#ifndef NDEBUG
-   /**
-    * Write this graph in dot format considering situation during a given iteration
-    * @param file_name is the file where graph has to be printed
-    * @param vertex_history tells which vertices are present in each iteration
-    * @param edge_history tells which edges are present in each iteration
-    * @param vertex_names is the name of each vertex (name of old vertices could be not more computable)
-    */
-   void WriteDot(const std::filesystem::path& file_name,
-                 const CustomMap<size_t, CustomMap<vertex, DesignFlowStep_Status>>& vertex_history,
-                 const CustomMap<size_t, CustomUnorderedMapStable<EdgeDescriptor, int>>& edge_history,
-                 const CustomMap<vertex, std::string>& vertex_names, const size_t writing_step_counter) const;
-#endif
+ private:
+   using graph_t::AddEdge;
+   using graph_t::AddVertex;
+   using graph_t::WriteDot;
+
+   CustomUnorderedMap<DesignFlowStep::signature_t, vertex_descriptor> signature_to_vertex;
 };
 using DesignFlowGraphRef = refcount<DesignFlowGraph>;
 using DesignFlowGraphConstRef = refcount<const DesignFlowGraph>;
 
+namespace std
+{
+   template <>
+   struct hash<DesignFlowGraph::edge_descriptor>
+   {
+      size_t operator()(DesignFlowGraph::edge_descriptor edge) const
+      {
+         size_t hash_value = 0;
+         boost::hash_combine(hash_value, edge.m_source);
+         boost::hash_combine(hash_value, edge.m_target);
+         return hash_value;
+      }
+   };
+} // namespace std
+
+template <typename H>
+H AbslHashValue(const H& h, const DesignFlowGraph::edge_descriptor& m)
+{
+   return H::combine(h, m.m_source, m.m_target);
+}
+
 /**
  * Functor used to write the content of the design flow step to dotty file
  */
-class DesignFlowStepWriter : public VertexWriter
+class DesignFlowStepWriter
 {
- private:
-   /// Actors which have to be printed (empty means all)
-   const CustomMap<vertex, DesignFlowStep_Status>& vertex_history;
-
-   /// The name of the actors (when they cannot be taken from graph
-   const CustomMap<vertex, std::string>& actor_names;
-
  public:
+   using vertex_descriptor = DesignFlowGraph::vertex_descriptor;
+
    /**
     * Constructor
-    * @param design_flow_graph is the graph to be printed
+    * @param g is the graph to be printed
     * @param vertex_history are the vertices which have to be printed
-    * @param detail_level is the detail level
     */
-   DesignFlowStepWriter(
-       const DesignFlowGraph* design_flow_graph,
-       const CustomMap<vertex, DesignFlowStep_Status>& vertex_history = CustomMap<vertex, DesignFlowStep_Status>(),
-       const CustomMap<vertex, std::string>& actor_names = CustomMap<vertex, std::string>(),
-       const int detail_level = 0);
+   DesignFlowStepWriter(const DesignFlowGraph* g);
 
-   /**
-    * Destructor
-    */
-   ~DesignFlowStepWriter() override;
+   void operator()(std::ostream& out, const vertex_descriptor& v) const;
 
-   /**
-    * Functor actually called by the boost library to perform the writing
-    * @param out is the stream where the nodes have to be printed
-    * @param v is the vertex to be printed
-    */
-   void operator()(std::ostream& out, const vertex& v) const override;
+ private:
+   const DesignFlowGraph* m_g;
 };
 
 /**
  * Functor used to write the content of the design flow edge to dotty file
  */
-class DesignFlowEdgeWriter : public EdgeWriter
+class DesignFlowEdgeWriter
 {
- private:
-   /// Actors which have to be printed (empty means all)
-   const CustomMap<vertex, DesignFlowStep_Status>& vertex_history;
-
-   /// Edges which have to be printed (empty means all)
-   const CustomUnorderedMapStable<EdgeDescriptor, int>& edge_history;
-
  public:
+   using edge_descriptor = DesignFlowGraph::edge_descriptor;
+
    /**
     * Constructor
     * @param design_flow_graph is the graph to be printed
     * @param vertex_history are the vertices which have to be printed
     * @param edge_history are the edges which have to be printed
-    * @param detail_level is the detail level
     */
-   DesignFlowEdgeWriter(
-       const DesignFlowGraph* design_flow_graph,
-       const CustomMap<vertex, DesignFlowStep_Status>& vertex_history = CustomMap<vertex, DesignFlowStep_Status>(),
-       const CustomUnorderedMapStable<EdgeDescriptor, int>& edge_history =
-           CustomUnorderedMapStable<EdgeDescriptor, int>(),
-       const int detail_level = 0);
+   DesignFlowEdgeWriter(const DesignFlowGraph* g);
 
-   /**
-    * Functor actually called by the boost library to perform the writing
-    * @param out is the stream where the edges have to be printed
-    * @param edge is the edge to be printed
-    */
-   void operator()(std::ostream& out, const EdgeDescriptor& edge) const override;
+   void operator()(std::ostream& out, const edge_descriptor& edge) const;
+
+ private:
+   const DesignFlowGraph* m_g;
 };
-
 #endif

@@ -247,40 +247,39 @@ int main(int argc, char* argv[])
             generic_deviceRef device = generic_device::factory(parameters, TM);
 
             const DesignFlowManagerRef design_flow_manager(new DesignFlowManager(parameters));
-            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
+            const auto design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
 
             const DesignFlowStepFactoryConstRef technology_flow_step_factory(
                 new TechnologyFlowStepFactory(TM, device, design_flow_manager, parameters));
             design_flow_manager->RegisterFactory(technology_flow_step_factory);
 
-            const std::string load_technology_flow_signature =
+            const auto load_technology_flow_signature =
                 TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY);
-            const vertex load_technology_flow_step =
+            const auto load_technology_flow_step =
                 design_flow_manager->GetDesignFlowStep(load_technology_flow_signature);
             const DesignFlowStepRef load_technology_design_flow_step =
-                load_technology_flow_step ?
-                    design_flow_graph->CGetDesignFlowStepInfo(load_technology_flow_step)->design_flow_step :
+                load_technology_flow_step != DesignFlowGraph::null_vertex() ?
+                    design_flow_graph->CGetNodeInfo(load_technology_flow_step)->design_flow_step :
                     GetPointer<const TechnologyFlowStepFactory>(technology_flow_step_factory)
                         ->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY);
             design_flow_manager->AddStep(load_technology_design_flow_step);
 
-            const std::string fix_technology_flow_signature =
+            const auto fix_technology_flow_signature =
                 TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::FIX_CHARACTERIZATION);
-            const vertex fix_technology_flow_step =
-                design_flow_manager->GetDesignFlowStep(fix_technology_flow_signature);
+            const auto fix_technology_flow_step = design_flow_manager->GetDesignFlowStep(fix_technology_flow_signature);
             const DesignFlowStepRef fix_technology_design_flow_step =
-                fix_technology_flow_step ?
-                    design_flow_graph->CGetDesignFlowStepInfo(fix_technology_flow_step)->design_flow_step :
+                fix_technology_flow_step != DesignFlowGraph::null_vertex() ?
+                    design_flow_graph->CGetNodeInfo(fix_technology_flow_step)->design_flow_step :
                     GetPointer<const TechnologyFlowStepFactory>(technology_flow_step_factory)
                         ->CreateTechnologyFlowStep(TechnologyFlowStep_Type::FIX_CHARACTERIZATION);
             design_flow_manager->AddStep(fix_technology_design_flow_step);
 
-            const std::string technology_flow_signature =
+            const auto technology_flow_signature =
                 TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::WRITE_TECHNOLOGY);
-            const vertex technology_flow_step = design_flow_manager->GetDesignFlowStep(technology_flow_signature);
+            const auto technology_flow_step = design_flow_manager->GetDesignFlowStep(technology_flow_signature);
             const DesignFlowStepRef technology_design_flow_step =
-                technology_flow_step ?
-                    design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
+                technology_flow_step != DesignFlowGraph::null_vertex() ?
+                    design_flow_graph->CGetNodeInfo(technology_flow_step)->design_flow_step :
                     GetPointer<const TechnologyFlowStepFactory>(technology_flow_step_factory)
                         ->CreateTechnologyFlowStep(TechnologyFlowStep_Type::WRITE_TECHNOLOGY);
             design_flow_manager->AddStep(technology_design_flow_step);
@@ -298,7 +297,7 @@ int main(int argc, char* argv[])
             generic_deviceRef device = generic_device::factory(parameters, TM);
 
             const DesignFlowManagerRef design_flow_manager(new DesignFlowManager(parameters));
-            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
+            const auto design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
 
             const DesignFlowStepFactoryConstRef technology_flow_step_factory(
                 new TechnologyFlowStepFactory(TM, device, design_flow_manager, parameters));
@@ -308,13 +307,13 @@ int main(int argc, char* argv[])
                 new ToDataFileStepFactory(device, design_flow_manager, parameters));
             design_flow_manager->RegisterFactory(to_data_file_step_factory);
 
-            const std::string to_data_file_step_signature =
+            const auto to_data_file_step_signature =
                 ToDataFileStep::ComputeSignature(ToDataFileStep_Type::GENERATE_FU_LIST);
-            const vertex to_data_file_vertex = design_flow_manager->GetDesignFlowStep(to_data_file_step_signature);
-            const DesignFlowStepRef to_data_file_step =
-                to_data_file_vertex ? design_flow_graph->CGetDesignFlowStepInfo(to_data_file_vertex)->design_flow_step :
-                                      GetPointer<const ToDataFileStepFactory>(to_data_file_step_factory)
-                                          ->CreateStep(to_data_file_step_signature);
+            const auto to_data_file_vertex = design_flow_manager->GetDesignFlowStep(to_data_file_step_signature);
+            const auto to_data_file_step = to_data_file_vertex != DesignFlowGraph::null_vertex() ?
+                                               design_flow_graph->CGetNodeInfo(to_data_file_vertex)->design_flow_step :
+                                               GetPointer<const ToDataFileStepFactory>(to_data_file_step_factory)
+                                                   ->CreateStep(to_data_file_step_signature);
             design_flow_manager->AddStep(to_data_file_step);
             design_flow_manager->Exec();
 #else

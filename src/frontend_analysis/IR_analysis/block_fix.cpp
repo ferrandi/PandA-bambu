@@ -60,7 +60,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 /// utility include
 #include "dbgPrintHelper.hpp"
@@ -75,7 +74,7 @@ BlockFix::BlockFix(const application_managerRef _AppM, unsigned int _function_id
 
 BlockFix::~BlockFix() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
 BlockFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -105,9 +104,9 @@ BlockFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType re
 DesignFlowStep_Status BlockFix::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
-   tree_nodeRef temp = TM->get_tree_node_const(function_id);
+   tree_nodeRef temp = TM->GetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(temp);
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* sl = GetPointer<statement_list>(fd->body);
 
    std::map<unsigned int, blocRef>& list_of_bloc = sl->list_of_bloc;
    std::map<unsigned int, blocRef>::iterator it3, it3_end = list_of_bloc.end();
@@ -144,21 +143,20 @@ DesignFlowStep_Status BlockFix::InternalExec()
    {
       for(const auto& statement : block.second->CGetStmtList())
       {
-         const auto* gg = GetPointer<const gimple_goto>(GET_NODE(statement));
+         const auto* gg = GetPointer<const gimple_goto>(statement);
          if(gg)
          {
-            THROW_ASSERT(gg->op and GetPointer<const label_decl>(GET_NODE(gg->op)),
-                         "Unexpexted condition :" + gg->ToString());
+            THROW_ASSERT(gg->op and GetPointer<const label_decl>(gg->op), "Unexpexted condition :" + gg->ToString());
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found a reachable label " + gg->op->ToString());
-            reachable_labels.insert(GET_INDEX_NODE(gg->op));
+            reachable_labels.insert(gg->op->index);
          }
-         const auto gs = GetPointer<const gimple_switch>(GET_NODE(statement));
+         const auto gs = GetPointer<const gimple_switch>(statement);
          if(gs)
          {
-            for(const auto& vec_op : GetPointer<const tree_vec>(GET_NODE(gs->op1))->list_of_op)
+            for(const auto& vec_op : GetPointer<const tree_vec>(gs->op1)->list_of_op)
             {
-               const auto cle = GetPointer<const case_label_expr>(GET_NODE(vec_op));
-               if(cle->got and GetPointer<const label_decl>(GET_NODE(cle->got)))
+               const auto cle = GetPointer<const case_label_expr>(vec_op);
+               if(cle->got and GetPointer<const label_decl>(cle->got))
                {
                   reachable_labels.insert(cle->got->index);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -173,10 +171,10 @@ DesignFlowStep_Status BlockFix::InternalExec()
    {
       for(const auto& statement : block.second->CGetStmtList())
       {
-         const auto* gl = GetPointer<const gimple_label>(GET_NODE(statement));
+         const auto* gl = GetPointer<const gimple_label>(statement);
          if(gl)
          {
-            const auto* ld = GetPointer<const label_decl>(GET_NODE(gl->op));
+            const auto* ld = GetPointer<const label_decl>(gl->op);
             if(ld and reachable_labels.find(ld->index) == reachable_labels.end())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,

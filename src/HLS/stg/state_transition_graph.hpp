@@ -319,7 +319,7 @@ class StateTransitionGraphsCollection : public graphs_collection
                                  const TransitionInfoRef info)
    {
       THROW_ASSERT(not ExistsEdge(source, target), "Trying to create an already existing edge");
-      return InternalAddEdge(source, target, selector, RefcountCast<EdgeInfo>(info));
+      return InternalAddEdge(source, target, selector, std::static_pointer_cast<EdgeInfo>(info));
    }
 };
 /// refcount definition of the class
@@ -359,23 +359,23 @@ struct StateTransitionGraph : public graph
     */
    inline StateInfoRef GetStateInfo(const vertex state)
    {
-      return RefcountCast<StateInfo>(graph::GetNodeInfo(state));
+      return std::static_pointer_cast<StateInfo>(graph::GetNodeInfo(state));
    }
 
    /**
     * Return the info associated with a state
     * @param state is the state to be considered
     */
-   inline const StateInfoConstRef CGetStateInfo(const vertex state) const
+   inline StateInfoConstRef CGetStateInfo(const vertex state) const
    {
-      return RefcountCast<const StateInfo>(graph::CGetNodeInfo(state));
+      return std::static_pointer_cast<const StateInfo>(graph::CGetNodeInfo(state));
    }
 
    /**
     * Return the info associated with a state, given its ID
     * @state_id is the ID of the state to be considered
     */
-   inline const StateInfoConstRef CGetStateInfo(unsigned int state_id) const
+   inline StateInfoConstRef CGetStateInfo(unsigned int state_id) const
    {
       return CGetStateInfo(GetVertex(state_id));
    }
@@ -397,16 +397,16 @@ struct StateTransitionGraph : public graph
     */
    inline TransitionInfoRef GetTransitionInfo(const EdgeDescriptor transition)
    {
-      return RefcountCast<TransitionInfo>(graph::GetEdgeInfo(transition));
+      return std::static_pointer_cast<TransitionInfo>(graph::GetEdgeInfo(transition));
    }
 
    /**
     * Return the info associated with a transition
     * @param transition is the transition to be considered
     */
-   inline const TransitionInfoConstRef CGetTransitionInfo(const EdgeDescriptor transition) const
+   inline TransitionInfoConstRef CGetTransitionInfo(const EdgeDescriptor transition) const
    {
-      return RefcountCast<const TransitionInfo>(graph::CGetEdgeInfo(transition));
+      return std::static_pointer_cast<const TransitionInfo>(graph::CGetEdgeInfo(transition));
    }
 
    /**
@@ -415,16 +415,16 @@ struct StateTransitionGraph : public graph
     */
    inline StateTransitionGraphInfoRef GetStateTransitionGraphInfo()
    {
-      return RefcountCast<StateTransitionGraphInfo>(graph::GetGraphInfo());
+      return std::static_pointer_cast<StateTransitionGraphInfo>(graph::GetGraphInfo());
    }
 
    /**
     * Return the info associated with the graph
     * @return the info associated with the graph
     */
-   inline const StateTransitionGraphInfoConstRef CGetStateTransitionGraphInfo() const
+   inline StateTransitionGraphInfoConstRef CGetStateTransitionGraphInfo() const
    {
-      return RefcountCast<const StateTransitionGraphInfo>(graph::CGetGraphInfo());
+      return std::static_pointer_cast<const StateTransitionGraphInfo>(graph::CGetGraphInfo());
    }
 
    /**

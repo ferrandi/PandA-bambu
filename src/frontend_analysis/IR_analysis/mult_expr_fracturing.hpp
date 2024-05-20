@@ -79,11 +79,7 @@ class mult_expr_fracturing : public ApplicationFrontendFlowStep
    bool recursive_transform(unsigned int function_id, const tree_nodeRef& current_tree_node,
                             const tree_nodeRef& current_statement, const tree_manipulationRef tree_man);
 
-   /**
-    * Return the set of analyses in relationship with this design step
-    * @param relationship_type is the type of relationship to be considered
-    */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    void ComputeRelationships(DesignFlowStepSet& relationships,
@@ -99,14 +95,6 @@ class mult_expr_fracturing : public ApplicationFrontendFlowStep
    mult_expr_fracturing(const application_managerRef AM, const DesignFlowManagerConstRef dfm,
                         const ParameterConstRef par);
 
-   /**
-    * Destructor
-    */
-   ~mult_expr_fracturing() override;
-
-   /**
-    * transform soft int operation into function call
-    */
    DesignFlowStep_Status Exec() override;
 };
 #endif

@@ -161,7 +161,7 @@ vcd_trace_head::vcd_trace_head(const DiscrepancyOpInfo& op, std::string signame,
       failed(fail_none),
       one_hot_fsm_encoding(_one_hot_fsm_encoding),
       op_info(op),
-      is_phi(_TM->get_tree_node_const(op.op_id)->get_kind() == gimple_phi_K),
+      is_phi(_TM->GetTreeNode(op.op_id)->get_kind() == gimple_phi_K),
       is_in_reg(_HLSMgr->get_HLS(op_info.stg_fun_id)
                     ->storage_value_information->is_a_storage_value(nullptr, op.ssa_name_node_id)),
       HLSMgr(_HLSMgr),
@@ -352,7 +352,7 @@ void vcd_trace_head::update()
       /* handle duplicated operations in more than one state */
       if(is_in_reg && is_phi)
       {
-         const auto gp = GetPointer<const gimple_phi>(TM->CGetTreeNode(op_info.op_id));
+         const auto gp = GetPointer<const gimple_phi>(TM->GetTreeNode(op_info.op_id));
          const auto state_id = compute_state_id(fsm_ss_it->value, one_hot_fsm_encoding);
          const auto state_info = HLSMgr->get_HLS(op_info.stg_fun_id)->STG->CGetStg()->CGetStateInfo(state_id);
          if(state_info->is_duplicated && !state_info->isOriginalState && !state_info->all_paths)

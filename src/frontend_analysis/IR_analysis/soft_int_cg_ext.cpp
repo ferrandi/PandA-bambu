@@ -62,9 +62,6 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
-
-#include <string>
 
 soft_int_cg_ext::soft_int_cg_ext(const application_managerRef AM, const DesignFlowManagerConstRef dfm,
                                  const ParameterConstRef par)
@@ -77,7 +74,7 @@ soft_int_cg_ext::soft_int_cg_ext(const application_managerRef AM, const DesignFl
 
 soft_int_cg_ext::~soft_int_cg_ext() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 soft_int_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -119,14 +116,15 @@ void soft_int_cg_ext::ComputeRelationships(DesignFlowStepSet& relationships,
 {
    if(relationship_type == INVALIDATION_RELATIONSHIP)
    {
+      const auto DFM = design_flow_manager.lock();
+      const auto DFG = DFM->CGetDesignFlowGraph();
       for(const auto& i : fun_id_to_restart)
       {
          const auto step_signature =
              FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::FUNCTION_CALL_TYPE_CLEANUP, i);
-         const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
-         THROW_ASSERT(frontend_step != NULL_VERTEX, "step " + step_signature + " is not present");
-         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const auto design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+         const auto frontend_step = DFM->GetDesignFlowStep(step_signature);
+         THROW_ASSERT(frontend_step != DesignFlowGraph::null_vertex(), "step is not present");
+         const auto design_flow_step = DFG->CGetNodeInfo(frontend_step)->design_flow_step;
          relationships.insert(design_flow_step);
       }
       fun_id_to_restart.clear();
@@ -153,7 +151,7 @@ DesignFlowStep_Status soft_int_cg_ext::Exec()
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                      "-->Analyzing function \"" + fname + "\": id = " + STR(function_id));
       const auto fd = GetPointerS<function_decl>(curr_tn);
-      const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+      const auto sl = GetPointerS<statement_list>(fd->body);
 
       bool modified = false;
       for(const auto& idx_bb : sl->list_of_bloc)
@@ -162,10 +160,10 @@ DesignFlowStep_Status soft_int_cg_ext::Exec()
          for(const auto& stmt : BB->CGetStmtList())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "-->Examine " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
+                           "-->Examine " + STR(stmt->index) + " " + stmt->ToString());
             modified |= recursive_transform(function_id, stmt, stmt, tree_man);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "<--Examined " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
+                           "<--Examined " + STR(stmt->index) + " " + stmt->ToString());
          }
       }
 
@@ -184,12 +182,10 @@ DesignFlowStep_Status soft_int_cg_ext::Exec()
    return fun_id_to_restart.empty() ? DesignFlowStep_Status::UNCHANGED : DesignFlowStep_Status::SUCCESS;
 }
 
-bool soft_int_cg_ext::recursive_transform(unsigned int function_id, const tree_nodeRef& current_tree_node,
+bool soft_int_cg_ext::recursive_transform(unsigned int function_id, const tree_nodeRef& curr_tn,
                                           const tree_nodeRef& current_statement, const tree_manipulationRef tree_man)
 {
-   THROW_ASSERT(current_tree_node->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    bool modified = false;
-   const tree_nodeRef curr_tn = GET_NODE(current_tree_node);
    const auto get_current_srcp = [curr_tn]() -> std::string {
       const auto srcp_tn = GetPointer<const srcp>(curr_tn);
       if(srcp_tn)
@@ -218,12 +214,12 @@ bool soft_int_cg_ext::recursive_transform(unsigned int function_id, const tree_n
       }
       case tree_list_K:
       {
-         tree_nodeRef current = current_tree_node;
+         tree_nodeRef current = curr_tn;
          while(current)
          {
-            modified |= recursive_transform(function_id, GetPointer<tree_list>(GET_NODE(current))->valu,
-                                            current_statement, tree_man);
-            current = GetPointer<tree_list>(GET_NODE(current))->chan;
+            modified |=
+                recursive_transform(function_id, GetPointer<tree_list>(current)->valu, current_statement, tree_man);
+            current = GetPointer<tree_list>(current)->chan;
          }
          break;
       }
@@ -248,7 +244,7 @@ bool soft_int_cg_ext::recursive_transform(unsigned int function_id, const tree_n
             const auto bitsize = std::max(bitsize0, bitsize1);
 
             const auto div_by_constant = [&]() {
-               if(GetPointer<const integer_cst>(GET_CONST_NODE(be->op1)))
+               if(GetPointer<const integer_cst>(be->op1))
                {
                   const auto cst_val = tree_helper::GetConstValue(be->op1);
                   if((cst_val & (cst_val - 1)) == 0)
@@ -259,8 +255,7 @@ bool soft_int_cg_ext::recursive_transform(unsigned int function_id, const tree_n
                return false;
             }();
 
-            if(!div_by_constant && GET_CONST_NODE(expr_type)->get_kind() == integer_type_K &&
-               (bitsize > 16 && bitsize <= 64))
+            if(!div_by_constant && expr_type->get_kind() == integer_type_K && (bitsize > 16 && bitsize <= 64))
             {
                const auto fu_suffix = be_type == trunc_mod_expr_K ? "mod" : "div";
                const auto bitsize_str = bitsize <= 32 ? "s" : "d";
@@ -275,9 +270,9 @@ bool soft_int_cg_ext::recursive_transform(unsigned int function_id, const tree_n
                const std::vector<tree_nodeRef> args = {be->op0, be->op1};
                const auto ce = tree_man->CreateCallExpr(called_function, args, get_current_srcp());
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced " + STR(current_statement));
-               TreeM->ReplaceTreeNode(current_statement, current_tree_node, ce);
+               TreeM->ReplaceTreeNode(current_statement, curr_tn, ce);
                CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index,
-                                                       GET_INDEX_CONST_NODE(current_statement),
+                                                       current_statement->index,
                                                        FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---      -> " + STR(current_statement));
                modified = true;
@@ -326,60 +321,57 @@ bool soft_int_cg_ext::recursive_transform(unsigned int function_id, const tree_n
          }
          break;
       }
-      case gimple_call_K:
-      case gimple_nop_K:
-      case var_decl_K:
-      case parm_decl_K:
-      case ssa_name_K:
-      case lut_expr_K:
-      case gimple_cond_K:
-      case gimple_switch_K:
-      case gimple_multi_way_if_K:
-      case gimple_return_K:
-      case gimple_for_K:
-      case gimple_while_K:
+      case CASE_PRAGMA_NODES:
       case CASE_TYPE_NODES:
-      case type_decl_K:
-      case template_decl_K:
-      case target_mem_ref_K:
-      case target_mem_ref461_K:
-      case real_cst_K:
+      case case_label_expr_K:
       case complex_cst_K:
-      case string_cst_K:
-      case integer_cst_K:
       case field_decl_K:
       case function_decl_K:
+      case gimple_asm_K:
+      case gimple_call_K:
+      case gimple_cond_K:
+      case gimple_for_K:
+      case gimple_goto_K:
+      case gimple_label_K:
+      case gimple_multi_way_if_K:
+      case gimple_nop_K:
+      case gimple_pragma_K:
+      case gimple_return_K:
+      case gimple_switch_K:
+      case gimple_while_K:
+      case integer_cst_K:
       case label_decl_K:
+      case lut_expr_K:
+      case parm_decl_K:
+      case real_cst_K:
       case result_decl_K:
+      case ssa_name_K:
+      case string_cst_K:
+      case target_mem_ref461_K:
+      case target_mem_ref_K:
+      case template_decl_K:
+      case tree_vec_K:
+      case type_decl_K:
+      case var_decl_K:
       case vector_cst_K:
       case void_cst_K:
-      case tree_vec_K:
-      case case_label_expr_K:
-      case gimple_label_K:
-      case gimple_asm_K:
-      case gimple_goto_K:
-      case CASE_PRAGMA_NODES:
-      case gimple_pragma_K:
          break;
+      case CASE_CPP_NODES:
+      case CASE_FAKE_NODES:
       case binfo_K:
       case block_K:
       case const_decl_K:
-      case CASE_CPP_NODES:
+      case error_mark_K:
       case gimple_bind_K:
       case gimple_phi_K:
       case gimple_predict_K:
       case gimple_resx_K:
       case identifier_node_K:
-      case last_tree_K:
       case namespace_decl_K:
-      case none_K:
-      case placeholder_expr_K:
       case statement_list_K:
-      case translation_unit_decl_K:
-      case error_mark_K:
-      case using_decl_K:
-      case tree_reindex_K:
       case target_expr_K:
+      case translation_unit_decl_K:
+      case using_decl_K:
       {
          THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + curr_tn->get_kind_text());
          break;

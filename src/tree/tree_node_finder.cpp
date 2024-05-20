@@ -41,14 +41,15 @@
  *
  */
 #include "tree_node_finder.hpp"
-#include "exceptions.hpp"         // for THROW_ASSERT
-#include "token_interface.hpp"    // for TOK, STOK, TreeV...
-#include <boost/lexical_cast.hpp> // for lexical_cast
 
+#include "exceptions.hpp"
 #include "ext_tree_node.hpp"
+#include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+
+#include <boost/lexical_cast.hpp>
 
 template <class type>
 static bool check_value_opt(const std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>::const_iterator& it_element,
@@ -73,7 +74,7 @@ check_tree_node_opt(const std::map<TreeVocabularyTokenTypes_TokenEnum, std::stri
                     const std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>::const_iterator& it_end,
                     const tree_nodeRef& tn, const std::string&)
 {
-   return it_element == it_end || (tn && GET_INDEX_NODE(tn) == std::stoull(it_element->second));
+   return it_element == it_end || (tn && tn->index == std::stoull(it_element->second));
 }
 
 #define CHECK_TREE_NODE_OPT(token, treeN) \
@@ -172,15 +173,6 @@ void tree_node_finder::operator()(const type_node* obj, unsigned int& mask)
               CHECK_TREE_NODE_OPT(TOK_UNQL, obj->unql) and CHECK_TREE_NODE_OPT(TOK_SIZE, obj->size) and
               CHECK_TREE_NODE_OPT(TOK_SCPE, obj->scpe) and CHECK_VALUE_OPT(TOK_PACKED, obj->packed_flag) and
               CHECK_VALUE_OPT(TOK_SYSTEM, obj->system_flag) and CHECK_VALUE_OPT(TOK_ALGN, obj->algn);
-}
-
-void tree_node_finder::operator()(const memory_tag* obj, unsigned int& mask)
-{
-   tree_node_mask::operator()(obj, mask);
-   TREE_NOT_YET_IMPLEMENTED(TOK_ALIAS);
-   // std::vector<tree_nodeRef>::const_iterator vend = obj->list_of_aliases.end();
-   // for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_aliases.begin(); i != vend; i++)
-   //   write_when_not_null(STOK(TOK_ALIAS), *i);
 }
 
 void tree_node_finder::operator()(const cst_node* obj, unsigned int& mask)

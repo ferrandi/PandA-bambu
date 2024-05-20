@@ -37,20 +37,15 @@
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
  */
-
 #ifndef HLS_FLOW_STEP_FACTORY_HPP
 #define HLS_FLOW_STEP_FACTORY_HPP
-
 #include "custom_set.hpp"
+#include "design_flow_step.hpp"
 #include "design_flow_step_factory.hpp"
 
-#include <vector>
-
-REF_FORWARD_DECL(DesignFlowStep);
 REF_FORWARD_DECL(HLS_manager);
 CONSTREF_FORWARD_DECL(HLSFlowStepSpecialization);
 class xml_element;
-class DesignFlowStepSet;
 enum class HLSFlowStep_Type;
 
 class HLSFlowStepFactory : public DesignFlowStepFactory
@@ -74,15 +69,7 @@ class HLSFlowStepFactory : public DesignFlowStepFactory
    HLSFlowStepFactory(const DesignFlowManagerConstRef design_flow_manager, const HLS_managerRef _HLS_mgr,
                       const ParameterConstRef parameters);
 
-   /**
-    * Destructor
-    */
    ~HLSFlowStepFactory() override;
-
-   /**
-    * Return the prefix of the steps created by the factory
-    */
-   const std::string GetPrefix() const override;
 
    /**
     * Create a scheduling design flow step
@@ -98,26 +85,26 @@ class HLSFlowStepFactory : public DesignFlowStepFactory
     * Create the frontend design flow steps
     * @param hls_flow_steps is the set of steps to be created
     */
-   const DesignFlowStepSet CreateHLSFlowSteps(
+   DesignFlowStepSet CreateHLSFlowSteps(
        const CustomUnorderedSet<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>>& hls_flow_steps) const;
 
    /**
     * The same as CreateHLSFlowSteps, but just for one step
     */
-   const DesignFlowStepSet
+   DesignFlowStepSet
    CreateHLSFlowSteps(const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>& hls_flow_step) const;
+
    /**
     * The same as CreateHLSFlowSteps, but just for one step, with an even
     * simpler syntax
     */
-   const DesignFlowStepSet
-   CreateHLSFlowSteps(const HLSFlowStep_Type type,
-                      const HLSFlowStepSpecializationConstRef hls_flow_step_specialization) const;
-   const DesignFlowStepRef
+   DesignFlowStepSet CreateHLSFlowSteps(const HLSFlowStep_Type type,
+                                        const HLSFlowStepSpecializationConstRef hls_flow_step_specialization) const;
+
+   DesignFlowStepRef
    CreateHLSFlowStep(const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>& hls_flow_step) const;
 
-   const DesignFlowStepRef
-   CreateHLSFlowStep(const HLSFlowStep_Type type,
-                     const HLSFlowStepSpecializationConstRef hls_flow_step_specialization) const;
+   DesignFlowStepRef CreateHLSFlowStep(const HLSFlowStep_Type type,
+                                       const HLSFlowStepSpecializationConstRef hls_flow_step_specialization) const;
 };
 #endif

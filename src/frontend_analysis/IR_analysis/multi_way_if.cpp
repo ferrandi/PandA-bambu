@@ -68,7 +68,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
-#include "tree_reindex.hpp"
 #include <cstdlib>
 #include <fstream>
 
@@ -83,7 +82,7 @@ multi_way_if::multi_way_if(const ParameterConstRef _parameters, const applicatio
 
 multi_way_if::~multi_way_if() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 multi_way_if::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -119,11 +118,11 @@ multi_way_if::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTyp
                /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
                const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(
                    FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
-               if(update_schedule)
+               if(update_schedule != DesignFlowGraph::null_vertex())
                {
                   const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
                   const DesignFlowStepRef design_flow_step =
-                      design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
+                      design_flow_graph->CGetNodeInfo(update_schedule)->design_flow_step;
                   if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() !=
                      function_behavior->GetBBVersion())
                   {
@@ -155,9 +154,9 @@ void multi_way_if::Initialize()
    bb_modified = false;
    TM = AppM->get_tree_manager();
    tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
-   const auto temp = TM->CGetTreeNode(function_id);
+   const auto temp = TM->GetTreeNode(function_id);
    const auto fd = GetPointerS<const function_decl>(temp);
-   sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   sl = GetPointerS<statement_list>(fd->body);
 #if HAVE_ILP_BUILT
    if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and
       GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
@@ -205,7 +204,7 @@ void multi_way_if::UpdateCfg(const blocRef& pred_bb, const blocRef& curr_bb)
       for(const auto& phi : succ_bb->CGetPhiList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Original phi " + phi->ToString());
-         auto* current_phi = GetPointerS<gimple_phi>(GET_NODE(phi));
+         auto* current_phi = GetPointerS<gimple_phi>(phi);
          for(const auto& def_edge : current_phi->CGetDefEdgesList())
          {
             if(def_edge.second == curr_bb->number)
@@ -294,7 +293,7 @@ DesignFlowStep_Status multi_way_if::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because predecessor is empty");
          continue;
       }
-      const auto last_pred_stmt = GET_NODE(pred_bb->CGetStmtList().back());
+      const auto last_pred_stmt = pred_bb->CGetStmtList().back();
       if(last_pred_stmt->get_kind() != gimple_cond_K && last_pred_stmt->get_kind() != gimple_multi_way_if_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -306,7 +305,7 @@ DesignFlowStep_Status multi_way_if::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because it is not a singleton");
          continue;
       }
-      const auto last_curr_stmt = GET_NODE(curr_bb->CGetStmtList().back());
+      const auto last_curr_stmt = curr_bb->CGetStmtList().back();
       if(last_curr_stmt->get_kind() != gimple_cond_K && last_curr_stmt->get_kind() != gimple_multi_way_if_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -412,10 +411,10 @@ void multi_way_if::MergeCondMulti(const blocRef& pred_bb, const blocRef& curr_bb
    IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    IR_schema[TOK(TOK_SCPE)] = STR(function_id);
    TM->create_tree_node(gimple_multi_way_if_id, gimple_multi_way_if_K, IR_schema);
-   auto new_gwi = GetPointerS<gimple_multi_way_if>(TM->get_tree_node_const(gimple_multi_way_if_id));
+   auto new_gwi = GetPointerS<gimple_multi_way_if>(TM->GetTreeNode(gimple_multi_way_if_id));
    new_gwi->bb_index = pred_bb->number;
 
-   const auto old_gwi = GetPointerS<const gimple_multi_way_if>(GET_CONST_NODE(curr_bb->CGetStmtList().back()));
+   const auto old_gwi = GetPointerS<const gimple_multi_way_if>(curr_bb->CGetStmtList().back());
 
    /// Create ce_condition
    const auto ce_cond = tree_man->ExtractCondition(pred_bb->CGetStmtList().back(), pred_bb, function_id);
@@ -464,7 +463,7 @@ void multi_way_if::MergeCondMulti(const blocRef& pred_bb, const blocRef& curr_bb
          new_gwi->add_cond(new_cond, old_cond.second);
       }
    }
-   pred_bb->PushBack(TM->GetTreeReindex(gimple_multi_way_if_id), AppM);
+   pred_bb->PushBack(TM->GetTreeNode(gimple_multi_way_if_id), AppM);
    pred_bb->false_edge = 0;
    pred_bb->true_edge = 0;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + new_gwi->ToString());
@@ -478,11 +477,11 @@ void multi_way_if::MergeMultiMulti(const blocRef& pred_bb, const blocRef& curr_b
    IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    IR_schema[TOK(TOK_SCPE)] = STR(function_id);
    TM->create_tree_node(gimple_multi_way_if_id, gimple_multi_way_if_K, IR_schema);
-   auto new_gwi = GetPointerS<gimple_multi_way_if>(TM->get_tree_node_const(gimple_multi_way_if_id));
+   auto new_gwi = GetPointerS<gimple_multi_way_if>(TM->GetTreeNode(gimple_multi_way_if_id));
    new_gwi->bb_index = pred_bb->number;
 
-   const auto old_gwi1 = GetPointerS<const gimple_multi_way_if>(GET_CONST_NODE(pred_bb->CGetStmtList().back()));
-   const auto old_gwi2 = GetPointerS<const gimple_multi_way_if>(GET_CONST_NODE(curr_bb->CGetStmtList().back()));
+   const auto old_gwi1 = GetPointerS<const gimple_multi_way_if>(pred_bb->CGetStmtList().back());
+   const auto old_gwi2 = GetPointerS<const gimple_multi_way_if>(curr_bb->CGetStmtList().back());
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---First gimple multi way if is " + old_gwi1->ToString());
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Second gimple multi way if is " + old_gwi2->ToString());
 
@@ -588,7 +587,7 @@ void multi_way_if::MergeMultiMulti(const blocRef& pred_bb, const blocRef& curr_b
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "<--Considered condition " + (old_cond1.first ? old_cond1.first->ToString() : " default"));
    }
-   pred_bb->PushBack(TM->GetTreeReindex(gimple_multi_way_if_id), AppM);
+   pred_bb->PushBack(TM->GetTreeNode(gimple_multi_way_if_id), AppM);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + new_gwi->ToString());
 }
 
@@ -600,10 +599,10 @@ void multi_way_if::MergeMultiCond(const blocRef& pred_bb, const blocRef& curr_bb
    IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    IR_schema[TOK(TOK_SCPE)] = STR(function_id);
    TM->create_tree_node(gimple_multi_way_if_id, gimple_multi_way_if_K, IR_schema);
-   auto new_gwi = GetPointerS<gimple_multi_way_if>(TM->get_tree_node_const(gimple_multi_way_if_id));
+   auto new_gwi = GetPointerS<gimple_multi_way_if>(TM->GetTreeNode(gimple_multi_way_if_id));
    new_gwi->bb_index = pred_bb->number;
 
-   const auto old_gwi = GetPointerS<const gimple_multi_way_if>(GET_CONST_NODE(pred_bb->CGetStmtList().back()));
+   const auto old_gwi = GetPointerS<const gimple_multi_way_if>(pred_bb->CGetStmtList().back());
    const auto old_ce = curr_bb->CGetStmtList().back();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Gimple multi way if is " + old_gwi->ToString());
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Gimple cond " + old_ce->ToString());
@@ -666,7 +665,7 @@ void multi_way_if::MergeMultiCond(const blocRef& pred_bb, const blocRef& curr_bb
          new_gwi->add_cond(tree_nodeRef(), old_cond.second);
       }
    }
-   pred_bb->PushBack(TM->GetTreeReindex(gimple_multi_way_if_id), AppM);
+   pred_bb->PushBack(TM->GetTreeNode(gimple_multi_way_if_id), AppM);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + new_gwi->ToString());
 }
 
@@ -674,14 +673,14 @@ void multi_way_if::MergeCondCond(const blocRef& pred_bb, const blocRef& curr_bb)
 {
    /// identify the first gimple_cond
    const auto list_of_stmt_cond1 = pred_bb->CGetStmtList();
-   THROW_ASSERT(GET_CONST_NODE(list_of_stmt_cond1.back())->get_kind() == gimple_cond_K, "a gimple_cond is expected");
+   THROW_ASSERT(list_of_stmt_cond1.back()->get_kind() == gimple_cond_K, "a gimple_cond is expected");
    const auto cond1_statement = list_of_stmt_cond1.back();
    pred_bb->RemoveStmt(cond1_statement, AppM);
    const auto ssa1_node = tree_man->ExtractCondition(cond1_statement, pred_bb, function_id);
 
    /// identify the second gimple_cond
    const auto list_of_stmt_cond2 = curr_bb->CGetStmtList();
-   THROW_ASSERT(GET_CONST_NODE(list_of_stmt_cond2.back())->get_kind() == gimple_cond_K, "a gimple_cond is expected");
+   THROW_ASSERT(list_of_stmt_cond2.back()->get_kind() == gimple_cond_K, "a gimple_cond is expected");
    const auto cond2_statement = list_of_stmt_cond2.back();
    curr_bb->RemoveStmt(cond2_statement, AppM);
    const auto ssa2_node = tree_man->ExtractCondition(cond2_statement, pred_bb, function_id);
@@ -693,8 +692,8 @@ void multi_way_if::MergeCondCond(const blocRef& pred_bb, const blocRef& curr_bb)
    IR_schema[TOK(TOK_SCPE)] = STR(function_id);
    TM->create_tree_node(gimple_multi_way_if_id, gimple_multi_way_if_K, IR_schema);
    IR_schema.clear();
-   const auto gimple_multi_way_if_stmt = TM->GetTreeReindex(gimple_multi_way_if_id);
-   auto* gmwi = GetPointerS<gimple_multi_way_if>(GET_NODE(gimple_multi_way_if_stmt));
+   const auto gimple_multi_way_if_stmt = TM->GetTreeNode(gimple_multi_way_if_id);
+   auto* gmwi = GetPointerS<gimple_multi_way_if>(gimple_multi_way_if_stmt);
    gmwi->bb_index = pred_bb->number;
    if(pred_bb->false_edge == curr_bb->number)
    {
@@ -753,10 +752,9 @@ void multi_way_if::FixCfg(const blocRef& pred_bb, const blocRef& succ_bb)
    /// Fix the last statement of the predecessor
    const auto& pred_list_of_stmt = pred_bb->CGetStmtList();
    THROW_ASSERT(pred_list_of_stmt.size(), "Unexpexted condition");
-   const auto pred_last_stmt = GET_NODE(pred_list_of_stmt.back());
-   if(pred_last_stmt->get_kind() == gimple_multi_way_if_K)
+   if(pred_list_of_stmt.back()->get_kind() == gimple_multi_way_if_K)
    {
-      auto gmwi = GetPointerS<gimple_multi_way_if>(pred_last_stmt);
+      auto gmwi = GetPointerS<gimple_multi_way_if>(pred_list_of_stmt.back());
       for(auto& cond : gmwi->list_of_cond)
       {
          if(cond.second == succ_bb->number)
@@ -774,7 +772,7 @@ void multi_way_if::FixCfg(const blocRef& pred_bb, const blocRef& succ_bb)
    /// Fix the phi
    for(const auto& phi : succ_bb->CGetPhiList())
    {
-      auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
+      auto gp = GetPointer<gimple_phi>(phi);
       for(auto& def_edge : gp->CGetDefEdgesList())
       {
          if(def_edge.second == pred_bb->number)
@@ -802,11 +800,11 @@ bool multi_way_if::HasToBeExecuted() const
          /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
          const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(
              FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
-         if(update_schedule)
+         if(update_schedule != DesignFlowGraph::null_vertex())
          {
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
             const DesignFlowStepRef design_flow_step =
-                design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
+                design_flow_graph->CGetNodeInfo(update_schedule)->design_flow_step;
             if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() !=
                function_behavior->GetBBVersion())
             {
@@ -834,12 +832,12 @@ bool multi_way_if::HasToBeExecuted() const
    {
       const auto vectorize_vertex =
           design_flow_manager.lock()->GetDesignFlowStep(ComputeSignature(FrontendFlowStepType::VECTORIZE, function_id));
-      if(vectorize_vertex == NULL_VERTEX)
+      if(vectorize_vertex == DesignFlowGraph::null_vertex())
       {
          return false;
       }
       const auto vectorize_step =
-          design_flow_manager.lock()->CGetDesignFlowGraph()->CGetDesignFlowStepInfo(vectorize_vertex)->design_flow_step;
+          design_flow_manager.lock()->CGetDesignFlowGraph()->CGetNodeInfo(vectorize_vertex)->design_flow_step;
       if(GetPointer<const FunctionFrontendFlowStep>(vectorize_step)->CGetBBVersion() == 0)
       {
          return false;

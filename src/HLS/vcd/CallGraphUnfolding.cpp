@@ -95,7 +95,7 @@ static void Unfold(const HLS_managerRef& HLSMgr)
 {
    // check that there is only one root function
    const auto CGM = HLSMgr->CGetCallGraphManager();
-   const auto root_functions = CGM->GetRootFunctions();
+   const auto& root_functions = CGM->GetRootFunctions();
    THROW_ASSERT(root_functions.size() == 1, STR(root_functions.size()));
    const auto root_function = *(root_functions.begin());
    const auto CG = CGM->CGetCallGraph();
@@ -136,10 +136,10 @@ CallGraphUnfolding::CallGraphUnfolding(const ParameterConstRef _Param, const HLS
 
 CallGraphUnfolding::~CallGraphUnfolding() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 CallGraphUnfolding::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
 
    switch(relationship_type)
    {

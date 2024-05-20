@@ -79,7 +79,7 @@ AddBbEcfgEdges::AddBbEcfgEdges(const application_managerRef _AppM, unsigned int 
 
 AddBbEcfgEdges::~AddBbEcfgEdges() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 AddBbEcfgEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;

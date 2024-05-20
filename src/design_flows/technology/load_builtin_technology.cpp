@@ -56,7 +56,7 @@ LoadBuiltinTechnology::LoadBuiltinTechnology(const technology_managerRef _TM, co
 
 LoadBuiltinTechnology::~LoadBuiltinTechnology() = default;
 
-const CustomUnorderedSet<TechnologyFlowStep_Type>
+CustomUnorderedSet<TechnologyFlowStep_Type>
 LoadBuiltinTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType) const
 {
    return CustomUnorderedSet<TechnologyFlowStep_Type>();

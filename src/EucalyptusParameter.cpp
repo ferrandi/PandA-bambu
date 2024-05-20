@@ -228,11 +228,11 @@ int EucalyptusParameter::Exec()
          {
             if(std::string(optarg) == "V")
             {
-               setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
+               setOption(OPT_writer_language, HDLWriter_Language::VERILOG);
             }
             else if(std::string(optarg) == "H")
             {
-               setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VHDL));
+               setOption(OPT_writer_language, HDLWriter_Language::VHDL);
             }
             else
             {
@@ -642,7 +642,7 @@ void EucalyptusParameter::SetDefaults()
    setOption(OPT_parallel_backend, false);
 
    /// backend HDL
-   setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
+   setOption(OPT_writer_language, HDLWriter_Language::VERILOG);
    setOption(OPT_reset_type, "no");
    setOption(OPT_reg_init_value, false);
 

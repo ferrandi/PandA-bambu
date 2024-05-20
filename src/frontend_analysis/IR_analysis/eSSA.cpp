@@ -59,7 +59,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
-#include "tree_reindex.hpp"
 
 class Operand
 {
@@ -70,7 +69,7 @@ class Operand
  public:
    Operand(const tree_nodeRef _operand, tree_nodeRef stmt) : operand(_operand), user_stmt(stmt)
    {
-      THROW_ASSERT(GetPointer<gimple_node>(GET_NODE(stmt)), "stmt should be a gimple_node");
+      THROW_ASSERT(GetPointer<gimple_node>(stmt), "stmt should be a gimple_node");
    }
 
    const tree_nodeRef getOperand() const
@@ -85,18 +84,18 @@ class Operand
 
    bool set(tree_nodeRef new_ssa, tree_managerRef TM)
    {
-      const auto* ssaOperand = GetPointer<const ssa_name>(GET_CONST_NODE(operand));
-      THROW_ASSERT(GET_NODE(new_ssa)->get_kind() == ssa_name_K, "New variable should be an ssa_name");
+      const auto* ssaOperand = GetPointer<const ssa_name>(operand);
+      THROW_ASSERT(new_ssa->get_kind() == ssa_name_K, "New variable should be an ssa_name");
       THROW_ASSERT(ssaOperand, "Old variable should be an ssa_name");
       THROW_ASSERT(TM, "Null reference to tree manager");
 
-      if(auto* gp = GetPointer<gimple_phi>(GET_NODE(user_stmt)))
+      if(auto* gp = GetPointer<gimple_phi>(user_stmt))
       {
          const auto& deList = gp->CGetDefEdgesList();
          std::vector<gimple_phi::DefEdge> validDE;
          for(const auto& de : deList)
          {
-            if(GET_INDEX_CONST_NODE(de.first) == ssaOperand->index)
+            if(de.first->index == ssaOperand->index)
             {
                validDE.push_back(de);
             }
@@ -105,9 +104,7 @@ class Operand
          if(validDE.size() > 1)
          {
             const auto newSSADefBBI =
-                GetPointer<const gimple_node>(
-                    GET_CONST_NODE(GetPointer<const ssa_name>(GET_CONST_NODE(new_ssa))->CGetDefStmt()))
-                    ->bb_index;
+                GetPointer<const gimple_node>(GetPointer<const ssa_name>(new_ssa)->CGetDefStmt())->bb_index;
             // Replace only correct DefEdge in the list
             for(const auto& de : validDE)
             {
@@ -237,7 +234,7 @@ bool isCompare(const struct binary_expr* condition)
 
 tree_nodeRef branchOpRecurse(tree_nodeRef op, tree_nodeRef stmt = nullptr)
 {
-   const auto Op = GET_CONST_NODE(op);
+   const auto Op = op;
    if(const auto* nop = GetPointer<const nop_expr>(Op))
    {
       return branchOpRecurse(nop->op, stmt);
@@ -249,23 +246,23 @@ tree_nodeRef branchOpRecurse(tree_nodeRef op, tree_nodeRef stmt = nullptr)
    else if(const auto* ssa = GetPointer<const ssa_name>(Op))
    {
       const auto DefStmt = ssa->CGetDefStmt();
-      if(const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(DefStmt)))
+      if(const auto* ga = GetPointer<const gimple_assign>(DefStmt))
       {
          return branchOpRecurse(ga->op1, DefStmt);
       }
-      else if(const auto* gp = GetPointer<const gimple_phi>(GET_CONST_NODE(DefStmt)))
+      else if(const auto* gp = GetPointer<const gimple_phi>(DefStmt))
       {
          const auto& defEdges = gp->CGetDefEdgesList();
          THROW_ASSERT(not defEdges.empty(), "Branch variable definition from nowhere");
          return defEdges.size() > 1 ? nullptr : branchOpRecurse(defEdges.front().first, DefStmt);
       }
-      else if(GetPointer<const gimple_nop>(GET_CONST_NODE(DefStmt)) != nullptr)
+      else if(GetPointer<const gimple_nop>(DefStmt) != nullptr)
       {
          // Branch variable is a function parameter
          return nullptr;
       }
-      THROW_UNREACHABLE("Branch var definition statement not handled (" + GET_CONST_NODE(DefStmt)->get_kind_text() +
-                        " " + GET_CONST_NODE(DefStmt)->ToString() + ")");
+      THROW_UNREACHABLE("Branch var definition statement not handled (" + DefStmt->get_kind_text() + " " +
+                        DefStmt->ToString() + ")");
    }
    else if(GetPointer<const cst_node>(Op))
    {
@@ -283,7 +280,7 @@ void processBranch(tree_nodeConstRef bi, CustomSet<OperandRef>& OpsToRename, eSS
 #endif
 )
 {
-   const auto* BI = GetPointer<const gimple_cond>(GET_CONST_NODE(bi));
+   const auto* BI = GetPointer<const gimple_cond>(bi);
    THROW_ASSERT(BI, "Branch instruction should be gimple_cond");
    THROW_ASSERT(BBs.count(BI->bb_index), "Branch BB should be a valid BB");
    const auto BranchBB = BBs.at(BI->bb_index);
@@ -295,33 +292,29 @@ void processBranch(tree_nodeConstRef bi, CustomSet<OperandRef>& OpsToRename, eSS
    const auto FalseBB = BBs.at(BranchBB->false_edge);
    const std::vector<blocRef> SuccsToProcess = {TrueBB, FalseBB};
 
-   if(GetPointer<const cst_node>(GET_CONST_NODE(BI->op0)) != nullptr)
+   if(GetPointer<const cst_node>(BI->op0) != nullptr)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Branch variable is a cst_node, skipping...");
       return;
    }
-   THROW_ASSERT(GET_CONST_NODE(BI->op0)->get_kind() == ssa_name_K,
-                "Non SSA variable found in branch (" + GET_CONST_NODE(BI->op0)->ToString() + ")");
+   THROW_ASSERT(BI->op0->get_kind() == ssa_name_K, "Non SSA variable found in branch (" + BI->op0->ToString() + ")");
    const auto cond_ssa = BI->op0;
    const auto cond_stmt = branchOpRecurse(BI->op0);
    if(cond_stmt == nullptr)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---Could not retrieve condition from branch variable, skipping... (" +
-                         GET_CONST_NODE(BI->op0)->ToString() + ")");
+                     "---Could not retrieve condition from branch variable, skipping... (" + BI->op0->ToString() + ")");
       return;
    }
-   if(GetPointer<const cst_node>(GET_CONST_NODE(cond_stmt)))
+   if(GetPointer<const cst_node>(cond_stmt))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---Constant condition from branch variable, skipping... (" +
-                         GET_CONST_NODE(cond_stmt)->ToString() + ")");
+                     "---Constant condition from branch variable, skipping... (" + cond_stmt->ToString() + ")");
       return;
    }
-   const auto* CondStmt = GetPointer<const gimple_assign>(GET_CONST_NODE(cond_stmt));
-   THROW_ASSERT(CondStmt, "Condition variable should be defined by gimple_assign (" +
-                              GET_CONST_NODE(cond_stmt)->ToString() + ")");
-   const auto CondOp = GET_CONST_NODE(CondStmt->op1);
+   const auto* CondStmt = GetPointer<const gimple_assign>(cond_stmt);
+   THROW_ASSERT(CondStmt, "Condition variable should be defined by gimple_assign (" + cond_stmt->ToString() + ")");
+   const auto CondOp = CondStmt->op1;
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "Branch condition is " + CondOp->get_kind_text() + " " + CondOp->ToString());
@@ -341,7 +334,7 @@ void processBranch(tree_nodeConstRef bi, CustomSet<OperandRef>& OpsToRename, eSS
             continue;
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        GET_NODE(Op)->ToString() + " eligible for renaming in BB" + STR(Succ->number));
+                        Op->ToString() + " eligible for renaming in BB" + STR(Succ->number));
 
          PredicateBase* PB = new PredicateWithEdge(gimple_cond_K, Op, BranchBB->number, Succ->number);
          addInfoFor(OperandRef(new Operand(Op, cond_stmt)), PB, OpsToRename, ValueInfoNums, ValueInfos);
@@ -357,8 +350,8 @@ void processBranch(tree_nodeConstRef bi, CustomSet<OperandRef>& OpsToRename, eSS
    {
       if(isCompare(bin))
       {
-         const auto lhs = GET_CONST_NODE(bin->op0);
-         const auto rhs = GET_CONST_NODE(bin->op1);
+         const auto lhs = bin->op0;
+         const auto rhs = bin->op1;
          if(lhs != rhs)
          {
             InsertHelper(cond_ssa);
@@ -400,7 +393,7 @@ void processMultiWayIf(tree_nodeConstRef mwii, CustomSet<OperandRef>& OpsToRenam
 #endif
 )
 {
-   const auto* MWII = GetPointer<const gimple_multi_way_if>(GET_CONST_NODE(mwii));
+   const auto* MWII = GetPointer<const gimple_multi_way_if>(mwii);
    THROW_ASSERT(MWII, "Multi way if instruction should be gimple_multi_way_if");
    const auto BranchBBI = MWII->bb_index;
    const auto BranchBB = BBs.at(BranchBBI);
@@ -409,7 +402,7 @@ void processMultiWayIf(tree_nodeConstRef mwii, CustomSet<OperandRef>& OpsToRenam
       const auto& TargetBB = BBs.at(TargetBBI);
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---" + GET_CONST_NODE(ssa_var)->ToString() + " eligible for renaming in BB" + STR(TargetBBI));
+                     "---" + ssa_var->ToString() + " eligible for renaming in BB" + STR(TargetBBI));
       auto* PS = new PredicateWithEdge(gimple_multi_way_if_K, ssa_var, BranchBBI, TargetBBI);
       addInfoFor(OperandRef(new Operand(ssa_var, use_stmt)), PS, OpsToRename, ValueInfoNums, ValueInfos);
       if(TargetBB->list_of_pred.size() > 1)
@@ -433,35 +426,32 @@ void processMultiWayIf(tree_nodeConstRef mwii, CustomSet<OperandRef>& OpsToRenam
                         "Branch loopback detected: variable renaming not safe, skipping...");
          continue;
       }
-      if(GetPointer<const cst_node>(GET_CONST_NODE(case_var)) != nullptr)
+      if(GetPointer<const cst_node>(case_var) != nullptr)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch variable is a cst_node, skipping...");
          continue;
       }
 
-      const auto* case_ssa = GetPointer<const ssa_name>(GET_CONST_NODE(case_var));
-      THROW_ASSERT(case_ssa,
-                   "Case conditional variable should be an ssa_name (" + GET_CONST_NODE(case_var)->ToString() + ")");
+      const auto* case_ssa = GetPointer<const ssa_name>(case_var);
+      THROW_ASSERT(case_ssa, "Case conditional variable should be an ssa_name (" + case_var->ToString() + ")");
       const auto case_stmt = case_ssa->CGetDefStmt();
-      if(GET_CONST_NODE(case_stmt)->get_kind() == gimple_phi_K)
+      if(case_stmt->get_kind() == gimple_phi_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "Branch variable already defined inside a phi node, skipping...");
          continue;
       }
-      const auto* Case_stmt = GetPointer<const gimple_assign>(GET_CONST_NODE(case_stmt));
-      THROW_ASSERT(Case_stmt, "Case statement should be a gimple_assign (" +
-                                  GET_CONST_NODE(case_stmt)->get_kind_text() + " " +
-                                  GET_CONST_NODE(case_stmt)->ToString() + ")");
+      const auto* Case_stmt = GetPointer<const gimple_assign>(case_stmt);
+      THROW_ASSERT(Case_stmt, "Case statement should be a gimple_assign (" + case_stmt->get_kind_text() + " " +
+                                  case_stmt->ToString() + ")");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "Condition: " + GET_CONST_NODE(Case_stmt->op1)->get_kind_text() + " " +
-                         GET_CONST_NODE(Case_stmt->op1)->ToString());
-      if(const auto* case_cmp = GetPointer<const binary_expr>(GET_CONST_NODE(Case_stmt->op1)))
+                     "Condition: " + Case_stmt->op1->get_kind_text() + " " + Case_stmt->op1->ToString());
+      if(const auto* case_cmp = GetPointer<const binary_expr>(Case_stmt->op1))
       {
          if(isCompare(case_cmp))
          {
-            const auto lhs = GET_CONST_NODE(case_cmp->op0);
-            const auto rhs = GET_CONST_NODE(case_cmp->op1);
+            const auto lhs = case_cmp->op0;
+            const auto rhs = case_cmp->op1;
             if(lhs != rhs)
             {
                InsertHelper(case_var, case_stmt, BBI);
@@ -492,8 +482,7 @@ void processMultiWayIf(tree_nodeConstRef mwii, CustomSet<OperandRef>& OpsToRenam
 // Perform a strict weak ordering on instructions and arguments.
 bool valueComesBefore(OrderedInstructions& OI, tree_nodeConstRef A, tree_nodeConstRef B)
 {
-   return OI.dominates(GetPointer<const gimple_node>(GET_CONST_NODE(A)),
-                       GetPointer<const gimple_node>(GET_CONST_NODE(B)));
+   return OI.dominates(A, B);
 }
 
 // Given a predicate info that is a type of branching terminator, get the
@@ -559,11 +548,10 @@ struct ValueDFS_Compare
    {
       if(!VD.Def && VD.U)
       {
-         const auto* PHI = GetPointer<const gimple_phi>(GET_CONST_NODE(VD.U->getUser()));
-         auto phiDefEdge = std::find_if(
-             PHI->CGetDefEdgesList().begin(), PHI->CGetDefEdgesList().end(), [&](const gimple_phi::DefEdge& de) {
-                return GET_INDEX_CONST_NODE(de.first) == GET_INDEX_CONST_NODE(VD.U->getOperand());
-             });
+         const auto* PHI = GetPointer<const gimple_phi>(VD.U->getUser());
+         auto phiDefEdge =
+             std::find_if(PHI->CGetDefEdgesList().begin(), PHI->CGetDefEdgesList().end(),
+                          [&](const gimple_phi::DefEdge& de) { return de.first->index == VD.U->getOperand()->index; });
          THROW_ASSERT(phiDefEdge != PHI->CGetDefEdgesList().end(), "Unable to find variable in phi definitions");
          return std::make_pair(phiDefEdge->second, PHI->bb_index);
       }
@@ -661,16 +649,15 @@ bool stackIsInScope(const ValueDFSStack& Stack, const ValueDFS& VDUse, const Ord
       {
          return false;
       }
-      const auto* PHI = GetPointer<const gimple_phi>(GET_CONST_NODE(VDUse.U->getUser()));
+      const auto* PHI = GetPointer<const gimple_phi>(VDUse.U->getUser());
       if(!PHI)
       {
          return false;
       }
       // Check edge
-      auto EdgePredIt = std::find_if(
-          PHI->CGetDefEdgesList().begin(), PHI->CGetDefEdgesList().end(), [&](const gimple_phi::DefEdge& de) {
-             return GET_INDEX_CONST_NODE(de.first) == GET_INDEX_CONST_NODE(VDUse.U->getOperand());
-          });
+      auto EdgePredIt =
+          std::find_if(PHI->CGetDefEdgesList().begin(), PHI->CGetDefEdgesList().end(),
+                       [&](const gimple_phi::DefEdge& de) { return de.first->index == VDUse.U->getOperand()->index; });
       if(EdgePredIt->second != getBranchBlock(Stack.back().PInfo))
       {
          return false;
@@ -705,14 +692,14 @@ void convertUsesToDFSOrdered(tree_nodeRef Op, std::vector<ValueDFS>& DFSOrderedS
 #endif
 )
 {
-   const auto* op = GetPointer<const ssa_name>(GET_CONST_NODE(Op));
-   THROW_ASSERT(op, "Op is not an ssa_name (" + GET_CONST_NODE(Op)->get_kind_text() + ")");
-   const auto defBBI = GetPointer<const gimple_node>(GET_CONST_NODE(op->CGetDefStmt()))->bb_index;
+   const auto* op = GetPointer<const ssa_name>(Op);
+   THROW_ASSERT(op, "Op is not an ssa_name (" + Op->get_kind_text() + ")");
+   const auto defBBI = GetPointer<const gimple_node>(op->CGetDefStmt())->bb_index;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    for(auto& Usize : op->CGetUseStmts())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Checking " + Usize.first->ToString());
-      const auto* gp = GetPointer<const gimple_phi>(GET_CONST_NODE(Usize.first));
+      const auto* gp = GetPointer<const gimple_phi>(Usize.first);
       if(gp)
       {
          if(gp->CGetDefEdgesList().size() == 1)
@@ -723,7 +710,7 @@ void convertUsesToDFSOrdered(tree_nodeRef Op, std::vector<ValueDFS>& DFSOrderedS
       }
 
       const auto& U = Usize.first;
-      const auto* I = GetPointer<const gimple_node>(GET_CONST_NODE(U));
+      const auto* I = GetPointer<const gimple_node>(U);
       THROW_ASSERT(I, "Use statement should be a gimple_node");
       if(I->bb_index == defBBI)
       {
@@ -767,7 +754,7 @@ void convertUsesToDFSOrdered(tree_nodeRef Op, std::vector<ValueDFS>& DFSOrderedS
          // #endif
          for(const auto& def_edge : gp->CGetDefEdgesList())
          {
-            if(GET_INDEX_CONST_NODE(def_edge.first) == GET_INDEX_CONST_NODE(Op))
+            if(def_edge.first->index == Op->index)
             {
                // #if HAVE_ASSERTS
                //                found = true;
@@ -817,15 +804,15 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
    for(auto RenameIter = RenameStack.end() - Start; RenameIter != RenameStack.end(); ++RenameIter)
    {
       auto Op = OrigOp;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Checking variable " + GET_CONST_NODE(Op)->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Checking variable " + Op->ToString());
       if(RenameIter != RenameStack.begin())
       {
          THROW_ASSERT((RenameIter - 1)->Def, "A valid definition shold be on the stack at this point");
-         const auto* gp = GetPointer<const gimple_phi>(GET_CONST_NODE((RenameIter - 1)->Def));
-         THROW_ASSERT(gp, "Previous definition on stack should be a gimple_phi (" +
-                              GET_CONST_NODE((RenameIter - 1)->Def)->ToString() + ")");
+         const auto* gp = GetPointer<const gimple_phi>((RenameIter - 1)->Def);
+         THROW_ASSERT(gp, "Previous definition on stack should be a gimple_phi (" + (RenameIter - 1)->Def->ToString() +
+                              ")");
          Op = gp->res;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Moving check to " + GET_CONST_NODE(Op)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Moving check to " + Op->ToString());
       }
       ValueDFS& Result = *RenameIter;
       const auto* ValInfo = Result.PInfo;
@@ -896,7 +883,7 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
                }
 
                // Fix multi_way_if routes
-               if(auto* mwi = GetPointer<gimple_multi_way_if>(GET_NODE(FromBB->CGetStmtList().back())))
+               if(auto* mwi = GetPointer<gimple_multi_way_if>(FromBB->CGetStmtList().back()))
                {
                   for(auto& cond : mwi->list_of_cond)
                   {
@@ -910,7 +897,7 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
                // Fix destination BB phis
                for(const auto& phi : ToBB->CGetPhiList())
                {
-                  auto* gp = GetPointer<gimple_phi>(GET_NODE(phi));
+                  auto* gp = GetPointer<gimple_phi>(phi);
                   const auto defFrom =
                       std::find_if(gp->CGetDefEdgesList().begin(), gp->CGetDefEdgesList().end(),
                                    [&](const gimple_phi::DefEdge& de) { return de.second == FromBB->number; });
@@ -923,7 +910,7 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
 
             // Insert required sigma operation into the intermediate basic block
             pic = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, function_id);
-            const auto gp = GetPointer<gimple_phi>(GET_NODE(pic));
+            const auto gp = GetPointer<gimple_phi>(pic);
             gp->SetSSAUsesComputed();
             gp->artificial = true;
             interBB->AddPhi(pic);
@@ -934,15 +921,15 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
          {
             // Insert required sigma operation into the destination basic block
             pic = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, function_id);
-            const auto gp = GetPointer<gimple_phi>(GET_NODE(pic));
+            const auto gp = GetPointer<gimple_phi>(pic);
             gp->SetSSAUsesComputed();
             gp->artificial = true;
             ToBB->AddPhi(pic);
          }
 
          // Clone renamed ssa properties
-         const auto* op = GetPointer<const ssa_name>(GET_CONST_NODE(Op));
-         auto* newSSA = GetPointer<ssa_name>(GET_NODE(new_ssa_var));
+         const auto* op = GetPointer<const ssa_name>(Op);
+         auto* newSSA = GetPointer<ssa_name>(new_ssa_var);
          newSSA->bit_values = op->bit_values;
          newSSA->range = RangeRef(op->range ? op->range->clone() : nullptr);
          newSSA->min = op->min;
@@ -951,7 +938,7 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
 
          PredicateMap.insert({pic, ValInfo});
          Result.Def = pic;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Materialized " + GET_CONST_NODE(pic)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Materialized " + pic->ToString());
       }
       else
       {
@@ -1119,7 +1106,7 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
          ValueDFS& Result = RenameStack.back();
          THROW_ASSERT(VD.U, "A use sohuld be in scope for current renaming operation");
 #if HAVE_ASSERTS
-         if(const auto* gp = GetPointer<const gimple_phi>(GET_CONST_NODE(VD.U->getUser())))
+         if(const auto* gp = GetPointer<const gimple_phi>(VD.U->getUser()))
          {
             THROW_ASSERT(gp->CGetDefEdgesList().size() > 1,
                          "Sigma operation should not be renamed (BB" + STR(gp->bb_index) + " " + gp->ToString() + ")");
@@ -1147,10 +1134,9 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
          }
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Found replacement " + GET_CONST_NODE(Result.Def)->ToString() + " for " +
-                            GET_CONST_NODE(VD.U->getOperand())->ToString() + " in " +
-                            GET_CONST_NODE(VD.U->getUser())->ToString());
-         const auto* phi = GetPointer<const gimple_phi>(GET_CONST_NODE(Result.Def));
+                        "---Found replacement " + Result.Def->ToString() + " for " + VD.U->getOperand()->ToString() +
+                            " in " + VD.U->getUser()->ToString());
+         const auto* phi = GetPointer<const gimple_phi>(Result.Def);
          if(not AppM->ApplyNewTransformation())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -1176,7 +1162,7 @@ eSSA::eSSA(const ParameterConstRef params, const application_managerRef AM, unsi
 
 eSSA::~eSSA() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 eSSA::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -1213,8 +1199,8 @@ void eSSA::Initialize()
 DesignFlowStep_Status eSSA::InternalExec()
 {
    auto TM = AppM->get_tree_manager();
-   const auto* fd = GetPointer<const function_decl>(TM->get_tree_node_const(function_id));
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   const auto* fd = GetPointer<const function_decl>(TM->GetTreeNode(function_id));
+   auto* sl = GetPointer<statement_list>(fd->body);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Extended SSA step");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Dominator tree computation...");
@@ -1303,14 +1289,13 @@ DesignFlowStep_Status eSSA::InternalExec()
       }
 
       const auto terminator = stmt_list.back();
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "Block terminates with " + GET_NODE(terminator)->get_kind_text());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Block terminates with " + terminator->get_kind_text());
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-      if(GET_CONST_NODE(terminator)->get_kind() == gimple_cond_K)
+      if(terminator->get_kind() == gimple_cond_K)
       {
          processBranch(terminator, OpsToRename, ValueInfoNums, ValueInfos, EdgeUsesOnly, sl->list_of_bloc, debug_level);
       }
-      else if(GET_CONST_NODE(terminator)->get_kind() == gimple_multi_way_if_K)
+      else if(terminator->get_kind() == gimple_multi_way_if_K)
       {
          processMultiWayIf(terminator, OpsToRename, ValueInfoNums, ValueInfos, EdgeUsesOnly, sl->list_of_bloc,
                            debug_level);
@@ -1363,7 +1348,7 @@ DesignFlowStep_Status eSSA::InternalExec()
       }
    }
 #ifndef NDEBUG
-   if(static_cast<size_t>(DFSInfos.size()) < (DT->num_bblocks() + 2))
+   if(DFSInfos.size() < (DT->num_bblocks() + 2))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Dominator tree has some unreachable blocks");
    }

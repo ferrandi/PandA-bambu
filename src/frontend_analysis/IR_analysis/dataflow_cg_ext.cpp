@@ -53,7 +53,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
-#include "tree_reindex.hpp"
 
 dataflow_cg_ext::dataflow_cg_ext(const ParameterConstRef _parameters, const application_managerRef _AppM,
                                  unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
@@ -62,7 +61,7 @@ dataflow_cg_ext::dataflow_cg_ext(const ParameterConstRef _parameters, const appl
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 dataflow_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -98,17 +97,16 @@ bool dataflow_cg_ext::HasToBeExecuted() const
 
 static void CleanVirtuals(const tree_managerRef& TM, const tree_nodeRef& call_stmt)
 {
-   const auto gn = GetPointerS<gimple_node>(GET_NODE(call_stmt));
+   const auto gn = GetPointerS<gimple_node>(call_stmt);
    if(gn->vdef)
    {
       dead_code_elimination::kill_vdef(TM, gn->vdef);
       gn->vdef = nullptr;
    }
-   std::for_each(gn->vuses.begin(), gn->vuses.end(),
-                 [&](auto& it) { GetPointer<ssa_name>(GET_NODE(it))->RemoveUse(call_stmt); });
+   std::for_each(gn->vuses.begin(), gn->vuses.end(), [&](auto& it) { GetPointer<ssa_name>(it)->RemoveUse(call_stmt); });
    gn->vuses.clear();
    std::for_each(gn->vovers.begin(), gn->vovers.end(),
-                 [&](auto& it) { GetPointer<ssa_name>(GET_NODE(it))->RemoveUse(call_stmt); });
+                 [&](auto& it) { GetPointer<ssa_name>(it)->RemoveUse(call_stmt); });
    gn->vovers.clear();
    THROW_ASSERT(!gn->memdef && !gn->memuse, "Unexpected condition");
 }
@@ -155,7 +153,7 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
          THROW_ERROR("Address/indirect function calls not supported in dataflow.");
       }
 
-      const auto fnode = TM->CGetTreeReindex(function_id);
+      const auto fnode = TM->GetTreeNode(function_id);
       auto is_single_call = boost::in_degree(tgt, *CG) == 1;
       std::vector<unsigned int> call_points(is_single_call ? ++(call_info->direct_call_points.begin()) :
                                                              call_info->direct_call_points.begin(),
@@ -163,7 +161,7 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
 
       for(auto call_id : call_points)
       {
-         const auto call_node = TM->CGetTreeReindex(call_id);
+         const auto call_node = TM->GetTreeNode(call_id);
          const auto module_suffix = "_" + std::to_string(call_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Clone module " + tsymbol + " -> " + tsymbol + module_suffix);
@@ -171,7 +169,7 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
          const auto version_symbol = tsymbol + module_suffix;
          const auto version_fnode = TM->GetFunction(version_symbol);
          THROW_ASSERT(version_fnode, "Expected version function node for " + version_symbol);
-         new_modules.push_back(GET_INDEX_CONST_NODE(version_fnode));
+         new_modules.push_back(version_fnode->index);
          const auto march = FunctionArchitectureRef(new FunctionArchitecture(*tarch));
          march->attrs.at(FunctionArchitecture::func_symbol) += module_suffix;
          march->attrs.at(FunctionArchitecture::func_symbol) += module_suffix;
@@ -184,7 +182,7 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
       std::vector<unsigned int> call_points(call_info->direct_call_points.begin(), call_info->direct_call_points.end());
       for(auto call_id : call_points)
       {
-         const auto call_node = TM->CGetTreeReindex(call_id);
+         const auto call_node = TM->GetTreeNode(call_id);
          CleanVirtuals(TM, call_node);
       }
    }

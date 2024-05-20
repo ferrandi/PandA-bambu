@@ -73,32 +73,30 @@ void InitializeHLS::ComputeRelationships(DesignFlowStepSet& relationship,
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const auto* frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(
-             design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
-         const std::string frontend_flow_signature = ApplicationFrontendFlowStep::ComputeSignature(BAMBU_FRONTEND_FLOW);
-         const vertex frontend_flow_step = design_flow_manager.lock()->GetDesignFlowStep(frontend_flow_signature);
-         const DesignFlowStepRef design_flow_step =
-             frontend_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(frontend_flow_step)->design_flow_step :
-                                  frontend_flow_step_factory->CreateApplicationFrontendFlowStep(BAMBU_FRONTEND_FLOW);
+         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(
+             design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
+         const auto frontend_flow_signature = ApplicationFrontendFlowStep::ComputeSignature(BAMBU_FRONTEND_FLOW);
+         const auto frontend_flow_step = design_flow_manager.lock()->GetDesignFlowStep(frontend_flow_signature);
+         const auto design_flow_step =
+             frontend_flow_step != DesignFlowGraph::null_vertex() ?
+                 design_flow_graph->CGetNodeInfo(frontend_flow_step)->design_flow_step :
+                 frontend_flow_step_factory->CreateApplicationFrontendFlowStep(BAMBU_FRONTEND_FLOW);
          relationship.insert(design_flow_step);
 
-         const auto* technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(
-             design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
-         const std::string technology_flow_signature =
+         const auto technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(
+             design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::TECHNOLOGY));
+         const auto technology_flow_signature =
              TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
-         const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
-         const DesignFlowStepRef technology_design_flow_step =
-             technology_flow_step ?
-                 design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
+         const auto technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
+         const auto technology_design_flow_step =
+             technology_flow_step != DesignFlowGraph::null_vertex() ?
+                 design_flow_graph->CGetNodeInfo(technology_flow_step)->design_flow_step :
                  technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          relationship.insert(technology_design_flow_step);
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP):
-      {
-         break;
-      }
+      case PRECEDENCE_RELATIONSHIP:
       case INVALIDATION_RELATIONSHIP:
       {
          break;
@@ -117,14 +115,14 @@ void InitializeHLS::Initialize()
 DesignFlowStep_Status InitializeHLS::InternalExec()
 {
    HLS = HLS_manager::create_HLS(HLSMgr, funId);
-   HLS->controller_type = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_controller_architecture));
+   HLS->controller_type = parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture);
    if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
    {
       HLS->controller_type = HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR;
    }
-   HLS->module_binding_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_fu_binding_algorithm));
-   HLS->liveness_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_liveness_algorithm));
-   HLS->chaining_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_chaining_algorithm));
+   HLS->module_binding_algorithm = parameters->getOption<HLSFlowStep_Type>(OPT_fu_binding_algorithm);
+   HLS->liveness_algorithm = parameters->getOption<HLSFlowStep_Type>(OPT_liveness_algorithm);
+   HLS->chaining_algorithm = parameters->getOption<HLSFlowStep_Type>(OPT_chaining_algorithm);
 
    return DesignFlowStep_Status::SUCCESS;
 }

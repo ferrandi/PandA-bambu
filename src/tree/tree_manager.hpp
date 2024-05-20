@@ -46,20 +46,16 @@
 #ifndef TREE_MANAGER_HPP
 #define TREE_MANAGER_HPP
 
-#include "config_HAVE_UNORDERED.hpp"
-
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "hash_helper.hpp"
-/// utility include
 #include "panda_types.hpp"
 #include "refcount.hpp"
 
-/// STL include
 #include <deque>
 #include <iosfwd>
-#include <string>  // for string
-#include <utility> // for pair
+#include <string>
+#include <utility>
 
 /**
  * @name forward declarations
@@ -78,6 +74,8 @@ enum class TreeVocabularyTokenTypes_TokenEnum;
 
 #define BUILTIN_SRCP "<built-in>:0:0"
 
+#define TREE_MANAGER_CONTAINER_UNORDERED 1
+
 /**
  * This class manages the tree structures extracted from the raw file.
  */
@@ -87,24 +85,19 @@ class tree_manager
    /// cache for tree_manager::find
    CustomUnorderedMapUnstable<std::string, unsigned int> find_cache;
 
-   /**
-    * Variable containing set of tree_nodes.
-    */
-#if HAVE_UNORDERED
-   UnorderedMapStd<unsigned int, tree_nodeRef> tree_nodes;
+/**
+ * Variable containing set of tree_nodes.
+ */
+#if TREE_MANAGER_CONTAINER_UNORDERED
+   CustomUnorderedMap<unsigned int, tree_nodeRef> tree_nodes;
 #else
    OrderedMapStd<unsigned int, tree_nodeRef> tree_nodes;
 #endif
+
    /**
     * Variable containing set of function_declaration with their index node
     */
    std::map<unsigned int, tree_nodeRef> function_decl_nodes;
-
-   /// list of examining statements during collapse_into recursion
-   std::deque<tree_nodeRef> stack;
-
-   /// set of already examined addr_expr used to avoid circular recursion
-   CustomUnorderedSet<tree_nodeRef> already_visited;
 
    /// the number of parallel loops
    unsigned int n_pl;
@@ -135,14 +128,8 @@ class tree_manager
    /// Set of parameters
    const ParameterConstRef Param;
 
-   /// Map containing temporary information for ssa_name uses deletion
-   CustomUnorderedMap<ssa_name*, tree_nodeRef> uses_erase_temp;
-
    /// Next version number for ssa variables
    unsigned int next_vers;
-
-   /// Index of current call of collapse_into_counter
-   unsigned int collapse_into_counter;
 
    /**
     * check for decl_node and return true if not suitable for symbol table or otherwise its symbol_name and
@@ -204,7 +191,18 @@ class tree_manager
     */
    explicit tree_manager(const ParameterConstRef& Param);
 
-   ~tree_manager();
+   /**
+    * @brief Reserve additional space for given amount of tree nodes
+    *
+    * @param additional_reserved_nodes Number of additional nodes to reserve space for
+    */
+   void add_reserve(size_t additional_reserved_nodes);
+
+   /**
+    * @brief Replace all tree reindex occurrences with the pointed tree node
+    *
+    */
+   void FixTreeReindex();
 
    /**
     * Return the index of function_decl node that implements
@@ -218,10 +216,9 @@ class tree_manager
 
    /**
     * Add to the tree manager the current node.
-    * @param i position in the tree_vector. Note that the raw file start from 1
     * @param curr is the added element
     */
-   void AddTreeNode(const unsigned int i, const tree_nodeRef& curr);
+   void AddTreeNode(const tree_nodeRef& curr);
 
    /**
     * Return a tree_reindex wrapping the  i-th tree_node.
@@ -231,27 +228,11 @@ class tree_manager
    tree_nodeRef GetTreeReindex(const unsigned int i);
 
    /**
-    * Return a tree_reindex wrapping the  i-th tree_node.
-    * @param i is the index of the tree_node.
-    * @return the reference to the tree_node.
-    */
-   const tree_nodeRef CGetTreeReindex(const unsigned int i) const;
-
-   /**
     * Return the index-th tree_node (modifiable version)
     * @param index is the index of the tree node to be returned
     * @return the index-the tree_node
     */
    tree_nodeRef GetTreeNode(const unsigned int index) const;
-
-   /**
-    * Return the reference to the i-th tree_node Constant version of get_tree_node.
-    * @param i is the index of the tree_node of the considered function.
-    * @return the reference to the tree_node.
-    * FIXME: this should return tree_nodeConstRef
-    */
-   const tree_nodeRef get_tree_node_const(unsigned int i) const;
-   const tree_nodeConstRef CGetTreeNode(const unsigned int i) const;
 
    /**
     * Return true if there exists a tree node associated with the given id, false otherwise
@@ -273,8 +254,8 @@ class tree_manager
     * TM->create_tree_node(identifier_node_id, TOK(TOK_IDENTIFIER_NODE), identifier_schema);
     * will add an identifier node to the tree_manager TM.
     */
-   void create_tree_node(const unsigned int node_id, enum kind tree_node_type,
-                         std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>& tree_node_schema);
+   tree_nodeRef create_tree_node(const unsigned int node_id, enum kind tree_node_type,
+                                 std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>& tree_node_schema);
 
    /**
     * if there exist return the node id of a tree node compatible with the tree_node_schema and of type tree_node_type.
@@ -378,17 +359,6 @@ class tree_manager
       }
       return os;
    }
-
-   /**
-    * Collapse operations chains into the examinated node
-    * @param funID is the index of the function
-    * @param stmt_to_block maps each statement to its bloc
-    * @param tn is the top tree node of the tree to be collapsed
-    * @param removed_nodes is the set of nodes removed during collapsing
-    */
-   void collapse_into(const unsigned int& funID, CustomUnorderedMapUnstable<unsigned int, unsigned int>& stmt_to_bloc,
-                      const tree_nodeRef& tn, CustomUnorderedSet<unsigned int>& removed_nodes,
-                      const application_managerRef AppM);
 
    /// increment the number a parallel loop
    void add_parallel_loop();
@@ -502,12 +472,6 @@ class tree_manager
     * @return true in case fd is a top function
     */
    bool is_top_function(const function_decl* fd) const;
-
-   /**
-    * @brief check_ssa_uses check if the uses of a ssa are correct
-    * @return true in case all the ssa uses are correct, false otherwise.
-    */
-   bool check_ssa_uses(unsigned int fun_id) const;
 };
 using tree_managerRef = refcount<tree_manager>;
 using tree_managerConstRef = refcount<const tree_manager>;

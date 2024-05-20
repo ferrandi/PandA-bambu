@@ -131,7 +131,7 @@ unsigned long long WB4_interface::get_data_bus_bitsize()
       {
          data_bus_bitsize =
              std::max(data_bus_bitsize,
-                      tree_helper::SizeAlloc(HLSMgr->get_tree_manager()->CGetTreeReindex(function_parameter.first)));
+                      tree_helper::SizeAlloc(HLSMgr->get_tree_manager()->GetTreeNode(function_parameter.first)));
       }
    }
    return data_bus_bitsize;

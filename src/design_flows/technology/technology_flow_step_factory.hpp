@@ -73,15 +73,7 @@ class TechnologyFlowStepFactory : public DesignFlowStepFactory
    TechnologyFlowStepFactory(const technology_managerRef TM, const generic_deviceRef target,
                              const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-   /**
-    * Destructor
-    */
    ~TechnologyFlowStepFactory() override;
-
-   /**
-    * Return the prefix of the steps created by the factory
-    */
-   const std::string GetPrefix() const override;
 
    /**
     * Create a scheduling design flow step

@@ -57,7 +57,6 @@
 #include "hls_manager.hpp"
 #include "string_manipulation.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 #include "utility.hpp"
 #include "xml_document.hpp"
 #include "xml_helper.hpp"
@@ -73,12 +72,12 @@ Evaluation::Evaluation(const ParameterConstRef _parameters, const HLS_managerRef
 
 Evaluation::~Evaluation() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 Evaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    auto objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
    const auto objective_vector = string_to_container<std::vector<std::string>>(objective_string, ",");
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -430,7 +429,7 @@ DesignFlowStep_Status Evaluation::Exec()
             const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
             THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
             const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(top_symbols.front());
-            const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(GET_INDEX_CONST_NODE(top_fnode));
+            const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(top_fnode->index);
             if(bench_name == "")
             {
                bench_name += FB->CGetBehavioralHelper()->get_function_name();

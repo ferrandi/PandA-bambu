@@ -49,6 +49,7 @@
 #include "WB4_interface.hpp"
 #include "add_library.hpp"
 #include "allocation.hpp"
+#include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
 #include "cdfc_module_binding.hpp"
 #include "chordal_coloring_register.hpp"
@@ -135,27 +136,22 @@
 
 HLSFlowStepFactory::HLSFlowStepFactory(const DesignFlowManagerConstRef _design_flow_manager,
                                        const HLS_managerRef _HLS_mgr, const ParameterConstRef _parameters)
-    : DesignFlowStepFactory(_design_flow_manager, _parameters), HLS_mgr(_HLS_mgr)
+    : DesignFlowStepFactory(DesignFlowStep::HLS, _design_flow_manager, _parameters), HLS_mgr(_HLS_mgr)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 HLSFlowStepFactory::~HLSFlowStepFactory() = default;
 
-const std::string HLSFlowStepFactory::GetPrefix() const
-{
-   return "HLS";
-}
-
 DesignFlowStepRef
 HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigned int funId,
                                       const HLSFlowStepSpecializationConstRef hls_flow_step_specialization) const
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Creating step " +
-                      (funId ? HLSFunctionStep::ComputeSignature(type, hls_flow_step_specialization, funId) :
-                               HLS_step::ComputeSignature(type, hls_flow_step_specialization)) +
-                      " (" + HLS_step::EnumToName(type) + ")");
+   INDENT_DBG_MEX(
+       DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+       std::string("-->Creating step HLS::") + HLS_step::EnumToName(type) +
+           (hls_flow_step_specialization ? "(" + hls_flow_step_specialization->GetName() + ")" : "") +
+           (funId ? "::" + HLS_mgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() : ""));
    DesignFlowStepRef design_flow_step = DesignFlowStepRef();
    switch(type)
    {
@@ -582,7 +578,7 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
    return design_flow_step;
 }
 
-const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
+DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
     const CustomUnorderedSet<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>>& hls_flow_steps) const
 {
    const CallGraphManagerConstRef call_graph_manager = HLS_mgr->CGetCallGraphManager();
@@ -700,7 +696,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
    return ret;
 }
 
-const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
+DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
     const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>& hls_flow_step) const
 {
    CustomUnorderedSet<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>> hls_flow_steps;
@@ -708,7 +704,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
    return CreateHLSFlowSteps(hls_flow_steps);
 }
 
-const DesignFlowStepSet
+DesignFlowStepSet
 HLSFlowStepFactory::CreateHLSFlowSteps(const HLSFlowStep_Type type,
                                        const HLSFlowStepSpecializationConstRef hls_flow_step_specialization) const
 {
@@ -717,13 +713,13 @@ HLSFlowStepFactory::CreateHLSFlowSteps(const HLSFlowStep_Type type,
    return CreateHLSFlowSteps(hls_flow_step);
 }
 
-const DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(
+DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(
     const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>& hls_flow_step) const
 {
    return *CreateHLSFlowSteps(hls_flow_step).cbegin();
 }
 
-const DesignFlowStepRef
+DesignFlowStepRef
 HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type,
                                       const HLSFlowStepSpecializationConstRef hls_flow_step_specialization) const
 {

@@ -107,7 +107,7 @@ void raw_writer::write_when_not_null(const std::string& str, const tree_nodeRef&
 {
    if(t)
    {
-      os << " " << str << ": @" << GET_INDEX_NODE(t);
+      os << " " << str << ": @" << t->index;
    }
 }
 
@@ -323,17 +323,6 @@ void raw_writer::operator()(const type_node* obj, unsigned int& mask)
    if(obj->libbambu_flag)
    {
       WRITE_TOKEN(os, TOK_LIBBAMBU);
-   }
-}
-
-void raw_writer::operator()(const memory_tag* obj, unsigned int& mask)
-{
-   mask = NO_VISIT;
-   obj->decl_node::visit(this);
-   auto vend = obj->list_of_aliases.end();
-   for(auto i = obj->list_of_aliases.begin(); i != vend; ++i)
-   {
-      write_when_not_null(STOK(TOK_ALIAS), *i);
    }
 }
 
@@ -1190,7 +1179,7 @@ void raw_writer::operator()(const var_decl* obj, unsigned int& mask)
       WRITE_NFIELD(os, STOK(TOK_BIT_VALUES), obj->bit_values);
    }
    write_when_not_null(STOK(TOK_SMT_ANN), obj->smt_ann);
-   CustomUnorderedSet<tree_nodeRef>::const_iterator var, var_end;
+   TreeNodeSet::const_iterator var, var_end;
    var_end = obj->defs.end();
    for(var = obj->defs.begin(); var != var_end; ++var)
    {

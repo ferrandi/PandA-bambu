@@ -63,7 +63,6 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 /// utility include
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
@@ -80,7 +79,7 @@ SerializeMutualExclusions::SerializeMutualExclusions(const application_managerRe
 
 SerializeMutualExclusions::~SerializeMutualExclusions() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 SerializeMutualExclusions::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -166,8 +165,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
       }
       /// NOTE: here cfg_bb_graph is correct
       if(boost::out_degree(basic_block, *cfg_bb_graph) == 2 &&
-         GET_CONST_NODE(cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->CGetStmtList().back())->get_kind() ==
-             gimple_cond_K)
+         cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->CGetStmtList().back()->get_kind() == gimple_cond_K)
       {
          OutEdgeIterator oe, oe_end;
          vertex true_vertex = NULL_VERTEX, false_vertex = NULL_VERTEX;
@@ -196,13 +194,13 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
          {
             std::swap(bb_node_info->true_edge, bb_node_info->false_edge);
             const auto last_stmt = bb_node_info->CGetStmtList().back();
-            const auto gc = GetPointer<const gimple_cond>(GET_CONST_NODE(last_stmt));
+            const auto gc = GetPointer<const gimple_cond>(last_stmt);
             THROW_ASSERT(gc, "");
             const auto srcp = gc->include_name + ":" + STR(gc->line_number) + ":" + STR(gc->column_number);
             const auto not_cond = tree_man->CreateNotExpr(gc->op0, bb_node_info, function_id);
             const auto ga_cond = tree_man->CreateGimpleAssign(tree_helper::CGetType(gc->op0), nullptr, nullptr,
                                                               not_cond, function_id, srcp);
-            const auto new_cond = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_cond))->op0;
+            const auto new_cond = GetPointerS<const gimple_assign>(ga_cond)->op0;
             bb_node_info->PushBefore(ga_cond, last_stmt, AppM);
             TM->ReplaceTreeNode(last_stmt, gc->op0, new_cond);
             bb_modified = true;
@@ -213,7 +211,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "-->Subgraph dominated by BB" + STR(basic_block_id) + " has to be restructured");
             const auto fd = GetPointerS<function_decl>(TM->GetTreeNode(function_id));
-            auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+            auto sl = GetPointerS<statement_list>(fd->body);
             const blocRef new_block(new bloc(sl->list_of_bloc.rbegin()->first + 1));
             new_block->SetSSAUsesComputed();
             sl->list_of_bloc[new_block->number] = new_block;
@@ -295,14 +293,14 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
             end_if_block->list_of_pred.push_back(new_block->number);
 
             THROW_ASSERT(bb_node_info->CGetStmtList().size(), "");
-            const auto gc = GetPointer<const gimple_cond>(GET_NODE(bb_node_info->CGetStmtList().back()));
+            const auto gc = GetPointer<const gimple_cond>(bb_node_info->CGetStmtList().back());
             THROW_ASSERT(gc, "");
             const auto srcp = gc->include_name + ":" + STR(gc->line_number) + ":" + STR(gc->column_number);
             const auto not_cond = tree_man->CreateNotExpr(gc->op0, new_block, function_id);
             const auto ga_cond = tree_man->CreateGimpleAssign(tree_helper::CGetType(gc->op0), nullptr, nullptr,
                                                               not_cond, function_id, srcp);
             new_block->PushBack(ga_cond, AppM);
-            const auto new_cond = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_cond))->op0;
+            const auto new_cond = GetPointerS<const gimple_assign>(ga_cond)->op0;
             const auto new_tree_node = tree_man->create_gimple_cond(new_cond, function_id, srcp);
             new_block->PushBack(new_tree_node, AppM);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Fixed basic blocks connections");
@@ -310,7 +308,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
             /// Fix the phi in end if and create the phi in new block
             for(const auto& phi : end_if_block->CGetPhiList())
             {
-               const auto gp = GetPointerS<gimple_phi>(GET_NODE(phi));
+               const auto gp = GetPointerS<gimple_phi>(phi);
                gimple_phi::DefEdgeList end_if_new_def_edge_list;
 
                const auto type = tree_helper::CGetType(gp->res);
@@ -322,26 +320,26 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                ssa_schema[TOK(TOK_VERS)] = STR(ssa_vers);
                ssa_schema[TOK(TOK_VOLATILE)] = STR(false);
                ssa_schema[TOK(TOK_VIRTUAL)] = STR(gp->virtual_flag);
-               if(GetPointer<ssa_name>(GET_NODE(gp->res))->var)
+               if(GetPointer<ssa_name>(gp->res)->var)
                {
-                  ssa_schema[TOK(TOK_VAR)] = STR(GetPointer<ssa_name>(GET_NODE(gp->res))->var->index);
+                  ssa_schema[TOK(TOK_VAR)] = STR(GetPointer<ssa_name>(gp->res)->var->index);
                }
                TM->create_tree_node(ssa_node_nid, ssa_name_K, ssa_schema);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Created " + STR(TM->CGetTreeNode(ssa_node_nid)));
+                              "---Created " + STR(TM->GetTreeNode(ssa_node_nid)));
 
                std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_phi_schema;
                const auto gimple_phi_id = TM->new_tree_node_id();
                gimple_phi_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                gimple_phi_schema[TOK(TOK_SCPE)] = STR(function_id);
-               gimple_phi_schema[TOK(TOK_TYPE)] = STR(GET_CONST_NODE(type));
+               gimple_phi_schema[TOK(TOK_TYPE)] = STR(type);
                gimple_phi_schema[TOK(TOK_RES)] = STR(ssa_node_nid);
                TM->create_tree_node(gimple_phi_id, gimple_phi_K, gimple_phi_schema);
-               auto new_gp = GetPointer<gimple_phi>(TM->get_tree_node_const(gimple_phi_id));
+               auto new_gp = GetPointer<gimple_phi>(TM->GetTreeNode(gimple_phi_id));
                new_gp->SetSSAUsesComputed();
 
                const auto zero = [&]() -> tree_nodeRef {
-                  if(GET_CONST_NODE(type)->get_kind() == integer_type_K)
+                  if(type->get_kind() == integer_type_K)
                   {
                      return TM->CreateUniqueIntegerCst(0, type);
                   }
@@ -374,11 +372,10 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                      end_if_new_def_edge_list.push_back(def_edge);
                   }
                }
-               new_block->AddPhi(TM->GetTreeReindex(gimple_phi_id));
+               new_block->AddPhi(TM->GetTreeNode(gimple_phi_id));
                gp->SetDefEdgeList(TM, end_if_new_def_edge_list);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "<--Added phi " + STR(TM->CGetTreeNode(gimple_phi_id)) + " - Fixed phi " +
-                                  gp->ToString());
+                              "<--Added phi " + STR(TM->GetTreeNode(gimple_phi_id)) + " - Fixed phi " + gp->ToString());
             }
             bb_modified = true;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -387,7 +384,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
       else if(boost::out_degree(basic_block, *cfg_bb_graph) >= 2)
       {
 #if HAVE_ASSERTS
-         const auto last_stmt = GET_CONST_NODE(cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->CGetStmtList().back());
+         const auto last_stmt = cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->CGetStmtList().back();
          const auto gmwi = GetPointer<const gimple_multi_way_if>(last_stmt);
          THROW_ASSERT(gmwi, last_stmt->get_kind_text());
          vertex previous_basic_block = NULL_VERTEX;

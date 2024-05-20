@@ -49,7 +49,6 @@
 #include "exceptions.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 #include <boost/tuple/tuple.hpp>
 
@@ -138,9 +137,8 @@ const std::string OpNodeInfo::GetOperation() const
       return NOP;
    }
    THROW_ASSERT(node, "");
-   THROW_ASSERT(GetPointer<const gimple_node>(GET_NODE(node)),
-                "Node is not a gimple_node but a " + GET_NODE(node)->get_kind_text());
-   return GetPointer<const gimple_node>(GET_NODE(node))->operation;
+   THROW_ASSERT(GetPointer<const gimple_node>(node), "Node is not a gimple_node but a " + node->get_kind_text());
+   return GetPointerS<const gimple_node>(node)->operation;
 }
 
 unsigned int OpNodeInfo::GetNodeId() const
@@ -249,7 +247,7 @@ OpGraphInfo::OpGraphInfo(const BehavioralHelperConstRef _BH)
 OpGraphInfo::~OpGraphInfo() = default;
 
 OpGraphsCollection::OpGraphsCollection(const OpGraphInfoRef _info, const ParameterConstRef _parameters)
-    : graphs_collection(RefcountCast<GraphInfo>(_info), _parameters),
+    : graphs_collection(std::static_pointer_cast<GraphInfo>(_info), _parameters),
       operations(OpGraphConstRef(new OpGraph(OpGraphsCollectionRef(this, null_deleter()), 0)))
 {
 }
@@ -296,7 +294,7 @@ OpVertexSorter::OpVertexSorter(const OpGraphConstRef _op_graph) : op_graph(_op_g
 
 bool OpVertexSorter::operator()(const vertex x, const vertex y) const
 {
-   return GET_NAME(op_graph, x) < GET_NAME(op_graph, y);
+   return op_graph->CGetOpNodeInfo(x)->vertex_name < op_graph->CGetOpNodeInfo(y)->vertex_name;
 }
 
 OpVertexSet::OpVertexSet(OpGraphConstRef _op_graph) : std::set<vertex, OpVertexSorter>(OpVertexSorter(_op_graph))
@@ -311,9 +309,11 @@ bool OpEdgeSorter::operator()(const EdgeDescriptor x, const EdgeDescriptor y) co
 {
    if(x != y)
    {
-      return GET_NAME(op_graph, boost::source(x, *op_graph)) < GET_NAME(op_graph, boost::source(y, *op_graph));
+      return op_graph->CGetOpNodeInfo(boost::source(x, *op_graph))->vertex_name <
+             op_graph->CGetOpNodeInfo(boost::source(y, *op_graph))->vertex_name;
    }
-   return GET_NAME(op_graph, boost::target(x, *op_graph)) < GET_NAME(op_graph, boost::target(y, *op_graph));
+   return op_graph->CGetOpNodeInfo(boost::target(x, *op_graph))->vertex_name <
+          op_graph->CGetOpNodeInfo(boost::target(y, *op_graph))->vertex_name;
 }
 
 OpEdgeSet::OpEdgeSet(OpGraphConstRef _op_graph) : std::set<EdgeDescriptor, OpEdgeSorter>(OpEdgeSorter(_op_graph))

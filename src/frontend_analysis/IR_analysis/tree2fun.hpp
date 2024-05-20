@@ -39,12 +39,8 @@
  */
 #ifndef TREE2FUN_HPP
 #define TREE2FUN_HPP
-
-/// Superclass include
-#include "function_frontend_flow_step.hpp"
-
-/// Utility include
 #include "custom_set.hpp"
+#include "function_frontend_flow_step.hpp"
 #include "refcount.hpp"
 
 /**
@@ -74,11 +70,7 @@ class tree2fun : public FunctionFrontendFlowStep
    bool recursive_transform(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement,
                             const tree_manipulationRef tree_man);
 
-   /**
-    * Return the set of analyses in relationship with this design step
-    * @param relationship_type is the type of relationship to be considered
-    */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
@@ -92,14 +84,8 @@ class tree2fun : public FunctionFrontendFlowStep
    tree2fun(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int _function_id,
             const DesignFlowManagerConstRef design_flow_manager);
 
-   /**
-    * Destructor
-    */
    ~tree2fun() override;
 
-   /**
-    * Fixes the var_decl duplication.
-    */
    DesignFlowStep_Status InternalExec() override;
 };
 #endif

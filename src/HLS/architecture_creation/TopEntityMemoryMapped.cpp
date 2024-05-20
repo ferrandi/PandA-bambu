@@ -85,8 +85,7 @@ void TopEntityMemoryMapped::Initialize()
 {
    top_entity::Initialize();
    const auto CGM = HLSMgr->CGetCallGraphManager();
-   const auto& top_function_ids = CGM->GetRootFunctions();
-   is_root_function = top_function_ids.count(funId);
+   is_root_function = CGM->GetRootFunctions().count(funId);
    needMemoryMappedRegisters =
        is_root_function ? parameters->getOption<bool>(OPT_memory_mapped_top) : HLSMgr->hasToBeInterfaced(funId);
    AddedComponents.clear();

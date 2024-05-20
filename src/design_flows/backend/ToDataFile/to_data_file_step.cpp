@@ -37,24 +37,24 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-/// Header include
 #include "to_data_file_step.hpp"
 
-/// design_flows include
 #include "design_flow_manager.hpp"
+#include "string_manipulation.hpp"
 
 ToDataFileStep::ToDataFileStep(const DesignFlowManagerConstRef _design_flow_manager,
                                const ToDataFileStep_Type _to_data_file_step_type, const ParameterConstRef _parameters)
-    : DesignFlowStep(_design_flow_manager, _parameters), to_data_file_step_type(_to_data_file_step_type)
+    : DesignFlowStep(ComputeSignature(_to_data_file_step_type), _design_flow_manager, _parameters),
+      to_data_file_step_type(_to_data_file_step_type)
 {
 }
 
-const std::string ToDataFileStep::ComputeSignature(const ToDataFileStep_Type to_data_file_step_type)
+DesignFlowStep::signature_t ToDataFileStep::ComputeSignature(const ToDataFileStep_Type to_data_file_step_type)
 {
-   return "ToDataFile::" + EnumToName(to_data_file_step_type);
+   return DesignFlowStep::ComputeSignature(TO_DATA_FILE, static_cast<unsigned short>(to_data_file_step_type), 0);
 }
 
-const std::string ToDataFileStep::EnumToName(const ToDataFileStep_Type to_data_file_step)
+std::string ToDataFileStep::EnumToName(const ToDataFileStep_Type to_data_file_step)
 {
    switch(to_data_file_step)
    {
@@ -96,17 +96,12 @@ bool ToDataFileStep::HasToBeExecuted() const
    return true;
 }
 
-std::string ToDataFileStep::GetSignature() const
-{
-   return ComputeSignature(to_data_file_step_type);
-}
-
 std::string ToDataFileStep::GetName() const
 {
-   return "GenerateFuList::" + EnumToName(to_data_file_step_type);
+   return "ToDataFile::" + EnumToName(to_data_file_step_type);
 }
 
 DesignFlowStepFactoryConstRef ToDataFileStep::CGetDesignFlowStepFactory() const
 {
-   return design_flow_manager.lock()->CGetDesignFlowStepFactory("ToDataFile");
+   return design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::TO_DATA_FILE);
 }

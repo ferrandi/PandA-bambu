@@ -88,8 +88,7 @@ class Scheduling : public HLSFunctionStep
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   virtual const CustomUnorderedSet<
-       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   virtual HLSRelationships
    ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:

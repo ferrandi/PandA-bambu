@@ -154,7 +154,7 @@ const CustomOrderedSet<unsigned int>& liveness::get_live_out(const vertex& v) co
 vertex liveness::get_op_where_defined(unsigned int var) const
 {
    THROW_ASSERT(var_op_definition.find(var) != var_op_definition.end(),
-                "var never defined " + TreeM->get_tree_node_const(var)->ToString());
+                "var never defined " + TreeM->GetTreeNode(var)->ToString());
    return var_op_definition.find(var)->second;
 }
 

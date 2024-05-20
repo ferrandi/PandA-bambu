@@ -97,7 +97,7 @@ DesignFlowStep_Status WriteTechnology::Exec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-const CustomUnorderedSet<TechnologyFlowStep_Type>
+CustomUnorderedSet<TechnologyFlowStep_Type>
 WriteTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<TechnologyFlowStep_Type> relationships;

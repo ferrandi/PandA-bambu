@@ -76,10 +76,10 @@ top_entity::top_entity(const ParameterConstRef _parameters, const HLS_managerRef
 
 top_entity::~top_entity() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 top_entity::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -113,8 +113,7 @@ DesignFlowStep_Status top_entity::InternalExec()
    const auto FB = HLSMgr->CGetFunctionBehavior(funId);
    const auto BH = FB->CGetBehavioralHelper();
    const auto function_name = BH->get_function_name();
-   const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   const auto is_top = top_functions.find(BH->get_function_index()) != top_functions.end();
+   const bool is_top = HLSMgr->CGetCallGraphManager()->GetRootFunctions().count(BH->get_function_index());
    const auto module_name = is_top ? "_" + function_name : function_name;
 
    /// Test on previous steps. They checks if datapath and controller have been created. If they didn't,
@@ -460,8 +459,7 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
       SM->add_connection(ret_obj, top_obj);
    }
 
-   const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   const auto is_top = top_functions.count(BH->get_function_index());
+   const bool is_top = HLSMgr->CGetCallGraphManager()->GetRootFunctions().count(BH->get_function_index());
    bool master_port = true; // Datapath->find_member("M_DataRdy", port_o_K, Datapath);
    ////////////////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////////////

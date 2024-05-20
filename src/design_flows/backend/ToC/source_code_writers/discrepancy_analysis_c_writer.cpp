@@ -61,7 +61,6 @@
 #include "time_info.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 
 #include <filesystem>
 
@@ -80,9 +79,8 @@
  * This function is used to detect when an integer variable (non-vector)
  * is actually handled as a vector from bambu
  */
-static inline bool is_large_integer(const tree_nodeConstRef& _tn)
+static inline bool is_large_integer(const tree_nodeConstRef& tn)
 {
-   const auto tn = _tn->get_kind() == tree_reindex_K ? GET_CONST_NODE(_tn) : _tn;
    const auto type = GetPointer<const type_node>(tn);
    THROW_ASSERT(type, "type_id " + STR(tn->index) + " is not a type");
    if(tn->get_kind() != integer_type_K)
@@ -271,7 +269,7 @@ void DiscrepancyAnalysisCWriter::InternalWriteFile()
    const auto top_symbols = Param->getOption<std::vector<std::string>>(OPT_top_functions_names);
    THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
    const auto top_fnode = TM->GetFunction(top_symbols.front());
-   const auto top_fb = HLSMgr->CGetFunctionBehavior(GET_INDEX_CONST_NODE(top_fnode));
+   const auto top_fb = HLSMgr->CGetFunctionBehavior(top_fnode->index);
    const auto top_bh = top_fb->CGetBehavioralHelper();
    const auto top_fname = top_bh->get_function_name();
    const auto return_type = tree_helper::GetFunctionReturnType(top_fnode);
@@ -335,7 +333,7 @@ void DiscrepancyAnalysisCWriter::writePreInstructionInfo(const FunctionBehaviorC
    {
       return;
    }
-   const tree_nodeConstRef curr_tn = TM->CGetTreeNode(st_tn_id);
+   const tree_nodeConstRef curr_tn = TM->GetTreeNode(st_tn_id);
    const auto kind = curr_tn->get_kind();
    if(kind == gimple_return_K)
    {
@@ -347,9 +345,9 @@ void DiscrepancyAnalysisCWriter::writePreInstructionInfo(const FunctionBehaviorC
                    "tree node " + STR(st_tn_id) + " is a gimple_call but does not actually call a function");
       THROW_ASSERT(node_info->called.size() == 1, "tree node " + STR(st_tn_id) + " calls more than a function");
       const auto called_id = *node_info->called.begin();
-      const tree_nodeConstRef called_fun_decl_node = TM->CGetTreeNode(called_id);
+      const tree_nodeConstRef called_fun_decl_node = TM->GetTreeNode(called_id);
       const auto* fu_dec = GetPointer<const function_decl>(called_fun_decl_node);
-      if(GetPointer<const identifier_node>(GET_NODE(fu_dec->name))->strg == BUILTIN_WAIT_CALL)
+      if(GetPointer<const identifier_node>(fu_dec->name)->strg == BUILTIN_WAIT_CALL)
       {
          /*
           * This operation calls a function with a function pointer, which is
@@ -369,8 +367,7 @@ void DiscrepancyAnalysisCWriter::writePreInstructionInfo(const FunctionBehaviorC
    else if(kind == gimple_assign_K)
    {
       const auto* g_as_node = GetPointer<const gimple_assign>(curr_tn);
-      tree_nodeRef rhs = GET_NODE(g_as_node->op1);
-      if(rhs->get_kind() == call_expr_K || rhs->get_kind() == aggr_init_expr_K)
+      if(g_as_node->op1->get_kind() == call_expr_K || g_as_node->op1->get_kind() == aggr_init_expr_K)
       {
          THROW_ASSERT(!node_info->called.empty(), "rhs of gimple_assign node " + STR(st_tn_id) +
                                                       " is a call_expr but does not actually call a function");
@@ -403,7 +400,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
    {
       return;
    }
-   const tree_nodeConstRef curr_tn = TM->CGetTreeNode(st_tn_id);
+   const tree_nodeConstRef curr_tn = TM->GetTreeNode(st_tn_id);
    if(curr_tn->get_kind() != gimple_assign_K && curr_tn->get_kind() != gimple_phi_K)
    {
       return;
@@ -446,14 +443,14 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
       is_virtual = g_phi_node->virtual_flag;
    }
 
-   if(ssa && GET_CONST_NODE(ssa)->get_kind() == ssa_name_K && !is_virtual)
+   if(ssa && ssa->get_kind() == ssa_name_K && !is_virtual)
    {
       /*
        * print statements that increase the counters used for coverage statistics
        */
       indented_output_stream->Append("__bambu_discrepancy_tot_assigned_ssa++;\n");
-      const auto* ssaname = GetPointerS<const ssa_name>(GET_CONST_NODE(ssa));
-      bool is_temporary = ssaname->var ? GetPointer<const decl_node>(GET_NODE(ssaname->var))->artificial_flag : true;
+      const auto* ssaname = GetPointerS<const ssa_name>(ssa);
+      bool is_temporary = ssaname->var ? GetPointer<const decl_node>(ssaname->var)->artificial_flag : true;
       bool is_discrepancy_address = Discrepancy->address_ssa.count(ssa);
       bool is_lost = Discrepancy->ssa_to_skip.count(ssa);
       bool has_no_meaning_in_software = is_discrepancy_address && Discrepancy->ssa_to_skip_if_address.count(ssa);
@@ -676,7 +673,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
       /// check if we need to add a check for floating operation correctness
       if(g_as_node)
       {
-         const auto rhs = GET_CONST_NODE(g_as_node->op1);
+         const auto rhs = g_as_node->op1;
          if(rhs->get_kind() == call_expr_K || rhs->get_kind() == aggr_init_expr_K)
          {
             indented_output_stream->Append("//" + oper->get_name() + "\n");
@@ -691,11 +688,11 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
             {
                const auto ce = GetPointerS<const call_expr>(rhs);
                const auto& actual_args = ce->args;
-               const auto op0 = GET_CONST_NODE(ce->fn);
+               const auto op0 = ce->fn;
                if(op0->get_kind() == addr_expr_K && (actual_args.size() == 1 || actual_args.size() == 2))
                {
                   const auto ue = GetPointerS<const unary_expr>(op0);
-                  const auto fn = GET_CONST_NODE(ue->op);
+                  const auto fn = ue->op;
                   THROW_ASSERT(fn->get_kind() == function_decl_K,
                                "tree node not currently supported " + fn->get_kind_text());
                   const auto fd = GetPointerS<const function_decl>(fn);
@@ -767,7 +764,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
                      {
                         const auto& f_sign = unary_op_relation->second.first;
                         const auto& cast_op = unary_op_relation->second.second;
-                        auto var1 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(0)));
+                        auto var1 = BHC->PrintVariable(actual_args.at(0)->index);
                         auto res_name = var_name;
                         if(F_TYPE_IN(f_sign) & FLOAT_TYPE)
                         {
@@ -814,10 +811,8 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
                         const auto& is_double_type = binary_op_relation->second.first;
                         const auto& op_symbol = binary_op_relation->second.second;
                         const std::string view_convert = is_double_type ? "_Int64_ViewConvert" : "_Int32_ViewConvert";
-                        const auto var1 =
-                            view_convert + "(" + BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(0))) + ")";
-                        const auto var2 =
-                            view_convert + "(" + BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(1))) + ")";
+                        const auto var1 = view_convert + "(" + BHC->PrintVariable(actual_args.at(0)->index) + ")";
+                        const auto var2 = view_convert + "(" + BHC->PrintVariable(actual_args.at(1)->index) + ")";
                         const auto res_name = view_convert + "(" + var_name + ")";
                         const auto computation = "(" + var1 + op_symbol + var2 + ")";
                         const auto check_string0 = "\"" + view_convert + "(" + var_name + ")==" + computation + "\"";
@@ -922,7 +917,7 @@ void DiscrepancyAnalysisCWriter::WriteExtraInitCode()
    const auto top_symbols = Param->getOption<std::vector<std::string>>(OPT_top_functions_names);
    THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
    const auto top_fnode = TM->GetFunction(top_symbols.front());
-   const auto fun_behavior = HLSMgr->CGetFunctionBehavior(GET_INDEX_CONST_NODE(top_fnode));
+   const auto fun_behavior = HLSMgr->CGetFunctionBehavior(top_fnode->index);
    const auto behavioral_helper = fun_behavior->CGetBehavioralHelper();
    Discrepancy->c_trace_filename = std::filesystem::path(c_backend_info->out_filename).parent_path().string() +
                                    behavioral_helper->get_function_name() + "_discrepancy.data";
@@ -988,14 +983,13 @@ void DiscrepancyAnalysisCWriter::DeclareLocalVariables(const CustomSet<unsigned 
    const auto FB = HLSMgr->CGetFunctionBehavior(BH->get_function_index());
    for(const auto& par : BH->GetParameters())
    {
-      if(FB->is_variable_mem(GET_INDEX_CONST_NODE(par)))
+      if(FB->is_variable_mem(par->index))
       {
          const auto bitsize = tree_helper::SizeAlloc(par);
          THROW_ASSERT(bitsize % 8 == 0 || bitsize == 1,
                       "bitsize of a variable in memory must be multiple of 8 --> is " + STR(bitsize));
-         indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"VARDECL_ID " +
-                                        STR(GET_INDEX_CONST_NODE(par)) + " VAR_ADDR LL_%lu\\n\", &" +
-                                        STR(BH->PrintVariable(GET_INDEX_CONST_NODE(par))) + ");//size " +
+         indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"VARDECL_ID " + STR(par->index) +
+                                        " VAR_ADDR LL_%lu\\n\", &" + STR(BH->PrintVariable(par->index)) + ");//size " +
                                         STR(compute_n_bytes(bitsize)) + "\n");
       }
    }
@@ -1003,7 +997,7 @@ void DiscrepancyAnalysisCWriter::DeclareLocalVariables(const CustomSet<unsigned 
    {
       if(FB->is_variable_mem(var))
       {
-         const auto bitsize = tree_helper::SizeAlloc(TM->CGetTreeReindex(var));
+         const auto bitsize = tree_helper::SizeAlloc(TM->GetTreeNode(var));
          THROW_ASSERT(bitsize % 8 == 0 || bitsize == 1,
                       "bitsize of a variable in memory must be multiple of 8 --> is " + STR(bitsize));
          indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"VARDECL_ID " + STR(var) +

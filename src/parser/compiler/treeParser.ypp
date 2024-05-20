@@ -49,12 +49,10 @@
 */
 //#define YYDEBUG 1
 
-///Autoheader include
 #include "config_HAVE_BISON_2_7_OR_GREATER.hpp"
 
 #define YYLTYPE_IS_TRIVIAL 0
 
-///Utility include
 #include "refcount.hpp"
 
 ///NOTE: forward declarations of BisonParserData and TreeFlexLexer are in this point since they will be used in treeParser.h
@@ -62,7 +60,6 @@ REF_FORWARD_DECL(BisonParserData);
 struct info_map;
 REF_FORWARD_DECL(TreeFlexLexer);
 
-#include "APInt.hpp"
 
 ///Header include
 #if HAVE_BISON_2_7_OR_GREATER
@@ -70,34 +67,26 @@ REF_FORWARD_DECL(TreeFlexLexer);
 #else
 #include "treeParser.h"
 #endif
-///Lexer include
-#include "treeLexer.hpp"
 
-#include "token_interface.hpp"
-
-///Parameter include
+#include "APInt.hpp"
 #include "Parameter.hpp"
-
-///STD include
-#include <cstdio>
-#include <cstring>
-#include <fstream>
-#include <string>
-#include <iosfwd>
-
-///Tree include
+#include "compiler_wrapper.hpp"
+#include "exceptions.hpp"
+#include "ext_tree_node.hpp"
+#include "fileIO.hpp"
+#include "token_interface.hpp"
+#include "treeLexer.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "ext_tree_node.hpp"
-#include "tree_reindex.hpp"
+#include "tree_reindex_remove.hpp"
 
-///Utiliy include
-#include "exceptions.hpp"
-#include "fileIO.hpp"
+#include <cstdio>
+#include <cstring>
+#include <fstream>
+#include <iosfwd>
+#include <string>
 
-///Wrapper include
-#include "compiler_wrapper.hpp"
 /**
 * Defines
 */
@@ -128,16 +117,7 @@ REF_FORWARD_DECL(TreeFlexLexer);
  * @param field is the name of the member of the obj_node to be setted. The type of field member has to be tree_nodeRef.
 */
 #define NS(obj_node, field) \
-  assign_tree_reindex_to_member(data->curr_tree_nodeRef, &obj_node::field, data->curr_NODE_ID, data->current_TM);
-
-/**
- * Macro used to set a generic field of a generic object.
- * @param curr is the current object reference.
- * @param obj_node is the type of the object to which the field is setted.
- * @param field is the name of the member of the obj_node to be setted. The type of field member has to be tree_nodeRef.
-*/
-#define NS2(curr, obj_node, field) \
-  assign_tree_reindex_to_member(curr, &obj_node::field, data->curr_NODE_ID, data->current_TM);
+  assign_tree_reindex_to_member(data->curr_tree_nodeRef, &obj_node::field, data->curr_NODE_ID, data->TreeM);
 
 /**
  * Macro used to set a generic field with a generic value of a generic object.
@@ -147,6 +127,9 @@ REF_FORWARD_DECL(TreeFlexLexer);
 */
 #define NSV(obj_node, field, value) \
     assign_value_to_member(data->curr_tree_nodeRef, &obj_node::field, value);
+
+#define NSV_SRCP(field, value) \
+    assign_value_to_srcp_member(data->curr_tree_nodeRef, &srcp::field, value);
 
 /**
  * Macro used to set a generic field with a generic value of a generic object.
@@ -168,7 +151,7 @@ REF_FORWARD_DECL(TreeFlexLexer);
  * Create the identifier_node
 */
 #define CTN_ID(parameter) \
-  create_Ref_identifier(&BisonParserData::curr_tree_nodeRef, data, parameter, data->current_TM);
+  create_Ref_identifier(&BisonParserData::curr_tree_nodeRef, data, parameter, data->TreeM);
 
 /**
  * Create the empty bloc and set the curr_blocRef.
@@ -197,7 +180,7 @@ REF_FORWARD_DECL(TreeFlexLexer);
 * @param add_function is the name of function that add a NODE_ID
 */
 #define ADDV(obj_node, add_function) \
-  addv(data->curr_tree_nodeRef, &obj_node::add_function, data->curr_NODE_ID, data->current_TM);
+  addv(data->curr_tree_nodeRef, &obj_node::add_function, data->curr_NODE_ID, data->TreeM);
 
 /**
  * Macro used to add a phi node to the object obj_node through the function add_function.
@@ -205,7 +188,7 @@ REF_FORWARD_DECL(TreeFlexLexer);
  * @param add_function is the name of function that add a phi
 */
 #define ADDP(obj_node, add_function) \
-  addv(data->curr_blocRef, &obj_node::add_function, data->curr_NODE_ID, data->current_TM);
+  addv(data->curr_blocRef, &obj_node::add_function, data->curr_NODE_ID, data->TreeM);
 
 /**
 * Macro used to add a NODE_ID to the object obj_node through the function add_function.
@@ -213,7 +196,7 @@ REF_FORWARD_DECL(TreeFlexLexer);
 * @param add_function is the name of function that add a NODE_ID
 */
 #define ADDV2(obj_node, add_function) \
-  addv2<obj_node, tree_nodeRef>(data->curr_tree_nodeRef, &obj_node::add_function, data->curr_NODE_ID_BIS, data->curr_NODE_ID, data->current_TM);
+  addv2<obj_node, tree_nodeRef>(data->curr_tree_nodeRef, &obj_node::add_function, data->curr_NODE_ID_BIS, data->curr_NODE_ID, data->TreeM);
 
 /**
 * Macro used to add a NODE_ID to the object obj_node through the function add_function.
@@ -221,7 +204,7 @@ REF_FORWARD_DECL(TreeFlexLexer);
 * @param add_function is the name of function that add a NODE_ID
 */
 #define ADDV3(obj_node, add_function) \
-  addv3<obj_node, tree_nodeRef>(data->curr_tree_nodeRef, &obj_node::add_function, data->curr_NODE_ID, static_cast<unsigned>(std::stoul(data->curr_string_number)), data->current_TM);
+  addv3<obj_node, tree_nodeRef>(data->curr_tree_nodeRef, &obj_node::add_function, data->curr_NODE_ID, static_cast<unsigned>(std::stoul(data->curr_string_number)), data->TreeM);
 
 /**
 * Macro used to add an unsigned int to the object obj_node through the function add_function.
@@ -229,7 +212,7 @@ REF_FORWARD_DECL(TreeFlexLexer);
 * @param add_function is the name of function that add a NODE_ID
 */
 #define ADD_UNSIGNED(obj_node, add_function) \
-  add_unsigned<obj_node, tree_nodeRef>(data->curr_tree_nodeRef, &obj_node::add_function, data->curr_NODE_ID, static_cast<unsigned>(std::stoul(data->curr_string_number)), data->current_TM);
+  add_unsigned<obj_node, tree_nodeRef>(data->curr_tree_nodeRef, &obj_node::add_function, data->curr_NODE_ID, static_cast<unsigned>(std::stoul(data->curr_string_number)), data->TreeM);
 
 /**
 * Macro used to add a bloc to the object obj_node through the function add_function.
@@ -258,58 +241,50 @@ REF_FORWARD_DECL(TreeFlexLexer);
  * @param access is a token between TOK_PUB TOK_PROT TOK_PRIV.
 */
 #define ADD_ACCESS_BINF(obj_node, add_function) \
-  add_access_binf(data->curr_tree_nodeRef, data->curr_NODE_ID, data->curr_token_enum, data->current_TM);
-
+  add_access_binf(data->curr_tree_nodeRef, data->curr_NODE_ID, data->curr_token_enum, data->TreeM);
 
 struct BisonParserData
 {
-   BisonParserData(const ParameterConstRef _Param, int _debug_level) :
-      Param(_Param),
-      debug_level(_debug_level),
-      curr_NODE_ID(0),
-      curr_NODE_ID_BIS(0),
-      implement_node(false),
-      id(0)
+   BisonParserData(const ParameterConstRef _Param, int _debug_level)
+         : Param(_Param), debug_level(_debug_level)
    {
    }
-   //the set of parameter
+   
+   // the set of parameter
    const ParameterConstRef Param;
 
-   ///debug level
+   /// debug level
    int debug_level;
 
    /// Current tree_node reference
    tree_nodeRef curr_tree_nodeRef;
 
    /// Current bloc reference
-   blocRef curr_blocRef;
+   blocRef curr_blocRef{nullptr};
 
    /// Current string reference
-   std::string curr_string;
+   std::string curr_string{""};
 
    /// Store the current NODE_ID as integer.
-   unsigned int curr_NODE_ID;
+   unsigned int curr_NODE_ID{0};
 
    /// Store the current NODE_ID_BIS as integer.
-   unsigned int curr_NODE_ID_BIS;
+   unsigned int curr_NODE_ID_BIS{0};
 
    /// Is true if the current node is an implementation node
-   bool implement_node;
+   bool implement_node{false};
 
    /// Store the current NUMBER as a string
-   std::string curr_string_number;
+   std::string curr_string_number{""};
 
    /// Store the current token_enum (long double)
-   TreeVocabularyTokenTypes_TokenEnum curr_token_enum;
+   TreeVocabularyTokenTypes_TokenEnum curr_token_enum{-1};
 
    /// Store the current id of the node. Used by node to identify the id of the current node.
-   int id;
+   int id{0};
 
-   ///merge all the raw read
-   tree_managerRef final_TM;
-
-   ///current tree manager
-   tree_managerRef current_TM;
+   /// current tree manager
+   tree_managerRef TreeM{nullptr};
 
    /// unique version identifier used for SSA_NAMEs objects
    static unsigned int global_uniq_vers_id;
@@ -318,135 +293,134 @@ struct BisonParserData
 unsigned int BisonParserData::global_uniq_vers_id = 1;
 
 /**
-* Local Data Structures
-*/
+ * Local Data Structures
+ */
 
 /**
-* Global Data Structures
-*/
+ * Global Data Structures
+ */
 
 /**
-* Function Prototypes
-*/
-extern int yylex(YYSTYPE *lvalp, const TreeFlexLexerRef lexer);
-extern void yyerror(const BisonParserDataRef data, const TreeFlexLexerRef lexer, const char *s);
+ * Function Prototypes
+ */
+extern int yylex(YYSTYPE * lvalp, const TreeFlexLexerRef lexer);
+extern void yyerror(const BisonParserDataRef data, const TreeFlexLexerRef lexer, const char* s);
 
 /**
-* Templates
-*/
-template<class obj_node, class TRef, class value_t>
-inline
-void assign_value_to_member(const TRef &curr, value_t obj_node::* field, const value_t value)
-  {
-    THROW_ASSERT(curr, "");
-    ((dynamic_cast<obj_node*>(curr.get())) ->* field) = value;
-  }
-
-template<class obj_node, class TRef>
-inline
-void assign_tree_reindex_to_member(const TRef &curr, tree_nodeRef obj_node::* field, const unsigned int tree_index, const tree_managerRef TM)
-  {
-    THROW_ASSERT(curr, "");
-((dynamic_cast<obj_node*>(curr.get())) ->* field) = TM->GetTreeReindex(tree_index);
-  }
-
-inline
-void create_Ref_bloc( refcount<bloc> BisonParserData::* field, const BisonParserDataRef data, unsigned int number_value)
-  {
-   (*data .* field) = refcount<bloc>(new bloc(number_value));
-  }
-
-template<class obj_node>
-inline
-void create_Ref_id(const BisonParserDataRef data, tree_nodeRef BisonParserData::* field)
+ * Templates
+ */
+template <class obj_node, class TRef, class value_t>
+inline void assign_value_to_member(const TRef& curr, value_t obj_node::*field, const value_t value)
 {
-    (*data .* field) = tree_nodeRef(new obj_node(data->id));
+   THROW_ASSERT(curr, "");
+   ((static_cast<obj_node*>(curr.get()))->*field) = value;
 }
 
-template<class constructor_parameter_type>
-inline
-void create_Ref_identifier(tree_nodeRef BisonParserData::* field, const BisonParserDataRef data, constructor_parameter_type par, tree_managerRef const &Root)
+template <class TRef, class value_t>
+inline void assign_value_to_srcp_member(const TRef& curr, value_t srcp::*field, const value_t value)
 {
-    (*data .* field) = tree_nodeRef(new identifier_node(data->id,par,Root.get()));
+   THROW_ASSERT(curr, "");
+   ((dynamic_cast<srcp*>(curr.get()))->*field) = value;
 }
 
-template<class attr>
-inline
-void add_attr(const tree_nodeRef &curr, const TreeVocabularyTokenTypes_TokenEnum &token_i)
-  {
-    (dynamic_cast<attr*>(curr.get()))->add(token_i);
-  }
-
-template<class attr>
-inline
-void add_attr_node(const tree_nodeRef &curr, const unsigned int tree_index, const tree_managerRef TM)
-  {
-    (dynamic_cast<attr*>(curr.get()))->add(TM->GetTreeReindex(tree_index));
-  }
-
-template<class function_decl>
-inline
-void add_op_name(const tree_nodeRef &curr, const std::string& token_s)
-  {
-    (dynamic_cast<function_decl*>(curr.get()))->add(token_s);
-  }
-
-template<class obj_node, class TRef, typename R>
-inline
-void  addv(const TRef &curr, R (obj_node::*add_function)(const tree_nodeRef&), const unsigned int tree_index, const tree_managerRef TM)
-  {
-((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index));
-  }
-
-template<class obj_node, class TRef, typename R>
-inline
-void  addv2(const TRef &curr, R (obj_node::*add_function)(const tree_nodeRef&, const tree_nodeRef&), const unsigned int tree_index_1, const unsigned int tree_index_2, const tree_managerRef TM)
+template <class obj_node, class TRef>
+inline void assign_tree_reindex_to_member(const TRef& curr, tree_nodeRef obj_node::*field,
+                                          const unsigned int tree_index, const tree_managerRef TM)
 {
-((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index_1), TM->GetTreeReindex(tree_index_2));
+   THROW_ASSERT(curr, "");
+   ((static_cast<obj_node*>(curr.get()))->*field) = TM->GetTreeReindex(tree_index);
 }
 
-template<class obj_node, class TRef, typename R>
-inline
-void  addv3(const TRef &curr, R (obj_node::*add_function)(const tree_nodeRef&, int), const unsigned int tree_index, const int value, const tree_managerRef TM)
+inline void create_Ref_bloc(refcount<bloc> BisonParserData::*field, const BisonParserDataRef data,
+                              unsigned int number_value)
 {
-((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index), value);
+   (*data.*field) = refcount<bloc>(new bloc(number_value));
 }
 
-template<class obj_node, class TRef, typename R>
-inline
-void  add_unsigned(const TRef &curr, R (obj_node::*add_function)(const tree_nodeRef&, unsigned int), const unsigned int tree_index, const unsigned int value, const tree_managerRef TM)
+template <class obj_node>
+inline void create_Ref_id(const BisonParserDataRef data, tree_nodeRef BisonParserData::*field)
 {
-   ((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index), value);
+   (*data.*field) = tree_nodeRef(new obj_node(data->id));
 }
 
-
-template<class obj_node, class TRefCurr, class TRef, typename R>
-inline
-void  addo(const TRefCurr &curr, R (obj_node::*add_function)(const TRef&), const TRef & obj)
-  {
-    ((dynamic_cast<obj_node*>(curr.get()))->*add_function)(obj);
-  }
-
-inline
-void add_access_binf(const tree_nodeRef & curr, const unsigned int binf_index, const TreeVocabularyTokenTypes_TokenEnum enum_access, const tree_managerRef TM)
+template <class constructor_parameter_type>
+inline void create_Ref_identifier(tree_nodeRef BisonParserData::*field, const BisonParserDataRef data,
+                                    constructor_parameter_type par, tree_managerRef const& Root)
 {
-   (dynamic_cast<binfo*>(curr.get()))->add_access_binf(TM->GetTreeReindex(binf_index), enum_access);
+   (*data.*field) = tree_nodeRef(new identifier_node(data->id, par, Root.get()));
 }
 
+template <class attr>
+inline void add_attr(const tree_nodeRef& curr, const TreeVocabularyTokenTypes_TokenEnum& token_i)
+{
+   (dynamic_cast<attr*>(curr.get()))->add(token_i);
+}
 
-inline
-void do_fun_decl(const bool &in, const int & cnib, const int & cni, const BisonParserDataRef data, const tree_managerRef TM)
-  {
-    TM->add_function(cni, data->curr_tree_nodeRef);
-  }
+template <class attr>
+inline void add_attr_node(const tree_nodeRef& curr, const unsigned int tree_index, const tree_managerRef TM)
+{
+   (dynamic_cast<attr*>(curr.get()))->add(TM->GetTreeReindex(tree_index));
+}
 
-template<class type_node>
-inline
-void do_qual(const tree_nodeRef &curr, const int & value)
-  {
-    THROW_ASSERT(curr, "");
-    ((dynamic_cast<type_node*>(curr.get()))->qual) = static_cast<TreeVocabularyTokenTypes_TokenEnum>(value);
-  }
+template <class function_decl>
+inline void add_op_name(const tree_nodeRef& curr, const std::string& token_s)
+{
+   (static_cast<function_decl*>(curr.get()))->add(token_s);
+}
+
+template <class obj_node, class TRef, typename R>
+inline void addv(const TRef& curr, R (obj_node::*add_function)(const tree_nodeRef&), const unsigned int tree_index,
+                  const tree_managerRef TM)
+{
+   ((static_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index));
+}
+
+template <class obj_node, class TRef, typename R>
+inline void addv2(const TRef& curr, R (obj_node::*add_function)(const tree_nodeRef&, const tree_nodeRef&),
+                  const unsigned int tree_index_1, const unsigned int tree_index_2, const tree_managerRef TM)
+{
+   ((static_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index_1),
+                                                            TM->GetTreeReindex(tree_index_2));
+}
+
+template <class obj_node, class TRef, typename R>
+inline void addv3(const TRef& curr, R (obj_node::*add_function)(const tree_nodeRef&, int),
+                  const unsigned int tree_index, const int value, const tree_managerRef TM)
+{
+   ((static_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index), value);
+}
+
+template <class obj_node, class TRef, typename R>
+inline void add_unsigned(const TRef& curr, R (obj_node::*add_function)(const tree_nodeRef&, unsigned int),
+                           const unsigned int tree_index, const unsigned int value, const tree_managerRef TM)
+{
+   ((static_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index), value);
+}
+
+template <class obj_node, class TRefCurr, class TRef, typename R>
+inline void addo(const TRefCurr& curr, R (obj_node::*add_function)(const TRef&), const TRef& obj)
+{
+   ((static_cast<obj_node*>(curr.get()))->*add_function)(obj);
+}
+
+inline void add_access_binf(const tree_nodeRef& curr, const unsigned int binf_index,
+                              const TreeVocabularyTokenTypes_TokenEnum enum_access, const tree_managerRef TM)
+{
+   (static_cast<binfo*>(curr.get()))->add_access_binf(TM->GetTreeReindex(binf_index), enum_access);
+}
+
+inline void do_fun_decl(const bool& in, const int& cnib, const int& cni, const BisonParserDataRef data,
+                        const tree_managerRef TM)
+{
+   TM->add_function(cni, data->curr_tree_nodeRef);
+}
+
+template <class type_node>
+inline void do_qual(const tree_nodeRef& curr, const int& value)
+{
+   THROW_ASSERT(curr, "");
+   ((static_cast<type_node*>(curr.get()))->qual) = static_cast<TreeVocabularyTokenTypes_TokenEnum>(value);
+}
 
 #ifndef __clang_analyzer__
 
@@ -462,7 +436,7 @@ bool pred;
 %token <value> NODE_ID
 %token <text> TOK_BISON_STRING
 %token <text> TOK_BISON_NUMBER
-%token TOK_BISON_COMPILER_VERSION TOK_BISON_PLUGIN_VERSION
+%token TOK_BISON_COMPILER_VERSION TOK_BISON_PLUGIN_VERSION TOK_BISON_NODE_COUNT
 %token TOK_BISON_ERROR_MARK TOK_BISON_IDENTIFIER_NODE TOK_BISON_TREE_LIST TOK_BISON_TREE_VEC
 %token TOK_BISON_BLOCK TOK_BISON_VOID_TYPE TOK_BISON_INTEGER_TYPE TOK_BISON_REAL_TYPE
 %token TOK_BISON_COMPLEX_TYPE TOK_BISON_TYPE_ARGUMENT_PACK TOK_BISON_NONTYPE_ARGUMENT_PACK TOK_BISON_EXPR_PACK_EXPANSION TOK_BISON_VECTOR_TYPE TOK_BISON_ENUMERAL_TYPE TOK_BISON_BOOLEAN_TYPE
@@ -611,20 +585,18 @@ bool pred;
    version : TOK_BISON_COMPILER_VERSION
              string_id { CompilerWrapper::bambu_ir_info = STOK(TOK_COMPILER_VERSION) + ": \"" + data->curr_string + "\"\n"; }
              TOK_BISON_PLUGIN_VERSION
-             string_id
+             string_id { CompilerWrapper::bambu_ir_info += STOK(TOK_PLUGIN_VERSION) + ": \"" + data->curr_string + "\"\n"; }
+             TOK_BISON_NODE_COUNT
+             number_id
              {
-                CompilerWrapper::bambu_ir_info += STOK(TOK_PLUGIN_VERSION) + ": \"" + data->curr_string + "\"\n";
-                if(data->final_TM)
-                   data->final_TM->merge_tree_managers(data->current_TM);
-                else if(data->current_TM)
-                   data->final_TM = data->current_TM;
-                data->current_TM = tree_managerRef(new tree_manager(data->Param));
+                data->TreeM = tree_managerRef(new tree_manager(data->Param));
+                data->TreeM->add_reserve(std::stoul(data->curr_string_number));
              }
              ;
 
    node : NODE_ID {data->curr_NODE_ID=data->id=$1;}
           node_d  {
-                      data->current_TM->AddTreeNode(data->id, data->curr_tree_nodeRef);
+                      data->TreeM->AddTreeNode(data->curr_tree_nodeRef);
                       data->curr_tree_nodeRef=tree_nodeRef();
                   };
 
@@ -929,7 +901,7 @@ bool pred;
             | tmpl_parms{NS(function_decl,tmpl_parms)} tmpl_args{NS(function_decl,tmpl_args)}
             ;
 
-   wfunction_decl : TOK_BISON_FUNCTION_DECL {CTN(function_decl) do_fun_decl(data->implement_node, data->curr_NODE_ID_BIS, data->curr_NODE_ID, data, data->current_TM);}
+   wfunction_decl : TOK_BISON_FUNCTION_DECL {CTN(function_decl) do_fun_decl(data->implement_node, data->curr_NODE_ID_BIS, data->curr_NODE_ID, data, data->TreeM);}
                     wdecl_node              {;}
                     fun_op                  {;}
                     wattr                   {;}
@@ -1057,19 +1029,19 @@ bool pred;
                         | var_decl_definition var_decl_definitions
                         ;
 
-   var_decl_definition : TOK_BISON_DEF_STMT node_id {GetPointer<var_decl>(data->curr_tree_nodeRef)->defs.insert(data->current_TM->GetTreeReindex(data->curr_NODE_ID));};
+   var_decl_definition : TOK_BISON_DEF_STMT node_id {GetPointerS<var_decl>(data->curr_tree_nodeRef)->defs.insert(data->TreeM->GetTreeReindex(data->curr_NODE_ID));};
 
    var_decl_uses : /*empty*/
                  | var_decl_use var_decl_uses
                  ;
 
-   var_decl_use : TOK_BISON_USE_STMT node_id {GetPointer<var_decl>(data->curr_tree_nodeRef)->uses.insert(data->current_TM->GetTreeReindex(data->curr_NODE_ID));};
+   var_decl_use : TOK_BISON_USE_STMT node_id {GetPointerS<var_decl>(data->curr_tree_nodeRef)->uses.insert(data->TreeM->GetTreeReindex(data->curr_NODE_ID));};
 
    var_decl_addressings : /*empty*/
                         | var_decl_addressing var_decl_addressings
                         ;
 
-   var_decl_addressing : TOK_BISON_ADDR_STMT node_id {GetPointer<var_decl>(data->curr_tree_nodeRef)->addressings.insert(data->current_TM->GetTreeReindex(data->curr_NODE_ID));};
+   var_decl_addressing : TOK_BISON_ADDR_STMT node_id {GetPointerS<var_decl>(data->curr_tree_nodeRef)->addressings.insert(data->TreeM->GetTreeReindex(data->curr_NODE_ID));};
 
    //string_cst:	TOK_BISON_STRING_CST^ (type)? strg lngt;
    wstring_cst : TOK_BISON_STRING_CST{CTN(string_cst)}  type_opt{OPT($3, NS(string_cst,type))}  strg{NSV(string_cst, strg, data->curr_string)}  lngt{NSV(string_cst, lngt, std::stoi(data->curr_string_number))};
@@ -1388,24 +1360,24 @@ bool pred;
                     predicate_opt           {OPT($9, NS(gimple_assign, predicate))}
                     gimple_modify_uses      {;}
                     gimple_modify_clbs      {;}
-                    clobber_opt             {OPT($15,GetPointer<gimple_assign>(data->curr_tree_nodeRef)->clobber = true;)}
-                    temporary_address_opt   {OPT($17,GetPointer<gimple_assign>(data->curr_tree_nodeRef)->temporary_address = true;)}
+                    clobber_opt             {OPT($15,GetPointerS<gimple_assign>(data->curr_tree_nodeRef)->clobber = true;)}
+                    temporary_address_opt   {OPT($17,GetPointerS<gimple_assign>(data->curr_tree_nodeRef)->temporary_address = true;)}
                   ;
 
    gimple_modify_uses : /*empty*/
                   | gimple_modify_use gimple_modify_uses
                   ;
 
-   gimple_modify_use : TOK_BISON_USE string_id {GetPointer<gimple_assign>(data->curr_tree_nodeRef)->use_set->Add(data->curr_string);}
-                     | TOK_BISON_USE_VARS node_id {GetPointer<gimple_assign>(data->curr_tree_nodeRef)->use_set->Add(data->current_TM->GetTreeReindex(data->curr_NODE_ID));}
+   gimple_modify_use : TOK_BISON_USE string_id {GetPointerS<gimple_assign>(data->curr_tree_nodeRef)->use_set->Add(data->curr_string);}
+                     | TOK_BISON_USE_VARS node_id {GetPointerS<gimple_assign>(data->curr_tree_nodeRef)->use_set->Add(data->TreeM->GetTreeReindex(data->curr_NODE_ID));}
                      ;
 
    gimple_modify_clbs : /*empty*/
                   | gimple_modify_clb gimple_modify_clbs
                   ;
 
-   gimple_modify_clb : TOK_BISON_CLB string_id {GetPointer<gimple_assign>(data->curr_tree_nodeRef)->clobbered_set->Add(data->curr_string);}
-                 | TOK_BISON_CLB_VARS node_id {GetPointer<gimple_assign>(data->curr_tree_nodeRef)->clobbered_set->Add(data->current_TM->GetTreeReindex(data->curr_NODE_ID));}
+   gimple_modify_clb : TOK_BISON_CLB string_id {GetPointerS<gimple_assign>(data->curr_tree_nodeRef)->clobbered_set->Add(data->curr_string);}
+                 | TOK_BISON_CLB_VARS node_id {GetPointerS<gimple_assign>(data->curr_tree_nodeRef)->clobbered_set->Add(data->TreeM->GetTreeReindex(data->curr_NODE_ID));}
                  ;
 
   //gt_expr:	TOK_BISON_GT_EXPR^ binary_expr;
@@ -1658,8 +1630,8 @@ bool pred;
                  | ptr_info ptr_info_opt
                  ;
 
-    ptr_info : TOK_BISON_USE string_id {GetPointer<ssa_name>(data->curr_tree_nodeRef)->use_set->Add(data->curr_string);}
-             | TOK_BISON_USE_VARS node_id {GetPointer<ssa_name>(data->curr_tree_nodeRef)->use_set->Add(data->current_TM->GetTreeReindex(data->curr_NODE_ID));}
+    ptr_info : TOK_BISON_USE string_id {GetPointerS<ssa_name>(data->curr_tree_nodeRef)->use_set->Add(data->curr_string);}
+             | TOK_BISON_USE_VARS node_id {GetPointerS<ssa_name>(data->curr_tree_nodeRef)->use_set->Add(data->TreeM->GetTreeReindex(data->curr_NODE_ID));}
              ;
 
    tok_ssa_name_def: tok_volatile_ssa_name | def_stmt_list;
@@ -1784,7 +1756,7 @@ bool pred;
                    | gimple_phi_tuples gimple_phi_tuples_pair
                    ;
 
-   gimple_phi_tuples_pair : def edge{GetPointer<gimple_phi>(data->curr_tree_nodeRef)->AddDefEdge(data->current_TM, gimple_phi::DefEdge(data->current_TM->GetTreeReindex(data->curr_NODE_ID), static_cast<unsigned>(std::stoul(data->curr_string_number))));}
+   gimple_phi_tuples_pair : def edge{GetPointerS<gimple_phi>(data->curr_tree_nodeRef)->AddDefEdge(data->TreeM, gimple_phi::DefEdge(data->TreeM->GetTreeReindex(data->curr_NODE_ID), static_cast<unsigned>(std::stoul(data->curr_string_number))));}
    ;
 
    //gimple_phi:       TOK_BISON_GIMPLE_PHI^ res (def edge)* (TOK_BISON_VIRTUAL)?;
@@ -1951,16 +1923,16 @@ bool pred;
                    | gimple_call_use gimple_call_uses
                    ;
 
-   gimple_call_use : TOK_BISON_USE string_id {GetPointer<gimple_call>(data->curr_tree_nodeRef)->use_set->Add(data->curr_string);}
-                  | TOK_BISON_USE_VARS node_id {GetPointer<gimple_call>(data->curr_tree_nodeRef)->use_set->Add(data->current_TM->GetTreeReindex(data->curr_NODE_ID));}
+   gimple_call_use : TOK_BISON_USE string_id {GetPointerS<gimple_call>(data->curr_tree_nodeRef)->use_set->Add(data->curr_string);}
+                  | TOK_BISON_USE_VARS node_id {GetPointerS<gimple_call>(data->curr_tree_nodeRef)->use_set->Add(data->TreeM->GetTreeReindex(data->curr_NODE_ID));}
                   ;
 
    gimple_call_clbs : /*empty*/
                    | gimple_call_clb gimple_call_clbs
                    ;
 
-   gimple_call_clb : TOK_BISON_CLB string_id {GetPointer<gimple_call>(data->curr_tree_nodeRef)->clobbered_set->Add(data->curr_string);}
-                  | TOK_BISON_CLB_VARS node_id {GetPointer<gimple_call>(data->curr_tree_nodeRef)->clobbered_set->Add(data->current_TM->GetTreeReindex(data->curr_NODE_ID));}
+   gimple_call_clb : TOK_BISON_CLB string_id {GetPointerS<gimple_call>(data->curr_tree_nodeRef)->clobbered_set->Add(data->curr_string);}
+                  | TOK_BISON_CLB_VARS node_id {GetPointerS<gimple_call>(data->curr_tree_nodeRef)->clobbered_set->Add(data->TreeM->GetTreeReindex(data->curr_NODE_ID));}
                   ;
 
    //bit_field_ref:  TOK_BISON_BIT_FIELD_REF^ ternary_expr;
@@ -2301,13 +2273,13 @@ bool pred;
       wfrem_expr: TOK_BISON_FREM_EXPR{CTN(frem_expr)}  wbinary_expr;
 
       //srcp: TOK_BISON_SRCP^ TOK_BISON_STRING TOK_BISON_NUMBER;
-       wsrcp_opt     : /*empty*/| TOK_BISON_SRCP string_id{NSV(srcp, include_name, data->curr_string)} number_id{NSV(srcp, line_number, static_cast<unsigned>(std::stoul(data->curr_string_number)))} number_id{NSV(srcp, column_number, static_cast<unsigned>(std::stoul(data->curr_string_number)))};
+       wsrcp_opt     : /*empty*/| TOK_BISON_SRCP string_id{NSV_SRCP(include_name, data->curr_string)} number_id{NSV_SRCP(line_number, static_cast<unsigned>(std::stoul(data->curr_string_number)))} number_id{NSV_SRCP(column_number, static_cast<unsigned>(std::stoul(data->curr_string_number)))};
 
 
 
    /* BLOC GRAMMAR */
    tok_hpl : /* empty */
-           | TOK_BISON_HPL {data->current_TM->add_parallel_loop();NBV(bloc, hpl, 1)}
+           | TOK_BISON_HPL {data->TreeM->add_parallel_loop();NBV(bloc, hpl, 1)}
            ;
    wloop_id:  /* empty */
            | TOK_BISON_LOOP_ID number_id{NBV(bloc, loop_id, static_cast<unsigned>(std::stoul(data->curr_string_number)))}
@@ -2323,11 +2295,11 @@ bool pred;
               ;
 
    phi_star : /*empty*/
-            | phi_star phi{data->curr_blocRef->AddPhi(data->current_TM->GetTreeReindex(data->curr_NODE_ID));}
+            | phi_star phi{data->curr_blocRef->AddPhi(data->TreeM->GetTreeReindex(data->curr_NODE_ID));}
             ;
 
    stmt_star : /*empty*/
-             | stmt_star stmt{data->curr_blocRef->PushBack(data->current_TM->GetTreeReindex(data->curr_NODE_ID), application_managerRef());}
+             | stmt_star stmt{data->curr_blocRef->PushBack(data->TreeM->GetTreeReindex(data->curr_NODE_ID), application_managerRef());}
              ;
 
    rtl_star : /*empty*/
@@ -2758,34 +2730,33 @@ bool pred;
 %%
 #endif
 /**
-* EPILOGUE
-*/
+ * EPILOGUE
+ */
 
 extern tree_managerRef tree_parseY(const ParameterConstRef Param, std::string fn)
 {
-    fileIO_istreamRef sname = fileIO_istream_open(fn);
-    if(sname->fail()) THROW_ERROR(std::string("FILE does not exist: ")+fn);
-    const TreeFlexLexerRef lexer(new TreeFlexLexer(sname.get(), nullptr));
-    const BisonParserDataRef data(new BisonParserData(Param, Param->get_class_debug_level("tree_parse")));
-    data->final_TM = tree_managerRef();
-    data->current_TM = tree_managerRef();
+   fileIO_istreamRef sname = fileIO_istream_open(fn);
+   if(sname->fail())
+      THROW_ERROR(std::string("FILE does not exist: ") + fn);
+
+   const TreeFlexLexerRef lexer(new TreeFlexLexer(sname.get(), nullptr));
+   const BisonParserDataRef data(new BisonParserData(Param, Param->get_class_debug_level("tree_parse")));
 #if YYDEBUG
-    yydebug = 1;
+   yydebug = 1;
 #endif
-    yyparse(data, lexer);
-    if(data->final_TM)
-      data->final_TM->merge_tree_managers(data->current_TM);
-    else
-      data->final_TM = data->current_TM;
-    return data->final_TM;
+   yyparse(data, lexer);
+
+   data->TreeM->FixTreeReindex();
+   return data->TreeM;
 }
 
-void yyerror(const BisonParserDataRef data, const TreeFlexLexerRef lexer, const char *msg)
+void yyerror(const BisonParserDataRef data, const TreeFlexLexerRef lexer, const char* msg)
 {
-  lexer->yyerror(msg);
+   lexer->yyerror(msg);
 }
-int yylex(YYSTYPE *lvalp, const TreeFlexLexerRef lexer)
+
+int yylex(YYSTYPE* lvalp, const TreeFlexLexerRef lexer)
 {
-  lexer->lvalp=lvalp;
-  return lexer->yylex();
+   lexer->lvalp = lvalp;
+   return lexer->yylex();
 }

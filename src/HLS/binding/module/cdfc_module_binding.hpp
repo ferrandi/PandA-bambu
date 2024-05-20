@@ -41,23 +41,16 @@
 
 #ifndef CDFC_MODULE_BINDING_HPP
 #define CDFC_MODULE_BINDING_HPP
-
-#include "fu_binding_creator.hpp"
-
-#include "graph.hpp"
-
-#include "hash_helper.hpp"
-
-/// STD include
-#include <string>
-
-/// STL includes
-#include <deque>
-#include <utility>
-#include <vector>
-
 #include "custom_map.hpp"
 #include "custom_set.hpp"
+#include "fu_binding_creator.hpp"
+#include "graph.hpp"
+#include "hash_helper.hpp"
+
+#include <deque>
+#include <string>
+#include <utility>
+#include <vector>
 
 //#define HC_APPROACH
 
@@ -83,15 +76,9 @@ class CDFCModuleBindingSpecialization : public HLSFlowStepSpecialization
     */
    explicit CDFCModuleBindingSpecialization(const CliqueCovering_Algorithm clique_covering_algorithm);
 
-   /**
-    * Return the string representation of this
-    */
-   std::string GetKindText() const override;
+   std::string GetName() const override;
 
-   /**
-    * Return the contribution to the signature of a step given by the specialization
-    */
-   std::string GetSignature() const override;
+   context_t GetSignatureContext() const override;
 };
 
 /// Predicate functor object used to select the proper set of vertices
@@ -335,9 +322,9 @@ class CdfcGraph : public graph
    /**
     * Returns the info associated with an edge
     */
-   inline const CdfcEdgeInfoConstRef CGetCdfcEdgeInfo(const EdgeDescriptor e) const
+   inline CdfcEdgeInfoConstRef CGetCdfcEdgeInfo(const EdgeDescriptor e) const
    {
-      return RefcountCast<const CdfcEdgeInfo>(graph::CGetEdgeInfo(e));
+      return std::static_pointer_cast<const CdfcEdgeInfo>(graph::CGetEdgeInfo(e));
    }
 
    /**

@@ -42,26 +42,18 @@
  */
 #ifndef HLS_STEP_HPP
 #define HLS_STEP_HPP
+#include "custom_map.hpp"
+#include "design_flow_step.hpp"
+#include "refcount.hpp"
 
-/// Autoheader include
+#include <string>
+
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_ILP_BUILT.hpp"
 #include "config_HAVE_LIBRARY_CHARACTERIZATION_BUILT.hpp"
 #include "config_HAVE_SIMULATION_WRAPPER_BUILT.hpp"
 #include "config_HAVE_TASTE.hpp"
 #include "config_HAVE_VCD_BUILT.hpp"
-
-/// Superclass include
-#include "design_flow_step.hpp"
-
-/// STD include
-#include <string>
-
-/// STL include
-#include "custom_map.hpp"
-
-/// utility include
-#include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(hls);
@@ -75,19 +67,42 @@ class xml_element;
 class HLSFlowStepSpecialization
 {
  public:
+   enum SpecializationClass
+   {
+      C_BACKEND = 0,
+      CDFC_MODULE_BINDING,
+      WEIGHTED_CLIQUE_REGISTER,
+      MEMORY_ALLOCATION,
+      ADD_LIBRARY,
+      PARAMETRIC_LIST_BASED
+   };
+   using context_t = unsigned short;
+
    HLSFlowStepSpecialization();
 
    virtual ~HLSFlowStepSpecialization();
 
    /**
-    * Return the string representation of this
+    * @brief Get the name of this specialization
+    *
+    * @return std::string Name of the specialization
     */
-   virtual std::string GetKindText() const = 0;
+   virtual std::string GetName() const = 0;
 
    /**
-    * Return the contribution to the signature of a step given by the specialization
+    * @brief Get the signature context for this specialization
+    *
+    * @return context_t signature context
     */
-   virtual std::string GetSignature() const = 0;
+   virtual context_t GetSignatureContext() const = 0;
+
+   /**
+    * @brief Compute signature context
+    *
+    * @param spec_class Specialization class
+    * @param context Additional context
+    */
+   static context_t ComputeSignatureContext(SpecializationClass spec_class, unsigned char context);
 };
 /// const refcount definition of the class
 using HLSFlowStepSpecializationConstRef = refcount<const HLSFlowStepSpecialization>;
@@ -188,7 +203,7 @@ enum class HLSFlowStep_Type
 
 enum class HLSFlowStep_Relationship
 {
-   ALL_FUNCTIONS,
+   ALL_FUNCTIONS = 0,
    CALLED_FUNCTIONS,
    SAME_FUNCTION,
    TOP_FUNCTION,
@@ -197,6 +212,40 @@ enum class HLSFlowStep_Relationship
 
 class HLS_step : public DesignFlowStep
 {
+ public:
+   using HLSRelationship = std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>;
+
+   struct HLSRelationshipEqual
+   {
+      inline bool operator()(const HLSRelationship& x, const HLSRelationship& y) const
+      {
+         if(std::get<0>(x) == std::get<0>(y) && std::get<2>(x) == std::get<2>(y))
+         {
+            if(std::get<1>(x) == std::get<1>(y))
+            {
+               return true;
+            }
+            else if(std::get<1>(x) && std::get<1>(y))
+            {
+               return std::get<1>(x)->GetSignatureContext() == std::get<1>(y)->GetSignatureContext();
+            }
+         }
+         return false;
+      }
+   };
+
+   struct HLSRelationshipHash
+   {
+      inline size_t operator()(const HLSRelationship& r) const
+      {
+         return static_cast<size_t>(std::get<0>(r)) << 24U |
+                static_cast<size_t>(std::get<1>(r) ? std::get<1>(r)->GetSignatureContext() : 0U) << 8U |
+                (static_cast<size_t>(std::get<2>(r)) & 0xFFU);
+      }
+   };
+
+   using HLSRelationships = CustomUnorderedSet<HLSRelationship, HLSRelationshipHash, HLSRelationshipEqual>;
+
  protected:
    /// Map hls step name to enum
    static CustomUnorderedMap<std::string, HLSFlowStep_Type> command_line_name_to_enum;
@@ -210,13 +259,18 @@ class HLS_step : public DesignFlowStep
    /// The information about specialization
    const HLSFlowStepSpecializationConstRef hls_flow_step_specialization;
 
+   HLS_step(signature_t signature, const ParameterConstRef _parameters, const HLS_managerRef HLSMgr,
+            const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
+            const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
+
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const CustomUnorderedSet<
-       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   virtual HLSRelationships ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+
+   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
  public:
    /**
@@ -230,27 +284,11 @@ class HLS_step : public DesignFlowStep
             const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
             const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
 
-   /**
-    * Destructor
-    */
    ~HLS_step() override;
 
-   /**
-    * Return a unified identifier of this design step
-    * @return the signature of the design step
-    */
-   std::string GetSignature() const override;
+   virtual std::string GetName() const override;
 
-   /**
-    * Return the name of this design step
-    * @return the name of the pass (for debug purpose)
-    */
-   std::string GetName() const override;
-
-   /**
-    * Return the name of the type of this frontend flow step
-    */
-   virtual std::string GetKindText() const;
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const final;
 
    /**
     * Given a HLS flow step type, return the name of the type
@@ -260,86 +298,29 @@ class HLS_step : public DesignFlowStep
    static std::string EnumToName(const HLSFlowStep_Type hls_flow_step_type);
 
    /**
-    * Return the factory to create this type of steps
-    */
-   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const final;
-
-   /**
-    * Compute the relationships of a step with other steps
-    * @param dependencies is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
-                             const DesignFlowStep::RelationshipType relationship_type) override;
-
-   /**
     * Compute the signature of a hls flow step
     * @param hls_flow_step_type is the type of the step
     * @param hls_flow_step_specialization is how the step has to be specialized
     * @return the corresponding signature
     */
-   static const std::string ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
-                                             const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
+   static signature_t ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
+                                       const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
 };
-/// refcount definition of the class
+
 using HLS_stepRef = refcount<HLS_step>;
 
-/**
- * Definition of hash function for HLSFlowStep_Type
- */
 namespace std
 {
-   template <>
-   struct hash<HLSFlowStep_Type> : public unary_function<HLSFlowStep_Type, size_t>
-   {
-      size_t operator()(HLSFlowStep_Type step) const
-      {
-         hash<int> hasher;
-         return hasher(static_cast<int>(step));
-      }
-   };
-} // namespace std
-
-/**
- * Definition of hash function for std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef,
- * HLSFlowStep_Relationship>
- */
-namespace std
-{
-   template <>
-   struct hash<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-       : public unary_function<
-             std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>, size_t>
-   {
-      size_t
-      operator()(std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> step) const
-      {
-         std::size_t ret = 0;
-         hash<int> hasher;
-         boost::hash_combine(ret, hasher(static_cast<int>(std::get<0>(step))));
-         boost::hash_combine(ret, std::get<1>(step));
-         boost::hash_combine(ret, hasher(static_cast<int>(std::get<2>(step))));
-         return ret;
-      }
-   };
-} // namespace std
-
-/**
- * Definition of hash function for std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>
- */
-namespace std
-{
+   /**
+    * Definition of hash function for std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>
+    */
    template <>
    struct hash<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>>
        : public unary_function<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>, size_t>
    {
       size_t operator()(std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> step) const
       {
-         std::size_t ret = 0;
-         hash<int> hasher;
-         boost::hash_combine(ret, hasher(static_cast<int>(step.first)));
-         boost::hash_combine(ret, step.second);
-         return ret;
+         return static_cast<size_t>(std::get<0>(step)) << 16U | std::get<1>(step)->GetSignatureContext();
       }
    };
 } // namespace std

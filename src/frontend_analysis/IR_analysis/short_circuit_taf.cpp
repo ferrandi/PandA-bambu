@@ -92,7 +92,6 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 /// utility includes
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
@@ -107,7 +106,7 @@ short_circuit_taf::short_circuit_taf(const ParameterConstRef _parameters, const 
 
 short_circuit_taf::~short_circuit_taf() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 short_circuit_taf::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -143,11 +142,11 @@ short_circuit_taf::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
                /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
                const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(
                    FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
-               if(update_schedule)
+               if(update_schedule != DesignFlowGraph::null_vertex())
                {
                   const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
                   const DesignFlowStepRef design_flow_step =
-                      design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
+                      design_flow_graph->CGetNodeInfo(update_schedule)->design_flow_step;
                   if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() !=
                      function_behavior->GetBBVersion())
                   {
@@ -186,9 +185,9 @@ void short_circuit_taf::Initialize()
 DesignFlowStep_Status short_circuit_taf::InternalExec()
 {
    const auto TM = AppM->get_tree_manager();
-   const auto temp = TM->CGetTreeNode(function_id);
+   const auto temp = TM->GetTreeNode(function_id);
    const auto fd = GetPointer<const function_decl>(temp);
-   const auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   const auto sl = GetPointer<statement_list>(fd->body);
 
    /// compute merging candidates
    CustomUnorderedSet<unsigned int> merging_candidates;
@@ -208,7 +207,7 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing predecessor BB" + STR(pred));
          if(pred != bloc::ENTRY_BLOCK_ID && idx_bb.first != pred && sl->list_of_bloc.at(pred)->CGetStmtList().size() &&
-            GET_CONST_NODE(sl->list_of_bloc.at(pred)->CGetStmtList().back())->get_kind() == gimple_cond_K)
+            sl->list_of_bloc.at(pred)->CGetStmtList().back()->get_kind() == gimple_cond_K)
          {
             ++n_pred_bb;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ok");
@@ -318,7 +317,7 @@ bool short_circuit_taf::check_merging_candidate(unsigned int& bb1, unsigned int&
       {
          continue;
       }
-      if(GET_CONST_NODE(list_of_bloc.at(bb1)->CGetStmtList().back())->get_kind() != gimple_cond_K)
+      if(list_of_bloc.at(bb1)->CGetStmtList().back()->get_kind() != gimple_cond_K)
       {
          continue;
       }
@@ -357,7 +356,7 @@ bool short_circuit_taf::check_merging_candidate(unsigned int& bb1, unsigned int&
          {
             continue;
          }
-         if(GET_CONST_NODE(list_of_bloc.at(bb2)->CGetStmtList().back())->get_kind() != gimple_cond_K)
+         if(list_of_bloc.at(bb2)->CGetStmtList().back()->get_kind() != gimple_cond_K)
          {
             continue;
          }
@@ -440,12 +439,12 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
 
    /// identify the first gimple_cond
    const auto& list_of_stmt_cond1 = list_of_bloc.at(bb1)->CGetStmtList();
-   THROW_ASSERT(GET_CONST_NODE(list_of_stmt_cond1.back())->get_kind() == gimple_cond_K, "a gimple_cond is expected");
+   THROW_ASSERT(list_of_stmt_cond1.back()->get_kind() == gimple_cond_K, "a gimple_cond is expected");
    const auto cond_statement = list_of_stmt_cond1.back();
    list_of_bloc.at(bb1)->RemoveStmt(cond_statement, AppM);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---First gimple cond is " + STR(cond_statement));
-   const auto ce1 = GetPointer<const gimple_cond>(GET_CONST_NODE(cond_statement));
+   const auto ce1 = GetPointer<const gimple_cond>(cond_statement);
    auto cond1 = ce1->op0;
    auto type_node = tree_helper::CGetType(cond1);
    const auto tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
@@ -457,7 +456,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    /// create the assignment between condition for bb1 and the new ssa var
    const auto cond1_created_stmt =
        tree_man->CreateGimpleAssign(type_node, nullptr, nullptr, cond1, function_id, BUILTIN_SRCP);
-   const auto ssa1_cond_node = GetPointer<const gimple_assign>(GET_CONST_NODE(cond1_created_stmt))->op0;
+   const auto ssa1_cond_node = GetPointer<const gimple_assign>(cond1_created_stmt)->op0;
    /// and then add to the bb1 statement list
    list_of_bloc.at(bb1)->PushBack(cond1_created_stmt, AppM);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -469,7 +468,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    {
       for(const auto& phi : list_of_bloc.at(merging_candidate)->CGetPhiList())
       {
-         const auto mc_phi = GetPointer<gimple_phi>(GET_NODE(phi));
+         const auto mc_phi = GetPointer<gimple_phi>(phi);
          std::pair<tree_nodeRef, unsigned int> def_edge_to_be_removed(tree_nodeRef(), 0);
          std::pair<tree_nodeRef, unsigned int> def_edge_to_be_updated(tree_nodeRef(), 0);
          for(const auto& def_edge : mc_phi->CGetDefEdgesList())
@@ -495,16 +494,16 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
          /// second, create the gimple assignment
          const auto res_type = tree_helper::CGetType(mc_phi->res);
          auto condition_type = tree_helper::CGetType(cond1);
-         auto isAVectorType = tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(condition_type));
+         auto isAVectorType = tree_helper::is_a_vector(TM, condition_type->index);
          const auto cond_expr_node = tree_man->create_ternary_operation(
              res_type, cond1, op1, op2, BUILTIN_SRCP, (isAVectorType ? vec_cond_expr_K : cond_expr_K));
          const auto created_stmt =
              tree_man->CreateGimpleAssign(res_type, nullptr, nullptr, cond_expr_node, function_id, BUILTIN_SRCP);
-         const auto ssa_cond_node = GetPointer<const gimple_assign>(GET_CONST_NODE(created_stmt))->op0;
+         const auto ssa_cond_node = GetPointer<const gimple_assign>(created_stmt)->op0;
 
          /// and then add to the statement list
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Created new assignment: " + GET_CONST_NODE(created_stmt)->ToString());
+                        "---Created new assignment: " + created_stmt->ToString());
          list_of_bloc.at(bb1)->PushBack(created_stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Phi is " + mc_phi->ToString());
          mc_phi->ReplaceDefEdge(TM, def_edge_to_be_updated,
@@ -521,24 +520,24 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
       const auto not_cond1 = tree_man->create_unary_operation(type_node, cond1, BUILTIN_SRCP, truth_not_expr_K);
       const auto created_stmt =
           tree_man->CreateGimpleAssign(type_node, nullptr, nullptr, not_cond1, function_id, BUILTIN_SRCP);
-      cond1 = GetPointer<const gimple_assign>(GET_CONST_NODE(created_stmt))->op0;
+      cond1 = GetPointer<const gimple_assign>(created_stmt)->op0;
       /// and then add to the bb1 statement list
       list_of_bloc.at(bb1)->PushBack(created_stmt, AppM);
    }
    /// identify the second gimple_cond
    THROW_ASSERT(list_of_bloc.at(bb2)->CGetPhiList().size() == 0, "not expected phi nodes");
 
-   THROW_ASSERT(GET_CONST_NODE(list_of_stmt_cond2.front())->get_kind() == gimple_cond_K, "a gimple_cond is expected");
+   THROW_ASSERT(list_of_stmt_cond2.front()->get_kind() == gimple_cond_K, "a gimple_cond is expected");
 
    const auto second_stmt = list_of_stmt_cond2.front();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Second gimple cond is " + STR(second_stmt));
-   auto ce2 = GetPointer<gimple_cond>(GET_NODE(second_stmt));
+   auto ce2 = GetPointer<gimple_cond>(second_stmt);
    auto cond2 = ce2->op0;
 
    /// create the assignment between condition for bb2 and the new ssa var
    const auto cond2_created_stmt =
        tree_man->CreateGimpleAssign(type_node, nullptr, nullptr, cond2, function_id, BUILTIN_SRCP);
-   cond2 = GetPointer<const gimple_assign>(GET_CONST_NODE(cond2_created_stmt))->op0;
+   cond2 = GetPointer<const gimple_assign>(cond2_created_stmt)->op0;
    /// and then add to the bb1 statement list
    list_of_bloc.at(bb1)->PushBack(cond2_created_stmt, AppM);
 
@@ -608,7 +607,7 @@ void short_circuit_taf::restructure_CFG(unsigned int bb1, unsigned int bb2, unsi
       const auto list_of_pred_stmt = list_of_bloc.at(pred)->CGetStmtList();
       const auto cond_statement =
           list_of_pred_stmt.begin() != list_of_pred_stmt.end() ? list_of_pred_stmt.back() : tree_nodeRef();
-      const auto cond_statement_node = cond_statement ? GET_NODE(cond_statement) : cond_statement;
+      const auto cond_statement_node = cond_statement ? cond_statement : cond_statement;
       if(cond_statement_node && GetPointer<gimple_multi_way_if>(cond_statement_node))
       {
          const auto gmwi = GetPointerS<gimple_multi_way_if>(cond_statement_node);
@@ -628,7 +627,7 @@ bool short_circuit_taf::check_phis(unsigned int curr_bb, const std::map<unsigned
 {
    for(const auto& phi : list_of_bloc.at(curr_bb)->CGetPhiList())
    {
-      const auto cb_phi = GetPointerS<const gimple_phi>(GET_CONST_NODE(phi));
+      const auto cb_phi = GetPointerS<const gimple_phi>(phi);
       if(cb_phi->virtual_flag)
       {
          return false;
@@ -653,11 +652,11 @@ bool short_circuit_taf::HasToBeExecuted() const
          /// If schedule is not up to date, do not execute this step and invalidate UpdateSchedule
          const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(
              FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
-         if(update_schedule)
+         if(update_schedule != DesignFlowGraph::null_vertex())
          {
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
             const DesignFlowStepRef design_flow_step =
-                design_flow_graph->CGetDesignFlowStepInfo(update_schedule)->design_flow_step;
+                design_flow_graph->CGetNodeInfo(update_schedule)->design_flow_step;
             if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() !=
                function_behavior->GetBBVersion())
             {

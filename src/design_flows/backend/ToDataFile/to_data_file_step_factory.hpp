@@ -37,10 +37,8 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
 #ifndef TO_DATA_FILE_STEP_FACTORY_HPP
 #define TO_DATA_FILE_STEP_FACTORY_HPP
-
 #include "design_flow_step_factory.hpp"
 #include "refcount.hpp"
 
@@ -67,15 +65,10 @@ class ToDataFileStepFactory : public DesignFlowStepFactory
    ~ToDataFileStepFactory() override;
 
    /**
-    * Return the prefix of the steps created by the factory
-    */
-   const std::string GetPrefix() const override;
-
-   /**
     * Creates a step
     * @param signature is the signature of the step to be created
     * @return the created step
     */
-   const DesignFlowStepRef CreateStep(const std::string& signature) const;
+   DesignFlowStepRef CreateStep(DesignFlowStep::signature_t signature) const;
 };
 #endif

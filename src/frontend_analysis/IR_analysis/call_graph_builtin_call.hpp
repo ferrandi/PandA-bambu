@@ -72,7 +72,7 @@ class CallGraphBuiltinCall : public FunctionFrontendFlowStep
    /// @brief State relationship with other design step
    ///
    /// @param RT Type of the relationship to be considered
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(DesignFlowStep::RelationshipType RT) const override;
 
  public:

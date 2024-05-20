@@ -104,7 +104,7 @@ void InstructionWriter::declareFunction(const unsigned int function_id)
 {
    const auto TM = AppM->get_tree_manager();
    const auto BH = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
-   const auto fdecl = tree_helper::PrintType(TM, TM->CGetTreeReindex(function_id), false, true, false, nullptr,
+   const auto fdecl = tree_helper::PrintType(TM, TM->GetTreeNode(function_id), false, true, false, nullptr,
                                              var_pp_functorConstRef(new std_var_pp_functor(BH)));
    indented_output_stream->Append(fdecl);
 }
