@@ -1355,8 +1355,6 @@ void Bit_Value::initialize()
 
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                           "---Used the init bitstring " + bitstring_to_string(current_inf));
-
-                           vd->bit_values = bitstring_to_string(current_inf);
                            best[lhs_nid] = current_inf;
                         }
                         else
@@ -1481,13 +1479,12 @@ void Bit_Value::initialize()
                                  THROW_ASSERT(std::find(current_inf.begin(), current_inf.end(), bit_lattice::X) ==
                                                   current_inf.end(),
                                               "Init bitstring must not contain X: " + bitstring_to_string(current_inf));
-                                 vd->bit_values = bitstring_to_string(current_inf);
                                  INDENT_DBG_MEX(
                                      DEBUG_LEVEL_PEDANTIC, debug_level,
                                      "---Bit Value: variable " +
                                          function_behavior->CGetBehavioralHelper()->PrintVariable(base_index) +
-                                         " trimmed to bitsize: " + STR(vd->bit_values.size()) +
-                                         " with bit-value pattern: " + vd->bit_values);
+                                         " trimmed to bitsize: " + STR(current_inf.size()) +
+                                         " with bit-value pattern: " + bitstring_to_string(current_inf));
                                  private_variables[base_index] = current_inf;
                               }
                               const auto var_inf = private_variables.at(base_index);
@@ -1556,7 +1553,6 @@ void Bit_Value::initialize()
          }
          if(ssa->volatile_flag)
          {
-            ssa->bit_values.clear();
             best[node_id] = create_u_bitstring(tree_helper::TypeSize(use_node));
          }
          else
@@ -1565,7 +1561,6 @@ void Bit_Value::initialize()
             if(!def || (ssa->var != nullptr && ((GET_CONST_NODE(def)->get_kind() == gimple_nop_K)) &&
                         GET_CONST_NODE(ssa->var)->get_kind() == var_decl_K))
             {
-               ssa->bit_values.clear();
                best[node_id] = create_bitstring_from_constant(0, 1, ssa_is_signed);
                if(ssa->var)
                {
@@ -1644,11 +1639,6 @@ void Bit_Value::initialize()
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---is signed");
                signed_var.insert(res_nid);
             }
-            if(bb_version == 0 || bb_version != function_behavior->GetBBVersion())
-            {
-               ssa->bit_values.clear();
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bit_values cleared : " + STR(ssa));
-            }
 
             if(ssa->CGetUseStmts().empty())
             {
@@ -1661,7 +1651,7 @@ void Bit_Value::initialize()
             }
             else
             {
-               if(ssa->bit_values.empty())
+               if(bb_version == 0 || bb_version != function_behavior->GetBBVersion())
                {
                   best[res_nid] = create_u_bitstring(tree_helper::TypeSize(pn->res));
                }
@@ -1712,11 +1702,6 @@ void Bit_Value::initialize()
                }
                else
                {
-                  if(bb_version == 0 || bb_version != function_behavior->GetBBVersion())
-                  {
-                     lhs_ssa->bit_values.clear();
-                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bit_values cleared : " + STR(lhs_ssa));
-                  }
                   const auto lhs_signed = tree_helper::IsSignedIntegerType(lhs);
                   if(lhs_signed)
                   {
@@ -1796,7 +1781,7 @@ void Bit_Value::initialize()
                   }
                   else
                   {
-                     if(lhs_ssa->bit_values.empty())
+                     if(bb_version == 0 || bb_version != function_behavior->GetBBVersion())
                      {
                         auto u_string = create_u_bitstring(tree_helper::TypeSize(lhs));
                         if(lhs_signed && tree_helper::is_natural(TM, GET_INDEX_CONST_NODE(ga->op0)))
@@ -1839,8 +1824,6 @@ void Bit_Value::initialize()
                   }
                   else
                   {
-                     out_ssa->bit_values.clear();
-                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bit_values cleared : " + STR(out_ssa));
                      if(tree_helper::IsSignedIntegerType(out_node))
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---is signed");
