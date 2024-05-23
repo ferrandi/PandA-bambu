@@ -126,6 +126,7 @@ FunctionCallOpt::ComputeFrontendRelationships(const DesignFlowStep::Relationship
          relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(FUNCTION_CALL_OPT, CALLED_FUNCTIONS));
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SOFT_INT_CG_EXT, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
