@@ -15,7 +15,9 @@ bambu_specific_test/soft_mul.c --top-fname=soft_mul --device-name=nx1h140tsp --g
 bambu_specific_test/soft_umul.c --top-fname=soft_umul --device-name=nx1h140tsp --generate-tb=a=0x5555555555555555,b=0xAAAAAAAAAAAAAAAA --benchmark-name=soft_umul_NF
 bambu_specific_test/soft_mul.c --top-fname=soft_mul --generate-tb=a=0x5555555555555555,b=0xAAAAAAAAAAAAAAAA --DSP-fracturing=16 --benchmark-name=soft_mul_F
 bambu_specific_test/soft_umul.c --top-fname=soft_umul --generate-tb=a=0x5555555555555555,b=0xAAAAAAAAAAAAAAAA --DSP-fracturing=16  --benchmark-name=soft_umul_F
-bambu_specific_test/soft_mul2.c --top-fname=soft_mul --generate-tb=a=0x5555555555555555,b=0xAAAAAAAAAAAAAAAA --DSP-fracturing=16 --benchmark-name=soft_mul_F
-bambu_specific_test/soft_umul2.c --top-fname=soft_umul --generate-tb=a=0x5555555555555555,b=0xAAAAAAAAAAAAAAAA --DSP-fracturing=16  --benchmark-name=soft_umul_F
+bambu_specific_test/soft_mul2.c --top-fname=soft_mul --generate-tb=a=0x5555555555555555,b=0xAAAAAAAAAAAAAAAA --DSP-fracturing=16 --benchmark-name=soft_mul2_F
+bambu_specific_test/soft_umul2.c --top-fname=soft_umul --generate-tb=a=0x5555555555555555,b=0xAAAAAAAAAAAAAAAA --DSP-fracturing=16  --benchmark-name=soft_umul2_F
+bambu_specific_test/soft_mul3.c --top-fname=soft_mul --generate-tb=a=0x5555555555555555,b=0xAAAAAAAAAAAAAAAA --DSP-fracturing=16 --benchmark-name=soft_mul3_F
+bambu_specific_test/soft_umul3.c --top-fname=soft_umul --generate-tb=a=0x5555555555555555,b=0xAAAAAAAAAAAAAAAA --DSP-fracturing=16  --benchmark-name=soft_umul3_F
 
 bambu_specific_test/unsafe-fp-assoc-1.c.bambuir --use-raw --pretty-print=output.c
