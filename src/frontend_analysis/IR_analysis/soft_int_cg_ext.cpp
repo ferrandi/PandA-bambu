@@ -271,7 +271,8 @@ bool soft_int_cg_ext::recursive_transform(const tree_nodeRef& current_tree_node,
             const auto bitsize0 = ceil_pow2(tree_helper::Size(be->op0));
             const auto bitsize1 = ceil_pow2(tree_helper::Size(be->op1));
             const auto bitsize2 = ceil_pow2(tree_helper::Size(be->type));
-            const auto bitsize = std::max(std::max(bitsize0, bitsize1), bitsize2);
+            const auto bitsizeIN = std::max(bitsize0, bitsize1);
+            const auto bitsize = std::max(bitsizeIN, bitsize2);
 
             auto doTransf = false;
             std::string fname;
@@ -281,7 +282,8 @@ bool soft_int_cg_ext::recursive_transform(const tree_nodeRef& current_tree_node,
                fname = unsignedp ? "__umul64" : "__mul64";
                doTransf = true;
             }
-            if(use32bitMul && GET_CONST_NODE(expr_type)->get_kind() == integer_type_K && bitsize == 32)
+            if(use32bitMul && GET_CONST_NODE(expr_type)->get_kind() == integer_type_K && bitsize == 32 &&
+               bitsizeIN == 32)
             {
                const auto unsignedp = tree_helper::IsUnsignedIntegerType(expr_type);
                fname = unsignedp ? "__umul32" : "__mul32";
