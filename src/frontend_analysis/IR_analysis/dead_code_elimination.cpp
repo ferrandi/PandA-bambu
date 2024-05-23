@@ -468,11 +468,11 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                            "node  " + STR(fu_decl_node) + " is not function_decl but " +
                                                fu_decl_node->get_kind_text());
                               const auto fdCalled = GetPointerS<const function_decl>(fu_decl_node);
-                              if(fdCalled->writing_memory || !fdCalled->body)
+                              if(fdCalled->writing_memory || !fdCalled->body || fdCalled->undefined_flag)
                               {
                                  is_a_writing_memory_call = true;
                               }
-                              if(fdCalled->reading_memory)
+                              if(fdCalled->reading_memory || !fdCalled->body || fdCalled->undefined_flag)
                               {
                                  is_a_reading_memory_call = true;
                               }
@@ -876,7 +876,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                if(fdCalled)
                {
                   bool is_a_writing_memory_call = false;
-                  if(fdCalled->writing_memory or !fdCalled->body)
+                  if(fdCalled->writing_memory || !fdCalled->body || fdCalled->undefined_flag)
                   {
                      is_a_writing_memory_call = true;
                   }
