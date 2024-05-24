@@ -120,8 +120,8 @@ enum class CompilerWrapper_CompilerTarget;
        lattice_pmi_def)(lattice_inc_dirs)(xilinx_root)(xilinx_settings)(xilinx_vivado_settings)(xilinx_glbl)(          \
        mentor_root)(mentor_modelsim_bin)(mentor_optimizer)(verilator)(verilator_timescale_override)(                   \
        verilator_parallel)(altera_root)(quartus_settings)(quartus_13_settings)(quartus_13_64bit)(nanoxplore_root)(     \
-       nanoxplore_settings)(nanoxplore_bypass)(shared_input_registers)(inline_functions)(constraints_functions)(       \
-       axi_burst_type)
+       nanoxplore_settings)(nanoxplore_bypass)(shared_input_registers)(inline_functions)(function_constraints)(        \
+       resource_constraints)(axi_burst_type)
 
 #define FRAMEWORK_OPTIONS                                                                                            \
    (benchmark_name)(cat_args)(find_max_transformations)(max_transformations)(compatible_compilers)(compute_size_of)( \
@@ -137,7 +137,7 @@ enum class CompilerWrapper_CompilerTarget;
    (gcc_config)(gcc_costs)(gcc_defines)(gcc_extra_options)(gcc_include_sysdir)(gcc_includes)(gcc_libraries)(          \
        gcc_library_directories)(gcc_openmp_simd)(compiler_opt_level)(gcc_m_env)(gcc_optimizations)(                   \
        gcc_optimization_set)(gcc_parameters)(gcc_plugindir)(gcc_read_xml)(gcc_standard)(gcc_undefines)(gcc_warnings)( \
-       gcc_c)(gcc_E)(gcc_S)(gcc_write_xml)
+       gcc_E)(gcc_S)(gcc_write_xml)
 
 #define SYNTHESIS_OPTIONS                                                                                            \
    (clock_period)(clock_name)(reset_name)(start_name)(done_name)(device_string)(synthesis_flow)(target_device_file)( \
@@ -233,7 +233,7 @@ class OptionMap : public std::map<std::string, std::string>
 #define LAST_GCC_OPT INPUT_OPT_WRITE_GCC_XML
 
 /// define the GCC short option string
-#define GCC_SHORT_OPTIONS_STRING "cf:I:D:U:O::l:L:W:Em:g::"
+#define GCC_SHORT_OPTIONS_STRING "f:I:D:U:O::l:L:W:Em:g::"
 
 #if !RELEASE
 #define GCC_LONG_OPTIONS_RAW_XML                                             \

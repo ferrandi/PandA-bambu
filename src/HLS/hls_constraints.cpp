@@ -164,6 +164,12 @@ HLS_constraints::HLS_constraints(const ParameterConstRef& _Param, std::string _f
       read_HLS_constraints_File(parameters->getOption<std::string>(OPT_constraints_file));
       PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Constraint file parsed");
    }
+   if(parameters->isOption(OPT_resource_constraints))
+   {
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "parsing command-line constraints...");
+      read_HLS_CL_constraints(parameters->getOption<std::string>(OPT_resource_constraints));
+      PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Command-line constraints parsed");
+   }
 
    /// the command-line values overwrite the ones written into the XML file
    if(parameters->isOption(OPT_clock_period))
@@ -516,6 +522,54 @@ void HLS_constraints::read_HLS_constraints_File(const std::string& fn)
    catch(...)
    {
       std::cerr << "unknown exception" << std::endl;
+   }
+}
+
+void HLS_constraints::read_HLS_CL_constraints(const std::string& s)
+{
+   const auto resource_library_constraints = string_to_container<std::vector<std::string>>(s, ",");
+   for(auto resource_library_constraint : resource_library_constraints)
+   {
+      if(!resource_library_constraint.empty() && resource_library_constraint.at(0) == '=')
+      {
+         resource_library_constraint = resource_library_constraint.substr(1);
+      }
+      const auto splitted = string_to_container<std::vector<std::string>>(resource_library_constraint, "=");
+      if(!splitted.empty())
+      {
+         std::string resource_name;
+         std::string library_name;
+         const auto resource_library_pair =
+             string_to_container<std::vector<std::string>>(splitted.at(0), ":");
+         if(resource_library_pair.size() == 2)
+         {
+            resource_name = resource_library_pair.at(0);
+            library_name = resource_library_pair.at(1);
+            if(library_name.empty() || resource_name.empty())
+            {
+               THROW_ERROR("unexpected --constraints format");
+            }
+         }
+         else
+         {
+            THROW_ERROR("unexpected --constraints format");
+         }
+         unsigned num_resources = 0;
+         if(splitted.size() == 1)
+         {
+            num_resources = 1;
+         }
+         else if(splitted.size() == 2)
+         {
+            auto res_num = splitted.at(1);
+            num_resources = static_cast<unsigned>(std::stoul(res_num));
+         }
+         else
+         {
+            THROW_ERROR("unexpected --constraints format");
+         }
+         set_number_fu(resource_name, library_name, num_resources);
+      }
    }
 }
 

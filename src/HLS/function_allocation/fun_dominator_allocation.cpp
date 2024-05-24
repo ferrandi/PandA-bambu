@@ -169,9 +169,9 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
 
    // manage function constraints first
    CustomOrderedSet<unsigned int> functions_constrained;
-   if(parameters->isOption(OPT_constraints_functions))
+   if(parameters->isOption(OPT_function_constraints))
    {
-      auto tmp_string = parameters->getOption<std::string>(OPT_constraints_functions);
+      auto tmp_string = parameters->getOption<std::string>(OPT_function_constraints);
       const auto funcs_values = string_to_container<std::vector<std::string>>(tmp_string, ",");
       for(auto fun_resources : funcs_values)
       {

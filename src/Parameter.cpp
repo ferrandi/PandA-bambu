@@ -536,11 +536,6 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
 {
    switch(next_option)
    {
-      case 'c':
-      {
-         setOption(OPT_gcc_c, true);
-         break;
-      }
       case 'D':
       {
          std::string defines;
