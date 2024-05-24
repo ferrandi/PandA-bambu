@@ -282,6 +282,7 @@ int tree_panda_gcc_parameter::Exec()
          case OPT_END_GROUP:
          case OPT_MINUS_MAP:
          case OPT_GC_SECTIONS:
+         case 'c':
          case 'e':
          case 'u':
          case 'T':
@@ -473,7 +474,6 @@ void tree_panda_gcc_parameter::SetDefaults()
    setOption(OPT_without_transformation, true);
    setOption(OPT_precision, 3);
    setOption(OPT_compute_size_of, true);
-   setOption(OPT_gcc_c, true);
    setOption(OPT_gcc_config, false);
    setOption(OPT_gcc_costs, false);
    setOption(OPT_gcc_openmp_simd, 0);

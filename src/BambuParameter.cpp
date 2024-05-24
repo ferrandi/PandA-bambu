@@ -808,8 +808,16 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        If the first character of func_name is '*', then 'num_resources'\n"
       << "        applies to all functions having as a prefix 'func_name' with '*'\n"
       << "        character removed.\n"
-      << "        In case we have -C='*', all functions have 1 instance constraint. \n\n"
-      << "    --AXI-burst-type=value\n."
+      << "        In case we have -C='*', all functions have 1 instance constraint. \n\n";
+   os << "    "
+         "--resource-constraints,-c=<resource_name>:<library_name>[=<num_resources>][,<resource_name>:<library_name>[=<"
+         "num_resources>]]*\n"
+      << "        Perform resource sharing inside the datapath, limiting the number of\n"
+      << "        resource instances to 'num_resources'.\n"
+      << "        Resources are specified as a comma-separated list of pairs (<resource_name>:<library_name>)\n"
+      << "        with an optional number of resources. (num_resources is by default equal to 1\n"
+      << "        when not specified).\n\n";
+   os << "    --AXI-burst-type=value\n."
       << "        Specify the type of AXI burst when performing single beat operations:\n"
       << "              FIXED        - fixed type burst (default)\n"
       << "              INCREMENTAL  - incremental type burst\n\n";
@@ -927,7 +935,7 @@ int BambuParameter::Exec()
    // Bambu short option. An option character in this string can be followed by a colon (`:') to indicate that it
    // takes a required argument. If an option character is followed by two colons (`::'), its argument is optional;
    // this is a GNU extension.
-   const char* const short_options = COMMON_SHORT_OPTIONS_STRING "o:t:u:H:sSC::b:w:p::" GCC_SHORT_OPTIONS_STRING;
+   const char* const short_options = COMMON_SHORT_OPTIONS_STRING "o:t:u:H:sSc:C::b:w:p::" GCC_SHORT_OPTIONS_STRING;
 
    const struct option long_options[] = {
       COMMON_LONG_OPTIONS,
@@ -936,8 +944,6 @@ int BambuParameter::Exec()
       {"top-rtldesign-name", required_argument, nullptr, OPT_TOP_RTLDESIGN_NAME},
       {"time", required_argument, nullptr, 't'},
       {"file-input-data", required_argument, nullptr, INPUT_OPT_FILE_INPUT_DATA},
-      /// Frontend options
-      {"circuit-dbg", required_argument, nullptr, 0},
    /// Scheduling options
 #if HAVE_ILP_BUILT
       {"speculative-sdc-scheduling", no_argument, nullptr, 's'},
@@ -972,6 +978,7 @@ int BambuParameter::Exec()
       {"expose-globals", no_argument, nullptr, OPT_EXPOSE_GLOBALS},
       // parameter based resource constraints
       {"constraints", required_argument, nullptr, 'C'},
+      {"resource-constraints", required_argument, nullptr, 'c'},
       /// evaluation options
       {"evaluation", optional_argument, nullptr, OPT_EVALUATION},
       {"timing-violation", no_argument, nullptr, OPT_TIMING_VIOLATION},
@@ -1219,11 +1226,23 @@ int BambuParameter::Exec()
          {
             if(optarg)
             {
-               setOption(OPT_constraints_functions, optarg);
+               setOption(OPT_function_constraints, optarg);
             }
             else
             {
                THROW_ERROR("BadParameters: -C option not correctly specified");
+            }
+            break;
+         }
+         case 'c':
+         {
+            if(optarg)
+            {
+               setOption(OPT_resource_constraints, optarg);
+            }
+            else
+            {
+               THROW_ERROR("BadParameters: -c option not correctly specified");
             }
             break;
          }
@@ -3017,7 +3036,7 @@ void BambuParameter::CheckParameters()
       else
       {
          setOption(OPT_disable_function_proxy, false);
-         if(isOption(OPT_constraints_functions))
+         if(isOption(OPT_function_constraints))
          {
             THROW_ERROR("--discrepancy-hw Hardware Discrepancy Analysis only works with function proxies and not with "
                         "-C defined");
@@ -3182,9 +3201,9 @@ void BambuParameter::CheckParameters()
       if(!isOption(OPT_disable_function_proxy))
       {
          setOption(OPT_disable_function_proxy, true);
-         if(!isOption(OPT_constraints_functions))
+         if(!isOption(OPT_function_constraints))
          {
-            setOption(OPT_constraints_functions, "*");
+            setOption(OPT_function_constraints, "*");
          }
       }
    }
@@ -3277,7 +3296,7 @@ void BambuParameter::CheckParameters()
       add_experimental_setup_compiler_options(!flag_cpp);
       if(!isOption(OPT_disable_function_proxy))
       {
-         if(!isOption(OPT_constraints_functions))
+         if(!isOption(OPT_function_constraints))
          {
             setOption(OPT_disable_function_proxy, false);
          }
@@ -3320,7 +3339,7 @@ void BambuParameter::CheckParameters()
       add_experimental_setup_compiler_options(!flag_cpp);
       if(!isOption(OPT_disable_function_proxy))
       {
-         if(!isOption(OPT_constraints_functions))
+         if(!isOption(OPT_function_constraints))
          {
             setOption(OPT_disable_function_proxy, false);
          }
@@ -3343,7 +3362,7 @@ void BambuParameter::CheckParameters()
       add_experimental_setup_compiler_options(false);
       if(!isOption(OPT_disable_function_proxy))
       {
-         if(!isOption(OPT_constraints_functions))
+         if(!isOption(OPT_function_constraints))
          {
             setOption(OPT_disable_function_proxy, false);
          }
@@ -3737,7 +3756,6 @@ void BambuParameter::SetDefaults()
    setOption(OPT_without_transformation, true);
    setOption(OPT_compute_size_of, true);
    setOption(OPT_precision, 3);
-   setOption(OPT_gcc_c, true);
    setOption(OPT_gcc_config, false);
    setOption(OPT_gcc_costs, false);
    setOption(OPT_gcc_optimization_set, CompilerWrapper_OptimizationSet::OBAMBU);
