@@ -155,7 +155,8 @@
       <cmd name="outdir = os.path.abspath('${__nxpython_outdir__}/output')"/>
       <cmd name="if path.exists(os.path.join(dir, 'pads.py')): os.remove(os.path.join(dir, 'pads.py'))" condition="!${__connect_iob__}"/>
       <cmd name="sys.path.append(dir)"/>
-      <cmd name="if omp_num_threads := os.getenv('OMP_NUM_THREADS'):"/>
+      <cmd name="omp_num_threads = os.getenv('OMP_NUM_THREADS')"/>
+      <cmd name="if omp_num_threads :"/>
       <cmd name="    setCoreCount(int(omp_num_threads))"/>
       <cmd name="project = createProject()"/>
       <cmd name="if nx_suite_version &gt;= 3: setLogDirectory(outdir)"/>
