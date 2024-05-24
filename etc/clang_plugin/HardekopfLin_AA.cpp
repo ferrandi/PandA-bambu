@@ -90,7 +90,6 @@
 #include <llvm/IR/ModuleSlotTracker.h>
 #include <llvm/Support/Casting.h>
 
-#include <boost/range/irange.hpp>
 #include <queue>
 #include <utility>
 
@@ -2084,7 +2083,7 @@ bool Andersen_AA::trace_int(const llvm::Value* V, llvm::DenseSet<const llvm::Val
          llvm::errs() << "CE";
       }
       opcode = CE->getOpcode();
-      for(auto i : boost::irange(0u, CE->getNumOperands()))
+      for(auto i = 0u; i < CE->getNumOperands(); ++i)
       {
          ops.push_back(CE->getOperand(i));
       }
@@ -2096,7 +2095,7 @@ bool Andersen_AA::trace_int(const llvm::Value* V, llvm::DenseSet<const llvm::Val
          llvm::errs() << "insn";
       }
       opcode = I->getOpcode();
-      for(auto i : boost::irange(0u, I->getNumOperands()))
+      for(auto i = 0u; i < I->getNumOperands(); ++i)
       {
          ops.push_back(I->getOperand(i));
       }
@@ -3466,7 +3465,7 @@ u32 Andersen_AA::proc_global_init(u32 onG, const llvm::Constant* C, bool first)
       // Recursively copy each field of the original struct into the next available
       //  field of the expanded struct. Note that the fields of a constant struct
       //  are accessed by getOperand().
-      for(auto i : boost::irange(0u, CS->getNumOperands()))
+      for(auto i = 0u; i < CS->getNumOperands(); ++i)
       {
          off += proc_global_init(onG + off, CS->getOperand(i), false);
       }
@@ -3476,14 +3475,14 @@ u32 Andersen_AA::proc_global_init(u32 onG, const llvm::Constant* C, bool first)
       // Copy each array element into the same node.
       // The offset returned (the field count of 1 el.)
       //  will be the same every time.
-      for(auto i : boost::irange(0u, CA->getNumOperands()))
+      for(auto i = 0u; i < CA->getNumOperands(); ++i)
       {
          off = proc_global_init(onG, CA->getOperand(i), false);
       }
    }
    else if(auto CA = llvm::dyn_cast<const llvm::ConstantDataSequential>(C))
    {
-      for(auto i : boost::irange(0u, CA->getNumElements()))
+      for(auto i = 0u; i < CA->getNumElements(); ++i)
       {
          off = proc_global_init(onG, CA->getElementAsConstant(i), false);
       }
@@ -3942,7 +3941,7 @@ void Andersen_AA::id_phi_insn(const llvm::Instruction* I)
       llvm::errs() << "\n";
    }
 
-   for(auto i : boost::irange(0u, PN->getNumIncomingValues()))
+   for(auto i = 0u; i < PN->getNumIncomingValues(); ++i)
    {
       auto incoming = PN->getIncomingValue(i);
       u32 vnS = get_val_node_cptr(incoming);
@@ -4874,7 +4873,7 @@ void Andersen_AA::obj_cons_id(const llvm::Module& M, const llvm::Type* MS)
    }
    // Insert special nodes w/o values.
    next_node = first_var_node;
-   for(auto i : boost::irange(0u, first_var_node))
+   for(auto i = 0u; i < first_var_node; ++i)
    {
       nodes.push_back(new Node);
    }
@@ -5060,7 +5059,7 @@ void Andersen_AA::clump_addr_taken()
    auto* move_to = static_cast<u32*>(malloc(onsz * 4));
 
    // The special nodes must stay at the front.
-   for(auto i : boost::irange(0u, first_var_node))
+   for(auto i = 0u; i < first_var_node; ++i)
    {
       nodes[i] = old_nodes[i];
       move_to[i] = i;
@@ -6424,7 +6423,7 @@ void Andersen_AA::pts_init()
    // For each offset (i), off_nodes[i] holds the nodes with obj_sz == (i+1),
    //  i.e. those for which (i) is the max allowed offset.
    std::vector<std::set<u32>> off_nodes(max_sz);
-   for(auto i : boost::irange(0u, npts))
+   for(auto i = 0u; i < npts; ++i)
    {
       u32 sz = nodes[i]->obj_sz;
       if(sz < 2)
@@ -6527,7 +6526,7 @@ void Andersen_AA::pts_init()
       // Save the current offset mask.
       off_mask[off] = om;
    }
-   for(auto i : boost::irange(0u, npts))
+   for(auto i = 0u; i < npts; ++i)
    {
       const Node* N = nodes[i];
       if(auto F = llvm::dyn_cast_or_null<const llvm::Function>(N->get_val()))
@@ -6600,7 +6599,7 @@ void Andersen_AA::solve_init()
    {
       llvm::errs() << "***** Initial worklist:";
    }
-   for(auto i : boost::irange(0u, nn))
+   for(auto i = 0u; i < nn; ++i)
    {
       Node* N = nodes[i];
       if(!N->is_rep())
@@ -8949,7 +8948,7 @@ void Staged_Flow_Sensitive_AA::make_off_graph()
    llvm::DenseMap<std::pair<u32, u32>, u32> gep2pe;
    OCG.assign(nodes.size(), OffNodeSFS());
    // address-taken variables are indirect
-   for(auto i : boost::irange(1u, last_obj_node + 1))
+   for(auto i = 1u; i <= last_obj_node; ++i)
    {
       OCG[i].idr = true;
    }
@@ -10372,7 +10371,7 @@ void Staged_Flow_Sensitive_AA::sfs_prep()
    top.assign(nodes.size() + num_tmp, PtsSet()); // top-level var -> ptsto set
 
    strong.assign(last_obj_node + 1, false); // object -> strong?
-   for(auto i : boost::irange(0u, last_obj_node + 1))
+   for(auto i = 0u; i <= last_obj_node; ++i)
    {
       strong[i] = !nodes[i]->weak;
    }
