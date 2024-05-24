@@ -1092,7 +1092,7 @@ void allocation::add_proxy_function_module(const HLS_constraintsRef HLS_C, techn
    HLS_C->set_number_fu(proxied_fu_name, PROXY_LIBRARY, 1);
 }
 
-void allocation::add_tech_constraint(technology_nodeRef cur_fu, unsigned int tech_constrain_value, unsigned int pos,
+void allocation::add_tech_constraint(technology_nodeRef cur_fu, unsigned int tech_constraint_value, unsigned int pos,
                                      bool proxy_constrained)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -1113,8 +1113,8 @@ void allocation::add_tech_constraint(technology_nodeRef cur_fu, unsigned int tec
    else
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                     "Constrained " + STR(pos) + "=" + cur_fu->get_name() + "->" + STR(tech_constrain_value));
-      allocation_information->tech_constraints.push_back(tech_constrain_value);
+                     "Constrained " + STR(pos) + "=" + cur_fu->get_name() + "->" + STR(tech_constraint_value));
+      allocation_information->tech_constraints.push_back(tech_constraint_value);
    }
 }
 
@@ -2050,19 +2050,18 @@ DesignFlowStep_Status allocation::InternalExec()
             continue;
          }
 
-         const auto tech_constrain_it =
+         const auto tech_constraint_it =
              GetPointer<functional_unit>(current_fu)->fu_template_name.size() ?
                  tech_vec.find(ENCODE_FU_LIB(GetPointer<functional_unit>(current_fu)->fu_template_name, lib_name)) :
                  tech_vec.find(ENCODE_FU_LIB(current_fu->get_name(), lib_name));
 
-         if(tech_constrain_it != tech_vec.end() && tech_constrain_it->second == 0)
+         if(tech_constraint_it != tech_vec.end() && tech_constraint_it->second == 0)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of constraint");
             continue; // forced to use 0 FUs of current ones
          }
 
-         const auto tech_constrain_value =
-             tech_constrain_it == tech_vec.end() ? INFINITE_UINT : tech_constrain_it->second;
+         auto tech_constraint_value = tech_constraint_it == tech_vec.end() ? INFINITE_UINT : tech_constraint_it->second;
 
          const auto structManager_obj = GetPointer<functional_unit>(current_fu)->CM;
 
@@ -2084,6 +2083,14 @@ DesignFlowStep_Status allocation::InternalExec()
          {
             const auto curr_op = GetPointer<operation>(ops);
             const auto& curr_op_name = curr_op->get_name();
+            if(tech_constraint_value == INFINITE_UINT)
+            {
+               const auto op_name_constraint = HLS->HLS_C->get_number_fu(curr_op_name, WORK_LIBRARY);
+               if(op_name_constraint != INFINITE_UINT)
+               {
+                  tech_constraint_value = op_name_constraint;
+               }
+            }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering operation: " + curr_op_name);
             if(vertex_to_analyse_partition.find(curr_op_name) == vertex_to_analyse_partition.end())
             {
@@ -2126,7 +2133,7 @@ DesignFlowStep_Status allocation::InternalExec()
                if(!isMemory)
                {
                   allocation_information->GetNodeTypePrec(vert, g, node_info, constant_id,
-                                                          tech_constrain_value != INFINITE_UINT);
+                                                          tech_constraint_value != INFINITE_UINT);
                }
                else
                {
@@ -2268,7 +2275,7 @@ DesignFlowStep_Status allocation::InternalExec()
                auto max_prec = node_info->input_prec.empty() ?
                                    0ULL :
                                    *std::max_element(node_info->input_prec.begin(), node_info->input_prec.end());
-               if(isMemory || lib_is_proxy_or_work || tech_constrain_value != INFINITE_UINT ||
+               if(isMemory || lib_is_proxy_or_work || tech_constraint_value != INFINITE_UINT ||
                   bambu_provided_resource.size())
                {
                   constant_id = HLS_manager::io_binding_type(0, 0);
@@ -2322,7 +2329,7 @@ DesignFlowStep_Status allocation::InternalExec()
                            }
                         }
                      }
-                     add_tech_constraint(fuUnit, tech_constrain_value, current_id, library_name == PROXY_LIBRARY);
+                     add_tech_constraint(fuUnit, tech_constraint_value, current_id, library_name == PROXY_LIBRARY);
                      current_id++;
                   }
                }
@@ -2356,7 +2363,7 @@ DesignFlowStep_Status allocation::InternalExec()
                      {
                         set_number_channels(specializedId, 1);
                      }
-                     add_tech_constraint(libraryManager->get_fu(functionalUnitName), tech_constrain_value, current_id,
+                     add_tech_constraint(libraryManager->get_fu(functionalUnitName), tech_constraint_value, current_id,
                                          library_name == PROXY_LIBRARY);
                      current_id++;
                   }
