@@ -539,8 +539,7 @@ void HLS_constraints::read_HLS_CL_constraints(const std::string& s)
       {
          std::string resource_name;
          std::string library_name;
-         const auto resource_library_pair =
-             string_to_container<std::vector<std::string>>(splitted.at(0), ":");
+         const auto resource_library_pair = string_to_container<std::vector<std::string>>(splitted.at(0), ":");
          if(resource_library_pair.size() == 2)
          {
             resource_name = resource_library_pair.at(0);
