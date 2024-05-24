@@ -2401,14 +2401,21 @@ expand_signatures_and_call_sites(std::set<llvm::Function*>& function_worklist,
       {
          if(llvm::PointerType* ptr_type = llvm::dyn_cast<llvm::PointerType>(arg_type))
          {
+            auto el_type =
+#if __clang_major__ < 16
+                ptr_type->getElementType();
+#else
+                ptr_type->isOpaquePointerTy() ? llvm::Type::getVoidTy(ptr_type->getContext()) :
+                                                ptr_type->getNonOpaquePointerElementType();
+#endif
             if(arg_dim_decay > 0)
             {
                arg->size = std::vector<unsigned long long>(1, arg_dim_decay);
                arg->expandable = true;
 
-               if(ptr_type->getElementType()->isArrayTy())
+               if(el_type->isArrayTy())
                {
-                  std::vector<unsigned long long> array_dims = compute_array_dims(ptr_type->getElementType());
+                  std::vector<unsigned long long> array_dims = compute_array_dims(el_type);
                   arg->size.insert(arg->size.end(), array_dims.begin(), array_dims.end());
                }
 
@@ -2435,7 +2442,7 @@ expand_signatures_and_call_sites(std::set<llvm::Function*>& function_worklist,
                   exp_arg(ptr_type, 0, new_arg, exp_args_map_ref, newMockFunctionArgs, exp_ops);
                }
             }
-            else if(llvm::StructType* str_ty = llvm::dyn_cast<llvm::StructType>(ptr_type->getElementType()))
+            else if(llvm::StructType* str_ty = llvm::dyn_cast<llvm::StructType>(el_type))
             {
                arg->size = std::vector<unsigned long long>();
                arg->expandable = true;
@@ -2463,7 +2470,7 @@ expand_signatures_and_call_sites(std::set<llvm::Function*>& function_worklist,
                   exp_arg(rec_type, 0, new_arg, exp_args_map_ref, newMockFunctionArgs, exp_ops);
                }
             }
-            else if(llvm::ArrayType* arr_type = llvm::dyn_cast<llvm::ArrayType>(ptr_type->getElementType()))
+            else if(llvm::ArrayType* arr_type = llvm::dyn_cast<llvm::ArrayType>(el_type))
             {
                arg->size = compute_array_dims(arr_type);
                arg->expandable = true;
@@ -2697,7 +2704,12 @@ expand_signatures_and_call_sites(std::set<llvm::Function*>& function_worklist,
             std::vector<llvm::Value*> new_call_ops = std::vector<llvm::Value*>();
 
             for(auto& op :
-                (user_call_inst != nullptr ? user_call_inst->arg_operands() : user_invoke_inst->arg_operands()))
+#if __clang_major__ < 14
+                (user_call_inst != nullptr ? user_call_inst->arg_operands() : user_invoke_inst->arg_operands())
+#else
+                (user_call_inst != nullptr ? user_call_inst->args() : user_invoke_inst->args())
+#endif
+            )
             {
                llvm::Value* operand = op.get();
 
@@ -3058,8 +3070,14 @@ static void gen_gepi_map(llvm::Value* gepi_base, llvm::Argument* arg, llvm::Use*
       for(llvm::Type* ty : type_vec)
       {
          std::vector<llvm::Value*> gepi_ops = std::vector<llvm::Value*>();
-
-         llvm::Type* gepi_type = llvm::cast<llvm::PointerType>(gepi_base->getType()->getScalarType())->getElementType();
+         auto ptr_type = llvm::cast<llvm::PointerType>(gepi_base->getType()->getScalarType());
+         auto gepi_type =
+#if __clang_major__ < 16
+             ptr_type->getElementType();
+#else
+             ptr_type->isOpaquePointerTy() ? llvm::Type::getVoidTy(ptr_type->getContext()) :
+                                             ptr_type->getNonOpaquePointerElementType();
+#endif
 
          if(!already_decay)
          {
@@ -4114,7 +4132,14 @@ static void cleanup(llvm::Module& module, const std::map<llvm::Function*, llvm::
 
             if(llvm::PointerType* ptr_ty = llvm::dyn_cast<llvm::PointerType>(arg->getType()))
             {
-               if(!ptr_ty->getElementType()->isAggregateType())
+               auto el_ty =
+#if __clang_major__ < 16
+                   ptr_ty->getElementType();
+#else
+                   ptr_ty->isOpaquePointerTy() ? llvm::Type::getVoidTy(ptr_ty->getContext()) :
+                                                 ptr_ty->getNonOpaquePointerElementType();
+#endif
+               if(!el_ty->isAggregateType())
                {
                   for(auto& use : arg->uses())
                   {
@@ -4171,7 +4196,14 @@ static void cleanup(llvm::Module& module, const std::map<llvm::Function*, llvm::
       {
          if(llvm::PointerType* ptr_ty = llvm::dyn_cast<llvm::PointerType>(arg->getType()))
          {
-            if(!ptr_ty->getElementType()->isAggregateType())
+            auto el_ty =
+#if __clang_major__ < 16
+                ptr_ty->getElementType();
+#else
+                ptr_ty->isOpaquePointerTy() ? llvm::Type::getVoidTy(ptr_ty->getContext()) :
+                                              ptr_ty->getNonOpaquePointerElementType();
+#endif
+            if(!el_ty->isAggregateType())
             {
                if(arg->getNumUses() == 1)
                {
@@ -4451,8 +4483,14 @@ static void cleanup(llvm::Module& module, const std::map<llvm::Function*, llvm::
             auto call_inst = llvm::dyn_cast<llvm::Instruction>(user);
             std::vector<llvm::Value*> call_ops = std::vector<llvm::Value*>();
             for(auto& op :
+#if __clang_major__ < 14
                 (llvm::isa<llvm::CallInst>(user) ? llvm::dyn_cast<llvm::CallInst>(call_inst)->arg_operands() :
-                                                   llvm::dyn_cast<llvm::InvokeInst>(call_inst)->arg_operands()))
+                                                   llvm::dyn_cast<llvm::InvokeInst>(call_inst)->arg_operands())
+#else
+                (llvm::isa<llvm::CallInst>(user) ? llvm::dyn_cast<llvm::CallInst>(call_inst)->args() :
+                                                   llvm::dyn_cast<llvm::InvokeInst>(call_inst)->args())
+#endif
+            )
             {
                llvm::Value* operand = op.get();
 
@@ -4473,9 +4511,15 @@ static void cleanup(llvm::Module& module, const std::map<llvm::Function*, llvm::
                         if(to_exp_it == arg_to_arg.end())
                         {
                            std::string new_load_name = call_inst->getName().str() + ".load." + std::to_string(i);
-                           llvm::LoadInst* load_inst =
-                               new llvm::LoadInst(llvm::cast<llvm::PointerType>(operand->getType())->getElementType(),
-                                                  operand, new_load_name, call_inst);
+                           auto ptr_ty = llvm::cast<llvm::PointerType>(operand->getType());
+                           auto el_ty =
+#if __clang_major__ < 16
+                               ptr_ty->getElementType();
+#else
+                               ptr_ty->isOpaquePointerTy() ? llvm::Type::getVoidTy(ptr_ty->getContext()) :
+                                                             ptr_ty->getNonOpaquePointerElementType();
+#endif
+                           llvm::LoadInst* load_inst = new llvm::LoadInst(el_ty, operand, new_load_name, call_inst);
 
                            call_ops.push_back(load_inst);
                         }
