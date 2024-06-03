@@ -1651,7 +1651,7 @@ void Bit_Value::initialize()
             }
             else
             {
-               if(bb_version == 0 || bb_version != function_behavior->GetBBVersion())
+               if(ssa->bit_values.empty() || bb_version == 0 || bb_version != function_behavior->GetBBVersion())
                {
                   best[res_nid] = create_u_bitstring(tree_helper::TypeSize(pn->res));
                }
@@ -1781,7 +1781,8 @@ void Bit_Value::initialize()
                   }
                   else
                   {
-                     if(bb_version == 0 || bb_version != function_behavior->GetBBVersion())
+                     if(lhs_ssa->bit_values.empty() || bb_version == 0 ||
+                        bb_version != function_behavior->GetBBVersion())
                      {
                         auto u_string = create_u_bitstring(tree_helper::TypeSize(lhs));
                         if(lhs_signed && tree_helper::is_natural(TM, GET_INDEX_CONST_NODE(ga->op0)))
