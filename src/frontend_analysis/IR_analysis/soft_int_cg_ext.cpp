@@ -143,13 +143,14 @@ DesignFlowStep_Status soft_int_cg_ext::Exec()
 
    for(const auto& function_id : reached_body_fun_ids)
    {
-      const auto fu_name = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name();
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                     "-->Analyzing function \"" + fu_name + "\": id = " + STR(function_id));
       const auto curr_tn = TreeM->GetTreeNode(function_id);
       const auto fname = tree_helper::GetFunctionName(TreeM, curr_tn);
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                     "-->Analyzing function \"" + fname + "\": id = " + STR(function_id));
       const auto fd = GetPointerS<function_decl>(curr_tn);
       const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+      use64bitMul = false;
+      use32bitMul = false;
 
       THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_device(), "unexpected condition");
       const auto hls_d = GetPointer<const HLS_manager>(AppM)->get_HLS_device();
@@ -193,7 +194,7 @@ DesignFlowStep_Status soft_int_cg_ext::Exec()
          fun_id_to_restart.insert(function_id);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                     "<--Analyzed function \"" + fu_name + "\": id = " + STR(function_id));
+                     "<--Analyzed function \"" + fname + "\": id = " + STR(function_id));
    }
    for(const auto& i : fun_id_to_restart)
    {
