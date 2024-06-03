@@ -53,6 +53,7 @@
 #include "design_flow_step.hpp"
 #include "exceptions.hpp"
 #include "function_behavior.hpp"
+#include "function_frontend_flow_step.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
 #include "math_function.hpp"
@@ -63,15 +64,16 @@
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+
 #include <string>
 
-soft_int_cg_ext::soft_int_cg_ext(const ParameterConstRef _parameters, const application_managerRef _AppM,
-                                 unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, SOFT_INT_CG_EXT, _design_flow_manager, _parameters),
-      TreeM(_AppM->get_tree_manager()),
+soft_int_cg_ext::soft_int_cg_ext(const application_managerRef AM, const DesignFlowManagerConstRef dfm,
+                                 const ParameterConstRef par)
+    : ApplicationFrontendFlowStep(AM, SOFT_INT_CG_EXT, dfm, par),
+      TreeM(AM->get_tree_manager()),
       use64bitMul(false),
       use32bitMul(false),
-      doSoftDiv(_parameters->isOption(OPT_hls_div) && _parameters->getOption<std::string>(OPT_hls_div) != "none")
+      doSoftDiv(par->isOption(OPT_hls_div) && par->getOption<std::string>(OPT_hls_div) != "none")
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -86,25 +88,21 @@ soft_int_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::Relationship
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
-         relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, SAME_FUNCTION));
-         relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
-         relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
-         relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(USE_COUNTING, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(CSE_STEP, ALL_FUNCTIONS));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(CSE_STEP, SAME_FUNCTION));
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
       {
-         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
-         {
-            relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
-         }
          break;
       }
       default:
@@ -115,59 +113,98 @@ soft_int_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::Relationship
    return relationships;
 }
 
-DesignFlowStep_Status soft_int_cg_ext::InternalExec()
+void soft_int_cg_ext::ComputeRelationships(DesignFlowStepSet& relationships,
+                                           const DesignFlowStep::RelationshipType relationship_type)
+{
+   if(relationship_type == INVALIDATION_RELATIONSHIP)
+   {
+      for(const auto& i : fun_id_to_restart)
+      {
+         const auto step_signature =
+             FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::FUNCTION_CALL_TYPE_CLEANUP, i);
+         const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
+         THROW_ASSERT(frontend_step != NULL_VERTEX, "step " + step_signature + " is not present");
+         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+         relationships.insert(design_flow_step);
+      }
+      fun_id_to_restart.clear();
+   }
+   ApplicationFrontendFlowStep::ComputeRelationships(relationships, relationship_type);
+}
+
+DesignFlowStep_Status soft_int_cg_ext::Exec()
 {
    const tree_manipulationRef tree_man(new tree_manipulation(TreeM, parameters, AppM));
 
-   const auto curr_tn = TreeM->GetTreeNode(function_id);
-   const auto fname = tree_helper::GetFunctionName(TreeM, curr_tn);
-   const auto fd = GetPointerS<function_decl>(curr_tn);
-   const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   const auto CGMan = AppM->CGetCallGraphManager();
+   const auto cg = CGMan->CGetCallGraph();
+   const auto reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
 
-   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_device(), "unexpected condition");
-   const auto hls_d = GetPointer<const HLS_manager>(AppM)->get_HLS_device();
-   if(fname != "__umul64" && fname != "__mul64")
+   for(const auto& function_id : reached_body_fun_ids)
    {
-      if((hls_d->has_parameter("use_soft_64_mul") && hls_d->get_parameter<size_t>("use_soft_64_mul")) ||
-         (parameters->isOption(OPT_DSP_fracturing) && parameters->getOption<std::string>(OPT_DSP_fracturing) == "16") ||
-         (parameters->isOption(OPT_DSP_fracturing) && parameters->getOption<std::string>(OPT_DSP_fracturing) == "32"))
-      {
-         use64bitMul = true;
-      }
-   }
-   if(fname != "__umul32" && fname != "__mul32")
-   {
-      if((hls_d->has_parameter("use_soft_32_mul") && hls_d->get_parameter<size_t>("use_soft_32_mul")) ||
-         (parameters->isOption(OPT_DSP_fracturing) && parameters->getOption<std::string>(OPT_DSP_fracturing) == "16"))
-      {
-         use32bitMul = true;
-      }
-   }
+      const auto fu_name = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name();
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                     "-->Analyzing function \"" + fu_name + "\": id = " + STR(function_id));
+      const auto curr_tn = TreeM->GetTreeNode(function_id);
+      const auto fname = tree_helper::GetFunctionName(TreeM, curr_tn);
+      const auto fd = GetPointerS<function_decl>(curr_tn);
+      const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
 
-   bool modified = false;
-   for(const auto& idx_bb : sl->list_of_bloc)
-   {
-      const auto& BB = idx_bb.second;
-      for(const auto& stmt : BB->CGetStmtList())
+      THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_device(), "unexpected condition");
+      const auto hls_d = GetPointer<const HLS_manager>(AppM)->get_HLS_device();
+      if(fname != "__umul64" && fname != "__mul64")
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Examine " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
-         modified |= recursive_transform(stmt, stmt, tree_man);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--Examined " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
+         if((hls_d->has_parameter("use_soft_64_mul") && hls_d->get_parameter<size_t>("use_soft_64_mul")) ||
+            (parameters->isOption(OPT_DSP_fracturing) &&
+             parameters->getOption<std::string>(OPT_DSP_fracturing) == "16") ||
+            (parameters->isOption(OPT_DSP_fracturing) &&
+             parameters->getOption<std::string>(OPT_DSP_fracturing) == "32"))
+         {
+            use64bitMul = true;
+         }
       }
-   }
+      if(fname != "__umul32" && fname != "__mul32")
+      {
+         if((hls_d->has_parameter("use_soft_32_mul") && hls_d->get_parameter<size_t>("use_soft_32_mul")) ||
+            (parameters->isOption(OPT_DSP_fracturing) &&
+             parameters->getOption<std::string>(OPT_DSP_fracturing) == "16"))
+         {
+            use32bitMul = true;
+         }
+      }
 
-   if(modified)
-   {
-      function_behavior->UpdateBBVersion();
-      return DesignFlowStep_Status::SUCCESS;
+      bool modified = false;
+      for(const auto& idx_bb : sl->list_of_bloc)
+      {
+         const auto& BB = idx_bb.second;
+         for(const auto& stmt : BB->CGetStmtList())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "-->Examine " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
+            modified |= recursive_transform(function_id, stmt, stmt, tree_man);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "<--Examined " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
+         }
+      }
+
+      if(modified)
+      {
+         fun_id_to_restart.insert(function_id);
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                     "<--Analyzed function \"" + fu_name + "\": id = " + STR(function_id));
    }
-   return DesignFlowStep_Status::UNCHANGED;
+   for(const auto& i : fun_id_to_restart)
+   {
+      const auto FB = AppM->GetFunctionBehavior(i);
+      FB->GetBBVersion();
+   }
+   return fun_id_to_restart.empty() ? DesignFlowStep_Status::UNCHANGED : DesignFlowStep_Status::SUCCESS;
 }
 
-bool soft_int_cg_ext::recursive_transform(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement,
-                                          const tree_manipulationRef tree_man)
+bool soft_int_cg_ext::recursive_transform(unsigned int function_id, const tree_nodeRef& current_tree_node,
+                                          const tree_nodeRef& current_statement, const tree_manipulationRef tree_man)
 {
    THROW_ASSERT(current_tree_node->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    bool modified = false;
@@ -190,11 +227,11 @@ bool soft_int_cg_ext::recursive_transform(const tree_nodeRef& current_tree_node,
       case gimple_assign_K:
       {
          const auto gm = GetPointerS<gimple_assign>(curr_tn);
-         modified |= recursive_transform(gm->op0, current_statement, tree_man);
-         modified |= recursive_transform(gm->op1, current_statement, tree_man);
+         modified |= recursive_transform(function_id, gm->op0, current_statement, tree_man);
+         modified |= recursive_transform(function_id, gm->op1, current_statement, tree_man);
          if(gm->predicate)
          {
-            modified |= recursive_transform(gm->predicate, current_statement, tree_man);
+            modified |= recursive_transform(function_id, gm->predicate, current_statement, tree_man);
          }
          break;
       }
@@ -203,8 +240,8 @@ bool soft_int_cg_ext::recursive_transform(const tree_nodeRef& current_tree_node,
          tree_nodeRef current = current_tree_node;
          while(current)
          {
-            modified |=
-                recursive_transform(GetPointer<tree_list>(GET_NODE(current))->valu, current_statement, tree_man);
+            modified |= recursive_transform(function_id, GetPointer<tree_list>(GET_NODE(current))->valu,
+                                            current_statement, tree_man);
             current = GetPointer<tree_list>(GET_NODE(current))->chan;
          }
          break;
@@ -212,15 +249,15 @@ bool soft_int_cg_ext::recursive_transform(const tree_nodeRef& current_tree_node,
       case CASE_UNARY_EXPRESSION:
       {
          const auto ue = GetPointerS<unary_expr>(curr_tn);
-         modified |= recursive_transform(ue->op, current_statement, tree_man);
+         modified |= recursive_transform(function_id, ue->op, current_statement, tree_man);
          break;
       }
       case CASE_BINARY_EXPRESSION:
       {
          const auto be = GetPointerS<binary_expr>(curr_tn);
          const auto be_type = be->get_kind();
-         modified |= recursive_transform(be->op0, current_statement, tree_man);
-         modified |= recursive_transform(be->op1, current_statement, tree_man);
+         modified |= recursive_transform(function_id, be->op0, current_statement, tree_man);
+         modified |= recursive_transform(function_id, be->op1, current_statement, tree_man);
 
          if(doSoftDiv && (be_type == exact_div_expr_K || be_type == trunc_div_expr_K || be_type == trunc_mod_expr_K))
          {
@@ -312,32 +349,32 @@ bool soft_int_cg_ext::recursive_transform(const tree_nodeRef& current_tree_node,
       case CASE_TERNARY_EXPRESSION:
       {
          const ternary_expr* te = GetPointer<ternary_expr>(curr_tn);
-         modified |= recursive_transform(te->op0, current_statement, tree_man);
+         modified |= recursive_transform(function_id, te->op0, current_statement, tree_man);
          if(te->op1)
          {
-            modified |= recursive_transform(te->op1, current_statement, tree_man);
+            modified |= recursive_transform(function_id, te->op1, current_statement, tree_man);
          }
          if(te->op2)
          {
-            modified |= recursive_transform(te->op2, current_statement, tree_man);
+            modified |= recursive_transform(function_id, te->op2, current_statement, tree_man);
          }
          break;
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
          const quaternary_expr* qe = GetPointer<quaternary_expr>(curr_tn);
-         modified |= recursive_transform(qe->op0, current_statement, tree_man);
+         modified |= recursive_transform(function_id, qe->op0, current_statement, tree_man);
          if(qe->op1)
          {
-            modified |= recursive_transform(qe->op1, current_statement, tree_man);
+            modified |= recursive_transform(function_id, qe->op1, current_statement, tree_man);
          }
          if(qe->op2)
          {
-            modified |= recursive_transform(qe->op2, current_statement, tree_man);
+            modified |= recursive_transform(function_id, qe->op2, current_statement, tree_man);
          }
          if(qe->op3)
          {
-            modified |= recursive_transform(qe->op3, current_statement, tree_man);
+            modified |= recursive_transform(function_id, qe->op3, current_statement, tree_man);
          }
          break;
       }
@@ -346,7 +383,7 @@ bool soft_int_cg_ext::recursive_transform(const tree_nodeRef& current_tree_node,
          const constructor* co = GetPointer<constructor>(curr_tn);
          for(const auto& iv : co->list_of_idx_valu)
          {
-            modified |= recursive_transform(iv.second, current_statement, tree_man);
+            modified |= recursive_transform(function_id, iv.second, current_statement, tree_man);
          }
          break;
       }
