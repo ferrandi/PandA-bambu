@@ -1046,7 +1046,8 @@ void Bit_Value::Initialize()
 
 DesignFlowStep_Status Bit_Value::InternalExec()
 {
-   if(parameters->IsParameter("bitvalue") && !parameters->GetParameter<unsigned int>("bitvalue"))
+   if((parameters->IsParameter("bitvalue") && !parameters->GetParameter<unsigned int>("bitvalue")) ||
+      !AppM->ApplyNewTransformation())
    {
       return DesignFlowStep_Status::UNCHANGED;
    }
@@ -1651,12 +1652,13 @@ void Bit_Value::initialize()
             }
             else
             {
-               if(ssa->bit_values.empty() || bb_version == 0 || bb_version != function_behavior->GetBBVersion())
+               if(bb_version == 0 || bb_version != function_behavior->GetBBVersion())
                {
                   best[res_nid] = create_u_bitstring(tree_helper::TypeSize(pn->res));
                }
                else
                {
+                  THROW_ASSERT(!ssa->bit_values.empty(), "unexpected case");
                   best[res_nid] = string_to_bitstring(ssa->bit_values);
                }
                if(best.count(res_nid))
@@ -1781,8 +1783,7 @@ void Bit_Value::initialize()
                   }
                   else
                   {
-                     if(lhs_ssa->bit_values.empty() || bb_version == 0 ||
-                        bb_version != function_behavior->GetBBVersion())
+                     if(bb_version == 0 || bb_version != function_behavior->GetBBVersion())
                      {
                         auto u_string = create_u_bitstring(tree_helper::TypeSize(lhs));
                         if(lhs_signed && tree_helper::is_natural(TM, GET_INDEX_CONST_NODE(ga->op0)))
@@ -1794,6 +1795,7 @@ void Bit_Value::initialize()
                      }
                      else
                      {
+                        THROW_ASSERT(!lhs_ssa->bit_values.empty(), "unexpected case");
                         best[lhs_nid] = string_to_bitstring(lhs_ssa->bit_values);
                      }
                   }
