@@ -199,7 +199,7 @@ DesignFlowStep_Status soft_int_cg_ext::Exec()
    for(const auto& i : fun_id_to_restart)
    {
       const auto FB = AppM->GetFunctionBehavior(i);
-      FB->GetBBVersion();
+      FB->UpdateBBVersion();
    }
    return fun_id_to_restart.empty() ? DesignFlowStep_Status::UNCHANGED : DesignFlowStep_Status::SUCCESS;
 }
