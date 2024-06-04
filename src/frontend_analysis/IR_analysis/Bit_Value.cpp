@@ -1046,7 +1046,8 @@ void Bit_Value::Initialize()
 
 DesignFlowStep_Status Bit_Value::InternalExec()
 {
-   if(parameters->IsParameter("bitvalue") && !parameters->GetParameter<unsigned int>("bitvalue"))
+   if((parameters->IsParameter("bitvalue") && !parameters->GetParameter<unsigned int>("bitvalue")) ||
+      !AppM->ApplyNewTransformation())
    {
       return DesignFlowStep_Status::UNCHANGED;
    }
@@ -1657,6 +1658,7 @@ void Bit_Value::initialize()
                }
                else
                {
+                  THROW_ASSERT(!ssa->bit_values.empty(), "unexpected case");
                   best[res_nid] = string_to_bitstring(ssa->bit_values);
                }
                if(best.count(res_nid))
@@ -1793,6 +1795,7 @@ void Bit_Value::initialize()
                      }
                      else
                      {
+                        THROW_ASSERT(!lhs_ssa->bit_values.empty(), "unexpected case");
                         best[lhs_nid] = string_to_bitstring(lhs_ssa->bit_values);
                      }
                   }

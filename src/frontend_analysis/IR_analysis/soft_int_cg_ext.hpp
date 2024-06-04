@@ -41,7 +41,7 @@
 #define SOFT_INT_CG_EXT_HPP
 
 /// Superclass include
-#include "function_frontend_flow_step.hpp"
+#include "application_frontend_flow_step.hpp"
 
 /// Utility include
 #include "custom_set.hpp"
@@ -60,7 +60,7 @@ REF_FORWARD_DECL(tree_node);
 /**
  * Add to the call graph the function calls associated with the integer division and modulus operations.
  */
-class soft_int_cg_ext : public FunctionFrontendFlowStep
+class soft_int_cg_ext : public ApplicationFrontendFlowStep
 {
  private:
    /// Already visited tree node (used to avoid infinite recursion)
@@ -71,12 +71,13 @@ class soft_int_cg_ext : public FunctionFrontendFlowStep
    bool use64bitMul;
    bool use32bitMul;
    bool doSoftDiv;
+   CustomOrderedSet<unsigned int> fun_id_to_restart;
 
    /**
     * Recursive examine tree node
     */
-   bool recursive_transform(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement,
-                            const tree_manipulationRef tree_man);
+   bool recursive_transform(unsigned int function_id, const tree_nodeRef& current_tree_node,
+                            const tree_nodeRef& current_statement, const tree_manipulationRef tree_man);
 
    /**
     * Return the set of analyses in relationship with this design step
@@ -85,16 +86,17 @@ class soft_int_cg_ext : public FunctionFrontendFlowStep
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
+   void ComputeRelationships(DesignFlowStepSet& relationships,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
+
  public:
    /**
     * Constructor.
-    * @param Param is the set of the parameters
-    * @param AppM is the application manager
-    * @param fun_id is the function index
-    * @param design_flow_manager is the design flow manager
+    * @param AM is the application manager
+    * @param dfm is the design flow manager
+    * @param par is the set of the parameters
     */
-   soft_int_cg_ext(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int _function_id,
-                   const DesignFlowManagerConstRef design_flow_manager);
+   soft_int_cg_ext(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par);
 
    /**
     * Destructor
@@ -102,8 +104,8 @@ class soft_int_cg_ext : public FunctionFrontendFlowStep
    ~soft_int_cg_ext() override;
 
    /**
-    * Fixes the var_decl duplication.
+    * transform soft int operation into function call
     */
-   DesignFlowStep_Status InternalExec() override;
+   DesignFlowStep_Status Exec() override;
 };
 #endif
