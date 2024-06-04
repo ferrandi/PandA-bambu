@@ -228,7 +228,6 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
       case FIX_STRUCTS_PASSED_BY_VALUE:
       case FIX_VDEF:
       case HDL_VAR_DECL_FIX:
-      case SOFT_INT_CG_EXT:
       case HWCALL_INJECTION:
       case IR_LOWERING:
       case LOOP_COMPUTATION:
@@ -302,6 +301,7 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
       case PRAGMA_SUBSTITUTION:
 #endif
       case RANGE_ANALYSIS:
+      case SOFT_INT_CG_EXT:
       case STRING_CST_FIX:
       case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP):
       {
@@ -388,6 +388,10 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       {
          return DesignFlowStepRef(new RangeAnalysis(AppM, design_flow_manager.lock(), parameters));
       }
+      case SOFT_INT_CG_EXT:
+      {
+         return DesignFlowStepRef(new soft_int_cg_ext(AppM, design_flow_manager.lock(), parameters));
+      }
       case STRING_CST_FIX:
       {
          return DesignFlowStepRef(new string_cst_fix(AppM, design_flow_manager.lock(), parameters));
@@ -433,7 +437,6 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       case FIX_STRUCTS_PASSED_BY_VALUE:
       case FIX_VDEF:
       case HDL_VAR_DECL_FIX:
-      case SOFT_INT_CG_EXT:
       case HWCALL_INJECTION:
       case IR_LOWERING:
       case LOOP_COMPUTATION:
@@ -669,10 +672,6 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       {
          return DesignFlowStepRef(new HDLVarDeclFix(AppM, function_id, design_flow_manager.lock(), parameters));
       }
-      case SOFT_INT_CG_EXT:
-      {
-         return DesignFlowStepRef(new soft_int_cg_ext(parameters, AppM, function_id, design_flow_manager.lock()));
-      }
       case HWCALL_INJECTION:
       {
          return DesignFlowStepRef(new HWCallInjection(parameters, AppM, function_id, design_flow_manager.lock()));
@@ -875,6 +874,7 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       case(PRAGMA_SUBSTITUTION):
 #endif
       case RANGE_ANALYSIS:
+      case SOFT_INT_CG_EXT:
       case STRING_CST_FIX:
       case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP):
       {
