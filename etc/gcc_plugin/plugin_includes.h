@@ -44,6 +44,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wfloat-conversion"
 #if(__GNUC__ < 6)
 #pragma GCC diagnostic ignored "-Wimplicit-function-declaration"
 #endif

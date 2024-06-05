@@ -61,13 +61,13 @@ inflate() {
       clang-7 )
          url="https://releases.llvm.org/7.0.1/clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
          ;;
-      clang-6 )
+      clang-6.0 )
          url="https://releases.llvm.org/6.0.1/clang+llvm-6.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
          ;;
-      clang-5 )
+      clang-5.0 )
          url="https://releases.llvm.org/5.0.2/clang+llvm-5.0.2-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
          ;;
-      clang-4 )
+      clang-4.0 )
          url="https://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
          ;;
       gcc-4.9 )
@@ -109,3 +109,24 @@ wait
 if [ -e "${failure_file}" ]; then
    exit -1
 fi
+
+CLANG_BINS=("`find ${install_dir}/clang+llvm-*/bin -type f -regextype posix-extended -regex '.*clang-[0-9]+\.?[0-9]?' 2> /dev/null`")
+CLANG_EXES=("clang" "clang++" "clang-cl" "clang-cpp" "ld.lld" "lld" "lld-link" "llvm-ar" "llvm-config" "llvm-dis" "llvm-link" "llvm-lto" "llvm-lto2" "llvm-ranlib" "mlir-opt" "mlir-translate" "opt")
+
+mkdir -p "${install_dir}/usr/bin"
+for clang_exe in ${CLANG_BINS}
+do
+   CLANG_VER=$(sed 's/clang-//g' <<< "$(basename ${clang_exe})")
+   CLANG_DIR=$(dirname ${clang_exe})
+   CLANG_BIN=${CLANG_DIR#${install_dir}}
+   echo "Generating ${install_dir}/usr/bin links for clang/llvm ${CLANG_VER}"
+   for app in "${CLANG_EXES[@]}"
+   do
+      if [[ -f "${CLANG_DIR}/${app}" ]]; then
+         echo " ${app}-${CLANG_VER}... ok"
+         ln -sf "../..${CLANG_BIN}/${app}" "${install_dir}/usr/bin/${app}-${CLANG_VER}"
+      else
+         echo " ${app}-${CLANG_VER}... not available"
+      fi
+   done
+done

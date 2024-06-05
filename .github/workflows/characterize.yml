@@ -45,9 +45,7 @@ jobs:
     uses: ./.github/workflows/build-appimage.yml
     with:
       package-name: bambu-characterize
-      compilers: ""
-      build-compiler: gcc-8
-      configure: --disable-bambu --enable-spider --enable-eucalyptus --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8 --with-gcc8=/bin/false
+      configure: --disable-bambu --enable-spider --enable-eucalyptus --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8
     secrets: inherit
 
   setup:

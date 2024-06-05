@@ -178,7 +178,6 @@ int dg_descriptor_tree_marked_p(const void* p)
 
 #endif
 
-#if(__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #pragma GCC diagnostic ignored "-Wconversion"
@@ -190,34 +189,10 @@ int dg_descriptor_tree_marked_p(const void* p)
 #pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
 #pragma GCC diagnostic ignored "-Wunused-function"
 #pragma GCC diagnostic ignored "-Wundef"
-#endif
-#if(__GNUC__ == 8)
-#include "gtype_roots_gcc8.h"
-#endif
-#if(__GNUC__ == 7)
-#include "gtype_roots_gcc7.h"
-#endif
-#if(__GNUC__ == 6)
-#include "gtype_roots_gcc6.h"
-#endif
-#if(__GNUC__ == 5)
-#include "gtype_roots_gcc5.h"
-#endif
-#if(__GNUC__ == 4 && __GNUC_MINOR__ == 9)
-#include "gtype_roots_gcc49.h"
-#endif
-#if(__GNUC__ == 4 && __GNUC_MINOR__ == 8)
-#include "gtype_roots_gcc48.h"
-#endif
-#if(__GNUC__ == 4 && __GNUC_MINOR__ == 7)
-#include "gtype_roots_gcc47.h"
-#endif
-#if(__GNUC__ == 4 && __GNUC_MINOR__ == 6)
-#include "gtype_roots_gcc46.h"
-#endif
-#if(__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+
+#include "gtype_roots.h"
+
 #pragma GCC diagnostic push
-#endif
 
 /* Serialize the CHILD and its children.  */
 #define serialize_child(field, child) queue_and_serialize_index(field, child)
@@ -371,34 +346,9 @@ static struct ggc_root_tab DumpGimpleTreeRoot = {NULL, 1, 1, DumpGimpleTreeWalke
 void DumpGimpleInit(char* _outdir_name)
 {
    /* Register our GC root-walking callback: */
-#if(__GNUC__ == 8)
-   ggc_register_root_tab(gt_ggc_r_gtype_roots_gcc8_h);
-#elif(__GNUC__ == 7)
-   ggc_register_root_tab(gt_ggc_r_gtype_roots_gcc7_h);
-#elif(__GNUC__ == 6)
-   ggc_register_root_tab(gt_ggc_r_gtype_roots_gcc6_h);
-#elif(__GNUC__ == 5)
-   ggc_register_root_tab(gt_ggc_r_gtype_roots_gcc5_h);
-#elif(__GNUC__ == 4 && __GNUC_MINOR__ == 9)
-   ggc_register_root_tab(gt_ggc_r_gtype_roots_gcc49_h);
-#elif(__GNUC__ == 4 && __GNUC_MINOR__ == 8)
-   ggc_register_root_tab(gt_ggc_r_gtype_roots_gcc48_h);
-#elif(__GNUC__ == 4 && __GNUC_MINOR__ == 7)
-   ggc_register_root_tab(gt_ggc_r_gtype_roots_gcc47_h);
-#elif(__GNUC__ == 4 && __GNUC_MINOR__ == 6)
-   ggc_register_root_tab(gt_ggc_r_gtype_roots_gcc46_h);
-#else
-   ggc_register_root_tab(&DumpGimpleRoot);
-#endif
-#if(__GNUC__ == 4 && __GNUC_MINOR__ == 9)
-   ggc_register_cache_tab(gt_ggc_rc_gtype_roots_gcc49_h);
-#elif(__GNUC__ == 4 && __GNUC_MINOR__ == 8)
-   ggc_register_cache_tab(gt_ggc_rc_gtype_roots_gcc48_h);
-#elif(__GNUC__ == 4 && __GNUC_MINOR__ == 7)
-   ggc_register_cache_tab(gt_ggc_rc_gtype_roots_gcc47_h);
-#elif(__GNUC__ == 4 && __GNUC_MINOR__ == 6)
-   ggc_register_cache_tab(gt_ggc_rc_gtype_roots_gcc46_h);
-#else
+   ggc_register_root_tab(gt_ggc_r_gtype_roots_h);
+#if(__GNUC__ == 4 && __GNUC_MINOR__ >= 6 && __GNUC_MINOR__ <= 9)
+   ggc_register_cache_tab(gt_ggc_rc_gtype_roots_h);
 #endif
    ggc_register_root_tab(&DumpGimpleTreeRoot);
    di_local_index = 0;

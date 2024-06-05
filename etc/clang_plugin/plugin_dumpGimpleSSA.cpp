@@ -128,11 +128,11 @@
 #include <string>
 
 #ifdef CPP_LANGUAGE
-#define CLANG_VERSION_SYMBOL_DUMP_SSA CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSACpp)
-#define CLANG_VERSION_STRING_DUMP_SSA CLANG_VERSION_STRING(_plugin_dumpGimpleSSACpp)
+#define CLANG_VERSION_SYMBOL_DUMP_SSA dumpGimpleSSACpp
+#define CLANG_VERSION_STRING_DUMP_SSA "dumpGimpleSSACpp"
 #else
-#define CLANG_VERSION_SYMBOL_DUMP_SSA CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)
-#define CLANG_VERSION_STRING_DUMP_SSA CLANG_VERSION_STRING(_plugin_dumpGimpleSSA)
+#define CLANG_VERSION_SYMBOL_DUMP_SSA dumpGimpleSSA
+#define CLANG_VERSION_STRING_DUMP_SSA "dumpGimpleSSA"
 #endif
 
 #define DEBUG_TYPE "dump-gimple-ssa"
@@ -359,7 +359,7 @@ namespace llvm
 // Currently there is no difference between c++ or c serialization
 #if !defined(_WIN32)
 // static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL_DUMP_SSA<true>>
-// XPassEarly(CLANG_VERSION_STRING(_plugin_dumpGimpleSSAEarly), "Custom Value Range Based optimization step: LLVM pass",
+// XPassEarly("dumpGimpleSSAEarly", "Custom Value Range Based optimization step: LLVM pass",
 // false /* Only looks at CFG */, false /* Analysis Pass */);
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL_DUMP_SSA>
     XPass(CLANG_VERSION_STRING_DUMP_SSA, "Dump gimple ssa raw format starting from LLVM IR: LLVM pass",
@@ -367,7 +367,7 @@ static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL_DUMP_SSA>
 #endif
 
 #if __clang_major__ >= 13
-llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
+llvm::PassPluginLibraryInfo getdumpGimpleSSAPluginInfo()
 {
    return {
        LLVM_PLUGIN_API_VERSION, CLANG_VERSION_STRING_DUMP_SSA, "v0.12", [](llvm::PassBuilder& PB) {
@@ -482,7 +482,7 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
 // This part is the new way of registering your pass
 extern "C" ::llvm::PassPluginLibraryInfo LLVM_ATTRIBUTE_WEAK llvmGetPassPluginInfo()
 {
-   return CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)();
+   return getdumpGimpleSSAPluginInfo();
 }
 #else
 #if ADD_RSP
@@ -519,7 +519,7 @@ static llvm::RegisterStandardPasses llvmtoolLoader_Ox(llvm::PassManagerBuilder::
 
 // namespace llvm
 // {
-//    void CLANG_PLUGIN_INIT(_plugin_dumpGimpleSSA)(PassRegistry&);
+//    void initializedumpGimpleSSAPass(PassRegistry&);
 // } // namespace llvm
 //
 // using namespace llvm;

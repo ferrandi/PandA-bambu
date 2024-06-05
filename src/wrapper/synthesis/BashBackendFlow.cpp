@@ -96,9 +96,8 @@ BashBackendFlow::BashBackendFlow(const ParameterConstRef _Param, const std::stri
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                      "---Importing default scripts for target device family: " + device_string);
-      parser = XMLDomParserRef(
-          new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/", true) +
-                           default_data[device_string]));
+      parser = XMLDomParserRef(new XMLDomParser(relocate_install_path(PANDA_DATA_INSTALLDIR "/wrapper/synthesis") /
+                                                default_data[device_string]));
    }
    parse_flow(parser);
 }
@@ -276,7 +275,7 @@ void BashBackendFlow::CheckSynthesisResults()
 
 void BashBackendFlow::WriteFlowConfiguration(std::ostream& script)
 {
-   script << "export PANDA_DATA_INSTALLDIR=" << relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/") << "\n"
+   script << "export PANDA_DATA_INSTALLDIR=" << relocate_install_path(PANDA_DATA_INSTALLDIR) << "\n"
           << "export CURR_WORKDIR=" << std::filesystem::current_path() << "\n";
 
    for(const auto& pair : device->get_device_bash_vars())

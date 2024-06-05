@@ -1,6 +1,7 @@
 EXTRA_DIST = \
 	$(top_srcdir)/etc/gcc_plugin/VRP_data.h \
 	$(top_srcdir)/etc/gcc_plugin/dumpGimple.c \
+	$(top_srcdir)/etc/gcc_plugin/dumpGimpleCpp.c \
 	$(top_srcdir)/etc/gcc_plugin/gcc-4.9/dbgcnt.def \
 	$(top_srcdir)/etc/gcc_plugin/gcc-4.9/dbgcnt.h \
 	$(top_srcdir)/etc/gcc_plugin/gcc-4.9/expr.h \
@@ -22,7 +23,8 @@ EXTRA_DIST = \
 	$(top_srcdir)/etc/gcc_plugin/plugin_topfname.cpp
 
 LD_LIBRARY_PATH=
-PANDA_PLUGIN_VERSION=0.12
+PANDA_PLUGIN_VERSION=1.00
+COMPILER_PLUGINS_BUILD_DIR=../$(notdir $(COMPILER_PLUGINS_DIR))
 if ENABLE_WERROR
 WFLAGS=-Wall \
    -Werror \
@@ -46,376 +48,88 @@ else
 WFLAGS=
 endif
 
-FORCE:
+install-exec-local: all-local
+	@mkdir -p $(DESTDIR)$(COMPILER_PLUGINS_DIR)
+	@cp -r $(COMPILER_PLUGINS_BUILD_DIR)/* $(DESTDIR)$(COMPILER_PLUGINS_DIR)
 
-check:all
+### SET_PLUGIN_RULES(macro_prefix,api_type)
+define SET_PLUGIN_RULES
+.PHONY: all-local_$(1) clean-local_$(1)
 
-###### gcc 4.9
-if BUILD_I386_GCC49_EMPTY_PLUGIN
-all: $(I386_GCC49_EMPTY_PLUGIN)
-endif
+all-local: all-local_$(1)
 
-if BUILD_I386_GCC49_SSA_PLUGIN
-all: $(I386_GCC49_SSA_PLUGIN)
-endif
+all-local_$(1): \
+	$(COMPILER_PLUGINS_BUILD_DIR)/$$($(1)_PLUGIN_DIR)/$(COMPILER_EMPTY_PLUGIN).so \
+	$(COMPILER_PLUGINS_BUILD_DIR)/$$($(1)_PLUGIN_DIR)/$(COMPILER_SSA_PLUGIN).so \
+	$(COMPILER_PLUGINS_BUILD_DIR)/$$($(1)_PLUGIN_DIR)/$(COMPILER_SSA_PLUGINCPP).so \
+	$(COMPILER_PLUGINS_BUILD_DIR)/$$($(1)_PLUGIN_DIR)/$(COMPILER_TOPFNAME_PLUGIN).so
 
-if BUILD_I386_GCC49_SSA_PLUGINCPP
-all: $(I386_GCC49_SSA_PLUGINCPP)
-endif
+clean-local: clean-local_$(1)
 
-if BUILD_I386_GCC49_TOPFNAME_PLUGIN
-all: $(I386_GCC49_TOPFNAME_PLUGIN)
-endif
+clean-local_$(1):
+	@rm -rf $$($(1)_PLUGIN_DIR)
 
-$(I386_GCC49_SSA_PLUGIN) : gcc49_plugin_dumpGimpleSSA.o gcc49_dumpGimple.o gcc49_tree-sra.o gcc49_version.h
-	case $(host_os) in \
+$(COMPILER_PLUGINS_BUILD_DIR)/$$($(1)_PLUGIN_DIR)/$(COMPILER_EMPTY_PLUGIN).so: \
+	$$($(1)_PLUGIN_DIR)/plugin_dumpGimpleEmpty.o $$($(1)_PLUGIN_DIR)/dumpGimple.o $$($(1)_PLUGIN_DIR)/tree-sra.o
+$(COMPILER_PLUGINS_BUILD_DIR)/$$($(1)_PLUGIN_DIR)/$(COMPILER_SSA_PLUGIN).so: \
+	$$($(1)_PLUGIN_DIR)/plugin_dumpGimpleSSA.o $$($(1)_PLUGIN_DIR)/dumpGimple.o $$($(1)_PLUGIN_DIR)/tree-sra.o
+$(COMPILER_PLUGINS_BUILD_DIR)/$$($(1)_PLUGIN_DIR)/$(COMPILER_SSA_PLUGINCPP).so: \
+	$$($(1)_PLUGIN_DIR)/plugin_dumpGimpleSSA.o $$($(1)_PLUGIN_DIR)/dumpGimpleCpp.o $$($(1)_PLUGIN_DIR)/tree-sra.o
+$(COMPILER_PLUGINS_BUILD_DIR)/$$($(1)_PLUGIN_DIR)/$(COMPILER_TOPFNAME_PLUGIN).so: \
+	$$($(1)_PLUGIN_DIR)/plugin_topfname.o
+
+$(COMPILER_PLUGINS_BUILD_DIR)/$$($(1)_PLUGIN_DIR)/%.so:
+	@mkdir -p $(COMPILER_PLUGINS_BUILD_DIR)/$$($(1)_PLUGIN_DIR)
+	@echo "  CXXLD $$@"
+	@case $$(host_os) in \
 	  mingw*) \
-	    flexlink -chain mingw -o gcc49_plugin_dumpGimpleSSA.so gcc49_plugin_dumpGimpleSSA.o gcc49_dumpGimple.o gcc49_tree-sra.o -lstdc++;;\
-	  *) \
-	    $(I386_GCC49_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc49_plugin_dumpGimpleSSA.o gcc49_dumpGimple.o gcc49_tree-sra.o -o gcc49_plugin_dumpGimpleSSA.so;; \
-	esac;
-
-$(I386_GCC49_SSA_PLUGINCPP) : gcc49_plugin_dumpGimpleSSA.o gcc49_dumpGimpleCpp.o gcc49_tree-sra.o gcc49_version.h
-	case $(host_os) in \
-	  mingw*) \
-	    flexlink -chain mingw -o gcc49_plugin_dumpGimpleSSACpp.so gcc49_plugin_dumpGimpleSSA.o gcc49_dumpGimpleCpp.o gcc49_tree-sra.o -lstdc++;;\
-	  *) \
-	    $(I386_GCC49_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc49_plugin_dumpGimpleSSA.o gcc49_dumpGimpleCpp.o gcc49_tree-sra.o -o gcc49_plugin_dumpGimpleSSACpp.so;; \
-	esac;
-
-$(I386_GCC49_EMPTY_PLUGIN) : gcc49_plugin_dumpGimpleEmpty.o gcc49_dumpGimple.o gcc49_tree-sra.o gcc49_version.h
-	case $(host_os) in \
-	  mingw*) \
-	    flexlink -chain mingw -o gcc49_plugin_dumpGimpleEmpty.so gcc49_plugin_dumpGimpleEmpty.o gcc49_dumpGimple.o gcc49_tree-sra.o -lstdc++;;\
-	  *) \
-	    $(I386_GCC49_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc49_plugin_dumpGimpleEmpty.o gcc49_dumpGimple.o gcc49_tree-sra.o -o gcc49_plugin_dumpGimpleEmpty.so;;\
-	esac;
-
-$(I386_GCC49_TOPFNAME_PLUGIN) : gcc49_plugin_topfname.o gcc49_version.h
-	case $(host_os) in \
-	  mingw*) \
-	    flexlink -chain mingw -o gcc49_plugin_topfname.so gcc49_plugin_topfname.o -lstdc++;;\
-	  *) \
-	    $(I386_GCC49_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc49_plugin_topfname.o -o gcc49_plugin_topfname.so;;\
-	esac;
-
-gcc49_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleEmpty.c $(top_srcdir)/etc/gcc_plugin/plugin_includes.h gcc49_version.h
-	case $(host_os) in \
-	  mingw*) \
-	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -c -fno-exceptions -fno-rtti -shared -O2 $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleEmpty.c -o gcc49_plugin_dumpGimpleEmpty.o -I$(I386_GCC49_PLUGIN_DIR)/include $(WFLAGS);;\
-	  *) \
-	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -shared -c $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleEmpty.c -o gcc49_plugin_dumpGimpleEmpty.o -I$(I386_GCC49_PLUGIN_DIR)/include $(WFLAGS);;\
-	esac;
-
-gcc49_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c $(top_srcdir)/etc/gcc_plugin/plugin_includes.h gcc49_version.h
-	case $(host_os) in \
-	  mingw*) \
-	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -fno-exceptions -fno-rtti -shared -O2 -c $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c -o gcc49_plugin_dumpGimpleSSA.o -I$(I386_GCC49_PLUGIN_DIR)/include $(WFLAGS);;\
-	  *) \
-	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -shared -c $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c -o gcc49_plugin_dumpGimpleSSA.o -I$(I386_GCC49_PLUGIN_DIR)/include $(WFLAGS);;\
-	esac;
-
-gcc49_plugin_topfname.o : $(top_srcdir)/etc/gcc_plugin/plugin_topfname.cpp $(top_srcdir)/etc/gcc_plugin/plugin_includes.h gcc49_version.h
-	case $(host_os) in \
-	  mingw*) \
-	    $(I386_GCC49_PLUGIN_COMPILER) -fno-exceptions -fno-rtti -shared -O2 -c $(top_srcdir)/etc/gcc_plugin/plugin_topfname.cpp -o gcc49_plugin_topfname.o -I$(I386_GCC49_PLUGIN_DIR)/include $(WFLAGS);;\
-	  *) \
-	    $(I386_GCC49_PLUGIN_COMPILER) -fPIC -fno-rtti -shared -c $(top_srcdir)/etc/gcc_plugin/plugin_topfname.cpp -o gcc49_plugin_topfname.o -I$(I386_GCC49_PLUGIN_DIR)/include $(WFLAGS);;\
-	esac;
-
-gcc49_dumpGimple.o : $(top_srcdir)/etc/gcc_plugin/dumpGimple.c gcc49_version.h gtype_roots_gcc49.h 
-	case $(host_os) in \
-	  mingw*) \
-	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -fno-exceptions -fno-rtti -shared -O2 -c $(top_srcdir)/etc/gcc_plugin/dumpGimple.c -o gcc49_dumpGimple.o -I. -I$(I386_GCC49_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);;\
-	  *) \
-	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -shared -c $(top_srcdir)/etc/gcc_plugin/dumpGimple.c -o gcc49_dumpGimple.o -I. -I$(I386_GCC49_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);;\
-	esac;
-
-gcc49_dumpGimpleCpp.o : $(top_srcdir)/etc/gcc_plugin/dumpGimple.c gcc49_version.h gtype_roots_gcc49.h 
-	case $(host_os) in \
-	  mingw*) \
-	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -fno-exceptions -fno-rtti -shared -O2 -c $(top_srcdir)/etc/gcc_plugin/dumpGimple.c -DCPP_LANGUAGE -o gcc49_dumpGimpleCpp.o -I. -I$(I386_GCC49_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);;\
-	  *) \
-	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -shared -c $(top_srcdir)/etc/gcc_plugin/dumpGimple.c -DCPP_LANGUAGE -o gcc49_dumpGimpleCpp.o -I. -I$(I386_GCC49_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);;\
-	esac;
-
-gcc49_tree-sra.o : $(top_srcdir)/etc/gcc_plugin/gcc-4.9/tree-sra.c
-	case $(host_os) in \
-	  mingw*) \
-	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -fno-exceptions -fno-rtti -shared -O2 -c $(top_srcdir)/etc/gcc_plugin/gcc-4.9/tree-sra.c -o gcc49_tree-sra.o -I. -I$(I386_GCC49_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" -DIN_GCC;;\
-	  *) \
-	    $(I386_GCC49_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -shared -c $(top_srcdir)/etc/gcc_plugin/gcc-4.9/tree-sra.c -o gcc49_tree-sra.o -I. -I$(I386_GCC49_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" -DIN_GCC ;;\
-	esac;
-
-
-
-gtype_roots_gcc49.h : $(top_srcdir)/etc/gcc_plugin/dumpGimple.c $(top_srcdir)/etc/gcc_plugin/plugin_includes.h $(top_srcdir)/etc/gcc_plugin/ggc_clike_static.h $(top_srcdir)/etc/gcc_plugin/ggc_clike_extern.h
-	$(I386_GCC49_GENGTYPE) -r  $(I386_GCC49_GTYPESTATE) -P $@ $(top_srcdir)/etc/gcc_plugin/dumpGimple.c $(I386_GCC49_PLUGIN_DIR)/include/splay-tree.h $(top_srcdir)/etc/gcc_plugin/plugin_includes.h $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c $(top_srcdir)/etc/gcc_plugin/ggc_clike_static.h $(top_srcdir)/etc/gcc_plugin/ggc_clike_extern.h
-
-gcc49_version.h : FORCE
-	$(I386_GCC49_PLUGIN_COMPILER) --version > new_gcc49_version.h
-	if ! test -f gcc49_version.h; then mv new_gcc49_version.h gcc49_version.h; else if ! diff -q gcc49_version.h  new_gcc49_version.h > /dev/null; then mv new_gcc49_version.h gcc49_version.h; fi fi
-
-###### 
-
-###### gcc 5
-if BUILD_I386_GCC5_EMPTY_PLUGIN
-all: $(I386_GCC5_EMPTY_PLUGIN)
-endif
-
-if BUILD_I386_GCC5_SSA_PLUGIN
-all: $(I386_GCC5_SSA_PLUGIN)
-endif
-
-if BUILD_I386_GCC5_SSA_PLUGINCPP
-all: $(I386_GCC5_SSA_PLUGINCPP)
-endif
-
-if BUILD_I386_GCC5_TOPFNAME_PLUGIN
-all: $(I386_GCC5_TOPFNAME_PLUGIN)
-endif
-
-$(I386_GCC5_SSA_PLUGIN) : gcc5_plugin_dumpGimpleSSA.o gcc5_dumpGimple.o  gcc5_tree-sra.o gcc5_version.h
-	$(I386_GCC5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc5_plugin_dumpGimpleSSA.o gcc5_dumpGimple.o gcc5_tree-sra.o -o gcc5_plugin_dumpGimpleSSA.so
-
-$(I386_GCC5_SSA_PLUGINCPP) : gcc5_plugin_dumpGimpleSSA.o gcc5_dumpGimpleCpp.o  gcc5_tree-sra.o gcc5_version.h
-	$(I386_GCC5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc5_plugin_dumpGimpleSSA.o gcc5_dumpGimpleCpp.o gcc5_tree-sra.o -o gcc5_plugin_dumpGimpleSSACpp.so
-
-$(I386_GCC5_EMPTY_PLUGIN) : gcc5_plugin_dumpGimpleEmpty.o gcc5_dumpGimple.o gcc5_tree-sra.o gcc5_version.h
-	$(I386_GCC5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc5_plugin_dumpGimpleEmpty.o gcc5_dumpGimple.o  gcc5_tree-sra.o -o gcc5_plugin_dumpGimpleEmpty.so
-
-$(I386_GCC5_TOPFNAME_PLUGIN) : gcc5_plugin_topfname.o gcc5_version.h
-	$(I386_GCC5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc5_plugin_topfname.o -o gcc5_plugin_topfname.so
-
-gcc5_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleEmpty.c $(top_srcdir)/etc/gcc_plugin/plugin_includes.h gcc5_version.h
-	$(I386_GCC5_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleEmpty.c -o gcc5_plugin_dumpGimpleEmpty.o -I$(I386_GCC5_PLUGIN_DIR)/include
-
-gcc5_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c $(top_srcdir)/etc/gcc_plugin/plugin_includes.h gcc5_version.h
-	$(I386_GCC5_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c -o gcc5_plugin_dumpGimpleSSA.o -I$(I386_GCC5_PLUGIN_DIR)/include 
-
-gcc5_plugin_topfname.o : $(top_srcdir)/etc/gcc_plugin/plugin_topfname.cpp $(top_srcdir)/etc/gcc_plugin/plugin_includes.h gcc5_version.h
-	$(I386_GCC5_PLUGIN_COMPILER) -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/plugin_topfname.cpp -o gcc5_plugin_topfname.o -I$(I386_GCC5_PLUGIN_DIR)/include
-
-gcc5_dumpGimple.o : $(top_srcdir)/etc/gcc_plugin/dumpGimple.c gcc5_version.h gtype_roots_gcc5.h 
-	$(I386_GCC5_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/dumpGimple.c -o gcc5_dumpGimple.o -I. -I$(I386_GCC5_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" 
-
-gcc5_dumpGimpleCpp.o : $(top_srcdir)/etc/gcc_plugin/dumpGimple.c gcc5_version.h gtype_roots_gcc5.h 
-	$(I386_GCC5_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/dumpGimple.c -DCPP_LANGUAGE -o gcc5_dumpGimpleCpp.o -I. -I$(I386_GCC5_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" 
-
-gcc5_tree-sra.o : $(top_srcdir)/etc/gcc_plugin/gcc-5/tree-sra.c
-	    $(I386_GCC5_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/gcc-5/tree-sra.c -o gcc5_tree-sra.o -I. -I$(I386_GCC5_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" -DIN_GCC 
-
-gtype_roots_gcc5.h : $(top_srcdir)/etc/gcc_plugin/dumpGimple.c $(top_srcdir)/etc/gcc_plugin/plugin_includes.h $(top_srcdir)/etc/gcc_plugin/ggc_cpplike_static.h $(top_srcdir)/etc/gcc_plugin/ggc_cpplike_extern.h
-	$(I386_GCC5_GENGTYPE) -r  $(I386_GCC5_GTYPESTATE) -P $@ $(top_srcdir)/etc/gcc_plugin/dumpGimple.c $(I386_GCC5_PLUGIN_DIR)/include/splay-tree.h $(top_srcdir)/etc/gcc_plugin/plugin_includes.h $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c $(top_srcdir)/etc/gcc_plugin/ggc_cpplike_static.h $(top_srcdir)/etc/gcc_plugin/ggc_cpplike_extern.h
-
-gcc5_version.h : FORCE
-	$(I386_GCC5_PLUGIN_COMPILER) --version > new_gcc5_version.h
-	if ! test -f gcc5_version.h; then mv new_gcc5_version.h gcc5_version.h; else if ! diff -q gcc5_version.h  new_gcc5_version.h > /dev/null; then mv new_gcc5_version.h gcc5_version.h; fi fi
-
-###### 
-
-###### gcc 6
-if BUILD_I386_GCC6_EMPTY_PLUGIN
-all: $(I386_GCC6_EMPTY_PLUGIN)
-endif
-
-if BUILD_I386_GCC6_SSA_PLUGIN
-all: $(I386_GCC6_SSA_PLUGIN)
-endif
-
-if BUILD_I386_GCC6_SSA_PLUGINCPP
-all: $(I386_GCC6_SSA_PLUGINCPP)
-endif
-
-if BUILD_I386_GCC6_TOPFNAME_PLUGIN
-all: $(I386_GCC6_TOPFNAME_PLUGIN)
-endif
-
-$(I386_GCC6_SSA_PLUGIN) : gcc6_plugin_dumpGimpleSSA.o gcc6_dumpGimple.o gcc6_tree-sra.o gcc6_version.h
-	$(I386_GCC6_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc6_plugin_dumpGimpleSSA.o gcc6_dumpGimple.o gcc6_tree-sra.o -o gcc6_plugin_dumpGimpleSSA.so
-
-$(I386_GCC6_SSA_PLUGINCPP) : gcc6_plugin_dumpGimpleSSA.o gcc6_dumpGimpleCpp.o gcc6_tree-sra.o gcc6_version.h
-	$(I386_GCC6_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc6_plugin_dumpGimpleSSA.o gcc6_dumpGimpleCpp.o gcc6_tree-sra.o -o gcc6_plugin_dumpGimpleSSACpp.so
-
-$(I386_GCC6_EMPTY_PLUGIN) : gcc6_plugin_dumpGimpleEmpty.o gcc6_dumpGimple.o gcc6_tree-sra.o gcc6_version.h
-	$(I386_GCC6_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc6_plugin_dumpGimpleEmpty.o gcc6_dumpGimple.o gcc6_tree-sra.o -o gcc6_plugin_dumpGimpleEmpty.so
-
-$(I386_GCC6_TOPFNAME_PLUGIN) : gcc6_plugin_topfname.o gcc6_version.h
-	$(I386_GCC6_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc6_plugin_topfname.o -o gcc6_plugin_topfname.so
-
-gcc6_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleEmpty.c $(top_srcdir)/etc/gcc_plugin/plugin_includes.h gcc6_version.h
-	$(I386_GCC6_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleEmpty.c -o gcc6_plugin_dumpGimpleEmpty.o -I$(I386_GCC6_PLUGIN_DIR)/include
-
-gcc6_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c $(top_srcdir)/etc/gcc_plugin/plugin_includes.h gcc6_version.h
-	$(I386_GCC6_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c -o gcc6_plugin_dumpGimpleSSA.o -I$(I386_GCC6_PLUGIN_DIR)/include 
-
-gcc6_plugin_topfname.o : $(top_srcdir)/etc/gcc_plugin/plugin_topfname.cpp $(top_srcdir)/etc/gcc_plugin/plugin_includes.h gcc6_version.h
-	$(I386_GCC6_PLUGIN_COMPILER) -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/plugin_topfname.cpp -o gcc6_plugin_topfname.o -I$(I386_GCC6_PLUGIN_DIR)/include
-
-gcc6_dumpGimple.o : $(top_srcdir)/etc/gcc_plugin/dumpGimple.c gcc6_version.h gtype_roots_gcc6.h 
-	$(I386_GCC6_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/dumpGimple.c -o gcc6_dumpGimple.o -I. -I$(I386_GCC6_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" 
-
-gcc6_dumpGimpleCpp.o : $(top_srcdir)/etc/gcc_plugin/dumpGimple.c gcc6_version.h gtype_roots_gcc6.h 
-	$(I386_GCC6_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/dumpGimple.c -DCPP_LANGUAGE -o gcc6_dumpGimpleCpp.o -I. -I$(I386_GCC6_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" 
-
-gcc6_tree-sra.o : $(top_srcdir)/etc/gcc_plugin/gcc-6/tree-sra.c
-	    $(I386_GCC6_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/gcc-6/tree-sra.c -o gcc6_tree-sra.o -I. -I$(I386_GCC6_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" -DIN_GCC 
-
-gtype_roots_gcc6.h : $(top_srcdir)/etc/gcc_plugin/dumpGimple.c $(top_srcdir)/etc/gcc_plugin/plugin_includes.h $(top_srcdir)/etc/gcc_plugin/ggc_cpplike_static.h $(top_srcdir)/etc/gcc_plugin/ggc_cpplike_extern.h
-	$(I386_GCC6_GENGTYPE) -r  $(I386_GCC6_GTYPESTATE) -P $@ $(top_srcdir)/etc/gcc_plugin/dumpGimple.c $(I386_GCC6_PLUGIN_DIR)/include/splay-tree.h $(top_srcdir)/etc/gcc_plugin/plugin_includes.h $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c $(top_srcdir)/etc/gcc_plugin/ggc_cpplike_static.h $(top_srcdir)/etc/gcc_plugin/ggc_cpplike_extern.h
-
-gcc6_version.h : FORCE
-	$(I386_GCC6_PLUGIN_COMPILER) --version > new_gcc6_version.h
-	if ! test -f gcc6_version.h; then mv new_gcc6_version.h gcc6_version.h; else if ! diff -q gcc6_version.h  new_gcc6_version.h > /dev/null; then mv new_gcc6_version.h gcc6_version.h; fi fi
-
-###### 
-
-###### gcc 7
-if BUILD_I386_GCC7_EMPTY_PLUGIN
-all: $(I386_GCC7_EMPTY_PLUGIN)
-endif
-
-if BUILD_I386_GCC7_SSA_PLUGIN
-all: $(I386_GCC7_SSA_PLUGIN)
-endif
-
-if BUILD_I386_GCC7_SSA_PLUGINCPP
-all: $(I386_GCC7_SSA_PLUGINCPP)
-endif
-
-if BUILD_I386_GCC7_TOPFNAME_PLUGIN
-all: $(I386_GCC7_TOPFNAME_PLUGIN)
-endif
-
-$(I386_GCC7_SSA_PLUGIN) : gcc7_plugin_dumpGimpleSSA.o gcc7_dumpGimple.o gcc7_tree-sra.o gcc7_version.h
-	$(I386_GCC7_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc7_plugin_dumpGimpleSSA.o gcc7_dumpGimple.o gcc7_tree-sra.o -o gcc7_plugin_dumpGimpleSSA.so
-
-$(I386_GCC7_SSA_PLUGINCPP) : gcc7_plugin_dumpGimpleSSA.o gcc7_dumpGimpleCpp.o gcc7_tree-sra.o gcc7_version.h
-	$(I386_GCC7_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc7_plugin_dumpGimpleSSA.o gcc7_dumpGimpleCpp.o gcc7_tree-sra.o -o gcc7_plugin_dumpGimpleSSACpp.so
-
-$(I386_GCC7_EMPTY_PLUGIN) : gcc7_plugin_dumpGimpleEmpty.o gcc7_dumpGimple.o gcc7_tree-sra.o gcc7_version.h
-	$(I386_GCC7_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc7_plugin_dumpGimpleEmpty.o gcc7_dumpGimple.o gcc7_tree-sra.o -o gcc7_plugin_dumpGimpleEmpty.so
-
-$(I386_GCC7_TOPFNAME_PLUGIN) : gcc7_plugin_topfname.o gcc7_version.h
-	$(I386_GCC7_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc7_plugin_topfname.o -o gcc7_plugin_topfname.so
-
-gcc7_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleEmpty.c $(top_srcdir)/etc/gcc_plugin/plugin_includes.h gcc7_version.h
-	$(I386_GCC7_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleEmpty.c -o gcc7_plugin_dumpGimpleEmpty.o -I$(I386_GCC7_PLUGIN_DIR)/include
-
-gcc7_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c $(top_srcdir)/etc/gcc_plugin/plugin_includes.h gcc7_version.h
-	$(I386_GCC7_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c -o gcc7_plugin_dumpGimpleSSA.o -I$(I386_GCC7_PLUGIN_DIR)/include 
-
-gcc7_plugin_topfname.o : $(top_srcdir)/etc/gcc_plugin/plugin_topfname.cpp $(top_srcdir)/etc/gcc_plugin/plugin_includes.h gcc7_version.h
-	$(I386_GCC7_PLUGIN_COMPILER) -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/plugin_topfname.cpp -o gcc7_plugin_topfname.o -I$(I386_GCC7_PLUGIN_DIR)/include
-
-gcc7_dumpGimple.o : $(top_srcdir)/etc/gcc_plugin/dumpGimple.c gcc7_version.h gtype_roots_gcc7.h 
-	$(I386_GCC7_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/dumpGimple.c -o gcc7_dumpGimple.o -I. -I$(I386_GCC7_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" 
-
-gcc7_dumpGimpleCpp.o : $(top_srcdir)/etc/gcc_plugin/dumpGimple.c gcc7_version.h gtype_roots_gcc7.h 
-	$(I386_GCC7_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/dumpGimple.c -DCPP_LANGUAGE -o gcc7_dumpGimpleCpp.o -I. -I$(I386_GCC7_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" 
-
-gcc7_tree-sra.o : $(top_srcdir)/etc/gcc_plugin/gcc-7/tree-sra.c
-	    $(I386_GCC7_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/gcc-7/tree-sra.c -o gcc7_tree-sra.o -I. -I$(I386_GCC7_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" -DIN_GCC 
-
-gtype_roots_gcc7.h : $(top_srcdir)/etc/gcc_plugin/dumpGimple.c $(top_srcdir)/etc/gcc_plugin/plugin_includes.h $(top_srcdir)/etc/gcc_plugin/ggc_cpplike_static.h $(top_srcdir)/etc/gcc_plugin/ggc_cpplike_extern.h
-	$(I386_GCC7_GENGTYPE) -r  $(I386_GCC7_GTYPESTATE) -P $@ $(top_srcdir)/etc/gcc_plugin/dumpGimple.c $(I386_GCC7_PLUGIN_DIR)/include/splay-tree.h $(top_srcdir)/etc/gcc_plugin/plugin_includes.h $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c $(top_srcdir)/etc/gcc_plugin/ggc_cpplike_static.h $(top_srcdir)/etc/gcc_plugin/ggc_cpplike_extern.h
-
-gcc7_version.h : FORCE
-	$(I386_GCC7_PLUGIN_COMPILER) --version > new_gcc7_version.h
-	if ! test -f gcc7_version.h; then mv new_gcc7_version.h gcc7_version.h; else if ! diff -q gcc7_version.h  new_gcc7_version.h > /dev/null; then mv new_gcc7_version.h gcc7_version.h; fi fi
-
-###### 
-
-###### gcc 8
-if BUILD_I386_GCC8_EMPTY_PLUGIN
-all: $(I386_GCC8_EMPTY_PLUGIN)
-endif
-
-if BUILD_I386_GCC8_SSA_PLUGIN
-all: $(I386_GCC8_SSA_PLUGIN)
-endif
-
-if BUILD_I386_GCC8_SSA_PLUGINCPP
-all: $(I386_GCC8_SSA_PLUGINCPP)
-endif
-
-if BUILD_I386_GCC8_TOPFNAME_PLUGIN
-all: $(I386_GCC8_TOPFNAME_PLUGIN)
-endif
-
-$(I386_GCC8_SSA_PLUGIN) : gcc8_plugin_dumpGimpleSSA.o gcc8_dumpGimple.o gcc8_tree-sra.o gcc8_version.h
-	case $(host_os) in \
-	  mingw*) \
-	    $(I386_GCC8_PLUGIN_COMPILER) -shared -Wl,--export-all-symbols -fno-rtti gcc8_plugin_dumpGimpleSSA.o gcc8_dumpGimple.o gcc8_tree-sra.o -o gcc8_plugin_dumpGimpleSSA.so $(I386_GCC8_PLUGIN_DIR)/cc1.exe.a;; \
+	    flexlink -chain mingw -o $$@ $$^ -lstdc++;;\
 	  darwin*) \
-	    $(I386_GCC8_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti gcc8_plugin_dumpGimpleSSA.o gcc8_dumpGimple.o gcc8_tree-sra.o -o gcc8_plugin_dumpGimpleSSA.so;; \
+	    $$($(1)_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti $$@ $$^;; \
 	  *) \
-	    $(I386_GCC8_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc8_plugin_dumpGimpleSSA.o gcc8_dumpGimple.o gcc8_tree-sra.o -o gcc8_plugin_dumpGimpleSSA.so;; \
+	    $$($(1)_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -o $$@ $$^;; \
 	esac;
 
-$(I386_GCC8_SSA_PLUGINCPP) : gcc8_plugin_dumpGimpleSSA.o gcc8_dumpGimpleCpp.o gcc8_tree-sra.o gcc8_version.h
-	case $(host_os) in \
+$$($(1)_PLUGIN_DIR)/%.o: $$(top_srcdir)/etc/gcc_plugin/$$($(1)_PLUGIN_DIR)/%.c
+	@mkdir -p $$($(1)_PLUGIN_DIR)
+	@echo "  CXX $$@"
+	@case $$(host_os) in \
 	  mingw*) \
-	    $(I386_GCC8_PLUGIN_COMPILER) -shared -Wl,--export-all-symbols -fno-rtti gcc8_plugin_dumpGimpleSSA.o gcc8_dumpGimpleCpp.o gcc8_tree-sra.o -o gcc8_plugin_dumpGimpleSSACpp.so $(I386_GCC8_PLUGIN_DIR)/cc1plus.exe.a;; \
-	  darwin*) \
-	    $(I386_GCC8_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti gcc8_plugin_dumpGimpleSSA.o gcc8_dumpGimpleCpp.o gcc8_tree-sra.o -o gcc8_plugin_dumpGimpleSSACpp.so;; \
+	    plugin_cxxflags="-fno-exceptions -fno-rtti -shared -O2";; \
 	  *) \
-	    $(I386_GCC8_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc8_plugin_dumpGimpleSSA.o gcc8_dumpGimpleCpp.o gcc8_tree-sra.o -o gcc8_plugin_dumpGimpleSSACpp.so;; \
-	esac;
+	    plugin_cxxflags="-fPIC -fno-rtti -shared";; \
+	esac; \
+	$$($(1)_PLUGIN_COMPILER) -x c++ $$$$plugin_cxxflags -c -o $$@ $$^ -I$$($(1)_PLUGIN_DIR) -I$$($(1)_PLUGIN_INC)/include -DPANDA_PLUGIN_VERSION=\"$$(PANDA_PLUGIN_VERSION)\" -DIN_GCC
 
-$(I386_GCC8_EMPTY_PLUGIN) : gcc8_plugin_dumpGimpleEmpty.o gcc8_dumpGimple.o gcc8_tree-sra.o gcc8_version.h
-	case $(host_os) in \
+$$($(1)_PLUGIN_DIR)/%.o: $$(top_srcdir)/etc/gcc_plugin/%.* $$($(1)_PLUGIN_DIR)/gtype_roots.h 
+	@mkdir -p $$($(1)_PLUGIN_DIR)
+	@echo "  CXX $$@"
+	@case $$(host_os) in \
 	  mingw*) \
-	    $(I386_GCC8_PLUGIN_COMPILER) -shared -Wl,--export-all-symbols -fno-rtti gcc8_plugin_dumpGimpleEmpty.o gcc8_dumpGimple.o gcc8_tree-sra.o -o gcc8_plugin_dumpGimpleEmpty.so $(I386_GCC8_PLUGIN_DIR)/cc1.exe.a;; \
-	  darwin*) \
-	    $(I386_GCC8_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti gcc8_plugin_dumpGimpleEmpty.o gcc8_dumpGimple.o gcc8_tree-sra.o -o gcc8_plugin_dumpGimpleEmpty.so;; \
+	  	plugin_cxxflags="-fno-exceptions -fno-rtti -shared -O2";; \
 	  *) \
-	    $(I386_GCC8_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc8_plugin_dumpGimpleEmpty.o gcc8_dumpGimple.o gcc8_tree-sra.o -o gcc8_plugin_dumpGimpleEmpty.so;; \
-	esac;
+	    plugin_cxxflags="-fPIC -fno-rtti -shared";; \
+	esac; \
+	$$($(1)_PLUGIN_COMPILER) -x c++ $$$$plugin_cxxflags -c -o $$@ $$< -I$$($(1)_PLUGIN_DIR) -I$$($(1)_PLUGIN_INC)/include -DPANDA_PLUGIN_VERSION=\"$$(PANDA_PLUGIN_VERSION)\" $$(WFLAGS)
 
-$(I386_GCC8_TOPFNAME_PLUGIN) : gcc8_plugin_topfname.o gcc8_version.h
-	case $(host_os) in \
-	  mingw*) \
-	    $(I386_GCC8_PLUGIN_COMPILER) -shared -Wl,--export-all-symbols -fno-rtti gcc8_plugin_topfname.o -o gcc8_plugin_topfname.so $(I386_GCC8_PLUGIN_DIR)/cc1.exe.a;; \
-	  darwin*) \
-	    $(I386_GCC8_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti gcc8_plugin_topfname.o -o gcc8_plugin_topfname.so;; \
-	  *) \
-	    $(I386_GCC8_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc8_plugin_topfname.o -o gcc8_plugin_topfname.so;; \
-	esac;
+$$($(1)_PLUGIN_DIR)/gtype_roots.h: $$(top_srcdir)/etc/gcc_plugin/dumpGimple.c $$(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c $$(top_srcdir)/etc/gcc_plugin/plugin_includes.h $$(top_srcdir)/etc/gcc_plugin/ggc_$(2)like_static.h $$(top_srcdir)/etc/gcc_plugin/ggc_$(2)like_extern.h
+	@mkdir -p $$($(1)_PLUGIN_DIR)
+	@echo "  GEN $$@"
+	@cd $$($(1)_PLUGIN_DIR) && $$($(1)_GENGTYPE) -r $$($(1)_GTYPESTATE) -P $$(@F) $$(addprefix ../, $$^) $$($(1)_PLUGIN_INC)/include/splay-tree.h
+endef
 
-gcc8_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleEmpty.c $(top_srcdir)/etc/gcc_plugin/plugin_includes.h gcc8_version.h
-	$(I386_GCC8_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleEmpty.c -o gcc8_plugin_dumpGimpleEmpty.o -I$(I386_GCC8_PLUGIN_DIR)/include
-
-gcc8_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c $(top_srcdir)/etc/gcc_plugin/plugin_includes.h gcc8_version.h
-	$(I386_GCC8_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c -o gcc8_plugin_dumpGimpleSSA.o -I$(I386_GCC8_PLUGIN_DIR)/include 
-
-gcc8_plugin_topfname.o : $(top_srcdir)/etc/gcc_plugin/plugin_topfname.cpp $(top_srcdir)/etc/gcc_plugin/plugin_includes.h gcc8_version.h
-	$(I386_GCC8_PLUGIN_COMPILER) -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/plugin_topfname.cpp -o gcc8_plugin_topfname.o -I$(I386_GCC8_PLUGIN_DIR)/include
-
-gcc8_dumpGimple.o : $(top_srcdir)/etc/gcc_plugin/dumpGimple.c gcc8_version.h gtype_roots_gcc8.h 
-	$(I386_GCC8_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/dumpGimple.c -o gcc8_dumpGimple.o -I. -I$(I386_GCC8_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" 
-
-gcc8_dumpGimpleCpp.o : $(top_srcdir)/etc/gcc_plugin/dumpGimple.c gcc8_version.h gtype_roots_gcc8.h 
-	$(I386_GCC8_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/dumpGimple.c -DCPP_LANGUAGE -o gcc8_dumpGimpleCpp.o -I. -I$(I386_GCC8_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" 
-
-gcc8_tree-sra.o : $(top_srcdir)/etc/gcc_plugin/gcc-8/tree-sra.c
-	    $(I386_GCC8_PLUGIN_COMPILER) -x c++ -fPIC -fno-rtti -c $(top_srcdir)/etc/gcc_plugin/gcc-8/tree-sra.c -o gcc8_tree-sra.o -I. -I$(I386_GCC8_PLUGIN_DIR)/include -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" -DIN_GCC 
-
-gtype_roots_gcc8.h : $(top_srcdir)/etc/gcc_plugin/dumpGimple.c $(top_srcdir)/etc/gcc_plugin/plugin_includes.h $(top_srcdir)/etc/gcc_plugin/ggc_cpplike_static.h $(top_srcdir)/etc/gcc_plugin/ggc_cpplike_extern.h
-	$(I386_GCC8_GENGTYPE) -r  $(I386_GCC8_GTYPESTATE) -P $@ $(top_srcdir)/etc/gcc_plugin/dumpGimple.c $(I386_GCC8_PLUGIN_DIR)/include/splay-tree.h $(top_srcdir)/etc/gcc_plugin/plugin_includes.h $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c $(top_srcdir)/etc/gcc_plugin/ggc_cpplike_static.h $(top_srcdir)/etc/gcc_plugin/ggc_cpplike_extern.h
-
-gcc8_version.h : FORCE
-	$(I386_GCC8_PLUGIN_COMPILER) --version > new_gcc8_version.h
-	if ! test -f gcc8_version.h; then mv new_gcc8_version.h gcc8_version.h; else if ! diff -q gcc8_version.h  new_gcc8_version.h > /dev/null; then mv new_gcc8_version.h gcc8_version.h; fi fi
-
-###### 
-
-clean :
-	rm -rf *.o *.so *.h
-
-install: all
-	if test "`ls *so`" != ""; then mkdir -p $(DESTDIR)$(GCC_PLUGIN_DIR); cp -v *.so $(DESTDIR)$(GCC_PLUGIN_DIR); fi
-
-#do not touch the following line
-
-
+if BUILD_I386_GCC49
+$(eval $(call SET_PLUGIN_RULES,I386_GCC49,c))
+endif
+if BUILD_I386_GCC5
+$(eval $(call SET_PLUGIN_RULES,I386_GCC5,cpp))
+endif
+if BUILD_I386_GCC6
+$(eval $(call SET_PLUGIN_RULES,I386_GCC6,cpp))
+endif
+if BUILD_I386_GCC7
+$(eval $(call SET_PLUGIN_RULES,I386_GCC7,cpp))
+endif
+if BUILD_I386_GCC8
+$(eval $(call SET_PLUGIN_RULES,I386_GCC8,cpp))
+endif

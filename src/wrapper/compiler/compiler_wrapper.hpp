@@ -123,45 +123,33 @@ class CompilerWrapper
       /// The extra_options
       std::string extra_options;
 
-      /// The plugin to dump empty gimple
-      std::string empty_plugin_obj;
-      std::string empty_plugin_name;
-
-      /// The plugin to dump ssa gimple
-      std::string ssa_plugin_obj;
-      std::string ssa_plugin_name;
-
-      /// The plugin expanding MemOps calls
-      std::string expandMemOps_plugin_obj;
-      std::string expandMemOps_plugin_name;
-
-      /// The plugin canocalizing GEPIs
-      std::string GepiCanon_plugin_obj;
-      std::string GepiCanon_plugin_name;
-
-      /// The plugin performing Custom Scalar Replacement of Aggregates
-      std::string CSROA_plugin_obj;
-      std::string CSROA_plugin_name;
-
-      /// The plugin making visible only the top function
-      std::string topfname_plugin_obj;
-      std::string topfname_plugin_name;
-
-      /// AST analysis
-      std::string ASTAnalyzer_plugin_obj;
-      std::string ASTAnalyzer_plugin_name;
-
       /// The clang llvm-link executable
       std::string llvm_link;
 
       /// The clang llvm-opt executable
       std::string llvm_opt;
 
-      /// true when compiler is based on clang/llvm
-      bool is_clang;
+      /// The compiler plugin directory
+      std::string plugin_dir;
 
-      Compiler() : is_clang(false)
+      /// The analyzer compiler plugin directory
+      std::string analyzer_plugin_dir;
+
+      /// true when compiler is based on clang/llvm
+      bool is_clang{false};
+
+      Compiler()
       {
+      }
+
+      inline std::string GetPluginObject(const std::string& plugin_name) const
+      {
+         return plugin_dir + plugin_name + ".so";
+      }
+
+      inline std::string GetAnalyzerPluginObject(const std::string& plugin_name) const
+      {
+         return analyzer_plugin_dir + plugin_name + ".so";
       }
    };
 
@@ -173,6 +161,8 @@ class CompilerWrapper
 
    /// The set of optimizations to be applied
    const CompilerWrapper_OptimizationSet OS;
+
+   const bool cpp_input;
 
    /// The frontend compiler parameters line for compiling a file
    std::string frontend_compiler_parameters;

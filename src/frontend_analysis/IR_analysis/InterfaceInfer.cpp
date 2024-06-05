@@ -440,17 +440,17 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             if(tname.find("_fixed<") != std::string::npos)
             {
                parm_attrs[FunctionArchitecture::parm_includes] +=
-                   STR(";" PANDA_DATA_INSTALLDIR "/panda/ac_types/include/" + tname.substr(0, 2) + "_fixed.h");
+                   STR(";" PANDA_DATA_INSTALLDIR "/ac_types/include/" + tname.substr(0, 2) + "_fixed.h");
             }
             if(tname.find("_int<") != std::string::npos)
             {
                parm_attrs[FunctionArchitecture::parm_includes] +=
-                   STR(";" PANDA_DATA_INSTALLDIR "/panda/ac_types/include/" + tname.substr(0, 2) + "_int.h");
+                   STR(";" PANDA_DATA_INSTALLDIR "/ac_types/include/" + tname.substr(0, 2) + "_int.h");
             }
             if(tname.find("ac_channel<") != std::string::npos)
             {
                parm_attrs[FunctionArchitecture::parm_includes] +=
-                   STR(";" PANDA_DATA_INSTALLDIR "/panda/ac_types/include/ac_channel.h");
+                   STR(";" PANDA_DATA_INSTALLDIR "/ac_types/include/ac_channel.h");
             }
             ++typename_it;
             ++parm_index;

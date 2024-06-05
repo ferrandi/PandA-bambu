@@ -158,24 +158,21 @@ namespace llvm
    static cl::opt<bool> add_noalias("add-noalias", cl::init(false), cl::desc("Force noalias to pointer parameters"),
                                     cl::value_desc("specify if pointer parameters are noalias"));
 
-   struct CLANG_VERSION_SYMBOL(_plugin_topfname)
-       : public ModulePass
+   struct topfname : public ModulePass
 #if __clang_major__ >= 13
-         ,
-         public PassInfoMixin<CLANG_VERSION_SYMBOL(_plugin_topfname)>
+       ,
+                     public PassInfoMixin<topfname>
 #endif
    {
       static char ID;
 
-      CLANG_VERSION_SYMBOL(_plugin_topfname)
-      () : ModulePass(ID)
+      topfname() : ModulePass(ID)
       {
          initializeCallGraphWrapperPassPass(*PassRegistry::getPassRegistry());
       }
 
 #if __clang_major__ >= 13
-      CLANG_VERSION_SYMBOL(_plugin_topfname)
-      (const CLANG_VERSION_SYMBOL(_plugin_topfname) &) : CLANG_VERSION_SYMBOL(_plugin_topfname)()
+      topfname(const topfname&) : topfname()
       {
       }
 #endif
@@ -363,7 +360,7 @@ namespace llvm
 
       StringRef getPassName() const override
       {
-         return CLANG_VERSION_STRING(_plugin_topfname);
+         return "topfname";
       }
 
       void getAnalysisUsage(AnalysisUsage& AU) const override
@@ -380,22 +377,21 @@ namespace llvm
 #endif
    };
 
-   char CLANG_VERSION_SYMBOL(_plugin_topfname)::ID = 0;
+   char topfname::ID = 0;
 
 } // namespace llvm
 
 #ifndef _WIN32
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)>
-    XPass(CLANG_VERSION_STRING(_plugin_topfname), "Make all private/static but the top function",
-          false /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::topfname> XPass("topfname", "Make all private/static but the top function",
+                                                false /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 
 #if __clang_major__ >= 13
-llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_topfname)()
+llvm::PassPluginLibraryInfo gettopfnamePluginInfo()
 {
-   return {LLVM_PLUGIN_API_VERSION, CLANG_VERSION_STRING(_plugin_topfname), "v0.12", [](llvm::PassBuilder& PB) {
+   return {LLVM_PLUGIN_API_VERSION, "topfname", "v0.12", [](llvm::PassBuilder& PB) {
               const auto load = [](llvm::ModulePassManager& MPM) {
-                 MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)());
+                 MPM.addPass(llvm::topfname());
                  if(llvm::Internalize_TFP)
                  {
                     MPM.addPass(llvm::InternalizePass(preservedSyms));
@@ -404,7 +400,7 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_topfname)()
               };
               PB.registerPipelineParsingCallback([&](llvm::StringRef Name, llvm::ModulePassManager& MPM,
                                                      llvm::ArrayRef<llvm::PassBuilder::PipelineElement>) {
-                 if(Name == CLANG_VERSION_STRING(_plugin_topfname))
+                 if(Name == "topfname")
                  {
                     return load(MPM);
                  }
@@ -423,14 +419,14 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_topfname)()
 // This part is the new way of registering your pass
 extern "C" ::llvm::PassPluginLibraryInfo LLVM_ATTRIBUTE_WEAK llvmGetPassPluginInfo()
 {
-   return CLANG_PLUGIN_INFO(_plugin_topfname)();
+   return gettopfnamePluginInfo();
 }
 #else
 #if ADD_RSP
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
-   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)());
+   PM.add(new llvm::topfname());
    if(llvm::Internalize_TFP)
    {
       PM.add(llvm::createInternalizePass(preservedSyms));
@@ -438,8 +434,7 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
 }
 
 // These constructors add our pass to a list of global extensions.
-static llvm::RegisterStandardPasses
-    CLANG_VERSION_SYMBOL(_plugin_topfname_Ox)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
+static llvm::RegisterStandardPasses topfname_Ox(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
 #endif
 #endif
 
@@ -447,10 +442,10 @@ static llvm::RegisterStandardPasses
 //
 // namespace llvm
 // {
-//    void CLANG_PLUGIN_INIT(_plugin_topfname)(PassRegistry&);
+//    void initializetopfnamePass(PassRegistry&);
 // } // namespace llvm
 //
-// INITIALIZE_PASS_BEGIN(CLANG_VERSION_SYMBOL(_plugin_topfname), CLANG_VERSION_STRING(_plugin_topfname),
+// INITIALIZE_PASS_BEGIN(topfname, "topfname",
 //                       "Make all private/static but the top function", false, false)
-// INITIALIZE_PASS_END(CLANG_VERSION_SYMBOL(_plugin_topfname), CLANG_VERSION_STRING(_plugin_topfname),
+// INITIALIZE_PASS_END(topfname, "topfname",
 //                     "Make all private/static but the top function", false, false)

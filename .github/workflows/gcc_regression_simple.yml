@@ -8,16 +8,11 @@ on:
         required: false
         type: string
         default: bambu-grs
-      compilers:
-        description: "Front-end compiler string"
-        required: false
-        type: string
-        default: gcc-4.9,clang-4
       configure:
         description: "Bambu build configuration arguments"
         required: false
         type: string
-        default: --enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release --with-gcc8=/bin/false
+        default: --enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release
       compiler:
         description: "Compiler used during tests"
         required: false
@@ -34,8 +29,6 @@ jobs:
     uses: ./.github/workflows/build-appimage.yml
     with:
       version: ${{inputs.package-name}}
-      compilers: ${{ inputs.compilers }}
-      build-compiler: gcc-8
       configure: ${{ inputs.configure }} CC=gcc-8 CXX=g++-8
     secrets: inherit
 

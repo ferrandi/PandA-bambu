@@ -6,6 +6,8 @@ EXTRA_DIST= \
    acx_compile_warn.m4 \
    acx_lapack.m4 \
    acx_lapackpp.m4 \
+   acx_prog_clang.m4 \
+   acx_prog_gcc.m4 \
    acx_windows_paths.m4 \
    append.m4 \
    as-scrub-include.m4 \
@@ -14,7 +16,6 @@ EXTRA_DIST= \
    ax_cflags_gcc_option.m4 \
    ax_check_compile_flag.m4 \
    ax_lapack.m4 \
-   ax_openmp.m4 \
    boost_base.m4 \
    c++17.m4 \
    clang_version4.m4 \
@@ -29,7 +30,6 @@ EXTRA_DIST= \
    clang_version13.m4 \
    clang_version16.m4 \
    codeset.m4 \
-   gcc_version.m4 \
    get_configure.sh \
    get_target.sh \
    gettext.m4 \

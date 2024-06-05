@@ -25,10 +25,14 @@ cd ..
 
 git clone --depth 1 --branch $BRANCH https://github.com/llvm/llvm-project.git
 
-cd llvm-project
-mkdir build
-cd build
-cmake -DLLVM_ENABLE_PROJECTS="$@" -DCMAKE_INSTALL_PREFIX="$DIST_DIR" -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=ON -G "Unix Makefiles" ../llvm
+mkdir llvm-project/build
+cd llvm-project/build
+cmake -G "Unix Makefiles" ../llvm \
+   -DCMAKE_INSTALL_PREFIX="$DIST_DIR" \
+   -DCMAKE_BUILD_TYPE=Release \
+   -DLLVM_STATIC_LINK_CXX_STDLIB=ON \
+   -DLLVM_TARGETS_TO_BUILD=X86 \
+   -DLLVM_ENABLE_PROJECTS="$@"
 make -j$J
 make install
 

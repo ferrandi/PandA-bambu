@@ -1,8 +1,8 @@
 #this file is libbambu/softfloat/Makefile.am
 EXTRA_DIST=bambu.h milieu.h README.txt softfloat.h SoftFloat-history.txt softfloat-macros SoftFloat-source.txt softfloat-specialize SoftFloat.txt timesoftfloat.c timesoftfloat.txt README_PANDA.txt div_utilities
 
-common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/gcc_plugin
-common_treegccflags_clang = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/clang_plugin
+common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/$(notdir $(COMPILER_PLUGINS_DIR))
+common_treegccflags_clang = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/$(notdir $(COMPILER_PLUGINS_DIR))
 common_cflags=-DNO_PARAMETRIC -DNO_SUBNORMALS -DNO_SIGNALLING -I$(top_srcdir)/etc/libbambu $(common_treegccflags) -Werror=uninitialized
 common_cflags_clang=-DNO_PARAMETRIC -DNO_SUBNORMALS -DNO_SIGNALLING -I$(top_srcdir)/etc/libbambu $(common_treegccflags_clang)  -Werror=uninitialized
 common_cflags_subnormals=-DNO_PARAMETRIC -DNO_SIGNALLING -I$(top_srcdir)/etc/libbambu $(common_treegccflags) -Werror=uninitialized

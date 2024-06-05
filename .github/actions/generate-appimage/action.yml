@@ -15,7 +15,7 @@ outputs:
   dist-dir:
     description: "Distribution directory with appimage contents"
 runs:
-  using: "docker"
+  using: "composite"
   image: "Dockerfile"
   env:
     J: ${{inputs.jobs}}
