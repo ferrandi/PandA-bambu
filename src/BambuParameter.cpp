@@ -74,7 +74,6 @@
 #include "config_HAVE_VCD_BUILT.hpp"
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "config_PANDA_LIB_INSTALLDIR.hpp"
-#include "config_SKIP_WARNING_SECTIONS.hpp"
 
 #if HAVE_HOST_PROFILING_BUILT
 #include "host_profiling.hpp"
@@ -2443,8 +2442,6 @@ int BambuParameter::Exec()
 
 void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
 {
-   const auto default_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
-
    if(kill_printf)
    {
       std::string defines;
@@ -2483,22 +2480,6 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
       if(optimizations.size())
       {
          setOption(OPT_gcc_optimizations, optimizations);
-      }
-   }
-   /// Set the default value for OPT_gcc_m_env
-   if(!isOption(OPT_gcc_m_env))
-   {
-      if(CompilerWrapper::hasCompilerM32(default_compiler))
-      {
-         setOption(OPT_gcc_m_env, "-m32");
-      }
-      else if(CompilerWrapper::hasCompilerMX32(default_compiler))
-      {
-         setOption(OPT_gcc_m_env, "-mx32");
-      }
-      else if(CompilerWrapper::hasCompilerM64(default_compiler))
-      {
-         setOption(OPT_gcc_m_env, "-m64");
       }
    }
 }
@@ -2963,9 +2944,8 @@ void BambuParameter::CheckParameters()
    if(flag_cpp)
    {
       /// add -I <ac_types_dir> and -I <ac_math_dir>
-      std::string includes =
-          "-isystem " + relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include")) +
-          " -isystem " + relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_math/include"));
+      std::string includes = "-isystem " + relocate_install_path(PANDA_DATA_INSTALLDIR "/ac_types/include").string() +
+                             " -isystem " + relocate_install_path(PANDA_DATA_INSTALLDIR "/ac_math/include").string();
       if(isOption(OPT_gcc_includes))
       {
          includes = getOption<std::string>(OPT_gcc_includes) + " " + includes;
@@ -3849,6 +3829,6 @@ void BambuParameter::add_bambu_library(std::string lib)
       archive_files = getOption<std::string>(OPT_archive_files) + STR_CST_string_separator;
    }
 
-   setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib", true) + lib +
+   setOption(OPT_archive_files, archive_files + relocate_install_path(PANDA_LIB_INSTALLDIR "/lib").string() + lib +
                                     "_" + CompilerWrapper::getCompilerSuffix(preferred_compiler) + VSuffix + ".a");
 }

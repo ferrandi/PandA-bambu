@@ -1,0 +1,47 @@
+ARG BASE=ubuntu:trusty
+FROM ${BASE} AS common
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ=Europe/Rome
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      autoconf automake bison bzip2 ca-certificates curl file flex \
+      ghostscript git libc6-dev-i386 libfl-dev libtool linux-libc-dev locales \
+      lsb-release make pkg-config rsync texinfo time tzdata wget xz-utils \
+   && update-ca-certificates \
+   && locale-gen en_US.UTF-8
+
+FROM common AS build_common
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get install -y --no-install-recommends \
+      g++ g++-multilib gcc gcc-multilib
+
+FROM build_common AS build_cmake
+WORKDIR /tmp
+RUN curl -L https://cmake.org/files/v3.26/cmake-3.26.6.tar.gz | tar xz \
+   && cd cmake-3.26.6 \
+   && ./bootstrap --parallel=4 -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL=OFF \
+   && make -j4
+
+FROM build_common AS build_gcc
+WORKDIR /tmp
+RUN curl -L https://ftp.gnu.org/gnu/gcc/gcc-13.3.0/gcc-13.3.0.tar.gz | tar xz \
+   && cd gcc-13.3.0 \
+   && ./contrib/download_prerequisites \
+   && mkdir build \
+   && cd build \
+   && ../configure -v --prefix=/usr \
+     --program-suffix=-13 --enable-version-specific-runtime-libs \
+     --enable-languages=c,c++ --enable-multilib --with-multilib-list=m32,m64,mx32 \
+     --disable-werror --disable-gcov --disable-nls --with-tune=generic \
+     --build=x86_64-linux-gnu --host=x86_64-linux-gnu \
+   && make -j16
+
+FROM common
+COPY --from=build_cmake /tmp/cmake-3.26.6 /tmp/cmake-3.26.6
+COPY --from=build_gcc /tmp/gcc-13.3.0 /tmp/gcc-13.3.0
+RUN cd /tmp/cmake-3.26.6 \
+   && make install \
+   && cd /tmp/gcc-13.3.0/build \
+   && make install \
+   && rm -rf /tmp/* /var/lib/apt/lists/*
+
+CMD [ "/bin/bash" ]

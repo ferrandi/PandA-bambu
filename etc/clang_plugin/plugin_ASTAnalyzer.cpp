@@ -1817,7 +1817,7 @@ class EmptyASTConsumer : public ASTConsumer
 
 namespace clang
 {
-   class CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer) : public PluginASTAction
+   class ASTAnalyzer : public PluginASTAction
    {
       int _action;
       std::string _outdir;
@@ -1892,7 +1892,9 @@ namespace clang
 
       void PrintHelp(raw_ostream& ros)
       {
-         ros << "Help for " CLANG_VERSION_STRING(_plugin_ASTAnalyzer) " plugin:\n";
+         ros << "Help for "
+                "ASTAnalyzer"
+                " plugin:\n";
          ros << " -outputdir <directory>\n";
          ros << "   Directory where the architecture.xml file will be written\n";
          ros << " -cppflag\n";
@@ -1905,25 +1907,24 @@ namespace clang
       }
 
     public:
-      CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)
-      () : _action(ParseAction_None), _outdir(""), _cppflag(false)
+      ASTAnalyzer() : _action(ParseAction_None), _outdir(""), _cppflag(false)
       {
       }
-      CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)(const CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer) & step) = delete;
-      CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer) & operator=(const CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer) &) = delete;
+      ASTAnalyzer(const ASTAnalyzer& step) = delete;
+      ASTAnalyzer& operator=(const ASTAnalyzer&) = delete;
    };
 
 #ifdef _WIN32
 
    void initializeplugin_ASTAnalyzer()
    {
-      static FrontendPluginRegistry::Add<CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)> X(
-          CLANG_VERSION_STRING(_plugin_ASTAnalyzer), "Analyze Clang AST to retrieve information useful for PandA");
+      static FrontendPluginRegistry::Add<ASTAnalyzer> X("ASTAnalyzer",
+                                                        "Analyze Clang AST to retrieve information useful for PandA");
    }
 #endif
 } // namespace clang
 
 #ifndef _WIN32
-static FrontendPluginRegistry::Add<CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)>
-    X(CLANG_VERSION_STRING(_plugin_ASTAnalyzer), "Analyze Clang AST to retrieve information useful for PandA");
+static FrontendPluginRegistry::Add<ASTAnalyzer> X("ASTAnalyzer",
+                                                  "Analyze Clang AST to retrieve information useful for PandA");
 #endif

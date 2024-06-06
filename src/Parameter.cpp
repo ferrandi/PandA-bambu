@@ -166,16 +166,31 @@ void Parameter::CheckParameters()
    }
 
 #if HAVE_FROM_C_BUILT
+   const auto default_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
    if(isOption(OPT_gcc_m_env))
    {
       const auto mopt = getOption<std::string>(OPT_gcc_m_env);
-      const auto default_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
       if((mopt == "-m32" && !CompilerWrapper::hasCompilerM32(default_compiler)) ||
          (mopt == "-mx32" && !CompilerWrapper::hasCompilerMX32(default_compiler)) ||
          (mopt == "-m64" && !CompilerWrapper::hasCompilerM64(default_compiler)))
       {
          THROW_ERROR("Option " + mopt + " not supported by " + CompilerWrapper::getCompilerSuffix(default_compiler) +
                      " compiler.");
+      }
+   }
+   else
+   {
+      if(CompilerWrapper::hasCompilerM32(default_compiler))
+      {
+         setOption(OPT_gcc_m_env, "-m32");
+      }
+      else if(CompilerWrapper::hasCompilerMX32(default_compiler))
+      {
+         setOption(OPT_gcc_m_env, "-mx32");
+      }
+      else if(CompilerWrapper::hasCompilerM64(default_compiler))
+      {
+         setOption(OPT_gcc_m_env, "-m64");
       }
    }
 #endif

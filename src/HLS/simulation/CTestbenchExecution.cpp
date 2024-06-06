@@ -139,11 +139,11 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
    {
       if(is_clang || CompilerWrapper::isCurrentOrNewer(default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC49))
       {
-         compiler_flags += "-g -fsanitize=address -fno-omit-frame-pointer -fno-common ";
+         compiler_flags += "-g -static-libasan -fsanitize=address -fno-omit-frame-pointer -fno-common ";
       }
       if(is_clang || CompilerWrapper::isCurrentOrNewer(default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC5))
       {
-         compiler_flags += "-fsanitize=undefined -fsanitize-recover=undefined ";
+         compiler_flags += "-static-libubsan -fsanitize=undefined -fsanitize-recover=undefined ";
       }
    }
    // setup source files

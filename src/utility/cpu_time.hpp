@@ -44,12 +44,6 @@
 #ifndef CPU_TIME_HPP
 #define CPU_TIME_HPP
 
-#include "config_HAVE_OPENMP.hpp"
-
-#if HAVE_OPENMP
-#include "omp.h"
-#endif
-
 #ifdef _WIN32
 #include <windows.h>
 #undef IN
@@ -141,11 +135,7 @@ void inline dump_exec_time(const std::string& thing, long et)
  */
 inline long int p_cpu_wtime()
 {
-#if HAVE_OPENMP
-   return static_cast<long int>(1000 * omp_get_wtime());
-#else
    return p_cpu_time();
-#endif
 }
 
 /// Macro used to store the start time into time_var

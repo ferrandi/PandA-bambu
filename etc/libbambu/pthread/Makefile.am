@@ -3,8 +3,8 @@ METASOURCES = AUTO
 CC=$(top_builddir)/src/tree-panda-gcc
 CFLAGS=
 pkglib_LIBRARIES =
-common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/gcc_plugin -finline-limit=10000 -O3 -I$(BOOST_DIR)
-common_treegccflags_clang = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/clang_plugin -O3 -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
+common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/$(notdir $(COMPILER_PLUGINS_DIR)) -finline-limit=10000 -O3 -I$(BOOST_DIR)
+common_treegccflags_clang = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/$(notdir $(COMPILER_PLUGINS_DIR)) -O3 -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
 
 if BUILD_I386_GCC49
 pkglib_LIBRARIES += libpthread_gcc49.a

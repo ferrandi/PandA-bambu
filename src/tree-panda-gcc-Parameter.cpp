@@ -367,9 +367,8 @@ void tree_panda_gcc_parameter::CheckParameters()
    if(flag_cpp)
    {
       /// add -I <ac_types_dir> and -I <ac_math_dir>
-      std::string includes =
-          "-isystem " + relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include")) +
-          " -isystem " + relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_math/include"));
+      std::string includes = "-isystem " + relocate_install_path(PANDA_DATA_INSTALLDIR "/ac_types/include").string() +
+                             " -isystem " + relocate_install_path(PANDA_DATA_INSTALLDIR "/ac_math/include").string();
       if(isOption(OPT_gcc_includes))
       {
          includes = getOption<std::string>(OPT_gcc_includes) + " " + includes;

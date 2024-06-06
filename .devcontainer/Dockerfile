@@ -18,7 +18,6 @@ COPY library-scripts/*.sh library-scripts/*.env /tmp/library-scripts/
 WORKDIR /
 RUN bash /tmp/library-scripts/common-debian.sh "${INSTALL_ZSH}" "${USERNAME}" "${USER_UID}" "${USER_GID}" "${UPGRADE_PACKAGES}" "true" "true" \
     && bash /tmp/library-scripts/compiler-download.sh "/" "${COMPILERS}" \
-    && bash /tmp/library-scripts/compiler-setup.sh \
     && apt-get install --no-install-recommends -y clang-format-11 python3-defusedxml python3-distutils \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts
 

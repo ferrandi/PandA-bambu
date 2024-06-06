@@ -15,8 +15,8 @@ METASOURCES = AUTO
 CC=$(top_builddir)/src/tree-panda-gcc
 CFLAGS=
 pkglib_LIBRARIES =
-common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/gcc_plugin
-common_treegccflags_clang = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/clang_plugin
+common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/$(notdir $(COMPILER_PLUGINS_DIR))
+common_treegccflags_clang = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/$(notdir $(COMPILER_PLUGINS_DIR))
 common_cflags=-O3 -nostdlib  $(common_treegccflags) $(BOOST_CPPFLAGS)
 common_cflags_clang=-O3 -nostdlib  $(common_treegccflags_clang) $(BOOST_CPPFLAGS)
 

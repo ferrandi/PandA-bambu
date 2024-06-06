@@ -120,38 +120,15 @@ inline void CopyStdout(const std::string& filename)
    fclose(filese);
 }
 
-inline std::string relocate_compiler_path(const std::string& path, bool resolve_path = false)
-{
-   if(getenv("MINGW_INST_DIR"))
-   {
-      if(resolve_path)
-      {
-         const auto app_prefix = getenv("MINGW_INST_DIR");
-         return app_prefix + path;
-      }
-      return "$MINGW_INST_DIR" + path;
-   }
-   else if(getenv("APPDIR"))
-   {
-      if(resolve_path)
-      {
-         const auto app_prefix = getenv("APPDIR");
-         return app_prefix + path;
-      }
-      return "$APPDIR" + path;
-   }
-#ifdef _WIN32
-   else
-   {
-      return "c:/msys64/" + path;
-   }
-#else
-   else
-   {
-      return path;
-   }
-#endif
-}
+/**
+ * @brief Convert relative path to install prefix made relative to base
+ *
+ * @param path Relative path to install prefix
+ * @param base Base directory to
+ * @return std::filesystem::path Input path made relative to current working directory
+ */
+std::filesystem::path relocate_install_path(const std::filesystem::path& path,
+                                            const std::filesystem::path& base = std::filesystem::current_path());
 
 /**
  * Copy file; if target already exist, overwrite

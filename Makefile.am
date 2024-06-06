@@ -42,7 +42,7 @@ $(top_builddir)/documentation/$(DOX_PROJECT_NAME)_html/index.html: Makefile $(to
 	DOX_HF_DIR=$(DOX_HF_DIR) \
 	  $(DOXYGEN) $(top_srcdir)/etc/Doxyfile;
 
-EXTRA_DIST = Makefile.init README.md
+EXTRA_DIST = Makefile README.md
 
 #Replace acinclude.m4
 ACLOCAL_AMFLAGS = -I etc/macros

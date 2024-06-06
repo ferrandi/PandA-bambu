@@ -434,34 +434,7 @@ void bloc::RemoveStmt(const tree_nodeRef statement, const application_managerRef
       {
          THROW_ASSERT(GetPointerS<const gimple_node>(GET_NODE(statement))->scpe, "statement " + statement->ToString());
          const auto fun_id = GET_INDEX_NODE(GetPointerS<const gimple_node>(GET_NODE(statement))->scpe);
-         const auto fun_cg_vertex = cg_man->GetVertex(fun_id);
-         const auto cg = cg_man->CGetCallGraph();
-         CustomOrderedSet<EdgeDescriptor> to_remove;
-         OutEdgeIterator oei, oei_end;
-         boost::tie(oei, oei_end) = boost::out_edges(fun_cg_vertex, *cg);
-         const auto call_id = GET_INDEX_NODE(statement);
-         for(; oei != oei_end; oei++)
-         {
-            const auto& direct_calls = cg->CGetFunctionEdgeInfo(*oei)->direct_call_points;
-            auto call_it = direct_calls.find(call_id);
-            if(call_it != direct_calls.end())
-            {
-               to_remove.insert(*oei);
-            }
-         }
-         THROW_ASSERT(to_remove.size() || tree_helper::print_function_name(
-                                              AppM->get_tree_manager(),
-                                              GetPointer<const function_decl>(AppM->get_tree_manager()->CGetTreeNode(
-                                                  called_function_id))) == BUILTIN_WAIT_CALL,
-                      "Call to be removed not found in call graph " + STR(call_id) + " " + STR(fun_id) + " " +
-                          STR(statement) + " | " +
-                          tree_helper::print_function_name(AppM->get_tree_manager(),
-                                                           GetPointerS<function_decl>(GET_NODE(
-                                                               GetPointerS<gimple_node>(GET_NODE(statement))->scpe))));
-         for(const auto& e : to_remove)
-         {
-            cg_man->RemoveCallPoint(e, call_id);
-         }
+         cg_man->RemoveCallPoint(fun_id, called_function_id, GET_INDEX_NODE(statement));
       }
    }
 #if HAVE_ASSERTS

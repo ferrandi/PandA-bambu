@@ -15,10 +15,6 @@ on:
         description: "Comma separated list of compilers to include"
         required: true
         default: "gcc-8,clang-12,clang-16"
-      build-compiler:
-        description: "Compiler used to build bambu (if not already included in compilers)"
-        required: false
-        default: "gcc-8"
       configure:
         description: "Bambu configuration options"
         required: true
@@ -35,16 +31,11 @@ on:
         required: false
         type: string
         default: "gcc-7,clang-12"
-      build-compiler:
-        description: "Compiler used to build bambu (if not already included in compilers)"
-        required: false
-        type: string
-        default: "gcc-8"
       configure:
         description: "Bambu configuration options"
         required: false
         type: string
-        default: "--enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8 --with-gcc8=/bin/false"
+        default: "--enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8"
       upload_config:
         description: "Upload configuration <CI|release|both>"
         required: false
@@ -64,7 +55,6 @@ on:
 
 env:
   compilers: ${{inputs.compilers}}
-  build-compiler: ${{inputs.build-compiler}}
   configure: ${{inputs.configure}}
   storage-url: ${{secrets.CI_STORAGE_URL}}
   storage-user: ${{secrets.CI_STORAGE_USER}}
@@ -72,7 +62,6 @@ env:
   storage-path: release
   package-name: ${{inputs.package-name}}
   dist-dir: dist
-  bcompiler-dir: compiler
   host_jobs: $J
   upload_config: ${{inputs.upload_config}}
   local-compilers-backup: $LOCAL_COMPILERS_BACKUP
@@ -83,6 +72,9 @@ jobs:
     outputs:
       package-name: ${{env.package-name}}
     steps:
+      - name: Clean workspace
+        shell: bash
+        run: rm -rf .[!.]* *
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -95,11 +87,6 @@ jobs:
           echo "Current host supports ${{env.host_jobs}} parallel jobs"
           echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
           env_id="$(echo $(sed 's/,/\n/g' <<< "${{env.compilers}}" | sort -V) | sed 's/ //g')"
-          if [[ ! -z "${{env.build-compiler}}" ]]; then
-            if [[ "$env_id" != *"${{env.build-compiler}}"* ]]; then
-              env_id+="${{env.build-compiler}}"
-            fi
-          fi
           echo "version=$(cat configure.ac | grep AC_INIT | sed -E 's/.*,(.*),.*/\1/g;s/ //g')" >> $GITHUB_OUTPUT
           echo "env_id=$env_id" >> $GITHUB_OUTPUT
           echo "timestamp=$(date -u +'%Y-%m-%d-%H;%M;%S')" >> $GITHUB_OUTPUT
@@ -122,10 +109,6 @@ jobs:
         run: |
           mkdir ${{env.dist-dir}}
           bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.dist-dir}}" "${{env.compilers}}" "${{env.local-compilers-backup}}"
-          if [[ ! -z "${{env.build-compiler}}" ]]; then
-            mkdir ${{env.bcompiler-dir}}
-            bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.bcompiler-dir}}" "${{env.build-compiler}}" "${{env.local-compilers-backup}}"
-          fi
       - name: Build Bambu application
         id: build
         uses: ./.github/actions/generate-appimage

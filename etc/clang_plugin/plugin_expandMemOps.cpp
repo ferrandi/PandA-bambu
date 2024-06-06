@@ -81,10 +81,9 @@
 
 #define DEBUG_TYPE "expand-mem-ops"
 
-char llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::ID = 0;
+char llvm::expandMemOps::ID = 0;
 
-bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::addrIsOfIntArrayType(llvm::Value* dst_addr, unsigned& Align,
-                                                                            const llvm::DataLayout* DL)
+bool llvm::expandMemOps::addrIsOfIntArrayType(llvm::Value* dst_addr, unsigned& Align, const llvm::DataLayout* DL)
 {
    llvm::Type* srcType = nullptr;
    if(llvm::dyn_cast<llvm::BitCastInst>(dst_addr))
@@ -136,7 +135,7 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::addrIsOfIntArrayType(llvm
    return false;
 }
 
-unsigned llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::getLoopOperandSizeInBytesLocal(llvm::Type* Type)
+unsigned llvm::expandMemOps::getLoopOperandSizeInBytesLocal(llvm::Type* Type)
 {
    if(auto* VTy = dyn_cast<llvm::VectorType>(Type))
    {
@@ -149,9 +148,11 @@ unsigned llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::getLoopOperandSizeInB
    return Type->getPrimitiveSizeInBits() / 8;
 }
 
-llvm::Type* llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::getMemcpyLoopLoweringTypeLocal(
-    llvm::LLVMContext& Context, llvm::ConstantInt* Length, unsigned src_align, unsigned dst_align,
-    llvm::Value* src_addr, llvm::Value* dst_addr, const llvm::DataLayout* DL, bool is_volatile, bool& Optimize)
+llvm::Type* llvm::expandMemOps::getMemcpyLoopLoweringTypeLocal(llvm::LLVMContext& Context, llvm::ConstantInt* Length,
+                                                               unsigned src_align, unsigned dst_align,
+                                                               llvm::Value* src_addr, llvm::Value* dst_addr,
+                                                               const llvm::DataLayout* DL, bool is_volatile,
+                                                               bool& Optimize)
 {
    if(!is_volatile)
    {
@@ -179,9 +180,9 @@ llvm::Type* llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::getMemcpyLoopLower
    return llvm::Type::getInt8Ty(Context);
 }
 
-void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::getMemcpyLoopResidualLoweringTypeLocal(
-    llvm::SmallVectorImpl<llvm::Type*>& OpsOut, llvm::LLVMContext& Context, unsigned RemainingBytes, unsigned src_align,
-    unsigned dst_align)
+void llvm::expandMemOps::getMemcpyLoopResidualLoweringTypeLocal(llvm::SmallVectorImpl<llvm::Type*>& OpsOut,
+                                                                llvm::LLVMContext& Context, unsigned RemainingBytes,
+                                                                unsigned src_align, unsigned dst_align)
 {
    for(unsigned i = 0; i != RemainingBytes; ++i)
    {
@@ -189,9 +190,10 @@ void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::getMemcpyLoopResidualLowe
    }
 }
 
-void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::createMemCpyLoopKnownSizeLocal(
-    llvm::Instruction* InsertBefore, llvm::Value* src_addr, llvm::Value* dst_addr, llvm::ConstantInt* CopyLen,
-    unsigned src_align, unsigned dst_align, bool src_volatile, bool dst_volatile, const llvm::DataLayout* DL)
+void llvm::expandMemOps::createMemCpyLoopKnownSizeLocal(llvm::Instruction* InsertBefore, llvm::Value* src_addr,
+                                                        llvm::Value* dst_addr, llvm::ConstantInt* CopyLen,
+                                                        unsigned src_align, unsigned dst_align, bool src_volatile,
+                                                        bool dst_volatile, const llvm::DataLayout* DL)
 {
    LLVM_DEBUG(llvm::dbgs() << "src: align: " << src_align << ", volatile: " << src_volatile << "\n");
    LLVM_DEBUG(llvm::dbgs() << "dst: align: " << dst_align << ", volatile: " << dst_volatile << "\n");
@@ -360,8 +362,7 @@ void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::createMemCpyLoopKnownSize
    assert(BytesCopied == CopyLen->getZExtValue() && "Bytes copied should match size in the call!");
 }
 
-void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::expandMemSetAsLoopLocal(llvm::MemSetInst* Memset,
-                                                                               const llvm::DataLayout* DL)
+void llvm::expandMemOps::expandMemSetAsLoopLocal(llvm::MemSetInst* Memset, const llvm::DataLayout* DL)
 {
    llvm::Instruction* InsertBefore = Memset;
    llvm::Value* dst_addr = Memset->getRawDest();
@@ -441,25 +442,22 @@ void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::expandMemSetAsLoopLocal(l
    LoopBuilder.CreateCondBr(LoopBuilder.CreateICmpULT(NewIndex, ActualCopyLen), LoopBB, NewBB);
 }
 
-llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)() : ModulePass(ID)
+llvm::expandMemOps::expandMemOps() : ModulePass(ID)
 {
    initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry());
    initializeLoopPassPass(*PassRegistry::getPassRegistry());
 }
 
 #if __clang_major__ >= 13
-llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)(
-    const CLANG_VERSION_SYMBOL(_plugin_expandMemOps) &)
-    : CLANG_VERSION_SYMBOL(_plugin_expandMemOps)()
+llvm::expandMemOps::expandMemOps(const expandMemOps&) : expandMemOps()
 {
 }
 #endif
 
-bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
-    Module& M, llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> GetTTI
+bool llvm::expandMemOps::exec(Module& M, llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> GetTTI
 #if __clang_major__ >= 16
-    ,
-    llvm::function_ref<llvm::ScalarEvolution&(llvm::Function&)> GetSE
+                              ,
+                              llvm::function_ref<llvm::ScalarEvolution&(llvm::Function&)> GetSE
 #endif
 )
 {
@@ -584,7 +582,7 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
    return res;
 }
 
-bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::runOnModule(Module& M)
+bool llvm::expandMemOps::runOnModule(Module& M)
 {
    auto GetTTI = [&](llvm::Function& F) -> llvm::TargetTransformInfo& {
       return getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
@@ -602,12 +600,12 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::runOnModule(Module& M)
    );
 }
 
-llvm::StringRef llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::getPassName() const
+llvm::StringRef llvm::expandMemOps::getPassName() const
 {
-   return CLANG_VERSION_STRING(_plugin_expandMemOps);
+   return "expandMemOps";
 }
 
-void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::getAnalysisUsage(AnalysisUsage& AU) const
+void llvm::expandMemOps::getAnalysisUsage(AnalysisUsage& AU) const
 {
    getLoopAnalysisUsage(AU);
    AU.addRequired<TargetTransformInfoWrapperPass>();
@@ -617,8 +615,7 @@ void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::getAnalysisUsage(Analysis
 }
 
 #if __clang_major__ >= 13
-llvm::PreservedAnalyses llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::run(llvm::Module& M,
-                                                                              llvm::ModuleAnalysisManager& MAM)
+llvm::PreservedAnalyses llvm::expandMemOps::run(llvm::Module& M, llvm::ModuleAnalysisManager& MAM)
 {
    LLVM_DEBUG(llvm::dbgs() << "Running mem ops expansion\n");
    auto& FAM = MAM.getResult<FunctionAnalysisManagerModuleProxy>(M).getManager();
@@ -640,31 +637,29 @@ llvm::PreservedAnalyses llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::run(ll
 
 #if !defined(_WIN32)
 #if CPP_LANGUAGE
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)>
-    XPass(CLANG_VERSION_STRING(_plugin_expandMemOpsCpp), "Make all private/static but the top function",
-          false /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::expandMemOps> XPass("expandMemOpsCpp", "Make all private/static but the top function",
+                                                    false /* Only looks at CFG */, false /* Analysis Pass */);
 #else
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)>
-    XPass(CLANG_VERSION_STRING(_plugin_expandMemOps), "Make all private/static but the top function",
-          false /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::expandMemOps> XPass("expandMemOps", "Make all private/static but the top function",
+                                                    false /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 #endif
 
 #if __clang_major__ >= 13
-llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_expandMemOps)()
+llvm::PassPluginLibraryInfo getexpandMemOpsPluginInfo()
 {
-   return {LLVM_PLUGIN_API_VERSION, CLANG_VERSION_STRING(_plugin_expandMemOps), "v0.12", [](llvm::PassBuilder& PB) {
+   return {LLVM_PLUGIN_API_VERSION, "expandMemOps", "v0.12", [](llvm::PassBuilder& PB) {
               const auto load = [](llvm::ModulePassManager& MPM) {
                  llvm::FunctionPassManager FPM;
                  FPM.addPass(llvm::InstCombinePass());
                  FPM.addPass(llvm::UnifyFunctionExitNodesPass());
                  MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM)));
-                 MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)());
+                 MPM.addPass(llvm::expandMemOps());
                  return true;
               };
               PB.registerPipelineParsingCallback([&](llvm::StringRef Name, llvm::ModulePassManager& MPM,
                                                      llvm::ArrayRef<llvm::PassBuilder::PipelineElement>) {
-                 if(Name == CLANG_VERSION_STRING(_plugin_expandMemOps))
+                 if(Name == "expandMemOps")
                  {
                     return load(MPM);
                  }
@@ -683,19 +678,18 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_expandMemOps)()
 // This part is the new way of registering your pass
 extern "C" ::llvm::PassPluginLibraryInfo LLVM_ATTRIBUTE_WEAK llvmGetPassPluginInfo()
 {
-   return CLANG_PLUGIN_INFO(_plugin_expandMemOps)();
+   return getexpandMemOpsPluginInfo();
 }
 #else
 #if ADD_RSP
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
-   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)());
+   PM.add(new llvm::expandMemOps());
 }
 
 // These constructors add our pass to a list of global extensions.
-static llvm::RegisterStandardPasses
-    CLANG_VERSION_SYMBOL(_plugin_expandMemOps_Ox)(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
+static llvm::RegisterStandardPasses expandMemOps_Ox(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
 #endif
 #endif
 
@@ -703,10 +697,10 @@ static llvm::RegisterStandardPasses
 //
 // namespace llvm
 // {
-//    void CLANG_PLUGIN_INIT(_plugin_expandMemOps)(PassRegistry&);
+//    void initializeexpandMemOpsPass(PassRegistry&);
 // } // namespace llvm
 //
-// INITIALIZE_PASS_BEGIN(CLANG_VERSION_SYMBOL(_plugin_expandMemOps), CLANG_VERSION_STRING(_plugin_expandMemOps),
+// INITIALIZE_PASS_BEGIN(expandMemOps, "expandMemOps",
 //                       "expand all memset,memcpy and memmove", false, false)
-// INITIALIZE_PASS_END(CLANG_VERSION_SYMBOL(_plugin_expandMemOps), CLANG_VERSION_STRING(_plugin_expandMemOps),
+// INITIALIZE_PASS_END(expandMemOps, "expandMemOps",
 //                     "expand all memset,memcpy and memmove", false, false)

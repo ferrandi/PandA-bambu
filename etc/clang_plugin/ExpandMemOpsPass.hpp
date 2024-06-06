@@ -41,8 +41,6 @@
 #ifndef EXPANDMEMOPSPASS_HPP
 #define EXPANDMEMOPSPASS_HPP
 
-#include "clang_version_symbol.hpp"
-
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/Analysis/TargetTransformInfo.h>
 #include <llvm/IR/Constants.h>
@@ -66,11 +64,10 @@
 
 namespace llvm
 {
-   class CLANG_VERSION_SYMBOL(_plugin_expandMemOps)
-       : public ModulePass
+   class expandMemOps : public ModulePass
 #if __clang_major__ >= 13
-         ,
-         public PassInfoMixin<CLANG_VERSION_SYMBOL(_plugin_expandMemOps)>
+       ,
+                        public PassInfoMixin<expandMemOps>
 #endif
    {
     private:
@@ -96,10 +93,10 @@ namespace llvm
     public:
       static char ID;
 
-      CLANG_VERSION_SYMBOL(_plugin_expandMemOps)();
+      expandMemOps();
 
 #if __clang_major__ >= 13
-      CLANG_VERSION_SYMBOL(_plugin_expandMemOps)(const CLANG_VERSION_SYMBOL(_plugin_expandMemOps) &);
+      expandMemOps(const expandMemOps&);
 #endif
 
       bool exec(Module& M, llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> GetTTI

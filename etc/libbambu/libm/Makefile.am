@@ -32,8 +32,8 @@ common_libm_src_std=ef_exp.c ef_log.c ef_pow.c ef_sqrt.c ew_sqrt.c sf_trigon.c w
 if BUILD_FLOPOCO
 common_libm_src += s_copysign.c sf_copysign.c
 endif
-common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/gcc_plugin
-common_treegccflags_clang = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/clang_plugin
+common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/$(notdir $(COMPILER_PLUGINS_DIR))
+common_treegccflags_clang = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/$(notdir $(COMPILER_PLUGINS_DIR))
 common_cflags=-DNO_RAISE_EXCEPTIONS -I$(top_srcdir)/etc/libbambu $(common_treegccflags) -I$(BOOST_DIR)
 common_cflags_clang=-DNO_RAISE_EXCEPTIONS -I$(top_srcdir)/etc/libbambu $(common_treegccflags_clang) -I$(BOOST_DIR)
 compiler_flags=-O2 -fipa-pta -fgcse-after-reload -fipa-cp-clone -funswitch-loops -finline-functions -fno-tree-loop-ivcanon $(common_cflags)
