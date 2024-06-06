@@ -44,20 +44,15 @@
  */
 #ifndef MEILP_SOLVER_HPP
 #define MEILP_SOLVER_HPP
-
-/// Autoheader include
-#include "config_HAVE_COIN_OR.hpp"
-#include "config_HAVE_GLPK.hpp"
-#include "config_HAVE_LP_SOLVE.hpp"
+#include "custom_map.hpp"
+#include "refcount.hpp"
 
 #include <cstddef>
 #include <iosfwd>
 #include <string>
 #include <vector>
 
-/// Utility include
-#include "custom_map.hpp"
-#include "refcount.hpp"
+#include "config_HAVE_GLPK.hpp"
 
 /**
  * @name forward declarations
@@ -148,12 +143,6 @@ class meilp_solver
    {
 #if HAVE_GLPK
       GLPK, /**< GLPK based solver (http://www.gnu.org/software/glpk) */
-#endif
-#if HAVE_COIN_OR
-      COIN_OR, /**< COIN-OR based solver (http://www.coin-or.org/) */
-#endif
-#if HAVE_LP_SOLVE
-      LP_SOLVE /**< LP_SOLVE based solver (http://tech.groups.yahoo.com/group/lp_solve/) */
 #endif
    };
 

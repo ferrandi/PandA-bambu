@@ -783,24 +783,6 @@ or-tools/ortools/graph/assignment.h
 SUBDIRS = abseil-cpp
 DIST_SUBDIRS = abseil-cpp
 
-if BUILD_COIN_OR
-   SUBDIRS += Coin-Cbc
-   lib_LTLIBRARIES = libCoin_Cbc.la
-   libCoin_Cbc_la_SOURCES =
-   libCoin_Cbc_la_LIBADD = Coin-Cbc/Cbc/src/libCbcSolver.la \
-      Coin-Cbc/Cbc/src/OsiCbc/libOsiCbc.la \
-      Coin-Cbc/Cbc/src/libCbc.la \
-      Coin-Cbc/Clp/src/OsiClp/libOsiClp.la \
-      Coin-Cbc/Cgl/src/libCgl.la \
-      Coin-Cbc/Clp/src/libClp.la \
-      Coin-Cbc/Osi/src/Osi/libOsi.la \
-      Coin-Cbc/CoinUtils/src/libCoinUtils.la
-endif
-
-if BUILD_LP_SOLVE
-   SUBDIRS += lpsolve5
-endif
-
 if BUILD_FLOPOCO
    SUBDIRS +=  libfplll-4.0.3 sollya flopoco
    DIST_SUBDIRS += libfplll-4.0.3 sollya flopoco

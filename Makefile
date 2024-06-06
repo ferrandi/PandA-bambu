@@ -79,7 +79,6 @@ distclean :
 	@rm -rf etc/scripts/.test_panda.py.swp
 	@rm -rf ext/autoreconf_log ext/config.h.in ext/config.h.in~ ext/configure
 	@rm -rf ext/abseil-cpp/configure
-	@rm -rf ext/Coin-Cbc/missing
 	@rm -rf ext/flopoco/config.h.in ext/flopoco/config.h.in~ ext/flopoco/configure ext/flopoco/configure.ac ext/flopoco/m4 ext/flopoco/Makefile.am ext/flopoco/src/FPExpressions/ExpressionParser.h ext/flopoco/src/FPExpressions/FlopocoScanner.h ext/flopoco/src/Makefile.am
 	@rm -rf ext/libfplll-4.0.3/config.h.in ext/libfplll-4.0.3/config.h.in~ ext/libfplll-4.0.3/configure
 	@rm -rf ext/sollya/config.h.in ext/sollya/config.h.in~ ext/sollya/configure ext/sollya/m4/l*

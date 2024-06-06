@@ -385,8 +385,6 @@ if test "x$panda_USE_BAMBU" = xyes; then
   AC_DEFINE(HAVE_LIBBDD, 1, "Define if bambu is built")
   fi
 
-  panda_USE_COIN_OR=no;
-
   AC_APPEND(ENABLE_DOC,"BAMBU")
 fi
 AM_CONDITIONAL(BUILD_BAMBU,       test "x$panda_USE_BAMBU" = xyes)
@@ -433,11 +431,7 @@ AM_CONDITIONAL(BUILD_TREE_PANDA_GCC, test "x$panda_USE_TREE_PANDA_GCC" = xyes)
 
 
 ##################### Library implications #########################
-if test "x$panda_USE_GLPK" = xno && test "x$panda_USE_COIN_OR" = xyes; then
-   panda_USE_GLPK=yes;
-fi
-
-if test "x$panda_USE_GLPK" = xyes || test "x$panda_USE_COIN_OR" = xyes; then
+if test "x$panda_USE_GLPK" = xyes; then
    panda_USE_LIB_ILP=yes;
 fi
 
@@ -579,30 +573,6 @@ AM_CONDITIONAL(BUILD_ABSEIL, test "x$panda_USE_ABSEIL" = xyes)
 AC_SUBST(ABSEIL_DIR)
 
 
-################################# Coin-Or stuff ################################
-if test "x$panda_USE_COIN_OR" = xyes; then
-   # Checks for libraries.
-   AX_BLAS()
-   BLAS_LIBS="$BLAS_LIBS"
-   AX_LAPACK()
-   LAPACK_LIBS="$LAPACK_LIBS"
-   AC_CHECK_LIB([bz2],[BZ2_bzReadOpen], [echo "Checking for libbz2... yes"], [echo "Checking for libbz2... no"; AC_MSG_ERROR("libbz2 not found")])
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/Coin-Cbc $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'"
-   if test $? != 0; then
-      AC_MSG_ERROR("Error in Coin-Cbc configuration")
-   fi
-   AC_DEFINE(HAVE_COIN_OR, 1, "Define if coin-or is used")
-   COIN_OR_DIR="$TOPSRCDIR/Coin-Cbc"
-   COIN_OR_OBJDIR="ext/Coin-Cbc"
-fi
-AC_SUBST(COIN_OR_DIR)
-AC_SUBST(COIN_OR_OBJDIR)
-AC_SUBST(BLAS_LIBS)
-AC_SUBST(FLIB)
-AC_SUBST(LAPACK_LIBS)
-AM_CONDITIONAL(BUILD_COIN_OR, test "x$panda_USE_COIN_OR" = xyes)
-
-
 ################ FloPoCo stuff #############################
 if test "x$panda_USE_FLOPOCO" = xyes; then
    AC_CHECK_LIB([gmpxx], [main], [HAVE_LIBGMPXX=yes], [])
@@ -678,34 +648,6 @@ fi
 AC_SUBST(LIB_SUITESPARSECONFIG)
 
 
-################################ LP-SOLVE stuff ################################
-if test "x$panda_USE_LP_SOLVE" = xyes; then
-  USE_BFP_NAME=LUSOL
-  #etaPFI
-  #etaPFI2
-  #GLPK
-  #LUSOL
-  if test ! -f $TOPSRCDIR/ext/lpsolve5/lp_solve_USE_$USE_BFP_NAME; then
-     rm -f $TOPSRCDIR/ext/lpsolve5/lp_solve_USE_*
-     touch $TOPSRCDIR/ext/lpsolve5/lp_solve_USE_$USE_BFP_NAME
-     if test -d  ext/lpsolve5/bfp; then
-       (cd ext/lpsolve5/bfp; make clean;)
-     fi
-     touch $TOPSRCDIR/ext/lpsolve5/configure.in
-   fi
-   if test $USE_BFP_NAME == etaPFI2; then
-      BFP_NAME="bfp_etaPFI"
-   else
-      BFP_NAME="bfp_$USE_BFP_NAME"
-   fi
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/lpsolve5 $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'"
-   AC_DEFINE(HAVE_LP_SOLVE, 1, "Define if lp solver is used")
-   LP_SOLVE_DIR="$TOPSRCDIR/lpsolve5"
-fi
-AC_SUBST(BFP_NAME)
-AC_SUBST(LP_SOLVE_DIR)
-AM_CONDITIONAL(BUILD_LP_SOLVE, test "x$panda_USE_LP_SOLVE" = xyes)
-
 
 ################################# TASTE ################################
 if test "x$panda_USE_TASTE" = xyes; then
@@ -717,7 +659,7 @@ AM_CONDITIONAL(USE_GRLIB, test "x$panda_USE_TASTE" = xyes)
 
 
 #################################### Ext Libraries #############################
-if test "x$ac_cv_cxx_compile_cxx17_native" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_gxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx1z" = xyes || test "x$panda_USE_ABSEIL" = xyes || test "x$panda_USE_COIN_OR" = xyes || test "x$panda_USE_FLOPOCO" = xyes || test "x$panda_USE_LP_SOLVE" = xyes; then
+if test "x$ac_cv_cxx_compile_cxx17_native" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_gxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx1z" = xyes || test "x$panda_USE_ABSEIL" = xyes || test "x$panda_USE_FLOPOCO" = xyes; then
   panda_USE_LIB_EXT=yes;
 fi
 AM_CONDITIONAL(BUILD_EXT, test "x$panda_USE_LIB_EXT" = xyes)

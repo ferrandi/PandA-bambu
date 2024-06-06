@@ -26,7 +26,6 @@ build/config_headers/config_HAVE_BLAS.hpp
 build/config_headers/config_HAVE_BOOST.hpp
 build/config_headers/config_HAVE_BOOST.hpp.in
 build/config_headers/config_HAVE_CIRCUIT_BUILT.hpp
-build/config_headers/config_HAVE_COIN_OR.hpp
 build/config_headers/config_HAVE_CORE_TOOLS.hpp
 build/config_headers/config_HAVE_DESIGN_FLOWS_BUILT.hpp
 build/config_headers/config_HAVE_DESIGN_OPTIMIZER.hpp
@@ -97,7 +96,6 @@ build/config_headers/config_HAVE_LIBRARY_CREATOR.hpp
 build/config_headers/config_HAVE_LIBZ.hpp
 build/config_headers/config_HAVE_LIMITS_H.hpp
 build/config_headers/config_HAVE_LNS.hpp
-build/config_headers/config_HAVE_LP_SOLVE.hpp
 build/config_headers/config_HAVE_MALLOC_H.hpp
 build/config_headers/config_HAVE_MEMORY_H.hpp
 build/config_headers/config_HAVE_MEMSET.hpp

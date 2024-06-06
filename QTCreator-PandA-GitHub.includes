@@ -31,13 +31,6 @@ etc/libbambu/ac_types/pdfdocs
 etc/libbambu/libm
 etc/libbambu/soft-fp
 etc/libbambu/softfloat
-ext/Coin-Cbc/BuildTools/headers
-ext/Coin-Cbc/Cbc/src
-ext/Coin-Cbc/Cgl/src
-ext/Coin-Cbc/Clp/src
-ext/Coin-Cbc/CoinUtils/src
-ext/Coin-Cbc/Osi/src/Osi
-ext/Coin-Cbc/ThirdParty/Glpk
 ext/abseil-cpp
 ext/flopoco/src
 ext/flopoco/src/FPExpAttic

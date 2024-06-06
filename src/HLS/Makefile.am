@@ -825,17 +825,6 @@ lib_scheduling_la_CPPFLAGS = \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
-if BUILD_COIN_OR
-   lib_scheduling_la_CPPFLAGS += \
-      -DHAVE_CONFIG_H \
-      -I$(COIN_OR_DIR)/Cbc/src \
-      -I$(COIN_OR_DIR)/Cgl/src \
-      -I$(COIN_OR_DIR)/Cgl/src/CglProbing \
-      -I$(COIN_OR_DIR)/CoinUtils/src \
-      -I$(COIN_OR_DIR)/Osi/src/Osi \
-      -I$(top_builddir)/$(COIN_OR_OBJDIR)/CoinUtils/src \
-      -I$(top_srcdir)/src/HLS/scheduling/newilp_scheduling
-endif
 noinst_HEADERS += \
    scheduling/ASLAP.hpp \
    scheduling/parametric_list_based.hpp \
