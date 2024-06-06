@@ -240,9 +240,9 @@ class CompilerWrapper
 
    std::string clang_recipes(const CompilerWrapper_OptimizationSet optimization_level, const std::string& fname) const;
 
-   std::string load_plugin(const std::string& plugin_obj, CompilerWrapper_CompilerTarget target) const;
+   std::string load_plugin(const std::string& plugin_obj) const;
 
-   std::string load_plugin_opt(std::string plugin_obj, CompilerWrapper_CompilerTarget target) const;
+   std::string load_plugin_opt(const std::string& plugin_obj) const;
 
    std::string add_plugin_prefix(CompilerWrapper_CompilerTarget target, std::string O_level = "") const;
 
