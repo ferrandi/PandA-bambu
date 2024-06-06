@@ -111,7 +111,7 @@ if [ -e "${failure_file}" ]; then
 fi
 
 CLANG_BINS=("`find ${install_dir}/clang+llvm-*/bin -type f -regextype posix-extended -regex '.*clang-[0-9]+\.?[0-9]?' 2> /dev/null`")
-CLANG_EXES=("clang" "clang++" "clang-cl" "clang-cpp" "ld.lld" "lld" "lld-link" "llvm-ar" "llvm-config" "llvm-dis" "llvm-link" "llvm-lto" "llvm-lto2" "llvm-ranlib" "mlir-opt" "mlir-translate" "opt")
+CLANG_EXES=("clang" "clang++" "clang-cl" "clang-cpp" "ld.lld" "lld" "lld-link" "llvm-ar" "llvm-config" "llvm-dis" "llvm-link" "llvm-lto" "llvm-lto2" "llvm-ranlib" "mlir-opt" "mlir-translate" "opt" "scan-build")
 
 mkdir -p "${install_dir}/usr/bin"
 for clang_exe in ${CLANG_BINS}
