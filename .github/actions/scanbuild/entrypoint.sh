@@ -1,12 +1,14 @@
 #!/bin/bash
 set -e
 
+report_dir="$1"
+shift
+args="$@"
+
 workspace_dir="$PWD"
 ccache_dir="$workspace_dir/.ccache"
 build_dir="$workspace_dir/build"
 autoconf_cache_dir="$workspace_dir/.autoconf"
-report_dir="$1"
-shift
 
 function cleanup {
    echo "::endgroup::"
@@ -67,7 +69,7 @@ if [[ -d "$autoconf_cache_dir" ]]; then
    mv $autoconf_cache_dir/* $build_dir/.
 fi
 mkdir -p "$report_dir"
-make scan-build SCAN_BUILD_VERSION="$CLANG_VERSION" SCAN_BUILD_REPORT_DIR="$report_dir" CONFIGURE_FLAGS="$@"
+make scan-build SCAN_BUILD_VERSION="$CLANG_VERSION" SCAN_BUILD_REPORT_DIR="$report_dir" CONFIGURE_FLAGS="$args"
 autoconf_caches=("`find $build_dir/. -type f -path '**/config.cache'`")
 for cache in $autoconf_caches
 do
