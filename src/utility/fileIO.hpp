@@ -121,14 +121,12 @@ inline void CopyStdout(const std::string& filename)
 }
 
 /**
- * @brief Convert relative path to install prefix made relative to base
+ * @brief Convert relative path to install prefix to absolute path
  *
  * @param path Relative path to install prefix
- * @param base Base directory to
- * @return std::filesystem::path Input path made relative to current working directory
+ * @return std::filesystem::path Absolute input path
  */
-std::filesystem::path relocate_install_path(const std::filesystem::path& path,
-                                            const std::filesystem::path& base = std::filesystem::current_path());
+std::filesystem::path relocate_install_path(const std::filesystem::path& path);
 
 /**
  * Copy file; if target already exist, overwrite
