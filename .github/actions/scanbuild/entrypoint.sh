@@ -35,24 +35,16 @@ cache_dir = $ccache_dir
 EOF
 if [[ -d "$dist_dir" ]]; then
    echo "Pre-initialized dist dir found. Installing system wide..."
-   mv $dist_dir/* /
+   rsync -rtpl $dist_dir/* /
+   rm -rf $dist_dir/*
 fi
 
 if [[ "$(ls / | grep 'clang+llvm*' | wc -l)" -gt 0 ]]; then
    CLANG_BINS=("`find /clang+llvm-*/bin -type f -regextype posix-extended -regex '.*clang-[0-9]+\.?[0-9]?'`")
-   CLANG_EXES=("clang" "clang++" "clang-cl" "clang-cpp" "ld.lld" "lld" "lld-link" "llvm-ar" "llvm-config" "llvm-dis" "llvm-link" "llvm-lto" "llvm-lto2" "llvm-ranlib" "mlir-opt" "mlir-translate" "opt" "scan-build")
-
    for clang_exe in $CLANG_BINS
    do
       CLANG_VER=$(sed 's/clang-//g' <<< "$(basename $clang_exe)")
       CLANG_DIR=$(dirname $clang_exe)
-      echo "Generating system links for clang/llvm $CLANG_VER"
-      for app in "${CLANG_EXES[@]}"
-      do
-         if [[ -f "$CLANG_DIR/$app" ]]; then
-            ln -sf "$CLANG_DIR/$app" "/usr/bin/$app-$CLANG_VER"
-         fi
-      done
       echo "Generating ccache alias for clang-$CLANG_VER"
       ln -sf ../../bin/ccache "/usr/lib/ccache/clang-$CLANG_VER"
       echo "Generating ccache alias for clang++-$CLANG_VER"
