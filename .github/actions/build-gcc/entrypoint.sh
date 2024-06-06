@@ -28,7 +28,7 @@ fi
 ./contrib/download_prerequisites
 mkdir build
 cd build
-../configure $@
+../configure "$@"
 make -j$J
 make DESTDIR="$DESTDIR" install
 
