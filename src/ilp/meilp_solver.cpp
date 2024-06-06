@@ -53,14 +53,6 @@
 #include "glpk_solver.hpp"
 #endif
 
-#if HAVE_COIN_OR
-#include "cbc_solver.hpp"
-#endif
-
-#if HAVE_LP_SOLVE
-#include "lp_solve_solver.hpp"
-#endif
-
 meilp_solver::meilp_solver()
     : nel(0), real_buffer(nullptr), int_buffer(nullptr), unique_column_id(0), MAX_time(0), debug_level(DEBUG_LEVEL_NONE)
 {
@@ -117,14 +109,6 @@ meilp_solverRef meilp_solver::create_solver(supported_solvers solver_type)
 #if HAVE_GLPK
       case GLPK:
          return meilp_solverRef(new glpk_solver());
-#endif
-#if HAVE_COIN_OR
-      case COIN_OR:
-         return meilp_solverRef(new cbc_solver());
-#endif
-#if HAVE_LP_SOLVE
-      case LP_SOLVE:
-         return meilp_solverRef(new lp_solve_solver());
 #endif
       default:
          THROW_ERROR("not supported solver type");

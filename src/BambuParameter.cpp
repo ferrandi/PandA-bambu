@@ -63,14 +63,12 @@
 #include "tree_helper.hpp"
 #include "utility.hpp"
 
-#include "config_HAVE_COIN_OR.hpp"
 #include "config_HAVE_FLOPOCO.hpp"
 #include "config_HAVE_GLPK.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 #include "config_HAVE_I386_CLANG16_COMPILER.hpp"
 #include "config_HAVE_ILP_BUILT.hpp"
 #include "config_HAVE_LIBRARY_CHARACTERIZATION_BUILT.hpp"
-#include "config_HAVE_LP_SOLVE.hpp"
 #include "config_HAVE_VCD_BUILT.hpp"
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "config_PANDA_LIB_INSTALLDIR.hpp"
@@ -3631,10 +3629,6 @@ void BambuParameter::SetDefaults()
 #if HAVE_ILP_BUILT
 #if HAVE_GLPK
    setOption(OPT_ilp_solver, meilp_solver::GLPK);
-#elif HAVE_COIN_OR
-   setOption(OPT_ilp_solver, meilp_solver::COIN_OR);
-#elif HAVE_LP_SOLVE
-   setOption(OPT_ilp_solver, meilp_solver::LP_SOLVE);
 #endif
 #endif
    /// speculative execution flag
