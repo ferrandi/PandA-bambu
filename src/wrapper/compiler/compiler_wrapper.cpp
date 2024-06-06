@@ -403,7 +403,7 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       }
       if(compiler.is_clang)
       {
-         load_prefix += " " + load_plugin(compiler.GetPluginObject(COMPILER_EMPTY_PLUGIN), compiler_target);
+         load_prefix += " " + load_plugin(COMPILER_EMPTY_PLUGIN);
          command +=
              " -mllvm -pandaGE-outputdir=" + output_temporary_directory + " -mllvm -pandaGE-infile=" + real_filename;
       }
@@ -453,11 +453,11 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
    const auto load_and_run_plugin = [&](const std::string& plugin_name) {
       if(cm & CM_COMPILER_STD)
       {
-         load_prefix += load_plugin(compiler.GetPluginObject(plugin_name), compiler_target);
+         load_prefix += load_plugin(plugin_name);
       }
       else
       {
-         load_prefix += load_plugin_opt(compiler.GetPluginObject(plugin_name), compiler_target);
+         load_prefix += load_plugin_opt(plugin_name);
          command += add_plugin_prefix(compiler_target) + plugin_name;
       }
    };
@@ -2333,39 +2333,18 @@ std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet
 {
    const auto& compiler = GetCompiler();
    auto plugin_prefix = add_plugin_prefix(compiler_target);
-   const std::string expandMemOps_plugin_name = COMPILER_EXPANDMEMOPS_PLUGIN;
-   const std::string GepiCanon_plugin_name = COMPILER_GEPICANON_PLUGIN;
-   const std::string CSROA_plugin_name = COMPILER_CSROA_PLUGIN;
-#ifndef _WIN32
-   const auto expandMemOps_plugin_obj = compiler.GetPluginObject(COMPILER_EXPANDMEMOPS_PLUGIN);
-   const auto GepiCanon_plugin_obj = compiler.GetPluginObject(COMPILER_GEPICANON_PLUGIN);
-   const auto CSROA_plugin_obj = compiler.GetPluginObject(COMPILER_CSROA_PLUGIN);
-#endif
 
    const auto opt_level = WriteOptimizationLevel(optimization_set == CompilerWrapper_OptimizationSet::O0 ?
                                                      CompilerWrapper_OptimizationSet::O1 :
                                                      optimization_set);
 
    std::string recipe;
-#ifndef _WIN32
-   recipe += load_plugin_opt(expandMemOps_plugin_obj, compiler_target);
+   recipe += load_plugin_opt(COMPILER_EXPANDMEMOPS_PLUGIN);
 
-   if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 &&
-      !GepiCanon_plugin_obj.empty())
+   if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1)
    {
-      recipe += load_plugin_opt(GepiCanon_plugin_obj, compiler_target);
-   }
-#endif
-
-   if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1
-#ifndef _WIN32
-      && !CSROA_plugin_obj.empty()
-#endif
-   )
-   {
-#ifndef _WIN32
-      recipe += load_plugin_opt(CSROA_plugin_obj, compiler_target);
-#endif
+      recipe += load_plugin_opt(COMPILER_GEPICANON_PLUGIN);
+      recipe += load_plugin_opt(COMPILER_CSROA_PLUGIN);
       recipe += " -panda-KN=" + fname;
       if(Param->IsParameter("max-CSROA"))
       {
@@ -2381,32 +2360,21 @@ std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet
       {
          std::string complex_recipe;
          complex_recipe += " -tti -targetlibinfo -tbaa -scoped-noalias -assumption-cache-tracker -profile-summary-info "
-                           "-forceattrs -inferattrs " +
-                           ("-" + expandMemOps_plugin_name) + " -domtree -mem2reg ";
-         if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1
-#ifndef _WIN32
-            && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
-#endif
-         )
+                           "-forceattrs -inferattrs -" COMPILER_EXPANDMEMOPS_PLUGIN " -domtree -mem2reg ";
+         if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1)
          {
             complex_recipe +=
-                ("-" + GepiCanon_plugin_name + "PS ") + ("-" + GepiCanon_plugin_name + "COL ") +
-                ("-" + GepiCanon_plugin_name + "BVR ") +
-                "-loops -loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution -loop-unroll " +
-                ("-" + CSROA_plugin_name + "FV ") +
-                "-ipsccp -globaldce -domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops "
-                "-loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution -loop-unroll "
-                "-simplifycfg ";
+                "-" COMPILER_GEPICANON_PLUGIN "PS -" COMPILER_GEPICANON_PLUGIN "COL -" COMPILER_GEPICANON_PLUGIN
+                "BVR -loops -loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution -loop-unroll "
+                "-" COMPILER_CSROA_PLUGIN
+                "FV -ipsccp -globaldce -domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops "
+                "-loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution -loop-unroll -simplifycfg ";
          }
-         if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1
-#ifndef _WIN32
-            && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
-#endif
-         )
+         if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1)
          {
-            complex_recipe += "-" + expandMemOps_plugin_name + (" -" + GepiCanon_plugin_name + "PS ") +
-                              ("-" + GepiCanon_plugin_name + "COL ") + ("-" + GepiCanon_plugin_name + "BVR ") +
-                              ("-" + CSROA_plugin_name + "D ");
+            complex_recipe +=
+                "-" COMPILER_EXPANDMEMOPS_PLUGIN " -" COMPILER_GEPICANON_PLUGIN "PS -" COMPILER_GEPICANON_PLUGIN
+                "COL -" COMPILER_GEPICANON_PLUGIN "BVR -" COMPILER_CSROA_PLUGIN "D ";
          }
          complex_recipe +=
              "-ipsccp -globalopt -dse -loop-unroll -instcombine -libcalls-shrinkwrap -tailcallelim -simplifycfg "
@@ -2429,13 +2397,9 @@ std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet
              "-scalar-evolution -aa -loop-accesses -loop-load-elim -basicaa -aa  -dse -loop-unroll -instcombine "
              "-simplifycfg -domtree -basicaa -aa  -dse -loop-unroll -instcombine -loops -loop-simplify "
              "-lcssa-verification -lcssa -scalar-evolution -loop-unroll ";
-         if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1
-#ifndef _WIN32
-            && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
-#endif
-         )
+         if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1)
          {
-            complex_recipe += " -" + expandMemOps_plugin_name + " -" + CSROA_plugin_name + "WI ";
+            complex_recipe += " -" COMPILER_EXPANDMEMOPS_PLUGIN " -" COMPILER_CSROA_PLUGIN "WI ";
          }
          complex_recipe +=
              "-domtree -basicaa -aa -memdep -dse -aa -memoryssa -early-cse-memssa -constprop -ipsccp -globaldce "
@@ -2450,64 +2414,64 @@ std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet
       else
       {
          recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer";
-         recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
+         recipe += " -" COMPILER_EXPANDMEMOPS_PLUGIN " -simplifycfg ";
       }
    }
    else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG5)
    {
       recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer";
-      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
+      recipe += " -" COMPILER_EXPANDMEMOPS_PLUGIN " -simplifycfg ";
    }
    else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG6)
    {
       recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer";
-      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
+      recipe += " -" COMPILER_EXPANDMEMOPS_PLUGIN " -simplifycfg ";
    }
    else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG7)
    {
       recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer";
-      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
+      recipe += " -" COMPILER_EXPANDMEMOPS_PLUGIN " -simplifycfg ";
    }
    else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG8)
    {
       recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer";
-      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
+      recipe += " -" COMPILER_EXPANDMEMOPS_PLUGIN " -simplifycfg ";
    }
    else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG9)
    {
       recipe += " -O" + opt_level + " -disable-slp-vectorization -scalarizer";
-      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
+      recipe += " -" COMPILER_EXPANDMEMOPS_PLUGIN " -simplifycfg ";
    }
    else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG10)
    {
       recipe += " -O" + opt_level + " -disable-slp-vectorization -scalarizer";
-      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
+      recipe += " -" COMPILER_EXPANDMEMOPS_PLUGIN " -simplifycfg ";
    }
    else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG11)
    {
       recipe += " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer";
-      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
+      recipe += " -" COMPILER_EXPANDMEMOPS_PLUGIN " -simplifycfg ";
    }
    else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG12)
    {
       recipe += " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer";
-      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
+      recipe += " -" COMPILER_EXPANDMEMOPS_PLUGIN " -simplifycfg ";
    }
    else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG13)
    {
       recipe += " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer";
-      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
+      recipe += " -" COMPILER_EXPANDMEMOPS_PLUGIN " -simplifycfg ";
    }
    else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
    {
       recipe += add_plugin_prefix(compiler_target, opt_level) +
                 " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false " + plugin_prefix + "scalarizer";
-      recipe += plugin_prefix + expandMemOps_plugin_name + plugin_prefix + "simplifycfg ";
+      recipe += plugin_prefix + COMPILER_EXPANDMEMOPS_PLUGIN + plugin_prefix + "simplifycfg ";
    }
    else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD)
    {
       recipe += " -O" + opt_level + " --disable-vector-combine -scalarizer";
-      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
+      recipe += " -" COMPILER_EXPANDMEMOPS_PLUGIN " -simplifycfg ";
    }
    else
    {
@@ -3070,22 +3034,23 @@ std::string CompilerWrapper::readExternalSymbols(const std::filesystem::path& fi
    return extern_symbols;
 }
 
-std::string CompilerWrapper::load_plugin(const std::string& plugin_obj, CompilerWrapper_CompilerTarget target) const
+std::string CompilerWrapper::load_plugin(const std::string& plugin_name) const
 {
-   if(target == CompilerWrapper_CompilerTarget::CT_I386_CLANG13 ||
-      target == CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
+   const auto plugin_obj = GetCompiler().GetPluginObject(plugin_name);
+   if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG13 ||
+      compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
    {
       return " -fpass-plugin=" + plugin_obj + " -Xclang -load -Xclang " + plugin_obj;
    }
    return " -fplugin=" + plugin_obj;
 }
 
-std::string CompilerWrapper::load_plugin_opt(std::string plugin_obj, CompilerWrapper_CompilerTarget target) const
+std::string CompilerWrapper::load_plugin_opt(const std::string& plugin_name) const
 {
-   boost::replace_all(plugin_obj, ".so", "_opt.so");
+   const auto plugin_obj = GetCompiler().GetPluginObject("opt_" + plugin_name);
    auto flags = " -load=" + plugin_obj;
-   if(target == CompilerWrapper_CompilerTarget::CT_I386_CLANG13 ||
-      target == CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
+   if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG13 ||
+      compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
    {
       flags += " -load-pass-plugin=" + plugin_obj;
    }
