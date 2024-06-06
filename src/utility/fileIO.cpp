@@ -82,7 +82,7 @@ fileIO_istreamRef fileIO_istream_open(const std::string& name)
    return res_file;
 }
 
-std::filesystem::path relocate_install_path(const std::filesystem::path& path, const std::filesystem::path& base)
+std::filesystem::path relocate_install_path(const std::filesystem::path& path)
 {
    static const std::filesystem::path main_exe_path =
        []() {
@@ -134,7 +134,7 @@ std::filesystem::path relocate_install_path(const std::filesystem::path& path, c
        }()
            .parent_path()
            .parent_path();
-   return (main_exe_path / path).lexically_proximate(base);
+   return main_exe_path / path;
 }
 
 int PandaSystem(const ParameterConstRef Param, const std::string& system_command, bool host_exec,
