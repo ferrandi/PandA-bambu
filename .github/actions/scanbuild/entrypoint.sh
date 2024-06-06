@@ -3,6 +3,7 @@ set -e
 
 workspace_dir="$PWD"
 ccache_dir="$workspace_dir/.ccache"
+build_dir="$workspace_dir/build"
 autoconf_cache_dir="$workspace_dir/.autoconf"
 report_dir="$1"
 shift
