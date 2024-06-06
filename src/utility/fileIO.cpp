@@ -52,6 +52,13 @@
 #include <random>
 #include <regex>
 
+#if !defined(PATH_MAX)
+// For GNU Hurd
+#if defined(__GNU__)
+#define PATH_MAX 4096
+#endif
+#endif
+
 fileIO_istreamRef fileIO_istream_open(const std::string& name)
 {
    fileIO_istreamRef res_file;
@@ -73,6 +80,61 @@ fileIO_istreamRef fileIO_istream_open(const std::string& name)
       }
    }
    return res_file;
+}
+
+std::filesystem::path relocate_install_path(const std::filesystem::path& path, const std::filesystem::path& base)
+{
+   static const std::filesystem::path main_exe_path =
+       []() {
+#if defined(__linux__) || defined(__CYGWIN__) || defined(__gnu_hurd__)
+          char exe_path[PATH_MAX];
+          const char* aPath = "/proc/self/exe";
+          if(std::filesystem::exists(aPath))
+          {
+             // /proc is not always mounted under Linux (chroot for example).
+             ssize_t len = readlink(aPath, exe_path, sizeof(exe_path));
+             if(len >= 0)
+             {
+                // Null terminate the string for realpath. readlink never null
+                // terminates its output.
+                len = std::min(len, ssize_t(sizeof(exe_path) - 1));
+                exe_path[len] = '\0';
+
+            // On Linux, /proc/self/exe always looks through symlinks. However, on
+            // GNU/Hurd, /proc/self/exe is a symlink to the path that was used to start
+            // the program, and not the eventual binary file. Therefore, call realpath
+            // so this behaves the same on all platforms.
+#if _POSIX_VERSION >= 200112 || defined(__GLIBC__)
+                std::unique_ptr<char, void (*)(void*)> real_path(realpath(exe_path, nullptr), std::free);
+                if(real_path)
+                {
+                   return std::filesystem::path(real_path.get());
+                }
+#else
+                char real_path[PATH_MAX];
+                if(realpath(exe_path, real_path))
+                   return std::filesystem::path(real_path);
+#endif
+             }
+          }
+#elif defined(__sun__) && defined(__svr4__)
+          char exe_path[PATH_MAX];
+          const char* aPath = "/proc/self/execname";
+          if(std::filesystem::path::exists(aPath))
+          {
+             int fd = open(aPath, O_RDONLY);
+             if(fd != -1 && read(fd, exe_path, sizeof(exe_path)) >= 0)
+                return std::filesystem::path(exe_path);
+          }
+#else
+#error Main executable path retrieve is not implemented on this host yet.
+#endif
+          THROW_ERROR("Bambu executable path too long.");
+          return std::filesystem::path();
+       }()
+           .parent_path()
+           .parent_path();
+   return (main_exe_path / path).lexically_proximate(base);
 }
 
 int PandaSystem(const ParameterConstRef Param, const std::string& system_command, bool host_exec,

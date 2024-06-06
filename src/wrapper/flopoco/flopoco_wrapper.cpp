@@ -44,38 +44,22 @@
  * Last modified by $Author$
  *
  */
-
-/// Autoheader include
-#include "config_SKIP_WARNING_SECTIONS.hpp"
-#include "config_WPEDANTIC.hpp"
-
-/// circuit include
-#include "structural_objects.hpp"
-
-/// Includes the class definition
 #include "flopoco_wrapper.hpp"
 
-/// Standard PandA include
-#include "dbgPrintHelper.hpp"
-#include "exceptions.hpp"
-#include "utility.hpp"
-
-/// Standard include
-#include <cerrno>
-#include <unistd.h>
-
-/// Streams include
-#include <fstream>
-#include <iosfwd>
-
-/// STL include
 #include "custom_map.hpp"
 #include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
+#include "fileIO.hpp"
+#include "structural_objects.hpp"
+#include "utility.hpp"
+
+#include <cerrno>
+#include <fstream>
+#include <iosfwd>
+#include <unistd.h>
 #include <vector>
 
-#include "fileIO.hpp"
-
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
 #pragma GCC diagnostic ignored "-Wconversion"
@@ -83,20 +67,6 @@
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #pragma GCC diagnostic ignored "-Wredundant-decls"
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-#if WPEDANTIC
-#pragma GCC diagnostic ignored "-Wpedantic"
-#endif
-#else
-#pragma GCC diagnostic warning "-Wshadow"
-#pragma GCC diagnostic warning "-Wconversion"
-#pragma GCC diagnostic warning "-Wold-style-cast"
-#pragma GCC diagnostic warning "-Wsign-conversion"
-#pragma GCC diagnostic warning "-Wredundant-decls"
-#pragma GCC diagnostic warning "-Wunused-parameter"
-#if WPEDANTIC
-#pragma GCC diagnostic warning "-Wpedantic"
-#endif
-#endif
 
 /// FloPoCo include
 #undef DEBUG
@@ -129,9 +99,7 @@
 #include "Targets/Virtex5.hpp"
 #include "Targets/Virtex6.hpp"
 
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #pragma GCC diagnostic pop
-#endif
 
 /// Redefinition of FloPoCo's global variables, declared in flopoco/src/main.cpp
 /// None of the following is actually used inside the wrapper

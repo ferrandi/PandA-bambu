@@ -19,7 +19,6 @@ jobs:
     with:
       package-name: bambu-gcc-full
       compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,gcc-8,clang-12
-      build-compiler: gcc-8
       configure: --enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8
     secrets: inherit
 

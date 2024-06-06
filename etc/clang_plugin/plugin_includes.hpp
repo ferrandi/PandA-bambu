@@ -44,7 +44,6 @@
 #define __clang_major__ 7
 #endif
 
-#include "clang_version_symbol.hpp"
 #include "config_HAVE_LIBBDD.hpp"
 
 #include "llvm/ADT/APFloat.h"

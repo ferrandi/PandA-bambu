@@ -793,8 +793,8 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
          bool is_system;
          const auto include = std::get<0>(behavioral_helper->get_definition(index, is_system));
          if((include.find("etc/libbambu") != std::string::npos) ||
-            (include.find(PANDA_DATA_INSTALLDIR "/panda/ac_types/include") != std::string::npos) ||
-            (include.find(PANDA_DATA_INSTALLDIR "/panda/ac_math/include") != std::string::npos) ||
+            (include.find(PANDA_DATA_INSTALLDIR "/ac_types/include") != std::string::npos) ||
+            (include.find(PANDA_DATA_INSTALLDIR "/ac_math/include") != std::string::npos) ||
             (ty->name && GetPointer<const type_decl>(GET_CONST_NODE(ty->name)) &&
              GetPointerS<const type_decl>(GET_CONST_NODE(ty->name))->libbambu_flag))
          {

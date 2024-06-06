@@ -66,9 +66,17 @@
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
-#include "config_CLANG_PLUGIN_DIR.hpp"
+#include "config_ANALYZER_COMPILER_PLUGINS_DIR.hpp"
+#include "config_COMPILER_ASTANALYZER_PLUGIN.hpp"
+#include "config_COMPILER_CSROA_PLUGIN.hpp"
+#include "config_COMPILER_EMPTY_PLUGIN.hpp"
+#include "config_COMPILER_EXPANDMEMOPS_PLUGIN.hpp"
+#include "config_COMPILER_GEPICANON_PLUGIN.hpp"
+#include "config_COMPILER_PLUGINS_DIR.hpp"
+#include "config_COMPILER_SSA_PLUGIN.hpp"
+#include "config_COMPILER_SSA_PLUGINCPP.hpp"
+#include "config_COMPILER_TOPFNAME_PLUGIN.hpp"
 #include "config_EXTRA_CLANGPP_COMPILER_OPTION.hpp"
-#include "config_GCC_PLUGIN_DIR.hpp"
 #include "config_HAVE_I386_CLANG10_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG10_M32.hpp"
 #include "config_HAVE_I386_CLANG10_M64.hpp"
@@ -137,115 +145,38 @@
 #include "config_HAVE_I386_GCC8_M32.hpp"
 #include "config_HAVE_I386_GCC8_M64.hpp"
 #include "config_HAVE_I386_GCC8_MX32.hpp"
-#include "config_I386_CLANG10_ASTANALYZER_PLUGIN.hpp"
-#include "config_I386_CLANG10_CSROA_PLUGIN.hpp"
-#include "config_I386_CLANG10_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG10_EXE.hpp"
-#include "config_I386_CLANG10_EXPANDMEMOPS_PLUGIN.hpp"
-#include "config_I386_CLANG10_GEPICANON_PLUGIN.hpp"
-#include "config_I386_CLANG10_SSA_PLUGIN.hpp"
-#include "config_I386_CLANG10_SSA_PLUGINCPP.hpp"
-#include "config_I386_CLANG10_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANG10_PLUGIN_DIR.hpp"
 #include "config_I386_CLANG10_VERSION.hpp"
-#include "config_I386_CLANG11_ASTANALYZER_PLUGIN.hpp"
-#include "config_I386_CLANG11_CSROA_PLUGIN.hpp"
-#include "config_I386_CLANG11_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG11_EXE.hpp"
-#include "config_I386_CLANG11_EXPANDMEMOPS_PLUGIN.hpp"
-#include "config_I386_CLANG11_GEPICANON_PLUGIN.hpp"
-#include "config_I386_CLANG11_SSA_PLUGIN.hpp"
-#include "config_I386_CLANG11_SSA_PLUGINCPP.hpp"
-#include "config_I386_CLANG11_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANG11_PLUGIN_DIR.hpp"
 #include "config_I386_CLANG11_VERSION.hpp"
-#include "config_I386_CLANG12_ASTANALYZER_PLUGIN.hpp"
-#include "config_I386_CLANG12_CSROA_PLUGIN.hpp"
-#include "config_I386_CLANG12_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG12_EXE.hpp"
-#include "config_I386_CLANG12_EXPANDMEMOPS_PLUGIN.hpp"
-#include "config_I386_CLANG12_GEPICANON_PLUGIN.hpp"
-#include "config_I386_CLANG12_SSA_PLUGIN.hpp"
-#include "config_I386_CLANG12_SSA_PLUGINCPP.hpp"
-#include "config_I386_CLANG12_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANG12_PLUGIN_DIR.hpp"
 #include "config_I386_CLANG12_VERSION.hpp"
-#include "config_I386_CLANG13_ASTANALYZER_PLUGIN.hpp"
-#include "config_I386_CLANG13_CSROA_PLUGIN.hpp"
-#include "config_I386_CLANG13_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG13_EXE.hpp"
-#include "config_I386_CLANG13_EXPANDMEMOPS_PLUGIN.hpp"
-#include "config_I386_CLANG13_GEPICANON_PLUGIN.hpp"
-#include "config_I386_CLANG13_SSA_PLUGIN.hpp"
-#include "config_I386_CLANG13_SSA_PLUGINCPP.hpp"
-#include "config_I386_CLANG13_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANG13_PLUGIN_DIR.hpp"
 #include "config_I386_CLANG13_VERSION.hpp"
-#include "config_I386_CLANG16_ASTANALYZER_PLUGIN.hpp"
-#include "config_I386_CLANG16_CSROA_PLUGIN.hpp"
-#include "config_I386_CLANG16_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG16_EXE.hpp"
-#include "config_I386_CLANG16_EXPANDMEMOPS_PLUGIN.hpp"
-#include "config_I386_CLANG16_GEPICANON_PLUGIN.hpp"
-#include "config_I386_CLANG16_SSA_PLUGIN.hpp"
-#include "config_I386_CLANG16_SSA_PLUGINCPP.hpp"
-#include "config_I386_CLANG16_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANG16_PLUGIN_DIR.hpp"
 #include "config_I386_CLANG16_VERSION.hpp"
-#include "config_I386_CLANG4_ASTANALYZER_PLUGIN.hpp"
-#include "config_I386_CLANG4_CSROA_PLUGIN.hpp"
-#include "config_I386_CLANG4_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG4_EXE.hpp"
-#include "config_I386_CLANG4_EXPANDMEMOPS_PLUGIN.hpp"
-#include "config_I386_CLANG4_GEPICANON_PLUGIN.hpp"
-#include "config_I386_CLANG4_SSA_PLUGIN.hpp"
-#include "config_I386_CLANG4_SSA_PLUGINCPP.hpp"
-#include "config_I386_CLANG4_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANG4_PLUGIN_DIR.hpp"
 #include "config_I386_CLANG4_VERSION.hpp"
-#include "config_I386_CLANG5_ASTANALYZER_PLUGIN.hpp"
-#include "config_I386_CLANG5_CSROA_PLUGIN.hpp"
-#include "config_I386_CLANG5_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG5_EXE.hpp"
-#include "config_I386_CLANG5_EXPANDMEMOPS_PLUGIN.hpp"
-#include "config_I386_CLANG5_GEPICANON_PLUGIN.hpp"
-#include "config_I386_CLANG5_SSA_PLUGIN.hpp"
-#include "config_I386_CLANG5_SSA_PLUGINCPP.hpp"
-#include "config_I386_CLANG5_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANG5_PLUGIN_DIR.hpp"
 #include "config_I386_CLANG5_VERSION.hpp"
-#include "config_I386_CLANG6_ASTANALYZER_PLUGIN.hpp"
-#include "config_I386_CLANG6_CSROA_PLUGIN.hpp"
-#include "config_I386_CLANG6_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG6_EXE.hpp"
-#include "config_I386_CLANG6_EXPANDMEMOPS_PLUGIN.hpp"
-#include "config_I386_CLANG6_GEPICANON_PLUGIN.hpp"
-#include "config_I386_CLANG6_SSA_PLUGIN.hpp"
-#include "config_I386_CLANG6_SSA_PLUGINCPP.hpp"
-#include "config_I386_CLANG6_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANG6_PLUGIN_DIR.hpp"
 #include "config_I386_CLANG6_VERSION.hpp"
-#include "config_I386_CLANG7_ASTANALYZER_PLUGIN.hpp"
-#include "config_I386_CLANG7_CSROA_PLUGIN.hpp"
-#include "config_I386_CLANG7_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG7_EXE.hpp"
-#include "config_I386_CLANG7_EXPANDMEMOPS_PLUGIN.hpp"
-#include "config_I386_CLANG7_GEPICANON_PLUGIN.hpp"
-#include "config_I386_CLANG7_SSA_PLUGIN.hpp"
-#include "config_I386_CLANG7_SSA_PLUGINCPP.hpp"
-#include "config_I386_CLANG7_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANG7_PLUGIN_DIR.hpp"
 #include "config_I386_CLANG7_VERSION.hpp"
-#include "config_I386_CLANG8_ASTANALYZER_PLUGIN.hpp"
-#include "config_I386_CLANG8_CSROA_PLUGIN.hpp"
-#include "config_I386_CLANG8_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG8_EXE.hpp"
-#include "config_I386_CLANG8_EXPANDMEMOPS_PLUGIN.hpp"
-#include "config_I386_CLANG8_GEPICANON_PLUGIN.hpp"
-#include "config_I386_CLANG8_SSA_PLUGIN.hpp"
-#include "config_I386_CLANG8_SSA_PLUGINCPP.hpp"
-#include "config_I386_CLANG8_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANG8_PLUGIN_DIR.hpp"
 #include "config_I386_CLANG8_VERSION.hpp"
-#include "config_I386_CLANG9_ASTANALYZER_PLUGIN.hpp"
-#include "config_I386_CLANG9_CSROA_PLUGIN.hpp"
-#include "config_I386_CLANG9_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG9_EXE.hpp"
-#include "config_I386_CLANG9_EXPANDMEMOPS_PLUGIN.hpp"
-#include "config_I386_CLANG9_GEPICANON_PLUGIN.hpp"
-#include "config_I386_CLANG9_SSA_PLUGIN.hpp"
-#include "config_I386_CLANG9_SSA_PLUGINCPP.hpp"
-#include "config_I386_CLANG9_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANG9_PLUGIN_DIR.hpp"
 #include "config_I386_CLANG9_VERSION.hpp"
 #include "config_I386_CLANGPP10_EXE.hpp"
 #include "config_I386_CLANGPP11_EXE.hpp"
@@ -259,15 +190,8 @@
 #include "config_I386_CLANGPP8_EXE.hpp"
 #include "config_I386_CLANGPP9_EXE.hpp"
 #include "config_I386_CLANGPPVVD_EXE.hpp"
-#include "config_I386_CLANGVVD_ASTANALYZER_PLUGIN.hpp"
-#include "config_I386_CLANGVVD_CSROA_PLUGIN.hpp"
-#include "config_I386_CLANGVVD_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANGVVD_EXE.hpp"
-#include "config_I386_CLANGVVD_EXPANDMEMOPS_PLUGIN.hpp"
-#include "config_I386_CLANGVVD_GEPICANON_PLUGIN.hpp"
-#include "config_I386_CLANGVVD_SSA_PLUGIN.hpp"
-#include "config_I386_CLANGVVD_SSA_PLUGINCPP.hpp"
-#include "config_I386_CLANGVVD_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANGVVD_PLUGIN_DIR.hpp"
 #include "config_I386_CLANGVVD_VERSION.hpp"
 #include "config_I386_CLANG_CPP10_EXE.hpp"
 #include "config_I386_CLANG_CPP11_EXE.hpp"
@@ -286,35 +210,20 @@
 #include "config_I386_CPP6_EXE.hpp"
 #include "config_I386_CPP7_EXE.hpp"
 #include "config_I386_CPP8_EXE.hpp"
-#include "config_I386_GCC49_EMPTY_PLUGIN.hpp"
 #include "config_I386_GCC49_EXE.hpp"
-#include "config_I386_GCC49_SSA_PLUGIN.hpp"
-#include "config_I386_GCC49_SSA_PLUGINCPP.hpp"
-#include "config_I386_GCC49_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_GCC49_PLUGIN_DIR.hpp"
 #include "config_I386_GCC49_VERSION.hpp"
-#include "config_I386_GCC5_EMPTY_PLUGIN.hpp"
 #include "config_I386_GCC5_EXE.hpp"
-#include "config_I386_GCC5_SSA_PLUGIN.hpp"
-#include "config_I386_GCC5_SSA_PLUGINCPP.hpp"
-#include "config_I386_GCC5_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_GCC5_PLUGIN_DIR.hpp"
 #include "config_I386_GCC5_VERSION.hpp"
-#include "config_I386_GCC6_EMPTY_PLUGIN.hpp"
 #include "config_I386_GCC6_EXE.hpp"
-#include "config_I386_GCC6_SSA_PLUGIN.hpp"
-#include "config_I386_GCC6_SSA_PLUGINCPP.hpp"
-#include "config_I386_GCC6_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_GCC6_PLUGIN_DIR.hpp"
 #include "config_I386_GCC6_VERSION.hpp"
-#include "config_I386_GCC7_EMPTY_PLUGIN.hpp"
 #include "config_I386_GCC7_EXE.hpp"
-#include "config_I386_GCC7_SSA_PLUGIN.hpp"
-#include "config_I386_GCC7_SSA_PLUGINCPP.hpp"
-#include "config_I386_GCC7_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_GCC7_PLUGIN_DIR.hpp"
 #include "config_I386_GCC7_VERSION.hpp"
-#include "config_I386_GCC8_EMPTY_PLUGIN.hpp"
 #include "config_I386_GCC8_EXE.hpp"
-#include "config_I386_GCC8_SSA_PLUGIN.hpp"
-#include "config_I386_GCC8_SSA_PLUGINCPP.hpp"
-#include "config_I386_GCC8_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_GCC8_PLUGIN_DIR.hpp"
 #include "config_I386_GCC8_VERSION.hpp"
 #include "config_I386_GPP49_EXE.hpp"
 #include "config_I386_GPP5_EXE.hpp"
@@ -382,6 +291,9 @@ CompilerWrapper::CompilerWrapper(const ParameterConstRef _Param, const CompilerW
     : Param(_Param),
       compiler_target(_compiler_target),
       OS(_OS),
+      cpp_input(_Param->isOption(OPT_input_format) &&
+                (_Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
+                 _Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP)),
       output_level(_Param->getOption<int>(OPT_output_level)),
       debug_level(_Param->get_class_debug_level("CompilerWrapper"))
 {
@@ -491,14 +403,14 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       }
       if(compiler.is_clang)
       {
-         load_prefix += " " + load_plugin(compiler.empty_plugin_obj, compiler_target);
+         load_prefix += " " + load_plugin(compiler.GetPluginObject(COMPILER_EMPTY_PLUGIN), compiler_target);
          command +=
              " -mllvm -pandaGE-outputdir=" + output_temporary_directory + " -mllvm -pandaGE-infile=" + real_filename;
       }
       else
       {
-         load_prefix += " -fplugin=" + compiler.empty_plugin_obj;
-         command += " -fplugin-arg-" + compiler.empty_plugin_name + "-outputdir=" + output_temporary_directory;
+         load_prefix += " -fplugin=" + compiler.GetPluginObject(COMPILER_EMPTY_PLUGIN);
+         command += " -fplugin-arg-" COMPILER_EMPTY_PLUGIN "-outputdir=" + output_temporary_directory;
       }
    }
 
@@ -511,44 +423,41 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
          boost::replace_all(command, "-fhls", "");
          boost::replace_all(command, "-target fpga64-xilinx-linux-gnu", "");
       }
-      load_prefix += " -fplugin=" + compiler.ASTAnalyzer_plugin_obj;
-      command += " -Xclang -add-plugin -Xclang " + compiler.ASTAnalyzer_plugin_name;
+      load_prefix += " -fplugin=" + compiler.GetAnalyzerPluginObject(COMPILER_ASTANALYZER_PLUGIN);
+      command += " -Xclang -add-plugin -Xclang " COMPILER_ASTANALYZER_PLUGIN;
 
       if(cm & CM_ANALYZER_INTERFACE)
       {
-         command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang -action";
-         command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang analyze";
-         command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang -outputdir";
-         command +=
-             " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang " + output_temporary_directory;
+         command += " -Xclang -plugin-arg-" COMPILER_ASTANALYZER_PLUGIN " -Xclang -action";
+         command += " -Xclang -plugin-arg-" COMPILER_ASTANALYZER_PLUGIN " -Xclang analyze";
+         command += " -Xclang -plugin-arg-" COMPILER_ASTANALYZER_PLUGIN " -Xclang -outputdir";
+         command += " -Xclang -plugin-arg-" COMPILER_ASTANALYZER_PLUGIN " -Xclang " + output_temporary_directory;
 
-         if(Param->isOption(OPT_input_format) &&
-            (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
-             Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP))
+         if(cpp_input)
          {
-            command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang -cppflag";
+            command += " -Xclang -plugin-arg-" COMPILER_ASTANALYZER_PLUGIN " -Xclang -cppflag";
          }
          if(top_fnames.size())
          {
-            command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang -topfname";
-            command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang " + top_fnames;
+            command += " -Xclang -plugin-arg-" COMPILER_ASTANALYZER_PLUGIN " -Xclang -topfname";
+            command += " -Xclang -plugin-arg-" COMPILER_ASTANALYZER_PLUGIN " -Xclang " + top_fnames;
          }
       }
       if(cm & CM_ANALYZER_OPTIMIZE)
       {
-         command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang -action";
-         command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang optimize";
+         command += " -Xclang -plugin-arg-" COMPILER_ASTANALYZER_PLUGIN " -Xclang -action";
+         command += " -Xclang -plugin-arg-" COMPILER_ASTANALYZER_PLUGIN " -Xclang optimize";
       }
    }
 
-   const auto load_and_run_plugin = [&](const std::string& plugin_obj, const std::string& plugin_name) {
+   const auto load_and_run_plugin = [&](const std::string& plugin_name) {
       if(cm & CM_COMPILER_STD)
       {
-         load_prefix += load_plugin(plugin_obj, compiler_target);
+         load_prefix += load_plugin(compiler.GetPluginObject(plugin_name), compiler_target);
       }
       else
       {
-         load_prefix += load_plugin_opt(plugin_obj, compiler_target);
+         load_prefix += load_plugin_opt(compiler.GetPluginObject(plugin_name), compiler_target);
          command += add_plugin_prefix(compiler_target) + plugin_name;
       }
    };
@@ -582,9 +491,8 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
          {
             append_arg("-panda-Internalize");
          }
-         load_and_run_plugin(compiler.topfname_plugin_obj, compiler.topfname_plugin_name);
-         if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 &&
-            !compiler.CSROA_plugin_obj.empty() && !compiler.expandMemOps_plugin_obj.empty())
+         load_and_run_plugin(COMPILER_TOPFNAME_PLUGIN);
+         if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1)
          {
             append_arg("-panda-KN=" + top_fnames);
             if(Param->IsParameter("max-CSROA"))
@@ -592,7 +500,7 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
                auto max_CSROA = Param->GetParameter<int>("max-CSROA");
                append_arg("-csroa-max-transformations=" + STR(max_CSROA));
             }
-            load_and_run_plugin(compiler.CSROA_plugin_obj, compiler.CSROA_plugin_name);
+            load_and_run_plugin(COMPILER_CSROA_PLUGIN);
          }
       }
       else
@@ -600,8 +508,8 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
          if(!isWholeProgram)
          {
             /// LTO not yet supported with GCC
-            load_prefix += " -fplugin=" + compiler.topfname_plugin_obj;
-            command += " -fplugin-arg-" + compiler.topfname_plugin_name + "-topfname=" + top_fnames;
+            load_prefix += " -fplugin=" + compiler.GetPluginObject(COMPILER_TOPFNAME_PLUGIN);
+            command += " -fplugin-arg-" COMPILER_TOPFNAME_PLUGIN "-topfname=" + top_fnames;
          }
       }
    }
@@ -609,7 +517,7 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
    {
       if(compiler.is_clang)
       {
-         load_and_run_plugin(compiler.expandMemOps_plugin_obj, compiler.expandMemOps_plugin_name);
+         load_and_run_plugin(COMPILER_EXPANDMEMOPS_PLUGIN);
       }
    }
 
@@ -626,13 +534,13 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
          {
             append_arg("-panda-topfname=" + top_fnames);
          }
-         load_and_run_plugin(compiler.ssa_plugin_obj, compiler.ssa_plugin_name);
+         cpp_input ? load_and_run_plugin(COMPILER_SSA_PLUGINCPP) : load_and_run_plugin(COMPILER_SSA_PLUGIN);
          // command += " -emit-llvm";
       }
       else
       {
-         load_prefix += " -fplugin=" + compiler.ssa_plugin_obj;
-         command += " -fplugin-arg-" + compiler.ssa_plugin_name + "-outputdir=" + output_temporary_directory;
+         load_prefix += " -fplugin=" + compiler.GetPluginObject(COMPILER_SSA_PLUGIN);
+         command += " -fplugin-arg-" COMPILER_SSA_PLUGIN "-outputdir=" + output_temporary_directory;
       }
    }
 
@@ -946,13 +854,17 @@ void CompilerWrapper::InitializeCompilerParameters()
          case(CompilerWrapper_OptimizationSet::Os):
          case(CompilerWrapper_OptimizationSet::Ofast):
          case(CompilerWrapper_OptimizationSet::Oz):
+         {
             frontend_compiler_parameters += (" -O" + WriteOptimizationLevel(optimization_set) + " ");
             break;
+         }
          case CompilerWrapper_OptimizationSet::OSF:
+         {
             frontend_compiler_parameters += (" -O3 -finline-limit=10000 --param inline-unit-growth=100000 ");
             break;
+         }
          case(CompilerWrapper_OptimizationSet::OBAMBU):
-            /// Filling optimizations map
+         { /// Filling optimizations map
             SetCompilerDefault();
 
             switch(OS)
@@ -978,51 +890,45 @@ void CompilerWrapper::InitializeCompilerParameters()
                default:
                {
                   THROW_UNREACHABLE("");
+                  break;
                }
             }
             ReadParameters();
 
-#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER ||    \
-    HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||    \
-    HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG12_COMPILER || \
-    HAVE_I386_CLANG13_COMPILER || HAVE_I386_CLANG16_COMPILER || HAVE_I386_CLANGVVD_COMPILER
-            {
-               CompilerWrapper_CompilerTarget compiler =
-                   Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
+            CompilerWrapper_CompilerTarget compiler =
+                Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
 
-               if(isClangCheck(compiler))
+            if(isClangCheck(compiler))
+            {
+               /// sanitize CLANG/LLVM options by removing unsupported GCC options
+               if(optimization_flags.find("tree-dominator-opts") != optimization_flags.end())
                {
-                  /// sanitize CLANG/LLVM options by removing unsupported GCC options
-                  if(optimization_flags.find("tree-dominator-opts") != optimization_flags.end())
-                  {
-                     optimization_flags.erase(optimization_flags.find("tree-dominator-opts"));
-                  }
-                  if(optimization_flags.find("tree-pre") != optimization_flags.end())
-                  {
-                     optimization_flags.erase(optimization_flags.find("tree-pre"));
-                  }
-                  if(optimization_flags.find("tree-pre") != optimization_flags.end())
-                  {
-                     optimization_flags.erase(optimization_flags.find("tree-pre"));
-                  }
-                  if(optimization_flags.find("ipa-cp-clone") != optimization_flags.end())
-                  {
-                     optimization_flags.erase(optimization_flags.find("ipa-cp-clone"));
-                  }
-                  if(optimization_flags.find("ipa-cp") != optimization_flags.end())
-                  {
-                     optimization_flags.erase(optimization_flags.find("ipa-cp"));
-                  }
+                  optimization_flags.erase(optimization_flags.find("tree-dominator-opts"));
+               }
+               if(optimization_flags.find("tree-pre") != optimization_flags.end())
+               {
+                  optimization_flags.erase(optimization_flags.find("tree-pre"));
+               }
+               if(optimization_flags.find("tree-pre") != optimization_flags.end())
+               {
+                  optimization_flags.erase(optimization_flags.find("tree-pre"));
+               }
+               if(optimization_flags.find("ipa-cp-clone") != optimization_flags.end())
+               {
+                  optimization_flags.erase(optimization_flags.find("ipa-cp-clone"));
+               }
+               if(optimization_flags.find("ipa-cp") != optimization_flags.end())
+               {
+                  optimization_flags.erase(optimization_flags.find("ipa-cp"));
                }
             }
-#endif
-
             frontend_compiler_parameters += (" " + WriteOptimizationsString() + " ");
-
             break;
+         }
          default:
          {
             THROW_UNREACHABLE("Unexpected optimization level");
+            break;
          }
       }
    }
@@ -1466,12 +1372,8 @@ void CompilerWrapper::SetCompilerDefault()
       optimization_flags["slp-vectorize"] = false; /// disable superword-level parallelism vectorization
    }
 
-   const auto flag_cpp =
-       Param->isOption(OPT_input_format) &&
-       (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
-        Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP);
    /// in case we are compiling C++ code
-   if(flag_cpp)
+   if(cpp_input)
    {
       optimization_flags["exceptions"] = false;
       optimization_flags["threadsafe-statics"] = false;
@@ -1488,11 +1390,6 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
    CompilerWrapper_CompilerTarget compatible_compilers =
        Param->getOption<CompilerWrapper_CompilerTarget>(OPT_compatible_compilers);
 #endif
-
-   const auto flag_cpp =
-       Param->isOption(OPT_input_format) &&
-       (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
-        Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP);
 
    std::string gcc_extra_options;
    if(Param->isOption(OPT_gcc_extra_options))
@@ -1515,63 +1412,16 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
 #endif
       preferred_compiler = compiler_target;
    }
-   const std::string gcc_plugin_dir =
+   const std::string plugin_root_dir =
        (Param->isOption(OPT_gcc_plugindir) ? Param->getOption<std::string>(OPT_gcc_plugindir) :
-                                             relocate_compiler_path(GCC_PLUGIN_DIR)) +
+                                             relocate_install_path(COMPILER_PLUGINS_DIR).string()) +
        "/";
-   const std::string clang_plugin_dir =
-       (Param->isOption(OPT_gcc_plugindir) ? Param->getOption<std::string>(OPT_gcc_plugindir) + "/../clang_plugin" :
-                                             relocate_compiler_path(CLANG_PLUGIN_DIR)) +
-       "/";
-   const std::string plugin_ext = ".so";
 
-#if HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || \
-    HAVE_I386_GCC8_COMPILER
-   auto fillASTAnalyzer_plugin = [&] {
-#if HAVE_I386_CLANG16_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG16_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG16_ASTANALYZER_PLUGIN;
-#elif HAVE_I386_CLANG13_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG13_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG13_ASTANALYZER_PLUGIN;
-#elif HAVE_I386_CLANG12_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG12_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG12_ASTANALYZER_PLUGIN;
-#elif HAVE_I386_CLANG11_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG11_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG11_ASTANALYZER_PLUGIN;
-#elif HAVE_I386_CLANG10_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG10_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG10_ASTANALYZER_PLUGIN;
-#elif HAVE_I386_CLANG9_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG9_ASTANALYZER_PLUGIN;
-#elif HAVE_I386_CLANG8_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
-#elif HAVE_I386_CLANG7_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
-#elif HAVE_I386_CLANG6_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
-#elif HAVE_I386_CLANG5_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
-#elif HAVE_I386_CLANG4_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
-#elif HAVE_I386_CLANGVVD_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANGVVD_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
-#endif
-   };
-#endif
 #if HAVE_I386_GCC49_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC49))
    {
-      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP49_EXE) : relocate_compiler_path(I386_GCC49_EXE);
-      compiler.cpp = relocate_compiler_path(I386_CPP49_EXE);
+      compiler.gcc = cpp_input ? I386_GPP49_EXE : I386_GCC49_EXE;
+      compiler.cpp = I386_CPP49_EXE;
       compiler.extra_options = " -mlong-double-64 " + gcc_extra_options;
       if(optimization_flags.find("tree-vectorize") != optimization_flags.end() &&
          optimization_flags.find("tree-vectorize")->second)
@@ -1587,21 +1437,15 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       {
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       }
-      compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC49_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = I386_GCC49_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj =
-          gcc_plugin_dir + (flag_cpp ? I386_GCC49_SSA_PLUGINCPP : I386_GCC49_SSA_PLUGIN) + plugin_ext;
-      compiler.ssa_plugin_name = (flag_cpp ? I386_GCC49_SSA_PLUGINCPP : I386_GCC49_SSA_PLUGIN);
-      compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC49_TOPFNAME_PLUGIN + plugin_ext;
-      compiler.topfname_plugin_name = I386_GCC49_TOPFNAME_PLUGIN;
-      fillASTAnalyzer_plugin();
+      compiler.plugin_dir = plugin_root_dir + I386_GCC49_PLUGIN_DIR "/";
+      compiler.analyzer_plugin_dir = plugin_root_dir + ANALYZER_COMPILER_PLUGINS_DIR "/";
    }
 #endif
 #if HAVE_I386_GCC5_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC5))
    {
-      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP5_EXE) : relocate_compiler_path(I386_GCC5_EXE);
-      compiler.cpp = relocate_compiler_path(I386_CPP5_EXE);
+      compiler.gcc = cpp_input ? I386_GPP5_EXE : I386_GCC5_EXE;
+      compiler.cpp = I386_CPP5_EXE;
       compiler.extra_options = " -mlong-double-64 " + gcc_extra_options;
       if(optimization_flags.find("tree-vectorize") != optimization_flags.end() &&
          optimization_flags.find("tree-vectorize")->second)
@@ -1617,22 +1461,16 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       {
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       }
-      compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC5_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = I386_GCC5_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj =
-          gcc_plugin_dir + (flag_cpp ? I386_GCC5_SSA_PLUGINCPP : I386_GCC5_SSA_PLUGIN) + plugin_ext;
-      compiler.ssa_plugin_name = (flag_cpp ? I386_GCC5_SSA_PLUGINCPP : I386_GCC5_SSA_PLUGIN);
-      compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC5_TOPFNAME_PLUGIN + plugin_ext;
-      compiler.topfname_plugin_name = I386_GCC5_TOPFNAME_PLUGIN;
-      fillASTAnalyzer_plugin();
+      compiler.plugin_dir = plugin_root_dir + I386_GCC5_PLUGIN_DIR "/";
+      compiler.analyzer_plugin_dir = plugin_root_dir + ANALYZER_COMPILER_PLUGINS_DIR "/";
    }
 #endif
 
 #if HAVE_I386_GCC6_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC6))
    {
-      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP6_EXE) : relocate_compiler_path(I386_GCC6_EXE);
-      compiler.cpp = relocate_compiler_path(I386_CPP6_EXE);
+      compiler.gcc = cpp_input ? I386_GPP6_EXE : I386_GCC6_EXE;
+      compiler.cpp = I386_CPP6_EXE;
       compiler.extra_options = " -mlong-double-64 " + gcc_extra_options;
       if(optimization_flags.find("tree-vectorize") != optimization_flags.end() &&
          optimization_flags.find("tree-vectorize")->second)
@@ -1648,22 +1486,16 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       {
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       }
-      compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC6_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = I386_GCC6_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj =
-          gcc_plugin_dir + (flag_cpp ? I386_GCC6_SSA_PLUGINCPP : I386_GCC6_SSA_PLUGIN) + plugin_ext;
-      compiler.ssa_plugin_name = (flag_cpp ? I386_GCC6_SSA_PLUGINCPP : I386_GCC6_SSA_PLUGIN);
-      compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC6_TOPFNAME_PLUGIN + plugin_ext;
-      compiler.topfname_plugin_name = I386_GCC6_TOPFNAME_PLUGIN;
-      fillASTAnalyzer_plugin();
+      compiler.plugin_dir = plugin_root_dir + I386_GCC6_PLUGIN_DIR "/";
+      compiler.analyzer_plugin_dir = plugin_root_dir + ANALYZER_COMPILER_PLUGINS_DIR "/";
    }
 #endif
 
 #if HAVE_I386_GCC7_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC7))
    {
-      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP7_EXE) : relocate_compiler_path(I386_GCC7_EXE);
-      compiler.cpp = relocate_compiler_path(I386_CPP7_EXE);
+      compiler.gcc = cpp_input ? I386_GPP7_EXE : I386_GCC7_EXE;
+      compiler.cpp = I386_CPP7_EXE;
       compiler.extra_options = " -mlong-double-64 " + gcc_extra_options;
       if(optimization_flags.find("tree-vectorize") != optimization_flags.end() &&
          optimization_flags.find("tree-vectorize")->second)
@@ -1679,22 +1511,16 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       {
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       }
-      compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC7_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = I386_GCC7_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj =
-          gcc_plugin_dir + (flag_cpp ? I386_GCC7_SSA_PLUGINCPP : I386_GCC7_SSA_PLUGIN) + plugin_ext;
-      compiler.ssa_plugin_name = (flag_cpp ? I386_GCC7_SSA_PLUGINCPP : I386_GCC7_SSA_PLUGIN);
-      compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC7_TOPFNAME_PLUGIN + plugin_ext;
-      compiler.topfname_plugin_name = I386_GCC7_TOPFNAME_PLUGIN;
-      fillASTAnalyzer_plugin();
+      compiler.plugin_dir = plugin_root_dir + I386_GCC7_PLUGIN_DIR "/";
+      compiler.analyzer_plugin_dir = plugin_root_dir + ANALYZER_COMPILER_PLUGINS_DIR "/";
    }
 #endif
 
 #if HAVE_I386_GCC8_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC8))
    {
-      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP8_EXE) : relocate_compiler_path(I386_GCC8_EXE);
-      compiler.cpp = relocate_compiler_path(I386_CPP8_EXE);
+      compiler.gcc = cpp_input ? I386_GPP8_EXE : I386_GCC8_EXE;
+      compiler.cpp = I386_CPP8_EXE;
       compiler.extra_options = " -mlong-double-64 " + gcc_extra_options;
       if(optimization_flags.find("tree-vectorize") != optimization_flags.end() &&
          optimization_flags.find("tree-vectorize")->second)
@@ -1710,14 +1536,8 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       {
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       }
-      compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC8_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = I386_GCC8_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj =
-          gcc_plugin_dir + (flag_cpp ? I386_GCC8_SSA_PLUGINCPP : I386_GCC8_SSA_PLUGIN) + plugin_ext;
-      compiler.ssa_plugin_name = (flag_cpp ? I386_GCC8_SSA_PLUGINCPP : I386_GCC8_SSA_PLUGIN);
-      compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC8_TOPFNAME_PLUGIN + plugin_ext;
-      compiler.topfname_plugin_name = I386_GCC8_TOPFNAME_PLUGIN;
-      fillASTAnalyzer_plugin();
+      compiler.plugin_dir = plugin_root_dir + I386_GCC8_PLUGIN_DIR "/";
+      compiler.analyzer_plugin_dir = plugin_root_dir + ANALYZER_COMPILER_PLUGINS_DIR "/";
    }
 #endif
 
@@ -1725,27 +1545,13 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG4))
    {
       compiler.is_clang = true;
-      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP4_EXE) : relocate_compiler_path(I386_CLANG4_EXE);
-      compiler.cpp = relocate_compiler_path(I386_CLANG_CPP4_EXE);
-      compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
+      compiler.gcc = cpp_input ? I386_CLANGPP4_EXE : I386_CLANG4_EXE;
+      compiler.cpp = I386_CLANG_CPP4_EXE;
+      compiler.extra_options = gcc_extra_options + (cpp_input ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
-      compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG4_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = I386_CLANG4_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj =
-          clang_plugin_dir + (flag_cpp ? I386_CLANG4_SSA_PLUGINCPP : I386_CLANG4_SSA_PLUGIN) + plugin_ext;
-      compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG4_SSA_PLUGINCPP : I386_CLANG4_SSA_PLUGIN);
-      compiler.expandMemOps_plugin_obj = clang_plugin_dir + I386_CLANG4_EXPANDMEMOPS_PLUGIN + plugin_ext;
-      compiler.expandMemOps_plugin_name = I386_CLANG4_EXPANDMEMOPS_PLUGIN;
-      compiler.GepiCanon_plugin_obj = clang_plugin_dir + I386_CLANG4_GEPICANON_PLUGIN + plugin_ext;
-      compiler.GepiCanon_plugin_name = I386_CLANG4_GEPICANON_PLUGIN;
-      compiler.CSROA_plugin_obj = clang_plugin_dir + I386_CLANG4_CSROA_PLUGIN + plugin_ext;
-      compiler.CSROA_plugin_name = I386_CLANG4_CSROA_PLUGIN;
-      compiler.topfname_plugin_obj = clang_plugin_dir + I386_CLANG4_TOPFNAME_PLUGIN + plugin_ext;
-      compiler.topfname_plugin_name = I386_CLANG4_TOPFNAME_PLUGIN;
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
-      compiler.llvm_link = relocate_compiler_path(I386_LLVM4_LINK_EXE);
-      compiler.llvm_opt = relocate_compiler_path(I386_LLVM4_OPT_EXE);
+      compiler.plugin_dir = compiler.analyzer_plugin_dir = plugin_root_dir + I386_CLANG4_PLUGIN_DIR "/";
+      compiler.llvm_link = I386_LLVM4_LINK_EXE;
+      compiler.llvm_opt = I386_LLVM4_OPT_EXE;
    }
 #endif
 
@@ -1753,27 +1559,13 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG5))
    {
       compiler.is_clang = true;
-      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP5_EXE) : relocate_compiler_path(I386_CLANG5_EXE);
-      compiler.cpp = relocate_compiler_path(I386_CLANG_CPP5_EXE);
-      compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
+      compiler.gcc = cpp_input ? I386_CLANGPP5_EXE : I386_CLANG5_EXE;
+      compiler.cpp = I386_CLANG_CPP5_EXE;
+      compiler.extra_options = gcc_extra_options + (cpp_input ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
-      compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG5_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = I386_CLANG5_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj =
-          clang_plugin_dir + (flag_cpp ? I386_CLANG5_SSA_PLUGINCPP : I386_CLANG5_SSA_PLUGIN) + plugin_ext;
-      compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG5_SSA_PLUGINCPP : I386_CLANG5_SSA_PLUGIN);
-      compiler.expandMemOps_plugin_obj = clang_plugin_dir + I386_CLANG5_EXPANDMEMOPS_PLUGIN + plugin_ext;
-      compiler.expandMemOps_plugin_name = I386_CLANG5_EXPANDMEMOPS_PLUGIN;
-      compiler.GepiCanon_plugin_obj = clang_plugin_dir + I386_CLANG5_GEPICANON_PLUGIN + plugin_ext;
-      compiler.GepiCanon_plugin_name = I386_CLANG5_GEPICANON_PLUGIN;
-      compiler.CSROA_plugin_obj = clang_plugin_dir + I386_CLANG5_CSROA_PLUGIN + plugin_ext;
-      compiler.CSROA_plugin_name = I386_CLANG5_CSROA_PLUGIN;
-      compiler.topfname_plugin_obj = clang_plugin_dir + I386_CLANG5_TOPFNAME_PLUGIN + plugin_ext;
-      compiler.topfname_plugin_name = I386_CLANG5_TOPFNAME_PLUGIN;
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
-      compiler.llvm_link = relocate_compiler_path(I386_LLVM5_LINK_EXE);
-      compiler.llvm_opt = relocate_compiler_path(I386_LLVM5_OPT_EXE);
+      compiler.plugin_dir = compiler.analyzer_plugin_dir = plugin_root_dir + I386_CLANG5_PLUGIN_DIR "/";
+      compiler.llvm_link = I386_LLVM5_LINK_EXE;
+      compiler.llvm_opt = I386_LLVM5_OPT_EXE;
    }
 #endif
 
@@ -1781,27 +1573,13 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG6))
    {
       compiler.is_clang = true;
-      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP6_EXE) : relocate_compiler_path(I386_CLANG6_EXE);
-      compiler.cpp = relocate_compiler_path(I386_CLANG_CPP6_EXE);
-      compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
+      compiler.gcc = cpp_input ? I386_CLANGPP6_EXE : I386_CLANG6_EXE;
+      compiler.cpp = I386_CLANG_CPP6_EXE;
+      compiler.extra_options = gcc_extra_options + (cpp_input ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
-      compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG6_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = I386_CLANG6_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj =
-          clang_plugin_dir + (flag_cpp ? I386_CLANG6_SSA_PLUGINCPP : I386_CLANG6_SSA_PLUGIN) + plugin_ext;
-      compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG6_SSA_PLUGINCPP : I386_CLANG6_SSA_PLUGIN);
-      compiler.expandMemOps_plugin_obj = clang_plugin_dir + I386_CLANG6_EXPANDMEMOPS_PLUGIN + plugin_ext;
-      compiler.expandMemOps_plugin_name = I386_CLANG6_EXPANDMEMOPS_PLUGIN;
-      compiler.GepiCanon_plugin_obj = clang_plugin_dir + I386_CLANG6_GEPICANON_PLUGIN + plugin_ext;
-      compiler.GepiCanon_plugin_name = I386_CLANG6_GEPICANON_PLUGIN;
-      compiler.CSROA_plugin_obj = clang_plugin_dir + I386_CLANG6_CSROA_PLUGIN + plugin_ext;
-      compiler.CSROA_plugin_name = I386_CLANG6_CSROA_PLUGIN;
-      compiler.topfname_plugin_obj = clang_plugin_dir + I386_CLANG6_TOPFNAME_PLUGIN + plugin_ext;
-      compiler.topfname_plugin_name = I386_CLANG6_TOPFNAME_PLUGIN;
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
-      compiler.llvm_link = relocate_compiler_path(I386_LLVM6_LINK_EXE);
-      compiler.llvm_opt = relocate_compiler_path(I386_LLVM6_OPT_EXE);
+      compiler.plugin_dir = compiler.analyzer_plugin_dir = plugin_root_dir + I386_CLANG6_PLUGIN_DIR "/";
+      compiler.llvm_link = I386_LLVM6_LINK_EXE;
+      compiler.llvm_opt = I386_LLVM6_OPT_EXE;
    }
 #endif
 
@@ -1809,27 +1587,13 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG7))
    {
       compiler.is_clang = true;
-      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP7_EXE) : relocate_compiler_path(I386_CLANG7_EXE);
-      compiler.cpp = relocate_compiler_path(I386_CLANG_CPP7_EXE);
-      compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
+      compiler.gcc = cpp_input ? I386_CLANGPP7_EXE : I386_CLANG7_EXE;
+      compiler.cpp = I386_CLANG_CPP7_EXE;
+      compiler.extra_options = gcc_extra_options + (cpp_input ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
-      compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG7_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = I386_CLANG7_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj =
-          clang_plugin_dir + (flag_cpp ? I386_CLANG7_SSA_PLUGINCPP : I386_CLANG7_SSA_PLUGIN) + plugin_ext;
-      compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG7_SSA_PLUGINCPP : I386_CLANG7_SSA_PLUGIN);
-      compiler.expandMemOps_plugin_obj = clang_plugin_dir + I386_CLANG7_EXPANDMEMOPS_PLUGIN + plugin_ext;
-      compiler.expandMemOps_plugin_name = I386_CLANG7_EXPANDMEMOPS_PLUGIN;
-      compiler.GepiCanon_plugin_obj = clang_plugin_dir + I386_CLANG7_GEPICANON_PLUGIN + plugin_ext;
-      compiler.GepiCanon_plugin_name = I386_CLANG7_GEPICANON_PLUGIN;
-      compiler.CSROA_plugin_obj = clang_plugin_dir + I386_CLANG7_CSROA_PLUGIN + plugin_ext;
-      compiler.CSROA_plugin_name = I386_CLANG7_CSROA_PLUGIN;
-      compiler.topfname_plugin_obj = clang_plugin_dir + I386_CLANG7_TOPFNAME_PLUGIN + plugin_ext;
-      compiler.topfname_plugin_name = I386_CLANG7_TOPFNAME_PLUGIN;
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
-      compiler.llvm_link = relocate_compiler_path(I386_LLVM7_LINK_EXE);
-      compiler.llvm_opt = relocate_compiler_path(I386_LLVM7_OPT_EXE);
+      compiler.plugin_dir = compiler.analyzer_plugin_dir = plugin_root_dir + I386_CLANG7_PLUGIN_DIR "/";
+      compiler.llvm_link = I386_LLVM7_LINK_EXE;
+      compiler.llvm_opt = I386_LLVM7_OPT_EXE;
    }
 #endif
 
@@ -1837,27 +1601,13 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG8))
    {
       compiler.is_clang = true;
-      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP8_EXE) : relocate_compiler_path(I386_CLANG8_EXE);
-      compiler.cpp = relocate_compiler_path(I386_CLANG_CPP8_EXE);
-      compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
+      compiler.gcc = cpp_input ? I386_CLANGPP8_EXE : I386_CLANG8_EXE;
+      compiler.cpp = I386_CLANG_CPP8_EXE;
+      compiler.extra_options = gcc_extra_options + (cpp_input ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
-      compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG8_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = I386_CLANG8_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj =
-          clang_plugin_dir + (flag_cpp ? I386_CLANG8_SSA_PLUGINCPP : I386_CLANG8_SSA_PLUGIN) + plugin_ext;
-      compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG8_SSA_PLUGINCPP : I386_CLANG8_SSA_PLUGIN);
-      compiler.expandMemOps_plugin_obj = clang_plugin_dir + I386_CLANG8_EXPANDMEMOPS_PLUGIN + plugin_ext;
-      compiler.expandMemOps_plugin_name = I386_CLANG8_EXPANDMEMOPS_PLUGIN;
-      compiler.GepiCanon_plugin_obj = clang_plugin_dir + I386_CLANG8_GEPICANON_PLUGIN + plugin_ext;
-      compiler.GepiCanon_plugin_name = I386_CLANG8_GEPICANON_PLUGIN;
-      compiler.CSROA_plugin_obj = clang_plugin_dir + I386_CLANG8_CSROA_PLUGIN + plugin_ext;
-      compiler.CSROA_plugin_name = I386_CLANG8_CSROA_PLUGIN;
-      compiler.topfname_plugin_obj = clang_plugin_dir + I386_CLANG8_TOPFNAME_PLUGIN + plugin_ext;
-      compiler.topfname_plugin_name = I386_CLANG8_TOPFNAME_PLUGIN;
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
-      compiler.llvm_link = relocate_compiler_path(I386_LLVM8_LINK_EXE);
-      compiler.llvm_opt = relocate_compiler_path(I386_LLVM8_OPT_EXE);
+      compiler.plugin_dir = compiler.analyzer_plugin_dir = plugin_root_dir + I386_CLANG8_PLUGIN_DIR "/";
+      compiler.llvm_link = I386_LLVM8_LINK_EXE;
+      compiler.llvm_opt = I386_LLVM8_OPT_EXE;
    }
 #endif
 
@@ -1865,27 +1615,13 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG9))
    {
       compiler.is_clang = true;
-      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP9_EXE) : relocate_compiler_path(I386_CLANG9_EXE);
-      compiler.cpp = relocate_compiler_path(I386_CLANG_CPP9_EXE);
-      compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
+      compiler.gcc = cpp_input ? I386_CLANGPP9_EXE : I386_CLANG9_EXE;
+      compiler.cpp = I386_CLANG_CPP9_EXE;
+      compiler.extra_options = gcc_extra_options + (cpp_input ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
-      compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG9_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = I386_CLANG9_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj =
-          clang_plugin_dir + (flag_cpp ? I386_CLANG9_SSA_PLUGINCPP : I386_CLANG9_SSA_PLUGIN) + plugin_ext;
-      compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG9_SSA_PLUGINCPP : I386_CLANG9_SSA_PLUGIN);
-      compiler.expandMemOps_plugin_obj = clang_plugin_dir + I386_CLANG9_EXPANDMEMOPS_PLUGIN + plugin_ext;
-      compiler.expandMemOps_plugin_name = I386_CLANG9_EXPANDMEMOPS_PLUGIN;
-      compiler.GepiCanon_plugin_obj = clang_plugin_dir + I386_CLANG9_GEPICANON_PLUGIN + plugin_ext;
-      compiler.GepiCanon_plugin_name = I386_CLANG9_GEPICANON_PLUGIN;
-      compiler.CSROA_plugin_obj = clang_plugin_dir + I386_CLANG9_CSROA_PLUGIN + plugin_ext;
-      compiler.CSROA_plugin_name = I386_CLANG9_CSROA_PLUGIN;
-      compiler.topfname_plugin_obj = clang_plugin_dir + I386_CLANG9_TOPFNAME_PLUGIN + plugin_ext;
-      compiler.topfname_plugin_name = I386_CLANG9_TOPFNAME_PLUGIN;
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG9_ASTANALYZER_PLUGIN;
-      compiler.llvm_link = relocate_compiler_path(I386_LLVM9_LINK_EXE);
-      compiler.llvm_opt = relocate_compiler_path(I386_LLVM9_OPT_EXE);
+      compiler.plugin_dir = compiler.analyzer_plugin_dir = plugin_root_dir + I386_CLANG9_PLUGIN_DIR "/";
+      compiler.llvm_link = I386_LLVM9_LINK_EXE;
+      compiler.llvm_opt = I386_LLVM9_OPT_EXE;
    }
 #endif
 
@@ -1893,27 +1629,13 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG10))
    {
       compiler.is_clang = true;
-      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP10_EXE) : relocate_compiler_path(I386_CLANG10_EXE);
-      compiler.cpp = relocate_compiler_path(I386_CLANG_CPP10_EXE);
-      compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
+      compiler.gcc = cpp_input ? I386_CLANGPP10_EXE : I386_CLANG10_EXE;
+      compiler.cpp = I386_CLANG_CPP10_EXE;
+      compiler.extra_options = gcc_extra_options + (cpp_input ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
-      compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG10_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = I386_CLANG10_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj =
-          clang_plugin_dir + (flag_cpp ? I386_CLANG10_SSA_PLUGINCPP : I386_CLANG10_SSA_PLUGIN) + plugin_ext;
-      compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG10_SSA_PLUGINCPP : I386_CLANG10_SSA_PLUGIN);
-      compiler.expandMemOps_plugin_obj = clang_plugin_dir + I386_CLANG10_EXPANDMEMOPS_PLUGIN + plugin_ext;
-      compiler.expandMemOps_plugin_name = I386_CLANG10_EXPANDMEMOPS_PLUGIN;
-      compiler.GepiCanon_plugin_obj = clang_plugin_dir + I386_CLANG10_GEPICANON_PLUGIN + plugin_ext;
-      compiler.GepiCanon_plugin_name = I386_CLANG10_GEPICANON_PLUGIN;
-      compiler.CSROA_plugin_obj = clang_plugin_dir + I386_CLANG10_CSROA_PLUGIN + plugin_ext;
-      compiler.CSROA_plugin_name = I386_CLANG10_CSROA_PLUGIN;
-      compiler.topfname_plugin_obj = clang_plugin_dir + I386_CLANG10_TOPFNAME_PLUGIN + plugin_ext;
-      compiler.topfname_plugin_name = I386_CLANG10_TOPFNAME_PLUGIN;
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG10_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG10_ASTANALYZER_PLUGIN;
-      compiler.llvm_link = relocate_compiler_path(I386_LLVM10_LINK_EXE);
-      compiler.llvm_opt = relocate_compiler_path(I386_LLVM10_OPT_EXE);
+      compiler.plugin_dir = compiler.analyzer_plugin_dir = plugin_root_dir + I386_CLANG10_PLUGIN_DIR "/";
+      compiler.llvm_link = I386_LLVM10_LINK_EXE;
+      compiler.llvm_opt = I386_LLVM10_OPT_EXE;
    }
 #endif
 
@@ -1921,27 +1643,13 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG11))
    {
       compiler.is_clang = true;
-      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP11_EXE) : relocate_compiler_path(I386_CLANG11_EXE);
-      compiler.cpp = relocate_compiler_path(I386_CLANG_CPP11_EXE);
-      compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
+      compiler.gcc = cpp_input ? I386_CLANGPP11_EXE : I386_CLANG11_EXE;
+      compiler.cpp = I386_CLANG_CPP11_EXE;
+      compiler.extra_options = gcc_extra_options + (cpp_input ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
-      compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG11_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = I386_CLANG11_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj =
-          clang_plugin_dir + (flag_cpp ? I386_CLANG11_SSA_PLUGINCPP : I386_CLANG11_SSA_PLUGIN) + plugin_ext;
-      compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG11_SSA_PLUGINCPP : I386_CLANG11_SSA_PLUGIN);
-      compiler.expandMemOps_plugin_obj = clang_plugin_dir + I386_CLANG11_EXPANDMEMOPS_PLUGIN + plugin_ext;
-      compiler.expandMemOps_plugin_name = I386_CLANG11_EXPANDMEMOPS_PLUGIN;
-      compiler.GepiCanon_plugin_obj = clang_plugin_dir + I386_CLANG11_GEPICANON_PLUGIN + plugin_ext;
-      compiler.GepiCanon_plugin_name = I386_CLANG11_GEPICANON_PLUGIN;
-      compiler.CSROA_plugin_obj = clang_plugin_dir + I386_CLANG11_CSROA_PLUGIN + plugin_ext;
-      compiler.CSROA_plugin_name = I386_CLANG11_CSROA_PLUGIN;
-      compiler.topfname_plugin_obj = clang_plugin_dir + I386_CLANG11_TOPFNAME_PLUGIN + plugin_ext;
-      compiler.topfname_plugin_name = I386_CLANG11_TOPFNAME_PLUGIN;
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG11_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG11_ASTANALYZER_PLUGIN;
-      compiler.llvm_link = relocate_compiler_path(I386_LLVM11_LINK_EXE);
-      compiler.llvm_opt = relocate_compiler_path(I386_LLVM11_OPT_EXE);
+      compiler.plugin_dir = compiler.analyzer_plugin_dir = plugin_root_dir + I386_CLANG11_PLUGIN_DIR "/";
+      compiler.llvm_link = I386_LLVM11_LINK_EXE;
+      compiler.llvm_opt = I386_LLVM11_OPT_EXE;
    }
 #endif
 
@@ -1949,27 +1657,13 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG12))
    {
       compiler.is_clang = true;
-      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP12_EXE) : relocate_compiler_path(I386_CLANG12_EXE);
-      compiler.cpp = relocate_compiler_path(I386_CLANG_CPP12_EXE);
-      compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
+      compiler.gcc = cpp_input ? I386_CLANGPP12_EXE : I386_CLANG12_EXE;
+      compiler.cpp = I386_CLANG_CPP12_EXE;
+      compiler.extra_options = gcc_extra_options + (cpp_input ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
-      compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG12_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = I386_CLANG12_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj =
-          clang_plugin_dir + (flag_cpp ? I386_CLANG12_SSA_PLUGINCPP : I386_CLANG12_SSA_PLUGIN) + plugin_ext;
-      compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG12_SSA_PLUGINCPP : I386_CLANG12_SSA_PLUGIN);
-      compiler.expandMemOps_plugin_obj = clang_plugin_dir + I386_CLANG12_EXPANDMEMOPS_PLUGIN + plugin_ext;
-      compiler.expandMemOps_plugin_name = I386_CLANG12_EXPANDMEMOPS_PLUGIN;
-      compiler.GepiCanon_plugin_obj = clang_plugin_dir + I386_CLANG12_GEPICANON_PLUGIN + plugin_ext;
-      compiler.GepiCanon_plugin_name = I386_CLANG12_GEPICANON_PLUGIN;
-      compiler.CSROA_plugin_obj = clang_plugin_dir + I386_CLANG12_CSROA_PLUGIN + plugin_ext;
-      compiler.CSROA_plugin_name = I386_CLANG12_CSROA_PLUGIN;
-      compiler.topfname_plugin_obj = clang_plugin_dir + I386_CLANG12_TOPFNAME_PLUGIN + plugin_ext;
-      compiler.topfname_plugin_name = I386_CLANG12_TOPFNAME_PLUGIN;
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG12_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG12_ASTANALYZER_PLUGIN;
-      compiler.llvm_link = relocate_compiler_path(I386_LLVM12_LINK_EXE);
-      compiler.llvm_opt = relocate_compiler_path(I386_LLVM12_OPT_EXE);
+      compiler.plugin_dir = compiler.analyzer_plugin_dir = plugin_root_dir + I386_CLANG12_PLUGIN_DIR "/";
+      compiler.llvm_link = I386_LLVM12_LINK_EXE;
+      compiler.llvm_opt = I386_LLVM12_OPT_EXE;
    }
 #endif
 
@@ -1977,27 +1671,13 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG13))
    {
       compiler.is_clang = true;
-      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP13_EXE) : relocate_compiler_path(I386_CLANG13_EXE);
-      compiler.cpp = relocate_compiler_path(I386_CLANG_CPP13_EXE);
-      compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
+      compiler.gcc = cpp_input ? I386_CLANGPP13_EXE : I386_CLANG13_EXE;
+      compiler.cpp = I386_CLANG_CPP13_EXE;
+      compiler.extra_options = gcc_extra_options + (cpp_input ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
-      compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG13_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = I386_CLANG13_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj =
-          clang_plugin_dir + (flag_cpp ? I386_CLANG13_SSA_PLUGINCPP : I386_CLANG13_SSA_PLUGIN) + plugin_ext;
-      compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG13_SSA_PLUGINCPP : I386_CLANG13_SSA_PLUGIN);
-      compiler.expandMemOps_plugin_obj = clang_plugin_dir + I386_CLANG13_EXPANDMEMOPS_PLUGIN + plugin_ext;
-      compiler.expandMemOps_plugin_name = I386_CLANG13_EXPANDMEMOPS_PLUGIN;
-      compiler.GepiCanon_plugin_obj = clang_plugin_dir + I386_CLANG13_GEPICANON_PLUGIN + plugin_ext;
-      compiler.GepiCanon_plugin_name = I386_CLANG13_GEPICANON_PLUGIN;
-      compiler.CSROA_plugin_obj = clang_plugin_dir + I386_CLANG13_CSROA_PLUGIN + plugin_ext;
-      compiler.CSROA_plugin_name = I386_CLANG13_CSROA_PLUGIN;
-      compiler.topfname_plugin_obj = clang_plugin_dir + I386_CLANG13_TOPFNAME_PLUGIN + plugin_ext;
-      compiler.topfname_plugin_name = I386_CLANG13_TOPFNAME_PLUGIN;
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG13_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG13_ASTANALYZER_PLUGIN;
-      compiler.llvm_link = relocate_compiler_path(I386_LLVM13_LINK_EXE);
-      compiler.llvm_opt = relocate_compiler_path(I386_LLVM13_OPT_EXE);
+      compiler.plugin_dir = compiler.analyzer_plugin_dir = plugin_root_dir + I386_CLANG13_PLUGIN_DIR "/";
+      compiler.llvm_link = I386_LLVM13_LINK_EXE;
+      compiler.llvm_opt = I386_LLVM13_OPT_EXE;
    }
 #endif
 
@@ -2005,27 +1685,13 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG16))
    {
       compiler.is_clang = true;
-      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP16_EXE) : relocate_compiler_path(I386_CLANG16_EXE);
-      compiler.cpp = relocate_compiler_path(I386_CLANG_CPP16_EXE);
-      compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
+      compiler.gcc = cpp_input ? I386_CLANGPP16_EXE : I386_CLANG16_EXE;
+      compiler.cpp = I386_CLANG_CPP16_EXE;
+      compiler.extra_options = gcc_extra_options + (cpp_input ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
-      compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG16_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = I386_CLANG16_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj =
-          clang_plugin_dir + (flag_cpp ? I386_CLANG16_SSA_PLUGINCPP : I386_CLANG16_SSA_PLUGIN) + plugin_ext;
-      compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG16_SSA_PLUGINCPP : I386_CLANG16_SSA_PLUGIN);
-      compiler.expandMemOps_plugin_obj = clang_plugin_dir + I386_CLANG16_EXPANDMEMOPS_PLUGIN + plugin_ext;
-      compiler.expandMemOps_plugin_name = I386_CLANG16_EXPANDMEMOPS_PLUGIN;
-      compiler.GepiCanon_plugin_obj = clang_plugin_dir + I386_CLANG16_GEPICANON_PLUGIN + plugin_ext;
-      compiler.GepiCanon_plugin_name = I386_CLANG16_GEPICANON_PLUGIN;
-      compiler.CSROA_plugin_obj = clang_plugin_dir + I386_CLANG16_CSROA_PLUGIN + plugin_ext;
-      compiler.CSROA_plugin_name = I386_CLANG16_CSROA_PLUGIN;
-      compiler.topfname_plugin_obj = clang_plugin_dir + I386_CLANG16_TOPFNAME_PLUGIN + plugin_ext;
-      compiler.topfname_plugin_name = I386_CLANG16_TOPFNAME_PLUGIN;
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG16_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANG16_ASTANALYZER_PLUGIN;
-      compiler.llvm_link = relocate_compiler_path(I386_LLVM16_LINK_EXE);
-      compiler.llvm_opt = relocate_compiler_path(I386_LLVM16_OPT_EXE);
+      compiler.plugin_dir = compiler.analyzer_plugin_dir = plugin_root_dir + I386_CLANG16_PLUGIN_DIR "/";
+      compiler.llvm_link = I386_LLVM16_LINK_EXE;
+      compiler.llvm_opt = I386_LLVM16_OPT_EXE;
    }
 #endif
 
@@ -2033,28 +1699,14 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD))
    {
       compiler.is_clang = true;
-      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPPVVD_EXE) : relocate_compiler_path(I386_CLANGVVD_EXE);
-      compiler.cpp = relocate_compiler_path(I386_CLANG_CPPVVD_EXE);
-      compiler.extra_options = " -D__VIVADO__ " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
+      compiler.gcc = cpp_input ? I386_CLANGPPVVD_EXE : I386_CLANGVVD_EXE;
+      compiler.cpp = I386_CLANG_CPPVVD_EXE;
+      compiler.extra_options = " -D__VIVADO__ " + gcc_extra_options + (cpp_input ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       compiler.extra_options += " -target fpga64-xilinx-linux-gnu";
-      compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANGVVD_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = I386_CLANGVVD_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj =
-          clang_plugin_dir + (flag_cpp ? I386_CLANGVVD_SSA_PLUGINCPP : I386_CLANGVVD_SSA_PLUGIN) + plugin_ext;
-      compiler.ssa_plugin_name = (flag_cpp ? I386_CLANGVVD_SSA_PLUGINCPP : I386_CLANGVVD_SSA_PLUGIN);
-      compiler.expandMemOps_plugin_obj = clang_plugin_dir + I386_CLANGVVD_EXPANDMEMOPS_PLUGIN + plugin_ext;
-      compiler.expandMemOps_plugin_name = I386_CLANGVVD_EXPANDMEMOPS_PLUGIN;
-      compiler.GepiCanon_plugin_obj = clang_plugin_dir + I386_CLANGVVD_GEPICANON_PLUGIN + plugin_ext;
-      compiler.GepiCanon_plugin_name = I386_CLANGVVD_GEPICANON_PLUGIN;
-      compiler.CSROA_plugin_obj = clang_plugin_dir + I386_CLANGVVD_CSROA_PLUGIN + plugin_ext;
-      compiler.CSROA_plugin_name = I386_CLANGVVD_CSROA_PLUGIN;
-      compiler.topfname_plugin_obj = clang_plugin_dir + I386_CLANGVVD_TOPFNAME_PLUGIN + plugin_ext;
-      compiler.topfname_plugin_name = I386_CLANGVVD_TOPFNAME_PLUGIN;
-      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANGVVD_ASTANALYZER_PLUGIN + plugin_ext;
-      compiler.ASTAnalyzer_plugin_name = I386_CLANGVVD_ASTANALYZER_PLUGIN;
-      compiler.llvm_link = relocate_compiler_path(I386_LLVMVVD_LINK_EXE);
-      compiler.llvm_opt = relocate_compiler_path(I386_LLVMVVD_OPT_EXE);
+      compiler.plugin_dir = compiler.analyzer_plugin_dir = plugin_root_dir + I386_CLANGVVD_PLUGIN_DIR "/";
+      compiler.llvm_link = I386_LLVMVVD_LINK_EXE;
+      compiler.llvm_opt = I386_LLVMVVD_OPT_EXE;
    }
 #endif
 
@@ -2068,35 +1720,30 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
 
 std::string CompilerWrapper::GetAnalyzeCompiler() const
 {
-   const auto flag_cpp =
-       Param->isOption(OPT_input_format) &&
-       (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
-        Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP);
-
 #if HAVE_I386_CLANG16_COMPILER
-   return flag_cpp ? relocate_compiler_path(I386_CLANGPP16_EXE) : relocate_compiler_path(I386_CLANG16_EXE);
+   return cpp_input ? I386_CLANGPP16_EXE : I386_CLANG16_EXE;
 #elif HAVE_I386_CLANG13_COMPILER
-   return flag_cpp ? relocate_compiler_path(I386_CLANGPP13_EXE) : relocate_compiler_path(I386_CLANG13_EXE);
+   return cpp_input ? I386_CLANGPP13_EXE : I386_CLANG13_EXE;
 #elif HAVE_I386_CLANG12_COMPILER
-   return flag_cpp ? relocate_compiler_path(I386_CLANGPP12_EXE) : relocate_compiler_path(I386_CLANG12_EXE);
+   return cpp_input ? I386_CLANGPP12_EXE : I386_CLANG12_EXE;
 #elif HAVE_I386_CLANG11_COMPILER
-   return flag_cpp ? relocate_compiler_path(I386_CLANGPP11_EXE) : relocate_compiler_path(I386_CLANG11_EXE);
+   return cpp_input ? I386_CLANGPP11_EXE : I386_CLANG11_EXE;
 #elif HAVE_I386_CLANG10_COMPILER
-   return flag_cpp ? relocate_compiler_path(I386_CLANGPP10_EXE) : relocate_compiler_path(I386_CLANG10_EXE);
+   return cpp_input ? I386_CLANGPP10_EXE : I386_CLANG10_EXE;
 #elif HAVE_I386_CLANG9_COMPILER
-   return flag_cpp ? relocate_compiler_path(I386_CLANGPP9_EXE) : relocate_compiler_path(I386_CLANG9_EXE);
+   return cpp_input ? I386_CLANGPP9_EXE : I386_CLANG9_EXE;
 #elif HAVE_I386_CLANG8_COMPILER
-   return flag_cpp ? relocate_compiler_path(I386_CLANGPP8_EXE) : relocate_compiler_path(I386_CLANG8_EXE);
+   return cpp_input ? I386_CLANGPP8_EXE : I386_CLANG8_EXE;
 #elif HAVE_I386_CLANG7_COMPILER
-   return flag_cpp ? relocate_compiler_path(I386_CLANGPP7_EXE) : relocate_compiler_path(I386_CLANG7_EXE);
+   return cpp_input ? I386_CLANGPP7_EXE : I386_CLANG7_EXE;
 #elif HAVE_I386_CLANG6_COMPILER
-   return flag_cpp ? relocate_compiler_path(I386_CLANGPP6_EXE) : relocate_compiler_path(I386_CLANG6_EXE);
+   return cpp_input ? I386_CLANGPP6_EXE : I386_CLANG6_EXE;
 #elif HAVE_I386_CLANG5_COMPILER
-   return flag_cpp ? relocate_compiler_path(I386_CLANGPP5_EXE) : relocate_compiler_path(I386_CLANG5_EXE);
+   return cpp_input ? I386_CLANGPP5_EXE : I386_CLANG5_EXE;
 #elif HAVE_I386_CLANG4_COMPILER
-   return flag_cpp ? relocate_compiler_path(I386_CLANGPP4_EXE) : relocate_compiler_path(I386_CLANG4_EXE);
+   return cpp_input ? I386_CLANGPP4_EXE : I386_CLANG4_EXE;
 #elif HAVE_I386_CLANGVVD_COMPILER
-   return flag_cpp ? relocate_compiler_path(I386_CLANGPPVVD_EXE) : relocate_compiler_path(I386_CLANGVVD_EXE);
+   return cpp_input ? I386_CLANGPPVVD_EXE : I386_CLANGVVD_EXE;
 #else
    THROW_ERROR("unexpected condition");
    return "";
@@ -2686,13 +2333,13 @@ std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet
 {
    const auto& compiler = GetCompiler();
    auto plugin_prefix = add_plugin_prefix(compiler_target);
-   const auto& expandMemOps_plugin_name = compiler.expandMemOps_plugin_name;
-   const auto& GepiCanon_plugin_name = compiler.GepiCanon_plugin_name;
-   const auto& CSROA_plugin_name = compiler.CSROA_plugin_name;
+   const std::string expandMemOps_plugin_name = COMPILER_EXPANDMEMOPS_PLUGIN;
+   const std::string GepiCanon_plugin_name = COMPILER_GEPICANON_PLUGIN;
+   const std::string CSROA_plugin_name = COMPILER_CSROA_PLUGIN;
 #ifndef _WIN32
-   const auto& expandMemOps_plugin_obj = compiler.expandMemOps_plugin_obj;
-   const auto& GepiCanon_plugin_obj = compiler.GepiCanon_plugin_obj;
-   const auto& CSROA_plugin_obj = compiler.CSROA_plugin_obj;
+   const auto expandMemOps_plugin_obj = compiler.GetPluginObject(COMPILER_EXPANDMEMOPS_PLUGIN);
+   const auto GepiCanon_plugin_obj = compiler.GetPluginObject(COMPILER_GEPICANON_PLUGIN);
+   const auto CSROA_plugin_obj = compiler.GetPluginObject(COMPILER_CSROA_PLUGIN);
 #endif
 
    const auto opt_level = WriteOptimizationLevel(optimization_set == CompilerWrapper_OptimizationSet::O0 ?

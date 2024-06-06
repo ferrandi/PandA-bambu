@@ -24,7 +24,7 @@ jobs:
     uses: ./.github/workflows/build-appimage.yml
     with:
       package-name: bambu-minimal
-      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,clang-4,clang-6,clang-7,clang-11,clang-13,clang-16
+      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,gcc-8,clang-4.0,clang-6.0,clang-7,clang-11,clang-13,clang-16
     secrets: inherit
 
   changes:
@@ -87,7 +87,6 @@ jobs:
         shell: bash
         run: |
           bash .devcontainer/library-scripts/compiler-download.sh / clang-16
-          bash .devcontainer/library-scripts/compiler-setup.sh
       - name: Launch ACMath tests for ${{matrix.compiler}} ${{matrix.flags}}
         working-directory: ./etc/libbambu/ac_math
         shell: bash
@@ -888,6 +887,8 @@ jobs:
             datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
     env:
       outname: panda_bench_${{matrix.test}}
+      OMP_NUM_THREADS: 4
+      J: 5
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

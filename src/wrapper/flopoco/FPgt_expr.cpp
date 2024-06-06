@@ -39,47 +39,29 @@
  * Last modified by $Author$
  *
  */
-
-/// Autoheader include
-#include "config_SKIP_WARNING_SECTIONS.hpp"
-
-#if SKIP_WARNING_SECTIONS
-#pragma GCC diagnostic ignored "-Wshadow"
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#pragma GCC diagnostic ignored "-Wconversion"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
-
-#include <cmath>
-#include <cstring>
-#include <iosfwd>
-#include <sstream>
-#include <vector>
-
-#include <cstddef>
-#include <gmp.h>
-
-#include "utils.hpp"
-#include <gmpxx.h>
-
-#include "FPAdderSinglePath.hpp"
 #include "FPgt_expr.hpp"
 
+#include "FPAdderSinglePath.hpp"
 #include "custom_map.hpp"
+#include "flopoco_wrapper.hpp"
+#include "utility.hpp"
+#include "utils.hpp"
+
 #include <cmath>
+#include <cstddef>
+#include <cstdio>
 #include <cstdlib>
+#include <cstring>
+#include <gmp.h>
+#include <gmpxx.h>
 #include <iomanip>
+#include <iosfwd>
 #include <list>
 #include <locale>
+#include <mpfr.h>
 #include <sstream>
 #include <string>
 #include <vector>
-
-#include <cstdio>
-#include <mpfr.h>
-
-#include "flopoco_wrapper.hpp"
-#include "utility.hpp"
 
 using namespace std;
 

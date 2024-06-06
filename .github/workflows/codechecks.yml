@@ -52,8 +52,11 @@ jobs:
     runs-on: [self-hosted]
     env:
       dist-dir: dist
-      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,gcc-8,clang-4,clang-5,clang-6,clang-7,clang-11,clang-12,clang-13,clang-16
+      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,gcc-8,clang-4.0,clang-5.0,clang-6.0,clang-7,clang-11,clang-12,clang-13,clang-16
     steps:
+      - name: Clean workspace
+        shell: bash
+        run: rm -rf .[!.]* *
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -65,11 +68,6 @@ jobs:
           echo "Current host supports ${{env.host_jobs}} parallel jobs"
           echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
           env_id="$(echo $(sed 's/,/\n/g' <<< "${{env.compilers}}" | sort -V) | sed 's/ //g')"
-          if [[ ! -z "${{env.build-compiler}}" ]]; then
-            if [[ "$env_id" != *"${{env.build-compiler}}"* ]]; then
-              env_id+="${{env.build-compiler}}"
-            fi
-          fi
           echo "version=$(cat configure.ac | grep AC_INIT | sed -E 's/.*,(.*),.*/\1/g;s/ //g')" >> $GITHUB_OUTPUT
           echo "env_id=$env_id" >> $GITHUB_OUTPUT
           echo "timestamp=$(date -u +'%Y-%m-%d-%H;%M;%S')" >> $GITHUB_OUTPUT

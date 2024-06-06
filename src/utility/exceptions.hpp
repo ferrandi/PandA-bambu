@@ -45,14 +45,12 @@
  */
 #ifndef EXCEPTIONS_HPP
 #define EXCEPTIONS_HPP
+#include <iostream>
+#include <string>
 
-/// Autoheader include
 #include "config_HAVE_ASSERTS.hpp"
 #include "config_HAVE_PRINT_STACK.hpp"
 
-/// STD include
-#include <iostream>
-#include <string>
 #if HAVE_PRINT_STACK
 #include <cxxabi.h>
 #include <execinfo.h>

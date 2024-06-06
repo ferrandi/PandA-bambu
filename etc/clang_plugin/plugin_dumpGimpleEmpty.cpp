@@ -78,17 +78,15 @@ namespace llvm
                                       cl::value_desc("directory path"));
    cl::opt<std::string> InFileGE("pandaGE-infile", cl::desc("Specify the name of the compiled source file"),
                                  cl::value_desc("filename path"), cl::OneOrMore);
-   struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)
-       : public ModulePass
+   struct dumpGimpleEmpty : public ModulePass
 #if __clang_major__ >= 13
-         ,
-         public PassInfoMixin<CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)>
+       ,
+                            public PassInfoMixin<dumpGimpleEmpty>
 #endif
    {
       static char ID;
 
-      CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)
-      () : ModulePass(ID)
+      dumpGimpleEmpty() : ModulePass(ID)
       {
          initializeLoopInfoWrapperPassPass(*PassRegistry::getPassRegistry());
          initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());
@@ -103,8 +101,7 @@ namespace llvm
       }
 
 #if __clang_major__ >= 13
-      CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)
-      (const CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty) &) : CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)()
+      dumpGimpleEmpty(const dumpGimpleEmpty&) : dumpGimpleEmpty()
       {
       }
 #endif
@@ -189,7 +186,7 @@ namespace llvm
 
       StringRef getPassName() const override
       {
-         return CLANG_VERSION_STRING(_plugin_dumpGimpleEmpty);
+         return "dumpGimpleEmpty";
       }
 
       void getAnalysisUsage(AnalysisUsage& AU) const override
@@ -242,27 +239,27 @@ namespace llvm
 #endif
    };
 
-   char CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)::ID = 0;
+   char dumpGimpleEmpty::ID = 0;
 
 } // namespace llvm
 
 #if !defined(_WIN32)
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)>
-    XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleEmpty), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass",
-          false /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::dumpGimpleEmpty> XPass("dumpGimpleEmpty",
+                                                       "Dump gimple ssa raw format starting from LLVM IR: LLVM pass",
+                                                       false /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 
 #if __clang_major__ >= 13
-llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleEmpty)()
+llvm::PassPluginLibraryInfo getdumpGimpleEmptyPluginInfo()
 {
-   return {LLVM_PLUGIN_API_VERSION, CLANG_VERSION_STRING(_plugin_dumpGimpleEmpty), "v0.12", [](llvm::PassBuilder& PB) {
+   return {LLVM_PLUGIN_API_VERSION, "dumpGimpleEmpty", "v0.12", [](llvm::PassBuilder& PB) {
               const auto load = [](llvm::ModulePassManager& MPM) {
-                 MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)());
+                 MPM.addPass(llvm::dumpGimpleEmpty());
                  return true;
               };
               PB.registerPipelineParsingCallback([&](llvm::StringRef Name, llvm::ModulePassManager& MPM,
                                                      llvm::ArrayRef<llvm::PassBuilder::PipelineElement>) {
-                 if(Name == CLANG_VERSION_STRING(_plugin_dumpGimpleEmpty))
+                 if(Name == "dumpGimpleEmpty")
                  {
                     return load(MPM);
                  }
@@ -281,19 +278,18 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleEmpty)()
 // This part is the new way of registering your pass
 extern "C" ::llvm::PassPluginLibraryInfo LLVM_ATTRIBUTE_WEAK llvmGetPassPluginInfo()
 {
-   return CLANG_PLUGIN_INFO(_plugin_dumpGimpleEmpty)();
+   return getdumpGimpleEmptyPluginInfo();
 }
 #else
 #if ADD_RSP
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
-   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)());
+   PM.add(new llvm::dumpGimpleEmpty());
 }
 
 // These constructors add our pass to a list of global extensions.
-static llvm::RegisterStandardPasses
-    CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyLoader_Ox)(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
+static llvm::RegisterStandardPasses dumpGimpleEmptyLoader_Ox(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
 #endif
 #endif
 
@@ -301,10 +297,10 @@ static llvm::RegisterStandardPasses
 //
 // namespace llvm
 // {
-//    void CLANG_PLUGIN_INIT(_plugin_dumpGimpleEmpty)(PassRegistry&);
+//    void initializedumpGimpleEmptyPass(PassRegistry&);
 // } // namespace llvm
 //
-// INITIALIZE_PASS_BEGIN(CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty), CLANG_VERSION_STRING(_plugin_dumpGimpleEmpty),
+// INITIALIZE_PASS_BEGIN(dumpGimpleEmpty, "dumpGimpleEmpty",
 //                       "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
 // INITIALIZE_PASS_DEPENDENCY(MemoryDependenceWrapperPass)
 // INITIALIZE_PASS_DEPENDENCY(MemorySSAWrapperPass)
@@ -316,5 +312,5 @@ static llvm::RegisterStandardPasses
 // INITIALIZE_PASS_DEPENDENCY(DominatorTreeWrapperPass)
 // INITIALIZE_PASS_DEPENDENCY(DominanceFrontierWrapperPass)
 // INITIALIZE_PASS_DEPENDENCY(OptimizationRemarkEmitterWrapperPass)
-// INITIALIZE_PASS_END(CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty), CLANG_VERSION_STRING(_plugin_dumpGimpleEmpty),
+// INITIALIZE_PASS_END(dumpGimpleEmpty, "dumpGimpleEmpty",
 //                     "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)

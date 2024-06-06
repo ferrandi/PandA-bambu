@@ -11,7 +11,7 @@ ylwrap
 
 aclocal.m4
 autom4te.cache
-autoreconf_log
+autoreconf.log
 autoscan-*.log
 autoscan.log
 compile
@@ -50,6 +50,5 @@ QTCreator-PandA-GitHub.creator.user
 .vscode/
 .env
 build/
-build_release/
 obj/
 panda_dist/

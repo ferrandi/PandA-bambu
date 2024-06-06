@@ -299,7 +299,7 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
           << "cd ${SWD}\n"
           << "if [ ! -z \"$APPDIR\" ]; then LD_LIBRARY_PATH=\"\"; fi\n";
 
-   file_list.push_back(relocate_compiler_path(PANDA_DATA_INSTALLDIR) + "/panda/libmdpi/mdpi.c");
+   file_list.push_back(relocate_install_path(PANDA_DATA_INSTALLDIR "/libmdpi/mdpi.c"));
 
    const auto has_user_elf = Param->isOption(OPT_testbench_input_file) &&
                              starts_with(Param->getOption<std::string>(OPT_testbench_input_file), "elf:");
@@ -362,7 +362,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, std
    const auto extra_compiler_flags = [&]() {
       std::string flags = " -fwrapv -flax-vector-conversions -msse2 -fno-strict-aliasing "
                           "-D__builtin_bambu_time_start\\(\\)= -D__builtin_bambu_time_stop\\(\\)= -D__BAMBU_SIM__";
-      flags += " -isystem " + relocate_compiler_path(PANDA_DATA_INSTALLDIR) + "/panda/libmdpi/include";
+      flags += " -isystem " + relocate_install_path(PANDA_DATA_INSTALLDIR "/libmdpi/include").string();
       if(Param->isOption(OPT_gcc_optimizations))
       {
          const auto gcc_parameters = Param->getOption<CustomSet<std::string>>(OPT_gcc_optimizations);
@@ -383,7 +383,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, std
       cflags.erase(static_cast<size_t>(what[0].first - cflags.c_str()),
                    static_cast<size_t>(what[0].second - what[0].first));
    }
-   beh_cflags += " -isystem " + relocate_compiler_path(PANDA_DATA_INSTALLDIR) + "/panda/libmdpi/include";
+   beh_cflags += " -isystem " + relocate_install_path(PANDA_DATA_INSTALLDIR "/libmdpi/include").string();
    beh_cflags += " -D__M_IPC_FILENAME=\\\\\\\"${M_IPC_FILENAME}\\\\\\\"";
    beh_cflags += " -D__M_OUT_LVL=${OUT_LVL}";
    if(cflags.find("-m32") != std::string::npos)
@@ -444,7 +444,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, std
    const auto tb_extra_cflags =
        Param->isOption(OPT_tb_extra_gcc_options) ? Param->getOption<std::string>(OPT_tb_extra_gcc_options) : "";
 
-   script << "make -f " << relocate_compiler_path(PANDA_DATA_INSTALLDIR) << "/panda/libmdpi/Makefile.mk \\\n"
+   script << "make -f " << relocate_install_path(PANDA_DATA_INSTALLDIR "/libmdpi/Makefile.mk").string() << " \\\n"
           << "  SIM_DIR=\"${SIM_DIR}\" BEH_DIR=\"${BEH_DIR}\" \\\n"
           << "  TOP_FNAME=\"" << top_fname << "\" \\\n"
           << "  MTOP_FNAME=\"" << m_top_fname << "\" \\\n"

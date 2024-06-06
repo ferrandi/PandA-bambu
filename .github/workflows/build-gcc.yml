@@ -12,7 +12,7 @@ on:
       configure:
         description: "GCC configuration options"
         required: false
-        default: "--enable-languages=c,c++,fortran --prefix=/usr --enable-shared --enable-linker-build-id --libexecdir=/usr/lib --without-included-gettext --enable-threads=posix --libdir=/usr/lib --enable-nls --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --enable-gnu-unique-object --disable-vtable-verify --enable-plugin --with-system-zlib --disable-browser-plugin --enable-multiarch --disable-werror --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32,m64,mx32 --enable-multilib --with-tune=generic --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu"
+        default: "--enable-languages=c,c++,fortran --enable-plugin --enable-multilib --with-multilib-list=m32,m64,mx32 --disable-werror --disable-gcov --disable-nls --with-tune=generic --build=x86_64-linux-gnu --host=x86_64-linux-gnu"
       patch:
         description: "Patch to be applied (if necessary)"
         required: false
@@ -53,7 +53,7 @@ jobs:
           jobs: ${{steps.host.outputs.jobs}}
           branch: ${{inputs.gcc_ref}}
           dist-name: gcc-${{inputs.version}}-bambu
-          config-args: -v --with-pkgversion="Ubuntu gcc-${{inputs.version}}-bambu" --with-bugurl="file:///usr/share/doc/gcc-${{inputs.version}}/README.Bugs" --program-suffix=-${{inputs.version}} ${{ inputs.configure }}
+          config-args: -v --with-pkgversion="Ubuntu gcc-${{inputs.version}}-bambu" --program-suffix=-${{inputs.version}} --prefix=/usr --enable-version-specific-runtime-libs ${{ inputs.configure }}
       - name: Upload GCC-${{inputs.version}} dist directory
         shell: bash
         run: |
