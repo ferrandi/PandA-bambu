@@ -652,7 +652,7 @@ AC_SUBST(LIB_SUITESPARSECONFIG)
 ################################# TASTE ################################
 if test "x$panda_USE_TASTE" = xyes; then
    AC_DEFINE(HAVE_TASTE, 1, "Define if TASTE has to be used")
-   AC_DEFINE_UNQUOTED(GRLIB_DIR, "/lib/GRLIB", "Define the GRLIB directory")
+   AC_DEFINE_UNQUOTED(GRLIB_DIR, "${libdir}/GRLIB", "Define the GRLIB directory")
 fi
 AM_CONDITIONAL(BUILD_TASTE, test "x$panda_USE_TASTE" = xyes)
 AM_CONDITIONAL(USE_GRLIB, test "x$panda_USE_TASTE" = xyes)
