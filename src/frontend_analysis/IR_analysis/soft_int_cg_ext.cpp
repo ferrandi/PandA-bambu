@@ -54,7 +54,6 @@
 #include "exceptions.hpp"
 #include "function_behavior.hpp"
 #include "function_frontend_flow_step.hpp"
-#include "hls_device.hpp"
 #include "hls_manager.hpp"
 #include "math_function.hpp"
 #include "string_manipulation.hpp"
@@ -71,8 +70,6 @@ soft_int_cg_ext::soft_int_cg_ext(const application_managerRef AM, const DesignFl
                                  const ParameterConstRef par)
     : ApplicationFrontendFlowStep(AM, SOFT_INT_CG_EXT, dfm, par),
       TreeM(AM->get_tree_manager()),
-      use64bitMul(false),
-      use32bitMul(false),
       doSoftDiv(par->isOption(OPT_hls_div) && par->getOption<std::string>(OPT_hls_div) != "none")
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -94,6 +91,7 @@ soft_int_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::Relationship
          relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(USE_COUNTING, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(CSE_STEP, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
@@ -135,6 +133,10 @@ void soft_int_cg_ext::ComputeRelationships(DesignFlowStepSet& relationships,
 
 DesignFlowStep_Status soft_int_cg_ext::Exec()
 {
+   if(!doSoftDiv)
+   {
+      return DesignFlowStep_Status::UNCHANGED;
+   }
    const tree_manipulationRef tree_man(new tree_manipulation(TreeM, parameters, AppM));
 
    const auto CGMan = AppM->CGetCallGraphManager();
@@ -149,31 +151,6 @@ DesignFlowStep_Status soft_int_cg_ext::Exec()
                      "-->Analyzing function \"" + fname + "\": id = " + STR(function_id));
       const auto fd = GetPointerS<function_decl>(curr_tn);
       const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
-      use64bitMul = false;
-      use32bitMul = false;
-
-      THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_device(), "unexpected condition");
-      const auto hls_d = GetPointer<const HLS_manager>(AppM)->get_HLS_device();
-      if(fname != "__umul64" && fname != "__mul64")
-      {
-         if((hls_d->has_parameter("use_soft_64_mul") && hls_d->get_parameter<size_t>("use_soft_64_mul")) ||
-            (parameters->isOption(OPT_DSP_fracturing) &&
-             parameters->getOption<std::string>(OPT_DSP_fracturing) == "16") ||
-            (parameters->isOption(OPT_DSP_fracturing) &&
-             parameters->getOption<std::string>(OPT_DSP_fracturing) == "32"))
-         {
-            use64bitMul = true;
-         }
-      }
-      if(fname != "__umul32" && fname != "__mul32")
-      {
-         if((hls_d->has_parameter("use_soft_32_mul") && hls_d->get_parameter<size_t>("use_soft_32_mul")) ||
-            (parameters->isOption(OPT_DSP_fracturing) &&
-             parameters->getOption<std::string>(OPT_DSP_fracturing) == "16"))
-         {
-            use32bitMul = true;
-         }
-      }
 
       bool modified = false;
       for(const auto& idx_bb : sl->list_of_bloc)
@@ -280,60 +257,18 @@ bool soft_int_cg_ext::recursive_transform(unsigned int function_id, const tree_n
             }();
 
             if(!div_by_constant && GET_CONST_NODE(expr_type)->get_kind() == integer_type_K &&
-               (bitsize == 32 || bitsize == 64))
+               (bitsize > 16 && bitsize <= 64))
             {
                const auto fu_suffix = be_type == trunc_mod_expr_K ? "mod" : "div";
-               const auto bitsize_str = bitsize == 32 ? "s" : "d";
+               const auto bitsize_str = bitsize <= 32 ? "s" : "d";
                const auto unsignedp = tree_helper::IsUnsignedIntegerType(expr_type);
                const std::string fu_name = "__" + STR(unsignedp ? "u" : "") + fu_suffix + bitsize_str + "i3" +
-                                           ((bitsize0 == 64 && bitsize1 == 32) ? "6432" : "");
+                                           ((bitsize0 > 32 && bitsize1 <= 32) ? "6432" : "");
                const auto called_function = TreeM->GetFunction(fu_name);
                THROW_ASSERT(called_function, "The library miss this function " + fu_name);
                THROW_ASSERT(TreeM->get_implementation_node(called_function->index) != 0,
                             "inconsistent behavioral helper");
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding call to " + fu_name);
-               const std::vector<tree_nodeRef> args = {be->op0, be->op1};
-               const auto ce = tree_man->CreateCallExpr(called_function, args, get_current_srcp());
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced " + STR(current_statement));
-               TreeM->ReplaceTreeNode(current_statement, current_tree_node, ce);
-               CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index,
-                                                       GET_INDEX_CONST_NODE(current_statement),
-                                                       FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---      -> " + STR(current_statement));
-               modified = true;
-            }
-         }
-         else if(be_type == mult_expr_K)
-         {
-            const auto expr_type = tree_helper::CGetType(be->op0);
-            const auto bitsize0 = ceil_pow2(tree_helper::Size(be->op0));
-            const auto bitsize1 = ceil_pow2(tree_helper::Size(be->op1));
-            const auto bitsize2 = ceil_pow2(tree_helper::Size(be->type));
-            const auto bitsizeIN = std::max(bitsize0, bitsize1);
-            const auto bitsize = std::max(bitsizeIN, bitsize2);
-
-            auto doTransf = false;
-            std::string fname;
-            if(use64bitMul && GET_CONST_NODE(expr_type)->get_kind() == integer_type_K && bitsize == 64)
-            {
-               const auto unsignedp = tree_helper::IsUnsignedIntegerType(expr_type);
-               fname = unsignedp ? "__umul64" : "__mul64";
-               doTransf = true;
-            }
-            if(use32bitMul && GET_CONST_NODE(expr_type)->get_kind() == integer_type_K && bitsize == 32 &&
-               bitsizeIN == 32)
-            {
-               const auto unsignedp = tree_helper::IsUnsignedIntegerType(expr_type);
-               fname = unsignedp ? "__umul32" : "__mul32";
-               doTransf = true;
-            }
-            if(doTransf)
-            {
-               const auto called_function = TreeM->GetFunction(fname);
-               THROW_ASSERT(called_function, "The library miss this function " + fname);
-               THROW_ASSERT(AppM->get_tree_manager()->get_implementation_node(called_function->index) != 0,
-                            "inconsistent behavioral helper");
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding call to " + fname);
                const std::vector<tree_nodeRef> args = {be->op0, be->op1};
                const auto ce = tree_man->CreateCallExpr(called_function, args, get_current_srcp());
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced " + STR(current_statement));

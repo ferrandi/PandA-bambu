@@ -68,9 +68,8 @@ class soft_int_cg_ext : public ApplicationFrontendFlowStep
 
    const tree_managerRef TreeM;
 
-   bool use64bitMul;
-   bool use32bitMul;
    bool doSoftDiv;
+
    CustomOrderedSet<unsigned int> fun_id_to_restart;
 
    /**

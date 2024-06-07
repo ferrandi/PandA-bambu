@@ -2132,6 +2132,8 @@ src/frontend_analysis/IR_analysis/loops_analysis_bambu.cpp
 src/frontend_analysis/IR_analysis/loops_analysis_bambu.hpp
 src/frontend_analysis/IR_analysis/lut_transformation.cpp
 src/frontend_analysis/IR_analysis/lut_transformation.hpp
+src/frontend_analysis/IR_analysis/mult_expr_fracturing.cpp
+src/frontend_analysis/IR_analysis/mult_expr_fracturing.hpp
 src/frontend_analysis/IR_analysis/multi_way_if.cpp
 src/frontend_analysis/IR_analysis/multi_way_if.hpp
 src/frontend_analysis/IR_analysis/multiple_entry_if_reduction.cpp

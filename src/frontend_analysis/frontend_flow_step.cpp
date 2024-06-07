@@ -283,6 +283,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "LutTransformation";
       case MULTI_WAY_IF:
          return "MultiWayIf";
+      case(MULT_EXPR_FRACTURING):
+         return "MultExprFracturing";
       case NI_SSA_LIVENESS:
          return "NiSsaLiveness";
       case(OP_CONTROL_DEPENDENCE_COMPUTATION):
