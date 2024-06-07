@@ -700,6 +700,11 @@ jobs:
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
+      - name: Download Clang 13
+        shell: bash
+        run: |
+          mkdir dist
+          bash .devcontainer/library-scripts/compiler-download.sh dist clang-13
       - name: Setup exec script
         id: setup
         shell: bash
@@ -715,6 +720,8 @@ jobs:
           export PATH=\$PWD/bin:\$PATH
           export APPDIR=\$PWD/squashfs-root
           export LD_LIBRARY_PATH=\$APPDIR/usr/lib/:\$APPDIR/lib/x86_64-linux-gnu/
+          rsync -rtpl dist/* /
+          rm -rf dist
           mkdir ${{env.report-dir}}
           echo "test-reports-dir=$PWD/${{env.report-dir}}" >> \$GITHUB_OUTPUT
           ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
