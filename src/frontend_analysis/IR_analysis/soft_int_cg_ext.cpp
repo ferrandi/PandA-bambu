@@ -91,7 +91,10 @@ soft_int_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::Relationship
          relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(USE_COUNTING, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(CSE_STEP, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
+         if(parameters->isOption(OPT_soft_float) && parameters->getOption<bool>(OPT_soft_float))
+         {
+            relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
+         }
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
