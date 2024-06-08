@@ -174,6 +174,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_HOST_PROFILING_BUILT
       case(HOST_PROFILING):
 #endif
+      case MULT_EXPR_FRACTURING:
 #if HAVE_FROM_PRAGMA_BUILT
       case(PRAGMA_ANALYSIS):
 #endif

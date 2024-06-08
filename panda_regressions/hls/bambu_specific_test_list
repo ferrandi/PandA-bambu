@@ -20,4 +20,7 @@ bambu_specific_test/soft_umul2.c --top-fname=soft_umul --generate-tb=a=0x5555555
 bambu_specific_test/soft_mul3.c --top-fname=soft_mul --generate-tb=a=0x5555555555555555,b=0xAAAAAAAAAAAAAAAA --DSP-fracturing=16 --benchmark-name=soft_mul3_F
 bambu_specific_test/soft_umul3.c --top-fname=soft_umul --generate-tb=a=0x5555555555555555,b=0xAAAAAAAAAAAAAAAA --DSP-fracturing=16  --benchmark-name=soft_umul3_F
 gcc_regression_simple/usmul.c --DSP-fracturing=16
+gcc_regression_simple/arith-rand.c --DSP-fracturing=16
+gcc_regression_simple/arith-rand-6432.c --DSP-fracturing=16
+gcc_regression_simple/arith-rand-ll.c --DSP-fracturing=16
 bambu_specific_test/unsafe-fp-assoc-1.c.bambuir --use-raw --pretty-print=output.c
