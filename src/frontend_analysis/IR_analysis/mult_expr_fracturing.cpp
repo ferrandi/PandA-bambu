@@ -31,15 +31,15 @@
  *
  */
 /**
- * @file soft_int_cg_ext.cpp
- * @brief Step that extends the call graph with software implementation of integer operators.
+ * @file mult_expr_fracturing.cpp
+ * @brief Step that replace multiplications with software implementation in case fracturing is requested.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
 
 /// Header include
-#include "soft_int_cg_ext.hpp"
+#include "mult_expr_fracturing.hpp"
 
 #include "Parameter.hpp"
 #include "application_manager.hpp"
@@ -54,6 +54,7 @@
 #include "exceptions.hpp"
 #include "function_behavior.hpp"
 #include "function_frontend_flow_step.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
 #include "math_function.hpp"
 #include "string_manipulation.hpp"
@@ -66,40 +67,31 @@
 
 #include <string>
 
-soft_int_cg_ext::soft_int_cg_ext(const application_managerRef AM, const DesignFlowManagerConstRef dfm,
-                                 const ParameterConstRef par)
-    : ApplicationFrontendFlowStep(AM, SOFT_INT_CG_EXT, dfm, par),
+mult_expr_fracturing::mult_expr_fracturing(const application_managerRef AM, const DesignFlowManagerConstRef dfm,
+                                           const ParameterConstRef par)
+    : ApplicationFrontendFlowStep(AM, MULT_EXPR_FRACTURING, dfm, par),
       TreeM(AM->get_tree_manager()),
-      doSoftDiv(par->isOption(OPT_hls_div) && par->getOption<std::string>(OPT_hls_div) != "none")
+      use64bitMul(false),
+      use32bitMul(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-soft_int_cg_ext::~soft_int_cg_ext() = default;
+mult_expr_fracturing::~mult_expr_fracturing() = default;
 
 const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
-soft_int_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+mult_expr_fracturing::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(USE_COUNTING, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(CSE_STEP, ALL_FUNCTIONS));
-         if(parameters->isOption(OPT_soft_float) && parameters->getOption<bool>(OPT_soft_float))
-         {
-            relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
-         }
+         relationships.insert(std::make_pair(SOFT_INT_CG_EXT, WHOLE_APPLICATION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -114,8 +106,8 @@ soft_int_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::Relationship
    return relationships;
 }
 
-void soft_int_cg_ext::ComputeRelationships(DesignFlowStepSet& relationships,
-                                           const DesignFlowStep::RelationshipType relationship_type)
+void mult_expr_fracturing::ComputeRelationships(DesignFlowStepSet& relationships,
+                                                const DesignFlowStep::RelationshipType relationship_type)
 {
    if(relationship_type == INVALIDATION_RELATIONSHIP)
    {
@@ -134,12 +126,8 @@ void soft_int_cg_ext::ComputeRelationships(DesignFlowStepSet& relationships,
    ApplicationFrontendFlowStep::ComputeRelationships(relationships, relationship_type);
 }
 
-DesignFlowStep_Status soft_int_cg_ext::Exec()
+DesignFlowStep_Status mult_expr_fracturing::Exec()
 {
-   if(!doSoftDiv)
-   {
-      return DesignFlowStep_Status::UNCHANGED;
-   }
    const tree_manipulationRef tree_man(new tree_manipulation(TreeM, parameters, AppM));
 
    const auto CGMan = AppM->CGetCallGraphManager();
@@ -154,6 +142,31 @@ DesignFlowStep_Status soft_int_cg_ext::Exec()
                      "-->Analyzing function \"" + fname + "\": id = " + STR(function_id));
       const auto fd = GetPointerS<function_decl>(curr_tn);
       const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+      use64bitMul = false;
+      use32bitMul = false;
+
+      THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_device(), "unexpected condition");
+      const auto hls_d = GetPointer<const HLS_manager>(AppM)->get_HLS_device();
+      if(fname != "__umul64" && fname != "__mul64")
+      {
+         if((hls_d->has_parameter("use_soft_64_mul") && hls_d->get_parameter<size_t>("use_soft_64_mul")) ||
+            (parameters->isOption(OPT_DSP_fracturing) &&
+             parameters->getOption<std::string>(OPT_DSP_fracturing) == "16") ||
+            (parameters->isOption(OPT_DSP_fracturing) &&
+             parameters->getOption<std::string>(OPT_DSP_fracturing) == "32"))
+         {
+            use64bitMul = true;
+         }
+      }
+      if(fname != "__umul32" && fname != "__mul32")
+      {
+         if((hls_d->has_parameter("use_soft_32_mul") && hls_d->get_parameter<size_t>("use_soft_32_mul")) ||
+            (parameters->isOption(OPT_DSP_fracturing) &&
+             parameters->getOption<std::string>(OPT_DSP_fracturing) == "16"))
+         {
+            use32bitMul = true;
+         }
+      }
 
       bool modified = false;
       for(const auto& idx_bb : sl->list_of_bloc)
@@ -184,8 +197,9 @@ DesignFlowStep_Status soft_int_cg_ext::Exec()
    return fun_id_to_restart.empty() ? DesignFlowStep_Status::UNCHANGED : DesignFlowStep_Status::SUCCESS;
 }
 
-bool soft_int_cg_ext::recursive_transform(unsigned int function_id, const tree_nodeRef& current_tree_node,
-                                          const tree_nodeRef& current_statement, const tree_manipulationRef tree_man)
+bool mult_expr_fracturing::recursive_transform(unsigned int function_id, const tree_nodeRef& current_tree_node,
+                                               const tree_nodeRef& current_statement,
+                                               const tree_manipulationRef tree_man)
 {
    THROW_ASSERT(current_tree_node->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    bool modified = false;
@@ -240,38 +254,37 @@ bool soft_int_cg_ext::recursive_transform(unsigned int function_id, const tree_n
          modified |= recursive_transform(function_id, be->op0, current_statement, tree_man);
          modified |= recursive_transform(function_id, be->op1, current_statement, tree_man);
 
-         if(doSoftDiv && (be_type == exact_div_expr_K || be_type == trunc_div_expr_K || be_type == trunc_mod_expr_K))
+         if(be_type == mult_expr_K)
          {
             const auto expr_type = tree_helper::CGetType(be->op0);
             const auto bitsize0 = ceil_pow2(tree_helper::Size(be->op0));
             const auto bitsize1 = ceil_pow2(tree_helper::Size(be->op1));
-            const auto bitsize = std::max(bitsize0, bitsize1);
+            const auto bitsize2 = ceil_pow2(tree_helper::Size(be->type));
+            const auto bitsizeIN = std::max(bitsize0, bitsize1);
+            const auto bitsize = std::max(bitsizeIN, bitsize2);
 
-            const auto div_by_constant = [&]() {
-               if(GetPointer<const integer_cst>(GET_CONST_NODE(be->op1)))
-               {
-                  const auto cst_val = tree_helper::GetConstValue(be->op1);
-                  if((cst_val & (cst_val - 1)) == 0)
-                  {
-                     return true;
-                  }
-               }
-               return false;
-            }();
-
-            if(!div_by_constant && GET_CONST_NODE(expr_type)->get_kind() == integer_type_K &&
-               (bitsize > 16 && bitsize <= 64))
+            auto doTransf = false;
+            std::string fname;
+            if(use64bitMul && GET_CONST_NODE(expr_type)->get_kind() == integer_type_K && bitsize == 64)
             {
-               const auto fu_suffix = be_type == trunc_mod_expr_K ? "mod" : "div";
-               const auto bitsize_str = bitsize <= 32 ? "s" : "d";
                const auto unsignedp = tree_helper::IsUnsignedIntegerType(expr_type);
-               const std::string fu_name = "__" + STR(unsignedp ? "u" : "") + fu_suffix + bitsize_str + "i3" +
-                                           ((bitsize0 > 32 && bitsize1 <= 32) ? "6432" : "");
-               const auto called_function = TreeM->GetFunction(fu_name);
-               THROW_ASSERT(called_function, "The library miss this function " + fu_name);
-               THROW_ASSERT(TreeM->get_implementation_node(called_function->index) != 0,
+               fname = unsignedp ? "__umul64" : "__mul64";
+               doTransf = true;
+            }
+            if(use32bitMul && GET_CONST_NODE(expr_type)->get_kind() == integer_type_K && bitsize == 32 &&
+               bitsizeIN == 32)
+            {
+               const auto unsignedp = tree_helper::IsUnsignedIntegerType(expr_type);
+               fname = unsignedp ? "__umul32" : "__mul32";
+               doTransf = true;
+            }
+            if(doTransf)
+            {
+               const auto called_function = TreeM->GetFunction(fname);
+               THROW_ASSERT(called_function, "The library miss this function " + fname);
+               THROW_ASSERT(AppM->get_tree_manager()->get_implementation_node(called_function->index) != 0,
                             "inconsistent behavioral helper");
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding call to " + fu_name);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding call to " + fname);
                const std::vector<tree_nodeRef> args = {be->op0, be->op1};
                const auto ce = tree_man->CreateCallExpr(called_function, args, get_current_srcp());
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced " + STR(current_statement));

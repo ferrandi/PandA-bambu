@@ -31,14 +31,14 @@
  *
  */
 /**
- * @file soft_int_cg_ext.hpp
- * @brief Step that extends the call graph with software implementation of integer operators.
+ * @file mult_expr_fracturing.hpp
+ * @brief Step that replace multiplications with software implementation in case fracturing is requested.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-#ifndef SOFT_INT_CG_EXT_HPP
-#define SOFT_INT_CG_EXT_HPP
+#ifndef MULT_EXPR_FRACTURING_HPP
+#define MULT_EXPR_FRACTURING_HPP
 
 /// Superclass include
 #include "application_frontend_flow_step.hpp"
@@ -51,16 +51,17 @@
  * @name forward declarations
  */
 //@{
-REF_FORWARD_DECL(soft_int_cg_ext);
+REF_FORWARD_DECL(mult_expr_fracturing);
 REF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_manipulation);
 REF_FORWARD_DECL(tree_node);
 //@}
 
 /**
- * Add to the call graph the function calls associated with the integer division and modulus operations.
+ * Add to the call graph the function calls associated with the integer multiplication in case multiplication fracturing
+ * is requested.
  */
-class soft_int_cg_ext : public ApplicationFrontendFlowStep
+class mult_expr_fracturing : public ApplicationFrontendFlowStep
 {
  private:
    /// Already visited tree node (used to avoid infinite recursion)
@@ -68,8 +69,8 @@ class soft_int_cg_ext : public ApplicationFrontendFlowStep
 
    const tree_managerRef TreeM;
 
-   bool doSoftDiv;
-
+   bool use64bitMul;
+   bool use32bitMul;
    CustomOrderedSet<unsigned int> fun_id_to_restart;
 
    /**
@@ -95,12 +96,13 @@ class soft_int_cg_ext : public ApplicationFrontendFlowStep
     * @param dfm is the design flow manager
     * @param par is the set of the parameters
     */
-   soft_int_cg_ext(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par);
+   mult_expr_fracturing(const application_managerRef AM, const DesignFlowManagerConstRef dfm,
+                        const ParameterConstRef par);
 
    /**
     * Destructor
     */
-   ~soft_int_cg_ext() override;
+   ~mult_expr_fracturing() override;
 
    /**
     * transform soft int operation into function call

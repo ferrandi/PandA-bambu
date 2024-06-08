@@ -111,6 +111,7 @@
 #include "loops_analysis_bambu.hpp"
 #include "loops_computation.hpp"
 #include "lut_transformation.hpp"
+#include "mult_expr_fracturing.hpp"
 #include "multi_way_if.hpp"
 #include "multiple_entry_if_reduction.hpp" //modified here
 #include "op_cdg_computation.hpp"
@@ -294,6 +295,7 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
 #if HAVE_HOST_PROFILING_BUILT
       case HOST_PROFILING:
 #endif
+      case MULT_EXPR_FRACTURING:
 #if HAVE_FROM_PRAGMA_BUILT
       case PRAGMA_ANALYSIS:
 #endif
@@ -372,6 +374,10 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
          return DesignFlowStepRef(new HostProfiling(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
+      case MULT_EXPR_FRACTURING:
+      {
+         return DesignFlowStepRef(new mult_expr_fracturing(AppM, design_flow_manager.lock(), parameters));
+      }
 #if HAVE_PRAGMA_BUILT
       case PRAGMA_ANALYSIS:
       {
@@ -867,6 +873,7 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
 #if HAVE_HOST_PROFILING_BUILT
       case(HOST_PROFILING):
 #endif
+      case MULT_EXPR_FRACTURING:
 #if HAVE_PRAGMA_BUILT
       case(PRAGMA_ANALYSIS):
 #endif

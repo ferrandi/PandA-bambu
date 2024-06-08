@@ -71,6 +71,7 @@ CompleteCallGraph::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
          relationships.insert(std::make_pair(DATAFLOW_CG_EXT, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(SOFT_INT_CG_EXT, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(MULT_EXPR_FRACTURING, WHOLE_APPLICATION));
          if(parameters->isOption(OPT_soft_float) && parameters->getOption<bool>(OPT_soft_float))
          {
             relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
