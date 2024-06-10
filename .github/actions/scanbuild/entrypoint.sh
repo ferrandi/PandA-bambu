@@ -4,10 +4,10 @@ set -e
 report_dir="$1"
 shift
 args="$@"
-
 workspace_dir="$PWD"
-ccache_dir="$workspace_dir/.ccache"
+dist_dir="$workspace_dir/dist"
 build_dir="$workspace_dir/build"
+ccache_dir="$workspace_dir/.ccache"
 autoconf_cache_dir="$workspace_dir/.autoconf"
 
 function cleanup {
@@ -35,7 +35,7 @@ cat > ~/.ccache/ccache.conf << EOF
 max_size = 5.0G
 cache_dir = $ccache_dir
 EOF
-if [[ -d "$dist_dir" ]]; then
+if [[ -d "$dist_dir" && ! -z "$(ls -A $dist_dir)" ]]; then
    echo "Pre-initialized dist dir found. Installing system wide..."
    rsync -rtpl $dist_dir/* /
    rm -rf $dist_dir/*
