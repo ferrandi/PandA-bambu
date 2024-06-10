@@ -253,7 +253,7 @@ AC_ARG_ENABLE(treegcc,               [  --enable-treegcc             compile tre
 #aid stuff
 AC_ARG_ENABLE(release,             [  --enable-release             compile the source code for release (default enabled)],                                  [panda_RELEASE="$enableval"], [panda_RELEASE="yes"])
 AC_ARG_ENABLE(unordered,           [  --enable-unordered           compile the source code with unordered data structure (default disabled)],               [panda_UNORDERED="$enableval"], [panda_UNORDERED="no"])
-AC_ARG_ENABLE(Werror,              [  --enable-Werror              compile the source code with Werror option; a subset of possible warning is considered], [panda_WERROR="$enableval"])
+AC_ARG_ENABLE(Werror,              [  --enable-Werror              compile the source code with Werror option; a subset of possible warning is considered], [panda_WERROR="$enableval"], [panda_WERROR="yes"])
 AC_ARG_ENABLE(asserts,             [  --disable-asserts            disable most of the runtime check (default enabled)],                                    [panda_ASSERTS="$enableval"], [panda_ASSERTS="yes"])
 AC_ARG_ENABLE(debug,               [  --enable-debug               compile the source code with debug symbols (default disabled)],                          [panda_DEBUG="$enableval"], [panda_DEBUG="no"])
 AC_ARG_ENABLE(opt,                 [  --enable-opt                 compile the source code with -O2 (default enabled) ],                                    [panda_OPT="$enableval"], [panda_OPT="yes"])
@@ -330,11 +330,6 @@ if test "x$panda_USE_BAMBU" != xyes &&  test "x$panda_USE_SPIDER" != xyes && tes
   echo "";
   exit 1;
 fi
-
-if test "x$panda_WERROR" != xno; then
-  panda_WERROR=yes;
-fi
-
 
 
 ################################################################################
@@ -1427,27 +1422,18 @@ all_includes=" -I$BUILDDIR/config_headers"
 ################ Werror checking ##############################
 #Checking should performed at the end since macros for checking boost library does not work with -WError
 if test "x$panda_WERROR" = xyes; then
-   CXXFLAGS+=" \
-   -Wall \
-   -Werror \
-   -Wextra \
-   -Wconversion \
-   -Wno-deprecated \
+   CXXFLAGS+=" -Wall -Werror -Wextra \
+   -Wconversion -Wsign-conversion -Wsign-promo \
    -Winit-self \
-   -Wsign-conversion \
    -Wredundant-decls \
    -Wvla -Wshadow -Wctor-dtor-privacy -Wnon-virtual-dtor -Woverloaded-virtual \
-   -Winit-self \
    -Wpointer-arith \
-   -Wcast-qual \
-   -Wcast-align \
+   -Wcast-qual -Wcast-align \
    -Wdouble-promotion \
    -Wold-style-cast -Wno-error=old-style-cast \
-   -Wsign-promo \
    -Wswitch-enum \
    -Wswitch-default \
-   -Wundef \
-   -Wno-unknown-pragmas"
+   -Wundef "
    AX_CHECK_COMPILE_FLAG("-Wmissing-include-dirs", CXXFLAGS+=" -Wmissing-include-dirs ",,"-Werror") #it is not doing any real test
    AX_CHECK_COMPILE_FLAG("-Wlogical-op", CXXFLAGS+=" -Wlogical-op ",,"-Werror")
    AX_CHECK_COMPILE_FLAG("-Wunused-local-typedefs", CXXFLAGS+=" -Wunused-local-typedefs ",,"-Werror")
@@ -1456,10 +1442,7 @@ if test "x$panda_WERROR" = xyes; then
    AX_CXXFLAGS_GCC_OPTION(-Wuse-after-free,, CXXFLAGS+=" -Wuse-after-free -Wno-error=use-after-free ",)
 
    AX_CHECK_COMPILE_FLAG("-Wpedantic", CXXFLAGS+=" -Wpedantic ",,"-Werror")
-   AX_CHECK_COMPILE_FLAG("-Wmismatched-tags", CXXFLAGS+=" -Wno-mismatched-tags ",,"-Werror")
-   AX_CHECK_COMPILE_FLAG("-Woverlength-strings", CXXFLAGS+=" -Wno-overlength-strings ",,"-Werror")
-   AX_CXXFLAGS_GCC_OPTION(-Wdeprecated-copy,, CXXFLAGS+=" -Wno-deprecated-copy -Wno-error=deprecated-copy ",)
-   AX_CXXFLAGS_GCC_OPTION(-Wunused-but-set-parameter,, CXXFLAGS+=" -Wno-unused-but-set-parameter -Wno-error=unused-but-set-parameter ",)
+   # AX_CHECK_COMPILE_FLAG("-Woverlength-strings", CXXFLAGS+=" -Wno-overlength-strings ",,"-Werror")
 else
    CXXFLAGS+=" -w "
 fi
@@ -1472,18 +1455,15 @@ optlevel=""
 AC_ARG_WITH(opt-level, [  --with-opt-level=<level> set the optimization level with which panda is compiled], [optlevel="$withval" ])
 
 if test "x$optlevel" != x; then
-  CXXFLAGS+=" -O$optlevel "
-  CFLAGS+=" -O$optlevel "
+  CFLAGS+=" -O$optlevel"
+  CXXFLAGS+=" -O$optlevel"
 else
   if test "x$panda_OPT" = xyes; then
-    CXXFLAGS+=" -Ofast -march=native -mtune=native "
-    CFLAGS+=" -Ofast -march=native -mtune=native "
+    CFLAGS+=" -Ofast -march=native -mtune=native"
+    CXXFLAGS+=" -Ofast -march=native -mtune=native"
   else
-    if test "x$panda_WERROR" = xyes; then
-      CXXFLAGS+=" -O1 "
-    else
-      CXXFLAGS+=" -O0 "
-    fi
+    CFLAGS+=" -O1"
+    CXXFLAGS+=" -O1"
   fi
 fi
 
