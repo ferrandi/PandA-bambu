@@ -44,11 +44,11 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wswitch-enum"
 #define USE_SAT 0
-#pragma region needed by mockturtle / algorithms / satlut_mapping.hpp
+// #pragma region needed by mockturtle / algorithms / satlut_mapping.hpp
 #define LIN64
 #define ABC_NAMESPACE pabc
 #define ABC_NO_USE_READLINE
-#pragma endregion
+// #pragma endregion
 #define FMT_HEADER_ONLY 1
 #define PHMAP_BIDIRECTIONAL 0
 #define MCDBGQ_NOLOCKFREE_FREELIST 0
@@ -112,7 +112,7 @@
 #include "tree_reindex.hpp"
 #include <fstream>
 
-#pragma region Macros declaration
+// #pragma region Macros declaration
 
 bool lut_transformation::CHECK_BIN_EXPR_BOOL_SIZE(binary_expr* be) const
 {
@@ -213,9 +213,9 @@ bool lut_transformation::cannotBeLUT(tree_nodeRef op) const
                                      parameters->GetParameter<unsigned int>("MAX_LUT_INT_SIZE"))));
 }
 
-#pragma endregion
+// #pragma endregion
 
-#pragma region Types declaration
+// #pragma region Types declaration
 
 /**
  * `klut_network_ext` class provides operations derived from the one already existing in `mockturtle::klut_network`.
@@ -276,7 +276,7 @@ class klut_network_ext : public mockturtle::klut_network
    }
 
  public:
-#pragma region single - bit operations
+   // #pragma region single - bit operations
    /**
     * Creates a 'greater' or equal operation.
     *
@@ -328,9 +328,9 @@ class klut_network_ext : public mockturtle::klut_network
    {
       return this->create_xor(a, b);
    }
-#pragma endregion
+   // #pragma endregion
 
-#pragma region utilities
+   // #pragma region utilities
 
    std::vector<signal> create_pi_v(size_t size)
    {
@@ -398,9 +398,9 @@ class klut_network_ext : public mockturtle::klut_network
       return create_node(s, tt);
    }
 
-#pragma endregion
+   // #pragma endregion
 
-#pragma region multi - bit operations
+   // #pragma region multi - bit operations
 
    std::vector<signal> create_buf_v(std::vector<signal> const& a)
    {
@@ -513,7 +513,7 @@ class klut_network_ext : public mockturtle::klut_network
       return this->create_not_v(this->create_eq_v(a, b, signedValues));
    }
 
-#pragma endregion
+   // #pragma endregion
 };
 
 /**
@@ -564,7 +564,7 @@ using klut_network_fn = mockturtle::klut_network::signal (klut_network_ext::*)(c
 using klut_network_fn_v = std::vector<mockturtle::klut_network::signal> (klut_network_ext::*)(
     const std::vector<mockturtle::klut_network::signal>&, const std::vector<mockturtle::klut_network::signal>&, bool);
 
-#pragma endregion
+// #pragma endregion
 
 /**
  * Checks whether the provided node is a primary input of lut network.
@@ -1794,7 +1794,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
    return modified;
 }
 
-#pragma region Life cycle
+// #pragma region Life cycle
 
 lut_transformation::lut_transformation(const ParameterConstRef Param, const application_managerRef _AppM,
                                        unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
@@ -1915,6 +1915,6 @@ DesignFlowStep_Status lut_transformation::InternalExec()
    return DesignFlowStep_Status::UNCHANGED;
 }
 
-#pragma endregion
+// #pragma endregion
 
 #pragma GCC diagnostic pop
