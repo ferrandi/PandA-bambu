@@ -1104,7 +1104,7 @@ const std::string Schedule::PrintTimingInformation(const unsigned int statement_
           NumberToString(GetEndingTime(statement_index) - GetStartingTime(statement_index), 2, 7) + ")" + "]";
 }
 
-class StartingTimeSorter : std::binary_function<unsigned int, unsigned int, bool>
+class StartingTimeSorter
 {
  protected:
    /// The starting time

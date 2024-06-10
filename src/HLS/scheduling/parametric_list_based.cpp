@@ -189,7 +189,7 @@ struct resource_ordering_functor
 /**
  * Functor to sort vertex by node name
  */
-class compare_vertex_by_name : std::binary_function<vertex, vertex, bool>
+class compare_vertex_by_name
 {
    const OpGraphConstRef& op_graph;
 
@@ -212,7 +212,7 @@ class compare_vertex_by_name : std::binary_function<vertex, vertex, bool>
 /**
  * The key comparison function for edge-integer set based on levels
  */
-class edge_integer_order_by_map : std::binary_function<vertex, vertex, bool>
+class edge_integer_order_by_map
 {
  private:
    /// Topological sorted vertices

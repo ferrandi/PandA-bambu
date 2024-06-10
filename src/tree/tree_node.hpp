@@ -51,14 +51,13 @@
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_UNORDERED.hpp"
 
-#include <cstddef>    // for size_t
-#include <functional> // for binary_function
-#include <iosfwd>     // for ostream
-#include <list>       // for list
-#include <memory>     // for allocator_traits...
-#include <string>     // for string
-#include <utility>    // for pair
-#include <vector>     // for vector
+#include <cstddef> // for size_t
+#include <iosfwd>  // for ostream
+#include <list>    // for list
+#include <memory>  // for allocator_traits...
+#include <string>  // for string
+#include <utility> // for pair
+#include <vector>  // for vector
 
 #include "custom_map.hpp" // for CustomMap
 #include "custom_set.hpp"
@@ -212,7 +211,7 @@ class tree_node
 using tree_nodeRef = refcount<tree_node>;
 using tree_nodeConstRef = refcount<const tree_node>;
 
-class TreeNodeConstSorter : std::binary_function<tree_nodeConstRef, tree_nodeConstRef, bool>
+class TreeNodeConstSorter
 {
  public:
    /**
@@ -233,7 +232,7 @@ class TreeNodeConstSorter : std::binary_function<tree_nodeConstRef, tree_nodeCon
  * A set of const tree node
  */
 #if HAVE_UNORDERED
-struct TreeNodeConstHash : public std::unary_function<tree_nodeConstRef, size_t>
+struct TreeNodeConstHash
 {
    size_t operator()(tree_nodeConstRef tn) const
    {
@@ -242,7 +241,7 @@ struct TreeNodeConstHash : public std::unary_function<tree_nodeConstRef, size_t>
    }
 };
 
-struct TreeNodeConstEqualTo : public std::binary_function<tree_nodeConstRef, tree_nodeConstRef, bool>
+struct TreeNodeConstEqualTo
 {
  public:
    /**
@@ -278,7 +277,7 @@ class TreeNodeConstSet : public OrderedSetStd<tree_nodeConstRef, TreeNodeConstSo
  * A set of tree node
  */
 #if HAVE_UNORDERED
-struct TreeNodeHash : public std::unary_function<tree_nodeRef, size_t>
+struct TreeNodeHash
 {
    size_t operator()(tree_nodeRef tn) const
    {
@@ -291,7 +290,7 @@ class TreeNodeSet : public UnorderedSetStd<tree_nodeRef, TreeNodeHash, TreeNodeC
 {
 };
 #else
-class TreeNodeSorter : std::binary_function<tree_nodeRef, tree_nodeRef, bool>
+class TreeNodeSorter
 {
  public:
    /**

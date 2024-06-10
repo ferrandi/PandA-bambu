@@ -290,7 +290,7 @@ using HLS_stepRef = refcount<HLS_step>;
 namespace std
 {
    template <>
-   struct hash<HLSFlowStep_Type> : public unary_function<HLSFlowStep_Type, size_t>
+   struct hash<HLSFlowStep_Type>
    {
       size_t operator()(HLSFlowStep_Type step) const
       {
@@ -308,8 +308,6 @@ namespace std
 {
    template <>
    struct hash<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-       : public unary_function<
-             std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>, size_t>
    {
       size_t
       operator()(std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> step) const
@@ -331,7 +329,6 @@ namespace std
 {
    template <>
    struct hash<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>>
-       : public unary_function<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>, size_t>
    {
       size_t operator()(std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> step) const
       {

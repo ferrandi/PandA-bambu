@@ -83,7 +83,7 @@
 #include <boost/graph/incremental_components.hpp>
 #include <cmath>
 
-class OpVertexSchedSorter : std::binary_function<vertex, vertex, bool>
+class OpVertexSchedSorter
 {
  private:
    /// reference to the scheduling

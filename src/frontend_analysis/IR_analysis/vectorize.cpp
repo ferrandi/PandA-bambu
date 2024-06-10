@@ -1091,7 +1091,6 @@ namespace std
 {
    template <>
    struct hash<std::tuple<unsigned int, vertex, unsigned int>>
-       : public unary_function<std::tuple<unsigned int, vertex, unsigned int>, size_t>
    {
       size_t operator()(std::tuple<unsigned int, vertex, unsigned int> value) const
       {

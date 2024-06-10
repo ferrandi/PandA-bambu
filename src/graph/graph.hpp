@@ -1316,7 +1316,7 @@ using EdgeDescriptor = boost::graph_traits<graph>::edge_descriptor;
 namespace std
 {
    template <>
-   struct hash<EdgeDescriptor> : public unary_function<EdgeDescriptor, size_t>
+   struct hash<EdgeDescriptor>
    {
       size_t operator()(EdgeDescriptor edge) const
       {

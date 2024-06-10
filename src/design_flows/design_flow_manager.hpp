@@ -45,7 +45,6 @@
 #include "graph.hpp"    // for vertex, Paramete...
 #include "refcount.hpp" // for REF_FORWARD_DECL
 #include <cstddef>      // for size_t
-#include <functional>   // for binary_function
 #include <set>          // for set
 #include <string>       // for string
 
@@ -63,7 +62,7 @@ REF_FORWARD_DECL(Parameter);
  * The key comparison functor for design flow step; it puts necessary steps before unnecessary ones;
  * in this way steps which depend on unnecessary steps are executed later
  */
-class DesignFlowStepNecessitySorter : std::binary_function<vertex, vertex, bool>
+class DesignFlowStepNecessitySorter
 {
  private:
    /// The design flow graph

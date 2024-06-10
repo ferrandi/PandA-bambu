@@ -130,7 +130,7 @@ class object_visitor
 
 /// functor used to traverse sequences with std::for_each
 template <class T, class visitor_obj>
-class for_each_functor : public std::unary_function<const refcount<T>&, void>
+class for_each_functor
 {
    /// visitor type definition
    using visitor_type = visitor_obj* const;

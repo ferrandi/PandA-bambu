@@ -55,10 +55,9 @@
 #include "graph.hpp"
 #include "refcount.hpp"
 
-#include <deque>      // for deque
-#include <functional> // for binary_function
-#include <iosfwd>     // for ostream, size_t
-#include <typeindex>  // for hash
+#include <deque>     // for deque
+#include <iosfwd>    // for ostream, size_t
+#include <typeindex> // for hash
 
 /**
  * @name forward declarations
@@ -144,7 +143,7 @@ enum class FunctionBehavior_VariableType
 namespace std
 {
    template <>
-   struct hash<FunctionBehavior_VariableAccessType> : public unary_function<FunctionBehavior_VariableAccessType, size_t>
+   struct hash<FunctionBehavior_VariableAccessType>
    {
       size_t operator()(FunctionBehavior_VariableAccessType variable_access_type) const
       {
@@ -160,7 +159,7 @@ namespace std
 namespace std
 {
    template <>
-   struct hash<FunctionBehavior_VariableType> : public unary_function<FunctionBehavior_VariableType, size_t>
+   struct hash<FunctionBehavior_VariableType>
    {
       size_t operator()(FunctionBehavior_VariableType variable_access_type) const
       {
@@ -897,7 +896,7 @@ using FunctionBehaviorConstRef = refcount<const FunctionBehavior>;
 /**
  * The key comparison function for vertices set based on levels
  */
-class op_vertex_order_by_map : std::binary_function<vertex, vertex, bool>
+class op_vertex_order_by_map
 {
  private:
    /// Topological sorted vertices

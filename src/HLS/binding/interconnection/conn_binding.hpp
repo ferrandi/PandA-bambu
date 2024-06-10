@@ -93,7 +93,7 @@ class conn_binding
 #else
 
    /// Sorter for connection
-   struct ConnectionSorter : public std::binary_function<connection, connection, bool>
+   struct ConnectionSorter
    {
       /**
        * Compare position of two connections

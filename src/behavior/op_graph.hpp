@@ -613,7 +613,7 @@ class OpEdgeSet : public CustomUnorderedSet<EdgeDescriptor>
    explicit OpEdgeSet(const OpGraphConstRef op_graph);
 };
 #else
-class OpVertexSorter : std::binary_function<vertex, vertex, bool>
+class OpVertexSorter
 {
  private:
    /// The operation graph to which vertices belong
@@ -664,7 +664,7 @@ class OpVertexMap : public std::map<vertex, value, OpVertexSorter>
    }
 };
 
-class OpEdgeSorter : std::binary_function<EdgeDescriptor, EdgeDescriptor, bool>
+class OpEdgeSorter
 {
  private:
    /// The operation graph to which vertices belong

@@ -50,7 +50,7 @@
 namespace std
 {
    template <typename T>
-   struct hash<std::vector<T>> : public std::unary_function<std::vector<T>, std::size_t>
+   struct hash<std::vector<T>>
    {
       std::size_t operator()(const std::vector<T>& val) const
       {
@@ -63,7 +63,7 @@ namespace std
 namespace std
 {
    template <typename T, typename U>
-   struct hash<std::pair<T, U>> : public std::unary_function<std::pair<T, U>, std::size_t>
+   struct hash<std::pair<T, U>>
    {
       std::size_t operator()(const std::pair<T, U>& val) const
       {

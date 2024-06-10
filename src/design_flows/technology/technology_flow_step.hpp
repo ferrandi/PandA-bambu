@@ -76,7 +76,7 @@ enum class TechnologyFlowStep_Type
 namespace std
 {
    template <>
-   struct hash<TechnologyFlowStep_Type> : public unary_function<TechnologyFlowStep_Type, size_t>
+   struct hash<TechnologyFlowStep_Type>
    {
       size_t operator()(TechnologyFlowStep_Type design_flow_step) const
       {

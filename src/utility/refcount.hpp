@@ -257,7 +257,7 @@ inline T* GetPointerS(const refcount<U>& t)
 namespace std
 {
    template <typename T>
-   struct hash<refcount<T>> : public std::unary_function<refcount<T>, std::size_t>
+   struct hash<refcount<T>>
    {
       std::size_t operator()(const refcount<T>& val) const
       {
@@ -272,7 +272,7 @@ namespace std
  * The key comparison function for refcount
  */
 template <typename T>
-class RefCountOrder : std::binary_function<refcount<T>, refcount<T>, bool>
+class RefCountOrder
 {
  public:
    /**

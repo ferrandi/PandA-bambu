@@ -77,7 +77,7 @@ CONSTREF_FORWARD_DECL(Schedule);
 /**
  * Class used to sort operation using ALAP in ascending order as primary key and ASAP ascending order as secondary key
  */
-class SDCSorter : std::binary_function<vertex, vertex, bool>
+class SDCSorter
 {
  private:
    /// ASAP

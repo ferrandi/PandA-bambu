@@ -211,7 +211,7 @@ inline Dest from_strongtype_cast(Source source)
    namespace std                                                                \
    {                                                                            \
       template <>                                                               \
-      struct hash<NewType> : public unary_function<NewType, size_t>             \
+      struct hash<NewType>                                                      \
       {                                                                         \
          size_t operator()(NewType var) const                                   \
          {                                                                      \

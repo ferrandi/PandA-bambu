@@ -59,7 +59,6 @@
 #include "node_info.hpp"      // for NodeInfo
 #include "refcount.hpp"       // for refcount, Refcou...
 #include <cstddef>            // for size_t
-#include <functional>         // for binary_function
 #include <list>               // for list
 #include <string>             // for string
 #include <utility>            // for pair
@@ -424,7 +423,7 @@ using BBGraphRef = refcount<BBGraph>;
 using BBGraphConstRef = refcount<const BBGraph>;
 
 #if !HAVE_UNORDERED
-class BBVertexSorter : std::binary_function<vertex, vertex, bool>
+class BBVertexSorter
 {
  private:
    /// The basic block graph to which vertices belong
@@ -447,7 +446,7 @@ class BBVertexSorter : std::binary_function<vertex, vertex, bool>
    bool operator()(const vertex x, const vertex y) const;
 };
 
-class BBEdgeSorter : std::binary_function<EdgeDescriptor, EdgeDescriptor, bool>
+class BBEdgeSorter
 {
  private:
    /// The basic block graph to which edges belong
@@ -477,7 +476,7 @@ class BBEdgeSorter : std::binary_function<EdgeDescriptor, EdgeDescriptor, bool>
 /**
  * The key comparison function for vertices set based on levels
  */
-class bb_vertex_order_by_map : std::binary_function<vertex, vertex, bool>
+class bb_vertex_order_by_map
 {
  private:
    /// Topological sorted vertices

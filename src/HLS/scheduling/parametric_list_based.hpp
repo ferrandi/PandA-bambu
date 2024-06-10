@@ -78,7 +78,7 @@ class OpVertexSet;
 using PriorityQueues = std::vector<rehashed_heap<int>>;
 #else
 /// Sorter for connection
-struct PrioritySorter : public std::binary_function<vertex, vertex, bool>
+struct PrioritySorter
 {
    /// The priority
    refcount<priority_data<int>> priority;

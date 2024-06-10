@@ -200,7 +200,7 @@ class generic_obj
 using generic_objRef = refcount<generic_obj>;
 
 #if !HAVE_UNORDERED
-class GenericObjSorter : std::binary_function<generic_objRef, generic_objRef, bool>
+class GenericObjSorter
 {
  public:
    /**
@@ -218,7 +218,7 @@ class GenericObjSorter : std::binary_function<generic_objRef, generic_objRef, bo
 };
 
 class GenericObjUnsignedIntSorter
-    : std::binary_function<std::pair<generic_objRef, unsigned int>, std::pair<generic_objRef, unsigned int>, bool>
+
 {
  public:
    /**

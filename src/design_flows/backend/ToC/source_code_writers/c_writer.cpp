@@ -95,7 +95,6 @@ namespace std
 {
    template <>
    struct hash<std::pair<tree_nodeRef, tree_nodeRef>>
-       : public std::unary_function<std::pair<tree_nodeRef, tree_nodeRef>, std::size_t>
    {
       std::size_t operator()(const std::pair<tree_nodeRef, tree_nodeRef>& val) const
       {
@@ -111,7 +110,6 @@ class TreeNodesPairSet : public CustomUnorderedSet<std::pair<tree_nodeRef, tree_
 };
 #else
 class TreeNodesPairSorter
-    : public std::binary_function<std::pair<tree_nodeRef, tree_nodeRef>, std::pair<tree_nodeRef, tree_nodeRef>, bool>
 {
  public:
    /**

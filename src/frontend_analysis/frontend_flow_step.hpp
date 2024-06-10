@@ -193,7 +193,7 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 namespace std
 {
    template <>
-   struct hash<FrontendFlowStepType> : public unary_function<FrontendFlowStepType, size_t>
+   struct hash<FrontendFlowStepType>
    {
       size_t operator()(FrontendFlowStepType algorithm) const
       {
@@ -312,7 +312,6 @@ namespace std
 {
    template <>
    struct hash<FrontendFlowStep::FunctionRelationship>
-       : public unary_function<FrontendFlowStep::FunctionRelationship, size_t>
    {
       size_t operator()(FrontendFlowStep::FunctionRelationship relationship) const
       {

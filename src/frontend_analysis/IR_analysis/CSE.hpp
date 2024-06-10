@@ -72,7 +72,7 @@ class statement_list;
 namespace std
 {
    template <>
-   struct hash<enum kind> : public unary_function<enum kind, size_t>
+   struct hash<enum kind>
    {
       size_t operator()(enum kind t) const
       {
