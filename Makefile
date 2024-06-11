@@ -52,8 +52,12 @@ appimage: appimage-setup build
 
 ### Scan build
 scan-build: run-configure
-	@make --directory=$(BUILD_DIR)/ext -j$(J)
-	@scan-build$(SCAN_BUILD_VERSION) -v -v -o $(SCAN_BUILD_REPORT_DIR) make --directory=build/src -j$(J)
+	@make --directory=build/ext -j$(J)
+	@scan-build$(SCAN_BUILD_VERSION) -v -v \
+		--use-analyzer=$(shell which clang$(SCAN_BUILD_VERSION)) \
+		--use-cc=$(shell which clang$(SCAN_BUILD_VERSION)) \
+		--use-c++=$(shell which clang++$(SCAN_BUILD_VERSION)) \
+		-o $(SCAN_BUILD_REPORT_DIR) make --directory=build/src -j$(J)
 
 clean:
 	@if [ -e $(BUILD_DIR)/Makefile ]; then make --directory=$(BUILD_DIR) clean; fi

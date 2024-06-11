@@ -2331,7 +2331,6 @@ const std::string CompilerWrapper::AddSourceCodeIncludes(const std::list<std::st
 std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet optimization_set,
                                            const std::string& fname) const
 {
-   const auto& compiler = GetCompiler();
    auto plugin_prefix = add_plugin_prefix(compiler_target);
 
    const auto opt_level = WriteOptimizationLevel(optimization_set == CompilerWrapper_OptimizationSet::O0 ?

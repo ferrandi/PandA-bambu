@@ -70,6 +70,21 @@ REF_FORWARD_DECL(CInitializationLexer);
 #endif
 
 ///Skipping warnings due to bison
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wconversion"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#pragma clang diagnostic ignored "-Wwrite-strings"
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#pragma clang diagnostic ignored "-Wredundant-decls"
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#if __has_warning("-Wunused-but-set-variable")
+#pragma clang diagnostic ignored "-Wunused-but-set-variable"
+#endif
+#if __has_warning("-Wzero-as-null-pointer-constant")
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
+#else
 #pragma GCC diagnostic ignored "-Wconversion"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -78,6 +93,8 @@ REF_FORWARD_DECL(CInitializationLexer);
 #pragma GCC diagnostic ignored "-Wredundant-decls"
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
 
 /**
 * Class declarations

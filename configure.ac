@@ -1444,6 +1444,7 @@ if test "x$panda_WERROR" = xyes; then
    AX_CXXFLAGS_GCC_OPTION(-Wuse-after-free,, CXXFLAGS+=" -Wuse-after-free -Wno-error=use-after-free ",)
 
    AX_CHECK_COMPILE_FLAG("-Wpedantic", CXXFLAGS+=" -Wpedantic ",,"-Werror")
+   AX_CHECK_COMPILE_FLAG("-Wmismatched-tags", CXXFLAGS+=" -Wno-mismatched-tags ",,"-Werror")
    # AX_CHECK_COMPILE_FLAG("-Woverlength-strings", CXXFLAGS+=" -Wno-overlength-strings ",,"-Werror")
 else
    CXXFLAGS+=" -w "

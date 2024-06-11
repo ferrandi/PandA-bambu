@@ -54,6 +54,10 @@
 #pragma clang diagnostic ignored "-Wdouble-promotion"
 #pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
 #pragma clang diagnostic ignored "-Wextra-semi"
+#pragma clang diagnostic ignored "-Wshadow"
+#if __has_warning("-Wdeprecated-builtins")
+#pragma clang diagnostic ignored "-Wdeprecated-builtins"
+#endif
 #else
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-conversion"
@@ -63,12 +67,13 @@
 #pragma GCC diagnostic ignored "-Woverflow"
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
 #pragma GCC diagnostic ignored "-Wstrict-overflow"
+#pragma GCC diagnostic ignored "-Wshadow"
 #endif
 
-#include "absl/container/btree_map.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/container/node_hash_map.h"
-#include "absl/hash/hash.h"
+#include <absl/container/btree_map.h>
+#include <absl/container/flat_hash_map.h>
+#include <absl/container/node_hash_map.h>
+#include <absl/hash/hash.h>
 
 #if defined(__clang__)
 #pragma clang diagnostic pop
