@@ -2554,6 +2554,10 @@ bool tree_manipulation::VersionFunctionCall(const tree_nodeRef& call_node, const
       return false;
    }
    const auto version_fn = CloneFunction(called_fn, version_suffix);
+   auto output_level = parameters->getOption<int>(OPT_output_level);
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "Function call " + call_node->ToString() + " versioned in " +
+                      tree_helper::print_function_name(TreeM, GetPointer<function_decl>(caller_node)));
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call before versioning : " + STR(call_node));
    const auto caller_id = caller_node->index;
    if(ret_val)
