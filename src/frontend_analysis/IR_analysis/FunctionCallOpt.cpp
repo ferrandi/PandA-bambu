@@ -84,6 +84,11 @@ static CustomUnorderedMap<kind, size_t> op_costs = {
     {nop_expr_K, 0},           {ssa_name_K, 0},       {addr_expr_K, 0},         {bit_ior_concat_expr_K, 0},
     {extract_bit_expr_K, 0}};
 
+/**
+ * Generate unique id from call argument list
+ * @param tns list of arguments
+ * @return std::string unique id for the given list of arguments
+ */
 static std::string __arg_suffix(const std::vector<tree_nodeRef>& tns)
 {
    std::stringstream suffix;
@@ -102,6 +107,53 @@ static std::string __arg_suffix(const std::vector<tree_nodeRef>& tns)
    suffix.str(std::string());
    suffix << "_" << std::hex << hash;
    return suffix.str();
+}
+
+/**
+ * Check if given call statement performs a call with all constant arguments
+ * @param call_stmt considered call statement
+ * @return true If all arguments of the call are constants
+ * @return false If any argument is not constant
+ */
+static bool __has_constant_args(const tree_nodeConstRef& call_stmt)
+{
+   const auto all_constant = [](const std::vector<tree_nodeRef>& tns) {
+      for(const auto& tn : tns)
+      {
+         if(!tree_helper::IsConstant(tn))
+         {
+            return false;
+         }
+      }
+      return true;
+   };
+   const auto call_kind = call_stmt->get_kind();
+   if(call_kind == gimple_call_K)
+   {
+      const auto gc = GetPointerS<const gimple_call>(call_stmt);
+      return all_constant(gc->args);
+   }
+   else if(call_kind == gimple_assign_K)
+   {
+      const auto ga = GetPointerS<const gimple_assign>(call_stmt);
+      THROW_ASSERT(ga->op1->get_kind() == call_expr_K, "");
+      const auto ce = GetPointerS<const call_expr>(ga->op1);
+      return all_constant(ce->args);
+   }
+   THROW_UNREACHABLE("Expected call statement: " + tree_node::GetString(call_kind) + " - " + STR(call_stmt));
+   return false;
+}
+
+/**
+ * Check if a gimple node has virtual SSA variables
+ *
+ * @param gn gimple_node to check
+ * @return true if vdef/vuse/vovers are found
+ * @return false if no vdef/vuse/vovers are found
+ */
+static bool __has_virtuals(const gimple_node* gn)
+{
+   return gn->vdef || gn->vuses.size() || gn->vovers.size();
 }
 
 FunctionCallOpt::FunctionCallOpt(const ParameterConstRef Param, const application_managerRef _AppM,
@@ -267,8 +319,8 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
       tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
       for(const auto& stmt_opt : opt_stmts->second)
       {
-         const auto& stmt_id = std::get<0>(stmt_opt);
-         const auto& opt_type = std::get<1>(stmt_opt);
+         const auto stmt_id = std::get<0>(stmt_opt);
+         const auto opt_type = std::get<1>(stmt_opt);
          const auto stmt = TM->GetTreeNode(stmt_id);
          if(stmt)
          {
@@ -414,6 +466,23 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                const auto caller_fd = GetPointerS<const function_decl>(caller_node);
                THROW_ASSERT(caller_fd->body, "");
                const auto caller_sl = GetPointerS<const statement_list>(caller_fd->body);
+               const auto is_unique_bb_call = [&](const gimple_node* gn) -> bool {
+                  THROW_ASSERT(caller_sl->list_of_bloc.count(gn->bb_index),
+                               "BB" + STR(gn->bb_index) + " not found in function " +
+                                   tree_helper::GetMangledFunctionName(caller_fd));
+                  const auto& bb = caller_sl->list_of_bloc.at(gn->bb_index);
+                  for(const auto& tn : bb->CGetStmtList())
+                  {
+                     if(tn->index != gn->index &&
+                        (tn->get_kind() == gimple_call_K ||
+                         (tn->get_kind() == gimple_assign_K &&
+                          GetPointerS<const gimple_assign>(tn)->op1->get_kind() == call_expr_K)))
+                     {
+                        return false;
+                     }
+                  }
+                  return true;
+               };
                if(omp_simd_enabled)
                {
                   const auto caller_has_simd = tree_helper::has_omp_simd(caller_sl);
@@ -432,62 +501,44 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "Analysing direct call point " + STR(call_stmt));
                   const auto call_gn = GetPointerS<const gimple_node>(call_stmt);
-                  if(call_gn->vdef || call_gn->vuses.size() || call_gn->vovers.size())
+                  const auto may_resolve_to_const =
+                      __has_constant_args(call_stmt) && loop_count == 0 && body_cost <= inline_max_cost;
+                  if(__has_virtuals(call_gn))
                   {
                      // TODO: alias analysis is not able to handle inlining yet
                      all_inlined = false;
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---Call statement carries alias dependencies, skipping...");
+                                    "---Virtual SSA handling not yet implemented, skipping...");
                      continue;
                   }
-                  if(inline_funciton)
+                  if(inline_funciton || may_resolve_to_const)
                   {
-                     if(!omp_simd_enabled || loop_count == 0)
-                     {
-                        const auto is_unique_bb_call = [&]() -> bool {
-                           THROW_ASSERT(caller_sl->list_of_bloc.count(call_gn->bb_index),
-                                        "BB" + STR(call_gn->bb_index) + " not found in function " +
-                                            tree_helper::GetMangledFunctionName(caller_fd) + " (" + STR(call_id) + ")");
-                           const auto bb = caller_sl->list_of_bloc.at(call_gn->bb_index);
-                           for(const auto& tn : bb->CGetStmtList())
-                           {
-                              if(tn->index != call_gn->index &&
-                                 (tn->get_kind() == gimple_call_K ||
-                                  (tn->get_kind() == gimple_assign_K &&
-                                   GetPointerS<const gimple_assign>(tn)->op1->get_kind() == call_expr_K)))
-                              {
-                                 return false;
-                              }
-                           }
-                           return true;
-                        }();
-                        if(is_unique_bb_call || loop_count == 0)
-                        {
-                           opt_call[caller_id].insert(std::make_pair(call_id, FunctionOptType::INLINE));
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                          "---" +
-                                              STR(always_inline.count(function_id) ? "Always inline function" :
-                                                                                     "Low body cost function") +
-                                              ", inlining required");
-                           continue;
-                        }
-                        else
-                        {
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                          "---BB" + STR(call_gn->bb_index) + " from function " +
-                                              tree_helper::GetMangledFunctionName(caller_fd) +
-                                              " has multiple call points, skipping...");
-                        }
-                     }
-                     else
+                     if(omp_simd_enabled && loop_count > 0)
                      {
                         INDENT_DBG_MEX(
                             DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                             "---Inlining of functions with internal loops disabled with OpenMP, skipping...");
+                        continue;
+                     }
+                     if(loop_count == 0 || is_unique_bb_call(call_gn))
+                     {
+                        opt_call[caller_id].insert(std::make_pair(call_id, FunctionOptType::INLINE));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---" +
+                                           STR(always_inline.count(function_id) ? "Always inline function" :
+                                                                                  "Low body cost function") +
+                                           ", inlining required");
+                        continue;
+                     }
+                     else
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---BB" + STR(call_gn->bb_index) + " from function " +
+                                           tree_helper::GetMangledFunctionName(caller_fd) +
+                                           " has multiple call points, skipping...");
                      }
                   }
-                  const auto all_const_args = HasConstantArgs(TM->GetTreeNode(call_id));
-                  if(all_const_args && loop_count == 0)
+                  if(may_resolve_to_const)
                   {
                      opt_call[caller_id].insert(std::make_pair(call_id, FunctionOptType::VERSION));
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -538,35 +589,6 @@ void FunctionCallOpt::RequestCallOpt(const tree_nodeConstRef& call_stmt, unsigne
 #endif
    THROW_ASSERT(is_call, "Statement does not contain a call");
    opt_call[caller_id].insert(std::make_pair(call_stmt->index, opt));
-}
-
-bool FunctionCallOpt::HasConstantArgs(const tree_nodeConstRef& call_stmt)
-{
-   const auto all_constant = [](const std::vector<tree_nodeRef>& tns) {
-      for(const auto& tn : tns)
-      {
-         if(!tree_helper::IsConstant(tn))
-         {
-            return false;
-         }
-      }
-      return true;
-   };
-   const auto call_kind = call_stmt->get_kind();
-   if(call_kind == gimple_call_K)
-   {
-      const auto gc = GetPointerS<const gimple_call>(call_stmt);
-      return all_constant(gc->args);
-   }
-   else if(call_kind == gimple_assign_K)
-   {
-      const auto ga = GetPointerS<const gimple_assign>(call_stmt);
-      THROW_ASSERT(ga->op1->get_kind() == call_expr_K, "");
-      const auto ce = GetPointerS<const call_expr>(ga->op1);
-      return all_constant(ce->args);
-   }
-   THROW_UNREACHABLE("Expected call statement: " + tree_node::GetString(call_kind) + " - " + STR(call_stmt));
-   return false;
 }
 
 size_t FunctionCallOpt::compute_cost(const statement_list* body, bool& has_simd)
