@@ -81,14 +81,6 @@ class FunctionCallOpt : public FunctionFrontendFlowStep
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
-    * Check if given call statement performs a call with all constant arguments
-    * @param call_stmt considered call statement
-    * @return true If all arguments of the call are constants
-    * @return false If any argument is not constant
-    */
-   static bool HasConstantArgs(const tree_nodeConstRef& call_stmt);
-
-   /**
     * Compute function body cost based on statements' types
     * @param body function body to be considered
     * @return size_t Cost value
