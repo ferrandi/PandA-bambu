@@ -240,9 +240,10 @@ void Bit_Value_opt::propagateValue(const tree_managerRef& TM, const tree_nodeRef
 )
 {
    THROW_ASSERT(old_val->get_kind() == ssa_name_K, "unexpected condition");
-   THROW_ASSERT(tree_helper::Size(old_val) >= tree_helper::Size(new_val),
-                "unexpected case " + STR(old_val) + " " + STR(new_val) + " old-bw=" + STR(tree_helper::Size(old_val)) +
-                    " new-bw=" + STR(tree_helper::Size(new_val)) + " from " + callSiteString);
+   THROW_ASSERT(tree_helper::IsConstant(new_val) || tree_helper::Size(old_val) >= tree_helper::Size(new_val),
+                "unexpected case " + STR(old_val) + "(bw: " + STR(tree_helper::Size(old_val)) +
+                    ", bv: " + GetPointerS<ssa_name>(old_val)->bit_values + ") " + STR(new_val) +
+                    "(bw: " + STR(tree_helper::Size(new_val)) + ")\n        " + callSiteString);
    const auto old_uses = GetPointerS<ssa_name>(old_val)->CGetUseStmts();
    for(const auto& [user, use_count] : old_uses)
    {
@@ -293,11 +294,11 @@ void Bit_Value_opt::optimize(const function_decl* fd, const tree_managerRef& TM,
    for(const auto& idx_bb : sl->list_of_bloc)
    {
       const auto& B = idx_bb.second;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(B->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(B->number));
       const auto list_of_stmt = B->CGetStmtList();
       for(const auto& stmt : list_of_stmt)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + stmt->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing statement " + stmt->ToString());
          if(!AppM->ApplyNewTransformation())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -636,11 +637,9 @@ void Bit_Value_opt::optimize(const function_decl* fd, const tree_managerRef& TM,
                    TM->CreateUniqueIntegerCst((1LL << (ssa->bit_values.size() - 1)) - 1, lhs_type);
                const auto band_expr = IRman->create_binary_operation(lhs_type, rhs_node, bit_mask_constant_node,
                                                                      srcp_default, bit_and_expr_K);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---replace ssa usage before: " + stmt->ToString());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---before: " + stmt->ToString());
                TM->ReplaceTreeNode(stmt, rhs_node, band_expr);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---replace ssa usage after: " + stmt->ToString());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---after : " + stmt->ToString());
                modified = true;
                ga->keep = true; /// this prevent an infinite loop with CSE
             }
@@ -2649,13 +2648,11 @@ void Bit_Value_opt::optimize(const function_decl* fd, const tree_managerRef& TM,
             }
          }
 
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Statement analyzed " + stmt->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement " + stmt->ToString());
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--BB analyzed " + STR(B->number));
       for(const auto& phi : B->CGetPhiList())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Phi operation " + phi->ToString());
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Phi index: " + STR(phi->index));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing phi " + phi->ToString());
          const auto pn = GetPointerS<gimple_phi>(phi);
          if(!pn->virtual_flag)
          {
@@ -2677,6 +2674,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, const tree_managerRef& TM,
                }
             }
          }
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed phi " + phi->ToString());
       }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(B->number));
    }
 }
