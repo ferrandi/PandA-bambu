@@ -116,6 +116,7 @@ DesignFlowStep_Status generate_hdl::Exec()
       top_circuits.push_back(HLSMgr->get_HLS(top_fnode->index)->top->get_circ());
    }
 
-   HM.hdl_gen(file_name, top_circuits, HLSMgr->hdl_files, HLSMgr->aux_files, false);
+   const auto generate_bambu_lib = parameters->getOption<bool>(OPT_generate_components_library);
+   HM.hdl_gen(file_name, top_circuits, HLSMgr->hdl_files, HLSMgr->aux_files, !generate_bambu_lib);
    return DesignFlowStep_Status::SUCCESS;
 }

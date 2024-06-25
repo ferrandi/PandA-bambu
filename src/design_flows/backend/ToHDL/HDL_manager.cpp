@@ -54,6 +54,7 @@
 #include "fileIO.hpp"
 #include "generic_device.hpp"
 #include "hls_manager.hpp"
+#include "library_manager.hpp"
 #include "string_manipulation.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
@@ -218,10 +219,9 @@ std::string HDL_manager::write_components(const std::string& filename, HDLWriter
 }
 
 void HDL_manager::write_components(const std::string& filename, const std::list<structural_objectRef>& components,
-                                   std::list<std::string>& hdl_files, std::list<std::string>& aux_files, bool tb)
+                                   std::list<std::string>& hdl_files, std::list<std::string>& aux_files,
+                                   bool unique_out)
 {
-   bool multiFileP =
-       !tb && parameters->IsParameter("enable-multifiles") && parameters->GetParameter<bool>("enable-multifiles");
    /// default language
    auto language = parameters->getOption<HDLWriter_Language>(OPT_writer_language);
 
@@ -246,122 +246,81 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
    }
 
    /// determine the proper language for each component
-   std::map<HDLWriter_Language, std::list<structural_objectRef>> component_language;
+   std::map<HDLWriter_Language, std::list<structural_objectRef>> hdl_comp, aux_comp;
    for(const auto& component : components)
    {
-      auto* mod = GetPointer<module>(component);
+      const auto mod = GetPointer<module>(component);
       THROW_ASSERT(mod, "Expected a component object");
+      const auto n_elements = mod->get_internal_objects_size();
+      const auto np = mod->get_NP_functionality();
 
-      unsigned int n_elements = mod->get_internal_objects_size();
-
-      const NP_functionalityRef np = mod->get_NP_functionality();
-
-      if(n_elements || (np && (np->exist_NP_functionality(type) ||
-                               (language == HDLWriter_Language::VERILOG &&
-                                np->exist_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED)) ||
-                               (language == HDLWriter_Language::VHDL &&
-                                np->exist_NP_functionality(NP_functionality::VHDL_PROVIDED)))))
+      HDLWriter_Language comp_language = language;
+      if(!n_elements && np)
       {
-         component_language[language].push_back(component);
-      }
-      else
-      {
-         if(np and
-            (np->exist_NP_functionality(NP_functionality::FSM) or np->exist_NP_functionality(NP_functionality::FSM_CS)))
+         const auto has_verilog = np->exist_NP_functionality(NP_functionality::VERILOG_PROVIDED) ||
+                                  np->exist_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED);
+         const auto has_vhdl = np->exist_NP_functionality(NP_functionality::VHDL_PROVIDED) ||
+                               np->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) ||
+                               np->exist_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED);
+         if(np->exist_NP_functionality(type) || (language == HDLWriter_Language::VERILOG && has_verilog) ||
+            (language == HDLWriter_Language::VHDL && has_vhdl) || np->exist_NP_functionality(NP_functionality::FSM) ||
+            np->exist_NP_functionality(NP_functionality::FSM_CS))
          {
-            component_language[language].push_back(component);
+            comp_language = language;
          }
-         else if(np && (np->exist_NP_functionality(NP_functionality::VERILOG_PROVIDED) ||
-                        np->exist_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED)))
+         else if(has_verilog)
          {
-            if(!parameters->getOption<bool>(OPT_mixed_design))
-            {
-               THROW_ERROR("VHDL implementation of " + component->get_path() + " is not available");
-            }
-            component_language[HDLWriter_Language::VERILOG].push_back(component);
+            comp_language = HDLWriter_Language::VERILOG;
          }
-         else if(np && (np->exist_NP_functionality(NP_functionality::VHDL_PROVIDED) ||
-                        np->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) ||
-                        np->exist_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED)))
+         else if(has_vhdl)
          {
-            if(!parameters->getOption<bool>(OPT_mixed_design))
-            {
-               THROW_ERROR("Verilog implementation of " + component->get_path() + " is not available");
-            }
-            else
-            {
-               THROW_WARNING(component->get_path() + " is available only in VHDL");
-            }
-            component_language[HDLWriter_Language::VHDL].push_back(component);
+            comp_language = HDLWriter_Language::VHDL;
          }
-         else if(np && np->exist_NP_functionality(NP_functionality::SYSTEM_VERILOG_PROVIDED))
+         else if(np->exist_NP_functionality(NP_functionality::SYSTEM_VERILOG_PROVIDED))
          {
-            component_language[HDLWriter_Language::SYSTEM_VERILOG].push_back(component);
+            comp_language = HDLWriter_Language::SYSTEM_VERILOG;
          }
          else
          {
             THROW_ERROR("Language not supported! Module " + mod->get_path());
          }
       }
-   }
-
-   /// generate the auxiliary files
-   for(auto l = component_language.begin(); l != component_language.end(); ++l)
-   {
-      if(language == l->first)
+      const auto library = TM->get_library(component->get_typeRef()->id_type);
+      if(unique_out || library.empty() || !starts_with(library, "STD"))
       {
-         continue;
-      }
-      if(multiFileP)
-      {
-         language_writerRef writer = language_writer::create_writer(l->first, TM, parameters);
-         for(const auto& c : component_language[l->first])
-         {
-            std::list<structural_objectRef> singletonList;
-            singletonList.push_back(c);
-            std::string mod_name = convert_to_identifier(writer.get(), GET_TYPE_NAME(c));
-            std::string generated_filename = write_components(mod_name, l->first, singletonList, aux_files);
-            aux_files.push_back(generated_filename);
-         }
+         hdl_comp[comp_language].push_back(component);
       }
       else
       {
-         std::string generated_filename = write_components(filename, l->first, component_language[l->first], aux_files);
+         aux_comp[comp_language].push_back(component);
+      }
+   }
+
+   for(auto& [lang, comps] : aux_comp)
+   {
+      auto writer = language_writer::create_writer(lang, TM, parameters);
+      auto lib_dir = "bambu_lib/" + writer->get_name() + "/";
+      std::filesystem::create_directories(lib_dir);
+      for(auto& comp : comps)
+      {
+         auto mod_name = lib_dir + convert_to_identifier(writer.get(), GET_TYPE_NAME(comp));
+         auto generated_filename = write_components(mod_name, lang, {comp}, aux_files);
          aux_files.push_back(generated_filename);
       }
    }
 
-   if(multiFileP)
+   for(auto& [lang, comps] : hdl_comp)
    {
-      language_writerRef writer = language_writer::create_writer(language, TM, parameters);
-
-      auto counter = component_language[language].size();
-      for(const auto& c : component_language[language])
+      auto writer = language_writer::create_writer(lang, TM, parameters);
+      auto generated_filename = write_components(filename, lang, comps, aux_files);
+      if(lang == language)
       {
-         --counter;
-         std::list<structural_objectRef> singletonList;
-         singletonList.push_back(c);
-         std::string mod_name = convert_to_identifier(writer.get(), GET_TYPE_NAME(c));
-         if(counter == 0)
-         {
-            mod_name = filename;
-         }
-         std::string generated_filename = write_components(mod_name, language, singletonList, aux_files);
-         if(counter == 0)
-         {
-            hdl_files.push_back(generated_filename);
-         }
-         else
-         {
-            aux_files.push_back(generated_filename);
-         }
+         hdl_files.push_back(generated_filename);
       }
-   }
-   else
-   {
-      std::string complete_filename = write_components(filename, language, component_language[language], aux_files);
-      /// add the generated file to the global list
-      hdl_files.push_back(complete_filename);
+      else
+      {
+         aux_files.push_back(generated_filename);
+      }
    }
 
 #if HAVE_FLOPOCO
@@ -375,7 +334,7 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
 }
 
 void HDL_manager::hdl_gen(const std::string& filename, const std::list<structural_objectRef>& cirs,
-                          std::list<std::string>& hdl_files, std::list<std::string>& aux_files, bool tb)
+                          std::list<std::string>& hdl_files, std::list<std::string>& aux_files, bool unique_out)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                  "  compute the list of components for which a structural description exists");
@@ -398,7 +357,7 @@ void HDL_manager::hdl_gen(const std::string& filename, const std::list<structura
    }
 
    /// generate the HDL descriptions for all the components
-   write_components(filename, list_of_com, hdl_files, aux_files, tb);
+   write_components(filename, list_of_com, hdl_files, aux_files, unique_out);
 }
 
 /**

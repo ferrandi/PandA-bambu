@@ -102,7 +102,7 @@ class xml_element;
        mentor_root)(mentor_modelsim_bin)(mentor_optimizer)(verilator)(verilator_timescale_override)(                   \
        verilator_parallel)(altera_root)(quartus_settings)(quartus_13_settings)(quartus_13_64bit)(nanoxplore_root)(     \
        nanoxplore_settings)(nanoxplore_bypass)(shared_input_registers)(inline_functions)(function_constraints)(        \
-       resource_constraints)(axi_burst_type)
+       resource_constraints)(axi_burst_type)(generate_components_library)
 
 #define FRAMEWORK_OPTIONS                                                                                            \
    (benchmark_name)(cat_args)(find_max_transformations)(max_transformations)(compatible_compilers)(compute_size_of)( \

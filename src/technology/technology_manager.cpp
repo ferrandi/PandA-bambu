@@ -201,12 +201,7 @@ void technology_manager::add(const technology_nodeRef curr, const std::string& L
    auto it = std::find(libraries.begin(), libraries.end(), Library);
    if(it == libraries.end())
    {
-      bool std = true;
-      if(Library == CG_LIBRARY || Library == DESIGN)
-      {
-         std = false;
-      }
-      library_managerRef lib(new library_manager(Library, Param, std));
+      library_managerRef lib(new library_manager(Library, Param, true));
       library_map[Library] = lib;
       libraries.push_back(Library);
    }
