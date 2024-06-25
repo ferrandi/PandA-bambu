@@ -226,6 +226,7 @@
 #define OPT_SHARED_INPUT_REGISTERS (1 + OPT_NANOXPLORE_BYPASS)
 #define OPT_INLINE_FUNCTIONS (1 + OPT_SHARED_INPUT_REGISTERS)
 #define OPT_AXI_BURST_TYPE (1 + OPT_INLINE_FUNCTIONS)
+#define OPT_GENERATE_COMPONENTS_LIBRARY (1 + OPT_AXI_BURST_TYPE)
 
 /// constant correspond to the "parametric list based option"
 #define PAR_LIST_BASED_OPT "parametric-list-based"
@@ -876,6 +877,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << std::endl;
    // options defining where backend tools could be found
    os << "  Backend configuration:\n\n"
+      << "    --generate-components-library\n"
+      << "        Export standard Bambu RTL components as a separate library"
       << "    --mentor-visualizer\n"
       << "        Simulate the RTL implementation and then open Mentor Visualizer.\n"
       << "        (Mentor root has to be correctly set, see --mentor-root)\n\n"
@@ -1095,6 +1098,7 @@ int BambuParameter::Exec()
       {"verilator-parallel", optional_argument, nullptr, OPT_VERILATOR_PARALLEL},
       {"shared-input-registers", no_argument, nullptr, OPT_SHARED_INPUT_REGISTERS},
       {"inline-fname", required_argument, nullptr, OPT_INLINE_FUNCTIONS},
+      {"generate-components-library", no_argument, nullptr, OPT_GENERATE_COMPONENTS_LIBRARY},
       GCC_LONG_OPTIONS,
       {nullptr, 0, nullptr, 0}
    };
@@ -2122,6 +2126,11 @@ int BambuParameter::Exec()
          case OPT_INLINE_FUNCTIONS:
          {
             setOption(OPT_inline_functions, std::string(optarg));
+            break;
+         }
+         case OPT_GENERATE_COMPONENTS_LIBRARY:
+         {
+            setOption(OPT_generate_components_library, true);
             break;
          }
          case 0:
@@ -3736,6 +3745,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_evaluation_mode, Evaluation_Mode::NONE);
    setOption(OPT_evaluation_objectives, "");
 
+   setOption(OPT_generate_components_library, false);
    setOption(OPT_altera_root, "/opt/altera" STR_CST_string_separator "/opt/intelFPGA");
    setOption(OPT_lattice_root, "/opt/diamond" STR_CST_string_separator "/usr/local/diamond");
    setOption(OPT_mentor_root, "/opt/mentor");
