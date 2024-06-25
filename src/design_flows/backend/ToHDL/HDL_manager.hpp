@@ -122,7 +122,7 @@ class HDL_manager
     * Determines the proper language for each component and generates the corresponding HDL descriptions
     */
    void write_components(const std::string& filename, const std::list<structural_objectRef>& components,
-                         std::list<std::string>& hdl_files, std::list<std::string>& aux_files, bool tb);
+                         std::list<std::string>& hdl_files, std::list<std::string>& aux_files, bool unique_out);
 
    /**
     * Writes the module description.
@@ -201,9 +201,10 @@ class HDL_manager
     * @param cirs are the structural objects representing the components to be generated
     * @param the created files (file_name + other files)
     * @param the created aux files
+    * @param single_file generate a unique output file with all components
     */
    void hdl_gen(const std::string& filename, const std::list<structural_objectRef>& cirs,
-                std::list<std::string>& hdl_files, std::list<std::string>& aux_files, bool tb);
+                std::list<std::string>& hdl_files, std::list<std::string>& aux_files, bool unique_out = false);
 
    /**
     * Converts a generic string to a language compliant identifier

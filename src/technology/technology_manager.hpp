@@ -41,10 +41,6 @@
  */
 #ifndef TECHNOLOGY_MANAGER_HPP
 #define TECHNOLOGY_MANAGER_HPP
-
-/// Autoheader include
-#include "config_HAVE_CIRCUIT_BUILT.hpp"
-
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "refcount.hpp"
@@ -54,8 +50,8 @@
 #include <string>
 #include <vector>
 
-/// working library.
-#define DESIGN std::string("design")
+#include "config_HAVE_CIRCUIT_BUILT.hpp"
+
 /// working library.
 #define WORK_LIBRARY std::string("work")
 /// OpenMP library
@@ -68,8 +64,6 @@
 #define LIBRARY_STD std::string("STD")
 /// standard library where all standard HLS resources are defined
 #define LIBRARY_STD_FU std::string("STD_FU")
-/// compound gates
-#define CG_LIBRARY std::string("CG")
 /// standard library for parallel controller
 #define LIBRARY_PC std::string("STD_PC")
 /// standard library for dataflow interface modules
