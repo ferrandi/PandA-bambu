@@ -288,16 +288,16 @@ int main(int argc, char* argv_orig[])
          std::string raw_file_name;
          if(Param->isOption(OPT_compress_archive))
          {
-            auto archive_file = Param->getOption<std::string>(OPT_compress_archive);
-            std::string fname = archive_file.substr(0, archive_file.find('.'));
-            fname = fname + ".o";
+            const auto archive_file = Param->getOption<std::filesystem::path>(OPT_compress_archive);
+            auto temp_obj = Param->getOption<std::filesystem::path>(OPT_output_temporary_directory) /
+                            archive_file.filename().replace_extension(".o");
             {
-               fileIO_ostreamRef raw_file = fileIO_ostream_open(fname);
+               fileIO_ostreamRef raw_file = fileIO_ostream_open(temp_obj.string());
                PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Dumping Tree-Manager");
-               (*raw_file) << TM;
+               TM->print(*raw_file);
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Dumped Tree-Manager");
             }
-            std::string command = "ar cru " + archive_file + " " + fname;
+            std::string command = "ar cru " + archive_file.string() + " " + temp_obj.string();
             // std::cout << command << std::endl;
             int ret = PandaSystem(Param, command);
             if(IsError(ret))
@@ -317,7 +317,7 @@ int main(int argc, char* argv_orig[])
             }
             fileIO_ostreamRef raw_file = fileIO_ostream_open(raw_file_name);
             PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Dumping Tree-Manager");
-            (*raw_file) << TM;
+            TM->print(*raw_file);
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Dumped Tree-Manager");
          }
       }
