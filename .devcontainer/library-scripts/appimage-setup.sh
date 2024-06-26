@@ -77,10 +77,10 @@ cat > ${pkg_dir}/usr/bin/tool_select.sh << EOF
 export LC_ALL="C"
 unset PYTHONHOME  # Python is not bundled with this AppImage
 unset PYTHONPATH
-BINARY_NAME=\$(basename "\$ARGV0")
-BINARY_PATH="\$APPDIR/usr/bin/\$BINARY_NAME"
-if [ "\$BINARY_NAME" == "panda_shell" ]; then
-   BINARY_PATH="\$SHELL"
+BINARY_NAME=\$(basename "\${ARGV0}")
+BINARY_PATH="\${APPDIR}/usr/bin/\${BINARY_NAME}"
+if [ "\$BINARY_NAME" == "\$(basename \${SHELL})" ]; then
+   BINARY_PATH="\${SHELL}"
 fi
 if [ ! -e "\$BINARY_PATH" ]; then
    BINARY_PATH="\$APPDIR/usr/bin/bambu"
