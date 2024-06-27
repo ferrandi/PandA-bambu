@@ -252,7 +252,7 @@ class shared_memmap : public memmap
 
    bptr_t addrmap(ptr_t sim_addr) override
    {
-      return reinterpret_cast<bptr_t>(sim_addr);
+      return ptr_to_bptr(sim_addr);
    }
 
    ptr_t mapaddr(const bptr_t addr) override
