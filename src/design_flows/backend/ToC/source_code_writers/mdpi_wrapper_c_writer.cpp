@@ -229,6 +229,7 @@ void MdpiWrapperCWriter::InternalWriteFile()
       }
       return idx_size;
    }();
+   const auto tb_memmap_mode = Param->getOption<std::string>(OPT_testbench_map_mode);
 
    std::string top_decl;
    std::string gold_decl = "EXTERN_CDECL ";
@@ -365,7 +366,9 @@ void MdpiWrapperCWriter::InternalWriteFile()
          }
          const auto arg_ptr = (is_pointer_type ? "(void*)" : "(void*)&") + arg_name;
          args_init += "__m_param_alloc(" + std::to_string(param_idx) + ", " + arg_size + ");\n";
-         args_decl += "{" + arg_ptr + ", " + arg_align + ", m_map_" + iface_type + "(" + arg_ptr + ")},\n";
+         args_decl += "{" + arg_ptr + ", " + arg_align + ", ";
+         args_decl += tb_memmap_mode == "SHARED" ? "NULL" : ("m_map_" + iface_type + "(" + arg_ptr + ")");
+         args_decl += "},\n";
          args_set += "m_interface_" + iface_type + "(" + std::to_string(param_idx) + ", args[" +
                      std::to_string(param_idx) + "].map_addr, " + arg_bitsize + ", " + arg_align + ");\n";
          ++param_idx;
@@ -400,6 +403,9 @@ void MdpiWrapperCWriter::InternalWriteFile()
    {
       indented_output_stream->AppendIndented("CDECL " + top_decl.substr(0, top_decl.size() - 1) + ";\n");
    }
+   indented_output_stream->Append("#ifndef MDPI_MEMMAP_MODE\n");
+   indented_output_stream->Append("#define MDPI_MEMMAP_MODE MDPI_MEMMAP_" + tb_memmap_mode + "\n");
+   indented_output_stream->Append("#endif\n");
    indented_output_stream->AppendIndented(R"(
 #ifdef __cplusplus
 #include <cstring>
@@ -717,7 +723,6 @@ void MdpiWrapperCWriter::WriteSimulatorInitMemory(const unsigned int function_id
       return max;
    }();
    const auto align = std::max(align_bus, align_infer);
-   const auto tb_map_mode = "MDPI_MEMMAP_" + Param->getOption<std::string>(OPT_testbench_map_mode);
 
    indented_output_stream->Append(R"(
 typedef struct
@@ -770,7 +775,7 @@ size_t i;
    indented_output_stream->Append("const ptr_t align = " + STR(align) + ";\n");
    indented_output_stream->Append("ptr_t base_addr = " + STR(base_addr) + ";\n\n");
 
-   indented_output_stream->Append("__m_memmap_init(" + tb_map_mode + ");\n");
+   indented_output_stream->Append("__m_memmap_init(MDPI_MEMMAP_MODE);\n");
    indented_output_stream->Append(R"(
 
 // Memory-mapped internal variables initialization
