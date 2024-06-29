@@ -888,6 +888,8 @@ jobs:
             datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
     env:
       outname: panda_bench_${{matrix.test}}
+      OMP_NUM_THREADS: 4
+      J: 5
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
