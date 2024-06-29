@@ -1,0 +1,928 @@
+********************************************************************************
+                    ____                  _
+                   | __ )  __ _ _ __ ___ | |_   _   _
+                   |  _ \ / _` | '_ ` _ \| '_ \| | | |
+                   | |_) | (_| | | | | | | |_) | |_| |
+                   |____/ \__,_|_| |_| |_|_.__/ \__,_|
+
+********************************************************************************
+                         High-Level Synthesis Tool
+
+                         Politecnico di Milano - DEIB
+                          System Architectures Group
+********************************************************************************
+                Copyright (C) 2004-2024 Politecnico di Milano
+
+Usage:
+       bambu [Options] <source_file> [<constraints_file>] [<technology_file>]
+
+Options:
+
+  General options:
+
+    --help, -h
+        Display this usage information.
+
+    --version, -V
+        Display the version of the program.
+
+    --seed=<number>
+        Set the seed of the random number generator (default=0).
+
+    --read-parameters-XML=<xml_file_name>
+        Read command line options from a XML file.
+
+    --write-parameters-XML=<xml_file_name>
+        Dump the parsed command line options into a XML file.
+
+
+  Output options:
+
+    --verbosity, -v <level>
+        Set the output verbosity level
+        Possible values for <level>:
+            0 - NONE
+            1 - MINIMUM
+            2 - VERBOSE
+            3 - PEDANTIC
+            4 - VERY PEDANTIC
+        (default = 1)
+
+    --debug, -d <level>
+        Set the verbosity level of debugging information
+        Possible values for <level>:
+            0 - NONE
+            1 - MINIMUM
+            2 - VERBOSE
+            3 - PEDANTIC
+            4 - VERY PEDANTIC
+        (default = 1).
+
+    --debug-classes=<classes_list>
+        Set maximum debug level for classes in <classes_list>
+
+    --max-transformations=<number>
+        Set a maximum number of transformations.
+
+        To reduce the disk usage two PandA parameter could be used:
+          --panda-parameter=print-tree-manager=0
+          --panda-parameter=print-dot-FF=0
+
+    --find-max-transformations
+        Find the maximum number of transformations raising an exception.
+
+    --no-clean
+        Do not remove temporary files.
+
+    --benchmark-name=<name>
+        Set the name of the current benchmark for data collection.
+        Mainly useful for data collection from extensive regression tests.
+
+    --configuration-name=<name>
+        Set the name of the current tool configuration for data collection.
+        Mainly useful for data collection from extensive regression tests.
+
+    --benchmark-fake-parameters
+        Set the parameters string for data collection. The parameters in the
+        string are not actually used, but they are used for data collection in
+        extensive regression tests.
+
+    --output-temporary-directory=<path>
+        Set the directory where temporary files are saved.
+        Default is 'panda-temp'
+
+    --print-dot
+        Dump to file several different graphs used in the IR of the tool.
+        The graphs are saved in .dot files, in graphviz format
+
+    --error-on-warning
+        Convert all runtime warnings to errors.
+
+    --pretty-print=<file>.c
+        C-based pretty print of the internal IRx
+
+    --writer,-w<language>
+        Output RTL language:
+            V - Verilog (default)
+            H - VHDL
+
+    --no-mixed-design
+        Avoid mixed output RTL language designs.
+
+    --generate-tb=<file>
+        Generate testbench using the given files.
+        <file> must be a valid testbench XML file or a C/C++ file specifying
+        a main function calling the top-level interface. (May be repeated)
+
+    --generate-tb=elf:<exe>
+        Generate testbench environment using <exe> as system simulation.
+        <exe> must be an executable that dynamically loads the synthesized
+        top-function symbol.
+
+    --tb-extra-gcc-options=<string>
+        Specify custom extra options to the compiler for testbench compilation only.
+
+    --tb-arg=<arg>
+        Passes <arg> to the testbench main function as an argument.
+        The option may be repeated to pass multiple arguments in order.
+
+    --tb-param-size=<param_name>:<byte_size>
+        A comma-separated list of pairs representing a pointer parameter name and
+        the size for the related memory space. Specifying this option will disable
+        automated top-level function verification.
+
+    --tb-memory-mapping=<arg>
+        Testbench memory mapping mode:
+            DEVICE - Emulate host/device memory mapping (default)
+            SHARED - Emulate shared memory space between host and device
+                     (BEAWARE: no memory integrity checks in shared mode)
+
+    --top-fname=<fun_name>
+        Define the top function to be synthesized. (default=main)
+
+    --top-rtldesign-name=<top_name>
+        Define the top module name for the RTL backend.
+
+    --inline-fname=<fun_name>[,<fun_name>]*
+        Define functions to be always inlined.
+        Automatic inlining is always performed using internal metrics.
+        Maximum cost to allow function inlining is defined through
+        --panda-parameter=inline-max-cost=<value>. (default=60)
+
+    --file-input-data=<file_list>
+        A comma-separated list of input files used by the C specification.
+
+    --C-no-parse=<file>
+        Specify a comma-separated list of C files used only during the
+        co-simulation phase.
+
+
+  GCC/CLANG front-end compiler options:
+
+    --compiler=<compiler_version>
+        Specify which compiler is used.
+        Possible values for <compiler_version> are:
+            I386_GCC49
+            I386_GCC5
+            I386_GCC6
+            I386_GCC7
+            I386_GCC8
+            I386_CLANG4
+            I386_CLANG5
+            I386_CLANG6
+            I386_CLANG7
+            I386_CLANG8
+            I386_CLANG9
+            I386_CLANG10
+            I386_CLANG11
+            I386_CLANG12
+            I386_CLANG13
+            I386_CLANG16
+
+    -O<level>
+        Enable a specific optimization level. Possible values are the usual
+        optimization flags accepted by compilers, plus some others:
+        -O0,-O1,-O2,-O3,-Os,-O4,-O5.
+
+    -f<option>
+        Enable or disable a GCC/CLANG optimization option. All the -f or -fno options
+        are supported. In particular, -ftree-vectorize option triggers the
+        high-level synthesis of vectorized operations.
+
+    -I<path>
+        Specify a path where headers are searched for.
+
+    -W<warning>
+        Specify a warning option passed to GCC/CLANG. All the -W options available in
+        GCC/CLANG are supported.
+
+    -E
+        Enable preprocessing mode of GCC/CLANG.
+
+    --std=<standard>
+        Assume that the input sources are for <standard>. All
+        the --std options available in GCC/CLANG are supported.
+        The default value is gnu90/gnu11 for C and gnu++98/gnu++14 for C++ 
+        depending on the selected frontend compiler support.
+
+    -D<name>
+        Predefine name as a macro, with definition 1.
+
+    -D<name=definition>
+        Tokenize <definition> and process as if it appeared as a #define directive.
+
+    -U<name>
+        Remove existing definition for macro <name>.
+
+    --param <name>=<value>
+        Set the amount <value> for the GCC/CLANG parameter <name> that could be used for
+        some optimizations.
+
+    -l<library>
+        Search the library named <library> when linking.
+
+    -L<dir>
+        Add directory <dir> to the list of directories to be searched for -l.
+
+    --use-raw
+        Specify that input file is already a raw file and not a source file.
+
+    -m<machine-option>
+        Specify machine dependend options (currently not used).
+
+    --read-GCC-XML=<xml_file_name>
+        Read GCC options from a XML file.
+
+    --write-GCC-XML=<xml_file_name>
+        Dump the parsed GCC/CLANG compiler options into a XML file.
+
+    --Include-sysdir
+        Return the system include directory used by the wrapped GCC/CLANG compiler.
+
+    --gcc-config
+        Return the GCC/CLANG configuration.
+
+    --compute-sizeof
+        Replace sizeof with the computed valued for the considered target
+        architecture.
+
+    --extra-gcc-options
+        Specify custom extra options to the compiler.
+
+
+  Target:
+
+    --target-file=file, -b<file>
+        Specify an XML description of the target device.
+
+    --generate-interface=<type>
+        Wrap the top level module with an external interface.
+        Possible values for <type> and related interfaces:
+            MINIMAL  -  minimal interface (default)
+            INFER    -  top function is built with an hardware interface inferred from
+                        the pragmas or from the top function signature
+            WB4      -  WishBone 4 interface
+
+    --architecture-xml=<filename>
+        User-defined module architecture file.
+
+    --memory-mapped-top
+        Generate a memory mapped interface for the top level function.
+        The start signal and each one of function parameter are mapped to a memory address
+
+
+  Scheduling:
+
+    --parametric-list-based[=<type>]
+        Perform priority list-based scheduling. This is the default scheduling algorithm
+        in bambu. The optional <type> argument can be used to set options for
+        list-based scheduling as follows:
+            0 - Dynamic mobility (default)
+            1 - Static mobility
+            2 - Priority-fixed mobility
+
+    --speculative-sdc-scheduling,-s
+        Perform scheduling by using speculative SDC.
+        The speculative SDC is more conservative, in case 
+        --panda-parameter=enable-conservative-sdc=1 is passed.
+
+    --pipelining,-p=<func_name>[=<init_interval>][,<func_name>[=<init_interval>]]*
+        Perform pipelining of comma separated list of specified functions with optional 
+        initiation interval (default II=1).
+        To pipeline softfloat operators it is possible to specify the __float_<op_name> prefix 
+        or simply __float to pipeline all softfloat library.
+
+    --no-chaining
+        Disable chaining optimization.
+
+
+  Binding:
+
+    --register-allocation=<type>
+        Set the algorithm used for register allocation. Possible values for the
+        <type> argument are the following:
+            WEIGHTED_TS         - use weighted clique covering algorithm by
+                                  exploiting the Tseng&Siewiorek heuristics
+                                  (default)
+            BIPARTITE_MATCHING  - use bipartite matching algorithm
+            COLORING            - use simple coloring algorithm
+            WEIGHTED_COLORING   - use weighted coloring algorithm
+            CHORDAL_COLORING    - use chordal coloring algorithm
+            TTT_CLIQUE_COVERING - use a weighted clique covering algorithm
+            UNIQUE_BINDING      - unique binding algorithm
+
+    --module-binding=<type>
+        Set the algorithm used for module binding. Possible values for the
+        <type> argument are one the following:
+            WEIGHTED_TS        - solve the weighted clique covering problem by
+                                 exploiting the Tseng&Siewiorek heuristics
+                                 (default)
+            BIPARTITE_MATCHING - solve the weighted clique covering problem
+                                 exploiting the bipartite matching approach
+            WEIGHTED_COLORING  - solve the weighted clique covering problem
+                                 performing a coloring on the conflict graph
+            COLORING           - solve the unweighted clique covering problem
+                                 performing a coloring on the conflict graph
+            TTT_FAST           - use Tomita, A. Tanaka, H. Takahashi maxima
+                                 weighted cliques heuristic to solve the clique
+                                 covering problem
+            TTT_FAST2          - use Tomita, A. Tanaka, H. Takahashi maximal
+                                 weighted cliques heuristic to incrementally
+                                 solve the clique covering problem
+            TTT_FULL           - use Tomita, A. Tanaka, H. Takahashi maximal
+                                 weighted cliques algorithm to solve the clique
+                                 covering problem
+            TTT_FULL2          - use Tomita, A. Tanaka, H. Takahashi maximal
+                                 weighted cliques algorithm to incrementally
+                                 solve the clique covering problem
+            TS                 - solve the unweighted clique covering problem
+                                 by exploiting the Tseng&Siewiorek heuristic
+            UNIQUE             - use a 1-to-1 binding algorithm
+
+
+    --shared-input-registers
+        The module bindings and the register binding try to share more resources by 
+        sharing the input registers
+
+
+  Memory allocation:
+
+    --xml-memory-allocation=<xml_file_name>
+        Specify the file where the XML configuration has been defined.
+
+    --memory-allocation-policy=<type>
+        Set the policy for memory allocation. Possible values for the <type>
+        argument are the following:
+            ALL_BRAM           - all objects that need to be stored in memory
+                                 are allocated on BRAMs (default)
+            LSS                - all local variables, static variables and
+                                 strings are allocated on BRAMs
+            GSS                - all global variables, static variables and
+                                 strings are allocated on BRAMs
+            NO_BRAM            - all objects that need to be stored in memory
+                                 are allocated on an external memory
+            EXT_PIPELINED_BRAM - all objects that need to be stored in memory
+                                 are allocated on an external pipelined memory
+
+   --base-address=address
+        Define the starting address for objects allocated externally to the top
+        module.
+
+   --initial-internal-address=address
+        Define the starting address for the objects allocated internally to the
+        top module.
+
+   --channels-type=<type>
+        Set the type of memory connections.
+        Possible values for <type> are:
+            MEM_ACC_11 - the accesses to the memory have a single direct
+                         connection or a single indirect connection
+            MEM_ACC_N1 - the accesses to the memory have n parallel direct
+                         connections or a single indirect connection
+            MEM_ACC_NN - the accesses to the memory have n parallel direct
+                         connections or n parallel indirect connections (default)
+
+   --channels-number=<n>
+        Define the number of parallel direct or indirect accesses.
+
+   --memory-ctrl-type=type
+        Define which type of memory controller is used. Possible values for the
+        <type> argument are the following:
+            D00 - no extra delay (default)
+            D10 - 1 clock cycle extra-delay for LOAD, 0 for STORE
+            D11 - 1 clock cycle extra-delay for LOAD, 1 for STORE
+            D21 - 2 clock cycle extra-delay for LOAD, 1 for STORE
+
+    --memory-banks-number=<n>
+        Define the number of memory banks.
+
+    --sparse-memory[=on/off]
+        Control how the memory allocation happens.
+            on - allocate the data in addresses which reduce the decoding logic (default)
+           off - allocate the data in a contiguous addresses.
+
+    --do-not-use-asynchronous-memories
+        Do not add asynchronous memories to the possible set of memories used
+        by bambu during the memory allocation step.
+
+    --distram-threshold=value
+        Define the threshold in bitsize used to infer DISTRIBUTED/ASYNCHRONOUS RAMs (default 256).
+
+    --serialize-memory-accesses
+        Serialize the memory accesses using the GCC virtual use-def chains
+        without taking into account any alias analysis information.
+
+    --unaligned-access
+        Use only memories supporting unaligned accesses.
+
+    --aligned-access
+        Assume that all accesses are aligned and so only memories supporting aligned
+
+        accesses are used.
+
+    --do-not-chain-memories
+        When enabled LOADs and STOREs will not be chained with other
+        operations.
+
+    --rom-duplication
+        Assume that read-only memories can be duplicated in case timing requires.
+
+    --bram-high-latency=[3,4]
+        Assume a 'high latency bram'-'faster clock frequency' block RAM memory
+        based architectures:
+        3 => LOAD(II=1,L=3) STORE(1).
+        4 => LOAD(II=1,L=4) STORE(II=1,L=2).
+
+    --mem-delay-read=value
+        Define the external memory latency when LOAD are performed (default 2).
+
+    --mem-delay-write=value
+        Define the external memory latency when STORE are performed (default 1).
+
+    --tb-queue-size=value
+        Define the maximum number of requests accepted by the testbench (default 4).
+
+    --expose-globals
+        All global variables can be accessed from outside the accelerator.
+
+    --data-bus-bitsize=<bitsize>
+        Set the bitsize of the external data bus.
+
+    --addr-bus-bitsize=<bitsize>
+        Set the bitsize of the external address bus.
+
+
+  Evaluation of HLS results:
+
+    --simulate
+        Simulate the RTL implementation.
+
+    --simulator=<type>
+        Specify the simulator used in generated simulation scripts:
+            MODELSIM - Mentor Modelsim
+            XSIM - Xilinx XSim
+            VERILATOR - Verilator simulator
+
+    --verilator-parallel[=num_threads]
+        Enable multi-threaded simulation when using verilator
+
+    --max-sim-cycles=<cycles>
+        Specify the maximum number of cycles a HDL simulation may run.
+        (default 200000000).
+
+    --accept-nonzero-return
+        Do not assume that application main must return 0.
+
+    --generate-vcd
+        Enable .vcd output file generation for waveform visualization (requires
+        testbench generation).
+
+    --evaluation[=type]
+        Perform evaluation of the results.
+        The value of 'type' selects the objectives to be evaluated
+        If nothing is specified all the following are evaluated
+        The 'type' argument can be a string containing any of the following
+        strings, separated with commas, without spaces:
+            AREA            - Area usage
+            AREAxTIME       - Area x Latency product
+            TIME            - Latency for the average computation
+            TOTAL_TIME      - Latency for the whole computation
+            CYCLES          - n. of cycles for the average computation
+            TOTAL_CYCLES    - n. of cycles for the whole computation
+            BRAMS           - number of BRAMs
+            DRAMS           - number of DRAMs
+            CLOCK_SLACK     - Slack between actual and required clock period
+            DSPS            - number of DSPs
+            FREQUENCY       - Maximum target frequency
+            PERIOD          - Actual clock period
+            REGISTERS       - number of registers
+
+
+  RTL synthesis:
+
+    --clock-name=id
+        Specify the clock signal name of the top interface (default = clock).
+
+    --reset-name=id
+        Specify the reset signal name of the top interface (default = reset).
+
+    --start-name=id
+        Specify the start signal name of the top interface (default = start_port).
+
+    --done-name=id
+        Specify the done signal name of the top interface (default = done_port).
+
+    --clock-period=value
+        Specify the period of the clock signal (default = 10ns).
+
+    --backend-script-extensions=file
+        Specify a file that will be included in the backend specific synthesis
+        scripts.
+
+    --backend-sdc-extensions=file
+        Specify a file that will be included in the Synopsys Design Constraints
+        file (SDC).
+
+   --parallel-backend
+        when possible enable a parallel synthesis backend
+    --VHDL-library=libraryname
+        Specify the library in which the VHDL generated files are compiled.
+
+    --device-name=value
+        Specify the name of the device. Three different cases are foreseen:
+            - Xilinx:  a comma separated string specifying device, speed grade
+                       and package (e.g.,: "xc7z020,-1,clg484,VVD")
+            - Altera:  a string defining the device string (e.g. EP2C70F896C6)
+            - Lattice: a string defining the device string (e.g.
+                       LFE5U85F8BG756C)
+            - NanoXplore: a string defining the device string (e.g. nx2h540tsc))
+
+    --power-optimization
+        Enable Xilinx power based optimization (default no).
+
+    --connect-iob
+        Connect primary input and output ports to IOBs.
+
+    --soft-float (default)
+        Enable the soft-based implementation of floating-point operations.
+        Bambu uses as default a faithfully rounded version of softfloat with rounding mode
+        equal to round to nearest even. Subnormal numbers are disabled by default.
+        Default FP formats are e8m23b-127nih and e11m52b-1023nih for single and double 
+        precision floating-point types respectively.
+
+    --libm-std-rounding
+        Enable the use of classical libm. This library combines a customized version of 
+        glibc, newlib and musl libm implementations into a single libm library synthetizable
+        with bambu.
+        Without this option, Bambu uses as default a faithfully rounded version of libm.
+
+    --soft-fp
+        Enable the use of soft_fp GCC library instead of bambu customized version of softfloat library.
+
+    --max-ulp
+        Define the maximal ULP (Unit in the last place, i.e., is the spacing
+        between floating-point numbers) accepted.
+
+    --fp-subnormal
+        Enable the soft-based implementation of floating-point operations with
+        subnormals support.
+
+    --fp-exception-mode=<ieee|saturation|overflow>
+        Set the soft-based exception handling mode:
+              ieee    - IEEE754 standard exceptions (default)
+           saturation - Inf is replaced with max value, Nan becomes undefined behaviour
+            overflow  - Inf and Nan results in undefined behaviour
+
+    --fp-rounding-mode=<nearest_even|truncate>
+        Set the soft-based rounding handling mode:
+           nearest_even - IEEE754 standard rounding mode (default)
+              truncate  - No rounding is applied
+
+    --fp-format=<func_name>*e<exp_bits>m<frac_bits>b<exp_bias><rnd_mode><exc_mode><?spec><?sign>
+        Define arbitrary precision floating-point format by function (use comma separated
+        list for multiple definitions). (i.e.: e8m27b-127nihs represent IEEE754 single precision FP)
+           func_name - Set arbitrary floating-point format for a specific function (using
+                       @ symbol here will resolve to the top function)
+                       (Arbitrary floating-point format will apply to specified function
+                       only, use --propagate-fp-format to extend it to called functions)
+            exp_bits - Number of bits used by the exponent
+           frac_bits - Number of bits used by the fractional value
+            exp_bias - Bias applied to the unsigned value represented by the exponent bits
+            rnd_mode - Rounding mode (exclusive option):
+                          n - nearest_even: IEEE754 standard rounding mode
+                          t - truncate    : no rounding is applied
+            exc_mode - Exception mode (exclusive option):
+                          i - ieee      : IEEE754 standard exceptions
+                          a - saturation: Inf is replaced with max value, Nan becomes undefined behaviour
+                          o - overflow  : Inf and Nan results in undefined behaviour
+              spec   - Floating-point specialization string (multiple choice):
+                          h - hidden one: IEEE754 standard representation with hidden one
+                          s - subnormals: IEEE754 subnormal numbers
+              sign   - Static sign representation (exclusive option):
+                            - IEEE754 dynamic sign is used if omitted
+                          1 - all values are considered as negative numbers
+                          0 - all values are considered as positive numbers
+
+    --fp-format=inline-math
+        The "inline-math" flag may be added to fp-format option to force floating-point
+        arithmetic operators always inline policy
+
+    --fp-format=inline-conversion
+        The "inline-conversion" flag may be added to fp-format option to force floating-point
+        conversion operators always inline policy
+
+    --fp-format-interface
+        User-defined floating-point format is applied to top interface signature if required
+        (default modifies top function body only)
+
+    --fp-format-propagate
+        Propagate user-defined floating-point format to called function when possible
+
+    --hls-div=<method>
+        Perform the high-level synthesis of integer division and modulo
+        operations starting from a C library based implementation or a HDL component:
+             none  - use a HDL based pipelined restoring division
+             nr1   - use a C-based non-restoring division with unrolling factor equal to 1
+             nr2   - use a C-based non-restoring division with unrolling factor equal to 2
+             NR    - use a C-based Newton-Raphson division (default)
+             as    - use a C-based align divisor shift dividend method
+
+    --hls-fpdiv=<method>
+        Perform the high-level synthesis of floating point division 
+        operations starting from a C library based implementation:
+             SRT4 - use a C-based Sweeney, Robertson, Tocher floating point division with radix 4 (default)
+             G    - use a C-based Goldschmidt floating point division.
+             SF   - use a C-based floating point division as describe in soft-fp library
+                    (it requires --soft-fp).
+    --skip-pipe-parameter=<value>
+        Used during the allocation of pipelined units. <value> specifies how
+        many pipelined units, compliant with the clock period, will be skipped.
+        (default=0).
+
+    --reset-type=value
+        Specify the type of reset:
+             no    - use registers without reset (default)
+             async - use registers with asynchronous reset
+             sync  - use registers with synchronous reset
+
+    --reset-level=value
+        Specify if the reset is active high or low:
+             low   - use registers with active low reset (default)
+             high  - use registers with active high reset
+
+    --disable-reg-init-value
+        Used to remove the INIT value from registers (useful for ASIC designs)
+
+    --registered-inputs=value
+        Specify if inputs are registered or not:
+             auto  - inputs are registered only for proxy functions (default)
+             top   - inputs and return are registered only for top and proxy functions
+             yes   - all inputs are registered
+             no    - none of the inputs is registered
+
+    --fsm-encoding=value
+             auto    - it depends on the target technology. VVD prefers one encoding
+                       while the other are fine with the standard binary encoding. (default)
+             one-hot - one hot encoding
+             binary  - binary encoding
+
+    --cprf=value
+        Clock Period Resource Fraction (default = 1.0).
+
+    --DSP-allocation-coefficient=value
+        During the allocation step the timing of the DSP-based modules is
+        multiplied by value (default = 1.0).
+
+    --DSP-margin-combinational=value
+        Timing of combinational DSP-based modules is multiplied by value.
+        (default = 1.0).
+
+    --DSP-margin-pipelined=value
+        Timing of pipelined DSP-based modules is multiplied by value.
+        (default = 1.0).
+
+    --DSP-fracturing=[16,32]
+        Restructure multiplication by fracturing the computation.
+        16 => All multiplications will be decomposed into multiplications with input size not larger than 16.
+        32 => All multiplications will be decomposed into multiplications with input size not larger than 32.
+
+    --mux-margins=n
+        Scheduling reserves a margin corresponding to the delay of n 32 bit
+        multiplexers.
+
+    --timing-model=value
+        Specify the timing model used by HLS:
+             EC     - estimate timing overhead of glue logics and connections
+                      between resources (default)
+             SIMPLE - just consider the resource delay
+
+    --experimental-setup=<setup>
+        Specify the experimental setup. This is a shorthand to set multiple
+        options with a single command.
+        Available values for <setup> are the following:
+             BAMBU-AREA           - this setup implies:
+                                    -Os  -D'printf(fmt, ...)='
+                                    --memory-allocation-policy=ALL_BRAM
+                                    --DSP-allocation-coefficient=1.75
+                                    --distram-threshold=256
+                                    --enable-function-proxy
+             BAMBU-AREA-MP        - this setup implies:
+                                    -Os  -D'printf(fmt, ...)='
+                                    --channels-type=MEM_ACC_NN
+                                    --channels-number=2
+                                    --memory-allocation-policy=ALL_BRAM
+                                    --DSP-allocation-coefficient=1.75
+                                    --distram-threshold=256
+                                    --enable-function-proxy
+             BAMBU-BALANCED       - this setup implies:
+                                    -O2  -D'printf(fmt, ...)='
+                                    --channels-type=MEM_ACC_11
+                                    --memory-allocation-policy=ALL_BRAM
+                                    -fgcse-after-reload  -fipa-cp-clone
+                                    -ftree-partial-pre  -funswitch-loops
+                                    -finline-functions  -fdisable-tree-bswap
+                                    --param max-inline-insns-auto=25
+                                    -fno-tree-loop-ivcanon
+                                    --distram-threshold=256
+                                    -C='*'
+                                    --disable-function-proxy
+             BAMBU-BALANCED-MP    - (default) this setup implies:
+                                    -O2  -D'printf(fmt, ...)='
+                                    --channels-type=MEM_ACC_NN
+                                    --channels-number=2
+                                    --memory-allocation-policy=ALL_BRAM
+                                    -fgcse-after-reload  -fipa-cp-clone
+                                    -ftree-partial-pre  -funswitch-loops
+                                    -finline-functions  -fdisable-tree-bswap
+                                    --param max-inline-insns-auto=25
+                                    -fno-tree-loop-ivcanon
+                                    --disable-function-proxy
+                                    -C='*'
+                                    --distram-threshold=256
+             BAMBU-TASTE          - this setup concatenate the input files and
+                                    passes these options to the compiler:
+                                    -O2  -D'printf(fmt, ...)='
+                                    --channels-type=MEM_ACC_NN
+                                    --memory-allocation-policy=ALL_BRAM
+                                    -fgcse-after-reload  -fipa-cp-clone
+                                    -ftree-partial-pre  -funswitch-loops
+                                    -finline-functions  -fdisable-tree-bswap
+                                    --param max-inline-insns-auto=25
+                                    -fno-tree-loop-ivcanon
+                                    --disable-function-proxy
+                                    -C='*'
+                                    --distram-threshold=256
+             BAMBU-PERFORMANCE    - this setup implies:
+                                    -O3  -D'printf(fmt, ...)='
+                                    --memory-allocation-policy=ALL_BRAM
+                                    --distram-threshold=512
+                                    --disable-function-proxy
+             BAMBU-PERFORMANCE-MP - this setup implies:
+                                    -O3  -D'printf(fmt, ...)='
+                                    --channels-type=MEM_ACC_NN
+                                    --channels-number=2
+                                    --memory-allocation-policy=ALL_BRAM
+                                    --distram-threshold=512
+                                    --disable-function-proxy
+             BAMBU                - this setup implies:
+                                    -O0 --channels-type=MEM_ACC_11
+                                    --memory-allocation-policy=LSS
+                                    --distram-threshold=256
+             BAMBU092             - this setup implies:
+                                    -O3  -D'printf(fmt, ...)='
+                                    --timing-model=SIMPLE
+                                    --DSP-margin-combinational=1.3
+                                    --cprf=0.9  -skip-pipe-parameter=1
+                                    --channels-type=MEM_ACC_11
+                                    --memory-allocation-policy=LSS
+                                    --distram-threshold=256
+             VVD                  - this setup implies:
+                                    -O3  -D'printf(fmt, ...)='
+                                    --channels-type=MEM_ACC_NN
+                                    --memory-allocation-policy=ALL_BRAM
+                                    --distram-threshold=256
+                                    --DSP-allocation-coefficient=1.75
+                                    --cprf=0.875
+
+
+  Other options:
+
+    --pragma-parse
+        Perform source code parsing to extract information about pragmas.
+        (default=no).
+
+    --num-accelerators
+        Set the number of physical accelerator instantiated in parallel sections. It must
+        be a power of two (default=4).
+
+    --time, -t <time>
+        Set maximum execution time (in seconds) for ILP solvers. (infinite).
+
+    --host-profiling
+        Perform host-profiling.
+
+    --disable-bitvalue-ipa
+        Disable inter-procedural bitvalue analysis.
+
+    --enable-function-proxy
+        Enable function proxy. May reduce the resource usage.
+
+    --disable-function-proxy
+        Disable function proxy. May increase FSMD parallelism.
+
+    --constraints,-C=<func_name>[=<num_resources>][,<func_name>[=<num_resources>]]*
+        Perform resource sharing of functions inside the datapath,
+        limiting the number of function instances to 'num_resources'.
+        Functions are specified as a comma-separated list with an optional
+        number of resources. (num_resources is by default equal to 1 when not specified).
+        In case <num_resources> is equal to 'u', the function is unconstrained.
+        If the first character of func_name is '*', then 'num_resources'
+        applies to all functions having as a prefix 'func_name' with '*'
+        character removed.
+        In case we have -C='*', all functions have 1 instance constraint. 
+
+    --resource-constraints,-c=<resource_name>:<library_name>[=<num_resources>][,<resource_name>:<library_name>[=<num_resources>]]*
+        Perform resource sharing inside the datapath, limiting the number of
+        resource instances to 'num_resources'.
+        Resources are specified as a comma-separated list of pairs (<resource_name>:<library_name>)
+        with an optional number of resources. (num_resources is by default equal to 1
+        when not specified).
+
+    --AXI-burst-type=value
+.        Specify the type of AXI burst when performing single beat operations:
+              FIXED        - fixed type burst (default)
+              INCREMENTAL  - incremental type burst
+
+
+  Debug options:
+
+    --discrepancy
+           Performs automated discrepancy analysis between the execution
+           of the original source code and the generated HDL (currently
+           supports only Verilog). If a mismatch is detected reports
+           useful information to the user.
+           Uninitialized variables in C are legal, but if they are used
+           before initialization in HDL it is possible to obtain X values
+           in simulation. This is not necessarily wrong, so these errors
+           are not reported by default to avoid reporting false positives.
+           If you can guarantee that in your C code there are no
+           uninitialized variables and you want the X values in HDL to be
+           reported use the option --discrepancy-force-uninitialized.
+           Note that the discrepancy of pointers relies on ASAN to properly
+           allocate objects in memory. Unfortunately, there is a well-known
+           bug on ASAN (https://github.com/google/sanitizers/issues/914)
+           when -fsanitize=address is passed to GCC or CLANG.
+           On some compiler versions this issues has been fixed but since the
+           fix has not been upstreamed the bambu option --discrepancy may not
+           work. To circumvent the issue, the user may perform the discrepancy
+           by adding these two options: --discrepancy --discrepancy-permissive-ptrs.
+
+    --discrepancy-force-uninitialized
+           Reports errors due to uninitialized values in HDL.
+           See the option --discrepancy for details
+
+    --discrepancy-no-load-pointers
+           Assume that the data loaded from memories in HDL are never used
+           to represent addresses, unless they are explicitly assigned to
+           pointer variables.
+           The discrepancy analysis is able to compare pointers in software
+           execution and addresses in hardware. By default all the values
+           loaded from memory are treated as if they could contain addresses,
+           even if they are integer variables. This is due to the fact that
+           C code doing this tricks is valid and actually used in embedded
+           systems, but it can lead to imprecise bug reports, because only
+           pointers pointing to actual data are checked by the discrepancy
+           analysis.
+           If you can guarantee that your code always manipulates addresses
+           using pointers and never using plain int, then you can use this
+           option to get more precise bug reports.
+
+    --discrepancy-only=comma,separated,list,of,function,names
+           Restricts the discrepancy analysis only to the functions whose
+           name is in the list passed as argument.
+
+    --discrepancy-permissive-ptrs
+           Do not trigger hard errors on pointer variables.
+
+    --discrepancy-hw
+           Hardware Discrepancy Analysis.
+
+    --assert-debug
+        Enable assertion debugging performed by Modelsim.
+        (Mentor Modelsim should be selected to use this option)
+
+
+  Backend configuration:
+
+    --mentor-visualizer
+        Simulate the RTL implementation and then open Mentor Visualizer.
+        (Mentor root has to be correctly set, see --mentor-root)
+
+    --mentor-optimizer=<0|1>
+        Enable or disable mentor optimizer. (default=enabled)
+
+    --nanoxplore-bypass=<name>
+        Define NanoXplore bypass when using NanoXplore. User may set NANOXPLORE_BYPASS
+        variable otherwise.
+
+    --altera-root=<path>
+        Define Altera tools path. Given path is searched for Quartus.
+        (default=/opt/altera:/opt/intelFPGA)
+
+    --lattice-root=<path>
+        Define Lattice tools path. Given path is searched for Diamond.
+        (default=/opt/diamond:/usr/local/diamond)
+
+    --mentor-root=<path>
+        Define Mentor tools path. Given directory is searched for Modelsim and Visualizer
+        (default=/opt/mentor)
+
+    --nanoxplore-root=<path>
+        Define NanoXplore tools path. Given directory is searched for NXMap.
+        (default=/opt/NanoXplore)
+
+    --xilinx-root=<path>
+        Define Xilinx tools path. Given directory is searched for both ISE and Vivado
+        (default=/opt/Xilinx)
+
+
