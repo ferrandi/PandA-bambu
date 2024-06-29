@@ -1,6 +1,0 @@
-1. Generate the module implementing the following formula (single precision and double precision):
-
-gamma = acos((a^2+b^2-c^2)/(2*a*b))
-
-2. Identify the combination of softfloat ops and libm which produces the best performances.
-
