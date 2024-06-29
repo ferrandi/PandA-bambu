@@ -1,4 +1,0 @@
-<?xml version="1.0"?>
-<function>
-  <testbench a="43" b="-12" c="5" d="-4232" e="0" f="17" g="19" expected="-507840"/>
-</function>

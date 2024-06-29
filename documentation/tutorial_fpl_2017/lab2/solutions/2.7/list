@@ -1,4 +1,0 @@
-module.c --benchmark-name=std_rounding_softfloat --libm-std-rounding --soft-float
-module.c --benchmark-name=std_rounding_soft-fp --libm-std-rounding --soft-fp
-module.c --benchmark-name=faith_rounding_softfloat --soft-float
-module.c --benchmark-name=faith_rounding_soft-fp --soft-fp

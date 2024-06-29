@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<function>
-   <testbench input="{0,1,2,3,4}" num_elements="5"/>
-   <testbench input="{0,1,2,3,4,5,6,7,8,9}" num_elements="10"/>
-   <testbench input="{0,0,0,0,0,0,0,0,0,0}" num_elements="10"/>
-   <testbench input="{0}" num_elements="1"/>
-</function>
-
