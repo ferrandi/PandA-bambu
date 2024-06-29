@@ -1,5 +1,0 @@
-<?xml version="1.0"?>
-<function>
-   <testbench input="0,1,2,3,4" num_elements="5"/>
-</function>
-
