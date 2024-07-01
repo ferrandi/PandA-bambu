@@ -37,17 +37,16 @@
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  */
 #include "mem_dominator_allocation_cs.hpp"
+
 #include "Parameter.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
 #include "cmath"
 #include "function_behavior.hpp"
 #include "hls_manager.hpp"
+#include "math_function.hpp"
 #include "memory_cs.hpp"
 #include "omp_functions.hpp"
-
-/// utility include
-#include "math_function.hpp"
 #include "utility.hpp"
 
 mem_dominator_allocation_cs::mem_dominator_allocation_cs(
@@ -62,15 +61,15 @@ mem_dominator_allocation_cs::mem_dominator_allocation_cs(
 
 mem_dominator_allocation_cs::~mem_dominator_allocation_cs() = default;
 
-DesignFlowStep_Status mem_dominator_allocation_cs::Exec()
+DesignFlowStep_Status mem_dominator_allocation_cs::InternalExec()
 {
-   mem_dominator_allocation::Exec(); // exec of hierarchical class
+   mem_dominator_allocation::InternalExec(); // exec of hierarchical class
    auto context_switch = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
    if(!context_switch)
    {
       context_switch = 1;
    }
-   auto num_bits_acc = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
+   auto num_bits_acc = ceil_log2(parameters->getOption<unsigned long>(OPT_num_accelerators));
    if(!num_bits_acc)
    {
       num_bits_acc = 1;

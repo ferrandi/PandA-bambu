@@ -69,7 +69,7 @@ struct no_filter_clique : public filter_clique<vertex_type>
    size_t clique_cost(const CustomOrderedSet<C_vertex>& candidate_clique,
                       const CustomUnorderedMap<C_vertex, vertex_type>&) const override
    {
-      return static_cast<size_t>(candidate_clique.size());
+      return candidate_clique.size();
    }
    bool is_filtering() const override
    {

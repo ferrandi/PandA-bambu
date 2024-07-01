@@ -1813,7 +1813,7 @@ namespace llvm
             return (CallID == llvm::Intrinsic::sadd_sat || CallID == llvm::Intrinsic::ssub_sat
 #if __clang_major__ > 11
                     || CallID == llvm::Intrinsic::smax || CallID == llvm::Intrinsic::smin ||
-                    CallID == llvm::Intrinsic::umax || CallID == llvm::Intrinsic::umin || CallID == llvm::Intrinsic::abs
+                    CallID == llvm::Intrinsic::abs
 #endif
             );
          }
@@ -3264,7 +3264,7 @@ namespace llvm
          case llvm::Type::IntegerTyID:
          {
             llvm::Type* casted_ty = const_cast<llvm::Type*>(ty);
-            return DL->getTypeAllocSizeInBits(casted_ty);
+            return DL->getTypeSizeInBits(casted_ty);
          }
          case llvm::Type::HalfTyID:
          case llvm::Type::FloatTyID:
@@ -3326,7 +3326,7 @@ namespace llvm
       const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
       bool isSigned = CheckSignedTag(Cty) || TREE_CODE(t) == GT(SIGNEDPOINTERTYPE);
       llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
-      auto obj_size = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? 32 : DL->getTypeAllocSizeInBits(ty);
+      auto obj_size = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? DL->getPointerSizeInBits() : DL->getTypeSizeInBits(ty);
       auto val = isSigned ? llvm::APInt::getSignedMinValue(obj_size) : llvm::APInt::getMinValue(obj_size);
       auto context = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
       return getIntegerCST(isSigned, *context, val, t);
@@ -3337,7 +3337,7 @@ namespace llvm
       const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
       bool isSigned = CheckSignedTag(Cty) || TREE_CODE(t) == GT(SIGNEDPOINTERTYPE);
       llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
-      auto obj_size = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? 32 : DL->getTypeAllocSizeInBits(ty);
+      auto obj_size = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? DL->getPointerSizeInBits() : DL->getTypeSizeInBits(ty);
       auto val = isSigned ? llvm::APInt::getSignedMaxValue(obj_size) : llvm::APInt::getMaxValue(obj_size);
       if(maxValueITtable.find(t) != maxValueITtable.end())
       {
@@ -3387,7 +3387,7 @@ namespace llvm
       llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
       if(TREE_CODE(t) == GT(SIGNEDPOINTERTYPE))
       {
-         auto obj_size = llvm::APInt(64, 32u);
+         auto obj_size = llvm::APInt(64, DL->getPointerSizeInBits());
          if(uicTable.find(obj_size) == uicTable.end())
          {
             uicTable[obj_size] = assignCodeAuto(llvm::ConstantInt::get(ty->getContext(), obj_size));
@@ -4089,7 +4089,12 @@ namespace llvm
 
    void DumpGimpleRaw::DumpVersion(llvm::raw_fd_ostream& stream)
    {
-      stream << "COMPILER_VERSION: \"Clang " __clang_version__ "\"\nPLUGIN_VERSION: \"" PANDA_PLUGIN_VERSION "\"\n";
+      auto node_count_str = std::to_string(last_used_index);
+      node_count_str = std::string(10 - node_count_str.size(), ' ') + node_count_str;
+      stream.seek(0);
+      stream << "COMPILER_VERSION: \"Clang " __clang_version__ "\"\nPLUGIN_VERSION: \"" PANDA_PLUGIN_VERSION
+                "\"\nNODE_COUNT: "
+             << node_count_str << "\n";
    }
 
    void DumpGimpleRaw::serialize_int(const char* field, int i)
@@ -6515,6 +6520,8 @@ namespace llvm
          PtoSets_AA = nullptr;
       }
 #endif
+
+      DumpVersion(stream);
 
       // M.print(llvm::errs(), nullptr);
       return res;

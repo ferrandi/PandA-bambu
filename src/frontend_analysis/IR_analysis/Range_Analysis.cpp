@@ -68,7 +68,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
-#include "tree_reindex.hpp"
 #include "utility.hpp"
 #include "var_pp_functor.hpp"
 
@@ -145,8 +144,7 @@ union vcDouble
 
 bool tree_reindexCompare::operator()(const tree_nodeConstRef& lhs, const tree_nodeConstRef& rhs) const
 {
-   return static_cast<const tree_reindex*>(lhs.get())->actual_tree_node->index <
-          static_cast<const tree_reindex*>(rhs.get())->actual_tree_node->index;
+   return lhs->index < rhs->index;
 }
 
 namespace
@@ -525,7 +523,7 @@ namespace
       }
       else if(const auto* ssa = GetPointer<const ssa_name>(op))
       {
-         const auto DefStmt = GET_CONST_NODE(ssa->CGetDefStmt());
+         const auto DefStmt = ssa->CGetDefStmt();
          if(const auto* gp = GetPointer<const gimple_phi>(DefStmt))
          {
             const auto& defEdges = gp->CGetDefEdgesList();
@@ -544,22 +542,17 @@ namespace
          THROW_UNREACHABLE("Branch var definition statement not handled (" + DefStmt->get_kind_text() + " " +
                            DefStmt->ToString() + ")");
       }
-      else if(op->get_kind() == tree_reindex_K)
-      {
-         return branchOpRecurse(GET_CONST_NODE(op));
-      }
       return op;
    }
 
    // Print name of variable according to its type
    void printVarName(const tree_nodeConstRef& V, std::ostream& OS)
    {
-      OS << GET_CONST_NODE(V)->ToString();
+      OS << V->ToString();
    }
 
-   bool isValidType(const tree_nodeConstRef& _tn)
+   bool isValidType(const tree_nodeConstRef& tn)
    {
-      const auto tn = _tn->get_kind() == tree_reindex_K ? GET_CONST_NODE(_tn) : _tn;
       switch(tn->get_kind())
       {
          case boolean_type_K:
@@ -635,12 +628,12 @@ namespace
    bool isValidInstruction(const tree_nodeConstRef& stmt, const FunctionBehaviorConstRef& FB)
    {
       tree_nodeConstRef Type = nullptr;
-      switch(GET_CONST_NODE(stmt)->get_kind())
+      switch(stmt->get_kind())
       {
          case gimple_assign_K:
          {
-            auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
-            if(GET_CONST_NODE(tree_helper::CGetType(ga->op0))->get_kind() == vector_type_K)
+            auto* ga = GetPointer<const gimple_assign>(stmt);
+            if(tree_helper::CGetType(ga->op0)->get_kind() == vector_type_K)
             {
                // Vector arithmetic not yet supported
                return false;
@@ -657,7 +650,7 @@ namespace
             }
             Type = tree_helper::CGetType(ga->op0);
 
-            switch(GET_CONST_NODE(ga->op1)->get_kind())
+            switch(ga->op1->get_kind())
             {
                /// cst_node cases
                case integer_cst_K:
@@ -672,8 +665,8 @@ namespace
                case negate_expr_K:
                case view_convert_expr_K:
                {
-                  const auto* ue = GetPointer<const unary_expr>(GET_CONST_NODE(ga->op1));
-                  if(GetPointer<const expr_node>(GET_CONST_NODE(ue->op)))
+                  const auto* ue = GetPointer<const unary_expr>(ga->op1);
+                  if(GetPointer<const expr_node>(ue->op))
                   {
                      // Nested operations not supported
                      return false;
@@ -707,7 +700,7 @@ namespace
                case sat_plus_expr_K:
                case sat_minus_expr_K:
                {
-                  const auto bin_op = GetPointer<const binary_expr>(GET_CONST_NODE(ga->op1));
+                  const auto bin_op = GetPointer<const binary_expr>(ga->op1);
                   if(!isValidType(bin_op->op0) || !isValidType(bin_op->op1))
                   {
                      return false;
@@ -721,7 +714,7 @@ namespace
 
                case ssa_name_K:
                {
-                  if(!isValidType(GET_CONST_NODE(ga->op1)))
+                  if(!isValidType(ga->op1))
                   {
                      return false;
                   }
@@ -882,7 +875,7 @@ namespace
 
          case gimple_phi_K:
          {
-            const auto* phi = GetPointer<const gimple_phi>(GET_CONST_NODE(stmt));
+            const auto* phi = GetPointer<const gimple_phi>(stmt);
             Type = tree_helper::CGetType(phi->res);
          }
          break;
@@ -919,9 +912,8 @@ namespace
       return isValidType(Type);
    }
 
-   bool isSignedType(const tree_nodeConstRef& _tn)
+   bool isSignedType(const tree_nodeConstRef& tn)
    {
-      const auto tn = _tn->get_kind() == tree_reindex_K ? GET_CONST_NODE(_tn) : _tn;
       switch(tn->get_kind())
       {
          case enumeral_type_K:
@@ -1197,7 +1189,6 @@ VarNode::VarNode(const tree_nodeConstRef& _V, unsigned int _function_id)
     : V(_V), function_id(_function_id), abstractState(0)
 {
    THROW_ASSERT(_V != nullptr, "Variable cannot be null");
-   THROW_ASSERT(_V->get_kind() == tree_reindex_K, "Variable should be a tree_reindex node");
    interval = tree_helper::TypeRange(_V, Unknown);
 }
 
@@ -1208,7 +1199,7 @@ void VarNode::init(bool outside)
    THROW_ASSERT(interval, "Interval should be initialized during VarNode construction");
    if(interval->isUnknown()) // Ranges already initialized come from user defined hints and shouldn't be overwritten
    {
-      if(GetPointer<const cst_node>(GET_CONST_NODE(V)) != nullptr)
+      if(GetPointer<const cst_node>(V) != nullptr)
       {
          interval = tree_helper::Range(V);
       }
@@ -1227,8 +1218,7 @@ int VarNode::updateIR(const tree_managerRef& TM,
                       ,
                       application_managerRef AppM)
 {
-   const auto ssa_node = TM->GetTreeReindex(GET_INDEX_CONST_NODE(V));
-   auto* SSA = GetPointer<ssa_name>(GET_NODE(ssa_node));
+   auto* SSA = GetPointer<ssa_name>(TM->GetTreeNode(V->index));
    if(SSA == nullptr || interval->isUnknown())
    {
       return ut_None;
@@ -1241,8 +1231,8 @@ int VarNode::updateIR(const tree_managerRef& TM,
       {
          ssa->bit_values = bitstring_to_string(bv);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "BitValue updated for " + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text() +
-                            ": " + SSA->bit_values + " <= " + bitstring_to_string(curr_bv));
+                        "BitValue updated for " + ssa->ToString() + " " + ssa->type->get_kind_text() + ": " +
+                            SSA->bit_values + " <= " + bitstring_to_string(curr_bv));
          return ut_BitValue;
       }
       return ut_None;
@@ -1262,7 +1252,7 @@ int VarNode::updateIR(const tree_managerRef& TM,
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "Modified range " + SSA->range->ToString() + " to " + interval->ToString() + " for " +
-                         SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
+                         SSA->ToString() + " " + SSA->type->get_kind_text());
    }
    else
    {
@@ -1291,14 +1281,13 @@ int VarNode::updateIR(const tree_managerRef& TM,
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "Anti range " + interval->ToString() + " not stored for " + SSA->ToString() + " " +
-                               GET_CONST_NODE(SSA->type)->get_kind_text());
+                               SSA->type->get_kind_text());
             return ut_None;
          }
          else if(interval->isEmpty())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "Empty range not stored for " + SSA->ToString() + " " +
-                               GET_CONST_NODE(SSA->type)->get_kind_text());
+                           "Empty range not stored for " + SSA->ToString() + " " + SSA->type->get_kind_text());
             return ut_None;
          }
       }
@@ -1324,7 +1313,7 @@ int VarNode::updateIR(const tree_managerRef& TM,
       //                               "Current range " + superRange->ToString() + "<" + STR(superBW) + ">" + " was
       //                               better than computed range " + interval->ToString() + "<" + STR(newBW) + "> for "
       //                               + SSA->ToString() + " " +
-      //                                   GET_CONST_NODE(SSA->type)->get_kind_text() + "<" + SSA->bit_values + ">");
+      //                                   SSA->type->get_kind_text() + "<" + SSA->bit_values + ">");
       //                interval = superRange;
       //                return true;
       //             }
@@ -1337,7 +1326,7 @@ int VarNode::updateIR(const tree_managerRef& TM,
       //    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "Added range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " +
-                         GET_CONST_NODE(SSA->type)->get_kind_text());
+                         SSA->type->get_kind_text());
       //    }
    }
 
@@ -1390,11 +1379,11 @@ int VarNode::updateIR(const tree_managerRef& TM,
       Bit_Value_opt::constrainSSA(SSA, TM);
       AppM->RegisterTransformation("RangeAnalysis", V);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---BitValue updated for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text() +
-                         ": " + bitstring_to_string(bit_values) + " <= " + SSA->bit_values);
+                     "---BitValue updated for " + SSA->ToString() + " " + SSA->type->get_kind_text() + ": " +
+                         bitstring_to_string(bit_values) + " <= " + SSA->bit_values);
    }
 
-   if(const auto* gp = GetPointer<const gimple_phi>(GET_NODE(SSA->CGetDefStmt())))
+   if(const auto* gp = GetPointer<const gimple_phi>(SSA->CGetDefStmt()))
    {
       if(gp->CGetDefEdgesList().size() == 1)
       {
@@ -1409,7 +1398,7 @@ int VarNode::updateIR(const tree_managerRef& TM,
 /// Pretty print.
 void VarNode::print(std::ostream& OS) const
 {
-   if(GET_CONST_NODE(V)->get_kind() == integer_cst_K)
+   if(V->get_kind() == integer_cst_K)
    {
       OS << tree_helper::GetConstValue(V);
    }
@@ -2364,7 +2353,7 @@ RangeRef PhiOpNode::eval() const
    THROW_ASSERT(sources.size() > 0, "Phi operation sources list empty");
    auto result = tree_helper::TypeRange(getSink()->getValue(), Empty);
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_CONST_NODE(getSink()->getValue())->ToString() + " = PHI");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, getSink()->getValue()->ToString() + " = PHI");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    // Iterate over the sources of the phiop
    for(const VarNode* varNode : sources)
@@ -2395,7 +2384,7 @@ std::function<OpNode*(NodeContainer*)>
 PhiOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&,
                            const tree_managerConstRef&, const application_managerRef&)
 {
-   const auto* phi = GetPointer<const gimple_phi>(GET_CONST_NODE(stmt));
+   const auto* phi = GetPointer<const gimple_phi>(stmt);
    if(!phi || phi->CGetDefEdgesList().size() <= 1)
    {
       return nullptr;
@@ -2430,13 +2419,13 @@ PhiOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_
 
 void PhiOpNode::print(std::ostream& OS) const
 {
-   OS << GET_CONST_NODE(getSink()->getValue())->ToString() << " = PHI<";
+   OS << getSink()->getValue()->ToString() << " = PHI<";
    int i = 0;
    for(; i < static_cast<int>(sources.size() - 1); ++i)
    {
-      OS << GET_CONST_NODE(sources.at(static_cast<decltype(sources.size())>(i))->getValue())->ToString() << ", ";
+      OS << sources.at(static_cast<decltype(sources.size())>(i))->getValue()->ToString() << ", ";
    }
-   OS << GET_CONST_NODE(sources.at(static_cast<decltype(sources.size())>(i))->getValue())->ToString() << ">";
+   OS << sources.at(static_cast<decltype(sources.size())>(i))->getValue()->ToString() << ">";
 }
 
 void PhiOpNode::printDot(std::ostream& OS) const
@@ -2445,7 +2434,7 @@ void PhiOpNode::printDot(std::ostream& OS) const
    for(const VarNode* varNode : sources)
    {
       const auto& V = varNode->getValue();
-      if(GET_CONST_NODE(V)->get_kind() == integer_cst_K)
+      if(V->get_kind() == integer_cst_K)
       {
          OS << " " << tree_helper::GetConstValue(V) << " -> \"" << this << "\"\n";
       }
@@ -2582,7 +2571,7 @@ RangeRef UnaryOpNode::eval() const
          }
          case view_convert_expr_K:
          {
-            if(GET_CONST_NODE(resultType)->get_kind() != real_type_K)
+            if(resultType->get_kind() != real_type_K)
             {
                if(oprndSigned)
                {
@@ -2671,13 +2660,12 @@ std::function<OpNode*(NodeContainer*)>
 UnaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&,
                              const tree_managerConstRef&, const application_managerRef&)
 {
-   const auto* assign = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
+   const auto* assign = GetPointer<const gimple_assign>(stmt);
    if(assign == nullptr)
    {
       return nullptr;
    }
-   if(GetPointer<const ssa_name>(GET_CONST_NODE(assign->op1)) != nullptr ||
-      GetPointer<const cst_node>(GET_CONST_NODE(assign->op1)))
+   if(GetPointer<const ssa_name>(assign->op1) != nullptr || GetPointer<const cst_node>(assign->op1))
    {
       return [function_id, stmt, assign](NodeContainer* NC) {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
@@ -2692,7 +2680,7 @@ UnaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int functio
          return new UnaryOpNode(BI, sink, stmt, _source, nop_expr_K);
       };
    }
-   const auto* un_op = GetPointer<const unary_expr>(GET_CONST_NODE(assign->op1));
+   const auto* un_op = GetPointer<const unary_expr>(assign->op1);
    if(un_op == nullptr)
    {
       return nullptr;
@@ -2716,8 +2704,8 @@ UnaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int functio
 
 void UnaryOpNode::print(std::ostream& OS) const
 {
-   OS << GET_CONST_NODE(getSink()->getValue())->ToString() << " = " << tree_node::GetString(this->getOpcode()) << "( "
-      << GET_CONST_NODE(getSource()->getValue())->ToString() << " )";
+   OS << getSink()->getValue()->ToString() << " = " << tree_node::GetString(this->getOpcode()) << "( "
+      << getSource()->getValue()->ToString() << " )";
 }
 
 void UnaryOpNode::printDot(std::ostream& OS) const
@@ -2756,7 +2744,7 @@ void UnaryOpNode::printDot(std::ostream& OS) const
    else if(opcode == fix_trunc_expr_K)
    {
       const auto type = tree_helper::CGetType(getSink()->getValue());
-      if(const auto* int_type = GetPointer<const integer_type>(GET_CONST_NODE(type)))
+      if(const auto* int_type = GetPointer<const integer_type>(type))
       {
          if(int_type->unsigned_flag)
          {
@@ -2781,7 +2769,7 @@ void UnaryOpNode::printDot(std::ostream& OS) const
    OS << "\"]\n";
 
    const auto& V = this->getSource()->getValue();
-   if(GET_CONST_NODE(V)->get_kind() == integer_cst_K)
+   if(V->get_kind() == integer_cst_K)
    {
       OS << " " << tree_helper::GetConstValue(V) << " -> \"" << this << "\"\n";
    }
@@ -2915,7 +2903,7 @@ std::function<OpNode*(NodeContainer*)>
 SigmaOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&,
                              const tree_managerConstRef&, const application_managerRef&)
 {
-   const auto* phi = GetPointer<const gimple_phi>(GET_CONST_NODE(stmt));
+   const auto* phi = GetPointer<const gimple_phi>(stmt);
    if(!phi || phi->CGetDefEdgesList().size() != 1)
    {
       return nullptr;
@@ -2963,8 +2951,7 @@ SigmaOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int functio
 
 void SigmaOpNode::print(std::ostream& OS) const
 {
-   OS << GET_CONST_NODE(getSink()->getValue())->ToString() << " = SIGMA< "
-      << GET_CONST_NODE(getSource()->getValue())->ToString() << " >";
+   OS << getSink()->getValue()->ToString() << " = SIGMA< " << getSource()->getValue()->ToString() << " >";
 }
 
 void SigmaOpNode::printDot(std::ostream& OS) const
@@ -2973,7 +2960,7 @@ void SigmaOpNode::printDot(std::ostream& OS) const
    this->getIntersect()->print(OS);
    OS << "\"]\n";
    const auto& V = this->getSource()->getValue();
-   if(GET_CONST_NODE(V)->get_kind() == integer_cst_K)
+   if(V->get_kind() == integer_cst_K)
    {
       OS << " " << tree_helper::GetConstValue(V) << " -> \"" << this << "\"\n";
    }
@@ -2986,7 +2973,7 @@ void SigmaOpNode::printDot(std::ostream& OS) const
    if(SymbolicSource)
    {
       const auto& _V = SymbolicSource->getValue();
-      if(GET_CONST_NODE(_V)->get_kind() == integer_cst_K)
+      if(_V->get_kind() == integer_cst_K)
       {
          OS << " " << tree_helper::GetConstValue(_V) << " -> \"" << this << "\"\n";
       }
@@ -3080,8 +3067,8 @@ BinaryOpNode::BinaryOpNode(const ValueRangeRef& _intersect, VarNode* _sink, cons
                            VarNode* _source1, VarNode* _source2, kind _opcode)
     : OpNode(_intersect, _sink, _inst), source1(_source1), source2(_source2), opcode(_opcode)
 {
-   THROW_ASSERT(isValidType(_sink->getValue()), "Binary operation sink should be of valid type (" +
-                                                    GET_CONST_NODE(_sink->getValue())->ToString() + ")");
+   THROW_ASSERT(isValidType(_sink->getValue()),
+                "Binary operation sink should be of valid type (" + _sink->getValue()->ToString() + ")");
 }
 
 RangeRef BinaryOpNode::evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, const RangeConstRef& op2, bool opSigned)
@@ -3289,7 +3276,7 @@ RangeRef BinaryOpNode::eval() const
 
       // Bitvalue may consider only lower bits for some variables, thus it is necessary to perform evaluation on
       // truncated opernds to obtain valid results
-      if(const auto* ssa = GetPointer<const ssa_name>(GET_CONST_NODE(getSink()->getValue())))
+      if(const auto* ssa = GetPointer<const ssa_name>(getSink()->getValue()))
       {
          const auto sinkSigned = isSignedType(getSink()->getValue());
          const auto bvRange = [&]() {
@@ -3369,12 +3356,12 @@ std::function<OpNode*(NodeContainer*)>
 BinaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&,
                               const tree_managerConstRef&, const application_managerRef&)
 {
-   const auto* assign = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
+   const auto* assign = GetPointer<const gimple_assign>(stmt);
    if(assign == nullptr)
    {
       return nullptr;
    }
-   const auto* bin_op = GetPointer<const binary_expr>(GET_CONST_NODE(assign->op1));
+   const auto* bin_op = GetPointer<const binary_expr>(assign->op1);
    if(bin_op == nullptr)
    {
       return nullptr;
@@ -3402,9 +3389,8 @@ BinaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int functi
 
 void BinaryOpNode::print(std::ostream& OS) const
 {
-   OS << GET_CONST_NODE(getSink()->getValue())->ToString() << " = ("
-      << GET_CONST_NODE(getSource1()->getValue())->ToString() << ")" << tree_node::GetString(this->getOpcode()) + "("
-      << GET_CONST_NODE(getSource2()->getValue())->ToString() << ")";
+   OS << getSink()->getValue()->ToString() << " = (" << getSource1()->getValue()->ToString() << ")"
+      << tree_node::GetString(this->getOpcode()) + "(" << getSource2()->getValue()->ToString() << ")";
 }
 
 void BinaryOpNode::printDot(std::ostream& OS) const
@@ -3412,7 +3398,7 @@ void BinaryOpNode::printDot(std::ostream& OS) const
    std::string opcodeName = tree_node::GetString(opcode);
    OS << " \"" << this << "\" [label=\"" << opcodeName << "\"]\n";
    const auto& V1 = this->getSource1()->getValue();
-   if(GET_CONST_NODE(V1)->get_kind() == integer_cst_K)
+   if(V1->get_kind() == integer_cst_K)
    {
       OS << " " << tree_helper::GetConstValue(V1) << " -> \"" << this << "\"\n";
    }
@@ -3423,7 +3409,7 @@ void BinaryOpNode::printDot(std::ostream& OS) const
       OS << "\" -> \"" << this << "\"\n";
    }
    const auto& V2 = this->getSource2()->getValue();
-   if(GET_CONST_NODE(V2)->get_kind() == integer_cst_K)
+   if(V2->get_kind() == integer_cst_K)
    {
       OS << " " << tree_helper::GetConstValue(V2) << " -> \"" << this << "\"\n";
    }
@@ -3447,7 +3433,7 @@ unsigned int evaluateBranch(const tree_nodeRef br_op, const blocRef branchBB
 )
 {
    // Evaluate condition variable if possible
-   if(GET_CONST_NODE(br_op)->get_kind() == integer_cst_K)
+   if(br_op->get_kind() == integer_cst_K)
    {
       const auto branchValue = tree_helper::GetConstValue(br_op);
       if(branchValue)
@@ -3465,10 +3451,10 @@ unsigned int evaluateBranch(const tree_nodeRef br_op, const blocRef branchBB
          return branchBB->true_edge;
       }
    }
-   else if(const auto* bin_op = GetPointer<const binary_expr>(GET_CONST_NODE(br_op)))
+   else if(const auto* bin_op = GetPointer<const binary_expr>(br_op))
    {
-      const auto* l = GetPointer<const integer_cst>(GET_CONST_NODE(bin_op->op0));
-      const auto* r = GetPointer<const integer_cst>(GET_CONST_NODE(bin_op->op1));
+      const auto* l = GetPointer<const integer_cst>(bin_op->op0);
+      const auto* r = GetPointer<const integer_cst>(bin_op->op1);
       if(l != nullptr && r != nullptr)
       {
          const auto lc = tree_helper::get_integer_cst_value(l);
@@ -3582,9 +3568,9 @@ TernaryOpNode::TernaryOpNode(const ValueRangeRef& _intersect, VarNode* _sink, co
     : OpNode(_intersect, _sink, _inst), source1(_source1), source2(_source2), source3(_source3), opcode(_opcode)
 {
 #if HAVE_ASSERTS
-   const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(_inst));
-   THROW_ASSERT(ga, "TernaryOp associated statement should be a gimple_assign " + GET_CONST_NODE(_inst)->ToString());
-   const auto* I = GetPointer<const ternary_expr>(GET_CONST_NODE(ga->op1));
+   const auto* ga = GetPointer<const gimple_assign>(_inst);
+   THROW_ASSERT(ga, "TernaryOp associated statement should be a gimple_assign " + _inst->ToString());
+   const auto* I = GetPointer<const ternary_expr>(ga->op1);
    THROW_ASSERT(I, "TernaryOp operator should be a ternary_expr");
    THROW_ASSERT(_sink->getBitWidth() >= _source2->getBitWidth(), STR("Operator bitwidth overflow ") + ga->ToString() +
                                                                      " (sink= " + STR(+_sink->getBitWidth()) +
@@ -3626,8 +3612,8 @@ RangeRef TernaryOpNode::eval() const
             }
             else
             {
-               const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(getInstruction()));
-               const auto* I = GetPointer<const ternary_expr>(GET_CONST_NODE(ga->op1));
+               const auto* ga = GetPointer<const gimple_assign>(getInstruction());
+               const auto* I = GetPointer<const ternary_expr>(ga->op1);
                const auto BranchVar = branchOpRecurse(I->op0);
                std::vector<const struct binary_expr*> BranchConds;
                // Check if branch variable is correlated with op1 or op2
@@ -3647,20 +3633,17 @@ RangeRef TernaryOpNode::eval() const
                   {
                      const auto& CondOp0 = be->op0;
                      const auto& CondOp1 = be->op1;
-                     if(GET_CONST_NODE(CondOp0)->get_kind() == integer_cst_K ||
-                        GET_CONST_NODE(CondOp1)->get_kind() == integer_cst_K)
+                     if(CondOp0->get_kind() == integer_cst_K || CondOp1->get_kind() == integer_cst_K)
                      {
-                        const auto& variable = GET_CONST_NODE(CondOp0)->get_kind() == integer_cst_K ? CondOp1 : CondOp0;
-                        const auto& constant = GET_CONST_NODE(CondOp0)->get_kind() == integer_cst_K ? CondOp0 : CondOp1;
+                        const auto& variable = CondOp0->get_kind() == integer_cst_K ? CondOp1 : CondOp0;
+                        const auto& constant = CondOp0->get_kind() == integer_cst_K ? CondOp0 : CondOp1;
                         const auto& opV1 = I->op1;
                         const auto& opV2 = I->op2;
-                        if(GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(opV1) ||
-                           GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(opV2))
+                        if(variable->index == opV1->index || variable->index == opV2->index)
                         {
                            const auto CR = tree_helper::Range(constant);
                            THROW_ASSERT(CR->isConstant(), "Range from constant should be constant (" +
-                                                              GET_CONST_NODE(constant)->ToString() + " => " +
-                                                              CR->ToString() + ")");
+                                                              constant->ToString() + " => " + CR->ToString() + ")");
                            kind pred = isSignedType(CondOp0) ? be->get_kind() : op_unsigned(be->get_kind());
                            kind swappred = op_swap(pred);
 
@@ -3668,7 +3651,7 @@ RangeRef TernaryOpNode::eval() const
                                                                makeSatisfyingCmpRegion(swappred, CR);
                            THROW_ASSERT(!tmpT->isFullSet(), "");
 
-                           if(GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(opV2))
+                           if(variable->index == opV2->index)
                            {
                               RangeRef FValues(new Range(*tmpT->getAnti()));
                               op3 = op3->intersectWith(FValues);
@@ -3719,12 +3702,12 @@ std::function<OpNode*(NodeContainer*)>
 TernaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&,
                                const tree_managerConstRef&, const application_managerRef&)
 {
-   const auto* assign = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
+   const auto* assign = GetPointer<const gimple_assign>(stmt);
    if(assign == nullptr)
    {
       return nullptr;
    }
-   const auto* ter_op = GetPointer<const ternary_expr>(GET_CONST_NODE(assign->op1));
+   const auto* ter_op = GetPointer<const ternary_expr>(assign->op1);
    if(ter_op == nullptr)
    {
       return nullptr;
@@ -3750,10 +3733,8 @@ TernaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int funct
 
 void TernaryOpNode::print(std::ostream& OS) const
 {
-   OS << GET_CONST_NODE(getSink()->getValue())->ToString() << " = "
-      << GET_CONST_NODE(getSource1()->getValue())->ToString() << " ? "
-      << GET_CONST_NODE(getSource2()->getValue())->ToString() << " : "
-      << GET_CONST_NODE(getSource3()->getValue())->ToString();
+   OS << getSink()->getValue()->ToString() << " = " << getSource1()->getValue()->ToString() << " ? "
+      << getSource2()->getValue()->ToString() << " : " << getSource3()->getValue()->ToString();
 }
 
 void TernaryOpNode::printDot(std::ostream& OS) const
@@ -3762,7 +3743,7 @@ void TernaryOpNode::printDot(std::ostream& OS) const
    OS << " \"" << this << "\" [label=\"" << opcodeName << "\"]\n";
 
    const auto& V1 = this->getSource1()->getValue();
-   if(GET_CONST_NODE(V1)->get_kind() == integer_cst_K)
+   if(V1->get_kind() == integer_cst_K)
    {
       OS << " " << tree_helper::GetConstValue(V1) << " -> \"" << this << "\"\n";
    }
@@ -3773,7 +3754,7 @@ void TernaryOpNode::printDot(std::ostream& OS) const
       OS << "\" -> \"" << this << "\"\n";
    }
    const auto& V2 = this->getSource2()->getValue();
-   if(GET_CONST_NODE(V2)->get_kind() == integer_cst_K)
+   if(V2->get_kind() == integer_cst_K)
    {
       OS << " " << tree_helper::GetConstValue(V2) << " -> \"" << this << "\"\n";
    }
@@ -3785,7 +3766,7 @@ void TernaryOpNode::printDot(std::ostream& OS) const
    }
 
    const auto& V3 = this->getSource3()->getValue();
-   if(GET_CONST_NODE(V3)->get_kind() == integer_cst_K)
+   if(V3->get_kind() == integer_cst_K)
    {
       OS << " " << tree_helper::GetConstValue(V3) << " -> \"" << this << "\"\n";
    }
@@ -3882,9 +3863,8 @@ RangeRef LoadOpNode::eval() const
 #endif
    {
       THROW_ASSERT(getSink()->getBitWidth() == getIntersect()->getRange()->getBitWidth(),
-                   "Sink (" + GET_CONST_NODE(getSink()->getValue())->ToString() + ") has bitwidth " +
-                       STR(getSink()->getBitWidth()) + " while intersect has bitwidth " +
-                       STR(getIntersect()->getRange()->getBitWidth()));
+                   "Sink (" + getSink()->getValue()->ToString() + ") has bitwidth " + STR(getSink()->getBitWidth()) +
+                       " while intersect has bitwidth " + STR(getIntersect()->getRange()->getBitWidth()));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "= " + getIntersect()->getRange()->ToString());
       return RangeRef(getIntersect()->getRange()->clone());
    }
@@ -3922,17 +3902,17 @@ static RangeRef constructor_range(const tree_managerConstRef TM, const tree_node
    const auto* c = GetPointer<const constructor>(tn);
    std::vector<unsigned long long> array_dims;
    unsigned long long elements_bitsize;
-   tree_helper::get_array_dim_and_bitsize(TM, GET_INDEX_CONST_NODE(c->type), array_dims, elements_bitsize);
+   tree_helper::get_array_dim_and_bitsize(TM, c->type->index, array_dims, elements_bitsize);
    unsigned int initialized_elements = 0;
    auto ctor_range = RangeRef(init->clone());
    for(const auto& i : c->list_of_idx_valu)
    {
-      const auto el = GET_CONST_NODE(i.second);
+      const auto el = i.second;
       THROW_ASSERT(el, "unexpected condition");
 
       if(el->get_kind() == constructor_K && tree_helper::IsArrayEquivType(GetPointerS<const constructor>(el)->type))
       {
-         THROW_ASSERT(array_dims.size() > 1 || GET_CONST_NODE(c->type)->get_kind() == record_type_K,
+         THROW_ASSERT(array_dims.size() > 1 || c->type->get_kind() == record_type_K,
                       "invalid nested constructors:" + tn->ToString() + " " + STR(array_dims.size()));
          ctor_range = ctor_range->unionWith(constructor_range(TM, el, ctor_range));
       }
@@ -3965,7 +3945,7 @@ std::function<OpNode*(NodeContainer*)>
 LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef& FB,
                             const tree_managerConstRef& TM, const application_managerRef& AppM)
 {
-   const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
+   const auto* ga = GetPointer<const gimple_assign>(stmt);
    if(ga == nullptr)
    {
       return nullptr;
@@ -3981,37 +3961,37 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
       const auto bw = static_cast<bw_t>(tree_helper::TypeSize(ga->op0));
       VarNode* sink = NC->addVarNode(ga->op0, function_id);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
-                     "Sink variable is " + GET_CONST_NODE(ga->op0)->get_kind_text() + " (size = " + STR(bw) + ")");
+                     "Sink variable is " + ga->op0->get_kind_text() + " (size = " + STR(bw) + ")");
 
       auto intersection = tree_helper::TypeRange(sink->getValue(), Empty);
-      if(GET_NODE(ga->op1)->get_kind() == array_ref_K || GET_NODE(ga->op1)->get_kind() == mem_ref_K ||
-         GET_NODE(ga->op1)->get_kind() == target_mem_ref_K || GET_NODE(ga->op1)->get_kind() == target_mem_ref461_K ||
-         GET_NODE(ga->op1)->get_kind() == var_decl_K)
+      if(ga->op1->get_kind() == array_ref_K || ga->op1->get_kind() == mem_ref_K ||
+         ga->op1->get_kind() == target_mem_ref_K || ga->op1->get_kind() == target_mem_ref461_K ||
+         ga->op1->get_kind() == var_decl_K)
       {
-         auto base_index = tree_helper::get_base_index(TM, GET_INDEX_NODE(ga->op1));
+         auto base_index = tree_helper::get_base_index(TM, ga->op1->index);
          const auto* hm = GetPointer<HLS_manager>(AppM);
          if(base_index && AppM->get_written_objects().find(base_index) == AppM->get_written_objects().end() && hm &&
             hm->Rmem && FB->is_variable_mem(base_index) && hm->Rmem->is_sds_var(base_index))
          {
-            const auto* vd = GetPointer<const var_decl>(TM->get_tree_node_const(base_index));
+            const auto* vd = GetPointer<const var_decl>(TM->GetTreeNode(base_index));
             if(vd && vd->init)
             {
-               if(GET_NODE(vd->init)->get_kind() == constructor_K)
+               if(vd->init->get_kind() == constructor_K)
                {
-                  intersection = constructor_range(TM, GET_CONST_NODE(vd->init), intersection);
+                  intersection = constructor_range(TM, vd->init, intersection);
                }
-               else if(GetPointer<const cst_node>(GET_CONST_NODE(vd->init)))
+               else if(GetPointer<const cst_node>(vd->init))
                {
                   auto init_range = tree_helper::Range(vd->init);
                   if(init_range->getBitWidth() != bw)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
-                                    "---Initializer value not compliant " + GET_NODE(vd->init)->ToString());
+                                    "---Initializer value not compliant " + vd->init->ToString());
                   }
                   else
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
-                                    "---Initializer value is " + GET_NODE(vd->init)->ToString());
+                                    "---Initializer value is " + vd->init->ToString());
                      intersection = init_range;
                   }
                }
@@ -4021,25 +4001,25 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
             hm->Rmem && hm->Rmem->get_enable_hls_bit_value() && FB->is_variable_mem(base_index) &&
             hm->Rmem->is_private_memory(base_index) && hm->Rmem->is_sds_var(base_index))
          {
-            const auto* vd = GetPointer<const var_decl>(TM->get_tree_node_const(base_index));
+            const auto* vd = GetPointer<const var_decl>(TM->GetTreeNode(base_index));
             if(vd && vd->init)
             {
-               if(GET_NODE(vd->init)->get_kind() == constructor_K)
+               if(vd->init->get_kind() == constructor_K)
                {
-                  intersection = constructor_range(TM, GET_CONST_NODE(vd->init), intersection);
+                  intersection = constructor_range(TM, vd->init, intersection);
                }
-               else if(GetPointer<const cst_node>(GET_CONST_NODE(vd->init)))
+               else if(GetPointer<const cst_node>(vd->init))
                {
                   auto init_range = tree_helper::Range(vd->init);
                   if(init_range->getBitWidth() != bw)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
-                                    "---Initializer value not compliant " + GET_NODE(vd->init)->ToString());
+                                    "---Initializer value not compliant " + vd->init->ToString());
                   }
                   else
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
-                                    "---Initializer value is " + GET_NODE(vd->init)->ToString());
+                                    "---Initializer value is " + vd->init->ToString());
                      intersection = init_range;
                   }
                }
@@ -4050,7 +4030,7 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
             }
             for(const auto& cur_var : hm->Rmem->get_source_values(base_index))
             {
-               const auto cur_node = TM->get_tree_node_const(cur_var);
+               const auto cur_node = TM->GetTreeNode(cur_var);
                THROW_ASSERT(cur_node, "");
                auto init_range = tree_helper::Range(cur_node);
                if(init_range->getBitWidth() != bw)
@@ -4093,7 +4073,7 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
 
 void LoadOpNode::print(std::ostream& OS) const
 {
-   OS << GET_CONST_NODE(getSink()->getValue())->ToString() << " = LOAD()";
+   OS << getSink()->getValue()->ToString() << " = LOAD()";
 }
 
 void LoadOpNode::printDot(std::ostream& OS) const
@@ -4103,7 +4083,7 @@ void LoadOpNode::printDot(std::ostream& OS) const
    for(auto src : sources)
    {
       const auto& V = src->getValue();
-      if(GET_CONST_NODE(V)->get_kind() == integer_cst_K)
+      if(V->get_kind() == integer_cst_K)
       {
          OS << " " << tree_helper::GetConstValue(V) << " -> \"" << this << "\"\n";
       }
@@ -4241,8 +4221,7 @@ class Nuutila
 
    const CustomSet<VarNode*>& getComponent(const tree_nodeConstRef& n) const
    {
-      THROW_ASSERT(static_cast<bool>(components.count(n)),
-                   "Required component not found (" + GET_CONST_NODE(n)->ToString() + ")");
+      THROW_ASSERT(static_cast<bool>(components.count(n)), "Required component not found (" + n->ToString() + ")");
       return components.at(n);
    }
 
@@ -4299,8 +4278,7 @@ Nuutila::Nuutila(const VarNodes& varNodes, UseMap& useMap, const SymbMap& symbMa
       // If the Value has not been visited yet, call visit for him
       if(dfs[vNode.first] < 0)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "Start visit from " + GET_CONST_NODE(vNode.first)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Start visit from " + vNode.first->ToString());
          std::stack<tree_nodeConstRef> pilha;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
          visit(vNode.first, pilha, useMap);
@@ -4358,7 +4336,7 @@ void Nuutila::delControlDependenceEdges(UseMap& useMap)
 #ifndef NDEBUG
          // Add pseudo edge to the string
          const auto& V = cd->getSource()->getValue();
-         if(GET_CONST_NODE(V)->get_kind() == integer_cst_K)
+         if(V->get_kind() == integer_cst_K)
          {
             pseudoEdgesString << " " << tree_helper::GetConstValue(V) << " -> ";
          }
@@ -4400,7 +4378,7 @@ void Nuutila::visit(const tree_nodeConstRef& V, std::stack<tree_nodeConstRef>& s
       const auto& sink = op->getSink()->getValue();
       if(dfs[sink] < 0)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->" + GET_CONST_NODE(sink)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->" + sink->ToString());
          visit(sink, stack, useMap);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
@@ -4411,7 +4389,7 @@ void Nuutila::visit(const tree_nodeConstRef& V, std::stack<tree_nodeConstRef>& s
    }
 
    // The second phase of the algorithm assigns components to stacked nodes
-   if(GET_INDEX_CONST_NODE(root[V]) == GET_INDEX_CONST_NODE(V))
+   if(root[V]->index == V->index)
    {
       // Neither the worklist nor the map of components is part of Nuutila's
       // original algorithm. We are using these data structures to get a
@@ -4443,10 +4421,10 @@ bool Nuutila::checkWorklist() const
       auto v1 = *nit;
       for(const auto& v2 : boost::make_iterator_range(++nit, cend()))
       {
-         if(GET_INDEX_CONST_NODE(v1) == GET_INDEX_CONST_NODE(v2))
+         if(v1->index == v2->index)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "[Nuutila::checkWorklist] Duplicated entry in worklist " + GET_CONST_NODE(v1)->ToString());
+                           "[Nuutila::checkWorklist] Duplicated entry in worklist " + v1->ToString());
             consistent = false;
          }
       }
@@ -4583,8 +4561,8 @@ bool Meet::fixed(OpNode* op)
    if(op->getInstruction())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "FIXED::@" + STR(GET_INDEX_CONST_NODE(op->getInstruction())) + ": " + oldInterval->ToString() +
-                         " -> " + newInterval->ToString());
+                     "FIXED::@" + STR(op->getInstruction()->index) + ": " + oldInterval->ToString() + " -> " +
+                         newInterval->ToString());
    }
    else
    {
@@ -4678,8 +4656,8 @@ bool Meet::widen(OpNode* op, const std::vector<APInt>& constantvector)
    if(op->getInstruction())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "WIDEN::@" + STR(GET_INDEX_CONST_NODE(op->getInstruction())) + ": " + oldRange->ToString() +
-                         " -> " + newRange->ToString() + " -> " + sinkRange->ToString());
+                     "WIDEN::@" + STR(op->getInstruction()->index) + ": " + oldRange->ToString() + " -> " +
+                         newRange->ToString() + " -> " + sinkRange->ToString());
    }
    else
    {
@@ -4725,8 +4703,8 @@ bool Meet::growth(OpNode* op)
    if(op->getInstruction())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "GROWTH::@" + STR(GET_INDEX_CONST_NODE(op->getInstruction())) + ": " + oldRange->ToString() +
-                         " -> " + sinkRange->ToString());
+                     "GROWTH::@" + STR(op->getInstruction()->index) + ": " + oldRange->ToString() + " -> " +
+                         sinkRange->ToString());
    }
    else
    {
@@ -4826,8 +4804,8 @@ bool Meet::narrow(OpNode* op, const std::vector<APInt>& constantvector)
    if(op->getInstruction())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "NARROW::@" + STR(GET_INDEX_CONST_NODE(op->getInstruction())) + ": " + oldRange->ToString() +
-                         " -> " + sinkRange->ToString());
+                     "NARROW::@" + STR(op->getInstruction()->index) + ": " + oldRange->ToString() + " -> " +
+                         sinkRange->ToString());
    }
    else
    {
@@ -4870,8 +4848,8 @@ bool Meet::crop(OpNode* op)
    if(op->getInstruction())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "CROP::@" + STR(GET_INDEX_CONST_NODE(op->getInstruction())) + ": " + oldRange->ToString() +
-                         " -> " + sinkRange->ToString());
+                     "CROP::@" + STR(op->getInstruction()->index) + ": " + oldRange->ToString() + " -> " +
+                         sinkRange->ToString());
    }
    else
    {
@@ -4899,7 +4877,7 @@ class ConstraintGraph : public NodeContainer
       {
          const auto V = *actv.begin();
          actv.erase(V);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "-> update: " + GET_CONST_NODE(V)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "-> update: " + V->ToString());
 
          // The use list.
          const auto& L = compUseMap.at(V);
@@ -4986,7 +4964,7 @@ class ConstraintGraph : public NodeContainer
     */
    unsigned int buildCVR(const gimple_cond* br, const blocRef branchBB, unsigned int function_id)
    {
-      if(GetPointer<const cst_node>(GET_CONST_NODE(br->op0)) != nullptr)
+      if(GetPointer<const cst_node>(br->op0) != nullptr)
       {
          return evaluateBranch(br->op0, branchBB
 #ifndef NDEBUG
@@ -4995,9 +4973,8 @@ class ConstraintGraph : public NodeContainer
 #endif
          );
       }
-      THROW_ASSERT(GET_CONST_NODE(br->op0)->get_kind() == ssa_name_K,
-                   "Non SSA variable found in branch (" + GET_CONST_NODE(br->op0)->get_kind_text() + " " +
-                       GET_CONST_NODE(br->op0)->ToString() + ")");
+      THROW_ASSERT(br->op0->get_kind() == ssa_name_K,
+                   "Non SSA variable found in branch (" + br->op0->get_kind_text() + " " + br->op0->ToString() + ")");
       const auto Cond = branchOpRecurse(br->op0);
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -5026,8 +5003,8 @@ class ConstraintGraph : public NodeContainer
          const auto FalseBBI = branchBB->false_edge;
 
          // We have a Variable-Constant comparison.
-         const auto Op0 = GET_CONST_NODE(bin_op->op0);
-         const auto Op1 = GET_CONST_NODE(bin_op->op1);
+         const auto Op0 = bin_op->op0;
+         const auto Op1 = bin_op->op1;
          tree_nodeConstRef constant = nullptr;
          tree_nodeConstRef variable = nullptr;
 
@@ -5073,9 +5050,8 @@ class ConstraintGraph : public NodeContainer
                            "Variable bitwidth is " + STR(tree_helper::TypeSize(variable)) + " and constant value is " +
                                constant->ToString());
 
-            auto TValues = (GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(bin_op->op0)) ?
-                               makeSatisfyingCmpRegion(pred, CR) :
-                               makeSatisfyingCmpRegion(swappred, CR);
+            auto TValues = (variable->index == bin_op->op0->index) ? makeSatisfyingCmpRegion(pred, CR) :
+                                                                     makeSatisfyingCmpRegion(swappred, CR);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Condition is true on " + TValues->ToString());
             auto FValues = TValues->isFullSet() ? tree_helper::TypeRange(variable, Empty) : TValues->getAnti();
             // When dealing with eq/ne conditions it is safer to propagate only the constant branch value
@@ -5096,15 +5072,14 @@ class ConstraintGraph : public NodeContainer
 
             // Do the same for the operand of variable (if variable is a cast
             // instruction)
-            if(const auto* Var = GetPointer<const ssa_name>(GET_CONST_NODE(variable)))
+            if(const auto* Var = GetPointer<const ssa_name>(variable))
             {
-               const auto* VDef = GetPointer<const gimple_assign>(GET_CONST_NODE(Var->CGetDefStmt()));
-               if(VDef && (GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K ||
-                           GET_CONST_NODE(VDef->op1)->get_kind() == convert_expr_K))
+               const auto* VDef = GetPointer<const gimple_assign>(Var->CGetDefStmt());
+               if(VDef && (VDef->op1->get_kind() == nop_expr_K || VDef->op1->get_kind() == convert_expr_K))
                {
-                  const auto* cast_inst = GetPointer<const unary_expr>(GET_CONST_NODE(VDef->op1));
+                  const auto* cast_inst = GetPointer<const unary_expr>(VDef->op1);
 #ifndef NDEBUG
-                  if(GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(bin_op->op0))
+                  if(variable->index == bin_op->op0->index)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "Op0 comes from a cast expression " + cast_inst->ToString());
@@ -5151,11 +5126,10 @@ class ConstraintGraph : public NodeContainer
             // Symbolic intervals for operand of op0 (if op0 is a cast instruction)
             if(const auto* Var = GetPointer<const ssa_name>(Op0))
             {
-               const auto* VDef = GetPointer<const gimple_assign>(GET_CONST_NODE(Var->CGetDefStmt()));
-               if(VDef && (GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K ||
-                           GET_CONST_NODE(VDef->op1)->get_kind() == convert_expr_K))
+               const auto* VDef = GetPointer<const gimple_assign>(Var->CGetDefStmt());
+               if(VDef && (VDef->op1->get_kind() == nop_expr_K || VDef->op1->get_kind() == convert_expr_K))
                {
-                  const auto* cast_inst = GetPointer<const unary_expr>(GET_CONST_NODE(VDef->op1));
+                  const auto* cast_inst = GetPointer<const unary_expr>(VDef->op1);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "Op0 comes from a cast expression " + cast_inst->ToString());
 
@@ -5174,11 +5148,10 @@ class ConstraintGraph : public NodeContainer
             // Symbolic intervals for operand of op1 (if op1 is a cast instruction)
             if(const auto* Var = GetPointer<const ssa_name>(Op1))
             {
-               const auto* VDef = GetPointer<const gimple_assign>(GET_CONST_NODE(Var->CGetDefStmt()));
-               if(VDef && (GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K ||
-                           GET_CONST_NODE(VDef->op1)->get_kind() == convert_expr_K))
+               const auto* VDef = GetPointer<const gimple_assign>(Var->CGetDefStmt());
+               if(VDef && (VDef->op1->get_kind() == nop_expr_K || VDef->op1->get_kind() == convert_expr_K))
                {
-                  const auto* cast_inst = GetPointer<const unary_expr>(GET_CONST_NODE(VDef->op1));
+                  const auto* cast_inst = GetPointer<const unary_expr>(VDef->op1);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "Op1 comes from a cast expression" + cast_inst->ToString());
 
@@ -5225,7 +5198,7 @@ class ConstraintGraph : public NodeContainer
             continue;
          }
 
-         if(GetPointer<const cst_node>(GET_CONST_NODE(condBBI.first)) != nullptr)
+         if(GetPointer<const cst_node>(condBBI.first) != nullptr)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "Branch variable is a cst_node, dead code elimination necessary!");
@@ -5233,10 +5206,9 @@ class ConstraintGraph : public NodeContainer
             //    return true;
             continue;
          }
-         THROW_ASSERT(GET_CONST_NODE(condBBI.first)->get_kind() == ssa_name_K,
-                      "Case conditional variable should be an ssa_name (" +
-                          GET_CONST_NODE(condBBI.first)->get_kind_text() + " " +
-                          GET_CONST_NODE(condBBI.first)->ToString() + ")");
+         THROW_ASSERT(condBBI.first->get_kind() == ssa_name_K, "Case conditional variable should be an ssa_name (" +
+                                                                   condBBI.first->get_kind_text() + " " +
+                                                                   condBBI.first->ToString() + ")");
          const auto case_compare = branchOpRecurse(condBBI.first);
          if(const auto* cmp_op = GetPointer<const binary_expr>(case_compare))
          {
@@ -5257,8 +5229,8 @@ class ConstraintGraph : public NodeContainer
             addVarNode(cmp_op->op1, function_id);
 
             // We have a Variable-Constant comparison.
-            const auto Op0 = GET_CONST_NODE(cmp_op->op0);
-            const auto Op1 = GET_CONST_NODE(cmp_op->op1);
+            const auto Op0 = cmp_op->op0;
+            const auto Op1 = cmp_op->op1;
             const struct integer_cst* constant = nullptr;
             tree_nodeConstRef variable = nullptr;
 
@@ -5300,9 +5272,8 @@ class ConstraintGraph : public NodeContainer
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "Variable bitwidth is " + STR(bw) + " and constant value is " + STR(constant->value));
 
-               const auto tmpT = (GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(cmp_op->op0)) ?
-                                     makeSatisfyingCmpRegion(pred, CR) :
-                                     makeSatisfyingCmpRegion(swappred, CR);
+               const auto tmpT = (variable->index == cmp_op->op0->index) ? makeSatisfyingCmpRegion(pred, CR) :
+                                                                           makeSatisfyingCmpRegion(swappred, CR);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Condition is true on " + tmpT->ToString());
 
                RangeRef TValues = tmpT->isFullSet() ? RangeRef(new Range(Regular, bw)) : tmpT;
@@ -5313,15 +5284,14 @@ class ConstraintGraph : public NodeContainer
 
                // Do the same for the operand of variable (if variable is a cast
                // instruction)
-               if(const auto* Var = GetPointer<const ssa_name>(GET_CONST_NODE(variable)))
+               if(const auto* Var = GetPointer<const ssa_name>(variable))
                {
-                  const auto* VDef = GetPointer<const gimple_assign>(GET_CONST_NODE(Var->CGetDefStmt()));
-                  if(VDef && (GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K ||
-                              GET_CONST_NODE(VDef->op1)->get_kind() == convert_expr_K))
+                  const auto* VDef = GetPointer<const gimple_assign>(Var->CGetDefStmt());
+                  if(VDef && (VDef->op1->get_kind() == nop_expr_K || VDef->op1->get_kind() == convert_expr_K))
                   {
-                     const auto* cast_inst = GetPointer<const unary_expr>(GET_CONST_NODE(VDef->op1));
+                     const auto* cast_inst = GetPointer<const unary_expr>(VDef->op1);
 #ifndef NDEBUG
-                     if(GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(cmp_op->op0))
+                     if(variable->index == cmp_op->op0->index)
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "Op0 comes from a cast expression " + cast_inst->ToString());
@@ -5362,11 +5332,10 @@ class ConstraintGraph : public NodeContainer
                // Symbolic intervals for operand of op0 (if op0 is a cast instruction)
                if(const auto* Var = GetPointer<const ssa_name>(Op0))
                {
-                  const auto* VDef = GetPointer<const gimple_assign>(GET_CONST_NODE(Var->CGetDefStmt()));
-                  if(VDef && (GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K ||
-                              GET_CONST_NODE(VDef->op1)->get_kind() == convert_expr_K))
+                  const auto* VDef = GetPointer<const gimple_assign>(Var->CGetDefStmt());
+                  if(VDef && (VDef->op1->get_kind() == nop_expr_K || VDef->op1->get_kind() == convert_expr_K))
                   {
-                     const auto* cast_inst = GetPointer<const unary_expr>(GET_CONST_NODE(VDef->op1));
+                     const auto* cast_inst = GetPointer<const unary_expr>(VDef->op1);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "Op0 comes from a cast expression" + cast_inst->ToString());
 
@@ -5382,11 +5351,10 @@ class ConstraintGraph : public NodeContainer
                // Symbolic intervals for operand of op1 (if op1 is a cast instruction)
                if(const auto* Var = GetPointer<const ssa_name>(Op1))
                {
-                  const auto* VDef = GetPointer<const gimple_assign>(GET_CONST_NODE(Var->CGetDefStmt()));
-                  if(VDef && (GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K ||
-                              GET_CONST_NODE(VDef->op1)->get_kind() == convert_expr_K))
+                  const auto* VDef = GetPointer<const gimple_assign>(Var->CGetDefStmt());
+                  if(VDef && (VDef->op1->get_kind() == nop_expr_K || VDef->op1->get_kind() == convert_expr_K))
                   {
-                     const auto* cast_inst = GetPointer<const unary_expr>(GET_CONST_NODE(VDef->op1));
+                     const auto* cast_inst = GetPointer<const unary_expr>(VDef->op1);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "Op1 comes from a cast expression" + cast_inst->ToString());
 
@@ -5486,7 +5454,7 @@ class ConstraintGraph : public NodeContainer
       for(const auto* varNode : component)
       {
          const auto& V = varNode->getValue();
-         if(const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(V)))
+         if(const auto* ic = GetPointer<const integer_cst>(V))
          {
             insertConstantIntoVector(tree_helper::get_integer_cst_value(ic), varNode->getBitWidth());
          }
@@ -5562,13 +5530,13 @@ class ConstraintGraph : public NodeContainer
 
             const auto pred = bop->getOpcode();
 
-            if(const auto* const1 = GetPointer<const integer_cst>(GET_CONST_NODE(sourceval1)))
+            if(const auto* const1 = GetPointer<const integer_cst>(sourceval1))
             {
                const auto bw = source1->getBitWidth();
                const auto cst_val = tree_helper::get_integer_cst_value(const1);
                pushConstFor(cst_val, bw, pred); // TODO: maybe should swap predicate for lhs constant?
             }
-            if(const auto* const2 = GetPointer<const integer_cst>(GET_CONST_NODE(sourceval2)))
+            if(const auto* const2 = GetPointer<const integer_cst>(sourceval2))
             {
                const auto bw = source2->getBitWidth();
                const auto cst_val = tree_helper::get_integer_cst_value(const2);
@@ -5582,7 +5550,7 @@ class ConstraintGraph : public NodeContainer
             {
                const auto* source = pop->getSource(i);
                const auto& sourceval = source->getValue();
-               if(const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(sourceval)))
+               if(const auto* ic = GetPointer<const integer_cst>(sourceval))
                {
                   insertConstantIntoVector(tree_helper::get_integer_cst_value(ic), source->getBitWidth());
                }
@@ -5719,9 +5687,9 @@ class ConstraintGraph : public NodeContainer
       for(VarNode* varNode : component)
       {
          const auto& V = varNode->getValue();
-         if(const auto* ssa = GetPointer<const ssa_name>(GET_CONST_NODE(V)))
+         if(const auto* ssa = GetPointer<const ssa_name>(V))
          {
-            if(const auto* phi_def = GetPointer<const gimple_phi>(GET_CONST_NODE(ssa->CGetDefStmt())))
+            if(const auto* phi_def = GetPointer<const gimple_phi>(ssa->CGetDefStmt()))
             {
                if(phi_def->CGetDefEdgesList().size() == 1)
                {
@@ -5778,7 +5746,7 @@ class ConstraintGraph : public NodeContainer
       for(auto* varNode : component)
       {
          const auto& V = varNode->getValue();
-         const auto* CI = GetPointer<const integer_cst>(GET_CONST_NODE(V));
+         const auto* CI = GetPointer<const integer_cst>(V);
          if(CI != nullptr)
          {
             continue;
@@ -5810,21 +5778,20 @@ class ConstraintGraph : public NodeContainer
       for(const auto& ssa_use_counter : ssa_uses)
       {
          auto ssa = ssa_use_counter.first;
-         const auto* SSA = GetPointer<const ssa_name>(GET_CONST_NODE(ssa));
+         const auto* SSA = GetPointer<const ssa_name>(ssa);
          // If ssa_name references a parm_decl and is defined by a gimple_nop, it represents the formal function
          // parameter inside the function body
-         if(SSA->var != nullptr && GET_CONST_NODE(SSA->var)->get_kind() == parm_decl_K &&
-            GET_CONST_NODE(SSA->CGetDefStmt())->get_kind() == gimple_nop_K)
+         if(SSA->var != nullptr && SSA->var->get_kind() == parm_decl_K &&
+            SSA->CGetDefStmt()->get_kind() == gimple_nop_K)
          {
-            auto argIt = std::find_if(args.begin(), args.end(), [&](const tree_nodeRef& arg) {
-               return GET_INDEX_CONST_NODE(arg) == GET_INDEX_CONST_NODE(SSA->var);
-            });
+            auto argIt = std::find_if(args.begin(), args.end(),
+                                      [&](const tree_nodeRef& arg) { return arg->index == SSA->var->index; });
             THROW_ASSERT(argIt != args.end(), "parm_decl associated with ssa_name not found in function parameters");
             size_t arg_pos = static_cast<size_t>(argIt - args.begin());
             THROW_ASSERT(arg_pos < args.size(), "Computed parameter position outside actual parameters number");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "Variable " + SSA->ToString() + " is defined from parameter " + STR(arg_pos) +
-                               " of function " + GetPointer<const identifier_node>(GET_CONST_NODE(FD->name))->strg);
+                               " of function " + GetPointer<const identifier_node>(FD->name)->strg);
             parmBind[arg_pos] = ssa;
             foundAll = std::find(parmBind.begin(), parmBind.end(), nullptr) == parmBind.end();
          }
@@ -5835,31 +5802,31 @@ class ConstraintGraph : public NodeContainer
    {
       tree_nodeRef fun_node = nullptr;
 
-      if(const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(tn)))
+      if(const auto* ga = GetPointer<const gimple_assign>(tn))
       {
-         if(const auto* ce = GetPointer<const call_expr>(GET_CONST_NODE(ga->op1)))
+         if(const auto* ce = GetPointer<const call_expr>(ga->op1))
          {
             fun_node = ce->fn;
          }
       }
-      if(const auto* ce = GetPointer<const gimple_call>(GET_CONST_NODE(tn)))
+      if(const auto* ce = GetPointer<const gimple_call>(tn))
       {
          fun_node = ce->fn;
       }
 
       if(fun_node)
       {
-         if(GET_NODE(fun_node)->get_kind() == addr_expr_K)
+         if(fun_node->get_kind() == addr_expr_K)
          {
-            const auto* ue = GetPointer<const unary_expr>(GET_NODE(fun_node));
+            const auto* ue = GetPointer<const unary_expr>(fun_node);
             fun_node = ue->op;
          }
-         else if(GET_NODE(fun_node)->get_kind() == obj_type_ref_K)
+         else if(fun_node->get_kind() == obj_type_ref_K)
          {
             fun_node = tree_helper::find_obj_type_ref_function(fun_node);
          }
 
-         const auto* FD = GetPointer<const function_decl>(GET_CONST_NODE(fun_node));
+         const auto* FD = GetPointer<const function_decl>(fun_node);
          THROW_ASSERT(FD, "Function call should reference a function_decl node");
          INDENT_DBG_MEX(
              DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -5917,8 +5884,8 @@ class ConstraintGraph : public NodeContainer
    {
       const auto TM = AppM->get_tree_manager();
       const auto FB = AppM->CGetFunctionBehavior(function_id);
-      const auto* FD = GetPointer<const function_decl>(TM->get_tree_node_const(function_id));
-      const auto* SL = GetPointer<const statement_list>(GET_CONST_NODE(FD->body));
+      const auto* FD = GetPointer<const function_decl>(TM->GetTreeNode(function_id));
+      const auto* SL = GetPointer<const statement_list>(FD->body);
 #ifndef NDEBUG
       std::string fn_name =
           tree_helper::print_type(TM, function_id, false, true, false, 0U,
@@ -5937,7 +5904,7 @@ class ConstraintGraph : public NodeContainer
             continue;
          }
 
-         const auto terminator = GET_CONST_NODE(stmt_list.back());
+         const auto terminator = stmt_list.back();
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "BB" + STR(idxBB.first) + " has terminator type " + terminator->get_kind_text() + " " +
                             terminator->ToString());
@@ -5998,7 +5965,7 @@ class ConstraintGraph : public NodeContainer
                   if(!storeFunctionCall(stmt))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "Skipping " + GET_NODE(stmt)->get_kind_text() + " " + GET_NODE(stmt)->ToString());
+                                    "Skipping " + stmt->get_kind_text() + " " + stmt->ToString());
                   }
                   continue;
                }
@@ -6101,7 +6068,7 @@ class ConstraintGraph : public NodeContainer
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "-->");
                   for(const auto& el : entryPoints)
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, GET_CONST_NODE(el)->ToString());
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, el->ToString());
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "<--");
                }
@@ -6114,10 +6081,9 @@ class ConstraintGraph : public NodeContainer
 #endif
             // iterate a fixed number of time before widening
             update(static_cast<size_t>(component.size() * 16L), compUseMap, entryPoints);
-            INDENT_DBG_MEX(
-                DEBUG_LEVEL_VERY_PEDANTIC, graph_debug,
-                "Printed constraint graph to " +
-                    printToFile("after_" + step_name + ".fixed." + STR(GET_INDEX_CONST_NODE(n)) + ".dot", parameters));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug,
+                           "Printed constraint graph to " +
+                               printToFile("after_" + step_name + ".fixed." + STR(n->index) + ".dot", parameters));
 
             generateEntryPoints(component, entryPoints);
 #ifndef NDEBUG
@@ -6130,8 +6096,7 @@ class ConstraintGraph : public NodeContainer
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, " --");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug,
                            "Printed constraint graph to " +
-                               printToFile("after_" + step_name + ".futures." + STR(GET_INDEX_CONST_NODE(n)) + ".dot",
-                                           parameters));
+                               printToFile("after_" + step_name + ".futures." + STR(n->index) + ".dot", parameters));
 
             for(VarNode* varNode : component)
             {
@@ -6142,10 +6107,9 @@ class ConstraintGraph : public NodeContainer
                   varNode->setRange(varNode->getMaxRange());
                }
             }
-            INDENT_DBG_MEX(
-                DEBUG_LEVEL_VERY_PEDANTIC, graph_debug,
-                "Printed constraint graph to " +
-                    printToFile("after_" + step_name + ".int." + STR(GET_INDEX_CONST_NODE(n)) + ".dot", parameters));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug,
+                           "Printed constraint graph to " +
+                               printToFile("after_" + step_name + ".int." + STR(n->index) + ".dot", parameters));
 
             // Second iterate till fix point
             std::set<tree_nodeConstRef, tree_reindexCompare> activeVars;
@@ -6185,7 +6149,7 @@ class ConstraintGraph : public NodeContainer
       // Print the body of the .dot file.
       for(const auto& varNode : getVarNodes())
       {
-         if(GET_CONST_NODE(varNode.first)->get_kind() == integer_cst_K)
+         if(varNode.first->get_kind() == integer_cst_K)
          {
             OS << " " << tree_helper::GetConstValue(varNode.first);
          }
@@ -6314,7 +6278,7 @@ static void TopFunctionUserHits(unsigned int function_id, const application_mana
 )
 {
    const auto TM = AppM->get_tree_manager();
-   const auto fd = TM->get_tree_node_const(function_id);
+   const auto fd = TM->GetTreeNode(function_id);
    const auto* FD = GetPointer<const function_decl>(fd);
 
    const auto& parmMap = CG->getParmMap();
@@ -6331,17 +6295,15 @@ static void TopFunctionUserHits(unsigned int function_id, const application_mana
          if(!isValidType(pType))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "Parameter " + STR(i) + " is of non-valid type (" + GET_CONST_NODE(pType)->get_kind_text() +
-                               ")");
+                           "Parameter " + STR(i) + " is of non-valid type (" + pType->get_kind_text() + ")");
             continue;
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "Parameter " + STR(i) + " defined as " + GET_CONST_NODE(p)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter " + STR(i) + " defined as " + p->ToString());
 
          VarNode* sink = CG->addVarNode(p, function_id);
 
          // Check for pragma mask directives user defined range
-         const auto parm = GetPointer<const parm_decl>(GET_CONST_NODE(FD->list_of_args.at(i)));
+         const auto parm = GetPointer<const parm_decl>(FD->list_of_args.at(i));
          if(parm->range != nullptr)
          {
             sink->setRange(parm->range);
@@ -6366,7 +6328,7 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
 )
 {
    const auto TM = AppM->get_tree_manager();
-   const auto fd = TM->get_tree_node_const(function_id);
+   const auto fd = TM->GetTreeNode(function_id);
    const auto* FD = GetPointer<const function_decl>(fd);
 #if !defined(NDEBUG) or HAVE_ASSERTS
    std::string fn_name = tree_helper::print_type(
@@ -6406,18 +6368,16 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
          if(!isValidType(pType))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "Parameter " + STR(i) + " is of non-valid type (" + GET_CONST_NODE(pType)->get_kind_text() +
-                               ")");
+                           "Parameter " + STR(i) + " is of non-valid type (" + pType->get_kind_text() + ")");
             continue;
          }
          parameters[i].first = p;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "Parameter " + STR(i) + " defined as " + GET_CONST_NODE(p)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter " + STR(i) + " defined as " + p->ToString());
 
          VarNode* sink = CG->addVarNode(p, function_id);
 
          // Check for pragma mask directives user defined range
-         const auto parm = GetPointer<const parm_decl>(GET_CONST_NODE(FD->list_of_args.at(i)));
+         const auto parm = GetPointer<const parm_decl>(FD->list_of_args.at(i));
          if(parm->range != nullptr)
          {
             sink->setRange(parm->range);
@@ -6442,22 +6402,21 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
    const auto ret_type = tree_helper::GetFunctionReturnType(fd);
    bool noReturn = ret_type == nullptr || !isValidType(ret_type);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "Function has " +
-                      (noReturn ? "no return type" : ("return type " + GET_CONST_NODE(ret_type)->get_kind_text())));
+                  "Function has " + (noReturn ? "no return type" : ("return type " + ret_type->get_kind_text())));
 
    // Creates the data structure which receives the return values of the
    // function, if there is any
    std::vector<VarNode*> returnVars;
    if(!noReturn)
    {
-      const auto* SL = GetPointer<const statement_list>(GET_CONST_NODE(FD->body));
+      const auto* SL = GetPointer<const statement_list>(FD->body);
       for(const auto& idxBB : SL->list_of_bloc)
       {
          const auto& stmt_list = idxBB.second->CGetStmtList();
 
          if(stmt_list.size())
          {
-            if(const auto* gr = GetPointer<const gimple_return>(GET_CONST_NODE(stmt_list.back())))
+            if(const auto* gr = GetPointer<const gimple_return>(stmt_list.back()))
             {
                if(gr->op != nullptr) // Compiler defined return statements may be without argument
                {
@@ -6488,16 +6447,16 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
 
    for(const auto& call : functionCalls)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing call " + GET_CONST_NODE(call)->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing call " + call->ToString());
       const std::vector<tree_nodeRef>* args = nullptr;
       tree_nodeConstRef ret_var = nullptr;
-      if(const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(call)))
+      if(const auto* ga = GetPointer<const gimple_assign>(call))
       {
-         const auto* ce = GetPointer<const call_expr>(GET_CONST_NODE(ga->op1));
+         const auto* ce = GetPointer<const call_expr>(ga->op1);
          args = &ce->args;
          ret_var = ga->op0;
       }
-      else if(const auto* gc = GetPointer<const gimple_call>(GET_CONST_NODE(call)))
+      else if(const auto* gc = GetPointer<const gimple_call>(call))
       {
          args = &gc->args;
       }
@@ -6527,8 +6486,7 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
             continue;
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        GET_CONST_NODE(parameters[i].second)->ToString() + " bound to argument " +
-                            GET_CONST_NODE(parameters[i].first)->ToString());
+                        parameters[i].second->ToString() + " bound to argument " + parameters[i].first->ToString());
          // Add real parameter to the CG
          from = CG->addVarNode(parameters[i].second, function_id);
 
@@ -6538,7 +6496,7 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
       // Match return values when return type is stored from caller
-      if(!noReturn && GET_CONST_NODE(call)->get_kind() != gimple_call_K)
+      if(!noReturn && call->get_kind() != gimple_call_K)
       {
          // Add caller instruction to the CG (it receives the return value)
          to = CG->addVarNode(ret_var, function_id);
@@ -6554,11 +6512,10 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
 #ifndef NDEBUG
          if(DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
          {
-            std::string phiString =
-                "Return variable " + GET_CONST_NODE(phiOp->getSink()->getValue())->ToString() + " = PHI<";
+            std::string phiString = "Return variable " + phiOp->getSink()->getValue()->ToString() + " = PHI<";
             for(size_t i = 0; i < phiOp->getNumSources(); ++i)
             {
-               phiString += GET_CONST_NODE(phiOp->getSource(i)->getValue())->ToString() + ", ";
+               phiString += phiOp->getSource(i)->getValue()->ToString() + ", ";
             }
             phiString[phiString.size() - 2] = '>';
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, phiString);
@@ -6584,10 +6541,10 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
 #ifndef NDEBUG
       if(DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
       {
-         std::string phiString = GET_CONST_NODE(m->getSink()->getValue())->ToString() + " = PHI<";
+         std::string phiString = m->getSink()->getValue()->ToString() + " = PHI<";
          for(size_t i = 0; i < m->getNumSources(); ++i)
          {
-            phiString += GET_CONST_NODE(m->getSource(i)->getValue())->ToString() + ", ";
+            phiString += m->getSource(i)->getValue()->ToString() + ", ";
          }
          phiString[phiString.size() - 2] = '>';
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, phiString);
@@ -6612,7 +6569,8 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
       ,
       solverType(st_Cousot),
       requireESSA(true),
-      execution_mode(RA_EXEC_NORMAL)
+      execution_mode(RA_EXEC_NORMAL),
+      last_ver_sum(0)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
    const auto opts =
@@ -6728,7 +6686,7 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
 
 RangeAnalysis::~RangeAnalysis() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -6792,8 +6750,8 @@ void RangeAnalysis::ComputeRelationships(DesignFlowStepSet& relationships,
          {
             const auto bv_signature = FunctionFrontendFlowStep::ComputeSignature(BIT_VALUE, f_id);
             const auto frontend_bv = dfm->GetDesignFlowStep(bv_signature);
-            THROW_ASSERT(frontend_bv != NULL_VERTEX, "step " + bv_signature + " is not present");
-            const auto bv = design_flow_graph->CGetDesignFlowStepInfo(frontend_bv)->design_flow_step;
+            THROW_ASSERT(frontend_bv != DesignFlowGraph::null_vertex(), "step is not present");
+            const auto bv = design_flow_graph->CGetNodeInfo(frontend_bv)->design_flow_step;
             relationships.insert(bv);
          }
       }
@@ -6812,16 +6770,15 @@ bool RangeAnalysis::HasToBeExecuted() const
    {
       return false;
    }
-   std::map<unsigned int, unsigned int> cur_bitvalue_ver;
-   std::map<unsigned int, unsigned int> cur_bb_ver;
+
    const auto CGMan = AppM->CGetCallGraphManager();
+   unsigned int curr_ver_sum = 0;
    for(const auto i : CGMan->GetReachedBodyFunctions())
    {
       const auto FB = AppM->CGetFunctionBehavior(i);
-      cur_bitvalue_ver[i] = FB->GetBitValueVersion();
-      cur_bb_ver[i] = FB->GetBBVersion();
+      curr_ver_sum += FB->GetBBVersion() + FB->GetBitValueVersion();
    }
-   return cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver;
+   return curr_ver_sum > last_ver_sum;
 }
 
 void RangeAnalysis::Initialize()
@@ -6974,8 +6931,7 @@ bool RangeAnalysis::finalize(ConstraintGraphRef CG)
       for(const auto& varNode : vars)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "Range " + varNode.second->getRange()->ToString() + " for " +
-                            GET_CONST_NODE(varNode.first)->ToString());
+                        "Range " + varNode.second->getRange()->ToString() + " for " + varNode.first->ToString());
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "IR update not applied in read-only mode");
@@ -7019,7 +6975,7 @@ bool RangeAnalysis::finalize(ConstraintGraphRef CG)
    }
 #endif
 
-   const auto rbf = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
+   const auto& rbf = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
    const auto cgm = AppM->CGetCallGraphManager();
    const auto cg = cgm->CGetCallGraph();
 #ifndef NDEBUG
@@ -7039,20 +6995,12 @@ bool RangeAnalysis::finalize(ConstraintGraphRef CG)
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
+   last_ver_sum = 0;
    for(const auto f : rbf)
    {
       const auto FB = AppM->GetFunctionBehavior(f);
-      auto isInBit = fun_id_to_restart.count(f);
-      if(isInBit)
-      {
-         last_bb_ver[f] = FB->GetBBVersion();
-         last_bitvalue_ver[f] = FB->UpdateBitValueVersion();
-      }
-      else
-      {
-         last_bb_ver[f] = FB->GetBBVersion();
-         last_bitvalue_ver[f] = FB->GetBitValueVersion();
-      }
+      const auto isInBit = fun_id_to_restart.count(f);
+      last_ver_sum += FB->GetBBVersion() + (isInBit ? FB->UpdateBitValueVersion() : FB->GetBitValueVersion());
    }
    return !fun_id_to_restart.empty();
 }

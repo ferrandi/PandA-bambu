@@ -127,13 +127,14 @@ int main(int argc, char* argv[])
           new TechnologyFlowStepFactory(TM, device, design_flow_manager, parameters));
       design_flow_manager->RegisterFactory(technology_flow_step_factory);
 
-      const std::string technology_flow_signature =
+      const auto technology_flow_signature =
           TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
-      const vertex technology_flow_step = design_flow_manager->GetDesignFlowStep(technology_flow_signature);
+      const auto technology_flow_step = design_flow_manager->GetDesignFlowStep(technology_flow_signature);
       const DesignFlowStepRef technology_design_flow_step =
-          technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
-                                 GetPointer<const TechnologyFlowStepFactory>(technology_flow_step_factory)
-                                     ->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+          technology_flow_step != DesignFlowGraph::null_vertex() ?
+              design_flow_graph->CGetNodeInfo(technology_flow_step)->design_flow_step :
+              GetPointer<const TechnologyFlowStepFactory>(technology_flow_step_factory)
+                  ->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
       design_flow_manager->AddStep(technology_design_flow_step);
 
       if(parameters->isOption(OPT_component_name))

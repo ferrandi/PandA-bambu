@@ -69,7 +69,7 @@ AddArtificialCallFlowEdges::AddArtificialCallFlowEdges(const application_manager
 
 AddArtificialCallFlowEdges::~AddArtificialCallFlowEdges() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 AddArtificialCallFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;

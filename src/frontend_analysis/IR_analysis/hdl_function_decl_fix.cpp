@@ -61,7 +61,6 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 #include "string_manipulation.hpp" // for GET_CLASS
 
@@ -79,8 +78,7 @@ DesignFlowStep_Status HDLFunctionDeclFix::Exec()
 {
    bool changed_tree = false;
    const tree_managerRef TM = AppM->get_tree_manager();
-   const auto hdl_writer_type =
-       static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
+   const auto hdl_writer_type = parameters->getOption<HDLWriter_Language>(OPT_writer_language);
    const auto hdl_writer = language_writer::create_writer(
        hdl_writer_type, GetPointer<HLS_manager>(AppM)->get_HLS_device()->get_technology_manager(), parameters);
    const auto hdl_reserved_names = hdl_writer->GetHDLReservedNames();
@@ -99,12 +97,12 @@ DesignFlowStep_Status HDLFunctionDeclFix::Exec()
 
    for(const auto function : TM->GetAllFunctions())
    {
-      auto fd = GetPointer<function_decl>(TM->get_tree_node_const(function));
+      auto fd = GetPointer<function_decl>(TM->GetTreeNode(function));
       if(not fd->name)
       {
          continue;
       }
-      auto in = GetPointer<identifier_node>(GET_NODE(fd->name));
+      auto in = GetPointer<identifier_node>(fd->name);
       const auto identifier =
           hdl_writer_type == HDLWriter_Language::VHDL ? boost::to_upper_copy<std::string>(in->strg) : in->strg;
       if(found_names.find(identifier) != found_names.end())
@@ -129,7 +127,7 @@ DesignFlowStep_Status HDLFunctionDeclFix::Exec()
    return changed_tree ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 HDLFunctionDeclFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;

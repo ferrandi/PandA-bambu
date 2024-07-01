@@ -75,7 +75,6 @@
 #include "ext_tree_node.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 
 /// utility include
 #include "dbgPrintHelper.hpp"
@@ -91,7 +90,7 @@ BasicBlocksCfgComputation::BasicBlocksCfgComputation(const ParameterConstRef _pa
 
 BasicBlocksCfgComputation::~BasicBlocksCfgComputation() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 BasicBlocksCfgComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -151,9 +150,9 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
 {
    const auto TM = AppM->get_tree_manager();
    const auto bbgc = function_behavior->bbgc;
-   const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function_id));
+   const auto fd = GetPointer<const function_decl>(TM->GetTreeNode(function_id));
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   const auto sl = GetPointer<const statement_list>(GET_CONST_NODE(fd->body));
+   const auto sl = GetPointer<const statement_list>(fd->body);
    THROW_ASSERT(sl, "Body is not a statement_list");
    for(const auto& id_bb : sl->list_of_bloc)
    {
@@ -224,7 +223,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
       {
          const auto& last = statements.back();
          /// switch statements
-         if(GET_CONST_NODE(last)->get_kind() == gimple_switch_K)
+         if(last->get_kind() == gimple_switch_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->BB" + STR(bb->number) + " ends with a switch");
             // Map between gimple_label and index of basic block
@@ -233,39 +232,35 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
             {
                THROW_ASSERT(sl->list_of_bloc.at(su)->CGetStmtList().size(), "Empty Basic Block");
                const auto first = sl->list_of_bloc.at(su)->CGetStmtList().front();
-               THROW_ASSERT(GET_CONST_NODE(first)->get_kind() == gimple_label_K,
-                            "First operation of BB" + STR(su) + " is a " + GET_CONST_NODE(first)->get_kind_text() +
-                                ": " + GET_CONST_NODE(first)->ToString());
-               const auto le = GetPointerS<const gimple_label>(GET_CONST_NODE(first));
-               label_to_bb[GET_CONST_NODE(le->op)] = su;
+               THROW_ASSERT(first->get_kind() == gimple_label_K, "First operation of BB" + STR(su) + " is a " +
+                                                                     first->get_kind_text() + ": " + first->ToString());
+               const auto le = GetPointerS<const gimple_label>(first);
+               label_to_bb[le->op] = su;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Gimple label of BB" + STR(su) + " is " + STR(GET_INDEX_CONST_NODE(le->op)));
+                              "---Gimple label of BB" + STR(su) + " is " + STR(le->op->index));
             }
-            const auto se = GetPointer<const gimple_switch>(GET_CONST_NODE(last));
+            const auto se = GetPointer<const gimple_switch>(last);
             THROW_ASSERT(se->op1, "case_label_exprs not found");
-            const auto tv = GetPointer<const tree_vec>(GET_CONST_NODE(se->op1));
+            const auto tv = GetPointer<const tree_vec>(se->op1);
 
             for(const auto& op : tv->list_of_op)
             {
-               const auto cl = GetPointer<const case_label_expr>(GET_CONST_NODE(op));
-               THROW_ASSERT(label_to_bb.count(GET_CONST_NODE(cl->got)),
-                            "There is not corresponding case_label_exprs with index " +
-                                STR(GET_INDEX_CONST_NODE(cl->got)));
+               const auto cl = GetPointer<const case_label_expr>(op);
+               THROW_ASSERT(label_to_bb.count(cl->got),
+                            "There is not corresponding case_label_exprs with index " + STR(cl->got->index));
                if(cl->default_flag)
                {
-                  bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(label_to_bb[GET_CONST_NODE(cl->got)]), CFG_SELECTOR,
-                                         default_COND);
+                  bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(label_to_bb[cl->got]), CFG_SELECTOR, default_COND);
                }
                else
                {
-                  bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(label_to_bb[GET_CONST_NODE(cl->got)]), CFG_SELECTOR,
-                                         GET_INDEX_CONST_NODE(op));
+                  bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(label_to_bb[cl->got]), CFG_SELECTOR, op->index);
                }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
          }
          /// computed goto
-         else if(GET_CONST_NODE(last)->get_kind() == gimple_goto_K && bb->list_of_succ.size() > 1)
+         else if(last->get_kind() == gimple_goto_K && bb->list_of_succ.size() > 1)
          {
             // Map between gimple_label and index of basic block
             for(const auto su : bb->list_of_succ)
@@ -274,9 +269,9 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
             }
          }
          /// multi-way if
-         else if(GET_CONST_NODE(last)->get_kind() == gimple_multi_way_if_K)
+         else if(last->get_kind() == gimple_multi_way_if_K)
          {
-            const auto gmwi = GetPointerS<const gimple_multi_way_if>(GET_CONST_NODE(last));
+            const auto gmwi = GetPointerS<const gimple_multi_way_if>(last);
             for(const auto& cond : gmwi->list_of_cond)
             {
                bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(cond.second), CFG_SELECTOR,

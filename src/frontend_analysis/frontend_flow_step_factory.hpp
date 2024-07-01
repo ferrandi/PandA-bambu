@@ -44,12 +44,13 @@
 #ifndef FRONTEND_FLOW_STEP_FACTORY_HPP
 #define FRONTEND_FLOW_STEP_FACTORY_HPP
 
-#include "custom_set.hpp"               // for unordered_set
-#include "design_flow_step.hpp"         // for DesignFlowStep (...
-#include "design_flow_step_factory.hpp" // for DesignFlowStepFa...
-#include "frontend_flow_step.hpp"       // for FrontendFlowStep...
-#include "refcount.hpp"                 // for REF_FORWARD_DECL
-#include <string>                       // for string
+#include "custom_set.hpp"
+#include "design_flow_step.hpp"
+#include "design_flow_step_factory.hpp"
+#include "frontend_flow_step.hpp"
+#include "refcount.hpp"
+
+#include <string>
 
 /// Forward declaration
 REF_FORWARD_DECL(application_manager);
@@ -73,23 +74,20 @@ class FrontendFlowStepFactory : public DesignFlowStepFactory
    FrontendFlowStepFactory(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager,
                            const ParameterConstRef parameters);
 
-   /**
-    * Destructor
-    */
    ~FrontendFlowStepFactory() override;
 
    /**
     * Create the frontend design flow steps
     * @param frontend_flow_step_types is the set of frontend flow transformation to be considered
     */
-   const DesignFlowStepSet
+   DesignFlowStepSet
    GenerateFrontendSteps(const CustomUnorderedSet<FrontendFlowStepType>& frontend_flow_step_types) const;
 
    /**
     * Create the frontend design flow step
     * @param frontend_flow_step_type is the frontend flow to be considered
     */
-   const DesignFlowStepRef GenerateFrontendStep(FrontendFlowStepType frontend_flow_step_type) const;
+   DesignFlowStepRef GenerateFrontendStep(FrontendFlowStepType frontend_flow_step_type) const;
 
    /**
     * Create an application frontend flow step
@@ -97,19 +95,14 @@ class FrontendFlowStepFactory : public DesignFlowStepFactory
     * @param design_flow_step is the type of step to be created
     * @param parameters is the set of input parameters
     */
-   const DesignFlowStepRef CreateApplicationFrontendFlowStep(const FrontendFlowStepType design_flow_step_type) const;
+   DesignFlowStepRef CreateApplicationFrontendFlowStep(const FrontendFlowStepType design_flow_step_type) const;
 
    /**
     * Create a function frontend flow step
     * @param design_flow_step is the type of step to be created
     * @param function_id is the index of the function
     */
-   const DesignFlowStepRef CreateFunctionFrontendFlowStep(const FrontendFlowStepType design_flow_step_type,
-                                                          const unsigned int function_id) const;
-
-   /**
-    * Return the prefix of the steps created by the factory
-    */
-   const std::string GetPrefix() const override;
+   DesignFlowStepRef CreateFunctionFrontendFlowStep(const FrontendFlowStepType design_flow_step_type,
+                                                    const unsigned int function_id) const;
 };
 #endif

@@ -58,10 +58,10 @@ datapath_creator::datapath_creator(const ParameterConstRef _Param, const HLS_man
 
 datapath_creator::~datapath_creator() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 datapath_creator::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

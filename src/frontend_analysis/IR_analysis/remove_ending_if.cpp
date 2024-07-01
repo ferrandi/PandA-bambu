@@ -111,7 +111,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
-#include "tree_reindex.hpp"
 #include <cstdlib>
 #include <fstream>
 
@@ -127,7 +126,7 @@ RemoveEndingIf::RemoveEndingIf(const ParameterConstRef _parameters, const applic
 
 RemoveEndingIf::~RemoveEndingIf() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 RemoveEndingIf::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -142,7 +141,7 @@ RemoveEndingIf::ComputeFrontendRelationships(const DesignFlowStep::RelationshipT
       }
       case(INVALIDATION_RELATIONSHIP):
       {
-         if(design_flow_manager.lock()->GetStatus(GetSignature()) == DesignFlowStep_Status::SUCCESS)
+         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
          {
             relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
          }
@@ -165,9 +164,9 @@ void RemoveEndingIf::Initialize()
 {
    TM = AppM->get_tree_manager();
    tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
-   const auto temp = TM->get_tree_node_const(function_id);
+   const auto temp = TM->GetTreeNode(function_id);
    auto fd = GetPointer<function_decl>(temp);
-   sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   sl = GetPointer<statement_list>(fd->body);
 #if HAVE_ILP_BUILT
    if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and
       GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
@@ -195,9 +194,9 @@ bool RemoveEndingIf::HasToBeExecuted() const
 DesignFlowStep_Status RemoveEndingIf::InternalExec()
 {
    bool bb_modified = false;
-   const auto HLS = GetPointer<const HLS_manager>(AppM)->get_HLS(function_id);
-   const auto clock_period = HLS->HLS_C->get_clock_period();
-   const auto clock_period_margin = HLS->allocation_information->GetClockPeriodMargin();
+   const auto funcHLS = GetPointer<const HLS_manager>(AppM)->get_HLS(function_id);
+   const auto clock_period = funcHLS->HLS_C->get_clock_period();
+   const auto clock_period_margin = funcHLS->allocation_information->GetClockPeriodMargin();
    const auto net_clock_period = clock_period - clock_period_margin;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Remove ending if is starting");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Looking for feasible blocs");
@@ -223,7 +222,7 @@ DesignFlowStep_Status RemoveEndingIf::InternalExec()
             // Control if the BB has just the return stmt
             if(block.second->CGetStmtList().size() == 1)
             {
-               auto last_stmt = GET_NODE(block.second->CGetStmtList().back());
+               auto last_stmt = block.second->CGetStmtList().back();
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---The block has just 1 statement");
                if(last_stmt->get_kind() == gimple_return_K)
                {
@@ -280,16 +279,14 @@ DesignFlowStep_Status RemoveEndingIf::InternalExec()
                            {
                               max = schedule->GetEndingTime(stmt->index);
                            }
-                           if((GET_NODE(stmt)->get_kind() == gimple_call_K) ||
-                              ((GetPointer<const gimple_assign>(GET_NODE(stmt))) &&
-                               ((GET_NODE(GetPointer<const gimple_assign>(GET_NODE(stmt))->op1)->get_kind() ==
-                                 call_expr_K) ||
-                                (GET_NODE(GetPointer<const gimple_assign>(GET_NODE(stmt))->op1)->get_kind() ==
-                                 aggr_init_expr_K))))
+                           if((stmt->get_kind() == gimple_call_K) ||
+                              ((GetPointer<const gimple_assign>(stmt)) &&
+                               ((GetPointer<const gimple_assign>(stmt)->op1->get_kind() == call_expr_K) ||
+                                (GetPointer<const gimple_assign>(stmt)->op1->get_kind() == aggr_init_expr_K))))
                            {
                               return false;
                            }
-                           if(GetPointer<const gimple_node>(GET_NODE(stmt))->vdef)
+                           if(GetPointer<const gimple_node>(stmt)->vdef)
                            {
                               return false;
                            }

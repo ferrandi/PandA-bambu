@@ -127,15 +127,9 @@ class ParametricListBasedSpecialization : public HLSFlowStepSpecialization
     */
    explicit ParametricListBasedSpecialization(const ParametricListBased_Metric parametric_list_based_metric);
 
-   /**
-    * Return the string representation of this
-    */
-   std::string GetKindText() const override;
+   std::string GetName() const override;
 
-   /**
-    * Return the contribution to the signature of a step given by the specialization
-    */
-   std::string GetSignature() const override;
+   context_t GetSignatureContext() const override;
 };
 
 /**
@@ -243,8 +237,7 @@ class parametric_list_based : public Scheduling
        bool& MultiCond0, bool& MultiCond1, bool& LoadStoreFunctionConflict, bool& FunctionStoreconflict,
        bool& proxyFunCond, bool unbounded_RW, bool seeMulticycle);
 
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   HLSRelationships ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * @brief compute_function_topological_order compute reachable function topological order

@@ -1,4 +1,0 @@
-Use the following parameters:
---libm-std-rounding
---soft-float
-...

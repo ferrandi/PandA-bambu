@@ -59,13 +59,8 @@
 #include <string>
 #include <vector>
 
-FunctionalUnitStep::FunctionalUnitStep(const generic_deviceRef _device,
-                                       const DesignFlowManagerConstRef _design_flow_manager,
-                                       const ParameterConstRef _parameters)
-    : DesignFlowStep(_design_flow_manager, _parameters),
-      TM(_device->get_technology_manager()),
-      device(_device),
-      has_first_synthesis_id(0)
+FunctionalUnitStep::FunctionalUnitStep(const generic_deviceRef _device)
+    : TM(_device->get_technology_manager()), device(_device), has_first_synthesis_id(0)
 {
 }
 

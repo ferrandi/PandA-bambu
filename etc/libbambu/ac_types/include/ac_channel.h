@@ -677,7 +677,8 @@ class ac_channel
       __FORCE_INLINE bool nb_read(T& t)
       {
          bool res;
-         t = _read(res);
+         T temp = _read(res);
+         t = res ? temp : t;
          return res;
       }
 

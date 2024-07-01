@@ -65,7 +65,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 #include <list>
 #include <string>
@@ -92,8 +91,7 @@ DesignFlowStep_Status minimal_interface::InternalExec()
 
    const auto FB = HLSMgr->CGetFunctionBehavior(funId);
    const auto BH = FB->CGetBehavioralHelper();
-   const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   const auto is_top = top_functions.find(BH->get_function_index()) != top_functions.end();
+   const bool is_top = HLSMgr->CGetCallGraphManager()->GetRootFunctions().count(BH->get_function_index());
    const auto wrappedObj = SM->get_circ();
    const auto module_name = is_top ? BH->get_function_name() : wrappedObj->get_id() + "_minimal_interface";
 
@@ -149,13 +147,12 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
    const auto channels_number = FB->GetChannelsNumber();
    const auto channels_type = FB->GetChannelsType();
    const auto memory_allocation_policy = FB->GetMemoryAllocationPolicy();
-   const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   const auto Has_intern_shared_data =
-       HLSMgr->Rmem->has_intern_shared_data() ||
-       (memory_allocation_policy == MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
-       (memory_allocation_policy == MemoryAllocation_Policy::NO_BRAM) ||
-       (top_function_ids.count(funId) ? parameters->getOption<bool>(OPT_memory_mapped_top) :
-                                        HLSMgr->hasToBeInterfaced(funId));
+   const auto Has_intern_shared_data = HLSMgr->Rmem->has_intern_shared_data() ||
+                                       (memory_allocation_policy == MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
+                                       (memory_allocation_policy == MemoryAllocation_Policy::NO_BRAM) ||
+                                       (HLSMgr->CGetCallGraphManager()->GetRootFunctions().count(funId) ?
+                                            parameters->getOption<bool>(OPT_memory_mapped_top) :
+                                            HLSMgr->hasToBeInterfaced(funId));
    bool with_master = false;
    bool with_slave = false;
    for(auto i = 0U; i < GetPointerS<module>(wrappedObj)->get_in_port_size(); ++i)
@@ -493,7 +490,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                    TestbenchGeneration::print_var_init(HLSMgr->get_tree_manager(), m->first, HLSMgr->Rmem);
                unsigned int byte_allocated = 0;
                unsigned long long int actual_byte =
-                   tree_helper::Size(HLSMgr->get_tree_manager()->CGetTreeReindex(m->first)) / 8;
+                   tree_helper::SizeAlloc(HLSMgr->get_tree_manager()->GetTreeNode(m->first)) / 8;
                std::vector<std::string> eightbit_string;
                for(const auto& i : splitted)
                {
@@ -1057,53 +1054,40 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                         else
                         {
                            /// check if we have axis master interface
-                           int_port = wrappedObj->find_member("_m_axis_" + port_name + "_TDATA", port_o_K, wrappedObj);
-                           if(int_port)
+                           int_port = wrappedObj->find_member("_" + port_name + "_TDATA", port_o_K, wrappedObj);
+                           if(int_port &&
+                              (GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_FDIN ||
+                               GetPointer<port_o>(int_port)->get_port_interface() ==
+                                   port_o::port_interface::PI_M_AXIS_TDATA))
                            {
-                              if(GetPointer<port_o>(int_port)->get_port_interface() ==
-                                     port_o::port_interface::PI_FDIN ||
-                                 GetPointer<port_o>(int_port)->get_port_interface() ==
-                                     port_o::port_interface::PI_M_AXIS_TDATA)
-                              {
-                                 int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
-                                 THROW_ASSERT(int_port, "unexpected condition");
-                                 portsToSkip.insert(int_port);
-                              }
+                              int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
+                              THROW_ASSERT(int_port, "unexpected condition");
+                              portsToSkip.insert(int_port);
                            }
                            else
                            {
                               /// check if we have axis slave interface
-                              int_port =
-                                  wrappedObj->find_member("_s_axis_" + port_name + "_TDATA", port_o_K, wrappedObj);
-                              if(int_port)
+                              int_port = wrappedObj->find_member("_" + port_name + "_TDATA", port_o_K, wrappedObj);
+                              if(int_port && (GetPointer<port_o>(int_port)->get_port_interface() ==
+                                                  port_o::port_interface::PI_FDOUT ||
+                                              GetPointer<port_o>(int_port)->get_port_interface() ==
+                                                  port_o::port_interface::PI_S_AXIS_TDATA))
                               {
-                                 if(GetPointer<port_o>(int_port)->get_port_interface() ==
-                                        port_o::port_interface::PI_FDOUT ||
-                                    GetPointer<port_o>(int_port)->get_port_interface() ==
-                                        port_o::port_interface::PI_S_AXIS_TDATA)
+                                 portsToSkip.insert(int_port);
+                                 if(port_in->get_kind() == port_vector_o_K)
                                  {
-                                    portsToSkip.insert(int_port);
-                                    if(port_in->get_kind() == port_vector_o_K)
-                                    {
-                                       ext_port = SM_minimal_interface->add_port_vector(
-                                           "s_axis_" + port_name + "_TDATA", port_o::IN,
-                                           GetPointer<port_o>(int_port)->get_ports_size(), interfaceObj,
-                                           int_port->get_typeRef());
-                                    }
-                                    else
-                                    {
-                                       ext_port =
-                                           SM_minimal_interface->add_port("s_axis_" + port_name + "_TDATA", port_o::IN,
-                                                                          interfaceObj, int_port->get_typeRef());
-                                    }
-                                    port_o::fix_port_properties(int_port, ext_port);
-                                    SM_minimal_interface->add_connection(int_port, ext_port);
+                                    ext_port = SM_minimal_interface->add_port_vector(
+                                        port_name + "_TDATA", port_o::IN,
+                                        GetPointer<port_o>(int_port)->get_ports_size(), interfaceObj,
+                                        int_port->get_typeRef());
                                  }
-                                 else if(GetPointer<port_o>(int_port)->get_port_interface() !=
-                                         port_o::port_interface::PI_DEFAULT)
+                                 else
                                  {
-                                    THROW_ERROR("not yet supported port interface");
+                                    ext_port = SM_minimal_interface->add_port(port_name + "_TDATA", port_o::IN,
+                                                                              interfaceObj, int_port->get_typeRef());
                                  }
+                                 port_o::fix_port_properties(int_port, ext_port);
+                                 SM_minimal_interface->add_connection(int_port, ext_port);
                               }
                            }
                         }
@@ -1118,7 +1102,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                const auto tnIndex = int_port->get_typeRef()->treenode;
                if(tnIndex > 0)
                {
-                  const auto tn = HLSMgr->get_tree_manager()->CGetTreeReindex(tnIndex);
+                  const auto tn = HLSMgr->get_tree_manager()->GetTreeNode(tnIndex);
                   if(tree_helper::IsPointerType(tn))
                   {
                      const auto pt_type = tree_helper::CGetPointedType(tree_helper::CGetType(tn));

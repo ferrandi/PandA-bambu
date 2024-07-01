@@ -77,10 +77,10 @@ standard_hls::standard_hls(const ParameterConstRef _parameters, const HLS_manage
 
 standard_hls::~standard_hls() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 standard_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -160,8 +160,7 @@ standard_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rel
 
 DesignFlowStep_Status standard_hls::InternalExec()
 {
-   const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   if(top_function_ids.count(funId))
+   if(HLSMgr->CGetCallGraphManager()->GetRootFunctions().count(funId))
    {
       STOP_TIME(HLSMgr->HLS_execution_time);
    }

@@ -308,10 +308,10 @@ bool GenerateTasteHDLArchitecture::HasToBeExecuted() const
    return true;
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 GenerateTasteHDLArchitecture::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

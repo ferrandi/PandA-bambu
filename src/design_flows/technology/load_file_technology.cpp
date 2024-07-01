@@ -73,7 +73,7 @@ DesignFlowStep_Status LoadFileTechnology::Exec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-const CustomUnorderedSet<TechnologyFlowStep_Type>
+CustomUnorderedSet<TechnologyFlowStep_Type>
 LoadFileTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<TechnologyFlowStep_Type> relationships;

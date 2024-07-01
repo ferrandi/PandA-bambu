@@ -1,3 +1,4 @@
+`timescale 1ns / 1ps
 module module2_IP
   (input wire        clock,
    input wire        reset,
@@ -58,6 +59,7 @@ module module2_IP
 
 endmodule
 
+`timescale 1ns / 1ps
 module module2 (clock, reset, start_port, input1, outputs, done_port, Min_oe_ram, Mout_oe_ram, Min_we_ram, Mout_we_ram, Min_addr_ram, Mout_addr_ram, M_Rdata_ram, Min_Wdata_ram, Mout_Wdata_ram, Min_data_ram_size, Mout_data_ram_size, M_DataRdy);
   parameter BITSIZE_outputs=1, BITSIZE_Min_addr_ram=1, BITSIZE_Mout_addr_ram=1, BITSIZE_M_Rdata_ram=8, BITSIZE_Min_Wdata_ram=8, BITSIZE_Mout_Wdata_ram=8, BITSIZE_Min_data_ram_size=1, BITSIZE_Mout_data_ram_size=1;
   // IN

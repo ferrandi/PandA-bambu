@@ -265,11 +265,10 @@ AC_ARG_ENABLE(debug,               [  --enable-debug               compile the s
 AC_ARG_ENABLE(opt,                 [  --enable-opt                 compile the source code with -O2 (default enabled) ],                                    [panda_OPT="$enableval"], [panda_OPT="yes"])
 AC_ARG_ENABLE(allstatic,           [  --enable-allstatic           create static binaries ],                                                                [panda_ALLSTATIC="$enableval"], [panda_ALLSTATIC="yes"])
 AC_ARG_ENABLE(32bits,              [  --enable-32bits              create 32bits binaries ],                                                                [panda_32BITS="$enableval"])
-AC_ARG_ENABLE(experimental,        [  --enable-experimental        compile the source code with experimental features],                                     [panda_USE_EXPERIMENTAL="$enableval"], [panda_USE_EXPERIMENTAL="no"])
 
 
 #etc/ext stuff
-AC_ARG_ENABLE(flopoco,             [  --enable-flopoco             compile FloPoCo external library],                     [panda_USE_FLOPOCO="$enableval"])
+AC_ARG_ENABLE(flopoco,             [  --enable-flopoco             compile FloPoCo external library],                     [panda_USE_FLOPOCO="$enableval"], [panda_USE_FLOPOCO="no"])
 
 
 
@@ -350,11 +349,6 @@ fi
 #                                                                              #
 ################################################################################
 
-if test "x$panda_USE_EXPERIMENTAL" = xyes; then
-    panda_RELEASE=no;
-fi
-
-
 ################ Bambu checking ##############################
 if test "x$panda_USE_BAMBU" = xyes; then
   panda_USE_ABSEIL=yes;
@@ -397,16 +391,7 @@ if test "x$panda_USE_BAMBU" = xyes; then
   AC_DEFINE(HAVE_LIBBDD, 1, "Define if bambu is built")
   fi
 
-  ###  bambu experimental packages ###
-  if test "x$panda_USE_EXPERIMENTAL" = xyes; then
-    panda_USE_LIB_TO_DATAFILE=yes;
-    #in experimental mode, the FloPoCo library is activated by default
-    if test "x$panda_USE_FLOPOCO" != xno; then
-       panda_USE_FLOPOCO=yes;
-    fi
-  else
-    panda_USE_COIN_OR=no;
-  fi
+  panda_USE_COIN_OR=no;
 
   AC_APPEND(ENABLE_DOC,"BAMBU")
 fi
@@ -442,10 +427,6 @@ if test "x$panda_USE_SPIDER" = xyes; then
   panda_USE_LIB_FROM_DISCREPANCY=yes;
   AC_APPEND(ENABLE_DOC,"SPIDER")
   AC_DEFINE(HAVE_SPIDER_BUILT, 1, "Define if spider is built")
-  if test "x$panda_USE_EXPERIMENTAL" = xyes; then
-     panda_USE_SOURCE_CODE_STATISTICS_XML=yes;
-     panda_USE_LIB_TREE=yes;
-  fi
 fi
 AM_CONDITIONAL(BUILD_SPIDER,      test "x$panda_USE_SPIDER" = xyes)
 
@@ -560,11 +541,6 @@ if test "x$panda_RELEASE" = xyes; then
 fi
 AM_CONDITIONAL(BUILD_RELEASE, test "x$panda_RELEASE" = xyes)
 
-if test "x$panda_USE_EXPERIMENTAL" = xyes; then
-  AC_DEFINE(HAVE_EXPERIMENTAL, 1, "Define if experimental features are added")
-fi
-AM_CONDITIONAL(BUILD_LIB_EXPERIMENTAL,  test "x$panda_USE_EXPERIMENTAL" = xyes)
-
 if test "x$panda_UNORDERED" = xyes; then
    AC_DEFINE(HAVE_UNORDERED, 1, "Define if unordered data structure are used")
 fi
@@ -597,13 +573,13 @@ fi
 
 ################################# ABSEIL stuff ################################
 if test "x$panda_USE_ABSEIL" = xyes; then
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/abseil-cpp $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'"
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/abseil $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'"
    if test $? != 0; then
       AC_MSG_ERROR("Error in abseil configuration")
    fi
    AC_DEFINE(HAVE_ABSEIL, 1, "Define if abseil is used")
-   ABSEIL_DIR="$TOPSRCDIR/ext/abseil-cpp"
-   ABSEIL_OBJDIR="ext/abseil-cpp"
+   ABSEIL_DIR="$TOPSRCDIR/ext/abseil/abseil-cpp"
+   ABSEIL_OBJDIR="ext/abseil"
 fi
 AM_CONDITIONAL(BUILD_ABSEIL, test "x$panda_USE_ABSEIL" = xyes)
 AC_SUBST(ABSEIL_DIR)

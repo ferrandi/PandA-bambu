@@ -39,25 +39,13 @@
  *
  */
 #include "BambuParameter.hpp"
+
 #include "allocation_constants.hpp"
 #include "cdfc_module_binding.hpp"
 #include "chaining.hpp"
 #include "clique_covering.hpp"
 #include "compiler_constants.hpp"
 #include "compiler_wrapper.hpp"
-#include "config_HAVE_COIN_OR.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
-#include "config_HAVE_FLOPOCO.hpp"
-#include "config_HAVE_GLPK.hpp"
-#include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-#include "config_HAVE_I386_CLANG16_COMPILER.hpp"
-#include "config_HAVE_ILP_BUILT.hpp"
-#include "config_HAVE_LIBRARY_CHARACTERIZATION_BUILT.hpp"
-#include "config_HAVE_LP_SOLVE.hpp"
-#include "config_HAVE_VCD_BUILT.hpp"
-#include "config_PANDA_DATA_INSTALLDIR.hpp"
-#include "config_PANDA_LIB_INSTALLDIR.hpp"
-#include "config_SKIP_WARNING_SECTIONS.hpp"
 #include "constant_strings.hpp"
 #include "cpu_time.hpp"
 #include "datapath_creator.hpp"
@@ -74,6 +62,19 @@
 #include "technology_node.hpp"
 #include "tree_helper.hpp"
 #include "utility.hpp"
+
+#include "config_HAVE_COIN_OR.hpp"
+#include "config_HAVE_FLOPOCO.hpp"
+#include "config_HAVE_GLPK.hpp"
+#include "config_HAVE_HOST_PROFILING_BUILT.hpp"
+#include "config_HAVE_I386_CLANG16_COMPILER.hpp"
+#include "config_HAVE_ILP_BUILT.hpp"
+#include "config_HAVE_LIBRARY_CHARACTERIZATION_BUILT.hpp"
+#include "config_HAVE_LP_SOLVE.hpp"
+#include "config_HAVE_VCD_BUILT.hpp"
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
+#include "config_PANDA_LIB_INSTALLDIR.hpp"
+#include "config_SKIP_WARNING_SECTIONS.hpp"
 
 #if HAVE_HOST_PROFILING_BUILT
 #include "host_profiling.hpp"
@@ -225,6 +226,7 @@
 #define OPT_SHARED_INPUT_REGISTERS (1 + OPT_NANOXPLORE_BYPASS)
 #define OPT_INLINE_FUNCTIONS (1 + OPT_SHARED_INPUT_REGISTERS)
 #define OPT_AXI_BURST_TYPE (1 + OPT_INLINE_FUNCTIONS)
+#define OPT_GENERATE_COMPONENTS_LIBRARY (1 + OPT_AXI_BURST_TYPE)
 
 /// constant correspond to the "parametric list based option"
 #define PAR_LIST_BASED_OPT "parametric-list-based"
@@ -334,8 +336,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        The speculative SDC is more conservative, in case \n"
       << "        --panda-parameter=enable-conservative-sdc=1 is passed.\n\n"
 #endif
-      << "    --pipelining,-p\n"
-      << "        Perform functional pipelining starting from the top function.\n\n"
       << "    --pipelining,-p=<func_name>[=<init_interval>][,<func_name>[=<init_interval>]]*\n"
       << "        Perform pipelining of comma separated list of specified functions with optional \n"
       << "        initiation interval (default II=1).\n"
@@ -520,19 +520,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            PERIOD          - Actual clock period\n"
       << "            REGISTERS       - number of registers\n"
       << "\n"
-#if HAVE_EXPERIMENTAL
-      << "    --evaluation-mode[=type]\n"
-      << "        Perform evaluation of the results:\n"
-      << "            EXACT:  based on actual synthesis and simulation (default)\n"
-      << "            LINEAR: based on linear regression. Unlike EXACT it supports\n"
-      << "                    only the evaluation of the following objectives:\n"
-      << "                    - AREA\n"
-      << "                    - CLOCK_SLACK\n"
-      << "                    - TIME\n"
-      << "\n"
-      << "    --timing-violation\n"
-      << "        Aborts if synthesized circuit does not meet the timing.\n\n"
-#endif
       << std::endl;
 
    // RTL synthesis options
@@ -640,9 +627,9 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Perform the high-level synthesis of integer division and modulo\n"
       << "        operations starting from a C library based implementation or a HDL component:\n"
       << "             none  - use a HDL based pipelined restoring division\n"
-      << "             nr1   - use a C-based non-restoring division with unrolling factor equal to 1 (default)\n"
+      << "             nr1   - use a C-based non-restoring division with unrolling factor equal to 1\n"
       << "             nr2   - use a C-based non-restoring division with unrolling factor equal to 2\n"
-      << "             NR    - use a C-based Newton-Raphson division\n"
+      << "             NR    - use a C-based Newton-Raphson division (default)\n"
       << "             as    - use a C-based align divisor shift dividend method\n\n"
       << "    --hls-fpdiv=<method>\n"
       << "        Perform the high-level synthesis of floating point division \n"
@@ -822,8 +809,16 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        If the first character of func_name is '*', then 'num_resources'\n"
       << "        applies to all functions having as a prefix 'func_name' with '*'\n"
       << "        character removed.\n"
-      << "        In case we have -C='*', all functions have 1 instance constraint. \n\n"
-      << "    --AXI-burst-type=value\n."
+      << "        In case we have -C='*', all functions have 1 instance constraint. \n\n";
+   os << "    "
+         "--resource-constraints,-c=<resource_name>:<library_name>[=<num_resources>][,<resource_name>:<library_name>[=<"
+         "num_resources>]]*\n"
+      << "        Perform resource sharing inside the datapath, limiting the number of\n"
+      << "        resource instances to 'num_resources'.\n"
+      << "        Resources are specified as a comma-separated list of pairs (<resource_name>:<library_name>)\n"
+      << "        with an optional number of resources. (num_resources is by default equal to 1\n"
+      << "        when not specified).\n\n";
+   os << "    --AXI-burst-type=value\n."
       << "        Specify the type of AXI burst when performing single beat operations:\n"
       << "              FIXED        - fixed type burst (default)\n"
       << "              INCREMENTAL  - incremental type burst\n\n";
@@ -882,6 +877,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << std::endl;
    // options defining where backend tools could be found
    os << "  Backend configuration:\n\n"
+      << "    --generate-components-library\n"
+      << "        Export standard Bambu RTL components as a separate library"
       << "    --mentor-visualizer\n"
       << "        Simulate the RTL implementation and then open Mentor Visualizer.\n"
       << "        (Mentor root has to be correctly set, see --mentor-root)\n\n"
@@ -936,12 +933,12 @@ int BambuParameter::Exec()
    /// flag to check if scheduling algorithm has been already chosen
    bool scheduling_set_p = false;
    /// variable used into option parsing
-   int option_index;
+   int opt, option_index;
 
    // Bambu short option. An option character in this string can be followed by a colon (`:') to indicate that it
    // takes a required argument. If an option character is followed by two colons (`::'), its argument is optional;
    // this is a GNU extension.
-   const char* const short_options = COMMON_SHORT_OPTIONS_STRING "o:t:u:H:sSC::b:w:p::" GCC_SHORT_OPTIONS_STRING;
+   const char* const short_options = COMMON_SHORT_OPTIONS_STRING "o:t:u:H:sSc:C::b:w:p::" GCC_SHORT_OPTIONS_STRING;
 
    const struct option long_options[] = {
       COMMON_LONG_OPTIONS,
@@ -950,8 +947,6 @@ int BambuParameter::Exec()
       {"top-rtldesign-name", required_argument, nullptr, OPT_TOP_RTLDESIGN_NAME},
       {"time", required_argument, nullptr, 't'},
       {"file-input-data", required_argument, nullptr, INPUT_OPT_FILE_INPUT_DATA},
-      /// Frontend options
-      {"circuit-dbg", required_argument, nullptr, 0},
    /// Scheduling options
 #if HAVE_ILP_BUILT
       {"speculative-sdc-scheduling", no_argument, nullptr, 's'},
@@ -986,12 +981,9 @@ int BambuParameter::Exec()
       {"expose-globals", no_argument, nullptr, OPT_EXPOSE_GLOBALS},
       // parameter based resource constraints
       {"constraints", required_argument, nullptr, 'C'},
+      {"resource-constraints", required_argument, nullptr, 'c'},
       /// evaluation options
       {"evaluation", optional_argument, nullptr, OPT_EVALUATION},
-#if HAVE_EXPERIMENTAL
-      {"evaluation-mode", required_argument, nullptr, OPT_EVALUATION_MODE},
-      {"timing-simulation", no_argument, nullptr, 0},
-#endif
       {"timing-violation", no_argument, nullptr, OPT_TIMING_VIOLATION},
       {"assert-debug", no_argument, nullptr, 0},
       {"device-name", required_argument, nullptr, OPT_DEVICE_NAME},
@@ -1106,6 +1098,7 @@ int BambuParameter::Exec()
       {"verilator-parallel", optional_argument, nullptr, OPT_VERILATOR_PARALLEL},
       {"shared-input-registers", no_argument, nullptr, OPT_SHARED_INPUT_REGISTERS},
       {"inline-fname", required_argument, nullptr, OPT_INLINE_FUNCTIONS},
+      {"generate-components-library", no_argument, nullptr, OPT_GENERATE_COMPONENTS_LIBRARY},
       GCC_LONG_OPTIONS,
       {nullptr, 0, nullptr, 0}
    };
@@ -1116,17 +1109,9 @@ int BambuParameter::Exec()
       return EXIT_SUCCESS;
    }
 
-   while(true)
+   while((opt = getopt_long(argc, argv, short_options, long_options, &option_index)) != -1)
    {
-      int next_option = getopt_long(argc, argv, short_options, long_options, &option_index);
-
-      // no more options are available
-      if(next_option == -1)
-      {
-         break;
-      }
-
-      switch(next_option)
+      switch(opt)
       {
          /// general options
          case OPT_TOP_FNAME:
@@ -1245,11 +1230,23 @@ int BambuParameter::Exec()
          {
             if(optarg)
             {
-               setOption(OPT_constraints_functions, optarg);
+               setOption(OPT_function_constraints, optarg);
             }
             else
             {
                THROW_ERROR("BadParameters: -C option not correctly specified");
+            }
+            break;
+         }
+         case 'c':
+         {
+            if(optarg)
+            {
+               setOption(OPT_resource_constraints, optarg);
+            }
+            else
+            {
+               THROW_ERROR("BadParameters: -c option not correctly specified");
             }
             break;
          }
@@ -1739,11 +1736,11 @@ int BambuParameter::Exec()
          {
             if(std::string(optarg) == "V")
             {
-               setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
+               setOption(OPT_writer_language, HDLWriter_Language::VERILOG);
             }
             else if(std::string(optarg) == "H")
             {
-               setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VHDL));
+               setOption(OPT_writer_language, HDLWriter_Language::VHDL);
             }
             else
             {
@@ -1899,7 +1896,7 @@ int BambuParameter::Exec()
 #if HAVE_HOST_PROFILING_BUILT
          case OPT_HOST_PROFILING:
          {
-            setOption(OPT_profiling_method, static_cast<int>(HostProfiling_Method::PM_BBP));
+            setOption(OPT_profiling_method, HostProfiling_Method::PM_BBP);
             break;
          }
 #endif
@@ -2106,10 +2103,13 @@ int BambuParameter::Exec()
          }
          case OPT_VERILATOR_PARALLEL:
          {
-            setOption(OPT_verilator_parallel, std::to_string(std::thread::hardware_concurrency()));
             if(optarg)
             {
                setOption(OPT_verilator_parallel, std::string(optarg));
+            }
+            else
+            {
+               setOption(OPT_verilator_parallel, std::to_string(std::thread::hardware_concurrency()));
             }
             break;
          }
@@ -2126,6 +2126,11 @@ int BambuParameter::Exec()
          case OPT_INLINE_FUNCTIONS:
          {
             setOption(OPT_inline_functions, std::string(optarg));
+            break;
+         }
+         case OPT_GENERATE_COMPONENTS_LIBRARY:
+         {
+            setOption(OPT_generate_components_library, true);
             break;
          }
          case 0:
@@ -2362,10 +2367,10 @@ int BambuParameter::Exec()
          default:
          {
             bool exit_success = false;
-            bool res = ManageGccOptions(next_option, optarg);
+            bool res = ManageGccOptions(opt, optarg);
             if(res)
             {
-               res = ManageDefaultOptions(next_option, optarg, exit_success);
+               res = ManageDefaultOptions(opt, optarg, exit_success);
             }
             if(exit_success)
             {
@@ -2378,16 +2383,6 @@ int BambuParameter::Exec()
          }
       }
    }
-
-#if HAVE_EXPERIMENTAL
-   if(isOption(OPT_gcc_write_xml))
-   {
-      const auto filenameXML = getOption<std::filesystem::path>(OPT_gcc_write_xml);
-      write_xml_configuration_file(filenameXML);
-      PRINT_MSG("Configuration saved into file \"" + filenameXML.string() + "\"");
-      return EXIT_SUCCESS;
-   }
-#endif
 
    std::string cat_args;
 
@@ -2421,7 +2416,7 @@ int BambuParameter::Exec()
          const auto input_file =
              isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
          setOption(OPT_input_file, input_file + filename);
-         setOption(OPT_input_format, static_cast<int>(Parameters_FileFormat::FF_AADL));
+         setOption(OPT_input_format, Parameters_FileFormat::FF_AADL);
       }
 #endif
       else if(file_type == Parameters_FileFormat::FF_C || file_type == Parameters_FileFormat::FF_OBJECTIVEC ||
@@ -2431,7 +2426,7 @@ int BambuParameter::Exec()
          const auto input_file =
              isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
          setOption(OPT_input_file, input_file + filename);
-         setOption(OPT_input_format, static_cast<int>(file_type));
+         setOption(OPT_input_format, file_type);
       }
       else if(file_type == Parameters_FileFormat::FF_RAW ||
               (isOption(OPT_input_format) &&
@@ -2440,7 +2435,7 @@ int BambuParameter::Exec()
          const auto input_file =
              isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
          setOption(OPT_input_file, input_file + filename);
-         setOption(OPT_input_format, static_cast<int>(Parameters_FileFormat::FF_RAW));
+         setOption(OPT_input_format, Parameters_FileFormat::FF_RAW);
          if(!isOption(OPT_pretty_print))
          {
             setOption(OPT_pretty_print, "_a.c");
@@ -2817,7 +2812,7 @@ void BambuParameter::CheckParameters()
    {
       setOption(OPT_generate_taste_architecture, true);
       setOption(OPT_clock_period, 20);
-      setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VHDL));
+      setOption(OPT_writer_language, HDLWriter_Language::VHDL);
       setOption(OPT_interface_type, HLSFlowStep_Type::TASTE_INTERFACE_GENERATION);
       setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_NN);
       setOption(OPT_channels_number, 2);
@@ -3053,7 +3048,7 @@ void BambuParameter::CheckParameters()
       else
       {
          setOption(OPT_disable_function_proxy, false);
-         if(isOption(OPT_constraints_functions))
+         if(isOption(OPT_function_constraints))
          {
             THROW_ERROR("--discrepancy-hw Hardware Discrepancy Analysis only works with function proxies and not with "
                         "-C defined");
@@ -3218,9 +3213,9 @@ void BambuParameter::CheckParameters()
       if(!isOption(OPT_disable_function_proxy))
       {
          setOption(OPT_disable_function_proxy, true);
-         if(!isOption(OPT_constraints_functions))
+         if(!isOption(OPT_function_constraints))
          {
-            setOption(OPT_constraints_functions, "*");
+            setOption(OPT_function_constraints, "*");
          }
       }
    }
@@ -3313,7 +3308,7 @@ void BambuParameter::CheckParameters()
       add_experimental_setup_compiler_options(!flag_cpp);
       if(!isOption(OPT_disable_function_proxy))
       {
-         if(!isOption(OPT_constraints_functions))
+         if(!isOption(OPT_function_constraints))
          {
             setOption(OPT_disable_function_proxy, false);
          }
@@ -3356,7 +3351,7 @@ void BambuParameter::CheckParameters()
       add_experimental_setup_compiler_options(!flag_cpp);
       if(!isOption(OPT_disable_function_proxy))
       {
-         if(!isOption(OPT_constraints_functions))
+         if(!isOption(OPT_function_constraints))
          {
             setOption(OPT_disable_function_proxy, false);
          }
@@ -3379,7 +3374,7 @@ void BambuParameter::CheckParameters()
       add_experimental_setup_compiler_options(false);
       if(!isOption(OPT_disable_function_proxy))
       {
-         if(!isOption(OPT_constraints_functions))
+         if(!isOption(OPT_function_constraints))
          {
             setOption(OPT_disable_function_proxy, false);
          }
@@ -3558,7 +3553,7 @@ void BambuParameter::CheckParameters()
       THROW_ERROR("--discrepancy-hw is only compatible with classic FSM controllers");
    }
    if(isOption(OPT_discrepancy_hw) && getOption<bool>(OPT_discrepancy_hw) &&
-      static_cast<HDLWriter_Language>(getOption<unsigned int>(OPT_writer_language)) != HDLWriter_Language::VERILOG)
+      getOption<HDLWriter_Language>(OPT_writer_language) != HDLWriter_Language::VERILOG)
    {
       THROW_ERROR("--discrepancy-hw is only compatible with Verilog");
    }
@@ -3739,7 +3734,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_top_file, "top");
 
    /// backend HDL
-   setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
+   setOption(OPT_writer_language, HDLWriter_Language::VERILOG);
 
    /// -- Module Interfaces -- //
    setOption(OPT_interface, true);
@@ -3750,6 +3745,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_evaluation_mode, Evaluation_Mode::NONE);
    setOption(OPT_evaluation_objectives, "");
 
+   setOption(OPT_generate_components_library, false);
    setOption(OPT_altera_root, "/opt/altera" STR_CST_string_separator "/opt/intelFPGA");
    setOption(OPT_lattice_root, "/opt/diamond" STR_CST_string_separator "/usr/local/diamond");
    setOption(OPT_mentor_root, "/opt/mentor");
@@ -3773,7 +3769,6 @@ void BambuParameter::SetDefaults()
    setOption(OPT_without_transformation, true);
    setOption(OPT_compute_size_of, true);
    setOption(OPT_precision, 3);
-   setOption(OPT_gcc_c, true);
    setOption(OPT_gcc_config, false);
    setOption(OPT_gcc_costs, false);
    setOption(OPT_gcc_optimization_set, CompilerWrapper_OptimizationSet::OBAMBU);
@@ -3815,7 +3810,7 @@ void BambuParameter::SetDefaults()
 
 #if HAVE_HOST_PROFILING_BUILT
    setOption(OPT_exec_argv, STR_CST_string_separator);
-   setOption(OPT_profiling_method, static_cast<int>(HostProfiling_Method::PM_NONE));
+   setOption(OPT_profiling_method, HostProfiling_Method::PM_NONE);
    setOption(OPT_host_compiler, CompilerWrapper::getDefaultCompiler());
 #endif
    setOption(OPT_clock_period, 10.0);

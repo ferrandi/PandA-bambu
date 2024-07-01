@@ -313,7 +313,7 @@ endif
     $(AM_CPPFLAGS)
 design_flows/technology/load_default_technology.cpp : design_flows/technology/C_COMPLEX_IPs.data design_flows/technology/C_FP_IPs.data design_flows/technology/C_HLS_IPs.data design_flows/technology/C_IO_IPs.data design_flows/technology/C_MEM_IPs.data \
     design_flows/technology/C_PROFILING_IPs.data design_flows/technology/CS_COMPONENT.data design_flows/technology/C_STD_IPs.data design_flows/technology/C_VEC_IPs.data design_flows/technology/NC_HLS_IPs.data design_flows/technology/NC_MEM_IPs.data design_flows/technology/NC_PC_IPs.data design_flows/technology/C_PC_IPs.data\
-    design_flows/technology/NC_SF_IPs.data design_flows/technology/NC_STD_IPs.data design_flows/technology/NC_VEC_IPs.data design_flows/technology/NC_wishbone_IPs.data design_flows/technology/NC_CACHE_IPs.data
+    design_flows/technology/NC_SF_IPs.data design_flows/technology/NC_STD_IPs.data design_flows/technology/NC_VEC_IPs.data design_flows/technology/NC_wishbone_IPs.data design_flows/technology/NC_CACHE_IPs.data design_flows/technology/NC_DATAFLOW_IPs.data
 
 #The tab in this rule can't be replaced by blanks
 design_flows/technology/C_COMPLEX_IPs.data: $(top_srcdir)/etc/lib/technology/C_COMPLEX_IPs.xml

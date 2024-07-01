@@ -149,6 +149,8 @@ namespace flopoco
    bool combinatorialOperator;
 } // namespace flopoco
 
+int flopoco_wrapper::sollya_initialized = 0;
+
 flopoco_wrapper::flopoco_wrapper(int
 #ifndef NDEBUG
                                      _debug_level
@@ -249,18 +251,22 @@ flopoco_wrapper::flopoco_wrapper(int
       THROW_UNREACHABLE("Non supported target architecture: " + FU_target);
    }
 
-   /// sollya initialization
-   jmp_buf recover;
-
-   initTool();
-   if(setjmp(recover))
+   if(!sollya_initialized)
    {
-      /* If we are here, we have come back from an error in the library */
-      THROW_ERROR("An error occurred somewhere");
+      /// sollya initialization
+      jmp_buf recover;
+
+      initTool();
+      if(setjmp(recover))
+      {
+         /* If we are here, we have come back from an error in the library */
+         THROW_ERROR("An error occurred somewhere");
+      }
+      setRecoverEnvironment(&recover);
+      extern int recoverEnvironmentReady;
+      recoverEnvironmentReady = 1;
+      sollya_initialized = 1;
    }
-   setRecoverEnvironment(&recover);
-   extern int recoverEnvironmentReady;
-   recoverEnvironmentReady = 1;
 }
 
 flopoco_wrapper::~flopoco_wrapper()

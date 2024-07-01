@@ -61,8 +61,7 @@ class TestVectorParser : public HLS_step
     */
    std::vector<std::map<std::string, std::string>> ParseXMLFile(const std::filesystem::path& input_xml) const;
 
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   HLSRelationships ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    TestVectorParser(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,

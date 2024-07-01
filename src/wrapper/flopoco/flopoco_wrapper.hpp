@@ -135,6 +135,8 @@ class flopoco_wrapper
 
    std::vector<flopoco::Operator*> oplist;
 
+   static int sollya_initialized;
+
    flopoco::Target* target;
 
    /**

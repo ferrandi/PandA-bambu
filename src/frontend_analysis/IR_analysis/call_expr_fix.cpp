@@ -59,7 +59,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 /// utility include
 #include "dbgPrintHelper.hpp"
@@ -74,7 +73,7 @@ call_expr_fix::call_expr_fix(const application_managerRef _AppM, unsigned int _f
 
 call_expr_fix::~call_expr_fix() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
 call_expr_fix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -103,9 +102,9 @@ call_expr_fix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
 DesignFlowStep_Status call_expr_fix::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
-   tree_nodeRef temp = TM->get_tree_node_const(function_id);
+   tree_nodeRef temp = TM->GetTreeNode(function_id);
    auto* fdcur = GetPointer<function_decl>(temp);
-   auto* sl = GetPointer<statement_list>(GET_NODE(fdcur->body));
+   auto* sl = GetPointer<statement_list>(fdcur->body);
    bool bb_modified = false;
 
    /// Checking if there are gimple_call or call_expr for which the fix apply
@@ -114,19 +113,18 @@ DesignFlowStep_Status call_expr_fix::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->analyzing BB" + std::to_string(block.first));
       for(const auto& statement : block.second->CGetStmtList())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing node " + GET_NODE(statement)->ToString());
-         if(GET_NODE(statement)->get_kind() == gimple_call_K)
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing node " + statement->ToString());
+         if(statement->get_kind() == gimple_call_K)
          {
-            auto* ce = GetPointer<gimple_call>(GET_NODE(statement));
+            auto* ce = GetPointer<gimple_call>(statement);
             std::vector<tree_nodeRef>& args = ce->args;
-            auto* ae = GetPointer<addr_expr>(GET_NODE(ce->fn));
+            auto* ae = GetPointer<addr_expr>(ce->fn);
             if(ae && args.size())
             {
-               auto* fd = GetPointer<function_decl>(GET_NODE(ae->op));
+               auto* fd = GetPointer<function_decl>(ae->op);
                if(!fd->undefined_flag)
                {
-                  tree_nodeRef functionType = GET_NODE(fd->type);
-                  auto* fun_type = GetPointer<function_type>(functionType);
+                  auto* fun_type = GetPointer<function_type>(fd->type);
                   bool is_var_args_p = fun_type->varargs_flag;
                   if(!is_var_args_p)
                   {
@@ -135,10 +133,10 @@ DesignFlowStep_Status call_expr_fix::InternalExec()
                      unsigned int count_param = 0;
                      while(paramList)
                      {
-                        tree_nodeRef elem = GET_NODE(paramList);
+                        tree_nodeRef elem = paramList;
                         auto* node = GetPointer<tree_list>(elem);
                         paramList = node->chan;
-                        if(GET_NODE(node->valu)->get_kind() != void_type_K)
+                        if(node->valu->get_kind() != void_type_K)
                         {
                            count_param++;
                         }
@@ -159,21 +157,20 @@ DesignFlowStep_Status call_expr_fix::InternalExec()
                }
             }
          }
-         if(GET_NODE(statement)->get_kind() == gimple_assign_K)
+         if(statement->get_kind() == gimple_assign_K)
          {
-            auto* ga = GetPointer<gimple_assign>(GET_NODE(statement));
-            if(GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K)
+            auto* ga = GetPointer<gimple_assign>(statement);
+            if(ga->op1->get_kind() == call_expr_K || ga->op1->get_kind() == aggr_init_expr_K)
             {
-               auto* ce = GetPointer<call_expr>(GET_NODE(ga->op1));
+               auto* ce = GetPointer<call_expr>(ga->op1);
                std::vector<tree_nodeRef>& args = ce->args;
-               auto* ae = GetPointer<addr_expr>(GET_NODE(ce->fn));
+               auto* ae = GetPointer<addr_expr>(ce->fn);
                if(ae && args.size())
                {
-                  auto* fd = GetPointer<function_decl>(GET_NODE(ae->op));
+                  auto* fd = GetPointer<function_decl>(ae->op);
                   if(!fd->undefined_flag)
                   {
-                     tree_nodeRef functionType = GET_NODE(fd->type);
-                     auto* fun_type = GetPointer<function_type>(functionType);
+                     auto* fun_type = GetPointer<function_type>(fd->type);
                      bool is_var_args_p = fun_type->varargs_flag;
                      if(!is_var_args_p)
                      {
@@ -182,10 +179,9 @@ DesignFlowStep_Status call_expr_fix::InternalExec()
                         unsigned int count_param = 0;
                         while(paramList)
                         {
-                           tree_nodeRef elem = GET_NODE(paramList);
-                           auto* node = GetPointer<tree_list>(elem);
+                           auto* node = GetPointer<tree_list>(paramList);
                            paramList = node->chan;
-                           if(GET_NODE(node->valu)->get_kind() != void_type_K)
+                           if(node->valu->get_kind() != void_type_K)
                            {
                               count_param++;
                            }

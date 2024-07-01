@@ -53,20 +53,11 @@ class WeightedCliqueRegisterBindingSpecialization : public HLSFlowStepSpecializa
    /// The algorithm to be used
    const CliqueCovering_Algorithm clique_covering_algorithm;
 
-   /**
-    * Constructor
-    */
    explicit WeightedCliqueRegisterBindingSpecialization(const CliqueCovering_Algorithm clique_covering_algorithm);
 
-   /**
-    * Return the string representation of this
-    */
-   std::string GetKindText() const override;
+   std::string GetName() const override;
 
-   /**
-    * Return the contribution to the signature of a step given by the specialization
-    */
-   std::string GetSignature() const override;
+   context_t GetSignatureContext() const override;
 };
 
 class weighted_clique_register : public compatibility_based_register

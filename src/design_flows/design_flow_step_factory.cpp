@@ -40,27 +40,24 @@
  * Last modified by $Author$
  *
  */
-
-/// Header include
 #include "design_flow_step_factory.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// utility include
 #include "exceptions.hpp"
 
-DesignFlowStepFactory::DesignFlowStepFactory(const DesignFlowManagerConstRef& _design_flow_manager,
+DesignFlowStepFactory::DesignFlowStepFactory(DesignFlowStep::StepClass _step_class,
+                                             const DesignFlowManagerConstRef& _design_flow_manager,
                                              const ParameterConstRef& _parameters)
     : design_flow_manager(_design_flow_manager),
       parameters(_parameters),
-      debug_level(_parameters->getOption<int>(OPT_debug_level))
+      debug_level(_parameters->getOption<int>(OPT_debug_level)),
+      step_class(_step_class)
 {
 }
 
 DesignFlowStepFactory::~DesignFlowStepFactory() = default;
 
-DesignFlowStepRef DesignFlowStepFactory::CreateFlowStep(const std::string&) const
+DesignFlowStepRef DesignFlowStepFactory::CreateFlowStep(DesignFlowStep::signature_t) const
 {
    THROW_UNREACHABLE("Not yet implemented");
    return DesignFlowStepRef();

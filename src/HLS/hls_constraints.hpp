@@ -123,6 +123,12 @@ class HLS_constraints
    void read_HLS_constraints_File(const std::string& f);
 
    /**
+    * @brief read_HLS_CL_constraints reads command-line constraints
+    * @param s is the input string
+    */
+   void read_HLS_CL_constraints(const std::string& s);
+
+   /**
     * Writes an XML file describing the high level synthesis constraints data structure.
     * @param f the output file name
     */

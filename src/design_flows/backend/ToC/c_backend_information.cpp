@@ -49,7 +49,7 @@ CBackendInformation::CBackendInformation(Type _type, const std::filesystem::path
 {
 }
 
-std::string CBackendInformation::GetKindText() const
+std::string CBackendInformation::GetName() const
 {
    switch(type)
    {
@@ -73,7 +73,7 @@ std::string CBackendInformation::GetKindText() const
    return "";
 }
 
-std::string CBackendInformation::GetSignature() const
+HLSFlowStepSpecialization::context_t CBackendInformation::GetSignatureContext() const
 {
-   return "CBackend::" + GetKindText();
+   return ComputeSignatureContext(C_BACKEND, static_cast<unsigned char>(type));
 }

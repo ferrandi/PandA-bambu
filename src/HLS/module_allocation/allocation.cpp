@@ -40,57 +40,57 @@
 
 #include "allocation.hpp"
 
-#include "HDL_manager.hpp"            // for structural_managerRef, langu...
-#include "ModuleGeneratorManager.hpp" // for structural_objectRef, struct...
-#include "NP_functionality.hpp"       // for NP_functionalityRef
-#include "Parameter.hpp"              // for ParameterConstRef
-#include "allocation_information.hpp" // for technology_nodeRef, node_kin...
+#include "HDL_manager.hpp"
+#include "ModuleGeneratorManager.hpp"
+#include "NP_functionality.hpp"
+#include "Parameter.hpp"
+#include "allocation_information.hpp"
 #include "application_frontend_flow_step.hpp"
 #include "area_info.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp" // for HAVE_EXPERIMENTAL
-#include "config_HAVE_FLOPOCO.hpp"      // for HAVE_FLOPOCO
-#include "cpu_time.hpp"                 // for START_TIME, STOP_TIME
+#include "cpu_time.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_VERY_PEDANTIC
+#include "dbgPrintHelper.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-#include "design_flow_step_factory.hpp" // for DesignFlowManagerConstRef
-#include "exceptions.hpp"               // for THROW_ASSERT, THROW_ERROR
+#include "design_flow_step_factory.hpp"
+#include "exceptions.hpp"
 #include "frontend_flow_step_factory.hpp"
 #include "function_frontend_flow_step.hpp"
 #include "functions.hpp"
 #include "generic_device.hpp"
-#include "hls.hpp"             // for HLS_constraintsRef
-#include "hls_constraints.hpp" // for ENCODE_FU_LIB
+#include "hls.hpp"
+#include "hls_constraints.hpp"
 #include "hls_device.hpp"
-#include "hls_flow_step_factory.hpp" // for HLS_managerRef
+#include "hls_flow_step_factory.hpp"
 #include "language_writer.hpp"
-#include "library_manager.hpp" // for library_managerRef, library_...
+#include "library_manager.hpp"
 #include "memory.hpp"
 #include "memory_allocation.hpp"
-#include "op_graph.hpp"            // for STORE, ADDR_EXPR, ASSERT_EXPR
-#include "schedule.hpp"            // for FunctionBehaviorConstRef
-#include "string_manipulation.hpp" // for STR GET_CLASS
+#include "op_graph.hpp"
+#include "schedule.hpp"
+#include "string_manipulation.hpp"
 #include "structural_manager.hpp"
-#include "structural_objects.hpp" // for PROXY_PREFIX, module, CLOCK_...
-#include "technology_manager.hpp" // for PROXY_LIBRARY, WORK_LIBRARY
-#include "technology_node.hpp"    // for functional_unit, operation
-#include "time_info.hpp"          // for ParameterConstRef
+#include "structural_objects.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include "time_info.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "tree_node.hpp" // for GET_NODE, GET_INDEX_NODE
-#include "tree_reindex.hpp"
-#include "typed_node_info.hpp" // for GET_NAME, ENTRY, EXIT, GET_TYPE
-#include "utility.hpp"         // for INFINITE_UINT, ASSERT_PARAMETER
+#include "tree_node.hpp"
+#include "typed_node_info.hpp"
+#include "utility.hpp"
+
 #include <algorithm>
-#include <cstddef> // for size_t
-#include <limits>  // for numeric_limits
+#include <cstddef>
+#include <limits>
 #include <tuple>
 #include <utility>
 #include <vector>
+
+#include "config_HAVE_FLOPOCO.hpp"
 
 static bool is_other_port(const structural_objectRef& port)
 {
@@ -170,10 +170,10 @@ void allocation::Initialize()
    TechM = HLS_D->get_technology_manager();
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 allocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -210,13 +210,13 @@ void allocation::ComputeRelationships(DesignFlowStepSet& relationship,
       if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
       {
          const auto frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(
-             design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
+             design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
          const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(
              FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, funId));
          const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
          const auto design_flow_step =
-             frontend_step != NULL_VERTEX ?
-                 design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
+             frontend_step != DesignFlowGraph::null_vertex() ?
+                 design_flow_graph->CGetNodeInfo(frontend_step)->design_flow_step :
                  frontend_flow_step_factory->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE, funId);
          relationship.insert(design_flow_step);
       }
@@ -275,9 +275,6 @@ technology_nodeRef allocation::extract_bambu_provided(const std::string& library
       auto* ref_op = GetPointer<operation>(op_vec[0]);
       cop->operation_name = op_name;
       cop->time_m = ref_op->time_m;
-#if HAVE_EXPERIMENTAL
-      cop->power_m = ref_op->power_m;
-#endif
       cop->commutative = curr_op->commutative;
       cop->bounded = ref_op->bounded;
       cop->supported_types = curr_op->supported_types;
@@ -856,7 +853,7 @@ void allocation::BuildProxyFunctionVHDL(functional_unit* current_fu)
 
 void allocation::BuildProxyFunction(functional_unit* current_fu)
 {
-   const auto writer = static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
+   const auto writer = parameters->getOption<HDLWriter_Language>(OPT_writer_language);
    switch(writer)
    {
       case HDLWriter_Language::VHDL:
@@ -1094,7 +1091,7 @@ void allocation::add_proxy_function_module(const HLS_constraintsRef HLS_C, techn
    HLS_C->set_number_fu(proxied_fu_name, PROXY_LIBRARY, 1);
 }
 
-void allocation::add_tech_constraint(technology_nodeRef cur_fu, unsigned int tech_constrain_value, unsigned int pos,
+void allocation::add_tech_constraint(technology_nodeRef cur_fu, unsigned int tech_constraint_value, unsigned int pos,
                                      bool proxy_constrained)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -1115,8 +1112,8 @@ void allocation::add_tech_constraint(technology_nodeRef cur_fu, unsigned int tec
    else
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                     "Constrained " + STR(pos) + "=" + cur_fu->get_name() + "->" + STR(tech_constrain_value));
-      allocation_information->tech_constraints.push_back(tech_constrain_value);
+                     "Constrained " + STR(pos) + "=" + cur_fu->get_name() + "->" + STR(tech_constraint_value));
+      allocation_information->tech_constraints.push_back(tech_constraint_value);
    }
 }
 
@@ -1211,12 +1208,10 @@ bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, tec
    {
       return true;
    }
-#if !HAVE_EXPERIMENTAL
    if(GetPointer<functional_unit>(current_fu)->functional_unit_name == "MEMORY_CTRL_P1N")
    {
       return true;
    }
-#endif
 
    const auto channel_type_to_be_used = HLSMgr->CGetFunctionBehavior(funId)->GetChannelsType();
    if(channels_type.size())
@@ -1485,17 +1480,17 @@ DesignFlowStep_Status allocation::InternalExec()
          {
             return "Exit";
          }
-         return GetPointer<const gimple_node>(TM->CGetTreeNode(node_id))->operation;
+         return GetPointer<const gimple_node>(TM->GetTreeNode(node_id))->operation;
       }();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "-->Processing operation: " + current_op + " - " + GET_NAME(g, v) +
                          (node_id && node_id != ENTRY_ID && node_id != EXIT_ID ?
-                              " - " + TM->CGetTreeNode(node_id)->ToString() :
+                              " - " + TM->GetTreeNode(node_id)->ToString() :
                               ""));
       technology_nodeRef current_fu;
       if(GET_TYPE(g, v) & (TYPE_STORE | TYPE_LOAD))
       {
-         const auto curr_tn = TM->CGetTreeNode(node_id);
+         const auto curr_tn = TM->GetTreeNode(node_id);
          const auto me = GetPointer<const gimple_assign>(curr_tn);
          THROW_ASSERT(me, "only gimple_assign's are allowed as memory operations");
          tree_nodeConstRef var;
@@ -1572,7 +1567,7 @@ DesignFlowStep_Status allocation::InternalExec()
          if(current_op == ASSIGN)
          {
             const auto& modify_node = g->CGetOpNodeInfo(v)->node;
-            const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
+            const auto gms = GetPointerS<const gimple_assign>(modify_node);
             const auto left_type = tree_helper::CGetType(gms->op0);
             if(tree_helper::IsComplexType(left_type))
             {
@@ -1610,7 +1605,7 @@ DesignFlowStep_Status allocation::InternalExec()
          else if(current_op == ASSERT_EXPR)
          {
             const auto& modify_node = g->CGetOpNodeInfo(v)->node;
-            const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
+            const auto gms = GetPointerS<const gimple_assign>(modify_node);
             const auto left_type = tree_helper::CGetType(gms->op0);
             if(tree_helper::IsSignedIntegerType(left_type))
             {
@@ -1628,8 +1623,8 @@ DesignFlowStep_Status allocation::InternalExec()
          else if(current_op == EXTRACT_BIT_EXPR)
          {
             const auto& modify_node = g->CGetOpNodeInfo(v)->node;
-            const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
-            const auto ebe = GetPointerS<const extract_bit_expr>(GET_CONST_NODE(gms->op1));
+            const auto gms = GetPointerS<const gimple_assign>(modify_node);
+            const auto ebe = GetPointerS<const extract_bit_expr>(gms->op1);
             const auto intOP0 = tree_helper::IsSignedIntegerType(ebe->op0);
             if(intOP0)
             {
@@ -1651,8 +1646,8 @@ DesignFlowStep_Status allocation::InternalExec()
          else if(current_op == NOP_EXPR)
          {
             const auto modify_node = g->CGetOpNodeInfo(v)->node;
-            const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
-            const auto ne = GetPointerS<const nop_expr>(GET_CONST_NODE(gms->op1));
+            const auto gms = GetPointerS<const gimple_assign>(modify_node);
+            const auto ne = GetPointerS<const nop_expr>(gms->op1);
             const auto left_type = tree_helper::CGetType(gms->op0);
             const auto right_type = tree_helper::CGetType(ne->op);
 
@@ -1758,8 +1753,8 @@ DesignFlowStep_Status allocation::InternalExec()
          else if(current_op == CONVERT_EXPR)
          {
             const auto modify_node = g->CGetOpNodeInfo(v)->node;
-            const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
-            const auto ce = GetPointerS<const convert_expr>(GET_CONST_NODE(gms->op1));
+            const auto gms = GetPointerS<const gimple_assign>(modify_node);
+            const auto ce = GetPointerS<const convert_expr>(gms->op1);
             const auto left_type = tree_helper::CGetType(gms->op0);
             const auto right_type = tree_helper::CGetType(ce->op);
 
@@ -1841,8 +1836,8 @@ DesignFlowStep_Status allocation::InternalExec()
          else if(current_op == VIEW_CONVERT_EXPR)
          {
             const auto& modify_node = g->CGetOpNodeInfo(v)->node;
-            const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
-            const auto vce = GetPointerS<const view_convert_expr>(GET_CONST_NODE(gms->op1));
+            const auto gms = GetPointerS<const gimple_assign>(modify_node);
+            const auto vce = GetPointerS<const view_convert_expr>(gms->op1);
             const auto right_type = tree_helper::CGetType(vce->op);
             if(tree_helper::IsSignedIntegerType(right_type))
             {
@@ -1879,11 +1874,11 @@ DesignFlowStep_Status allocation::InternalExec()
          unsigned int out_var = HLSMgr->get_produced_value(HLS->functionId, v);
          if(out_var)
          {
-            const auto type = tree_helper::CGetType(TM->CGetTreeReindex(out_var));
+            const auto type = tree_helper::CGetType(TM->GetTreeNode(out_var));
             if(tree_helper::IsVectorType(type))
             {
                const auto element_type = tree_helper::CGetElements(type);
-               const auto element_size = tree_helper::Size(element_type);
+               const auto element_size = tree_helper::SizeAlloc(element_type);
                allocation_information->precision_map[current_size] = element_size;
             }
             else
@@ -1933,11 +1928,11 @@ DesignFlowStep_Status allocation::InternalExec()
                const auto out_var = HLSMgr->get_produced_value(HLS->functionId, v);
                if(out_var)
                {
-                  const auto type = tree_helper::CGetType(TM->CGetTreeReindex(out_var));
+                  const auto type = tree_helper::CGetType(TM->GetTreeNode(out_var));
                   if(tree_helper::IsVectorType(type))
                   {
                      const auto element_type = tree_helper::CGetElements(type);
-                     const auto element_size = tree_helper::Size(element_type);
+                     const auto element_size = tree_helper::SizeAlloc(element_type);
                      allocation_information->precision_map[current_size] = element_size;
                   }
                   else
@@ -1970,11 +1965,11 @@ DesignFlowStep_Status allocation::InternalExec()
             unsigned int out_var = HLSMgr->get_produced_value(HLS->functionId, v);
             if(out_var)
             {
-               const auto type = tree_helper::CGetType(TM->CGetTreeReindex(out_var));
+               const auto type = tree_helper::CGetType(TM->GetTreeNode(out_var));
                if(tree_helper::IsVectorType(type))
                {
                   const auto element_type = tree_helper::CGetElements(type);
-                  const auto element_size = tree_helper::Size(element_type);
+                  const auto element_size = tree_helper::SizeAlloc(element_type);
                   allocation_information->precision_map[current_size] = element_size;
                }
                else
@@ -2054,19 +2049,18 @@ DesignFlowStep_Status allocation::InternalExec()
             continue;
          }
 
-         const auto tech_constrain_it =
+         const auto tech_constraint_it =
              GetPointer<functional_unit>(current_fu)->fu_template_name.size() ?
                  tech_vec.find(ENCODE_FU_LIB(GetPointer<functional_unit>(current_fu)->fu_template_name, lib_name)) :
                  tech_vec.find(ENCODE_FU_LIB(current_fu->get_name(), lib_name));
 
-         if(tech_constrain_it != tech_vec.end() && tech_constrain_it->second == 0)
+         if(tech_constraint_it != tech_vec.end() && tech_constraint_it->second == 0)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of constraint");
             continue; // forced to use 0 FUs of current ones
          }
 
-         const auto tech_constrain_value =
-             tech_constrain_it == tech_vec.end() ? INFINITE_UINT : tech_constrain_it->second;
+         auto tech_constraint_value = tech_constraint_it == tech_vec.end() ? INFINITE_UINT : tech_constraint_it->second;
 
          const auto structManager_obj = GetPointer<functional_unit>(current_fu)->CM;
 
@@ -2088,6 +2082,14 @@ DesignFlowStep_Status allocation::InternalExec()
          {
             const auto curr_op = GetPointer<operation>(ops);
             const auto& curr_op_name = curr_op->get_name();
+            if(tech_constraint_value == INFINITE_UINT)
+            {
+               const auto op_name_constraint = HLS->HLS_C->get_number_fu(curr_op_name, WORK_LIBRARY);
+               if(op_name_constraint != INFINITE_UINT)
+               {
+                  tech_constraint_value = op_name_constraint;
+               }
+            }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering operation: " + curr_op_name);
             if(vertex_to_analyse_partition.find(curr_op_name) == vertex_to_analyse_partition.end())
             {
@@ -2106,7 +2108,7 @@ DesignFlowStep_Status allocation::InternalExec()
                   {
                      return "Exit";
                   }
-                  return GetPointer<const gimple_node>(TM->CGetTreeNode(vert_node_id))->operation;
+                  return GetPointer<const gimple_node>(TM->GetTreeNode(vert_node_id))->operation;
                }();
                if(tree_helper::NormalizeTypename(g->CGetOpNodeInfo(vert)->GetOperation()) != curr_op_name)
                {
@@ -2130,7 +2132,7 @@ DesignFlowStep_Status allocation::InternalExec()
                if(!isMemory)
                {
                   allocation_information->GetNodeTypePrec(vert, g, node_info, constant_id,
-                                                          tech_constrain_value != INFINITE_UINT);
+                                                          tech_constraint_value != INFINITE_UINT);
                }
                else
                {
@@ -2178,12 +2180,7 @@ DesignFlowStep_Status allocation::InternalExec()
                std::string specialized_fuName = "";
 
                const auto has_to_be_generated =
-                   structManager_obj && (GetPointer<module>(structManager_obj->get_circ())
-                                             ->get_NP_functionality()
-                                             ->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) ||
-                                         GetPointer<module>(structManager_obj->get_circ())
-                                             ->get_NP_functionality()
-                                             ->exist_NP_functionality(NP_functionality::VHDL_GENERATOR));
+                   structManager_obj && GetPointer<module>(structManager_obj->get_circ())->has_to_be_generated();
                if(has_to_be_generated)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Unit has to be specialized.");
@@ -2277,7 +2274,7 @@ DesignFlowStep_Status allocation::InternalExec()
                auto max_prec = node_info->input_prec.empty() ?
                                    0ULL :
                                    *std::max_element(node_info->input_prec.begin(), node_info->input_prec.end());
-               if(isMemory || lib_is_proxy_or_work || tech_constrain_value != INFINITE_UINT ||
+               if(isMemory || lib_is_proxy_or_work || tech_constraint_value != INFINITE_UINT ||
                   bambu_provided_resource.size())
                {
                   constant_id = HLS_manager::io_binding_type(0, 0);
@@ -2331,7 +2328,7 @@ DesignFlowStep_Status allocation::InternalExec()
                            }
                         }
                      }
-                     add_tech_constraint(fuUnit, tech_constrain_value, current_id, library_name == PROXY_LIBRARY);
+                     add_tech_constraint(fuUnit, tech_constraint_value, current_id, library_name == PROXY_LIBRARY);
                      current_id++;
                   }
                }
@@ -2365,7 +2362,7 @@ DesignFlowStep_Status allocation::InternalExec()
                      {
                         set_number_channels(specializedId, 1);
                      }
-                     add_tech_constraint(libraryManager->get_fu(functionalUnitName), tech_constrain_value, current_id,
+                     add_tech_constraint(libraryManager->get_fu(functionalUnitName), tech_constraint_value, current_id,
                                          library_name == PROXY_LIBRARY);
                      current_id++;
                   }
@@ -2934,7 +2931,7 @@ void allocation::IntegrateTechnologyLibraries()
                    "Something of wrong happened");
       allocation_information->vars_to_memory_units[var] = current_size;
       allocation_information->memory_units[current_size] = var;
-      allocation_information->memory_units_sizes[current_size] = tree_helper::Size(TM->CGetTreeReindex(var)) / 8;
+      allocation_information->memory_units_sizes[current_size] = tree_helper::SizeAlloc(TM->GetTreeNode(var)) / 8;
       allocation_information->precision_map[current_size] = 0;
       /// check clock constraints compatibility
       auto* fu_br = GetPointer<functional_unit>(current_fu);
@@ -3111,8 +3108,7 @@ void allocation::IntegrateTechnologyLibraries()
                      return nullptr;
                   }();
                   THROW_ASSERT(fnode, "Expected valid function node");
-                  modGen->create_generic_module(shared_fu_name, nullptr,
-                                                HLSMgr->CGetFunctionBehavior(GET_INDEX_CONST_NODE(fnode)),
+                  modGen->create_generic_module(shared_fu_name, nullptr, HLSMgr->CGetFunctionBehavior(fnode->index),
                                                 libraryManager->get_library_name(), new_shared_fu_name);
                   techNode_obj = libraryManager->get_fu(new_shared_fu_name);
                   THROW_ASSERT(techNode_obj, "function not yet built: " + new_shared_fu_name);

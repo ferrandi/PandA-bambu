@@ -64,7 +64,6 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 #include <fstream>
 
 SplitReturn::SplitReturn(const ParameterConstRef _parameters, const application_managerRef _AppM,
@@ -76,7 +75,7 @@ SplitReturn::SplitReturn(const ParameterConstRef _parameters, const application_
 
 SplitReturn::~SplitReturn() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 SplitReturn::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -132,10 +131,10 @@ DesignFlowStep_Status SplitReturn::InternalExec()
 {
    const auto TM = AppM->get_tree_manager();
    const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
-   const auto f_node = TM->CGetTreeNode(function_id);
+   const auto f_node = TM->GetTreeNode(function_id);
    const auto ret_type = tree_helper::GetFunctionReturnType(f_node);
    const auto fd = GetPointerS<const function_decl>(f_node);
-   const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   const auto sl = GetPointerS<statement_list>(fd->body);
 
    const auto create_return_and_fix_cfg = [&](const tree_nodeRef& new_gr, const blocRef& pred_block,
                                               const blocRef& curr_bb) -> void {
@@ -178,7 +177,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
          /// Fix gimple_multi_way_if
          if(pred_block->CGetStmtList().size())
          {
-            const auto pred_last_stmt = GET_NODE(pred_block->CGetStmtList().back());
+            const auto pred_last_stmt = pred_block->CGetStmtList().back();
             if(pred_last_stmt->get_kind() == gimple_multi_way_if_K)
             {
                const auto gmwi = GetPointerS<gimple_multi_way_if>(pred_last_stmt);
@@ -204,13 +203,13 @@ DesignFlowStep_Status SplitReturn::InternalExec()
                          STR(bb->CGetStmtList().size()));
       if(bb->list_of_pred.size() > 1 && bb->CGetPhiList().size() == 1 && bb->CGetStmtList().size() == 1)
       {
-         const auto stmt = GET_CONST_NODE(bb->CGetStmtList().front());
+         const auto stmt = bb->CGetStmtList().front();
          if(stmt->get_kind() == gimple_return_K)
          {
             const auto bb_index = bb->number;
-            const auto gp = GetPointerS<const gimple_phi>(GET_CONST_NODE(bb->CGetPhiList().front()));
+            const auto gp = GetPointerS<const gimple_phi>(bb->CGetPhiList().front());
             const auto gr = GetPointerS<const gimple_return>(stmt);
-            if(gr->op && GET_INDEX_NODE(gp->res) == GET_INDEX_NODE(gr->op))
+            if(gr->op && gp->res->index == gr->op->index)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "--- There is a split return possible at BB" + STR(bb_index));
@@ -236,7 +235,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
                for(const auto& def_edge : gp->CGetDefEdgesList())
                {
                   const auto new_gr = tree_man->create_gimple_return(ret_type, gr->op, function_id, BUILTIN_SRCP);
-                  GetPointerS<gimple_return>(GET_NODE(new_gr))->AddVuse(def_edge.first);
+                  GetPointerS<gimple_return>(new_gr)->AddVuse(def_edge.first);
                   const auto& pred_block = sl->list_of_bloc.at(def_edge.second);
                   create_return_and_fix_cfg(new_gr, pred_block, bb);
                }
@@ -251,7 +250,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
       else if(bb->list_of_pred.size() > 1 && bb->CGetPhiList().size() == 0 && bb->CGetStmtList().size() == 1)
       {
          const auto bb_index = bb->number;
-         const auto stmt = GET_CONST_NODE(bb->CGetStmtList().front());
+         const auto stmt = bb->CGetStmtList().front();
          if(stmt->get_kind() == gimple_return_K)
          {
             const auto gr = GetPointerS<const gimple_return>(stmt);

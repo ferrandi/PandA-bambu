@@ -60,7 +60,6 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 PredicateStatements::PredicateStatements(const application_managerRef _AppM, unsigned int _function_id,
                                          const DesignFlowManagerConstRef _design_flow_manager,
@@ -73,7 +72,7 @@ PredicateStatements::PredicateStatements(const application_managerRef _AppM, uns
 
 PredicateStatements::~PredicateStatements() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
 PredicateStatements::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -126,15 +125,15 @@ DesignFlowStep_Status PredicateStatements::InternalExec()
    const auto true_value = TM->CreateUniqueIntegerCst(1, boolean_type);
 
    bool bb_modified = false;
-   const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function_id));
-   const auto sl = GetPointer<const statement_list>(GET_NODE(fd->body));
+   const auto fd = GetPointer<const function_decl>(TM->GetTreeNode(function_id));
+   const auto sl = GetPointer<const statement_list>(fd->body);
    for(const auto& block : sl->list_of_bloc)
    {
       for(const auto& stmt : block.second->CGetStmtList())
       {
-         const auto ga = GetPointer<gimple_assign>(GET_NODE(stmt));
+         const auto ga = GetPointer<gimple_assign>(stmt);
          if(behavioral_helper->CanBeSpeculated(stmt->index) || !ga ||
-            (GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K))
+            (ga->op1->get_kind() == call_expr_K || ga->op1->get_kind() == aggr_init_expr_K))
          {
             continue;
          }

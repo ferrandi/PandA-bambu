@@ -75,10 +75,10 @@ datapath_parallel_cs::datapath_parallel_cs(const ParameterConstRef _parameters, 
 
 datapath_parallel_cs::~datapath_parallel_cs() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 datapath_parallel_cs::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -159,7 +159,7 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
        HLSMgr->CGetFunctionBehavior(kernel_function_id)->CGetBehavioralHelper()->get_function_name();
    const auto kernel_library = HLS->HLS_D->get_technology_manager()->get_library(kernel_function_name);
    structural_objectRef kernel_mod;
-   auto addr_kernel = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
+   auto addr_kernel = ceil_log2(parameters->getOption<unsigned long>(OPT_num_accelerators));
    if(!addr_kernel)
    {
       addr_kernel = 1;
@@ -325,7 +325,7 @@ void datapath_parallel_cs::instantiate_component_parallel(structural_objectRef c
       addr_task = 1;
    }
    GetPointer<module>(mem_par_mod)->SetParameter("ADDR_TASKS", STR(addr_task));
-   auto addr_kern = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
+   auto addr_kern = ceil_log2(parameters->getOption<unsigned long>(OPT_num_accelerators));
    if(!addr_kern)
    {
       addr_kern = 1;

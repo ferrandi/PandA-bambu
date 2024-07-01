@@ -1,5 +1,0 @@
-Evaluate the effects of GCC optimizations on the number of cycles of adpcm benchmark:
-- Different level of optimizations
-- Vectorization
-- Different inlining
-

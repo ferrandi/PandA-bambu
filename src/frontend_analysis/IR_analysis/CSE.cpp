@@ -86,7 +86,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
-#include "tree_reindex.hpp"
 
 #include "basic_block.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
@@ -102,7 +101,7 @@ CSE::CSE(const ParameterConstRef _parameters, const application_managerRef _AppM
 
 CSE::~CSE() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 CSE::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -131,29 +130,13 @@ CSE::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relatio
       }
       case(INVALIDATION_RELATIONSHIP):
       {
-         switch(GetStatus())
+         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
          {
-            case DesignFlowStep_Status::SUCCESS:
+            relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
+            if(restart_phi_opt)
             {
-               relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
-               if(restart_phi_opt)
-               {
-                  relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
-               }
-               break;
+               relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
             }
-            case DesignFlowStep_Status::SKIPPED:
-            case DesignFlowStep_Status::UNCHANGED:
-            case DesignFlowStep_Status::UNEXECUTED:
-            case DesignFlowStep_Status::UNNECESSARY:
-            {
-               break;
-            }
-            case DesignFlowStep_Status::ABORTED:
-            case DesignFlowStep_Status::EMPTY:
-            case DesignFlowStep_Status::NONEXISTENT:
-            default:
-               THROW_UNREACHABLE("");
          }
          break;
       }
@@ -189,9 +172,9 @@ DesignFlowStep_Status CSE::InternalExec()
    /// define a map relating variables and columns
    std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef>> unique_table;
 
-   const auto temp = TM->CGetTreeNode(function_id);
+   const auto temp = TM->GetTreeNode(function_id);
    const auto fd = GetPointerS<const function_decl>(temp);
-   const auto sl = GetPointerS<const statement_list>(GET_CONST_NODE(fd->body));
+   const auto sl = GetPointerS<const statement_list>(fd->body);
 
    /// store the GCC BB graph ala boost::graph
    BBGraphsCollectionRef GCC_bb_graphs_collection(
@@ -269,18 +252,18 @@ DesignFlowStep_Status CSE::InternalExec()
       TreeNodeSet to_be_removed;
       for(const auto& stmt : B->CGetStmtList())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing " + GET_CONST_NODE(stmt)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing " + stmt->ToString());
          if(!AppM->ApplyNewTransformation())
          {
             break;
          }
-         const auto eq_tn = hash_check(GET_NODE(stmt), bb, sl, unique_table);
+         const auto eq_tn = hash_check(stmt, bb, sl, unique_table);
          if(eq_tn)
          {
             const auto ref_ga = GetPointerS<gimple_assign>(eq_tn);
-            const auto dead_ga = GetPointerS<const gimple_assign>(GET_CONST_NODE(stmt));
-            const auto ref_ssa = GetPointerS<ssa_name>(GET_NODE(ref_ga->op0));
-            const auto dead_ssa = GetPointerS<const ssa_name>(GET_CONST_NODE(dead_ga->op0));
+            const auto dead_ga = GetPointerS<const gimple_assign>(stmt);
+            const auto ref_ssa = GetPointerS<ssa_name>(ref_ga->op0);
+            const auto dead_ssa = GetPointerS<const ssa_name>(dead_ga->op0);
 
             if(ref_ssa->min)
             {
@@ -316,8 +299,8 @@ DesignFlowStep_Status CSE::InternalExec()
             else
             {
                const auto ga_op_type = tree_helper::CGetType(ref_ga->op0);
-               if(GET_CONST_NODE(ga_op_type)->get_kind() == integer_type_K && ref_ssa->min && ref_ssa->max &&
-                  dead_ssa->min && dead_ssa->max)
+               if(ga_op_type->get_kind() == integer_type_K && ref_ssa->min && ref_ssa->max && dead_ssa->min &&
+                  dead_ssa->max)
                {
                   const auto ref_min = tree_helper::GetConstValue(ref_ssa->min);
                   const auto dead_min = tree_helper::GetConstValue(dead_ssa->min);
@@ -374,7 +357,7 @@ DesignFlowStep_Status CSE::InternalExec()
       }
       for(const auto& stmt : to_be_removed)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + GET_CONST_NODE(stmt)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + stmt->ToString());
          B->RemoveStmt(stmt, AppM);
       }
       if(B->CGetStmtList().empty() && B->CGetPhiList().empty() && !to_be_removed.empty())
@@ -385,7 +368,7 @@ DesignFlowStep_Status CSE::InternalExec()
       {
          for(const auto& stmt : B->CGetStmtList())
          {
-            schedule->UpdateTime(GET_INDEX_CONST_NODE(stmt));
+            schedule->UpdateTime(stmt->index);
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered BB" + STR(B->number));
@@ -402,13 +385,12 @@ DesignFlowStep_Status CSE::InternalExec()
 bool CSE::has_memory_access(const gimple_assign* ga) const
 {
    const auto& fun_mem_data = function_behavior->get_function_mem();
-   const auto rhs_kind = GET_CONST_NODE(ga->op1)->get_kind();
+   const auto rhs_kind = ga->op1->get_kind();
    const auto op0_type = tree_helper::CGetType(ga->op0);
    const auto op1_type = tree_helper::CGetType(ga->op1);
    /// check for bit field ref of vector type
    const auto is_a_vector_bitfield =
-       rhs_kind == bit_field_ref_K &&
-       tree_helper::IsVectorType(GetPointerS<const bit_field_ref>(GET_CONST_NODE(ga->op1))->op0);
+       rhs_kind == bit_field_ref_K && tree_helper::IsVectorType(GetPointerS<const bit_field_ref>(ga->op1)->op0);
 
    bool skip_check = rhs_kind == var_decl_K || rhs_kind == string_cst_K || rhs_kind == constructor_K ||
                      (rhs_kind == bit_field_ref_K && !is_a_vector_bitfield) || rhs_kind == component_ref_K ||
@@ -416,40 +398,37 @@ bool CSE::has_memory_access(const gimple_assign* ga) const
                      rhs_kind == target_mem_ref_K || rhs_kind == target_mem_ref461_K or rhs_kind == mem_ref_K;
    if(rhs_kind == realpart_expr_K || rhs_kind == imagpart_expr_K)
    {
-      const auto code1 = GET_CONST_NODE(GetPointerS<const unary_expr>(GET_CONST_NODE(ga->op1))->op)->get_kind();
+      const auto code1 = GetPointerS<const unary_expr>(ga->op1)->op->get_kind();
       if((code1 == bit_field_ref_K && !is_a_vector_bitfield) || code1 == component_ref_K || code1 == indirect_ref_K ||
          code1 == bit_field_ref_K || code1 == misaligned_indirect_ref_K || code1 == mem_ref_K || code1 == array_ref_K ||
          code1 == target_mem_ref_K || code1 == target_mem_ref461_K)
       {
          skip_check = true;
       }
-      if(code1 == var_decl_K && fun_mem_data.find(GET_INDEX_CONST_NODE(
-                                    GetPointerS<const unary_expr>(GET_CONST_NODE(ga->op1))->op)) != fun_mem_data.end())
+      if(code1 == var_decl_K &&
+         fun_mem_data.find(GetPointerS<const unary_expr>(ga->op1)->op->index) != fun_mem_data.end())
       {
          skip_check = true;
       }
    }
    else if(rhs_kind == view_convert_expr_K)
    {
-      const auto vc = GetPointerS<const view_convert_expr>(GET_CONST_NODE(ga->op1));
+      const auto vc = GetPointerS<const view_convert_expr>(ga->op1);
       const auto vc_op_type = tree_helper::CGetType(vc->op);
-      if(GET_CONST_NODE(op0_type)->get_kind() == record_type_K || GET_CONST_NODE(op0_type)->get_kind() == union_type_K)
+      if(op0_type->get_kind() == record_type_K || op0_type->get_kind() == union_type_K)
       {
          skip_check = true;
       }
-      if(GET_CONST_NODE(vc_op_type)->get_kind() == record_type_K ||
-         GET_CONST_NODE(vc_op_type)->get_kind() == union_type_K)
+      if(vc_op_type->get_kind() == record_type_K || vc_op_type->get_kind() == union_type_K)
       {
          skip_check = true;
       }
 
-      if(GET_CONST_NODE(vc_op_type)->get_kind() == array_type_K &&
-         GET_CONST_NODE(op0_type)->get_kind() == vector_type_K)
+      if(vc_op_type->get_kind() == array_type_K && op0_type->get_kind() == vector_type_K)
       {
          skip_check = true;
       }
-      if(GET_CONST_NODE(vc_op_type)->get_kind() == vector_type_K &&
-         GET_CONST_NODE(op0_type)->get_kind() == array_type_K)
+      if(vc_op_type->get_kind() == vector_type_K && op0_type->get_kind() == array_type_K)
       {
          skip_check = true;
       }
@@ -459,17 +438,17 @@ bool CSE::has_memory_access(const gimple_assign* ga) const
    {
       skip_check = true;
    }
-   if(fun_mem_data.find(GET_INDEX_CONST_NODE(ga->op0)) != fun_mem_data.end() ||
-      fun_mem_data.find(GET_INDEX_CONST_NODE(ga->op1)) != fun_mem_data.end())
+   if(fun_mem_data.find(ga->op0->index) != fun_mem_data.end() ||
+      fun_mem_data.find(ga->op1->index) != fun_mem_data.end())
    {
       skip_check = true;
    }
    if(op0_type && op1_type &&
-      ((GET_CONST_NODE(op0_type)->get_kind() == record_type_K &&
-        GET_CONST_NODE(op1_type)->get_kind() == record_type_K && rhs_kind != view_convert_expr_K) ||
-       (GET_CONST_NODE(op0_type)->get_kind() == union_type_K && GET_CONST_NODE(op1_type)->get_kind() == union_type_K &&
+      ((op0_type->get_kind() == record_type_K && op1_type->get_kind() == record_type_K &&
         rhs_kind != view_convert_expr_K) ||
-       (GET_CONST_NODE(op0_type)->get_kind() == array_type_K)))
+       (op0_type->get_kind() == union_type_K && op1_type->get_kind() == union_type_K &&
+        rhs_kind != view_convert_expr_K) ||
+       (op0_type->get_kind() == array_type_K)))
    {
       skip_check = true;
    }
@@ -493,10 +472,10 @@ CSE::hash_check(const tree_nodeRef& tn, vertex bb_vertex, const statement_list* 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null clobber/init_assignment");
       return nullptr;
    }
-   if(ga && GET_CONST_NODE(ga->op0)->get_kind() == ssa_name_K)
+   if(ga && ga->op0->get_kind() == ssa_name_K)
    {
       auto bitwidth_values = tree_helper::Size(ga->op0);
-      const auto rhs = GET_CONST_NODE(ga->op1);
+      const auto rhs = ga->op1;
       const auto rhs_kind = rhs->get_kind();
       if(GetPointer<const binary_expr>(rhs))
       {
@@ -529,9 +508,9 @@ CSE::hash_check(const tree_nodeRef& tn, vertex bb_vertex, const statement_list* 
             ins.push_back(vuse->index);
 
             /// Check if the virtual is defined in the same basic block
-            const auto virtual_sn = GetPointerS<const ssa_name>(GET_CONST_NODE(vuse));
+            const auto virtual_sn = GetPointerS<const ssa_name>(vuse);
             const auto virtual_sn_def = virtual_sn->CGetDefStmt();
-            const auto virtual_sn_gn = GetPointerS<const gimple_node>(GET_CONST_NODE(virtual_sn_def));
+            const auto virtual_sn_gn = GetPointerS<const gimple_node>(virtual_sn_def);
 
             if(virtual_sn_gn->bb_index == ga->bb_index)
             {
@@ -563,40 +542,40 @@ CSE::hash_check(const tree_nodeRef& tn, vertex bb_vertex, const statement_list* 
               rhs_kind == float_expr_K || rhs_kind == fix_trunc_expr_K)
       {
          const auto ue = GetPointerS<const unary_expr>(rhs);
-         ins.push_back(GET_INDEX_CONST_NODE(ue->op));
+         ins.push_back(ue->op->index);
          const auto type_index = tree_helper::CGetType(ga->op0)->index;
          ins.push_back(type_index);
       }
       else if(GetPointer<const unary_expr>(rhs))
       {
          const auto ue = GetPointerS<const unary_expr>(rhs);
-         ins.push_back(GET_INDEX_CONST_NODE(ue->op));
+         ins.push_back(ue->op->index);
       }
       else if(GetPointer<const binary_expr>(rhs))
       {
          const auto be = GetPointerS<const binary_expr>(rhs);
-         ins.push_back(GET_INDEX_CONST_NODE(be->op0));
-         ins.push_back(GET_INDEX_CONST_NODE(be->op1));
+         ins.push_back(be->op0->index);
+         ins.push_back(be->op1->index);
       }
       else if(GetPointer<const ternary_expr>(rhs))
       {
          const auto te = GetPointerS<const ternary_expr>(rhs);
-         ins.push_back(GET_INDEX_CONST_NODE(te->op0));
-         ins.push_back(GET_INDEX_CONST_NODE(te->op1));
+         ins.push_back(te->op0->index);
+         ins.push_back(te->op1->index);
          if(te->op2)
          {
-            ins.push_back(GET_INDEX_CONST_NODE(te->op2));
+            ins.push_back(te->op2->index);
          }
       }
       else if(GetPointer<const call_expr>(rhs))
       {
          const auto ce = GetPointerS<const call_expr>(rhs);
-         if(GET_CONST_NODE(ce->fn)->get_kind() == addr_expr_K)
+         if(ce->fn->get_kind() == addr_expr_K)
          {
-            const auto addr_node = GET_CONST_NODE(ce->fn);
+            const auto addr_node = ce->fn;
             const auto ae = GetPointerS<const addr_expr>(addr_node);
-            ins.push_back(GET_INDEX_CONST_NODE(ae->op));
-            const auto fd = GetPointerS<const function_decl>(GET_CONST_NODE(ae->op));
+            ins.push_back(ae->op->index);
+            const auto fd = GetPointerS<const function_decl>(ae->op);
             // TODO: may be optimized
             if(fd->undefined_flag || fd->writing_memory || fd->reading_memory || ga->vuses.size())
             {
@@ -605,7 +584,7 @@ CSE::hash_check(const tree_nodeRef& tn, vertex bb_vertex, const statement_list* 
             }
             for(const auto& arg : ce->args)
             {
-               ins.push_back(GET_INDEX_CONST_NODE(arg));
+               ins.push_back(arg->index);
             }
          }
          else
@@ -617,35 +596,35 @@ CSE::hash_check(const tree_nodeRef& tn, vertex bb_vertex, const statement_list* 
       else if(GetPointer<const lut_expr>(rhs))
       {
          const auto le = GetPointerS<const lut_expr>(rhs);
-         ins.push_back(GET_INDEX_CONST_NODE(le->op0));
-         ins.push_back(GET_INDEX_CONST_NODE(le->op1));
+         ins.push_back(le->op0->index);
+         ins.push_back(le->op1->index);
          if(le->op2)
          {
-            ins.push_back(GET_INDEX_CONST_NODE(le->op2));
+            ins.push_back(le->op2->index);
          }
          if(le->op3)
          {
-            ins.push_back(GET_INDEX_CONST_NODE(le->op3));
+            ins.push_back(le->op3->index);
          }
          if(le->op4)
          {
-            ins.push_back(GET_INDEX_CONST_NODE(le->op4));
+            ins.push_back(le->op4->index);
          }
          if(le->op5)
          {
-            ins.push_back(GET_INDEX_CONST_NODE(le->op5));
+            ins.push_back(le->op5->index);
          }
          if(le->op6)
          {
-            ins.push_back(GET_INDEX_CONST_NODE(le->op6));
+            ins.push_back(le->op6->index);
          }
          if(le->op7)
          {
-            ins.push_back(GET_INDEX_CONST_NODE(le->op7));
+            ins.push_back(le->op7->index);
          }
          if(le->op8)
          {
-            ins.push_back(GET_INDEX_CONST_NODE(le->op8));
+            ins.push_back(le->op8->index);
          }
       }
       else

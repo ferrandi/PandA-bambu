@@ -58,7 +58,7 @@ LoadTechnology::LoadTechnology(const technology_managerRef _TM, const generic_de
 
 LoadTechnology::~LoadTechnology() = default;
 
-const CustomUnorderedSet<TechnologyFlowStep_Type>
+CustomUnorderedSet<TechnologyFlowStep_Type>
 LoadTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<TechnologyFlowStep_Type> relationships;

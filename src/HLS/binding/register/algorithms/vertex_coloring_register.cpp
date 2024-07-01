@@ -85,7 +85,7 @@ DesignFlowStep_Status vertex_coloring_register::RegisterBinding()
    const auto vEnd = support.end();
    for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
    {
-      const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
+      const auto& live = HLS->Rliv->get_live_in(*vIt);
       auto k_end = live.end();
       for(auto k = live.begin(); k != k_end; ++k)
       {

@@ -372,7 +372,7 @@ struct BBGraph : public graph
     */
    inline BBNodeInfoRef GetBBNodeInfo(const vertex node)
    {
-      return RefcountCast<BBNodeInfo>(graph::GetNodeInfo(node));
+      return std::static_pointer_cast<BBNodeInfo>(graph::GetNodeInfo(node));
    }
 
    /**
@@ -380,9 +380,9 @@ struct BBGraph : public graph
     * @param node is the basic block vertex to be considered
     * @return the info associated with a basic block
     */
-   inline const BBNodeInfoConstRef CGetBBNodeInfo(const vertex node) const
+   inline BBNodeInfoConstRef CGetBBNodeInfo(const vertex node) const
    {
-      return RefcountCast<const BBNodeInfo>(graph::CGetNodeInfo(node));
+      return std::static_pointer_cast<const BBNodeInfo>(graph::CGetNodeInfo(node));
    }
 
    /**
@@ -390,15 +390,15 @@ struct BBGraph : public graph
     */
    inline BBEdgeInfoRef GetBBEdgeInfo(const EdgeDescriptor e)
    {
-      return RefcountCast<BBEdgeInfo>(graph::GetEdgeInfo(e));
+      return std::static_pointer_cast<BBEdgeInfo>(graph::GetEdgeInfo(e));
    }
 
    /**
     * Returns the info associated with an edge
     */
-   inline const BBEdgeInfoConstRef CGetBBEdgeInfo(const EdgeDescriptor e) const
+   inline BBEdgeInfoConstRef CGetBBEdgeInfo(const EdgeDescriptor e) const
    {
-      return RefcountCast<const BBEdgeInfo>(graph::CGetEdgeInfo(e));
+      return std::static_pointer_cast<const BBEdgeInfo>(graph::CGetEdgeInfo(e));
    }
 
    /**
@@ -407,16 +407,16 @@ struct BBGraph : public graph
     */
    inline BBGraphInfoRef GetBBGraphInfo()
    {
-      return RefcountCast<BBGraphInfo>(graph::GetGraphInfo());
+      return std::static_pointer_cast<BBGraphInfo>(graph::GetGraphInfo());
    }
 
    /**
     * Returns the property associated with the graph
     * @return the proprty associated with the graph
     */
-   inline const BBGraphInfoConstRef CGetBBGraphInfo() const
+   inline BBGraphInfoConstRef CGetBBGraphInfo() const
    {
-      return RefcountCast<const BBGraphInfo>(graph::CGetGraphInfo());
+      return std::static_pointer_cast<const BBGraphInfo>(graph::CGetGraphInfo());
    }
 };
 /// refcount definition of the class

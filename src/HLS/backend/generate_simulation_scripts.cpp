@@ -57,7 +57,6 @@
 #include "structural_manager.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 #include "utility.hpp"
 
 #include <list>
@@ -74,10 +73,10 @@ GenerateSimulationScripts::GenerateSimulationScripts(const ParameterConstRef _pa
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 GenerateSimulationScripts::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -111,8 +110,8 @@ void GenerateSimulationScripts::ComputeRelationships(DesignFlowStepSet& design_f
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         const auto c_backend_factory =
-             GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
+         const auto c_backend_factory = GetPointer<const CBackendStepFactory>(
+             design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::C_BACKEND));
 
          design_flow_step_set.insert(c_backend_factory->CreateCBackendStep(
              CBackendInformationConstRef(new CBackendInformation(CBackendInformation::CB_HLS, _c_testbench))));
@@ -141,7 +140,7 @@ DesignFlowStep_Status GenerateSimulationScripts::Exec()
    const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
    THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
    const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(top_symbols.front());
-   const auto top_hls = HLSMgr->get_HLS(GET_INDEX_CONST_NODE(top_fnode));
+   const auto top_hls = HLSMgr->get_HLS(top_fnode->index);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Generating simulation scripts");
    std::list<std::string> full_list;
    std::copy(HLSMgr->aux_files.begin(), HLSMgr->aux_files.end(), std::back_inserter(full_list));
@@ -156,8 +155,7 @@ DesignFlowStep_Status GenerateSimulationScripts::Exec()
 
    HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(
        SimulationTool::to_sim_type(parameters->getOption<std::string>(OPT_simulator)), parameters,
-       HLSMgr->CGetFunctionBehavior(GET_INDEX_CONST_NODE(top_fnode))->CGetBehavioralHelper()->GetMangledFunctionName(),
-       inc_dirs);
+       HLSMgr->CGetFunctionBehavior(top_fnode->index)->CGetBehavioralHelper()->GetMangledFunctionName(), inc_dirs);
 
    HLSMgr->RSim->sim_tool->GenerateSimulationScript(top_hls->top->get_circ()->get_id(), full_list);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Generated simulation scripts");

@@ -40,12 +40,8 @@
 
 #ifndef FUNCTIONAL_UNIT_STEP_HPP
 #define FUNCTIONAL_UNIT_STEP_HPP
-
-/// Superclass include
-#include "design_flow_step.hpp"
-
-/// utility include
 #include "custom_map.hpp"
+#include "design_flow_step.hpp"
 #include "refcount.hpp"
 
 class functional_unit;
@@ -106,13 +102,12 @@ class FunctionalUnitStep : public virtual DesignFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   FunctionalUnitStep(const generic_deviceRef _device, const DesignFlowManagerConstRef design_flow_manager,
-                      const ParameterConstRef parameters);
+   FunctionalUnitStep(const generic_deviceRef _device);
 
    /**
     * Destructor
     */
-   ~FunctionalUnitStep() override;
+   virtual ~FunctionalUnitStep() override;
 
    /**
     * Initialize the step (i.e., like a constructor, but executed just before exec

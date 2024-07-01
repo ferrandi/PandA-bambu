@@ -79,7 +79,7 @@ void TestbenchDUTModuleGenerator::InternalExec(std::ostream& out, structural_obj
    const auto top_mod = GetPointer<module>(top_cir);
    THROW_ASSERT(top_mod, "");
    const auto parameters = HLSMgr->get_parameter();
-   const auto top_language = static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
+   const auto top_language = parameters->getOption<HDLWriter_Language>(OPT_writer_language);
    const auto interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
    const auto memory_mapped_top = parameters->getOption<bool>(OPT_memory_mapped_top);
 

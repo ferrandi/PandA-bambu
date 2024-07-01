@@ -63,7 +63,7 @@ class eSSA : public FunctionFrontendFlowStep
  private:
    BBGraphRef DT;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    bool renameUses(CustomSet<OperandRef>& OpSet, ValueInfoLookup& ValueInfoNums, std::vector<ValueInfo>& ValueInfos,

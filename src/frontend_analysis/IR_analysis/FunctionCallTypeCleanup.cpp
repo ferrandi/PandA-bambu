@@ -49,7 +49,6 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 #include "application_manager.hpp"
 
@@ -71,7 +70,7 @@ void FunctionCallTypeCleanup::Initialize()
 {
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 FunctionCallTypeCleanup::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> relationships;
@@ -109,10 +108,10 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
    bool changed = false;
    const auto TM = AppM->get_tree_manager();
    const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
-   const auto tn = TM->CGetTreeNode(function_id);
+   const auto tn = TM->GetTreeNode(function_id);
    const auto fd = GetPointerS<const function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   const auto sl = GetPointerS<const statement_list>(GET_CONST_NODE(fd->body));
+   const auto sl = GetPointerS<const statement_list>(fd->body);
    THROW_ASSERT(sl, "Body is not a statement_list");
    const auto CGMan = AppM->CGetCallGraphManager();
    const auto called_body_fun_ids = CGMan->GetReachedFunctionsFrom(function_id);
@@ -122,66 +121,60 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
       for(const auto& stmt : block.second->CGetStmtList())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Examining statement " + GET_CONST_NODE(stmt)->ToString());
-         if(GET_CONST_NODE(stmt)->get_kind() == gimple_assign_K)
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + stmt->ToString());
+         if(stmt->get_kind() == gimple_assign_K)
          {
-            const auto ga = GetPointerS<const gimple_assign>(GET_CONST_NODE(stmt));
+            const auto ga = GetPointerS<const gimple_assign>(stmt);
             const auto srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
-            const auto code0 = GET_CONST_NODE(ga->op0)->get_kind();
-            const auto code1 = GET_CONST_NODE(ga->op1)->get_kind();
+            const auto code0 = ga->op0->get_kind();
+            const auto code1 = ga->op1->get_kind();
 
             THROW_ASSERT(!ga->clobber, "");
             if(code1 == call_expr_K || code1 == aggr_init_expr_K)
             {
-               const auto ce = GetPointerS<call_expr>(GET_NODE(ga->op1));
-               if(GET_CONST_NODE(ce->fn)->get_kind() == addr_expr_K)
+               const auto ce = GetPointerS<call_expr>(ga->op1);
+               if(ce->fn->get_kind() == addr_expr_K)
                {
-                  const auto addr_node = GET_CONST_NODE(ce->fn);
+                  const auto addr_node = ce->fn;
                   const auto ae = GetPointerS<const addr_expr>(addr_node);
-                  const auto fu_decl_node = GET_CONST_NODE(ae->op);
+                  const auto fu_decl_node = ae->op;
                   THROW_ASSERT(fu_decl_node->get_kind() == function_decl_K, "node  " + STR(fu_decl_node) +
                                                                                 " is not function_decl but " +
                                                                                 fu_decl_node->get_kind_text());
                   const auto ret_type_node = tree_helper::GetFunctionReturnType(fu_decl_node);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---is a call_expr with LHS " + GET_CONST_NODE(ga->op0)->ToString());
+                                 "---is a call_expr with LHS " + ga->op0->ToString());
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---the called function returns type " + STR(ret_type_node));
                   if(code0 == ssa_name_K)
                   {
                      const auto assigned_ssa_type_node = tree_helper::CGetType(ga->op0);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---the assigned ssa_name " + STR(GET_CONST_NODE(ga->op0)) + " has type " +
+                                    "---the assigned ssa_name " + STR(ga->op0) + " has type " +
                                         STR(assigned_ssa_type_node));
                      if(!tree_helper::IsSameType(ret_type_node, assigned_ssa_type_node))
                      {
                         const auto new_ssa =
                             tree_man->create_ssa_name(tree_nodeRef(), ret_type_node, tree_nodeRef(), tree_nodeRef());
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---create ssa " + GET_CONST_NODE(new_ssa)->ToString());
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---create ssa " + new_ssa->ToString());
 
                         const auto ga_nop = tree_man->CreateNopExpr(new_ssa, assigned_ssa_type_node, tree_nodeRef(),
                                                                     tree_nodeRef(), function_id);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---create nop " + GET_CONST_NODE(ga_nop)->ToString());
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---create nop " + ga_nop->ToString());
 
-                        const auto cast_ga = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_nop));
+                        const auto cast_ga = GetPointerS<const gimple_assign>(ga_nop);
                         TM->ReplaceTreeNode(ga_nop, cast_ga->op0, ga->op0);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---fix nop " + GET_CONST_NODE(ga_nop)->ToString());
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---fix nop " + ga_nop->ToString());
 
                         TM->ReplaceTreeNode(stmt, ga->op0, new_ssa);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---update call " + GET_CONST_NODE(stmt)->ToString());
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---update call " + stmt->ToString());
 
                         block.second->PushAfter(ga_nop, stmt, AppM);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---insert nop " + GET_CONST_NODE(ga_nop)->ToString());
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---insert nop " + ga_nop->ToString());
                         changed = true;
                      }
                   }
-                  const auto called_id = GET_INDEX_NODE(ae->op);
+                  const auto called_id = ae->op->index;
                   if(called_body_fun_ids.find(called_id) != called_body_fun_ids.end())
                   {
                      changed |= ParametersTypeCleanup(TM, tree_man, block.second, stmt, ce->args, srcp_default);
@@ -191,24 +184,22 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Function does not have a body");
                   }
                }
-               else if(GET_CONST_NODE(ce->fn)->get_kind() != ssa_name_K)
+               else if(ce->fn->get_kind() != ssa_name_K)
                {
-                  THROW_UNREACHABLE("call node  " + STR(GET_CONST_NODE(ce->fn)) + " is a " +
-                                    GET_CONST_NODE(ce->fn)->get_kind_text());
+                  THROW_UNREACHABLE("call node  " + STR(ce->fn) + " is a " + ce->fn->get_kind_text());
                }
             }
          }
-         else if(GET_CONST_NODE(stmt)->get_kind() == gimple_call_K)
+         else if(stmt->get_kind() == gimple_call_K)
          {
-            const auto gc = GetPointerS<gimple_call>(GET_NODE(stmt));
-            if(GET_CONST_NODE(gc->fn)->get_kind() == addr_expr_K)
+            const auto gc = GetPointerS<gimple_call>(stmt);
+            if(gc->fn->get_kind() == addr_expr_K)
             {
-               const auto addr_node = GET_CONST_NODE(gc->fn);
+               const auto addr_node = gc->fn;
                const auto ae = GetPointerS<const addr_expr>(addr_node);
-               THROW_ASSERT(GET_CONST_NODE(ae->op)->get_kind() == function_decl_K,
-                            "node  " + STR(GET_CONST_NODE(ae->op)) + " is not function_decl but " +
-                                GET_CONST_NODE(ae->op)->get_kind_text());
-               const auto called_id = GET_INDEX_CONST_NODE(ae->op);
+               THROW_ASSERT(ae->op->get_kind() == function_decl_K,
+                            "node  " + STR(ae->op) + " is not function_decl but " + ae->op->get_kind_text());
+               const auto called_id = ae->op->index;
                if(called_body_fun_ids.find(called_id) != called_body_fun_ids.end())
                {
                   const auto srcp_default =
@@ -220,14 +211,12 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Function does not have a body");
                }
             }
-            else if(GET_CONST_NODE(gc->fn)->get_kind() != ssa_name_K)
+            else if(gc->fn->get_kind() != ssa_name_K)
             {
-               THROW_UNREACHABLE("call node  " + STR(GET_CONST_NODE(gc->fn)) + " is a " +
-                                 GET_CONST_NODE(gc->fn)->get_kind_text());
+               THROW_UNREACHABLE("call node  " + STR(gc->fn) + " is a " + gc->fn->get_kind_text());
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--Examined statement " + GET_CONST_NODE(stmt)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + stmt->ToString());
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined BB" + STR(block.first));
    }
@@ -249,44 +238,40 @@ bool FunctionCallTypeCleanup::ParametersTypeCleanup(const tree_managerRef& TM, c
    for(; arg_it != args.cend(); arg_it++, arg_n++)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Examining arg " + GET_CONST_NODE(*arg_it)->ToString() + " " +
-                         GET_CONST_NODE(*arg_it)->get_kind_text());
+                     "-->Examining arg " + (*arg_it)->ToString() + " " + (*arg_it)->get_kind_text());
       const auto formal_type = tree_helper::GetFormalIth(stmt, arg_n);
       const auto actual_type = tree_helper::CGetType(*arg_it);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---formal type = " + GET_CONST_NODE(formal_type)->get_kind_text() + "\t" + STR(formal_type));
+                     "---formal type = " + formal_type->get_kind_text() + "\t" + STR(formal_type));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---actual type = " + GET_CONST_NODE(actual_type)->get_kind_text() + "\t" + STR(actual_type));
+                     "---actual type = " + actual_type->get_kind_text() + "\t" + STR(actual_type));
       tree_nodeRef ga_cleanup = nullptr;
-      if((GET_CONST_NODE(*arg_it)->get_kind() == integer_cst_K || GET_CONST_NODE(*arg_it)->get_kind() == ssa_name_K) &&
+      if(((*arg_it)->get_kind() == integer_cst_K || (*arg_it)->get_kind() == ssa_name_K) &&
          !tree_helper::IsSameType(formal_type, actual_type))
       {
-         ga_cleanup = tree_man->CreateNopExpr(*arg_it, TM->CGetTreeReindex(formal_type->index), tree_nodeRef(),
-                                              tree_nodeRef(), function_id);
+         ga_cleanup = tree_man->CreateNopExpr(*arg_it, formal_type, tree_nodeRef(), tree_nodeRef(), function_id);
       }
-      else if(GET_CONST_NODE(*arg_it)->get_kind() == addr_expr_K || GET_CONST_NODE(*arg_it)->get_kind() == nop_expr_K ||
-              GET_CONST_NODE(*arg_it)->get_kind() == view_convert_expr_K) /// required by CLANG/LLVM
+      else if((*arg_it)->get_kind() == addr_expr_K || (*arg_it)->get_kind() == nop_expr_K ||
+              (*arg_it)->get_kind() == view_convert_expr_K) /// required by CLANG/LLVM
       {
-         const auto parm_ue = GetPointerS<const unary_expr>(GET_CONST_NODE(*arg_it));
-         const auto ue_expr = tree_man->create_unary_operation(
-             formal_type, parm_ue->op, srcp,
-             GET_CONST_NODE(*arg_it)->get_kind()); /// It is required to de-share some IR nodes
+         const auto parm_ue = GetPointerS<const unary_expr>(*arg_it);
+         const auto ue_expr =
+             tree_man->create_unary_operation(formal_type, parm_ue->op, srcp,
+                                              (*arg_it)->get_kind()); /// It is required to de-share some IR nodes
          ga_cleanup =
              tree_man->CreateGimpleAssign(formal_type, tree_nodeRef(), tree_nodeRef(), ue_expr, function_id, srcp);
       }
       if(ga_cleanup)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---adding statement " + GET_CONST_NODE(ga_cleanup)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + ga_cleanup->ToString());
          block->PushBefore(ga_cleanup, stmt, AppM);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---old call statement " + GET_CONST_NODE(stmt)->ToString());
-         const auto new_ssa = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_cleanup))->op0;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---old call statement " + stmt->ToString());
+         const auto new_ssa = GetPointerS<const gimple_assign>(ga_cleanup)->op0;
          unsigned int k = 0;
          auto tmp_arg_it = args.begin();
          for(; tmp_arg_it != args.end(); tmp_arg_it++, k++)
          {
-            if(GET_INDEX_CONST_NODE(*arg_it) == GET_INDEX_CONST_NODE(*tmp_arg_it) &&
+            if((*arg_it)->index == (*tmp_arg_it)->index &&
                tree_helper::GetFormalIth(stmt, k)->index == formal_type->index)
             {
                TM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, stmt, false);
@@ -295,8 +280,7 @@ bool FunctionCallTypeCleanup::ParametersTypeCleanup(const tree_managerRef& TM, c
                continue;
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---new call statement " + GET_CONST_NODE(stmt)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---new call statement " + stmt->ToString());
          THROW_ASSERT(k, "");
          changed = true;
       }

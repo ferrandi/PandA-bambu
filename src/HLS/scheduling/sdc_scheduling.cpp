@@ -173,7 +173,7 @@ class SDCSorter : std::binary_function<vertex, vertex, bool>
                }
                for(const auto cluster_op : to_process)
                {
-                  op_levels[cluster_op] = static_cast<size_t>(op_levels.size());
+                  op_levels[cluster_op] = op_levels.size();
                }
             }
          }
@@ -504,14 +504,14 @@ void SDCScheduling::ComputeRelationships(DesignFlowStepSet& relationship,
       if(relationship_type == INVALIDATION_RELATIONSHIP)
       {
          {
-            vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(
+            auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(
                 FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SDC_CODE_MOTION, funId));
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
             const DesignFlowStepRef design_flow_step =
-                frontend_step != NULL_VERTEX ?
-                    design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
+                frontend_step != DesignFlowGraph::null_vertex() ?
+                    design_flow_graph->CGetNodeInfo(frontend_step)->design_flow_step :
                     GetPointer<const FrontendFlowStepFactory>(
-                        design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))
+                        design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND))
                         ->CreateFunctionFrontendFlowStep(FrontendFlowStepType::SDC_CODE_MOTION, funId);
             relationship.insert(design_flow_step);
          }
@@ -520,11 +520,10 @@ void SDCScheduling::ComputeRelationships(DesignFlowStepSet& relationship,
    Scheduling::ComputeRelationships(relationship, relationship_type);
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 SDCScheduling::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret =
-       Scheduling::ComputeHLSRelationships(relationship_type);
+   HLSRelationships ret = Scheduling::ComputeHLSRelationships(relationship_type);
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -565,16 +564,13 @@ bool SDCScheduling::HasToBeExecuted() const
    {
       return Scheduling::HasToBeExecuted();
    }
-   else
-   {
-      return false;
-   }
+   return false;
 }
 
 DesignFlowStep_Status SDCScheduling::InternalExec()
 {
    const auto TM = HLSMgr->get_tree_manager();
-   auto fnode = TM->get_tree_node_const(funId);
+   auto fnode = TM->GetTreeNode(funId);
    auto fd = GetPointer<function_decl>(fnode);
    const auto fname = tree_helper::GetMangledFunctionName(fd);
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);

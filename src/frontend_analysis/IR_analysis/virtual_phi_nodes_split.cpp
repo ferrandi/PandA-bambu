@@ -62,7 +62,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
-#include "tree_reindex.hpp"
 
 bool virtual_phi_nodes_split::tree_dumped = false;
 
@@ -77,7 +76,7 @@ virtual_phi_nodes_split::virtual_phi_nodes_split(const ParameterConstRef _parame
 
 virtual_phi_nodes_split::~virtual_phi_nodes_split() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 virtual_phi_nodes_split::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -124,9 +123,9 @@ DesignFlowStep_Status virtual_phi_nodes_split::InternalExec()
    /// replace[source, target] has been inserted
    std::map<std::pair<unsigned int, unsigned int>, unsigned int> replace;
 
-   tree_nodeRef temp = TM->get_tree_node_const(function_id);
+   tree_nodeRef temp = TM->GetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(temp);
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* sl = GetPointer<statement_list>(fd->body);
    std::map<unsigned int, blocRef>& list_of_bloc = sl->list_of_bloc;
 
    std::map<unsigned int, blocRef>::iterator iit, iit_end = list_of_bloc.end();
@@ -156,10 +155,10 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
                                                 std::map<unsigned int, blocRef>& list_of_bloc, const tree_managerRef TM,
                                                 std::map<std::pair<unsigned int, unsigned int>, unsigned int>& replace)
 {
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Splitting phi node " + STR(GET_INDEX_NODE(tree_phi)));
-   auto* phi = GetPointer<gimple_phi>(GET_NODE(tree_phi));
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Splitting phi node " + STR(tree_phi->index));
+   auto* phi = GetPointer<gimple_phi>(tree_phi);
    THROW_ASSERT(phi, "A non-phi node is stored in the phi_list");
-   // std::cout << "Analyzing phi-node: @" << GET_INDEX_NODE(tree_phi) << std::endl;
+   // std::cout << "Analyzing phi-node: @" << tree_phi->index << std::endl;
    if(phi->virtual_flag)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Phi node is virtual so no splitting is performed");
@@ -170,8 +169,8 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
       tree_nodeRef def = def_edge.first;
 
       /// create the new ssa
-      auto* ssa_var = GetPointer<ssa_name>(GET_NODE(phi->res));
-      THROW_ASSERT(ssa_var, "unexpected condition " + STR(GET_INDEX_NODE(phi->res)));
+      auto* ssa_var = GetPointer<ssa_name>(phi->res);
+      THROW_ASSERT(ssa_var, "unexpected condition " + STR(phi->res->index));
       const auto type_node = tree_helper::CGetType(phi->res);
       const auto res = tree_man->create_ssa_name(type_node, ssa_var->var, nullptr, nullptr);
 
@@ -251,15 +250,14 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
 
          const auto created_stmt = tree_man->create_gimple_modify_stmt(res, def, function_id, BUILTIN_SRCP);
          phi->ReplaceDefEdge(TM, def_edge, gimple_phi::DefEdge(def_edge.first, source_bb->number));
-         if(list_of_stmt.size() and (GetPointer<gimple_goto>(GET_NODE(list_of_stmt.back())) ||
-                                     GetPointer<gimple_while>(GET_NODE(list_of_stmt.back())) ||
-                                     GetPointer<gimple_for>(GET_NODE(list_of_stmt.back())) ||
-                                     GetPointer<gimple_switch>(GET_NODE(list_of_stmt.back()))))
+         if(list_of_stmt.size() and
+            (GetPointer<gimple_goto>(list_of_stmt.back()) || GetPointer<gimple_while>(list_of_stmt.back()) ||
+             GetPointer<gimple_for>(list_of_stmt.back()) || GetPointer<gimple_switch>(list_of_stmt.back())))
          {
             source_bb->PushBack(created_stmt, AppM);
             /// update bb_index associated with the statement
          }
-         else if(list_of_stmt.size() && GetPointer<gimple_cond>(GET_NODE(list_of_stmt.back())))
+         else if(list_of_stmt.size() && GetPointer<gimple_cond>(list_of_stmt.back()))
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "One of the predecessors ends with an if");
             bool true_case = source_bb->true_edge == bb_block->number;
@@ -313,14 +311,12 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
 
             // Inserting phi
             new_bb->PushBack(created_stmt, AppM);
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                          "Inserted new gimple " + STR(GET_INDEX_CONST_NODE(created_stmt)));
+            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Inserted new gimple " + STR(created_stmt->index));
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Finished creation of new basic block");
          }
          else
          {
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                          "Inserted new gimple " + STR(GET_INDEX_CONST_NODE(created_stmt)));
+            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Inserted new gimple " + STR(created_stmt->index));
             source_bb->PushBack(created_stmt, AppM);
          }
          break;

@@ -2,8 +2,7 @@
 script=$(readlink -e $0)
 root_dir=$(dirname $script)
 
-export NPROC=8
-export NCORE=8
+export OMP_NUM_THREADS=8
 export DIE_AREA="0 0 180 180"
 export CORE_AREA="5.08 5.08 170 170"
 

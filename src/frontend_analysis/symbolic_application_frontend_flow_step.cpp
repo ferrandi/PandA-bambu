@@ -40,21 +40,22 @@
  * Last modified by $Author$
  *
  */
-
 #include "symbolic_application_frontend_flow_step.hpp"
 
-#include "Parameter.hpp"                   // for Parameter, ParameterCon...
-#include "application_manager.hpp"         // for application_managerRef
-#include "exceptions.hpp"                  // for THROW_UNREACHABLE
-#include "function_frontend_flow_step.hpp" // for DesignFlowManagerConstRef
-#include "hash_helper.hpp"                 // for hash
-#include "string_manipulation.hpp"         // for GET_CLASS
-#include <iostream>                        // for ios_base::failure
+#include "Parameter.hpp"
+#include "application_manager.hpp"
+#include "exceptions.hpp"
+#include "function_frontend_flow_step.hpp"
+#include "hash_helper.hpp"
+#include "string_manipulation.hpp"
+
+#include <iostream>
 
 SymbolicApplicationFrontendFlowStep::SymbolicApplicationFrontendFlowStep(
     const application_managerRef _AppM, const FrontendFlowStepType _represented_frontend_flow_step,
     const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : ApplicationFrontendFlowStep(_AppM, SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP, _design_flow_manager, _parameters),
+    : ApplicationFrontendFlowStep(ComputeSignature(_represented_frontend_flow_step), _AppM,
+                                  SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP, _design_flow_manager, _parameters),
       represented_frontend_flow_step_type(_represented_frontend_flow_step)
 {
    composed = true;
@@ -63,7 +64,7 @@ SymbolicApplicationFrontendFlowStep::SymbolicApplicationFrontendFlowStep(
 
 SymbolicApplicationFrontendFlowStep::~SymbolicApplicationFrontendFlowStep() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 SymbolicApplicationFrontendFlowStep::ComputeFrontendRelationships(
     const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -101,16 +102,11 @@ std::string SymbolicApplicationFrontendFlowStep::GetKindText() const
    return "SymbolicApplicationFrontendFlowStep(" + EnumToKindText(represented_frontend_flow_step_type) + ")";
 }
 
-const std::string
+DesignFlowStep::signature_t
 SymbolicApplicationFrontendFlowStep::ComputeSignature(const FrontendFlowStepType represented_frontend_flow_step_type)
 {
-   return "Frontend::" + STR(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP) + "(" + STR(represented_frontend_flow_step_type) +
-          ")";
-}
-
-std::string SymbolicApplicationFrontendFlowStep::GetSignature() const
-{
-   return ComputeSignature(represented_frontend_flow_step_type);
+   return DesignFlowStep::ComputeSignature(SYMBOLIC_APPLICATION_FRONTEND, SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP,
+                                           represented_frontend_flow_step_type);
 }
 
 bool SymbolicApplicationFrontendFlowStep::HasToBeExecuted() const

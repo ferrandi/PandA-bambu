@@ -40,12 +40,12 @@
  * Last modified by $Author$
  *
  */
-
 #ifndef DESIGN_FLOW_AUX_STEP_HPP
 #define DESIGN_FLOW_AUX_STEP_HPP
-#include "design_flow_step.hpp" // for DesignFlowStep, DesignFlowManagerCon...
-#include <iosfwd>               // for ostream
-#include <string>               // for string
+#include "design_flow_step.hpp"
+
+#include <iosfwd>
+#include <string>
 
 /// Identifier of the auxiliary design flow steps
 using AuxDesignFlowStepType = enum AuxDesignFlowStepType {
@@ -62,75 +62,36 @@ class AuxDesignFlowStep : public DesignFlowStep
    /// The type of this auxiliary design flow step
    const AuxDesignFlowStepType type;
 
-   /// The name of this auxiliary design flow step
-   const std::string name;
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
  public:
    /**
     * Constructor
-    * @param name is the name of the step
     * @param type is the type of the step
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   AuxDesignFlowStep(std::string name, const AuxDesignFlowStepType type,
-                     const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   AuxDesignFlowStep(AuxDesignFlowStepType type, const DesignFlowManagerConstRef design_flow_manager,
+                     const ParameterConstRef parameters);
 
-   /**
-    * Destructor
-    */
    ~AuxDesignFlowStep() override;
 
-   /**
-    * Execute the step
-    * @return the exit status of this step
-    */
    DesignFlowStep_Status Exec() override;
 
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
    bool HasToBeExecuted() const override;
 
-   /**
-    * Return a unified identifier of this design step
-    * @return the signature of the design step
-    */
-   std::string GetSignature() const override;
-
-   /**
-    * Return the name of this design step
-    * @return the name of the pass (for debug purpose)
-    */
    std::string GetName() const override;
 
-   /**
-    * Compute the relationships of a step with other steps
-    * @param design_flow is the design flow graph
-    * @param dependencies is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& relationship,
-                             const DesignFlowStep::RelationshipType relationship_type) override;
+   void WriteDot(std::ostream& out) const override;
+
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 
    /**
     * Compute the signature of a sdf design flow step
-    * @param name is the name of the step
     * @param type is the type of auxiliary step
     * @return the signature corresponding to the analysis/transformation
     */
-   static const std::string ComputeSignature(const std::string& name, const AuxDesignFlowStepType type);
-
-   /**
-    * Write the label for a dot graph
-    * @param out is the stream where label has to be printed
-    */
-   void WriteDot(std::ostream& out) const override;
-
-   /**
-    * Return the factory to create this type of steps
-    */
-   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
+   static signature_t ComputeSignature(AuxDesignFlowStepType type);
 };
 #endif

@@ -71,7 +71,7 @@ void read_technology_File(const std::string& fn, const technology_managerRef& TM
          }
          for(const auto& library : TM->get_library_list())
          {
-            if(WORK_LIBRARY == library || DESIGN == library || PROXY_LIBRARY == library)
+            if(WORK_LIBRARY == library || PROXY_LIBRARY == library)
             {
                continue;
             }

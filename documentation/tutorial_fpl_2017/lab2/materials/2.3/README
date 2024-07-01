@@ -1,7 +1,0 @@
-Compare the number of cycles required by a function executing 64 bit multiplication on the following target
-- xc4vlx100-10ff1513 – 66MHz
-- 5SGXEA7N2F45C1 – 200MHz
-- xc7vx690t-3ffg1930-VVD – 100MHz
-- xc7vx690t-3ffg1930-VVD – 333MHz
-- xc7vx690t-3ffg1930-VVD – 400MHz
-

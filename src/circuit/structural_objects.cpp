@@ -684,16 +684,24 @@ void structural_object::type_resize(unsigned long long new_bit_size)
          type->size = new_bit_size;
          break;
       }
-      case structural_type_descriptor::USER:
       case structural_type_descriptor::VECTOR_INT:
       case structural_type_descriptor::VECTOR_UINT:
+      {
+         if(type->size < new_bit_size)
+         {
+            type->size = new_bit_size;
+         }
+         break;
+      }
+
+      case structural_type_descriptor::USER:
       case structural_type_descriptor::VECTOR_REAL:
       case structural_type_descriptor::VECTOR_USER:
       case structural_type_descriptor::OTHER:
       case structural_type_descriptor::UNKNOWN:
       default:
          THROW_ERROR("Not correct resizing  " + get_path() + " (" + type->id_type + ") New size " +
-                     std::to_string(new_bit_size));
+                     std::to_string(new_bit_size) + " old size " + std::to_string(type->size));
    }
 }
 
@@ -3310,6 +3318,12 @@ const NP_functionalityRef& module::get_NP_functionality() const
    return NP_descriptions;
 }
 
+bool module::has_to_be_generated() const
+{
+   return get_NP_functionality()->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) ||
+          get_NP_functionality()->exist_NP_functionality(NP_functionality::VHDL_GENERATOR);
+}
+
 void module::get_NP_library_parameters(
     structural_objectRef _owner, std::vector<std::pair<std::string, structural_objectRef>>& computed_parameters) const
 {
@@ -4182,7 +4196,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          const xml_text_node* text = EnodeC->get_child_text();
          if(!text)
          {
-            THROW_WARNING("description is missing for " + EnodeC->get_name());
+            THROW_WARNING("description is missing for " + _owner->get_id());
          }
          else
          {
@@ -4195,7 +4209,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          const xml_text_node* text = EnodeC->get_child_text();
          if(!text)
          {
-            THROW_WARNING("copyright is missing for " + EnodeC->get_name());
+            THROW_WARNING("copyright is missing for " + _owner->get_id());
          }
          else
          {
@@ -4208,7 +4222,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          const xml_text_node* text = EnodeC->get_child_text();
          if(!text)
          {
-            THROW_WARNING("authors are missing for " + EnodeC->get_name());
+            THROW_WARNING("authors are missing for " + _owner->get_id());
          }
          else
          {
@@ -4221,7 +4235,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          const xml_text_node* text = EnodeC->get_child_text();
          if(!text)
          {
-            THROW_WARNING("license is missing for " + EnodeC->get_name());
+            THROW_WARNING("license is missing for " + _owner->get_id());
          }
          else
          {
@@ -4234,7 +4248,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          const xml_text_node* text = EnodeC->get_child_text();
          if(!text)
          {
-            THROW_WARNING("specialization identifier is missing for " + EnodeC->get_name());
+            THROW_WARNING("specialization identifier is missing for " + _owner->get_id());
          }
          else
          {
@@ -4247,7 +4261,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          const xml_text_node* text = EnodeC->get_child_text();
          if(!text)
          {
-            THROW_WARNING("multi_unit_multiplicity identifier is missing for " + EnodeC->get_name());
+            THROW_WARNING("multi_unit_multiplicity identifier is missing for " + _owner->get_id());
          }
          else
          {
@@ -4261,7 +4275,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          const xml_text_node* text = EnodeC->get_child_text();
          if(!text)
          {
-            THROW_WARNING("keep_hierarchy identifier is missing for " + EnodeC->get_name());
+            THROW_WARNING("keep_hierarchy identifier is missing for " + _owner->get_id());
          }
          else
          {

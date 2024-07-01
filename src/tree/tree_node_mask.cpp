@@ -124,12 +124,6 @@ void tree_node_mask::operator()(const type_node*, unsigned int& mask)
    mask = NO_VISIT;
 }
 
-void tree_node_mask::operator()(const memory_tag*, unsigned int& mask)
-{
-   mask = NO_VISIT;
-   SET_VISIT_INDEX(mask, memory_tag::decl_node);
-}
-
 void tree_node_mask::operator()(const cst_node*, unsigned int& mask)
 {
    mask = NO_VISIT;

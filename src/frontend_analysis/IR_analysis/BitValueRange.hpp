@@ -58,7 +58,7 @@ struct ssa_name;
 class BitValueRange : public FunctionFrontendFlowStep
 {
  private:
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:

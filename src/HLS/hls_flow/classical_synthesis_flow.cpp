@@ -43,9 +43,8 @@
  */
 #include "classical_synthesis_flow.hpp"
 
-// . include
 #include "Parameter.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp"
 
 ClassicalHLSSynthesisFlow::ClassicalHLSSynthesisFlow(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                                                      const DesignFlowManagerConstRef _design_flow_manager)
@@ -56,10 +55,10 @@ ClassicalHLSSynthesisFlow::ClassicalHLSSynthesisFlow(const ParameterConstRef _pa
 
 ClassicalHLSSynthesisFlow::~ClassicalHLSSynthesisFlow() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 ClassicalHLSSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

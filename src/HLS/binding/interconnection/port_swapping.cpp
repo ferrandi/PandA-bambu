@@ -76,10 +76,10 @@ port_swapping::port_swapping(const ParameterConstRef _Param, const HLS_managerRe
 
 port_swapping::~port_swapping() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 port_swapping::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -287,7 +287,7 @@ void port_swapping::port_swapping_algorithm(PSGraph& g, std::vector<PSMultiStart
    //
    std::random_device rd;
    std::mt19937 generator(rd());
-   generator.seed(parameters->getOption<long unsigned int>(OPT_seed));
+   generator.seed(parameters->getOption<unsigned long>(OPT_seed));
    std::vector<PSVertex> p(num_vertices(g));
 
    std::vector<PSVertex> component(boost::num_vertices(g));

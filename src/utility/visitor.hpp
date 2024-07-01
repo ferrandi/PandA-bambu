@@ -42,11 +42,12 @@
  */
 #ifndef VISITOR_HPP
 #define VISITOR_HPP
-
 #include "refcount.hpp"
-#include <algorithm>
+
 #include <boost/preprocessor/facilities/empty.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
+
+#include <algorithm>
 #include <deque>
 
 /// return the id given a super class or a class member
@@ -61,10 +62,12 @@
    (ref_obj)->method
 #define VISIT_MEMBER(mask, ref_obj, method) VISIT_MEMBER_NAMED(ref_obj, mask, ref_obj, method)
 /// macro used to traverse non empty sequences
-#define SEQ_VISIT_MEMBER(mask, seq, seqbasetype, method, visitor_type, visitor_obj) \
-   if(((1 << GETID(seq)) & (mask)) == 0 && !(seq).empty())                          \
-   std::for_each((seq).begin(), (seq).end(),                                        \
-                 for_each_functor<seqbasetype, visitor_type>(&seqbasetype::method, visitor_obj))
+#define SEQ_VISIT_MEMBER(mask, seq, method)                \
+   if(((1 << GETID(seq)) & (mask)) == 0 && !(seq).empty()) \
+   {                                                       \
+      for(const auto& k : seq)                             \
+         (k.get())->method;                                \
+   }
 /// constant used to avoid member visit
 #define NO_VISIT ~0U
 /// constant used to allow member visit
@@ -126,32 +129,5 @@ class object_visitor
    BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO, BOOST_PP_EMPTY, VISITED_OBJ_SEQ2);
 #undef VISITED_OBJ_SEQ1
 #undef VISITED_OBJ_SEQ2
-};
-
-/// functor used to traverse sequences with std::for_each
-template <class T, class visitor_obj>
-class for_each_functor : public std::unary_function<const refcount<T>&, void>
-{
-   /// visitor type definition
-   using visitor_type = visitor_obj* const;
-   using visitor_function_type = void (T::*const)(visitor_type) const;
-
- public:
-   /// constructor
-   for_each_functor(const visitor_function_type _visitor_function, visitor_type _vo)
-       : visitor_function(_visitor_function), vo(_vo)
-   {
-   }
-   /// functor
-   void operator()(const refcount<T>& x) const
-   {
-      ((x.get())->*visitor_function)(vo);
-   }
-
- private:
-   /// visitor member
-   const visitor_function_type visitor_function;
-   /// visitor object
-   visitor_type vo;
 };
 #endif

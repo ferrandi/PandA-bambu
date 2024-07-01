@@ -40,14 +40,12 @@
  * Last modified by $Author$
  *
  */
-
 #ifndef BIT_VALUE_OPT_HPP
 #define BIT_VALUE_OPT_HPP
 
 #include "function_frontend_flow_step.hpp"
 
 #include "refcount.hpp"
-#include "tree_basic_block.hpp"
 /**
  * @name forward declarations
  */
@@ -55,6 +53,7 @@
 REF_FORWARD_DECL(Bit_Value_opt);
 REF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_manipulation);
+REF_FORWARD_DECL(tree_node);
 struct function_decl;
 struct ssa_name;
 //@}
@@ -68,7 +67,7 @@ class Bit_Value_opt : public FunctionFrontendFlowStep
    /// when true IR has been modified
    bool modified;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
@@ -77,10 +76,10 @@ class Bit_Value_opt : public FunctionFrontendFlowStep
     * @param fd is the function declaration
     * @param TM is the tree manager
     */
-   void optimize(const function_decl* fd, tree_managerRef TM, tree_manipulationRef IRman);
+   void optimize(const function_decl* fd, const tree_managerRef& TM, const tree_manipulationRef& IRman);
 
-   void propagateValue(const ssa_name* ssa, tree_managerRef TM, tree_nodeRef old_val, tree_nodeRef new_val,
-                       const std::string callSiteString);
+   void propagateValue(const tree_managerRef& TM, const tree_nodeRef& old_val, const tree_nodeRef& new_val,
+                       const std::string& callSiteString);
 
  public:
    /**
@@ -110,6 +109,6 @@ class Bit_Value_opt : public FunctionFrontendFlowStep
     */
    bool HasToBeExecuted() const override;
 
-   static void constrainSSA(ssa_name* op_ssa, tree_managerRef TM);
+   static void constrainSSA(ssa_name* op_ssa, const tree_managerRef& TM);
 };
 #endif /* Bit_Value_opt_HPP */

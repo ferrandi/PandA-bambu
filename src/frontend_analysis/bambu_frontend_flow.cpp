@@ -75,7 +75,7 @@ BambuFrontendFlow::BambuFrontendFlow(const application_managerRef _AppM,
 
 BambuFrontendFlow::~BambuFrontendFlow() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 BambuFrontendFlow::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -111,15 +111,12 @@ BambuFrontendFlow::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
             relationships.insert(std::make_pair(FUNCTION_CALL_OPT, WHOLE_APPLICATION));
          }
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, WHOLE_APPLICATION));
-         if(static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)) ==
-            HDLWriter_Language::VHDL)
+         if(parameters->getOption<HDLWriter_Language>(OPT_writer_language) == HDLWriter_Language::VHDL)
          {
             relationships.insert(std::make_pair(HDL_FUNCTION_DECL_FIX, WHOLE_APPLICATION));
          }
-         if(parameters->isOption(OPT_hls_div) && parameters->getOption<std::string>(OPT_hls_div) != "none")
-         {
-            relationships.insert(std::make_pair(HLS_DIV_CG_EXT, WHOLE_APPLICATION));
-         }
+         relationships.insert(std::make_pair(SOFT_INT_CG_EXT, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(MULT_EXPR_FRACTURING, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(INTERFACE_INFER, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(LUT_TRANSFORMATION, WHOLE_APPLICATION));
@@ -140,6 +137,7 @@ BambuFrontendFlow::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
          relationships.insert(std::make_pair(SPLIT_RETURN, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(STRING_CST_FIX, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(SWITCH_FIX, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(TREE2FUN, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(LOOPS_ANALYSIS_BAMBU, WHOLE_APPLICATION));
 
          relationships.insert(std::make_pair(MULTI_WAY_IF, WHOLE_APPLICATION));

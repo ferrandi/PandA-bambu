@@ -73,7 +73,7 @@ if BUILD_FLOPOCO
       $(top_builddir)/ext/sollya/libsollya.la
 endif
 
-lib_eucalyptus_la_LIBADD += $(top_builddir)/ext/abseil-cpp/libabseil.la
+lib_eucalyptus_la_LIBADD += $(top_builddir)/ext/abseil/libabseil.la
 
 eucalyptus_LDADD = lib_eucalyptus.la @PTHREAD_HACK@
 

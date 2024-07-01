@@ -82,6 +82,6 @@ if BUILD_LIB_WRAPPER
    lib_spider_la_LIBADD += lib_wrapper.la
 endif
 
-lib_spider_la_LIBADD += $(top_builddir)/ext/abseil-cpp/libabseil.la
+lib_spider_la_LIBADD += $(top_builddir)/ext/abseil/libabseil.la
 
 spider_LDADD = lib_spider.la @PTHREAD_HACK@

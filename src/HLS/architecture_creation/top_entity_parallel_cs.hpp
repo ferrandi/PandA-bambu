@@ -56,8 +56,7 @@ class top_entity_parallel_cs : public top_entity
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   HLSRelationships ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    unsigned long long BW_loop_iter(const structural_objectRef circuit);
    void connect_loop_iter(const structural_objectRef circuit, unsigned long long loopBW);

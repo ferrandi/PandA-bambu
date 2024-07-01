@@ -286,7 +286,7 @@ struct module_binding_check : public check_clique<vertex_type>
          {
             if(vars.size() > 1)
             {
-               n_muxes += static_cast<size_t>(vars.size()) - 1;
+               n_muxes += vars.size() - 1;
             }
          }
       }
@@ -347,7 +347,7 @@ struct module_binding_check : public check_clique<vertex_type>
             port_inputs.insert(temp_var);
             port_inputs_other.insert(temp_var);
          }
-         auto n_mux_inputs = static_cast<size_t>(port_inputs.size());
+         auto n_mux_inputs = port_inputs.size();
 
          total_area_muxes +=
              HLS->allocation_information->estimate_muxNto1_area(fu_prec, static_cast<unsigned int>(n_mux_inputs));

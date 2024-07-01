@@ -61,7 +61,6 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 #include "utility.hpp"
 #include "var_pp_functor.hpp"
 
@@ -77,7 +76,7 @@ dead_code_eliminationIPA::dead_code_eliminationIPA(const application_managerRef 
 
 dead_code_eliminationIPA::~dead_code_eliminationIPA() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 dead_code_eliminationIPA::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -112,7 +111,7 @@ dead_code_eliminationIPA::ComputeFrontendRelationships(const DesignFlowStep::Rel
 void dead_code_eliminationIPA::ComputeRelationships(DesignFlowStepSet& relationships,
                                                     const DesignFlowStep::RelationshipType relationship_type)
 {
-   if(relationship_type == INVALIDATION_RELATIONSHIP)
+   if(relationship_type == INVALIDATION_RELATIONSHIP && GetStatus() == DesignFlowStep_Status::SUCCESS)
    {
       const auto DFM = design_flow_manager.lock();
       const auto DFG = DFM->CGetDesignFlowGraph();
@@ -127,21 +126,19 @@ void dead_code_eliminationIPA::ComputeRelationships(DesignFlowStepSet& relations
          {
             const auto step_signature = FunctionFrontendFlowStep::ComputeSignature(step_type, i);
             const auto frontend_step = DFM->GetDesignFlowStep(step_signature);
-            THROW_ASSERT(frontend_step != NULL_VERTEX, "step " + step_signature + " is not present");
-            const auto design_flow_step = DFG->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+            THROW_ASSERT(frontend_step != DesignFlowGraph::null_vertex(), "step is not present");
+            const auto design_flow_step = DFG->CGetNodeInfo(frontend_step)->design_flow_step;
             relationships.insert(design_flow_step);
          }
       }
-      fun_id_to_restart.clear();
       for(const auto i : fun_id_to_restartParm)
       {
          const auto step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::PARM2SSA, i);
          const auto frontend_step = DFM->GetDesignFlowStep(step_signature);
-         THROW_ASSERT(frontend_step != NULL_VERTEX, "step " + step_signature + " is not present");
-         const auto design_flow_step = DFG->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+         THROW_ASSERT(frontend_step != DesignFlowGraph::null_vertex(), "step is not present");
+         const auto design_flow_step = DFG->CGetNodeInfo(frontend_step)->design_flow_step;
          relationships.insert(design_flow_step);
       }
-      fun_id_to_restartParm.clear();
    }
    ApplicationFrontendFlowStep::ComputeRelationships(relationships, relationship_type);
 }
@@ -166,7 +163,7 @@ DesignFlowStep_Status dead_code_eliminationIPA::Exec()
       const auto top_functions = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
       std::transform(top_functions.begin(), top_functions.end(),
                      std::inserter(interface_functions, interface_functions.end()),
-                     [&](const auto& fname) { return GET_INDEX_CONST_NODE(TM->GetFunction(fname)); });
+                     [&](const auto& fname) { return TM->GetFunction(fname)->index; });
       const auto addr_funcs = CGM->GetAddressedFunctions();
       interface_functions.insert(addr_funcs.begin(), addr_funcs.end());
    }
@@ -212,8 +209,8 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
       auto idx = static_cast<unsigned int>(parms.size() - 1);
       for(auto it = parms.rbegin(); it != parms.rend(); ++it, --idx)
       {
-         const auto ssa = AppM->getSSAFromParm(function_id, GET_INDEX_CONST_NODE(*it));
-         if(GetPointer<const ssa_name>(TM->CGetTreeNode(ssa))->CGetUseStmts().empty())
+         const auto ssa = AppM->getSSAFromParm(function_id, (*it)->index);
+         if(GetPointer<const ssa_name>(TM->GetTreeNode(ssa))->CGetUseStmts().empty())
          {
             unused_parm_indices.push_back(idx);
          }
@@ -234,7 +231,7 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
       for(const auto& idx : unused_parm_indices)
       {
          const auto arg_it = std::next(arg_list.begin(), idx);
-         auto ssa = GetPointer<ssa_name>(GET_NODE(*arg_it));
+         auto ssa = GetPointer<ssa_name>(*arg_it);
          if(ssa)
          {
             THROW_ASSERT(ssa->CGetUseStmts().count(call_stmt),
@@ -242,7 +239,7 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
 
             if(ssa->virtual_flag)
             {
-               const auto gn = GetPointerS<gimple_node>(GET_NODE(call_stmt));
+               const auto gn = GetPointerS<gimple_node>(call_stmt);
                if(gn->vuses.erase(*arg_it))
                {
                   ssa->RemoveUse(call_stmt);
@@ -283,11 +280,10 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
          INDENT_DBG_MEX(
              DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
              "Analysing call points from " +
-                 tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
+                 tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(TM->GetTreeNode(caller_id))));
          for(const auto& call_id : fei->direct_call_points)
          {
-            auto call_rdx = TM->GetTreeReindex(call_id);
-            auto call_stmt = GET_NODE(call_rdx);
+            const auto call_stmt = TM->GetTreeNode(call_id);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Before: " + call_stmt->ToString());
             tree_nodeRef fn;
             if(call_stmt->get_kind() == gimple_call_K)
@@ -295,22 +291,22 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
                auto gc = GetPointerS<gimple_call>(call_stmt);
                THROW_ASSERT(gc->args.size() == parms.size(), "");
                fn = gc->fn;
-               arg_eraser(gc->args, call_rdx);
+               arg_eraser(gc->args, call_stmt);
             }
             else if(call_stmt->get_kind() == gimple_assign_K)
             {
                const auto ga = GetPointerS<const gimple_assign>(call_stmt);
-               auto ce = GetPointer<call_expr>(GET_NODE(ga->op1));
+               auto ce = GetPointer<call_expr>(ga->op1);
                fn = ce->fn;
-               THROW_ASSERT(ce, "Unexpected call expression: " + GET_NODE(ga->op1)->get_kind_text());
+               THROW_ASSERT(ce, "Unexpected call expression: " + ga->op1->get_kind_text());
                THROW_ASSERT(ce->args.size() == parms.size(), "");
-               arg_eraser(ce->args, call_rdx);
+               arg_eraser(ce->args, call_stmt);
             }
             else
             {
                THROW_UNREACHABLE("Call point statement not handled: " + call_stmt->get_kind_text());
             }
-            auto ae = GetPointer<addr_expr>(GET_NODE(fn));
+            auto ae = GetPointer<addr_expr>(fn);
             if(ae)
             {
                ae->type = ftype_ptr;
@@ -340,9 +336,9 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
       for(auto i : unused_parm_indices)
       {
          const auto& pnode = fd->list_of_args.at(i);
-         const auto pname = GetPointer<parm_decl>(GET_NODE(pnode))->name;
+         const auto pname = GetPointer<parm_decl>(pnode)->name;
          THROW_ASSERT(pname, "Expected parameter name.");
-         const auto pname_str = GetPointer<identifier_node>(GET_NODE(pname))->strg;
+         const auto pname_str = GetPointer<identifier_node>(pname)->strg;
          func_arch->parms.erase(pname_str);
       }
    }

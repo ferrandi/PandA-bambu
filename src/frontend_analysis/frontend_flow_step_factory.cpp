@@ -53,11 +53,11 @@
 #include "basic_blocks_cfg_computation.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-#include "config_HAVE_ILP_BUILT.hpp"    // for HAVE_ILP_BUILT
-#include "config_HAVE_PRAGMA_BUILT.hpp" // for HAVE_PRAGMA_B...
-#include "config_HAVE_TASTE.hpp"        // for HAVE_TASTE
+#include "config_HAVE_ILP_BUILT.hpp"
+#include "config_HAVE_PRAGMA_BUILT.hpp"
+#include "config_HAVE_TASTE.hpp"
 #include "design_flow_step.hpp"
-#include "exceptions.hpp" // for THROW_UNREACH...
+#include "exceptions.hpp"
 #if HAVE_HOST_PROFILING_BUILT
 #include "basic_blocks_profiling.hpp"
 #endif
@@ -108,12 +108,12 @@
 #include "fanout_opt.hpp"
 #include "hdl_function_decl_fix.hpp"
 #include "hdl_var_decl_fix.hpp"
-#include "hls_div_cg_ext.hpp"
 #include "loops_analysis_bambu.hpp"
 #include "loops_computation.hpp"
 #include "lut_transformation.hpp"
+#include "mult_expr_fracturing.hpp"
 #include "multi_way_if.hpp"
-#include "multiple_entry_if_reduction.hpp" //modified here
+#include "multiple_entry_if_reduction.hpp"
 #include "op_cdg_computation.hpp"
 #include "op_feedback_edges_computation.hpp"
 #include "op_order_computation.hpp"
@@ -122,6 +122,7 @@
 #include "parm2ssa.hpp"
 #include "parm_decl_taken_address_fix.hpp"
 #include "phi_opt.hpp"
+#include "soft_int_cg_ext.hpp"
 #if HAVE_FROM_PRAGMA_BUILT
 #include "pragma_substitution.hpp"
 #endif
@@ -143,6 +144,7 @@
 #include "split_return.hpp"
 #include "string_cst_fix.hpp"
 #include "switch_fix.hpp"
+#include "tree2fun.hpp"
 #include "un_comparison_lowering.hpp"
 #if HAVE_ILP_BUILT
 #include "update_schedule.hpp"
@@ -161,13 +163,13 @@
 FrontendFlowStepFactory::FrontendFlowStepFactory(const application_managerRef _AppM,
                                                  const DesignFlowManagerConstRef _design_flow_manager,
                                                  const ParameterConstRef _parameters)
-    : DesignFlowStepFactory(_design_flow_manager, _parameters), AppM(_AppM)
+    : DesignFlowStepFactory(DesignFlowStep::FRONTEND, _design_flow_manager, _parameters), AppM(_AppM)
 {
 }
 
 FrontendFlowStepFactory::~FrontendFlowStepFactory() = default;
 
-const DesignFlowStepSet FrontendFlowStepFactory::GenerateFrontendSteps(
+DesignFlowStepSet FrontendFlowStepFactory::GenerateFrontendSteps(
     const CustomUnorderedSet<FrontendFlowStepType>& frontend_flow_step_types) const
 {
    DesignFlowStepSet frontend_flow_steps;
@@ -181,8 +183,7 @@ const DesignFlowStepSet FrontendFlowStepFactory::GenerateFrontendSteps(
    return frontend_flow_steps;
 }
 
-const DesignFlowStepRef
-FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow_step_type) const
+DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow_step_type) const
 {
    switch(frontend_flow_step_type)
    {
@@ -227,7 +228,6 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
       case FIX_STRUCTS_PASSED_BY_VALUE:
       case FIX_VDEF:
       case HDL_VAR_DECL_FIX:
-      case HLS_DIV_CG_EXT:
       case HWCALL_INJECTION:
       case IR_LOWERING:
       case LOOP_COMPUTATION:
@@ -259,6 +259,7 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
       case SOFT_FLOAT_CG_EXT:
       case SCALAR_SSA_DATA_FLOW_ANALYSIS:
       case SWITCH_FIX:
+      case TREE2FUN:
 #if HAVE_ILP_BUILT
       case UPDATE_SCHEDULE:
 #endif
@@ -293,6 +294,7 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
 #if HAVE_HOST_PROFILING_BUILT
       case HOST_PROFILING:
 #endif
+      case MULT_EXPR_FRACTURING:
 #if HAVE_FROM_PRAGMA_BUILT
       case PRAGMA_ANALYSIS:
 #endif
@@ -300,6 +302,7 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
       case PRAGMA_SUBSTITUTION:
 #endif
       case RANGE_ANALYSIS:
+      case SOFT_INT_CG_EXT:
       case STRING_CST_FIX:
       case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP):
       {
@@ -311,7 +314,7 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
    return DesignFlowStepRef();
 }
 
-const DesignFlowStepRef
+DesignFlowStepRef
 FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowStepType design_flow_step_type) const
 {
    switch(design_flow_step_type)
@@ -370,6 +373,10 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
          return DesignFlowStepRef(new HostProfiling(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
+      case MULT_EXPR_FRACTURING:
+      {
+         return DesignFlowStepRef(new mult_expr_fracturing(AppM, design_flow_manager.lock(), parameters));
+      }
 #if HAVE_PRAGMA_BUILT
       case PRAGMA_ANALYSIS:
       {
@@ -385,6 +392,10 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       case RANGE_ANALYSIS:
       {
          return DesignFlowStepRef(new RangeAnalysis(AppM, design_flow_manager.lock(), parameters));
+      }
+      case SOFT_INT_CG_EXT:
+      {
+         return DesignFlowStepRef(new soft_int_cg_ext(AppM, design_flow_manager.lock(), parameters));
       }
       case STRING_CST_FIX:
       {
@@ -431,7 +442,6 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       case FIX_STRUCTS_PASSED_BY_VALUE:
       case FIX_VDEF:
       case HDL_VAR_DECL_FIX:
-      case HLS_DIV_CG_EXT:
       case HWCALL_INJECTION:
       case IR_LOWERING:
       case LOOP_COMPUTATION:
@@ -463,6 +473,7 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       case SOFT_FLOAT_CG_EXT:
       case SCALAR_SSA_DATA_FLOW_ANALYSIS:
       case SWITCH_FIX:
+      case TREE2FUN:
       case UN_COMPARISON_LOWERING:
       case UNROLLING_DEGREE:
 #if HAVE_ILP_BUILT
@@ -491,7 +502,7 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
    return DesignFlowStepRef();
 }
 
-const DesignFlowStepRef
+DesignFlowStepRef
 FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepType design_flow_step_type,
                                                         const unsigned int function_id) const
 {
@@ -666,10 +677,6 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       {
          return DesignFlowStepRef(new HDLVarDeclFix(AppM, function_id, design_flow_manager.lock(), parameters));
       }
-      case HLS_DIV_CG_EXT:
-      {
-         return DesignFlowStepRef(new hls_div_cg_ext(parameters, AppM, function_id, design_flow_manager.lock()));
-      }
       case HWCALL_INJECTION:
       {
          return DesignFlowStepRef(new HWCallInjection(parameters, AppM, function_id, design_flow_manager.lock()));
@@ -796,6 +803,10 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       {
          return DesignFlowStepRef(new SwitchFix(AppM, function_id, design_flow_manager.lock(), parameters));
       }
+      case TREE2FUN:
+      {
+         return DesignFlowStepRef(new tree2fun(parameters, AppM, function_id, design_flow_manager.lock()));
+      }
       case UN_COMPARISON_LOWERING:
       {
          return DesignFlowStepRef(new UnComparisonLowering(AppM, function_id, design_flow_manager.lock(), parameters));
@@ -861,6 +872,7 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
 #if HAVE_HOST_PROFILING_BUILT
       case(HOST_PROFILING):
 #endif
+      case MULT_EXPR_FRACTURING:
 #if HAVE_PRAGMA_BUILT
       case(PRAGMA_ANALYSIS):
 #endif
@@ -868,6 +880,7 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       case(PRAGMA_SUBSTITUTION):
 #endif
       case RANGE_ANALYSIS:
+      case SOFT_INT_CG_EXT:
       case STRING_CST_FIX:
       case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP):
       {
@@ -879,9 +892,4 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
          THROW_UNREACHABLE("Frontend flow step type does not exist");
    }
    return DesignFlowStepRef();
-}
-
-const std::string FrontendFlowStepFactory::GetPrefix() const
-{
-   return "Frontend";
 }

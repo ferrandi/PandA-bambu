@@ -1,5 +1,0 @@
-<?xml version="1.0"?>
-<function>
-  <testbench original1="2" original2="5" reference1="15" reference2="11" must_be_equal="0"/>
-  <testbench original1="2" original2="5" reference1="2" reference2="5" must_be_equal="1"/>
-</function>

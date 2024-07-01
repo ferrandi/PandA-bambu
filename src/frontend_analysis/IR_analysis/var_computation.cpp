@@ -63,7 +63,6 @@
 #include "ext_tree_node.hpp"
 #include "tree_helper.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 /// Utility include
 #include "dbgPrintHelper.hpp"
@@ -87,7 +86,7 @@ VarComputation::VarComputation(const ParameterConstRef _parameters, const applic
 
 VarComputation::~VarComputation() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 VarComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -180,7 +179,7 @@ DesignFlowStep_Status VarComputation::InternalExec()
 void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeConstRef& _tree_node,
                                         const FunctionBehavior_VariableAccessType access_type) const
 {
-   const auto tree_node = GET_CONST_NODE(_tree_node);
+   const auto tree_node = _tree_node;
    const auto node_kind = tree_node->get_kind();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Analyzing node " + STR(tree_node) + "(" + tree_node::GetString(node_kind) + ")");
@@ -233,7 +232,7 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
       {
          const auto* ce = GetPointerS<const call_expr>(tree_node);
          /// Needed to correctly support function pointers
-         if(GET_CONST_NODE(ce->fn)->get_kind() == ssa_name_K)
+         if(ce->fn->get_kind() == ssa_name_K)
          {
             RecursivelyAnalyze(op_vertex, ce->fn, FunctionBehavior_VariableAccessType::USE);
          }
@@ -249,7 +248,7 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
       {
          const auto* gc = GetPointer<const gimple_call>(tree_node);
          /// Needed to correctly support function pointers
-         if(GET_CONST_NODE(gc->fn)->get_kind() == ssa_name_K)
+         if(gc->fn->get_kind() == ssa_name_K)
          {
             RecursivelyAnalyze(op_vertex, gc->fn, FunctionBehavior_VariableAccessType::USE);
          }
@@ -341,7 +340,7 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
       {
          ogc->AddSourceCodeVariable(op_vertex, tree_node->index);
          const auto* vd = GetPointer<const var_decl>(tree_node);
-         if(vd && (!vd->scpe || GET_CONST_NODE(vd->scpe)->get_kind() == translation_unit_decl_K))
+         if(vd && (!vd->scpe || vd->scpe->get_kind() == translation_unit_decl_K))
          {
             AppM->AddGlobalVariable(_tree_node);
          }
@@ -386,7 +385,7 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
          else
          {
             if((sn->volatile_flag ||
-                (sn->CGetDefStmts().size() == 1 && GET_CONST_NODE(sn->CGetDefStmt())->get_kind() == gimple_nop_K)) &&
+                (sn->CGetDefStmts().size() == 1 && sn->CGetDefStmt()->get_kind() == gimple_nop_K)) &&
                sn->var)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -436,7 +435,7 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
             RecursivelyAnalyze(op_vertex, current_tree_list->valu, access_type);
             if(current_tree_list->chan)
             {
-               current_args = GET_CONST_NODE(current_tree_list->chan);
+               current_args = current_tree_list->chan;
             }
             else
             {
@@ -502,7 +501,7 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
       {
          const auto* qe = GetPointerS<const quaternary_expr>(tree_node);
          if((qe->get_kind() == array_ref_K || qe->get_kind() == array_range_ref_K) &&
-            GET_CONST_NODE(tree_helper::CGetType(qe->op0))->get_kind() == array_type_K)
+            tree_helper::CGetType(qe->op0)->get_kind() == array_type_K)
          {
             RecursivelyAnalyze(op_vertex, qe->op0, access_type);
          }
@@ -679,17 +678,17 @@ void VarComputation::AnalyzeVops(const vertex op_vertex, const gimple_node* vop)
 {
    for(const auto& vuse : vop->vuses)
    {
-      ogc->AddVariable(op_vertex, GET_INDEX_NODE(vuse), FunctionBehavior_VariableType::VIRTUAL,
+      ogc->AddVariable(op_vertex, vuse->index, FunctionBehavior_VariableType::VIRTUAL,
                        FunctionBehavior_VariableAccessType::USE);
    }
    if(vop->vdef)
    {
-      ogc->AddVariable(op_vertex, GET_INDEX_NODE(vop->vdef), FunctionBehavior_VariableType::VIRTUAL,
+      ogc->AddVariable(op_vertex, vop->vdef->index, FunctionBehavior_VariableType::VIRTUAL,
                        FunctionBehavior_VariableAccessType::DEFINITION);
    }
    for(auto const& vover : vop->vovers)
    {
-      ogc->AddVariable(op_vertex, GET_INDEX_NODE(vover), FunctionBehavior_VariableType::VIRTUAL,
+      ogc->AddVariable(op_vertex, vover->index, FunctionBehavior_VariableType::VIRTUAL,
                        FunctionBehavior_VariableAccessType::OVER);
    }
 }

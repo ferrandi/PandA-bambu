@@ -17,7 +17,7 @@ if {![info exists standalone] || $standalone} {
   puts "Starting detailed routing"
 }
 
-set_thread_count $::env(NUM_CORES)
+set_thread_count $::env(OMP_NUM_THREADS)
 
 set additional_args ""
 if { ![info exists ::env(USE_WXL)]} {

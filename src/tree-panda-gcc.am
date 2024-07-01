@@ -57,6 +57,6 @@ if BUILD_LIB_TECHNOLOGY
    lib_treepandagcc_la_LIBADD += lib_technology.la
 endif
 
-lib_treepandagcc_la_LIBADD += $(top_builddir)/ext/abseil-cpp/libabseil.la
+lib_treepandagcc_la_LIBADD += $(top_builddir)/ext/abseil/libabseil.la
 
 tree_panda_gcc_LDADD = lib_treepandagcc.la  @PTHREAD_HACK@

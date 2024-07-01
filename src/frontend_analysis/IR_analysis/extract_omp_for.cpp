@@ -67,7 +67,6 @@
 #include "tree_basic_block.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 /// utility _Nonnull
 #include "dbgPrintHelper.hpp"
@@ -82,7 +81,7 @@ ExtractOmpFor::ExtractOmpFor(const application_managerRef _AppM, unsigned int _f
 
 ExtractOmpFor::~ExtractOmpFor() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 ExtractOmpFor::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    const auto TM = AppM->get_tree_manager();
@@ -164,7 +163,7 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
                const auto list_of_stmt = bb_node_info->block->CGetStmtList();
                THROW_ASSERT(list_of_stmt.size() >= 2, "Unexpected pattern");
                const auto first_node = list_of_stmt.front();
-               const auto call = GetPointer<const gimple_call>(GET_NODE(first_node));
+               const auto call = GetPointer<const gimple_call>(first_node);
                if(not call)
                {
                   THROW_ERROR("First operation of loop body is " + first_node->ToString());
@@ -172,29 +171,29 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
                auto stmt_it = list_of_stmt.begin();
                ++stmt_it;
                const auto second_node = *stmt_it;
-               const auto ga = GetPointer<const gimple_assign>(GET_NODE(second_node));
+               const auto ga = GetPointer<const gimple_assign>(second_node);
                if(not ga)
                {
                   THROW_ERROR("Second operation of loop body is " + second_node->ToString());
                }
-               const auto pe = GetPointer<const plus_expr>(GET_NODE(ga->op1));
+               const auto pe = GetPointer<const plus_expr>(ga->op1);
                if(not pe)
                {
                   THROW_ERROR("Second operation of loop body is " + second_node->ToString());
                }
-               const auto induction_variable = GetPointer<const ssa_name>(GET_NODE(ga->op0));
+               const auto induction_variable = GetPointer<const ssa_name>(ga->op0);
                THROW_ASSERT(loop->main_iv, "");
                if(not induction_variable or induction_variable->index != loop->main_iv)
                {
-                  THROW_ERROR("Induction variable is " + TM->get_tree_node_const(loop->main_iv)->ToString() +
+                  THROW_ERROR("Induction variable is " + TM->GetTreeNode(loop->main_iv)->ToString() +
                               " - Second operation of loop body is " + second_node->ToString());
                }
-               const auto call_op = GetPointer<const addr_expr>(GET_NODE(call->fn));
+               const auto call_op = GetPointer<const addr_expr>(call->fn);
                if(not call_op)
                {
                   THROW_ERROR("First operation of loop body is " + first_node->ToString());
                }
-               auto called_function = GetPointer<function_decl>(GET_NODE(call_op->op));
+               auto called_function = GetPointer<function_decl>(call_op->op);
                if(not called_function)
                {
                   THROW_ERROR("First operation of loop body is " + first_node->ToString());
@@ -233,23 +232,23 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
                      THROW_ERROR("unexpected pattern");
                   }
                   auto stmt_iter = stm_list.begin();
-                  const auto ga1 = GetPointer<const gimple_assign>(GET_NODE(*stmt_iter));
+                  const auto ga1 = GetPointer<const gimple_assign>(*stmt_iter);
                   if(not ga1)
                   {
                      THROW_ERROR("First statement of pre-loop BB is " + (*stmt_iter)->ToString());
                   }
-                  const auto nop1 = GetPointer<const nop_expr>(GET_NODE(ga1->op1));
+                  const auto nop1 = GetPointer<const nop_expr>(ga1->op1);
                   if(not nop1)
                   {
                      THROW_ERROR("First statement of pre-loop BB is " + (*stmt_iter)->ToString());
                   }
                   ++stmt_iter;
-                  const auto ga2 = GetPointer<const gimple_assign>(GET_NODE(*stmt_iter));
+                  const auto ga2 = GetPointer<const gimple_assign>(*stmt_iter);
                   if(not ga2)
                   {
                      THROW_ERROR("Second statement of pre-loop BB is " + (*stmt_iter)->ToString());
                   }
-                  if(GET_NODE(ga2->op1)->get_kind() == gt_expr_K)
+                  if(ga2->op1->get_kind() == gt_expr_K)
                   {
                      continue;
                   }
@@ -260,7 +259,7 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
                }
                for(const auto& statement : basic_block_info->block->CGetStmtList())
                {
-                  const auto gr = GetPointer<const gimple_return>(GET_NODE(statement));
+                  const auto gr = GetPointer<const gimple_return>(statement);
                   if(gr and not gr->op)
                   {
                      continue;
@@ -268,7 +267,7 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
                   THROW_ERROR(statement->ToString());
                }
             }
-            auto fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
+            auto fd = GetPointer<function_decl>(TM->GetTreeNode(function_id));
             function_behavior->UpdateBBVersion();
             fd->omp_for_wrapper = parameters->getOption<size_t>(OPT_num_accelerators);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped loop " + STR(loop->GetId()));
@@ -312,34 +311,34 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
                   return tree_nodeRef();
                }
             }();
-            const auto call = GetPointer<const gimple_call>(GET_NODE(first_node));
+            const auto call = GetPointer<const gimple_call>(first_node);
             if(not call)
             {
                THROW_ERROR("First operation of loop body is " + first_node->ToString());
             }
-            const auto ga = GetPointer<const gimple_assign>(GET_NODE(second_node));
+            const auto ga = GetPointer<const gimple_assign>(second_node);
             if(not ga)
             {
                THROW_ERROR("Second operation of loop body is " + second_node->ToString());
             }
-            const auto pe = GetPointer<const plus_expr>(GET_NODE(ga->op1));
+            const auto pe = GetPointer<const plus_expr>(ga->op1);
             if(not pe)
             {
                THROW_ERROR("Second operation of loop body is " + second_node->ToString());
             }
-            const auto induction_variable = GetPointer<const ssa_name>(GET_NODE(pe->op0));
+            const auto induction_variable = GetPointer<const ssa_name>(pe->op0);
             THROW_ASSERT(loop->main_iv, "");
             if(not induction_variable or induction_variable->index != loop->main_iv)
             {
-               THROW_ERROR("Induction variable is " + TM->get_tree_node_const(loop->main_iv)->ToString() +
+               THROW_ERROR("Induction variable is " + TM->GetTreeNode(loop->main_iv)->ToString() +
                            " - Second operation of loop body is " + second_node->ToString());
             }
-            const auto call_op = GetPointer<const addr_expr>(GET_NODE(call->fn));
+            const auto call_op = GetPointer<const addr_expr>(call->fn);
             if(not call_op)
             {
                THROW_ERROR("First operation of loop body is " + first_node->ToString());
             }
-            auto called_function = GetPointer<function_decl>(GET_NODE(call_op->op));
+            auto called_function = GetPointer<function_decl>(call_op->op);
             if(not called_function)
             {
                THROW_ERROR("First operation of loop body is " + first_node->ToString());
@@ -369,7 +368,7 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
                }
                for(const auto& statement : basic_block_info->block->CGetStmtList())
                {
-                  const auto gr = GetPointer<const gimple_return>(GET_NODE(statement));
+                  const auto gr = GetPointer<const gimple_return>(statement);
                   if(gr and not gr->op)
                   {
                      continue;
@@ -377,7 +376,7 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
                   THROW_ERROR(statement->ToString());
                }
             }
-            auto fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
+            auto fd = GetPointer<function_decl>(TM->GetTreeNode(function_id));
             function_behavior->UpdateBBVersion();
             fd->omp_for_wrapper = parameters->getOption<size_t>(OPT_num_accelerators);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped loop " + STR(loop->GetId()));

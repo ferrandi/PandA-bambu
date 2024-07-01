@@ -91,8 +91,7 @@ class datapath_parallel_cs : public classic_datapath
     * @param relationship_type
     * @return
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   HLSRelationships ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * @brief for each port resize it depending on the type of bus port

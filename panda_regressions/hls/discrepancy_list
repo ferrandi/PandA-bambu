@@ -263,7 +263,6 @@ gcc_regression_simple/20050607-1.c
 gcc_regression_simple/20050613-1.c
 gcc_regression_simple/20050713-1.c
 gcc_regression_simple/20050826-1.c
-gcc_regression_simple/20050826-2.c
 gcc_regression_simple/20051021-1.c
 gcc_regression_simple/20051104-1.c
 gcc_regression_simple/20051110-1.c

@@ -77,16 +77,8 @@ class FunctionCallOpt : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
-
-   /**
-    * Check if given call statement performs a call with all constant arguments
-    * @param call_stmt considered call statement
-    * @return true If all arguments of the call are constants
-    * @return false If any argument is not constant
-    */
-   static bool HasConstantArgs(const tree_nodeConstRef& call_stmt);
 
    /**
     * Compute function body cost based on statements' types

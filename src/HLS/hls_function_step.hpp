@@ -35,24 +35,23 @@
  * @brief Base class for all HLS algorithms
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
-
 #ifndef HLS_FUNCION_STEP_HPP
 #define HLS_FUNCION_STEP_HPP
-
-/// Superclass include
 #include "hls_step.hpp"
 
 class HLSFunctionStep : public HLS_step
 {
+ private:
+   /* Current bb+bitvalue version for a given function id */
+   static CustomMap<unsigned int, unsigned int> curr_ver;
+
+   /* Sum of called functions' bb+bitvalue versions after last Exec call */
+   unsigned int last_ver_sum;
+
  protected:
-   /// last bb version of the called functions
-   std::map<unsigned int, unsigned int> last_bb_ver;
-
-   /// The version of bit value IR representation on which this step was applied
-   std::map<unsigned int, unsigned int> last_bitvalue_ver;
-
    /// identifier of the function to be processed (0 means that it is a global step)
    const unsigned int funId;
 
@@ -77,9 +76,6 @@ class HLSFunctionStep : public HLS_step
     */
    virtual DesignFlowStep_Status InternalExec() = 0;
 
- private:
-   bool HasToBeExecuted0() const;
-
  public:
    /**
     * Constructor
@@ -93,27 +89,15 @@ class HLSFunctionStep : public HLS_step
        const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
        const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
 
-   /**
-    * Destructor
-    */
    ~HLSFunctionStep() override;
 
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
+   virtual bool HasToBeExecuted() const override;
 
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
-   void Initialize() override;
+   virtual void Initialize() override;
 
-   /**
-    * Return a unified identifier of this design step
-    * @return the signature of the design step
-    */
-   std::string GetSignature() const final;
+   std::string GetName() const final;
+
+   DesignFlowStep_Status Exec() final;
 
    /**
     * Compute the signature of a hls flow step
@@ -122,20 +106,8 @@ class HLSFunctionStep : public HLS_step
     * @param function_id is the index of the function
     * @return the corresponding signature
     */
-   static std::string ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
+   static signature_t ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
                                        const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
                                        const unsigned int function_id);
-
-   /**
-    * Return the name of this design step
-    * @return the name of the pass (for debug purpose)
-    */
-   std::string GetName() const final;
-
-   /**
-    * Execute the step
-    * @return the exit status of this step
-    */
-   DesignFlowStep_Status Exec() final;
 };
 #endif

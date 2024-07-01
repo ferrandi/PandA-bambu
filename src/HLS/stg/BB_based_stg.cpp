@@ -117,10 +117,10 @@ BB_based_stg::BB_based_stg(const ParameterConstRef _parameters, const HLS_manage
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 BB_based_stg::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -200,12 +200,11 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    std::map<vertex, std::list<vertex>> global_executing_ops, global_starting_ops, global_ending_ops, global_onfly_ops;
 
    const auto CGM = HLSMgr->CGetCallGraphManager();
-   const auto top_functions = CGM->GetRootFunctions();
-   const auto needMemoryMappedRegisters = top_functions.count(funId) ?
-                                              parameters->getOption<bool>(OPT_memory_mapped_top) :
-                                              HLSMgr->hasToBeInterfaced(funId);
+   const bool is_top = CGM->GetRootFunctions().count(funId);
+   const auto needMemoryMappedRegisters =
+       is_top ? parameters->getOption<bool>(OPT_memory_mapped_top) : HLSMgr->hasToBeInterfaced(funId);
    auto has_registered_inputs = HLS->registered_inputs && !needMemoryMappedRegisters;
-   if(top_functions.count(funId) && parameters->getOption<std::string>(OPT_registered_inputs) == "top")
+   if(is_top && parameters->getOption<std::string>(OPT_registered_inputs) == "top")
    {
       has_registered_inputs = true;
    }
@@ -237,9 +236,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       size_t n_call_sites = 0;
       for(boost::tie(ie_it, ie_it_end) = boost::in_edges(current_vertex, *subgraph); ie_it != ie_it_end; ++ie_it)
       {
-         const auto* info = Cget_edge_info<FunctionEdgeInfo, const CallGraph>(*ie_it, *subgraph);
-         n_call_sites += static_cast<size_t>(info->direct_call_points.size()) +
-                         static_cast<size_t>(info->indirect_call_points.size());
+         const auto info = subgraph->CGetFunctionEdgeInfo(*ie_it);
+         n_call_sites += info->direct_call_points.size() + info->indirect_call_points.size();
       }
       HLS->call_sites_number = n_call_sites;
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Number of function call sites = " + STR(n_call_sites));
@@ -349,8 +347,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                   if((GET_TYPE(dfgRef, *obo_it) & TYPE_PHI) != 0)
                   {
                      for(const auto& def_edge :
-                         GetPointer<const gimple_phi>(HLSMgr->get_tree_manager()->get_tree_node_const(
-                                                          dfgRef->CGetOpNodeInfo(*obo_it)->GetNodeId()))
+                         GetPointer<const gimple_phi>(
+                             HLSMgr->get_tree_manager()->GetTreeNode(dfgRef->CGetOpNodeInfo(*obo_it)->GetNodeId()))
                              ->CGetDefEdgesList())
                      {
                         if(!def_edge.first)

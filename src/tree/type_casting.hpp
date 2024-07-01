@@ -42,12 +42,9 @@
  */
 #ifndef TYPE_CASTING_HPP
 #define TYPE_CASTING_HPP
-
-/// Tree include
+#include "refcount.hpp"
 #include "tree_node.hpp"
 
-/// Utility include
-#include "refcount.hpp"
 #include <boost/preprocessor/facilities/empty.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
 
@@ -56,7 +53,6 @@
  */
 //@{
 REF_FORWARD_DECL(type_casting);
-class TreeNodeConstSet;
 //@}
 
 #define LOCAL_OBJ_NOT_SPECIALIZED_SEQ                                                                                \

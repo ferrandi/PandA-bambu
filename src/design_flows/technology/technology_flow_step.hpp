@@ -39,18 +39,12 @@
  */
 #ifndef TECHNOLOGY_FLOW_STEP_HPP
 #define TECHNOLOGY_FLOW_STEP_HPP
-
-/// Autoheader include
-#include "config_HAVE_CIRCUIT_BUILT.hpp"
-
-/// Superclass include
 #include "design_flow_step.hpp"
+#include "refcount.hpp"
 
-/// STD include
 #include <string>
 
-/// utility include
-#include "refcount.hpp"
+#include "config_HAVE_CIRCUIT_BUILT.hpp"
 
 REF_FORWARD_DECL(generic_device);
 REF_FORWARD_DECL(technology_manager);
@@ -69,7 +63,6 @@ enum class TechnologyFlowStep_Type
 };
 
 #if NO_ABSEIL_HASH
-
 /**
  * Definition of hash function for TechnologyFlowStep_Type
  */
@@ -103,8 +96,11 @@ class TechnologyFlowStep : public DesignFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const CustomUnorderedSet<TechnologyFlowStep_Type>
+   virtual CustomUnorderedSet<TechnologyFlowStep_Type>
    ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const = 0;
+
+   void ComputeRelationships(DesignFlowStepSet& steps,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
  public:
    /**
@@ -119,49 +115,17 @@ class TechnologyFlowStep : public DesignFlowStep
                       const DesignFlowManagerConstRef design_flow_manager,
                       const TechnologyFlowStep_Type technology_flow_step_type, const ParameterConstRef parameters);
 
-   /**
-    * Return a unified identifier of this design step
-    * @return the signature of the design step
-    */
-   std::string GetSignature() const override;
+   std::string GetName() const override;
 
-   /**
-    * Given a technology flow step type, return the name of the type
-    * @param technology_flow_step_type is the type to be considered
-    * @return the name of the type
-    */
-   static const std::string EnumToName(const TechnologyFlowStep_Type technology_flow_step_type);
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
+
+   bool HasToBeExecuted() const override;
 
    /**
     * Compute the signature of a technology flow step
     * @param technology_flow_step_type is the type of the step
     * @return the corresponding signature
     */
-   static const std::string ComputeSignature(const TechnologyFlowStep_Type technology_flow_step_type);
-
-   /**
-    * Return the name of this design step
-    * @return the name of the pass (for debug purpose)
-    */
-   std::string GetName() const override;
-
-   /**
-    * Compute the relationships of a step with other steps
-    * @param dependencies is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& steps,
-                             const DesignFlowStep::RelationshipType relationship_type) override;
-
-   /**
-    * Return the factory to create this type of steps
-    */
-   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
-
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
+   static signature_t ComputeSignature(const TechnologyFlowStep_Type technology_flow_step_type);
 };
 #endif

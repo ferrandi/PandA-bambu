@@ -44,18 +44,10 @@
 #ifndef PRAGMA_ANALYSIS_HPP
 #define PRAGMA_ANALYSIS_HPP
 
-/// Superclass include
 #include "application_frontend_flow_step.hpp"
-
-/// Utility include
 #include "refcount.hpp"
 
-/**
- * @name forward declarations
- */
-//@{
 REF_FORWARD_DECL(tree_node);
-//@}
 
 /**
  * Restructure the tree control flow graph
@@ -65,30 +57,26 @@ class PragmaAnalysis : public ApplicationFrontendFlowStep
  private:
    /**
     * Given the index of a function replacing a pragma, returns a parameter
-    * @param tree_node is the index of the call
+    * @param tn is the tree node of the call
     * @param param is the index of the parameter (starting from 1)
     */
-   std::string get_call_parameter(const unsigned int tree_node, const unsigned int idx) const;
+   std::string get_call_parameter(const tree_nodeRef& tn, const unsigned int idx) const;
 
    /**
     * Create a map pragma
-    * @param index_node is the tree index of the gimple containing the call which will be directly replaced by the
+    * @param tn is the tree node of the gimple containing the call which will be directly replaced by the
     * pragma
     */
-   void create_map_pragma(const unsigned int node_id) const;
+   tree_nodeRef create_map_pragma(const tree_nodeRef& tn) const;
 
    /**
     * Create an omp pragma
-    * @param index_node is the tree index of the gimple containing the call which will be directly replaced by the
+    * @param tn is the tree node of the gimple containing the call which will be directly replaced by the
     * pragma
     */
-   void create_omp_pragma(const unsigned int tree_node) const;
+   tree_nodeRef create_omp_pragma(const tree_nodeRef& tn) const;
 
-   /**
-    * Return the set of analyses in relationship with this design step
-    * @param relationship_type is the type of relationship to be considered
-    */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
@@ -101,15 +89,6 @@ class PragmaAnalysis : public ApplicationFrontendFlowStep
    PragmaAnalysis(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager,
                   const ParameterConstRef parameters);
 
-   /**
-    *  Destructor
-    */
-   ~PragmaAnalysis() override;
-
-   /**
-    * Performes the analysis of the pragmas
-    * @return the exit status of this step
-    */
    DesignFlowStep_Status Exec() override;
 };
 #endif

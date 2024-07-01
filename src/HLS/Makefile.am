@@ -314,6 +314,7 @@ lib_modulebinding_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS \
    -I$(top_srcdir)/src/HLS/function_allocation \
    -I$(top_srcdir)/src/HLS/module_allocation \
+   -I$(top_srcdir)/src/HLS/module_generator \
    -I$(top_srcdir)/src/HLS/virtual_components \
    -I$(top_srcdir)/src/HLS/binding \
    -I$(top_srcdir)/src/HLS/binding/interconnection \

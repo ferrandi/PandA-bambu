@@ -39,22 +39,22 @@
  * $Date$
  * Last modified by $Author$
  */
-
 #ifndef BEHAVIORAL_HELPER_HPP
 #define BEHAVIORAL_HELPER_HPP
 
-/// Autoheader include
-#include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
-
 #include "custom_map.hpp"
-#include "custom_set.hpp" // for set
 #include "custom_set.hpp"
 #include "graph.hpp"
 #include "refcount.hpp"
-#include <list>   // for list
-#include <string> // for string
+#include "tree_node.hpp"
+
+#include <list>
+#include <string>
 #include <tuple>
-#include <utility> // for pair
+#include <utility>
+
+#include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
+
 /**
  * @name Forward declarations.
  */
@@ -67,7 +67,6 @@ CONSTREF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_node);
 CONSTREF_FORWARD_DECL(tree_node);
 CONSTREF_FORWARD_DECL(var_pp_functor);
-class TreeNodeConstSet;
 //@}
 
 using tree_class = unsigned int;

@@ -39,11 +39,11 @@
  */
 #ifndef NON_DETERMINISTIC_FLOWS_HPP
 #define NON_DETERMINISTIC_FLOWS_HPP
+#include "design_flow.hpp"
+#include "design_flow_step.hpp"
 
-#include "design_flow.hpp"      // for DesignFlow
-#include "design_flow_step.hpp" // for DesignFlowManagerConstRef, DesignFlo...
-#include <cstddef>              // for size_t
-#include <string>               // for string
+#include <cstddef>
+#include <string>
 
 /**
  * Class to test non deterministic flows
@@ -73,15 +73,8 @@ class NonDeterministicFlows : public DesignFlow
     */
    NonDeterministicFlows(const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-   /**
-    *  Destructor
-    */
    ~NonDeterministicFlows() override;
 
-   /**
-    * Execute the flow
-    * @return the exit status of this step
-    */
    DesignFlowStep_Status Exec() override;
 };
 #endif

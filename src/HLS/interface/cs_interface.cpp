@@ -189,7 +189,7 @@ void cs_interface::instantiate_component_parallel(const structural_managerRef SM
       addr_task = 1;
    }
    GetPointer<module>(mem_ctrl_mod)->SetParameter("ADDR_TASKS", STR(addr_task));
-   auto addr_kern = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
+   auto addr_kern = ceil_log2(parameters->getOption<unsigned long>(OPT_num_accelerators));
    if(!addr_kern)
    {
       addr_kern = 1;

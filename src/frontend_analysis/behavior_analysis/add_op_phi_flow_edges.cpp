@@ -58,7 +58,6 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
 AddOpPhiFlowEdges::AddOpPhiFlowEdges(const application_managerRef _AppM, const unsigned int _function_id,
                                      const DesignFlowManagerConstRef _design_flow_manager,
@@ -70,7 +69,7 @@ AddOpPhiFlowEdges::AddOpPhiFlowEdges(const application_managerRef _AppM, const u
 
 AddOpPhiFlowEdges::~AddOpPhiFlowEdges() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 AddOpPhiFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -154,21 +153,20 @@ DesignFlowStep_Status AddOpPhiFlowEdges::InternalExec()
          const auto dominator_statements = dom_tree->CGetBBNodeInfo(dominator)->block->CGetStmtList();
          THROW_ASSERT(dominator_statements.size(),
                       "BB" + STR(dom_tree->CGetBBNodeInfo(dominator)->block->number) + " is empty");
-         const auto last_statement = GET_NODE(dominator_statements.back());
+         const auto last_statement = dominator_statements.back();
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Last statement is " + last_statement->ToString());
          if(last_statement->get_kind() == gimple_cond_K)
          {
             const auto gc = GetPointer<const gimple_cond>(last_statement);
-            if(GET_NODE(gc->op0)->get_kind() == integer_cst_K)
+            if(gc->op0->get_kind() == integer_cst_K)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered " + GET_NAME(fcfg, *operation));
                continue;
             }
-            THROW_ASSERT(GET_NODE(gc->op0)->get_kind() == ssa_name_K,
-                         "Operand of gimple_cond is " + gc->op0->ToString());
-            const auto ssa = GetPointer<const ssa_name>(GET_NODE(gc->op0));
+            THROW_ASSERT(gc->op0->get_kind() == ssa_name_K, "Operand of gimple_cond is " + gc->op0->ToString());
+            const auto ssa = GetPointer<const ssa_name>(gc->op0);
             const auto def_stmt_node = ssa->CGetDefStmt();
-            if(GetPointer<gimple_nop>(GET_NODE(def_stmt_node)))
+            if(GetPointer<gimple_nop>(def_stmt_node))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered " + GET_NAME(fcfg, *operation));
                continue;
@@ -184,22 +182,20 @@ DesignFlowStep_Status AddOpPhiFlowEdges::InternalExec()
          {
             /// Approximation: we consider all conditions
             const auto gmwi = GetPointer<const gimple_multi_way_if>(last_statement);
-            for(const auto& cond : gmwi->list_of_cond)
+            for(const auto& [cond, edge] : gmwi->list_of_cond)
             {
-               const auto cond_bb = bb_index_map.find(cond.second)->second;
-               if(cond.first and
-                  ((cond.second == bb_index) or function_behavior->CheckBBReachability(cond_bb, bb_vertex)))
+               const auto cond_bb = bb_index_map.find(edge)->second;
+               if(cond and ((edge == bb_index) or function_behavior->CheckBBReachability(cond_bb, bb_vertex)))
                {
-                  if(GET_NODE(cond.first)->get_kind() == integer_cst_K)
+                  if(cond->get_kind() == integer_cst_K)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "<--Considered " + GET_NAME(fcfg, *operation));
                      continue;
                   }
-                  THROW_ASSERT(GET_NODE(cond.first)->get_kind() == ssa_name_K,
-                               "Operand of gimple_multi_way_if is " + cond.first->ToString());
-                  const auto ssa = GetPointer<const ssa_name>(GET_NODE(cond.first));
-                  THROW_ASSERT(ssa, GET_NODE(cond.first)->get_kind_text() + " " + STR(cond.first));
+                  THROW_ASSERT(cond->get_kind() == ssa_name_K, "Operand of gimple_multi_way_if is " + cond->ToString());
+                  const auto ssa = GetPointer<const ssa_name>(cond);
+                  THROW_ASSERT(ssa, cond->get_kind_text() + " " + STR(cond));
                   const auto def_stmt_index = ssa->CGetDefStmt()->index;
                   const auto def_stmt_vertex =
                       fcfg->CGetOpGraphInfo()->tree_node_to_operation.find(def_stmt_index)->second;
@@ -210,10 +206,9 @@ DesignFlowStep_Status AddOpPhiFlowEdges::InternalExec()
          else if(last_statement->get_kind() == gimple_switch_K)
          {
             const auto gs = GetPointer<const gimple_switch>(last_statement);
-            THROW_ASSERT(GET_NODE(gs->op0)->get_kind() == ssa_name_K,
-                         "Operand of gimple_switch is " + gs->op0->ToString());
-            const auto ssa = GetPointer<const ssa_name>(GET_NODE(gs->op0));
-            if(not ssa->var or GET_NODE(ssa->var)->get_kind() != parm_decl_K)
+            THROW_ASSERT(gs->op0->get_kind() == ssa_name_K, "Operand of gimple_switch is " + gs->op0->ToString());
+            const auto ssa = GetPointer<const ssa_name>(gs->op0);
+            if(not ssa->var or ssa->var->get_kind() != parm_decl_K)
             {
                const auto def_stmt_index = ssa->CGetDefStmt()->index;
                THROW_ASSERT(fcfg->CGetOpGraphInfo()->tree_node_to_operation.find(def_stmt_index) !=

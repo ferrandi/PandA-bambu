@@ -55,6 +55,7 @@ enum class TreeVocabularyTokenTypes_TokenEnum
    FIRST_TOKEN = -1,
    TOK_COMPILER_VERSION,
    TOK_PLUGIN_VERSION,
+   TOK_NODE_COUNT,
    TOK_IDENTIFIER_NODE,
    TOK_TREE_LIST,
    TOK_TREE_VEC,

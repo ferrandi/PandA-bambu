@@ -69,6 +69,13 @@ REF_FORWARD_DECL(Discrepancy);
 
 class application_manager
 {
+ private:
+   /// The number of cfg transformations applied to this function
+   size_t cfg_transformations;
+
+   // The maximum number of cfg transformations specified by the user
+   size_t cfg_max_transformations;
+
  protected:
    /// class representing the application information at low level
    const tree_managerRef TM;
@@ -91,9 +98,6 @@ class application_manager
    /// class representing the source code pragmas
    pragma_managerRef PM;
 #endif
-
-   /// The number of cfg transformations applied to this function
-   size_t cfg_transformations;
 
    /// debugging level of the class
    const int debug_level;
@@ -265,14 +269,27 @@ class application_manager
    /**
     * Return true if a new transformation can be applied
     */
-   bool ApplyNewTransformation() const;
+   inline bool ApplyNewTransformation() const
+   {
+#ifndef NDEBUG
+      return cfg_transformations < cfg_max_transformations;
+#else
+      return true;
+#endif
+   }
 
    /**
     * Register a transformation
     * @param step is the name of the step in which the transformation is applied
     * @param new_tn is the tree node to be created
     */
-   void RegisterTransformation(const std::string& step, const tree_nodeConstRef new_tn);
+#ifndef NDEBUG
+   void RegisterTransformation(const std::string& step, const tree_nodeConstRef& new_tn);
+#else
+   inline void RegisterTransformation(const std::string&, const tree_nodeConstRef)
+   {
+   }
+#endif
 
    /**
     * getSSAFromParm returns the ssa_name index associated with the parm_decl index, 0 in case there is not an

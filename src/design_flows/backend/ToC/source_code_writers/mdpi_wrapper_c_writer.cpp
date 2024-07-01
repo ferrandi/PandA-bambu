@@ -56,7 +56,6 @@
 #include "testbench_generation.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 #include "utility.hpp"
 #include "var_pp_functor.hpp"
 
@@ -111,7 +110,7 @@ using namespace __AC_NAMESPACE;
    const auto top_symbols = Param->getOption<std::vector<std::string>>(OPT_top_functions_names);
    THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
    const auto top_fnode = TM->GetFunction(top_symbols.front());
-   const auto fd = GetPointerS<const function_decl>(GET_CONST_NODE(top_fnode));
+   const auto fd = GetPointerS<const function_decl>(top_fnode);
    const auto top_fname = tree_helper::GetMangledFunctionName(fd);
    const auto& parms = HLSMgr->module_arch->GetArchitecture(top_fname)->parms;
 
@@ -127,6 +126,7 @@ using namespace __AC_NAMESPACE;
    if(includes.size())
    {
       indented_output_stream->Append("#define " + top_fname + " __keep_your_declaration_out_of_my_code\n");
+      indented_output_stream->Append("#define main __keep_your_main_out_of_my_code\n");
 
       const auto output_directory = Param->getOption<std::filesystem::path>(OPT_output_directory) / "simulation";
       for(const auto& inc : includes)
@@ -141,6 +141,7 @@ using namespace __AC_NAMESPACE;
          }
       }
       indented_output_stream->Append("#undef " + top_fname + "\n");
+      indented_output_stream->Append("#undef main\n");
    }
    indented_output_stream->Append(R"(
 
@@ -165,7 +166,7 @@ void MdpiWrapperCWriter::InternalWriteFile()
    const auto top_symbols = Param->getOption<std::vector<std::string>>(OPT_top_functions_names);
    THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
    const auto top_fnode = TM->GetFunction(top_symbols.front());
-   const auto top_fb = HLSMgr->CGetFunctionBehavior(GET_INDEX_CONST_NODE(top_fnode));
+   const auto top_fb = HLSMgr->CGetFunctionBehavior(top_fnode->index);
    const auto top_bh = top_fb->CGetBehavioralHelper();
    const auto top_fname = top_bh->get_function_name();
    const auto top_fname_mngl = top_bh->GetMangledFunctionName();
@@ -217,7 +218,7 @@ void MdpiWrapperCWriter::InternalWriteFile()
          size_t param_idx = 0;
          for(const auto& param : top_bh->GetParameters())
          {
-            const auto parm_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(param));
+            const auto parm_name = top_bh->PrintVariable(param->index);
             std::cmatch what;
             if(std::regex_search(param_size_str.c_str(), what, std::regex("\\b" + parm_name + ":(\\d+)")))
             {
@@ -228,6 +229,7 @@ void MdpiWrapperCWriter::InternalWriteFile()
       }
       return idx_size;
    }();
+   const auto tb_memmap_mode = Param->getOption<std::string>(OPT_testbench_map_mode);
 
    std::string top_decl;
    std::string gold_decl = "EXTERN_CDECL ";
@@ -264,7 +266,7 @@ void MdpiWrapperCWriter::InternalWriteFile()
    {
       for(const auto& arg : top_params)
       {
-         const auto parm_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
+         const auto parm_name = top_bh->PrintVariable(arg->index);
          THROW_ASSERT(func_arch->parms.find(parm_name) != func_arch->parms.end(),
                       "Attributes missing for parameter " + parm_name + " in function " + top_fname);
          const auto& parm_attrs = func_arch->parms.at(parm_name);
@@ -364,7 +366,9 @@ void MdpiWrapperCWriter::InternalWriteFile()
          }
          const auto arg_ptr = (is_pointer_type ? "(void*)" : "(void*)&") + arg_name;
          args_init += "__m_param_alloc(" + std::to_string(param_idx) + ", " + arg_size + ");\n";
-         args_decl += "{" + arg_ptr + ", " + arg_align + ", m_map_" + iface_type + "(" + arg_ptr + ")},\n";
+         args_decl += "{" + arg_ptr + ", " + arg_align + ", ";
+         args_decl += tb_memmap_mode == "SHARED" ? "NULL" : ("m_map_" + iface_type + "(" + arg_ptr + ")");
+         args_decl += "},\n";
          args_set += "m_interface_" + iface_type + "(" + std::to_string(param_idx) + ", args[" +
                      std::to_string(param_idx) + "].map_addr, " + arg_bitsize + ", " + arg_align + ");\n";
          ++param_idx;
@@ -384,7 +388,7 @@ void MdpiWrapperCWriter::InternalWriteFile()
       args_init += "__m_param_alloc(" + std::to_string(param_idx) + ", sizeof(retval));\n";
       args_decl += "{&retval, 1, m_map_default(&retval)}";
       args_set += "m_interface_default(" + std::to_string(param_idx) + ", args[" + std::to_string(param_idx) +
-                  "].map_addr, " + std::to_string(tree_helper::Size(return_type)) + ", sizeof(retval));\n";
+                  "].map_addr, " + std::to_string(tree_helper::SizeAlloc(return_type)) + ", sizeof(retval));\n";
       ++param_idx;
    }
    args_set += "__m_interface_mem(" + std::to_string(param_idx) + ");\n";
@@ -399,6 +403,9 @@ void MdpiWrapperCWriter::InternalWriteFile()
    {
       indented_output_stream->AppendIndented("CDECL " + top_decl.substr(0, top_decl.size() - 1) + ";\n");
    }
+   indented_output_stream->Append("#ifndef MDPI_MEMMAP_MODE\n");
+   indented_output_stream->Append("#define MDPI_MEMMAP_MODE MDPI_MEMMAP_" + tb_memmap_mode + "\n");
+   indented_output_stream->Append("#endif\n");
    indented_output_stream->AppendIndented(R"(
 #ifdef __cplusplus
 #include <cstring>
@@ -621,7 +628,7 @@ static size_t __m_call_count = 0;
 )");
 
    // write C code used to print initialization values for the HDL simulator's memory
-   WriteSimulatorInitMemory(GET_INDEX_CONST_NODE(top_fnode));
+   WriteSimulatorInitMemory(top_fnode->index);
 
    indented_output_stream->Append(top_decl);
    indented_output_stream->Append("{\n");
@@ -716,7 +723,6 @@ void MdpiWrapperCWriter::WriteSimulatorInitMemory(const unsigned int function_id
       return max;
    }();
    const auto align = std::max(align_bus, align_infer);
-   const auto tb_map_mode = "MDPI_MEMMAP_" + Param->getOption<std::string>(OPT_testbench_map_mode);
 
    indented_output_stream->Append(R"(
 typedef struct
@@ -769,7 +775,7 @@ size_t i;
    indented_output_stream->Append("const ptr_t align = " + STR(align) + ";\n");
    indented_output_stream->Append("ptr_t base_addr = " + STR(base_addr) + ";\n\n");
 
-   indented_output_stream->Append("__m_memmap_init(" + tb_map_mode + ");\n");
+   indented_output_stream->Append("__m_memmap_init(MDPI_MEMMAP_MODE);\n");
    indented_output_stream->Append(R"(
 
 // Memory-mapped internal variables initialization

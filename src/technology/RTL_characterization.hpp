@@ -41,8 +41,6 @@
  */
 #ifndef RTL_CHARACTERIZATION_HPP
 #define RTL_CHARACTERIZATION_HPP
-
-/// Superclass
 #include "functional_unit_step.hpp"
 
 #include "custom_set.hpp"
@@ -150,28 +148,21 @@ class RTLCharacterization : public FunctionalUnitStep
     * Extract the component name from list of cells
     * @param input is the input string
     */
-   const std::string ComputeComponent(const std::string& input) const;
+   std::string ComputeComponent(const std::string& input) const;
 
    /**
     * Extract the cell lists
     * @param input is the input string
     */
-   const CustomSet<std::string> ComputeCells(const std::string& input) const;
+   CustomSet<std::string> ComputeCells(const std::string& input) const;
 
-   /**
-    * Analyze the single cell
-    * @param fu is the cell
-    * @param prec is the precision
-    * @param portsize_parameters is the size of parameters
-    * @param portsize_index
-    * @param pipe_parameters
-    * @param constPort is the index of the constant port
-    * @param is_commutative is true if all the operations are commutative
-    */
    void AnalyzeCell(functional_unit* fu, const unsigned int prec, const std::vector<std::string>& portsize_parameters,
                     const size_t portsize_index, const std::vector<std::string>& pipe_parameters,
                     const size_t stage_index, const unsigned int constPort, const bool is_commutative,
                     size_t max_lut_size) override;
+
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
  public:
    /**
@@ -184,50 +175,16 @@ class RTLCharacterization : public FunctionalUnitStep
    RTLCharacterization(const generic_deviceRef _device, const std::string& _cells,
                        const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-   /**
-    * Destructor
-    */
    ~RTLCharacterization() override;
 
-   /**
-    * Perform RTL characterization of the modules with respect to the target device
-    */
-   DesignFlowStep_Status Exec() override;
-
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
-
-   /**
-    * Return a unified identifier of this design step
-    * @return the signature of the design step
-    */
-   std::string GetSignature() const override;
-
-   /**
-    * Return the name of this design step
-    * @return the name of the pass (for debug purpose)
-    */
    std::string GetName() const override;
 
-   /**
-    * Compute the relationships of a step with other steps
-    * @param dependencies is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& relationship,
-                             const DesignFlowStep::RelationshipType relationship_type) override;
+   bool HasToBeExecuted() const override;
 
-   /**
-    * Return the factory to create this type of steps
-    */
-   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
-
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
    void Initialize() override;
+
+   DesignFlowStep_Status Exec() override;
+
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 };
 #endif

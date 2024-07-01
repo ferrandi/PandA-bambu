@@ -56,7 +56,6 @@
 #include "tree_basic_block.hpp"             // for bloc
 #include "tree_manager.hpp"                 // for tree_manager
 #include "tree_node.hpp"                    // for gimple_assign
-#include "tree_reindex.hpp"
 
 FixVdef::FixVdef(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id,
                  const DesignFlowManagerConstRef _design_flow_manager)
@@ -65,7 +64,7 @@ FixVdef::FixVdef(const ParameterConstRef Param, const application_managerRef _Ap
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 FixVdef::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -111,13 +110,13 @@ void FixVdef::ComputeRelationships(DesignFlowStepSet& relationship,
       {
          const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
          const auto technology_flow_step_factory = GetPointerS<const TechnologyFlowStepFactory>(
-             design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+             design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::TECHNOLOGY));
          const auto technology_flow_signature =
              TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          const auto technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
          const auto technology_design_flow_step =
-             technology_flow_step ?
-                 design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
+             technology_flow_step != DesignFlowGraph::null_vertex() ?
+                 design_flow_graph->CGetNodeInfo(technology_flow_step)->design_flow_step :
                  technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          relationship.insert(technology_design_flow_step);
          break;
@@ -135,10 +134,10 @@ void FixVdef::ComputeRelationships(DesignFlowStepSet& relationship,
 DesignFlowStep_Status FixVdef::InternalExec()
 {
    const auto TM = AppM->get_tree_manager();
-   const auto tn = TM->CGetTreeNode(function_id);
+   const auto tn = TM->GetTreeNode(function_id);
    const auto fd = GetPointer<const function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   const auto sl = GetPointer<const statement_list>(GET_CONST_NODE(fd->body));
+   const auto sl = GetPointer<const statement_list>(fd->body);
    THROW_ASSERT(sl, "Body is not a statement_list");
    THROW_ASSERT(GetPointer<const HLS_manager>(AppM), "unexpected condition");
    const auto isSingleMem = GetPointerS<const HLS_manager>(AppM)->IsSingleWriteMemory();
@@ -147,8 +146,8 @@ DesignFlowStep_Status FixVdef::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block.first));
       for(const auto& s : block.second->CGetStmtList())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing statement " + GET_NODE(s)->ToString());
-         const auto gn = GetPointerS<gimple_node>(GET_NODE(s));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing statement " + s->ToString());
+         const auto gn = GetPointerS<gimple_node>(s);
          if(isSingleMem)
          {
             gn->vdef = gn->memdef;

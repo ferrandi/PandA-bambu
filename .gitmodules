@@ -11,3 +11,6 @@
 [submodule "pugixml"]
 	path = ext/pugixml
 	url = https://github.com/zeux/pugixml.git
+[submodule "abseil-cpp"]
+	path = ext/abseil/abseil-cpp
+	url = https://github.com/abseil/abseil-cpp.git

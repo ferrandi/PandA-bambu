@@ -52,10 +52,10 @@ OmpBodyLoopSynthesisFlow::OmpBodyLoopSynthesisFlow(const ParameterConstRef _para
 
 OmpBodyLoopSynthesisFlow::~OmpBodyLoopSynthesisFlow() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 OmpBodyLoopSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

@@ -23,7 +23,6 @@ build/config_headers/config_HAVE_DESIGN_FLOWS_BUILT.hpp
 build/config_headers/config_HAVE_DESIGN_OPTIMIZER.hpp
 build/config_headers/config_HAVE_DLFCN_H.hpp
 build/config_headers/config_HAVE_EUCALYPTUS_BUILT.hpp
-build/config_headers/config_HAVE_EXPERIMENTAL.hpp
 build/config_headers/config_HAVE_FLEX_2_5_34_OR_GREATER.hpp
 build/config_headers/config_HAVE_FLEX_2_5_35_OR_GREATER.hpp
 build/config_headers/config_HAVE_FLOAT_H.hpp
@@ -1999,6 +1998,8 @@ src/design_flows/backend/ToC/source_code_writers/hls_instruction_writer.cpp
 src/design_flows/backend/ToC/source_code_writers/hls_instruction_writer.hpp
 src/design_flows/backend/ToC/source_code_writers/instruction_writer.cpp
 src/design_flows/backend/ToC/source_code_writers/instruction_writer.hpp
+src/design_flows/backend/ToC/source_code_writers/mdpi_wrapper_c_writer.cpp
+src/design_flows/backend/ToC/source_code_writers/mdpi_wrapper_c_writer.hpp
 src/design_flows/backend/ToDataFile/generate_fu_list.cpp
 src/design_flows/backend/ToDataFile/generate_fu_list.hpp
 src/design_flows/backend/ToDataFile/to_data_file_step.cpp
@@ -2123,14 +2124,16 @@ src/frontend_analysis/IR_analysis/hdl_function_decl_fix.cpp
 src/frontend_analysis/IR_analysis/hdl_function_decl_fix.hpp
 src/frontend_analysis/IR_analysis/hdl_var_decl_fix.cpp
 src/frontend_analysis/IR_analysis/hdl_var_decl_fix.hpp
-src/frontend_analysis/IR_analysis/hls_div_cg_ext.cpp
-src/frontend_analysis/IR_analysis/hls_div_cg_ext.hpp
+src/frontend_analysis/IR_analysis/soft_int_cg_ext.cpp
+src/frontend_analysis/IR_analysis/soft_int_cg_ext.hpp
 src/frontend_analysis/IR_analysis/InterfaceInfer.cpp
 src/frontend_analysis/IR_analysis/InterfaceInfer.hpp
 src/frontend_analysis/IR_analysis/loops_analysis_bambu.cpp
 src/frontend_analysis/IR_analysis/loops_analysis_bambu.hpp
 src/frontend_analysis/IR_analysis/lut_transformation.cpp
 src/frontend_analysis/IR_analysis/lut_transformation.hpp
+src/frontend_analysis/IR_analysis/mult_expr_fracturing.cpp
+src/frontend_analysis/IR_analysis/mult_expr_fracturing.hpp
 src/frontend_analysis/IR_analysis/multi_way_if.cpp
 src/frontend_analysis/IR_analysis/multi_way_if.hpp
 src/frontend_analysis/IR_analysis/multiple_entry_if_reduction.cpp
@@ -2165,6 +2168,8 @@ src/frontend_analysis/IR_analysis/string_cst_fix.cpp
 src/frontend_analysis/IR_analysis/string_cst_fix.hpp
 src/frontend_analysis/IR_analysis/switch_fix.cpp
 src/frontend_analysis/IR_analysis/switch_fix.hpp
+src/frontend_analysis/IR_analysis/tree2fun.cpp
+src/frontend_analysis/IR_analysis/tree2fun.hpp
 src/frontend_analysis/IR_analysis/update_schedule.cpp
 src/frontend_analysis/IR_analysis/update_schedule.hpp
 src/frontend_analysis/IR_analysis/use_counting.cpp

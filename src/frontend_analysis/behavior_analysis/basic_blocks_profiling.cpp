@@ -73,7 +73,7 @@ BasicBlocksProfiling::BasicBlocksProfiling(const application_managerRef _AppM,
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 BasicBlocksProfiling::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -85,8 +85,8 @@ void BasicBlocksProfiling::ComputeRelationships(DesignFlowStepSet& relationship,
 {
    if(relationship_type == DEPENDENCE_RELATIONSHIP)
    {
-      const auto c_backend_factory =
-          GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
+      const auto c_backend_factory = GetPointer<const CBackendStepFactory>(
+          design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::C_BACKEND));
       relationship.insert(c_backend_factory->CreateCBackendStep(
           CBackendInformationConstRef(new CBackendInformation(CBackendInformation::CB_BBP, profiling_source_file))));
    }

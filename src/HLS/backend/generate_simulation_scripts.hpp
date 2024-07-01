@@ -49,8 +49,7 @@ class GenerateSimulationScripts : public HLS_step
 
    const std::filesystem::path _c_driver_wrapper;
 
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   HLSRelationships ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
                              const DesignFlowStep::RelationshipType relationship_type) override;

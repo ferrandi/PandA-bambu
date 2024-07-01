@@ -38,7 +38,7 @@
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
-//#undef NDEBUG
+// #undef NDEBUG
 #include "plugin_includes.hpp"
 
 #include <clang/AST/AST.h>
@@ -50,6 +50,9 @@
 #include <clang/AST/RecordLayout.h>
 #include <clang/AST/RecursiveASTVisitor.h>
 #include <clang/AST/Type.h>
+#if __clang_major__ >= 11
+#include <clang/Analysis/CallGraph.h>
+#endif
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Frontend/FrontendPluginRegistry.h>
 #include <clang/Lex/LexDiagnostic.h>
@@ -590,10 +593,6 @@ class PipelineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
             {
                ReportError(attr.first.loc, "Pipelining initiation interval must be a positive integer value");
             }
-            else if(std::stoi(attr.second) > 1)
-            {
-               ReportError(attr.first.loc, "Pipelining initiation interval greater than one not yet supported");
-            }
          }
          else if(iequals(attr.first.id, "off"))
          {
@@ -825,19 +824,25 @@ const char* UnrollHLSPragmaHandler::PragmaKeyword = "unroll";
 
 class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
 {
+   int _parseAction;
+
    void forceNoInline(FunctionDecl* FD) const
    {
-      if(!FD->hasAttr<NoInlineAttr>())
+      if(_parseAction & ParseAction_Optimize)
       {
-         FD->addAttr(NoInlineAttr::CreateImplicit(FD->getASTContext()));
-         FD->dropAttr<AlwaysInlineAttr>();
+         if(!FD->hasAttr<NoInlineAttr>())
+         {
+            FD->addAttr(NoInlineAttr::CreateImplicit(FD->getASTContext()));
+            FD->dropAttr<AlwaysInlineAttr>();
+         }
+         FD->dropAttr<InternalLinkageAttr>();
       }
-      FD->dropAttr<InternalLinkageAttr>();
    }
 
  public:
-   DataflowHLSPragmaHandler(ASTContext& ctx, PrintingPolicy& pp, std::map<std::string, func_attr_t>& func_attributes)
-       : HLSPragmaAnalyzer(ctx, pp, func_attributes), HLSPragmaParser()
+   DataflowHLSPragmaHandler(ASTContext& ctx, PrintingPolicy& pp, int ParseAction,
+                            std::map<std::string, func_attr_t>& func_attributes)
+       : HLSPragmaAnalyzer(ctx, pp, func_attributes), HLSPragmaParser(), _parseAction(ParseAction)
    {
    }
    ~DataflowHLSPragmaHandler() = default;
@@ -867,12 +872,14 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
             bool hasModule = false;
             LLVM_DEBUG(dbgs() << "DATAFLOW: " << functionSym << "\n");
             forceNoInline(FD);
+
+#if __clang_major__ < 11
             for(auto* stmt : FD->getBody()->children())
             {
                if(auto callExpr = dyn_cast<CallExpr>(stmt))
                {
                   const auto calleeDecl = callExpr->getDirectCallee();
-                  if(calleeDecl)
+                  if(calleeDecl && !calleeDecl->isConstexpr())
                   {
                      LLVM_DEBUG(dbgs() << " -> " << MangledName(calleeDecl) << "\n");
                      GetFuncAttr(calleeDecl).attrs[key_loc_t("dataflow_module", SourceLocation())] = "1";
@@ -881,12 +888,33 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
 
                      hasModule = true;
                   }
+                  else if(callExpr->isTypeDependent())
+                  {
+                     return;
+                  }
+               }
+            }
+#else
+            CallGraph CG;
+            CG.addToCallGraph(FD);
+            for(auto callee : *CG.getOrInsertNode(FD))
+            {
+               auto calleeDecl = (*callee).getDecl()->getAsFunction();
+               if(calleeDecl && !calleeDecl->isConstexpr())
+               {
+                  LLVM_DEBUG(dbgs() << " -> " << MangledName(calleeDecl) << "\n");
+                  GetFuncAttr(calleeDecl).attrs[key_loc_t("dataflow_module", SourceLocation())] = "1";
+                  GetFuncAttr(calleeDecl).attrs[key_loc_t("inline", SourceLocation())] = "off";
+                  forceNoInline(calleeDecl);
+                  hasModule = true;
                }
             }
             if(!hasModule)
             {
                ReportError(FD->getLocation(), "Dataflow function has no valid submodule");
+               return;
             }
+#endif
          }
       }
    }
@@ -926,6 +954,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(bus_size < 32 || bus_size > 1024 || (bus_size & (bus_size - 1)) != 0)
             {
                ReportError(attr.first.loc, "Invalid cache bus size");
+               continue;
             }
          }
          else if(iequals(attr.first.id, "ways"))
@@ -933,6 +962,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(std::stoi(attr.second) <= 0)
             {
                ReportError(attr.first.loc, "Invalid cache way count");
+               continue;
             }
          }
          else if(iequals(attr.first.id, "line_count"))
@@ -940,6 +970,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(std::stoi(attr.second) <= 0)
             {
                ReportError(attr.first.loc, "Invalid cache line count");
+               continue;
             }
          }
          else if(iequals(attr.first.id, "line_size"))
@@ -947,6 +978,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(std::stoi(attr.second) <= 0)
             {
                ReportError(attr.first.loc, "Invalid cache line size");
+               continue;
             }
          }
          else if(iequals(attr.first.id, "num_write_outstanding"))
@@ -954,6 +986,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(std::stoi(attr.second) <= 0)
             {
                ReportError(attr.first.loc, "Invalid number of outstanding write operations");
+               continue;
             }
          }
          else if(iequals(attr.first.id, "rep_policy"))
@@ -961,6 +994,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(attr.second != "lru" && attr.second != "tree")
             {
                ReportError(attr.first.loc, "Invalid cache replacement policy");
+               continue;
             }
          }
          else if(iequals(attr.first.id, "write_policy"))
@@ -968,6 +1002,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(attr.second != "wb" && attr.second != "wt")
             {
                ReportError(attr.first.loc, "Invalid cache write policy");
+               continue;
             }
          }
          else
@@ -985,10 +1020,12 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
       if(iface.find(key_loc_t("cache_line_count", SourceLocation())) == iface.end())
       {
          ReportError(p.loc, "Missing cache line count attribute");
+         return;
       }
       if(iface.find(key_loc_t("cache_line_size", SourceLocation())) == iface.end())
       {
          ReportError(p.loc, "Missing cache line size attribute");
+         return;
       }
    }
 
@@ -1001,6 +1038,8 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
    ASTContext& _ASTContext;
    SourceManager& _SM;
    int _parseAction;
+
+   static const std::map<std::string, std::string> _ifMapper;
 
    const NamedDecl* getBaseTypeDecl(const QualType& qt) const
    {
@@ -1186,6 +1225,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
       if(isUnsupportedInterface(FD))
       {
          ReportError(p.loc, "HLS pragma not supported on variadic function declarations");
+         return;
       }
       auto portName = p.attrs.find(key_loc_t("port", SourceLocation()));
       if(portName == p.attrs.end())
@@ -1252,6 +1292,15 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
 
       const auto argType = parmDecl->getType();
       auto& ifaceMode = bundle_attrs.insert(*ifaceModeReq).first->second;
+      if(_ifMapper.find(ifaceMode) != _ifMapper.end())
+      {
+         ifaceMode = _ifMapper.at(ifaceMode);
+         if(ifaceMode.empty())
+         {
+            ReportError(ifaceModeReq->first.loc, "Interface mode not supported.");
+            return;
+         }
+      }
       auto& parmTypename = parm_attrs[key_loc_t("typename", SourceLocation())];
       auto& parmSizeInBytes = parm_attrs[key_loc_t("size_in_bytes", SourceLocation())];
       auto& parmOriginalTypename = parm_attrs[key_loc_t("original_typename", SourceLocation())];
@@ -1318,6 +1367,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
                ifaceMode != "m_axi" && ifaceMode != "axis")
             {
                ReportError(ifaceModeReq->first.loc, "Invalid HLS interface mode");
+               return;
             }
          }
       }
@@ -1347,6 +1397,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
                (is_channel_if && ifaceMode != "fifo" && ifaceMode != "axis"))
             {
                ReportError(ifaceModeReq->first.loc, "Invalid HLS interface mode");
+               return;
             }
          }
          else
@@ -1367,6 +1418,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
                ifaceMode != "ovalid" && ifaceMode != "acknowledge")
             {
                ReportError(ifaceModeReq->first.loc, "Invalid HLS interface mode");
+               return;
             }
             if((argType->isBuiltinType() || argType->isEnumeralType()) && ifaceMode == "none")
             {
@@ -1382,6 +1434,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
       if(ifaceMode == "array" && parm_attrs.find(key_loc_t("elem_count", SourceLocation())) == parm_attrs.end())
       {
          ReportError(ifaceModeReq->first.loc, "HLS interface array element count missing");
+         return;
       }
 
       parmTypename = removeSpaces(parmTypename);
@@ -1497,6 +1550,9 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
    }
    static const char* PragmaKeyword;
 };
+const std::map<std::string, std::string> InterfaceHLSPragmaHandler::_ifMapper = {
+    {"ap_fifo", "fifo"},       {"ap_none", "none"},    {"ap_vld", "valid"},    {"ap_ovld", "ovalid"},
+    {"ap_ack", "acknowledge"}, {"ap_hs", "handshake"}, {"ap_memory", "array"}, {"bram", ""}};
 const char* InterfaceHLSPragmaHandler::PragmaKeyword = "interface";
 
 class HLSASTConsumer : public ASTConsumer
@@ -1657,7 +1713,7 @@ class HLSASTConsumer : public ASTConsumer
    } while(false)
 
       ADD_HANDLER(InterfaceHLSPragmaHandler, ctx, _PP, _pa, _func_attributes);
-      ADD_HANDLER(DataflowHLSPragmaHandler, ctx, _PP, _func_attributes);
+      ADD_HANDLER(DataflowHLSPragmaHandler, ctx, _PP, _pa, _func_attributes);
 
       if(_pa & ParseAction_Analyze)
       {

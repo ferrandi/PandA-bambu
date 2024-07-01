@@ -127,13 +127,14 @@ static void __ipc_reserve()
 #define __ipc_notify()                                                           \
    do                                                                            \
    {                                                                             \
+      pid_t __remote_pid = atomic_load(&__m_ipc_remote_pid);                     \
       do                                                                         \
       {                                                                          \
-         if(kill(atomic_load(&__m_ipc_remote_pid), __M_IPC_BACKEND_SIGNO) == -1) \
+         if(kill(__remote_pid, __M_IPC_BACKEND_SIGNO) == -1)                     \
          {                                                                       \
             if(errno == EAGAIN || errno == EINTR)                                \
                continue;                                                         \
-            error("Unable to send signal.\n");                                   \
+            error("Failed to signal remote process (PID: %d).\n", __remote_pid); \
             perror("kill failed");                                               \
             abort();                                                             \
          }                                                                       \

@@ -56,7 +56,6 @@
 #include "polixml.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 #include "utility.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
@@ -161,12 +160,12 @@ hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functio
 std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long long precision)
 {
    std::string trimmed_value;
-   const auto node = TM->CGetTreeReindex(node_id);
+   const auto node = TM->GetTreeNode(node_id);
    const auto node_type = tree_helper::CGetType(node);
    if(tree_helper::IsRealType(node_type))
    {
       THROW_ASSERT(tree_helper::Size(node_type) == precision, "real precision mismatch");
-      const auto rc = GetPointerS<const real_cst>(GET_CONST_NODE(node));
+      const auto rc = GetPointerS<const real_cst>(node);
       std::string C_value = rc->valr;
       if(C_value == "Inf")
       {
@@ -180,22 +179,22 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long
    }
    else if(tree_helper::IsVectorType(node_type))
    {
-      const auto vc = GetPointerS<const vector_cst>(GET_CONST_NODE(node));
+      const auto vc = GetPointerS<const vector_cst>(node);
       auto n_elm = static_cast<unsigned int>(vc->list_of_valu.size());
       auto elm_prec = precision / n_elm;
       trimmed_value = "";
       for(unsigned int i = 0; i < n_elm; ++i)
       {
-         trimmed_value = get_constant_string(GET_INDEX_NODE(vc->list_of_valu[i]), elm_prec) + trimmed_value;
+         trimmed_value = get_constant_string(vc->list_of_valu[i]->index, elm_prec) + trimmed_value;
       }
    }
    else if(tree_helper::IsComplexType(node_type))
    {
-      const auto cc = GetPointerS<const complex_cst>(GET_CONST_NODE(node));
-      const auto rcc = GetPointer<const real_cst>(GET_CONST_NODE(cc->real));
+      const auto cc = GetPointerS<const complex_cst>(node);
       std::string trimmed_value_r;
-      if(rcc)
+      if(cc->real->get_kind() == real_cst_K)
       {
+         const auto rcc = GetPointerS<const real_cst>(cc->real);
          std::string C_value_r = rcc->valr;
          if(C_value_r == "Inf")
          {
@@ -207,10 +206,10 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long
       {
          trimmed_value_r = convert_to_binary(tree_helper::GetConstValue(cc->real), precision / 2);
       }
-      const auto icc = GetPointer<const real_cst>(GET_CONST_NODE(cc->imag));
       std::string trimmed_value_i;
-      if(icc)
+      if(cc->imag->get_kind() == real_cst_K)
       {
+         const auto icc = GetPointerS<const real_cst>(cc->imag);
          std::string C_value_i = icc->valr;
          if(C_value_i == "Inf")
          {
@@ -295,9 +294,9 @@ bool HLS_manager::is_register_compatible(unsigned int var) const
 
 bool HLS_manager::is_reading_writing_function(unsigned funID) const
 {
-   auto fun_node = TM->get_tree_node_const(funID);
-   auto fd = GetPointer<function_decl>(fun_node);
-   THROW_ASSERT(fd, "unexpected condition");
+   auto fun_node = TM->GetTreeNode(funID);
+   THROW_ASSERT(fun_node->get_kind() == function_decl_K, "unexpected condition");
+   auto fd = GetPointerS<function_decl>(fun_node);
    return fd->reading_memory || fd->writing_memory;
 }
 

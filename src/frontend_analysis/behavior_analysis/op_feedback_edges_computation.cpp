@@ -76,7 +76,7 @@ op_feedback_edges_computation::op_feedback_edges_computation(const ParameterCons
 
 op_feedback_edges_computation::~op_feedback_edges_computation() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 op_feedback_edges_computation::ComputeFrontendRelationships(
     const DesignFlowStep::RelationshipType relationship_type) const
 {

@@ -70,7 +70,7 @@ class InterfaceInfer : public ApplicationFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    void ComputeRelationships(DesignFlowStepSet& relationship,
@@ -94,19 +94,23 @@ class InterfaceInfer : public ApplicationFrontendFlowStep
                           const tree_manipulationRef tree_man, const tree_managerRef TM);
 
    void create_resource_Read_simple(const std::set<std::string>& operations, const interface_info& info,
-                                    FunctionArchitectureRef func_arch, bool IO_port) const;
+                                    FunctionArchitectureRef func_arch, bool IO_port, bool unused_port,
+                                    unsigned int root_id) const;
 
    void create_resource_Write_simple(const std::set<std::string>& operations, const interface_info& info,
                                      FunctionArchitectureRef func_arch, bool IO_port) const;
 
    void create_resource_array(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
-                              const interface_info& info, FunctionArchitectureRef func_arch) const;
+                              const interface_info& info, FunctionArchitectureRef func_arch, bool unused_port,
+                              unsigned int root_id) const;
 
    void create_resource_m_axi(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
-                              const interface_info& info, FunctionArchitectureRef func_arch) const;
+                              const interface_info& info, FunctionArchitectureRef func_arch, bool unused_port,
+                              unsigned root_id) const;
 
    void create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
-                        const interface_info& info, FunctionArchitectureRef func_arch) const;
+                        const interface_info& info, FunctionArchitectureRef func_arch, bool unused_port,
+                        unsigned int root_id) const;
 
  public:
    /**

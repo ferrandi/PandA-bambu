@@ -68,7 +68,7 @@ class fanout_opt : public FunctionFrontendFlowStep
    /// tree manager
    const tree_managerRef TM;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /// return true in case the use is relevant for the fanout optimization

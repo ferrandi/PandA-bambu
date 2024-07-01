@@ -1,5 +1,6 @@
 COMPILER_VERSION: "GCC 4.9.3"
 PLUGIN_VERSION: "0.12"
+NODE_COUNT:        161
 @1      var_decl         name: @2       type: @3       scpe: @4      
                          srcp: "<orig-file>":23:6      
                          uid : 1754     static         init: @5      

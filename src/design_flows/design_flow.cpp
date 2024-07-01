@@ -39,13 +39,15 @@
  *
  */
 #include "design_flow.hpp"
-#include "design_flow_manager.hpp" // for DesignFlowStepFactoryConstRef
-#include "exceptions.hpp"          // for THROW_UNREACHABLE
-#include "string_manipulation.hpp" // for STR
 
-DesignFlow::DesignFlow(const DesignFlowManagerConstRef _design_flow_manager, const DesignFlow_Type _design_flow_type,
+#include "design_flow_manager.hpp"
+#include "exceptions.hpp"
+#include "string_manipulation.hpp"
+
+DesignFlow::DesignFlow(const DesignFlowManagerConstRef _design_flow_manager, DesignFlow_Type _design_flow_type,
                        const ParameterConstRef _parameters)
-    : DesignFlowStep(_design_flow_manager, _parameters), design_flow_type(_design_flow_type)
+    : DesignFlowStep(ComputeSignature(_design_flow_type), _design_flow_manager, _parameters),
+      design_flow_type(_design_flow_type)
 {
 }
 
@@ -55,17 +57,22 @@ void DesignFlow::ComputeRelationships(DesignFlowStepSet&, const DesignFlowStep::
 {
 }
 
-std::string DesignFlow::GetSignature() const
-{
-   return ComputeSignature(design_flow_type);
-}
-
 std::string DesignFlow::GetName() const
 {
    return "DF::" + EnumToKindText(design_flow_type);
 }
 
-const std::string DesignFlow::EnumToKindText(const DesignFlow_Type design_flow_type)
+DesignFlowStepFactoryConstRef DesignFlow::CGetDesignFlowStepFactory() const
+{
+   return design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::DESIGN_FLOW);
+}
+
+bool DesignFlow::HasToBeExecuted() const
+{
+   return true;
+}
+
+std::string DesignFlow::EnumToKindText(const DesignFlow_Type design_flow_type)
 {
    switch(design_flow_type)
    {
@@ -76,11 +83,6 @@ const std::string DesignFlow::EnumToKindText(const DesignFlow_Type design_flow_t
    }
    THROW_UNREACHABLE("");
    return "";
-}
-
-DesignFlowStepFactoryConstRef DesignFlow::CGetDesignFlowStepFactory() const
-{
-   return design_flow_manager.lock()->CGetDesignFlowStepFactory("DF");
 }
 
 DesignFlow_Type DesignFlow::KindTextToEnum(const std::string& name)
@@ -96,12 +98,7 @@ DesignFlow_Type DesignFlow::KindTextToEnum(const std::string& name)
    }
 }
 
-bool DesignFlow::HasToBeExecuted() const
+DesignFlowStep::signature_t DesignFlow::ComputeSignature(DesignFlow_Type design_flow_type)
 {
-   return true;
-}
-
-std::string DesignFlow::ComputeSignature(const DesignFlow_Type design_flow_type)
-{
-   return "DF::" + STR(static_cast<int>(design_flow_type));
+   return DesignFlowStep::ComputeSignature(DESIGN_FLOW, static_cast<unsigned short>(design_flow_type), 0);
 }

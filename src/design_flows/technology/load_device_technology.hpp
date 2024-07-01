@@ -60,7 +60,7 @@ class LoadDeviceTechnology : public TechnologyFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<TechnologyFlowStep_Type>
+   CustomUnorderedSet<TechnologyFlowStep_Type>
    ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:

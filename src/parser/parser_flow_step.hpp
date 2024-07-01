@@ -37,15 +37,11 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
 #ifndef PARSER_STEP_HPP
 #define PARSER_STEP_HPP
-
-/// Autoheader include
-#include "config_HAVE_FROM_AADL_ASN_BUILT.hpp"
-
-/// Superclass include
 #include "design_flow_step.hpp"
+
+#include "config_HAVE_FROM_AADL_ASN_BUILT.hpp"
 
 using ParserFlowStep_Type = enum ParserFlowStep_Type {
 #if HAVE_FROM_AADL_ASN_BUILT
@@ -68,12 +64,8 @@ class ParserFlowStep : public DesignFlowStep
     */
    virtual std::string GetKindText() const final;
 
-   /**
-    * Given a parser step type, return the name of the type
-    * @param type is the type to be considered
-    * @return the name of the type
-    */
-   static const std::string EnumToKindText(const ParserFlowStep_Type parser_step_type);
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
  public:
    /**
@@ -86,21 +78,13 @@ class ParserFlowStep : public DesignFlowStep
    ParserFlowStep(const DesignFlowManagerConstRef design_flow_manager, const ParserFlowStep_Type parser_step_type,
                   const std::string& file_name, const ParameterConstRef parameters);
 
-   /**
-    * Destructor
-    */
    ~ParserFlowStep() override;
 
-   /**
-    * Return the signature of this step
-    */
-   std::string GetSignature() const override;
-
-   /**
-    * Return the name of this design step
-    * @return the name of the pass (for debug purpose)
-    */
    std::string GetName() const override;
+
+   bool HasToBeExecuted() const override;
+
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 
    /**
     * Compute the signature of a parser flow step
@@ -108,25 +92,6 @@ class ParserFlowStep : public DesignFlowStep
     * @param file_name is the file name
     * @return the corresponding signature
     */
-   static const std::string ComputeSignature(const ParserFlowStep_Type parser_step_type, const std::string& file_name);
-
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
-
-   /**
-    * Compute the relationships of a step with other steps
-    * @param dependencies is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& relationship,
-                             const DesignFlowStep::RelationshipType relationship_type) override;
-
-   /**
-    * Return the factory to create this type of steps
-    */
-   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
+   static signature_t ComputeSignature(const ParserFlowStep_Type parser_step_type, const std::string& file_name);
 };
 #endif

@@ -41,7 +41,6 @@
  */
 #ifndef UTILITY_HPP
 #define UTILITY_HPP
-
 #include "panda_types.hpp"
 #include "string_manipulation.hpp"
 
@@ -157,7 +156,7 @@ constexpr void string_to_container(_OutputIt first, const std::string& str, cons
       }
       last += _len + 1;
       curr += _len + 1;
-   } while(last < str.size());
+   } while(last <= str.size());
 }
 
 template <typename _Container>

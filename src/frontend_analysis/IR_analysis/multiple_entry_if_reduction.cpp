@@ -109,10 +109,6 @@
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_node_dup.hpp"
-#include "tree_reindex.hpp"
-
-REF_FORWARD_DECL(tree_node_dup);
-
 #define MAX_DOUBLE std::numeric_limits<double>::max();
 
 MultipleEntryIfReduction::MultipleEntryIfReduction(const ParameterConstRef _parameters,
@@ -125,7 +121,7 @@ MultipleEntryIfReduction::MultipleEntryIfReduction(const ParameterConstRef _para
 
 MultipleEntryIfReduction::~MultipleEntryIfReduction() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 MultipleEntryIfReduction::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -145,27 +141,10 @@ MultipleEntryIfReduction::ComputeFrontendRelationships(const DesignFlowStep::Rel
       }
       case(INVALIDATION_RELATIONSHIP):
       {
-         switch(GetStatus())
+         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
          {
-            case DesignFlowStep_Status::SUCCESS:
-            {
-               relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
-               relationships.insert(std::make_pair(SIMPLE_CODE_MOTION, SAME_FUNCTION));
-               break;
-            }
-            case DesignFlowStep_Status::SKIPPED:
-            case DesignFlowStep_Status::UNCHANGED:
-            case DesignFlowStep_Status::UNEXECUTED:
-            case DesignFlowStep_Status::UNNECESSARY:
-            {
-               break;
-            }
-            case DesignFlowStep_Status::ABORTED:
-            case DesignFlowStep_Status::EMPTY:
-            case DesignFlowStep_Status::NONEXISTENT:
-               break;
-            default:
-               THROW_UNREACHABLE("");
+            relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
+            relationships.insert(std::make_pair(SIMPLE_CODE_MOTION, SAME_FUNCTION));
          }
          break;
       }
@@ -183,12 +162,12 @@ bool MultipleEntryIfReduction::HasToBeExecuted() const
    }
    const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(
        FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SIMPLE_CODE_MOTION, function_id));
-   if(!frontend_step)
+   if(frontend_step == DesignFlowGraph::null_vertex())
    {
       return false;
    }
    const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-   const auto design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+   const auto design_flow_step = design_flow_graph->CGetNodeInfo(frontend_step)->design_flow_step;
    return GetPointerS<const simple_code_motion>(design_flow_step)->IsScheduleBased();
 }
 
@@ -197,8 +176,8 @@ void MultipleEntryIfReduction::Initialize()
    bb_modified = false;
    TM = AppM->get_tree_manager();
    tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
-   const auto fd = GetPointerS<const function_decl>(TM->CGetTreeNode(function_id));
-   sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   const auto fd = GetPointerS<const function_decl>(TM->GetTreeNode(function_id));
+   sl = GetPointerS<statement_list>(fd->body);
    if(GetPointer<const HLS_manager>(AppM) && GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id) &&
       GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id)->allocation_information)
    {
@@ -250,7 +229,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because empty");
          continue;
       }
-      const auto last_stmt = GET_NODE(block->CGetStmtList().back());
+      const auto last_stmt = block->CGetStmtList().back();
       if((!parameters->IsParameter("MEIR_y") || !parameters->GetParameter<bool>("MEIR_y")) &&
          last_stmt->get_kind() != gimple_cond_K && last_stmt->get_kind() != gimple_multi_way_if_K)
       {
@@ -265,13 +244,13 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
       const bool vdef_op = [&]() -> bool {
          for(const auto& stmt : block->CGetStmtList())
          {
-            const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
+            const auto ga = GetPointer<const gimple_assign>(stmt);
             if(ga && ga->temporary_address)
             {
                return true;
             }
             /// We skip basic block containing gimple_call since it would require modification of the call graph
-            if(GET_CONST_NODE(stmt)->get_kind() == gimple_call_K)
+            if(stmt->get_kind() == gimple_call_K)
             {
                return true;
             }
@@ -370,10 +349,9 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                new_block->false_edge = target_id;
             }
          }
-         if(source_block->CGetStmtList().size() &&
-            GetPointer<gimple_multi_way_if>(GET_NODE(source_block->CGetStmtList().back())))
+         if(source_block->CGetStmtList().size() && GetPointer<gimple_multi_way_if>(source_block->CGetStmtList().back()))
          {
-            const auto gmwi = GetPointerS<gimple_multi_way_if>(GET_NODE(source_block->CGetStmtList().back()));
+            const auto gmwi = GetPointerS<gimple_multi_way_if>(source_block->CGetStmtList().back());
             for(auto& cond : gmwi->list_of_cond)
             {
                if(cond.second == block->number)
@@ -395,15 +373,14 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
          for(const auto& phi : target_block->CGetPhiList())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Initial phi " + STR(phi));
-            auto gp = GetPointerS<gimple_phi>(GET_NODE(phi));
+            auto gp = GetPointerS<gimple_phi>(phi);
             gimple_phi::DefEdgeList def_edge_list;
             for(const auto& def_edge : gp->CGetDefEdgesList())
             {
                if(def_edge.second == block->number)
                {
-                  const auto sn = GetPointer<const ssa_name>(GET_NODE(def_edge.first));
-                  if(!sn ||
-                     GetPointerS<const gimple_node>(GET_CONST_NODE(sn->CGetDefStmt()))->bb_index != block->number)
+                  const auto sn = GetPointer<const ssa_name>(def_edge.first);
+                  if(!sn || GetPointerS<const gimple_node>(sn->CGetDefStmt())->bb_index != block->number)
                   {
                      for(const auto& copy_id : copy_ids)
                      {
@@ -434,11 +411,11 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Fixed phis");
       CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, unsigned int>> remaps;
-      CustomMap<unsigned int, tree_node_dupRef> tree_node_dups;
-      for(const auto& copy : copy_ids)
-      {
-         tree_node_dups[copy.second] = tree_node_dupRef(new tree_node_dup(remaps[copy.second], AppM));
-      }
+      CustomMap<unsigned int, std::unique_ptr<tree_node_dup>> tree_node_dups;
+      std::transform(copy_ids.begin(), copy_ids.end(), std::inserter(tree_node_dups, tree_node_dups.end()),
+                     [&](const auto& copy) -> decltype(tree_node_dups)::value_type {
+                        return {copy.second, std::make_unique<tree_node_dup>(remaps[copy.second], AppM)};
+                     });
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Modified basic block graph");
 
       /// Build list of phis + gimple_nodes
@@ -469,15 +446,15 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
          /// Cache of created phi - first key is the used ssa - second key is the basic block where is created
          CustomMap<vertex, tree_nodeRef> added_phis;
 
-         const auto vdef = GetPointer<const gimple_node>(GET_CONST_NODE(gimple))->vdef;
+         const auto vdef = GetPointer<const gimple_node>(gimple)->vdef;
          if(vdef)
          {
             defined_sns.insert(vdef);
          }
 
-         if(GET_CONST_NODE(gimple)->get_kind() == gimple_phi_K)
+         if(gimple->get_kind() == gimple_phi_K)
          {
-            const auto old_gp = GetPointerS<const gimple_phi>(GET_CONST_NODE(gimple));
+            const auto old_gp = GetPointerS<const gimple_phi>(gimple);
             defined_sns.insert(old_gp->res);
             for(const auto& def_edge : old_gp->CGetDefEdgesList())
             {
@@ -487,17 +464,16 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                remaps[copy_ids[def_edge.second]][old_gp->res->index] = def_edge.first->index;
             }
          }
-         else if(GET_CONST_NODE(gimple)->get_kind() == gimple_assign_K)
+         else if(gimple->get_kind() == gimple_assign_K)
          {
-            const auto old_ga = GetPointerS<const gimple_assign>(GET_CONST_NODE(gimple));
-            if(GET_NODE(old_ga->op0)->get_kind() == ssa_name_K)
+            const auto old_ga = GetPointerS<const gimple_assign>(gimple);
+            if(old_ga->op0->get_kind() == ssa_name_K)
             {
                defined_sns.insert(old_ga->op0);
             }
          }
-         else if(GET_CONST_NODE(gimple)->get_kind() == gimple_multi_way_if_K ||
-                 GET_CONST_NODE(gimple)->get_kind() == gimple_cond_K ||
-                 GET_CONST_NODE(gimple)->get_kind() == gimple_return_K)
+         else if(gimple->get_kind() == gimple_multi_way_if_K || gimple->get_kind() == gimple_cond_K ||
+                 gimple->get_kind() == gimple_return_K)
          {
          }
          else
@@ -505,19 +481,18 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
             THROW_UNREACHABLE(STR(gimple));
          }
          /// Duplicating statement
-         if(GET_CONST_NODE(gimple)->get_kind() == gimple_phi_K)
+         if(gimple->get_kind() == gimple_phi_K)
          {
          }
-         else if(GET_CONST_NODE(gimple)->get_kind() == gimple_assign_K)
+         else if(gimple->get_kind() == gimple_assign_K)
          {
-            const auto ga = GetPointerS<const gimple_assign>(GET_CONST_NODE(gimple));
+            const auto ga = GetPointerS<const gimple_assign>(gimple);
             const auto ssa_uses = tree_helper::ComputeSsaUses(ga->op1);
             for(const auto& ssa_use : ssa_uses)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering use " + STR(ssa_use.first));
-               if(GetPointerS<const gimple_node>(
-                      GET_CONST_NODE(GetPointerS<const ssa_name>(GET_CONST_NODE(ssa_use.first))->CGetDefStmt()))
-                      ->bb_index == block->number)
+               if(GetPointerS<const gimple_node>(GetPointerS<const ssa_name>(ssa_use.first)->CGetDefStmt())->bb_index ==
+                  block->number)
                {
 #if HAVE_ASSERTS
                   for(const auto& copy : copy_ids)
@@ -530,30 +505,29 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
             }
             for(const auto& copy : copy_ids)
             {
-               if(GET_CONST_NODE(ga->op0)->get_kind() == ssa_name_K)
+               if(ga->op0->get_kind() == ssa_name_K)
                {
-                  const auto ssa0 = GetPointerS<const ssa_name>(GET_CONST_NODE(ga->op0));
+                  const auto ssa0 = GetPointerS<const ssa_name>(ga->op0);
                   const auto new_ssa = tree_man->create_ssa_name(nullptr, ssa0->type, ssa0->min, ssa0->max);
                   remaps[copy.second][ga->op0->index] = new_ssa->index;
                   reaching_defs[copy.second] = new_ssa;
                }
                if(ga->vdef)
                {
-                  const auto new_ssa = tree_man->create_ssa_name(
-                      nullptr, GetPointerS<const ssa_name>(GET_CONST_NODE(ga->vdef))->type, nullptr, nullptr);
-                  GetPointerS<ssa_name>(GET_NODE(new_ssa))->virtual_flag = true;
+                  const auto new_ssa =
+                      tree_man->create_ssa_name(nullptr, GetPointerS<const ssa_name>(ga->vdef)->type, nullptr, nullptr);
+                  GetPointerS<ssa_name>(new_ssa)->virtual_flag = true;
                   remaps[copy.second][ga->vdef->index] = new_ssa->index;
                   reaching_defs[copy.second] = new_ssa;
                }
-               const auto new_stmt = tree_node_dups[copy.second]->create_tree_node(GET_NODE(gimple));
+               const auto new_stmt = tree_node_dups[copy.second]->create_tree_node(gimple);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---New statement (" + STR(new_stmt) + ") is " + STR(TM->CGetTreeNode(new_stmt)));
-               sl->list_of_bloc.at(copy.second)->PushBack(TM->GetTreeReindex(new_stmt), AppM);
+                              "---New statement (" + STR(new_stmt) + ") is " + STR(TM->GetTreeNode(new_stmt)));
+               sl->list_of_bloc.at(copy.second)->PushBack(TM->GetTreeNode(new_stmt), AppM);
             }
          }
-         else if(GET_CONST_NODE(gimple)->get_kind() == gimple_multi_way_if_K ||
-                 GET_CONST_NODE(gimple)->get_kind() == gimple_cond_K ||
-                 GET_CONST_NODE(gimple)->get_kind() == gimple_return_K)
+         else if(gimple->get_kind() == gimple_multi_way_if_K || gimple->get_kind() == gimple_cond_K ||
+                 gimple->get_kind() == gimple_return_K)
          {
             const auto ssa_uses = tree_helper::ComputeSsaUses(gimple);
             for(const auto& ssa_use : ssa_uses)
@@ -561,8 +535,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering use " + STR(ssa_use.first));
                for(const auto& copy : copy_ids)
                {
-                  if((GetPointerS<const gimple_node>(
-                          GET_CONST_NODE(GetPointerS<const ssa_name>(GET_CONST_NODE(ssa_use.first))->CGetDefStmt()))
+                  if((GetPointerS<const gimple_node>(GetPointerS<const ssa_name>(ssa_use.first)->CGetDefStmt())
                           ->bb_index != block->number))
                   {
                      /// Defined in a different basic block
@@ -577,10 +550,10 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
             }
             for(const auto& copy : copy_ids)
             {
-               const auto new_stmt = tree_node_dups[copy.second]->create_tree_node(GET_NODE(gimple));
+               const auto new_stmt = tree_node_dups[copy.second]->create_tree_node(gimple);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---New statement is " + STR(TM->CGetTreeNode(new_stmt)));
-               sl->list_of_bloc.at(copy.second)->PushBack(TM->GetTreeReindex(new_stmt), AppM);
+                              "---New statement is " + STR(TM->GetTreeNode(new_stmt)));
+               sl->list_of_bloc.at(copy.second)->PushBack(TM->GetTreeNode(new_stmt), AppM);
             }
          }
          else
@@ -589,7 +562,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
          }
          for(const auto& defined_sn : defined_sns)
          {
-            const auto sn = GetPointerS<ssa_name>(GET_NODE(defined_sn));
+            const auto sn = GetPointerS<ssa_name>(defined_sn);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Updating uses of " + sn->ToString());
             /// The old ssa
             TreeNodeSet uses_to_be_removed;
@@ -597,11 +570,11 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "-->Considering use in " + STR(use_stmt.first->index) + " " + STR(use_stmt.first));
-               const auto use_bb_index = GetPointerS<const gimple_node>(GET_CONST_NODE(use_stmt.first))->bb_index;
+               const auto use_bb_index = GetPointerS<const gimple_node>(use_stmt.first)->bb_index;
                if(bb_index_map.find(use_bb_index) == bb_index_map.end())
                {
                   THROW_ASSERT(sn->virtual_flag, "");
-                  const auto gn = GetPointerS<gimple_node>(GET_NODE(use_stmt.first));
+                  const auto gn = GetPointerS<gimple_node>(use_stmt.first);
                   THROW_ASSERT(gn->vovers.find(defined_sn) == gn->vovers.end(), "vovers not handled");
                   THROW_ASSERT(gn->vuses.find(defined_sn) != gn->vuses.end(), "vuse not found");
                   gn->vuses.erase(defined_sn);
@@ -618,10 +591,10 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                auto use_depth = loops->CGetLoop(use_loop_id)->depth;
 
                /// Management of vuses for overwrite
-               if(sn->virtual_flag && GET_NODE(use_stmt.first)->get_kind() != gimple_phi_K &&
+               if(sn->virtual_flag && use_stmt.first->get_kind() != gimple_phi_K &&
                   !function_behavior->CheckBBReachability(*basic_block, use_bb))
                {
-                  const auto gn = GetPointerS<gimple_node>(GET_NODE(use_stmt.first));
+                  const auto gn = GetPointerS<gimple_node>(use_stmt.first);
                   THROW_ASSERT(gn->vovers.find(defined_sn) == gn->vovers.end(), "vovers not handled");
                   THROW_ASSERT(gn->vuses.find(defined_sn) != gn->vuses.end(), "vuse not found");
                   gn->vuses.erase(defined_sn);
@@ -630,7 +603,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                                  "---Removing " + STR(defined_sn) + " from vuses of " + gn->ToString());
                   for(const auto& copy : copy_ids)
                   {
-                     if(gn->AddVuse(TM->GetTreeReindex(remaps[copy.second][sn->index])))
+                     if(gn->AddVuse(TM->GetTreeNode(remaps[copy.second][sn->index])))
                      {
                         const auto vssa = GetPointerS<ssa_name>(TM->GetTreeNode(remaps[copy.second][sn->index]));
                         vssa->AddUseStmt(use_stmt.first);
@@ -857,13 +830,12 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                         const auto phi_gimple_stmt =
                             tree_man->create_phi_node(phi_def_ssa_node, def_edges, function_id, sn->virtual_flag);
                         THROW_ASSERT(tree_helper::CGetType(phi_def_ssa_node)->index ==
-                                         tree_helper::CGetType(TM->CGetTreeReindex(sn->index))->index,
+                                         tree_helper::CGetType(defined_sn)->index,
                                      "");
-                        auto new_gp = GetPointerS<gimple_phi>(GET_NODE(phi_gimple_stmt));
+                        auto new_gp = GetPointerS<gimple_phi>(phi_gimple_stmt);
                         new_gp->SetSSAUsesComputed();
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---Created ssa_" +
-                                           STR(GetPointer<const ssa_name>(GET_CONST_NODE(phi_def_ssa_node))->vers));
+                                       "---Created ssa_" + STR(GetPointer<const ssa_name>(phi_def_ssa_node)->vers));
                         bb_cfg->GetBBNodeInfo(current)->block->AddPhi(phi_gimple_stmt);
                         reaching_defs[current_id] = phi_def_ssa_node;
                         added_phis[current] = phi_gimple_stmt;
@@ -874,11 +846,11 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing " + STR(local_phi));
                      auto uses = tree_helper::ComputeSsaUses(local_phi);
-                     if(uses.find(TM->GetTreeReindex(sn->index)) != uses.end())
+                     if(uses.find(defined_sn) != uses.end())
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Uses the ssa");
                         gimple_phi::DefEdgeList new_def_edge_list;
-                        auto local_gp = GetPointerS<gimple_phi>(GET_NODE(local_phi));
+                        auto local_gp = GetPointerS<gimple_phi>(local_phi);
                         for(const auto& def_edge : local_gp->CGetDefEdgesList())
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -926,7 +898,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "---Replacing " + STR(sn) + " with " + STR(reaching_defs[current_id]) + " in " +
                                            STR(stmt));
-                        TM->ReplaceTreeNode(stmt, TM->GetTreeReindex(sn->index), reaching_defs[current_id]);
+                        TM->ReplaceTreeNode(stmt, defined_sn, reaching_defs[current_id]);
                      }
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -946,7 +918,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                         for(const auto& target_phi : bb_fcfg->CGetBBNodeInfo(target)->block->CGetPhiList())
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing " + STR(target_phi));
-                           auto gp = GetPointerS<gimple_phi>(GET_NODE(target_phi));
+                           auto gp = GetPointerS<gimple_phi>(target_phi);
                            for(const auto& def_edge : gp->CGetDefEdgesList())
                            {
                               if(def_edge.first->index == sn->index && def_edge.second == current_id)
@@ -990,7 +962,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                for(const auto& phi : header_bb_node_info->CGetPhiList())
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fixing " + STR(phi));
-                  auto gp = GetPointerS<gimple_phi>(GET_NODE(phi));
+                  auto gp = GetPointerS<gimple_phi>(phi);
                   const auto old_def_edge_list = gp->CGetDefEdgesList();
                   gimple_phi::DefEdgeList new_def_edge_list;
                   for(const auto& old_def_edge : old_def_edge_list)
@@ -1006,10 +978,9 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                            THROW_ASSERT(remaps.find(copy.second) != remaps.end(), STR(copy.second));
                            THROW_ASSERT(remaps.find(copy.second)->second.find(old_def_edge.first->index) !=
                                             remaps.find(copy.second)->second.end(),
-                                        STR(old_def_edge.first->index) + " " +
-                                            STR(TM->CGetTreeNode(old_def_edge.first->index)));
+                                        STR(old_def_edge.first->index) + " " + STR(old_def_edge.first));
                            new_def_edge_list.push_back(gimple_phi::DefEdge(
-                               TM->GetTreeReindex(remaps[copy.second][old_def_edge.first->index]), copy.second));
+                               TM->GetTreeNode(remaps[copy.second][old_def_edge.first->index]), copy.second));
                         }
                      }
                   }

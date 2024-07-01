@@ -74,7 +74,6 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_reindex.hpp"
 #include <deque>
 #include <iosfwd>
 #include <list>
@@ -360,7 +359,7 @@ void fsm_controller::create_state_machine(std::string& parse)
             if(!GetPointer<operation>(op_tn)->is_bounded() && (!start_port_i || !done_port_i))
             {
                THROW_ERROR("Unbounded operations have to have both done_port and start_port ports!" +
-                           STR(TreeM->CGetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId())));
+                           STR(TreeM->GetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId())));
             }
 
             // since v now has to wait for loop completion, every operation will be unbounded
@@ -373,11 +372,11 @@ void fsm_controller::create_state_machine(std::string& parse)
 
             if((!GetPointer<operation>(op_tn)->is_bounded()))
             {
-               auto node = TreeM->CGetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId());
+               auto node = TreeM->GetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId());
                if(node->get_kind() == gimple_assign_K)
                {
                   const auto nodeGA = GetPointerS<const gimple_assign>(node);
-                  const auto ssaIndex = GET_INDEX_CONST_NODE(nodeGA->op0);
+                  const auto ssaIndex = nodeGA->op0->index;
                   if(HLS->storage_value_information->is_a_storage_value(v, ssaIndex))
                   {
                      const auto storage_value_index =
@@ -816,18 +815,16 @@ std::string fsm_controller::get_guard_value(const tree_managerRef TM, const unsi
    }
    else
    {
-      tree_nodeRef node = TM->get_tree_node_const(index);
+      tree_nodeRef node = TM->GetTreeNode(index);
       THROW_ASSERT(node->get_kind() == case_label_expr_K, "case_label_expr expected " + GET_NAME(data, op));
       auto cle = GetPointer<case_label_expr>(node);
       THROW_ASSERT(cle->op0, "guard expected in a case_label_expr");
-      THROW_ASSERT(GetPointer<integer_cst>(GET_NODE(cle->op0)),
-                   "expected integer_cst object as guard in a case_label_expr");
+      THROW_ASSERT(GetPointer<integer_cst>(cle->op0), "expected integer_cst object as guard in a case_label_expr");
       const auto low_result = tree_helper::GetConstValue(cle->op0);
       integer_cst_t high_result = 0;
       if(cle->op1)
       {
-         THROW_ASSERT(GetPointer<integer_cst>(GET_NODE(cle->op1)),
-                      "expected integer_cst object as guard in a case_label_expr");
+         THROW_ASSERT(GetPointer<integer_cst>(cle->op1), "expected integer_cst object as guard in a case_label_expr");
          high_result = tree_helper::GetConstValue(cle->op1);
       }
       if(high_result == 0)

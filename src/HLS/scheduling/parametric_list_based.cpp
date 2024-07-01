@@ -88,7 +88,7 @@ bool PrioritySorter::operator()(const vertex x, const vertex y) const
    {
       return x_priority > y_priority;
    }
-   return GET_NAME(op_graph, x) < GET_NAME(op_graph, y);
+   return op_graph->CGetOpNodeInfo(x)->vertex_name < op_graph->CGetOpNodeInfo(y)->vertex_name;
 }
 #endif
 
@@ -113,7 +113,8 @@ struct cs_ordering_functor
    bool operator()(const vertex& a, const vertex& b) const
    {
       return order.find(a)->second < order.find(b)->second ||
-             (order.find(a)->second == order.find(b)->second && GET_NAME(op_graph, a) < GET_NAME(op_graph, b));
+             (order.find(a)->second == order.find(b)->second &&
+              op_graph->CGetOpNodeInfo(a)->vertex_name < op_graph->CGetOpNodeInfo(b)->vertex_name);
    }
 
    /**
@@ -294,7 +295,7 @@ ParametricListBasedSpecialization::ParametricListBasedSpecialization(
 {
 }
 
-std::string ParametricListBasedSpecialization::GetKindText() const
+std::string ParametricListBasedSpecialization::GetName() const
 {
    switch(parametric_list_based_metric)
    {
@@ -310,9 +311,9 @@ std::string ParametricListBasedSpecialization::GetKindText() const
    return "";
 }
 
-std::string ParametricListBasedSpecialization::GetSignature() const
+HLSFlowStepSpecialization::context_t ParametricListBasedSpecialization::GetSignatureContext() const
 {
-   return GetKindText();
+   return ComputeSignatureContext(PARAMETRIC_LIST_BASED, static_cast<unsigned char>(parametric_list_based_metric));
 }
 
 parametric_list_based::parametric_list_based(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
@@ -525,9 +526,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    THROW_ASSERT(Operations.size(), "At least one vertex is expected");
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const OpGraphConstRef op_graph = FB->CGetOpGraph(FunctionBehavior::CFG);
-   const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    const unsigned int return_type_index = FB->CGetBehavioralHelper()->GetFunctionReturnType(funId);
-   auto registering_output_p = top_function_ids.find(funId) != top_function_ids.end() && return_type_index &&
+   auto registering_output_p = HLSMgr->CGetCallGraphManager()->GetRootFunctions().count(funId) && return_type_index &&
                                parameters->getOption<std::string>(OPT_registered_inputs) == "top";
    CustomUnorderedSet<vertex> operations;
    for(auto op : Operations)
@@ -698,7 +698,7 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    }
 
    const auto TM = HLSMgr->get_tree_manager();
-   auto fnode = TM->get_tree_node_const(funId);
+   auto fnode = TM->GetTreeNode(funId);
    auto fd = GetPointer<function_decl>(fnode);
    const auto fname = tree_helper::GetMangledFunctionName(fd);
    CustomUnorderedSet<vertex> RW_stmts;
@@ -2174,11 +2174,10 @@ bool parametric_list_based::check_LOAD_chaining(const CustomUnorderedSet<vertex>
    return false;
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 parametric_list_based::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret =
-       Scheduling::ComputeHLSRelationships(relationship_type);
+   HLSRelationships ret = Scheduling::ComputeHLSRelationships(relationship_type);
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

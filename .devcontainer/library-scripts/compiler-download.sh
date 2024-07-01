@@ -28,7 +28,7 @@ extract() {
       echo "Extracting ${filename} from backup directory"
       tar -C $2 --no-same-owner -xJf ${backup_file}
    else
-      echo "Inflating ${filename} from url"
+      echo "Inflating ${filename} from ${url}"
       wget ${url} $wget_opt | tar -C $2 --no-same-owner -xJf -
    fi
 }

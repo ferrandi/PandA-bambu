@@ -43,31 +43,25 @@
  */
 #ifndef OP_GRAPH_HPP
 #define OP_GRAPH_HPP
-
-/// Autoheader include
-#include "config_HAVE_HLS_BUILT.hpp"
-#include "config_HAVE_UNORDERED.hpp"
-
-/// Superclasses include
 #include "cdfg_edge_info.hpp"
-#include "graph.hpp"
-#include "typed_node_info.hpp"
-
-/// behavior include
-#include "function_behavior.hpp"
-
-#include <boost/graph/graph_traits.hpp> // for graph_traits<>::...
-#include <iosfwd>                       // for ostream
-#include <limits>                       // for numeric_limits
-#include <list>                         // for list
-#include <set>                          // for set
-#include <string>                       // for string
-
-/// utility includes
 #include "custom_map.hpp"
 #include "custom_set.hpp"
+#include "function_behavior.hpp"
+#include "graph.hpp"
 #include "refcount.hpp"
-#include "strong_typedef.hpp" // for UINT_STRONG_TYPEDEF
+#include "strong_typedef.hpp"
+#include "typed_node_info.hpp"
+
+#include <boost/graph/graph_traits.hpp>
+
+#include <iosfwd>
+#include <limits>
+#include <list>
+#include <set>
+#include <string>
+
+#include "config_HAVE_HLS_BUILT.hpp"
+#include "config_HAVE_UNORDERED.hpp"
 
 CONSTREF_FORWARD_DECL(BehavioralHelper);
 enum class FunctionBehavior_VariableAccessType;
@@ -820,7 +814,7 @@ struct OpGraph : public graph
     */
    inline OpNodeInfoRef GetOpNodeInfo(const vertex node)
    {
-      return RefcountCast<OpNodeInfo>(graph::GetNodeInfo(node));
+      return std::static_pointer_cast<OpNodeInfo>(graph::GetNodeInfo(node));
    }
 
    /**
@@ -828,9 +822,9 @@ struct OpGraph : public graph
     * @param node is the operation to be considered
     * @return the associated property
     */
-   inline const OpNodeInfoConstRef CGetOpNodeInfo(const vertex node) const
+   inline OpNodeInfoConstRef CGetOpNodeInfo(const vertex node) const
    {
-      return RefcountCast<const OpNodeInfo>(graph::CGetNodeInfo(node));
+      return std::static_pointer_cast<const OpNodeInfo>(graph::CGetNodeInfo(node));
    }
 
    /**
@@ -838,9 +832,9 @@ struct OpGraph : public graph
     * @param edge is the edge to be analyzed
     * @return the associated property
     */
-   inline const OpEdgeInfoConstRef CGetOpEdgeInfo(const EdgeDescriptor edge) const
+   inline OpEdgeInfoConstRef CGetOpEdgeInfo(const EdgeDescriptor edge) const
    {
-      return RefcountCast<const OpEdgeInfo>(graph::CGetEdgeInfo(edge));
+      return std::static_pointer_cast<const OpEdgeInfo>(graph::CGetEdgeInfo(edge));
    }
 
    /**
@@ -849,16 +843,16 @@ struct OpGraph : public graph
     */
    inline OpGraphInfoRef GetOpGraphInfo()
    {
-      return RefcountCast<OpGraphInfo>(GetGraphInfo());
+      return std::static_pointer_cast<OpGraphInfo>(GetGraphInfo());
    }
 
    /**
     * Returns the property associated with the graph
     * @return the graph property
     */
-   inline const OpGraphInfoConstRef CGetOpGraphInfo() const
+   inline OpGraphInfoConstRef CGetOpGraphInfo() const
    {
-      return RefcountCast<const OpGraphInfo>(CGetGraphInfo());
+      return std::static_pointer_cast<const OpGraphInfo>(CGetGraphInfo());
    }
 
    /**
@@ -867,7 +861,7 @@ struct OpGraph : public graph
     */
    inline OpGraphInfoRef CGetOpGraphInfo()
    {
-      return RefcountCast<OpGraphInfo>(GetGraphInfo());
+      return std::static_pointer_cast<OpGraphInfo>(GetGraphInfo());
    }
 
    /**

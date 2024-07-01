@@ -51,7 +51,6 @@
 #include "hls_manager.hpp"
 #include "time_info.hpp"
 #include "tree_manager.hpp"
-#include "tree_reindex.hpp"
 #include "utility.hpp"
 
 SynthesisEvaluation::SynthesisEvaluation(const ParameterConstRef _Param, const HLS_managerRef _hls_mgr,
@@ -62,10 +61,10 @@ SynthesisEvaluation::SynthesisEvaluation(const ParameterConstRef _Param, const H
 
 SynthesisEvaluation::~SynthesisEvaluation() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 SynthesisEvaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

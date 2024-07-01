@@ -153,10 +153,9 @@ SpiderParameter::SpiderParameter(const std::string& _program_name, int _argc, ch
 
 int SpiderParameter::Exec()
 {
-   exit_code = PARAMETER_NOTPARSED;
+   int opt;
 
-   /// variable used into option parsing
-   int option_index;
+   exit_code = PARAMETER_NOTPARSED;
 
    const char* const short_options = COMMON_SHORT_OPTIONS_STRING "I:O:p:";
 
@@ -182,17 +181,9 @@ int SpiderParameter::Exec()
       PrintUsage(std::cerr);
       return EXIT_SUCCESS;
    }
-   while(true)
+   while((opt = getopt_long(argc, argv, short_options, long_options, nullptr)) != -1)
    {
-      int next_option = getopt_long(argc, argv, short_options, long_options, &option_index);
-
-      // no more options are available
-      if(next_option == -1)
-      {
-         break;
-      }
-
-      switch(next_option)
+      switch(opt)
       {
          case 'I':
          {
@@ -258,7 +249,7 @@ int SpiderParameter::Exec()
          default:
          {
             bool exit_success = false;
-            bool res = ManageDefaultOptions(next_option, optarg, exit_success);
+            bool res = ManageDefaultOptions(opt, optarg, exit_success);
             if(exit_success)
             {
                return EXIT_SUCCESS;
@@ -390,22 +381,22 @@ void SpiderParameter::CheckParameters()
                break;
          }
       }
-      setOption(OPT_input_format, static_cast<int>(input_format));
+      setOption(OPT_input_format, input_format);
    }
    else
    {
       Parameters_FileFormat input_format = GetFileFormat(getOption<std::string>(OPT_input_format), true);
-      setOption(OPT_input_format, static_cast<int>(input_format));
+      setOption(OPT_input_format, input_format);
    }
    if(!isOption(OPT_output_format))
    {
       Parameters_FileFormat output_format = GetFileFormat(getOption<std::string>(OPT_output_file), false);
-      setOption(OPT_output_format, static_cast<int>(output_format));
+      setOption(OPT_output_format, output_format);
    }
    else
    {
       Parameters_FileFormat output_format = GetFileFormat(getOption<std::string>(OPT_output_format), false);
-      setOption(OPT_output_format, static_cast<int>(output_format));
+      setOption(OPT_output_format, output_format);
    }
 #if HAVE_TECHNOLOGY_BUILT
    for(const auto& input_file : getOption<CustomSet<std::string>>(OPT_input_file))

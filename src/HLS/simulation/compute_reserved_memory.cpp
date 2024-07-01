@@ -59,7 +59,7 @@ ComputeReservedMemory::ComputeReservedMemory(const tree_managerConstRef _TM, con
 unsigned long long ComputeReservedMemory::GetReservedBytes() const
 {
    const auto ptd_type = tree_helper::CGetPointedType(tree_helper::CGetType(tn));
-   auto reservedMem = elements_number * tree_helper::Size(ptd_type) / 8;
+   auto reservedMem = elements_number * tree_helper::SizeAlloc(ptd_type) / 8;
    return reservedMem ? reservedMem : 1;
 }
 

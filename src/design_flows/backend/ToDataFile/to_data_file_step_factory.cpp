@@ -52,22 +52,16 @@
 ToDataFileStepFactory::ToDataFileStepFactory(const generic_deviceRef _device,
                                              const DesignFlowManagerConstRef _design_flow_manager,
                                              const ParameterConstRef _parameters)
-    : DesignFlowStepFactory(_design_flow_manager, _parameters), device(_device)
+    : DesignFlowStepFactory(DesignFlowStep::TO_DATA_FILE, _design_flow_manager, _parameters), device(_device)
 {
 }
 
 ToDataFileStepFactory::~ToDataFileStepFactory() = default;
 
-const std::string ToDataFileStepFactory::GetPrefix() const
+DesignFlowStepRef ToDataFileStepFactory::CreateStep(DesignFlowStep::signature_t signature) const
 {
-   return "ToDataFile";
-}
-
-const DesignFlowStepRef ToDataFileStepFactory::CreateStep(const std::string& signature) const
-{
-   THROW_ASSERT(signature.compare(0, std::string("ToDataFile::").size(), "ToDataFile::") == 0,
-                "Wrong signature " + signature);
-   const auto to_data_file_step_type = ToDataFileStep::NameToEnum(signature.substr(std::string("ToDataFile::").size()));
+   THROW_ASSERT(DesignFlowStep::GetStepClass(signature) == GetClass(), "Wrong step class");
+   const auto to_data_file_step_type = static_cast<ToDataFileStep_Type>(DesignFlowStep::GetStepType(signature));
    switch(to_data_file_step_type)
    {
       case ToDataFileStep_Type::UNKNOWN:

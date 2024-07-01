@@ -104,7 +104,7 @@ void fu_binding_cs::instantiate_component_kernel(const HLS_managerRef HLSMgr, co
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting setting parameter scheduler!");
    GetPointer<module>(scheduler_mod)
        ->SetParameter("NUM_TASKS", STR(parameters->getOption<unsigned int>(OPT_context_switch)));
-   auto addr_acc = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
+   auto addr_acc = ceil_log2(parameters->getOption<unsigned long>(OPT_num_accelerators));
    if(!addr_acc)
    {
       addr_acc = 1;
@@ -266,7 +266,7 @@ void fu_binding_cs::set_atomic_memory_parameter(const hlsRef HLS)
          {
             addr_tasks = 1;
          }
-         auto addr_acc = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
+         auto addr_acc = ceil_log2(parameters->getOption<unsigned long>(OPT_num_accelerators));
          if(!addr_acc)
          {
             addr_acc = 1;

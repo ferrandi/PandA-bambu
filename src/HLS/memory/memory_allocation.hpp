@@ -103,15 +103,9 @@ class MemoryAllocationSpecialization : public HLSFlowStepSpecialization
    MemoryAllocationSpecialization(const MemoryAllocation_Policy memory_allocation_policy,
                                   const MemoryAllocation_ChannelsType memory_allocation_channels_type);
 
-   /**
-    * Return the string representation of this
-    */
-   std::string GetKindText() const override;
+   std::string GetName() const override;
 
-   /**
-    * Return the contribution to the signature of a step given by the specialization
-    */
-   std::string GetSignature() const override;
+   context_t GetSignatureContext() const override;
 };
 
 /**
@@ -119,18 +113,16 @@ class MemoryAllocationSpecialization : public HLSFlowStepSpecialization
  */
 class memory_allocation : public HLS_step
 {
+ private:
+   /* Sum of reached body functions' bb+bitvalue versions after last Exec call */
+   unsigned int last_ver_sum;
+
  protected:
    /// list of functions to be analyzed
    CustomOrderedSet<unsigned int> func_list;
 
    /// The version of memory representation on which this step was applied
    unsigned int memory_version;
-
-   /// The version of BB IR representation on which this step was applied
-   std::map<unsigned int, unsigned int> last_bb_ver;
-
-   /// The version of bit value IR representation on which this step was applied
-   std::map<unsigned int, unsigned int> last_bitvalue_ver;
 
    /**
     * Prepares the data structures for the memory allocation
@@ -147,8 +139,7 @@ class memory_allocation : public HLS_step
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   HLSRelationships ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * Execute the step
@@ -184,13 +175,13 @@ class memory_allocation : public HLS_step
     * Check if this step has actually to be executed
     * @return true if the step has to be executed
     */
-   bool HasToBeExecuted() const override;
+   bool HasToBeExecuted() const final;
 
    /**
     * Execute the step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status Exec() override;
+   DesignFlowStep_Status Exec() final;
 };
 
 #endif

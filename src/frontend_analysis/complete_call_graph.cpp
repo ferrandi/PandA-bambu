@@ -58,7 +58,7 @@ CompleteCallGraph::CompleteCallGraph(const application_managerRef _AppM,
 
 CompleteCallGraph::~CompleteCallGraph() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 CompleteCallGraph::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -70,14 +70,13 @@ CompleteCallGraph::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
          relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(DATAFLOW_CG_EXT, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
-         if(parameters->isOption(OPT_hls_div) && parameters->getOption<std::string>(OPT_hls_div) != "none")
-         {
-            relationships.insert(std::make_pair(HLS_DIV_CG_EXT, ALL_FUNCTIONS));
-         }
+         relationships.insert(std::make_pair(SOFT_INT_CG_EXT, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(MULT_EXPR_FRACTURING, WHOLE_APPLICATION));
          if(parameters->isOption(OPT_soft_float) && parameters->getOption<bool>(OPT_soft_float))
          {
             relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
          }
+         relationships.insert(std::make_pair(TREE2FUN, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, ALL_FUNCTIONS));
          break;
       }

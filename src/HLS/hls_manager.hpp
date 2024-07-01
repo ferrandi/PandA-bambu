@@ -35,6 +35,7 @@
  * @brief Data structure representing the entire HLS information
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -182,6 +183,9 @@ class HLS_manager : public application_manager
 
    /// information about memory allocation
    memoryRef Rmem;
+
+   /// unused port interface
+   std::map<unsigned, std::set<std::pair<std::string, std::string>>> unused_interfaces;
 
    /// information about the simulation
    SimulationInformationRef RSim;

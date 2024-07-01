@@ -145,7 +145,7 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
     * signextension)
     *
     * for each lhs variable in the gimple_assign instruction and entry is created in the best map
-    * the entry in the map is of the type <GET_INDEX_NODE(lhs), bit_string of <U>s of the variable lenght>
+    * the entry in the map is of the type <lhs->index, bit_string of <U>s of the variable lenght>
     * for each gimple_assign the used variables are checked against the values in the parm set in order to identify the
     * parameters of the function when those are found their ssa index node is added in the best map and in the arguments
     * map ( used by the clear() function )
@@ -222,7 +222,7 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
     */
    std::deque<bit_lattice> get_current_or_best(const tree_nodeConstRef& tn) const;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
