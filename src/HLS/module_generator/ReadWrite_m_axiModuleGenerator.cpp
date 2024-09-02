@@ -332,6 +332,13 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_
          }
       }
 
+      const auto out1_port = mod->find_member("out1", port_o_K, mod);
+      THROW_ASSERT(out1_port, "out1 port must be present in " + mod->get_path());
+      const auto fe_data_w = STD_GET_SIZE(GetPointer<port_o>(out1_port)->get_typeRef());
+      THROW_ASSERT((1ULL << std::stoull(word_off_w)) * fe_data_w >= std::stoull(be_data_w),
+                   "ERROR: Cache line of " + STR((1ULL << std::stoull(word_off_w)) * fe_data_w) +
+                       " bits is smaller than bus size (" + STR(be_data_w) + ")");
+
       ip_components = "IOB_cache_axi";
       out << "wire [BITSIZE_address-1:BITSIZE_log_data_size] addr;\n"
           << "wire [BITSIZE_data_size-1:0] wstrb;\n"
