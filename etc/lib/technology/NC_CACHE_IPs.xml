@@ -654,7 +654,7 @@ generate
     assign m_axi_wlast   = m_axi_wvalid_int;
     assign m_axi_bready  = 1&apos;b1;
     //AXI Buffer Output signals
-    assign m_axi_awaddr = {BE_ADDR_W{1&apos;b0}} + {addr[FE_ADDR_W-1 - BE_BYTE_W : (BE_BYTE_W - FE_BYTE_W)], {BE_BYTE_W{1&apos;b0}}};
+    assign m_axi_awaddr = {BE_ADDR_W{1&apos;b0}} + {addr[BITSIZE_addr-1 : (BE_BYTE_W - FE_BYTE_W)], {BE_BYTE_W{1&apos;b0}}};
             
     if(BE_DATA_W == FE_DATA_W)
     begin
