@@ -91,6 +91,7 @@ class simple_indent;
 #define WENABLE_PORT_NAME "wenable"
 #define START_PORT_NAME "start_port"
 #define RESET_PORT_NAME "reset"
+#define CACHE_RESET_PORT_NAME "cache_reset"
 #define DONE_PORT_NAME "done_port"
 #define RETURN_PORT_NAME "return_port"
 #define START_PORT_NAME_CFC "start_port_CFC"
@@ -608,7 +609,7 @@ using structural_objectRef = refcount<structural_object>;
        S_AXIL_AWREADY)(S_AXIL_AWADDR)(S_AXIL_WVALID)(S_AXIL_WREADY)(S_AXIL_WDATA)(S_AXIL_WSTRB)(S_AXIL_ARVALID)(       \
        S_AXIL_ARREADY)(S_AXIL_ARADDR)(S_AXIL_RVALID)(S_AXIL_RREADY)(S_AXIL_RDATA)(S_AXIL_RRESP)(S_AXIL_BVALID)(        \
        S_AXIL_BREADY)(S_AXIL_BRESP)(PI_S_AXIS_TVALID)(PI_S_AXIS_TREADY)(PI_S_AXIS_TDATA)(PI_M_AXIS_TVALID)(            \
-       PI_M_AXIS_TREADY)(PI_M_AXIS_TDATA)(PI_DEFAULT)
+       PI_M_AXIS_TREADY)(PI_M_AXIS_TDATA)(PI_DEFAULT)(CACHE_RESET)
 
 #define PORT_DIRECTION_ENUM (IN)(OUT)(IO)(GEN)(UNKNOWN)(TLM_IN)(TLM_OUT)(TLM_INOUT)
 
