@@ -2240,6 +2240,9 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       const auto addrPort = CM->add_port("in4", port_o::IN, interface_top, address_interface_datatype);
       GetPointerS<port_o>(addrPort)->set_is_addr_bus(true);
 
+      const auto cache_reset_port = CM->add_port(CACHE_RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
+      GetPointerS<port_o>(cache_reset_port)->set_port_interface(port_o::port_interface::CACHE_RESET);
+
       const auto awready = CM->add_port("_m_axi_" + bundle_name + "_awready", port_o::IN, interface_top, bool_type);
       GetPointerS<port_o>(awready)->set_port_interface(port_o::port_interface::M_AXI_AWREADY);
 
