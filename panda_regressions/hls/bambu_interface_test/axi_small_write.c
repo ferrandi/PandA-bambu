@@ -15,9 +15,9 @@
 #pragma HLS cache bundle = gmem1 line_count = 16 line_size = 16 bus_size = 128 ways = 1 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
 #else
-#pragma HLS cache bundle = gmem0 line_count = 16 line_size = 16 bus_size = 128 ways = 1 num_write_outstanding = 2 rep_policy = \
+#pragma HLS cache bundle = gmem0 line_count = 16 line_size = 16 bus_size = 32 ways = 1 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
-#pragma HLS cache bundle = gmem1 line_count = 16 line_size = 16 bus_size = 128 ways = 1 num_write_outstanding = 2 rep_policy = \
+#pragma HLS cache bundle = gmem1 line_count = 16 line_size = 16 bus_size = 32 ways = 1 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
 #endif
 int __attribute__((noinline)) vector_copy_plus(int* a, int* b)
