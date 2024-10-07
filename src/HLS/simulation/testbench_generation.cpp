@@ -81,6 +81,7 @@
 #define CST_STR_BAMBU_TESTBENCH "bambu_testbench"
 
 #define SETUP_PORT_NAME "setup_port"
+#define CACHE_RESET_PORT_NAME "cache_reset"
 
 TestbenchGeneration::TestbenchGeneration(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                                          const DesignFlowManagerConstRef _design_flow_manager)
@@ -209,6 +210,12 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
 
    const auto fsm_reset = tb_fsm->find_member(RESET_PORT_NAME, port_o_K, tb_fsm);
    const auto fsm_setup = tb_fsm->find_member(SETUP_PORT_NAME, port_o_K, tb_fsm);
+   const auto dut_cache_reset_port = dut->find_member(CACHE_RESET_PORT_NAME, port_o_K, dut);
+   // if the accelerator has a setup port, it must be connected to the setup signal
+   if(dut_cache_reset_port)
+   {
+      add_internal_connection(dut_cache_reset_port, fsm_setup);
+   }
    auto fsm_start = tb_fsm->find_member(START_PORT_NAME, port_o_K, tb_fsm);
    auto dut_done = dut->find_member(DONE_PORT_NAME, port_o_K, dut);
    THROW_ASSERT(dut_done, "DUT done_port is missing.");

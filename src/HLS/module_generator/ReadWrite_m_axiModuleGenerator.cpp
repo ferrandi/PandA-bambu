@@ -70,6 +70,7 @@ enum in_port
    i_in2,
    i_in3,
    i_in4,
+   i_cache_reset,
    i_awready,
    i_wready,
    i_bid,
@@ -345,7 +346,18 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_
           << "wire [BITSIZE_data-1:0] rdata;\n"
           << "wire ready;\n"
           << "wire dirty;\n"
+          << "wire reset_cache;\n"
           << "reg state, state_next;\n\n";
+
+      const auto reset_level = Param->getOption<bool>(OPT_reset_level);
+      if(reset_level)
+      {
+         out << "assign reset_cache = reset || cache_reset;\n\n";
+      }
+      else
+      {
+         out << "assign reset_cache = reset && !cache_reset;\n\n";
+      }
 
       out << "localparam S_IDLE = 0, S_FLUSH = 1;\n"
           << "initial state = S_IDLE;\n\n"
@@ -472,7 +484,7 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_
           << "  .m_axi_arvalid(" << _ports_out[o_arvalid].name << "),\n"
           << "  .m_axi_rready(" << _ports_out[o_rready].name << "),\n"
           << "  .clock(clock),\n"
-          << "  .reset(reset));\n\n"
+          << "  .reset(reset_cache));\n\n"
           << "`undef _CACHE_CNT\n";
    }
    structural_manager::add_NP_functionality(mod, NP_functionality::IP_COMPONENT, ip_components);
