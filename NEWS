@@ -1,4 +1,4 @@
-=========== PANDA 2024.03 ===========
+=========== PANDA 2024.10 ===========
 Twelfth public release of PandA framework.
 
 New features introduced:
@@ -10,6 +10,9 @@ New features introduced:
 - Support for DSP fracturing
 - Support for dataflow architecture generation and co-simulation
 - Enhanced AXI4-Master interface support
+- Fixes to AXI cache implementation
+- Improved C/C++ so-simulation testbench and runtime environment
+- Various fixes and improvements to HLS algorithms
 
 =========== PANDA 2023.10 ===========
 Eleventh public release of PandA framework.
