@@ -1235,7 +1235,7 @@ begin
   STATE_SETUP:
     begin
       automatic time start_time = $time + CLOCK_PERIOD;
-      automatic time start_cycle = $rtoi(start_time/CLOCK_PERIOD);
+      automatic time start_cycle = $rtoi($itor(start_time)/CLOCK_PERIOD);
       automatic integer res_file;
       if(setup_next)
       begin
@@ -1250,7 +1250,7 @@ begin
     end
   STATE_RUNNING:
     begin
-      automatic time curr_cycle = $rtoi($time/CLOCK_PERIOD);
+      automatic time curr_cycle = $rtoi($itor($time)/CLOCK_PERIOD);
       if(curr_cycle &gt;= over_time)
       begin
         automatic integer res_file;
@@ -1264,7 +1264,7 @@ begin
   SIM_DONE:
     begin
       automatic time curr_time = $time;
-      automatic time curr_cycle = $rtoi(curr_time/CLOCK_PERIOD);
+      automatic time curr_cycle = $rtoi($itor(curr_time)/CLOCK_PERIOD);
       automatic integer res_file;
       res_file = $fopen(RESFILE, &quot;a&quot;);
       $fwrite(res_file, &quot;%0d,&quot;, curr_time);
