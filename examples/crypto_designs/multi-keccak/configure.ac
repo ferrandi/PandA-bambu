@@ -8,7 +8,6 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 LT_INIT([disable-shared])
 AC_PROG_CC
 AC_PROG_INSTALL
-AC_PROG_RANLIB
 CFLAGS=' -O3 --compiler=I386_GCC49'
 CC=tree-panda-gcc
 AC_OUTPUT(Makefile include/Makefile src/Makefile src/chi/Makefile src/iota/Makefile src/pi/Makefile src/rho/Makefile  src/theta/Makefile)
