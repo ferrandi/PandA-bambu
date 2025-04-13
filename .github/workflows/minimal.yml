@@ -942,7 +942,7 @@ jobs:
 
   Make-checks:
     needs: [build]
-    runs-on: [self-hosted, lattice, mentor, xilinx]
+    runs-on: [self-hosted, mentor, xilinx]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
