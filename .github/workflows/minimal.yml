@@ -232,7 +232,7 @@ jobs:
 
   gcc_regression_simple:
     needs: [build, specific-test]
-    runs-on: [self-hosted, mentor, xilinx]
+    runs-on: [self-hosted, mentor]
     env:
       outname: ${{matrix.setup}}_regression_simple
     strategy:
