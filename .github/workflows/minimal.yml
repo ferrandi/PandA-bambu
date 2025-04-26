@@ -232,7 +232,7 @@ jobs:
 
   gcc_regression_simple:
     needs: [build, specific-test]
-    runs-on: [self-hosted, mentor, xilinx]
+    runs-on: [self-hosted, mentor]
     env:
       outname: ${{matrix.setup}}_regression_simple
     strategy:
@@ -942,7 +942,7 @@ jobs:
 
   Make-checks:
     needs: [build]
-    runs-on: [self-hosted, lattice, mentor, xilinx]
+    runs-on: [self-hosted, mentor, xilinx]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
