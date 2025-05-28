@@ -719,7 +719,7 @@ class UnrollHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
                      PragmaIntroducerKind
 #endif
                          Introducer,
-                     Token& PragmaTok, Token& UnrollTok) override
+                     Token& PragmaTok, Token& UnrollTok0) override
    {
       Token Tok;
       bool disable_unroll = false;
@@ -762,6 +762,8 @@ class UnrollHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
       }
 
       auto* Info = new(PP.getPreprocessorAllocator()) PragmaLoopHintInfo;
+      Token UnrollTok = UnrollTok0;
+      UnrollTok.setIdentifierInfo(PP.getIdentifierInfo("unroll"));
       Info->PragmaName = UnrollTok;
       Info->Option.startToken();
       if(disable_unroll)
