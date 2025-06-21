@@ -4,9 +4,9 @@
 /* AXI pragmas */
 #pragma HLS interface port = a mode = m_axi offset = direct bundle = gmem0
 #pragma HLS interface port = b mode = m_axi offset = direct bundle = gmem1
-#pragma HLS interface port = c mode = m_axi offset = direct bundle = gmem2
+#pragma HLS interface port = c_out mode = m_axi offset = direct bundle = gmem2
 
-void mmult(int* a, int* b, int* c)
+void mmult(int* a, int* b, int* c_out)
 {
    int running = 0;
 
@@ -18,7 +18,7 @@ void mmult(int* a, int* b, int* c)
          {
             for(unsigned c = 0; c < rank / tile_rank; c++)
             {
-               c[(r + r_tile * rank / tile_rank) * rank + (c + c_tile * rank / tile_rank)] = 0;
+               c_out[(r + r_tile * rank / tile_rank) * rank + (c + c_tile * rank / tile_rank)] = 0;
             }
          }
          for(unsigned i_tile = 0; i_tile < tile_rank; i_tile++)
@@ -34,7 +34,7 @@ void mmult(int* a, int* b, int* c)
                      unsigned bIndex = (index + i_tile * rank / tile_rank) * rank + (c + c_tile * rank / tile_rank);
                      running += a[aIndex] * b[bIndex];
                   }
-                  c[(r + r_tile * rank / tile_rank) * rank + (c + c_tile * rank / tile_rank)] += running;
+                  c_out[(r + r_tile * rank / tile_rank) * rank + (c + c_tile * rank / tile_rank)] += running;
                }
             }
          }
