@@ -38,7 +38,7 @@
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
-#undef NDEBUG
+// #undef NDEBUG
 #include "plugin_includes.hpp"
 
 #include <clang/AST/AST.h>
