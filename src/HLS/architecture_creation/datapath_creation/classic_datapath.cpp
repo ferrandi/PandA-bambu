@@ -274,7 +274,7 @@ DesignFlowStep_Status classic_datapath::InternalExec()
    HLS->datapath->INIT(true);
    if(parameters->getOption<bool>(OPT_print_dot))
    {
-      HLS->datapath->WriteDot(FB->CGetBehavioralHelper()->get_function_name() + "/HLS_Datapath.dot",
+      HLS->datapath->WriteDot(FB->CGetBehavioralHelper()->get_function_name(), "HLS_Datapath.dot",
                               structural_manager::COMPLETE_G);
    }
    return DesignFlowStep_Status::SUCCESS;

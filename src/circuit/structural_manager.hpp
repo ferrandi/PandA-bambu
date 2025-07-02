@@ -317,7 +317,8 @@ class structural_manager
    /**
     * Function that writes the dot file of the graph by using the AT&T dot format.
     */
-   void WriteDot(const std::string& file_name, circuit_graph_type gt, graph* g = nullptr) const;
+   void WriteDot(const std::string& function_name, const std::string& file_name, circuit_graph_type gt,
+                 graph* g = nullptr) const;
 
    /**
     * Get a reference to circ field

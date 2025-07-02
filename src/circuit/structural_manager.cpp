@@ -804,11 +804,13 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
    } // switch src kind
 }
 
-void structural_manager::WriteDot(const std::string& file_name, circuit_graph_type gt, graph* g) const
+void structural_manager::WriteDot(const std::string& function_name, const std::string& file_name, circuit_graph_type gt,
+                                  graph* g) const
 {
-   const auto output_directory = Param->getOption<std::string>(OPT_dot_directory);
-   std::ofstream f((output_directory + file_name).c_str());
-
+   const auto output_directory = Param->getOption<std::filesystem::path>(OPT_dot_directory) / function_name;
+   std::filesystem::create_directories(output_directory);
+   const auto full_name = output_directory / file_name;
+   std::ofstream f(full_name);
    if(g == nullptr)
    {
       switch(gt)
