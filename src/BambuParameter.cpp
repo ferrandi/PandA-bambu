@@ -878,7 +878,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
    // options defining where backend tools could be found
    os << "  Backend configuration:\n\n"
       << "    --generate-components-library\n"
-      << "        Export standard Bambu RTL components as a separate library"
+      << "        Export standard Bambu RTL components as a separate library\n"
       << "    --mentor-visualizer\n"
       << "        Simulate the RTL implementation and then open Mentor Visualizer.\n"
       << "        (Mentor root has to be correctly set, see --mentor-root)\n\n"
