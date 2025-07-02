@@ -719,7 +719,7 @@ class UnrollHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
                      PragmaIntroducerKind
 #endif
                          Introducer,
-                     Token& PragmaTok, Token& UnrollTok) override
+                     Token& PragmaTok, Token& UnrollTok0) override
    {
       Token Tok;
       bool disable_unroll = false;
@@ -749,9 +749,21 @@ class UnrollHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(Tok.is(tok::equal))
             {
                PP.Lex(Tok);
+
                if(Tok.is(tok::kw_true))
                {
                   disable_unroll = true;
+               }
+               else
+               {
+                  const auto idTrue = PP.getSpelling(Tok);
+                  if(iequals(idTrue, "true"))
+                  {
+                     disable_unroll = true;
+                  }
+               }
+               if(disable_unroll)
+               {
                   PP.Lex(Tok);
                   continue;
                }
@@ -762,14 +774,18 @@ class UnrollHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
       }
 
       auto* Info = new(PP.getPreprocessorAllocator()) PragmaLoopHintInfo;
-      Info->PragmaName = UnrollTok;
-      Info->Option.startToken();
+      Token UnrollTok = UnrollTok0;
       if(disable_unroll)
       {
-         Info->Option.setKind(tok::identifier);
-         PP.CreateString("disable", Info->Option, UnrollTok.getEndLoc().getLocWithOffset(1));
+         UnrollTok.setIdentifierInfo(PP.getIdentifierInfo("nounroll"));
       }
-      else if(UnrollFactor.isNot(tok::unknown))
+      else
+      {
+         UnrollTok.setIdentifierInfo(PP.getIdentifierInfo("unroll"));
+      }
+      Info->PragmaName = UnrollTok;
+      Info->Option.startToken();
+      if(UnrollFactor.isNot(tok::unknown))
       {
          SmallVector<Token, 2> ValueList;
 

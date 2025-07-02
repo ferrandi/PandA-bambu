@@ -684,7 +684,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
 
    if(parameters->getOption<bool>(OPT_print_dot))
    {
-      SM_taste_interface->WriteDot(FB->CGetBehavioralHelper()->get_function_name() + "/HLS_TasteInterface.dot",
+      SM_taste_interface->WriteDot(FB->CGetBehavioralHelper()->get_function_name(), "HLS_TasteInterface.dot",
                                    structural_manager::COMPLETE_G);
    }
    return DesignFlowStep_Status::SUCCESS;
