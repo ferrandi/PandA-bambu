@@ -13,7 +13,7 @@ A comparison with a standard commercial HLS tool is provided when possible.
 
 - Target hardware: AMD/Xilinx Virtex7 FPGA.
 - Target frequency: 200 MHz.
-- Source code for the benchmarks is available in [examples/CHStone](../examples/CHstone).
+- Source code for the benchmarks is available in [examples/CHStone](../../examples/CHstone).
 
 ---
 

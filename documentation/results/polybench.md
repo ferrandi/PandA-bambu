@@ -13,7 +13,7 @@ Two sets of experiments were carried out, one with **floating-point** kernels an
 
 - Target hardware: AMD/Xilinx Virtex7 FPGA.
 - Target frequency: 200 MHz.
-- Source code for the benchmarks is available in [examples/PolyBench](../examples/PolyBench).
+- Source code for the benchmarks is available in [examples/PolyBench](../../examples/PolyBench).
 
 ---
 
