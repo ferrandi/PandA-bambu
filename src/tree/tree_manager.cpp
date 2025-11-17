@@ -465,7 +465,12 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
             }
          }
       }
-      tn = new_node;
+      THROW_ASSERT(!definition || GetPointer<cst_node>(new_node) || new_node->get_kind() == ssa_name_K,
+                   "unexpected node");
+      if(!definition || new_node->get_kind() == ssa_name_K)
+      {
+         tn = new_node;
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, __replace_tree_node_debug_level,
                      "<--Replaced " + old_node->ToString() + " (" + old_node->get_kind_text() + ") with " +
                          new_node->ToString() + "(" + new_node->get_kind_text() + ") New statement: " + tn->ToString());
