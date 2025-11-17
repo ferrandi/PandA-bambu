@@ -310,30 +310,84 @@ using Slong = long long;
          return float_floor(d);
       }
 
-#if defined(__BAMBU__) && !defined(__BAMBU_SIM__)
-#define AC_ASSERT(cond, msg)
-#else
-#define AC_ASSERT(cond, msg) ac_private::ac_assert(cond, __FILE__, __LINE__, msg)
-   __FORCE_INLINE void ac_assert(bool condition, const char* file = nullptr, int line = 0, const char* msg = nullptr)
-   {
+    [[noreturn]] inline void
+    ac_runtime_fail(const char* expr,
+                    const char* file,
+                    int         line,
+                    const char* msg)
+    {
+    #ifndef AC_USER_DEFINED_ASSERT
+        std::cerr << "Assertion failed: (" << (expr ? expr : "<null>") << ")\n";
+        if (file) {
+            std::cerr << "  file: " << file << "\n";
+        }
+        std::cerr << "  line: " << line << "\n";
+        if (msg) {
+            std::cerr << "  message: " << msg << "\n";
+        }
+        std::cerr.flush();
+        std::abort();
+    #else
+        (void)expr; (void)file; (void)line; (void)msg;
+    #endif
+    }
+
+    [[noreturn]] inline void
+    ac_constexpr_fail(const char* file,
+                      int         line,
+                      const char* expr,
+                      const char* msg)
+    {
+        (void)file; (void)line; (void)expr; (void)msg;
+
+    #if defined(__has_builtin)
+    #  if __has_builtin(__builtin_trap)
+        __builtin_trap();
+    #  else
+        std::abort();
+    #  endif
+    #else
+        std::abort();
+    #endif
+    }
+
+    constexpr void ac_assert(bool        condition,
+                             const char* expr,
+                             const char* file,
+                             int         line,
+                             const char* msg)
+    {
 #ifndef AC_USER_DEFINED_ASSERT
-      if(!condition)
-      {
-         std::cerr << "Assert";
-         if(file)
-         {
-            std::cerr << " in file " << file << ":" << line;
-         }
-         if(msg)
-         {
-            std::cerr << " " << msg;
-         }
-         std::cerr << std::endl;
-         assert(0);
-      }
+        if (!condition) {
+        #if defined(__has_builtin)
+        #  if __has_builtin(__builtin_is_constant_evaluated)
+            if (__builtin_is_constant_evaluated()) {
+                // constexpr: compilation fail
+                ac_constexpr_fail(file, line, expr, msg);
+            } else {
+                // runtime fail
+                ac_runtime_fail(expr, file, line, msg);
+            }
+        #  else
+            // no builtin: runtime fail
+            ac_runtime_fail(expr, file, line, msg);
+        #  endif
+        #else
+            ac_runtime_fail(expr, file, line, msg);
+        #endif
+        }
+    #else
+        (void)condition; (void)expr; (void)file; (void)line; (void)msg;
+    #endif
+        }
+
+#if defined(__BAMBU__) && !defined(__BAMBU_SIM__)
+    #define AC_ASSERT(cond, msg)   ((void)0)
+#else
+    #define AC_ASSERT(cond, msg) \
+        ::ac_private::ac_assert((cond), #cond, __FILE__, __LINE__, (msg))
 #endif
-   }
-#endif
+
       // helper structs for statically computing log2 like functions (nbits,
       // log2_floor, log2_ceil)
       //   using recursive templates
@@ -1204,7 +1258,7 @@ using Slong = long long;
       struct iv_copy_base_struct<true>
       {
          template <int N, bool C, int W, bool S>
-         __FORCE_INLINE void iv_copy_base(const iv_base<N, C, W, S>& op, iv_base<N, C, W, S>& r)
+         __FORCE_INLINE constexpr void iv_copy_base(const iv_base<N, C, W, S>& op, iv_base<N, C, W, S>& r)
          {
             r.assign(op);
          }
@@ -1213,13 +1267,13 @@ using Slong = long long;
       struct iv_copy_base_struct<false>
       {
          template <int N1, bool C1, int W1, bool S1, int Nr, bool Cr, int Wr, bool Sr>
-         __FORCE_INLINE void iv_copy_base(const iv_base<N1, C1, W1, S1>& op, iv_base<Nr, Cr, Wr, Sr>& r)
+         __FORCE_INLINE constexpr void iv_copy_base(const iv_base<N1, C1, W1, S1>& op, iv_base<Nr, Cr, Wr, Sr>& r)
          {
             LOOP(int, i, 0, exclude, Nr, { r.set(i, op[i]); });
          }
       };
       template <int N, int START, int N1, bool C1, int W1, bool S1, int Nr, bool Cr, int Wr, bool Sr>
-      __FORCE_INLINE void iv_copy(const iv_base<N1, C1, W1, S1>& op, iv_base<Nr, Cr, Wr, Sr>& r)
+      __FORCE_INLINE constexpr void iv_copy(const iv_base<N1, C1, W1, S1>& op, iv_base<Nr, Cr, Wr, Sr>& r)
       {
          if(START == 0 && N == Nr && Nr == N1 && C1 == Cr && W1 == Wr && S1 == Sr)
          {
@@ -1233,7 +1287,7 @@ using Slong = long long;
       }
 
       template <int START, int N, int N1, bool C1, int W1, bool S1>
-      __FORCE_INLINE bool iv_equal_zero(const iv_base<N1, C1, W1, S1>& op)
+      __FORCE_INLINE constexpr bool iv_equal_zero(const iv_base<N1, C1, W1, S1>& op)
       {
          bool retval = true;
          if(START < N)
@@ -1244,7 +1298,7 @@ using Slong = long long;
       }
 
       template <int START, int N, int N1, bool C1, int W1, bool S1>
-      __FORCE_INLINE bool iv_equal_ones(const iv_base<N1, C1, W1, S1>& op)
+      __FORCE_INLINE constexpr bool iv_equal_ones(const iv_base<N1, C1, W1, S1>& op)
       {
          bool retval = true;
          if(START < N)
@@ -1255,7 +1309,7 @@ using Slong = long long;
       }
 
       template <int N1, bool C1, int W1, bool S1, int N2, bool C2, int W2, bool S2>
-      __FORCE_INLINE bool iv_equal(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2)
+      __FORCE_INLINE constexpr bool iv_equal(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2)
       {
          constexpr int M1 = AC_MAX(N1, N2);
          constexpr int M2 = AC_MIN(N1, N2);
@@ -1281,7 +1335,7 @@ using Slong = long long;
       }
 
       template <int B, int N, bool C, int W, bool S>
-      __FORCE_INLINE bool iv_equal_ones_from(const iv_base<N, C, W, S>& op)
+      __FORCE_INLINE constexpr bool iv_equal_ones_from(const iv_base<N, C, W, S>& op)
       {
          if((B >= 32 * N && op[N - 1] >= 0) || (B & 31 && ~(op[B / 32] >> (B & 31))))
          {
@@ -1291,7 +1345,7 @@ using Slong = long long;
       }
 
       template <int B, int N, bool C, int W, bool S>
-      __FORCE_INLINE bool iv_equal_zeros_from(const iv_base<N, C, W, S>& op)
+      __FORCE_INLINE constexpr bool iv_equal_zeros_from(const iv_base<N, C, W, S>& op)
       {
          if((B >= 32 * N && op[N - 1] < 0) || (B & 31 && (op[B / 32] >> (B & 31))))
          {
@@ -1301,7 +1355,7 @@ using Slong = long long;
       }
 
       template <int B, int N, bool C, int W, bool S>
-      __FORCE_INLINE bool iv_equal_ones_to(const iv_base<N, C, W, S>& op)
+      __FORCE_INLINE constexpr bool iv_equal_ones_to(const iv_base<N, C, W, S>& op)
       {
          if((B >= 32 * N && op[N - 1] >= 0) || (B & 31 && ~(op[B / 32] | (all_ones << (B & 31)))))
          {
@@ -1311,7 +1365,7 @@ using Slong = long long;
       }
 
       template <int B, int N, bool C, int W, bool S>
-      __FORCE_INLINE bool iv_equal_zeros_to(const iv_base<N, C, W, S>& op)
+      __FORCE_INLINE constexpr bool iv_equal_zeros_to(const iv_base<N, C, W, S>& op)
       {
          if((B >= 32 * N && op[N - 1] < 0) || (B & 31 && (op[B / 32] & ~(all_ones << (B & 31)))))
          {
@@ -1325,7 +1379,7 @@ using Slong = long long;
       }
 
       template <bool greater, int N1, bool C1, int W1, bool S1, int N2, bool C2, int W2, bool S2>
-      __FORCE_INLINE bool iv_compare(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2)
+      __FORCE_INLINE constexpr bool iv_compare(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2)
       {
          constexpr int M1 = AC_MAX(N1, N2);
          constexpr int M2 = AC_MIN(N1, N2);
@@ -1428,7 +1482,7 @@ using Slong = long long;
       }
 
       template <int Nr, bool Cr, int Wr, bool Sr>
-      __FORCE_INLINE void iv_assign_int64(iv_base<Nr, Cr, Wr, Sr>& r, Slong l)
+      __FORCE_INLINE constexpr void iv_assign_int64(iv_base<Nr, Cr, Wr, Sr>& r, Slong l)
       {
          r.assign_int64(l);
       }
@@ -1467,7 +1521,7 @@ using Slong = long long;
       }
 
       template <int N1, bool C1, int W1, bool S1, int N2, bool C2, int W2, bool S2, int Nr, bool Cr, int Wr, bool Sr>
-      __FORCE_INLINE void iv_mult(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
+      __FORCE_INLINE constexpr void iv_mult(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
                                   iv_base<Nr, Cr, Wr, Sr>& r)
       {
          if(Nr == 1)
@@ -1617,7 +1671,7 @@ using Slong = long long;
       }
 
       template <int START, int N, bool C, int W, bool S, int Nr, bool Cr, int Wr, bool Sr>
-      __FORCE_INLINE unsigned char iv_add_int_carry(const iv_base<N, C, W, S>& op1, int op2, unsigned char carry,
+      __FORCE_INLINE constexpr unsigned char iv_add_int_carry(const iv_base<N, C, W, S>& op1, int op2, unsigned char carry,
                                                     iv_base<Nr, Cr, Wr, Sr>& r)
       {
          if(N == START)

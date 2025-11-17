@@ -125,7 +125,7 @@ namespace __AC_NAMESPACE
          return *this;
       }
 
-      __FORCE_INLINE void overflow_adjust(bool overflow, bool neg)
+      __FORCE_INLINE constexpr void overflow_adjust(bool overflow, bool neg)
       {
          if(O == AC_WRAP)
          {
@@ -365,7 +365,7 @@ namespace __AC_NAMESPACE
             bool neg_src = false;
             if((F2 - F + W) < W2)
             {
-               bool all_ones = ac_private::iv_equal_ones_from<F2 - F + W, N2>(op.v);
+               const bool all_ones = ac_private::iv_equal_ones_from<F2 - F + W, N2>(op.v);
                deleted_bits_zero =
                    deleted_bits_zero && (carry ? all_ones : ac_private::iv_equal_zeros_from<F2 - F + W, N2>(op.v));
                deleted_bits_one =
