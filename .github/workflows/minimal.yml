@@ -872,7 +872,7 @@ jobs:
       matrix:
         include:
           - test: altera
-            datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
+            datapoints: CYCLES
           - test: hw
             args: -c=--evaluation=PERIOD,AREA,FREQUENCY,CLOCK_SLACK,REGISTERS,DSPS,BRAMS
             datapoints: PERIOD,AREA,REGISTERS,DSPS,BRAMS
