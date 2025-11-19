@@ -317,6 +317,7 @@ using Slong = long long;
                     const char* msg)
     {
     #ifndef AC_USER_DEFINED_ASSERT
+      #if !defined(__BAMBU__) || defined(__BAMBU_SIM__)
         std::cerr << "Assertion failed: (" << (expr ? expr : "<null>") << ")\n";
         if (file) {
             std::cerr << "  file: " << file << "\n";
@@ -326,6 +327,7 @@ using Slong = long long;
             std::cerr << "  message: " << msg << "\n";
         }
         std::cerr.flush();
+      #endif
         std::abort();
     #else
         (void)expr; (void)file; (void)line; (void)msg;
