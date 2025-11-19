@@ -1262,11 +1262,13 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      extract_unary_expr(be->op1,
                                         be->op0->get_kind() == addr_expr_K || be->op0->get_kind() == nop_expr_K, false);
                   }
-                  if(GetPointer<binary_expr>(be->op0) || GetPointer<constructor>(be->op0))
+                  if(GetPointer<binary_expr>(be->op0) || GetPointer<constructor>(be->op0) ||
+                     GetPointer<ternary_expr>(be->op0))
                   {
                      extract_expr(be->op0, ga->temporary_address || code1 == mem_ref_K);
                   }
-                  if(GetPointer<binary_expr>(be->op1) || GetPointer<constructor>(be->op1))
+                  if(GetPointer<binary_expr>(be->op1) || GetPointer<constructor>(be->op1) ||
+                     GetPointer<ternary_expr>(be->op0))
                   {
                      extract_expr(be->op1, false);
                   }
@@ -1695,11 +1697,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---expand mem_ref 1 " + STR(ga->op1->index));
                      auto* MR = GetPointer<mem_ref>(ga->op1);
                      const auto mem_op0_kind = MR->op0->get_kind();
-                     if(mem_op0_kind == addr_expr_K || mem_op0_kind == pointer_plus_expr_K ||
-                        mem_op0_kind == view_convert_expr_K)
+                     if(mem_op0_kind != ssa_name_K && !GetPointer<cst_node>(MR->op0))
                      {
-                        // BEAWARE: it is ok to use this function even with binary_expr provided that duplicate = false
-                        // in those cases
+                        // BEAWARE: it is ok to use this function even with binary_expr or ternary_expr provided that
+                        // duplicate = false in those cases
                         extract_unary_expr(MR->op0, mem_op0_kind == addr_expr_K, true);
                      }
 
@@ -2844,8 +2845,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---expand mem_ref 2 " + STR(ga->op0->index));
                      auto* MR = GetPointer<mem_ref>(ga->op0);
                      const auto mem_op0_kind = MR->op0->get_kind();
-                     if(mem_op0_kind == addr_expr_K || mem_op0_kind == pointer_plus_expr_K ||
-                        mem_op0_kind == view_convert_expr_K)
+                     if(mem_op0_kind != ssa_name_K && !GetPointer<cst_node>(MR->op0))
                      {
                         extract_unary_expr(MR->op0, mem_op0_kind == addr_expr_K, true);
                      }
