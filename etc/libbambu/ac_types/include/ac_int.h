@@ -521,7 +521,7 @@ using Slong = long long;
          signed _BitInt(W0) v __INIT_VALUE;
 
        public:
-         __FORCE_INLINE void assign_int64(Slong l)
+         __FORCE_INLINE constexpr void assign_int64(Slong l)
          {
             v = l;
          }
@@ -597,7 +597,7 @@ using Slong = long long;
          bool v __INIT_VALUE;
 
        public:
-         __FORCE_INLINE void assign_int64(Slong l)
+         __FORCE_INLINE constexpr void assign_int64(Slong l)
          {
             set(0, static_cast<int>(l));
          }
@@ -642,7 +642,7 @@ using Slong = long long;
          bool v __INIT_VALUE;
 
        public:
-         __FORCE_INLINE void assign_int64(Slong l)
+         __FORCE_INLINE constexpr void assign_int64(Slong l)
          {
             set(0, static_cast<int>(l));
          }
@@ -700,7 +700,7 @@ using Slong = long long;
       int v[(W0 + 31) / 32] __INIT_VALUE;
 
     public:
-      __FORCE_INLINE void assign_int64(Slong l)
+      __FORCE_INLINE constexpr void assign_int64(Slong l)
       {
          set(0, static_cast<int>(l));
          if(N > 1)
@@ -797,7 +797,7 @@ using Slong = long long;
       int v __INIT_VALUE;
 
     public:
-      __FORCE_INLINE void assign_int64(Slong l)
+      __FORCE_INLINE constexpr void assign_int64(Slong l)
       {
          set(0, static_cast<int>(l));
       }
@@ -862,7 +862,7 @@ using Slong = long long;
       typename select_type_iv_base2<C>::type v __INIT_VALUE_LL;
 
     public:
-      __FORCE_INLINE void assign_int64(Slong l)
+      __FORCE_INLINE constexpr void assign_int64(Slong l)
       {
          set(0, static_cast<int>(l));
          set(1, static_cast<int>(l >> 32));
@@ -940,7 +940,7 @@ using Slong = long long;
       long long int va __INIT_VALUE_LL;
 
     public:
-      __FORCE_INLINE void assign_int64(Slong l)
+      __FORCE_INLINE constexpr void assign_int64(Slong l)
       {
          set(0, static_cast<int>(l));
          set(1, static_cast<int>(l >> 32));
@@ -1003,7 +1003,7 @@ using Slong = long long;
       int v2 __INIT_VALUE;
 
     public:
-      __FORCE_INLINE void assign_int64(Slong l)
+      __FORCE_INLINE constexpr void assign_int64(Slong l)
       {
          set(0, static_cast<int>(l));
          set(1, static_cast<int>(l >> 32));
@@ -1074,7 +1074,7 @@ using Slong = long long;
       typename select_type_iv_base2<C>::type v2 __INIT_VALUE_LL;
 
     public:
-      __FORCE_INLINE void assign_int64(Slong l)
+      __FORCE_INLINE constexpr void assign_int64(Slong l)
       {
          set(0, static_cast<int>(l));
          set(1, static_cast<int>(l >> 32));
@@ -1170,7 +1170,7 @@ using Slong = long long;
       long long int v2 __INIT_VALUE_LL;
 
     public:
-      __FORCE_INLINE void assign_int64(Slong l)
+      __FORCE_INLINE constexpr void assign_int64(Slong l)
       {
          set(0, static_cast<int>(l));
          set(1, static_cast<int>(l >> 32));
