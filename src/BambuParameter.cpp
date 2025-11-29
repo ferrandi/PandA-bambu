@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2025 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -3779,7 +3779,8 @@ void BambuParameter::SetDefaults()
    {
       defines = getOption<std::string>(OPT_gcc_defines) + STR_CST_string_separator;
    }
-   defines += "__BAMBU__";
+   defines += std::string("__BAMBU__") + STR_CST_string_separator;
+   defines += "__SYNTHESIS__";
    setOption(OPT_gcc_defines, defines);
 
    setOption(OPT_soft_float, true);

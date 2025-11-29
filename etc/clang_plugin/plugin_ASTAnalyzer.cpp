@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2024 Politecnico di Milano
+ *              Copyright (C) 2018-2025 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -449,6 +449,20 @@ class HLSPragmaHandler : public PragmaHandler
                   {
                      attr_val = PP.getSpelling(Tok);
                      PP.Lex(Tok);
+                     while(Tok.is(tok::comma))
+                     {
+                        PP.Lex(Tok);
+                        if(Tok.isOneOf(tok::identifier, tok::raw_identifier, tok::kw_true, tok::kw_false) ||
+                           tok::isLiteral(Tok.getKind()))
+                        {
+                           attr_val += "," + PP.getSpelling(Tok);
+                           PP.Lex(Tok);
+                        }
+                        else
+                        {
+                           return Report(PP, Tok.getLocation(), DiagnosticsEngine::Error, "Unexpected token");
+                        }
+                     }
                      continue;
                   }
                }
@@ -1815,7 +1829,7 @@ class HLSASTConsumer : public ASTConsumer
       {
          const pragma_line_t p = _pragmas.front();
          _pragmas.pop_front();
-         ReportError(p.loc, "Unassociated HLS pragma");
+         Report(p.loc, DiagnosticsEngine::Warning, "HLS pragma not associated to any decl");
       }
 
       if(_parseAction & ParseAction_Analyze)
