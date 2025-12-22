@@ -3836,7 +3836,7 @@ using Slong = long long;
       friend class ac_fixed;
 
       __FORCE_INLINE
-      explicit constexpr ac_int() = default;
+      constexpr ac_int() = default;
 
       __FORCE_INLINE explicit constexpr ac_int(const ac_int& op)
       {
