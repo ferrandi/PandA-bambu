@@ -868,11 +868,10 @@ ac_channel<T>::ac_channel(const char* bin_file)
 {
    std::ifstream init_file(bin_file, std::ifstream::in | std::ifstream::binary);
    T v;
-   while(chan.num_free())
+   while (init_file.read((char*)&v, sizeof(T))) 
    {
-      init_file.read((char*)&v, sizeof(T));
-      write(v);
-   }
+   	write(v);
+   } 
 }
 
 template <class T>
