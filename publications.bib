@@ -1,108 +1,82 @@
-@conference{
-	11311_977866,
-	author = {Castellana, VITO GIOVANNI and Minutoli, Marco and Morari, Alessandro and Tumeo, Antonino and Lattuada, Marco and Ferrandi, Fabrizio},
-	title = {High level synthesis of RDF queries for graph analytics},
-	year = {2015},
-	publisher = {IEEE Press},
-	address = {Piscataway, NJ},
-	booktitle = {Proceedings of the IEEE/ACM International Conference on Computer-Aided Design, ICCAD},
-	abstract = {In this paper we present a set of techniques that enable the synthesis of efficient custom accelerators for memory intensive, irregular applications. To address the challenges of irregular applications (large memory footprint, unpredictable fine-grained data accesses, and high synchronization intensity), and exploit their opportunities (thread level parallelism, memory level parallelism), we propose a novel accelerator design that employs an adaptive and Distributed Controller (DC) architecture, and a Memory Interface Controller (MIC) that supports concurrent and atomic memory operations on a multi-ported/multi-banked shared memory. Among the multitude of algorithms that may benefit from our solution, we focus on the acceleration of graph analytics applications and, in particular, on the synthesis of SPARQL queries on Resource Description Framework (RDF) databases. We achieve this objective by incorporating the synthesis techniques into Bambu, an Open Source high-level synthesis tools, and interfacing it with GEMS, the Graph database Engine for Multithreaded Systems. The GEMS' front-end generates optimized C implementations of the input queries, modeled as graph pattern matching algorithms, which are then automatically synthesized by Bambu. We validate our approach by synthesizing several SPARQL queries from the Lehigh University Benchmark (LUBM).},
-	keywords = {graph theory;high level synthesis;memory architecture;multi-threading;query languages;shared memory systems;Bambu;DC architecture;GEMS;LUBM;Lehigh University Benchmark;MIC;RDF databases;RDF queries;SPARQL queries;accelerator design;adaptive architecture;atomic memory operations;concurrent memory operations;distributed controller architecture;graph analytics;graph database engine;graph pattern matching algorithms;memory intensive irregular applications;memory interface controller;multiported/multibanked shared memory;multithreaded systems;open source high-level synthesis tools;resource description framework databases;Acceleration;Computer architecture;Databases;Field programmable gate arrays;Parallel processing;Program processors;Resource description framework},
-	doi = {10.1109/ICCAD.2015.7372587},
-	isbn = {978-1-4673-8388-2},	
-	isbn = {978-1-4673-8388-2},	
-	pages = {323--330}
-}
-@article{
-	11311_869737,
-	author = {Lattuada, Marco and Ferrandi, Fabrizio},
-	title = {Modeling Resolution of Resources Contention in Synchronous Data Flow Graphs},
-	year = {2015},
-	journal = {JOURNAL OF SIGNAL PROCESSING SYSTEMS FOR SIGNAL, IMAGE, AND VIDEO TECHNOLOGY},
-	volume = {80},
-	abstract = {Synchronous Data Flow graphs are widely adopted in the designing of streaming applications, but were originally formulated to describe only how an application is partitioned and which data are exchanged among different tasks. Since Synchronous Data Flow graphs are often used to describe and evaluate complete design solutions, missing information (e.g., mapping, scheduling, etc.) has to be included in them by means of further actors and channels to obtain accurate evaluations. To address this issue preserving the simplicity of the representation, techniques that model data transfer delays by means of ad-hoc actors have been proposed, but they model independently each communication ignoring contentions. Moreover, they do not usually consider at all delays due to buffer contentions, potentially overestimating the throughput of a design solution. In this paper a technique to extend Synchronous Data Flow graphs by adding ad-hoc actors and channels to model resolution of resources contentions is proposed. The results show that the number of added actors and channels is limited but that they can significantly increase the Synchronous Data Flow graph accuracy.},
-	doi = {10.1007/s11265-014-0923-y},
-	pages = {39--47},
-	number = {1}
-}
-@conference{
-	11311_262325,
-	author = {Corbetta, S. and Ferrandi, Fabrizio and Morandi, M. and Novati, M. and Santambrogio, MARCO DOMENICO and Sciuto, Donatella},
-	title = {Two Novel Approaches to Online Partial Bitstream Relocation in a Dynamically Reconfigurable System},
-	year = {2007},
-	publisher = {IEEE Compurter Soc.},
-	booktitle = {VLSI, 2007. ISVLSI '07. IEEE Computer Society Annual Symposium on},
-	abstract = {FPGAs allow the creation of partially reconfigurable systems; when compared to traditional reconfigurable systems based on total reconfiguration, recent approaches offer significant innovations. One of these is the possibility of dynamically change the functionalities hosted on the device only when needed and while the rest of the system keeps working. This permits better performance but increases the complexity of both module creation and placement. This paper describes and compares two different solutions, a HW and a SW one, to perform bitstream relocation: BiRF and BAnMaT Light. The former is a hardware filter in the fixed part of the reconfigurable architecture, the latter is a software solution, run on the internal processor of the FPGA.},
-	doi = {10.1109/ISVLSI.2007.99},
-	pages = {457--458}
-}
-@conference{
-	11311_268434,
-	author = {Ferrandi, Fabrizio and Fossati, Luca and Lattuada, Marco and Palermo, Gianluca and Sciuto, Donatella and Tumeo, Antonino},
-	title = {Partitioning and Mapping for the hArtes European Project},
-	year = {2007},
-	booktitle = {Proc. Workshop on Directions in FPGAs and Reconfigurable Systems: Design, Programming and Technologies for adaptive heterogeneous Systems-on-Chip and their European Dimensions, held during Design Automation and Test in Europe 2007 (DATE '07),},
-	pages = {47--52}
-}
-@conference{
-	11311_553645,
-	author = {Tumeo, Antonino and Branca, M. and Camerini, L. and Ceriani, M. and Monchiero, Matteo and Palermo, Gianluca and Ferrandi, Fabrizio and Sciuto, Donatella},
-	title = {Prototyping pipelined applications on a heterogeneous fpga multiprocessor virtual platform},
-	year = {2009},
-	publisher = {IEEE Press Piscataway, NJ, USA},
-	booktitle = {ASP-DAC '09 Proceedings of the 2009 Asia and South Pacific Design Automation Conference},
+@article{11311_575576,
+	author = {Bertels, K. and Sima, V. M. and Yankova, Y. and Kuzmanov, G. and Luk, W. and Coutinho, J. G. F. and Ferrandi, Fabrizio and Pilato, Christian and Lattuada, Marco and Sciuto, Donatella and Michelotti, A.},
+	title = {hArtes: Hardware-Software Codesign for Heterogeneous Multicore Platforms},
+	year = {2010},
+	journal = {IEEE MICRO},
+	volume = {30},
+	abstract = {Developing heterogeneous multicore platforms requires choosing the best hardware configuration for mapping the application, and modifying that application so that different parts execute on the most appropriate hardware component. The hArtes toolchain provides the option of automatic or semi-automatic support for this mapping. During test and validation on several computation-intensive applications, hArtes achieved substantial speedups and drastically reduced development times.},
 	keywords = {INF},
-	url = {http://doi.acm.org/10.1145/1509633.1509717},
-	doi = {10.1145/1509633.1509717},
-	isbn = {9781424427482},	
-	pages = {317--322}
+	url = {http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=5640604},
+	doi = {10.1109/MM.2010.91},
+	pages = {88--97},
+	number = {5}
 }
-@inbook{
-	11311_1262560,
-	author = {Curzel, Serena},
-	title = {Modern High-Level Synthesis: Improving Productivity with a Multi-level Approach},
-	year = {2024},
-	publisher = {Springer},
-	booktitle = {Special Topics in Information Technology},
-	doi = {10.1007/978-3-031-51500-2_2},
-	isbn = {9783031514999},	
-	isbn = {9783031515002},	
-	pages = {15--25}
+@conference{11311_1297602,
+	author = {Silvano, Cristina and Ferrandi, Fabrizio and Curzel, Serena and Ielmini, Daniele and Perri, Stefania and Spagnolo, Fanny and Corsonello, Pasquale and Schifano, Sebastiano Fabio and Zambelli, Cristian and Garofalo, Angelo and Conti, Francesco and Benini, Luca},
+	title = {Multi-Partner Project: Architectures and Design Methodologies to Accelerate AI Workloads. The ICSC Flagship 2 Project},
+	year = {2025},
+	publisher = {Institute of Electrical and Electronics Engineers Inc.},
+	booktitle = {Proceedings -Design, Automation and Test in Europe, DATE},
+	doi = {10.23919/date64628.2025.10993254},
+	pages = {1--7}
 }
-@conference{
-	11311_869736,
-	author = {Castellana, VITO GIOVANNI and Antonino, Tumeo and Ferrandi, Fabrizio},
-	title = {An adaptive Memory Interface Controller for improving bandwidth utilization of hybrid and reconfigurable systems},
-	year = {2014},
-	booktitle = {Design, Automation & Test in Europe Conference & Exhibition (DATE), 2014},
-	abstract = {Data mining, bioinformatics, knowledge discovery, social network analysis, are emerging irregular applications that exploits data structures based on pointers or linked lists, such as graphs, unbalanced trees or unstructured grids. These applications are characterized by unpredictable memory accesses and generally are memory bandwidth bound, but also presents large amounts of inherent dynamic parallelism because they can potentially spawn concurrent activities for each one of the element they are exploring. Hybrid architectures, which integrate general purpose processors with reconfigurable devices, appears promising target platforms for accelerating irregular applications. These systems often connect to distributed and multi-ported memories, potentially enabling parallel memory operations. However, these memory architectures introduce several challenges, such as the necessity to manage concurrency and synchronization to avoid structural conflicts on shared memory locations and to guarantee consistency. In this paper we present an adaptive Memory Interface Controller (MIC) that addresses these issues. The MIC is a general and customizable solution that can target several different memory structures, and is suitable for High Level Synthesis frameworks. It implements a dynamic arbitration scheme, which avoids conflicts on memory resources at runtime, and supports atomic memory operations, commonly exploited for synchronization directives in parallel programming paradigms. The MIC simultaneously maps multiple accesses to different memory ports, allowing fine grained parallelism exploitation and ensuring correctness also in the presence of irregular and statically unpredictable memory access patterns. We evaluated the effectiveness of our approach on a typical irregular kernel, graph Breadth First Search (BFS), exploring different design alternatives.},
-	doi = {10.7873/DATE.2014.192},
-	isbn = {9783981537024},	
+@conference{11311_767090,
+	author = {Pilato, Christian and Ferrandi, Fabrizio},
+	title = {Bambu: A Modular Framework for the High Level Synthesis of Memory-Intensive Applications},
+	year = {2013},
+	booktitle = {Proceedings of the 23rd International Conference on Field Programmable Logic and Applications (FPL)},
+	doi = {10.1109/FPL.2013.6645550},
+	isbn = {9781479900046},	
 	pages = {1--4}
 }
-@conference{
-	11311_1208351,
-	author = {Vitali, E. and Gadioli, D. and Ferrandi, F. and Palermo, G.},
-	title = {Parametric Throughput Oriented Large Integer Multipliers for High Level Synthesis},
-	year = {2021},
-	publisher = {Institute of Electrical and Electronics Engineers Inc.},
-	volume = {2021-},
-	booktitle = {Proceedings -Design, Automation and Test in Europe, DATE},
-	doi = {10.23919/DATE51398.2021.9473908},
-	isbn = {978-3-9819263-5-4},	
-	pages = {38--41}
+@conference{11311_553638,
+	author = {Muhammad, Rashid and Ferrandi, Fabrizio and Koen, Bertels},
+	title = {hArtes design flow for heterogeneous platforms},
+	year = {2009},
+	booktitle = {Quality of Electronic Design, 2009. ISQED 2009. Quality Electronic Design},
+	keywords = {XML;embedded systems;hardware description languages;hardware-software codesign;optimisation;program compilers;reconfigurable architectures;task analysis;C pragma notations;H.264 video encoding application;HDL compilation;HDL generation;XML architecture description file;algorithm exploration and translation;design space exploration;hArtes design flow;hardware/software co-design;holistic approach to reconfigurable real time embedded systems design flow;holistic tool-chain;information exchange;reconfigurable heterogeneous platforms;system synthesis;task assignment;task optimization;task partitioning;Algorithm design and analysis;Application software;Computer architecture;Design optimization;Embedded software;Hardware design languages;Partitioning algorithms;Real time systems;Space exploration;XML;Design space exploration;application partitioning;simulation;system synthesis},
+	url = {http://dx.doi.org/10.1109/ISQED.2009.4810316},
+	doi = {10.1109/ISQED.2009.4810316},
+	pages = {330--338}
 }
-@conference{
-	11311_1263097,
-	author = {Limaye, Ankur and Barone, Claudio and Agostini, Nicolas Bohm and Minutoli, Marco and Manzano, Joseph and Castellana, Vito Giovanni and Gozzi, Giovanni and Fiorito, Michele and Curzel, Serena and Ferrandi, Fabrizio and Tumeo, Antonino},
-	title = {Towards Automated Generation of Chiplet-Based Systems Invited Paper},
-	year = {2024},
-	booktitle = {2024 29th Asia and South Pacific Design Automation Conference (ASP-DAC)},
-	doi = {10.1109/asp-dac58780.2024.10473980},
-	pages = {771--776}
+@article{11311_1148653,
+	author = {Siracusa, Marco and Ferrandi, Fabrizio},
+	title = {Tensor Optimization for High-Level Synthesis Design Flows},
+	year = {2020},
+	journal = {IEEE TRANSACTIONS ON COMPUTER-AIDED DESIGN OF INTEGRATED CIRCUITS AND SYSTEMS},
+	volume = {39},
+	doi = {10.1109/TCAD.2020.3012318},
+	pages = {4217--4228},
+	number = {11}
 }
-@conference{
-	11311_553649,
+@conference{11311_575582,
+	author = {Lattuada, Marco and Ferrandi, Fabrizio},
+	title = {Performance modeling of embedded applications with zero architectural knowledge},
+	year = {2010},
+	publisher = {ACM},
+	address = {New York, NY, USA},
+	booktitle = {CODES/ISSS '10 Proceedings of the eighth IEEE/ACM/IFIP international conference on Hardware/software codesign and system synthesis},
+	abstract = {Performance estimation is a key step in the development of an embedded system. Normally, the performance evaluation is performed using a simulator or a performance mathematical model of the target architecture. However, both these approaches are usually based on the knowledge of the architectural details of the target.
+
+In this paper we present a methodology for automatically building an analytical model to estimate the performance of an application on a generic processor without requiring any information about the processor architecture but the one provided by the GNU GCC Intermediate Representation. The proposed methodology exploits the linear regression technique based on an application analysis performed on the Register Transfer Level internal representation of the GNU GCC compiler. The benefits of working with this type of model and with this intermediate representation are three: we take into account most of the compiler optimizations, we implicitly consider some architectural characteristics of the target processor and we can easily estimate the performance of portions of the specification. We validate our approach by evaluating with cross-validation technique the accuracy and the generality of the performance models built for the ARM926EJ-S and the LEON3 processors},
+	url = {http://dl.acm.org/citation.cfm?id=1879010},
+	doi = {10.1145/1878961.1879010},
+	isbn = {9781605589053},	
+	pages = {277--286}
+}
+@conference{11311_248119,
+	author = {Ferrandi, Fabrizio and Lanzi, PIER LUCA and Palermo, Gianluca and Pilato, Christian and Sciuto, Donatella and Tumeo, Antonino},
+	title = {An Evolutionary Approach to Area-Time Optimization of FPGA designs},
+	year = {2007},
+	publisher = {IEEE},
+	booktitle = {Proceedings of IC-SAMOS 2007. International Conference on Embedded Computer Systems: Architectures, Modeling and Simulation, 2007.},
+	url = {http://dx.doi.org/10.1109/ICSAMOS.2007.4285745},
+	url = {http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=4285745},
+	doi = {10.1109/ICSAMOS.2007.4285745},
+	isbn = {1424410584},	
+	pages = {145--152}
+}
+@conference{11311_553649,
 	author = {Branca, M. and Camerini, L. and Ferrandi, Fabrizio and Lanzi, PIER LUCA and Pilato, Christian and Sciuto, Donatella and Tumeo, Antonino},
 	title = {Mapping pipelined applications onto heterogeneous embedded systems: a Bayesian Optimization Algorithm based approach},
 	year = {2009},
@@ -115,8 +89,294 @@ The paper introduces the model adopted for pipelined applications and then shows
 	doi = {10.1145/1629435.1629495},
 	pages = {443--452}
 }
-@inbook{
-	11311_630182,
+@conference{11311_1285808,
+	author = {Curzel, Serena and Gribaudo, Marco},
+	title = {Custom Floating-Point Computations for the Optimization of ODE Solvers on FPGA},
+	year = {2025},
+	publisher = {Schloss Dagstuhl- Leibniz-Zentrum fur Informatik GmbH, Dagstuhl Publishing},
+	volume = {127},
+	booktitle = {16th Workshop on Parallel Programming and Run-Time Management Techniques for Many-Core Architectures and 14th Workshop on Design Tools and Architectures for Multicore Embedded Computing Platforms (PARMA-DITAM 2025)},
+	doi = {10.4230/oasics.parma-ditam.2025.2},
+	pages = {1--13}
+}
+@article{11311_1161042,
+	author = {Minutoli, Marco and Castellana, Vito Giovanni and Saporetti, Nicola and Devecchi, Stefano and Lattuada, Marco and Fezzardi, Pietro and Tumeo, Antonino and Ferrandi, Fabrizio},
+	title = {Svelto: High-Level Synthesis of Multi-Threaded Accelerators for Graph Analytics},
+	year = {2021},
+	journal = {IEEE TRANSACTIONS ON COMPUTERS},
+	volume = {71},
+	doi = {10.1109/TC.2021.3057860},
+	pages = {520--533},
+	number = {3}
+}
+@conference{11311_1181959,
+	author = {Pilato, C. and Bohm, S. and Brocheton, F. and Castrillon, J. and Cevasco, R. and Cima, V. and Cmar, R. and Diamantopoulos, D. and Ferrandi, F. and Martinovic, J. and Palermo, G. and Paolino, M. and Parodi, A. and Pittaluga, L. and Raho, D. and Regazzoni, F. and Slaninova, K. and Hagleitner, C.},
+	title = {EVEREST: A design environment for extreme-scale big data analytics on heterogeneous platforms},
+	year = {2021},
+	publisher = {Institute of Electrical and Electronics Engineers Inc.},
+	volume = {2021-},
+	booktitle = {PROCEEDINGS OF THE 2021 DESIGN, AUTOMATION & TEST IN EUROPE CONFERENCE & EXHIBITION (DATE 2021)},
+	doi = {10.23919/DATE51398.2021.9473940},
+	pages = {1320--1325}
+}
+@conference{11311_1247638,
+	author = {Curzel, Serena and Fiorito, Michele and Cueva, Patricia Lopez and Jorge, Tiago and Tsiodras, Thanassis and Ferrandi, Fabrizio},
+	title = {Exploration of Synthesis Methods from Simulink Models to FPGA for Aerospace Applications},
+	year = {2023},
+	booktitle = {CF '23: Proceedings of the 20th ACM International Conference on Computing Frontiers},
+	doi = {10.1145/3587135.3592766},
+	isbn = {9798400701405},	
+	pages = {243--249}
+}
+@conference{11311_575577,
+	author = {Pilato, Christian and Ferrandi, Fabrizio and Pandini, D.},
+	title = {A Fast Heuristic for Extending Standard Cell Libraries with Regular Macro Cells},
+	year = {2010},
+	booktitle = {IEEE Computer Society Annual Symposium on VLSI, 2010, ISVLSI 2010},
+	keywords = {INF},
+	url = {http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=5572753},
+	doi = {10.1109/ISVLSI.2010.69},
+	pages = {23--28}
+}
+@conference{11311_608571,
+	author = {Pilato, Christian and Ferrandi, Fabrizio and Sciuto, Donatella},
+	title = {A design methodology to implement memory accesses in High-Level Synthesis},
+	year = {2011},
+	booktitle = {2011 Proceedings of the 9th International Conference on Hardware/Software Codesign and System Synthesis (CODES+ISSS)},
+	doi = {10.1145/2039370.2039381},
+	isbn = {978-145030715-4},	
+	pages = {49--58}
+}
+@conference{11311_1220331,
+	author = {Curzel, S. and Jovic, S. and Fiorito, M. and Tumeo, A. and Ferrandi, F.},
+	title = {Higher-Level Synthesis: experimenting with MLIR polyhedral representations for accelerator design},
+	year = {2022},
+	booktitle = {IMPACT 2022: 12th International Workshop on Polyhedral Compilation Techniques},
+	pages = {1--10}
+}
+@article{11311_1148640,
+	author = {Fezzardi, Pietro and Ferrandi, Fabrizio},
+	title = {Automated Bug Detection for High-level Synthesis of Multi-threaded Irregular Applications},
+	year = {2020},
+	journal = {ACM TRANSACTIONS ON PARALLEL COMPUTING},
+	volume = {7},
+	doi = {10.1145/3418086},
+	pages = {1--26},
+	number = {4}
+}
+@article{11311_1297601,
+	author = {Silvano, Cristina and Ielmini, Daniele and Ferrandi, Fabrizio and Fiorin, Leandro and Curzel, Serena and Benini, Luca and Conti, Francesco and Garofalo, Angelo and Zambelli, Cristian and Calore, Enrico and Schifano, Sebastiano and Palesi, Maurizio and Ascia, Giuseppe and Patti, Davide and Petra, Nicola and De Caro, Davide and Lavagno, Luciano and Urso, Teodoro and Cardellini, Valeria and Cardarilli, Gian and Birke, Robert and Perri, Stefania},
+	title = {A Survey on Deep Learning Hardware Accelerators for Heterogeneous HPC Platforms},
+	year = {2025},
+	journal = {ACM COMPUTING SURVEYS},
+	volume = {57},
+	url = {https://dl.acm.org/doi/10.1145/3729215},
+	doi = {10.1145/3729215},
+	pages = {1--39},
+	number = {11}
+}
+@conference{11311_768471,
+	author = {Lovergine, Silvia and Ferrandi, Fabrizio},
+	title = {Harnessing Adaptivity Analysis for the Automatic Design of Efficient Embedded and HPC Systems},
+	year = {2013},
+	booktitle = {Proceedings IPDPS 2013},
+	doi = {10.1109/IPDPSW.2013.230},
+	isbn = {9780769549798},	
+	pages = {2298--2301}
+}
+@conference{11311_966133,
+	author = {Minutoli, Marco and Castellana, VITO GIOVANNI and Tumeo, Antonino and Ferrandi, Fabrizio},
+	title = {Inter-procedural resource sharing in High Level Synthesis through function proxies},
+	year = {2015},
+	booktitle = {Field Programmable Logic and Applications (FPL), 2015 25th International Conference on},
+	abstract = {Modular design is becoming increasingly important in High Level Synthesis (HLS) flows. Current HLS flows generate hierarchical and modular designs that mimic the structure and call graph of the input specification by translating functions into modules. Function calls are translated by instantiating the callee module in the data-path of its caller, allowing for resource sharing when the same function is called multiple times. However, if two different callers invoke the same function, current HLS flows cannot share the instance of the module between the two callers, even if they invoke the function in a mutually exclusive way. In this paper, we propose a methodology that enables sharing of (sub)modules across modules boundaries. Sharing is obtained through function proxies, which act as forwarders of function calls in the original specification to shared modules without reducing performance. Building on the concept of function proxies, we propose a methodology and the related components to perform HLS of function calls through function pointers, without requiring complete static knowledge of the alias set (point-to set). We show that module sharing through function proxies provides valuable area savings and no significant impacts on the execution delays, and that our synthesis approach for function pointers enables dynamic polymorphism.},
+	doi = {10.1109/FPL.2015.7293958},
+	isbn = {978-0-9934-2800-5},	
+	isbn = {978-0-9934-2800-5},	
+	pages = {1--8}
+}
+@article{11311_1052325,
+	author = {Fezzardi, Pietro and Pilato, Christian and Ferrandi, Fabrizio},
+	title = {Enabling Automated Bug Detection for IP-based Designs using High-Level Synthesis},
+	year = {2018},
+	journal = {IEEE DESIGN & TEST},
+	volume = {35},
+	url = {https://ieeexplore.ieee.org/document/8332976/},
+	doi = {10.1109/MDAT.2018.2824121},
+	pages = {54--62},
+	number = {5}
+}
+@conference{11311_768467,
+	author = {Lovergine, Silvia and Ferrandi, Fabrizio},
+	title = {Dynamic AC-scheduling for hardware cores with unknown and uncertain information},
+	year = {2013},
+	booktitle = {Proceedings ICCD 2013},
+	abstract = {Modern hardware cores necessarily have to deal with many sources of unknown or uncertain information. Components with variable latency and unpredictable behavior are becoming predominant in hardware designs. Conventional hardware cores underperform when dealing with unknown or uncertain information. Common High-Level Synthesis (HLS) approaches, which require to specify the complete behavior at design-time, present significant restrictions in supporting this kind of conditions. The literature proposes several dynamic scheduling techniques to improve the cores performance by handling inherent uncertainty of applications. However, they do not address other sources of unknown information. In this paper, we propose the dynamic Activating Conditions (AC)-scheduling: a methodology for the design automation of hardware cores which can dynamically adapt the instructions scheduling according to behaviors unknown at design-time. Neither assumptions about components latency nor worst case approach are required. Experimental results show significant performance increase, with limited area overhead, with respect to state-of-the-art approaches.},
+	doi = {10.1109/ICCD.2013.6657086},
+	isbn = {9781479929870},	
+	pages = {475--478}
+}
+@conference{11311_964843,
+	author = {Minutoli, Marco and Castellana, VITO GIOVANNI and Tumeo, Antonino and Ferrandi, Fabrizio},
+	title = {Function Proxies for Improved Resource Sharing in High Level Synthesis},
+	year = {2015},
+	booktitle = {Field-Programmable Custom Computing Machines (FCCM), 2015 IEEE 23rd Annual International Symposium on},
+	abstract = {The current generation of High Level Synthesis (HLS) tools usually generates hierarchical and modular designs, mimicking the structure of the call graph of the original high-level input specification. The standard approach is to progressively synthesize functions into modules by navigating the application call graph from the leaves up to the top function. In the synthesized architecture, function calls corresponds to the instantiation of the related module into the data path generated for the caller. Our work introduces a methodology that enables sharing of (sub)modules across modules boundaries.},
+	doi = {10.1109/FCCM.2015.60},
+	isbn = {978-1-4799-9969-9},	
+	isbn = {978-1-4799-9969-9},	
+	pages = {100--100}
+}
+@conference{11311_544245,
+	author = {Pilato, Christian and Loiacono, Daniele and Ferrandi, Fabrizio and Lanzi, PIER LUCA and Sciuto, Donatella},
+	title = {High-level synthesis with multi-objective genetic algorithm: A comparative encoding analysis},
+	year = {2008},
+	booktitle = {Proceedings of the IEEE Congress on Evolutionary Computation 2008, CEC 2008},
+	doi = {10.1109/CEC.2008.4631249},
+	isbn = {9781424418220},	
+	pages = {3334--3341}
+}
+@conference{11311_998431,
+	author = {Fezzardi, Pietro and Ferrandi, Fabrizio},
+	title = {Automated bug detection for pointers and memory accesses in High-Level Synthesis compilers},
+	year = {2016},
+	booktitle = {FPL 2016 - 26th International Conference on Field-Programmable Logic and Applications},
+	doi = {10.1109/FPL.2016.7577369},
+	isbn = {978-2-8399-1844-2},	
+	isbn = {978-2-8399-1844-2},	
+	pages = {1--9}
+}
+@conference{11311_768470,
+	author = {Lattuada, Marco and Ferrandi, Fabrizio},
+	title = {Modeling pipelined application with Synchronous Data Flow graphs},
+	year = {2013},
+	booktitle = {Proceedings ICSAMOS},
+	doi = {10.1109/SAMOS.2013.6621105},
+	isbn = {9781479901036},	
+	pages = {49--55}
+}
+@conference{11311_1074488,
+	author = {Castellana, Vito Giovanni and Minutoli, Marco and Tumeo, Antonino and Lattuada, Marco and Fezzardi, Pietro and Ferrandi, Fabrizio},
+	title = {Software defined architectures for data analytics},
+	year = {2019},
+	booktitle = {ASPDAC '19 Proceedings of the 24th Asia and South Pacific Design Automation Conference},
+	doi = {10.1145/3287624.3288754},
+	isbn = {9781450360074},	
+	pages = {711--718}
+}
+@article{11311_977870,
+	author = {Lattuada, Marco and Pilato, Christian and Ferrandi, Fabrizio},
+	title = {Performance Estimation of Task Graphs Based on Path Profiling},
+	year = {2015},
+	journal = {INTERNATIONAL JOURNAL OF PARALLEL PROGRAMMING},
+	volume = {44},
+	abstract = {Correctly estimating the speed-up of a parallel embedded application is crucial to efficiently compare different parallelization techniques, task graph transformations or mapping and scheduling solutions. Unfortunately, especially in case of control-dominated applications, task correlations may heavily affect the execution time of the solutions and usually this is not properly taken into account during performance analysis. We propose a methodology that combines a single profiling of the initial sequential specification with different decisions in terms of partitioning, mapping, and scheduling in order to better estimate the actual speed-up of these solutions. We validated our approach on a multi-processor simulation platform: experimental results show that our methodology, effectively identifying the correlations among tasks, significantly outperforms existing approaches for speed-up estimation. Indeed, we obtained an absolute error less than 5 % in average, even when compiling the code with different optimization levels.},
+	keywords = {Hierarchical Task Graph; Path profiling; Performance estimation; Software; Information Systems; Theoretical Computer Science},
+	doi = {10.1007/s10766-015-0372-7},
+	pages = {1--37},
+	number = {4}
+}
+@conference{11311_553648,
+	author = {Lattuada, Marco and Pilato, Christian and Tumeo, Antonino and Ferrandi, Fabrizio},
+	title = {Performance Modeling of Parallel Applications on MPSoCs},
+	year = {2009},
+	booktitle = {System-on-Chip, 2009. SOC 2009. International Symposium on},
+	abstract = {In this paper we present a new technique for automatically measuring the performance of tasks, functions or arbitrary parts of a program on a multiprocessor embedded system. The technique instruments the tasks described by OpenMP, used to represent the task parallelism, while ad hoc pragmas in the source indicate other pieces of code to profile. The annotations and the instrumentation are completely target-independent, so the same code can be measured on different target architectures, on simulators or on prototypes. We validate the approach on a single and on a dual LEON 3 platform synthesized on FPGA, demonstrating a low instrumentation overhead. We show how the information obtained with this technique can be easily exploited in a hardware/software design space exploration tool, by estimating, with good accuracy, the speed-up of a parallel application given the profiling on the single processor prototype.},
+	keywords = {embedded systems;field programmable gate arrays;hardware-software codesign;logic design;multiprocessing systems;system-on-chip;FPGA;MPSoC design;OpenMP;ad hoc pragmas;dual LEON 3 platform;hardware-software design;multiprocessor embedded system;performance modeling;single processor prototype;task parallelism;Application software;Computer architecture;Embedded system;Field programmable gate arrays;Hardware;Instruments;Software design;Software prototyping;Space exploration;Virtual prototyping},
+	url = {http://doi.ieeecomputersociety.org/10.1109/SOCC.2009.5335675},
+	doi = {10.1109/SOCC.2009.5335675},
+	pages = {64--68}
+}
+@article{11311_1222754,
+	author = {Curzel, S. and Bohm Agostini, N. and Castellana, V. G. and Minutoli, M. and Limaye, A. and Manzano, J. and Zhang, J. J. and Brooks, D. and Wei, G. and Ferrandi, F. and Tumeo, A.},
+	title = {End-to-End Synthesis of Dynamically Controlled Machine Learning Accelerators},
+	year = {2022},
+	journal = {IEEE TRANSACTIONS ON COMPUTERS},
+	volume = {71},
+	abstract = {Edge systems are required to autonomously make real-time decisions based on large quantities of input data under strict power, performance, area, and other constraints. Meeting these constraints is only possible by specializing systems through hardware accelerators purposefully built for machine learning and data analysis algorithms. However, data science evolves at a quick pace, and manual design of custom accelerators has high non-recurrent engineering costs: general solutions are needed to automatically and rapidly transition from the formulation of a new algorithm to the deployment of a dedicated hardware implementation. Our solution is the SOftware Defined Architectures (SODA) Synthesizer, an end-to-end, multi-level, modular, extensible compiler toolchain providing a direct path from machine learning tools to hardware. The SODA Synthesizer frontend is based on the multilevel intermediate representation (MLIR) framework; it ingests pre-trained machine learning models, identifies kernels suited for acceleration, performs high-level optimizations, and prepares them for hardware synthesis. In the backend, SODA leverages state-of-the-art high-level synthesis techniques to generate highly efficient accelerators, targeting both field programmable devices (FPGAs) and application-specific circuits (ASICs). In this paper, we describe how the SODA Synthesizer can also assemble the generated accelerators (based on the finite state machine with datapath model) in a custom system driven by a distributed controller, building a coarse-grained dataflow architecture that does not require a host processor to orchestrate parallel execution of multiple accelerators. We show the effectiveness of our approach by automatically generating ASIC accelerators for layers of popular deep neural networks (DNNs). Our high-level optimizations result in up to 74x speedup on isolated accelerators for individual DNN layers, and our dynamically scheduled architecture yields an additional 3x performance improvement when combining accelerators to handle streaming inputs.},
+	doi = {10.1109/TC.2022.3211430},
+	pages = {3074--3087},
+	number = {12}
+}
+@article{11311_1020704,
+	author = {Lattuada, Marco and Ferrandi, Fabrizio and Perrotin, Maxime},
+	title = {Data Transfers Analysis in Computer Assisted Design Flow of FPGA Accelerators for Aerospace Systems},
+	year = {2018},
+	journal = {IEEE TRANSACTIONS ON MULTI-SCALE COMPUTING SYSTEMS},
+	volume = {4},
+	url = {http://ieeexplore.ieee.org/document/7914673/},
+	doi = {10.1109/TMSCS.2017.2699647},
+	pages = {3--16},
+	number = {1}
+}
+@conference{11311_869736,
+	author = {Castellana, VITO GIOVANNI and Antonino, Tumeo and Ferrandi, Fabrizio},
+	title = {An adaptive Memory Interface Controller for improving bandwidth utilization of hybrid and reconfigurable systems},
+	year = {2014},
+	booktitle = {Design, Automation & Test in Europe Conference & Exhibition (DATE), 2014},
+	abstract = {Data mining, bioinformatics, knowledge discovery, social network analysis, are emerging irregular applications that exploits data structures based on pointers or linked lists, such as graphs, unbalanced trees or unstructured grids. These applications are characterized by unpredictable memory accesses and generally are memory bandwidth bound, but also presents large amounts of inherent dynamic parallelism because they can potentially spawn concurrent activities for each one of the element they are exploring. Hybrid architectures, which integrate general purpose processors with reconfigurable devices, appears promising target platforms for accelerating irregular applications. These systems often connect to distributed and multi-ported memories, potentially enabling parallel memory operations. However, these memory architectures introduce several challenges, such as the necessity to manage concurrency and synchronization to avoid structural conflicts on shared memory locations and to guarantee consistency. In this paper we present an adaptive Memory Interface Controller (MIC) that addresses these issues. The MIC is a general and customizable solution that can target several different memory structures, and is suitable for High Level Synthesis frameworks. It implements a dynamic arbitration scheme, which avoids conflicts on memory resources at runtime, and supports atomic memory operations, commonly exploited for synchronization directives in parallel programming paradigms. The MIC simultaneously maps multiple accesses to different memory ports, allowing fine grained parallelism exploitation and ensuring correctness also in the presence of irregular and statically unpredictable memory access patterns. We evaluated the effectiveness of our approach on a typical irregular kernel, graph Breadth First Search (BFS), exploring different design alternatives.},
+	doi = {10.7873/DATE.2014.192},
+	isbn = {9783981537024},	
+	pages = {1--4}
+}
+@conference{11311_630186,
+	author = {Elhoj, M. and Reis, A. and Ribas, R. and Ferrandi, Fabrizio and Pilato, Christian and Moll, F. and Miranda, M. and Dobrovolny, P. and Woolaway, N. and Grasset, A. and Bonnot, P. and Desoli, G. and Pandini, D.},
+	title = {SYNAPTIC Project: Regularity Applied to Enhance Manufacturability and Yield at Several Abstraction Levels},
+	year = {2011},
+	booktitle = {ERDIAP 2011 - Workshop on Exploiting Regularity in the Design of IPs, Architectures and Platforms},
+	url = {http://www.vde-verlag.de/proceedings-en/563333026.html},
+	pages = {189--192}
+}
+@conference{11311_1268546,
+	author = {Fiorito, Michele and Curzel, Serena and Gozzi, Giovanni and Ferrandi, Fabrizio},
+	title = {A DNN-based Background Segmentation Accelerator for FPGA-equipped satellites},
+	year = {2024},
+	booktitle = {CF '24 Companion: Proceedings of the 21st ACM International Conference on Computing Frontiers Workshops and Special Sessions},
+	doi = {10.1145/3637543.3652979},
+	pages = {128--132}
+}
+@conference{11311_1251607,
+	author = {Pozzoni, Luca Ezio and Ferrandi, Fabrizio and Mendola, Loris and Palazzo, Alfio Antonino and Pappalardo, Francesco},
+	title = {Using High-Level Synthesis to model System Verilog procedural timing controls},
+	year = {2023},
+	booktitle = {Design, Automation & Test in Europe Conference & Exhibition (DATE)},
+	doi = {10.23919/DATE56975.2023.10136907},
+	isbn = {979-8-3503-9624-9},	
+	pages = {1--6}
+}
+@conference{11311_257923,
+	author = {Cordone, R. and Ferrandi, Fabrizio and Palermo, Gianluca and Santambrogio, MARCO DOMENICO and Sciuto, Donatella},
+	title = {Using Speculative Computation and Parallelizing Techniques to Improve Scheduling of Control based Designs},
+	year = {2006},
+	publisher = {IEEE},
+	booktitle = {IEEE Proc. Asia and South Pacific Conference on Design Automation 2006},
+	abstract = {Recent research results have seen the application of parallelizing techniques to high-level synthesis. In particular, the effect of speculative code transformations on mixed control-data flow designs has demonstrated effective results on schedule lengths. In this paper we first analyze the use of the control and data dependence graph as an intermediate representation that provides the possibility of extracting the maximum parallelism. Then we analyze the scheduling problem by formulating an approach based on Integer Linear Programming (ILP) to minimize the number of control steps given the amount of resources. We improve the already proposed ILP scheduling approaches by introducing a new conditional resource sharing constraint which is then extended to the case of speculative computation. The ILP formulation has been solved by using a Branch and Cut framework which provides better results than standard branch and bound techniques},
+	url = {http://dl.acm.org/citation.cfm?id=1118502},
+	url = {http://dx.doi.org/10.1145/1118299.1118502},
+	doi = {10.1109/ASPDAC.2006.1594800},
+	isbn = {0780394518},	
+	pages = {898--904}
+}
+@conference{11311_1277195,
+	author = {Curzel, Serena and Jovic, Sofija and Fiorito, Michele and Tumeo, Antonino and Ferrandi, Fabrizio},
+	title = {Pre-Scheduling of Affine Loops for HLS Pipelining},
+	year = {2025},
+	publisher = {Springer},
+	volume = {15386},
+	booktitle = {Euro-Par 2024: Parallel Processing Workshops},
+	doi = {10.1007/978-3-031-90203-1_53},
+	pages = {1--12}
+}
+@conference{11311_1262109,
+	author = {Ferrandi, Fabrizio and Fiorito, Michele and Barone, Claudio and Gozzi, Giovanni and Curzel, Serena},
+	title = {High-Level Synthesis Developments in the Context of European Space Technology Research (Invited Talk)},
+	year = {2024},
+	volume = {116},
+	booktitle = {15th Workshop on Parallel Programming and Run-Time Management Techniques for Many-Core Architectures and 13th Workshop on Design Tools and Architectures for Multicore Embedded Computing Platforms (PARMA-DITAM 2024)},
+	doi = {10.4230/oasics.parma-ditam.2024.1},
+	pages = {1--12}
+}
+@inbook{11311_630182,
 	author = {Bertels, K. and Lattanzi, A. and Ciavattini, E. and Bettarelli, F. and Chiaradia, M. T. and Nutricato, R. and Morea, A. and Antola, ANNA MARIA and Ferrandi, Fabrizio and Lattuada, Marco and Pilato, Christian and Sciuto, Donatella and Meeuws, R. J. and Yankova, Y. and Sima, V. M. and Sigdel, K. and Luk, W. and Coutinho, J. G. F. and Lam, Y. M. and Todman, T. and Michelotti, A. and Cerruto, A.},
 	title = {The hArtes Tool Chain},
 	year = {2012},
@@ -127,30 +387,25 @@ The paper introduces the model adopted for pipelined applications and then shows
 	isbn = {9789400714052},	
 	pages = {9--109}
 }
-@conference{
-	11311_544246,
-	author = {Tumeo, Antonino and Pilato, Christian and Ferrandi, Fabrizio and Sciuto, Donatella and Lanzi, PIER LUCA},
-	title = {Ant Colony Optimization for Mapping and Scheduling in Heterogeneous Multiprocessor Systems},
-	year = {2008},
-	booktitle = {Proceedings IEEE International Conference in Embedded Computer Systems: Architectures, Modeling, and Simulation, 2008, SAMOS VIII},
-	doi = {10.1109/ICSAMOS.2008.4664857},
-	pages = {142--149}
+@conference{11311_775515,
+	author = {Castellana, VITO GIOVANNI and Ferrandi, Fabrizio},
+	title = {An automated flow for the High Level Synthesis of coarse grained parallel applications},
+	year = {2013},
+	booktitle = {2013 International Conference on Field-Programmable Technology (FPT)},
+	abstract = {High Level Synthesis (HLS) provides a way to significantly enhance the productivity of embedded system designers, by enabling the automatic or semiautomatic generation of hardware accelerators starting from high level descriptions with (usually software) programming languages. Typical HLS approaches build a centralized Finite State Machine (FSM) to control the generated datapath, performing the operations according to a pre-determined, static schedule. However, FSM-based approaches are only able to extract parallelism within a single execution flow. In the presence of coarse grained parallelism, in the form of concurrent function calls or parallel control structures, they either serialize all the operations, or build excessively complex controllers, aiming at executing as many operation as possible in a single control step (i.e., they try to extract as much instruction level parallelism as possible). The resulting controllers occupy an excessive amount of area or lead to very low operating frequencies. In this paper we propose a methodology for the HLS of accelerators supporting parallel execution and dynamic scheduling. The approach exploits an adaptive distributed controller, composed of a set of communicating elements associated with each operation. This controller design enables supporting multiple concurrent execution flows, thus increasing parallelism exploitation beyond instruction level parallelism. The approach also supports variable latency operations, such as memory accesses and speculative operations. We apply our methodology on a set of typical HLS benchmarks, and demonstrate valuable speed ups with limited area overheads with respect to conventional FSM-based flows.},
+	doi = {10.1109/FPT.2013.6718370},
+	isbn = {9781479921980},	
+	isbn = {9781479921997},	
+	pages = {294--301}
 }
-@conference{
-	11311_1000685,
-	author = {Minutoli, Marco and Castellana, VITO GIOVANNI and Tumeo, Antonino and Lattuada, Marco and Ferrandi, Fabrizio},
-	title = {Efficient synthesis of graph methods: a dynamically scheduled architecture},
-	year = {2016},
-	publisher = {ACM},
-	address = {New York},
-	booktitle = {ICCAD '16 Proceedings of the 35th International Conference on Computer-Aided Design},
-	doi = {10.1145/2966986.2967030},
-	isbn = {9781450344661},	
-	isbn = {978-145034466-1},	
-	pages = {1--8}
+@conference{11311_268434,
+	author = {Ferrandi, Fabrizio and Fossati, Luca and Lattuada, Marco and Palermo, Gianluca and Sciuto, Donatella and Tumeo, Antonino},
+	title = {Partitioning and Mapping for the hArtes European Project},
+	year = {2007},
+	booktitle = {Proc. Workshop on Directions in FPGAs and Reconfigurable Systems: Design, Programming and Technologies for adaptive heterogeneous Systems-on-Chip and their European Dimensions, held during Design Automation and Test in Europe 2007 (DATE '07),},
+	pages = {47--52}
 }
-@conference{
-	11311_973455,
+@conference{11311_973455,
 	author = {Fezzardi, Pietro and Castellana, Michele and Ferrandi, Fabrizio},
 	title = {Trace-based automated logical debugging for high-level synthesis generated circuits},
 	year = {2015},
@@ -162,251 +417,81 @@ The paper introduces the model adopted for pipelined applications and then shows
 	isbn = {978-1-4673-7166-7},	
 	pages = {251--258}
 }
-@article{
-	11311_1148640,
-	author = {Fezzardi, Pietro and Ferrandi, Fabrizio},
-	title = {Automated Bug Detection for High-level Synthesis of Multi-threaded Irregular Applications},
-	year = {2020},
-	journal = {ACM TRANSACTIONS ON PARALLEL COMPUTING},
-	volume = {7},
-	doi = {10.1145/3418086},
-	pages = {1--26},
+@article{11311_1010813,
+	author = {Lattuada, Marco and Ferrandi, Fabrizio},
+	title = {Exploiting Vectorization in High Level Synthesis of Nested Irregular Loops},
+	year = {2017},
+	journal = {JOURNAL OF SYSTEMS ARCHITECTURE},
+	volume = {75},
+	url = {http://dx.doi.org/10.1016/j.sysarc.2017.03.001},
+	doi = {10.1016/j.sysarc.2017.03.001},
+	pages = {1--14}
+}
+@conference{11311_964118,
+	author = {Lattuada, Marco and Ferrandi, Fabrizio},
+	title = {Exploiting Outer Loops Vectorization in High Level Synthesis},
+	year = {2015},
+	publisher = {Springer International Publishing},
+	booktitle = {Architecture of Computing Systems – ARCS 2015},
+	abstract = {Synthesis of DoAll loops is a key aspect of High Level Synthesis since they allow to easily exploit the potential parallelism provided by programmable devices. This type of parallelism can be implemented in several ways: by duplicating the implementation of body loop, by exploiting loop pipelining or by applying vectorization.
+In this paper a methodology for the synthesis of complex DoAll loops based on outer vectorization is proposed. Vectorization is not limited to the innermost loops: complex constructs such as nested loops, conditional constructs and function calls are supported. Experimental results on parallel benchmarks show up to 7.35x speed-up and up to 40 % reduction of area-delay product.},
+	doi = {10.1007/978-3-319-16086-3_3},
+	isbn = {978-3-319-16085-6},	
+	isbn = {978-3-319-16086-3},	
+	isbn = {978-3-319-16085-6},	
+	isbn = {978-3-319-16086-3},	
+	pages = {31--42}
+}
+@conference{11311_572916,
+	author = {Ferrandi, Fabrizio and Pilato, Christian and Sciuto, Donatella and Tumeo, Antonino},
+	title = {Mapping and scheduling of parallel C applications with Ant Colony Optimization onto heterogeneous reconfigurable MPSoCs},
+	year = {2010},
+	booktitle = {Proceedings of the Asia and South Pacific Design Automation Conference (ASP-DAC 2010)},
+	keywords = {INF},
+	doi = {10.1109/ASPDAC.2010.5419782},
+	isbn = {9781424457656},	
+	pages = {799--804}
+}
+@conference{11311_553642,
+	author = {Branca, M. and Camerini, L. and Ferrandi, Fabrizio and Lanzi, PIER LUCA and Pilato, Christian and Sciuto, Donatella and Tumeo, Antonino},
+	title = {Evolutionary algorithms for the mapping of pipelined applications onto heterogeneous embedded systems},
+	year = {2009},
+	booktitle = {Proceedings of the 11th Annual Conference on Genetic and Evolutionary Computation},
+	keywords = {INF},
+	url = {http://doi.acm.org/10.1145/1569901.1570094},
+	doi = {10.1145/1569901.1570094},
+	pages = {1435--1442}
+}
+@article{11311_1030731,
+	author = {Fezzardi, Pietro and Lattuada, Marco and Ferrandi, Fabrizio},
+	title = {Using Efficient Path Profiling to Optimize Memory Consumption of On-Chip Debugging for High-Level Synthesis},
+	year = {2017},
+	journal = {ACM TRANSACTIONS ON EMBEDDED COMPUTING SYSTEMS},
+	volume = {1},
+	pages = {1--19},
+	number = {Special Issue on ESWEEK 2017}
+}
+@article{11311_1114656,
+	author = {Lattuada, Marco and Ferrandi, Fabrizio},
+	title = {A Design Flow Engine for the Support of Customized Dynamic High Level Synthesis Flows},
+	year = {2019},
+	journal = {ACM TRANSACTIONS ON RECONFIGURABLE TECHNOLOGY AND SYSTEMS},
+	volume = {12},
+	keywords = {High level synthesis; Compilation steps},
+	url = {http://doi.acm.org/10.1145/3356475},
+	doi = {10.1145/3356475},
+	pages = {19:1--19:26},
 	number = {4}
 }
-@conference{
-	11311_240811,
-	author = {Ferrandi, Fabrizio and Fossati, Luca and Lattuada, Marco and Palermo, Gianluca and Sciuto, Donatella and Tumeo, Antonino},
-	title = {Automatic parallelization of sequential specifications for symmetric MPSoCs},
-	year = {2007},
-	publisher = {Springer US},
-	booktitle = {Embedded System Design: Topics, Techniques and Trends},
-	url = {http://link.springer.com/chapter/10.1007/978-0-387-72258-0_16?null},
-	doi = {10.1007/978-0-387-72258-0_16},
-	isbn = {9780387722573},	
-	isbn = {9780387722580},	
-	pages = {179--192}
-}
-@conference{
-	11311_268312,
-	author = {Ferrandi, Fabrizio and Lanzi, PIER LUCA and Sciuto, Donatella},
-	title = {System Level Hardware--Software Design Exploration with XCS},
-	year = {2004},
-	publisher = {Springer Verlag},
-	journal = {LECTURE NOTES IN COMPUTER SCIENCE},
-	booktitle = {Genetic and Evolutionary Computation -- GECCO 2004: Genetic and Evolutionary Computation Conference, Seattle, WA, USA, June 26-30, 2004. Proceedings, Part II},
-	abstract = {The current trend in Embedded Systems (ES) design is moving towards the integration of increasingly complex applications on a single chip. An Embedded System has to satisfy both performance constraints and cost limits; it is composed of both dedicated elements, i.e. hardware (HW) components, and programmable units, i.e. software (SW) components, Hardware (HW) and software (SW) components have to interact with each other for accomplishing a specific task. One of the aims of codesign is to support the exploration of the most significant architectural alternatives in terms of decomposition between hardware (HW) and software (SW) components. In this paper, we propose a novel approach to support the exploration of feasible hardware-software (HW-SW) configurations. The approach exploits the learning classifier system XCS both to identify existing relationships among the system components and to support HW-SW partitioning decisions. We validate the approach by applying it to the design of a Digital Sound Spatializer.},
-	url = {http://dx.doi.org/10.1007/978-3-540-24855-2_91},
-	doi = {10.1007/978-3-540-24855-2_91},
-	isbn = {9783540223436},	
-	pages = {763--773}
-}
-@conference{
-	11311_553648,
-	author = {Lattuada, Marco and Pilato, Christian and Tumeo, Antonino and Ferrandi, Fabrizio},
-	title = {Performance Modeling of Parallel Applications on MPSoCs},
-	year = {2009},
-	booktitle = {System-on-Chip, 2009. SOC 2009. International Symposium on},
-	abstract = {In this paper we present a new technique for automatically measuring the performance of tasks, functions or arbitrary parts of a program on a multiprocessor embedded system. The technique instruments the tasks described by OpenMP, used to represent the task parallelism, while ad hoc pragmas in the source indicate other pieces of code to profile. The annotations and the instrumentation are completely target-independent, so the same code can be measured on different target architectures, on simulators or on prototypes. We validate the approach on a single and on a dual LEON 3 platform synthesized on FPGA, demonstrating a low instrumentation overhead. We show how the information obtained with this technique can be easily exploited in a hardware/software design space exploration tool, by estimating, with good accuracy, the speed-up of a parallel application given the profiling on the single processor prototype.},
-	keywords = {embedded systems;field programmable gate arrays;hardware-software codesign;logic design;multiprocessing systems;system-on-chip;FPGA;MPSoC design;OpenMP;ad hoc pragmas;dual LEON 3 platform;hardware-software design;multiprocessor embedded system;performance modeling;single processor prototype;task parallelism;Application software;Computer architecture;Embedded system;Field programmable gate arrays;Hardware;Instruments;Software design;Software prototyping;Space exploration;Virtual prototyping},
-	url = {http://doi.ieeecomputersociety.org/10.1109/SOCC.2009.5335675},
-	doi = {10.1109/SOCC.2009.5335675},
-	pages = {64--68}
-}
-@article{
-	11311_1052325,
-	author = {Fezzardi, Pietro and Pilato, Christian and Ferrandi, Fabrizio},
-	title = {Enabling Automated Bug Detection for IP-based Designs using High-Level Synthesis},
-	year = {2018},
-	journal = {IEEE DESIGN & TEST},
-	volume = {35},
-	url = {https://ieeexplore.ieee.org/document/8332976/},
-	doi = {10.1109/MDAT.2018.2824121},
-	pages = {54--62},
-	number = {5}
-}
-@conference{
-	11311_1074488,
-	author = {Castellana, Vito Giovanni and Minutoli, Marco and Tumeo, Antonino and Lattuada, Marco and Fezzardi, Pietro and Ferrandi, Fabrizio},
-	title = {Software defined architectures for data analytics},
-	year = {2019},
-	booktitle = {ASPDAC '19 Proceedings of the 24th Asia and South Pacific Design Automation Conference},
-	doi = {10.1145/3287624.3288754},
-	isbn = {9781450360074},	
-	pages = {711--718}
-}
-@article{
-	11311_544405,
-	author = {Pilato, Christian and Tumeo, Antonino and Palermo, Gianluca and Ferrandi, Fabrizio and Lanzi, PIER LUCA and Sciuto, Donatella},
-	title = {Improving Evolutionary Exploration to Area-Time Optimization of FPGA Designs},
+@conference{11311_544244,
+	author = {Ferrandi, Fabrizio and Lanzi, PIER LUCA and Loiacono, Daniele and Pilato, Christian and Sciuto, Donatella},
+	title = {A Multi-objective Genetic Algorithm for Design Space Exploration in High-Level Synthesis},
 	year = {2008},
-	journal = {JOURNAL OF SYSTEMS ARCHITECTURE},
-	volume = {54},
-	abstract = {This paper presents a new methodology based on evolutionary multi-objective optimization (EMO) to synthesize multiple complex modules on reprogrammable devices. It starts from a behavioral description written in a common high-level language (for instance C) to automatically produce the register-transfer level (RTL) design in a hardware description language (e.g. Verilog). Since all high-level synthesis problems (scheduling, resource allocation and binding) are notoriously NP-complete and interdependent, these problems should be considered simultaneously. This drives to a wide design space, that needs to be thoroughly explored to obtain solutions able to satisfy the design constraints (e.g. area and performance). Since evolutionary algorithms are good candidates to tackle such complex explorations, in this paper we provide a solution based on the non-dominated sorting genetic algorithm (NSGA-II) to explore the design space and obtain the best solutions in terms of performance given the area constraints of a target reprogrammable device, for instance a Field Programmable Gate Array (FPGA). To further reduce the time needed for the exploration, that theoretically requires the complete logic synthesis of each visited point, the evaluation of the solutions have been speed-up by using two techniques: a good cost estimation model and a technique to exploit fitness inheritance by substituting the expensive actual evaluations with estimations based on closeness in an hypothetical design space. We show on the JPEG case study that the proposed approach provides good results in terms of trade-off between total area occupied and execution time. The results shows also that the Pareto-optimal set obtained by applying the proposed fitness inheritance model well approximates the set obtained without the proposed technique and reduces the overall execution time up to the 25% in average.},
-	doi = {10.1016/j.sysarc.2008.04.010},
-	pages = {1046--1057},
-	number = {11}
+	booktitle = {IEEE Computer Society Annual on VLSI, 2008, ISVLSI 2008},
+	doi = {10.1109/ISVLSI.2008.73},
+	pages = {417--422}
 }
-@conference{
-	11311_1229391,
-	author = {Castellana, Vito Giovanni and Agostini, Nicolas Bohm and Limaye, Ankur and Amatya, Vinay and Minutoli, Marco and Manzano, Joseph and Tumeo, Antonino and Curzel, Serena and Fiorito, Michele and Ferrandi, Fabrizio},
-	title = {Towards On-Chip Learning for Low Latency Reasoning with End-to-End Synthesis},
-	year = {2023},
-	booktitle = {ASPDAC '23: Proceedings of the 28th Asia and South Pacific Design Automation Conference},
-	abstract = {The Software Defined Architectures (SODA) Synthesizer is an open-source compiler-based tool able to automatically generate domain-specialized systems targeting Application-Specific Integrated Circuits (ASICs) or Field Programmable Gate Arrays (FPGAs) starting from high-level programming. SODA is composed of a frontend, SODA-OPT, which leverages the multilevel intermediate representation (MLIR) framework to interface with productive programming tools (e.g., machine learning frameworks), identify kernels suitable for acceleration, and perform high-level optimizations, and of a state-of-the-art high-level synthesis backend, Bambu from the PandA framework, to generate custom accelerators. One specific application of the SODA Synthesizer is the generation of accelerators to enable ultra-low latency inference and control on autonomous systems for scientific discovery (e.g., electron microscopes, sensors in particle accelerators, etc.). This paper provides an overview of the flow in the context of the generation of accelerators for edge processing to be integrated in transmission electron microscopy (TEM) devices, focusing on use cases from precision material synthesis. We show the tool in action with an example of design space exploration for inference on reconfigurable devices with a conventional deep neural network model (LeNet). Finally, we discuss the research directions and opportunities enabled by SODA in the area of autonomous control for scientific experimental workflows.},
-	doi = {10.1145/3566097.3568360},
-	isbn = {9781450397834},	
-	pages = {632--638}
-}
-@conference{
-	11311_260968,
-	author = {Donato, A. and Ferrandi, Fabrizio and Redaelli, M. and Santambrogio, MARCO DOMENICO and Sciuto, Donatella},
-	title = {Operating system support for dynamically reconfigurable SoC architectures},
-	year = {2005},
-	booktitle = {SOC Conference, 2005. Proceedings. IEEE International},
-	abstract = {The advantages and the flexibility introduced into the hardware implementation by partial dynamic reconfiguration have rapidly changed the design flow of embedded systems. Although nowadays it is common to deal with systems characterized by a dynamic architecture able to manage and to adapt themselves to extremely different working scenarios, it is not so easy to provide such flexibility also into the software part of these systems. In order to cope with this problem we developed an innovative modular Linux driver that greatly simplifies the software handling of reconfiguration, allowing the programmer to concentrate on a hierarchical view of the system to be implemented. This methodology can be applied to different architectures providing a powerful and flexible software solution and, at the same time, it can be easily customized to respond to specific behaviors and requirements},
-	keywords = {Linux;integrated circuit design;reconfigurable architectures;system-on-chip;Linux driver;dynamic architecture;dynamically reconfigurable SoC architectures;operating system support;partial dynamic reconfiguration;reconfiguration handling;system-on-chip;Operating systems;Runtime},
-	doi = {10.1109/SOCC.2005.1554501},
-	isbn = {0-7803-9264-7},	
-	pages = {235--238}
-}
-@conference{
-	11311_1220191,
-	author = {Agostini, Nicolas Bohm and Curzel, Serena and Limaye, Ankur and Amatya, Vinay and Minutoli, Marco and Castellana, Vito Giovanni and Manzano, Joseph and Tumeo, Antonino and Ferrandi, Fabrizio},
-	title = {The SODA approach: leveraging high-level synthesis for hardware/software co-design and hardware specialization: invited},
-	year = {2022},
-	booktitle = {DAC '22: Proceedings of the 59th ACM/IEEE Design Automation Conference},
-	abstract = {Novel "converged" applications combine phases of scientific simulation with data analysis and machine learning. Each computational phase can benefit from specialized accelerators. However, algorithms evolve so quickly that mapping them on existing accelerators is suboptimal or even impossible. This paper presents the SODA (Software Defined Accelerators) framework, a modular, multi-level, open-source, no-human-in-the-loop, hardware synthesizer that enables end-to-end generation of specialized accelerators. SODA is composed of SODA-Opt, a high-level frontend developed in MLIR that interfaces with domain-specific programming frameworks and allows performing system level design, and Bambu, a state-of-the-art high-level synthesis engine that can target different device technologies. The framework implements design space exploration as compiler optimization passes. We show how the modular, yet tight, integration of the high-level optimizer and lower-level HLS tools enables the generation of accelerators optimized for the computational patterns of converged applications. We then discuss some of the research opportunities that such a framework allows, including system-level design, profile driven optimization, and supporting new optimization metrics.},
-	doi = {10.1145/3489517.3530628},
-	isbn = {9781450391429},	
-	pages = {1359--1362}
-}
-@conference{
-	11311_1000832,
-	author = {Ferrandi, Fabrizio and Santambrogio, MARCO DOMENICO and Nurmi, Jari},
-	title = {Proceedings - 2010 International Conference on Field Programmable Logic and Applications, FPL 2010: Message from the conference chairs},
-	year = {2010},
-	booktitle = {Proceedings - 2010 International Conference on Field Programmable Logic and Applications, FPL 2010},
-	keywords = {Computer Science Applications1707 Computer Vision and Pattern Recognition; Hardware and Architecture},
-	doi = {10.1109/FPL.2010.5},
-	isbn = {9780769541792},	
-	isbn = {9780769541792},	
-	pages = {xv--xv}
-}
-@conference{
-	11311_665711,
-	author = {Lovergine, Silvia and Ferrandi, Fabrizio},
-	title = {Instructions activating conditions for hardware-based auto-scheduling},
-	year = {2012},
-	booktitle = {Proceedings of the 9th conference on Computing Frontiers - CF '12},
-	doi = {10.1145/2212908.2212946},
-	isbn = {9781450312158},	
-	pages = {253--256}
-}
-@article{
-	11311_1297601,
-	author = {Silvano, Cristina and Ielmini, Daniele and Ferrandi, Fabrizio and Fiorin, Leandro and Curzel, Serena and Benini, Luca and Conti, Francesco and Garofalo, Angelo and Zambelli, Cristian and Calore, Enrico and Schifano, Sebastiano and Palesi, Maurizio and Ascia, Giuseppe and Patti, Davide and Petra, Nicola and De Caro, Davide and Lavagno, Luciano and Urso, Teodoro and Cardellini, Valeria and Cardarilli, Gian and Birke, Robert and Perri, Stefania},
-	title = {A Survey on Deep Learning Hardware Accelerators for Heterogeneous HPC Platforms},
-	year = {2025},
-	journal = {ACM COMPUTING SURVEYS},
-	volume = {57},
-	url = {https://dl.acm.org/doi/10.1145/3729215},
-	doi = {10.1145/3729215},
-	pages = {1--39},
-	number = {11}
-}
-@conference{
-	11311_246574,
-	author = {Ferrandi, Fabrizio and Ferrara, G. and Fornara, G. and Fummi, F. and Sciuto, Donatella},
-	title = {Testability Alternatives Exploration through Functional Testing},
-	year = {2000},
-	booktitle = {Proc.of IEEE VLSI Test Symposium (VTS 2000)},
-	isbn = {9780769506135},	
-	pages = {423--430}
-}
-@article{
-	11311_1006480,
-	author = {Ferrandi, Fabrizio},
-	title = {Reduction of fault detection costs through a BDD formalism},
-	year = {1994},
-	journal = {MICROPROCESSING AND MICROPROGRAMMING},
-	volume = {40},
-	keywords = {Engineering (all)},
-	doi = {10.1016/0165-6074(94)90052-3},
-	pages = {841--844},
-	number = {10-12}
-}
-@conference{
-	11311_666807,
-	author = {Ferrandi, Fabrizio and Fummi, F. and Macii, E. and Poncino, M. and Sciuto, Donatella},
-	title = {Test generation for networks of interacting FSMs using symbolic techniques},
-	year = {1996},
-	publisher = {IEEE Computer Society},
-	address = {Los Alamitos},
-	booktitle = {Proceedings of the 6th Great-Lakes Symposium on VLSI},
-	doi = {10.1109/GLSV.1996.497621},
-	isbn = {0818675020},	
-	pages = {208--213}
-}
-@conference{
-	11311_575582,
-	author = {Lattuada, Marco and Ferrandi, Fabrizio},
-	title = {Performance modeling of embedded applications with zero architectural knowledge},
-	year = {2010},
-	publisher = {ACM},
-	address = {New York, NY, USA},
-	booktitle = {CODES/ISSS '10 Proceedings of the eighth IEEE/ACM/IFIP international conference on Hardware/software codesign and system synthesis},
-	abstract = {Performance estimation is a key step in the development of an embedded system. Normally, the performance evaluation is performed using a simulator or a performance mathematical model of the target architecture. However, both these approaches are usually based on the knowledge of the architectural details of the target. In this paper we present a methodology for automatically building an analytical model to estimate the performance of an application on a generic processor without requiring any information about the processor architecture but the one provided by the GNU GCC Intermediate Representation. The proposed methodology exploits the linear regression technique based on an application analysis performed on the Register Transfer Level internal representation of the GNU GCC compiler. The benefits of working with this type of model and with this intermediate representation are three: we take into account most of the compiler optimizations, we implicitly consider some architectural characteristics of the target processor and we can easily estimate the performance of portions of the specification. We validate our approach by evaluating with cross-validation technique the accuracy and the generality of the performance models built for the ARM926EJ-S and the LEON3 processors},
-	url = {http://dl.acm.org/citation.cfm?id=1879010},
-	doi = {10.1145/1878961.1879010},
-	isbn = {9781605589053},	
-	pages = {277--286}
-}
-@conference{
-	11311_1251607,
-	author = {Pozzoni, Luca Ezio and Ferrandi, Fabrizio and Mendola, Loris and Palazzo, Alfio Antonino and Pappalardo, Francesco},
-	title = {Using High-Level Synthesis to model System Verilog procedural timing controls},
-	year = {2023},
-	booktitle = {Design, Automation & Test in Europe Conference & Exhibition (DATE)},
-	doi = {10.23919/DATE56975.2023.10136907},
-	isbn = {979-8-3503-9624-9},	
-	pages = {1--6}
-}
-@conference{
-	11311_665790,
-	author = {Ferrandi, Fabrizio and Fummi, F. and Gerli, L. and Sciuto, Donatella},
-	title = {Symbolic functional vector generation for VHDL specifications},
-	year = {1999},
-	booktitle = {Design, Automation and Test in Europe Conference and Exhibition, 1999. Proceedings (Cat. No. PR00078)},
-	abstract = {Verification of the functional correctness of VHDL specifications is one of the primary and most time consuming tasks of design. However, it must necessarily be an incomplete task since it is impossible to completely exercise the specification by exhaustively applying all input patterns. The paper aims at presenting a two-step strategy based on symbolic analysis of the VHDL specification, using a behavioral fault model. First, we generate a reduced number of functional test vectors for each process of the specification which allows complete code statement coverage and bit coverage, allowing the identification of possible redundancies in the VHDL process. Then, through the definition of a controllability measure, we verify if these functional test vectors can be applied to the process inputs when interconnected to other processes. If this is not the case, the analysis of the nonapplicable inputs provides identification of possible code redundancies and design errors. Experimental results show that bit coverage provides complete statement coverage and a more detailed identification of possible design errors.},
-	doi = {10.1109/DATE.1999.761163},
-	isbn = {0769500781},	
-	pages = {442--446}
-}
-@conference{
-	11311_665768,
-	author = {Buonanno, G. and Ferrandi, Fabrizio and Sciuto, Donatella},
-	title = {Testability analysis of pipelined data paths},
-	year = {1996},
-	booktitle = {1996 Proceedings. Eighth Annual IEEE International Conference on Innovative Systems in Silicon},
-	doi = {10.1109/ICISS.1996.552433},
-	isbn = {0780336399},	
-	isbn = {0780336402},	
-	pages = {259--268}
-}
-@conference{
-	11311_973456,
-	author = {Lattuada, Marco and Ferrandi, Fabrizio},
-	title = {Code transformations based on speculative SDC scheduling},
-	year = {2015},
-	publisher = {IEEE, 345 E 47TH ST, NEW YORK, NY 10017 USA},
-	booktitle = {Proceedings of the IEEE/ACM International Conference on Computer-Aided Design, ICCAD},
-	abstract = {Code motion and speculations are usually exploited in the High Level Synthesis of control dominated applications to improve the performances of the synthesized designs. Selecting the transformations to be applied is not a trivial task: their effects can indeed indirectly spread across the whole design, potentially worsening the quality of the results. In this paper we propose a code transformation flow, based on a new extension of the System of Difference Constraints (SDC) scheduling algorithm, which introduces a large number of transformations, whose profitability is guaranteed by SDC formulation. Experimental results show that the proposed technique in average reduces the execution time of control dominated applications by 37% with respect to a commercial tool without increasing the area usage.},
-	doi = {10.1109/ICCAD.2015.7372552},
-	isbn = {978-1-4673-8388-2},	
-	pages = {71--77}
-}
-@conference{
-	11311_995143,
+@conference{11311_995143,
 	author = {Minutoli, M. and Castellana, VITO GIOVANNI and Tumeo, Antonino and Ferrandi, Fabrizio and Lattuada, Marco},
 	title = {A Dynamically Scheduled Architecture for the Synthesis of Graph Database Queries},
 	year = {2016},
@@ -415,39 +500,15 @@ The paper introduces the model adopted for pipelined applications and then shows
 	doi = {10.1109/FCCM.2016.41},
 	pages = {136--136}
 }
-@conference{
-	11311_1229392,
-	author = {Agostini, N. B. and Limaye, A. and Minutoli, M. and Castellana, V. G. and Manzano, J. and Tumeo, A. and Curzel, S. and Ferrandi, F.},
-	title = {SODA synthesizer: An open-source, multi-level, modular, extensible compiler from high-level frameworks to silicon},
-	year = {2022},
-	booktitle = {ICCAD '22: Proceedings of the 41st IEEE/ACM International Conference on Computer-Aided Design},
-	abstract = {The SODA Synthesizer is an open-source, modular, end-to-end hardware compiler framework. The SODA frontend, developed in MLIR, performs system-level design, code partitioning, and highlevel optimizations to prepare the specifications for the hardware synthesis. The backend is based on a state-of-the-art high-level synthesis tool and generates the final hardware design. The backend can interface with logic synthesis tools for field programmable gate arrays or with commercial and open-source logic synthesis tools for application-specific integrated circuits. We discuss the opportunities and challenges in integrating with commercial and open-source tools both at the frontend and backend, and highlight the role that an end-to-end compiler framework like SODA can play in an open-source hardware design ecosystem.},
-	doi = {10.1145/3508352.3561101},
-	isbn = {9781450392174},	
-	pages = {1--7}
+@conference{11311_630180,
+	author = {Pilato, Christian and Ferrandi, Fabrizio and Pandini, D.},
+	title = {A Design Methodology for the Automatic Sizing of Standard-Cell Libraries},
+	year = {2011},
+	booktitle = {Proc. ACM Great Lakes Symposium on VLSI},
+	doi = {10.1145/1973009.1973040},
+	pages = {151--156}
 }
-@conference{
-	11311_250155,
-	author = {Ferrandi, Fabrizio and Redaelli, M. and Santambrogio, MARCO DOMENICO and Sciuto, Donatella},
-	title = {Solving the Coloring Problem to Schedule on Partially Dynamically Reconfigurable Hardware},
-	year = {2005},
-	booktitle = {13th IFIP International Conference on Very Large Scale Integration - IFIP VLSI-SOC 2005 Proceedings},
-	pages = {97--102}
-}
-@article{
-	11311_1020704,
-	author = {Lattuada, Marco and Ferrandi, Fabrizio and Perrotin, Maxime},
-	title = {Data Transfers Analysis in Computer Assisted Design Flow of FPGA Accelerators for Aerospace Systems},
-	year = {2018},
-	journal = {IEEE TRANSACTIONS ON MULTI-SCALE COMPUTING SYSTEMS},
-	volume = {4},
-	url = {http://ieeexplore.ieee.org/document/7914673/},
-	doi = {10.1109/TMSCS.2017.2699647},
-	pages = {3--16},
-	number = {1}
-}
-@conference{
-	11311_253573,
+@conference{11311_253573,
 	author = {Ferrandi, Fabrizio and Lanzi, PIER LUCA and Palermo, Gianluca and Pilato, Christian and Sciuto, Donatella and Tumeo, Antonino},
 	title = {Fitness Inheritance in Evolutionary and Multi-Objective High-Level Synthesis},
 	year = {2007},
@@ -461,465 +522,18 @@ The paper introduces the model adopted for pipelined applications and then shows
 	isbn = {9781424413409},	
 	pages = {2459--2466}
 }
-@article{
-	11311_262963,
-	author = {Ferrandi, Fabrizio and Fummi, F. and Macii, E. and Massimo, P. and Sciuto, Donatella},
-	title = {Symbolic optimization of interacting controllers based on redundancy identification and removal},
-	year = {2000},
-	journal = {IEEE TRANSACTIONS ON COMPUTER-AIDED DESIGN OF INTEGRATED CIRCUITS AND SYSTEMS},
-	volume = {19},
-	abstract = {This paper presents a binary decision diagram (BDD)-based algorithm for the optimization of the driven machine, M2, of a finite-state machine (FSM) network with cascade connection, M1 →M2. The technique we propose relies on redundant faults identification and removal. A fault, f, located into machine M 2, is redundant with respect to the overall network if the driving machine M1 is not able to generate any test sequence for such a fault. When the state transition graph (STG) specifications of the network components are available, the standard way for checking the redundancy condition for the considered fault requires one to first construct the product machine M2×M2F , where M2F is the faulty FSM, then to connect it to the driving machine, and finally to perform reachability analysis on the composed machine M1→M2×M2F. Clearly, the size of such machine limits the applicability of the approach above to systems whose components have a few tens of states at most, even when symbolic traversal algorithms are used. Since we are interested in dealing with networks of larger FSM's (i.e., machines whose STGs can not be represented explicitly), we propose to use the product automaton P'=A1×Af, where A1 ' is the finite automaton (FA) accepting all the output sequences of M1, and Af is the FA accepting all the test sequences for fault f, instead of machine M1→M2 ×M2F. This simplifies sensibly the task of the reachability analysis program, since Af has considerably less states and less edges than the product machine M2 ×M2F and, thus, the size of the BDD representation of its transition relation is much more easily manageable. In addition, differently from other approaches, automaton A 1' is not required to be deterministic and state minimal. This allows us to avoid the application of determinization and state minimization procedures whose complexity is exponential. We present experimental results For examples (i.e., network of interacting controllers) on which existing optimization methods are not applicable, due to the size of the component FSM's. We also provide a comparison to the data produced by state-of-the-art FSM network optimizers on small benchmarks in order to show the effectiveness of our approach},
-	doi = {10.1109/43.851991},
-	pages = {760--772},
-	number = {7}
-}
-@conference{
-	11311_768467,
-	author = {Lovergine, Silvia and Ferrandi, Fabrizio},
-	title = {Dynamic AC-scheduling for hardware cores with unknown and uncertain information},
-	year = {2013},
-	booktitle = {Proceedings ICCD 2013},
-	abstract = {Modern hardware cores necessarily have to deal with many sources of unknown or uncertain information. Components with variable latency and unpredictable behavior are becoming predominant in hardware designs. Conventional hardware cores underperform when dealing with unknown or uncertain information. Common High-Level Synthesis (HLS) approaches, which require to specify the complete behavior at design-time, present significant restrictions in supporting this kind of conditions. The literature proposes several dynamic scheduling techniques to improve the cores performance by handling inherent uncertainty of applications. However, they do not address other sources of unknown information. In this paper, we propose the dynamic Activating Conditions (AC)-scheduling: a methodology for the design automation of hardware cores which can dynamically adapt the instructions scheduling according to behaviors unknown at design-time. Neither assumptions about components latency nor worst case approach are required. Experimental results show significant performance increase, with limited area overhead, with respect to state-of-the-art approaches.},
-	doi = {10.1109/ICCD.2013.6657086},
-	isbn = {9781479929870},	
-	pages = {475--478}
-}
-@conference{
-	11311_768470,
-	author = {Lattuada, Marco and Ferrandi, Fabrizio},
-	title = {Modeling pipelined application with Synchronous Data Flow graphs},
-	year = {2013},
-	booktitle = {Proceedings ICSAMOS},
-	doi = {10.1109/SAMOS.2013.6621105},
-	isbn = {9781479901036},	
-	pages = {49--55}
-}
-@article{
-	11311_548790,
-	author = {Ferrandi, Fabrizio and Fummi, F. and Sciuto, Donatella},
-	title = {Test Generation and Testability Alternatives Exploration of Critical Algorithms for Embedded Applications},
-	year = {2002},
-	journal = {IEEE TRANSACTIONS ON COMPUTERS},
-	volume = {51},
-	abstract = {Presents an analysis of the behavioral descriptions of embedded systems to generate behavioral test patterns that are used to perform the exploration of design alternatives based on testability. In this way, during the hardware/software partitioning of the embedded system, testability aspects can be considered. This paper presents an innovative error model for algorithmic (behavioral) descriptions, which allows for the generation of behavioral test patterns. They are converted into gate-level test sequences by using more-or-less accurate procedures based on scheduling information or both scheduling and allocation information. The paper shows, experimentally, that such converted gate-level test sequences provide a very high stuck-at fault coverage when applied to different gate-level implementations of the given behavioral specification. For this reason, our behavioral test patterns can be used to explore testability alternatives, by simply performing fault simulation at the gate level with the same set of patterns, without regenerating them for each circuit. Furthermore, whenever gate-level ATPGs are applied on the synthesized gate-level circuits, they obtain lower fault coverage with respect to our behavioral test patterns, in particular when considering circuits with hard-to-detect faults},
-	doi = {10.1109/12.980008},
-	pages = {200--215},
-	number = {2}
-}
-@conference{
-	11311_253815,
-	author = {Ferrandi, Fabrizio and Monchiero, M. and Palermo, Gianluca and Sciuto, Donatella and Tumeo, Antonino},
-	title = {Self Reconfigurable Implementation of the JPEG Encoder},
-	year = {2007},
-	publisher = {IEEE},
-	booktitle = {Proceedings of the IEEE International Conference on Application-specific Systems, Architectures and Processors (ASAP 2007)},
-	url = {http://dx.doi.org/10.1109/ASAP.2007.4429953},
-	url = {http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=4429953},
-	doi = {10.1109/ASAP.2007.4429953},
-	isbn = {9781424410262},	
-	isbn = {9781424410279},	
-	pages = {24--29}
-}
-@conference{
-	11311_666685,
-	author = {Buonanno, G. and Ferrandi, Fabrizio and Ferrandi, L. and Fummi, F. and Sciuto, Donatella},
-	title = {How an ''evolving'' fault model improves the behavioral test generation},
-	year = {1997},
-	publisher = {IEEE Computer Society},
-	address = {Los Alamitos},
-	booktitle = {Proceedings of the 7th Great Lakes Symposium on VLSI (GLSVLSI 97)},
-	abstract = {By considering test costs at behavioral level, test problems can be pointed out during the first phases of the design flow. Thus, in case either some testability problems are identified or the size (and hence the cost) of the test set results to be too high, the designer or the high level synthesis tool can modify the circuit to reduce such testability problems. The main problem is the correspondence between the behavioral and RT or gate level fault models. To overcome such limitation, the paper presents a design flow based on the behavioral fault model modification (''evolution'') depending on the actual RTL implementation.},
-	doi = {10.1109/GLSV.1997.580515},
-	isbn = {0818679050},	
-	pages = {124--129}
-}
-@article{
-	11311_558195,
-	author = {Antola, ANNA MARIA and Ferrandi, Fabrizio and Piuri, V. and Sami, Mariagiovanna},
-	title = {Semiconcurrent error detection in data paths},
-	year = {2001},
-	journal = {IEEE TRANSACTIONS ON COMPUTERS},
-	volume = {50},
-	abstract = {A high-level synthesis strategy is proposed for design of semiconcurrently self-checking devices. Attention is mainly focused on data path design. After identifying the reference architecture against which cost and performance are evaluated, a simultaneous scheduling-and-allocation strategy is presented for linear-code data flow graphs, allowing resource sharing between nominal and checking data paths. The proposed strategy is actually independent from a specific scheduling-and-allocation algorithm since it is essentially concerned with the introduction of the fault tolerance issue at high-abstraction level in any design environment. Conventional duplication with comparison, even if considered in a high-level synthesis strategy, leads to high circuit complexity increase. The proposed approach provides that the required checking periodicity is satisfied while minimizing additional functional units by means of maximum reuse of the resources available for the nominal computation as long as error detection ability is preserved. The strategy is then extended to deal with branches and loops in the data path. Risk of error aliasing due to resource sharing is analyzed.},
-	doi = {10.1109/12.926159},
-	pages = {449--465},
-	number = {5}
-}
-@conference{
-	11311_248119,
-	author = {Ferrandi, Fabrizio and Lanzi, PIER LUCA and Palermo, Gianluca and Pilato, Christian and Sciuto, Donatella and Tumeo, Antonino},
-	title = {An Evolutionary Approach to Area-Time Optimization of FPGA designs},
-	year = {2007},
-	publisher = {IEEE},
-	booktitle = {Proceedings of IC-SAMOS 2007. International Conference on Embedded Computer Systems: Architectures, Modeling and Simulation, 2007.},
-	url = {http://dx.doi.org/10.1109/ICSAMOS.2007.4285745},
-	url = {http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=4285745},
-	doi = {10.1109/ICSAMOS.2007.4285745},
-	isbn = {1424410584},	
-	pages = {145--152}
-}
-@conference{
-	11311_654952,
-	author = {Bolchini, Cristiana and Buonanno, G. and Ferrandi, Fabrizio and Sciuto, Donatella and Bombana, M. and Cavalloro, P. and Zaza, G.},
-	title = {Towards WSI testable devices: an improved scan insertion technique},
-	year = {1995},
-	booktitle = {Proc. IEEE Int. Conference on Wafer Scale Integration (ICWSI)},
-	abstract = {The aim of this paper is to introduce a different approach for the application of the partial scan methodology into a circuit to provide the most convenient solution in terms of overheads and performances. First testability analysis, based on new testability conditions, is performed to identify areas that are hard-to-test; then the partial scan technique is applied in a modified fashion only to the identified critical areas.},
-	doi = {10.1109/ICWSI.1995.515468},
-	isbn = {0780324676},	
-	pages = {339--348}
-}
-@conference{
-	11311_1262109,
-	author = {Ferrandi, Fabrizio and Fiorito, Michele and Barone, Claudio and Gozzi, Giovanni and Curzel, Serena},
-	title = {High-Level Synthesis Developments in the Context of European Space Technology Research (Invited Talk)},
+@inbook{11311_1262560,
+	author = {Curzel, Serena},
+	title = {Modern High-Level Synthesis: Improving Productivity with a Multi-level Approach},
 	year = {2024},
-	volume = {116},
-	booktitle = {15th Workshop on Parallel Programming and Run-Time Management Techniques for Many-Core Architectures and 13th Workshop on Design Tools and Architectures for Multicore Embedded Computing Platforms (PARMA-DITAM 2024)},
-	doi = {10.4230/oasics.parma-ditam.2024.1},
-	pages = {1--12}
+	publisher = {Springer},
+	booktitle = {Special Topics in Information Technology},
+	doi = {10.1007/978-3-031-51500-2_2},
+	isbn = {9783031514999},	
+	isbn = {9783031515002},	
+	pages = {15--25}
 }
-@conference{
-	11311_998431,
-	author = {Fezzardi, Pietro and Ferrandi, Fabrizio},
-	title = {Automated bug detection for pointers and memory accesses in High-Level Synthesis compilers},
-	year = {2016},
-	booktitle = {FPL 2016 - 26th International Conference on Field-Programmable Logic and Applications},
-	doi = {10.1109/FPL.2016.7577369},
-	isbn = {978-2-8399-1844-2},	
-	isbn = {978-2-8399-1844-2},	
-	pages = {1--9}
-}
-@conference{
-	11311_268104,
-	author = {Ferrandi, Fabrizio and Lanzi, PIER LUCA and Sciuto, Donatella},
-	title = {Mining Interesting Patterns from Hardware-Software Codesign Data with the Learning Classifier System XCS},
-	year = {2003},
-	booktitle = {Proceedings of the IEEE Congress on Evolutionary Computation (CEC 2003)},
-	isbn = {0780378040},	
-	pages = {1486--1492}
-}
-@conference{
-	11311_575577,
-	author = {Pilato, Christian and Ferrandi, Fabrizio and Pandini, D.},
-	title = {A Fast Heuristic for Extending Standard Cell Libraries with Regular Macro Cells},
-	year = {2010},
-	booktitle = {IEEE Computer Society Annual Symposium on VLSI, 2010, ISVLSI 2010},
-	keywords = {INF},
-	url = {http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=5572753},
-	doi = {10.1109/ISVLSI.2010.69},
-	pages = {23--28}
-}
-@conference{
-	11311_543518,
-	author = {Ferrandi, Fabrizio and Ferrara, G and Palazzo, R and Rana, Vincenzo and Santambrogio, MARCO DOMENICO},
-	title = {VHDL to FPGA automatic IP-Core generation: a case study on Xilinx design flow},
-	year = {2006},
-	booktitle = {Int. Parallel and Distributed Processing Symp. - Reconfigurable Architecture Workshop – RAW},
-	doi = {10.1109/IPDPS.2006.1639491},
-	pages = {219--219}
-}
-@article{
-	11311_1222754,
-	author = {Curzel, S. and Bohm Agostini, N. and Castellana, V. G. and Minutoli, M. and Limaye, A. and Manzano, J. and Zhang, J. J. and Brooks, D. and Wei, G. and Ferrandi, F. and Tumeo, A.},
-	title = {End-to-End Synthesis of Dynamically Controlled Machine Learning Accelerators},
-	year = {2022},
-	journal = {IEEE TRANSACTIONS ON COMPUTERS},
-	volume = {71},
-	abstract = {Edge systems are required to autonomously make real-time decisions based on large quantities of input data under strict power, performance, area, and other constraints. Meeting these constraints is only possible by specializing systems through hardware accelerators purposefully built for machine learning and data analysis algorithms. However, data science evolves at a quick pace, and manual design of custom accelerators has high non-recurrent engineering costs: general solutions are needed to automatically and rapidly transition from the formulation of a new algorithm to the deployment of a dedicated hardware implementation. Our solution is the SOftware Defined Architectures (SODA) Synthesizer, an end-to-end, multi-level, modular, extensible compiler toolchain providing a direct path from machine learning tools to hardware. The SODA Synthesizer frontend is based on the multilevel intermediate representation (MLIR) framework; it ingests pre-trained machine learning models, identifies kernels suited for acceleration, performs high-level optimizations, and prepares them for hardware synthesis. In the backend, SODA leverages state-of-the-art high-level synthesis techniques to generate highly efficient accelerators, targeting both field programmable devices (FPGAs) and application-specific circuits (ASICs). In this paper, we describe how the SODA Synthesizer can also assemble the generated accelerators (based on the finite state machine with datapath model) in a custom system driven by a distributed controller, building a coarse-grained dataflow architecture that does not require a host processor to orchestrate parallel execution of multiple accelerators. We show the effectiveness of our approach by automatically generating ASIC accelerators for layers of popular deep neural networks (DNNs). Our high-level optimizations result in up to 74x speedup on isolated accelerators for individual DNN layers, and our dynamically scheduled architecture yields an additional 3x performance improvement when combining accelerators to handle streaming inputs.},
-	doi = {10.1109/TC.2022.3211430},
-	pages = {3074--3087},
-	number = {12}
-}
-@conference{
-	11311_630186,
-	author = {Elhoj, M. and Reis, A. and Ribas, R. and Ferrandi, Fabrizio and Pilato, Christian and Moll, F. and Miranda, M. and Dobrovolny, P. and Woolaway, N. and Grasset, A. and Bonnot, P. and Desoli, G. and Pandini, D.},
-	title = {SYNAPTIC Project: Regularity Applied to Enhance Manufacturability and Yield at Several Abstraction Levels},
-	year = {2011},
-	booktitle = {ERDIAP 2011 - Workshop on Exploiting Regularity in the Design of IPs, Architectures and Platforms},
-	url = {http://www.vde-verlag.de/proceedings-en/563333026.html},
-	pages = {189--192}
-}
-@conference{
-	11311_544244,
-	author = {Ferrandi, Fabrizio and Lanzi, PIER LUCA and Loiacono, Daniele and Pilato, Christian and Sciuto, Donatella},
-	title = {A Multi-objective Genetic Algorithm for Design Space Exploration in High-Level Synthesis},
-	year = {2008},
-	booktitle = {IEEE Computer Society Annual on VLSI, 2008, ISVLSI 2008},
-	doi = {10.1109/ISVLSI.2008.73},
-	pages = {417--422}
-}
-@conference{
-	11311_575579,
-	author = {Lattuada, Marco and Ferrandi, Fabrizio},
-	title = {Fine grain analysis of simulators accuracy for calibrating performance models},
-	year = {2010},
-	booktitle = {Rapid System Prototyping (RSP), 2010 21st IEEE International Symposium on},
-	abstract = {In embedded system design, the tuning and validation of a cycle accurate simulator is a difficult task. The designer has to assure that the estimation error of the simulator meets the design constraints on every application. If an application is not correctly estimated, the designer has to identify on which parts of the application the simulator introduces an estimation error and consequently fix the simulator. However, detecting which are the mispredicted parts of a very large application can be a difficult process which requires a lot of time. In this paper we propose a methodology which helps the designer to fast and automatically isolate the portions of the application mispredicted by a simulator. This is accomplished by recursively analyzing the application source code trace highlighting the mispredicted sections of source code. The results obtained applying the methodology to the TSIM simulator show how our methodology is able to fast analyze large applications isolating small portions of mispredicted code.},
-	doi = {10.1109/RSP.2010.5656414},
-	isbn = {9781424470723},	
-	isbn = {9781424470730},	
-	pages = {1--7}
-}
-@article{
-	11311_524446,
-	author = {Ferrandi, Fabrizio and Fummi, F. and Macii, E. and Poncino, M. and Sciuto, Donatella},
-	title = {Testing Core-based Digital Systems: a Symbolic Methodology},
-	year = {1997},
-	publisher = {IEEE / Institute of Electrical and Electronics Engineers Incorporated:445 Hoes Lane:Piscataway, NJ 08854:(800)701-4333, (732)981-0060, EMAIL: subscription-service@ieee.org, INTERNET: http://www.ieee.org, Fax: (732)981-9667},
-	journal = {IEEE DESIGN & TEST OF COMPUTERS},
-	volume = {13, n.4},
-	abstract = {One of the primary draw-backs of the core-based design paradigm is the limited knowledge of the internal structure and organization of the cores which is provided to the users. This problem is particularly critical from the point of view of testing, since it forces the designers to rely on the test patterns provided by the core vendors. As a solution that avoids the use of scan-based techniques, we present a test methodology which provides the following capabilities: Test generation for a system containing cores, and testability estimation and improvement of the system components. The methodology can be applied to designs consisting of an arbitrary interconnection of modules, some of which may be cores. Our approach relies on a fault model which allows the identification of an accurate correspondence between functional and stuck-at sources of failure. In addition, a functional DfT technique reduces the design to a feedback-free interconnection eventually improving the testability of some modules. This provides an abstraction of the interconnection structure of the system, thus enabling its simplification to a chain of three basic entities: The module under test, a controlling network, and an observing network. The whole methodology exploits the expressiveness of Binary Decision Diagrams for the storage and the manipulation of the system description. Some promising results, conducted on a reasonably complex core-based design, demonstrate the applicability of the proposed approach.},
-	doi = {10.1109/54.632883},
-	pages = {69--77},
-	number = {4}
-}
-@conference{
-	11311_259699,
-	author = {Ferrandi, Fabrizio and Pandini, D. and Rosiello, A. and Sciuto, Donatella},
-	title = {A Hash-based Approach for Functional Regularity Extraction During Logic Synthesis},
-	year = {2007},
-	publisher = {IEEE Compurter Soc.},
-	booktitle = {VLSI, 2007. ISVLSI '07. IEEE Computer Society Annual Symposium on},
-	abstract = {Performance, power, and functionality, yield and manufacturability are rapidly becoming additional critical factors that must be considered at higher levels of abstraction. A possible solution to improve yield and manufacturability is based on the detection of regularity at logic level This paper focuses its attention on regularity extraction, after technology independent logic synthesis, to detect recurring functionalities during logic synthesis and thus constraining the physical design phase to exploit the regular netlist produced. A fast heuristic to the template identification is proposed and analyzed on a standard set of benchmarks both sequential and combinational.},
-	keywords = {cryptography;design for manufacture;high level synthesis;integrated circuit yield;logic design;functional regularity extraction;hash-based approach;integrated circuit yield;logic level;logic synthesis;regular netlist;template identification;Circuit synthesis;Clustering algorithms;Hardware design languages;Latches;Libraries;Logic circuits;Logic design;Manufacturing;Minimization;Phase detection},
-	doi = {10.1109/ISVLSI.2007.5},
-	isbn = {9781595936059},	
-	pages = {92--97}
-}
-@conference{
-	11311_741174,
-	author = {Ferrandi, Fabrizio and Lanzi, PIER LUCA and Pilato, Christian and Sciuto, Donatella and Tumeo, Antonino},
-	title = {Ant Colony Optimization for Mapping, Scheduling and Placing in Reconﬁgurable Systems},
-	year = {2013},
-	booktitle = {Proceedings of the NASA/ESA Conference on Adaptive Hardware and Systems (AHS 2013)},
-	doi = {10.1109/AHS.2013.6604225},
-	isbn = {9781467363839},	
-	pages = {47--54}
-}
-@conference{
-	11311_630180,
-	author = {Pilato, Christian and Ferrandi, Fabrizio and Pandini, D.},
-	title = {A Design Methodology for the Automatic Sizing of Standard-Cell Libraries},
-	year = {2011},
-	booktitle = {Proc. ACM Great Lakes Symposium on VLSI},
-	doi = {10.1145/1973009.1973040},
-	pages = {151--156}
-}
-@conference{
-	11311_1194314,
-	author = {Curzel, Serena and Agostini, Nicolas Bohm and Song, Shihao and Dagli, Ismet and Limaye, Ankur and Tan, Cheng and Minutoli, Marco and Castellana, Vito Giovanni and Amatya, Vinay and Manzano, Joseph and Das, Anup and Ferrandi, Fabrizio and Tumeo, Antonino},
-	title = {Automated Generation of Integrated Digital and Spiking Neuromorphic Machine Learning Accelerators},
-	year = {2021},
-	booktitle = {Proceedings of the 2021 IEEE/ACM International Conference On Computer Aided Design (ICCAD)},
-	url = {https://ieeexplore.ieee.org/document/9643474},
-	doi = {10.1109/ICCAD51958.2021.9643474},
-	isbn = {978-1-6654-4507-8},	
-	pages = {1--7}
-}
-@conference{
-	11311_1297708,
-	author = {Soldavini, S. and Suchert, F. and Curzel, S. and Fiorito, M. and Friebel, K. and Ferrandi, F. and Cmar, R. and Castrillon, J. and Pilato, C.},
-	title = {Etna: MLIR-Based System-Level Design and Optimization for Transparent Application Execution on CPU-FPGA Nodes},
-	year = {2024},
-	publisher = {IEEE},
-	booktitle = {Proceedings - 2024 IEEE 32nd Annual International Symposium on Field-Programmable Custom Computing Machines, FCCM 2024},
-	keywords = {FPGA; HBM; HLS; MLIR},
-	doi = {10.1109/FCCM60383.2024.00012},
-	pages = {224--224}
-}
-@conference{
-	11311_553638,
-	author = {Muhammad, Rashid and Ferrandi, Fabrizio and Koen, Bertels},
-	title = {hArtes design flow for heterogeneous platforms},
-	year = {2009},
-	booktitle = {Quality of Electronic Design, 2009. ISQED 2009. Quality Electronic Design},
-	keywords = {XML;embedded systems;hardware description languages;hardware-software codesign;optimisation;program compilers;reconfigurable architectures;task analysis;C pragma notations;H.264 video encoding application;HDL compilation;HDL generation;XML architecture description file;algorithm exploration and translation;design space exploration;hArtes design flow;hardware/software co-design;holistic approach to reconfigurable real time embedded systems design flow;holistic tool-chain;information exchange;reconfigurable heterogeneous platforms;system synthesis;task assignment;task optimization;task partitioning;Algorithm design and analysis;Application software;Computer architecture;Design optimization;Embedded software;Hardware design languages;Partitioning algorithms;Real time systems;Space exploration;XML;Design space exploration;application partitioning;simulation;system synthesis},
-	url = {http://dx.doi.org/10.1109/ISQED.2009.4810316},
-	doi = {10.1109/ISQED.2009.4810316},
-	pages = {330--338}
-}
-@conference{
-	11311_1268546,
-	author = {Fiorito, Michele and Curzel, Serena and Gozzi, Giovanni and Ferrandi, Fabrizio},
-	title = {A DNN-based Background Segmentation Accelerator for FPGA-equipped satellites},
-	year = {2024},
-	booktitle = {CF '24 Companion: Proceedings of the 21st ACM International Conference on Computing Frontiers Workshops and Special Sessions},
-	doi = {10.1145/3637543.3652979},
-	pages = {128--132}
-}
-@article{
-	11311_1010813,
-	author = {Lattuada, Marco and Ferrandi, Fabrizio},
-	title = {Exploiting Vectorization in High Level Synthesis of Nested Irregular Loops},
-	year = {2017},
-	journal = {JOURNAL OF SYSTEMS ARCHITECTURE},
-	volume = {75},
-	url = {http://dx.doi.org/10.1016/j.sysarc.2017.03.001},
-	doi = {10.1016/j.sysarc.2017.03.001},
-	pages = {1--14}
-}
-@article{
-	11311_575576,
-	author = {Bertels, K. and Sima, V. M. and Yankova, Y. and Kuzmanov, G. and Luk, W. and Coutinho, J. G. F. and Ferrandi, Fabrizio and Pilato, Christian and Lattuada, Marco and Sciuto, Donatella and Michelotti, A.},
-	title = {hArtes: Hardware-Software Codesign for Heterogeneous Multicore Platforms},
-	year = {2010},
-	journal = {IEEE MICRO},
-	volume = {30},
-	abstract = {Developing heterogeneous multicore platforms requires choosing the best hardware configuration for mapping the application, and modifying that application so that different parts execute on the most appropriate hardware component. The hArtes toolchain provides the option of automatic or semi-automatic support for this mapping. During test and validation on several computation-intensive applications, hArtes achieved substantial speedups and drastically reduced development times.},
-	keywords = {INF},
-	url = {http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=5640604},
-	doi = {10.1109/MM.2010.91},
-	pages = {88--97},
-	number = {5}
-}
-@conference{
-	11311_964118,
-	author = {Lattuada, Marco and Ferrandi, Fabrizio},
-	title = {Exploiting Outer Loops Vectorization in High Level Synthesis},
-	year = {2015},
-	publisher = {Springer International Publishing},
-	booktitle = {Architecture of Computing Systems - ARCS 2015},
-	abstract = {Synthesis of DoAll loops is a key aspect of High Level Synthesis since they allow to easily exploit the potential parallelism provided by programmable devices. This type of parallelism can be implemented in several ways: by duplicating the implementation of body loop, by exploiting loop pipelining or by applying vectorization. In this paper a methodology for the synthesis of complex DoAll loops based on outer vectorization is proposed. Vectorization is not limited to the innermost loops: complex constructs such as nested loops, conditional constructs and function calls are supported. Experimental results on parallel benchmarks show up to 7.35x speed-up and up to 40 % reduction of area-delay product.},
-	doi = {10.1007/978-3-319-16086-3_3},
-	isbn = {978-3-319-16085-6},	
-	isbn = {978-3-319-16086-3},	
-	isbn = {978-3-319-16085-6},	
-	isbn = {978-3-319-16086-3},	
-	pages = {31--42}
-}
-@article{
-	11311_977870,
-	author = {Lattuada, Marco and Pilato, Christian and Ferrandi, Fabrizio},
-	title = {Performance Estimation of Task Graphs Based on Path Profiling},
-	year = {2015},
-	journal = {INTERNATIONAL JOURNAL OF PARALLEL PROGRAMMING},
-	volume = {44},
-	abstract = {Correctly estimating the speed-up of a parallel embedded application is crucial to efficiently compare different parallelization techniques, task graph transformations or mapping and scheduling solutions. Unfortunately, especially in case of control-dominated applications, task correlations may heavily affect the execution time of the solutions and usually this is not properly taken into account during performance analysis. We propose a methodology that combines a single profiling of the initial sequential specification with different decisions in terms of partitioning, mapping, and scheduling in order to better estimate the actual speed-up of these solutions. We validated our approach on a multi-processor simulation platform: experimental results show that our methodology, effectively identifying the correlations among tasks, significantly outperforms existing approaches for speed-up estimation. Indeed, we obtained an absolute error less than 5 % in average, even when compiling the code with different optimization levels.},
-	keywords = {Hierarchical Task Graph; Path profiling; Performance estimation; Software; Information Systems; Theoretical Computer Science},
-	doi = {10.1007/s10766-015-0372-7},
-	pages = {1--37},
-	number = {4}
-}
-@conference{
-	11311_630185,
-	author = {Pilato, Christian and Ferrandi, Fabrizio and Pandini, D.},
-	title = {Evaluating Static CMOS Complex Cells in Technology Mapping},
-	year = {2011},
-	booktitle = {ERDIAP 2011 - Workshop on Exploiting Regularity in the Design of IPs, Architectures and Platforms},
-	url = {http://www.vde-verlag.de/proceedings-en/563333031.html},
-	pages = {222--229}
-}
-@conference{
-	11311_240759,
-	author = {Amicucci, C. and Ferrandi, Fabrizio and Santambrogio, MARCO DOMENICO and Sciuto, Donatella},
-	title = {SyCERS: a SystemC design exploration framework for SoC reconfigurable architecture},
-	year = {2006},
-	booktitle = {Proc. ERSA'06: The 2006 International Conference on Engineering of Reconfigurable Systems & Algorithm,},
-	pages = {63--69}
-}
-@conference{
-	11311_1229389,
-	author = {Agostini, N. B. and Curzel, S. and Amatya, V. and Tan, C. and Minutoli, M. and Castellana, V. G. and Manzano, J. and Kaeli, D. and Tumeo, A.},
-	title = {An MLIR-based compiler flow for system-level design and hardware acceleration},
-	year = {2022},
-	booktitle = {ICCAD '22: Proceedings of the 41st IEEE/ACM International Conference on Computer-Aided Design},
-	abstract = {The generation of custom hardware accelerators for applications implemented within high-level productive programming frameworks requires considerable manual effort. To automate this process, we introduce SODA-OPT, a compiler tool that extends the MLIR infrastructure. SODA-OPT automatically searches, outlines, tiles, and pre-optimizes relevant code regions to generate high-quality accelerators through high-level synthesis. SODA-OPT can support any high-level programming framework and domain-specific language that interface with the MLIR infrastructure. By leveraging MLIR, SODA-OPT solves compiler optimization problems with specialized abstractions. Backend synthesis tools connect to SODA-OPT through progressive intermediate representation lowerings. SODAOPT interfaces to a design space exploration engine to identify the combination of compiler optimization passes and options that provides high-performance generated designs for different backends and targets. We demonstrate the practical applicability of the compilation flow by exploring the automatic generation of accelerators for deep neural networks operators outlined at arbitrary granularity and by combining outlining with tiling on large convolution layers. Experimental results with kernels from the PolyBench benchmark show that our high-level optimizations improve execution delays of synthesized accelerators up to 60x. We also show that for the selected kernels, our solution outperforms the current of state-ofthe art in more than 70% of the benchmarks and provides better average speedup in 55% of them. SODA-OPT is an open source project available at https://gitlab.pnnl.gov/sodalite/soda-opt.},
-	doi = {10.1145/3508352.3549424},
-	isbn = {9781450392174},	
-	pages = {1--9}
-}
-@conference{
-	11311_665770,
-	author = {Bombana, M. and Cavalloro, P. and Ferrandi, Fabrizio},
-	title = {Property verification in the design of telecom applications},
-	year = {1997},
-	booktitle = {Proceedings of ASP-DAC '97: Asia and South Pacific Design Automation Conference},
-	abstract = {The industrial interest in the application of formal methods in the design of complex ASICs is noteworthy to improve the efficiency of the design process (reduced time-to-market) and to increase the quality of the final products (increased competitive profile). In this paper we focus our attention on design capture and functional verification, two critical phases in the current design methodologies. A modular toolset built around a model checker is described. A telecom co-processor is presented, and general properties derived. A user-oriented taxonomy of properties is introduced to support the design practice. Guidelines for the application of this technique are inferred from the example and generalized},
-	doi = {10.1109/ASPDAC.1997.600106},
-	isbn = {0780336623},	
-	pages = {167--172}
-}
-@inbook{
-	11311_693770,
-	author = {Georgi, Kuzmanov and Vlad Mihai, Sima and Koen, Bertels and Coutinho, José Gabriel F. and Wayne, Luk and Giacomo, Marchiori and Raffaele, Tripiccione and Ferrandi, Fabrizio},
-	title = {hArtes: Holistic Approach to Reconfigurable Real-Time Embedded SystemsReconfigurable Computing},
-	year = {2011},
-	publisher = {-New York, NY: Plenum   -SPRINGER, 233 SPRING STREET, NEW YORK, USA, NY, 10013},
-	address = {New York},
-	booktitle = {Reconfigurable Computing},
-	doi = {10.1007/978-1-4614-0061-5_5},
-	isbn = {9781461400608},	
-	pages = {91--115}
-}
-@conference{
-	11311_1285808,
-	author = {Curzel, Serena and Gribaudo, Marco},
-	title = {Custom Floating-Point Computations for the Optimization of ODE Solvers on FPGA},
-	year = {2025},
-	publisher = {Schloss Dagstuhl- Leibniz-Zentrum fur Informatik GmbH, Dagstuhl Publishing},
-	volume = {127},
-	booktitle = {16th Workshop on Parallel Programming and Run-Time Management Techniques for Many-Core Architectures and 14th Workshop on Design Tools and Architectures for Multicore Embedded Computing Platforms (PARMA-DITAM 2025)},
-	doi = {10.4230/oasics.parma-ditam.2025.2},
-	pages = {1--13}
-}
-@conference{
-	11311_1000827,
-	author = {Lattanzi, A and Ciavattini, E. and Cecchi, S. and Romoli, L. and Ferrandi, Fabrizio},
-	title = {Real-time implementation of wave field synthesis on Nu-Tech framework using CUDA technology},
-	year = {2010},
-	booktitle = {128th Audio Engineering Society Convention 2010},
-	keywords = {Modeling and Simulation; Acoustics and Ultrasonics},
-	isbn = {9781617387739},	
-	isbn = {9781617387739},	
-	pages = {512--521}
-}
-@conference{
-	11311_553642,
-	author = {Branca, M. and Camerini, L. and Ferrandi, Fabrizio and Lanzi, PIER LUCA and Pilato, Christian and Sciuto, Donatella and Tumeo, Antonino},
-	title = {Evolutionary algorithms for the mapping of pipelined applications onto heterogeneous embedded systems},
-	year = {2009},
-	booktitle = {Proceedings of the 11th Annual Conference on Genetic and Evolutionary Computation},
-	keywords = {INF},
-	url = {http://doi.acm.org/10.1145/1569901.1570094},
-	doi = {10.1145/1569901.1570094},
-	pages = {1435--1442}
-}
-@conference{
-	11311_1249326,
-	author = {Ibellaatti, Nadia and Lepape, Edouard and Kilic, Alp and Akyel, Kaya and Chouayakh, Kassem and Ferrandi, Fabrizio and Barone, Claudio and Curzel, Serena and Fiorito, Michele and Gozzi, Giovanni and Masmano, Miguel and Navarro, Ana Risquez and Muñioz, Manuel and Gallego, Vicente Nicolau and Cueva, Patricia Lopez and Letrillard, Jean-noel and Wartel, Franck},
-	title = {HERMES: qualification of High pErformance pRogrammable Microprocessor and dEvelopment of Software ecosystem},
-	year = {2023},
-	booktitle = {2023 Design, Automation & Test in Europe Conference & Exhibition (DATE)},
-	doi = {10.23919/DATE56975.2023.10136921},
-	pages = {1--5}
-}
-@conference{
-	11311_264468,
-	author = {Bruschi, Francesco and Ferrandi, Fabrizio},
-	title = {Synthesis of complex control structures from behavioral SystemC models},
-	year = {2003},
-	publisher = {IEEE},
-	booktitle = {Design, Automation and Test in Europe Conference and Exhibition, 2003},
-	abstract = {In this paper, we present the results of a set of experiments we conducted in order to evaluate the viability of behavioral synthesis, relying on the tools available at the moment in the EDA market. To accomplish this we modelled a complex PCI bus interface in SystemC using a behavioral style of description. Then we tried to synthesize it by means of the Synopsis CoCentric SystemC compiler tool. The problems arisen during synthesis, in particular those concerned with the cycle-accurate timing behavior of the synthesized circuit, were addressed. After analyzing them, possible solutions were proposed, where possible. Finally, a summary of the pros and cons of the behavioral synthesis in SystemC is presented.},
-	keywords = {INF},
-	doi = {10.1109/DATE.2003.1186681},
-	isbn = {9780769518701},	
-	pages = {20112--20119}
-}
-@article{
-	11311_1148653,
-	author = {Siracusa, Marco and Ferrandi, Fabrizio},
-	title = {Tensor Optimization for High-Level Synthesis Design Flows},
-	year = {2020},
-	journal = {IEEE TRANSACTIONS ON COMPUTER-AIDED DESIGN OF INTEGRATED CIRCUITS AND SYSTEMS},
-	volume = {39},
-	doi = {10.1109/TCAD.2020.3012318},
-	pages = {4217--4228},
-	number = {11}
-}
-@article{
-	11311_1220338,
+@article{11311_1220338,
 	author = {Bohm Agostini, N. and Curzel, S. and Zhang, J. and Limaye, A. and Tan, C. and Amatya, V. and Minutoli, M. and Castellana, V. G. and Manzano, J. and Brooks, D. and Wei, G. and Tumeo, A.},
 	title = {Bridging Python to Silicon: The SODA Toolchain},
 	year = {2022},
@@ -930,116 +544,51 @@ The paper introduces the model adopted for pipelined applications and then shows
 	pages = {78--88},
 	number = {5}
 }
-@conference{
-	11311_1247638,
-	author = {Curzel, Serena and Fiorito, Michele and Cueva, Patricia Lopez and Jorge, Tiago and Tsiodras, Thanassis and Ferrandi, Fabrizio},
-	title = {Exploration of Synthesis Methods from Simulink Models to FPGA for Aerospace Applications},
-	year = {2023},
-	booktitle = {CF '23: Proceedings of the 20th ACM International Conference on Computing Frontiers},
-	doi = {10.1145/3587135.3592766},
-	isbn = {9798400701405},	
-	pages = {243--249}
+@conference{11311_741174,
+	author = {Ferrandi, Fabrizio and Lanzi, PIER LUCA and Pilato, Christian and Sciuto, Donatella and Tumeo, Antonino},
+	title = {Ant Colony Optimization for Mapping, Scheduling and Placing
+in Reconﬁgurable Systems},
+	year = {2013},
+	booktitle = {Proceedings of the NASA/ESA Conference on Adaptive Hardware and Systems (AHS 2013)},
+	doi = {10.1109/AHS.2013.6604225},
+	isbn = {9781467363839},	
+	pages = {47--54}
 }
-@article{
-	11311_1161042,
-	author = {Minutoli, Marco and Castellana, Vito Giovanni and Saporetti, Nicola and Devecchi, Stefano and Lattuada, Marco and Fezzardi, Pietro and Tumeo, Antonino and Ferrandi, Fabrizio},
-	title = {Svelto: High-Level Synthesis of Multi-Threaded Accelerators for Graph Analytics},
-	year = {2021},
-	journal = {IEEE TRANSACTIONS ON COMPUTERS},
-	volume = {71},
-	doi = {10.1109/TC.2021.3057860},
-	pages = {520--533},
-	number = {3}
-}
-@conference{
-	11311_1181959,
-	author = {Pilato, C. and Bohm, S. and Brocheton, F. and Castrillon, J. and Cevasco, R. and Cima, V. and Cmar, R. and Diamantopoulos, D. and Ferrandi, F. and Martinovic, J. and Palermo, G. and Paolino, M. and Parodi, A. and Pittaluga, L. and Raho, D. and Regazzoni, F. and Slaninova, K. and Hagleitner, C.},
-	title = {EVEREST: A design environment for extreme-scale big data analytics on heterogeneous platforms},
-	year = {2021},
-	publisher = {Institute of Electrical and Electronics Engineers Inc.},
-	volume = {2021-},
-	booktitle = {PROCEEDINGS OF THE 2021 DESIGN, AUTOMATION & TEST IN EUROPE CONFERENCE & EXHIBITION (DATE 2021)},
-	doi = {10.23919/DATE51398.2021.9473940},
-	pages = {1320--1325}
-}
-@conference{
-	11311_1180263,
-	author = {Castellana, Vito Giovanni and Tumeo, Antonino and Ferrandi, Fabrizio},
-	title = {High-Level Synthesis of Parallel Specifications Coupling Static and Dynamic Controllers},
-	year = {2021},
-	booktitle = {Proceedings of International Symposium on Parallel and Distributed Processing (IPDPS)},
-	doi = {10.1109/IPDPS49936.2021.00028},
-	isbn = {978-1-6654-4066-0},	
-	pages = {192--202}
-}
-@conference{
-	11311_1285590,
-	author = {Barone, Claudio and Kushwah, Rishika and Limaye, Ankur and Castellana, Vito Giovanni and Gozzi, Giovanni and Fiorito, Michele and Ferrandi, Fabrizio and Tumeo, Antonino},
-	title = {To Cache or not to Cache? Exploring the Design Space of Tunable, HLS-generated Accelerators},
-	year = {2024},
-	publisher = {Association for Computing Machinery},
-	booktitle = {PROCEEDINGS OF THE INTERNATIONAL SYMPOSIUM ON MEMORY SYSTEMS, MEMSYS 2024},
-	doi = {10.1145/3695794.3695815},
-	pages = {210--218}
-}
-@conference{
-	11311_575581,
-	author = {Lattuada, Marco and Ferrandi, Fabrizio},
-	title = {Combining Target-independent Analysis with Dynamic Profiling to Build the Performance Model of a DSP},
+@conference{11311_575580,
+	author = {Cecchi, S. and Primavera, A. and Piazza, F. and Bettarelli, F. and Ciavattini, E. and Toppi, R. and Coutinho, J. G. F. and Luk, W. and Pilato, Christian and Ferrandi, Fabrizio and Sima, V. M. and Bertels, K.},
+	title = {The hArtes CarLab: A New Approach to Advanced Algorithms Development for Automotive Audio},
 	year = {2010},
-	booktitle = {Computer and Information Technology (CIT), 2010 IEEE 10th International Conference on},
-	abstract = {Fast and accurate performance estimation is a key aspect of heterogeneous embedded systems design flow, since cycle-accurate simulators, when exist, are usually too slow to be used during design space exploration. Performance estimation techniques are usually based on combination of estimation of the single processing elements which compose the system. Architectural characteristics of Digital Signal Processors (DSP), such as the presence of Single Instruction Multiple Data operations or of special hardware units to control loop executions, introduce peculiar aspects in the performance estimation problem. In this paper we present a methodology to estimate the performance of a function on a given dataset on a DSP. Estimation is performed combining the host profiling data with the function GNU GCC GIMPLE representation. Starting from the results of this analysis, we build a performance model of a DSP by exploiting the Linear Regression Technique. Use of GIMPLE representation allows to take directly into account the target-independent optimizations performed by the DSP compiler. We validate our approach by building a performance model of the MagicV DSP and by testing the model on a set of significative benchmarks.},
-	url = {http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=5578004},
-	doi = {10.1109/CIT.2010.324},
-	isbn = {9781424475476},	
-	pages = {1895--1901}
+	booktitle = {Proceedings of 129th Audio Engineering Society Convention (AES)},
+	keywords = {INF},
+	url = {http://www.aes.org/e-lib/browse.cfm?elib=15605},
+	pages = {1--12}
 }
-@conference{
-	11311_262750,
-	author = {Ferrandi, Fabrizio and Lanzi, PIER LUCA and Sciuto, Donatella and Tanelli, Mara},
-	title = {System-level metrics for hardware/software architectural mapping},
-	year = {2004},
-	booktitle = {Electronic Design, Test and Applications, Proceedings. DELTA 2004. Second IEEE International Workshop on},
-	abstract = {The current trend in Embedded Systems (ES) design is moving towards the integration of increasingly complex applications on a single chip, while having to meet strict market demands which force to face always shortening design times. In general, the ideal design methodology shall support the exploration of the highest possible number of alternatives (in terms of HW-SW architectures) starting in the early design stages as this will prevent costly correction efforts in the deployment phase. The present paper will propose a new methodology for tackling the design exploration problem, with the aim of providing a solution in terms of optimal partitioning with respect of the overall system performance.},
-	keywords = {computer architecture;embedded systems;software architecture;software metrics;software performance evaluation;systems analysis;HW-SW architectures;communication performance estimation;embedded systems design;hardware performance estimation;hardware/software architectural mapping;optimal partitioning;software performance estimation;system level metrics;Application software;Computer architecture;Delay estimation;Design methodology;Embedded system;Hardware;Modeling;Performance analysis;Software performance;System performance},
-	doi = {10.1109/DELTA.2004.10060},
-	pages = {231--236}
+@conference{11311_977866,
+	author = {Castellana, VITO GIOVANNI and Minutoli, Marco and Morari, Alessandro and Tumeo, Antonino and Lattuada, Marco and Ferrandi, Fabrizio},
+	title = {High level synthesis of RDF queries for graph analytics},
+	year = {2015},
+	publisher = {IEEE Press},
+	address = {Piscataway, NJ},
+	booktitle = {Proceedings of the IEEE/ACM International Conference on Computer-Aided Design, ICCAD},
+	abstract = {In this paper we present a set of techniques that enable the synthesis of efficient custom accelerators for memory intensive, irregular applications. To address the challenges of irregular applications (large memory footprint, unpredictable fine-grained data accesses, and high synchronization intensity), and exploit their opportunities (thread level parallelism, memory level parallelism), we propose a novel accelerator design that employs an adaptive and Distributed Controller (DC) architecture, and a Memory Interface Controller (MIC) that supports concurrent and atomic memory operations on a multi-ported/multi-banked shared memory. Among the multitude of algorithms that may benefit from our solution, we focus on the acceleration of graph analytics applications and, in particular, on the synthesis of SPARQL queries on Resource Description Framework (RDF) databases. We achieve this objective by incorporating the synthesis techniques into Bambu, an Open Source high-level synthesis tools, and interfacing it with GEMS, the Graph database Engine for Multithreaded Systems. The GEMS' front-end generates optimized C implementations of the input queries, modeled as graph pattern matching algorithms, which are then automatically synthesized by Bambu. We validate our approach by synthesizing several SPARQL queries from the Lehigh University Benchmark (LUBM).},
+	keywords = {graph theory;high level synthesis;memory architecture;multi-threading;query languages;shared memory systems;Bambu;DC architecture;GEMS;LUBM;Lehigh University Benchmark;MIC;RDF databases;RDF queries;SPARQL queries;accelerator design;adaptive architecture;atomic memory operations;concurrent memory operations;distributed controller architecture;graph analytics;graph database engine;graph pattern matching algorithms;memory intensive irregular applications;memory interface controller;multiported/multibanked shared memory;multithreaded systems;open source high-level synthesis tools;resource description framework databases;Acceleration;Computer architecture;Databases;Field programmable gate arrays;Parallel processing;Program processors;Resource description framework},
+	doi = {10.1109/ICCAD.2015.7372587},
+	isbn = {978-1-4673-8388-2},	
+	isbn = {978-1-4673-8388-2},	
+	pages = {323--330}
 }
-@conference{
-	11311_1300850,
+@conference{11311_1254959,
 	author = {Fiorito, Michele and Curzel, Serena and Ferrandi, Fabrizio},
-	title = {Augmented Co-Simulation for Fast Functional and System-Level Verification of HLS Accelerators},
-	year = {2025},
-	booktitle = {2025 IEEE/ACM International Conference On Computer Aided Design (ICCAD)},
-	doi = {10.1109/iccad66269.2025.11240905},
-	pages = {1--9}
+	title = {TrueFloat: A Templatized Arithmetic Library for HLS Floating-Point Operators},
+	year = {2023},
+	volume = {14385},
+	booktitle = {SAMOS 2023: Embedded Computer Systems: Architectures, Modeling, and Simulation},
+	doi = {10.1007/978-3-031-46077-7_35},
+	isbn = {978-3-031-46076-0},	
+	isbn = {978-3-031-46077-7},	
+	pages = {486--493}
 }
-@conference{
-	11311_665779,
-	author = {Ferrandi, Fabrizio and Macii, A. and Macii, E. and Poncino, M. and Scarsi, R. and Somenzi, F.},
-	title = {Symbolic algorithms for layout-oriented synthesis of pass transistor logic circuits},
-	year = {1998},
-	booktitle = {Proceedings of the 1998 IEEE/ACM international conference on Computer-aided design  - ICCAD '98},
-	abstract = {The paper presents a novel methodology for synthesizing PTL circuits, whose distinctive features are the use of a symbolic algorithm for the covering of the initial network in terms of PTL cells, and the exploitation of layout level area and delay model during the selection of the best covering solution. The results produced by the synthesis procedure on the full suite of the Iscas'85 combinational circuits are very encouraging.},
-	doi = {10.1145/288548.288619},
-	isbn = {1581130082},	
-	pages = {235--241}
-}
-@conference{
-	11311_665733,
-	author = {Lattuada, Marco and Ferrandi, Fabrizio},
-	title = {Performance estimation of embedded software with confidence levels},
-	year = {2012},
-	booktitle = {17th Asia and South Pacific Design Automation Conference},
-	abstract = {Since time constraints are a very critical aspect of an embedded system, performance evaluation can not be postponed to the end of the design flow, but it has to be introduced since its early stages. Estimation techniques based on mathematical models are usually preferred during this phase since they provide quite accurate estimation of the application performance in a fast way. However, the estimation error has to be considered during design space exploration to evaluate if a solution can be accepted (e.g., by discarding solutions whose estimated time is too close to constraint). Evaluate if the possible error can be significant analyzing a punctual estimation is not a trivial task. In this paper we propose a methodology, based on statistical analysis, that provides a prediction interval on the estimation and a confidence level on meeting a time constraint. This information can drive design space exploration reducing the number of solutions to be validated. The results show how the produced intervals effectively capture the estimation error introduced by a linear model.},
-	doi = {10.1109/ASPDAC.2012.6165022},
-	isbn = {9781467307703},	
-	isbn = {9781467307710},	
-	isbn = {9781467307727},	
-	pages = {573--578}
-}
-@inbook{
-	11311_630184,
+@inbook{11311_630184,
 	author = {Bettarelli, F. and Ciavattini, E. and Lattanzi, A. and Beltrame, G. and Ferrandi, Fabrizio and Fossati, L. and Pilato, Christian and Sciuto, Donatella and Meeuws, R. J. and Ostadzadeh, S. A. and Nawaz, Z. and Lu, Y. and Marconi, T. and Sabeghi, M. and Sima, V. M. and Sigdel, K.},
 	title = {Extensions of the hArtes Tool Chain},
 	year = {2012},
@@ -1050,84 +599,189 @@ The paper introduces the model adopted for pipelined applications and then shows
 	isbn = {9789400714052},	
 	pages = {193--227}
 }
-@conference{
-	11311_608571,
-	author = {Pilato, Christian and Ferrandi, Fabrizio and Sciuto, Donatella},
-	title = {A design methodology to implement memory accesses in High-Level Synthesis},
+@conference{11311_553643,
+	author = {Ferrandi, Fabrizio and Lattuada, Marco and Pilato, Christian and Tumeo, Antonino},
+	title = {Performance Estimation for Task Graphs Combining Sequential Path Profiling and Control Dependence Regions},
+	year = {2009},
+	booktitle = {Proceedings of the 7th IEEE/ACM International Conference on Formal Methods and Models for Codesign},
+	abstract = {The speed-up estimation of parallelized code is crucial to efficiently compare different parallelization techniques or task graph transformations. Unfortunately, most of the time, during the parallelization of a specification, the information that can be extracted by profiling the corresponding sequential code (e.g. the most executed paths) are not properly taken into account. In particular, correlating sequential path profiling with the corresponding parallelized code can help in the identification of code hot spots, opening new possibilities for automatic parallelization. For this reason, starting from a well-known profiling technique, the Efficient Path Profiling, we propose a methodology that estimates the speed-up of a parallelized specification, just using the corresponding hierarchical task graph representation and the information coming from the dynamic profiling of the initial sequential specification. Experimental results show that the proposed solution outperforms existing approaches.},
+	keywords = {INF},
+	url = {http://doi.ieeecomputersociety.org/10.1109/MEMCOD.2009.5185389},
+	doi = {10.1109/MEMCOD.2009.5185389},
+	pages = {131--140}
+}
+@conference{11311_1272283,
+	author = {Pilato, C. and Banik, S. and Beranek, J. and Brocheton, F. and Castrillon, J. and Cevasco, R. and Cmar, R. and Curzel, S. and Ferrandi, F. and Friebel, K. F. A. and Galizia, A. and Grasso, M. and Silva, P. and Martinovic, J. and Palermo, G. and Paolino, M. and Parodi, A. and Parodi, A. and Pintus, F. and Polig, R. and Poulet, D. and Regazzoni, F. and Ringlein, B. and Rocco, R. and Slaninova, K. and Slooff, T. and Soldavini, S. and Suchert, F. and Tibaldi, M. and Weiss, B. and Hagleitner, C.},
+	title = {A System Development Kit for Big Data Applications on FPGA-based Clusters: The EVEREST Approach},
+	year = {2024},
+	publisher = {Institute of Electrical and Electronics Engineers Inc.},
+	booktitle = {Proceedings -Design, Automation and Test in Europe, DATE},
+	doi = {10.23919/DATE58400.2024.10546518},
+	pages = {1--6}
+}
+@conference{11311_665711,
+	author = {Lovergine, Silvia and Ferrandi, Fabrizio},
+	title = {Instructions activating conditions for hardware-based auto-scheduling},
+	year = {2012},
+	booktitle = {Proceedings of the 9th conference on Computing Frontiers - CF '12},
+	doi = {10.1145/2212908.2212946},
+	isbn = {9781450312158},	
+	pages = {253--256}
+}
+@article{11311_544405,
+	author = {Pilato, Christian and Tumeo, Antonino and Palermo, Gianluca and Ferrandi, Fabrizio and Lanzi, PIER LUCA and Sciuto, Donatella},
+	title = {Improving Evolutionary Exploration to Area-Time Optimization of FPGA Designs},
+	year = {2008},
+	journal = {JOURNAL OF SYSTEMS ARCHITECTURE},
+	volume = {54},
+	abstract = {This paper presents a new methodology based on evolutionary multi-objective optimization (EMO) to synthesize multiple complex modules on reprogrammable devices. It starts from a behavioral description written in a common high-level language (for instance C) to automatically produce the register-transfer level (RTL) design in a hardware description language (e.g. Verilog). Since all high-level synthesis problems (scheduling, resource allocation and binding) are notoriously NP-complete and interdependent, these problems should be considered simultaneously. This drives to a wide design space, that needs to be thoroughly explored to obtain solutions able to satisfy the design constraints (e.g. area and performance). Since evolutionary algorithms are good candidates to tackle such complex explorations, in this paper we provide a solution based on the non-dominated sorting genetic algorithm (NSGA-II) to explore the design space and obtain the best solutions in terms of performance given the area constraints of a target reprogrammable device, for instance a Field Programmable Gate Array (FPGA). To further reduce the time needed for the exploration, that theoretically requires the complete logic synthesis of each visited point, the evaluation of the solutions have been speed-up by using two techniques: a good cost estimation model and a technique to exploit fitness inheritance by substituting the expensive actual evaluations with estimations based on closeness in an hypothetical design space. We show on the JPEG case study that the proposed approach provides good results in terms of trade-off between total area occupied and execution time. The results shows also that the Pareto-optimal set obtained by applying the proposed fitness inheritance model well approximates the set obtained without the proposed technique and reduces the overall execution time up to the 25% in average.},
+	doi = {10.1016/j.sysarc.2008.04.010},
+	pages = {1046--1057},
+	number = {11}
+}
+@conference{11311_1229391,
+	author = {Castellana, Vito Giovanni and Agostini, Nicolas Bohm and Limaye, Ankur and Amatya, Vinay and Minutoli, Marco and Manzano, Joseph and Tumeo, Antonino and Curzel, Serena and Fiorito, Michele and Ferrandi, Fabrizio},
+	title = {Towards On-Chip Learning for Low Latency Reasoning with End-to-End Synthesis},
+	year = {2023},
+	booktitle = {ASPDAC '23: Proceedings of the 28th Asia and South Pacific Design Automation Conference},
+	abstract = {The Software Defined Architectures (SODA) Synthesizer is an open-source compiler-based tool able to automatically generate domain-specialized systems targeting Application-Specific Integrated Circuits (ASICs) or Field Programmable Gate Arrays (FPGAs) starting from high-level programming. SODA is composed of a frontend, SODA-OPT, which leverages the multilevel intermediate representation (MLIR) framework to interface with productive programming tools (e.g., machine learning frameworks), identify kernels suitable for acceleration, and perform high-level optimizations, and of a state-of-the-art high-level synthesis backend, Bambu from the PandA framework, to generate custom accelerators. One specific application of the SODA Synthesizer is the generation of accelerators to enable ultra-low latency inference and control on autonomous systems for scientific discovery (e.g., electron microscopes, sensors in particle accelerators, etc.). This paper provides an overview of the flow in the context of the generation of accelerators for edge processing to be integrated in transmission electron microscopy (TEM) devices, focusing on use cases from precision material synthesis. We show the tool in action with an example of design space exploration for inference on reconfigurable devices with a conventional deep neural network model (LeNet). Finally, we discuss the research directions and opportunities enabled by SODA in the area of autonomous control for scientific experimental workflows.},
+	doi = {10.1145/3566097.3568360},
+	isbn = {9781450397834},	
+	pages = {632--638}
+}
+@conference{11311_1297708,
+	author = {Soldavini, S. and Suchert, F. and Curzel, S. and Fiorito, M. and Friebel, K. and Ferrandi, F. and Cmar, R. and Castrillon, J. and Pilato, C.},
+	title = {Etna: MLIR-Based System-Level Design and Optimization for Transparent Application Execution on CPU-FPGA Nodes},
+	year = {2024},
+	publisher = {IEEE},
+	booktitle = {Proceedings - 2024 IEEE 32nd Annual International Symposium on Field-Programmable Custom Computing Machines, FCCM 2024},
+	keywords = {FPGA; HBM; HLS; MLIR},
+	doi = {10.1109/FCCM60383.2024.00012},
+	pages = {224--224}
+}
+@conference{11311_575579,
+	author = {Lattuada, Marco and Ferrandi, Fabrizio},
+	title = {Fine grain analysis of simulators accuracy for calibrating performance models},
+	year = {2010},
+	booktitle = {Rapid System Prototyping (RSP), 2010 21st IEEE International Symposium on},
+	abstract = {In embedded system design, the tuning and validation of a cycle accurate simulator is a difficult task. The designer has to assure that the estimation error of the simulator meets the design constraints on every application. If an application is not correctly estimated, the designer has to identify on which parts of the application the simulator introduces an estimation error and consequently fix the simulator. However, detecting which are the mispredicted parts of a very large application can be a difficult process which requires a lot of time. In this paper we propose a methodology which helps the designer to fast and automatically isolate the portions of the application mispredicted by a simulator. This is accomplished by recursively analyzing the application source code trace highlighting the mispredicted sections of source code. The results obtained applying the methodology to the TSIM simulator show how our methodology is able to fast analyze large applications isolating small portions of mispredicted code.},
+	doi = {10.1109/RSP.2010.5656414},
+	isbn = {9781424470723},	
+	isbn = {9781424470730},	
+	pages = {1--7}
+}
+@conference{11311_240811,
+	author = {Ferrandi, Fabrizio and Fossati, Luca and Lattuada, Marco and Palermo, Gianluca and Sciuto, Donatella and Tumeo, Antonino},
+	title = {Automatic parallelization of sequential specifications for symmetric MPSoCs},
+	year = {2007},
+	publisher = {Springer US},
+	booktitle = {Embedded System Design: Topics, Techniques and Trends},
+	url = {http://link.springer.com/chapter/10.1007/978-0-387-72258-0_16?null},
+	doi = {10.1007/978-0-387-72258-0_16},
+	isbn = {9780387722573},	
+	isbn = {9780387722580},	
+	pages = {179--192}
+}
+@conference{11311_768465,
+	author = {Castellana, VITO GIOVANNI and Ferrandi, Fabrizio},
+	title = {Scheduling independent liveness analysis for register binding in high level synthesis},
+	year = {2013},
+	booktitle = {Proceedings DATE 2013},
+	abstract = {Classical techniques for register allocation and binding require the definition of the program execution order, since a partial ordering relation between operations must be induced to perform liveness analysis through data-flow equations. In High Level Synthesis (HLS) flows this is commonly obtained through the scheduling task. However for some HLS approaches, such a relation can be difficult to be computed, or not statically computable at all, and adopting conventional register binding techniques, even when feasible, cannot guarantee maximum performances. To overcome these issues we introduce a novel scheduling-independent liveness analysis methodology, suitable for dynamic scheduling architectures. Such liveness analysis is exploited in register binding using standard graph coloring techniques, and unlike other approaches it avoids the insertion of structural dependencies, introduced to prevent run-time resource conflicts in dynamic scheduling environments. The absence of additional dependencies avoids performance degradation and makes parallelism exploitation independent from the register binding task, while on average not impacting on area, as shown through the experimental results.},
+	doi = {10.7873/DATE.2013.319},
+	isbn = {9781450321532},	
+	pages = {1571--1574}
+}
+@conference{11311_630185,
+	author = {Pilato, Christian and Ferrandi, Fabrizio and Pandini, D.},
+	title = {Evaluating Static CMOS Complex Cells in Technology Mapping},
 	year = {2011},
-	booktitle = {2011 Proceedings of the 9th International Conference on Hardware/Software Codesign and System Synthesis (CODES+ISSS)},
-	doi = {10.1145/2039370.2039381},
-	isbn = {978-145030715-4},	
-	pages = {49--58}
+	booktitle = {ERDIAP 2011 - Workshop on Exploiting Regularity in the Design of IPs, Architectures and Platforms},
+	url = {http://www.vde-verlag.de/proceedings-en/563333031.html},
+	pages = {222--229}
 }
-@conference{
-	11311_1277195,
-	author = {Curzel, Serena and Jovic, Sofija and Fiorito, Michele and Tumeo, Antonino and Ferrandi, Fabrizio},
-	title = {Pre-Scheduling of Affine Loops for HLS Pipelining},
-	year = {2025},
-	publisher = {Springer},
-	volume = {15386},
-	booktitle = {Euro-Par 2024: Parallel Processing Workshops},
-	doi = {10.1007/978-3-031-90203-1_53},
-	pages = {1--12}
+@conference{11311_1220191,
+	author = {Agostini, Nicolas Bohm and Curzel, Serena and Limaye, Ankur and Amatya, Vinay and Minutoli, Marco and Castellana, Vito Giovanni and Manzano, Joseph and Tumeo, Antonino and Ferrandi, Fabrizio},
+	title = {The SODA approach: leveraging high-level synthesis for hardware/software co-design and hardware specialization: invited},
+	year = {2022},
+	booktitle = {DAC '22: Proceedings of the 59th ACM/IEEE Design Automation Conference},
+	abstract = {Novel "converged" applications combine phases of scientific simulation with data analysis and machine learning. Each computational phase can benefit from specialized accelerators. However, algorithms evolve so quickly that mapping them on existing accelerators is suboptimal or even impossible. This paper presents the SODA (Software Defined Accelerators) framework, a modular, multi-level, open-source, no-human-in-the-loop, hardware synthesizer that enables end-to-end generation of specialized accelerators. SODA is composed of SODA-Opt, a high-level frontend developed in MLIR that interfaces with domain-specific programming frameworks and allows performing system level design, and Bambu, a state-of-the-art high-level synthesis engine that can target different device technologies. The framework implements design space exploration as compiler optimization passes. We show how the modular, yet tight, integration of the high-level optimizer and lower-level HLS tools enables the generation of accelerators optimized for the computational patterns of converged applications. We then discuss some of the research opportunities that such a framework allows, including system-level design, profile driven optimization, and supporting new optimization metrics.},
+	doi = {10.1145/3489517.3530628},
+	isbn = {9781450391429},	
+	pages = {1359--1362}
 }
-@conference{
-	11311_1189606,
-	author = {Ferrandi, Fabrizio and Castellana, Vito Giovanni and Curzel, Serena and Fezzardi, Pietro and Fiorito, Michele and Lattuada, Marco and Minutoli, Marco and Pilato, Christian and Tumeo, Antonino},
-	title = {Invited: Bambu: an Open-Source Research Framework for the High-Level Synthesis of Complex Applications},
+@conference{11311_1180263,
+	author = {Castellana, Vito Giovanni and Tumeo, Antonino and Ferrandi, Fabrizio},
+	title = {High-Level Synthesis of Parallel Specifications Coupling Static and Dynamic Controllers},
 	year = {2021},
-	booktitle = {Proceedings of the 2021 58th ACM/IEEE Design Automation Conference (DAC)},
-	doi = {10.1109/DAC18074.2021.9586110},
-	isbn = {978-1-6654-3274-0},	
-	pages = {1327--1330}
+	booktitle = {Proceedings of International Symposium on Parallel and Distributed Processing (IPDPS)},
+	doi = {10.1109/IPDPS49936.2021.00028},
+	isbn = {978-1-6654-4066-0},	
+	pages = {192--202}
 }
-@article{
-	11311_572925,
-	author = {Ferrandi, Fabrizio and Lanzi, PIER LUCA and Pilato, Christian and Sciuto, Donatella and Tumeo, Antonino},
-	title = {Ant Colony Heuristic for Mapping and Scheduling Tasks and Communications on Heterogeneous Embedded Systems},
-	year = {2010},
+@conference{11311_999155,
+	author = {Minutoli, Marco and Castellana, VITO GIOVANNI and Tumeo, Antonino and Lattuada, Marco and Ferrandi, Fabrizio},
+	title = {Enabling the high level synthesis of data analytics accelerators},
+	year = {2016},
+	publisher = {ACM},
+	booktitle = {CODES '16 Proceedings of the Eleventh IEEE/ACM/IFIP International Conference on Hardware/Software Codesign and System Synthesis},
+	doi = {10.1145/2968456.2976764},
+	isbn = {9781450344838},	
+	isbn = {9781450344838},	
+	pages = {1--3}
+}
+@conference{11311_1249326,
+	author = {Ibellaatti, Nadia and Lepape, Edouard and Kilic, Alp and Akyel, Kaya and Chouayakh, Kassem and Ferrandi, Fabrizio and Barone, Claudio and Curzel, Serena and Fiorito, Michele and Gozzi, Giovanni and Masmano, Miguel and Navarro, Ana Risquez and Muñioz, Manuel and Gallego, Vicente Nicolau and Cueva, Patricia Lopez and Letrillard, Jean-noel and Wartel, Franck},
+	title = {HERMES: qualification of High pErformance pRogrammable Microprocessor and dEvelopment of Software ecosystem},
+	year = {2023},
+	booktitle = {2023 Design, Automation & Test in Europe Conference & Exhibition (DATE)},
+	doi = {10.23919/DATE56975.2023.10136921},
+	pages = {1--5}
+}
+@conference{11311_1229389,
+	author = {Agostini, N. B. and Curzel, S. and Amatya, V. and Tan, C. and Minutoli, M. and Castellana, V. G. and Manzano, J. and Kaeli, D. and Tumeo, A.},
+	title = {An MLIR-based compiler flow for system-level design and hardware acceleration},
+	year = {2022},
+	booktitle = {ICCAD '22: Proceedings of the 41st IEEE/ACM International Conference on Computer-Aided Design},
+	abstract = {The generation of custom hardware accelerators for applications implemented within high-level productive programming frameworks requires considerable manual effort. To automate this process, we introduce SODA-OPT, a compiler tool that extends the MLIR infrastructure. SODA-OPT automatically searches, outlines, tiles, and pre-optimizes relevant code regions to generate high-quality accelerators through high-level synthesis. SODA-OPT can support any high-level programming framework and domain-specific language that interface with the MLIR infrastructure. By leveraging MLIR, SODA-OPT solves compiler optimization problems with specialized abstractions. Backend synthesis tools connect to SODA-OPT through progressive intermediate representation lowerings. SODAOPT interfaces to a design space exploration engine to identify the combination of compiler optimization passes and options that provides high-performance generated designs for different backends and targets. We demonstrate the practical applicability of the compilation flow by exploring the automatic generation of accelerators for deep neural networks operators outlined at arbitrary granularity and by combining outlining with tiling on large convolution layers. Experimental results with kernels from the PolyBench benchmark show that our high-level optimizations improve execution delays of synthesized accelerators up to 60x. We also show that for the selected kernels, our solution outperforms the current of state-ofthe art in more than 70% of the benchmarks and provides better average speedup in 55% of them. SODA-OPT is an open source project available at https://gitlab.pnnl.gov/sodalite/soda-opt.},
+	doi = {10.1145/3508352.3549424},
+	isbn = {9781450392174},	
+	pages = {1--9}
+}
+@conference{11311_1000685,
+	author = {Minutoli, Marco and Castellana, VITO GIOVANNI and Tumeo, Antonino and Lattuada, Marco and Ferrandi, Fabrizio},
+	title = {Efficient synthesis of graph methods: a dynamically scheduled architecture},
+	year = {2016},
+	publisher = {ACM},
+	address = {New York},
+	booktitle = {ICCAD '16 Proceedings of the 35th International Conference on Computer-Aided Design},
+	doi = {10.1145/2966986.2967030},
+	isbn = {9781450344661},	
+	isbn = {978-145034466-1},	
+	pages = {1--8}
+}
+@inbook{11311_693770,
+	author = {Georgi, Kuzmanov and Vlad Mihai, Sima and Koen, Bertels and Coutinho, José Gabriel F. and Wayne, Luk and Giacomo, Marchiori and Raffaele, Tripiccione and Ferrandi, Fabrizio},
+	title = {hArtes: Holistic Approach to Reconfigurable Real-Time Embedded SystemsReconfigurable Computing},
+	year = {2011},
+	publisher = {-New York, NY: Plenum   -SPRINGER, 233 SPRING STREET, NEW YORK, USA, NY, 10013},
+	address = {New York},
+	booktitle = {Reconfigurable Computing},
+	doi = {10.1007/978-1-4614-0061-5_5},
+	isbn = {9781461400608},	
+	pages = {91--115}
+}
+@article{11311_998432,
+	author = {Nane, Razvan and Sima, Vlad Mihai and Pilato, Christian and Choi, Jongsok and Fort, Blair and Canis, Andrew and Chen, Yu Ting and Hsiao, Hsuan and Brown, Stephen and Ferrandi, Fabrizio and Anderson, Jason and Bertels, Koen},
+	title = {A Survey and Evaluation of FPGA High-Level Synthesis Tools},
+	year = {2016},
 	journal = {IEEE TRANSACTIONS ON COMPUTER-AIDED DESIGN OF INTEGRATED CIRCUITS AND SYSTEMS},
-	volume = {29},
-	abstract = {To exploit the power of modern heterogeneous multiprocessor embedded platforms on partitioned applications, the designer usually needs to efficiently map and schedule all the tasks and the communications of the application, respecting the constraints imposed by the target architecture. Since the problem is heavily constrained, common methods used to explore such design space usually fail, obtaining low-quality solutions. In this paper, we propose an ant colony optimization (ACO) heuristic that, given a model of the target architecture and the application, efficiently executes both scheduling and mapping to optimize the application performance. We compare our approach with several other heuristics, including simulated annealing, tabu search, and genetic algorithms, on the performance to reach the optimum value and on the potential to explore the design space. We show that our approach obtains better results than other heuristics by at least 16% on average, despite an overhead in execution time. Finally, we validate the approach by scheduling and mapping a JPEG encoder on a realistic target architecture.},
-	keywords = {INF},
-	doi = {10.1109/TCAD.2010.2048354},
-	pages = {911--924},
-	number = {6}
+	volume = {35},
+	doi = {10.1109/TCAD.2015.2513673},
+	pages = {1591--1604},
+	number = {10}
 }
-@conference{
-	11311_251538,
-	author = {Bruschi, Francesco and Ferrandi, Fabrizio},
-	title = {A systemC based framework for the early evaluation of communication architectures},
-	year = {2006},
-	booktitle = {Proc. Forum on Specification & Design Languages, FDL’06},
-	keywords = {INF},
-	isbn = {9783000197109},	
-	pages = {319--326}
-}
-@conference{
-	11311_964843,
-	author = {Minutoli, Marco and Castellana, VITO GIOVANNI and Tumeo, Antonino and Ferrandi, Fabrizio},
-	title = {Function Proxies for Improved Resource Sharing in High Level Synthesis},
-	year = {2015},
-	booktitle = {Field-Programmable Custom Computing Machines (FCCM), 2015 IEEE 23rd Annual International Symposium on},
-	abstract = {The current generation of High Level Synthesis (HLS) tools usually generates hierarchical and modular designs, mimicking the structure of the call graph of the original high-level input specification. The standard approach is to progressively synthesize functions into modules by navigating the application call graph from the leaves up to the top function. In the synthesized architecture, function calls corresponds to the instantiation of the related module into the data path generated for the caller. Our work introduces a methodology that enables sharing of (sub)modules across modules boundaries.},
-	doi = {10.1109/FCCM.2015.60},
-	isbn = {978-1-4799-9969-9},	
-	isbn = {978-1-4799-9969-9},	
-	pages = {100--100}
-}
-@conference{
-	11311_575580,
-	author = {Cecchi, S. and Primavera, A. and Piazza, F. and Bettarelli, F. and Ciavattini, E. and Toppi, R. and Coutinho, J. G. F. and Luk, W. and Pilato, Christian and Ferrandi, Fabrizio and Sima, V. M. and Bertels, K.},
-	title = {The hArtes CarLab: A New Approach to Advanced Algorithms Development for Automotive Audio},
-	year = {2010},
-	booktitle = {Proceedings of 129th Audio Engineering Society Convention (AES)},
-	keywords = {INF},
-	url = {http://www.aes.org/e-lib/browse.cfm?elib=15605},
-	pages = {1--12}
-}
-@article{
-	11311_630187,
+@article{11311_630187,
 	author = {Cecchi, S. and Primavera, A. and Piazza, F. and Bettarelli, F. and Ciavattini, E. and Toppi, R. and Coutinho, J. G. F. and Luk, W. and Pilato, Christian and Ferrandi, Fabrizio and Sima, V. M. and Bertels, K.},
 	title = {The hArtes CarLab: A New Approach to Advanced Algorithms Development for Automotive Audio},
 	year = {2011},
@@ -1139,111 +793,185 @@ The paper introduces the model adopted for pipelined applications and then shows
 	pages = {858--869},
 	number = {11}
 }
-@conference{
-	11311_249501,
-	author = {Allara, A. and Bombana, M. and Cavalloro, P. and Ferrandi, Fabrizio},
-	title = {Requirements for synthesis-oriented modeling in SystemC},
-	year = {2001},
-	booktitle = {Proc. Workshop on Formal Design of Safety Critical Embedded Systems},
-	keywords = {INF},
-	pages = {------}
+@conference{11311_268104,
+	author = {Ferrandi, Fabrizio and Lanzi, PIER LUCA and Sciuto, Donatella},
+	title = {Mining Interesting Patterns from Hardware-Software Codesign Data with the Learning Classifier System XCS},
+	year = {2003},
+	booktitle = {Proceedings of the IEEE Congress on Evolutionary Computation (CEC 2003)},
+	isbn = {0780378040},	
+	pages = {1486--1492}
 }
-@conference{
-	11311_666622,
-	author = {Ferrandi, Fabrizio and Fummi, F. and Macii, E. and Poncino, M. and Sciuto, Donatella},
-	title = {Power estimation of behavioral descriptions},
-	year = {1998},
-	publisher = {IEEE Computer Society},
-	address = {Los Alamitos},
-	booktitle = {Proceedings of the Design, Automation and Test in Europe Conference (DATE98)},
-	abstract = {This paper presents a methodology for power estimation of designs described at the Behavioral-level as the interconnection of functional modules. The input/output Behavior of each module is implicitly stored using BDDs, and the power consumed By the network is estimated using a novel and accurate entropy-based approach. As a demonstration example, we have used the proposed power estimation technique to evaluate and compare the effects of some architectural transformations applied to a reference design specification on the power dissipation of the corresponding implementations.},
-	doi = {10.1109/DATE.1998.655944},
-	isbn = {0818683597},	
-	pages = {762--766}
-}
-@conference{
-	11311_768465,
-	author = {Castellana, VITO GIOVANNI and Ferrandi, Fabrizio},
-	title = {Scheduling independent liveness analysis for register binding in high level synthesis},
-	year = {2013},
-	booktitle = {Proceedings DATE 2013},
-	abstract = {Classical techniques for register allocation and binding require the definition of the program execution order, since a partial ordering relation between operations must be induced to perform liveness analysis through data-flow equations. In High Level Synthesis (HLS) flows this is commonly obtained through the scheduling task. However for some HLS approaches, such a relation can be difficult to be computed, or not statically computable at all, and adopting conventional register binding techniques, even when feasible, cannot guarantee maximum performances. To overcome these issues we introduce a novel scheduling-independent liveness analysis methodology, suitable for dynamic scheduling architectures. Such liveness analysis is exploited in register binding using standard graph coloring techniques, and unlike other approaches it avoids the insertion of structural dependencies, introduced to prevent run-time resource conflicts in dynamic scheduling environments. The absence of additional dependencies avoids performance degradation and makes parallelism exploitation independent from the register binding task, while on average not impacting on area, as shown through the experimental results.},
-	doi = {10.7873/DATE.2013.319},
-	isbn = {9781450321532},	
-	pages = {1571--1574}
-}
-@article{
-	11311_1114656,
+@conference{11311_665733,
 	author = {Lattuada, Marco and Ferrandi, Fabrizio},
-	title = {A Design Flow Engine for the Support of Customized Dynamic High Level Synthesis Flows},
-	year = {2019},
-	journal = {ACM TRANSACTIONS ON RECONFIGURABLE TECHNOLOGY AND SYSTEMS},
-	volume = {12},
-	keywords = {High level synthesis; Compilation steps},
-	url = {http://doi.acm.org/10.1145/3356475},
-	doi = {10.1145/3356475},
-	pages = {19:1--19:26},
-	number = {4}
+	title = {Performance estimation of embedded software with confidence levels},
+	year = {2012},
+	booktitle = {17th Asia and South Pacific Design Automation Conference},
+	abstract = {Since time constraints are a very critical aspect of an embedded system, performance evaluation can not be postponed to the end of the design flow, but it has to be introduced since its early stages. Estimation techniques based on mathematical models are usually preferred during this phase since they provide quite accurate estimation of the application performance in a fast way. However, the estimation error has to be considered during design space exploration to evaluate if a solution can be accepted (e.g., by discarding solutions whose estimated time is too close to constraint). Evaluate if the possible error can be significant analyzing a punctual estimation is not a trivial task. In this paper we propose a methodology, based on statistical analysis, that provides a prediction interval on the estimation and a confidence level on meeting a time constraint. This information can drive design space exploration reducing the number of solutions to be validated. The results show how the produced intervals effectively capture the estimation error introduced by a linear model.},
+	doi = {10.1109/ASPDAC.2012.6165022},
+	isbn = {9781467307703},	
+	isbn = {9781467307710},	
+	isbn = {9781467307727},	
+	pages = {573--578}
 }
-@conference{
-	11311_572916,
-	author = {Ferrandi, Fabrizio and Pilato, Christian and Sciuto, Donatella and Tumeo, Antonino},
-	title = {Mapping and scheduling of parallel C applications with Ant Colony Optimization onto heterogeneous reconfigurable MPSoCs},
+@conference{11311_575581,
+	author = {Lattuada, Marco and Ferrandi, Fabrizio},
+	title = {Combining Target-independent Analysis with Dynamic Profiling to Build the Performance Model of a DSP},
 	year = {2010},
-	booktitle = {Proceedings of the Asia and South Pacific Design Automation Conference (ASP-DAC 2010)},
-	keywords = {INF},
-	doi = {10.1109/ASPDAC.2010.5419782},
-	isbn = {9781424457656},	
-	pages = {799--804}
+	booktitle = {Computer and Information Technology (CIT), 2010 IEEE 10th International Conference on},
+	abstract = {Fast and accurate performance estimation is a key aspect of heterogeneous embedded systems design flow, since cycle-accurate simulators, when exist, are usually too slow to be used during design space exploration. Performance estimation techniques are usually based on combination of estimation of the single processing elements which compose the system. Architectural characteristics of Digital Signal Processors (DSP), such as the presence of Single Instruction Multiple Data operations or of special hardware units to control loop executions, introduce peculiar aspects in the performance estimation problem. In this paper we present a methodology to estimate the performance of a function on a given dataset on a DSP. Estimation is performed combining the host profiling data with the function GNU GCC GIMPLE representation. Starting from the results of this analysis, we build a performance model of a DSP by exploiting the Linear Regression Technique. Use of GIMPLE representation allows to take directly into account the target-independent optimizations performed by the DSP compiler. We validate our approach by building a performance model of the MagicV DSP and by testing the model on a set of significative benchmarks.},
+	url = {http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=5578004},
+	doi = {10.1109/CIT.2010.324},
+	isbn = {9781424475476},	
+	pages = {1895--1901}
 }
-@conference{
-	11311_999155,
-	author = {Minutoli, Marco and Castellana, VITO GIOVANNI and Tumeo, Antonino and Lattuada, Marco and Ferrandi, Fabrizio},
-	title = {Enabling the high level synthesis of data analytics accelerators},
-	year = {2016},
-	publisher = {ACM},
-	booktitle = {CODES '16 Proceedings of the Eleventh IEEE/ACM/IFIP International Conference on Hardware/Software Codesign and System Synthesis},
-	doi = {10.1145/2968456.2976764},
-	isbn = {9781450344838},	
-	isbn = {9781450344838},	
-	pages = {1--3}
+@conference{11311_1229392,
+	author = {Agostini, N. B. and Limaye, A. and Minutoli, M. and Castellana, V. G. and Manzano, J. and Tumeo, A. and Curzel, S. and Ferrandi, F.},
+	title = {SODA synthesizer: An open-source, multi-level, modular, extensible compiler from high-level frameworks to silicon},
+	year = {2022},
+	booktitle = {ICCAD '22: Proceedings of the 41st IEEE/ACM International Conference on Computer-Aided Design},
+	abstract = {The SODA Synthesizer is an open-source, modular, end-to-end hardware compiler framework. The SODA frontend, developed in MLIR, performs system-level design, code partitioning, and highlevel optimizations to prepare the specifications for the hardware synthesis. The backend is based on a state-of-the-art high-level synthesis tool and generates the final hardware design. The backend can interface with logic synthesis tools for field programmable gate arrays or with commercial and open-source logic synthesis tools for application-specific integrated circuits. We discuss the opportunities and challenges in integrating with commercial and open-source tools both at the frontend and backend, and highlight the role that an end-to-end compiler framework like SODA can play in an open-source hardware design ecosystem.},
+	doi = {10.1145/3508352.3561101},
+	isbn = {9781450392174},	
+	pages = {1--7}
 }
-@inbook{
-	11311_1030902,
-	author = {Tumeo, Antonino and Ceriani, M. and Palermo, Gianluca and Minutoli, Marco and Castellana, VITO GIOVANNI and Ferrandi, Fabrizio},
-	title = {Real-time considerations for rugged embedded systems},
-	year = {2016},
-	publisher = {Elsevier Inc.},
-	booktitle = {Rugged Embedded Systems: Computing in Harsh Environments},
-	keywords = {Aperiodic tasks; Automotive applications; Dual priority scheduling; Embedded systems; FPGA; Hard real-time tasks; MiBench; Multiprocessor interrupt controller; Periodic tasks; Prototyping; Real-time systems; Responsiveness; Rugged systems; Ruggedization; Schedulability; Computer Science (all)},
-	url = {http://www.sciencedirect.com/science/book/9780128024591},
-	doi = {10.1016/B978-0-12-802459-1.00003-8},
-	isbn = {9780128026328},	
-	pages = {39--56}
+@conference{11311_1300850,
+	author = {Fiorito, Michele and Curzel, Serena and Ferrandi, Fabrizio},
+	title = {Augmented Co-Simulation for Fast Functional and System-Level Verification of HLS Accelerators},
+	year = {2025},
+	booktitle = {2025 IEEE/ACM International Conference On Computer Aided Design (ICCAD)},
+	doi = {10.1109/iccad66269.2025.11240905},
+	pages = {1--9}
 }
-@article{
-	11311_998432,
-	author = {Nane, Razvan and Sima, Vlad Mihai and Pilato, Christian and Choi, Jongsok and Fort, Blair and Canis, Andrew and Chen, Yu Ting and Hsiao, Hsuan and Brown, Stephen and Ferrandi, Fabrizio and Anderson, Jason and Bertels, Koen},
-	title = {A Survey and Evaluation of FPGA High-Level Synthesis Tools},
-	year = {2016},
+@conference{11311_1285590,
+	author = {Barone, Claudio and Kushwah, Rishika and Limaye, Ankur and Castellana, Vito Giovanni and Gozzi, Giovanni and Fiorito, Michele and Ferrandi, Fabrizio and Tumeo, Antonino},
+	title = {To Cache or not to Cache? Exploring the Design Space of Tunable, HLS-generated Accelerators},
+	year = {2024},
+	publisher = {Association for Computing Machinery},
+	booktitle = {PROCEEDINGS OF THE INTERNATIONAL SYMPOSIUM ON MEMORY SYSTEMS, MEMSYS 2024},
+	doi = {10.1145/3695794.3695815},
+	pages = {210--218}
+}
+@conference{11311_262750,
+	author = {Ferrandi, Fabrizio and Lanzi, PIER LUCA and Sciuto, Donatella and Tanelli, Mara},
+	title = {System-level metrics for hardware/software architectural mapping},
+	year = {2004},
+	booktitle = {Electronic Design, Test and Applications, Proceedings. DELTA 2004. Second IEEE International Workshop on},
+	abstract = {The current trend in Embedded Systems (ES) design is moving towards the integration of increasingly complex applications on a single chip, while having to meet strict market demands which force to face always shortening design times. In general, the ideal design methodology shall support the exploration of the highest possible number of alternatives (in terms of HW-SW architectures) starting in the early design stages as this will prevent costly correction efforts in the deployment phase. The present paper will propose a new methodology for tackling the design exploration problem, with the aim of providing a solution in terms of optimal partitioning with respect of the overall system performance.},
+	keywords = {computer architecture;embedded systems;software architecture;software metrics;software performance evaluation;systems analysis;HW-SW architectures;communication performance estimation;embedded systems design;hardware performance estimation;hardware/software architectural mapping;optimal partitioning;software performance estimation;system level metrics;Application software;Computer architecture;Delay estimation;Design methodology;Embedded system;Hardware;Modeling;Performance analysis;Software performance;System performance},
+	doi = {10.1109/DELTA.2004.10060},
+	pages = {231--236}
+}
+@conference{11311_1189606,
+	author = {Ferrandi, Fabrizio and Castellana, Vito Giovanni and Curzel, Serena and Fezzardi, Pietro and Fiorito, Michele and Lattuada, Marco and Minutoli, Marco and Pilato, Christian and Tumeo, Antonino},
+	title = {Invited: Bambu: an Open-Source Research Framework for the High-Level Synthesis of Complex Applications},
+	year = {2021},
+	booktitle = {Proceedings of the 2021 58th ACM/IEEE Design Automation Conference (DAC)},
+	doi = {10.1109/DAC18074.2021.9586110},
+	isbn = {978-1-6654-3274-0},	
+	pages = {1327--1330}
+}
+@conference{11311_1263097,
+	author = {Limaye, Ankur and Barone, Claudio and Agostini, Nicolas Bohm and Minutoli, Marco and Manzano, Joseph and Castellana, Vito Giovanni and Gozzi, Giovanni and Fiorito, Michele and Curzel, Serena and Ferrandi, Fabrizio and Tumeo, Antonino},
+	title = {Towards Automated Generation of Chiplet-Based Systems Invited Paper},
+	year = {2024},
+	booktitle = {2024 29th Asia and South Pacific Design Automation Conference (ASP-DAC)},
+	doi = {10.1109/asp-dac58780.2024.10473980},
+	pages = {771--776}
+}
+@conference{11311_544246,
+	author = {Tumeo, Antonino and Pilato, Christian and Ferrandi, Fabrizio and Sciuto, Donatella and Lanzi, PIER LUCA},
+	title = {Ant Colony Optimization for Mapping and Scheduling in Heterogeneous Multiprocessor Systems},
+	year = {2008},
+	booktitle = {Proceedings IEEE International Conference in Embedded Computer Systems: Architectures, Modeling, and Simulation, 2008, SAMOS VIII},
+	doi = {10.1109/ICSAMOS.2008.4664857},
+	pages = {142--149}
+}
+@conference{11311_259699,
+	author = {Ferrandi, Fabrizio and Pandini, D. and Rosiello, A. and Sciuto, Donatella},
+	title = {A Hash-based Approach for Functional Regularity Extraction During Logic Synthesis},
+	year = {2007},
+	publisher = {IEEE Compurter Soc.},
+	booktitle = {VLSI, 2007. ISVLSI '07. IEEE Computer Society Annual Symposium on},
+	abstract = {Performance, power, and functionality, yield and manufacturability are rapidly becoming additional critical factors that must be considered at higher levels of abstraction. A possible solution to improve yield and manufacturability is based on the detection of regularity at logic level This paper focuses its attention on regularity extraction, after technology independent logic synthesis, to detect recurring functionalities during logic synthesis and thus constraining the physical design phase to exploit the regular netlist produced. A fast heuristic to the template identification is proposed and analyzed on a standard set of benchmarks both sequential and combinational.},
+	keywords = {cryptography;design for manufacture;high level synthesis;integrated circuit yield;logic design;functional regularity extraction;hash-based approach;integrated circuit yield;logic level;logic synthesis;regular netlist;template identification;Circuit synthesis;Clustering algorithms;Hardware design languages;Latches;Libraries;Logic circuits;Logic design;Manufacturing;Minimization;Phase detection},
+	doi = {10.1109/ISVLSI.2007.5},
+	isbn = {9781595936059},	
+	pages = {92--97}
+}
+@conference{11311_973456,
+	author = {Lattuada, Marco and Ferrandi, Fabrizio},
+	title = {Code transformations based on speculative SDC scheduling},
+	year = {2015},
+	publisher = {IEEE, 345 E 47TH ST, NEW YORK, NY 10017 USA},
+	booktitle = {Proceedings of the IEEE/ACM International Conference on Computer-Aided Design, ICCAD},
+	abstract = {Code motion and speculations are usually exploited in the High Level Synthesis of control dominated applications to improve the performances of the synthesized designs. Selecting the transformations to be applied is not a trivial task: their effects can indeed indirectly spread across the whole design, potentially worsening the quality of the results.
+
+In this paper we propose a code transformation flow, based on a new extension of the System of Difference Constraints (SDC) scheduling algorithm, which introduces a large number of transformations, whose profitability is guaranteed by SDC formulation. Experimental results show that the proposed technique in average reduces the execution time of control dominated applications by 37% with respect to a commercial tool without increasing the area usage.},
+	doi = {10.1109/ICCAD.2015.7372552},
+	isbn = {978-1-4673-8388-2},	
+	pages = {71--77}
+}
+@article{11311_572925,
+	author = {Ferrandi, Fabrizio and Lanzi, PIER LUCA and Pilato, Christian and Sciuto, Donatella and Tumeo, Antonino},
+	title = {Ant Colony Heuristic for Mapping and Scheduling Tasks and Communications on Heterogeneous Embedded Systems},
+	year = {2010},
 	journal = {IEEE TRANSACTIONS ON COMPUTER-AIDED DESIGN OF INTEGRATED CIRCUITS AND SYSTEMS},
-	volume = {35},
-	doi = {10.1109/TCAD.2015.2513673},
-	pages = {1591--1604},
-	number = {10}
+	volume = {29},
+	abstract = {To exploit the power of modern heterogeneous multiprocessor embedded platforms on partitioned applications, the designer usually needs to efficiently map and schedule all the tasks and the communications of the application, respecting the constraints imposed by the target architecture. Since the problem is heavily constrained, common methods used to explore such design space usually fail, obtaining low-quality solutions. In this paper, we propose an ant colony optimization (ACO) heuristic that, given a model of the target architecture and the application, efficiently executes both scheduling and mapping to optimize the application performance. We compare our approach with several other heuristics, including simulated annealing, tabu search, and genetic algorithms, on the performance to reach the optimum value and on the potential to explore the design space. We show that our approach obtains better results than other heuristics by at least 16% on average, despite an overhead in execution time. Finally, we validate the approach by scheduling and mapping a JPEG encoder on a realistic target architecture.},
+	keywords = {INF},
+	doi = {10.1109/TCAD.2010.2048354},
+	pages = {911--924},
+	number = {6}
 }
-@conference{
-	11311_665738,
-	author = {Marco, Ceriani and Ferrandi, Fabrizio and Lanzi, PIER LUCA and Sciuto, Donatella and Antonino, Tumeo},
-	title = {Multiprocessor systems-on-chip synthesis using multi-objective evolutionary computation},
-	year = {2010},
-	booktitle = {Proceedings of the 12th annual conference on Genetic and evolutionary computation - GECCO '10},
-	doi = {10.1145/1830483.1830710},
-	isbn = {9781450300728},	
-	pages = {1267--1274}
+@conference{11311_1285593,
+	author = {Limaye, Ankur and Bohm Agostini, Nicolas and Barone, Claudio and Castellana, Vito Giovanni and Fiorito, Michele and Ferrandi, Fabrizio and Marquez, Andres and Tumeo, Antonino},
+	title = {A Synthesis Methodology for Intelligent Memory Interfaces in Accelerator Systems},
+	year = {2025},
+	publisher = {IEEE},
+	booktitle = {Proceedings of the 30th Asia and South Pacific Design Automation Conference},
+	doi = {10.1145/3658617.3697553},
+	pages = {1016--1022}
 }
-@article{
-	11311_1270384,
+@conference{11311_251538,
+	author = {Bruschi, Francesco and Ferrandi, Fabrizio},
+	title = {A systemC based framework for the early evaluation of communication architectures},
+	year = {2006},
+	booktitle = {Proc. Forum on Specification & Design Languages, FDL’06},
+	keywords = {INF},
+	isbn = {9783000197109},	
+	pages = {319--326}
+}
+@conference{11311_1194314,
+	author = {Curzel, Serena and Agostini, Nicolas Bohm and Song, Shihao and Dagli, Ismet and Limaye, Ankur and Tan, Cheng and Minutoli, Marco and Castellana, Vito Giovanni and Amatya, Vinay and Manzano, Joseph and Das, Anup and Ferrandi, Fabrizio and Tumeo, Antonino},
+	title = {Automated Generation of Integrated Digital and Spiking Neuromorphic Machine Learning Accelerators},
+	year = {2021},
+	booktitle = {Proceedings of the 2021 IEEE/ACM International Conference On Computer Aided Design (ICCAD)},
+	url = {https://ieeexplore.ieee.org/document/9643474},
+	doi = {10.1109/ICCAD51958.2021.9643474},
+	isbn = {978-1-6654-4507-8},	
+	pages = {1--7}
+}
+@conference{11311_630181,
+	author = {Pilato, Christian and Castellana, VITO GIOVANNI and Lovergine, Silvia and Ferrandi, Fabrizio},
+	title = {A Runtime Adaptive Controller for Supporting Hardware Components with Variable Latency},
+	year = {2011},
+	booktitle = {Proc. of 2011 NASA/ESA Conference on Adaptive Hardware and Systems},
+	doi = {10.1109/AHS.2011.5963930},
+	pages = {153--160}
+}
+@conference{11311_977752,
+	author = {Lattuada, Marco and Ferrandi, Fabrizio and Perrotin, Maxime},
+	title = {Computer Assisted Design and Integration of FPGA Accelerators in Aerospace Systems},
+	year = {2016},
+	booktitle = {Proceedings of IEEE Aerospace Conference 2016},
+	abstract = {The integration of Field Programmable Gate Arrays (FPGAs) in an aerospace system allows to improve its efficiency and its flexibility thanks to their programmability. To exploit these devices, the designer has to identify the functionalities that have to be executed on them and provide their implementation by means of Hardware Description Languages. Generating these descriptions for a software developer could be a very difficult task because of the different programming paradigms of software programs and hardware descriptions. To facilitate the developer in this activity, High Level Synthesis techniques have been developed aiming at (semi-)automatically generating hardware implementations of specifications written in high level languages (e.g., C). State of the art tools implementing such methodologies have not been designed for the integration with aerospace systems design flows, so significant adaptations could be required to the designer for integrating the hardware implementations with the rest of the design solution.
+   In this paper the integration of a High Level Synthesis design flow in the TASTE framework (http://taste.tuxfamily.org) is presented. TASTE is a set of freely available tools for the development of real time embedded systems developed by the European Space Agency together with a set of its industrial partners. This framework allows to integrate specifications described in different languages (e.g., C, ADA, Simulink, SDL) by means of formal languages (AADL and ASN.1) and to early verify the correctness of the produced solutions. TASTE has been extended with Bambu (http://panda.dei.polimi.it), a tool for the High Level Synthesis developed at Politecnico di Milano. In this way the TASTE users have the possibility to specify which functionalities, provided by means of high level languages such C, have to be implemented in hardware on the FPGA without having to directly provide the hardware implementations. Thanks to the integration of the High Level Synthesis tool indeed, the framework is able not only to produce the hardware implementations, but also to integrate them in the rest of the aerospace system by automatically generating the whole architecture to be implemented on the FPGA. This architecture contains not only the implementation of the hardware accelerators, but also of the components required to transfer the data from and to the rest of the system and to correctly manage their size and endianness.
+The application of the extended framework to a real case study shows its effective usability.},
+	doi = {10.1109/AERO.2016.7500675},
+	isbn = {978-146737676-1},	
+	pages = {1--11}
+}
+@article{11311_1270384,
 	author = {Gozzi, Giovanni and Fiorito, Michele and Curzel, Serena and Barone, Claudio and Castellana, Vito Giovanni and Minutoli, Marco and Tumeo, Antonino and Ferrandi, Fabrizio},
 	title = {SPARTA: High-Level Synthesis of Parallel Multi-Threaded Accelerators},
 	year = {2024},
@@ -1254,221 +982,27 @@ The paper introduces the model adopted for pipelined applications and then shows
 	pages = {1--30},
 	number = {1}
 }
-@conference{
-	11311_768471,
-	author = {Lovergine, Silvia and Ferrandi, Fabrizio},
-	title = {Harnessing Adaptivity Analysis for the Automatic Design of Efficient Embedded and HPC Systems},
-	year = {2013},
-	booktitle = {Proceedings IPDPS 2013},
-	doi = {10.1109/IPDPSW.2013.230},
-	isbn = {9780769549798},	
-	pages = {2298--2301}
+@conference{11311_268312,
+	author = {Ferrandi, Fabrizio and Lanzi, PIER LUCA and Sciuto, Donatella},
+	title = {System Level Hardware--Software Design Exploration with XCS},
+	year = {2004},
+	publisher = {Springer Verlag},
+	journal = {LECTURE NOTES IN COMPUTER SCIENCE},
+	booktitle = {Genetic and Evolutionary Computation -- GECCO 2004: Genetic and Evolutionary Computation Conference, Seattle, WA, USA, June 26-30, 2004. Proceedings, Part II},
+	abstract = {The current trend in Embedded Systems (ES) design is moving towards the integration of increasingly complex applications on a single chip. An Embedded System has to satisfy both performance constraints and cost limits; it is composed of both dedicated elements, i.e. hardware (HW) components, and programmable units, i.e. software (SW) components, Hardware (HW) and software (SW) components have to interact with each other for accomplishing a specific task. One of the aims of codesign is to support the exploration of the most significant architectural alternatives in terms of decomposition between hardware (HW) and software (SW) components. In this paper, we propose a novel approach to support the exploration of feasible hardware-software (HW-SW) configurations. The approach exploits the learning classifier system XCS both to identify existing relationships among the system components and to support HW-SW partitioning decisions. We validate the approach by applying it to the design of a Digital Sound Spatializer.},
+	url = {http://dx.doi.org/10.1007/978-3-540-24855-2_91},
+	doi = {10.1007/978-3-540-24855-2_91},
+	isbn = {9783540223436},	
+	pages = {763--773}
 }
-@conference{
-	11311_630181,
-	author = {Pilato, Christian and Castellana, VITO GIOVANNI and Lovergine, Silvia and Ferrandi, Fabrizio},
-	title = {A Runtime Adaptive Controller for Supporting Hardware Components with Variable Latency},
-	year = {2011},
-	booktitle = {Proc. of 2011 NASA/ESA Conference on Adaptive Hardware and Systems},
-	doi = {10.1109/AHS.2011.5963930},
-	pages = {153--160}
-}
-@conference{
-	11311_1220331,
-	author = {Curzel, S. and Jovic, S. and Fiorito, M. and Tumeo, A. and Ferrandi, F.},
-	title = {Higher-Level Synthesis: experimenting with MLIR polyhedral representations for accelerator design},
-	year = {2022},
-	booktitle = {IMPACT 2022: 12th International Workshop on Polyhedral Compilation Techniques},
-	pages = {1--10}
-}
-@conference{
-	11311_966133,
-	author = {Minutoli, Marco and Castellana, VITO GIOVANNI and Tumeo, Antonino and Ferrandi, Fabrizio},
-	title = {Inter-procedural resource sharing in High Level Synthesis through function proxies},
+@article{11311_869737,
+	author = {Lattuada, Marco and Ferrandi, Fabrizio},
+	title = {Modeling Resolution of Resources Contention in Synchronous Data Flow Graphs},
 	year = {2015},
-	booktitle = {Field Programmable Logic and Applications (FPL), 2015 25th International Conference on},
-	abstract = {Modular design is becoming increasingly important in High Level Synthesis (HLS) flows. Current HLS flows generate hierarchical and modular designs that mimic the structure and call graph of the input specification by translating functions into modules. Function calls are translated by instantiating the callee module in the data-path of its caller, allowing for resource sharing when the same function is called multiple times. However, if two different callers invoke the same function, current HLS flows cannot share the instance of the module between the two callers, even if they invoke the function in a mutually exclusive way. In this paper, we propose a methodology that enables sharing of (sub)modules across modules boundaries. Sharing is obtained through function proxies, which act as forwarders of function calls in the original specification to shared modules without reducing performance. Building on the concept of function proxies, we propose a methodology and the related components to perform HLS of function calls through function pointers, without requiring complete static knowledge of the alias set (point-to set). We show that module sharing through function proxies provides valuable area savings and no significant impacts on the execution delays, and that our synthesis approach for function pointers enables dynamic polymorphism.},
-	doi = {10.1109/FPL.2015.7293958},
-	isbn = {978-0-9934-2800-5},	
-	isbn = {978-0-9934-2800-5},	
-	pages = {1--8}
-}
-@conference{
-	11311_544245,
-	author = {Pilato, Christian and Loiacono, Daniele and Ferrandi, Fabrizio and Lanzi, PIER LUCA and Sciuto, Donatella},
-	title = {High-level synthesis with multi-objective genetic algorithm: A comparative encoding analysis},
-	year = {2008},
-	booktitle = {Proceedings of the IEEE Congress on Evolutionary Computation 2008, CEC 2008},
-	doi = {10.1109/CEC.2008.4631249},
-	isbn = {9781424418220},	
-	pages = {3334--3341}
-}
-@conference{
-	11311_1272283,
-	author = {Pilato, C. and Banik, S. and Beranek, J. and Brocheton, F. and Castrillon, J. and Cevasco, R. and Cmar, R. and Curzel, S. and Ferrandi, F. and Friebel, K. F. A. and Galizia, A. and Grasso, M. and Silva, P. and Martinovic, J. and Palermo, G. and Paolino, M. and Parodi, A. and Parodi, A. and Pintus, F. and Polig, R. and Poulet, D. and Regazzoni, F. and Ringlein, B. and Rocco, R. and Slaninova, K. and Slooff, T. and Soldavini, S. and Suchert, F. and Tibaldi, M. and Weiss, B. and Hagleitner, C.},
-	title = {A System Development Kit for Big Data Applications on FPGA-based Clusters: The EVEREST Approach},
-	year = {2024},
-	publisher = {Institute of Electrical and Electronics Engineers Inc.},
-	booktitle = {Proceedings -Design, Automation and Test in Europe, DATE},
-	doi = {10.23919/DATE58400.2024.10546518},
-	pages = {1--6}
-}
-@conference{
-	11311_553643,
-	author = {Ferrandi, Fabrizio and Lattuada, Marco and Pilato, Christian and Tumeo, Antonino},
-	title = {Performance Estimation for Task Graphs Combining Sequential Path Profiling and Control Dependence Regions},
-	year = {2009},
-	booktitle = {Proceedings of the 7th IEEE/ACM International Conference on Formal Methods and Models for Codesign},
-	abstract = {The speed-up estimation of parallelized code is crucial to efficiently compare different parallelization techniques or task graph transformations. Unfortunately, most of the time, during the parallelization of a specification, the information that can be extracted by profiling the corresponding sequential code (e.g. the most executed paths) are not properly taken into account. In particular, correlating sequential path profiling with the corresponding parallelized code can help in the identification of code hot spots, opening new possibilities for automatic parallelization. For this reason, starting from a well-known profiling technique, the Efficient Path Profiling, we propose a methodology that estimates the speed-up of a parallelized specification, just using the corresponding hierarchical task graph representation and the information coming from the dynamic profiling of the initial sequential specification. Experimental results show that the proposed solution outperforms existing approaches.},
-	keywords = {INF},
-	url = {http://doi.ieeecomputersociety.org/10.1109/MEMCOD.2009.5185389},
-	doi = {10.1109/MEMCOD.2009.5185389},
-	pages = {131--140}
-}
-@conference{
-	11311_1006496,
-	author = {Bombana, M. and Buonanno, G. and Cavalloro, P. and Ferrandi, Fabrizio and Sciuto, Donatella and Zaza, G.},
-	title = {Reduction of fault detection costs through testable design of sequential architectures with signal feedbacks},
-	year = {1993},
-	publisher = {Institute of Electrical and Electronics Engineers Inc.},
-	booktitle = {Proceedings - IEEE International Symposium on Defect and Fault Tolerance in VLSI Systems},
-	doi = {10.1109/DFTVS.1993.595805},
-	isbn = {0818635029},	
-	isbn = {0818635029},	
-	pages = {223--230}
-}
-@article{
-	11311_1030731,
-	author = {Fezzardi, Pietro and Lattuada, Marco and Ferrandi, Fabrizio},
-	title = {Using Efficient Path Profiling to Optimize Memory Consumption of On-Chip Debugging for High-Level Synthesis},
-	year = {2017},
-	journal = {ACM TRANSACTIONS ON EMBEDDED COMPUTING SYSTEMS},
-	volume = {1},
-	pages = {1--19},
-	number = {Special Issue on ESWEEK 2017}
-}
-@conference{
-	11311_1285593,
-	author = {Limaye, Ankur and Bohm Agostini, Nicolas and Barone, Claudio and Castellana, Vito Giovanni and Fiorito, Michele and Ferrandi, Fabrizio and Marquez, Andres and Tumeo, Antonino},
-	title = {A Synthesis Methodology for Intelligent Memory Interfaces in Accelerator Systems},
-	year = {2025},
-	publisher = {IEEE},
-	booktitle = {Proceedings of the 30th Asia and South Pacific Design Automation Conference},
-	doi = {10.1145/3658617.3697553},
-	pages = {1016--1022}
-}
-@conference{
-	11311_665763,
-	author = {Ferrandi, Fabrizio and Fummi, F. and Macii, E. and Poncino, M. and Sciuto, Donatella},
-	title = {Symbolic optimization of FSM networks based on sequential ATPG techniques},
-	year = {1996},
-	booktitle = {33rd Design Automation Conference Proceedings, 1996},
-	doi = {10.1109/DAC.1996.545621},
-	isbn = {0897917790},	
-	pages = {467--470}
-}
-@conference{
-	11311_977752,
-	author = {Lattuada, Marco and Ferrandi, Fabrizio and Perrotin, Maxime},
-	title = {Computer Assisted Design and Integration of FPGA Accelerators in Aerospace Systems},
-	year = {2016},
-	booktitle = {Proceedings of IEEE Aerospace Conference 2016},
-	abstract = {The integration of Field Programmable Gate Arrays (FPGAs) in an aerospace system allows to improve its efficiency and its flexibility thanks to their programmability. To exploit these devices, the designer has to identify the functionalities that have to be executed on them and provide their implementation by means of Hardware Description Languages. Generating these descriptions for a software developer could be a very difficult task because of the different programming paradigms of software programs and hardware descriptions. To facilitate the developer in this activity, High Level Synthesis techniques have been developed aiming at (semi-)automatically generating hardware implementations of specifications written in high level languages (e.g., C). State of the art tools implementing such methodologies have not been designed for the integration with aerospace systems design flows, so significant adaptations could be required to the designer for integrating the hardware implementations with the rest of the design solution. In this paper the integration of a High Level Synthesis design flow in the TASTE framework (http://taste.tuxfamily.org) is presented. TASTE is a set of freely available tools for the development of real time embedded systems developed by the European Space Agency together with a set of its industrial partners. This framework allows to integrate specifications described in different languages (e.g., C, ADA, Simulink, SDL) by means of formal languages (AADL and ASN.1) and to early verify the correctness of the produced solutions. TASTE has been extended with Bambu (http://panda.dei.polimi.it), a tool for the High Level Synthesis developed at Politecnico di Milano. In this way the TASTE users have the possibility to specify which functionalities, provided by means of high level languages such C, have to be implemented in hardware on the FPGA without having to directly provide the hardware implementations. Thanks to the integration of the High Level Synthesis tool indeed, the framework is able not only to produce the hardware implementations, but also to integrate them in the rest of the aerospace system by automatically generating the whole architecture to be implemented on the FPGA. This architecture contains not only the implementation of the hardware accelerators, but also of the components required to transfer the data from and to the rest of the system and to correctly manage their size and endianness. The application of the extended framework to a real case study shows its effective usability.},
-	doi = {10.1109/AERO.2016.7500675},
-	isbn = {978-146737676-1},	
-	pages = {1--11}
-}
-@inbook{
-	11311_1003459,
-	author = {Pilato, Christian and Loiacono, Daniele and Tumeo, Antonino and Ferrandi, Fabrizio and Lanzi, PIER LUCA and Sciuto, Donatella},
-	title = {Speeding-Up Expensive Evaluations in High-Level Synthesis Using Solution Modeling and Fitness Inheritance},
-	year = {2010},
-	publisher = {Springer Berlin Heidelberg},
-	booktitle = {Computational Intelligence in Expensive Optimization Problems},
-	url = {http://dx.doi.org/10.1007/978-3-642-10701-6_26},
-	doi = {10.1007/978-3-642-10701-6_26},
-	isbn = {978-3-642-10701-6},	
-	pages = {701--723}
-}
-@conference{
-	11311_968239,
-	author = {Lovergine, Silvia and Tumeo, Antonino and Villa, Oreste and Ferrandi, Fabrizio},
-	title = {YAPPA: A compiler-based parallelization framework for irregular applications on MPSoCs},
-	year = {2013},
-	publisher = {IEEE Computer Society},
-	booktitle = {Proceedings of the 2013 International Symposium on Rapid System Prototyping: Shortening the Path from Specification to Prototype, RSP 2013},
-	keywords = {Compilers; Embedded Systems; HPC; Irregular Applications; Parallel Code Generation; Software},
-	doi = {10.1109/RSP.2013.6683968},
-	isbn = {9781479924103},	
-	isbn = {9781479924103},	
-	pages = {123--129}
-}
-@conference{
-	11311_1297602,
-	author = {Silvano, Cristina and Ferrandi, Fabrizio and Curzel, Serena and Ielmini, Daniele and Perri, Stefania and Spagnolo, Fanny and Corsonello, Pasquale and Schifano, Sebastiano Fabio and Zambelli, Cristian and Garofalo, Angelo and Conti, Francesco and Benini, Luca},
-	title = {Multi-Partner Project: Architectures and Design Methodologies to Accelerate AI Workloads. The ICSC Flagship 2 Project},
-	year = {2025},
-	publisher = {Institute of Electrical and Electronics Engineers Inc.},
-	booktitle = {Proceedings -Design, Automation and Test in Europe, DATE},
-	doi = {10.23919/date64628.2025.10993254},
-	pages = {1--7}
-}
-@conference{
-	11311_1254959,
-	author = {Fiorito, Michele and Curzel, Serena and Ferrandi, Fabrizio},
-	title = {TrueFloat: A Templatized Arithmetic Library for HLS Floating-Point Operators},
-	year = {2023},
-	volume = {14385},
-	booktitle = {SAMOS 2023: Embedded Computer Systems: Architectures, Modeling, and Simulation},
-	doi = {10.1007/978-3-031-46077-7_35},
-	isbn = {978-3-031-46076-0},	
-	isbn = {978-3-031-46077-7},	
-	pages = {486--493}
-}
-@conference{
-	11311_257923,
-	author = {Cordone, R. and Ferrandi, Fabrizio and Palermo, Gianluca and Santambrogio, MARCO DOMENICO and Sciuto, Donatella},
-	title = {Using Speculative Computation and Parallelizing Techniques to Improve Scheduling of Control based Designs},
-	year = {2006},
-	publisher = {IEEE},
-	booktitle = {IEEE Proc. Asia and South Pacific Conference on Design Automation 2006},
-	abstract = {Recent research results have seen the application of parallelizing techniques to high-level synthesis. In particular, the effect of speculative code transformations on mixed control-data flow designs has demonstrated effective results on schedule lengths. In this paper we first analyze the use of the control and data dependence graph as an intermediate representation that provides the possibility of extracting the maximum parallelism. Then we analyze the scheduling problem by formulating an approach based on Integer Linear Programming (ILP) to minimize the number of control steps given the amount of resources. We improve the already proposed ILP scheduling approaches by introducing a new conditional resource sharing constraint which is then extended to the case of speculative computation. The ILP formulation has been solved by using a Branch and Cut framework which provides better results than standard branch and bound techniques},
-	url = {http://dl.acm.org/citation.cfm?id=1118502},
-	url = {http://dx.doi.org/10.1145/1118299.1118502},
-	doi = {10.1109/ASPDAC.2006.1594800},
-	isbn = {0780394518},	
-	pages = {898--904}
-}
-@conference{
-	11311_665775,
-	author = {Bietti, F. S. and Ferrandi, Fabrizio and Fummi, F. and Sciuto, Donatella},
-	title = {VHDL testability analysis based on fault clustering and implicit fault injection},
-	year = {1998},
-	booktitle = {Proceedings of the 8th Great Lakes Symposium on VLSI (Cat. No.98TB100222)},
-	abstract = {Testability analysis of VHDL sequential models is the main topic of this paper. We investigate the possibility to obtain information about the testability of a sequential VHDL description before its actual synthesis. The analysis is based on an implicit fault model that injects faults into a BDD based description extracted from the VHDL representation. Such an injection is related to the original VHDL representation thus allowing the identification of potential testability problems before RTL and logic synthesis. Fault injection is performed efficiently by exploiting the concept of fault clustering, that is the possibility of grouping faults and analyzing them concurrently. The proposed methodology is applied to benchmarks for efficiency evaluation and to a real VHDL description},
-	doi = {10.1109/GLSV.1998.665238},
-	isbn = {0818684097},	
-	pages = {237--242}
-}
-@conference{
-	11311_767090,
-	author = {Pilato, Christian and Ferrandi, Fabrizio},
-	title = {Bambu: A Modular Framework for the High Level Synthesis of Memory-Intensive Applications},
-	year = {2013},
-	booktitle = {Proceedings of the 23rd International Conference on Field Programmable Logic and Applications (FPL)},
-	doi = {10.1109/FPL.2013.6645550},
-	isbn = {9781479900046},	
-	pages = {1--4}
-}
-@conference{
-	11311_775515,
-	author = {Castellana, VITO GIOVANNI and Ferrandi, Fabrizio},
-	title = {An automated flow for the High Level Synthesis of coarse grained parallel applications},
-	year = {2013},
-	booktitle = {2013 International Conference on Field-Programmable Technology (FPT)},
-	abstract = {High Level Synthesis (HLS) provides a way to significantly enhance the productivity of embedded system designers, by enabling the automatic or semiautomatic generation of hardware accelerators starting from high level descriptions with (usually software) programming languages. Typical HLS approaches build a centralized Finite State Machine (FSM) to control the generated datapath, performing the operations according to a pre-determined, static schedule. However, FSM-based approaches are only able to extract parallelism within a single execution flow. In the presence of coarse grained parallelism, in the form of concurrent function calls or parallel control structures, they either serialize all the operations, or build excessively complex controllers, aiming at executing as many operation as possible in a single control step (i.e., they try to extract as much instruction level parallelism as possible). The resulting controllers occupy an excessive amount of area or lead to very low operating frequencies. In this paper we propose a methodology for the HLS of accelerators supporting parallel execution and dynamic scheduling. The approach exploits an adaptive distributed controller, composed of a set of communicating elements associated with each operation. This controller design enables supporting multiple concurrent execution flows, thus increasing parallelism exploitation beyond instruction level parallelism. The approach also supports variable latency operations, such as memory accesses and speculative operations. We apply our methodology on a set of typical HLS benchmarks, and demonstrate valuable speed ups with limited area overheads with respect to conventional FSM-based flows.},
-	doi = {10.1109/FPT.2013.6718370},
-	isbn = {9781479921980},	
-	isbn = {9781479921997},	
-	pages = {294--301}
+	journal = {JOURNAL OF SIGNAL PROCESSING SYSTEMS FOR SIGNAL, IMAGE, AND VIDEO TECHNOLOGY},
+	volume = {80},
+	abstract = {Synchronous Data Flow graphs are widely adopted in the designing of streaming applications, but were originally formulated to describe only how an application is partitioned and which data are exchanged among different tasks. Since Synchronous Data Flow graphs are often used to describe and evaluate complete design solutions, missing information (e.g., mapping, scheduling, etc.) has to be included in them by means of further actors and channels to obtain accurate evaluations. To address this issue preserving the simplicity of the representation, techniques that model data transfer delays by means of ad-hoc actors have been proposed, but they model independently each communication ignoring contentions. Moreover, they do not usually consider at all delays due to buffer contentions, potentially overestimating the throughput of a design solution. In this paper a technique to extend Synchronous Data Flow graphs by adding ad-hoc actors and channels to model resolution of resources contentions is proposed. The results show that the number of added actors and channels is limited but that they can significantly increase the Synchronous Data Flow graph accuracy.},
+	doi = {10.1007/s11265-014-0923-y},
+	pages = {39--47},
+	number = {1}
 }
