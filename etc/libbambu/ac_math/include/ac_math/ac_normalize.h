@@ -129,6 +129,7 @@ namespace ac_math
 
       // Slice out all the bits, place them in the normalized_fixed_temp variable, then
       // find the position of the leading 1 there.
+      normalized_fixed_temp.reset();
       normalized_fixed_temp.set_slc(0, input.template slc<W>(0));
 
       // the leading_1 variable tells us where the leading 1 is.
@@ -236,6 +237,7 @@ namespace ac_math
 
       // Find leading 1 and left-shift both real and imaginary parts accordingly.
       int leading_1 = input_l1_ind.leading_sign();
+      normalized_complex_temp.reset();
       normalized_complex_temp.r().set_slc(0, input.r().template slc<W>(0));
       normalized_complex_temp.i().set_slc(0, input.i().template slc<W>(0));
       normalized_complex_temp.r() <<= leading_1;

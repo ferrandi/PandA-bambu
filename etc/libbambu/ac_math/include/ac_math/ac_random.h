@@ -264,6 +264,7 @@ void ac_random_ac_s<T, SIZE, SMALL>::operator()(T& v)
 {
    const ac_int<6> ac_16 = 16;
    ac_int<16> rv = rand();
+   v.reset();
    v.set_slc(0, rv);
    for(int i = 16; i < SIZE; i += 16)
    {
@@ -278,6 +279,7 @@ struct ac_random_ac_s<T, SIZE, true>
 {
    void operator()(T& v)
    {
+      v.reset();
       v.set_slc(0, ac_int<SIZE>(rand()));
    }
 };

@@ -127,6 +127,12 @@
 namespace ac_math
 {
    template <int XW, int XI, ac_q_mode XQ, ac_o_mode XO, int OW, int OI, ac_q_mode OQ, ac_o_mode OO>
+   void ac_shift_left(ac_fixed<XW, XI, false, XQ, XO> x, unsigned int n, ac_fixed<OW, OI, false, OQ, OO>& sl);
+
+   template <int XW, int XI, ac_q_mode XQ, ac_o_mode XO, int OW, int OI, ac_q_mode OQ, ac_o_mode OO>
+   void ac_shift_left(ac_fixed<XW, XI, true, XQ, XO> x, unsigned int n, ac_fixed<OW, OI, true, OQ, OO>& sl);
+
+   template <int XW, int XI, ac_q_mode XQ, ac_o_mode XO, int OW, int OI, ac_q_mode OQ, ac_o_mode OO>
    void ac_shift_right(ac_fixed<XW, XI, false, XQ, XO> x, unsigned int n, ac_fixed<OW, OI, false, OQ, OO>& sr)
    {
       const int R_BIT = (OQ == AC_TRN || OQ == AC_TRN_ZERO) ? 0 : 1;
@@ -164,20 +170,33 @@ namespace ac_math
    template <int XW, int XI, ac_q_mode XQ, ac_o_mode XO, int OW, int OI, ac_q_mode OQ, ac_o_mode OO>
    void ac_shift_right(ac_fixed<XW, XI, false, XQ, XO> x, int n, ac_fixed<OW, OI, false, OQ, OO>& sr)
    {
+      if(n < 0)
+      {
+         ac_shift_left(x, static_cast<unsigned>(-n), sr);
+         return;
+      }
       const int R_BIT = (OQ == AC_TRN || OQ == AC_TRN_ZERO) ? 0 : 1;
       const int R_HALF = (R_BIT == 0 || OQ == AC_RND || OQ == AC_RND_INF) ? 0 : 1;
       const int S_OVER = (OO == AC_WRAP) ? 0 : 1;
       const int TF = AC_MAX(XW - XI, OW - OI + R_BIT);
       const int TI = AC_MAX(XI, OI);
       const int TW = TI + TF;
-      ac_fixed<TW, TI, false> t = ((ac_fixed<TW, TI, false>)x) >> n;
+      ac_fixed<TW, TI, false> t = (n >= 0) ? (((ac_fixed<TW, TI, false>)x) >> n)
+                                           : (((ac_fixed<TW, TI, false>)x) << -n);
 
       ac_fixed<TW + R_HALF + S_OVER, TI + S_OVER, false> t2 = t;
 
       if(R_HALF || S_OVER)
       {
          ac_fixed<TW, TI, false> m1 = ~(ac_fixed<TW, TI, false>)0;
-         m1 <<= n;
+         if(n >= 0)
+         {
+            m1 <<= n;
+         }
+         else
+         {
+            m1 >>= -n;
+         }
          ac_fixed<XW, XI, false> mask = ~(ac_fixed<XW, XI, false>)m1;
          if(n >= 0)
          {
@@ -217,7 +236,8 @@ namespace ac_math
       // of integer bits as in the input.
       const int TI = XI;
       const int TW = TI + TF;
-      ac_fixed<TW, TI, true> t = ((ac_fixed<TW, TI, true>)x) >> n;
+      ac_fixed<TW, TI, true> t = (n >= 0) ? (((ac_fixed<TW, TI, true>)x) >> n)
+                                          : (((ac_fixed<TW, TI, true>)x) << -n);
       unsigned un = 0x7FFFFFFF & n;
 
       ac_fixed<TW + R_HALF, TI, true> t2 = t;
@@ -245,6 +265,11 @@ namespace ac_math
    template <int XW, int XI, ac_q_mode XQ, ac_o_mode XO, int OW, int OI, ac_q_mode OQ, ac_o_mode OO>
    void ac_shift_right(ac_fixed<XW, XI, true, XQ, XO> x, int n, ac_fixed<OW, OI, true, OQ, OO>& sr)
    {
+      if(n < 0)
+      {
+         ac_shift_left(x, static_cast<unsigned>(-n), sr);
+         return;
+      }
       const int R_BIT = (OQ == AC_TRN) ? 0 : 1;
       const int R_HALF = (R_BIT == 0 || OQ == AC_RND) ? 0 : 1;
       const int S_OVER = (OO == AC_WRAP) ? 1 : 2;
@@ -258,7 +283,14 @@ namespace ac_math
       if(R_HALF || S_OVER == 2)
       {
          ac_fixed<TW, TI, false> m1 = ~(ac_fixed<TW, TI, true>)0;
-         m1 <<= n;
+         if(n >= 0)
+         {
+            m1 <<= n;
+         }
+         else
+         {
+            m1 >>= -n;
+         }
          ac_fixed<XW, XI, true> mask = ~(ac_fixed<XW, XI, true>)m1;
          if(n >= 0)
          {
@@ -298,14 +330,22 @@ namespace ac_math
       const int TF = XW - XI;
       const int TI = AC_MAX(XI, OI);
       const int TW = TI + TF;
-      ac_fixed<TW, TI, false> t = ((ac_fixed<TW, TI, false>)x) << n;
+      ac_fixed<TW, TI, false> t = (n >= 0) ? (((ac_fixed<TW, TI, false>)x) << n)
+                                           : (((ac_fixed<TW, TI, false>)x) >> -n);
 
       ac_fixed<TW + S_OVER, TI + S_OVER, false> t2 = t;
 
       if(S_OVER)
       {
          ac_fixed<TW, TI, false> m1 = ~(ac_fixed<TW, TI, false>)0;
-         m1 >>= n;
+         if(n >= 0)
+         {
+            m1 >>= n;
+         }
+         else
+         {
+            m1 <<= -n;
+         }
          ac_fixed<XW, XI, false> mask = ~(ac_fixed<XW, XI, false>)m1;
          t2[TW + S_OVER - 1] = !!(x & mask);
       }
@@ -325,6 +365,11 @@ namespace ac_math
    template <int XW, int XI, ac_q_mode XQ, ac_o_mode XO, int OW, int OI, ac_q_mode OQ, ac_o_mode OO>
    void ac_shift_left(ac_fixed<XW, XI, false, XQ, XO> x, int n, ac_fixed<OW, OI, false, OQ, OO>& sl)
    {
+      if(n < 0)
+      {
+         ac_shift_right(x, static_cast<unsigned>(-n), sl);
+         return;
+      }
       const int R_BIT = (OQ == AC_TRN || OQ == AC_TRN_ZERO) ? 0 : 1;
       const int R_HALF = (R_BIT == 0 || OQ == AC_RND || OQ == AC_RND_INF) ? 0 : 1;
       const int S_OVER = (OO == AC_WRAP) ? 0 : 1;
@@ -377,14 +422,22 @@ namespace ac_math
       const int TF = XW - XI;
       const int TI = AC_MAX(XI, OI);
       const int TW = TI + TF;
-      ac_fixed<TW, TI, true> t = ((ac_fixed<TW, TI, true>)x) << n;
+      ac_fixed<TW, TI, true> t = (n >= 0) ? (((ac_fixed<TW, TI, true>)x) << n)
+                                          : (((ac_fixed<TW, TI, true>)x) >> -n);
 
       ac_fixed<TW + S_OVER, TI + S_OVER, true> t2 = t;
 
       if(S_OVER == 2)
       {
          ac_fixed<TW, TI, false> m1 = ~(ac_fixed<TW, TI, false>)0;
-         m1 >>= n;
+         if(n >= 0)
+         {
+            m1 >>= n;
+         }
+         else
+         {
+            m1 <<= -n;
+         }
          ac_fixed<XW, XI, true> mask = ~(ac_fixed<XW, XI, true>)m1;
          t2[TW + S_OVER - 1] = x[XW - 1];
          if(mask != 0)
@@ -408,6 +461,11 @@ namespace ac_math
    template <int XW, int XI, ac_q_mode XQ, ac_o_mode XO, int OW, int OI, ac_q_mode OQ, ac_o_mode OO>
    void ac_shift_left(ac_fixed<XW, XI, true, XQ, XO> x, int n, ac_fixed<OW, OI, true, OQ, OO>& sl)
    {
+      if(n < 0)
+      {
+         ac_shift_right(x, static_cast<unsigned>(-n), sl);
+         return;
+      }
       const int R_BIT = (OQ == AC_TRN) ? 0 : 1;
       const int R_HALF = (R_BIT == 0 || OQ == AC_RND) ? 0 : 1;
       const int S_OVER = (OO == AC_WRAP) ? 1 : 2;

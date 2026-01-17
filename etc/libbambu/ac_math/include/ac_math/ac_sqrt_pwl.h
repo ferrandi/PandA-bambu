@@ -181,6 +181,7 @@ namespace ac_math
           ((ac_fixed<int_bits + n_frac_bits + 3, int_bits, false>)(normalized_input - x_min_lut)) << 3;
       // Take out the fractional bits of the scaled input
       ac_fixed<n_frac_bits, 0, false> input_sc_frac;
+      input_sc_frac.reset();
       input_sc_frac.set_slc(0, input_sc.template slc<n_frac_bits>(0));
       // index is taken as integer part of scaled value and used for selection of m and c values
       ac_int<int_bits, false> index = input_sc.to_int();

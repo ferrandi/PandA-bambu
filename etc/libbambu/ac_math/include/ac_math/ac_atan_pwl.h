@@ -180,6 +180,7 @@ namespace ac_math
       ac_fixed<f_b_n_i, int_bits, false> x_in_sc = (ac_fixed<f_b_n_i + int_bits, int_bits, false>)normalized_input << 2;
       // Take out the fractional bits of the scaled input
       ac_fixed<f_b_n_i - int_bits, 0, false> x_in_sc_frac;
+      x_in_sc_frac.reset();
       x_in_sc_frac.set_slc(0, x_in_sc.template slc<f_b_n_i - int_bits>(0));
       ac_int<int_bits, false> index;
       // The integer part of the scaled input is the index of the LUT table

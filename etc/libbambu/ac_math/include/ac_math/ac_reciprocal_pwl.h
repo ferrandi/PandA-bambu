@@ -211,6 +211,7 @@ namespace ac_math
           ((ac_fixed<int_bits + nfrac_bits + 4, int_bits, false>)(normalized_fixed - x_min_lut)) << 4;
       // Take out the fractional bits of the scaled input
       ac_fixed<nfrac_bits, 0, false> x_in_sc_frac;
+      x_in_sc_frac.reset();
       x_in_sc_frac.set_slc(0, x_in_sc.template slc<nfrac_bits>(0));
       // The integer part of the input is the index of the LUT table
       ac_int<int_bits, false> index = x_in_sc.to_int();

@@ -288,6 +288,14 @@ namespace __AC_NAMESPACE
       ac_float() = default;
       ac_float(const ac_float& op) = default;
       ac_float& operator=(const ac_float&) = default;
+      __FORCE_INLINE void reset()
+      {
+         m.reset();
+         if(E)
+         {
+            e.reset();
+         }
+      }
 
       template <AC_FL_T(2)>
       ac_float(const AC_FL(2) & op, bool assert_on_overflow = false, bool assert_on_rounding = false)
@@ -315,6 +323,7 @@ namespace __AC_NAMESPACE
 
          fx2_t m2 = op.m;
          fx_t t;
+         t.reset();
          t.set_slc(0, m2.template slc<fx_t::width>(0));
          ac_fixed<W + RND, I + RND, S, Q> m_1 = t;
          bool rnd_ovfl = false;
@@ -324,6 +333,7 @@ namespace __AC_NAMESPACE
             m_1[W - 1] = m_1[W - 1] && !rnd_ovfl;
             m_1[W - 2] = m_1[W - 2] || rnd_ovfl;
          }
+         m.reset();
          m.set_slc(0, m_1.template slc<W>(0));
          if(fx_t::width > W && assert_on_rounding)
          {
@@ -592,6 +602,7 @@ namespace __AC_NAMESPACE
          typedef ac_fixed<fx_t::width, fx_t::i_width, false> fxu_t;
 
          fx2_t op2_m_0;
+         op2_m_0.reset();
          op2_m_0.set_slc(0, op2.m.template slc<W2>(0));
 
          fx_t op1_m = m;
@@ -677,6 +688,7 @@ namespace __AC_NAMESPACE
          t2_t t2 = t1;
          t2[0] = sticky_bit;
          r1_t r1;
+         r1.reset();
          r1.set_slc(0, t2.template slc<t2_t::width>(0));
          r_type r_t;
          r_t.m = (ac_fixed<WR, IR, SR, QR>)r1; // t2;  This could overflow if !SR&ST
@@ -848,6 +860,7 @@ namespace __AC_NAMESPACE
          if(!hw)
          {
             ac_fixed<W, 0, S> mantissa;
+            mantissa.reset();
             mantissa.set_slc(0, m.template slc<W>(0));
             std::string r = mantissa.to_string(base_rep, sign_mag);
             r += "e2";
@@ -884,9 +897,9 @@ namespace __AC_NAMESPACE
          const char* q[] = {"AC_TRN",     "AC_RND",         "AC_TRN_ZERO", "AC_RND_ZERO",
                             "AC_RND_INF", "AC_RND_MIN_INF", "AC_RND_CONV"};
          std::string r = "ac_float<";
-         r += ac_int<32, true>(W).to_string(AC_DEC) + ',';
-         r += ac_int<32, true>(I).to_string(AC_DEC) + ',';
-         r += ac_int<32, true>(E).to_string(AC_DEC) + ',';
+         r += std::to_string(W) + ',';
+         r += std::to_string(I) + ',';
+         r += std::to_string(E) + ',';
          r += tf[S];
          r += ',';
          r += q[Q];

@@ -316,12 +316,19 @@ namespace __AC_NAMESPACE
       constexpr ac_fixed()
       {
 #if defined(__BAMBU__) || !defined(AC_DEFAULT_IN_RANGE)
+#if defined(__INIT_VALUE) || defined(__INIT_VALUE_LL)
          if(O == AC_SAT_SYM && S && Base::v[N - 1] < 0 &&
             (W > 1 ? ac_private::iv_equal_zeros_to<W - 1, N>(Base::v) : true))
          {
+            Base::reset();
             Base::v.set(0, (Base::v[0] | 1));
          }
 #endif
+#endif
+      }
+      __FORCE_INLINE constexpr void reset()
+      {
+         Base::reset();
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
       __FORCE_INLINE constexpr ac_fixed(const ac_fixed<W2, I2, S2, Q2, O2>& op)
@@ -460,6 +467,7 @@ namespace __AC_NAMESPACE
       __FORCE_INLINE constexpr ac_fixed(double d)
       {
          // printf("%f\n",d);
+         Base::reset();
          double di = ac_private::ldexpr<-(I + !S + ((32 - W - !S) & 31))>(d);
          bool o = false, qb = false, r = false;
          bool neg_src = d < 0;
@@ -496,6 +504,7 @@ namespace __AC_NAMESPACE
       __FORCE_INLINE constexpr ac_fixed(float d)
       {
          // printf("%f\n",d);
+         Base::reset();
          float di = ac_private::ldexpr<-(I + !S + ((32 - W - !S) & 31))>(d);
          bool o = false, qb = false, r = false;
          bool neg_src = d < 0;
@@ -744,8 +753,8 @@ namespace __AC_NAMESPACE
                             "AC_RND_INF", "AC_RND_MIN_INF", "AC_RND_CONV", "AC_RND_CONV_ODD"};
          const char* o[] = {"AC_WRAP", "AC_SAT", "AC_SAT_ZERO", "AC_SAT_SYM"};
          std::string r = "ac_fixed<";
-         r += ac_int<32, true>(W).to_string(AC_DEC) + ',';
-         r += ac_int<32, true>(I).to_string(AC_DEC) + ',';
+         r += std::to_string(W) + ',';
+         r += std::to_string(I) + ',';
          r += tf[S];
          r += ',';
          r += q[Q];
@@ -824,8 +833,8 @@ namespace __AC_NAMESPACE
             N1minus = ac_fixed<Num_w_minus, Num_i_minus, S>::N,
             N2 = ac_fixed<W2, I2, S2>::N,
             N2minus = ac_fixed<W2 + S2, I2 + S2, S2>::N,
-            num_s = S + (N1minus > N1),
-            den_s = S2 + (N2minus > N2),
+            num_s = S + (static_cast<int>(N1minus) > static_cast<int>(N1)),
+            den_s = S2 + (static_cast<int>(N2minus) > static_cast<int>(N2)),
             Nr = rt<W2, I2, S2>::div::N
          };
          ac_fixed<Num_w, Num_i, S> t = *this;
@@ -2183,6 +2192,7 @@ namespace __AC_NAMESPACE
          exp = exp_i + rshift;
          ac_int<Mant_W + 2, true> f_i = f0 * ((Ulong)1 << (Mant_W + 1 - rshift));
          ac_fixed<Mant_W + 2, 2, true> r;
+         r.reset();
          r.set_slc(0, f_i);
          return r;
       }
@@ -2211,6 +2221,7 @@ namespace __AC_NAMESPACE
          exp = exp_i + rshift;
          ac_int<Mant_W + 2, true> f_i = f0 * (1 << (Mant_W + 1 - rshift));
          ac_fixed<Mant_W + 2, 2, true> r;
+         r.reset();
          r.set_slc(0, f_i);
          return r;
       }
@@ -2242,6 +2253,7 @@ namespace __AC_NAMESPACE
          exp = exp_i + rshift;
          ac_int<Mant_W + 1, false> f_i = f0 * ((Ulong)1 << (Mant_W + 1 - rshift));
          ac_fixed<Mant_W + 1, 1, false> r;
+         r.reset();
          r.set_slc(0, f_i);
          sign = s;
          return r;
@@ -2273,6 +2285,7 @@ namespace __AC_NAMESPACE
          exp = exp_i + rshift;
          ac_int<24, false> f_i = f0 * (1 << (Mant_W + 1 - rshift));
          ac_fixed<24, 1, false> r;
+         r.reset();
          r.set_slc(0, f_i);
          sign = s;
          return r;

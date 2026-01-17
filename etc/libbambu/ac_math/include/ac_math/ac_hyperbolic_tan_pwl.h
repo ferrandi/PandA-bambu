@@ -170,6 +170,7 @@ namespace ac_math
 
       // Take out the fractional bits of the scaled input
       ac_fixed<n_frac_bits, 0, false> x_in_sc_frac;
+      x_in_sc_frac.reset();
       x_in_sc_frac.set_slc(0, x_in_sc.template slc<n_frac_bits>(0));
       ac_int<int_bits, false> index;
       // The integer part of the input is the index of the LUT table
@@ -178,12 +179,15 @@ namespace ac_math
       // The precision given below will ensure that there is no precision lost in the assignment to output_pwl, hence
       // rounding for the variable is switched off by default. However, if the user wishes to use less fractional bits
       // and turn rounding on instead, they are welcome to do so by giving a different value for pwl_Q.
-      ac_fixed<n_frac_bits * 2 + 1, 1, true, pwl_Q> output_pwl = m_lut[index] * x_in_sc_frac + c_lut[index];
-
+      ac_fixed<n_frac_bits * 2 + 1, 1, true, pwl_Q> output_pwl;
       // If the input is outside the pwl domain then saturate output
       if(input_pwl >= x_max_lut)
       {
          output_pwl.template set_val<AC_VAL_MAX>();
+      }
+      else
+      {
+         output_pwl = m_lut[index] * x_in_sc_frac + c_lut[index];
       }
 
       // As the hyperbolic tangent function is symmetrical, for negative inputs from -3 to 0 (pwl domain is [0, 3) )

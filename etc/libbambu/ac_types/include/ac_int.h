@@ -126,8 +126,9 @@
 #define __FORCE_INLINE __attribute__((always_inline)) inline
 #endif
 
-#define __INIT_VALUE = {0}
-#define __INIT_VALUE_LL = {0}
+/*#define __INIT_VALUE = {0}*/
+/*#define __INIT_VALUE_LL = {0}*/
+
 
 #ifndef __ASSERT_H__
 #define __ASSERT_H__
@@ -514,26 +515,48 @@ using Slong = long long;
          return ldexpr32<N / 32>(N < 0 ? d / ((unsigned)1 << (-N & 31)) : d * ((unsigned)1 << (N & 31)));
       }
 
+#if defined(__has_builtin)
+#define __AC_HAS_BUILTIN(x) __has_builtin(x)
+#else
+#define __AC_HAS_BUILTIN(x) 0
+#endif
+
+#if __AC_HAS_BUILTIN(__builtin_is_constant_evaluated) || (defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 9)
+#define __AC_IS_CONST_EVAL() (__builtin_is_constant_evaluated())
+#else
+#define __AC_IS_CONST_EVAL() (false)
+#endif
+
 #if __clang_major__ >= 16
       template <int N, bool C, int W0, bool S0>
       class iv_base
       {
-         signed _BitInt(W0) v __INIT_VALUE;
+         signed _BitInt(W0) v /*__INIT_VALUE*/;
+#ifdef CHECK_UNDEFINE_VALUE
+         bool initialized = false;
+#endif
+         template <int, bool, int, bool>
+         friend class iv_base;
 
        public:
          __FORCE_INLINE constexpr void assign_int64(Slong l)
          {
+            reset();
             v = l;
          }
 
          __FORCE_INLINE constexpr void assign_uint64(Ulong l)
          {
+            reset();
             v = l;
          }
-         __FORCE_INLINE constexpr void set(int x, int value)
-         {
-            AC_ASSERT(x >= 0 && x < N, "unexpected condition");
-            bool updateRes = x * 32 < W0;
+          __FORCE_INLINE constexpr void set(int x, int value)
+          {
+#ifdef CHECK_UNDEFINE_VALUE
+            AC_ASSERT(initialized, "iv_base::set called on uninitialized object - call reset() first");
+#endif
+             AC_ASSERT(x >= 0 && x < N, "unexpected condition");
+             bool updateRes = x * 32 < W0;
             if(!updateRes)
             {
                return;
@@ -548,6 +571,9 @@ using Slong = long long;
 
          __FORCE_INLINE constexpr Slong to_int64() const
          {
+#ifdef CHECK_UNDEFINE_VALUE
+            AC_ASSERT(initialized, "iv_base::to_int64 called on uninitialized object - call reset() first");
+#endif
             if(S0)
             {
                Slong conv = v;
@@ -563,6 +589,9 @@ using Slong = long long;
 
          __FORCE_INLINE constexpr int operator[](int x) const
          {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::operator[] called on uninitialized object - call reset() first");
+#endif
             AC_ASSERT(x >= 0 && x < N, "unexpected condition");
             bool returnRes = x * 32 < W0;
             int res = 0;
@@ -580,105 +609,216 @@ using Slong = long long;
          }
          __FORCE_INLINE constexpr void assign(const iv_base& b)
          {
+#ifdef CHECK_UNDEFINE_VALUE
+            initialized = true;
+#endif
             v = b.v;
          }
+         __FORCE_INLINE constexpr void reset()
+         {
+            v = 0;
+#ifdef CHECK_UNDEFINE_VALUE
+            initialized = true;
+#endif
+         }
 
-         __FORCE_INLINE explicit constexpr iv_base() = default;
+         __FORCE_INLINE explicit constexpr iv_base()
+         {
+            if(__AC_IS_CONST_EVAL())
+            {
+               v = 0;
+#ifdef CHECK_UNDEFINE_VALUE
+               initialized = true;
+#endif
+            }
+         }
          __FORCE_INLINE explicit constexpr iv_base(const iv_base& b) = delete;
          __FORCE_INLINE constexpr iv_base(iv_base&& b) = delete;
-         __FORCE_INLINE constexpr iv_base& operator=(const iv_base& b) = delete;
-         template <int N2, bool C2, int W2, bool S2>
-         __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b) = delete;
+      __FORCE_INLINE constexpr iv_base& operator=(const iv_base& b) = delete;
+      template <int N2, bool C2, int W2, bool S2>
+      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+      {
+         constexpr int M = AC_MIN(N, N2);
+         reset();
+         LOOP(int, i, 0, exclude, M, { set(i, b[i]); });
+         if(M < N)
+         {
+            const int ext = (M > 0 && b[M - 1] < 0) ? ~0 : 0;
+            LOOP(int, i, M, exclude, N, { set(i, ext); });
+         }
+      }
       } __attribute__((aligned(8)));
 
       template <int N, bool C>
       class iv_base<N, C, 1, true>
       {
-         bool v __INIT_VALUE;
+         bool v /*__INIT_VALUE*/;
+#ifdef CHECK_UNDEFINE_VALUE
+         bool initialized = false;
+#endif
+         template <int, bool, int, bool>
+         friend class iv_base;
 
        public:
          __FORCE_INLINE constexpr void assign_int64(Slong l)
          {
+            reset();
             set(0, static_cast<int>(l));
          }
 
          __FORCE_INLINE constexpr void assign_uint64(Ulong l)
          {
+            reset();
             set(0, static_cast<int>(l));
          }
-         __FORCE_INLINE constexpr void set(int x, int value)
-         {
-            AC_ASSERT(x >= 0 && x < N, "unexpected condition");
-            v = value & 1;
+          __FORCE_INLINE constexpr void set(int x, int value)
+          {
+#ifdef CHECK_UNDEFINE_VALUE
+            AC_ASSERT(initialized, "iv_base::set called on uninitialized object - call reset() first");
+#endif
+             AC_ASSERT(x >= 0 && x < N, "unexpected condition");
+             v = value & 1;
          }
 
          __FORCE_INLINE constexpr Slong to_int64() const
          {
+#ifdef CHECK_UNDEFINE_VALUE
+            AC_ASSERT(initialized, "iv_base::to_int64 called on uninitialized object - call reset() first");
+#endif
             return v ? -1LL : 0;
          }
 
          __FORCE_INLINE constexpr int operator[](int x) const
          {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::operator[] called on uninitialized object - call reset() first");
+#endif
             AC_ASSERT(x >= 0 && x < N, "unexpected condition");
             int res = v ? -1 : 0;
             return res;
          }
          __FORCE_INLINE constexpr void assign(const iv_base& b)
          {
+#ifdef CHECK_UNDEFINE_VALUE
+            initialized = true;
+#endif
             v = b.v;
          }
+         __FORCE_INLINE constexpr void reset()
+         {
+            v = false;
+#ifdef CHECK_UNDEFINE_VALUE
+            initialized = true;
+#endif
+         }
 
-         __FORCE_INLINE explicit constexpr iv_base() = default;
+         __FORCE_INLINE explicit constexpr iv_base()
+         {
+            if(__AC_IS_CONST_EVAL())
+            {
+               v = false;
+#ifdef CHECK_UNDEFINE_VALUE
+               initialized = true;
+#endif
+            }
+         }
          __FORCE_INLINE explicit constexpr iv_base(const iv_base& b) = delete;
          __FORCE_INLINE constexpr iv_base(iv_base&& b) = delete;
          __FORCE_INLINE constexpr iv_base& operator=(const iv_base& b) = delete;
          template <int N2, bool C2, int W2, bool S2>
-         __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b) = delete;
+         __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+         {
+#ifdef CHECK_UNDEFINE_VALUE
+            initialized = true;
+#endif
+            v = (b[0] & 1) != 0;
+         }
       } __attribute__((aligned(8)));
 
       template <int N, bool C>
       class iv_base<N, C, 1, false>
       {
-         bool v __INIT_VALUE;
+         bool v /*__INIT_VALUE*/;
+#ifdef CHECK_UNDEFINE_VALUE
+         bool initialized = false;
+#endif
+         template <int, bool, int, bool>
+         friend class iv_base;
 
        public:
          __FORCE_INLINE constexpr void assign_int64(Slong l)
          {
+            reset();
             set(0, static_cast<int>(l));
          }
 
          __FORCE_INLINE constexpr void assign_uint64(Ulong l)
          {
+            reset();
             set(0, static_cast<int>(l));
          }
-         __FORCE_INLINE constexpr void set(int x, int value)
-         {
-            AC_ASSERT(x >= 0 && x < N, "unexpected condition");
-            v = value & 1;
+          __FORCE_INLINE constexpr void set(int x, int value)
+          {
+#ifdef CHECK_UNDEFINE_VALUE
+            AC_ASSERT(initialized, "iv_base::set called on uninitialized object - call reset() first");
+#endif
+             AC_ASSERT(x >= 0 && x < N, "unexpected condition");
+             v = value & 1;
          }
 
          __FORCE_INLINE constexpr Slong to_int64() const
          {
+#ifdef CHECK_UNDEFINE_VALUE
+            AC_ASSERT(initialized, "iv_base::to_int64 called on uninitialized object - call reset() first");
+#endif
             return v ? 1 : 0;
          }
 
          __FORCE_INLINE constexpr int operator[](int x) const
          {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::operator[] called on uninitialized object - call reset() first");
+#endif
             AC_ASSERT(x >= 0 && x < N, "unexpected condition");
             int res = v ? 1 : 0;
             return res;
          }
          __FORCE_INLINE constexpr void assign(const iv_base& b)
          {
+#ifdef CHECK_UNDEFINE_VALUE
+            initialized = true;
+#endif
             v = b.v;
          }
+         __FORCE_INLINE constexpr void reset()
+         {
+            v = false;
+#ifdef CHECK_UNDEFINE_VALUE
+            initialized = true;
+#endif
+         }
 
-         __FORCE_INLINE explicit constexpr iv_base() = default;
+         __FORCE_INLINE explicit constexpr iv_base()
+         {
+            if(__AC_IS_CONST_EVAL())
+            {
+               v = false;
+#ifdef CHECK_UNDEFINE_VALUE
+               initialized = true;
+#endif
+            }
+         }
          __FORCE_INLINE explicit constexpr iv_base(const iv_base& b) = delete;
          __FORCE_INLINE constexpr iv_base(iv_base&& b) = delete;
          __FORCE_INLINE constexpr iv_base& operator=(const iv_base& b) = delete;
          template <int N2, bool C2, int W2, bool S2>
-         __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b) = delete;
+         __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+         {
+#ifdef CHECK_UNDEFINE_VALUE
+            initialized = true;
+#endif
+            v = (b[0] & 1) != 0;
+         }
       } __attribute__((aligned(8)));
 
 #else
@@ -697,11 +837,17 @@ using Slong = long long;
    template <int N, bool C, int W0, bool S0>
    class iv_base
    {
-      int v[(W0 + 31) / 32] __INIT_VALUE;
+      int v[(W0 + 31) / 32] /*__INIT_VALUE*/;
+#ifdef CHECK_UNDEFINE_VALUE
+      bool initialized = false;
+#endif
+      template <int, bool, int, bool>
+      friend class iv_base;
 
     public:
       __FORCE_INLINE constexpr void assign_int64(Slong l)
       {
+         reset();
          set(0, static_cast<int>(l));
          if(N > 1)
          {
@@ -713,6 +859,7 @@ using Slong = long long;
 
       __FORCE_INLINE constexpr void assign_uint64(Ulong l)
       {
+         reset();
          set(0, static_cast<int>(l));
          if(N > 1)
          {
@@ -722,6 +869,9 @@ using Slong = long long;
       }
       __FORCE_INLINE constexpr void set(int x, int value)
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::set called on uninitialized object - call reset() first");
+#endif
          AC_ASSERT(x >= 0 && x < N, "unexpected condition");
          bool updateRes = x * 32 < W0;
          if(!updateRes)
@@ -748,6 +898,9 @@ using Slong = long long;
 
       __FORCE_INLINE constexpr Slong to_int64() const
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::to_int64 called on uninitialized object - call reset() first");
+#endif
          if(S0)
          {
             Slong conv = ((W0 + 31) / 32) == 1 ? operator[](0) :
@@ -765,6 +918,9 @@ using Slong = long long;
 
       __FORCE_INLINE constexpr int operator[](int x) const
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::operator[] called on uninitialized object - call reset() first");
+#endif
          AC_ASSERT(x >= 0 && x < N, "unexpected condition");
          bool returnRes = x * 32 < W0;
          int res = 0;
@@ -781,37 +937,86 @@ using Slong = long long;
       }
       __FORCE_INLINE constexpr void assign(const iv_base& b)
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         initialized = true;
+#endif
          LOOP(int, i, 0, exclude, N, { set(i, b[i]); });
       }
-      __FORCE_INLINE explicit constexpr iv_base() = default;
+      __FORCE_INLINE constexpr void reset()
+      {
+         LOOP(int, i, 0, exclude, (W0 + 31) / 32, { v[i] = 0; });
+#ifdef CHECK_UNDEFINE_VALUE
+         initialized = true;
+#endif
+      }
+      __FORCE_INLINE explicit constexpr iv_base()
+      {
+         if(__AC_IS_CONST_EVAL())
+         {
+            reset();
+         }
+      }
       __FORCE_INLINE explicit constexpr iv_base(const iv_base& b) = delete;
       __FORCE_INLINE constexpr iv_base(iv_base&& b) = delete;
       __FORCE_INLINE constexpr iv_base& operator=(const iv_base& b) = delete;
-      template <int N2, bool C2, int W2, bool S2>
-      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b) = delete;
+      template <int N2, bool C2, int W2, bool S2,
+                typename std::enable_if<(N2 == N && C2 == C && W2 <= W0), int>::type = 0>
+      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+      {
+#ifdef CHECK_UNDEFINE_VALUE
+         initialized = true;
+#endif
+         LOOP(int, i, 0, exclude, (W0 + 31) / 32, { v[i] = b.v[i]; });
+      }
+      template <int N2, bool C2, int W2, bool S2,
+                typename std::enable_if<!(N2 == N && C2 == C && W2 <= W0), int>::type = 0>
+      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+      {
+         constexpr int M = AC_MIN(N, N2);
+         reset();
+         LOOP(int, i, 0, exclude, M, { set(i, b[i]); });
+         if(M < N)
+         {
+            const int ext = (M > 0 && b[M - 1] < 0) ? ~0 : 0;
+            LOOP(int, i, M, exclude, N, { set(i, ext); });
+         }
+      }
    } __attribute__((aligned(8)));
 
    template <bool C, int W0, bool S0>
    class iv_base<1, C, W0, S0>
    {
-      int v __INIT_VALUE;
+      int v /*__INIT_VALUE*/;
+#ifdef CHECK_UNDEFINE_VALUE
+      bool initialized = false;
+#endif
+      template <int, bool, int, bool>
+      friend class iv_base;
 
     public:
       __FORCE_INLINE constexpr void assign_int64(Slong l)
       {
+         reset();
          set(0, static_cast<int>(l));
       }
       __FORCE_INLINE constexpr void assign_uint64(Ulong l)
       {
+         reset();
          set(0, static_cast<int>(l));
       }
       __FORCE_INLINE constexpr void set(int x, int value)
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::set called on uninitialized object - call reset() first");
+#endif
          AC_ASSERT(x >= 0 && x < 1, "unexpected condition");
          v = constrain_bits<W0, S0>(value);
       }
       __FORCE_INLINE constexpr Slong to_int64() const
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::to_int64 called on uninitialized object - call reset() first");
+#endif
          if(S0)
          {
             Slong conv = operator[](0);
@@ -826,19 +1031,44 @@ using Slong = long long;
       }
       __FORCE_INLINE constexpr int operator[](int x) const
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::operator[] called on uninitialized object - call reset() first");
+#endif
          AC_ASSERT(x >= 0 && x < 1, "unexpected condition");
          return constrain_bits<W0, S0>(v);
       }
       __FORCE_INLINE constexpr void assign(const iv_base& b)
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         initialized = true;
+#endif
          v = b.v;
       }
-      __FORCE_INLINE explicit constexpr iv_base() = default;
+      __FORCE_INLINE constexpr void reset()
+      {
+         v = 0;
+#ifdef CHECK_UNDEFINE_VALUE
+         initialized = true;
+#endif
+      }
+      __FORCE_INLINE explicit constexpr iv_base()
+      {
+         if(__AC_IS_CONST_EVAL())
+         {
+            reset();
+         }
+      }
       __FORCE_INLINE explicit constexpr iv_base(const iv_base& b) = delete;
       __FORCE_INLINE constexpr iv_base(iv_base&& b) = delete;
       __FORCE_INLINE constexpr iv_base& operator=(const iv_base& b) = delete;
       template <int N2, bool C2, int W2, bool S2>
-      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b) = delete;
+      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+      {
+#ifdef CHECK_UNDEFINE_VALUE
+         initialized = true;
+#endif
+         v = constrain_bits<W0, S0>(b[0]);
+      }
    } __attribute__((aligned(8)));
 
    template <bool C>
@@ -859,21 +1089,31 @@ using Slong = long long;
    template <bool C, int W0, bool S0>
    class iv_base<2, C, W0, S0>
    {
-      typename select_type_iv_base2<C>::type v __INIT_VALUE_LL;
+      typename select_type_iv_base2<C>::type v /*__INIT_VALUE_LL*/;
+#ifdef CHECK_UNDEFINE_VALUE
+      bool initialized = false;
+#endif
+      template <int, bool, int, bool>
+      friend class iv_base;
 
     public:
       __FORCE_INLINE constexpr void assign_int64(Slong l)
       {
+         reset();
          set(0, static_cast<int>(l));
          set(1, static_cast<int>(l >> 32));
       }
       __FORCE_INLINE constexpr void assign_uint64(Ulong l)
       {
+         reset();
          set(0, static_cast<int>(l));
          set(1, static_cast<int>(l >> 32));
       }
       __FORCE_INLINE constexpr void set(int x, int value)
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::set called on uninitialized object - call reset() first");
+#endif
          AC_ASSERT(x >= 0 && x < 2, "unexpected condition");
          if(x == 1 && !C)
          {
@@ -894,6 +1134,9 @@ using Slong = long long;
       }
       __FORCE_INLINE constexpr Slong to_int64() const
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::to_int64 called on uninitialized object - call reset() first");
+#endif
          if(S0)
          {
             Slong conv = ((W0 + 31) / 32) == 1 ? operator[](0) : v;
@@ -908,6 +1151,9 @@ using Slong = long long;
       }
       __FORCE_INLINE constexpr int operator[](int x) const
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::operator[] called on uninitialized object - call reset() first");
+#endif
          AC_ASSERT(x >= 0 && x < 2, "unexpected condition");
          bool returnRes = x * 32 < W0;
          int res = 0;
@@ -924,34 +1170,80 @@ using Slong = long long;
       }
       __FORCE_INLINE constexpr void assign(const iv_base& b)
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         initialized = true;
+#endif
          v = b.v;
       }
-      __FORCE_INLINE explicit constexpr iv_base() = default;
+      __FORCE_INLINE constexpr void reset()
+      {
+         v = 0;
+#ifdef CHECK_UNDEFINE_VALUE
+         initialized = true;
+#endif
+      }
+      __FORCE_INLINE explicit constexpr iv_base()
+      {
+         if(__AC_IS_CONST_EVAL())
+         {
+            reset();
+         }
+      }
       __FORCE_INLINE explicit constexpr iv_base(const iv_base& b) = delete;
       __FORCE_INLINE constexpr iv_base(iv_base&& b) = delete;
       __FORCE_INLINE constexpr iv_base& operator=(const iv_base& b) = delete;
-      template <int N2, bool C2, int W2, bool S2>
-      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b) = delete;
+      template <int N2, bool C2, int W2, bool S2,
+                typename std::enable_if<(N2 == 2 && C2 == C && W2 <= W0), int>::type = 0>
+      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+      {
+#ifdef CHECK_UNDEFINE_VALUE
+         initialized = true;
+#endif
+         v = b.v;
+      }
+      template <int N2, bool C2, int W2, bool S2,
+                typename std::enable_if<!(N2 == 2 && C2 == C && W2 <= W0), int>::type = 0>
+      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+      {
+         constexpr int M = AC_MIN(2, N2);
+         reset();
+         LOOP(int, i, 0, exclude, M, { set(i, b[i]); });
+         if(M < 2)
+         {
+            const int ext = (M > 0 && b[M - 1] < 0) ? ~0 : 0;
+            LOOP(int, i, M, exclude, 2, { set(i, ext); });
+         }
+      }
    } __attribute__((aligned(8)));
 
    template <int W0, bool S0>
    class iv_base<3, true, W0, S0>
    {
-      long long int va __INIT_VALUE_LL;
+      long long int va /*__INIT_VALUE_LL*/;
+#ifdef CHECK_UNDEFINE_VALUE
+      bool initialized = false;
+#endif
+      template <int, bool, int, bool>
+      friend class iv_base;
 
     public:
       __FORCE_INLINE constexpr void assign_int64(Slong l)
       {
+         reset();
          set(0, static_cast<int>(l));
          set(1, static_cast<int>(l >> 32));
       }
       __FORCE_INLINE constexpr void assign_uint64(Ulong l)
       {
+         reset();
          set(0, static_cast<int>(l));
          set(1, static_cast<int>(l >> 32));
       }
       __FORCE_INLINE constexpr void set(int x, int value)
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::set called on uninitialized object - call reset() first");
+#endif
          AC_ASSERT(x >= 0 && x < 3, "unexpected condition");
          if(x == 0)
          {
@@ -964,10 +1256,16 @@ using Slong = long long;
       }
       __FORCE_INLINE constexpr Slong to_int64() const
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::to_int64 called on uninitialized object - call reset() first");
+#endif
          return va;
       }
       __FORCE_INLINE constexpr int operator[](int x) const
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::operator[] called on uninitialized object - call reset() first");
+#endif
          AC_ASSERT(x >= 0 && x < 3, "unexpected condition");
          int res = 0;
          if(x == 0)
@@ -986,25 +1284,67 @@ using Slong = long long;
       }
       __FORCE_INLINE constexpr void assign(const iv_base& b)
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         initialized = true;
+#endif
          va = b.va;
       }
-      __FORCE_INLINE explicit constexpr iv_base() = default;
+      __FORCE_INLINE constexpr void reset()
+      {
+         va = 0;
+#ifdef CHECK_UNDEFINE_VALUE
+         initialized = true;
+#endif
+      }
+      __FORCE_INLINE explicit constexpr iv_base()
+      {
+         if(__AC_IS_CONST_EVAL())
+         {
+            reset();
+         }
+      }
       __FORCE_INLINE explicit constexpr iv_base(const iv_base& b) = delete;
       __FORCE_INLINE constexpr iv_base(iv_base&& b) = delete;
       __FORCE_INLINE constexpr iv_base& operator=(const iv_base& b) = delete;
-      template <int N2, bool C2, int W2, bool S2>
-      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b) = delete;
+      template <int N2, bool C2, int W2, bool S2,
+                typename std::enable_if<(N2 == 3 && C2 && W2 <= W0), int>::type = 0>
+      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+      {
+#ifdef CHECK_UNDEFINE_VALUE
+         initialized = true;
+#endif
+         va = b.va;
+      }
+      template <int N2, bool C2, int W2, bool S2,
+                typename std::enable_if<!(N2 == 3 && C2 && W2 <= W0), int>::type = 0>
+      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+      {
+         constexpr int M = AC_MIN(3, N2);
+         reset();
+         LOOP(int, i, 0, exclude, M, { set(i, b[i]); });
+         if(M < 3)
+         {
+            const int ext = (M > 0 && b[M - 1] < 0) ? ~0 : 0;
+            LOOP(int, i, M, exclude, 3, { set(i, ext); });
+         }
+      }
    } __attribute__((aligned(8)));
 
    template <int W0, bool S0>
    class iv_base<3, false, W0, S0>
    {
-      long long int va __INIT_VALUE_LL;
-      int v2 __INIT_VALUE;
+      long long int va /*__INIT_VALUE_LL*/;
+      int v2 /*__INIT_VALUE*/;
+#ifdef CHECK_UNDEFINE_VALUE
+      bool initialized = false;
+#endif
+      template <int, bool, int, bool>
+      friend class iv_base;
 
     public:
       __FORCE_INLINE constexpr void assign_int64(Slong l)
       {
+         reset();
          set(0, static_cast<int>(l));
          set(1, static_cast<int>(l >> 32));
          auto val = (operator[](1) < 0) ? ~0 : 0;
@@ -1012,12 +1352,16 @@ using Slong = long long;
       }
       __FORCE_INLINE constexpr void assign_uint64(Ulong l)
       {
+         reset();
          set(0, static_cast<int>(l));
          set(1, static_cast<int>(l >> 32));
          set(2, 0);
       }
       __FORCE_INLINE constexpr void set(int x, int value)
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::set called on uninitialized object - call reset() first");
+#endif
          AC_ASSERT(x >= 0 && x < 3, "unexpected condition");
          if(x == 0)
          {
@@ -1034,10 +1378,16 @@ using Slong = long long;
       }
       __FORCE_INLINE constexpr Slong to_int64() const
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::to_int64 called on uninitialized object - call reset() first");
+#endif
          return va;
       }
       __FORCE_INLINE constexpr int operator[](int x) const
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::operator[] called on uninitialized object - call reset() first");
+#endif
          AC_ASSERT(x >= 0 && x < 3, "unexpected condition");
          int res = 0;
          if(x == 0)
@@ -1056,26 +1406,70 @@ using Slong = long long;
       }
       __FORCE_INLINE constexpr void assign(const iv_base& b)
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         initialized = true;
+#endif
          va = b.va;
          v2 = b.v2;
       }
-      __FORCE_INLINE explicit constexpr iv_base() = default;
+      __FORCE_INLINE constexpr void reset()
+      {
+         va = 0;
+         v2 = 0;
+#ifdef CHECK_UNDEFINE_VALUE
+         initialized = true;
+#endif
+      }
+      __FORCE_INLINE explicit constexpr iv_base()
+      {
+         if(__AC_IS_CONST_EVAL())
+         {
+            reset();
+         }
+      }
       __FORCE_INLINE explicit constexpr iv_base(const iv_base& b) = delete;
       __FORCE_INLINE constexpr iv_base(iv_base&& b) = delete;
       __FORCE_INLINE constexpr iv_base& operator=(const iv_base& b) = delete;
-      template <int N2, bool C2, int W2, bool S2>
-      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b) = delete;
+      template <int N2, bool C2, int W2, bool S2,
+                typename std::enable_if<(N2 == 3 && !C2 && W2 <= W0), int>::type = 0>
+      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+      {
+#ifdef CHECK_UNDEFINE_VALUE
+         initialized = true;
+#endif
+         va = b.va;
+         v2 = b.v2;
+      }
+      template <int N2, bool C2, int W2, bool S2,
+                typename std::enable_if<!(N2 == 3 && !C2 && W2 <= W0), int>::type = 0>
+      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+      {
+         constexpr int M = AC_MIN(3, N2);
+         reset();
+         LOOP(int, i, 0, exclude, M, { set(i, b[i]); });
+         if(M < 3)
+         {
+            const int ext = (M > 0 && b[M - 1] < 0) ? ~0 : 0;
+            LOOP(int, i, M, exclude, 3, { set(i, ext); });
+         }
+      }
    } __attribute__((aligned(8)));
 
    template <bool C, int W0, bool S0>
    class iv_base<4, C, W0, S0>
    {
-      long long int va __INIT_VALUE_LL;
-      typename select_type_iv_base2<C>::type v2 __INIT_VALUE_LL;
+      long long int va /*__INIT_VALUE_LL*/;
+      typename select_type_iv_base2<C>::type v2 /*__INIT_VALUE_LL*/;
+#ifdef CHECK_UNDEFINE_VALUE
+      bool initialized = false;
+#endif
+      template <int, bool, int, bool>
+      friend class iv_base;
 
     public:
       __FORCE_INLINE constexpr void assign_int64(Slong l)
       {
+         reset();
          set(0, static_cast<int>(l));
          set(1, static_cast<int>(l >> 32));
          auto val = (operator[](1) < 0) ? ~0 : 0;
@@ -1084,6 +1478,7 @@ using Slong = long long;
       }
       __FORCE_INLINE constexpr void assign_uint64(Ulong l)
       {
+         reset();
          set(0, static_cast<int>(l));
          set(1, static_cast<int>(l >> 32));
          set(2, 0);
@@ -1091,6 +1486,9 @@ using Slong = long long;
       }
       __FORCE_INLINE constexpr void set(int x, int value)
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::set called on uninitialized object - call reset() first");
+#endif
          AC_ASSERT(x >= 0 && x < 4, "unexpected condition");
          if(x == 0)
          {
@@ -1122,10 +1520,16 @@ using Slong = long long;
       }
       __FORCE_INLINE constexpr Slong to_int64() const
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::to_int64 called on uninitialized object - call reset() first");
+#endif
          return va;
       }
       __FORCE_INLINE constexpr int operator[](int x) const
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::operator[] called on uninitialized object - call reset() first");
+#endif
          AC_ASSERT(x >= 0 && x < 4, "unexpected condition");
          int res = 0;
          if(x == 0)
@@ -1152,26 +1556,70 @@ using Slong = long long;
       }
       __FORCE_INLINE constexpr void assign(const iv_base& b)
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         initialized = true;
+#endif
          va = b.va;
          v2 = b.v2;
       }
-      __FORCE_INLINE explicit constexpr iv_base() = default;
+      __FORCE_INLINE constexpr void reset()
+      {
+         va = 0;
+         v2 = 0;
+#ifdef CHECK_UNDEFINE_VALUE
+         initialized = true;
+#endif
+      }
+      __FORCE_INLINE explicit constexpr iv_base()
+      {
+         if(__AC_IS_CONST_EVAL())
+         {
+            reset();
+         }
+      }
       __FORCE_INLINE explicit constexpr iv_base(const iv_base& b) = delete;
       __FORCE_INLINE constexpr iv_base(iv_base&& b) = delete;
       __FORCE_INLINE constexpr iv_base& operator=(const iv_base& b) = delete;
-      template <int N2, bool C2, int W2, bool S2>
-      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b) = delete;
+      template <int N2, bool C2, int W2, bool S2,
+                typename std::enable_if<(N2 == 4 && C2 == C && W2 <= W0), int>::type = 0>
+      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+      {
+#ifdef CHECK_UNDEFINE_VALUE
+         initialized = true;
+#endif
+         va = b.va;
+         v2 = b.v2;
+      }
+      template <int N2, bool C2, int W2, bool S2,
+                typename std::enable_if<!(N2 == 4 && C2 == C && W2 <= W0), int>::type = 0>
+      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+      {
+         constexpr int M = AC_MIN(4, N2);
+         reset();
+         LOOP(int, i, 0, exclude, M, { set(i, b[i]); });
+         if(M < 4)
+         {
+            const int ext = (M > 0 && b[M - 1] < 0) ? ~0 : 0;
+            LOOP(int, i, M, exclude, 4, { set(i, ext); });
+         }
+      }
    } __attribute__((aligned(8)));
 
    template <int W0, bool S0>
    class iv_base<5, true, W0, S0>
    {
-      long long int va __INIT_VALUE_LL;
-      long long int v2 __INIT_VALUE_LL;
+      long long int va /*__INIT_VALUE_LL*/;
+      long long int v2 /*__INIT_VALUE_LL*/;
+#ifdef CHECK_UNDEFINE_VALUE
+      bool initialized = false;
+#endif
+      template <int, bool, int, bool>
+      friend class iv_base;
 
     public:
       __FORCE_INLINE constexpr void assign_int64(Slong l)
       {
+         reset();
          set(0, static_cast<int>(l));
          set(1, static_cast<int>(l >> 32));
          auto val = (operator[](1) < 0) ? ~0 : 0;
@@ -1180,6 +1628,7 @@ using Slong = long long;
       }
       __FORCE_INLINE constexpr void assign_uint64(Ulong l)
       {
+         reset();
          set(0, static_cast<int>(l));
          set(1, static_cast<int>(l >> 32));
          set(2, 0);
@@ -1187,6 +1636,9 @@ using Slong = long long;
       }
       __FORCE_INLINE constexpr void set(int x, int value)
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::set called on uninitialized object - call reset() first");
+#endif
          AC_ASSERT(x >= 0 && x < 5, "unexpected condition");
          if(x == 0)
          {
@@ -1211,10 +1663,16 @@ using Slong = long long;
       }
       __FORCE_INLINE constexpr Slong to_int64() const
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::to_int64 called on uninitialized object - call reset() first");
+#endif
          return va;
       }
       __FORCE_INLINE constexpr int operator[](int x) const
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         AC_ASSERT(initialized, "iv_base::operator[] called on uninitialized object - call reset() first");
+#endif
          AC_ASSERT(x >= 0 && x < 5, "unexpected condition");
          int res = 0;
          if(x == 0)
@@ -1241,17 +1699,59 @@ using Slong = long long;
       }
       __FORCE_INLINE constexpr void assign(const iv_base& b)
       {
+#ifdef CHECK_UNDEFINE_VALUE
+         initialized = true;
+#endif
          va = b.va;
          v2 = b.v2;
       }
-      __FORCE_INLINE explicit constexpr iv_base() = default;
+      __FORCE_INLINE constexpr void reset()
+      {
+         va = 0;
+         v2 = 0;
+#ifdef CHECK_UNDEFINE_VALUE
+         initialized = true;
+#endif
+      }
+      __FORCE_INLINE explicit constexpr iv_base()
+      {
+         if(__AC_IS_CONST_EVAL())
+         {
+            reset();
+         }
+      }
       __FORCE_INLINE explicit constexpr iv_base(const iv_base& b) = delete;
       __FORCE_INLINE constexpr iv_base(iv_base&& b) = delete;
       __FORCE_INLINE constexpr iv_base& operator=(const iv_base& b) = delete;
-      template <int N2, bool C2, int W2, bool S2>
-      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b) = delete;
+      template <int N2, bool C2, int W2, bool S2,
+                typename std::enable_if<(N2 == 5 && C2 && W2 <= W0), int>::type = 0>
+      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+      {
+#ifdef CHECK_UNDEFINE_VALUE
+         initialized = true;
+#endif
+         va = b.va;
+         v2 = b.v2;
+      }
+      template <int N2, bool C2, int W2, bool S2,
+                typename std::enable_if<!(N2 == 5 && C2 && W2 <= W0), int>::type = 0>
+      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+      {
+         constexpr int M = AC_MIN(5, N2);
+         reset();
+         LOOP(int, i, 0, exclude, M, { set(i, b[i]); });
+         if(M < 5)
+         {
+            const int ext = (M > 0 && b[M - 1] < 0) ? ~0 : 0;
+            LOOP(int, i, M, exclude, 5, { set(i, ext); });
+         }
+      }
    } __attribute__((aligned(8)));
 #endif
+
+#undef __AC_IS_CONST_EVAL
+#undef __AC_HAS_BUILTIN
+
       template <bool select>
       struct iv_copy_base_struct
       {
@@ -1262,6 +1762,7 @@ using Slong = long long;
          template <int N, bool C, int W, bool S>
          __FORCE_INLINE constexpr void iv_copy_base(const iv_base<N, C, W, S>& op, iv_base<N, C, W, S>& r)
          {
+            r.reset();
             r.assign(op);
          }
       };
@@ -1271,12 +1772,21 @@ using Slong = long long;
          template <int N1, bool C1, int W1, bool S1, int Nr, bool Cr, int Wr, bool Sr>
          __FORCE_INLINE constexpr void iv_copy_base(const iv_base<N1, C1, W1, S1>& op, iv_base<Nr, Cr, Wr, Sr>& r)
          {
+            r.reset();
             LOOP(int, i, 0, exclude, Nr, { r.set(i, op[i]); });
          }
       };
       template <int N, int START, int N1, bool C1, int W1, bool S1, int Nr, bool Cr, int Wr, bool Sr>
       __FORCE_INLINE constexpr void iv_copy(const iv_base<N1, C1, W1, S1>& op, iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         if(START == 0)
+         {
+            if(reinterpret_cast<const void*>(&op) == reinterpret_cast<const void*>(&r))
+            {
+               return;
+            }
+            r.reset();
+         }
          if(START == 0 && N == Nr && Nr == N1 && C1 == Cr && W1 == Wr && S1 == Sr)
          {
             iv_copy_base_struct<START == 0 && N == Nr && Nr == N1 && C1 == Cr && W1 == Wr && S1 == Sr> icbs;
@@ -1477,6 +1987,10 @@ using Slong = long long;
       template <int START, int N, bool C, int W, bool S>
       __FORCE_INLINE constexpr void iv_extend(iv_base<N, C, W, S>& r, int ext)
       {
+      if(START == 0)
+      {
+         r.reset();
+      }
          if(START < N)
          {
             LOOP(int, i, START, exclude, N, { r.set(i, ext); });
@@ -1526,6 +2040,7 @@ using Slong = long long;
       __FORCE_INLINE constexpr void iv_mult(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
                                   iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         r.reset();
          if(Nr == 1)
          {
             r.set(0, op1[0] * op2[0]);
@@ -1721,6 +2236,7 @@ using Slong = long long;
       __FORCE_INLINE void iv_add(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
                                  iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         r.reset();
          if(Nr == 1)
          {
             r.set(0, op1[0] + op2[0]);
@@ -1829,6 +2345,7 @@ using Slong = long long;
       __FORCE_INLINE void iv_sub(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
                                  iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         r.reset();
          if(Nr == 1)
          {
             r.set(0, op1[0] - op2[0]);
@@ -1856,6 +2373,7 @@ using Slong = long long;
       template <int N, bool C, int W, bool S, int Nr, bool Cr, int Wr, bool Sr>
       void iv_neg(const iv_base<N, C, W, S>& op1, iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         r.reset();
          Slong l = 0;
          LOOP(int, k, 0, exclude, AC_MIN(N, Nr), {
             l -= (Ulong)(unsigned)op1[k];
@@ -1872,6 +2390,7 @@ using Slong = long long;
       template <bool S0, int N, bool C, int W, bool S, int Nr, bool Cr, int Wr, bool Sr>
       __FORCE_INLINE void iv_abs(const iv_base<N, C, W, S>& op1, iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         r.reset();
          if(S0 && op1[N - 1] < 0)
          {
             iv_neg(op1, r);
@@ -1889,6 +2408,8 @@ using Slong = long long;
       __FORCE_INLINE void iv_udiv(const iv_base<Nn, Cn, Wn, Sn>& n, const iv_base<Nd, Cd, Wd, Sd>& d,
                                   iv_base<Nq, Cq, Wq, Sq>& q, iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         q.reset();
+         r.reset();
          constexpr int w2_length = 2 * w1_length;
          int d_msi = D - 1; // most significant int for d
          bool loop_finished = false;
@@ -2018,6 +2539,7 @@ using Slong = long long;
       __FORCE_INLINE void iv_div(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
                                  iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         r.reset();
          enum
          {
             N1_over = N1 + (Den_s && (Num_s == 2))
@@ -2068,6 +2590,7 @@ using Slong = long long;
       __FORCE_INLINE void iv_rem(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
                                  iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         r.reset();
          enum
          {
             N1_over = N1 + (Den_s && (Num_s == 2))
@@ -2116,6 +2639,10 @@ using Slong = long long;
       template <int N, int START, int N1, bool C1, int W1, bool S1, int Nr, bool Cr, int Wr, bool Sr>
       __FORCE_INLINE void iv_bitwise_complement_n(const iv_base<N1, C1, W1, S1>& op, iv_base<Nr, Cr, Wr, Sr>& r)
       {
+      if(START == 0)
+      {
+         r.reset();
+      }
          if(START < N)
          {
             LOOP(int, i, START, exclude, N, { r.set(i, ~op[i]); });
@@ -2125,6 +2652,7 @@ using Slong = long long;
       template <int N, bool C, int W, bool S, int Nr, bool Cr, int Wr, bool Sr>
       __FORCE_INLINE void iv_bitwise_complement(const iv_base<N, C, W, S>& op, iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         r.reset();
          const int M = AC_MIN(N, Nr);
          iv_bitwise_complement_n<M, 0>(op, r);
          iv_extend<M>(r, (r[M - 1] < 0) ? ~0 : 0);
@@ -2135,6 +2663,7 @@ using Slong = long long;
       __FORCE_INLINE void iv_bitwise_and_n(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
                                            iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         r.reset();
          LOOP(int, i, 0, exclude, N, { r.set(i, op1[i] & op2[i]); });
       }
 
@@ -2142,6 +2671,7 @@ using Slong = long long;
       __FORCE_INLINE void iv_bitwise_and(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
                                          iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         r.reset();
          constexpr int M1 = AC_MIN(AC_MAX(N1, N2), Nr);
          constexpr int M2 = AC_MIN(AC_MIN(N1, N2), Nr);
 
@@ -2176,6 +2706,7 @@ using Slong = long long;
       __FORCE_INLINE void iv_bitwise_or_n(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
                                           iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         r.reset();
          LOOP(int, i, 0, exclude, N, { r.set(i, op1[i] | op2[i]); });
       }
 
@@ -2183,6 +2714,7 @@ using Slong = long long;
       __FORCE_INLINE void iv_bitwise_or(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
                                         iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         r.reset();
          constexpr int M1 = AC_MIN(AC_MAX(N1, N2), Nr);
          constexpr int M2 = AC_MIN(AC_MIN(N1, N2), Nr);
 
@@ -2217,6 +2749,7 @@ using Slong = long long;
       __FORCE_INLINE void iv_bitwise_xor_n(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
                                            iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         r.reset();
          LOOP(int, i, 0, exclude, N, { r.set(i, op1[i] ^ op2[i]); });
       }
 
@@ -2224,6 +2757,7 @@ using Slong = long long;
       __FORCE_INLINE void iv_bitwise_xor(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
                                          iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         r.reset();
          constexpr int M1 = AC_MIN(AC_MAX(N1, N2), Nr);
          constexpr int M2 = AC_MIN(AC_MIN(N1, N2), Nr);
 
@@ -2256,6 +2790,7 @@ using Slong = long long;
       template <int N, bool C, int W, bool S, int Nr, bool Cr, int Wr, bool Sr>
       __FORCE_INLINE void iv_shift_l(const iv_base<N, C, W, S>& op1, unsigned op2, iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         r.reset();
          AC_ASSERT(Nr <= N, "iv_shift_l, incorrect usage Nr > N");
          unsigned s31 = op2 & 31;
          unsigned ishift = (op2 >> 5) > Nr ? Nr : (op2 >> 5);
@@ -2277,6 +2812,7 @@ using Slong = long long;
       template <int N, bool C, int W, bool S, int Nr, bool Cr, int Wr, bool Sr>
       __FORCE_INLINE void iv_shift_r(const iv_base<N, C, W, S>& op1, unsigned op2, iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         r.reset();
          unsigned s31 = op2 & 31;
          unsigned ishift = (op2 >> 5) > N ? N : (op2 >> 5);
          int ext = op1[N - 1] < 0 ? ~0 : 0;
@@ -2298,6 +2834,7 @@ using Slong = long long;
       template <bool S0, int N, bool C, int W, bool S, int Nr, bool Cr, int Wr, bool Sr>
       __FORCE_INLINE void iv_shift_l2(const iv_base<N, C, W, S>& op1, signed op2, iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         r.reset();
          if(S0 && op2 < 0)
          {
             iv_shift_r(op1, -op2, r);
@@ -2311,6 +2848,7 @@ using Slong = long long;
       template <bool S0, int N, bool C, int W, bool S, int Nr, bool Cr, int Wr, bool Sr>
       __FORCE_INLINE void iv_shift_r2(const iv_base<N, C, W, S>& op1, signed op2, iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         r.reset();
          if(S0 && op2 < 0)
          {
             iv_shift_l(op1, -op2, r);
@@ -2324,6 +2862,7 @@ using Slong = long long;
       template <int B, int N, bool C, int W, bool S, int Nr, bool Cr, int Wr, bool Sr>
       __FORCE_INLINE constexpr void iv_const_shift_l(const iv_base<N, C, W, S>& op1, iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         r.reset();
          // B >= 0
          if(!B)
          {
@@ -2368,6 +2907,7 @@ using Slong = long long;
       template <int B, int N, bool C, int W, bool S, int Nr, bool Cr, int Wr, bool Sr>
       __FORCE_INLINE void iv_const_shift_r(const iv_base<N, C, W, S>& op1, iv_base<Nr, Cr, Wr, Sr>& r)
       {
+         r.reset();
          if(!B)
          {
             constexpr int M1 = AC_MIN(N, Nr);
@@ -2399,6 +2939,7 @@ using Slong = long long;
       __FORCE_INLINE constexpr void iv_conv_from_fraction(const double d, iv_base<N, C, W, S>& r, bool* qb, bool* rbits,
                                                           bool* o)
       {
+         r.reset();
          bool b = d < 0;
          double d2 = b ? -d : d;
          double dfloor = mgc_floor(d2);
@@ -2429,6 +2970,7 @@ using Slong = long long;
       __FORCE_INLINE constexpr void iv_conv_from_fraction(const float d, iv_base<N, C, W, S>& r, bool* qb, bool* rbits,
                                                           bool* o)
       {
+         r.reset();
          bool b = d < 0;
          float d2 = b ? -d : d;
          float dfloor = mgc_floor(d2);
@@ -2839,24 +3381,24 @@ using Slong = long long;
          explicit constexpr iv() = default;
          __FORCE_INLINE explicit constexpr iv(const iv& b)
          {
-            iv_copy<N, 0>(b.v, v);
+            v.assign(b.v);
          }
          __FORCE_INLINE constexpr iv(iv&& b)
          {
-            iv_copy<N, 0>(b.v, v);
+            v.assign(b.v);
          }
          __FORCE_INLINE constexpr iv& operator=(const iv& b)
          {
-            iv_copy<N, 0>(b.v, v);
+            v.assign(b.v);
             return *this;
          }
-         template <int N2, bool C2, int W2, bool S2>
-         __FORCE_INLINE constexpr iv(const iv<N2, C2, W2, S2>& b)
+         __FORCE_INLINE constexpr void reset()
          {
-            const int M = AC_MIN(N, N2);
-            iv_assign_int64(v, 0);
-            iv_copy<M, 0>(b.v, v);
-            iv_extend<M>(v, (v[M - 1] < 0) ? ~0 : 0);
+            v.reset();
+         }
+         template <int N2, bool C2, int W2, bool S2>
+         __FORCE_INLINE constexpr iv(const iv<N2, C2, W2, S2>& b) : v(b.v)
+         {
          }
 
          __FORCE_INLINE constexpr iv(Slong t)
@@ -2871,44 +3413,27 @@ using Slong = long long;
 
          __FORCE_INLINE constexpr iv(int t)
          {
-            v.set(0, t);
-            iv_extend<1>(v, (t < 0) ? ~0 : 0);
+            v.assign_int64(t);
          }
 
          __FORCE_INLINE constexpr iv(unsigned int t)
          {
-            v.set(0, t);
-            iv_extend<1>(v, 0);
+            v.assign_uint64(t);
          }
 
          __FORCE_INLINE constexpr iv(long t)
          {
-            if(long_w == 32)
-            {
-               v.set(0, t);
-               iv_extend<1>(v, (t < 0) ? ~0 : 0);
-            }
-            else
-            {
-               iv_assign_int64(v, t);
-            }
+            v.assign_int64(t);
          }
 
          __FORCE_INLINE constexpr iv(unsigned long t)
          {
-            if(long_w == 32)
-            {
-               v.set(0, t);
-               iv_extend<1>(v, 0);
-            }
-            else
-            {
-               iv_assign_uint64(v, t);
-            }
+            v.assign_uint64(t);
          }
 
          __FORCE_INLINE constexpr iv(double d)
          {
+            v.reset();
             double d2 = ldexpr32<-N>(d);
             bool qb = false, rbits = false, o = false;
             iv_conv_from_fraction(d2, v, &qb, &rbits, &o);
@@ -2916,6 +3441,7 @@ using Slong = long long;
 
          __FORCE_INLINE constexpr iv(float d)
          {
+            v.reset();
             float d2 = ldexpr32<-N>(d);
             bool qb = false, rbits = false, o = false;
             iv_conv_from_fraction(d2, v, &qb, &rbits, &o);
@@ -3118,6 +3644,23 @@ using Slong = long long;
                }
                v.set(msb_v, v[msb_v] ^ ((v[msb_v] ^ m) & ~((all_ones << 1) << msb_b)));
             }
+            if(lsb == 0 && WS == W && (W & 31))
+            {
+               const unsigned rem = W & 31;
+               const unsigned msb_word = (W - 1) >> 5;
+               const unsigned mask = ~0u << rem;
+               unsigned val = v[msb_word];
+               if(S)
+               {
+                  const unsigned sign_mask = 1u << ((W - 1) & 31);
+                  val = (val & sign_mask) ? (val | mask) : (val & ~mask);
+               }
+               else
+               {
+                  val &= ~mask;
+               }
+               v.set(msb_word, val);
+            }
          }
 
          template <int N_2, bool C_2, int W2, bool S2>
@@ -3161,6 +3704,23 @@ using Slong = long long;
                   m = t;
                }
                v.set(msb_v, v[msb_v] ^ ((v[msb_v] ^ m) & ~((all_ones << 1) << msb_b)));
+            }
+            if(lsb == 0 && WS == W && (W & 31))
+            {
+               const unsigned rem = W & 31;
+               const unsigned msb_word = (W - 1) >> 5;
+               const unsigned mask = ~0u << rem;
+               unsigned val = v[msb_word];
+               if(S)
+               {
+                  const unsigned sign_mask = 1u << ((W - 1) & 31);
+                  val = (val & sign_mask) ? (val | mask) : (val & ~mask);
+               }
+               else
+               {
+                  val &= ~mask;
+               }
+               v.set(msb_word, val);
             }
          }
          unsigned leading_bits(bool bit) const
@@ -3838,6 +4398,11 @@ using Slong = long long;
       __FORCE_INLINE
       constexpr ac_int() = default;
 
+      __FORCE_INLINE constexpr void reset()
+      {
+         Base::reset();
+      }
+
       __FORCE_INLINE explicit constexpr ac_int(const ac_int& op)
       {
          Base::operator=(op);
@@ -4111,8 +4676,8 @@ using Slong = long long;
             Nminus = ac_int<W + S, S>::N,
             N2 = ac_int<W2, S2>::N,
             N2minus = ac_int<W2 + S2, S2>::N,
-            num_s = S + (Nminus > N),
-            den_s = S2 + (N2minus > N2),
+            num_s = S + (static_cast<int>(Nminus) > static_cast<int>(N)),
+            den_s = S2 + (static_cast<int>(N2minus) > static_cast<int>(N2)),
             Nr = rt<W2, S2>::div::N
          };
          this->Base::template div<num_s, den_s>(op2, r);
@@ -4127,8 +4692,8 @@ using Slong = long long;
             Nminus = ac_int<W + S, S>::N,
             N2 = ac_int<W2, S2>::N,
             N2minus = ac_int<W2 + S2, S2>::N,
-            num_s = S + (Nminus > N),
-            den_s = S2 + (N2minus > N2),
+            num_s = S + (static_cast<int>(Nminus) > static_cast<int>(N)),
+            den_s = S2 + (static_cast<int>(N2minus) > static_cast<int>(N2)),
             Nr = rt<W2, S2>::mod::N
          };
          this->Base::template rem<num_s, den_s>(op2, r);
@@ -4869,218 +5434,208 @@ using Slong = long long;
    template <>
    __FORCE_INLINE constexpr ac_int<1, true>::ac_int(bool b)
    {
-      v.set(0, b ? -1 : 0);
+      v.assign_int64(b ? -1 : 0);
    }
 
    template <>
    __FORCE_INLINE constexpr ac_int<1, false>::ac_int(bool b)
    {
-      v.set(0, b);
+      v.assign_uint64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<1, false>::ac_int(signed char b)
    {
-      v.set(0, b & 1);
+      v.assign_int64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<1, false>::ac_int(unsigned char b)
    {
-      v.set(0, b & 1);
+      v.assign_uint64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<1, false>::ac_int(signed short b)
    {
-      v.set(0, b & 1);
+      v.assign_int64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<1, false>::ac_int(unsigned short b)
    {
-      v.set(0, b & 1);
+      v.assign_uint64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<1, false>::ac_int(signed int b)
    {
-      v.set(0, b & 1);
+      v.assign_int64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<1, false>::ac_int(unsigned int b)
    {
-      v.set(0, b & 1);
+      v.assign_uint64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<1, false>::ac_int(signed long b)
    {
-      v.set(0, b & 1);
+      v.assign_int64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<1, false>::ac_int(unsigned long b)
    {
-      v.set(0, b & 1);
+      v.assign_uint64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<1, false>::ac_int(Ulong b)
    {
-      v.set(0, (int)b & 1);
+      v.assign_uint64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<1, false>::ac_int(Slong b)
    {
-      v.set(0, (int)b & 1);
+      v.assign_int64(b);
    }
 
    template <>
    __FORCE_INLINE constexpr ac_int<8, true>::ac_int(bool b)
    {
-      v.set(0, b);
+      v.assign_int64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<8, false>::ac_int(bool b)
    {
-      v.set(0, b);
+      v.assign_uint64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<8, true>::ac_int(signed char b)
    {
-      v.set(0, b);
+      v.assign_int64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<8, false>::ac_int(unsigned char b)
    {
-      v.set(0, b);
+      v.assign_uint64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<8, true>::ac_int(unsigned char b)
    {
-      v.set(0, (signed char)b);
+      v.assign_int64(static_cast<signed char>(b));
    }
    template <>
    __FORCE_INLINE constexpr ac_int<8, false>::ac_int(signed char b)
    {
-      v.set(0, (unsigned char)b);
+      v.assign_uint64(static_cast<unsigned char>(b));
    }
 
    template <>
    __FORCE_INLINE constexpr ac_int<16, true>::ac_int(bool b)
    {
-      v.set(0, b);
+      v.assign_int64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<16, false>::ac_int(bool b)
    {
-      v.set(0, b);
+      v.assign_uint64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<16, true>::ac_int(signed char b)
    {
-      v.set(0, b);
+      v.assign_int64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<16, false>::ac_int(unsigned char b)
    {
-      v.set(0, b);
+      v.assign_uint64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<16, true>::ac_int(unsigned char b)
    {
-      v.set(0, b);
+      v.assign_int64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<16, false>::ac_int(signed char b)
    {
-      v.set(0, (unsigned short)b);
+      v.assign_uint64(static_cast<unsigned short>(b));
    }
    template <>
    __FORCE_INLINE constexpr ac_int<16, true>::ac_int(signed short b)
    {
-      v.set(0, b);
+      v.assign_int64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<16, false>::ac_int(unsigned short b)
    {
-      v.set(0, b);
+      v.assign_uint64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<16, true>::ac_int(unsigned short b)
    {
-      v.set(0, (signed short)b);
+      v.assign_int64(static_cast<signed short>(b));
    }
    template <>
    __FORCE_INLINE constexpr ac_int<16, false>::ac_int(signed short b)
    {
-      v.set(0, (unsigned short)b);
+      v.assign_uint64(static_cast<unsigned short>(b));
    }
 
    template <>
    __FORCE_INLINE constexpr ac_int<32, true>::ac_int(signed int b)
    {
-      v.set(0, b);
+      v.assign_int64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<32, true>::ac_int(unsigned int b)
    {
-      v.set(0, b);
+      v.assign_int64(static_cast<int>(b));
    }
    template <>
    __FORCE_INLINE constexpr ac_int<32, false>::ac_int(signed int b)
    {
-      v.set(0, b);
-      v.set(1, 0);
+      v.assign_uint64(static_cast<unsigned int>(b));
    }
    template <>
    __FORCE_INLINE constexpr ac_int<32, false>::ac_int(unsigned int b)
    {
-      v.set(0, b);
-      v.set(1, 0);
+      v.assign_uint64(b);
    }
 
    template <>
    __FORCE_INLINE constexpr ac_int<32, true>::ac_int(Slong b)
    {
-      v.set(0, (int)b);
+      v.assign_int64(static_cast<int>(b));
    }
    template <>
    __FORCE_INLINE constexpr ac_int<32, true>::ac_int(Ulong b)
    {
-      v.set(0, (int)b);
+      v.assign_int64(static_cast<int>(b));
    }
    template <>
    __FORCE_INLINE constexpr ac_int<32, false>::ac_int(Slong b)
    {
-      v.set(0, (int)b);
-      v.set(1, 0);
+      v.assign_uint64(static_cast<unsigned int>(b));
    }
    template <>
    __FORCE_INLINE constexpr ac_int<32, false>::ac_int(Ulong b)
    {
-      v.set(0, (int)b);
-      v.set(1, 0);
+      v.assign_uint64(static_cast<unsigned int>(b));
    }
 
    template <>
    __FORCE_INLINE constexpr ac_int<64, true>::ac_int(Slong b)
    {
-      v.set(0, (int)b);
-      v.set(1, (int)(b >> 32));
+      v.assign_int64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<64, true>::ac_int(Ulong b)
    {
-      v.set(0, (int)b);
-      v.set(1, (int)(b >> 32));
+      v.assign_uint64(b);
    }
    template <>
    __FORCE_INLINE constexpr ac_int<64, false>::ac_int(Slong b)
    {
-      v.set(0, (int)b);
-      v.set(1, (int)((Ulong)b >> 32));
-      v.set(2, 0);
+      v.assign_uint64(static_cast<Ulong>(b));
    }
    template <>
    __FORCE_INLINE constexpr ac_int<64, false>::ac_int(Ulong b)
    {
-      v.set(0, (int)b);
-      v.set(1, (int)(b >> 32));
-      v.set(2, 0);
+      v.assign_uint64(b);
    }
 
    template <int W1, bool S1>

@@ -140,6 +140,7 @@ namespace ac_math
       // is suitable to be used in later calculations.
       if(W > I)
       {
+         input_frac_part.reset();
          input_frac_part.set_slc(0, input.template slc<AC_MAX(W - I, 1)>(0));
       }
 
@@ -174,6 +175,7 @@ namespace ac_math
       ac_fixed<12, 2, false> x_in_sc = ((ac_fixed<14, 2, false>)input_frac_part) << 2;
       ac_fixed<12 - 2, 0, false> x_in_sc_frac;
       // Slice out the fractional part from the scaled input, store it in another variable.
+      x_in_sc_frac.reset();
       x_in_sc_frac.set_slc(0, x_in_sc.template slc<12 - 2>(0));
       // The integer part of the scaled input is the index of the LUT table
       ac_int<2, false> index = x_in_sc.to_int();

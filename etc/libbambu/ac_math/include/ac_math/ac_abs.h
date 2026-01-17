@@ -175,6 +175,7 @@ namespace ac_math
       ac_int<XW, false> xiabs;
       ac_abs(xi, xiabs);
       ac_fixed<XW, XI, false> xabs;
+      xabs.reset();
       xabs.set_slc(0, xiabs.template slc<XW>(0));
       y = xabs;
    }
@@ -233,6 +234,7 @@ namespace ac_math
       ac_fixed<XW, XI, false> xabs_m;
       ac_abs(x.m, xabs_m);
       ac_float<XW, XI, XE + 1> xabs;
+      xabs.m.reset();
       // |-2^I*2^E| = 2^I*2^E > (2^I - ulp)*2^E
       //   adjust 2^I*2^E to 2^(I-1)*2^(E+1)
       bool ismax = xabs_m[XW - 1];

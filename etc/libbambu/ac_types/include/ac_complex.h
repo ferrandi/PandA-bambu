@@ -92,6 +92,17 @@ namespace __AC_NAMESPACE
       using map_T_sqr = typename ac_private::map<T_sqr>::t;
       using map_T_mag = typename ac_private::map<typename map_T::rt_unary::mag>::t;
 
+    private:
+      template <typename U>
+      static auto reset_if_supported(U& value, int) -> decltype(value.reset(), void())
+      {
+         value.reset();
+      }
+      template <typename U>
+      static void reset_if_supported(U&, ...)
+      {
+      }
+
     public:
       using element_type = T;
       template <typename T2>
@@ -138,6 +149,11 @@ namespace __AC_NAMESPACE
       {
          _r = r;
          _i = i;
+      }
+      void reset()
+      {
+         reset_if_supported(_r, 0);
+         reset_if_supported(_i, 0);
       }
       const T& r() const
       {
