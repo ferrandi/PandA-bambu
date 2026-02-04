@@ -451,8 +451,6 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered successor BB" + STR(succ));
             }
             new_gwi->add_cond(tree_nodeRef(), default_bb);
-            std::cout << "Removing2: " << gs_node << "\n"
-                      << "Before2  : " << bb->CGetStmtList().back() << "\n";
             bb->RemoveStmt(gs_node, AppM);
             bb->PushBack(new_gwi_node, AppM);
             AppM->RegisterTransformation(GetName(), new_gwi_node);
