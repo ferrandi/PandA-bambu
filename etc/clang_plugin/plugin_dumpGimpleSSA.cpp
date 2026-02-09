@@ -52,6 +52,7 @@
 #include <llvm/Analysis/TargetTransformInfo.h>
 #include <llvm/Analysis/TypeBasedAliasAnalysis.h>
 #include <llvm/CodeGen/Passes.h>
+#include <llvm/IR/Attributes.h>
 #include <llvm/IR/Dominators.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/PassManager.h>
@@ -123,9 +124,11 @@
 
 #include <pugixml.hpp>
 
+#include <cstdlib>
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #ifdef CPP_LANGUAGE
 #define CLANG_VERSION_SYMBOL_DUMP_SSA CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSACpp)
@@ -148,6 +151,162 @@ namespace llvm
                                 cl::value_desc("filename path"), cl::OneOrMore, cl::CommaSeparated);
    cl::opt<std::string> CostTable("panda-cost-table", cl::desc("Specify the cost per operation"),
                                   cl::value_desc("cost table"));
+
+   static constexpr const char* BAMBU_ORIG_NAME_ATTR = "bambu.orig_name";
+   static constexpr const char* BAMBU_ORIG_INDEX_ATTR = "bambu.orig_index";
+
+   static bool parseParamIndex(const pugi::xml_attribute& indexAttr, size_t& outIndex)
+   {
+      if(indexAttr.empty())
+      {
+         return false;
+      }
+      char* endPtr = nullptr;
+      const auto parsedIndex = std::strtoul(indexAttr.value(), &endPtr, 10);
+      if(endPtr == indexAttr.value() || *endPtr != '\0')
+      {
+         return false;
+      }
+      outIndex = parsedIndex;
+      return true;
+   }
+
+   static std::map<std::string, std::vector<std::string>> loadFunctionParamTracking(const pugi::xml_document& doc)
+   {
+      std::map<std::string, std::vector<std::string>> fun2params;
+      const auto module = doc.child("module");
+      for(auto& f : module.children("function"))
+      {
+         const auto funcSymbol = std::string(f.attribute("symbol").value());
+         if(funcSymbol.empty())
+         {
+            continue;
+         }
+
+         auto& funcParms = fun2params[funcSymbol];
+         const auto paramsRoot = f.child("parameters");
+         for(auto& p : paramsRoot)
+         {
+            size_t idx = 0;
+            if(!parseParamIndex(p.attribute("index"), idx))
+            {
+               continue;
+            }
+            if(funcParms.size() <= idx)
+            {
+               funcParms.resize(idx + 1);
+            }
+
+            auto paramName = std::string(p.attribute("name").value());
+            if(paramName.empty())
+            {
+               paramName = p.attribute("port").value();
+            }
+            if(paramName.empty())
+            {
+               paramName = "P" + std::to_string(idx);
+            }
+            funcParms[idx] = paramName;
+         }
+      }
+      return fun2params;
+   }
+
+   static void extendTopFunctionNamesFromArchitecture(const pugi::xml_document& doc, std::vector<std::string>& topNames)
+   {
+      const auto module = doc.child("module");
+      for(auto& f : module.children("function"))
+      {
+         const auto funcSymbol = std::string(f.attribute("symbol").value());
+         const auto funcName = std::string(f.attribute("name").value());
+         const auto isDataflow = !f.attribute("dataflow_top").empty() || !f.attribute("dataflow_module").empty();
+         if(!isDataflow || funcSymbol.empty())
+         {
+            continue;
+         }
+         if(llvm::find(topNames, funcSymbol) == topNames.end() && llvm::find(topNames, funcName) == topNames.end())
+         {
+            topNames.push_back(funcSymbol);
+         }
+      }
+   }
+
+   static bool addFunctionParamTrackingAttrs(Module& M,
+                                             const std::map<std::string, std::vector<std::string>>& fun2params)
+   {
+      bool changed = false;
+      for(auto& F : M)
+      {
+         if(F.isDeclaration())
+         {
+            continue;
+         }
+         const auto it = fun2params.find(F.getName().str());
+         if(it == fun2params.end())
+         {
+            continue;
+         }
+         const auto& trackedParams = it->second;
+         unsigned int argIndex = 0;
+         for(auto& A : F.args())
+         {
+            std::string origName;
+            if(argIndex < trackedParams.size())
+            {
+               origName = trackedParams[argIndex];
+            }
+            if(origName.empty())
+            {
+               origName = A.getName().str();
+            }
+            if(origName.empty())
+            {
+               origName = "P" + std::to_string(argIndex);
+            }
+            F.addParamAttr(argIndex, Attribute::get(M.getContext(), BAMBU_ORIG_NAME_ATTR, origName));
+            F.addParamAttr(argIndex, Attribute::get(M.getContext(), BAMBU_ORIG_INDEX_ATTR, std::to_string(argIndex)));
+            changed = true;
+            ++argIndex;
+         }
+      }
+      return changed;
+   }
+
+   static bool addFunctionParamTrackingAttrsFromXML(Module& M, const std::string& architectureXML)
+   {
+      pugi::xml_document doc;
+      if(!doc.load_file(architectureXML.c_str()))
+      {
+         return false;
+      }
+      const auto fun2params = loadFunctionParamTracking(doc);
+      return addFunctionParamTrackingAttrs(M, fun2params);
+   }
+
+#if __clang_major__ >= 13
+   struct BambuParamTrackingPass : public PassInfoMixin<BambuParamTrackingPass>
+   {
+      llvm::PreservedAnalyses run(llvm::Module& M, llvm::ModuleAnalysisManager&)
+      {
+         const auto changed = addFunctionParamTrackingAttrsFromXML(M, outdir_name + "/architecture.xml");
+         return changed ? llvm::PreservedAnalyses::none() : llvm::PreservedAnalyses::all();
+      }
+   };
+#else
+   struct BambuParamTrackingLegacyPass : public ModulePass
+   {
+      static char ID;
+      BambuParamTrackingLegacyPass() : ModulePass(ID)
+      {
+      }
+
+      bool runOnModule(Module& M) override
+      {
+         return addFunctionParamTrackingAttrsFromXML(M, outdir_name + "/architecture.xml");
+      }
+   };
+   char BambuParamTrackingLegacyPass::ID = 0;
+#endif
 
    struct CLANG_VERSION_SYMBOL_DUMP_SSA : public ModulePass
 #if __clang_major__ >= 13
@@ -211,30 +370,12 @@ namespace llvm
          const auto arch_filename = outdir_name + "/architecture.xml";
          if(doc.load_file(arch_filename.c_str()))
          {
-            for(auto& f : doc.child("module"))
+            extendTopFunctionNamesFromArchitecture(doc, TopFunctionNames);
+            Fun2Params = loadFunctionParamTracking(doc);
+            for(const auto& funPair : Fun2Params)
             {
-               const auto func_symbol = std::string(f.attribute("symbol").value());
-               const auto func_name = std::string(f.attribute("name").value());
-               const auto is_dataflow = !f.attribute("dataflow_top").empty() || !f.attribute("dataflow_module").empty();
-               if(is_dataflow && (llvm::find(TopFunctionNames, func_name) == TopFunctionNames.end() ||
-                                  llvm::find(TopFunctionNames, func_symbol) == TopFunctionNames.end()))
-               {
-                  TopFunctionNames.push_back(func_symbol);
-               }
-               auto& func_parms = Fun2Params[func_symbol];
-               for(auto& p : f.child("parameters"))
-               {
-                  const auto parm_index = p.attribute("index").value();
-                  const auto parm_name = std::string(p.attribute("port").value());
-                  size_t idx = std::strtoul(parm_index, nullptr, 10);
-                  if(func_parms.size() <= idx)
-                  {
-                     func_parms.resize(idx + 1);
-                  }
-                  func_parms[idx] = parm_name;
-               }
-               LLVM_DEBUG(dbgs() << "FUNC: " << func_symbol << "("
-                                 << llvm::join(func_parms.begin(), func_parms.end(), ", ") << ")\n");
+               LLVM_DEBUG(dbgs() << "FUNC: " << funPair.first << "("
+                                 << llvm::join(funPair.second.begin(), funPair.second.end(), ", ") << ")\n");
             }
          }
 
@@ -372,6 +513,7 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
    return {
        LLVM_PLUGIN_API_VERSION, CLANG_VERSION_STRING_DUMP_SSA, "v0.12", [](llvm::PassBuilder& PB) {
           const auto load = [](llvm::ModulePassManager& MPM, bool doOpt) {
+             MPM.addPass(llvm::BambuParamTrackingPass());
              llvm::FunctionPassManager FPM0;
              FPM0.addPass(llvm::LowerAtomicPass());
              MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM0)));
@@ -487,6 +629,11 @@ extern "C" ::llvm::PassPluginLibraryInfo LLVM_ATTRIBUTE_WEAK llvmGetPassPluginIn
 #else
 #if ADD_RSP
 // This function is of type PassManagerBuilder::ExtensionFn
+static void loadBambuParamTrackingEarly(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
+{
+   PM.add(new llvm::BambuParamTrackingLegacyPass());
+}
+
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
    //   PM.add(llvm::createGVNPass());
@@ -502,6 +649,8 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
    PM.add(new llvm::CLANG_VERSION_SYMBOL_DUMP_SSA());
 }
 
+static llvm::RegisterStandardPasses llvmtoolLoader_Early(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly,
+                                                         loadBambuParamTrackingEarly);
 static llvm::RegisterStandardPasses llvmtoolLoader_Ox(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
 
 //    static void loadPassEarly(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)

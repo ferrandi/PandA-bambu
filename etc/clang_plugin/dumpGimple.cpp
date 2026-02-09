@@ -48,6 +48,7 @@
 #include "TreeHeightReduction.hpp"
 #endif
 
+#include <llvm/ADT/Twine.h>
 #include <llvm/Analysis/AliasAnalysis.h>
 #include <llvm/Analysis/AssumptionCache.h>
 #include <llvm/Analysis/CFG.h>
@@ -362,6 +363,17 @@ namespace llvm
       assert(demangled_outbuffer == nullptr);
 
       return declname;
+   }
+
+   static std::string getArgumentStringAttribute(const llvm::Function* fd, unsigned int arg_index,
+                                                 const char* attribute_name)
+   {
+      const auto arg_attr = fd->getAttributes().getParamAttr(arg_index, attribute_name);
+      if(!arg_attr.isStringAttribute())
+      {
+         return "";
+      }
+      return arg_attr.getValueAsString().str();
    }
 
    DumpGimpleRaw::DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals,
@@ -3553,11 +3565,14 @@ namespace llvm
    const std::list<const void*> DumpGimpleRaw::DECL_ARGUMENTS(const void* t)
    {
       const llvm::Function* fd = reinterpret_cast<const llvm::Function*>(t);
-      bool nameAreKnown = false;
-      if(fd->hasName() && fun2params->find(getName(fd)) != fun2params->end() &&
-         fun2params->find(getName(fd))->second.size() == fd->arg_size())
+      const std::vector<std::string>* tracked_names = nullptr;
+      if(fd->hasName() && fun2params)
       {
-         nameAreKnown = true;
+         const auto fun_parms_it = fun2params->find(getName(fd));
+         if(fun_parms_it != fun2params->end())
+         {
+            tracked_names = &fun_parms_it->second;
+         }
       }
 
       std::list<const void*> res;
@@ -3565,8 +3580,31 @@ namespace llvm
       for(const auto& par : fd->args())
       {
          res.push_back(assignCodeAuto(&par));
-         if(nameAreKnown)
-            argNameTable[&par] = fun2params->find(getName(fd))->second[par_index];
+
+         auto arg_name = getArgumentStringAttribute(fd, par_index, "bambu.orig_name");
+         if(arg_name.empty() && tracked_names && par_index < tracked_names->size() &&
+            tracked_names->size() == fd->arg_size())
+         {
+            arg_name = (*tracked_names)[par_index];
+         }
+         if(arg_name.empty())
+         {
+            if(fd->isDeclaration())
+            {
+               arg_name = "P" + std::to_string(par_index);
+            }
+            else
+            {
+               std::string func_name = fd->hasName() ? getName(fd) : std::string("<anonymous>");
+               report_fatal_error(llvm::Twine("Missing parameter name for function '") + func_name +
+                                  llvm::Twine("' at argument index ") + llvm::Twine(par_index) +
+                                  llvm::Twine(": expected 'bambu.orig_name' attribute or architecture.xml mapping"));
+            }
+         }
+         else
+         {
+            argNameTable[&par] = arg_name;
+         }
          ++par_index;
       }
       return res;
