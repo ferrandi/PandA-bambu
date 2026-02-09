@@ -144,6 +144,16 @@
 #endif
 #include <cmath>
 #include <string>
+#if !defined(__BAMBU__) || defined(__BAMBU_SIM__)
+#if defined(__unix__) || defined(__APPLE__)
+#include <execinfo.h>
+#include <unistd.h>
+#include <cstdio>
+#include <cstring>
+#include <cinttypes>
+#include <dlfcn.h>
+#endif
+#endif
 
 #if !defined(__BAMBU__) || defined(__BAMBU_SIM__)
 #ifndef __AC_INT_UTILITY_BASE
@@ -311,6 +321,115 @@ using Slong = long long;
          return float_floor(d);
       }
 
+    #if ((defined(__unix__) || defined(__APPLE__)) && (!defined(__BAMBU__) || defined(__BAMBU_SIM__)))
+    inline void ac_print_stacktrace_with_lines(void* const* bt, int bt_size)
+    {
+   #if defined(__linux__)
+      for(int i = 0; i < bt_size; ++i)
+      {
+         Dl_info info;
+         if(dladdr(bt[i], &info) == 0 || !info.dli_fname || !info.dli_fbase)
+         {
+            continue;
+         }
+         const uintptr_t pc = reinterpret_cast<uintptr_t>(bt[i]);
+         const uintptr_t base = reinterpret_cast<uintptr_t>(info.dli_fbase);
+         const uintptr_t offset = pc - base;
+         char cmd[512];
+         // Prefer llvm-symbolizer for reliable inline frames (DWARF5).
+         std::snprintf(cmd, sizeof(cmd),
+                       "llvm-symbolizer -e %s --inlining -p -f -C 0x%" PRIxPTR " 2>/dev/null",
+                       info.dli_fname,
+                       offset);
+         FILE* fp = popen(cmd, "r");
+         if(!fp)
+         {
+            std::snprintf(cmd, sizeof(cmd),
+                          "addr2line -e %s -f -C -p -i 0x%" PRIxPTR " 2>/dev/null",
+                          info.dli_fname,
+                          offset);
+            fp = popen(cmd, "r");
+         }
+         if(!fp)
+         {
+            continue;
+         }
+         char line[512];
+         bool printed = false;
+         while(std::fgets(line, sizeof(line), fp))
+         {
+            if(line[0] == '\0')
+            {
+               continue;
+            }
+            std::cerr << "  " << line;
+            size_t len = std::strlen(line);
+            if(len == 0 || line[len - 1] != '\n')
+            {
+               std::cerr << "\n";
+            }
+            printed = true;
+         }
+         pclose(fp);
+         if(!printed)
+         {
+            std::snprintf(cmd, sizeof(cmd),
+                          "addr2line -e %s -f -C -p -i 0x%" PRIxPTR " 2>/dev/null",
+                          info.dli_fname,
+                          offset);
+            fp = popen(cmd, "r");
+            if(!fp)
+            {
+               continue;
+            }
+            if(std::fgets(line, sizeof(line), fp))
+            {
+               std::cerr << "  " << line;
+               size_t len = std::strlen(line);
+               if(len == 0 || line[len - 1] != '\n')
+               {
+                  std::cerr << "\n";
+               }
+            }
+            pclose(fp);
+         }
+      }
+   #elif defined(__APPLE__)
+      for(int i = 0; i < bt_size; ++i)
+      {
+         Dl_info info;
+         if(dladdr(bt[i], &info) == 0 || !info.dli_fname || !info.dli_fbase)
+         {
+            continue;
+         }
+         const uintptr_t pc = reinterpret_cast<uintptr_t>(bt[i]);
+         const uintptr_t base = reinterpret_cast<uintptr_t>(info.dli_fbase);
+         char cmd[256];
+         std::snprintf(cmd, sizeof(cmd), "atos -o %s -l 0x%" PRIxPTR " -i 0x%" PRIxPTR " 2>/dev/null", info.dli_fname, base, pc);
+         FILE* fp = popen(cmd, "r");
+         if(!fp)
+         {
+            continue;
+         }
+         char line[512];
+         if(std::fgets(line, sizeof(line), fp))
+         {
+            std::cerr << "  " << line;
+            size_t len = std::strlen(line);
+            if(len == 0 || line[len - 1] != '\n')
+            {
+               std::cerr << "\n";
+            }
+         }
+         pclose(fp);
+      }
+   #else
+      (void)bt;
+      (void)bt_size;
+   #endif
+    }
+    #endif
+
     [[noreturn]] inline void
     ac_runtime_fail(const char* expr,
                     const char* file,
@@ -327,6 +446,14 @@ using Slong = long long;
         if (msg) {
             std::cerr << "  message: " << msg << "\n";
         }
+#if defined(__unix__) || defined(__APPLE__)
+        void* bt[64];
+        int bt_size = ::backtrace(bt, 64);
+        std::cerr << "  stack:\n";
+        ::backtrace_symbols_fd(bt, bt_size, STDERR_FILENO);
+        std::cerr << "  stack (lines):\n";
+        ac_print_stacktrace_with_lines(bt, bt_size);
+#endif
         std::cerr.flush();
       #endif
         std::abort();
@@ -3644,23 +3771,6 @@ using Slong = long long;
                }
                v.set(msb_v, v[msb_v] ^ ((v[msb_v] ^ m) & ~((all_ones << 1) << msb_b)));
             }
-            if(lsb == 0 && WS == W && (W & 31))
-            {
-               const unsigned rem = W & 31;
-               const unsigned msb_word = (W - 1) >> 5;
-               const unsigned mask = ~0u << rem;
-               unsigned val = v[msb_word];
-               if(S)
-               {
-                  const unsigned sign_mask = 1u << ((W - 1) & 31);
-                  val = (val & sign_mask) ? (val | mask) : (val & ~mask);
-               }
-               else
-               {
-                  val &= ~mask;
-               }
-               v.set(msb_word, val);
-            }
          }
 
          template <int N_2, bool C_2, int W2, bool S2>
@@ -3704,23 +3814,6 @@ using Slong = long long;
                   m = t;
                }
                v.set(msb_v, v[msb_v] ^ ((v[msb_v] ^ m) & ~((all_ones << 1) << msb_b)));
-            }
-            if(lsb == 0 && WS == W && (W & 31))
-            {
-               const unsigned rem = W & 31;
-               const unsigned msb_word = (W - 1) >> 5;
-               const unsigned mask = ~0u << rem;
-               unsigned val = v[msb_word];
-               if(S)
-               {
-                  const unsigned sign_mask = 1u << ((W - 1) & 31);
-                  val = (val & sign_mask) ? (val | mask) : (val & ~mask);
-               }
-               else
-               {
-                  val &= ~mask;
-               }
-               v.set(msb_word, val);
             }
          }
          unsigned leading_bits(bool bit) const
