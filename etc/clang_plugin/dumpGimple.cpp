@@ -48,7 +48,6 @@
 #include "TreeHeightReduction.hpp"
 #endif
 
-#include <llvm/ADT/Twine.h>
 #include <llvm/Analysis/AliasAnalysis.h>
 #include <llvm/Analysis/AssumptionCache.h>
 #include <llvm/Analysis/CFG.h>
@@ -3589,22 +3588,13 @@ namespace llvm
          }
          if(arg_name.empty())
          {
-            if(fd->isDeclaration())
-            {
-               arg_name = "P" + std::to_string(par_index);
-            }
-            else
-            {
-               std::string func_name = fd->hasName() ? getName(fd) : std::string("<anonymous>");
-               report_fatal_error(llvm::Twine("Missing parameter name for function '") + func_name +
-                                  llvm::Twine("' at argument index ") + llvm::Twine(par_index) +
-                                  llvm::Twine(": expected 'bambu.orig_name' attribute or architecture.xml mapping"));
-            }
+            arg_name = par.getName().str();
          }
-         else
+         if(arg_name.empty())
          {
-            argNameTable[&par] = arg_name;
+            arg_name = "P" + std::to_string(par_index);
          }
+         argNameTable[&par] = arg_name;
          ++par_index;
       }
       return res;

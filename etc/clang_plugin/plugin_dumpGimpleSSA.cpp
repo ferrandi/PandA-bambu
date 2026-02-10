@@ -155,20 +155,265 @@ namespace llvm
    static constexpr const char* BAMBU_ORIG_NAME_ATTR = "bambu.orig_name";
    static constexpr const char* BAMBU_ORIG_INDEX_ATTR = "bambu.orig_index";
 
+   static bool parseIndexValue(const char* rawValue, size_t& outIndex)
+   {
+      if(rawValue == nullptr || *rawValue == '\0')
+      {
+         return false;
+      }
+      char* endPtr = nullptr;
+      const auto parsedIndex = std::strtoul(rawValue, &endPtr, 10);
+      if(endPtr == rawValue || *endPtr != '\0')
+      {
+         return false;
+      }
+      outIndex = parsedIndex;
+      return true;
+   }
+
    static bool parseParamIndex(const pugi::xml_attribute& indexAttr, size_t& outIndex)
    {
       if(indexAttr.empty())
       {
          return false;
       }
-      char* endPtr = nullptr;
-      const auto parsedIndex = std::strtoul(indexAttr.value(), &endPtr, 10);
-      if(endPtr == indexAttr.value() || *endPtr != '\0')
+      return parseIndexValue(indexAttr.value(), outIndex);
+   }
+
+   static std::string getArgumentStringAttribute(const llvm::Function& F, unsigned int argIndex, const char* attrName)
+   {
+#if __clang_major__ >= 5
+      const auto argAttr = F.getAttributes().getParamAttr(argIndex, attrName);
+#else
+      const auto argAttr = F.getAttributes().getAttribute(argIndex + 1, attrName);
+#endif
+      if(!argAttr.isStringAttribute())
+      {
+         return "";
+      }
+      return argAttr.getValueAsString().str();
+   }
+
+   static bool pruneAndReindexFunctionParameters(pugi::xml_node xmlFunction, const llvm::Function& llvmFunction)
+   {
+      auto parametersRoot = xmlFunction.child("parameters");
+      if(!parametersRoot)
       {
          return false;
       }
-      outIndex = parsedIndex;
-      return true;
+      const auto functionSymbol = std::string(xmlFunction.attribute("symbol").value());
+      const auto functionName = std::string(xmlFunction.attribute("name").value());
+
+      struct parameterInfo
+      {
+         pugi::xml_node node;
+         size_t oldIndex = 0;
+         bool hasIndex = false;
+         bool selected = false;
+      };
+
+      std::vector<parameterInfo> xmlParameters;
+      for(auto p : parametersRoot.children("parameter"))
+      {
+         parameterInfo info;
+         info.node = p;
+         info.hasIndex = parseParamIndex(p.attribute("index"), info.oldIndex);
+         xmlParameters.push_back(info);
+      }
+
+      bool changed = false;
+      std::vector<size_t> remainingOriginalIndices;
+      std::vector<std::string> remainingOriginalNames;
+      unsigned int argIndex = 0;
+      for(const auto& arg : llvmFunction.args())
+      {
+         (void)arg;
+         size_t desiredOldIndex = argIndex;
+         size_t parsedOrigIndex = 0;
+         const auto origIndexAttr = getArgumentStringAttribute(llvmFunction, argIndex, BAMBU_ORIG_INDEX_ATTR);
+         if(parseIndexValue(origIndexAttr.c_str(), parsedOrigIndex))
+         {
+            desiredOldIndex = parsedOrigIndex;
+         }
+         remainingOriginalIndices.push_back(desiredOldIndex);
+
+         auto originalName = getArgumentStringAttribute(llvmFunction, argIndex, BAMBU_ORIG_NAME_ATTR);
+         if(!originalName.empty())
+         {
+            remainingOriginalNames.push_back(originalName);
+         }
+
+         parameterInfo* selectedParam = nullptr;
+         for(auto& param : xmlParameters)
+         {
+            if(!param.selected && param.hasIndex && param.oldIndex == desiredOldIndex)
+            {
+               selectedParam = &param;
+               break;
+            }
+         }
+
+         if(!selectedParam && !originalName.empty())
+         {
+            for(auto& param : xmlParameters)
+            {
+               if(param.selected)
+               {
+                  continue;
+               }
+               auto paramName = std::string(param.node.attribute("name").value());
+               if(paramName.empty())
+               {
+                  paramName = param.node.attribute("port").value();
+               }
+               if(paramName == originalName)
+               {
+                  selectedParam = &param;
+                  break;
+               }
+            }
+         }
+
+         if(!selectedParam && desiredOldIndex != argIndex)
+         {
+            for(auto& param : xmlParameters)
+            {
+               if(!param.selected && param.hasIndex && param.oldIndex == argIndex)
+               {
+                  selectedParam = &param;
+                  break;
+               }
+            }
+         }
+
+         if(!selectedParam)
+         {
+            continue;
+         }
+
+         selectedParam->selected = true;
+         const auto newIndex = std::to_string(argIndex);
+         auto indexAttr = selectedParam->node.attribute("index");
+         if(indexAttr.empty())
+         {
+            selectedParam->node.append_attribute("index").set_value(newIndex.c_str());
+            changed = true;
+         }
+         else if(newIndex != std::string(indexAttr.value()))
+         {
+            indexAttr.set_value(newIndex.c_str());
+            changed = true;
+         }
+         ++argIndex;
+      }
+
+      for(const auto& param : xmlParameters)
+      {
+         if(!param.selected)
+         {
+            bool hasCorrespondingOriginalIndex =
+                param.hasIndex && llvm::is_contained(remainingOriginalIndices, param.oldIndex);
+            auto unmatchedParamName = std::string(param.node.attribute("name").value());
+            if(unmatchedParamName.empty())
+            {
+               unmatchedParamName = param.node.attribute("port").value();
+            }
+            const bool hasCorrespondingOriginalName =
+                !unmatchedParamName.empty() && llvm::is_contained(remainingOriginalNames, unmatchedParamName);
+
+            if(!hasCorrespondingOriginalIndex && !hasCorrespondingOriginalName)
+            {
+               parametersRoot.remove_child(param.node);
+               changed = true;
+               continue;
+            }
+            if(unmatchedParamName.empty())
+            {
+               unmatchedParamName = "<unnamed>";
+            }
+
+            std::string unmatchedParamIndex = "<missing>";
+            if(param.hasIndex)
+            {
+               unmatchedParamIndex = std::to_string(param.oldIndex);
+            }
+            else if(!param.node.attribute("index").empty())
+            {
+               unmatchedParamIndex = param.node.attribute("index").value();
+            }
+
+            const auto functionId = functionSymbol.empty() ? functionName : functionSymbol;
+            std::string errorMessage = "Invalid architecture.xml parameter mapping for function '" + functionId + "'";
+            if(!functionName.empty() && functionName != functionId)
+            {
+               errorMessage += " (name '" + functionName + "')";
+            }
+            errorMessage += ": parameter '" + unmatchedParamName + "' at index '" + unmatchedParamIndex +
+                            "' has no correspondence with original LLVM parameters";
+            report_fatal_error(llvm::StringRef(errorMessage));
+         }
+      }
+
+      auto bundlesRoot = xmlFunction.child("bundles");
+      if(bundlesRoot)
+      {
+         std::vector<std::string> usedBundleNames;
+         for(auto& param : parametersRoot.children("parameter"))
+         {
+            const auto bundleName = std::string(param.attribute("bundle").value());
+            if(bundleName.empty() || llvm::is_contained(usedBundleNames, bundleName))
+            {
+               continue;
+            }
+            usedBundleNames.push_back(bundleName);
+         }
+
+         for(auto bundle = bundlesRoot.child("bundle"); bundle;)
+         {
+            const auto nextBundle = bundle.next_sibling("bundle");
+            const auto bundleName = std::string(bundle.attribute("name").value());
+            if(!bundleName.empty() && !llvm::is_contained(usedBundleNames, bundleName))
+            {
+               bundlesRoot.remove_child(bundle);
+               changed = true;
+            }
+            bundle = nextBundle;
+         }
+      }
+
+      return changed;
+   }
+
+   static bool pruneArchitectureXMLWithModule(pugi::xml_document& doc, const llvm::Module& M)
+   {
+      auto moduleNode = doc.child("module");
+      if(!moduleNode)
+      {
+         return false;
+      }
+
+      bool changed = false;
+      for(auto f = moduleNode.child("function"); f;)
+      {
+         const auto next = f.next_sibling("function");
+         const auto funcSymbol = std::string(f.attribute("symbol").value());
+         const auto* llvmFunction = funcSymbol.empty() ? nullptr : M.getFunction(funcSymbol);
+         if(!llvmFunction)
+         {
+            moduleNode.remove_child(f);
+            changed = true;
+            f = next;
+            continue;
+         }
+
+         if(pruneAndReindexFunctionParameters(f, *llvmFunction))
+         {
+            changed = true;
+         }
+         f = next;
+      }
+
+      return changed;
    }
 
    static std::map<std::string, std::vector<std::string>> loadFunctionParamTracking(const pugi::xml_document& doc)
@@ -280,7 +525,8 @@ namespace llvm
          return false;
       }
       const auto fun2params = loadFunctionParamTracking(doc);
-      return addFunctionParamTrackingAttrs(M, fun2params);
+      const auto attrsChanged = addFunctionParamTrackingAttrs(M, fun2params);
+      return attrsChanged;
    }
 
 #if __clang_major__ >= 13
@@ -370,6 +616,10 @@ namespace llvm
          const auto arch_filename = outdir_name + "/architecture.xml";
          if(doc.load_file(arch_filename.c_str()))
          {
+            if(pruneArchitectureXMLWithModule(doc, M))
+            {
+               doc.save_file(arch_filename.c_str());
+            }
             extendTopFunctionNamesFromArchitecture(doc, TopFunctionNames);
             Fun2Params = loadFunctionParamTracking(doc);
             for(const auto& funPair : Fun2Params)
@@ -512,8 +762,8 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
 {
    return {
        LLVM_PLUGIN_API_VERSION, CLANG_VERSION_STRING_DUMP_SSA, "v0.12", [](llvm::PassBuilder& PB) {
-          const auto load = [](llvm::ModulePassManager& MPM, bool doOpt) {
-             MPM.addPass(llvm::BambuParamTrackingPass());
+          const auto loadEarly = [](llvm::ModulePassManager& MPM) { MPM.addPass(llvm::BambuParamTrackingPass()); };
+          const auto loadLate = [](llvm::ModulePassManager& MPM, bool doOpt) {
              llvm::FunctionPassManager FPM0;
              FPM0.addPass(llvm::LowerAtomicPass());
              MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM0)));
@@ -598,9 +848,21 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
                                                  llvm::ArrayRef<llvm::PassBuilder::PipelineElement>) {
              if(Name == CLANG_VERSION_STRING_DUMP_SSA)
              {
-                return load(MPM, false);
+                loadEarly(MPM);
+                loadLate(MPM, false);
+                return true;
              }
              return false;
+          });
+          PB.registerPipelineStartEPCallback([&](llvm::ModulePassManager& MPM,
+#if __clang_major__ <= 13
+                                                 llvm::PassBuilder::OptimizationLevel Opt
+#else
+                  llvm::OptimizationLevel Opt
+#endif
+                                             ) {
+             (void)Opt;
+             loadEarly(MPM);
           });
           PB.registerOptimizerLastEPCallback([&](llvm::ModulePassManager& MPM,
 #if __clang_major__ <= 13
@@ -609,10 +871,9 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
                   llvm::OptimizationLevel Opt
 #endif
                                              ) {
-             return load(
-                 MPM,
+             loadLate(MPM,
 #if __clang_major__ <= 13
-                 Opt != llvm::PassBuilder::OptimizationLevel::O0 && Opt != llvm::PassBuilder::OptimizationLevel::O1
+                      Opt != llvm::PassBuilder::OptimizationLevel::O0 && Opt != llvm::PassBuilder::OptimizationLevel::O1
 #else
                      Opt != llvm::OptimizationLevel::O0 && Opt != llvm::OptimizationLevel::O1
 #endif
