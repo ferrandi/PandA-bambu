@@ -53,6 +53,7 @@
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
 #include "hls_step.hpp"
@@ -308,7 +309,7 @@ static std::vector<unsigned int> GetSortedRoots(const CallGraphManager& CGM)
 
    const auto& CG = CGM.GetCallGraph();
    std::deque<CallGraph::vertex_descriptor> sorted_cg;
-   CG.ReverseTopologicalSort(sorted_cg);
+   graph_reverse_topological_sort(CG, sorted_cg);
    auto root_fid = CGM.GetRootFunctions();
    for(auto v : sorted_cg)
    {
@@ -328,14 +329,14 @@ static std::tuple<unsigned int, unsigned int> GetCallStmt(const CallGraphManager
 {
    const auto fv = CGM.GetVertex(fid);
    const auto& CG = CGM.GetCallGraph();
-   if(CG.in_degree(fv) == 1)
+   if(graph_in_degree(CG, fv) == 1)
    {
-      const auto ie = CG.in_edges(fv).front();
-      const auto& edge_info = CG.CGetEdgeInfo(ie);
+      const auto ie = graph_in_edges(CG, fv).front();
+      const auto& edge_info = graph_edge_info(CG, ie);
       if(edge_info.direct_call_points.size() == 1)
       {
          const auto call_id = *edge_info.direct_call_points.begin();
-         return {CGM.get_function(CG.source(ie)), call_id};
+         return {CGM.get_function(graph_source(CG, ie)), call_id};
       }
    }
    return {0, 0};

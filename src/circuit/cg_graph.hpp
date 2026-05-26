@@ -104,6 +104,9 @@ struct CGEdgeInfo : public EdgeInfo
    void print(std::ostream& os) const;
 };
 
+using CGGraphStoragePolicy = append_only_vec_graph_storage;
+using CGGraphVertexDescriptor = graph_storage_traits<CGGraphStoragePolicy>::vertex_descriptor;
+
 /**
  * Information associated with the whole graph of a circuit.
  */
@@ -111,10 +114,10 @@ struct CGGraphInfo : public GraphInfo
 {
    /// primary input node.
    /// gen and io port are associated with the entry node
-   gc_vertex_descriptor Entry{gc_null_vertex()};
+   CGGraphVertexDescriptor Entry{graph_storage_traits<CGGraphStoragePolicy>::null_vertex()};
 
    /// primary output node
-   gc_vertex_descriptor Exit{gc_null_vertex()};
+   CGGraphVertexDescriptor Exit{graph_storage_traits<CGGraphStoragePolicy>::null_vertex()};
 
    std::string Entry_name{ENTRY};
    std::string Exit_name{EXIT};
@@ -132,13 +135,14 @@ struct CGGraphInfo : public GraphInfo
    {
    }
 
-   CGGraphInfo(gc_vertex_descriptor en, const std::string& en_name, gc_vertex_descriptor ex, const std::string& ex_name)
+   CGGraphInfo(CGGraphVertexDescriptor en, const std::string& en_name, CGGraphVertexDescriptor ex,
+               const std::string& ex_name)
        : Entry(en), Exit(ex), Entry_name(en_name), Exit_name(ex_name)
    {
    }
 };
 
-using CGGraphsCollection = graphs_collection<CGNodeInfo, CGEdgeInfo, CGGraphInfo>;
+using CGGraphsCollection = graphs_collection<CGNodeInfo, CGEdgeInfo, CGGraphInfo, CGGraphStoragePolicy>;
 
 using CGGraph = graph<CGGraphsCollection>;
 

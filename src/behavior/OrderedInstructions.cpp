@@ -41,6 +41,7 @@
 
 #include "basic_block.hpp"
 #include "exceptions.hpp"
+#include "graph_facade.hpp"
 #include "ir_basic_block.hpp"
 #include "ir_node.hpp"
 
@@ -126,7 +127,7 @@ bool OrderedBasicBlock::dominates(const ir_nodeConstRef& A, const ir_nodeConstRe
    return instComesBefore(A, B);
 }
 
-struct DTVisitor : public boost::default_dfs_visitor
+struct DTVisitor : public graph_default_dfs_visitor
 {
  public:
    DTVisitor(CustomMap<unsigned int, DFSInfo>& infos) : _step(0), _infos(infos)
@@ -135,13 +136,13 @@ struct DTVisitor : public boost::default_dfs_visitor
 
    void discover_vertex(BBGraph::vertex_descriptor u, const BBGraph& g)
    {
-      const auto& BB = g.CGetNodeInfo(u).block;
+      const auto& BB = graph_node_info(g, u).block;
       _infos[BB->number].DFSIn = _step++;
    }
 
    void finish_vertex(BBGraph::vertex_descriptor u, const BBGraph& g)
    {
-      const auto& BB = g.CGetNodeInfo(u).block;
+      const auto& BB = graph_node_info(g, u).block;
       _infos[BB->number].DFSOut = _step++;
    }
 
@@ -154,20 +155,18 @@ static CustomMap<unsigned int, DFSInfo> compute_dominator_vector(const BBGraph& 
 {
    CustomMap<unsigned int, DFSInfo> dominators;
    DTVisitor dtv(dominators);
-   const auto entryVertex = DT.CGetGraphInfo().bb_index_map.at(bloc::ENTRY_BLOCK_ID);
-   std::vector<boost::default_color_type> color_vec(DT.num_vertices(), boost::white_color);
-   boost::depth_first_visit(
-       DT, entryVertex, dtv,
-       boost::make_iterator_property_map(color_vec.begin(), boost::get(boost::vertex_index, DT), boost::white_color));
+   const auto entryVertex = graph_graph_info(DT).bb_index_map.at(bloc::ENTRY_BLOCK_ID);
+   auto color_map = graph_make_color_map(DT);
+   graph_depth_first_visit(DT, entryVertex, dtv, color_map.get());
    return dominators;
 }
 
 static CustomMap<unsigned int, OrderedBasicBlock> compute_ordered_bbs(const BBGraph& DT)
 {
    CustomMap<unsigned int, OrderedBasicBlock> OBBmap;
-   for(auto v : DT.vertices())
+   for(auto v : graph_vertices(DT))
    {
-      const auto& bb = DT.CGetNodeInfo(v).block;
+      const auto& bb = graph_node_info(DT, v).block;
       OBBmap.emplace(bb->number, OrderedBasicBlock(bb));
    }
    return OBBmap;

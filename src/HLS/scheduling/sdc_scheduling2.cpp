@@ -55,6 +55,7 @@
 #include "fu_binding.hpp"
 #include "function_behavior.hpp"
 #include "function_frontend_flow_step.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "ir_basic_block.hpp"
@@ -165,7 +166,7 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
    for(const auto loop_operation : loop_operations)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---Creating variables for " + filtered_op_graph.CGetNodeInfo(loop_operation).vertex_name +
+                     "---Creating variables for " + graph_node_info(filtered_op_graph, loop_operation).vertex_name +
                          " (executed by " + " " +
                          allocation_information->get_fu_name(allocation_information->GetFuType(loop_operation)).first +
                          ")  " + ": " + STR(next_var_index));
@@ -179,13 +180,13 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
    /// Add dependence constraints: target can start in the same clock cycle in which source ends
    for(const auto operation : loop_operations)
    {
-      const auto& op_info = filtered_op_graph.CGetNodeInfo(operation);
+      const auto& op_info = graph_node_info(filtered_op_graph, operation);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "-->Adding dependencies starting from " + op_info.vertex_name);
-      for(const auto& oe : filtered_op_graph.out_edges(operation))
+      for(const auto& oe : graph_out_edges(filtered_op_graph, operation))
       {
-         auto tgt = filtered_op_graph.target(oe);
-         const auto& tgt_info = filtered_op_graph.CGetNodeInfo(tgt);
+         auto tgt = graph_target(filtered_op_graph, oe);
+         const auto& tgt_info = graph_node_info(filtered_op_graph, tgt);
          if(op_info.GetNodeId() == ENTRY_ID)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -203,7 +204,7 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
                solver.add_constraint(operation_to_varindex.at(operation), operation_to_varindex.at(tgt), -1);
             }
             /// Not control dependence
-            else if(filtered_op_graph.GetSelector(oe) & ~CDG_SELECTOR)
+            else if(graph_edge_selector(filtered_op_graph, oe) & ~CDG_SELECTOR)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Added dependence constraint 0 " + op_info.vertex_name + "-" + tgt_info.vertex_name);
@@ -240,7 +241,7 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
    compute_RW_stmts(RW_stmts, filtered_op_graph, HLSMgr, function_id);
    for(const auto operation : loop_operations)
    {
-      const auto& op_info = filtered_dfg_graph.CGetNodeInfo(operation);
+      const auto& op_info = graph_node_info(filtered_dfg_graph, operation);
       auto opFuType = allocation_information->GetFuType(operation);
       auto timeLatency = allocation_information->GetTimeLatency(operation, opFuType);
       auto isPipelined = allocation_information->get_initiation_time(opFuType, operation) > 0;
@@ -278,12 +279,12 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
       {
          op_multicycles.insert(op_varindex);
       }
-      for(const auto& oe : filtered_dfg_graph.out_edges(operation))
+      for(const auto& oe : graph_out_edges(filtered_dfg_graph, operation))
       {
-         auto tgt = filtered_dfg_graph.target(oe);
-         const auto& tgt_info = filtered_dfg_graph.CGetNodeInfo(tgt);
+         auto tgt = graph_target(filtered_dfg_graph, oe);
+         const auto& tgt_info = graph_node_info(filtered_dfg_graph, tgt);
          auto chainingP = allocation_information->CanBeChained(operation, tgt);
-         auto edge_type = filtered_dfg_graph.GetSelector(oe);
+         auto edge_type = graph_edge_selector(filtered_dfg_graph, oe);
          if((!(edge_type & FB_DFG_SELECTOR)) && chainingP)
          {
             const double edge_delay = [&]() -> double {
@@ -318,7 +319,7 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
    for(const auto operation : loop_operations)
    {
       std::vector<double> vals;
-      const auto& op_info = filtered_dfg_graph.CGetNodeInfo(operation);
+      const auto& op_info = graph_node_info(filtered_dfg_graph, operation);
       auto op_varindex = operation_to_varindex.at(operation);
       ssspSolver.exec(op_varindex, vals);
       double max_delay = 0.0;
@@ -338,11 +339,11 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
          }
          ++val_index;
       }
-      const auto operation_bb = basic_block_graph.CGetGraphInfo().bb_index_map.at(op_info.bb_index);
-      auto laststmt = *(basic_block_graph.CGetNodeInfo(operation_bb).statements_list.rbegin());
+      const auto operation_bb = graph_graph_info(basic_block_graph).bb_index_map.at(op_info.bb_index);
+      auto laststmt = *(graph_node_info(basic_block_graph, operation_bb).statements_list.rbegin());
       if(laststmt != operation)
       {
-         const auto& laststmt_info = filtered_dfg_graph.CGetNodeInfo(laststmt);
+         const auto& laststmt_info = graph_node_info(filtered_dfg_graph, laststmt);
          auto laststmt_type = laststmt_info.node_type;
          if((laststmt_type & TYPE_MULTIIF) != 0)
          {
@@ -366,7 +367,7 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
 
    /// For each basic block, for each functional unit fu, the list of the last n operations executed (n is the number
    /// of resource of type fu) - Value is a set since there can be different paths reaching current basic block
-   CustomMap<OpGraph::vertex_descriptor,
+   CustomMap<BBGraph::vertex_descriptor,
              CustomMap<unsigned int, CustomOrderedSet<std::list<OpGraph::vertex_descriptor>>>>
        constrained_operations_sequences;
    std::map<unsigned, unsigned> rel_position_map;
@@ -375,13 +376,13 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "-->Adding sorting constraints for BB" +
-                         STR(basic_block_graph.CGetNodeInfo(basic_block).block->number));
+                         STR(graph_node_info(basic_block_graph, basic_block).block->number));
 
-      for(const auto& ie : basic_block_graph.in_edges(basic_block))
+      for(const auto& ie : graph_in_edges(basic_block_graph, basic_block))
       {
-         const auto source = basic_block_graph.source(ie);
+         const auto source = graph_source(basic_block_graph, ie);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Considering source BB" + STR(basic_block_graph.CGetNodeInfo(source).block->number));
+                        "-->Considering source BB" + STR(graph_node_info(basic_block_graph, source).block->number));
          if(loop_bbs.count(source))
          {
             for(const auto& fu_type : constrained_operations_sequences[source])
@@ -393,7 +394,7 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
       std::set<OpGraph::vertex_descriptor, SDCSorter> basic_block_sorted_operations(sdc_sorter);
-      for(const auto operation : basic_block_graph.CGetNodeInfo(basic_block).statements_list)
+      for(const auto operation : graph_node_info(basic_block_graph, basic_block).statements_list)
       {
          basic_block_sorted_operations.insert(operation);
       }
@@ -408,7 +409,7 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
             if(resources_number < INFINITE_UINT && !allocation_information->is_vertex_bounded(fu_type))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---" + filtered_op_graph.CGetNodeInfo(debug_operation).vertex_name);
+                              "---" + graph_node_info(filtered_op_graph, debug_operation).vertex_name);
             }
          }
 #endif
@@ -429,7 +430,7 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
             continue;
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Considering " + filtered_op_graph.CGetNodeInfo(operation).vertex_name);
+                        "-->Considering " + graph_node_info(filtered_op_graph, operation).vertex_name);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Mapped on a shared resource");
          const auto& old_sequences = constrained_operations_sequences[basic_block][fu_type];
          if(old_sequences.size())
@@ -442,7 +443,7 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
                   std::string old_sequence_string;
                   for(const auto temp : old_sequence)
                   {
-                     old_sequence_string += filtered_op_graph.CGetNodeInfo(temp).vertex_name + "-";
+                     old_sequence_string += graph_node_info(filtered_op_graph, temp).vertex_name + "-";
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "-->Considering sequence " + old_sequence_string);
@@ -453,14 +454,14 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
                   const auto front = old_sequence.front();
                   old_sequence.pop_front();
                   const std::string name = allocation_information->get_fu_name(fu_type).first + "_" +
-                                           filtered_op_graph.CGetNodeInfo(front).vertex_name + "_" +
-                                           filtered_op_graph.CGetNodeInfo(operation).vertex_name;
+                                           graph_node_info(filtered_op_graph, front).vertex_name + "_" +
+                                           graph_node_info(filtered_op_graph, operation).vertex_name;
                   auto frontII = allocation_information->get_initiation_time(fu_type, front);
                   auto cycles = allocation_information->GetCycleLatency(front);
                   auto w = (frontII > 0 ? -static_cast<int>(frontII) : -static_cast<int>(cycles));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Resource constraint " + filtered_op_graph.CGetNodeInfo(front).vertex_name + "-" +
-                                     filtered_op_graph.CGetNodeInfo(operation).vertex_name + " " + STR(w));
+                                 "---Resource constraint " + graph_node_info(filtered_op_graph, front).vertex_name +
+                                     "-" + graph_node_info(filtered_op_graph, operation).vertex_name + " " + STR(w));
                   solver.add_constraint(operation_to_varindex.at(front), operation_to_varindex.at(operation), w);
                }
                if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
@@ -468,7 +469,7 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
                   std::string old_sequence_string;
                   for(const auto temp : old_sequence)
                   {
-                     old_sequence_string += filtered_op_graph.CGetNodeInfo(temp).vertex_name + "-";
+                     old_sequence_string += graph_node_info(filtered_op_graph, temp).vertex_name + "-";
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--New sequence " + old_sequence_string);
                }
@@ -483,11 +484,11 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
             constrained_operations_sequences[basic_block][fu_type].insert(temp);
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--Considered " + filtered_op_graph.CGetNodeInfo(operation).vertex_name);
+                        "<--Considered " + graph_node_info(filtered_op_graph, operation).vertex_name);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "<--Added sorting constraints for BB" +
-                         STR(basic_block_graph.CGetNodeInfo(basic_block).block->number));
+                         STR(graph_node_info(basic_block_graph, basic_block).block->number));
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added sorting constraints");
 
@@ -620,9 +621,9 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
       const bb_vertex_order_by_map comp_i(bb_map_levels);
       std::set<BBGraph::vertex_descriptor, bb_vertex_order_by_map> loop_bbs(comp_i);
       OpVertexSet loop_operations(&FB->GetOpGraphsCollection());
-      for(const auto& bb : basic_block_graph.vertices())
+      for(const auto& bb : graph_vertices(basic_block_graph))
       {
-         const auto& bb_info = basic_block_graph.CGetNodeInfo(bb);
+         const auto& bb_info = graph_node_info(basic_block_graph, bb);
          if(bb_info.loop_id == loop_id)
          {
             loop_bbs.insert(bb);
@@ -645,8 +646,8 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
       {
          auto current_control_step = static_cast<unsigned int>(vals.at(operation));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---" + filtered_op_graph.CGetNodeInfo(operation).vertex_name + " scheduled at relative step " +
-                            STR(current_control_step));
+                        "---" + graph_node_info(filtered_op_graph, operation).vertex_name +
+                            " scheduled at relative step " + STR(current_control_step));
          HLS->Rsch->set_execution(operation, current_control_step + initial_ctrl_step);
          HLS->Rsch->set_execution_end(operation, current_control_step + initial_ctrl_step +
                                                      allocation_information->GetCycleLatency(operation) - 1);
@@ -656,7 +657,7 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
             last_relative_step = current_control_step + cycle_latency;
          }
          /// set the binding information
-         if(HLS->HLS_C->has_binding_to_fu(filtered_op_graph.CGetNodeInfo(operation).vertex_name))
+         if(HLS->HLS_C->has_binding_to_fu(graph_node_info(filtered_op_graph, operation).vertex_name))
          {
             res_binding->bind(operation, allocation_information->GetFuType(operation), 0);
          }
@@ -675,18 +676,18 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking which operations have to be moved");
       CustomUnorderedSet<OpGraph::vertex_descriptor> RW_stmts;
       compute_RW_stmts(RW_stmts, op_graph, HLSMgr, funId);
-      CustomMap<OpGraph::vertex_descriptor, CustomSet<OpGraph::vertex_descriptor>> bb_barrier;
+      CustomMap<OpGraph::vertex_descriptor, CustomSet<BBGraph::vertex_descriptor>> bb_barrier;
       for(const auto loop_bb : loop_bbs)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Checking if operations of BB" + STR(basic_block_graph.CGetNodeInfo(loop_bb).block->number) +
-                            " can be moved");
+                        "-->Checking if operations of BB" +
+                            STR(graph_node_info(basic_block_graph, loop_bb).block->number) + " can be moved");
          /// Set of operations which cannot be moved (at the moment) because of dependencies from phi
          OpVertexSet blocked_ops(&FB->GetOpGraphsCollection());
 
-         for(const auto loop_operation : basic_block_graph.CGetNodeInfo(loop_bb).statements_list)
+         for(const auto loop_operation : graph_node_info(basic_block_graph, loop_bb).statements_list)
          {
-            const auto& loop_op_info = filtered_op_graph.CGetNodeInfo(loop_operation);
+            const auto& loop_op_info = graph_node_info(filtered_op_graph, loop_operation);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Checking if " + loop_op_info.vertex_name + " has to be moved");
             auto curr_vertex_type = loop_op_info.node_type;
@@ -726,12 +727,12 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
                bb_barrier[loop_operation].insert(loop_bb);
                continue;
             }
-            if(loop_operation == filtered_op_graph.CGetGraphInfo().entry_vertex)
+            if(loop_operation == graph_graph_info(filtered_op_graph).entry_vertex)
             {
                bb_barrier[loop_operation].insert(loop_bb);
                continue;
             }
-            if(loop_operation == filtered_op_graph.CGetGraphInfo().exit_vertex)
+            if(loop_operation == graph_graph_info(filtered_op_graph).exit_vertex)
             {
                bb_barrier[loop_operation].insert(loop_bb);
                continue;
@@ -744,17 +745,17 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Type is ok");
 
             /// Computing bb barrier starting from bb barrier of predecessor
-            for(const auto& ie : filtered_op_graph.in_edges(loop_operation))
+            for(const auto& ie : graph_in_edges(filtered_op_graph, loop_operation))
             {
-               const auto source = filtered_op_graph.source(ie);
+               const auto source = graph_source(filtered_op_graph, ie);
                if(bb_barrier.count(source))
                {
                   for(const auto pred_bb_barrier : bb_barrier.at(source))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "---Inserting BB" +
-                                        STR(basic_block_graph.CGetNodeInfo(pred_bb_barrier).block->number) +
-                                        " because of " + filtered_op_graph.CGetNodeInfo(source).vertex_name);
+                                        STR(graph_node_info(basic_block_graph, pred_bb_barrier).block->number) +
+                                        " because of " + graph_node_info(filtered_op_graph, source).vertex_name);
                      bb_barrier[loop_operation].insert(pred_bb_barrier);
                   }
                }
@@ -768,35 +769,35 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
 
             const auto operation_step = HLS->Rsch->get_cstep(loop_operation).second +
                                         (allocation_information->GetCycleLatency(loop_operation) - 1u);
-            const auto operation_bb = basic_block_graph.CGetGraphInfo().bb_index_map.at(loop_op_info.bb_index);
+            const auto operation_bb = graph_graph_info(basic_block_graph).bb_index_map.at(loop_op_info.bb_index);
             auto current_bb_dominator = operation_bb;
-            THROW_ASSERT(dominators.in_degree(current_bb_dominator) == 1,
+            THROW_ASSERT(graph_in_degree(dominators, current_bb_dominator) == 1,
                          "Dominator is not a tree or entry was reached");
-            auto candidate_bb = dominators.source(dominators.in_edges(current_bb_dominator).front());
+            auto candidate_bb = graph_source(dominators, graph_in_edges(dominators, current_bb_dominator).front());
             while(true)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Checking if it can be moved in BB" +
-                                  STR(basic_block_graph.CGetNodeInfo(candidate_bb).block->number));
-               if(candidate_bb == basic_block_graph.CGetGraphInfo().entry_vertex || loop_bbs.count(candidate_bb) == 0)
+                                  STR(graph_node_info(basic_block_graph, candidate_bb).block->number));
+               if(candidate_bb == graph_graph_info(basic_block_graph).entry_vertex || loop_bbs.count(candidate_bb) == 0)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "No because it is in other loop");
                   break;
                }
                bool overlapping = false;
-               for(const auto dominator_op : basic_block_graph.CGetNodeInfo(candidate_bb).statements_list)
+               for(const auto dominator_op : graph_node_info(basic_block_graph, candidate_bb).statements_list)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---cstep" + STR(HLS->Rsch->get_cstep(dominator_op).second) + " " +
                                      STR((allocation_information->GetCycleLatency(dominator_op) - 1u)) + " " +
-                                     filtered_op_graph.CGetNodeInfo(dominator_op).vertex_name + " " +
+                                     graph_node_info(filtered_op_graph, dominator_op).vertex_name + " " +
                                      STR(operation_step) + " " +
-                                     filtered_op_graph.CGetNodeInfo(loop_operation).vertex_name);
+                                     graph_node_info(filtered_op_graph, loop_operation).vertex_name);
                   if((HLS->Rsch->get_cstep(dominator_op).second +
                       (allocation_information->GetCycleLatency(dominator_op) - 1u)) >= operation_step)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---" + filtered_op_graph.CGetNodeInfo(dominator_op).vertex_name + " ends at " +
+                                    "---" + graph_node_info(filtered_op_graph, dominator_op).vertex_name + " ends at " +
                                         STR(HLS->Rsch->get_cstep(dominator_op).second +
                                             (allocation_information->GetCycleLatency(dominator_op) - 1u)) +
                                         " - " + loop_op_info.vertex_name + " ends at " + STR(operation_step));
@@ -812,10 +813,10 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
                current_bb_dominator = candidate_bb;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Updating dominator to BB" +
-                                  STR(basic_block_graph.CGetNodeInfo(current_bb_dominator).block->number));
-               THROW_ASSERT(dominators.in_degree(current_bb_dominator) == 1,
+                                  STR(graph_node_info(basic_block_graph, current_bb_dominator).block->number));
+               THROW_ASSERT(graph_in_degree(dominators, current_bb_dominator) == 1,
                             "Dominator is not a tree or entry was reached");
-               candidate_bb = dominators.source(dominators.in_edges(current_bb_dominator).front());
+               candidate_bb = graph_source(dominators, graph_in_edges(dominators, current_bb_dominator).front());
                /// If the current is in the barrier, do not check for the candidate
                if(bb_barrier.count(loop_operation) && bb_barrier.at(loop_operation).count(current_bb_dominator))
                {
@@ -826,11 +827,11 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Operation " + loop_op_info.vertex_name + " has to be moved in BB" +
-                                  STR(basic_block_graph.CGetNodeInfo(current_bb_dominator).block->number));
+                                  STR(graph_node_info(basic_block_graph, current_bb_dominator).block->number));
                std::vector<unsigned int> movement;
                movement.push_back(loop_op_info.GetNodeId());
                movement.push_back(loop_op_info.bb_index);
-               movement.push_back(basic_block_graph.CGetNodeInfo(current_bb_dominator).block->number);
+               movement.push_back(graph_node_info(basic_block_graph, current_bb_dominator).block->number);
                movements_list.push_back(movement);
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -839,10 +840,10 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Updating execution times");
       std::list<OpGraph::vertex_descriptor> sorted_vertices;
-      filtered_op_graph.TopologicalSort(sorted_vertices);
+      graph_topological_sort(filtered_op_graph, sorted_vertices);
       for(const auto sorted_vertex : sorted_vertices)
       {
-         HLS->Rsch->UpdateTime(filtered_op_graph.CGetNodeInfo(sorted_vertex).GetNodeId(), false);
+         HLS->Rsch->UpdateTime(graph_node_info(filtered_op_graph, sorted_vertex).GetNodeId(), false);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Updated execution time");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked which operations have to be moved");

@@ -44,7 +44,7 @@
 #include "HLS/fsm/FSMInfo.hpp"
 #include "custom_map.hpp"
 #include "generic_obj.hpp"
-#include "graph.hpp"
+#include "op_graph.hpp"
 #include "refcount.hpp"
 #include <iosfwd>
 #include <string>
@@ -66,8 +66,8 @@ REF_FORWARD_DECL(technology_manager);
 
 /// definition of the data transfer (ir_node, precision, from, to, data_transferred, current_op). Note that from/to
 /// can represent either chained vertices or FSM states
-using data_transfer =
-    std::tuple<unsigned int, unsigned int, FSMInfo::state_descriptor, FSMInfo::state_descriptor, gc_vertex_descriptor>;
+using data_transfer = std::tuple<unsigned int, unsigned int, FSMInfo::state_descriptor, FSMInfo::state_descriptor,
+                                 OpGraph::vertex_descriptor>;
 
 /**
  * @class conn_binding
@@ -151,7 +151,7 @@ class conn_binding
    const BehavioralHelperConstRef BH;
 
    /// map between a vertex and the corresponding activation signal
-   std::map<gc_vertex_descriptor, std::map<unsigned int, generic_objRef>> activation_ports;
+   std::map<OpGraph::vertex_descriptor, std::map<unsigned int, generic_objRef>> activation_ports;
 
    /// map between input port variable and generic object
    std::map<unsigned int, generic_objRef> input_ports;
@@ -166,13 +166,13 @@ class conn_binding
    std::map<std::string, structural_objectRef> converters;
 
    /// map between command input port (operation vertex and command type) and generic object
-   std::map<std::pair<gc_vertex_descriptor, unsigned int>, generic_objRef> command_input_ports;
+   std::map<std::pair<OpGraph::vertex_descriptor, unsigned int>, generic_objRef> command_input_ports;
 
    /// map between output port variable and generic object
-   std::map<gc_vertex_descriptor, generic_objRef> command_output_ports;
+   std::map<OpGraph::vertex_descriptor, generic_objRef> command_output_ports;
 
    /// map between a call operation and the datapath endpoint carrying its predicate value
-   std::map<gc_vertex_descriptor, generic_objRef> command_predicates;
+   std::map<OpGraph::vertex_descriptor, generic_objRef> command_predicates;
 
    /// selector ports
 #if HAVE_UNORDERED
@@ -263,19 +263,20 @@ class conn_binding
     * @param mode is command mode (as defined into commandport_obj::command_type)
     * @param g is graph where vertex ver is stored
     */
-   generic_objRef bind_command_port(gc_vertex_descriptor ver, direction_type dir, unsigned int mode, const OpGraph& g);
+   generic_objRef bind_command_port(OpGraph::vertex_descriptor ver, direction_type dir, unsigned int mode,
+                                    const OpGraph& g);
 
-   generic_objRef bind_selector_port(direction_type dir, unsigned int mode, gc_vertex_descriptor cond,
+   generic_objRef bind_selector_port(direction_type dir, unsigned int mode, OpGraph::vertex_descriptor cond,
                                      const OpGraph& data);
 
    generic_objRef bind_selector_port(direction_type dir, unsigned int mode, const generic_objRef elem, unsigned int op);
 
-   void bind_command_predicate(gc_vertex_descriptor ver, const generic_objRef& predicate_port)
+   void bind_command_predicate(OpGraph::vertex_descriptor ver, const generic_objRef& predicate_port)
    {
       command_predicates[ver] = predicate_port;
    }
 
-   generic_objRef get_command_predicate(gc_vertex_descriptor ver) const
+   generic_objRef get_command_predicate(OpGraph::vertex_descriptor ver) const
    {
       const auto it = command_predicates.find(ver);
       return it == command_predicates.end() ? generic_objRef() : it->second;

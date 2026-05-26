@@ -53,6 +53,7 @@
 #include "fu_binding.hpp"
 #include "function_behavior.hpp"
 #include "graph.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_manager.hpp"
@@ -84,9 +85,9 @@ ASLAP::ASLAP(const HLS_managerConstRef _hls_manager, const hlsRef HLS,
       ctrl_step_multiplier(_ctrl_step_multiplier),
       operations(_operations)
 {
-   for(const auto v : beh_graph.vertices())
+   for(const auto v : graph_vertices(beh_graph))
    {
-      if(beh_graph.CGetNodeInfo(v).node_type & TYPE_MULTIIF)
+      if(graph_node_info(beh_graph, v).node_type & TYPE_MULTIIF)
       {
          has_branching_blocks = true;
          break;
@@ -121,7 +122,7 @@ void ASLAP::print(std::ostream& os) const
 /**
  * Terminate function used during improve_ASAP_with_constraints visiting and updating of ASAP_p vector
  */
-struct p_update_check : public boost::dfs_visitor<>
+struct p_update_check : public graph_dfs_visitor
 {
  private:
    /// vertex
@@ -129,12 +130,13 @@ struct p_update_check : public boost::dfs_visitor<>
    /// string that identifies operation name
    const std::string& op_name;
    /// asap values
-   vertex2int<>& ASAP_p;
+   vertex2int<OpGraph::vertex_descriptor>& ASAP_p;
    /// behavioral specification in terms of graph
    const OpGraph& beh_graph;
 
  public:
-   p_update_check(OpGraph::vertex_descriptor v, const std::string& name, vertex2int<>& A_p, const OpGraph& g)
+   p_update_check(OpGraph::vertex_descriptor v, const std::string& name, vertex2int<OpGraph::vertex_descriptor>& A_p,
+                  const OpGraph& g)
        : s(v), op_name(name), ASAP_p(A_p), beh_graph(g)
    {
    }
@@ -145,7 +147,7 @@ struct p_update_check : public boost::dfs_visitor<>
    template <class Vertex, class Graph>
    void discover_vertex(Vertex v, const Graph&) const
    {
-      if(v != s && beh_graph.CGetNodeInfo(v).GetOperation() == op_name)
+      if(v != s && graph_node_info(beh_graph, v).GetOperation() == op_name)
       {
          ASAP_p[v]++;
       }
@@ -158,10 +160,10 @@ void ASLAP::add_constraints_to_ASAP()
    auto cur_et = 0u;
 
    /** ASAP_nip[i] contains the number of non immediate predecessor of node i with the same type of operation.*/
-   vertex2int<> ASAP_nip;
+   vertex2int<OpGraph::vertex_descriptor> ASAP_nip;
 
    /** ASAP_p[i] contains the number of predecessor of node i with the same type of operation.*/
-   vertex2int<> ASAP_p;
+   vertex2int<OpGraph::vertex_descriptor> ASAP_p;
 
    ASAP_nip.resize(levels.begin(), levels.end(), 0);
    ASAP_p.resize(levels.begin(), levels.end(), 0);
@@ -169,17 +171,17 @@ void ASLAP::add_constraints_to_ASAP()
    for(auto level : levels)
    {
       // Updating ASAP_p information
-      p_update_check vis(level, beh_graph.CGetNodeInfo(level).GetOperation(), ASAP_p, beh_graph);
+      p_update_check vis(level, graph_node_info(beh_graph, level).GetOperation(), ASAP_p, beh_graph);
       beh_graph.DepthFirstVisit(level, vis);
       ASAP_nip[level] = ASAP_p[level];
-      for(const auto& ei : beh_graph.in_edges(level))
+      for(const auto& ei : graph_in_edges(beh_graph, level))
       {
-         auto v = beh_graph.source(ei);
+         auto v = graph_source(beh_graph, ei);
          if(!operations.count(v))
          {
             continue;
          }
-         if(beh_graph.CGetNodeInfo(v).GetOperation() == beh_graph.CGetNodeInfo(level).GetOperation())
+         if(graph_node_info(beh_graph, v).GetOperation() == graph_node_info(beh_graph, level).GetOperation())
          {
             ASAP_nip[level]--;
          }
@@ -210,7 +212,7 @@ void ASLAP::add_constraints_to_ASAP()
    for(const auto& i : ASAP_p)
    {
       PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                       beh_graph.CGetNodeInfo(i.first).vertex_name + " - " + std::to_string(i.second));
+                       graph_node_info(beh_graph, i.first).vertex_name + " - " + std::to_string(i.second));
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
 
@@ -218,7 +220,7 @@ void ASLAP::add_constraints_to_ASAP()
    for(const auto& i : ASAP_nip)
    {
       PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                       beh_graph.CGetNodeInfo(i.first).vertex_name + " - " + std::to_string(i.second));
+                       graph_node_info(beh_graph, i.first).vertex_name + " - " + std::to_string(i.second));
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
 #endif
@@ -228,11 +230,11 @@ void ASLAP::compute_ASAP(const Schedule* partial_schedule)
 {
    // Store the current execution time
    double cur_start;
-   vertex2float<> finish_time; //
-   const auto [vI, vI_end] = boost::vertices(beh_graph);
+   vertex2float<OpGraph::vertex_descriptor> finish_time; //
+   const auto vertices = graph_vertices(beh_graph);
 
    ASAP.clear();
-   finish_time.resize(vI, vI_end, 0); //
+   finish_time.resize(vertices.begin(), vertices.end(), 0); //
    min_tot_csteps = 0u;
    if(partial_schedule)
    {
@@ -255,12 +257,12 @@ void ASLAP::compute_ASAP(const Schedule* partial_schedule)
       const auto op_cycles = GetCycleLatency(level, Allocation_MinMax::MIN);
       cur_start = 0.0;
 
-      for(const auto& ei : beh_graph.in_edges(level))
+      for(const auto& ei : graph_in_edges(beh_graph, level))
       {
-         const auto vi = beh_graph.source(ei);
+         const auto vi = graph_source(beh_graph, ei);
          cur_start = finish_time.at(vi) < cur_start ? cur_start : finish_time.at(vi);
-         //       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, beh_graph.CGetNodeInfo(vi).vertex_name + " -> " +
-         //       beh_graph.CGetNodeInfo(level).vertex_name + " cur_start " + std::to_string(cur_start));
+         //       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, graph_node_info(beh_graph, vi).vertex_name + " -> "
+         //       + graph_node_info(beh_graph, level).vertex_name + " cur_start " + std::to_string(cur_start));
       }
 
       finish_time.at(level) = cur_start + op_cycles;
@@ -270,11 +272,11 @@ void ASLAP::compute_ASAP(const Schedule* partial_schedule)
                       curr_asap;
       ASAP.set_execution(level, curr_asap);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                    beh_graph.CGetNodeInfo(level).vertex_name + " cur_start " + std::to_string(cur_start) +
+                    graph_node_info(beh_graph, level).vertex_name + " cur_start " + std::to_string(cur_start) +
                         " finish_time[level] " + std::to_string(finish_time[level]));
       min_tot_csteps = min_tot_csteps < curr_asap ? curr_asap : min_tot_csteps;
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                    beh_graph.CGetNodeInfo(level).vertex_name + " - " + STR(ASAP.get_cstep(level).second));
+                    graph_node_info(beh_graph, level).vertex_name + " - " + STR(ASAP.get_cstep(level).second));
    }
    ASAP.set_csteps(min_tot_csteps + 1u);
 }
@@ -287,9 +289,9 @@ void ASLAP::add_constraints_to_ALAP()
    unsigned int m_k;
 
    /** ALAP_nip[i] contains the number of non immediate predecessor of node i with the same type of operation.*/
-   vertex2int<> ALAP_nip;
+   vertex2int<OpGraph::vertex_descriptor> ALAP_nip;
    /** ALAP_p[i] contains the number of predecessor of node i with the same type of operation.*/
-   vertex2int<> ALAP_p;
+   vertex2int<OpGraph::vertex_descriptor> ALAP_p;
    const auto R = beh_graph.reverse_graph();
 
    ALAP_nip.resize(levels.begin(), levels.end(), 0);
@@ -297,18 +299,18 @@ void ASLAP::add_constraints_to_ALAP()
    auto iend = levels.rend();
    for(auto i = levels.rbegin(); i != iend; ++i)
    {
-      const auto& op_info = beh_graph.CGetNodeInfo(*i);
+      const auto& op_info = graph_node_info(beh_graph, *i);
       p_update_check vis(*i, op_info.GetOperation(), ALAP_p, beh_graph);
       R.DepthFirstVisit(*i, vis);
       ALAP_nip[*i] = ALAP_p[*i];
-      for(const auto& ei : beh_graph.out_edges(*i))
+      for(const auto& ei : graph_out_edges(beh_graph, *i))
       {
-         auto v = beh_graph.target(ei);
+         auto v = graph_target(beh_graph, ei);
          if(!operations.count(v))
          {
             continue;
          }
-         if(beh_graph.CGetNodeInfo(v).GetOperation() == op_info.GetOperation())
+         if(graph_node_info(beh_graph, v).GetOperation() == op_info.GetOperation())
          {
             ALAP_nip[*i]--;
          }
@@ -334,20 +336,20 @@ void ASLAP::add_constraints_to_ALAP()
    if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
    {
       PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "ALAP_p: ");
-      vertex2int<>::const_iterator i_end = ALAP_p.end();
-      for(vertex2int<>::const_iterator i = ALAP_p.begin(); i != i_end; ++i)
+      vertex2int<OpGraph::vertex_descriptor>::const_iterator i_end = ALAP_p.end();
+      for(vertex2int<OpGraph::vertex_descriptor>::const_iterator i = ALAP_p.begin(); i != i_end; ++i)
       {
          PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                          beh_graph.CGetNodeInfo(i->first).vertex_name + " - " + std::to_string(i->second));
+                          graph_node_info(beh_graph, i->first).vertex_name + " - " + std::to_string(i->second));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
 
       PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "ASAP_nip: ");
-      vertex2int<>::const_iterator ai_end = ALAP_nip.end();
-      for(vertex2int<>::const_iterator ai = ALAP_nip.begin(); ai != ai_end; ++ai)
+      vertex2int<OpGraph::vertex_descriptor>::const_iterator ai_end = ALAP_nip.end();
+      for(vertex2int<OpGraph::vertex_descriptor>::const_iterator ai = ALAP_nip.begin(); ai != ai_end; ++ai)
       {
          PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                          beh_graph.CGetNodeInfo(ai->first).vertex_name + " - " + std::to_string(ai->second));
+                          graph_node_info(beh_graph, ai->first).vertex_name + " - " + std::to_string(ai->second));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
 
@@ -356,7 +358,7 @@ void ASLAP::add_constraints_to_ALAP()
       for(auto level : levels)
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                       beh_graph.CGetNodeInfo(level).vertex_name + " - " + STR(ALAP.get_cstep(level).second));
+                       graph_node_info(beh_graph, level).vertex_name + " - " + STR(ALAP.get_cstep(level).second));
       }
 #endif
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "end");
@@ -448,18 +450,18 @@ void ASLAP::compute_ALAP_fast(bool* feasible)
 {
    // This function is used both in fast case and
    double cur_rev_start;
-   vertex2float<> Rev_finish_time;
-   const auto [vI, vI_end] = boost::vertices(beh_graph);
-   Rev_finish_time.resize(vI, vI_end, 0);
+   vertex2float<OpGraph::vertex_descriptor> Rev_finish_time;
+   const auto vertices = graph_vertices(beh_graph);
+   Rev_finish_time.resize(vertices.begin(), vertices.end(), 0);
 
    auto i_end = levels.rend();
    for(auto i = levels.rbegin(); i != i_end; ++i)
    {
       const auto op_cycles = GetCycleLatency(*i, Allocation_MinMax::MIN);
       cur_rev_start = 0.0;
-      for(const auto& ei : beh_graph.in_edges(*i))
+      for(const auto& ei : graph_in_edges(beh_graph, *i))
       {
-         const auto vi = beh_graph.target(ei);
+         const auto vi = graph_target(beh_graph, ei);
          cur_rev_start = Rev_finish_time.at(vi) < cur_rev_start ? cur_rev_start : Rev_finish_time.at(vi);
       }
       Rev_finish_time.at(*i) = cur_rev_start + op_cycles;
@@ -480,7 +482,7 @@ void ASLAP::compute_ALAP_fast(bool* feasible)
          *feasible = ALAP.get_cstep(level) >= ASAP.get_cstep(level);
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                    beh_graph.CGetNodeInfo(level).vertex_name + " - " + STR(ALAP.get_cstep(level).second));
+                    graph_node_info(beh_graph, level).vertex_name + " - " + STR(ALAP.get_cstep(level).second));
    }
 }
 
@@ -495,9 +497,9 @@ void ASLAP::compute_ALAP_worst_case()
    auto i_end = levels.rend();
    for(auto i = levels.rbegin(); i != i_end; ++i)
    {
-      for(const auto& ei : beh_graph.in_edges(*i))
+      for(const auto& ei : graph_in_edges(beh_graph, *i))
       {
-         const auto vi = beh_graph.target(ei);
+         const auto vi = graph_target(beh_graph, ei);
          if(!operations.count(vi))
          {
             continue;
@@ -542,7 +544,7 @@ unsigned int ASLAP::GetCycleLatency(OpGraph::vertex_descriptor operation, Alloca
    double execution_time = allocation_information.get_attribute_of_fu_per_op(operation, beh_graph, minmax,
                                                                              AllocationInformation::execution_time);
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                 beh_graph.CGetNodeInfo(operation).vertex_name + " - ex=" + STR(execution_time));
+                 graph_node_info(beh_graph, operation).vertex_name + " - ex=" + STR(execution_time));
    if(execution_time > 0.0)
    {
       return allocation_information.op_et_to_cycles(execution_time, clock_period / ctrl_step_multiplier);

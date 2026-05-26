@@ -43,6 +43,7 @@
 #include "Parameter.hpp"
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hash_helper.hpp"
 #include "op_graph.hpp"
 #include "string_manipulation.hpp"
@@ -59,7 +60,7 @@ DesignFlowStep_Status OpOrderComputation::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Starting order computation on Operation CFG");
    const auto cfg = function_behavior->GetOpGraph(FunctionBehavior::CFG);
    std::list<OpGraph::vertex_descriptor> sorted_vertices;
-   cfg.TopologicalSort(sorted_vertices);
+   graph_topological_sort(cfg, sorted_vertices);
 
    function_behavior->map_levels.clear();
    function_behavior->deque_levels.clear();
@@ -68,13 +69,13 @@ DesignFlowStep_Status OpOrderComputation::InternalExec()
    for(const auto vertex : sorted_vertices)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Assigning vertex " + cfg.CGetNodeInfo(vertex).vertex_name);
+                     "-->Assigning vertex " + graph_node_info(cfg, vertex).vertex_name);
       function_behavior->add_level(vertex, index++);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }
 
 #ifndef NDEBUG
-   THROW_ASSERT(sorted_vertices.size() == cfg.num_vertices(),
+   THROW_ASSERT(sorted_vertices.size() == graph_num_vertices(cfg),
                 "Operation CFG topological sort did not return all vertices");
 #endif
 

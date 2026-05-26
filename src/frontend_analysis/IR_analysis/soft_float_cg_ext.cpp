@@ -55,6 +55,7 @@
 #include "design_flow_step.hpp"
 #include "exceptions.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "ir_basic_block.hpp"
 #include "ir_helper.hpp"
 #include "ir_manager.hpp"
@@ -306,7 +307,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
                reached_v.insert(CGM.GetVertex(func_id));
             }
             const auto& TopCG = CGM.CGetCallSubGraph(reached_v);
-            TopCG.TopologicalSort(func_sort);
+            graph_topological_sort(TopCG, func_sort);
 
             for(const auto func : func_sort)
             {
@@ -365,9 +366,9 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
                INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---FP format " + current_v->ToString());
 
                // Propagate current fp format to the called functions
-               for(const auto& ei : TopCG.out_edges(func))
+               for(const auto& ei : graph_out_edges(TopCG, func))
                {
-                  const auto called = TopCG.target(ei);
+                  const auto called = graph_target(TopCG, ei);
                   const auto fname = ir_helper::GetFunctionName(IRM->GetIRNode(CGM.get_function(called)));
                   const auto called_fname = strip_fname(fname);
                   if(static_cast<bool>(libm_funcs.count(called_fname)))
@@ -475,11 +476,11 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
    if(!ff_already_propagated && !_version->ieee_format())
    {
       const auto& CG = AppM->CGetCallGraphManager().GetCallGraph();
-      for(const auto& ie : CG.in_edges(_version->function_vertex))
+      for(const auto& ie : graph_in_edges(CG, _version->function_vertex))
       {
-         if(static_cast<bool>(funcFF.count(CG.source(ie))))
+         if(static_cast<bool>(funcFF.count(graph_source(CG, ie))))
          {
-            const auto& funcV = funcFF.at(CG.source(ie));
+            const auto& funcV = funcFF.at(graph_source(CG, ie));
             if(funcV->ieee_format() || *(funcV->userRequired) != *(_version->userRequired))
             {
                // If a caller of current function uses a different float format, current function is not internal to the
@@ -2542,7 +2543,8 @@ FloatFormatRef FloatFormat::FromArgs(const std::vector<ir_nodeRef>& args)
    return ff;
 }
 
-FunctionVersion::FunctionVersion() : function_vertex(nullptr), userRequired(nullptr), internal(true)
+FunctionVersion::FunctionVersion()
+    : function_vertex(CallGraphsCollection::storage_traits::null_vertex()), userRequired(nullptr), internal(true)
 {
 }
 

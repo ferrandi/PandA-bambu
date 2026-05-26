@@ -42,6 +42,7 @@
 
 #include "cdfg_edge_info.hpp"
 #include "exceptions.hpp"
+#include "graph_facade.hpp"
 #include "ir_basic_block.hpp"
 #include "string_manipulation.hpp"
 
@@ -52,25 +53,25 @@
 #include <utility>
 
 BasicBlocksGraphConstructor::BasicBlocksGraphConstructor(BBGraphsCollection& _bg)
-    : bg(_bg), bb_index_map(_bg.GetGraphInfo().bb_index_map)
+    : bg(_bg), bb_index_map(graph_graph_info(_bg).bb_index_map)
 {
 }
 
 BBGraph::vertex_descriptor BasicBlocksGraphConstructor::add_vertex(blocRef info)
 {
-   auto index = bg.num_vertices();
+   auto index = graph_num_vertices(bg);
    auto v = bg.AddVertex();
    if(index == 0)
    {
       THROW_ASSERT(index == BB_ENTRY, "wrong value of the BB_ENTRY constant");
-      bg.GetGraphInfo().entry_vertex = v;
+      graph_graph_info(bg).entry_vertex = v;
    }
    else if(index == 1)
    {
       THROW_ASSERT(index == BB_EXIT, "wrong value of the BB_EXIT constant");
-      bg.GetGraphInfo().exit_vertex = v;
+      graph_graph_info(bg).exit_vertex = v;
    }
-   bg.GetNodeInfo(v).block = info;
+   graph_node_info(bg, v).block = info;
    bb_index_map[info->number] = v;
    return v;
 }
@@ -101,21 +102,21 @@ void BasicBlocksGraphConstructor::RemoveEdge(const BBGraph::edge_descriptor& edg
 void BasicBlocksGraphConstructor::add_bb_edge_info(BBGraph::vertex_descriptor source, BBGraph::vertex_descriptor target,
                                                    int type, const unsigned label)
 {
-   const auto [e, found] = boost::edge(source, target, bg);
-   THROW_ASSERT(found, "Edge BB" + STR(bg.CGetNodeInfo(source).block->number) + "-->BB" +
-                           STR(bg.CGetNodeInfo(target).block->number) + " doesn't exists");
+   const auto [e, found] = graph_find_edge(bg, source, target);
+   THROW_ASSERT(found, "Edge BB" + STR(graph_node_info(bg, source).block->number) + "-->BB" +
+                           STR(graph_node_info(bg, target).block->number) + " doesn't exists");
    THROW_ASSERT(type & (CFG_SELECTOR | FB_CFG_SELECTOR | CDG_SELECTOR | FB_CDG_SELECTOR), "Not supported label type");
-   bg.GetEdgeInfo(e).labels[type].insert(label);
+   graph_edge_info(bg, e).labels[type].insert(label);
 }
 
 BBGraph::edge_descriptor BasicBlocksGraphConstructor::connect_to_exit(BBGraph::vertex_descriptor source)
 {
-   return AddEdge(source, bg.GetGraphInfo().exit_vertex, CFG_SELECTOR);
+   return AddEdge(source, graph_graph_info(bg).exit_vertex, CFG_SELECTOR);
 }
 
 BBGraph::edge_descriptor BasicBlocksGraphConstructor::connect_to_entry(BBGraph::vertex_descriptor target)
 {
-   return AddEdge(bg.GetGraphInfo().entry_vertex, target, CFG_SELECTOR);
+   return AddEdge(graph_graph_info(bg).entry_vertex, target, CFG_SELECTOR);
 }
 
 bool BasicBlocksGraphConstructor::check_vertex(unsigned int block_index) const
@@ -130,7 +131,7 @@ BBGraph::vertex_descriptor BasicBlocksGraphConstructor::Cget_vertex(unsigned int
    return bb_index_map.find(block_index)->second;
 }
 
-void BasicBlocksGraphConstructor::add_operation_to_bb(BBGraph::vertex_descriptor op, unsigned int index)
+void BasicBlocksGraphConstructor::add_operation_to_bb(OpGraph::vertex_descriptor op, unsigned int index)
 {
-   bg.GetNodeInfo(Cget_vertex(index)).statements_list.push_back(op);
+   graph_node_info(bg, Cget_vertex(index)).statements_list.push_back(op);
 }

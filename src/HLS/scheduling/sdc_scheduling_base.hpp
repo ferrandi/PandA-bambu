@@ -42,6 +42,7 @@
 #define SDC_SCHEDULING_BASE_HPP
 
 #include "SchedulingStep.hpp"
+#include "basic_block.hpp"
 #include "custom_map.hpp"
 #include "op_graph.hpp"
 
@@ -78,7 +79,7 @@ struct SDCSorter
    const OpGraph& op_graph;
 
    /// The index basic block map
-   const CustomUnorderedMap<unsigned int, OpGraph::vertex_descriptor>& bb_index_map;
+   const CustomUnorderedMap<unsigned int, BBGraph::vertex_descriptor>& bb_index_map;
 
    using ComparisonKey = std::pair<OpGraph::vertex_descriptor, OpGraph::vertex_descriptor>;
    mutable CustomUnorderedMapUnstable<ComparisonKey, bool> comparison_cache;

@@ -44,6 +44,7 @@
 #include "custom_set.hpp"
 #include "exceptions.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "ir_manager.hpp"
 #include "ir_node.hpp"
 #include "op_graph.hpp"
@@ -109,10 +110,10 @@ void operations_graph_constructor::CompressEdges()
 void operations_graph_constructor::add_edge_info(OpGraph::vertex_descriptor src, OpGraph::vertex_descriptor tgt,
                                                  const int selector, unsigned int NodeID)
 {
-   const auto [e, inserted] = boost::edge(src, tgt, og);
-   THROW_ASSERT(inserted, "Edge from " + og.CGetNodeInfo(src).vertex_name + " to " + og.CGetNodeInfo(tgt).vertex_name +
-                              " doesn't exists");
-   og.GetEdgeInfo(e).add_nodeID(NodeID, selector);
+   const auto [e, inserted] = graph_find_edge(og, src, tgt);
+   THROW_ASSERT(inserted, "Edge from " + graph_node_info(og, src).vertex_name + " to " +
+                              graph_node_info(og, tgt).vertex_name + " doesn't exists");
+   graph_edge_info(og, e).add_nodeID(NodeID, selector);
 }
 
 void operations_graph_constructor::AddOperation(const ir_managerRef TM, const std::string& src,
@@ -122,13 +123,13 @@ void operations_graph_constructor::AddOperation(const ir_managerRef TM, const st
    THROW_ASSERT(src != "", "Vertex name empty");
    THROW_ASSERT(operation_t != "", "Operation empty");
    auto current = getIndex(src);
-   auto& node_info = og.GetNodeInfo(current);
+   auto& node_info = graph_node_info(og, current);
    THROW_ASSERT(!node_info.node || node_id == 0 || node_id == node_info.GetNodeId(),
                 "Trying to set node_id " + STR(node_id) + " to vertex " + src + " that has already node_id " +
                     STR(node_info.GetNodeId()));
    if(node_id > 0 && node_id != ENTRY_ID && node_id != EXIT_ID)
    {
-      og.GetNodeInfo(current).node = TM->GetIRNode(node_id);
+      graph_node_info(og, current).node = TM->GetIRNode(node_id);
    }
    const auto updated_node_id = node_info.GetNodeId();
    if(updated_node_id != 0 && updated_node_id != ENTRY_ID && updated_node_id != EXIT_ID)
@@ -138,11 +139,11 @@ void operations_graph_constructor::AddOperation(const ir_managerRef TM, const st
    node_info.bb_index = bb_index;
    if(src == ENTRY)
    {
-      og.GetGraphInfo().entry_vertex = current;
+      graph_graph_info(og).entry_vertex = current;
    }
    if(src == EXIT)
    {
-      og.GetGraphInfo().exit_vertex = current;
+      graph_graph_info(og).exit_vertex = current;
    }
    og.GetGraphInfo().ir_node_to_operation[node_id] = current;
 }

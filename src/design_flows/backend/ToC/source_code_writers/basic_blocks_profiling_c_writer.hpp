@@ -49,15 +49,15 @@ class BasicBlocksProfilingCWriter final : public EdgeCWriter
 {
    bool enable_instrumentation{false};
 
-   void print_loop_ending(unsigned fid, gc_edge_descriptor e) final;
+   void print_loop_ending(unsigned fid, BBGraph::edge_descriptor e) final;
 
-   void print_loop_escaping(unsigned fid, gc_edge_descriptor e) final;
+   void print_loop_escaping(unsigned fid, BBGraph::edge_descriptor e) final;
 
-   void print_loop_starting(unsigned fid, gc_edge_descriptor e) final;
+   void print_loop_starting(unsigned fid, BBGraph::edge_descriptor e) final;
 
-   void print_edge(unsigned fid, gc_edge_descriptor e, unsigned int index) final;
+   void print_edge(unsigned fid, BBGraph::edge_descriptor e, unsigned int index) final;
 
-   void print_loop_switching(unsigned fid, gc_edge_descriptor e) final;
+   void print_loop_switching(unsigned fid, BBGraph::edge_descriptor e) final;
 
    void InternalWriteHeader() final;
 

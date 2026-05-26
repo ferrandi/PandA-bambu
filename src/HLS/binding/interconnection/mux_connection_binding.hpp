@@ -46,8 +46,8 @@
 
 #include "HLS/fsm/FSMInfo.hpp"
 #include "conn_binding.hpp"
-#include "graph.hpp"
 #include "hls_manager.hpp"
+#include "op_graph.hpp"
 
 class OpGraph;
 REF_FORWARD_DECL(conn_binding);
@@ -113,8 +113,8 @@ class mux_connection_binding : public conn_binding_creator
    /**
     * Determine the actual interconnection
     */
-   void determine_connection(gc_vertex_descriptor op, const HLS_manager::io_binding_type& var, generic_objRef fu_obj,
-                             unsigned int port_num, unsigned int port_index, const OpGraph& data,
+   void determine_connection(OpGraph::vertex_descriptor op, const HLS_manager::io_binding_type& var,
+                             generic_objRef fu_obj, unsigned int port_num, unsigned int port_index, const OpGraph& data,
                              unsigned int precision, unsigned int alignment, FSMInfo::state_descriptor state_src,
                              FSMInfo::state_descriptor state_tgt, unsigned int src_phi_bb_index);
 
@@ -126,7 +126,7 @@ class mux_connection_binding : public conn_binding_creator
    /**
     *  create the connection object and update the unique table
     */
-   void create_single_conn(gc_vertex_descriptor op, generic_objRef fu_obj_src, generic_objRef fu_obj,
+   void create_single_conn(OpGraph::vertex_descriptor op, generic_objRef fu_obj_src, generic_objRef fu_obj,
                            unsigned int port_num, unsigned int port_index, unsigned int ir_var, unsigned int precision,
                            const bool is_not_a_phi, FSMInfo::state_descriptor state_src,
                            FSMInfo::state_descriptor state_tgt);
@@ -134,16 +134,16 @@ class mux_connection_binding : public conn_binding_creator
    /**
     * connect the fu_obj with the associated registers.
     */
-   void connect_to_registers(gc_vertex_descriptor op, const OpGraph& data, generic_objRef fu_obj, unsigned int port_num,
-                             unsigned int port_index, unsigned int ir_var, unsigned long long precision,
-                             const bool is_not_a_phi, FSMInfo::state_descriptor state_src,
+   void connect_to_registers(OpGraph::vertex_descriptor op, const OpGraph& data, generic_objRef fu_obj,
+                             unsigned int port_num, unsigned int port_index, unsigned int ir_var,
+                             unsigned long long precision, const bool is_not_a_phi, FSMInfo::state_descriptor state_src,
                              FSMInfo::state_descriptor state_tgt, unsigned int src_phi_bb_index);
 
    unsigned int extract_parm_decl(unsigned int ir_var, const ir_managerRef IRM);
 
    void connect_pipelined_registers(FSMInfo::state_descriptor state, const OpGraph& data);
 
-   unsigned int address_precision(unsigned int precision, gc_vertex_descriptor op, const OpGraph& data,
+   unsigned int address_precision(unsigned int precision, OpGraph::vertex_descriptor op, const OpGraph& data,
                                   const ir_managerRef IRM);
 
    bool isConstantObj(unsigned int ir_node_index, const ir_managerRef IRM);

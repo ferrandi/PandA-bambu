@@ -43,6 +43,7 @@
 
 #include "application_manager.hpp"
 #include "custom_map.hpp"
+#include "op_graph.hpp"
 
 #include <boost/preprocessor/seq/for_each.hpp>
 
@@ -241,7 +242,7 @@ class HLS_manager : public application_manager
    /**
     * Returns the values required by a vertex
     */
-   std::vector<io_binding_type> get_required_values(unsigned int fun_id, gc_vertex_descriptor v) const;
+   std::vector<io_binding_type> get_required_values(unsigned int fun_id, OpGraph::vertex_descriptor v) const;
 
    /**
     * helper function that return true in case the variable is register compatible

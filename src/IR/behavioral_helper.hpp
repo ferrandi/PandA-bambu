@@ -42,8 +42,8 @@
 
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include "graph.hpp"
 #include "ir_node.hpp"
+#include "op_graph.hpp"
 #include "refcount.hpp"
 
 #include <list>
@@ -51,7 +51,6 @@
 #include <tuple>
 #include <utility>
 
-class OpGraph;
 CONSTREF_FORWARD_DECL(Parameter);
 CONSTREF_FORWARD_DECL(ir_manager);
 CONSTREF_FORWARD_DECL(ir_node);
@@ -118,7 +117,7 @@ class BehavioralHelper
     * @param vppf is the functor used to dump the variable var.
     * @param dot tells if the output is a dot graph
     */
-   std::string print_vertex(const OpGraph& g, gc_vertex_descriptor v, const std::unique_ptr<var_pp_functor>& vppf,
+   std::string print_vertex(const OpGraph& g, OpGraph::vertex_descriptor v, const std::unique_ptr<var_pp_functor>& vppf,
                             const bool dot = false) const;
 
    /**

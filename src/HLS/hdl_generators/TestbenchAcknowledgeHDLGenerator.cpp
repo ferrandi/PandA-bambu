@@ -52,7 +52,7 @@ TestbenchAcknowledgeHDLGenerator::TestbenchAcknowledgeHDLGenerator(const HLS_man
 }
 
 void TestbenchAcknowledgeHDLGenerator::InternalExec(std::ostream& out, structural_objectRef mod_cir,
-                                                    unsigned int function_id, gc_vertex_descriptor /* op_v */,
+                                                    unsigned int function_id, OpGraph::vertex_descriptor /* op_v */,
                                                     const HDLWriter_Language language,
                                                     const std::vector<HDLGenerator::parameter>& /* _p */,
                                                     const std::vector<HDLGenerator::parameter>& /* _ports_in */,

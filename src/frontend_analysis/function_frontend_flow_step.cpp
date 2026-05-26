@@ -57,7 +57,7 @@
 #include "exceptions.hpp"
 #include "frontend_flow_step_factory.hpp"
 #include "function_behavior.hpp"
-#include "graph.hpp"
+#include "graph_facade.hpp"
 #include "hash_helper.hpp"
 #include "ir_basic_block.hpp"
 #include "ir_common.hpp"
@@ -152,9 +152,9 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
       {
          case(CALLED_FUNCTIONS):
          {
-            for(const auto& oe : ACG.out_edges(function_v))
+            for(const auto& oe : graph_out_edges(ACG, function_v))
             {
-               const auto target = ACG.target(oe);
+               const auto target = graph_target(ACG, oe);
                const auto called_function = CGM.get_function(target);
                if(function_id != called_function &&
                   AppM->CGetFunctionBehavior(called_function)->CGetBehavioralHelper()->has_implementation())
@@ -178,9 +178,9 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
          }
          case(CALLING_FUNCTIONS):
          {
-            for(const auto& ie : ACG.in_edges(function_v))
+            for(const auto& ie : graph_in_edges(ACG, function_v))
             {
-               const auto source = ACG.source(ie);
+               const auto source = graph_source(ACG, ie);
                const auto calling_function = CGM.get_function(source);
                if(calling_function != function_id)
                {
@@ -253,7 +253,7 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::filesystem::path& file
 {
    BBGraphsCollection ir_bb_graphs_collection(BBGraphInfo(AppM, function_id));
    BBGraph ir_bb_graph(ir_bb_graphs_collection, CFG_SELECTOR);
-   auto& bb_graph_info = ir_bb_graphs_collection.GetGraphInfo();
+   auto& bb_graph_info = graph_graph_info(ir_bb_graph);
    CustomUnorderedMap<unsigned int, BBGraph::vertex_descriptor> inverse_vertex_map;
    const auto function_ir_node = AppM->get_ir_manager()->GetIRNode(function_id);
    const auto fd = GetPointerS<const function_val_node>(function_ir_node);

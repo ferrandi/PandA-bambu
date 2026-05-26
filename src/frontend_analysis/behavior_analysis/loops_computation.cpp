@@ -48,6 +48,7 @@
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
 #include "graph.hpp"
+#include "graph_facade.hpp"
 #include "hash_helper.hpp"
 #include "ir_basic_block.hpp"
 #include "loop.hpp"
@@ -100,7 +101,7 @@ DesignFlowStep_Status loops_computation::InternalExec()
 {
    auto fbb = function_behavior->GetBBGraph(FunctionBehavior::FBB);
 
-   const auto entry_vertex = fbb.CGetGraphInfo().entry_vertex;
+   const auto entry_vertex = graph_graph_info(fbb).entry_vertex;
    THROW_ASSERT(function_behavior->dominators, "Dominators has to be computed!");
    function_behavior->loops = LoopsRef(new Loops(fbb, entry_vertex, *function_behavior->dominators));
    if(parameters->getOption<bool>(OPT_print_dot))
@@ -118,7 +119,7 @@ DesignFlowStep_Status loops_computation::InternalExec()
       const auto blocks = loop->getBlocks();
       for(const auto bb_v : blocks)
       {
-         auto& bb_node_info = fbb.GetNodeInfo(bb_v);
+         auto& bb_node_info = graph_node_info(fbb, bb_v);
          bb_node_info.loop_id = loop->getLoopId();
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                        "  Basic block " + std::to_string(bb_node_info.block->number));

@@ -47,7 +47,7 @@
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "function_behavior.hpp"
-#include "graph.hpp"
+#include "graph_facade.hpp"
 #include "ir_helper.hpp"
 #include "ir_node.hpp"
 #include "op_graph.hpp"
@@ -98,11 +98,11 @@ void VarComputation::Initialize()
    if(bb_version != 0 && bb_version != function_behavior->GetBBVersion())
    {
       auto mod_cfg = function_behavior->GetOpGraph(FunctionBehavior::CFG);
-      if(mod_cfg.num_vertices() != 0)
+      if(graph_num_vertices(mod_cfg) != 0)
       {
-         for(const auto op : mod_cfg.vertices())
+         for(const auto op : graph_vertices(mod_cfg))
          {
-            auto& op_node_info = mod_cfg.GetNodeInfo(op);
+            auto& op_node_info = graph_node_info(mod_cfg, op);
             op_node_info.cited_variables.clear();
             op_node_info.actual_parameters.clear();
             op_node_info.Initialize();
@@ -116,7 +116,7 @@ DesignFlowStep_Status VarComputation::InternalExec()
    const auto cfg = function_behavior->GetOpGraph(FunctionBehavior::CFG);
    const auto& ogc = function_behavior->ogc;
    std::list<OpGraph::vertex_descriptor> Vertices;
-   for(const auto& v : cfg.vertices())
+   for(const auto& v : graph_vertices(cfg))
    {
       Vertices.push_back(v);
    }
@@ -125,7 +125,7 @@ DesignFlowStep_Status VarComputation::InternalExec()
    {
       auto curr_Ver = Ver;
       ++Ver;
-      if(cfg.CGetNodeInfo(*curr_Ver).node_type == TYPE_VPHI)
+      if(graph_node_info(cfg, *curr_Ver).node_type == TYPE_VPHI)
       {
          PhiNodes.push_back(*curr_Ver);
          Vertices.erase(curr_Ver);
@@ -133,7 +133,7 @@ DesignFlowStep_Status VarComputation::InternalExec()
    }
    for(const auto Ver : Vertices)
    {
-      const auto& node = cfg.CGetNodeInfo(Ver).node;
+      const auto& node = graph_node_info(cfg, Ver).node;
       if(node)
       {
          RecursivelyAnalyze(Ver, node, VariableAccessType::UNKNOWN, ogc);
@@ -141,7 +141,7 @@ DesignFlowStep_Status VarComputation::InternalExec()
    }
    for(const auto& PhiNode : PhiNodes)
    {
-      const auto& node = cfg.CGetNodeInfo(PhiNode).node;
+      const auto& node = graph_node_info(cfg, PhiNode).node;
       if(node)
       {
          RecursivelyAnalyze(PhiNode, node, VariableAccessType::UNKNOWN, ogc);
@@ -270,8 +270,8 @@ void VarComputation::RecursivelyAnalyze(OpGraph::vertex_descriptor op_vertex, co
       }
       case argument_val_node_K:
       {
-         ogc->AddVariable(function_behavior->GetOpGraph(FunctionBehavior::CFG).CGetGraphInfo().entry_vertex,
-                          ir_node->index, VariableType::SCALAR, access_type);
+         const auto cfg = function_behavior->GetOpGraph(FunctionBehavior::CFG);
+         ogc->AddVariable(graph_graph_info(cfg).entry_vertex, ir_node->index, VariableType::SCALAR, access_type);
          ogc->AddSourceCodeVariable(op_vertex, ir_node->index);
          break;
       }
@@ -304,8 +304,9 @@ void VarComputation::RecursivelyAnalyze(OpGraph::vertex_descriptor op_vertex, co
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Adding " + sn->ToString() + " to defs of Entry");
-               ogc->AddVariable(function_behavior->GetOpGraph(FunctionBehavior::CFG).CGetGraphInfo().entry_vertex,
-                                ir_node->index, VariableType::SCALAR, VariableAccessType::DEFINITION);
+               const auto cfg = function_behavior->GetOpGraph(FunctionBehavior::CFG);
+               ogc->AddVariable(graph_graph_info(cfg).entry_vertex, ir_node->index, VariableType::SCALAR,
+                                VariableAccessType::DEFINITION);
             }
             ogc->AddSourceCodeVariable(op_vertex, ir_node->index);
             switch(access_type)

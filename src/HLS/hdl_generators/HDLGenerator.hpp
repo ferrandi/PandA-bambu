@@ -41,7 +41,7 @@
 #define _HDL_GENERATOR_HPP_
 
 #include "Factory.hpp"
-#include "graph.hpp"
+#include "op_graph.hpp"
 #include "refcount.hpp"
 
 #include <functional>
@@ -79,14 +79,14 @@ class HDLGenerator : public Factory<HDLGenerator, const HLS_managerRef&>
                         bool parametric = false) const;
 
    virtual void InternalExec(std::ostream& out, structural_objectRef mod, unsigned int function_id,
-                             gc_vertex_descriptor op_v, const HDLWriter_Language language,
+                             OpGraph::vertex_descriptor op_v, const HDLWriter_Language language,
                              const std::vector<parameter>& _p, const std::vector<parameter>& _ports_in,
                              const std::vector<parameter>& _ports_out, const std::vector<parameter>& _ports_inout) = 0;
 
  public:
    virtual ~HDLGenerator() = default;
 
-   void Exec(std::ostream& out, structural_objectRef mod, unsigned int function_id, gc_vertex_descriptor op_v,
+   void Exec(std::ostream& out, structural_objectRef mod, unsigned int function_id, OpGraph::vertex_descriptor op_v,
              const std::vector<parameter>& _p, const HDLWriter_Language language);
 };
 

@@ -49,6 +49,7 @@
 #include "call_graph_manager.hpp"
 #include "design_flow_manager.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "ir_basic_block.hpp"
@@ -435,7 +436,7 @@ DesignFlowStep_Status CSE::InternalExec()
 
    dominance<BBGraph> bb_dominators(cfg, inverse_vertex_map[bloc::ENTRY_BLOCK_ID],
                                     inverse_vertex_map[bloc::EXIT_BLOCK_ID]);
-   BBGraph dt(bb_graphs_collection, D_SELECTOR);
+   auto dt = make_graph_view<BBGraph>(bb_graphs_collection, D_SELECTOR);
    bb_dominators.forEachDominanceRelation(
        [&](const BBGraph::vertex_descriptor child, const BBGraph::vertex_descriptor dom_vertex) {
           if(child != inverse_vertex_map[bloc::ENTRY_BLOCK_ID])
@@ -444,15 +445,15 @@ DesignFlowStep_Status CSE::InternalExec()
           }
        });
 
-   const auto dependence_graph = OpGraph(function_behavior->GetOpGraphsCollection(), SAODG_SELECTOR);
-   const auto& stmt_to_op = dependence_graph.CGetGraphInfo().ir_node_to_operation;
+   const auto dependence_graph = make_graph_view<OpGraph>(function_behavior->GetOpGraphsCollection(), SAODG_SELECTOR);
+   const auto& stmt_to_op = graph_graph_info(dependence_graph).ir_node_to_operation;
 
    std::deque<BBGraph::vertex_descriptor> sort_list;
-   dt.TopologicalSort(sort_list);
+   graph_topological_sort(dt, sort_list);
 
    for(const auto& bb : sort_list)
    {
-      const auto B = dt.CGetNodeInfo(bb).block;
+      const auto B = graph_node_info(dt, bb).block;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering BB " + STR(B->number));
       /// CSE on basic blocks
       unique_table[bb].clear();
@@ -461,7 +462,7 @@ DesignFlowStep_Status CSE::InternalExec()
       {
          THROW_ASSERT(unique_table.find(dom_vertex) != unique_table.end(), "unexpected condition");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Adding dominator equiv: " + STR(dt.CGetNodeInfo(dom_vertex).block->number));
+                        "---Adding dominator equiv: " + STR(graph_node_info(dt, dom_vertex).block->number));
 
          for(const auto& key_value_pair : unique_table.at(dom_vertex))
          {
@@ -1417,7 +1418,7 @@ DesignFlowStep_Status CSE::InternalExec()
                       "Unexpected cross-BB load after a control statement: " + dead_access.stmt->ToString());
 
          const auto common_dom = common_dominator(ref_access.block->number, dead_access.block->number);
-         const auto common_block = dt.CGetNodeInfo(common_dom).block;
+         const auto common_block = graph_node_info(dt, common_dom).block;
          if(common_block->number == bloc::ENTRY_BLOCK_ID || common_block->number == bloc::EXIT_BLOCK_ID ||
             common_block->number == ref_access.block->number || common_block->number == dead_access.block->number)
          {

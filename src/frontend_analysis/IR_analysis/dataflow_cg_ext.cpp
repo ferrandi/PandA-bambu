@@ -46,6 +46,7 @@
 #include "call_graph_manager.hpp"
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls_manager.hpp"
 #include "ir_helper.hpp"
 #include "ir_manager.hpp"
@@ -140,9 +141,9 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
    std::vector<std::tuple<CallGraph::vertex_descriptor, std::string, FunctionArchitectureRef,
                           const CustomOrderedSet<unsigned int>, const std::vector<unsigned int>>>
        tgt_vertices;
-   for(const auto& ie : CG.out_edges(f_v))
+   for(const auto& ie : graph_out_edges(CG, f_v))
    {
-      auto tgt = CG.target(ie);
+      auto tgt = graph_target(CG, ie);
       const auto target_id = CGM.get_function(tgt);
       const auto tsymbol = AppM->CGetFunctionBehavior(target_id)->CGetBehavioralHelper()->GetFunctionName();
       const auto tarch = HLSMgr->module_arch->GetArchitecture(tsymbol);
@@ -154,13 +155,13 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Function " + tsymbol + " is not a dataflow module");
          continue;
       }
-      const auto& call_info = CG.CGetEdgeInfo(ie);
+      const auto& call_info = graph_edge_info(CG, ie);
       const auto call_direct_point = call_info.direct_call_points;
       if(call_info.function_addresses.size() || call_info.indirect_call_points.size())
       {
          THROW_ERROR("Address/indirect function calls not supported in dataflow.");
       }
-      auto is_single_call = CG.in_degree(tgt) == 1;
+      auto is_single_call = graph_in_degree(CG, tgt) == 1;
       std::vector<unsigned int> call_points(
           (is_single_call ? ++(call_direct_point.begin()) : call_direct_point.begin()), call_direct_point.end());
       tgt_vertices.emplace_back(tgt, tsymbol, tarch, call_direct_point, call_points);

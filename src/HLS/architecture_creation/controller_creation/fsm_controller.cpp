@@ -55,6 +55,7 @@
 #include "fu_binding.hpp"
 #include "function_behavior.hpp"
 #include "funit_obj.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "ir_helper.hpp"
@@ -249,9 +250,9 @@ void fsm_controller::create_state_machine(std::string& parse)
          active_fu.insert(HLS->Rfu->get(op));
          const auto tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(op));
          const auto op_tn = GetPointer<functional_unit>(tn)->get_operation(
-             ir_helper::NormalizeTypename(data.CGetNodeInfo(op).GetOperation()));
+             ir_helper::NormalizeTypename(graph_node_info(data, op).GetOperation()));
          THROW_ASSERT(GetPointer<operation>(op_tn)->time_m,
-                      "Time model not available for operation: " + data.CGetNodeInfo(op).vertex_name);
+                      "Time model not available for operation: " + graph_node_info(data, op).vertex_name);
          const auto CM = GetPointer<functional_unit>(tn)->CM;
          if(!CM)
          {
@@ -267,7 +268,7 @@ void fsm_controller::create_state_machine(std::string& parse)
          if(!GetPointer<operation>(op_tn)->is_bounded() && (!start_port_i || !done_port_i))
          {
             THROW_ERROR("Unbounded operations have to have both done_port and start_port ports!" +
-                        STR(IRM->GetIRNode(data.CGetNodeInfo(op).GetNodeId())));
+                        STR(IRM->GetIRNode(graph_node_info(data, op).GetNodeId())));
          }
          bool is_starting_operation =
              std::find(state_info.startingOperations.begin(), state_info.startingOperations.end(), op) !=
@@ -275,7 +276,7 @@ void fsm_controller::create_state_machine(std::string& parse)
 
          if((!GetPointer<operation>(op_tn)->is_bounded()))
          {
-            auto node = IRM->GetIRNode(data.CGetNodeInfo(op).GetNodeId());
+            auto node = IRM->GetIRNode(graph_node_info(data, op).GetNodeId());
             if(node->get_kind() == assign_stmt_K)
             {
                const auto nodeGA = GetPointerS<const assign_stmt>(node);
@@ -640,7 +641,7 @@ void fsm_controller::create_state_machine(std::string& parse)
                   {
                      THROW_ASSERT(present_state[v][out_ports[s.second]] != 0, "unexpected condition");
                      auto data_operation = std::get<2>(a);
-                     if(data_operation.second != gc_null_vertex())
+                     if(data_operation.second != OpGraph::null_vertex())
                      {
                         THROW_ASSERT(cond_ports.find(data_operation.second) != cond_ports.end(),
                                      "unexpected condition");
@@ -701,8 +702,8 @@ void fsm_controller::create_state_machine(std::string& parse)
 std::string fsm_controller::get_guard_value(const ir_managerRef TM, const unsigned int index,
                                             OpGraph::vertex_descriptor op, const OpGraph& data)
 {
-   THROW_ASSERT((data.CGetNodeInfo(op).node_type & TYPE_MULTIIF) != 0, "unexpected condition");
-   unsigned int node_id = data.CGetNodeInfo(op).GetNodeId();
+   THROW_ASSERT((graph_node_info(data, op).node_type & TYPE_MULTIIF) != 0, "unexpected condition");
+   unsigned int node_id = graph_node_info(data, op).GetNodeId();
    unsigned int pos = ir_helper::get_multi_way_if_pos(TM, node_id, index);
    return "&" + STR(pos);
 }
@@ -770,11 +771,11 @@ void fsm_controller::add_FSM_stages(structural_managerRef SM)
          const auto& state_data = get_fsm_state(v);
          for(const auto& op : state_data.endingOperations)
          {
-            if(data.CGetNodeInfo(op).node_type == TYPE_ENTRY)
+            if(graph_node_info(data, op).node_type == TYPE_ENTRY)
             {
                continue;
             }
-            auto node = IRM->GetIRNode(data.CGetNodeInfo(op).GetNodeId());
+            auto node = IRM->GetIRNode(graph_node_info(data, op).GetNodeId());
             if(node->get_kind() == assign_stmt_K)
             {
                const auto nodeGA = GetPointerS<const assign_stmt>(node);
@@ -800,7 +801,7 @@ void fsm_controller::add_FSM_stages(structural_managerRef SM)
          {
             const auto tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(op));
             const auto op_tn = GetPointer<functional_unit>(tn)->get_operation(
-                ir_helper::NormalizeTypename(data.CGetNodeInfo(op).GetOperation()));
+                ir_helper::NormalizeTypename(graph_node_info(data, op).GetOperation()));
             const auto CM = GetPointer<functional_unit>(tn)->CM;
             if(!CM)
             {
@@ -822,7 +823,7 @@ void fsm_controller::add_FSM_stages(structural_managerRef SM)
          }
          for(const auto& op : state_data.executingOperations)
          {
-            if((data.CGetNodeInfo(op).node_type & TYPE_PHI) == 0)
+            if((graph_node_info(data, op).node_type & TYPE_PHI) == 0)
             {
                auto fu = HLS->Rfu->get_assign(op);
                auto idx = HLS->Rfu->get_index(op);
@@ -833,10 +834,10 @@ void fsm_controller::add_FSM_stages(structural_managerRef SM)
                    state_data.startingOperations.end();
 
                if(tmp_ops_node_size > 1U &&
-                  (!(data.CGetNodeInfo(op).node_type & (TYPE_LOAD | TYPE_STORE)) || is_starting_operation))
+                  (!(graph_node_info(data, op).node_type & (TYPE_LOAD | TYPE_STORE)) || is_starting_operation))
                {
                   const auto selector_obj = GetPointer<funit_obj>(HLS->Rfu->get(fu, idx))
-                                                ->GetSelector_op(data.CGetNodeInfo(op).GetOperation());
+                                                ->GetSelector_op(graph_node_info(data, op).GetOperation());
                   const auto op_port = 1 + out_ports[selector_obj];
                   auto op_stage = 1 + HLS->fsm_info->GetStepOp(data, v, op);
                   stage_table += state_data.name + ":" + std::to_string(op_port) + ":" + std::to_string(op_stage) + ";";

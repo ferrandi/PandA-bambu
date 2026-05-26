@@ -39,10 +39,10 @@
  */
 #ifndef CSE_HPP
 #define CSE_HPP
+#include "basic_block.hpp"
 #include "function_frontend_flow_step.hpp"
 
 #include "custom_map.hpp"
-#include "graph.hpp"
 #include "ir_common.hpp"
 #include "refcount.hpp"
 
@@ -92,9 +92,9 @@ class CSE : public FunctionFrontendFlowStep
    bool restart_lut_opt;
 
    /// check if the statement has an equivalent in the unique table
-   ir_nodeRef hash_check(
-       const ir_nodeRef& tn, gc_vertex_descriptor bb, const statement_list_node* sl,
-       std::map<gc_vertex_descriptor, CustomUnorderedMapStable<CSE_tuple_key_type, ir_nodeRef>>& unique_table) const;
+   ir_nodeRef hash_check(const ir_nodeRef& tn, BBGraph::vertex_descriptor bb, const statement_list_node* sl,
+                         std::map<BBGraph::vertex_descriptor, CustomUnorderedMapStable<CSE_tuple_key_type, ir_nodeRef>>&
+                             unique_table) const;
 
    /// check if the assign_stmt is a load, store or a memcpy/memset
    bool has_memory_access(const assign_stmt* ga) const;

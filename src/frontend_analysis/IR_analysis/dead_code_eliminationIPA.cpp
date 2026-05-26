@@ -51,6 +51,7 @@
 #include "design_flow_manager.hpp"
 #include "function_behavior.hpp"
 #include "function_frontend_flow_step.hpp"
+#include "graph_facade.hpp"
 #include "hls_manager.hpp"
 #include "ir_basic_block.hpp"
 #include "ir_helper.hpp"
@@ -259,12 +260,12 @@ bool dead_code_eliminationIPA::signature_opt(const ir_managerRef& TM, function_v
    const auto ftype_ptr = ir_man->GetPointerType(ftype);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Erasing unused arguments from call points");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-   for(const auto& ie : CG.in_edges(function_v))
+   for(const auto& ie : graph_in_edges(CG, function_v))
    {
-      const auto caller_id = CGM.get_function(ie.m_source);
+      const auto caller_id = CGM.get_function(graph_source(CG, ie));
       if(rFunctions.find(caller_id) != rFunctions.end())
       {
-         const auto& fei = CG.CGetEdgeInfo(ie);
+         const auto& fei = graph_edge_info(CG, ie);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "Analysing call points from " + ir_helper::GetFunctionName(TM->GetIRNode(caller_id)));
          for(const auto& call_id : fei.direct_call_points)

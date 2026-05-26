@@ -39,14 +39,16 @@
 #include "chaining_information.hpp"
 
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 
 #include <boost/pending/disjoint_sets.hpp>
+#include <utility>
 
 struct ChainingSet
 {
-   using const_vertex_index_pmap_t = boost::property_map<OpGraph::Base, boost::vertex_index_t>::const_type;
+   using const_vertex_index_pmap_t = decltype(graph_vertex_index_map(std::declval<const OpGraph&>()));
    using rank_pmap_type = boost::iterator_property_map<std::vector<std::size_t>::iterator, boost::identity_property_map,
                                                        std::vector<std::size_t>::value_type>;
    using pred_pmap_type = boost::iterator_property_map<std::vector<std::size_t>::iterator, boost::identity_property_map,
@@ -62,8 +64,8 @@ struct ChainingSet
    boost::disjoint_sets<rank_pmap_type, pred_pmap_type> ds;
 
    ChainingSet(const OpGraph& flow_graph)
-       : cindex_pmap(boost::get(boost::vertex_index_t(), flow_graph)),
-         n_vert(flow_graph.num_vertices()),
+       : cindex_pmap(graph_vertex_index_map(flow_graph)),
+         n_vert(graph_num_vertices(flow_graph)),
          rank_map(2 * n_vert),
          pred_map(2 * n_vert),
          rank_pmap(rank_map.begin()),
@@ -103,7 +105,7 @@ void ChainingInformation::Initialize()
    const auto HLS = HLS_mgr.lock()->get_HLS(function_id);
 
    HLS->chaining_information->chaining_relation = ChainingSetRef(new ChainingSet(flow_graph));
-   for(const auto v : flow_graph.vertices())
+   for(const auto v : graph_vertices(flow_graph))
    {
       HLS->chaining_information->chaining_relation->ds.make_set(chaining_relation->get_index0(v));
       HLS->chaining_information->chaining_relation->ds.make_set(chaining_relation->get_index1(v));

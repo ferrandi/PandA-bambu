@@ -52,6 +52,7 @@
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
 #include "functions.hpp"
+#include "graph_facade.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
 #include "ir_basic_block.hpp"
@@ -186,10 +187,10 @@ DesignFlowStep_Status OMPCGExt::InternalExec()
    const auto remove_address_edge = [&](unsigned int source, unsigned int dest) {
       const auto source_v = CGM.GetVertex(source);
       const auto dest_v = CGM.GetVertex(dest);
-      if(CG.ExistsEdge(source_v, dest_v))
+      if(graph_exists_edge(CG, source_v, dest_v))
       {
-         const auto edge = CG.CGetEdge(source_v, dest_v);
-         const auto& edge_info = CG.CGetEdgeInfo(edge);
+         const auto edge = graph_get_edge(CG, source_v, dest_v);
+         const auto& edge_info = graph_edge_info(CG, edge);
          THROW_ASSERT(edge_info.direct_call_points.empty() && edge_info.indirect_call_points.empty(),
                       "Unexpected call points.");
          const auto to_remove = edge_info.function_addresses;
@@ -861,14 +862,14 @@ std::vector<blocRef> OMPCGExt::DominatorTopologicalSort(const unsigned int funct
              bb_graphs_collection.AddEdge(dom_vertex, child, D_SELECTOR);
           }
        });
-   dt.GetGraphInfo().bb_index_map = std::move(inverse_vertex_map);
+   graph_graph_info(dt).bb_index_map = std::move(inverse_vertex_map);
 
    std::list<BBGraph::vertex_descriptor> v_topological;
-   dt.TopologicalSort(v_topological);
+   graph_topological_sort(dt, v_topological);
    THROW_ASSERT(v_topological.size(), "");
    std::vector<blocRef> bb_topological;
    std::transform(v_topological.begin(), v_topological.end(), std::back_inserter(bb_topological),
-                  [&](BBGraph::vertex_descriptor v) { return dt.CGetNodeInfo(v).block; });
+                  [&](BBGraph::vertex_descriptor v) { return graph_node_info(dt, v).block; });
    return bb_topological;
 }
 

@@ -45,7 +45,7 @@
 #define REHASHED_HEAP_HPP
 
 #include "custom_map.hpp"
-#include "graph.hpp"
+#include "op_graph.hpp"
 #include "priority.hpp"
 #include "refcount.hpp"
 
@@ -56,7 +56,7 @@
 /**
  * Class used to represent a priority queue of vertex with rehash.
  */
-template <class _Type, typename vertex_descriptor = gc_vertex_descriptor>
+template <class _Type, typename vertex_descriptor = OpGraph::vertex_descriptor>
 struct rehashed_heap
     : public std::priority_queue<vertex_descriptor, std::vector<vertex_descriptor>, priority_compare_functor<_Type>>
 {
@@ -96,7 +96,7 @@ struct rehashed_heap
 /**
  * Class used to represent a tree of priority queues.
  */
-template <class _Type, typename vertex_descriptor = gc_vertex_descriptor>
+template <class _Type, typename vertex_descriptor = OpGraph::vertex_descriptor>
 struct tree_rehashed_heap
     : public CustomUnorderedMap<vertex_descriptor, std::vector<rehashed_heap<_Type, vertex_descriptor>>>
 {

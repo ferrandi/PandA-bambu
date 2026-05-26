@@ -52,6 +52,7 @@
 #include "exceptions.hpp"
 #include "fu_binding.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_c_writer.hpp"
 #include "hls_manager.hpp"
@@ -215,7 +216,7 @@ void DiscrepancyAnalysisCWriter::writePreInstructionInfo(const FunctionBehaviorC
                                                          OpGraph::vertex_descriptor statement)
 {
    const auto instrGraph = FB->GetOpGraph(FunctionBehavior::FCFG);
-   const auto& node_info = instrGraph.CGetNodeInfo(statement);
+   const auto& node_info = graph_node_info(instrGraph, statement);
    const auto st_tn_id = node_info.GetNodeId();
    if(st_tn_id == 0 || st_tn_id == ENTRY_ID || st_tn_id == EXIT_ID)
    {
@@ -267,7 +268,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
                                                           OpGraph::vertex_descriptor statement)
 {
    const auto instrGraph = fun_behavior->GetOpGraph(FunctionBehavior::FCFG);
-   const auto st_tn_id = instrGraph.CGetNodeInfo(statement).GetNodeId();
+   const auto st_tn_id = graph_node_info(instrGraph, statement).GetNodeId();
    if(st_tn_id == 0 || st_tn_id == ENTRY_ID || st_tn_id == EXIT_ID)
    {
       return;
@@ -292,7 +293,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
 
    technology_nodeRef fu_tech_n = hls->allocation_information->get_fu(hls->Rfu->get_assign(statement));
    technology_nodeRef op_tech_n = GetPointer<functional_unit>(fu_tech_n)->get_operation(
-       ir_helper::NormalizeTypename(instrGraph.CGetNodeInfo(statement).GetOperation()));
+       ir_helper::NormalizeTypename(graph_node_info(instrGraph, statement).GetOperation()));
 
    const operation* oper = GetPointer<operation>(op_tech_n);
    if(!oper)
@@ -384,7 +385,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
       indented_output_stream->Append("__bambu_discrepancy_emit_event_sep();\n");
       indented_output_stream->Append(
           "fprintf(__bambu_discrepancy_fp, \"\\x7b\\\"type\\\":\\\"op_trace\\\",\\\"op_id\\\":" +
-          STR(instrGraph.CGetNodeInfo(statement).GetNodeId()) + ",\\\"value\\\":\\\"\");\n");
+          STR(graph_node_info(instrGraph, statement).GetNodeId()) + ",\\\"value\\\":\\\"\");\n");
 
       if(is_real || is_vector || ir_helper::IsStructType(ssa_type) || is_large_integer(ssa_type))
       {
@@ -406,7 +407,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
          if(rhs->get_kind() == call_node_K)
          {
             indented_output_stream->Append("//" + oper->get_name() + "\n");
-            const auto& node_info = instrGraph.CGetNodeInfo(statement);
+            const auto& node_info = graph_node_info(instrGraph, statement);
             THROW_ASSERT(!node_info.called.empty(), "rhs of assign_stmt node " + STR(st_tn_id) +
                                                         " is a call_node but does not actually call a function");
             THROW_ASSERT(node_info.called.size() == 1,

@@ -54,6 +54,7 @@
 #include "exceptions.hpp"
 #include "fu_binding.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_device.hpp"
@@ -205,7 +206,7 @@ unsigned int AllocationInformation::get_number_fu(unsigned int fu_name) const
 
 const CustomOrderedSet<unsigned int>& AllocationInformation::can_implement_set(OpGraph::vertex_descriptor v) const
 {
-   return can_implement_set(op_graph.CGetNodeInfo(v).GetNodeId());
+   return can_implement_set(graph_node_info(op_graph, v).GetNodeId());
 }
 
 const CustomOrderedSet<unsigned int>& AllocationInformation::can_implement_set(const unsigned int v) const
@@ -243,7 +244,7 @@ bool AllocationInformation::CanImplementSetNotEmpty(const unsigned int v) const
 double AllocationInformation::get_execution_time(const unsigned int fu_name, OpGraph::vertex_descriptor v,
                                                  const OpGraph& g) const
 {
-   return get_execution_time(fu_name, g.CGetNodeInfo(v).GetNodeId());
+   return get_execution_time(fu_name, graph_node_info(g, v).GetNodeId());
 }
 
 double AllocationInformation::get_execution_time(const unsigned int fu_name, unsigned int v) const
@@ -339,7 +340,7 @@ double AllocationInformation::get_attribute_of_fu_per_op(OpGraph::vertex_descrip
                                                          AllocationInformation::op_target target, unsigned int& fu_name,
                                                          bool& flag, const updatecopy_HLS_constraints_functor* CF) const
 {
-   const unsigned int node_id = g.CGetNodeInfo(v).GetNodeId();
+   const unsigned int node_id = graph_node_info(g, v).GetNodeId();
    const auto node_operation = [&]() -> std::string {
       if(node_id == ENTRY_ID)
       {
@@ -354,7 +355,7 @@ double AllocationInformation::get_attribute_of_fu_per_op(OpGraph::vertex_descrip
    const CustomOrderedSet<unsigned int>& fu_set =
        node_id_to_fus.find(std::pair<unsigned int, std::string>(node_id, node_operation))->second;
 
-   const auto op_name = ir_helper::NormalizeTypename(g.CGetNodeInfo(v).GetOperation());
+   const auto op_name = ir_helper::NormalizeTypename(graph_node_info(g, v).GetOperation());
    const CustomOrderedSet<unsigned int>::const_iterator f_end = fu_set.end();
    auto f_i = fu_set.begin();
    flag = false;
@@ -444,7 +445,7 @@ double AllocationInformation::get_attribute_of_fu_per_op(OpGraph::vertex_descrip
             return 0.0;
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Get Execution time " + g.CGetNodeInfo(v).vertex_name);
+                        "-->Get Execution time " + graph_node_info(g, v).vertex_name);
          THROW_ASSERT(GetPointerS<functional_unit>(list_of_FU[fu_name]), "");
          THROW_ASSERT(GetPointerS<operation>(GetPointerS<functional_unit>(list_of_FU[fu_name])->get_operation(op_name)),
                       op_name + " not provided by " + list_of_FU[fu_name]->get_name());
@@ -512,7 +513,7 @@ double AllocationInformation::get_attribute_of_fu_per_op(OpGraph::vertex_descrip
 
 unsigned int AllocationInformation::min_number_of_resources(OpGraph::vertex_descriptor v) const
 {
-   const auto node_id = op_graph.CGetNodeInfo(v).GetNodeId();
+   const auto node_id = graph_node_info(op_graph, v).GetNodeId();
    if(node_id == ENTRY_ID)
    {
       return INFINITE_UINT;
@@ -679,7 +680,7 @@ double AllocationInformation::get_DSPs(const unsigned int fu_name) const
 
 unsigned int AllocationInformation::get_initiation_time(const unsigned int fu_name, OpGraph::vertex_descriptor v) const
 {
-   return get_initiation_time(fu_name, op_graph.CGetNodeInfo(v).GetNodeId());
+   return get_initiation_time(fu_name, graph_node_info(op_graph, v).GetNodeId());
 }
 
 unsigned int AllocationInformation::get_initiation_time(const unsigned int fu_name,
@@ -707,7 +708,7 @@ bool AllocationInformation::is_operation_bounded(const OpGraph& g, OpGraph::vert
                                                  unsigned int fu_type) const
 {
    const technology_nodeRef node = get_fu(fu_type);
-   const auto op_string = ir_helper::NormalizeTypename(g.CGetNodeInfo(op).GetOperation());
+   const auto op_string = ir_helper::NormalizeTypename(graph_node_info(g, op).GetOperation());
    const functional_unit* fu = GetPointerS<functional_unit>(node);
    const technology_nodeRef op_node = fu->get_operation(op_string);
    THROW_ASSERT(GetPointer<operation>(op_node), "Op node is not an operation");
@@ -729,7 +730,7 @@ bool AllocationInformation::is_operation_PI_registered(const OpGraph& g, OpGraph
                                                        unsigned int fu_type) const
 {
    const technology_nodeRef node = get_fu(fu_type);
-   const auto op_string = ir_helper::NormalizeTypename(g.CGetNodeInfo(op).GetOperation());
+   const auto op_string = ir_helper::NormalizeTypename(graph_node_info(g, op).GetOperation());
    const functional_unit* fu = GetPointerS<functional_unit>(node);
    const technology_nodeRef op_node = fu->get_operation(op_string);
    THROW_ASSERT(GetPointer<operation>(op_node), "Op node is not an operation");
@@ -858,7 +859,7 @@ bool AllocationInformation::is_vertex_bounded(const unsigned int fu_name) const
 
 bool AllocationInformation::is_vertex_bounded_with(OpGraph::vertex_descriptor v, unsigned int& fu_name) const
 {
-   return is_vertex_bounded_with(op_graph.CGetNodeInfo(v).GetNodeId(), fu_name);
+   return is_vertex_bounded_with(graph_node_info(op_graph, v).GetNodeId(), fu_name);
 }
 
 bool AllocationInformation::is_vertex_bounded_with(const unsigned int v, unsigned int& fu_name) const
@@ -946,7 +947,7 @@ bool AllocationInformation::has_to_be_synthetized(const unsigned int fu_name) co
 double AllocationInformation::get_stage_period(const unsigned int fu_name, OpGraph::vertex_descriptor v,
                                                const OpGraph& g) const
 {
-   return get_stage_period(fu_name, g.CGetNodeInfo(v).GetNodeId());
+   return get_stage_period(fu_name, graph_node_info(g, v).GetNodeId());
 }
 
 double AllocationInformation::get_stage_period(const unsigned int fu_name, const unsigned int v) const
@@ -1020,7 +1021,7 @@ double AllocationInformation::estimate_muxNto1_area(unsigned long long fu_prec, 
 unsigned int AllocationInformation::get_cycles(const unsigned int fu_name, OpGraph::vertex_descriptor v,
                                                const OpGraph& g) const
 {
-   return get_cycles(fu_name, g.CGetNodeInfo(v).GetNodeId());
+   return get_cycles(fu_name, graph_node_info(g, v).GetNodeId());
 }
 
 unsigned int AllocationInformation::get_cycles(const unsigned int fu_name, const unsigned int v) const
@@ -1138,7 +1139,7 @@ void AllocationInformation::set_number_channels(unsigned int fu_name, unsigned i
 
 unsigned int AllocationInformation::max_number_of_resources(OpGraph::vertex_descriptor v) const
 {
-   const auto node_id = op_graph.CGetNodeInfo(v).GetNodeId();
+   const auto node_id = graph_node_info(op_graph, v).GetNodeId();
    if(node_id == ENTRY_ID)
    {
       return INFINITE_UINT;
@@ -1202,8 +1203,8 @@ void AllocationInformation::GetNodeTypePrec(OpGraph::vertex_descriptor node, con
       return;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Getting node type precision of " + g.CGetNodeInfo(node).vertex_name);
-   std::string current_op = ir_helper::NormalizeTypename(g.CGetNodeInfo(node).GetOperation());
+                  "-->Getting node type precision of " + graph_node_info(g, node).vertex_name);
+   std::string current_op = ir_helper::NormalizeTypename(graph_node_info(g, node).GetOperation());
 
    bool is_a_pointer = false;
    ir_nodeConstRef type;
@@ -1236,7 +1237,7 @@ void AllocationInformation::GetNodeTypePrec(OpGraph::vertex_descriptor node, con
       }
       if(id == 0 ||
          ((ir_helper::IsConstant(IRM->GetIRNode(id)) ||
-           ir_helper::is_concat_or_node(IRM, g.CGetNodeInfo(node).GetNodeId())) &&
+           ir_helper::is_concat_or_node(IRM, graph_node_info(g, node).GetNodeId())) &&
           !is_constrained && !is_second_constant && vars_read.size() != 1 && !no_constant_ops.count(current_op) &&
           (index == 1 || current_op != "lut_node" || current_op != "extract_bit_node")))
       {
@@ -1277,7 +1278,7 @@ void AllocationInformation::GetNodeTypePrec(OpGraph::vertex_descriptor node, con
          }
          else
          {
-            const auto& op_node = g.CGetNodeInfo(node).node;
+            const auto& op_node = graph_node_info(g, node).node;
             const auto form_par_type = ir_helper::GetFormalIth(op_node, index);
             const auto size_ir_var = ir_helper::Size(var_node);
             const auto size_form_par = form_par_type ? ir_helper::Size(form_par_type) : 0;
@@ -1664,7 +1665,7 @@ void AllocationInformation::GetNodeTypePrec(OpGraph::vertex_descriptor node, con
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "<--Got node type precision of " + g.CGetNodeInfo(node).vertex_name);
+                  "<--Got node type precision of " + graph_node_info(g, node).vertex_name);
 }
 
 unsigned int updatecopy_HLS_constraints_functor::operator()(const unsigned int name) const
@@ -1804,7 +1805,7 @@ technology_nodeRef AllocationInformation::get_fu(const std::string& fu_name, con
 
 unsigned int AllocationInformation::GetCycleLatency(OpGraph::vertex_descriptor operationID) const
 {
-   return GetCycleLatency(op_graph.CGetNodeInfo(operationID).GetNodeId());
+   return GetCycleLatency(graph_node_info(op_graph, operationID).GetNodeId());
 }
 
 unsigned int AllocationInformation::GetCycleLatency(const unsigned int operationID) const
@@ -1878,7 +1879,7 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(OpGraph::vertex_
                                                                 const unsigned int functional_unit,
                                                                 const unsigned int stage) const
 {
-   return GetTimeLatency(op_graph.CGetNodeInfo(operationID).GetNodeId(), functional_unit, stage);
+   return GetTimeLatency(graph_node_info(op_graph, operationID).GetNodeId(), functional_unit, stage);
 }
 
 std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned int operation_index,
@@ -2203,7 +2204,7 @@ double AllocationInformation::GetPhiConnectionLatency(const unsigned int stateme
 
 unsigned int AllocationInformation::GetFuType(OpGraph::vertex_descriptor operation) const
 {
-   return GetFuType(op_graph.CGetNodeInfo(operation).GetNodeId());
+   return GetFuType(graph_node_info(op_graph, operation).GetNodeId());
 }
 
 unsigned int AllocationInformation::GetFuType(const unsigned int operation) const
@@ -2275,7 +2276,7 @@ double AllocationInformation::EstimateControllerDelay() const
       return 0.0;
    }
    size_t n_states =
-       hls_manager->CGetFunctionBehavior(function_index)->GetBBGraph(FunctionBehavior::BB).num_vertices() +
+       graph_num_vertices(hls_manager->CGetFunctionBehavior(function_index)->GetBBGraph(FunctionBehavior::BB)) +
        get_n_complex_operations();
    double n_states_factor = static_cast<double>(n_states) / NUM_CST_allocation_default_states_number_normalization_BB;
    if(hls->fsm_info &&
@@ -2911,8 +2912,8 @@ double AllocationInformation::GetClockPeriodMargin() const
 double AllocationInformation::GetConnectionTime(OpGraph::vertex_descriptor first_operation,
                                                 OpGraph::vertex_descriptor second_operation, bool readP) const
 {
-   const auto first_operation_index = op_graph.CGetNodeInfo(first_operation).GetNodeId();
-   const auto second_operation_index = second_operation ? op_graph.CGetNodeInfo(second_operation).GetNodeId() : 0;
+   const auto first_operation_index = graph_node_info(op_graph, first_operation).GetNodeId();
+   const auto second_operation_index = second_operation ? graph_node_info(op_graph, second_operation).GetNodeId() : 0;
    return GetConnectionTime(first_operation_index, second_operation_index, readP);
 }
 
@@ -3313,8 +3314,8 @@ bool AllocationInformation::CanBeMerged(const unsigned int first_operation, cons
 bool AllocationInformation::CanBeChained(OpGraph::vertex_descriptor first_statement,
                                          OpGraph::vertex_descriptor second_statement) const
 {
-   const auto first_statement_index = op_graph.CGetNodeInfo(first_statement).GetNodeId();
-   const auto second_statement_index = op_graph.CGetNodeInfo(second_statement).GetNodeId();
+   const auto first_statement_index = graph_node_info(op_graph, first_statement).GetNodeId();
+   const auto second_statement_index = graph_node_info(op_graph, second_statement).GetNodeId();
    const auto ret = CanBeChained(first_statement_index, second_statement_index);
    return ret;
 }

@@ -46,6 +46,8 @@
 #include "FSMInfo.hpp"
 #include "conn_binding.hpp"
 #include "generic_obj.hpp"
+#include "graph_facade.hpp"
+#include "op_graph.hpp"
 #include "refcount.hpp"
 
 #include <utility>
@@ -72,7 +74,7 @@ class commandport_obj : public generic_obj
       WRENABLE                /// enable for register writing
    };
 
-   using data_operation_pair = std::pair<unsigned int, gc_vertex_descriptor>;
+   using data_operation_pair = std::pair<unsigned int, OpGraph::vertex_descriptor>;
    /// describe a transition from a source state to the target state plus the ir_node of the data transferred and the
    /// operation vertex where the computation is performed
    using transition = std::tuple<FSMInfo::state_descriptor, FSMInfo::state_descriptor, data_operation_pair>;
@@ -81,7 +83,7 @@ class commandport_obj : public generic_obj
    /// TODO: substitute with a functor
    /// operation vertex associated with the command port signal (if type is condition or operation) or
    /// state vertex associated with the command port signal
-   gc_vertex_descriptor signal;
+   OpGraph::vertex_descriptor signal;
 
    generic_objRef elem;
 
@@ -100,7 +102,7 @@ class commandport_obj : public generic_obj
     * @param _mode is command type
     * @param _name is the port name
     */
-   commandport_obj(gc_vertex_descriptor signal_, unsigned int _mode, const std::string& _name)
+   commandport_obj(OpGraph::vertex_descriptor signal_, unsigned int _mode, const std::string& _name)
        : generic_obj(COMMAND_PORT, _name), signal(signal_), mode(_mode)
    {
       THROW_ASSERT(mode == OPERATION or mode == MULTIIF or mode == UNBOUNDED,
@@ -108,7 +110,7 @@ class commandport_obj : public generic_obj
    }
 
    commandport_obj(generic_objRef _elem, unsigned int _mode, const std::string& _name)
-       : generic_obj(COMMAND_PORT, _name), signal(gc_null_vertex()), elem(_elem), mode(_mode)
+       : generic_obj(COMMAND_PORT, _name), signal(graph_null_vertex<OpGraph>()), elem(_elem), mode(_mode)
    {
       THROW_ASSERT(mode == SELECTOR || mode == WRENABLE || mode == MULTI_UNBOUNDED or mode == MULTI_UNBOUNDED_ENABLE,
                    "Selector port is wrong");
@@ -118,7 +120,7 @@ class commandport_obj : public generic_obj
     * Gets the vertex associated with port
     * @return reference to vertex
     */
-   gc_vertex_descriptor get_vertex() const
+   OpGraph::vertex_descriptor get_vertex() const
    {
       THROW_ASSERT(mode == OPERATION || mode == MULTIIF || mode == UNBOUNDED, "Command mode not allowed");
       return signal;

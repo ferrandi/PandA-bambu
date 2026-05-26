@@ -52,7 +52,7 @@ TestbenchNoneHDLGenerator::TestbenchNoneHDLGenerator(const HLS_managerRef& _HLSM
 }
 
 void TestbenchNoneHDLGenerator::InternalExec(std::ostream& out, structural_objectRef mod_cir, unsigned int function_id,
-                                             gc_vertex_descriptor /* op_v */, const HDLWriter_Language language,
+                                             OpGraph::vertex_descriptor /* op_v */, const HDLWriter_Language language,
                                              const std::vector<HDLGenerator::parameter>& /* _p */,
                                              const std::vector<HDLGenerator::parameter>& /* _ports_in */,
                                              const std::vector<HDLGenerator::parameter>& /* _ports_out */,

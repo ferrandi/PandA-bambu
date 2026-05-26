@@ -41,6 +41,7 @@
 
 #include "basic_block.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "op_graph.hpp"
 
 SDCScheduling_base::SDCScheduling_base(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
@@ -55,7 +56,7 @@ SDCScheduling_base::SDCScheduling_base(const ParameterConstRef _parameters, cons
 SDCSorter::SDCSorter(const FunctionBehaviorConstRef _function_behavior, const OpGraph& _op_graph)
     : function_behavior(_function_behavior),
       op_graph(_op_graph),
-      bb_index_map(_function_behavior->GetBBGraph(FunctionBehavior::BB).GetGraphInfo().bb_index_map)
+      bb_index_map(graph_graph_info(_function_behavior->GetBBGraph(FunctionBehavior::BB)).bb_index_map)
 {
 }
 
@@ -67,8 +68,8 @@ bool SDCSorter::operator()(OpGraph::vertex_descriptor x, OpGraph::vertex_descrip
    {
       return cached->second;
    }
-   const auto first_bb_index = op_graph.CGetNodeInfo(x).bb_index;
-   const auto second_bb_index = op_graph.CGetNodeInfo(y).bb_index;
+   const auto first_bb_index = graph_node_info(op_graph, x).bb_index;
+   const auto second_bb_index = graph_node_info(op_graph, y).bb_index;
    bool result = false;
    if(first_bb_index != second_bb_index)
    {

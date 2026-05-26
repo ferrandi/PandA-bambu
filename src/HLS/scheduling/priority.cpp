@@ -40,6 +40,7 @@
 #include "priority.hpp"
 
 #include "ASLAP.hpp"
+#include "graph_facade.hpp"
 #include "op_graph.hpp"
 #include "schedule.hpp"
 
@@ -49,7 +50,7 @@ priority_static_mobility::priority_static_mobility(const ASLAP& aslap)
    const auto& alap = aslap.CGetALAP();
 
    const auto& data = aslap.CGetOpGraph();
-   for(const auto v : data.vertices())
+   for(const auto v : graph_vertices(data))
    {
       if(!asap.is_scheduled(v))
       {
@@ -68,7 +69,7 @@ priority_dynamic_mobility::priority_dynamic_mobility(const ASLAP& aslap, const O
    const auto& alap = aslap.CGetALAP();
 
    const auto& data = aslap.CGetOpGraph();
-   for(const auto v : data.vertices())
+   for(const auto v : graph_vertices(data))
    {
       if(!asap.is_scheduled(v))
       {

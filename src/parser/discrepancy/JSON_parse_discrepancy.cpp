@@ -40,6 +40,7 @@
 #include "UnfoldedCallGraph.hpp"
 #include "exceptions.hpp"
 #include "fileIO.hpp"
+#include "graph_facade.hpp"
 #include "string_manipulation.hpp"
 
 #include <glaze/glaze.hpp>
@@ -166,12 +167,12 @@ void JSON_parse_discrepancy(const std::string& c_trace_filename, DiscrepancyRef 
 #if HAVE_ASSERTS
                bool found = false;
 #endif
-               for(const auto& oe : ufcg.out_edges(vertex_stack.top()))
+               for(const auto& oe : graph_out_edges(ufcg, vertex_stack.top()))
                {
-                  if(ufcg.CGetEdgeInfo(oe).call_id == call_id)
+                  if(graph_edge_info(ufcg, oe).call_id == call_id)
                   {
-                     auto tgt = ufcg.target(oe);
-                     if(ufcg.CGetNodeInfo(tgt).f_id == called_id)
+                     auto tgt = graph_target(ufcg, oe);
+                     if(graph_node_info(ufcg, tgt).f_id == called_id)
                      {
                         vertex_stack.push(tgt);
 #if HAVE_ASSERTS
@@ -187,7 +188,7 @@ void JSON_parse_discrepancy(const std::string& c_trace_filename, DiscrepancyRef 
             THROW_ASSERT(Discrepancy->unfolded_v_to_scope.find(vertex_stack.top()) !=
                              Discrepancy->unfolded_v_to_scope.end(),
                          std::string("can't find scope for new vertex ") +
-                             STR(Discrepancy->DiscrepancyCallGraph.CGetNodeInfo(vertex_stack.top()).f_id));
+                             STR(graph_node_info(Discrepancy->DiscrepancyCallGraph, vertex_stack.top()).f_id));
             Discrepancy->context_to_scope[new_context] = Discrepancy->unfolded_v_to_scope.at(vertex_stack.top());
 
             for(const auto& entry : event.addr_table)
@@ -221,7 +222,7 @@ void JSON_parse_discrepancy(const std::string& c_trace_filename, DiscrepancyRef 
             {
                THROW_ERROR("malformed call stack trace");
             }
-            const auto fsm_fun_id = Discrepancy->DiscrepancyCallGraph.CGetNodeInfo(vertex_stack.top()).f_id;
+            const auto fsm_fun_id = graph_node_info(Discrepancy->DiscrepancyCallGraph, vertex_stack.top()).f_id;
             Discrepancy->c_control_flow_trace[fsm_fun_id][context_stack.top()].emplace_back(event.bb.value());
          }
          else if(event.type == "op_trace")

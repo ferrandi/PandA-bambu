@@ -45,6 +45,7 @@
 #include "BambuParameter.hpp"
 #include "application_manager.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls_manager.hpp"
 #include "ir_helper.hpp"
 #include "ir_manager.hpp"
@@ -70,7 +71,8 @@ void BuiltinWaitCallNHDLGenerator::InternalExec(std::ostream& out, structural_ob
       THROW_ASSERT(function_id && op_v, "");
       const auto FB = HLSMgr->CGetFunctionBehavior(function_id);
       const auto TM = HLSMgr->get_ir_manager();
-      const auto call_tn = TM->GetIRNode(FB->GetOpGraph(FunctionBehavior::CFG).CGetNodeInfo(op_v).GetNodeId());
+      const auto cfg = FB->GetOpGraph(FunctionBehavior::CFG);
+      const auto call_tn = TM->GetIRNode(graph_node_info(cfg, op_v).GetNodeId());
       THROW_ASSERT(call_tn && call_tn->get_kind() == call_stmt_K, "Expected call_stmt.");
       const auto gc = GetPointerS<const call_stmt>(call_tn);
       THROW_ASSERT(gc->args.size() >= 2, "Expected at least two arguments for the builtin wait call.");

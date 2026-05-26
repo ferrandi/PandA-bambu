@@ -47,6 +47,7 @@
 #include "fu_binding.hpp"
 #include "function_behavior.hpp"
 #include "graph.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "op_graph.hpp"
 #include "schedule.hpp"
@@ -65,7 +66,7 @@ DesignFlowStep_Status unique_binding::InternalExec()
 
    std::map<unsigned int, CustomOrderedSet<unsigned int>> black_list;
    std::map<unsigned int, std::list<std::pair<std::string, OpGraph::vertex_descriptor>>> fu_ops;
-   for(const auto v : data.vertices())
+   for(const auto v : graph_vertices(data))
    {
       unsigned int fu = HLS->Rfu->get_assign(v);
       if(HLS->Rfu->get_index(v) != INFINITE_UINT)
@@ -78,7 +79,7 @@ DesignFlowStep_Status unique_binding::InternalExec()
       }
       else
       {
-         fu_ops[fu].push_back(std::make_pair(data.CGetNodeInfo(v).vertex_name, v));
+         fu_ops[fu].push_back(std::make_pair(graph_node_info(data, v).vertex_name, v));
       }
       black_list.insert(std::make_pair(fu, CustomOrderedSet<unsigned int>()));
    }

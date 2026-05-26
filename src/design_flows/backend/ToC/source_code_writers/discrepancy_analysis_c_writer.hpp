@@ -66,13 +66,13 @@ class DiscrepancyAnalysisCWriter : public HLSCWriter
     * Write extra information on the given statement vertex, before the
     * statement itself
     */
-   void writePreInstructionInfo(const FunctionBehaviorConstRef FB, gc_vertex_descriptor statement) override;
+   void writePreInstructionInfo(const FunctionBehaviorConstRef FB, OpGraph::vertex_descriptor statement) override;
 
    /**
     * Write extra information on the given statement vertex, after the
     * statement itself
     */
-   void writePostInstructionInfo(const FunctionBehaviorConstRef fun_behavior, gc_vertex_descriptor) override;
+   void writePostInstructionInfo(const FunctionBehaviorConstRef fun_behavior, OpGraph::vertex_descriptor) override;
 
    /**
     * Write function implementation

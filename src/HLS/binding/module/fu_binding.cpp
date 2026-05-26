@@ -54,6 +54,7 @@
 #include "function_behavior.hpp"
 #include "functions.hpp"
 #include "funit_obj.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
@@ -67,6 +68,7 @@
 #include "memory_allocation.hpp"
 #include "memory_symbol.hpp"
 #include "omp_fork_fu_binding.hpp"
+#include "op_graph.hpp"
 #include "reg_binding.hpp"
 #include "string_manipulation.hpp"
 #include "structural_manager.hpp"
@@ -259,7 +261,7 @@ void fu_binding::bind(OpGraph::vertex_descriptor v, unsigned int unit, unsigned 
       unique_table[key] =
           generic_objRef(new funit_obj(allocation_information->get_string_name(unit) + "_i" + STR(index), unit, index));
    }
-   const auto statement_index = op_graph.CGetNodeInfo(v).GetNodeId();
+   const auto statement_index = graph_node_info(op_graph, v).GetNodeId();
    op_binding[statement_index] = unique_table[key];
    if(!operations.count(key))
    {
@@ -283,14 +285,14 @@ OpVertexSet fu_binding::get_operations(unsigned int unit, unsigned int index) co
 
 const funit_obj& fu_binding::operator[](OpGraph::vertex_descriptor v)
 {
-   const auto statement_index = op_graph.CGetNodeInfo(v).GetNodeId();
+   const auto statement_index = graph_node_info(op_graph, v).GetNodeId();
    THROW_ASSERT(op_binding.count(statement_index), "vertex not preset");
    return *(GetPointer<funit_obj>(op_binding.at(statement_index)));
 }
 
 bool fu_binding::is_assigned(OpGraph::vertex_descriptor v) const
 {
-   const auto statement_index = op_graph.CGetNodeInfo(v).GetNodeId();
+   const auto statement_index = graph_node_info(op_graph, v).GetNodeId();
    return is_assigned(statement_index);
 }
 
@@ -327,7 +329,7 @@ void fu_binding::reset_allocation(unsigned int unit)
 
 unsigned int fu_binding::get_assign(OpGraph::vertex_descriptor v) const
 {
-   const auto statement_index = op_graph.CGetNodeInfo(v).GetNodeId();
+   const auto statement_index = graph_node_info(op_graph, v).GetNodeId();
    return get_assign(statement_index);
 }
 
@@ -346,7 +348,7 @@ std::string fu_binding::get_fu_name(OpGraph::vertex_descriptor v) const
 
 unsigned int fu_binding::get_index(OpGraph::vertex_descriptor v) const
 {
-   const auto statement_index = op_graph.CGetNodeInfo(v).GetNodeId();
+   const auto statement_index = graph_node_info(op_graph, v).GetNodeId();
    return GetPointer<funit_obj>(op_binding.at(statement_index))->get_index();
 }
 
@@ -401,7 +403,7 @@ structural_objectRef fu_binding::add_gate(const HLS_managerRef HLSMgr, const hls
    curr_lib_instance->copy(curr_gate);
    if(ops.size() == 1)
    {
-      curr_gate->set_id("fu_" + data.CGetNodeInfo(*(ops.begin())).vertex_name);
+      curr_gate->set_id("fu_" + graph_node_info(data, *(ops.begin())).vertex_name);
    }
    else
    {
@@ -1053,13 +1055,13 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             if(mapped_operations.size())
             {
                current_op =
-                   ir_helper::NormalizeTypename(op_graph.CGetNodeInfo(*(mapped_operations.begin())).GetOperation());
+                   ir_helper::NormalizeTypename(graph_node_info(op_graph, *(mapped_operations.begin())).GetOperation());
             }
             if(current_op == BUILTIN_WAIT_CALL)
             {
                has_resource_sharing_p = true;
                const auto site = *mapped_operations.begin();
-               const auto vertex_node_id = op_graph.CGetNodeInfo(site).GetNodeId();
+               const auto vertex_node_id = graph_node_info(op_graph, site).GetNodeId();
 
                const auto callSiteMemorySym = HLSMgr->Rmem->get_symbol(vertex_node_id, HLS->functionId);
                memory::add_memory_parameter(HLS->datapath, callSiteMemorySym->get_symbol_name(),
@@ -1253,7 +1255,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                const auto& specialized_fuName = fu_name;
 
                const auto check_lib = TechM->get_library(specialized_fuName);
-               modGen->create_generic_module(FUName, gc_null_vertex(), FB, UPlibrary, specialized_fuName);
+               modGen->create_generic_module(FUName, OpGraph::null_vertex(), FB, UPlibrary, specialized_fuName);
             }
             const auto FU = SM->add_module_from_technology_library(fu_name + "_i0", fu_name, UPlibrary, circuit, TechM);
             if(std::find(memory_modules.begin(), memory_modules.end(), FU) == memory_modules.end())
@@ -1999,7 +2001,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
          const auto data = FB->GetOpGraph(FunctionBehavior::CFG);
          for(const auto& mapped_operation : mapped_operations)
          {
-            const auto& op_info = data.CGetNodeInfo(mapped_operation);
+            const auto& op_info = graph_node_info(data, mapped_operation);
             PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                           "  on BRAM = " + op_info.GetOperation() + " " + op_info.vertex_name);
             const auto vars = HLSMgr->get_required_values(HLS->functionId, mapped_operation);
@@ -2058,7 +2060,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
 
       for(const auto& mapped_operation : mapped_operations)
       {
-         const auto& op_info = data.CGetNodeInfo(mapped_operation);
+         const auto& op_info = graph_node_info(data, mapped_operation);
          const auto vars = HLSMgr->get_required_values(HLS->functionId, mapped_operation);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                         "---Considering operation " +
@@ -3258,7 +3260,7 @@ void fu_binding::set_ports_are_swapped(OpGraph::vertex_descriptor v, bool condit
 
 generic_objRef fu_binding::get(OpGraph::vertex_descriptor v) const
 {
-   const auto statement_index = op_graph.CGetNodeInfo(v).GetNodeId();
+   const auto statement_index = graph_node_info(op_graph, v).GetNodeId();
    return op_binding.at(statement_index);
 }
 

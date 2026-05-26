@@ -45,11 +45,6 @@
 #include "exceptions.hpp"
 #include "hls.hpp"
 
-#include <boost/graph/incremental_components.hpp>
-#include <boost/graph/properties.hpp>
-#include <boost/pending/disjoint_sets.hpp>
-#include <boost/property_map/property_map.hpp>
-
 chaining::chaining(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
                    const DesignFlowManager& _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
     : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)

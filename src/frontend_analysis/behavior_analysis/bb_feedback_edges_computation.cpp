@@ -47,6 +47,7 @@
 #include "behavioral_helper.hpp"
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hash_helper.hpp"
 #include "ir_basic_block.hpp"
 #include "loop.hpp"
@@ -102,8 +103,8 @@ DesignFlowStep_Status bb_feedback_edges_computation::InternalExec()
       for(auto [from_bb, to_bb] : loop->getBackEdges())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Transforming " + STR(fbb.CGetNodeInfo(from_bb).block->number) + "->" +
-                            STR(fbb.CGetNodeInfo(to_bb).block->number));
+                        "---Transforming " + STR(graph_node_info(fbb, from_bb).block->number) + "->" +
+                            STR(graph_node_info(fbb, to_bb).block->number));
          function_behavior->bbgc->RemoveEdge(from_bb, to_bb, CFG_SELECTOR);
          function_behavior->bbgc->AddEdge(from_bb, to_bb, FB_CFG_SELECTOR);
       }
@@ -120,7 +121,7 @@ DesignFlowStep_Status bb_feedback_edges_computation::InternalExec()
    {
       const auto cfg_graph = function_behavior->GetBBGraph(FunctionBehavior::BB);
       std::list<BBGraph::vertex_descriptor> vertices;
-      cfg_graph.TopologicalSort(vertices);
+      graph_topological_sort(cfg_graph, vertices);
    }
    catch(...)
    {

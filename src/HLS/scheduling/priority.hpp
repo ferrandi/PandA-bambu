@@ -86,7 +86,7 @@ struct priority_data
 
  private:
    /// data structure storing the priority values.
-   vertex2obj<dataType> priority_values;
+   vertex2obj<dataType, OpGraph::vertex_descriptor> priority_values;
 };
 
 /**

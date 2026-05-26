@@ -43,7 +43,7 @@
 #include "function_frontend_flow_step.hpp"
 
 #include "custom_set.hpp"
-#include "graph.hpp"
+#include "op_graph.hpp"
 
 /// Forward declaration
 enum class VariableAccessType;
@@ -70,7 +70,7 @@ class DataDependenceComputation : public FunctionFrontendFlowStep
     * @param statement is the statement to be considered
     * @param variable_access_type is the type of accesses to be considered
     */
-   CustomSet<unsigned int> getVariables(gc_vertex_descriptor statement,
+   CustomSet<unsigned int> getVariables(OpGraph::vertex_descriptor statement,
                                         const VariableAccessType variable_access_type) const;
 
  public:

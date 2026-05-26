@@ -42,7 +42,7 @@
 #ifndef INSTRUCTION_WRITER_HPP
 #define INSTRUCTION_WRITER_HPP
 
-#include "graph.hpp"
+#include "op_graph.hpp"
 #include "refcount.hpp"
 
 #include <fstream>
@@ -60,6 +60,8 @@ class simple_indent;
 class InstructionWriter
 {
  protected:
+   using operation_vertex_descriptor = OpGraph::vertex_descriptor;
+
    /// The application manager
    const application_managerConstRef AppM;
 
@@ -95,7 +97,7 @@ class InstructionWriter
     * @param statement is the statement to be printed
     * @param varFunctor is the variable functor
     */
-   virtual void write(const FunctionBehaviorConstRef function_behavior, gc_vertex_descriptor statement,
+   virtual void write(const FunctionBehaviorConstRef function_behavior, operation_vertex_descriptor statement,
                       const std::unique_ptr<var_pp_functor>& varFunctor);
 
    /**

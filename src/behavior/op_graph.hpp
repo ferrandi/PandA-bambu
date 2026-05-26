@@ -44,11 +44,10 @@
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "graph.hpp"
+#include "graph_facade.hpp"
 #include "graph_info.hpp"
 #include "refcount.hpp"
 #include "typed_node_info.hpp"
-
-#include <boost/graph/graph_traits.hpp>
 
 #include <iosfwd>
 #include <limits>
@@ -433,22 +432,26 @@ struct OpEdgeInfo : public CdfgEdgeInfo
 /**
  * information associated with the whole graph
  */
+using OpGraphStoragePolicy = append_only_vec_graph_storage;
+using OpGraphVertexDescriptor = graph_storage_traits<OpGraphStoragePolicy>::vertex_descriptor;
+using OpGraphEdgeDescriptor = graph_storage_traits<OpGraphStoragePolicy>::edge_descriptor;
+
 struct OpGraphInfo : public GraphInfo
 {
    /// Index identifying the entry vertex
-   gc_vertex_descriptor entry_vertex{gc_null_vertex()};
+   OpGraphVertexDescriptor entry_vertex{graph_storage_traits<OpGraphStoragePolicy>::null_vertex()};
 
    /// Index identifying the exit vertex
-   gc_vertex_descriptor exit_vertex{gc_null_vertex()};
+   OpGraphVertexDescriptor exit_vertex{graph_storage_traits<OpGraphStoragePolicy>::null_vertex()};
 
    /// The behavioral helper
    BehavioralHelperConstRef BH{nullptr};
 
    /// For each statement, the vertex in which it is contained
-   CustomMap<unsigned int, gc_vertex_descriptor> ir_node_to_operation;
+   CustomMap<unsigned int, OpGraphVertexDescriptor> ir_node_to_operation;
 
    /// For each ssa var, the vertex defining it
-   CustomMap<unsigned int, gc_vertex_descriptor> SSA2Def;
+   CustomMap<unsigned int, OpGraphVertexDescriptor> SSA2Def;
 
    OpGraphInfo() = default;
 
@@ -467,7 +470,7 @@ struct OpGraphInfo : public GraphInfo
 /**
  * A set of operation vertices
  */
-class OpVertexSet : public CustomUnorderedSet<gc_vertex_descriptor>
+class OpVertexSet : public CustomUnorderedSet<OpGraphVertexDescriptor>
 {
  public:
    explicit OpVertexSet(const OpGraphsCollection* op_graph);
@@ -477,15 +480,15 @@ class OpVertexSet : public CustomUnorderedSet<gc_vertex_descriptor>
  * Map from operation vertices to value
  */
 template <typename value>
-class OpVertexMap : public CustomUnorderedMap<gc_vertex_descriptor, value>
+class OpVertexMap : public CustomUnorderedMap<OpGraphVertexDescriptor, value>
 {
  public:
-   explicit OpVertexMap(const OpGraphsCollection*) : CustomUnorderedMap<gc_vertex_descriptor, value>()
+   explicit OpVertexMap(const OpGraphsCollection*) : CustomUnorderedMap<OpGraphVertexDescriptor, value>()
    {
    }
 };
 
-class OpEdgeSet : public CustomUnorderedSet<gc_edge_descriptor>
+class OpEdgeSet : public CustomUnorderedSet<OpGraphEdgeDescriptor>
 {
  public:
    explicit OpEdgeSet(const OpGraphsCollection* op_graph);
@@ -510,13 +513,13 @@ class OpVertexSorter
     * @param y is the second step
     * @return true if x is necessary and y is unnecessary
     */
-   bool operator()(gc_vertex_descriptor x, gc_vertex_descriptor y) const;
+   bool operator()(OpGraphVertexDescriptor x, OpGraphVertexDescriptor y) const;
 };
 
 /**
  * A set of operation vertices
  */
-class OpVertexSet : public std::set<gc_vertex_descriptor, OpVertexSorter>
+class OpVertexSet : public std::set<OpGraphVertexDescriptor, OpVertexSorter>
 {
  public:
    explicit OpVertexSet(const OpGraphsCollection* op_graph);
@@ -526,11 +529,11 @@ class OpVertexSet : public std::set<gc_vertex_descriptor, OpVertexSorter>
  * Map from operation vertices to value
  */
 template <typename value>
-class OpVertexMap : public std::map<gc_vertex_descriptor, value, OpVertexSorter>
+class OpVertexMap : public std::map<OpGraphVertexDescriptor, value, OpVertexSorter>
 {
  public:
    explicit OpVertexMap(const OpGraphsCollection* op_graph)
-       : std::map<gc_vertex_descriptor, value, OpVertexSorter>(OpVertexSorter(op_graph))
+       : std::map<OpGraphVertexDescriptor, value, OpVertexSorter>(OpVertexSorter(op_graph))
    {
    }
 };
@@ -555,10 +558,10 @@ class OpEdgeSorter
     * @param y is the second edge
     * @return true if x < y
     */
-   bool operator()(const gc_edge_descriptor& x, const gc_edge_descriptor& y) const;
+   bool operator()(const OpGraphEdgeDescriptor& x, const OpGraphEdgeDescriptor& y) const;
 };
 
-class OpEdgeSet : public std::set<gc_edge_descriptor, OpEdgeSorter>
+class OpEdgeSet : public std::set<OpGraphEdgeDescriptor, OpEdgeSorter>
 {
  public:
    explicit OpEdgeSet(const OpGraphsCollection* op_graph);
@@ -568,7 +571,9 @@ class OpEdgeSet : public std::set<gc_edge_descriptor, OpEdgeSorter>
 /**
  * This structure defines graphs where nodes are operations
  */
-class OpGraphsCollection : public graphs_collection<OpNodeInfo, OpEdgeInfo, OpGraphInfo>
+using OpGraphsCollectionBase = graphs_collection<OpNodeInfo, OpEdgeInfo, OpGraphInfo, OpGraphStoragePolicy>;
+
+class OpGraphsCollection : public OpGraphsCollectionBase
 {
  protected:
    /// The set of operations
@@ -587,7 +592,15 @@ class OpGraphsCollection : public graphs_collection<OpNodeInfo, OpEdgeInfo, OpGr
     * Remove a vertex from this graph
     * @param v is the vertex to be removed
     */
-   void RemoveVertex(vertex_descriptor v) override;
+   template <typename = void>
+   void RemoveVertex(vertex_descriptor v) requires is_mutable_storage_policy_v<OpGraphStoragePolicy>
+   {
+      operations.erase(v);
+      OpGraphsCollectionBase::RemoveVertex(v);
+   }
+
+   template <typename = void>
+   void RemoveVertex(vertex_descriptor v) requires(!is_mutable_storage_policy_v<OpGraphStoragePolicy>) = delete;
 
    /**
     * Return the vertices belonging to the graph
@@ -664,7 +677,7 @@ struct OpGraph : public graph<OpGraphsCollection>
     * @param v is the vertex
     */
 #if HAVE_UNORDERED
-   boost::iterator_range<InEdgeIterator> CGetInEdges(vertex_descriptor v) const;
+   graph_iterator_range<InEdgeIterator> CGetInEdges(vertex_descriptor v) const;
 #else
    OpEdgeSet CGetInEdges(vertex_descriptor v) const;
 #endif
@@ -674,7 +687,7 @@ struct OpGraph : public graph<OpGraphsCollection>
     * @param v is the vertex
     */
 #if HAVE_UNORDERED
-   boost::iterator_range<OutEdgeIterator> CGetOutEdges(vertex_descriptor v) const;
+   graph_iterator_range<OutEdgeIterator> CGetOutEdges(vertex_descriptor v) const;
 #else
    OpEdgeSet CGetOutEdges(vertex_descriptor v) const;
 #endif

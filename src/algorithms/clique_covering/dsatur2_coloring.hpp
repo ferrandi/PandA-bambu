@@ -47,18 +47,14 @@
 #define DSATUR2_COLORING_HPP
 
 #include <boost/config.hpp>
-#include <boost/graph/properties.hpp>
 #include <boost/version.hpp>
 #if BOOST_VERSION >= 104000
 #include <boost/property_map/property_map.hpp>
 #else
 #include <boost/property_map.hpp>
 #endif
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/visitors.hpp>
+#include "graph_facade.hpp"
 #include <boost/limits.hpp>
-#include <boost/tuple/tuple.hpp>
 #if BOOST_VERSION >= 106400
 #include <boost/serialization/array_wrapper.hpp>
 #endif
@@ -144,8 +140,8 @@ namespace boost
          heap_container = new size_type[_num_node];
          for(i = 0; i < num_node; i++)
          {
-            Vertex v = boost::vertex(i, G);
-            DegreeCount[i] = static_cast<size_type>(out_degree(v, _G));
+            Vertex v = ::graph_vertex(G, i);
+            DegreeCount[i] = static_cast<size_type>(::graph_out_degree(_G, v));
             heap_container[iheap] = i;
             iheap++;
          }
@@ -161,11 +157,10 @@ namespace boost
       void AssignColor(size_type node, size_type color)
       {
          size_type node1;
-         put(CM, boost::vertex(node, G), color);
-         typename GraphTraits::adjacency_iterator v, vend;
-         for(boost::tie(v, vend) = adjacent_vertices(boost::vertex(node, G), G); v != vend; ++v)
+         put(CM, ::graph_vertex(G, node), color);
+         for(const auto& v : ::graph_adjacent_vertices(G, ::graph_vertex(G, node)))
          {
-            node1 = static_cast<size_type>(get(vertex_index, G, *v));
+            node1 = static_cast<size_type>(::graph_vertex_index(G, v));
             if(!ColorAdj(node1, color))
             {
                ColorCount[node1]++;
@@ -202,7 +197,7 @@ namespace boost
             }
             /// not able to color so we have to increase the maximum color available
             max_color++;
-            put(CM, boost::vertex(v, G), max_color);
+            put(CM, ::graph_vertex(G, v), max_color);
             AssignColor(v, max_color);
          }
          return max_color + 1;
@@ -217,7 +212,7 @@ namespace boost
    {
       using size_type = typename property_traits<ColorMap>::value_type;
 
-      const auto num_node = static_cast<size_type>(num_vertices(G));
+      const auto num_node = static_cast<size_type>(::graph_num_vertices(G));
       if(num_node == 0)
       {
          return 0;

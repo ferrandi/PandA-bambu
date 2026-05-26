@@ -44,16 +44,15 @@
 #ifndef CWRITER_HPP
 #define CWRITER_HPP
 
+#include "basic_block.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include "graph.hpp"
 #include "refcount.hpp"
 
 #include <deque>
 #include <list>
 #include <vector>
 
-class BBGraph;
 class BBNodeInfo;
 class OpVertexSet;
 class instrumented_call_instr_writer;
@@ -98,6 +97,10 @@ class CWriter
    void WriteImplementations();
 
  protected:
+   using basic_block_vertex_descriptor = BBGraphVertexDescriptor;
+   using basic_block_edge_descriptor = BBGraph::edge_descriptor;
+   using operation_vertex_descriptor = OpGraph::vertex_descriptor;
+
    /// the hls manager
    const HLS_managerConstRef HLSMgr;
 
@@ -144,13 +147,13 @@ class CWriter
    std::map<unsigned int, std::string> basic_block_tail;
 
    /// renaming table used by phi node destruction procedure
-   std::map<gc_vertex_descriptor, std::map<unsigned int, std::string>> renaming_table;
+   std::map<basic_block_vertex_descriptor, std::map<unsigned int, std::string>> renaming_table;
 
-   CustomOrderedSet<gc_vertex_descriptor> bb_frontier;
-   CustomOrderedSet<gc_vertex_descriptor> bb_analyzed;
+   CustomOrderedSet<basic_block_vertex_descriptor> bb_frontier;
+   CustomOrderedSet<basic_block_vertex_descriptor> bb_analyzed;
    std::map<unsigned int, std::string> basic_blocks_labels;
-   CustomOrderedSet<gc_vertex_descriptor> goto_list;
-   CustomOrderedSet<gc_vertex_descriptor> local_rec_instructions;
+   CustomOrderedSet<basic_block_vertex_descriptor> goto_list;
+   CustomOrderedSet<operation_vertex_descriptor> local_rec_instructions;
 
    std::vector<std::string> additionalIncludes;
    CustomOrderedSet<std::string> writtenIncludes;
@@ -173,7 +176,7 @@ class CWriter
     * @param bracket tells if bracket should be added before and after this basic block
     * @param variableFunctor is the functor used to print variables inside the generated code
     */
-   void writeRoutineInstructions_rec(unsigned fid, gc_vertex_descriptor current_vertex, bool bracket,
+   void writeRoutineInstructions_rec(unsigned fid, basic_block_vertex_descriptor current_vertex, bool bracket,
                                      const std::unique_ptr<var_pp_functor>& variableFunctor);
 
    /**
@@ -189,7 +192,7 @@ class CWriter
     *   "Practical Improvements to the Construction and Destruction of Static Single Assignment Form",
     *   Software -- Practice and Experience 1998
     */
-   void insert_copies(gc_vertex_descriptor b, const BBGraph& bb_domGraph, const BBGraph& bb_fcfgGraph,
+   void insert_copies(basic_block_vertex_descriptor b, const BBGraph& bb_domGraph, const BBGraph& bb_fcfgGraph,
                       const std::unique_ptr<var_pp_functor>& variableFunctor,
                       const CustomSet<unsigned int>& phi_instructions,
                       std::map<unsigned int, unsigned int>& created_variables,
@@ -199,7 +202,7 @@ class CWriter
    /**
     * insert copies according the algorithm described in Briggs et. al.
     */
-   void schedule_copies(gc_vertex_descriptor b, const BBGraph& bb_domGraph, const BBGraph& bb_fcfgGraph,
+   void schedule_copies(basic_block_vertex_descriptor b, const BBGraph& bb_domGraph, const BBGraph& bb_fcfgGraph,
                         const std::unique_ptr<var_pp_functor>& variableFunctor,
                         const CustomSet<unsigned int>& phi_instructions,
                         std::map<unsigned int, unsigned int>& created_variables,
@@ -236,7 +239,7 @@ class CWriter
     * The default for this function is to do nothing, but every derived class
     * can specify its own additional information to print
     */
-   virtual void writePreInstructionInfo(const FunctionBehaviorConstRef, gc_vertex_descriptor);
+   virtual void writePreInstructionInfo(const FunctionBehaviorConstRef, operation_vertex_descriptor);
 
    /**
     * Write additional information on the given statement vertex, after the
@@ -244,7 +247,7 @@ class CWriter
     * The default for this function is to do nothing, but every derived class
     * can specify its own additional information to print
     */
-   virtual void writePostInstructionInfo(const FunctionBehaviorConstRef, gc_vertex_descriptor);
+   virtual void writePostInstructionInfo(const FunctionBehaviorConstRef, operation_vertex_descriptor);
 
    /**
     * Write the instructions belonging to a body loop
@@ -255,7 +258,7 @@ class CWriter
     * @param variableFunctor is the functor used to print variables inside the generated code
     */
    virtual void WriteBodyLoop(const unsigned int function_index, const unsigned int loop_id,
-                              gc_vertex_descriptor current_vertex, bool bracket,
+                              basic_block_vertex_descriptor current_vertex, bool bracket,
                               const std::unique_ptr<var_pp_functor>& variableFunctor);
 
    /*
@@ -310,11 +313,11 @@ class CWriter
     * @param bb_start is the first basic block to be printed
     * @param bb_end is the set of first basic block not to be printed
     */
-   virtual void
-   writeRoutineInstructions(const unsigned int function_index, const OpVertexSet& instructions,
-                            const std::unique_ptr<var_pp_functor>& variableFunctor,
-                            gc_vertex_descriptor bb_start = gc_null_vertex(),
-                            CustomOrderedSet<gc_vertex_descriptor> bb_end = CustomOrderedSet<gc_vertex_descriptor>());
+   virtual void writeRoutineInstructions(
+       const unsigned int function_index, const OpVertexSet& instructions,
+       const std::unique_ptr<var_pp_functor>& variableFunctor,
+       basic_block_vertex_descriptor bb_start = graph_storage_traits<BBGraphStoragePolicy>::null_vertex(),
+       CustomOrderedSet<basic_block_vertex_descriptor> bb_end = CustomOrderedSet<basic_block_vertex_descriptor>());
 
    /**
     * Writes an include directive

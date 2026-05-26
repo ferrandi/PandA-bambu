@@ -44,6 +44,7 @@
 #include "custom_set.hpp"
 #include "graph.hpp"
 #include "ir_node.hpp"
+#include "op_graph.hpp"
 #include "refcount.hpp"
 
 #include <cstddef>
@@ -113,6 +114,8 @@ class application_manager
    ir_nodeConstRef GetProducedValue(const ir_nodeConstRef& tn) const;
 
  public:
+   using operation_vertex_descriptor = OpGraph::vertex_descriptor;
+
 #if __cplusplus >= 201703L
    template <typename T>
    static std::string ParameterTypeName()
@@ -261,12 +264,12 @@ class application_manager
     * Returns the value produced by a vertex
     */
    /// FIXME: to be remove after substitution with GetProducedValue
-   unsigned int get_produced_value(unsigned int fun_id, gc_vertex_descriptor v) const;
+   unsigned int get_produced_value(unsigned int fun_id, operation_vertex_descriptor v) const;
 
    /**
     * Returns the value produced by a vertex
     */
-   ir_nodeConstRef GetProducedValue(unsigned int fun_id, gc_vertex_descriptor v) const;
+   ir_nodeConstRef GetProducedValue(unsigned int fun_id, operation_vertex_descriptor v) const;
 
    /**
     * Returns the parameter data-structure

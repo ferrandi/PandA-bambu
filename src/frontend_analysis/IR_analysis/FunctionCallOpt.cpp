@@ -49,6 +49,7 @@
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "ir_basic_block.hpp"
@@ -413,9 +414,9 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
       const auto function_v = CGM.GetVertex(function_id);
       const auto call_count = [&]() -> size_t {
          size_t call_points = 0u;
-         for(const auto& ie : CG.in_edges(function_v))
+         for(const auto& ie : graph_in_edges(CG, function_v))
          {
-            const auto caller_info = CG.CGetEdgeInfo(ie);
+            const auto caller_info = graph_edge_info(CG, ie);
             call_points += caller_info.direct_call_points.size();
             call_points += caller_info.indirect_call_points.size();
             call_points += caller_info.function_addresses.size();
@@ -434,9 +435,9 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                         "---Force inline   : " + STR(always_inline.count(function_id) ? "yes" : "no"));
          const bool inline_funciton = always_inline.count(function_id) || ((body_cost * call_count) <= inline_max_cost);
 
-         for(const auto& ie : CG.in_edges(function_v))
+         for(const auto& ie : graph_in_edges(CG, function_v))
          {
-            const auto caller_id = CGM.get_function(ie.m_source);
+            const auto caller_id = CGM.get_function(graph_source(CG, ie));
             caller_bb.insert(std::make_pair(caller_id, AppM->CGetFunctionBehavior(caller_id)->GetBBVersion()));
             const auto caller_node = TM->GetIRNode(caller_id);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -463,7 +464,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                return true;
             };
 
-            const auto& caller_info = CG.CGetEdgeInfo(ie);
+            const auto& caller_info = graph_edge_info(CG, ie);
             bool all_inlined = true;
             for(const auto& call_id : caller_info.direct_call_points)
             {
@@ -644,7 +645,7 @@ size_t FunctionCallOpt::detect_loops(const statement_list_node* body) const
       }
       THROW_ASSERT(scc.size() == 1, "");
       const auto bb_v = scc.front();
-      const auto& bb = cfg.CGetNodeInfo(bb_v).block;
+      const auto& bb = graph_node_info(cfg, bb_v).block;
       if(std::find(bb->list_of_succ.begin(), bb->list_of_succ.end(), bb->number) != bb->list_of_succ.end())
       {
          loop_count++;

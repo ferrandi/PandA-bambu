@@ -47,6 +47,7 @@
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "ir_common.hpp"
 #include "ir_helper.hpp"
 #include "ir_manager.hpp"
@@ -125,14 +126,14 @@ unsigned application_manager::GetOMPThreadsCount(unsigned int funId) const
 
 FunctionBehaviorRef application_manager::GetFunctionBehavior(unsigned int index)
 {
-   const auto& behaviors = call_graph_manager->GetCallGraph().CGetGraphInfo().behaviors;
+   const auto& behaviors = graph_graph_info(call_graph_manager->GetCallGraph()).behaviors;
    THROW_ASSERT(behaviors.count(index), "There is no function with index " + STR(index));
    return behaviors.at(index);
 }
 
 FunctionBehaviorConstRef application_manager::CGetFunctionBehavior(unsigned int index) const
 {
-   const auto& behaviors = call_graph_manager->GetCallGraph().CGetGraphInfo().behaviors;
+   const auto& behaviors = graph_graph_info(call_graph_manager->GetCallGraph()).behaviors;
    THROW_ASSERT(behaviors.count(index), "There is no function with index " + STR(index));
    return behaviors.at(index);
 }
@@ -165,7 +166,7 @@ unsigned int application_manager::get_produced_value(unsigned int fun_id, OpGrap
 
 ir_nodeConstRef application_manager::GetProducedValue(unsigned int fun_id, OpGraph::vertex_descriptor v) const
 {
-   const auto node = CGetFunctionBehavior(fun_id)->GetOpGraphsCollection().CGetNodeInfo(v).node;
+   const auto node = graph_node_info(CGetFunctionBehavior(fun_id)->GetOpGraphsCollection(), v).node;
    return node ? GetProducedValue(node) : nullptr;
 }
 

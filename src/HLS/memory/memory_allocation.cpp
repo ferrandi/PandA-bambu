@@ -50,6 +50,7 @@
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
 #include "generic_device.hpp"
+#include "graph_facade.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
 #include "ir_helper.hpp"
@@ -329,8 +330,8 @@ void memory_allocation::finalize_memory_allocation()
                {
                   for(const auto& stmt : arg2stms.second)
                   {
-                     const auto op_it = g.CGetGraphInfo().ir_node_to_operation.find(stmt);
-                     if(op_it != g.CGetGraphInfo().ir_node_to_operation.end())
+                     const auto op_it = graph_graph_info(g).ir_node_to_operation.find(stmt);
+                     if(op_it != graph_graph_info(g).ir_node_to_operation.end())
                      {
                         RW_stmts.insert(op_it->second);
                      }
@@ -340,13 +341,13 @@ void memory_allocation::finalize_memory_allocation()
          }
       }
 
-      for(const auto v : g.vertices())
+      for(const auto v : graph_vertices(g))
       {
          if(RW_stmts.find(v) != RW_stmts.end())
          {
             continue;
          }
-         const auto& op_info = g.CGetNodeInfo(v);
+         const auto& op_info = graph_node_info(g, v);
          const auto current_op = op_info.GetOperation();
          const auto var_read = HLSMgr->get_required_values(fun_id, v);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing operation " + op_info.vertex_name);

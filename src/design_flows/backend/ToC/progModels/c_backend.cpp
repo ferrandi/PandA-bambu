@@ -53,6 +53,7 @@
 #include "design_flow_manager.hpp"
 #include "frontend_flow_step.hpp"
 #include "frontend_flow_step_factory.hpp"
+#include "graph_facade.hpp"
 #include "hls_flow_step_factory.hpp"
 #include "hls_function_step.hpp"
 #include "hls_manager.hpp"
@@ -142,7 +143,7 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
                // call graph is not ready yet we exit. The relationships will
                // be computed again after the call graph computation.
                const auto& CGM = AppM->CGetCallGraphManager();
-               if(CGM.GetCallGraph().num_vertices())
+               if(graph_num_vertices(CGM.GetCallGraph()))
                {
                   const auto hls_step_factory = GetPointer<const HLSFlowStepFactory>(
                       design_flow_manager.CGetDesignFlowStepFactory(DesignFlowStep::HLS));
@@ -190,7 +191,7 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
                // Root function cannot be computed at the beginning so if the
                // call graph is not ready yet we exit. The relationships will
                // be computed again after the call graph computation.
-               if(AppM->CGetCallGraphManager().GetCallGraph().num_vertices())
+               if(graph_num_vertices(AppM->CGetCallGraphManager().GetCallGraph()))
                {
                   const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
                   for(const auto& top_symbol : top_symbols)

@@ -44,14 +44,13 @@
 #include "cpu_time.hpp"
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "liveVariables.hpp"
 #include "reg_binding.hpp"
 #include "storage_value_information.hpp"
 #include "utility.hpp"
-
-#include <boost/graph/sequential_vertex_coloring.hpp>
 
 #include <vector>
 
@@ -151,13 +150,13 @@ DesignFlowStep_Status chordal_coloring_register::RegisterBinding()
       }
       THROW_ASSERT(found, "maximal not found");
       seq[vx_index] = i;
-      auto vx = boost::vertex(vx_index, cg);
+      auto vx = graph_vertex(cg, vx_index);
       vertex_order[i] = vx;
       // for each unnumbered vertex v adjacent to vx
       // label(v)=label(v) + i
-      for(const auto adj : boost::make_iterator_range(boost::adjacent_vertices(vx, cg)))
+      for(const auto adj : graph_adjacent_vertices(cg, vx))
       {
-         long unsigned int vindex = get(boost::vertex_index, cg, adj);
+         long unsigned int vindex = graph_vertex_index(cg, adj);
          if(seq[vindex] == NO_ORDER)
          {
             bool add = true;
@@ -178,15 +177,15 @@ DesignFlowStep_Status chordal_coloring_register::RegisterBinding()
    }
 
    /// sequential vertex coloring based on left edge sorting
-   auto num_colors = boost::sequential_vertex_coloring(
+   auto num_colors = graph_sequential_vertex_coloring(
        cg,
-       boost::make_iterator_property_map(vertex_order.begin(), boost::identity_property_map(),
-                                         boost::graph_traits<conflict_graph>::null_vertex()),
+       graph_make_indexed_iterator_property_map(vertex_order.begin(), boost::identity_property_map(),
+                                                graph_null_vertex(cg)),
        color);
 
    /// finalize
    HLS->Rreg = reg_bindingRef(new reg_binding(HLS, HLSMgr));
-   const auto states = HLS->fsm_info->vertices();
+   const auto states = graph_vertices(*HLS->fsm_info);
 
    for(const auto v : states)
    {
@@ -194,7 +193,7 @@ DesignFlowStep_Status chordal_coloring_register::RegisterBinding()
       for(const auto& [var, stage] : live)
       {
          const auto storage_value_index = HLS->storage_value_information->get_storage_value_index(v, var, stage);
-         HLS->Rreg->bind(storage_value_index, static_cast<unsigned int>(color[boost::vertex(storage_value_index, cg)]));
+         HLS->Rreg->bind(storage_value_index, static_cast<unsigned int>(color[graph_vertex(cg, storage_value_index)]));
       }
    }
    HLS->Rreg->set_used_regs(static_cast<unsigned int>(num_colors));

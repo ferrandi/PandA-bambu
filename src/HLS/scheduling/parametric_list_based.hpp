@@ -148,7 +148,7 @@ class parametric_list_based : public SchedulingStep
    OpGraph flow_graph_with_feedbacks;
 
    /// The starting time given the scheduling (used for chaining)
-   vertex2float<> starting_time;
+   vertex2float<OpGraph::vertex_descriptor> starting_time;
 
    /// The ending time given the scheduling (used for chaining)
    OpVertexMap<double> ending_time;
@@ -235,8 +235,8 @@ class parametric_list_based : public SchedulingStep
        double setup_hold_time, double& phi_extra_time, double scheduling_mux_margins, bool unbounded,
        bool unbounded_chaining, bool unbounded_Functions, bool LoadStoreOp,
        const std::set<std::string>& proxy_functions_used, bool cstep_has_RET_conflict, unsigned int fu_type,
-       const vertex2obj<unsigned int>& current_ASAP, const fu_bindingRef res_binding, Schedule& schedule,
-       bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0, bool& chainingRetCond,
+       const vertex2obj<unsigned int, OpGraph::vertex_descriptor>& current_ASAP, const fu_bindingRef res_binding,
+       Schedule& schedule, bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0, bool& chainingRetCond,
        bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2, bool& cannotBeChained3, bool& MultiCond0,
        bool& MultiCond1, bool& LoadStoreFunctionConflict, bool& FunctionLoadStoreConflict, bool& proxyFunCond,
        bool unbounded_RW, bool seeMulticycle, bool is_current_vertex_bounded);

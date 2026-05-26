@@ -44,6 +44,7 @@
 #include "basic_block.hpp"
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_step.hpp"
@@ -93,9 +94,9 @@ void UpdateSchedule::Initialize()
       schedule = GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch;
       /// Set reference to schedule in basic blocks
       auto basic_block_graph = function_behavior->GetBBGraph(FunctionBehavior::BB);
-      for(const auto& basic_block : basic_block_graph.vertices())
+      for(const auto& basic_block : graph_vertices(basic_block_graph))
       {
-         basic_block_graph.GetNodeInfo(basic_block).block->schedule = schedule;
+         graph_node_info(basic_block_graph, basic_block).block->schedule = schedule;
       }
    }
 }

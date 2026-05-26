@@ -53,6 +53,7 @@
 #include "fileIO.hpp"
 #include "frontend_flow_step_factory.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
 #include "ir_helper.hpp"
@@ -184,7 +185,7 @@ std::vector<std::map<std::string, std::string>> TestVectorParser::ParseUserStrin
 std::vector<std::map<std::string, std::string>>
 TestVectorParser::ParseXMLFile(const std::filesystem::path& input_xml_filename) const
 {
-   THROW_ASSERT(HLSMgr->CGetCallGraphManager().GetCallGraph().num_vertices() != 0,
+   THROW_ASSERT(graph_num_vertices(HLSMgr->CGetCallGraphManager().GetCallGraph()) != 0,
                 "The call graph has not been computed yet");
    const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
    THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");

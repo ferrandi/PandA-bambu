@@ -43,6 +43,7 @@
 #include "basic_block.hpp"
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hash_helper.hpp"
 #include "op_graph.hpp"
 #include "string_manipulation.hpp"
@@ -85,9 +86,9 @@ void OpCdgComputation::Initialize()
    if(bb_version != 0 and bb_version != function_behavior->GetBBVersion())
    {
       const auto cdg = function_behavior->GetOpGraph(FunctionBehavior::CDG);
-      if(cdg.num_vertices() != 0)
+      if(graph_num_vertices(cdg) != 0)
       {
-         for(const auto& edge : cdg.edges())
+         for(const auto& edge : graph_edges(cdg))
          {
             function_behavior->ogc->RemoveSelector(edge, CDG_SELECTOR);
          }
@@ -99,21 +100,21 @@ DesignFlowStep_Status OpCdgComputation::InternalExec()
 {
    auto fcfg = function_behavior->GetOpGraph(FunctionBehavior::FCFG);
    const auto bb_cdg = function_behavior->GetBBGraph(FunctionBehavior::CDG_BB);
-   for(const auto& edge : bb_cdg.edges())
+   for(const auto& edge : graph_edges(bb_cdg))
    {
-      const auto source = bb_cdg.source(edge);
-      const auto target = bb_cdg.target(edge);
-      const auto source_operations = bb_cdg.CGetNodeInfo(source).statements_list;
-      const auto target_operations = bb_cdg.CGetNodeInfo(target).statements_list;
+      const auto source = graph_source(bb_cdg, edge);
+      const auto target = graph_target(bb_cdg, edge);
+      const auto source_operations = graph_node_info(bb_cdg, source).statements_list;
+      const auto target_operations = graph_node_info(bb_cdg, target).statements_list;
       if(source_operations.size() && target_operations.size())
       {
-         const auto labels = bb_cdg.CGetEdgeInfo(edge).get_labels(CFG_SELECTOR);
+         const auto labels = graph_edge_info(bb_cdg, edge).get_labels(CFG_SELECTOR);
          const auto source_operation = source_operations.back();
          for(const auto target_operation : target_operations)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Adding Control Dependence " + fcfg.CGetNodeInfo(source_operation).vertex_name + "-->" +
-                               fcfg.CGetNodeInfo(target_operation).vertex_name);
+                           "---Adding Control Dependence " + graph_node_info(fcfg, source_operation).vertex_name +
+                               "-->" + graph_node_info(fcfg, target_operation).vertex_name);
             function_behavior->ogc->AddEdge(source_operation, target_operation, CDG_SELECTOR);
             for(const auto label : labels)
             {
@@ -123,13 +124,13 @@ DesignFlowStep_Status OpCdgComputation::InternalExec()
       }
    }
 
-   for(const auto& basic_block : bb_cdg.vertices())
+   for(const auto& basic_block : graph_vertices(bb_cdg))
    {
-      const auto& bb_node_info = bb_cdg.CGetNodeInfo(basic_block);
+      const auto& bb_node_info = graph_node_info(bb_cdg, basic_block);
       const auto cer_index = bb_node_info.cer;
       for(const auto statement : bb_node_info.statements_list)
       {
-         fcfg.GetNodeInfo(statement).cer = cer_index;
+         graph_node_info(fcfg, statement).cer = cer_index;
       }
    }
 

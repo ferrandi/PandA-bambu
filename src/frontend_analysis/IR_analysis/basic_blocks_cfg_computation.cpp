@@ -48,7 +48,7 @@
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "function_behavior.hpp"
-#include "graph.hpp"
+#include "graph_facade.hpp"
 #include "ir_basic_block.hpp"
 #include "ir_manager.hpp"
 #include "op_graph.hpp"
@@ -198,9 +198,9 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
    }
    const auto exit = bbgc->Cget_vertex(BB_EXIT);
    const auto fcfg = function_behavior->GetBBGraph(FunctionBehavior::FBB);
-   for(const auto& v : fcfg.vertices())
+   for(const auto& v : graph_vertices(fcfg))
    {
-      if(fcfg.out_degree(v) == 0 && v != exit)
+      if(graph_out_degree(fcfg, v) == 0 && v != exit)
       {
          bbgc->AddEdge(v, exit, CFG_SELECTOR);
       }

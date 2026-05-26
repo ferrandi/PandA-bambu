@@ -52,7 +52,7 @@
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 #include "custom_set.hpp"
 #include "exceptions.hpp"
-#include "graph.hpp"
+#include "graph_facade.hpp"
 #include "ir_helper.hpp"
 #include "ir_manager.hpp"
 #include "ir_node.hpp"
@@ -63,8 +63,6 @@
 #if HAVE_HOST_PROFILING_BUILT
 #include "profiling_information.hpp"
 #endif
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/filtered_graph.hpp>
 #include <boost/iterator/filter_iterator.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/tuple/tuple.hpp>
@@ -227,57 +225,61 @@ OpGraph FunctionBehavior::GetOpGraph(FunctionBehavior::graph_type gt) const
    switch(gt)
    {
       case CFG:
-         return OpGraph(*op_graphs_collection, CFG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection, CFG_SELECTOR);
       case FCFG:
-         return OpGraph(*op_graphs_collection, FCFG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection, FCFG_SELECTOR);
       case CDG:
-         return OpGraph(*op_graphs_collection, CDG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection, CDG_SELECTOR);
       case FCDG:
-         return OpGraph(*op_graphs_collection, FCDG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection, FCDG_SELECTOR);
       case DFG:
-         return OpGraph(*op_graphs_collection, DFG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection, DFG_SELECTOR);
       case FDFG:
-         return OpGraph(*op_graphs_collection, FDFG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection, FDFG_SELECTOR);
       case ADG:
-         return OpGraph(*op_graphs_collection, ADG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection, ADG_SELECTOR);
       case FADG:
-         return OpGraph(*op_graphs_collection, FADG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection, FADG_SELECTOR);
       case ODG:
-         return OpGraph(*op_graphs_collection, ODG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection, ODG_SELECTOR);
       case FODG:
-         return OpGraph(*op_graphs_collection, FODG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection, FODG_SELECTOR);
       case SDG:
-         return OpGraph(*op_graphs_collection, SDG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection, SDG_SELECTOR);
       case FSDG:
-         return OpGraph(*op_graphs_collection, FSDG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection, FSDG_SELECTOR);
       case SAODG:
-         return OpGraph(*op_graphs_collection, SDG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection, SDG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR);
       case FSAODG:
-         return OpGraph(*op_graphs_collection, FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection, FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR);
       case FLSAODG:
-         return OpGraph(*op_graphs_collection, FLG_SELECTOR | SDG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection,
+                                         FLG_SELECTOR | SDG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR);
 #ifndef NDEBUG
       case FLSAODDG:
-         return OpGraph(*op_graphs_collection,
-                        FLG_SELECTOR | SDG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR | DEBUG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection,
+                                         FLG_SELECTOR | SDG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR | DEBUG_SELECTOR);
 #endif
       case FFLSAODG:
-         return OpGraph(*op_graphs_collection, FLG_SELECTOR | FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection,
+                                         FLG_SELECTOR | FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR);
       case FLAODDG:
-         return OpGraph(*op_graphs_collection, FLG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR | DFG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection,
+                                         FLG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR | DFG_SELECTOR);
       case FFLAODDG:
-         return OpGraph(*op_graphs_collection, FLG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR | FDFG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection,
+                                         FLG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR | FDFG_SELECTOR);
       case FLG:
-         return OpGraph(*op_graphs_collection, FLG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection, FLG_SELECTOR);
       case SG:
-         return OpGraph(*op_graphs_collection, SG_SELECTOR | FLG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection, SG_SELECTOR | FLG_SELECTOR);
       case AGG_VIRTUALG:
-         return OpGraph(*op_graphs_collection, DFG_AGG_SELECTOR | ADG_AGG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection, DFG_AGG_SELECTOR | ADG_AGG_SELECTOR);
       default:
          break;
    }
    THROW_UNREACHABLE("Not supported graph type");
-   return OpGraph(*op_graphs_collection, CFG_SELECTOR);
+   return make_graph_view<OpGraph>(*op_graphs_collection, CFG_SELECTOR);
 }
 
 BehavioralHelperRef FunctionBehavior::GetBehavioralHelper()
@@ -302,72 +304,76 @@ OpGraph FunctionBehavior::GetOpGraph(FunctionBehavior::graph_type gt,
    switch(gt)
    {
       case CFG:
-         return OpGraph(*op_graphs_collection, CFG_SELECTOR, subset);
+         return make_graph_view<OpGraph>(*op_graphs_collection, CFG_SELECTOR, subset);
 
       case FCFG:
-         return OpGraph(*op_graphs_collection, FCFG_SELECTOR, subset);
+         return make_graph_view<OpGraph>(*op_graphs_collection, FCFG_SELECTOR, subset);
 
       case CDG:
-         return OpGraph(*op_graphs_collection, CDG_SELECTOR, subset);
+         return make_graph_view<OpGraph>(*op_graphs_collection, CDG_SELECTOR, subset);
 
       case FCDG:
-         return OpGraph(*op_graphs_collection, FCDG_SELECTOR, subset);
+         return make_graph_view<OpGraph>(*op_graphs_collection, FCDG_SELECTOR, subset);
 
       case DFG:
-         return OpGraph(*op_graphs_collection, DFG_SELECTOR, subset);
+         return make_graph_view<OpGraph>(*op_graphs_collection, DFG_SELECTOR, subset);
 
       case FDFG:
-         return OpGraph(*op_graphs_collection, FDFG_SELECTOR, subset);
+         return make_graph_view<OpGraph>(*op_graphs_collection, FDFG_SELECTOR, subset);
 
       case ADG:
-         return OpGraph(*op_graphs_collection, ADG_SELECTOR, subset);
+         return make_graph_view<OpGraph>(*op_graphs_collection, ADG_SELECTOR, subset);
 
       case FADG:
-         return OpGraph(*op_graphs_collection, ADG_SELECTOR | FB_ADG_SELECTOR, subset);
+         return make_graph_view<OpGraph>(*op_graphs_collection, ADG_SELECTOR | FB_ADG_SELECTOR, subset);
 
       case ODG:
-         return OpGraph(*op_graphs_collection, ODG_SELECTOR, subset);
+         return make_graph_view<OpGraph>(*op_graphs_collection, ODG_SELECTOR, subset);
 
       case FODG:
-         return OpGraph(*op_graphs_collection, FODG_SELECTOR, subset);
+         return make_graph_view<OpGraph>(*op_graphs_collection, FODG_SELECTOR, subset);
 
       case SDG:
-         return OpGraph(*op_graphs_collection, SDG_SELECTOR, subset);
+         return make_graph_view<OpGraph>(*op_graphs_collection, SDG_SELECTOR, subset);
 
       case FSDG:
-         return OpGraph(*op_graphs_collection, FSDG_SELECTOR, subset);
+         return make_graph_view<OpGraph>(*op_graphs_collection, FSDG_SELECTOR, subset);
 
       case SAODG:
-         return OpGraph(*op_graphs_collection, SAODG_SELECTOR, subset);
+         return make_graph_view<OpGraph>(*op_graphs_collection, SAODG_SELECTOR, subset);
 
       case FSAODG:
-         return OpGraph(*op_graphs_collection, FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR | FDFG_SELECTOR, subset);
+         return make_graph_view<OpGraph>(*op_graphs_collection,
+                                         FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR | FDFG_SELECTOR, subset);
 
       case FLSAODG:
-         return OpGraph(*op_graphs_collection, SAODG_SELECTOR | FLG_SELECTOR, subset);
+         return make_graph_view<OpGraph>(*op_graphs_collection, SAODG_SELECTOR | FLG_SELECTOR, subset);
 
 #ifndef NDEBUG
       case FLSAODDG:
-         return OpGraph(*op_graphs_collection, SAODG_SELECTOR | FLG_SELECTOR | DEBUG_SELECTOR, subset);
+         return make_graph_view<OpGraph>(*op_graphs_collection, SAODG_SELECTOR | FLG_SELECTOR | DEBUG_SELECTOR, subset);
 #endif
 
       case FFLSAODG:
-         return OpGraph(*op_graphs_collection, FLG_SELECTOR | FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR, subset);
+         return make_graph_view<OpGraph>(*op_graphs_collection,
+                                         FLG_SELECTOR | FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR, subset);
 
       case FLAODDG:
-         return OpGraph(*op_graphs_collection, DFG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR | FLG_SELECTOR, subset);
+         return make_graph_view<OpGraph>(*op_graphs_collection,
+                                         DFG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR | FLG_SELECTOR, subset);
 
       case FFLAODDG:
-         return OpGraph(*op_graphs_collection, FLG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR | FDFG_SELECTOR);
+         return make_graph_view<OpGraph>(*op_graphs_collection,
+                                         FLG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR | FDFG_SELECTOR);
 
       case FLG:
-         return OpGraph(*op_graphs_collection, FLG_SELECTOR, subset);
+         return make_graph_view<OpGraph>(*op_graphs_collection, FLG_SELECTOR, subset);
 
       case SG:
-         return OpGraph(*op_graphs_collection, SG_SELECTOR, subset);
+         return make_graph_view<OpGraph>(*op_graphs_collection, SG_SELECTOR, subset);
 
       case AGG_VIRTUALG:
-         return OpGraph(*op_graphs_collection, DFG_AGG_SELECTOR | ADG_AGG_SELECTOR, subset);
+         return make_graph_view<OpGraph>(*op_graphs_collection, DFG_AGG_SELECTOR | ADG_AGG_SELECTOR, subset);
       default:
          THROW_UNREACHABLE("");
    }
@@ -384,22 +390,22 @@ BBGraph FunctionBehavior::GetBBGraph(FunctionBehavior::bb_graph_type gt) const
    switch(gt)
    {
       case BB:
-         return BBGraph(*bb_graphs_collection, CFG_SELECTOR);
+         return make_graph_view<BBGraph>(*bb_graphs_collection, CFG_SELECTOR);
       case FBB:
-         return BBGraph(*bb_graphs_collection, FCFG_SELECTOR);
+         return make_graph_view<BBGraph>(*bb_graphs_collection, FCFG_SELECTOR);
       case CDG_BB:
-         return BBGraph(*bb_graphs_collection, CDG_SELECTOR);
+         return make_graph_view<BBGraph>(*bb_graphs_collection, CDG_SELECTOR);
       case DOM_TREE:
-         return BBGraph(*bb_graphs_collection, D_SELECTOR);
+         return make_graph_view<BBGraph>(*bb_graphs_collection, D_SELECTOR);
       case POST_DOM_TREE:
-         return BBGraph(*bb_graphs_collection, PD_SELECTOR);
+         return make_graph_view<BBGraph>(*bb_graphs_collection, PD_SELECTOR);
       case DJ:
-         return BBGraph(*bb_graphs_collection, D_SELECTOR | J_SELECTOR);
+         return make_graph_view<BBGraph>(*bb_graphs_collection, D_SELECTOR | J_SELECTOR);
       default:
          break;
    }
    THROW_UNREACHABLE("");
-   return BBGraph(*bb_graphs_collection, CFG_SELECTOR);
+   return make_graph_view<BBGraph>(*bb_graphs_collection, CFG_SELECTOR);
 }
 
 void FunctionBehavior::print(std::ostream& os) const
@@ -409,34 +415,35 @@ void FunctionBehavior::print(std::ostream& os) const
    // os << ", , ";
 }
 
-void FunctionBehavior::add_level(gc_vertex_descriptor v, unsigned int index)
+void FunctionBehavior::add_level(operation_vertex_descriptor v, unsigned int index)
 {
    map_levels[v] = index;
    deque_levels.push_back(v);
 }
 
-const std::deque<gc_vertex_descriptor>& FunctionBehavior::get_levels() const
+const std::deque<FunctionBehavior::operation_vertex_descriptor>& FunctionBehavior::get_levels() const
 {
    return deque_levels;
 }
 
-const std::map<gc_vertex_descriptor, unsigned int>& FunctionBehavior::get_map_levels() const
+const std::map<FunctionBehavior::operation_vertex_descriptor, unsigned int>& FunctionBehavior::get_map_levels() const
 {
    return map_levels;
 }
 
-void FunctionBehavior::add_bb_level(gc_vertex_descriptor v, unsigned int index)
+void FunctionBehavior::add_bb_level(basic_block_vertex_descriptor v, unsigned int index)
 {
    bb_map_levels[v] = index;
    bb_deque_levels.push_back(v);
 }
 
-const std::deque<gc_vertex_descriptor>& FunctionBehavior::get_bb_levels() const
+const std::deque<FunctionBehavior::basic_block_vertex_descriptor>& FunctionBehavior::get_bb_levels() const
 {
    return bb_deque_levels;
 }
 
-const std::map<gc_vertex_descriptor, unsigned int>& FunctionBehavior::get_bb_map_levels() const
+const std::map<FunctionBehavior::basic_block_vertex_descriptor, unsigned int>&
+FunctionBehavior::get_bb_map_levels() const
 {
    return bb_map_levels;
 }
@@ -550,9 +557,9 @@ CustomOrderedSet<unsigned int> FunctionBehavior::get_local_variables(const appli
    // the variables which have to be declared are all those variables but
    // the globals ones
    const auto cfg = GetOpGraph(FunctionBehavior::CFG);
-   for(const auto& v : cfg.vertices())
+   for(const auto& v : graph_vertices(cfg))
    {
-      const auto& varsTemp = cfg.CGetNodeInfo(v).cited_variables;
+      const auto& varsTemp = graph_node_info(cfg, v).cited_variables;
       vars.insert(varsTemp.begin(), varsTemp.end());
    }
    for(const auto& funParam : helper->GetParameters())

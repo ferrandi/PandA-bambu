@@ -46,9 +46,9 @@
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "graph.hpp"
+#include "op_graph.hpp"
 #include "refcount.hpp"
 
-class OpGraph;
 CONSTREF_FORWARD_DECL(FunctionExpander);
 CONSTREF_FORWARD_DECL(Parameter);
 CONSTREF_FORWARD_DECL(ir_manager);
@@ -162,7 +162,7 @@ class CallGraphManager : private CallGraphsCollection
     * @param cfg is the pointer to the graph which the operation belongs to
     * @param caller is the caller vertex
     */
-   CustomSet<unsigned int> get_called_by(const OpGraph& cfg, vertex_descriptor caller) const;
+   CustomSet<unsigned int> get_called_by(const OpGraph& cfg, OpGraph::vertex_descriptor caller) const;
 
    /**
     * Given a vertex of the call graph, this returns the index of the corresponding function

@@ -40,7 +40,6 @@
  */
 #include "dsatur2_coloring.hpp"
 #include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/adjacency_list_io.hpp>
 #include <cstring>
 #include <fstream>
 #include <iosfwd>

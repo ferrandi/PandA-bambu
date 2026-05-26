@@ -51,7 +51,7 @@
 /**
  * Class managing map of the vertexes on a generic object.
  */
-template <class data_obj, typename vertex = gc_vertex_descriptor>
+template <class data_obj, typename vertex = graph_default_vertex_descriptor>
 struct vertex2obj : public CustomUnorderedMapUnstable<vertex, data_obj>
 {
    virtual ~vertex2obj() = default;
@@ -61,7 +61,7 @@ struct vertex2obj : public CustomUnorderedMapUnstable<vertex, data_obj>
     * @param os is the output stream
     * @param it is the iterator pointing to the vertex to print
     */
-   virtual void print_el(std::ostream& os, typename vertex2obj<data_obj>::const_iterator& it) const
+   virtual void print_el(std::ostream& os, typename vertex2obj<data_obj, vertex>::const_iterator& it) const
    {
       os << "(" << it->second << ") ";
    }
@@ -71,7 +71,7 @@ struct vertex2obj : public CustomUnorderedMapUnstable<vertex, data_obj>
     * @param os is the output stream
     * @param it is the iterator pointing to the vertex to print
     */
-   virtual void print_rowHead(std::ostream& os, typename vertex2obj<data_obj>::const_iterator& it) const
+   virtual void print_rowHead(std::ostream& os, typename vertex2obj<data_obj, vertex>::const_iterator& it) const
    {
       os << it->first;
    }
@@ -130,10 +130,10 @@ struct vertex2obj : public CustomUnorderedMapUnstable<vertex, data_obj>
    }
 };
 
-template <typename vertex = gc_vertex_descriptor>
+template <typename vertex = graph_default_vertex_descriptor>
 using vertex2int = vertex2obj<int, vertex>;
 
-template <typename vertex = gc_vertex_descriptor>
+template <typename vertex = graph_default_vertex_descriptor>
 using vertex2float = vertex2obj<double, vertex>;
 
 #endif

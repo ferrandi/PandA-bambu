@@ -47,15 +47,12 @@
 #define MAXCLIQUE_DSATUR_COLORING_HPP
 
 #include <boost/config.hpp>
-#include <boost/graph/properties.hpp>
 #include <boost/version.hpp>
 #if BOOST_VERSION >= 104000
 #include <boost/property_map/property_map.hpp>
 #else
 #include <boost/property_map.hpp>
 #endif
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/visitors.hpp>
 #include <boost/limits.hpp>
 #if BOOST_VERSION >= 106400
 #include <boost/serialization/array_wrapper.hpp>
@@ -66,7 +63,7 @@
 #include <vector>
 
 #include "custom_set.hpp"
-#include <boost/graph/filtered_graph.hpp>
+#include "graph_facade.hpp"
 
 /**
  * This algorithm is to find coloring of a graph
@@ -116,7 +113,7 @@ namespace boost
       using size_type = typename property_traits<ColorMap>::value_type;
 
       size_type max_color = 0;
-      const size_type V = num_vertices(G);
+      const size_type V = ::graph_num_vertices(G);
 
       // We need to keep track of which colors are used by
       // adjacent vertices. We do this by marking the colors
@@ -127,24 +124,20 @@ namespace boost
       std::vector<size_type> mark(V, std::numeric_limits<size_type>::max BOOST_PREVENT_MACRO_SUBSTITUTION());
 
       // Initialize colors
-      typename GraphTraits::vertex_iterator v, vend;
-      for(boost::tie(v, vend) = vertices(G); v != vend; ++v)
+      for(const auto& v : ::graph_vertices(G))
       {
-         put(color, *v, V - 1);
+         put(color, v, V - 1);
       }
 
       // Determine the color for every vertex one by one
       size_type i = 0;
-      for(boost::tie(v, vend) = vertices(G); v != vend; ++v)
+      for(const auto& current : ::graph_vertices(G))
       {
-         Vertex current = *v;
-         typename GraphTraits::adjacency_iterator v1, vend1;
-
          // Mark the colors of vertices adjacent to current.
          // i can be the value for marking since i increases successively
-         for(boost::tie(v1, vend1) = adjacent_vertices(current, G); v1 != vend1; ++v1)
+         for(const auto& v1 : ::graph_adjacent_vertices(G, current))
          {
-            mark[get(color, *v1)] = i;
+            mark[get(color, v1)] = i;
          }
 
          // Next step is to assign the smallest un-marked color
@@ -252,9 +245,9 @@ namespace boost
          heap_container = new size_type[_num_node - clique_size];
          for(i = 0; i < num_node; i++)
          {
-            Vertex v = vertex(i, G);
+            Vertex v = ::graph_vertex(G, i);
             support.insert(v);
-            DegreeCount[i] = degree(v, G);
+            DegreeCount[i] = ::graph_degree(G, v);
             heap_container[iheap] = i;
             iheap++;
          }
@@ -270,7 +263,9 @@ namespace boost
       {
          SET_container GreedySupport, G1_support;
          typename IG_GraphTraits::vertex_iterator vstart, v, vend;
-         boost::tie(vstart, vend) = vertices(FG);
+         const auto fg_vertices = ::graph_vertices(FG);
+         vstart = fg_vertices.begin();
+         vend = fg_vertices.end();
          v = vstart;
          while(v != vend)
          {
@@ -282,12 +277,12 @@ namespace boost
          {
             v = vstart;
             IG_Vertex selected = *v;
-            size_type maxdegree = out_degree(*v, FG);
+            size_type maxdegree = ::graph_out_degree(FG, *v);
             ;
             ++v;
             while(v != vend)
             {
-               size_type tmpdegree = out_degree(*v, FG);
+               size_type tmpdegree = ::graph_out_degree(FG, *v);
                if(tmpdegree > maxdegree)
                {
                   maxdegree = tmpdegree;
@@ -296,12 +291,13 @@ namespace boost
                ++v;
             }
             BestClique.insert(selected);
-            typename IG_GraphTraits::adjacency_iterator v1, v1end;
-            boost::tie(v1, v1end) = adjacent_vertices(selected, FG);
-            G1_support.insert(v1, v1end);
+            const auto selected_adj = ::graph_adjacent_vertices(FG, selected);
+            G1_support.insert(selected_adj.begin(), selected_adj.end());
             support = G1_support;
             G1_support.clear();
-            boost::tie(vstart, vend) = vertices(FG);
+            const auto fg_vertices_next = ::graph_vertices(FG);
+            vstart = fg_vertices_next.begin();
+            vend = fg_vertices_next.end();
          } while(vstart != vend);
          std::swap(GreedySupport, support);
          return BestClique.size();
@@ -309,7 +305,9 @@ namespace boost
       size_type MaxCliqueRec(size_type ub)
       {
          typename IG_GraphTraits::vertex_iterator vstart, v, vend;
-         boost::tie(vstart, vend) = vertices(FG);
+         const auto fg_vertices = ::graph_vertices(FG);
+         vstart = fg_vertices.begin();
+         vend = fg_vertices.end();
          if(vstart == vend)
          {
             if(BestClique.size() < C.size())
@@ -321,7 +319,7 @@ namespace boost
          }
 
          std::vector<size_type> color_vec(num_node);
-         ColorMap color(&color_vec.front(), get(vertex_index, FG));
+         ColorMap color(&color_vec.front(), ::graph_vertex_index_map(FG));
          size_type k = unsorted_coloring(FG, color);
          /// if C is empty and k is good save the coloring
          if(support.size() == num_node && k < BestColoring)
@@ -329,7 +327,7 @@ namespace boost
             BestColoring = k;
             for(size_type i = 0; i < num_node; ++i)
             {
-               put(CM, vertex(i, G), get(color, vertex(i, G)));
+               put(CM, ::graph_vertex(G, i), get(color, ::graph_vertex(G, i)));
             }
             // printf("Best coloring is %ld\n", BestColoring);
          }
@@ -343,12 +341,12 @@ namespace boost
          v = vstart;
          IG_Vertex selected = *v;
          size_type FG_cardinality = 1;
-         size_type mindegree = out_degree(*v, FG);
+         size_type mindegree = ::graph_out_degree(FG, *v);
          size_type maxdegree = mindegree;
          ++v;
          while(v != vend)
          {
-            size_type tmpdegree = out_degree(*v, FG);
+            size_type tmpdegree = ::graph_out_degree(FG, *v);
             if(tmpdegree > maxdegree)
             {
                maxdegree = tmpdegree;
@@ -379,9 +377,8 @@ namespace boost
          }
          /// create the support for the the induced graph N{selected}
          SET_container G1_support;
-         typename IG_GraphTraits::adjacency_iterator v1, v1end;
-         boost::tie(v1, v1end) = adjacent_vertices(selected, FG);
-         G1_support.insert(v1, v1end);
+         const auto selected_adj = ::graph_adjacent_vertices(FG, selected);
+         G1_support.insert(selected_adj.begin(), selected_adj.end());
          std::swap(G1_support, support);
          C.insert(selected);
          size_type sizeG1 = MaxCliqueRec(ub);
@@ -402,7 +399,7 @@ namespace boost
          // printf("Best coloring is %ld\n", BestColoring);
          for(i = 0; i < num_node; i++)
          {
-            put(CM, vertex(i, G), ColorClass[i]);
+            put(CM, ::graph_vertex(G, i), ColorClass[i]);
          }
       }
 
@@ -411,10 +408,9 @@ namespace boost
          size_type node1;
 
          ColorClass[node] = color;
-         typename GraphTraits::adjacency_iterator v, vend;
-         for(boost::tie(v, vend) = adjacent_vertices(vertex(node, G), G); v != vend; ++v)
+         for(const auto& v : ::graph_adjacent_vertices(G, ::graph_vertex(G, node)))
          {
-            node1 = get(vertex_index, G, *v);
+            node1 = ::graph_vertex_index(G, v);
             if(ColorAdj(node1, color) == 0)
             {
                ColorCount[node1]++;
@@ -429,10 +425,9 @@ namespace boost
       {
          size_type node1;
          ColorClass[node] = 0;
-         typename GraphTraits::adjacency_iterator v, vend;
-         for(boost::tie(v, vend) = adjacent_vertices(vertex(node, G), G); v != vend; ++v)
+         for(const auto& v : ::graph_adjacent_vertices(G, ::graph_vertex(G, node)))
          {
-            node1 = get(vertex_index, G, *v);
+            node1 = ::graph_vertex_index(G, v);
             assert(ColorAdj(node1, color) != 0);
             ColorAdj(node1, color) -= 1;
             if(ColorAdj(node1, color) == 0)
@@ -510,7 +505,7 @@ namespace boost
       using Vertex = typename GraphTraits::vertex_descriptor;
       using size_type = typename property_traits<ColorMap>::value_type;
 
-      const size_type num_node = num_vertices(G);
+      const size_type num_node = ::graph_num_vertices(G);
       if(num_node == 0)
       {
          return 0;

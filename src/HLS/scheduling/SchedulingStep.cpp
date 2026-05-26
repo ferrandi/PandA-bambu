@@ -43,6 +43,7 @@
 #include "behavioral_helper.hpp"
 #include "fu_binding.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "ir_helper.hpp"
@@ -117,8 +118,9 @@ void SchedulingStep::compute_RW_stmts(CustomUnorderedSet<OpGraph::vertex_descrip
             {
                for(const auto& stmt : arg2stms.second)
                {
-                  const auto op_it = flow_graph.CGetGraphInfo().ir_node_to_operation.find(stmt);
-                  if(op_it != flow_graph.CGetGraphInfo().ir_node_to_operation.end())
+                  const auto& graph_info = graph_graph_info(flow_graph);
+                  const auto op_it = graph_info.ir_node_to_operation.find(stmt);
+                  if(op_it != graph_info.ir_node_to_operation.end())
                   {
                      RW_stmts.insert(op_it->second);
                   }

@@ -41,6 +41,7 @@
 
 #include "Parameter.hpp"
 #include "dbgPrintHelper.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "ir_helper.hpp"
 #include "liveVariables.hpp"
@@ -62,12 +63,11 @@ void conflict_based_register::create_conflict_graph(conflict_graph& cg)
 
    const auto cg_num_vertices = HLS->storage_value_information->get_number_of_storage_values();
    color_vec.resize(cg_num_vertices);
-   color =
-       boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type,
-                                    cg_vertices_size_type&>(&color_vec.front(), boost::get(boost::vertex_index, cg));
+   color = boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type,
+                                        cg_vertices_size_type&>(color_vec.data(), graph_vertex_index_map(cg));
    HLS->storage_value_information->Initialize();
    /// conflict graph creation
-   const auto states = HLS->fsm_info->vertices();
+   const auto states = graph_vertices(*HLS->fsm_info);
    for(const auto v : states)
    {
       const auto& live = HLS->Rliv->getLiveInFsmVariables(v);
@@ -84,7 +84,7 @@ void conflict_based_register::create_conflict_graph(conflict_graph& cg)
             const auto head =
                 HLS->storage_value_information->get_storage_value_index(v, k_inner->first, k_inner->second);
             THROW_ASSERT(head < cg_num_vertices, "wrong conflict graph index");
-            boost::add_edge(boost::vertex(tail, cg), boost::vertex(head, cg), cg);
+            graph_add_edge(graph_vertex(cg, tail), graph_vertex(cg, head), cg);
             ++k_inner;
          }
       }
@@ -96,7 +96,7 @@ void conflict_based_register::create_conflict_graph(conflict_graph& cg)
       {
          if(!HLS->storage_value_information->are_storage_value_compatible(vi, vj))
          {
-            boost::add_edge(boost::vertex(vi, cg), boost::vertex(vj, cg), cg);
+            graph_add_edge(graph_vertex(cg, vi), graph_vertex(cg, vj), cg);
          }
       }
    }

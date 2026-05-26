@@ -56,6 +56,7 @@
 #include "function_behavior.hpp"
 #include "funit_obj.hpp"
 #include "generic_obj.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
@@ -180,7 +181,7 @@ generic_objRef conn_binding::bind_port(unsigned int var, conn_binding::direction
    return generic_objRef();
 }
 
-generic_objRef conn_binding::bind_command_port(gc_vertex_descriptor ver, conn_binding::direction_type dir,
+generic_objRef conn_binding::bind_command_port(OpGraph::vertex_descriptor ver, conn_binding::direction_type dir,
                                                unsigned int mode, const OpGraph& g)
 {
    switch(dir)
@@ -190,7 +191,7 @@ generic_objRef conn_binding::bind_command_port(gc_vertex_descriptor ver, conn_bi
          if(command_input_ports.count(std::make_pair(ver, mode)) == 0)
          {
             command_input_ports[std::make_pair(ver, mode)] = generic_objRef(new commandport_obj(
-                ver, mode, "IN_" + commandport_obj::get_mode_string(mode) + "_" + g.CGetNodeInfo(ver).vertex_name));
+                ver, mode, "IN_" + commandport_obj::get_mode_string(mode) + "_" + graph_node_info(g, ver).vertex_name));
          }
          return command_input_ports[std::make_pair(ver, mode)];
       }
@@ -199,7 +200,8 @@ generic_objRef conn_binding::bind_command_port(gc_vertex_descriptor ver, conn_bi
          if(command_output_ports.count(ver) == 0)
          {
             command_output_ports[ver] = generic_objRef(new commandport_obj(
-                ver, mode, "OUT_" + commandport_obj::get_mode_string(mode) + "_" + g.CGetNodeInfo(ver).vertex_name));
+                ver, mode,
+                "OUT_" + commandport_obj::get_mode_string(mode) + "_" + graph_node_info(g, ver).vertex_name));
          }
          return command_output_ports[ver];
       }
@@ -223,7 +225,7 @@ generic_objRef conn_binding::bind_selector_port(conn_binding::direction_type dir
 }
 
 generic_objRef conn_binding::bind_selector_port(conn_binding::direction_type dir, unsigned int mode,
-                                                gc_vertex_descriptor cond, const OpGraph& data)
+                                                OpGraph::vertex_descriptor cond, const OpGraph& data)
 {
    if(activation_ports.find(cond) != activation_ports.end() and
       activation_ports[cond].find(dir) != activation_ports[cond].end())
@@ -233,7 +235,7 @@ generic_objRef conn_binding::bind_selector_port(conn_binding::direction_type dir
    generic_objRef port =
        generic_objRef(new commandport_obj(cond, mode,
                                           (dir == IN ? "IN_" : "OUT_") + commandport_obj::get_mode_string(mode) + "_" +
-                                              data.CGetNodeInfo(cond).vertex_name));
+                                              graph_node_info(data, cond).vertex_name));
    activation_ports[cond][dir] = port;
    return selectors[dir][std::make_pair(port, 0)] = port;
 }
@@ -622,7 +624,7 @@ void conn_binding::mux_allocation(const hlsRef HLS, const structural_managerRef 
          mux_obj0->set_structural_obj(mux);
 
          /// mux selector in datapath interface
-         generic_objRef selector = GetPointer<mux_obj>(mux_obj0)->GetSelector();
+         generic_objRef selector = GetPointer<mux_obj>(mux_obj0)->GetMuxSelector();
          structural_objectRef sel_obj = selector->get_structural_obj();
          THROW_ASSERT(sel_obj, "Selector obj not created");
          /// selector in mux object
@@ -951,15 +953,15 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
 
    /// define the type for boolean command signals
    structural_type_descriptorRef boolean_port_type(new structural_type_descriptor("bool", 0));
-   std::map<gc_vertex_descriptor, structural_objectRef> skip_done_signals;
-   std::map<gc_vertex_descriptor, structural_objectRef> effective_done_signals;
+   std::map<OpGraph::vertex_descriptor, structural_objectRef> skip_done_signals;
+   std::map<OpGraph::vertex_descriptor, structural_objectRef> effective_done_signals;
    std::map<structural_objectRef, structural_objectRef> sig;
 
    const auto add_bool_signal = [&](const std::string& base_name) {
       return SM->add_sign(base_name + "_" + STR(unique_id++), circuit, boolean_port_type);
    };
 
-   const auto get_raw_done_signal = [&](const gc_vertex_descriptor op) -> structural_objectRef {
+   const auto get_raw_done_signal = [&](const OpGraph::vertex_descriptor op) -> structural_objectRef {
       auto fu_unit = HLS->Rfu->get(op);
       auto fu_obj = fu_unit->get_structural_obj();
       auto done = fu_obj->find_member(DONE_PORT_NAME, port_o_K, fu_obj);
@@ -986,7 +988,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
       return sig[done];
    };
 
-   const auto get_effective_done_signal = [&](const gc_vertex_descriptor op) -> structural_objectRef {
+   const auto get_effective_done_signal = [&](const OpGraph::vertex_descriptor op) -> structural_objectRef {
       const auto done_it = effective_done_signals.find(op);
       if(done_it != effective_done_signals.end())
       {
@@ -1006,7 +1008,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
          return raw_done;
       }
 
-      const auto op_name = data.CGetNodeInfo(op).vertex_name;
+      const auto op_name = graph_node_info(data, op).vertex_name;
       const auto or_gate =
           SM->add_module_from_technology_library("predicated_done_or_" + op_name + "_" + STR(unique_id), OR_GATE_STD,
                                                  TM->get_library(OR_GATE_STD), circuit, TM);
@@ -1027,9 +1029,9 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
    {
       auto tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(j));
       auto op_tn = GetPointer<functional_unit>(tn)->get_operation(
-          ir_helper::NormalizeTypename(data.CGetNodeInfo(j).GetOperation()));
+          ir_helper::NormalizeTypename(graph_node_info(data, j).GetOperation()));
       THROW_ASSERT(GetPointer<operation>(op_tn)->time_m,
-                   "Time model not available for operation: " + data.CGetNodeInfo(j).vertex_name);
+                   "Time model not available for operation: " + graph_node_info(data, j).vertex_name);
       /// check for start port
       auto CM = GetPointer<functional_unit>(tn)->CM;
       if(!CM)
@@ -1041,7 +1043,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
       auto* fu_module = GetPointer<module_o>(top);
       THROW_ASSERT(fu_module, "expected");
       structural_objectRef start_port_i = fu_module->find_member(START_PORT_NAME, port_o_K, top);
-      if(((data.CGetNodeInfo(j).node_type & TYPE_EXTERNAL) && start_port_i) ||
+      if(((graph_node_info(data, j).node_type & TYPE_EXTERNAL) && start_port_i) ||
          !GetPointer<operation>(op_tn)->is_bounded() || start_port_i)
       {
          bind_selector_port(conn_binding::IN, commandport_obj::UNBOUNDED, j, data);
@@ -1052,8 +1054,8 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding inputs");
    std::map<structural_objectRef, std::list<structural_objectRef>> calls;
-   std::map<structural_objectRef, std::list<gc_vertex_descriptor>> start_to_vertex;
-   std::map<gc_vertex_descriptor, structural_objectRef> vertex_to_selector;
+   std::map<structural_objectRef, std::list<OpGraph::vertex_descriptor>> start_to_vertex;
+   std::map<OpGraph::vertex_descriptor, structural_objectRef> vertex_to_selector;
    if(selectors.find(conn_binding::IN) != selectors.end())
    {
       auto connection_binding_sets = selectors.find(conn_binding::IN)->second;
@@ -1131,11 +1133,11 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
                if(GetPointer<commandport_obj>(j->second)->get_command_type() == commandport_obj::UNBOUNDED)
                {
                   auto op = GetPointer<commandport_obj>(j->second)->get_vertex();
-                  const auto op_name = data.CGetNodeInfo(op).vertex_name;
+                  const auto op_name = graph_node_info(data, op).vertex_name;
                   vertex_to_selector[op] = sel_obj;
                   const auto predicate_port = get_command_predicate(op);
                   structural_objectRef start_signal = sel_obj;
-                  const auto op_node = HLSMgr->get_ir_manager()->GetIRNode(data.CGetNodeInfo(op).GetNodeId());
+                  const auto op_node = HLSMgr->get_ir_manager()->GetIRNode(graph_node_info(data, op).GetNodeId());
                   const auto call_predicate = getCallPredicate(op_node);
                   THROW_ASSERT(!(call_predicate && call_predicate->get_kind() == constant_int_val_node_K &&
                                  ir_helper::GetConstValue(call_predicate) == 0),
@@ -1292,7 +1294,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
       auto mu_mod = mu->get_structural_obj();
       auto mut = GetPointer<multi_unbounded_obj>(mu);
       const auto& ops = mut->get_ops();
-      std::vector<std::pair<gc_vertex_descriptor, structural_objectRef>> ordered_ops;
+      std::vector<std::pair<OpGraph::vertex_descriptor, structural_objectRef>> ordered_ops;
       ordered_ops.reserve(ops.size());
       for(const auto& op : ops)
       {

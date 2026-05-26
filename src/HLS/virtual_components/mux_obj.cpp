@@ -61,7 +61,7 @@ generic_objRef mux_obj::get_final_target()
    return tree_target;
 }
 
-generic_objRef mux_obj::GetSelector() const
+generic_objRef mux_obj::GetMuxSelector() const
 {
    return selector;
 }

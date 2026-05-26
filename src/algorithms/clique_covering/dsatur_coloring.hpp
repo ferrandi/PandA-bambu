@@ -47,7 +47,6 @@
 #define DSATUR_COLORING_HPP
 
 #include <boost/config.hpp>
-#include <boost/graph/properties.hpp>
 #include <boost/version.hpp>
 #if BOOST_VERSION >= 104000
 #include <boost/property_map/property_map.hpp>
@@ -55,11 +54,9 @@
 #include <boost/property_map.hpp>
 #endif
 #include "custom_set.hpp"
+#include "graph_facade.hpp"
 #include <algorithm>
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/visitors.hpp>
 #include <boost/limits.hpp>
-#include <boost/tuple/tuple.hpp>
 #include <vector>
 
 /**
@@ -87,7 +84,7 @@ namespace boost
     public:
       bool operator()(size_type v1, size_type v2) const
       {
-         return degree(vertex(v1, G), G) >= degree(vertex(v2, G), G);
+         return ::graph_degree(G, ::graph_vertex(G, v1)) >= ::graph_degree(G, ::graph_vertex(G, v2));
       }
       explicit dsatur_degree_compare_functor(const VertexListGraph& _G) : G(_G)
       {
@@ -103,10 +100,10 @@ namespace boost
     public:
       bool operator()(size_type v1) const
       {
-         return degree(vertex(v1, G), G) < v2_degree;
+         return ::graph_degree(G, ::graph_vertex(G, v1)) < v2_degree;
       }
       dsatur_degree_predicate_functor(const VertexListGraph& _G, size_type& _v2)
-          : G(_G), v2_degree(degree(vertex(_v2, _G), _G))
+          : G(_G), v2_degree(::graph_degree(_G, ::graph_vertex(_G, _v2)))
       {
       }
 
@@ -208,12 +205,11 @@ namespace boost
             {
                maxclr = color;
             }
-            put(CM, vertex(v, G), color);
+            put(CM, ::graph_vertex(G, v), color);
             /// update neighbors saturation
-            typename GraphTraits::adjacency_iterator vit, vend;
-            for(boost::tie(vit, vend) = adjacent_vertices(vertex(v, G), G); vit != vend; ++vit)
+            for(const auto& vit : ::graph_adjacent_vertices(G, ::graph_vertex(G, v)))
             {
-               size_type w = get(vertex_index, G, *vit);
+               size_type w = static_cast<size_type>(::graph_vertex_index(G, vit));
                if(vertex_to_iter[w])
                {
                   /// color not previously adjacent to w
@@ -299,7 +295,7 @@ namespace boost
       using Vertex = typename GraphTraits::vertex_descriptor;
       using size_type = typename property_traits<ColorMap>::value_type;
 
-      const size_type num_node = num_vertices(G);
+      const size_type num_node = ::graph_num_vertices(G);
       if(num_node == 0)
       {
          return 0;

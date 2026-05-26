@@ -43,6 +43,7 @@
 #include "Parameter.hpp"
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hash_helper.hpp"
 #include "op_graph.hpp"
 #include "operations_graph_constructor.hpp"
@@ -88,9 +89,9 @@ void ScalarSsaDataDependenceComputation::Initialize()
    if(bb_version != 0 and bb_version != function_behavior->GetBBVersion())
    {
       const auto fsaodg = function_behavior->GetOpGraph(FunctionBehavior::FSAODG);
-      if(fsaodg.num_vertices() != 0)
+      if(graph_num_vertices(fsaodg) != 0)
       {
-         for(const auto& edge : fsaodg.edges())
+         for(const auto& edge : graph_edges(fsaodg))
          {
             function_behavior->ogc->RemoveSelector(edge, DFG_SCA_SELECTOR | FB_DFG_SCA_SELECTOR | ADG_SCA_SELECTOR |
                                                              FB_ADG_SCA_SELECTOR | ODG_SCA_SELECTOR |

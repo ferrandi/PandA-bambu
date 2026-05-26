@@ -42,13 +42,14 @@
 #include "call_graph_manager.hpp"
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls_manager.hpp"
 #include "op_graph.hpp"
 #include "string_manipulation.hpp"
 
 namespace
 {
-   class CallSitesCollectorVisitor : public boost::default_dfs_visitor
+   class CallSitesCollectorVisitor : public graph_default_dfs_visitor
    {
       /// A refcount to the HLSMgr
       const HLS_managerRef HLSMgr;
@@ -70,16 +71,16 @@ namespace
 
       void examine_edge(const CallGraph::edge_descriptor& e, const CallGraph& g)
       {
-         const auto called_id = HLSMgr->CGetCallGraphManager().get_function(g.target(e));
-         const auto caller_id = HLSMgr->CGetCallGraphManager().get_function(g.source(e));
-         for(const auto callid : g.CGetEdgeInfo(e).direct_call_points)
+         const auto called_id = HLSMgr->CGetCallGraphManager().get_function(graph_target(g, e));
+         const auto caller_id = HLSMgr->CGetCallGraphManager().get_function(graph_source(g, e));
+         for(const auto callid : graph_edge_info(g, e).direct_call_points)
          {
             HLSMgr->RDiscr->call_sites_info.fu_id_to_call_ids[caller_id].insert(callid);
             THROW_ASSERT(HLSMgr->RDiscr->call_sites_info.call_id_to_called_id[callid].empty() or callid == 0,
                          "direct call " + STR(callid) + " calls more than one function");
             HLSMgr->RDiscr->call_sites_info.call_id_to_called_id[callid].insert(called_id);
          }
-         for(const auto callid : g.CGetEdgeInfo(e).indirect_call_points)
+         for(const auto callid : graph_edge_info(g, e).indirect_call_points)
          {
             HLSMgr->RDiscr->call_sites_info.fu_id_to_call_ids[caller_id].insert(callid);
             HLSMgr->RDiscr->call_sites_info.call_id_to_called_id[callid].insert(called_id);
@@ -97,7 +98,7 @@ namespace
    void RecursivelyUnfold(UnfoldedCallGraph::vertex_descriptor caller_v, UnfoldedCallGraph& ucg, const CallGraph& CG,
                           const CallSitesInfo& call_sites_info)
    {
-      const auto caller_id = ucg.CGetNodeInfo(caller_v).f_id;
+      const auto caller_id = graph_node_info(ucg, caller_v).f_id;
       // if this function does not call other functions we're done
       const auto caller = call_sites_info.fu_id_to_call_ids.find(caller_id);
       if(caller == call_sites_info.fu_id_to_call_ids.cend())
@@ -117,7 +118,7 @@ namespace
              call_sites_info.call_id_to_called_id.at(call_id)) // loop on the function called by call_id
          {
             // compute the behavior of the new vertex
-            const auto& behaviors = CG.CGetGraphInfo().behaviors;
+            const auto& behaviors = graph_graph_info(CG).behaviors;
             const auto b = behaviors.find(called_id);
             // add a new copy of the vertex representing the called function
             const auto called_v = ucg.AddVertex(
@@ -142,10 +143,8 @@ namespace
           * Use a visitor to analyze the call graph in HLSMgr and to initialize the
           * CallSitesInfo in the Discrepancy data.
           */
-         std::vector<boost::default_color_type> csc_color(CG.num_vertices());
-         boost::depth_first_visit(CG, CGM.GetVertex(root_function), CallSitesCollectorVisitor(HLSMgr),
-                                  boost::make_iterator_property_map(
-                                      csc_color.begin(), boost::get(boost::vertex_index_t(), CG), boost::white_color));
+         auto csc_color = graph_make_color_map(CG);
+         graph_depth_first_visit(CG, CGM.GetVertex(root_function), CallSitesCollectorVisitor(HLSMgr), csc_color.get());
       }
       /*
        * After the collection of the data on the call sites we can actually start
@@ -155,9 +154,9 @@ namespace
       for(const auto fun_id : CGM.GetReachedFunctionsFrom(root_function))
       {
          const auto op_graph = HLSMgr->CGetFunctionBehavior(fun_id)->GetOpGraph(FunctionBehavior::FCFG);
-         THROW_ASSERT(op_graph.num_vertices() >= 2,
+         THROW_ASSERT(graph_num_vertices(op_graph) >= 2,
                       "at least ENTRY and EXIT node must exist for op graph of function " + STR(fun_id));
-         HLSMgr->RDiscr->n_total_operations += op_graph.num_vertices() - 2;
+         HLSMgr->RDiscr->n_total_operations += graph_num_vertices(op_graph) - 2;
       }
       // insert in the unfolded call graph the root function node
       HLSMgr->RDiscr->unfolded_root_v =

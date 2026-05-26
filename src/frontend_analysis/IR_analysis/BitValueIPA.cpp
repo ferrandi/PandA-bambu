@@ -52,6 +52,7 @@
 #include "design_flow_manager.hpp"
 #include "function_behavior.hpp"
 #include "function_frontend_flow_step.hpp"
+#include "graph_facade.hpp"
 #include "ir_basic_block.hpp"
 #include "ir_helper.hpp"
 #include "ir_manager.hpp"
@@ -167,9 +168,9 @@ DesignFlowStep_Status BitValueIPA::Exec()
       vertex_subset.insert(CGM.GetVertex(cvertex));
    }
    const auto subgraph = CGM.CGetCallSubGraph(vertex_subset);
-   for(const auto& e : subgraph.edges())
+   for(const auto& e : graph_edges(subgraph))
    {
-      const auto& info = subgraph.CGetEdgeInfo(e);
+      const auto& info = graph_edge_info(subgraph, e);
       if(info.indirect_call_points.size())
       {
          return DesignFlowStep_Status::UNCHANGED;
@@ -285,9 +286,9 @@ DesignFlowStep_Status BitValueIPA::Exec()
             auto res = create_x_bitstring(1);
 
             const auto fu_cgv = CGM.GetVertex(fu_id);
-            for(const auto& ie : cg.in_edges(fu_cgv))
+            for(const auto& ie : graph_in_edges(cg, fu_cgv))
             {
-               const auto caller_id = CGM.get_function(cg.source(ie));
+               const auto caller_id = CGM.get_function(graph_source(cg, ie));
                if(reached_body_fun_ids.find(caller_id) == reached_body_fun_ids.cend())
                {
                   continue;
@@ -296,7 +297,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                               "-->examining caller \"" +
                                   AppM->CGetFunctionBehavior(caller_id)->CGetBehavioralHelper()->GetFunctionName() +
                                   "\": id = " + STR(caller_id));
-               const auto& call_edge_info = cg.CGetEdgeInfo(ie);
+               const auto& call_edge_info = graph_edge_info(cg, ie);
                for(const auto& i : call_edge_info.direct_call_points)
                {
                   THROW_ASSERT(i, "unexpected condition");
@@ -428,9 +429,9 @@ DesignFlowStep_Status BitValueIPA::Exec()
                   auto res = create_x_bitstring(1);
 
                   const auto fu_cgv = CGM.GetVertex(fu_id);
-                  for(const auto& ie : cg.in_edges(fu_cgv))
+                  for(const auto& ie : graph_in_edges(cg, fu_cgv))
                   {
-                     const auto caller_id = CGM.get_function(cg.source(ie));
+                     const auto caller_id = CGM.get_function(graph_source(cg, ie));
                      if(reached_body_fun_ids.find(caller_id) == reached_body_fun_ids.cend())
                      {
                         continue;
@@ -439,7 +440,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                          AppM->CGetFunctionBehavior(caller_id)->CGetBehavioralHelper()->GetFunctionName();
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                     "-->examining caller \"" + caller_name + "\": id = " + STR(caller_id));
-                     const auto& call_edge_info = cg.CGetEdgeInfo(ie);
+                     const auto& call_edge_info = graph_edge_info(cg, ie);
                      for(const auto& i : call_edge_info.direct_call_points)
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->examining direct call point " + STR(i));
@@ -653,14 +654,14 @@ DesignFlowStep_Status BitValueIPA::Exec()
                             AppM->CGetFunctionBehavior(restart_fun_id)->CGetBehavioralHelper()->GetFunctionName());
          fun_id_to_restart.insert(restart_fun_id);
          const auto fu_cgv = CGM.GetVertex(restart_fun_id);
-         for(const auto& ie : cg.in_edges(fu_cgv))
+         for(const auto& ie : graph_in_edges(cg, fu_cgv))
          {
-            const auto caller_id = CGM.get_function(cg.source(ie));
+            const auto caller_id = CGM.get_function(graph_source(cg, ie));
             if(reached_body_fun_ids.find(caller_id) == reached_body_fun_ids.cend())
             {
                continue;
             }
-            const auto& call_edge_info = cg.CGetEdgeInfo(ie);
+            const auto& call_edge_info = graph_edge_info(cg, ie);
             if(!call_edge_info.direct_call_points.empty())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,

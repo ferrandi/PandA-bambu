@@ -43,10 +43,7 @@
 #include "custom_map.hpp"
 #include "design_flow_step.hpp"
 #include "exceptions.hpp"
-
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/filtered_graph.hpp>
-#include <boost/iterator/iterator_facade.hpp>
+#include "graph_facade.hpp"
 
 #include <filesystem>
 #include <ostream>
@@ -75,25 +72,25 @@ DesignFlowGraph::vertex_descriptor DesignFlowGraph::GetDesignFlowStep(DesignFlow
 
 void DesignFlowGraph::AddDesignFlowDependence(vertex_descriptor src, vertex_descriptor tgt, DesignFlowEdge type)
 {
-   const auto [e, found] = boost::edge(src, tgt, *this);
+   const auto [e, found] = graph_find_edge(*this, src, tgt);
    if(found)
    {
       AddType(e, type);
    }
    else
    {
-      boost::add_edge(src, tgt, type, *this);
+      graph_add_edge(src, tgt, type, *this);
    }
 }
 
 DesignFlowEdge DesignFlowGraph::AddType(edge_descriptor e, DesignFlowEdge type)
 {
-   return GetEdgeInfo(e) |= type;
+   return graph_edge_info(*this, e) |= type;
 }
 
 DesignFlowEdge DesignFlowGraph::RemoveType(edge_descriptor e, DesignFlowEdge type)
 {
-   auto& etype = GetEdgeInfo(e);
+   auto& etype = graph_edge_info(*this, e);
    return etype = static_cast<DesignFlowEdge>(etype & ~type);
 }
 
@@ -112,7 +109,7 @@ DesignFlowStepWriter::DesignFlowStepWriter(const DesignFlowGraph* g) : m_g(g)
 void DesignFlowStepWriter::operator()(std::ostream& out, const vertex_descriptor& v) const
 {
    out << "[";
-   const auto step_info = m_g->CGetNodeInfo(v);
+   const auto step_info = graph_node_info(*m_g, v);
 
    if(step_info->design_flow_step->IsComposed())
    {
@@ -175,11 +172,11 @@ DesignFlowEdgeWriter::DesignFlowEdgeWriter(const DesignFlowGraph* g) : m_g(g)
 void DesignFlowEdgeWriter::operator()(std::ostream& out, const edge_descriptor& edge) const
 {
    out << "[";
-   const auto source = m_g->source(edge);
-   const auto target = m_g->target(edge);
+   const auto source = graph_source(*m_g, edge);
+   const auto target = graph_target(*m_g, edge);
 
-   const auto source_info = m_g->CGetNodeInfo(source);
-   const auto target_info = m_g->CGetNodeInfo(target);
+   const auto source_info = graph_node_info(*m_g, source);
+   const auto target_info = graph_node_info(*m_g, target);
    const bool source_executed =
        source_info->status == DesignFlowStep_Status::EMPTY || source_info->status == DesignFlowStep_Status::SKIPPED ||
        source_info->status == DesignFlowStep_Status::SUCCESS || source_info->status == DesignFlowStep_Status::UNCHANGED;
@@ -188,7 +185,7 @@ void DesignFlowEdgeWriter::operator()(std::ostream& out, const edge_descriptor& 
        target_info->status == DesignFlowStep_Status::SUCCESS || target_info->status == DesignFlowStep_Status::UNCHANGED;
    const bool source_unnecessary = source_info->status == DesignFlowStep_Status::UNNECESSARY;
    const bool target_unnecessary = target_info->status == DesignFlowStep_Status::UNNECESSARY;
-   if(DesignFlowGraph::FEEDBACK == m_g->CGetEdgeInfo(edge))
+   if(DesignFlowGraph::FEEDBACK == graph_edge_info(*m_g, edge))
    {
       out << "color=red3,";
    }
@@ -196,7 +193,7 @@ void DesignFlowEdgeWriter::operator()(std::ostream& out, const edge_descriptor& 
    {
       out << "color=darkgreen, ";
    }
-   if((DesignFlowGraph::PRECEDENCE == m_g->CGetEdgeInfo(edge)) || target_unnecessary || source_unnecessary)
+   if((DesignFlowGraph::PRECEDENCE == graph_edge_info(*m_g, edge)) || target_unnecessary || source_unnecessary)
    {
       out << "style=dashed";
    }

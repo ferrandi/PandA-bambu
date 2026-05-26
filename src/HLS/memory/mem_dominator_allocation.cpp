@@ -50,6 +50,7 @@
 #include "function_behavior.hpp"
 #include "functions.hpp"
 #include "generic_device.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_device.hpp"
@@ -381,9 +382,9 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       preset.insert(top_vertex);
       const auto reached_from_top = CGM.GetReachedFunctionsFrom(top_function);
       const auto is_dominated = [&](CallGraph::vertex_descriptor v) {
-         for(const auto& e : CG.in_edges(v))
+         for(const auto& e : graph_in_edges(CG, v))
          {
-            if(!reached_from_top.count(CGM.get_function(CG.source(e))))
+            if(!reached_from_top.count(CGM.get_function(graph_source(CG, e))))
             {
                return false;
             }
@@ -431,9 +432,9 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       const auto& subgraph = cg.at(top_function);
       /// we do not need the exit vertex since the post-dominator graph is not used
       cg_dominators[top_function] =
-          std::make_unique<dominance<CallGraph>>(subgraph, top_vertex, CallGraph::null_vertex());
+          std::make_unique<dominance<CallGraph>>(subgraph, top_vertex, graph_null_vertex<CallGraph>());
       std::list<CallGraph::vertex_descriptor> sorted;
-      subgraph.TopologicalSort(sorted);
+      graph_topological_sort(subgraph, sorted);
       for(const auto& v : sorted)
       {
          allocation_order.push_back(CGM.get_function(v));
@@ -449,7 +450,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       cg.emplace(addr_func, subgraph_from(top_vertex, true));
       const auto& subgraph = cg.at(addr_func);
       std::list<CallGraph::vertex_descriptor> sorted;
-      subgraph.TopologicalSort(sorted);
+      graph_topological_sort(subgraph, sorted);
       for(const auto& v : sorted)
       {
          const auto v_id = CGM.get_function(v);
@@ -501,7 +502,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       const auto current_vertex = get_remapped_vertex(CGM.GetVertex(f_id), CGM, HLSMgr);
 
       auto current_dom = current_vertex;
-      const auto projection_in_degree = cg.at(top_id).in_degree(current_vertex);
+      const auto projection_in_degree = graph_in_degree(cg.at(top_id), current_vertex);
       if(projection_in_degree != 1)
       {
          current_dom = get_remapped_vertex(dom_tree.getImmediateDominator(current_vertex), CGM, HLSMgr);
@@ -547,8 +548,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
 
    bool all_pointers_resolved = true;
    CustomMap<var_id_t, unsigned long long> var_size;
-   CustomMap<var_id_t, CustomMap<func_id_t, CustomOrderedSet<CallGraph::vertex_descriptor>>> var_referring_vertex_map;
-   CustomMap<var_id_t, CustomMap<func_id_t, CustomOrderedSet<CallGraph::vertex_descriptor>>> var_load_vertex_map;
+   CustomMap<var_id_t, CustomMap<func_id_t, CustomOrderedSet<OpGraph::vertex_descriptor>>> var_referring_vertex_map;
+   CustomMap<var_id_t, CustomMap<func_id_t, CustomOrderedSet<OpGraph::vertex_descriptor>>> var_load_vertex_map;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Pointers classification...");
    for(const auto& fun_id : func_list)
    {
@@ -568,9 +569,9 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       }
 
       const auto g = function_behavior->GetOpGraph(FunctionBehavior::CFG);
-      for(const auto v : g.vertices())
+      for(const auto v : graph_vertices(g))
       {
-         const auto op_info = g.CGetNodeInfo(v);
+         const auto op_info = graph_node_info(g, v);
          const auto current_op = op_info.GetOperation();
          /// custom function like printf may create problem to the pointer resolution
          if(current_op == "__builtin_printf" || current_op == BUILTIN_WAIT_CALL || current_op == MEMSET ||
@@ -793,9 +794,9 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          const auto BH = function_behavior->CGetBehavioralHelper();
          INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Analyzing function: " + BH->GetFunctionName());
          const auto g = function_behavior->GetOpGraph(FunctionBehavior::CFG);
-         for(const auto v : g.vertices())
+         for(const auto v : graph_vertices(g))
          {
-            const auto op_info = g.CGetNodeInfo(v);
+            const auto op_info = graph_node_info(g, v);
             if(op_info.node_type & (TYPE_LOAD | TYPE_STORE))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing statement " + op_info.vertex_name);
@@ -845,7 +846,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       memory_allocation_map[top_id][f_id];
       const auto& top_cg = cg.at(top_id);
       const auto f_v = CGM.GetVertex(f_id);
-      if(top_cg.out_degree(f_v))
+      if(graph_out_degree(top_cg, f_v))
       {
          THROW_ASSERT(HLSMgr->get_HLS(f_id),
                       "Missing HLS initialization for " +
@@ -855,9 +856,9 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                       "missing number of instances of function " +
                           HLSMgr->CGetFunctionBehavior(f_id)->CGetBehavioralHelper()->GetFunctionName());
          const auto cur_instances = num_instances.at(top_id).at(f_v);
-         for(const auto& e : top_cg.out_edges(f_v))
+         for(const auto& e : graph_out_edges(top_cg, f_v))
          {
-            const auto tgt = top_cg.target(e);
+            const auto tgt = graph_target(top_cg, e);
             const auto tgt_fu_name = functions::GetFUName(CGM.get_function(tgt), HLSMgr);
             if(HLSMgr->Rfuns->is_a_proxied_function(tgt_fu_name) ||
                (parameters->getOption<bool>(OPT_memory_mapped_top) && HLSMgr->hasToBeInterfaced(f_id)))
@@ -870,7 +871,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             }
             else
             {
-               const auto n_call_points = static_cast<unsigned int>(top_cg.CGetEdgeInfo(e).direct_call_points.size());
+               const auto n_call_points =
+                   static_cast<unsigned int>(graph_edge_info(top_cg, e).direct_call_points.size());
                if(!num_instances.at(top_id).count(tgt))
                {
                   num_instances.at(top_id)[tgt] = cur_instances * n_call_points;
@@ -1429,17 +1431,17 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    for(const auto& f_id : omp_functions)
    {
       const auto f_v = CGM.GetVertex(f_id);
-      for(const auto& e : CG.in_edges(f_v))
+      for(const auto& e : graph_in_edges(CG, f_v))
       {
-         fork_calls.insert(CG.source(e));
+         fork_calls.insert(graph_source(CG, e));
       }
    }
    for(const auto& fork_v : fork_calls)
    {
       const auto fork_id = CGM.get_function(fork_v);
-      for(const auto& e : CG.out_edges(fork_v))
+      for(const auto& e : graph_out_edges(CG, fork_v))
       {
-         const auto outlined_id = CGM.get_function(CG.target(e));
+         const auto outlined_id = CGM.get_function(graph_target(CG, e));
          if(HLSMgr->isOmpLambdaFunction(outlined_id))
          {
             THROW_ASSERT(omp_allocation_order.count(outlined_id),

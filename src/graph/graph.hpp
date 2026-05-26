@@ -57,9 +57,13 @@
 #include <deque>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <list>
+#include <memory>
 #include <ostream>
+#include <type_traits>
 #include <utility>
+#include <vector>
 
 template <class Graph>
 struct graph_base : public Graph
@@ -318,19 +322,67 @@ struct graph_base : public Graph
    }
 };
 
-using gc_vertex_list_t = boost::listS;
+template <class T>
+struct EdgeProperty;
 
-using gc_directed = boost::bidirectionalS;
+struct mutable_list_graph_storage
+{
+   using out_edge_list_selector = boost::listS;
+   using vertex_list_selector = boost::listS;
+   using directed_selector = boost::bidirectionalS;
+};
 
-using gc_vertex_descriptor = typename boost::mpl::if_<typename boost::detail::is_random_access<gc_vertex_list_t>::type,
-                                                      std::size_t, void*>::type;
+struct append_only_vec_graph_storage
+{
+   using out_edge_list_selector = boost::vecS;
+   using vertex_list_selector = boost::vecS;
+   using directed_selector = boost::bidirectionalS;
+};
+
+template <typename StoragePolicy>
+inline constexpr bool is_mutable_storage_policy_v = std::is_same_v<StoragePolicy, mutable_list_graph_storage>;
+
+template <typename StoragePolicy>
+struct graph_storage_traits
+{
+   using out_edge_list_selector = typename StoragePolicy::out_edge_list_selector;
+   using vertex_list_selector = typename StoragePolicy::vertex_list_selector;
+   using directed_selector = typename StoragePolicy::directed_selector;
+   using vertex_descriptor =
+       typename boost::mpl::if_<typename boost::detail::is_random_access<vertex_list_selector>::type, std::size_t,
+                                void*>::type;
+   using edge_descriptor = boost::detail::edge_desc_impl<boost::bidirectional_tag, vertex_descriptor>;
+
+   static constexpr vertex_descriptor null_vertex()
+   {
+      if constexpr(std::is_same_v<vertex_descriptor, void*>)
+      {
+         return nullptr;
+      }
+      else
+      {
+         return static_cast<vertex_descriptor>(-1);
+      }
+   }
+};
+
+using gc_default_storage_policy = mutable_list_graph_storage;
+using gc_default_storage_traits = graph_storage_traits<gc_default_storage_policy>;
+
+using gc_vertex_list_t = gc_default_storage_traits::vertex_list_selector;
+
+using gc_directed = gc_default_storage_traits::directed_selector;
+
+using gc_vertex_descriptor = gc_default_storage_traits::vertex_descriptor;
+using graph_default_vertex_descriptor = gc_default_storage_traits::vertex_descriptor;
 
 inline constexpr gc_vertex_descriptor gc_null_vertex()
 {
-   return static_cast<gc_vertex_descriptor>(0);
+   return gc_default_storage_traits::null_vertex();
 }
 
-using gc_edge_descriptor = boost::detail::edge_desc_impl<boost::bidirectional_tag, gc_vertex_descriptor>;
+using gc_edge_descriptor = gc_default_storage_traits::edge_descriptor;
+using graph_default_edge_descriptor = gc_default_storage_traits::edge_descriptor;
 
 /**
  * Definition of hash function for gc_edge_descriptor
@@ -351,16 +403,21 @@ namespace std
 } // namespace std
 
 template <typename node_info_t = boost::no_property, typename edge_info_t = boost::no_property,
-          typename graph_info_t = boost::no_property>
+          typename graph_info_t = boost::no_property, typename StoragePolicy = gc_default_storage_policy>
 using RawGraphBase =
-    boost::adjacency_list<gc_vertex_list_t, gc_vertex_list_t, gc_directed,
+    boost::adjacency_list<typename graph_storage_traits<StoragePolicy>::out_edge_list_selector,
+                          typename graph_storage_traits<StoragePolicy>::vertex_list_selector,
+                          typename graph_storage_traits<StoragePolicy>::directed_selector,
                           boost::property<boost::vertex_index_t, std::size_t, node_info_t>, edge_info_t, graph_info_t>;
 
 template <typename node_info_t = boost::no_property, typename edge_info_t = boost::no_property,
-          typename graph_info_t = boost::no_property>
-struct RawGraph : public graph_base<RawGraphBase<node_info_t, edge_info_t, graph_info_t>>
+          typename graph_info_t = boost::no_property, typename StoragePolicy = gc_default_storage_policy>
+struct RawGraph : public graph_base<RawGraphBase<node_info_t, edge_info_t, graph_info_t, StoragePolicy>>
 {
-   typedef RawGraphBase<node_info_t, edge_info_t, graph_info_t> Base;
+   using storage_policy = StoragePolicy;
+   using storage_traits = graph_storage_traits<storage_policy>;
+
+   typedef RawGraphBase<node_info_t, edge_info_t, graph_info_t, StoragePolicy> Base;
 
    typedef typename boost::graph_traits<Base>::vertex_descriptor vertex_descriptor;
    typedef typename boost::graph_traits<Base>::edge_descriptor edge_descriptor;
@@ -384,10 +441,22 @@ struct RawGraph : public graph_base<RawGraphBase<node_info_t, edge_info_t, graph
    {
    }
 
+   static constexpr vertex_descriptor null_vertex()
+   {
+      return storage_traits::null_vertex();
+   }
+
    vertex_descriptor AddVertex(const vertex_bundled& v_info)
    {
       const auto index = boost::num_vertices(*this);
-      return boost::add_vertex(vertex_property_type(index, v_info), *this);
+      if constexpr(boost::detail::is_random_access<typename storage_traits::vertex_list_selector>::value)
+      {
+         return boost::add_vertex(vertex_property_type(v_info), *this);
+      }
+      else
+      {
+         return boost::add_vertex(vertex_property_type(index, v_info), *this);
+      }
    }
 
    template <typename T = vertex_bundled, std::enable_if_t<std::is_default_constructible<T>::value, bool> = true>
@@ -396,16 +465,21 @@ struct RawGraph : public graph_base<RawGraphBase<node_info_t, edge_info_t, graph
       return AddVertex(T());
    }
 
-   void RemoveVertex(vertex_descriptor _v)
+   void RemoveVertex(vertex_descriptor _v) requires is_mutable_storage_policy_v<StoragePolicy>
    {
       boost::remove_vertex(_v, *this);
-      auto index_map = boost::get(boost::vertex_index_t(), *this);
-      size_t index = 0;
-      for(const auto v : boost::make_iterator_range(boost::vertices(*this)))
+      if constexpr(!boost::detail::is_random_access<typename storage_traits::vertex_list_selector>::value)
       {
-         index_map[v] = index++;
+         auto index_map = boost::get(boost::vertex_index_t(), *this);
+         size_t index = 0;
+         for(const auto v : boost::make_iterator_range(boost::vertices(*this)))
+         {
+            index_map[v] = index++;
+         }
       }
    }
+
+   void RemoveVertex(vertex_descriptor _v) requires(!is_mutable_storage_policy_v<StoragePolicy>) = delete;
 
    edge_descriptor AddEdge(vertex_descriptor src, vertex_descriptor tgt, const edge_bundled& e_info)
    {
@@ -432,6 +506,14 @@ struct RawGraph : public graph_base<RawGraphBase<node_info_t, edge_info_t, graph
       boost::remove_edge(boost::source(e, *this), boost::target(e, *this), *this);
    }
 };
+
+template <typename node_info_t = boost::no_property, typename edge_info_t = boost::no_property,
+          typename graph_info_t = boost::no_property>
+using mutable_raw_graph = RawGraph<node_info_t, edge_info_t, graph_info_t, mutable_list_graph_storage>;
+
+template <typename node_info_t = boost::no_property, typename edge_info_t = boost::no_property,
+          typename graph_info_t = boost::no_property>
+using append_only_raw_graph = RawGraph<node_info_t, edge_info_t, graph_info_t, append_only_vec_graph_storage>;
 
 /**
  * The property associated with edge
@@ -471,9 +553,11 @@ struct EdgeProperty : public T
 };
 
 template <typename node_info_t = boost::no_property, typename edge_info_t = boost::no_property,
-          typename graph_info_t = boost::no_property>
+          typename graph_info_t = boost::no_property, typename StoragePolicy = gc_default_storage_policy>
 using graphs_collection_base = boost::adjacency_list<
-    gc_vertex_list_t, gc_vertex_list_t, gc_directed,
+    typename graph_storage_traits<StoragePolicy>::out_edge_list_selector,
+    typename graph_storage_traits<StoragePolicy>::vertex_list_selector,
+    typename graph_storage_traits<StoragePolicy>::directed_selector,
     boost::property<boost::vertex_index_t, std::size_t,
                     boost::property<boost::vertex_color_t, boost::default_color_type, node_info_t>>,
     EdgeProperty<edge_info_t>, graph_info_t>;
@@ -482,11 +566,15 @@ using graphs_collection_base = boost::adjacency_list<
  * bulk graph. All the edge of a graph are store in this object
  */
 template <typename node_info_t = boost::no_property, typename edge_info_t = boost::no_property,
-          typename graph_info_t = boost::no_property>
-struct graphs_collection : public graph_base<graphs_collection_base<node_info_t, edge_info_t, graph_info_t>>
+          typename graph_info_t = boost::no_property, typename StoragePolicy = gc_default_storage_policy>
+struct graphs_collection
+    : public graph_base<graphs_collection_base<node_info_t, edge_info_t, graph_info_t, StoragePolicy>>
 
 {
-   typedef graphs_collection_base<node_info_t, edge_info_t, graph_info_t> Base;
+   using storage_policy = StoragePolicy;
+   using storage_traits = graph_storage_traits<storage_policy>;
+
+   typedef graphs_collection_base<node_info_t, edge_info_t, graph_info_t, StoragePolicy> Base;
 
    typedef typename boost::graph_traits<Base>::vertex_descriptor vertex_descriptor;
    typedef typename boost::graph_traits<Base>::edge_descriptor edge_descriptor;
@@ -503,6 +591,11 @@ struct graphs_collection : public graph_base<graphs_collection_base<node_info_t,
    template <typename... Args>
    graphs_collection(Args&&... args) : graph_base<Base>(std::forward<Args>(args)...)
    {
+   }
+
+   static constexpr vertex_descriptor null_vertex()
+   {
+      return storage_traits::null_vertex();
    }
 
    virtual ~graphs_collection() = default;
@@ -574,7 +667,10 @@ struct graphs_collection : public graph_base<graphs_collection_base<node_info_t,
    {
       const auto index = boost::num_vertices(*this);
       const auto new_v = boost::add_vertex(*this);
-      boost::get(boost::vertex_index_t(), *this)[new_v] = index;
+      if constexpr(!boost::detail::is_random_access<typename storage_traits::vertex_list_selector>::value)
+      {
+         boost::get(boost::vertex_index_t(), *this)[new_v] = index;
+      }
       boost::get(boost::vertex_bundle_t(), *this)[new_v] = info;
       return new_v;
    }
@@ -589,16 +685,21 @@ struct graphs_collection : public graph_base<graphs_collection_base<node_info_t,
     * Remove a vertex from this graph
     * @param _v is the vertex to be removed
     */
-   virtual void RemoveVertex(vertex_descriptor _v)
+   void RemoveVertex(vertex_descriptor _v) requires is_mutable_storage_policy_v<StoragePolicy>
    {
       boost::remove_vertex(_v, *this);
-      auto index_map = boost::get(boost::vertex_index_t(), *this);
-      size_t index = 0;
-      for(const auto v : boost::make_iterator_range(boost::vertices(*this)))
+      if constexpr(!boost::detail::is_random_access<typename storage_traits::vertex_list_selector>::value)
       {
-         index_map[v] = index++;
+         auto index_map = boost::get(boost::vertex_index_t(), *this);
+         size_t index = 0;
+         for(const auto v : boost::make_iterator_range(boost::vertices(*this)))
+         {
+            index_map[v] = index++;
+         }
       }
    }
+
+   void RemoveVertex(vertex_descriptor _v) requires(!is_mutable_storage_policy_v<StoragePolicy>) = delete;
 
    /**
     * Add an edge to this graph
@@ -661,15 +762,85 @@ struct graphs_collection : public graph_base<graphs_collection_base<node_info_t,
    }
 };
 
+template <typename node_info_t = boost::no_property, typename edge_info_t = boost::no_property,
+          typename graph_info_t = boost::no_property>
+using mutable_graphs_collection = graphs_collection<node_info_t, edge_info_t, graph_info_t, mutable_list_graph_storage>;
+
+template <typename node_info_t = boost::no_property, typename edge_info_t = boost::no_property,
+          typename graph_info_t = boost::no_property>
+using append_only_graphs_collection =
+    graphs_collection<node_info_t, edge_info_t, graph_info_t, append_only_vec_graph_storage>;
+
 /**
  * Predicate functor object used to select the proper set of vertexes
  */
 template <typename Graph>
+class FilteredViewSubset
+{
+ private:
+   using vertex_descriptor = typename Graph::vertex_descriptor;
+   using subset_type = CustomUnorderedSet<vertex_descriptor>;
+   static constexpr bool has_random_access_vertices =
+       boost::detail::is_random_access<typename Graph::storage_traits::vertex_list_selector>::value;
+
+   bool has_subset;
+   subset_type sparse_subset;
+   std::vector<unsigned char> dense_subset;
+
+ public:
+   explicit FilteredViewSubset(const subset_type& subset) : has_subset(!subset.empty()), sparse_subset(subset)
+   {
+   }
+
+   FilteredViewSubset(const Graph& graph, const subset_type& subset) : has_subset(!subset.empty())
+   {
+      if(!has_subset)
+      {
+         return;
+      }
+
+      if constexpr(has_random_access_vertices)
+      {
+         dense_subset.resize(boost::num_vertices(graph), 0U);
+         for(const auto v : subset)
+         {
+            const auto index = static_cast<std::size_t>(v);
+            THROW_ASSERT(index < dense_subset.size(), "Filtered graph subset contains an invalid vertex descriptor");
+            dense_subset[index] = 1U;
+         }
+      }
+      else
+      {
+         sparse_subset = subset;
+      }
+   }
+
+   bool contains(vertex_descriptor v) const
+   {
+      if(!has_subset)
+      {
+         return true;
+      }
+
+      if constexpr(has_random_access_vertices)
+      {
+         const auto index = static_cast<std::size_t>(v);
+         THROW_ASSERT(index < dense_subset.size(), "Filtered graph subset contains an invalid vertex descriptor");
+         return dense_subset[index] != 0U;
+      }
+      else
+      {
+         return sparse_subset.find(v) != sparse_subset.end();
+      }
+   }
+};
+
+template <typename Graph>
 struct SelectVertex
 {
  private:
-   /// The set of vertices to be considered
-   CustomUnorderedSet<typename Graph::vertex_descriptor> subset;
+   using subset_state = FilteredViewSubset<Graph>;
+   std::shared_ptr<const subset_state> subset;
 
  public:
    SelectVertex()
@@ -680,7 +851,12 @@ struct SelectVertex
     * Constructor
     * @param _subset is the set of vertices to be considered
     */
-   SelectVertex(const CustomUnorderedSet<typename Graph::vertex_descriptor>& _subset) : subset(_subset)
+   explicit SelectVertex(const CustomUnorderedSet<typename Graph::vertex_descriptor>& _subset)
+       : subset(std::make_shared<subset_state>(_subset))
+   {
+   }
+
+   explicit SelectVertex(std::shared_ptr<const subset_state> _subset) : subset(std::move(_subset))
    {
    }
 
@@ -691,7 +867,7 @@ struct SelectVertex
     */
    bool operator()(typename Graph::vertex_descriptor v) const
    {
-      return subset.empty() || (subset.find(v) != subset.end());
+      return !subset || subset->contains(v);
    }
 };
 
@@ -702,6 +878,8 @@ template <typename Graph>
 struct SelectEdge
 {
  private:
+   using subset_state = FilteredViewSubset<Graph>;
+
    /// The bulk graph
    const Graph* g;
 
@@ -709,7 +887,7 @@ struct SelectEdge
    int selector;
 
    /// The vertices of subgraph
-   CustomUnorderedSet<typename Graph::vertex_descriptor> subset;
+   std::shared_ptr<const subset_state> subset;
 
  public:
    SelectEdge() : g(nullptr), selector(0)
@@ -722,26 +900,26 @@ struct SelectEdge
     * @param _selector is the selector of the filtered graph
     * @param _subset is the set of vertices of the filtered graph
     */
-   SelectEdge(const Graph* _g, int _selector = 0,
-              const CustomUnorderedSet<typename Graph::vertex_descriptor>& _subset = {})
-       : g(_g), selector(_selector), subset(_subset)
+   SelectEdge(const Graph* _g, int _selector = 0, std::shared_ptr<const subset_state> _subset = {})
+       : g(_g), selector(_selector), subset(std::move(_subset))
    {
    }
 
    bool operator()(const typename Graph::edge_descriptor& e) const
    {
-      if(subset.empty())
+      if(!(selector & g->operator[](e).selector))
       {
-         return selector & g->operator[](e).selector;
+         return false;
+      }
+
+      if(!subset)
+      {
+         return true;
       }
 
       const auto u = boost::source(e, *g);
       const auto v = boost::target(e, *g);
-      if((selector & g->GetSelector(e)) && subset.find(v) != subset.end() && subset.find(u) != subset.end())
-      {
-         return true;
-      }
-      return false;
+      return subset->contains(v) && subset->contains(u);
    }
 };
 
@@ -752,6 +930,10 @@ template <class GraphsCollection>
 struct graph : public graph_base<boost::filtered_graph<typename GraphsCollection::Base, SelectEdge<GraphsCollection>,
                                                        SelectVertex<GraphsCollection>>>
 {
+   using collection_type = GraphsCollection;
+   using storage_policy = typename collection_type::storage_policy;
+   using storage_traits = typename collection_type::storage_traits;
+
    typedef boost::filtered_graph<typename GraphsCollection::Base, SelectEdge<GraphsCollection>,
                                  SelectVertex<GraphsCollection>>
        Base;
@@ -767,6 +949,9 @@ struct graph : public graph_base<boost::filtered_graph<typename GraphsCollection
 
    typedef typename boost::vertex_property_type<Base>::type vertex_property_type;
    typedef typename boost::lookup_one_property<vertex_property_type, boost::vertex_bundle_t>::type vertex_bundled;
+   using subset_type = CustomUnorderedSet<vertex_descriptor>;
+   using subset_state = FilteredViewSubset<GraphsCollection>;
+   using subset_state_ptr = std::shared_ptr<const subset_state>;
 
    /**
     * Sub-graph constructor.
@@ -774,12 +959,19 @@ struct graph : public graph_base<boost::filtered_graph<typename GraphsCollection
     * @param selector is the selector used to filter the bulk graph.
     * @param vertices is the set of vertexes on which the graph is filtered.
     */
-   graph(const GraphsCollection& g, const int selector, const CustomUnorderedSet<vertex_descriptor>& vertices = {})
-       : graph_base<Base>(g, SelectEdge<GraphsCollection>(&g, selector, vertices),
-                          SelectVertex<GraphsCollection>(vertices)),
-         m_collection(g),
-         m_selector(selector)
+   graph(const GraphsCollection& g, const int selector) : graph(subset_ctor_tag{}, g, selector, {})
    {
+   }
+
+   graph(const GraphsCollection& g, const int selector, const subset_type& vertices)
+       : graph(subset_ctor_tag{}, g, selector,
+               vertices.empty() ? subset_state_ptr{} : std::make_shared<subset_state>(g, vertices))
+   {
+   }
+
+   static constexpr vertex_descriptor null_vertex()
+   {
+      return storage_traits::null_vertex();
    }
 
    const GraphsCollection& GetGraphsCollection() const
@@ -792,7 +984,7 @@ struct graph : public graph_base<boost::filtered_graph<typename GraphsCollection
     */
    bool is_in_subset(vertex_descriptor v) const
    {
-      return m_vertex_pred(v);
+      return !m_subset_state || m_subset_state->contains(v);
    }
 
    /**
@@ -827,8 +1019,22 @@ struct graph : public graph_base<boost::filtered_graph<typename GraphsCollection
    }
 
  protected:
+   struct subset_ctor_tag
+   {
+   };
+
+   graph(subset_ctor_tag, const GraphsCollection& g, const int selector, subset_state_ptr subset_view)
+       : graph_base<Base>(g, SelectEdge<GraphsCollection>(&g, selector, subset_view),
+                          SelectVertex<GraphsCollection>(subset_view)),
+         m_collection(g),
+         m_selector(selector),
+         m_subset_state(std::move(subset_view))
+   {
+   }
+
    const GraphsCollection& m_collection;
    const int m_selector;
+   const subset_state_ptr m_subset_state;
 };
 
 /**

@@ -42,7 +42,7 @@
 #define VAR_COMPUTATION_HPP
 #include "function_frontend_flow_step.hpp"
 
-#include "graph.hpp"
+#include "op_graph.hpp"
 #include "refcount.hpp"
 
 class node_stmt;
@@ -62,7 +62,7 @@ class VarComputation : public FunctionFrontendFlowStep
     * @param access_type is the type of the access
     * @param ogc is the operations graph constructor used to record dependencies
     */
-   void RecursivelyAnalyze(gc_vertex_descriptor op_vertex, const ir_nodeConstRef& ir_node,
+   void RecursivelyAnalyze(OpGraph::vertex_descriptor op_vertex, const ir_nodeConstRef& ir_node,
                            const VariableAccessType access_type,
                            const std::unique_ptr<operations_graph_constructor>& ogc) const;
 
@@ -72,7 +72,7 @@ class VarComputation : public FunctionFrontendFlowStep
     * @param vops is the set of virtual operands to be considered
     * @param ogc is the operations graph constructor used to record dependencies
     */
-   void AnalyzeVops(gc_vertex_descriptor op_vertex, const node_stmt* vops,
+   void AnalyzeVops(OpGraph::vertex_descriptor op_vertex, const node_stmt* vops,
                     const std::unique_ptr<operations_graph_constructor>& ogc) const;
 
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>

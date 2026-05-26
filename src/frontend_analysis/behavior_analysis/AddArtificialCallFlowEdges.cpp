@@ -44,6 +44,7 @@
 #include "behavioral_helper.hpp"
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hash_helper.hpp"
 #include "ir_basic_block.hpp"
 #include "op_graph.hpp"
@@ -94,14 +95,14 @@ DesignFlowStep_Status AddArtificialCallFlowEdges::InternalExec()
 
    const auto BH = function_behavior->CGetBehavioralHelper();
    /// Adding operation to empty return
-   for(const auto& v : bb_graph.vertices())
+   for(const auto& v : graph_vertices(bb_graph))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Analyzing BB" + STR(bb_graph.CGetNodeInfo(v).block->number));
-      const auto& statements_list = bb_graph.CGetNodeInfo(v).statements_list;
+                     "-->Analyzing BB" + STR(graph_node_info(bb_graph, v).block->number));
+      const auto& statements_list = graph_node_info(bb_graph, v).statements_list;
       for(const auto stmt : statements_list)
       {
-         const auto& node_info = op_graph.CGetNodeInfo(stmt);
+         const auto& node_info = graph_node_info(op_graph, stmt);
          const unsigned int st_tn_id = node_info.GetNodeId();
          if(!BH->CanBeMoved(st_tn_id))
          {
@@ -125,7 +126,7 @@ DesignFlowStep_Status AddArtificialCallFlowEdges::InternalExec()
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "<--Analyzed BB" + STR(bb_graph.CGetNodeInfo(v).block->number));
+                     "<--Analyzed BB" + STR(graph_node_info(bb_graph, v).block->number));
    }
    if(parameters->getOption<bool>(OPT_print_dot))
    {

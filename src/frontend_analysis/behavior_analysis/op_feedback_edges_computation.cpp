@@ -46,6 +46,7 @@
 #include "behavioral_helper.hpp"
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "ir_basic_block.hpp"
 #include "ir_manager.hpp"
 #include "loop.hpp"
@@ -107,9 +108,9 @@ DesignFlowStep_Status op_feedback_edges_computation::InternalExec()
       {
          const auto& from_bb = sp_back_edge.first;
          const auto& to_bb = sp_back_edge.second;
-         const auto& bb_node_info = fbb.CGetNodeInfo(to_bb);
+         const auto& bb_node_info = graph_node_info(fbb, to_bb);
          auto label_vertex = bb_node_info.statements_list.front();
-         const auto bb_node_info_from = fbb.CGetNodeInfo(from_bb);
+         const auto bb_node_info_from = graph_node_info(fbb, from_bb);
          THROW_ASSERT(bb_node_info_from.statements_list.size(),
                       "Empty block " + std::to_string(bb_node_info_from.block->number));
          auto goto_vertex = bb_node_info_from.statements_list.back();
@@ -117,8 +118,8 @@ DesignFlowStep_Status op_feedback_edges_computation::InternalExec()
          function_behavior->ogc->RemoveEdge(goto_vertex, label_vertex, CFG_SELECTOR);
          function_behavior->ogc->AddEdge(goto_vertex, label_vertex, FB_CFG_SELECTOR);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Transforming " + STR(fbb.CGetNodeInfo(from_bb).block->number) + "->" +
-                            STR(fbb.CGetNodeInfo(to_bb).block->number));
+                        "---Transforming " + STR(graph_node_info(fbb, from_bb).block->number) + "->" +
+                            STR(graph_node_info(fbb, to_bb).block->number));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed loop " + STR(loop->getLoopId()));
    }

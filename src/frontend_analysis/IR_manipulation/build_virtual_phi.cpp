@@ -47,6 +47,7 @@
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "ir_basic_block.hpp"
 #include "ir_helper.hpp"
 #include "ir_manager.hpp"
@@ -107,7 +108,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
    const auto ir_man = ir_manipulationRef(new ir_manipulation(TM, parameters, AppM));
    auto basic_block_graph = function_behavior->GetBBGraph(FunctionBehavior::FBB);
    const auto loops = function_behavior->getConstLoops();
-   const auto bb_index_map = basic_block_graph.CGetGraphInfo().bb_index_map;
+   const auto bb_index_map = graph_graph_info(basic_block_graph).bb_index_map;
    using ReachabilityKey = std::pair<BBGraph::vertex_descriptor, BBGraph::vertex_descriptor>;
    CustomUnorderedMapUnstable<ReachabilityKey, bool> bb_reachability_cache;
    const auto check_bb_reachability_cached = [&](const BBGraph::vertex_descriptor from,
@@ -144,14 +145,15 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
    /// The set of nodes which overwrite a vop
    IRNodeMap<IRNodeSet> vovers;
 
-   std::list<BBGraph::vertex_descriptor> objs(basic_block_graph.vertices().begin(), basic_block_graph.vertices().end());
+   const auto bb_vertices = graph_vertices(basic_block_graph);
+   std::list<BBGraph::vertex_descriptor> objs(bb_vertices.begin(), bb_vertices.end());
    /// Computing definitions and overwriting
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing definitions: " + STR(objs.size()));
-   for(const auto basic_block : basic_block_graph.vertices())
+   for(const auto basic_block : graph_vertices(basic_block_graph))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Analyzing BB" + STR(basic_block_graph.CGetNodeInfo(basic_block).block->number));
-      const auto& block_info = basic_block_graph.CGetNodeInfo(basic_block).block;
+                     "-->Analyzing BB" + STR(graph_node_info(basic_block_graph, basic_block).block->number));
+      const auto& block_info = graph_node_info(basic_block_graph, basic_block).block;
       for(const auto& stmt : block_info->CGetStmtList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing stmt " + STR(stmt));
@@ -201,7 +203,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed stmt " + STR(stmt));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "<--Analyzed BB" + STR(basic_block_graph.CGetNodeInfo(basic_block).block->number));
+                     "<--Analyzed BB" + STR(graph_node_info(basic_block_graph, basic_block).block->number));
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed definitions");
 
@@ -221,7 +223,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       THROW_ASSERT(sn, STR(virtual_ssa_definition.first));
 
       /// The index of the loop to be considered (the most internal loops which contains the definition and all the uses
-      auto loop_id = basic_block_graph.CGetNodeInfo(definition_bb).loop_id;
+      auto loop_id = graph_node_info(basic_block_graph, definition_bb).loop_id;
 
       /// The depth of the loop to be considered
       auto depth = loops->getConstLoop(loop_id)->getLoopDepth();
@@ -291,7 +293,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
          use_stmts.insert(use_stmt.first);
          use_bbs.insert(use_bb);
 
-         auto use_loop_id = basic_block_graph.CGetNodeInfo(use_bb).loop_id;
+         auto use_loop_id = graph_node_info(basic_block_graph, use_bb).loop_id;
          auto use_depth = loops->getConstLoop(use_loop_id)->getLoopDepth();
 
          /// Use is in the considered loop
@@ -345,7 +347,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
 
       // The set of header basic blocks where a phi has to be inserted
       CustomSet<BBGraph::vertex_descriptor> phi_headers;
-      auto current_loop = loops->getConstLoop(basic_block_graph.CGetNodeInfo(definition_bb).loop_id);
+      auto current_loop = loops->getConstLoop(graph_node_info(basic_block_graph, definition_bb).loop_id);
       while(current_loop->getLoopId() != loop_id)
       {
          for(const auto& cur_pair : current_loop->getBackEdges())
@@ -385,11 +387,11 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       /// Loop 0 must be managed in a different way
       if(loop_id == 0)
       {
-         reaching_defs[virtual_ssa_definition.first][basic_block_graph.CGetGraphInfo().entry_vertex] = volatile_sn;
-         for(const auto& oe : basic_block_graph.out_edges(basic_block_graph.CGetGraphInfo().entry_vertex))
+         reaching_defs[virtual_ssa_definition.first][graph_graph_info(basic_block_graph).entry_vertex] = volatile_sn;
+         for(const auto& oe : graph_out_edges(basic_block_graph, graph_graph_info(basic_block_graph).entry_vertex))
          {
-            const auto target = basic_block_graph.target(oe);
-            if(basic_block_graph.CGetGraphInfo().exit_vertex != target)
+            const auto target = graph_target(basic_block_graph, oe);
+            if(graph_graph_info(basic_block_graph).exit_vertex != target)
             {
                to_be_processed.insert(target);
             }
@@ -406,9 +408,9 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                if(check_bb_feedback_reachability_cached(current, use_bb))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---BB" + STR(basic_block_graph.CGetNodeInfo(use_bb).block->number) +
+                                 "---BB" + STR(graph_node_info(basic_block_graph, use_bb).block->number) +
                                      " can be reached from BB" +
-                                     STR(basic_block_graph.CGetNodeInfo(current).block->number));
+                                     STR(graph_node_info(basic_block_graph, current).block->number));
                   reachable = true;
                   break;
                }
@@ -426,7 +428,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
          for(const auto removable : to_be_removed)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Removing BB" + STR(basic_block_graph.CGetNodeInfo(removable).block->number));
+                           "---Removing BB" + STR(graph_node_info(basic_block_graph, removable).block->number));
             loop_basic_blocks.erase(removable);
          }
       }
@@ -436,9 +438,9 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
          loops->getConstLoop(loop_id)->collectBlocksRecursively(loop_bbs);
          for(const auto& loop_bb : loop_bbs)
          {
-            for(const auto ei : basic_block_graph.in_edges(loop_bb))
+            for(const auto ei : graph_in_edges(basic_block_graph, loop_bb))
             {
-               const auto source = basic_block_graph.source(ei);
+               const auto source = graph_source(basic_block_graph, ei);
                if(loop_bbs.find(source) == loop_bbs.end())
                {
                   reaching_defs[virtual_ssa_definition.first][source] = volatile_sn;
@@ -456,12 +458,12 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
          const auto current = *(to_be_processed.begin());
          to_be_processed.erase(current);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Checking BB" + STR(basic_block_graph.CGetNodeInfo(current).block->number));
+                        "-->Checking BB" + STR(graph_node_info(basic_block_graph, current).block->number));
 
-         if(basic_block_graph.in_degree(current) == 1)
+         if(graph_in_degree(basic_block_graph, current) == 1)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Single entry BB");
-            const auto source = basic_block_graph.source(basic_block_graph.in_edges(current).front());
+            const auto source = graph_source(basic_block_graph, graph_in_edges(basic_block_graph, current).front());
             THROW_ASSERT(reaching_defs.at(virtual_ssa_definition.first).count(source), "unexpected condition");
             reaching_defs[virtual_ssa_definition.first][current] =
                 reaching_defs.at(virtual_ssa_definition.first).at(source);
@@ -472,10 +474,10 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             /// The phi is necessary only if there are different reaching definition
             bool build_phi = false;
             IRNodeSet local_reaching_defs;
-            for(const auto& ie : basic_block_graph.in_edges(current))
+            for(const auto& ie : graph_in_edges(basic_block_graph, current))
             {
-               const auto source = basic_block_graph.source(ie);
-               if((basic_block_graph.GetSelector(ie) & FB_CFG_SELECTOR))
+               const auto source = graph_source(basic_block_graph, ie);
+               if((graph_edge_selector(basic_block_graph, ie) & FB_CFG_SELECTOR))
                {
                   if(phi_headers.find(current) != phi_headers.end())
                   {
@@ -486,7 +488,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                   else
                   {
                      /// Check if this is a irreducible loop
-                     const auto current_loop_id = basic_block_graph.CGetNodeInfo(current).loop_id;
+                     const auto current_loop_id = graph_node_info(basic_block_graph, current).loop_id;
                      if(!loops->getConstLoop(current_loop_id)->isReducible())
                      {
                         /// If loop is irreducible, than we have to consider the definition coming from sp_back_edge
@@ -500,7 +502,8 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                {
                   THROW_ASSERT(reaching_defs.find(virtual_ssa_definition.first) != reaching_defs.end() &&
                                    reaching_defs.find(virtual_ssa_definition.first)->second.count(source),
-                               "Definition coming from BB" + STR(basic_block_graph.CGetNodeInfo(source).block->number));
+                               "Definition coming from BB" +
+                                   STR(graph_node_info(basic_block_graph, source).block->number));
                   local_reaching_defs.insert(reaching_defs.at(virtual_ssa_definition.first).at(source));
                }
             }
@@ -514,13 +517,14 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---PHI has to be built");
 
                std::vector<phi_stmt::DefEdge> def_edges;
-               for(const auto& ie : basic_block_graph.in_edges(current))
+               for(const auto& ie : graph_in_edges(basic_block_graph, current))
                {
-                  if((basic_block_graph.GetSelector(ie) & CFG_SELECTOR) != 0)
+                  if((graph_edge_selector(basic_block_graph, ie) & CFG_SELECTOR) != 0)
                   {
-                     const auto source = basic_block_graph.source(ie);
+                     const auto source = graph_source(basic_block_graph, ie);
                      const auto& vssa = reaching_defs.at(virtual_ssa_definition.first).at(source);
-                     def_edges.push_back(phi_stmt::DefEdge(vssa, basic_block_graph.CGetNodeInfo(source).block->number));
+                     def_edges.push_back(
+                         phi_stmt::DefEdge(vssa, graph_node_info(basic_block_graph, source).block->number));
                   }
                }
                ir_nodeRef phi_res;
@@ -529,7 +533,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                    ir_helper::CGetType(phi_res)->index == ir_helper::CGetType(virtual_ssa_definition.first)->index, "");
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created ssa " + phi_res->ToString());
                GetPointerS<phi_stmt>(phi_tn)->SetSSAUsesComputed();
-               basic_block_graph.GetNodeInfo(current).block->AddPhi(phi_tn);
+               graph_node_info(basic_block_graph, current).block->AddPhi(phi_tn);
                reaching_defs[virtual_ssa_definition.first][current] = phi_res;
                added_phis[virtual_ssa_definition.first][current] = phi_tn;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created phi " + phi_tn->ToString());
@@ -546,7 +550,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
          if(definition_bb == current || use_bbs.count(current))
          {
             bool before_definition = definition_bb == current || check_bb_reachability_cached(current, definition_bb);
-            for(const auto& stmt : basic_block_graph.CGetNodeInfo(current).block->CGetStmtList())
+            for(const auto& stmt : graph_node_info(basic_block_graph, current).block->CGetStmtList())
             {
                const auto& reaching_def = reaching_defs.at(virtual_ssa_definition.first).at(current);
                if(use_stmts.count(stmt) && stmt->index != virtual_ssa_definition.second->index)
@@ -591,36 +595,36 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                             STR(reaching_defs.at(virtual_ssa_definition.first).at(current)));
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking successors");
-         for(const auto& oe : basic_block_graph.out_edges(current))
+         for(const auto& oe : graph_out_edges(basic_block_graph, current))
          {
-            const auto target = basic_block_graph.target(oe);
+            const auto target = graph_target(basic_block_graph, oe);
             if(loop_basic_blocks.count(target))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Considering BB" + STR(basic_block_graph.CGetNodeInfo(target).block->number));
-               if((basic_block_graph.GetSelector(oe) & FB_CFG_SELECTOR) != 0)
+                              "---Considering BB" + STR(graph_node_info(basic_block_graph, target).block->number));
+               if((graph_edge_selector(basic_block_graph, oe) & FB_CFG_SELECTOR) != 0)
                {
                   if(phi_headers.count(target))
                   {
                      THROW_ASSERT(added_phis.find(virtual_ssa_definition.first) != added_phis.end() &&
                                       added_phis.find(virtual_ssa_definition.first)->second.count(target),
                                   "Phi for " + STR(virtual_ssa_definition.first) + " was not created in BB" +
-                                      STR(basic_block_graph.CGetNodeInfo(target).block->number));
+                                      STR(graph_node_info(basic_block_graph, target).block->number));
                      GetPointerS<phi_stmt>(added_phis.at(virtual_ssa_definition.first).at(target))
                          ->AddDefEdge(TM, phi_stmt::DefEdge(reaching_defs.at(virtual_ssa_definition.first).at(current),
-                                                            basic_block_graph.CGetNodeInfo(current).block->number));
+                                                            graph_node_info(basic_block_graph, current).block->number));
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "---Updated phi " + STR(added_phis.at(virtual_ssa_definition.first).at(target)));
                   }
-                  else if(!loops->getConstLoop(basic_block_graph.CGetNodeInfo(target).loop_id)->isReducible())
+                  else if(!loops->getConstLoop(graph_node_info(basic_block_graph, target).loop_id)->isReducible())
                   {
                      THROW_ASSERT(added_phis.find(virtual_ssa_definition.first) != added_phis.end() &&
                                       added_phis.find(virtual_ssa_definition.first)->second.count(target),
                                   "Phi for " + STR(virtual_ssa_definition.first) + " was not created in BB" +
-                                      STR(basic_block_graph.CGetNodeInfo(target).block->number));
+                                      STR(graph_node_info(basic_block_graph, target).block->number));
                      GetPointerS<phi_stmt>(added_phis.at(virtual_ssa_definition.first).at(target))
                          ->AddDefEdge(TM, phi_stmt::DefEdge(reaching_defs.at(virtual_ssa_definition.first).at(current),
-                                                            basic_block_graph.CGetNodeInfo(current).block->number));
+                                                            graph_node_info(basic_block_graph, current).block->number));
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "---Updated phi " + STR(added_phis.at(virtual_ssa_definition.first).at(target)));
                   }
@@ -628,15 +632,15 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                   {
                      IRNodeSet local_reaching_defs;
                      /// Check if phi has to be created because of different definitions coming from outside the loop
-                     for(const auto& ie : basic_block_graph.in_edges(target))
+                     for(const auto& ie : graph_in_edges(basic_block_graph, target))
                      {
-                        if((basic_block_graph.GetSelector(ie) & FB_CFG_SELECTOR) == 0)
+                        if((graph_edge_selector(basic_block_graph, ie) & FB_CFG_SELECTOR) == 0)
                         {
-                           const auto source = basic_block_graph.source(ie);
+                           const auto source = graph_source(basic_block_graph, ie);
                            THROW_ASSERT(reaching_defs.find(virtual_ssa_definition.first) != reaching_defs.end() &&
                                             reaching_defs.find(virtual_ssa_definition.first)->second.count(source),
                                         "Definition coming from BB" +
-                                            STR(basic_block_graph.CGetNodeInfo(source).block->number));
+                                            STR(graph_node_info(basic_block_graph, source).block->number));
                            local_reaching_defs.insert(reaching_defs.at(virtual_ssa_definition.first).at(source));
                         }
                      }
@@ -645,11 +649,11 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                         THROW_ASSERT(added_phis.find(virtual_ssa_definition.first) != added_phis.end() &&
                                          added_phis.find(virtual_ssa_definition.first)->second.count(target),
                                      "Phi for " + STR(virtual_ssa_definition.first) + " was not created in BB" +
-                                         STR(basic_block_graph.CGetNodeInfo(target).block->number));
+                                         STR(graph_node_info(basic_block_graph, target).block->number));
                         GetPointerS<phi_stmt>(added_phis.at(virtual_ssa_definition.first).at(target))
                             ->AddDefEdge(TM,
                                          phi_stmt::DefEdge(reaching_defs.at(virtual_ssa_definition.first).at(current),
-                                                           basic_block_graph.CGetNodeInfo(current).block->number));
+                                                           graph_node_info(basic_block_graph, current).block->number));
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "---Updated phi " + STR(added_phis.at(virtual_ssa_definition.first).at(target)));
                      }
@@ -663,7 +667,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked successors");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--Checked BB" + STR(basic_block_graph.CGetNodeInfo(current).block->number));
+                        "<--Checked BB" + STR(graph_node_info(basic_block_graph, current).block->number));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered ssa " + STR(virtual_ssa_definition.first));
    }
@@ -684,7 +688,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
          {
             if(removedPhis.find(bbv_phi.second) == removedPhis.end())
             {
-               const auto& bb = basic_block_graph.GetNodeInfo(bbv_phi.first).block;
+               const auto& bb = graph_node_info(basic_block_graph, bbv_phi.first).block;
                const auto phi_tn = GetPointerS<phi_stmt>(bbv_phi.second);
                const auto vssa = GetPointerS<ssa_node>(phi_tn->res);
                if(vssa->CGetNumberUses() == 0 ||
@@ -708,18 +712,18 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
 #ifndef NDEBUG
    if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
    {
-      for(const auto basic_block : basic_block_graph.vertices())
+      for(const auto basic_block : graph_vertices(basic_block_graph))
       {
-         const auto& block = basic_block_graph.CGetNodeInfo(basic_block).block;
+         const auto& block = graph_node_info(basic_block_graph, basic_block).block;
          for(const auto& phi : block->CGetPhiList())
          {
             const auto gp = GetPointerS<const phi_stmt>(phi);
             if(gp->virtual_flag)
             {
-               THROW_ASSERT(gp->CGetDefEdgesList().size() == basic_block_graph.in_degree(basic_block),
+               THROW_ASSERT(gp->CGetDefEdgesList().size() == graph_in_degree(basic_block_graph, basic_block),
                             STR(phi) + " of BB" + STR(block->number) +
                                 " has wrong number of inputs: " + STR(gp->CGetDefEdgesList().size()) + " vs " +
-                                STR(basic_block_graph.in_degree(basic_block)));
+                                STR(graph_in_degree(basic_block_graph, basic_block)));
             }
          }
       }

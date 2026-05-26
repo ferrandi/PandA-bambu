@@ -53,7 +53,8 @@ HDLGenerator::parameter::parameter(const structural_objectRef& port)
 }
 
 void HDLGenerator::Exec(std::ostream& out, structural_objectRef _mod, unsigned int function_id,
-                        gc_vertex_descriptor op_v, const std::vector<parameter>& _p, const HDLWriter_Language language)
+                        OpGraph::vertex_descriptor op_v, const std::vector<parameter>& _p,
+                        const HDLWriter_Language language)
 {
    const auto mod = GetPointer<module_o>(_mod);
    std::vector<parameter> _ports_in(mod->get_in_port_size(), parameter());

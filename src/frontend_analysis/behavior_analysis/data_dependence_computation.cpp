@@ -47,6 +47,7 @@
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "ir_helper.hpp"
 #include "ir_manager.hpp"
 #include "ir_node.hpp"
@@ -89,9 +90,9 @@ static void ordered_dfs(unsigned u, const OpGraph& avg, CustomUnorderedMap<OpGra
    vis[u] = true;
    CustomOrderedSet<unsigned> to;
    auto statement = rev_pos.at(u);
-   for(const auto& ei : avg.out_edges(statement))
+   for(const auto& ei : graph_out_edges(avg, statement))
    {
-      auto vi = avg.target(ei);
+      auto vi = graph_target(avg, ei);
       if(pos.find(vi) != pos.end())
       {
          to.insert(pos.find(vi)->second);
@@ -117,17 +118,17 @@ void DataDependenceComputation::do_dependence_reduction()
           .writeDot(function_behavior->GetDotPath() / "AGG_VIRTUALG.dot", 1);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---do_dependence_reduction");
-   for(const auto basic_block : bb_fcfg.vertices())
+   for(const auto basic_block : graph_vertices(bb_fcfg))
    {
-      const auto& bb_node_info = bb_fcfg.CGetNodeInfo(basic_block);
-      CustomUnorderedMap<BBGraph::vertex_descriptor, unsigned> pos;
-      std::vector<BBGraph::vertex_descriptor> rev_pos;
+      const auto& bb_node_info = graph_node_info(bb_fcfg, basic_block);
+      CustomUnorderedMap<OpGraph::vertex_descriptor, unsigned> pos;
+      std::vector<OpGraph::vertex_descriptor> rev_pos;
       unsigned posIndex = 0;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(bb_node_info.get_bb_index()));
       for(const auto statement : bb_node_info.statements_list)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Analyzing operation " + avg.CGetNodeInfo(statement).vertex_name);
+                        "---Analyzing operation " + graph_node_info(avg, statement).vertex_name);
          pos[statement] = posIndex;
          ++posIndex;
          rev_pos.push_back(statement);
@@ -152,9 +153,9 @@ void DataDependenceComputation::do_dependence_reduction()
       for(const auto statement : bb_node_info.statements_list)
       {
          std::list<OpGraph::edge_descriptor> to_be_removed;
-         for(const auto ei : avg.out_edges(statement))
+         for(const auto ei : graph_out_edges(avg, statement))
          {
-            auto vi = avg.target(ei);
+            auto vi = graph_target(avg, ei);
             if(pos.find(vi) != pos.end())
             {
                auto key = std::make_pair(pos.at(statement), pos.at(vi));
@@ -220,9 +221,10 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
       return result;
    };
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing definitions");
-   for(const auto& v : cfg.vertices())
+   for(const auto& v : graph_vertices(cfg))
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Definitions in " + cfg.CGetNodeInfo(v).vertex_name);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Definitions in " + graph_node_info(cfg, v).vertex_name);
       const auto& local_defs = getVariables(v, VariableAccessType::DEFINITION);
       for(auto local_def : local_defs)
       {
@@ -233,9 +235,10 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed definitions");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing overwritings");
-   for(const auto& v : cfg.vertices())
+   for(const auto& v : graph_vertices(cfg))
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Overwritings in " + cfg.CGetNodeInfo(v).vertex_name);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Overwritings in " + graph_node_info(cfg, v).vertex_name);
       const auto& local_overs = getVariables(v, VariableAccessType::OVER);
       for(auto local_over : local_overs)
       {
@@ -252,12 +255,13 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
    // nodes carry no var field, we match operations through cited_variables
    // (the physical variables each operation accesses).
    std::map<unsigned int, CustomOrderedSet<OpGraph::vertex_descriptor>> cited_var_to_virtual_over_vertices;
-   for(const auto& v : cfg.vertices())
+   for(const auto& v : graph_vertices(cfg))
    {
-      const auto& v_virtual_overs = cfg.CGetNodeInfo(v).getVariables(VariableType::VIRTUAL, VariableAccessType::OVER);
+      const auto& v_info = graph_node_info(cfg, v);
+      const auto& v_virtual_overs = v_info.getVariables(VariableType::VIRTUAL, VariableAccessType::OVER);
       if(!v_virtual_overs.empty())
       {
-         for(const auto cited_var : cfg.CGetNodeInfo(v).cited_variables)
+         for(const auto cited_var : v_info.cited_variables)
          {
             cited_var_to_virtual_over_vertices[cited_var].insert(v);
          }
@@ -265,10 +269,11 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing dependencies");
-   for(const auto& v : cfg.vertices())
+   for(const auto& v : graph_vertices(cfg))
    {
+      const auto& v_info = graph_node_info(cfg, v);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Computing anti and data dependencies of vertex " + cfg.CGetNodeInfo(v).vertex_name);
+                     "-->Computing anti and data dependencies of vertex " + v_info.vertex_name);
       for(auto local_use : getVariables(v, VariableAccessType::USE))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -282,20 +287,20 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
                const bool forward_dependence = check_reachability_cached(this_def, v);
                const bool feedback_dependence = check_reachability_cached(v, this_def);
                THROW_ASSERT(!(forward_dependence and feedback_dependence),
-                            "Dependence between operation " + cfg.CGetNodeInfo(this_def).vertex_name + " and " +
-                                cfg.CGetNodeInfo(v).vertex_name + " is in both the direction");
+                            "Dependence between operation " + graph_node_info(cfg, this_def).vertex_name + " and " +
+                                v_info.vertex_name + " is in both the direction");
                if(forward_dependence)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Adding data dependence " + cfg.CGetNodeInfo(this_def).vertex_name + "-->" +
-                                     cfg.CGetNodeInfo(v).vertex_name);
+                                 "---Adding data dependence " + graph_node_info(cfg, this_def).vertex_name + "-->" +
+                                     v_info.vertex_name);
                   function_behavior->ogc->AddEdge(this_def, v, dfg_selector);
                   function_behavior->ogc->add_edge_info(this_def, v, DFG_SELECTOR, local_use);
                   if(ir_helper::IsVirtual(local_use_node) && check_feedback_reachability_cached(v, this_def))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---Adding fb_adg_selector dependence " + cfg.CGetNodeInfo(v).vertex_name + "-->" +
-                                        cfg.CGetNodeInfo(this_def).vertex_name);
+                                    "---Adding fb_adg_selector dependence " + v_info.vertex_name + "-->" +
+                                        graph_node_info(cfg, this_def).vertex_name);
                      function_behavior->ogc->AddEdge(v, this_def, fb_adg_selector);
                      /// NOTE: label associated with forward selector also on feedback edge
                      function_behavior->ogc->add_edge_info(v, this_def, ADG_SELECTOR, local_use);
@@ -305,21 +310,21 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
                if(feedback_dependence)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Checking for feedback data dependence " + cfg.CGetNodeInfo(this_def).vertex_name +
-                                     "-->" + cfg.CGetNodeInfo(v).vertex_name);
+                                 "---Checking for feedback data dependence " +
+                                     graph_node_info(cfg, this_def).vertex_name + "-->" + v_info.vertex_name);
                   if(v != this_def && ir_helper::IsVirtual(local_use_node))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---Adding adg_selector dependence " + cfg.CGetNodeInfo(v).vertex_name + "-->" +
-                                        cfg.CGetNodeInfo(this_def).vertex_name);
+                                    "---Adding adg_selector dependence " + v_info.vertex_name + "-->" +
+                                        graph_node_info(cfg, this_def).vertex_name);
                      function_behavior->ogc->AddEdge(v, this_def, adg_selector);
                      function_behavior->ogc->add_edge_info(v, this_def, ADG_SELECTOR, local_use);
                   }
                   if(check_feedback_reachability_cached(this_def, v))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---Adding fb_dfg_selector dependence " + cfg.CGetNodeInfo(this_def).vertex_name +
-                                        "-->" + cfg.CGetNodeInfo(v).vertex_name);
+                                    "---Adding fb_dfg_selector dependence " +
+                                        graph_node_info(cfg, this_def).vertex_name + "-->" + v_info.vertex_name);
                      function_behavior->ogc->AddEdge(this_def, v, fb_dfg_selector);
                      /// NOTE: label associated with forward selector also on feedback edgeADG_SELECTOR
                      /// (ADG_SCA_SELECTADG_SELECTOR (ADG_SCA_SELECTOR | ADG_AGG_SELECTOR) FeedOR | ADG_AGG_SELECTOR)
@@ -331,8 +336,8 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
                if(v == this_def)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Adding2 fb_dfg_selector dependence " + cfg.CGetNodeInfo(v).vertex_name + "-->" +
-                                     cfg.CGetNodeInfo(v).vertex_name);
+                                 "---Adding2 fb_dfg_selector dependence " + v_info.vertex_name + "-->" +
+                                     v_info.vertex_name);
                   function_behavior->ogc->AddEdge(v, v, fb_dfg_selector);
                   function_behavior->ogc->add_edge_info(v, v, DFG_SELECTOR, local_use);
                }
@@ -349,8 +354,8 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
                   if(dependence)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---Adding adg_selector dependence " + cfg.CGetNodeInfo(v).vertex_name + "-->" +
-                                        cfg.CGetNodeInfo(this_over).vertex_name);
+                                    "---Adding adg_selector dependence " + v_info.vertex_name + "-->" +
+                                        graph_node_info(cfg, this_over).vertex_name);
                      function_behavior->ogc->AddEdge(v, this_over, adg_selector);
                      function_behavior->ogc->add_edge_info(v, this_over, ADG_SELECTOR, local_use);
                   }
@@ -359,7 +364,7 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
             // Cross-chain anti-dependency: after function inlining, independent
             // VSSA chains for the same physical memory may exist. Match operations
             // through cited_variables (the physical variables each operation accesses).
-            for(const auto cited_var : cfg.CGetNodeInfo(v).cited_variables)
+            for(const auto cited_var : v_info.cited_variables)
             {
                const auto cvit = cited_var_to_virtual_over_vertices.find(cited_var);
                if(cvit != cited_var_to_virtual_over_vertices.end())
@@ -374,9 +379,8 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
                      if(dependence)
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---Adding cross-chain adg_selector dependence " +
-                                           cfg.CGetNodeInfo(v).vertex_name + "-->" +
-                                           cfg.CGetNodeInfo(this_over).vertex_name);
+                                       "---Adding cross-chain adg_selector dependence " + v_info.vertex_name + "-->" +
+                                           graph_node_info(cfg, this_over).vertex_name);
                         function_behavior->ogc->AddEdge(v, this_over, adg_selector);
                         function_behavior->ogc->add_edge_info(v, this_over, ADG_SELECTOR, local_use);
                      }
@@ -387,9 +391,9 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "<--Computed anti and data dependencies of vertex " + cfg.CGetNodeInfo(v).vertex_name);
+                     "<--Computed anti and data dependencies of vertex " + v_info.vertex_name);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Computing output dependencies of vertex " + cfg.CGetNodeInfo(v).vertex_name);
+                     "-->Computing output dependencies of vertex " + v_info.vertex_name);
       for(auto local_over : getVariables(v, VariableAccessType::OVER))
       {
          if(defs.find(local_over) != defs.end())
@@ -401,15 +405,15 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
                if(forward_dependence)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Adding output dependence " + cfg.CGetNodeInfo(this_def).vertex_name + "-->" +
-                                     cfg.CGetNodeInfo(v).vertex_name);
+                                 "---Adding output dependence " + graph_node_info(cfg, this_def).vertex_name + "-->" +
+                                     v_info.vertex_name);
                   function_behavior->ogc->AddEdge(this_def, v, ODG_AGG_SELECTOR);
                   function_behavior->ogc->add_edge_info(this_def, v, ODG_SELECTOR, local_over);
                   if(check_feedback_reachability_cached(v, this_def))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---Adding FB_ODG_AGG_SELECTOR dependence " + cfg.CGetNodeInfo(v).vertex_name +
-                                        "-->" + cfg.CGetNodeInfo(this_def).vertex_name);
+                                    "---Adding FB_ODG_AGG_SELECTOR dependence " + v_info.vertex_name + "-->" +
+                                        graph_node_info(cfg, this_def).vertex_name);
                      function_behavior->ogc->AddEdge(v, this_def, FB_ODG_AGG_SELECTOR);
                      /// NOTE: label associated with forward selector also on feedback edge
                      function_behavior->ogc->add_edge_info(v, this_def, ODG_SELECTOR, local_over);
@@ -425,15 +429,15 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
                if(v != this_over && check_feedback_reachability_cached(v, this_over))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Adding FB_ODG_AGG_SELECTOR dependence " + cfg.CGetNodeInfo(v).vertex_name + "-->" +
-                                     cfg.CGetNodeInfo(this_over).vertex_name);
+                                 "---Adding FB_ODG_AGG_SELECTOR dependence " + v_info.vertex_name + "-->" +
+                                     graph_node_info(cfg, this_over).vertex_name);
                   function_behavior->ogc->AddEdge(v, this_over, FB_ODG_AGG_SELECTOR);
                }
             }
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "<--Computed output dependencies of vertex " + cfg.CGetNodeInfo(v).vertex_name);
+                     "<--Computed output dependencies of vertex " + v_info.vertex_name);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed dependencies");
    if(parameters->getOption<bool>(OPT_print_dot))
@@ -452,7 +456,7 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
    {
       const auto dfg = function_behavior->GetOpGraph(FunctionBehavior::DFG);
       std::list<OpGraph::vertex_descriptor> vertices;
-      dfg.TopologicalSort(vertices);
+      graph_topological_sort(dfg, vertices);
    }
    catch(...)
    {
@@ -462,7 +466,7 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
    return DesignFlowStep_Status::SUCCESS;
 }
 
-CustomSet<unsigned int> DataDependenceComputation::getVariables(gc_vertex_descriptor statement,
+CustomSet<unsigned int> DataDependenceComputation::getVariables(OpGraph::vertex_descriptor statement,
                                                                 const VariableAccessType variable_access_type) const
 {
    VariableType variable_type = VariableType::UNKNOWN;
@@ -478,7 +482,6 @@ CustomSet<unsigned int> DataDependenceComputation::getVariables(gc_vertex_descri
    {
       THROW_UNREACHABLE("Unexpected data flow analysis type");
    }
-   return function_behavior->GetOpGraph(FunctionBehavior::CFG)
-       .CGetNodeInfo(statement)
+   return graph_node_info(function_behavior->GetOpGraph(FunctionBehavior::CFG), statement)
        .getVariables(variable_type, variable_access_type);
 }

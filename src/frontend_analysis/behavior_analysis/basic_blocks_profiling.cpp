@@ -50,6 +50,7 @@
 #include "design_flow_manager.hpp"
 #include "fileIO.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hash_helper.hpp"
 #include "hls_device.hpp"
 #include "hls_flow_step_factory.hpp"
@@ -129,7 +130,7 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
             const auto fid = static_cast<unsigned>(std::stoull(tokens[1]));
             const auto function_behavior = AppM->CGetFunctionBehavior(fid);
             const auto& bb_index_map =
-                function_behavior->GetBBGraph(FunctionBehavior::FBB).CGetGraphInfo().bb_index_map;
+                graph_graph_info(function_behavior->GetBBGraph(FunctionBehavior::FBB)).bb_index_map;
             auto& bb_executions = function_behavior->profiling_information->bb_executions;
             unsigned bbi = 0;
             for(auto it = std::next(tokens.begin(), 2); it != tokens.end(); ++it)

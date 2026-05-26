@@ -52,6 +52,7 @@
 #include "design_flow_manager.hpp"
 #include "function_behavior.hpp"
 #include "graph.hpp"
+#include "graph_facade.hpp"
 #include "hash_helper.hpp"
 #include "string_manipulation.hpp"
 
@@ -100,8 +101,8 @@ DesignFlowStep_Status dom_post_dom_computation::InternalExec()
    const BehavioralHelperConstRef helper = function_behavior->CGetBehavioralHelper();
    /// dominators computation
    THROW_ASSERT(!function_behavior->dominators, "Dominators already built");
-   const auto bbentry = fbb.CGetGraphInfo().entry_vertex;
-   const auto bbexit = fbb.CGetGraphInfo().exit_vertex;
+   const auto bbentry = graph_graph_info(fbb).entry_vertex;
+   const auto bbexit = graph_graph_info(fbb).exit_vertex;
    function_behavior->dominators = std::make_unique<dominance<BBGraph>>(fbb, bbentry, bbexit);
    function_behavior->dominators->forEachDominanceRelation(
        [&](const BBGraph::vertex_descriptor child, const BBGraph::vertex_descriptor dom_vertex) {

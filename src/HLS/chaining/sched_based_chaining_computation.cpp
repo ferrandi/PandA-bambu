@@ -44,6 +44,7 @@
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "schedule.hpp"
@@ -69,26 +70,26 @@ DesignFlowStep_Status sched_based_chaining_computation::InternalExec()
    const auto FB = HLSMgr->CGetFunctionBehavior(funId);
    const auto flow_graph = FB->GetOpGraph(FunctionBehavior::FLSAODG);
 
-   for(const auto op : flow_graph.vertices())
+   for(const auto op : graph_vertices(flow_graph))
    {
       const auto current_starting_cycle = HLS->Rsch->get_cstep(op);
       const auto current_ending_cycle = HLS->Rsch->get_cstep_end(op);
       if(current_starting_cycle == current_ending_cycle)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Operations " + flow_graph.CGetNodeInfo(op).vertex_name + " and " +
-                            flow_graph.CGetNodeInfo(op).vertex_name + " are chained in");
+                        "---Operations " + graph_node_info(flow_graph, op).vertex_name + " and " +
+                            graph_node_info(flow_graph, op).vertex_name + " are chained in");
          HLS->chaining_information->add_chained_vertices_in(op, op);
       }
       bool is_chained_test = false;
-      for(const auto& ei : flow_graph.in_edges(op))
+      for(const auto& ei : graph_in_edges(flow_graph, op))
       {
-         auto src = flow_graph.source(ei);
+         auto src = graph_source(flow_graph, ei);
          if(HLS->Rsch->get_cstep_end(src) == current_starting_cycle)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                           std::string("Operations ") + flow_graph.CGetNodeInfo(src).vertex_name + " and " +
-                               flow_graph.CGetNodeInfo(op).vertex_name + " are chained in");
+                           std::string("Operations ") + graph_node_info(flow_graph, src).vertex_name + " and " +
+                               graph_node_info(flow_graph, op).vertex_name + " are chained in");
             HLS->chaining_information->add_chained_vertices_in(op, src);
             is_chained_test = true;
          }
@@ -96,18 +97,18 @@ DesignFlowStep_Status sched_based_chaining_computation::InternalExec()
       if(is_chained_test)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                        std::string("Operations ") + flow_graph.CGetNodeInfo(op).vertex_name +
+                        std::string("Operations ") + graph_node_info(flow_graph, op).vertex_name +
                             " is chained with something");
          HLS->chaining_information->is_chained_with.insert(op);
       }
-      for(auto eo : flow_graph.out_edges(op))
+      for(auto eo : graph_out_edges(flow_graph, op))
       {
-         auto tgt = flow_graph.target(eo);
+         auto tgt = graph_target(flow_graph, eo);
          if(HLS->Rsch->get_cstep(tgt) == current_ending_cycle)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                           std::string("Operations ") + flow_graph.CGetNodeInfo(tgt).vertex_name + " and " +
-                               flow_graph.CGetNodeInfo(op).vertex_name + " are chained out");
+                           std::string("Operations ") + graph_node_info(flow_graph, tgt).vertex_name + " and " +
+                               graph_node_info(flow_graph, op).vertex_name + " are chained out");
             HLS->chaining_information->add_chained_vertices_out(op, tgt);
          }
       }

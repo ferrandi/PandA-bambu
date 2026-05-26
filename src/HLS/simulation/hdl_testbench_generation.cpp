@@ -195,7 +195,7 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
    }();
    const auto top_fb = HLSMgr->CGetFunctionBehavior(top_id);
    const auto top_bh = top_fb->CGetBehavioralHelper();
-   mgm.create_generic_module("TestbenchDUT", nullptr, top_fb, LIBRARY_STD, "TestbenchDUT");
+   mgm.create_generic_module("TestbenchDUT", OpGraph::null_vertex(), top_fb, LIBRARY_STD, "TestbenchDUT");
    const auto dut = tb_top->add_module_from_technology_library("DUT", "TestbenchDUT", LIBRARY_STD, tb_cir, TechM);
    const auto dut_clock = dut->find_member(CLOCK_PORT_NAME, port_o_K, dut);
    THROW_ASSERT(dut_clock, "");
@@ -478,7 +478,8 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
 
             if(!axim_bundle)
             {
-               mgm.create_generic_module("TestbenchAXIM", nullptr, top_fb, LIBRARY_STD, axim_bundle_name);
+               mgm.create_generic_module("TestbenchAXIM", OpGraph::null_vertex(), top_fb, LIBRARY_STD,
+                                         axim_bundle_name);
                const auto if_port = tb_top->add_module_from_technology_library(
                    axim_bundle_name + "_fu", axim_bundle_name, LIBRARY_STD, tb_cir, TechM);
                if_modules.push_back(if_port);
@@ -503,8 +504,8 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
             const auto if_port_bundle = tb_cir->find_member(if_port_name + "_fu", module_o_K, tb_cir);
             if(!if_port_bundle)
             {
-               mgm.create_generic_module("Testbench" + capitalize(arg_interface), nullptr, top_fb, LIBRARY_STD,
-                                         if_port_name);
+               mgm.create_generic_module("Testbench" + capitalize(arg_interface), OpGraph::null_vertex(), top_fb,
+                                         LIBRARY_STD, if_port_name);
                const auto if_port = tb_top->add_module_from_technology_library(if_port_name + "_fu", if_port_name,
                                                                                LIBRARY_STD, tb_cir, TechM);
                if_port->SetParameter("index", STR(interface_index));
@@ -580,7 +581,8 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
                const auto axim_bundle = tb_cir->find_member(axim_bundle_name + "_fu", module_o_K, tb_cir);
                if(!axim_bundle)
                {
-                  mgm.create_generic_module("TestbenchAXIM", nullptr, top_fb, LIBRARY_STD, axim_bundle_name);
+                  mgm.create_generic_module("TestbenchAXIM", OpGraph::null_vertex(), top_fb, LIBRARY_STD,
+                                            axim_bundle_name);
                   const auto if_port = tb_top->add_module_from_technology_library(
                       axim_bundle_name + "_fu", axim_bundle_name, LIBRARY_STD, tb_cir, TechM);
                   if_port->SetParameter("index", tb_mem->GetParameter("index"));

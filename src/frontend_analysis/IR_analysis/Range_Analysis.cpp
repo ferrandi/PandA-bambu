@@ -55,6 +55,7 @@
 #include "design_flow_manager.hpp"
 #include "function_behavior.hpp"
 #include "function_frontend_flow_step.hpp"
+#include "graph_facade.hpp"
 #include "ir_basic_block.hpp"
 #include "ir_helper.hpp"
 #include "ir_manager.hpp"
@@ -283,9 +284,9 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
          return false;
       }
 
-      for(auto ie : call_graph.in_edges(f_v))
+      for(auto ie : graph_in_edges(call_graph, f_v))
       {
-         const auto& einfo = call_graph.CGetEdgeInfo(ie);
+         const auto& einfo = graph_edge_info(call_graph, ie);
          if(einfo.direct_call_points.size())
          {
             return true;
@@ -397,9 +398,9 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
                   std::string("Function ") + (hasReturn ? "has explicit" : "has no") + " return statement" +
                       (returnVars.size() > 1 ? "s" : ""));
 
-   for(const auto& ie : call_graph.in_edges(f_v))
+   for(const auto& ie : graph_in_edges(call_graph, f_v))
    {
-      const auto& einfo = call_graph.CGetEdgeInfo(ie);
+      const auto& einfo = graph_edge_info(call_graph, ie);
       for(const auto call_id : einfo.direct_call_points)
       {
          const auto call_tn = TM->GetIRNode(call_id);

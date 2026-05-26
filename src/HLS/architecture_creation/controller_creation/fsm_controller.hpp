@@ -60,7 +60,7 @@ class fsm_controller : public ControllerCreatorBaseStep
     * Returns the value of the condition of an if else if
     * default is not managed
     */
-   std::string get_guard_value(const ir_managerRef TM, const unsigned int index, gc_vertex_descriptor op,
+   std::string get_guard_value(const ir_managerRef TM, const unsigned int index, OpGraph::vertex_descriptor op,
                                const OpGraph& data);
 
    DesignFlowStep_Status InternalExec() override;

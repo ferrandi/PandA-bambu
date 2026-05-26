@@ -40,17 +40,16 @@
 #ifndef CONFLICT_BASED_REGISTER_HPP
 #define CONFLICT_BASED_REGISTER_HPP
 
+#include "graph_facade.hpp"
 #include "reg_binding_creator.hpp"
-
-#include <boost/graph/adjacency_list.hpp>
 
 class conflict_based_register : public reg_binding_creator
 {
  protected:
-   using conflict_graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, unsigned>;
-   using cg_vertex_descriptor = boost::graph_traits<conflict_graph>::vertex_descriptor;
-   using cg_vertices_size_type = boost::graph_traits<conflict_graph>::vertices_size_type;
-   using cg_vertex_index_map = boost::property_map<conflict_graph, boost::vertex_index_t>::const_type;
+   using conflict_graph = graph_adjacency_list<graph_vec_storage, graph_vec_storage, graph_undirected, unsigned>;
+   using cg_vertex_descriptor = graph_vertex_descriptor_t<conflict_graph>;
+   using cg_vertices_size_type = graph_vertices_size_type_t<conflict_graph>;
+   using cg_vertex_index_map = graph_vertex_index_map_t<conflict_graph>;
 
    boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type,
                                 cg_vertices_size_type&>

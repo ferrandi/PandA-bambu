@@ -53,6 +53,7 @@
 #include "fileIO.hpp"
 #include "function_behavior.hpp"
 #include "generic_device.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
@@ -444,7 +445,7 @@ namespace
 
          if(loop->isReducible())
          {
-            const auto header_bb = bb_graph.CGetNodeInfo(loop->getHeader()).block->number;
+            const auto header_bb = graph_node_info(bb_graph, loop->getHeader()).block->number;
             get_attribute(loop_node, "header_bb") = header_bb;
             if(implementation->Rsch && !FB->is_function_pipelined())
             {
@@ -467,7 +468,7 @@ namespace
          auto blocks = loop_node.append_child("blocks");
          for(const auto bb_vertex : loop->getBlocks())
          {
-            const auto bb_number = bb_graph.CGetNodeInfo(bb_vertex).block->number;
+            const auto bb_number = graph_node_info(bb_graph, bb_vertex).block->number;
             auto block = blocks.append_child(xml_safe_name("bb_", STR(bb_number)).c_str());
             get_attribute(block, "id") = bb_number;
          }

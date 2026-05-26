@@ -42,14 +42,12 @@
 #include "profiling_information.hpp"
 
 #include "basic_block.hpp"
+#include "graph_facade.hpp"
 #include "host_profiling_xml.hpp"
 #include "ir_basic_block.hpp"
 #include "loop.hpp"
 #include "xml_element.hpp"
 #include "xml_helper.hpp"
-
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/filtered_graph.hpp>
 
 #include <string>
 #include <utility>
@@ -181,7 +179,7 @@ void ProfilingInformation::WriteToXml(xml_element* root, const BBGraph& fcfg) co
    BBExecutions::const_iterator bb_execution, bb_execution_end = bb_executions.end();
    for(bb_execution = bb_executions.begin(); bb_execution != bb_execution_end; ++bb_execution)
    {
-      ordered_bb_executions[fcfg.CGetNodeInfo(bb_execution->first).block->number] = bb_execution->second;
+      ordered_bb_executions[graph_node_info(fcfg, bb_execution->first).block->number] = bb_execution->second;
    }
 
    std::map<unsigned int, long double>::const_iterator ordered_bb_execution,
@@ -202,8 +200,8 @@ void ProfilingInformation::WriteToXml(xml_element* root, const BBGraph& fcfg) co
    for(edge_execution = edge_executions.begin(); edge_execution != edge_execution_end; ++edge_execution)
    {
       ordered_edge_executions[std::pair<unsigned int, unsigned int>(
-          fcfg.CGetNodeInfo(fcfg.source(edge_execution->first)).block->number,
-          fcfg.CGetNodeInfo(fcfg.target(edge_execution->first)).block->number)] = edge_execution->second;
+          graph_node_info(fcfg, graph_source(fcfg, edge_execution->first)).block->number,
+          graph_node_info(fcfg, graph_target(fcfg, edge_execution->first)).block->number)] = edge_execution->second;
    }
 
    std::map<std::pair<unsigned int, unsigned int>, long double>::const_iterator ordered_edge_execution,

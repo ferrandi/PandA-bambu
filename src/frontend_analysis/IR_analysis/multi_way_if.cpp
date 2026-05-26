@@ -51,6 +51,7 @@
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_step.hpp"
@@ -234,7 +235,7 @@ DesignFlowStep_Status multi_way_if::InternalExec()
                                 CFG_SELECTOR);
    /// sort basic block vertices from the entry till the exit
    std::list<BBGraph::vertex_descriptor> bb_sorted_vertices;
-   struct LocalDFSVisitor : public boost::dfs_visitor<>
+   struct LocalDFSVisitor : public graph_dfs_visitor
    {
       explicit LocalDFSVisitor(std::list<BBGraph::vertex_descriptor>& Out) : Lref(Out)
       {
@@ -247,14 +248,13 @@ DesignFlowStep_Status multi_way_if::InternalExec()
    };
    {
       LocalDFSVisitor vis(bb_sorted_vertices);
-      std::vector<boost::default_color_type> color_storage(boost::num_vertices(bb_graph));
-      const auto idmap = boost::get(boost::vertex_index_t(), bb_graph);
-      auto color_map = boost::make_iterator_property_map(color_storage.begin(), idmap, color_storage[0]);
-      boost::depth_first_search(bb_graph, boost::visitor(vis).color_map(color_map).vertex_index_map(idmap));
+      const auto idmap = graph_vertex_index_map(bb_graph);
+      auto color_map = graph_make_color_map(bb_graph);
+      graph_depth_first_search(bb_graph, graph_visitor(vis).color_map(color_map.get()).vertex_index_map(idmap));
    }
    for(auto bb : bb_sorted_vertices)
    {
-      const auto& bb_node_info = bb_graph.CGetNodeInfo(bb);
+      const auto& bb_node_info = graph_node_info(bb_graph, bb);
       const auto& curr_bbi = bb_node_info.block->number;
       const auto& curr_bb = bb_node_info.block;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(curr_bbi));

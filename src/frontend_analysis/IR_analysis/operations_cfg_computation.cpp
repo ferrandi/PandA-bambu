@@ -50,7 +50,7 @@
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "function_behavior.hpp"
-#include "graph.hpp"
+#include "graph_facade.hpp"
 #include "ir_basic_block.hpp"
 #include "ir_helper.hpp"
 #include "ir_manager.hpp"
@@ -105,9 +105,9 @@ void operations_cfg_computation::Initialize()
    {
       function_behavior->ogc->Clear();
       auto basic_block_graph = function_behavior->GetBBGraph(FunctionBehavior::BB);
-      for(const auto& basic_block : basic_block_graph.vertices())
+      for(const auto& basic_block : graph_vertices(basic_block_graph))
       {
-         basic_block_graph.GetNodeInfo(basic_block).statements_list.clear();
+         graph_node_info(basic_block_graph, basic_block).statements_list.clear();
       }
    }
 }
@@ -133,20 +133,21 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
 
    std::string res;
    std::string f_name = helper->GetFunctionName() + "_" + STR(function_id);
+   const auto& fbb_info = graph_graph_info(fbb);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing label map");
-   for(const auto& v : fbb.vertices())
+   for(const auto& v : graph_vertices(fbb))
    {
-      THROW_ASSERT(fbb.CGetGraphInfo().exit_vertex, "Exit basic block not set");
-      if(v == fbb.CGetGraphInfo().exit_vertex)
+      THROW_ASSERT(fbb_info.exit_vertex != BBGraph::null_vertex(), "Exit basic block not set");
+      if(v == fbb_info.exit_vertex)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipping exit vertex");
          continue;
       }
-      const auto& bb_node_info = fbb.CGetNodeInfo(v);
+      const auto& bb_node_info = graph_node_info(fbb, v);
       const auto block = bb_node_info.block;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Examining BB" + STR(block->number));
-      if(block->CGetStmtList().empty() && v != fbb.CGetGraphInfo().entry_vertex && v != fbb.CGetGraphInfo().exit_vertex)
+      if(block->CGetStmtList().empty() && v != fbb_info.entry_vertex && v != fbb_info.exit_vertex)
       {
          ir_manager::IRSchema nop_stmt_schema;
          nop_stmt_schema[TOK(TOK_IR_LOCINFO)] = BUILTIN_LOCINFO;
@@ -172,7 +173,7 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
       {
          res = get_first_node(block->CGetPhiList().front(), f_name);
       }
-      else if(v == fbb.CGetGraphInfo().entry_vertex)
+      else if(v == fbb_info.entry_vertex)
       {
          res = ENTRY;
          first_statement[block->number] = res;
@@ -187,13 +188,13 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed label map");
    /// second cycle doing the real job
    ir_nodeRef last_instruction;
-   for(const auto& v : fbb.vertices())
+   for(const auto& v : graph_vertices(fbb))
    {
-      if(/* v == fbb.CGetGraphInfo().entry_vertex || */ v == fbb.CGetGraphInfo().exit_vertex)
+      if(/* v == fbb_info.entry_vertex || */ v == fbb_info.exit_vertex)
       {
          continue;
       }
-      const auto& bb_node_info = fbb.CGetNodeInfo(v);
+      const auto& bb_node_info = graph_node_info(fbb, v);
       const auto block = bb_node_info.block;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "-->Building operation of basic block BB" + STR(block->number));

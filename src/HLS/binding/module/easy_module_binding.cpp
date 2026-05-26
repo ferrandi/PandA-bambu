@@ -49,6 +49,7 @@
 #include "fu_binding.hpp"
 #include "function_behavior.hpp"
 #include "graph.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "ir_manager.hpp"
@@ -130,7 +131,7 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
    std::map<unsigned int, unsigned int> n_shared_fu;
    for(const auto operation : sdg.CGetOperations())
    {
-      const auto id = sdg.CGetNodeInfo(operation).GetNodeId();
+      const auto id = graph_node_info(sdg, operation).GetNodeId();
       if(id == ENTRY_ID || id == EXIT_ID)
       {
          continue;
@@ -175,7 +176,7 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
       {
          fu.bind(op, fu_unit, 0);
          easy_bound_vertices.insert(op);
-         const auto node_info = sdg.CGetNodeInfo(op);
+         const auto node_info = graph_node_info(sdg, op);
          if(node_info.GetNodeId())
          {
             INDENT_OUT_MEX(
@@ -190,7 +191,7 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
       }
    }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                  "---Bound operations:" + STR(easy_bound_vertices.size()) + "/" + STR(boost::num_vertices(sdg)));
+                  "---Bound operations:" + STR(easy_bound_vertices.size()) + "/" + STR(graph_num_vertices(sdg)));
 
    if(output_level >= OUTPUT_LEVEL_MINIMUM && output_level <= OUTPUT_LEVEL_PEDANTIC)
    {

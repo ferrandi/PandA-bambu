@@ -49,6 +49,7 @@
 #include "fu_binding.hpp"
 #include "function_behavior.hpp"
 #include "function_frontend_flow_step.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_device.hpp"
@@ -101,7 +102,7 @@ Schedule::Schedule(const HLS_managerConstRef _hls_manager, const unsigned int _f
 void Schedule::print(fu_bindingRef Rfu) const
 {
    std::map<AbsControlStep, OpVertexSet> csteps_partitions;
-   for(const auto v : op_graph.vertices())
+   for(const auto v : graph_vertices(op_graph))
    {
       const auto control_step = get_cstep(v);
       if(csteps_partitions.find(control_step) == csteps_partitions.end())
@@ -115,7 +116,7 @@ void Schedule::print(fu_bindingRef Rfu) const
    {
       for(const auto op : control_step.second)
       {
-         const auto& node_info = op_graph.CGetNodeInfo(op);
+         const auto& node_info = graph_node_info(op_graph, op);
          INDENT_OUT_MEX(0, 0,
                         "---Operation " + node_info.vertex_name + "(" + node_info.GetOperation() + ")" +
                             " scheduled at control step (" + STR(get_cstep(op).second) + "-" +
@@ -151,7 +152,7 @@ class ScheduleWriter : public GraphWriter<OpGraph>
       os << "//Scheduling solution\n";
       os << "splines=ortho;\n";
       std::map<unsigned int, UnorderedSetStdStable<OpGraph::vertex_descriptor>> inverse_relation;
-      for(const auto v : printing_graph.vertices())
+      for(const auto v : graph_vertices(printing_graph))
       {
          if(!opSet || opSet->find(v) != opSet->end())
          {
@@ -164,7 +165,7 @@ class ScheduleWriter : public GraphWriter<OpGraph>
          os << "CS" << level << " [style=plaintext]\n{rank=same; CS" << level << " ";
          for(const auto operation : inverse_relation[level])
          {
-            os << boost::get(boost::vertex_index_t(), printing_graph)[operation] << " ";
+            os << graph_vertex_index(printing_graph, operation) << " ";
          }
          os << " ;}\n";
       }
@@ -176,8 +177,7 @@ class ScheduleWriter : public GraphWriter<OpGraph>
       {
          if(!inverse_relation[level].empty())
          {
-            os << "CS" << level << " -> "
-               << boost::get(boost::vertex_index_t(), printing_graph)[*inverse_relation[level].begin()]
+            os << "CS" << level << " -> " << graph_vertex_index(printing_graph, *inverse_relation[level].begin())
                << " [style=invis weight=1000 color=dimgrey];\n";
          }
       }
@@ -189,7 +189,7 @@ void Schedule::writeDot(const std::filesystem::path& file_name) const
    OpVertexWriter op_label_writer(op_graph, 0);
    OpEdgeWriter op_edge_property_writer(op_graph);
    ScheduleWriter graph_writer(op_graph, ScheduleConstRef(this, null_deleter()));
-   op_graph.graph::writeDot(file_name, op_label_writer, op_edge_property_writer, graph_writer);
+   graph_write_dot(op_graph, file_name, op_label_writer, op_edge_property_writer, graph_writer);
 }
 
 void Schedule::writeDot(const std::filesystem::path& file_name, const OpGraph& subgraph, const OpVertexSet& opSet) const
@@ -197,12 +197,12 @@ void Schedule::writeDot(const std::filesystem::path& file_name, const OpGraph& s
    OpVertexWriter op_label_writer(subgraph, 0);
    OpEdgeWriter op_edge_property_writer(subgraph);
    ScheduleWriter graph_writer(subgraph, ScheduleConstRef(this, null_deleter()), &opSet);
-   subgraph.graph::writeDot(file_name, op_label_writer, op_edge_property_writer, graph_writer);
+   graph_write_dot(subgraph, file_name, op_label_writer, op_edge_property_writer, graph_writer);
 }
 
 void Schedule::set_execution(OpGraph::vertex_descriptor op, unsigned int c_step)
 {
-   const auto operation_index = op_graph.CGetNodeInfo(op).GetNodeId();
+   const auto operation_index = graph_node_info(op_graph, op).GetNodeId();
    if(op_starting_cycle.find(operation_index) == op_starting_cycle.end())
    {
       op_starting_cycle.emplace(operation_index, c_step);
@@ -216,7 +216,7 @@ void Schedule::set_execution(OpGraph::vertex_descriptor op, unsigned int c_step)
 
 void Schedule::set_execution_end(OpGraph::vertex_descriptor op, unsigned int c_step_end)
 {
-   const auto operation_index = op_graph.CGetNodeInfo(op).GetNodeId();
+   const auto operation_index = graph_node_info(op_graph, op).GetNodeId();
    if(op_ending_cycle.find(operation_index) == op_ending_cycle.end())
    {
       op_ending_cycle.emplace(operation_index, c_step_end);
@@ -229,7 +229,7 @@ void Schedule::set_execution_end(OpGraph::vertex_descriptor op, unsigned int c_s
 
 bool Schedule::is_scheduled(OpGraph::vertex_descriptor op) const
 {
-   const auto statement_index = op_graph.CGetNodeInfo(op).GetNodeId();
+   const auto statement_index = graph_node_info(op_graph, op).GetNodeId();
    return is_scheduled(statement_index);
 }
 
@@ -240,8 +240,9 @@ bool Schedule::is_scheduled(const unsigned int statement_index) const
 
 AbsControlStep Schedule::get_cstep(OpGraph::vertex_descriptor op) const
 {
-   const auto operation_index = op_graph.CGetNodeInfo(op).GetNodeId();
-   THROW_ASSERT(is_scheduled(op), "Operation " + op_graph.CGetNodeInfo(op).vertex_name + " has not been scheduled");
+   const auto& op_info = graph_node_info(op_graph, op);
+   const auto operation_index = op_info.GetNodeId();
+   THROW_ASSERT(is_scheduled(op), "Operation " + op_info.vertex_name + " has not been scheduled");
    if(operation_index == ENTRY_ID)
    {
       return AbsControlStep(BB_ENTRY, op_starting_cycle.at(operation_index));
@@ -272,7 +273,7 @@ AbsControlStep Schedule::get_cstep(const unsigned int operation_index) const
 
 AbsControlStep Schedule::get_cstep_end(OpGraph::vertex_descriptor op) const
 {
-   const auto statement_index = op_graph.CGetNodeInfo(op).GetNodeId();
+   const auto statement_index = graph_node_info(op_graph, op).GetNodeId();
    return get_cstep_end(statement_index);
 }
 
@@ -307,7 +308,7 @@ void Schedule::clear()
 
 void Schedule::remove_sched(OpGraph::vertex_descriptor op)
 {
-   const auto operation_index = op_graph.CGetNodeInfo(op).GetNodeId();
+   const auto operation_index = graph_node_info(op_graph, op).GetNodeId();
    remove_sched(operation_index);
 }
 void Schedule::remove_sched(const unsigned int operation_index)
@@ -999,7 +1000,7 @@ CustomSet<unsigned int> Schedule::ComputeCriticalPath<FSMInfo::stateData>(const 
    double ending_state_time = 0;
    for(const auto starting_operation : state_info.startingOperations)
    {
-      const auto node_id = op_graph.CGetNodeInfo(starting_operation).GetNodeId();
+      const auto node_id = graph_node_info(op_graph, starting_operation).GetNodeId();
       if(node_id == ENTRY_ID or node_id == EXIT_ID)
       {
          continue;
@@ -1032,7 +1033,7 @@ CustomSet<unsigned int> Schedule::ComputeCriticalPath<FSMInfo::stateData>(const 
        std::set<unsigned int, StartingTimeSorter>(StartingTimeSorter(starting_times));
    for(const auto starting_operation : state_info.startingOperations)
    {
-      const auto node_id = op_graph.CGetNodeInfo(starting_operation).GetNodeId();
+      const auto node_id = graph_node_info(op_graph, starting_operation).GetNodeId();
       if(node_id == ENTRY_ID or node_id == EXIT_ID)
       {
          continue;

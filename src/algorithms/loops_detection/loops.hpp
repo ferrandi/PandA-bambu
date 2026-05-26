@@ -47,6 +47,7 @@
 #include "SemiNCADominance.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
+#include "graph_facade.hpp"
 #include "loop.hpp"
 #include "loops_fwd.hpp"
 #include "refcount.hpp"
@@ -404,14 +405,14 @@ void LoopsTemplate<Graph, GraphTraits, LoopT>::analyze(dominance<Graph>& domTree
    const auto headerVertexForIndex = [&](int index) -> Vertex {
       if(index < 0 || static_cast<std::size_t>(index) >= nodes.size())
       {
-         return boost::graph_traits<Graph>::null_vertex();
+         return graph_null_vertex(cfg);
       }
       return nodes[static_cast<std::size_t>(index)].block;
    };
 
    auto dominatesHeader = [&](int headerIndex, Vertex candidate) {
       const Vertex headerVertex = headerVertexForIndex(headerIndex);
-      if(headerVertex == boost::graph_traits<Graph>::null_vertex())
+      if(headerVertex == graph_null_vertex(cfg))
       {
          const auto numIt = number.find(candidate);
          if(numIt == number.end())
@@ -745,7 +746,9 @@ template <typename Graph, typename GraphTraits, typename LoopT>
 void LoopsTemplate<Graph, GraphTraits, LoopT>::buildZeroLoop(Vertex entryVertex)
 {
    LoopRefType zero_loop(new LoopImpl(fbbGraph, entryVertex));
-   const auto [vit, vit_end] = boost::vertices(fbbGraph);
+   const auto vertices = graph_vertices(fbbGraph);
+   auto vit = vertices.begin();
+   const auto vit_end = vertices.end();
    zero_loop->blocks.insert(vit, vit_end);
 
    for(const auto& loop : loopsList)

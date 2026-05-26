@@ -143,7 +143,7 @@ class Schedule
    CustomMap<unsigned int, double> ending_times;
 
    /// slack map
-   std::map<gc_vertex_descriptor, double> op_slack;
+   std::map<OpGraph::vertex_descriptor, double> op_slack;
 
    /// The operation graph (for scheduling purpose) (cannot be const because of = operator)
    const OpGraph op_graph;
@@ -220,19 +220,19 @@ class Schedule
     * @param op the the operation vertex
     * @param c_step is an integer representing the clock cycle where the operation starts the computation
     */
-   void set_execution(gc_vertex_descriptor op, unsigned int c_step);
+   void set_execution(OpGraph::vertex_descriptor op, unsigned int c_step);
 
    /**
     * Sets the ending clock cycle for the given operation
     * @param op the the operation vertex
     * @param c_step_end is an integer representing the clock cycle where the operation ends the computation
     */
-   void set_execution_end(gc_vertex_descriptor op, unsigned int c_step_end);
+   void set_execution_end(OpGraph::vertex_descriptor op, unsigned int c_step_end);
 
    /**
     * Returns true if the given operation has been already scheduled, false otherwise
     */
-   bool is_scheduled(gc_vertex_descriptor op) const;
+   bool is_scheduled(OpGraph::vertex_descriptor op) const;
 
    /**
     * Returns true if the given operation has been already scheduled, false otherwise
@@ -244,7 +244,7 @@ class Schedule
     * @param op is the vertex of the operation
     * @return an integer representing the clock cycle where it starts the execution
     */
-   AbsControlStep get_cstep(gc_vertex_descriptor op) const;
+   AbsControlStep get_cstep(OpGraph::vertex_descriptor op) const;
 
    /**
     * Returns the clock cycle where the given operation has been scheduled
@@ -258,7 +258,7 @@ class Schedule
     * @param op is the operation
     * @return the last clock cycle
     */
-   AbsControlStep get_cstep_end(gc_vertex_descriptor op) const;
+   AbsControlStep get_cstep_end(OpGraph::vertex_descriptor op) const;
 
    /**
     * Return the last clock cycle in which the operation execute
@@ -295,18 +295,18 @@ class Schedule
     */
    void clear();
 
-   void remove_sched(gc_vertex_descriptor op);
+   void remove_sched(OpGraph::vertex_descriptor op);
    void remove_sched(const unsigned int operation_index);
 
    /**
     * set the slack associated with the vertex with respect to the clock period
     */
-   void set_slack(gc_vertex_descriptor op, double v_slack)
+   void set_slack(OpGraph::vertex_descriptor op, double v_slack)
    {
       op_slack[op] = v_slack;
    }
 
-   double get_slack(gc_vertex_descriptor op) const
+   double get_slack(OpGraph::vertex_descriptor op) const
    {
       if(op_slack.find(op) != op_slack.end())
       {

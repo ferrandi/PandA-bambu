@@ -42,9 +42,7 @@
 #include "hls_function_step.hpp"
 
 #include "custom_map.hpp"
-#include "graph.hpp"
-
-class OpGraph;
+#include "op_graph.hpp"
 
 class SchedulingStep : public HLSFunctionStep
 {
@@ -62,7 +60,7 @@ class SchedulingStep : public HLSFunctionStep
 
    void Initialize() override;
 
-   static void compute_RW_stmts(CustomUnorderedSet<gc_vertex_descriptor>& RW_stmts, const OpGraph& flow_graph,
+   static void compute_RW_stmts(CustomUnorderedSet<OpGraph::vertex_descriptor>& RW_stmts, const OpGraph& flow_graph,
                                 const HLS_managerRef HLSMgr, unsigned function_id);
 };
 #endif

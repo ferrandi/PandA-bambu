@@ -43,7 +43,7 @@
 #include "custom_map.hpp"
 #include "design_flow_step.hpp"
 #include "edge_info.hpp"
-#include "graph.hpp"
+#include "graph_facade.hpp"
 #include "graph_info.hpp"
 #include "node_info.hpp"
 #include "refcount.hpp"
@@ -78,7 +78,7 @@ class DesignFlowInfo
 {
  public:
    using vertex_descriptor =
-       boost::adjacency_list_traits<boost::vecS, boost::vecS, boost::bidirectionalS>::vertex_descriptor;
+       graph_adjacency_list_traits<graph_vec_storage, graph_vec_storage, graph_bidirectional>::vertex_descriptor;
    /// The entry vertex of the graph
    vertex_descriptor entry;
 
@@ -86,12 +86,21 @@ class DesignFlowInfo
    vertex_descriptor exit;
 };
 
-using DesignFlowGraphBase = boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS,
-                                                  DesignFlowStepInfoRef, DesignFlowEdge, DesignFlowInfo>;
+using DesignFlowGraphBase = graph_adjacency_list<graph_vec_storage, graph_vec_storage, graph_bidirectional,
+                                                 DesignFlowStepInfoRef, DesignFlowEdge, DesignFlowInfo>;
 
 class DesignFlowGraph : public graph_base<DesignFlowGraphBase>
 {
  public:
+   using storage_policy = append_only_vec_graph_storage;
+   struct storage_traits : graph_storage_traits<storage_policy>
+   {
+      static constexpr DesignFlowGraph::vertex_descriptor null_vertex()
+      {
+         return graph_storage_traits<storage_policy>::null_vertex();
+      }
+   };
+
    enum EdgeType : DesignFlowEdge
    {
       DEPENDENCE = 1,
@@ -124,6 +133,11 @@ class DesignFlowGraph : public graph_base<DesignFlowGraphBase>
     * @param file_name is the file where the graph has to be printed
     */
    void writeDot(std::filesystem::path file_name) const;
+
+   static constexpr vertex_descriptor null_vertex()
+   {
+      return storage_traits::null_vertex();
+   }
 
  private:
    CustomUnorderedMap<DesignFlowStep::signature_t, vertex_descriptor> signature_to_vertex;

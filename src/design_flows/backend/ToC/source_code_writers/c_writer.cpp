@@ -60,6 +60,7 @@
 #include "discrepancy_analysis_c_writer.hpp"
 #include "discrepancy_instruction_writer.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls_c_writer.hpp"
 #include "hls_instruction_writer.hpp"
 #include "hls_manager.hpp"
@@ -196,9 +197,9 @@ void CWriter::declare_cast_types(unsigned int funId, CustomSet<std::string>& loc
    const auto BH = function_behavior->CGetBehavioralHelper();
    const auto inGraph = function_behavior->GetOpGraph(FunctionBehavior::DFG);
    // I simply have to go over all the vertices and look for types used for type casting;
-   for(const auto& v : inGraph.vertices())
+   for(const auto& v : graph_vertices(inGraph))
    {
-      const auto& node = inGraph.CGetNodeInfo(v).node;
+      const auto& node = graph_node_info(inGraph, v).node;
       if(node)
       {
          IRNodeConstSet types;
@@ -228,7 +229,7 @@ void CWriter::Initialize()
    InternalInitialize();
 }
 
-void CWriter::WriteBodyLoop(const unsigned int fid, const unsigned int, gc_vertex_descriptor current_vertex,
+void CWriter::WriteBodyLoop(const unsigned int fid, const unsigned int, BBGraph::vertex_descriptor current_vertex,
                             bool bracket, const std::unique_ptr<var_pp_functor>& variableFunctor)
 {
    writeRoutineInstructions_rec(fid, current_vertex, bracket, variableFunctor);
@@ -241,7 +242,9 @@ void CWriter::WriteFunctionBody(unsigned int function_id)
    const auto BH = function_behavior->CGetBehavioralHelper();
 
    OpVertexSet vertices(&function_behavior->GetOpGraphsCollection());
-   const auto [statement, statement_end] = boost::vertices(op_graph);
+   const auto statements = graph_vertices(op_graph);
+   auto statement = statements.begin();
+   const auto statement_end = statements.end();
    vertices.insert(statement, statement_end);
    THROW_ASSERT(vertices.size() > 0, "Graph for function " + BH->GetFunctionName() + " is empty");
    writeRoutineInstructions(function_id, vertices, std::make_unique<std_var_pp_functor>(BH));
@@ -366,9 +369,9 @@ void CWriter::WriteHeader()
       }
 
       const auto op_graph = FB->GetOpGraph(FunctionBehavior::DFG);
-      for(const auto& v : op_graph.vertices())
+      for(const auto& v : graph_vertices(op_graph))
       {
-         const auto& node = op_graph.CGetNodeInfo(v).node;
+         const auto& node = graph_node_info(op_graph, v).node;
          if(node)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing includes for operation " + STR(node));
@@ -536,9 +539,9 @@ const CustomSet<unsigned int> CWriter::GetLocalVariables(const unsigned int func
    // I simply have to go over all the vertices and get the used variables;
    // the variables which have to be declared are all those variables but
    // the globals ones
-   for(const auto& v : inGraph.vertices())
+   for(const auto& v : graph_vertices(inGraph))
    {
-      const auto& vars_temp = inGraph.CGetNodeInfo(v).cited_variables;
+      const auto& vars_temp = graph_node_info(inGraph, v).cited_variables;
       vars.insert(vars_temp.begin(), vars_temp.end());
    }
    return vars;
@@ -594,23 +597,23 @@ void CWriter::EndFunctionBody(unsigned int funId)
    renaming_table.clear();
 }
 
-void CWriter::writePreInstructionInfo(const FunctionBehaviorConstRef, const gc_vertex_descriptor)
+void CWriter::writePreInstructionInfo(const FunctionBehaviorConstRef, const OpGraph::vertex_descriptor)
 {
 }
 
-void CWriter::writePostInstructionInfo(const FunctionBehaviorConstRef, const gc_vertex_descriptor)
+void CWriter::writePostInstructionInfo(const FunctionBehaviorConstRef, const OpGraph::vertex_descriptor)
 {
 }
 
-void CWriter::writeRoutineInstructions_rec(unsigned fid, gc_vertex_descriptor current_vertex, bool bracket,
+void CWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_descriptor current_vertex, bool bracket,
                                            const std::unique_ptr<var_pp_functor>& variableFunctor)
 {
    const auto function_behavior = HLSMgr->CGetFunctionBehavior(fid);
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
    const auto cfgGraph = function_behavior->GetOpGraph(FunctionBehavior::FCFG);
    const auto bb_fcfgGraph = function_behavior->GetBBGraph(FunctionBehavior::FBB);
-   const auto& bb_graph_info = bb_fcfgGraph.CGetGraphInfo();
-   const auto& bb_node_info = bb_fcfgGraph.CGetNodeInfo(current_vertex);
+   const auto& bb_graph_info = graph_graph_info(bb_fcfgGraph);
+   const auto& bb_node_info = graph_node_info(bb_fcfgGraph, current_vertex);
    const unsigned int bb_number = bb_node_info.block->number;
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Starting writing BB" + STR(bb_number));
@@ -639,13 +642,13 @@ void CWriter::writeRoutineInstructions_rec(unsigned fid, gc_vertex_descriptor cu
    auto bb_PD = function_behavior->post_dominators->getImmediateDominator(current_vertex);
 #ifndef NDEBUG
    {
-      const auto bb_node_info_pd = bb_fcfgGraph.CGetNodeInfo(bb_PD);
+      const auto bb_node_info_pd = graph_node_info(bb_fcfgGraph, bb_PD);
       const auto& bb_number_PD = bb_node_info_pd.block->number;
 
       std::string frontier_string;
       for(const auto bb : bb_frontier)
       {
-         frontier_string += "BB" + STR(bb_fcfgGraph.CGetNodeInfo(bb).block->number) + " ";
+         frontier_string += "BB" + STR(graph_node_info(bb_fcfgGraph, bb).block->number) + " ";
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Frontier at the moment is: " + frontier_string);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Its post-dominator is BB" + STR(bb_number_PD));
@@ -665,7 +668,7 @@ void CWriter::writeRoutineInstructions_rec(unsigned fid, gc_vertex_descriptor cu
    const auto& stmts_list = bb_node_info.statements_list;
    for(const auto st : boost::adaptors::reverse(stmts_list))
    {
-      const auto& op_info = cfgGraph.CGetNodeInfo(st);
+      const auto& op_info = graph_node_info(cfgGraph, st);
       if(!local_rec_instructions.count(st))
       {
          continue;
@@ -702,15 +705,15 @@ void CWriter::writeRoutineInstructions_rec(unsigned fid, gc_vertex_descriptor cu
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Basic block should start with a label");
    }
 
-   if(!add_bb_label && bb_fcfgGraph.in_degree(current_vertex) > 1)
+   if(!add_bb_label && graph_in_degree(bb_fcfgGraph, current_vertex) > 1)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "Basic block has an indegree > 1 and not associated label");
-      for(const auto& ie : bb_fcfgGraph.in_edges(current_vertex))
+      for(const auto& ie : graph_in_edges(bb_fcfgGraph, current_vertex))
       {
-         const auto source = bb_fcfgGraph.source(ie);
+         const auto source = graph_source(bb_fcfgGraph, ie);
          // Basic block start the body of a short circuit
-         if(!bb_analyzed.count(source) && !((FB_CFG_SELECTOR & bb_fcfgGraph.GetSelector(ie))))
+         if(!bb_analyzed.count(source) && !((FB_CFG_SELECTOR & graph_edge_selector(bb_fcfgGraph, ie))))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "Basic block should start with a label since is the body of a short-circuit");
@@ -779,16 +782,16 @@ void CWriter::writeRoutineInstructions_rec(unsigned fid, gc_vertex_descriptor cu
             continue;
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "Preparing printing of operation " + cfgGraph.CGetNodeInfo(*vIter).vertex_name);
+                        "Preparing printing of operation " + graph_node_info(cfgGraph, *vIter).vertex_name);
          // Write in the C file extra information before the instruction itself
          if(verbose)
          {
-            indented_output_stream->Append("//Instruction: " + cfgGraph.CGetNodeInfo(*vIter).vertex_name + "\n");
+            indented_output_stream->Append("//Instruction: " + graph_node_info(cfgGraph, *vIter).vertex_name + "\n");
          }
          writePreInstructionInfo(function_behavior, *vIter);
 
          bool isLastIntruction = last_stmt == *vIter;
-         const auto v_type = cfgGraph.CGetNodeInfo(*vIter).node_type;
+         const auto v_type = graph_node_info(cfgGraph, *vIter).node_type;
          /// in case we have phi nodes we check if some assignments should be printed
          bool print_phi_now =
              ((v_type & TYPE_MULTIIF)) || behavioral_helper->end_with_a_cond_or_goto(bb_node_info.block);
@@ -825,7 +828,7 @@ void CWriter::writeRoutineInstructions_rec(unsigned fid, gc_vertex_descriptor cu
          if(v_type & TYPE_MULTIIF)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Operation is a multiif");
-            unsigned int node_id = cfgGraph.CGetNodeInfo(last_stmt).GetNodeId();
+            unsigned int node_id = graph_node_info(cfgGraph, last_stmt).GetNodeId();
             const ir_nodeRef node = TM->GetIRNode(node_id);
             THROW_ASSERT(node->get_kind() == multi_way_if_stmt_K, "unexpected node");
             auto* gmwi = GetPointer<multi_way_if_stmt>(node);
@@ -902,9 +905,9 @@ void CWriter::writeRoutineInstructions_rec(unsigned fid, gc_vertex_descriptor cu
             if(last_statement_is_a_cond_or_goto)
             {
                /// now we can analyze the following basic blocks
-               for(const auto& oE : bb_fcfgGraph.out_edges(current_vertex))
+               for(const auto& oE : graph_out_edges(bb_fcfgGraph, current_vertex))
                {
-                  auto next_bb = bb_fcfgGraph.target(oE);
+                  auto next_bb = graph_target(bb_fcfgGraph, oE);
                   if(bb_frontier.find(next_bb) != bb_frontier.end())
                   {
                      continue;
@@ -916,30 +919,30 @@ void CWriter::writeRoutineInstructions_rec(unsigned fid, gc_vertex_descriptor cu
          else
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---It is not a special operation");
-            const auto bbentry = bb_fcfgGraph.CGetGraphInfo().entry_vertex;
+            const auto bbentry = graph_graph_info(bb_fcfgGraph).entry_vertex;
             if(current_vertex == bbentry)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ended writing basic block " + STR(bb_number));
                return;
             }
-            THROW_ASSERT(bb_fcfgGraph.out_degree(current_vertex) <= 1, "only one edge expected");
-            for(const auto& oE : bb_fcfgGraph.out_edges(current_vertex))
+            THROW_ASSERT(graph_out_degree(bb_fcfgGraph, current_vertex) <= 1, "only one edge expected");
+            for(const auto& oE : graph_out_edges(bb_fcfgGraph, current_vertex))
             {
-               auto next_bb = bb_fcfgGraph.target(oE);
+               auto next_bb = graph_target(bb_fcfgGraph, oE);
                if(bb_frontier.find(next_bb) != bb_frontier.end())
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "Not adding goto since target is in the frontier");
                   continue;
                }
-               if(bb_fcfgGraph.in_degree(next_bb) == 1)
+               if(graph_in_degree(bb_fcfgGraph, next_bb) == 1)
                {
                   writeRoutineInstructions_rec(fid, next_bb, false, variableFunctor);
                }
                else
                {
-                  const auto& next_bb_node_info = bb_fcfgGraph.CGetNodeInfo(next_bb);
+                  const auto& next_bb_node_info = graph_node_info(bb_fcfgGraph, next_bb);
                   const unsigned int next_bb_number = next_bb_node_info.block->number;
                   THROW_ASSERT(basic_blocks_labels.find(next_bb_number) != basic_blocks_labels.end(),
                                "I do not know the destination");
@@ -962,26 +965,26 @@ void CWriter::writeRoutineInstructions_rec(unsigned fid, gc_vertex_descriptor cu
       if(!behavioral_helper->end_with_a_cond_or_goto(bb_node_info.block))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Not end with a cond or goto");
-         const auto bbentry = bb_fcfgGraph.CGetGraphInfo().entry_vertex;
+         const auto bbentry = graph_graph_info(bb_fcfgGraph).entry_vertex;
          if(current_vertex == bbentry)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ended writing basic block " + STR(bb_number));
             return;
          }
-         THROW_ASSERT(bb_fcfgGraph.out_degree(current_vertex) <= 1,
+         THROW_ASSERT(graph_out_degree(bb_fcfgGraph, current_vertex) <= 1,
                       "only one edge expected BB(" + STR(bb_number) + ") Fun(" + STR(fid) + ")");
-         for(const auto& oE : bb_fcfgGraph.out_edges(current_vertex))
+         for(const auto& oE : graph_out_edges(bb_fcfgGraph, current_vertex))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Examining the only? successor");
-            auto next_bb = bb_fcfgGraph.target(oE);
-            if(bb_frontier.find(next_bb) != bb_frontier.end() or bb_fcfgGraph.in_degree(next_bb) == 1)
+            auto next_bb = graph_target(bb_fcfgGraph, oE);
+            if(bb_frontier.find(next_bb) != bb_frontier.end() or graph_in_degree(bb_fcfgGraph, next_bb) == 1)
             {
                continue;
             }
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Successor does not belong to frontier");
-            const auto& next_bb_node_info = bb_fcfgGraph.CGetNodeInfo(next_bb);
+            const auto& next_bb_node_info = graph_node_info(bb_fcfgGraph, next_bb);
             const auto next_bb_number = next_bb_node_info.block->number;
             THROW_ASSERT(basic_blocks_labels.find(next_bb_number) != basic_blocks_labels.end(),
                          "I do not know the destination");
@@ -1001,7 +1004,7 @@ void CWriter::writeRoutineInstructions_rec(unsigned fid, gc_vertex_descriptor cu
       // recurse on the post dominator
       bb_frontier.erase(bb_PD);
       THROW_ASSERT(bb_analyzed.find(bb_PD) == bb_analyzed.end(),
-                   "something wrong happened " + STR(bb_fcfgGraph.CGetNodeInfo(bb_PD).block->number) + " Fun(" +
+                   "something wrong happened " + STR(graph_node_info(bb_fcfgGraph, bb_PD).block->number) + " Fun(" +
                        STR(fid) + ")");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Printing the post dominator");
       writeRoutineInstructions_rec(fid, bb_PD, false, variableFunctor);
@@ -1025,9 +1028,9 @@ void CWriter::compute_phi_nodes(const FunctionBehaviorConstRef function_behavior
    CustomSet<unsigned int> phi_instructions;
    for(const auto instruction : instructions)
    {
-      if(cfgGraph.CGetNodeInfo(instruction).node_type & TYPE_PHI)
+      if(graph_node_info(cfgGraph, instruction).node_type & TYPE_PHI)
       {
-         phi_instructions.insert(cfgGraph.CGetNodeInfo(instruction).GetNodeId());
+         phi_instructions.insert(graph_node_info(cfgGraph, instruction).GetNodeId());
       }
    }
    if(!phi_instructions.empty())
@@ -1035,7 +1038,7 @@ void CWriter::compute_phi_nodes(const FunctionBehaviorConstRef function_behavior
       std::map<unsigned int, unsigned int> created_variables;
       std::map<unsigned int, std::string> symbol_table;
       std::map<unsigned int, std::deque<std::string>> array_of_stacks;
-      insert_copies(bb_domGraph.CGetGraphInfo().entry_vertex, bb_domGraph, bb_fcfgGraph, variableFunctor,
+      insert_copies(graph_graph_info(bb_domGraph).entry_vertex, bb_domGraph, bb_fcfgGraph, variableFunctor,
                     phi_instructions, created_variables, symbol_table, array_of_stacks);
       /// in case we declare the variables introduced during the phi nodes destruction
       if(!created_variables.empty())
@@ -1058,7 +1061,8 @@ void CWriter::compute_phi_nodes(const FunctionBehaviorConstRef function_behavior
 
 void CWriter::writeRoutineInstructions(const unsigned int fid, const OpVertexSet& instructions,
                                        const std::unique_ptr<var_pp_functor>& variableFunctor,
-                                       gc_vertex_descriptor bb_start, CustomOrderedSet<gc_vertex_descriptor> bb_end)
+                                       BBGraph::vertex_descriptor bb_start,
+                                       CustomOrderedSet<BBGraph::vertex_descriptor> bb_end)
 {
    bb_label_counter++;
    const auto function_behavior = HLSMgr->CGetFunctionBehavior(fid);
@@ -1073,7 +1077,7 @@ void CWriter::writeRoutineInstructions(const unsigned int fid, const OpVertexSet
    }
    else if(instructions.size() == 1)
    {
-      if(cfgGraph.CGetNodeInfo((*instructions.begin())).node_type & TYPE_ENTRY)
+      if(graph_node_info(cfgGraph, *instructions.begin()).node_type & TYPE_ENTRY)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                         "<--CWriter::writeRoutineInstructions - instructions is a set with only entry");
@@ -1086,9 +1090,9 @@ void CWriter::writeRoutineInstructions(const unsigned int fid, const OpVertexSet
    BBGraph::vertex_descriptor bbentry;
    CustomOrderedSet<BBGraph::vertex_descriptor> bb_exit;
 
-   if(!bb_start)
+   if(bb_start == graph_storage_traits<BBGraphStoragePolicy>::null_vertex())
    {
-      bbentry = bb_fcfgGraph.CGetGraphInfo().entry_vertex;
+      bbentry = graph_graph_info(bb_fcfgGraph).entry_vertex;
    }
    else
    {
@@ -1097,7 +1101,7 @@ void CWriter::writeRoutineInstructions(const unsigned int fid, const OpVertexSet
 
    if(bb_end.empty())
    {
-      bb_exit.insert(bb_fcfgGraph.CGetGraphInfo().exit_vertex);
+      bb_exit.insert(graph_graph_info(bb_fcfgGraph).exit_vertex);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "There are " + STR(bb_exit.size()) + " exit basic blocks");
    }
    else
@@ -1106,21 +1110,21 @@ void CWriter::writeRoutineInstructions(const unsigned int fid, const OpVertexSet
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing labels");
-   for(const auto& v : bb_fcfgGraph.vertices())
+   for(const auto& v : graph_vertices(bb_fcfgGraph))
    {
       size_t delta = bb_exit.count(v) ? 1u : 0u;
-      if(bb_fcfgGraph.in_degree(v) <= (1 + delta))
+      if(graph_in_degree(bb_fcfgGraph, v) <= (1 + delta))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Skipped BB" + STR(bb_fcfgGraph.CGetNodeInfo(v).block->number));
+                        "---Skipped BB" + STR(graph_node_info(bb_fcfgGraph, v).block->number));
          continue;
       }
-      const auto& bb_node_info = bb_fcfgGraph.CGetNodeInfo(v);
+      const auto& bb_node_info = graph_node_info(bb_fcfgGraph, v);
       basic_blocks_labels[bb_node_info.block->number] =
 
           ("BB_LABEL_" + STR(bb_node_info.block->number)) + (bb_label_counter == 1 ? "" : "_" + STR(bb_label_counter));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---Label of BB" + STR(bb_fcfgGraph.CGetNodeInfo(v).block->number) + " is " +
+                     "---Label of BB" + STR(graph_node_info(bb_fcfgGraph, v).block->number) + " is " +
                          basic_blocks_labels[bb_node_info.block->number]);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed labels");
@@ -1137,21 +1141,21 @@ void CWriter::writeRoutineInstructions(const unsigned int fid, const OpVertexSet
 
    /// some statements can be in entry
    writeRoutineInstructions_rec(fid, bbentry, false, variableFunctor);
-   if(!bb_start && bb_end.size() == 0)
+   if(bb_start == graph_storage_traits<BBGraphStoragePolicy>::null_vertex() && bb_end.empty())
    {
-      for(const auto& oE : bb_fcfgGraph.out_edges(bbentry))
+      for(const auto& oE : graph_out_edges(bb_fcfgGraph, bbentry))
       {
-         if(bb_exit.count(bb_fcfgGraph.target(oE)))
+         if(bb_exit.count(graph_target(bb_fcfgGraph, oE)))
          {
             continue;
          }
          else
          {
-            writeRoutineInstructions_rec(fid, bb_fcfgGraph.target(oE), false, variableFunctor);
+            writeRoutineInstructions_rec(fid, graph_target(bb_fcfgGraph, oE), false, variableFunctor);
          }
       }
    }
-   CustomOrderedSet<gc_vertex_descriptor> not_yet_considered;
+   CustomOrderedSet<BBGraph::vertex_descriptor> not_yet_considered;
    std::set_difference(goto_list.begin(), goto_list.end(),     /*first set*/
                        bb_analyzed.begin(), bb_analyzed.end(), /*second set*/
                        std::inserter(not_yet_considered, not_yet_considered.begin()) /*result*/);
@@ -1165,7 +1169,7 @@ void CWriter::writeRoutineInstructions(const unsigned int fid, const OpVertexSet
                           bb_analyzed.begin(), bb_analyzed.end(), /*second set*/
                           std::inserter(not_yet_considered, not_yet_considered.begin()) /*result*/);
    }
-   const auto& exit = bb_fcfgGraph.CGetGraphInfo().exit_vertex;
+   const auto& exit = graph_graph_info(bb_fcfgGraph).exit_vertex;
    if(goto_list.count(exit) && basic_blocks_labels.find(bloc::EXIT_BLOCK_ID) != basic_blocks_labels.end())
    {
       indented_output_stream->Append(basic_blocks_labels.find(bloc::EXIT_BLOCK_ID)->second + ":\n");
@@ -1321,14 +1325,16 @@ void CWriter::DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declare
    const auto function_behavior = HLSMgr->CGetFunctionBehavior(fid);
    const auto data = function_behavior->GetOpGraph(FunctionBehavior::DFG);
    OpVertexSet vertices(&function_behavior->GetOpGraphsCollection());
-   const auto [vit, vit_end] = boost::vertices(data);
+   const auto data_vertices = graph_vertices(data);
+   auto vit = data_vertices.begin();
+   const auto vit_end = data_vertices.end();
    vertices.insert(vit, vit_end);
    THROW_ASSERT(vertices.size() > 0, "Graph for function " + BH->GetFunctionName() + " is empty");
    compute_phi_nodes(function_behavior, vertices, std::make_unique<std_var_pp_functor>(BH));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Declaring local variables");
 }
 
-void CWriter::insert_copies(gc_vertex_descriptor b, const BBGraph& bb_domGraph, const BBGraph& bb_fcfgGraph,
+void CWriter::insert_copies(BBGraph::vertex_descriptor b, const BBGraph& bb_domGraph, const BBGraph& bb_fcfgGraph,
                             const std::unique_ptr<var_pp_functor>& variableFunctor,
                             const CustomSet<unsigned int>& phi_instructions,
                             std::map<unsigned int, unsigned int>& created_variables,
@@ -1347,16 +1353,16 @@ void CWriter::insert_copies(gc_vertex_descriptor b, const BBGraph& bb_domGraph, 
    }
    schedule_copies(b, bb_domGraph, bb_fcfgGraph, variableFunctor, phi_instructions, created_variables, symbol_table,
                    pushed, array_of_stacks);
-   for(const auto& oi : bb_domGraph.out_edges(b))
+   for(const auto& oi : graph_out_edges(bb_domGraph, b))
    {
-      auto c = bb_domGraph.target(oi);
+      auto c = graph_target(bb_domGraph, oi);
       insert_copies(c, bb_domGraph, bb_fcfgGraph, variableFunctor, phi_instructions, created_variables, symbol_table,
                     array_of_stacks);
    }
    pop_stack(pushed, array_of_stacks);
 }
 
-void CWriter::schedule_copies(gc_vertex_descriptor b, const BBGraph& bb_domGraph, const BBGraph& bb_fcfgGraph,
+void CWriter::schedule_copies(BBGraph::vertex_descriptor b, const BBGraph& bb_domGraph, const BBGraph& bb_fcfgGraph,
                               const std::unique_ptr<var_pp_functor>& variableFunctor,
                               const CustomSet<unsigned int>& phi_instructions,
                               std::map<unsigned int, unsigned int>& created_variables,
@@ -1364,17 +1370,17 @@ void CWriter::schedule_copies(gc_vertex_descriptor b, const BBGraph& bb_domGraph
                               std::map<unsigned int, std::deque<std::string>>& array_of_stacks)
 {
    /// Pass One: initialize the data structures
-   const auto& bb_node_info = bb_fcfgGraph.CGetNodeInfo(b);
+   const auto& bb_node_info = graph_node_info(bb_fcfgGraph, b);
    unsigned int bi_id = bb_node_info.block->number;
 
    IRNodesPairSet copy_set, worklist;
    std::map<unsigned int, unsigned int> map;
    CustomOrderedSet<unsigned int> used_by_another;
    std::map<unsigned int, unsigned int> bb_dest_definition;
-   for(const auto& oi : bb_fcfgGraph.out_edges(b))
+   for(const auto& oi : graph_out_edges(bb_fcfgGraph, b))
    {
-      auto s = bb_fcfgGraph.target(oi);
-      const auto& si = bb_fcfgGraph.CGetNodeInfo(s);
+      auto s = graph_target(bb_fcfgGraph, oi);
+      const auto& si = graph_node_info(bb_fcfgGraph, s);
       for(const auto& phi_op : si.block->CGetPhiList())
       {
          if(phi_instructions.find(phi_op->index) == phi_instructions.end())
@@ -1431,18 +1437,18 @@ void CWriter::schedule_copies(gc_vertex_descriptor b, const BBGraph& bb_domGraph
             /// if dest belongs to live_out(b)
             /// wrt the original algorithm an optimization has been added: in case b does not dominate any other node we
             /// can skip the creation of t
-            //            if(bb_domGraph.out_degree(b) > 0 &&
+            //            if(the dominator graph still had outgoing edges from b &&
             //                  bb_node_info.block->live_out.find(dest_i) != bb_node_info.block->live_out.end()
             //                  )
             bool add_copy = false;
-            for(const auto& oe : bb_domGraph.out_edges(b))
+            for(const auto& oe : graph_out_edges(bb_domGraph, b))
             {
-               auto tgt_bb = bb_domGraph.target(oe);
+               auto tgt_bb = graph_target(bb_domGraph, oe);
                if(tgt_bb == b)
                {
                   continue;
                }
-               const auto& tgt_bi = bb_domGraph.CGetNodeInfo(tgt_bb);
+               const auto& tgt_bi = graph_node_info(bb_domGraph, tgt_bb);
                if(tgt_bi.block->live_in.find(dest_i) != tgt_bi.block->live_in.end())
                {
                   add_copy = true;

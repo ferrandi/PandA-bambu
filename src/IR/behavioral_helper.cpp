@@ -47,6 +47,7 @@
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "ir_basic_block.hpp"
 #include "ir_helper.hpp"
 #include "ir_manager.hpp"
@@ -92,7 +93,7 @@ BehavioralHelper::BehavioralHelper(const application_managerRef _AppM, unsigned 
 std::string BehavioralHelper::print_vertex(const OpGraph& g, OpGraph::vertex_descriptor v,
                                            const std::unique_ptr<var_pp_functor>& vppf, bool dot) const
 {
-   const auto node = g.CGetNodeInfo(v).node;
+   const auto node = graph_node_info(g, v).node;
    std::string res;
    if(node && node->get_kind() != nop_stmt_K)
    {

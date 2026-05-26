@@ -61,10 +61,10 @@ class EdgeCWriter : public CWriter
 {
  protected:
    /// Increment which should be added before the label in a basic block
-   std::map<gc_vertex_descriptor, gc_edge_descriptor> local_inc;
+   std::map<BBGraph::vertex_descriptor, BBGraph::edge_descriptor> local_inc;
 
    /// Set of already dumped edges
-   std::set<gc_edge_descriptor, ltedge<BBGraphsCollection>> dumped_edges;
+   std::set<BBGraph::edge_descriptor, ltedge<BBGraphsCollection>> dumped_edges;
 
    /// Map a pair function - loop to an unique index
    std::map<unsigned int, std::map<unsigned int, unsigned int>> fun_loop_to_index;
@@ -77,21 +77,21 @@ class EdgeCWriter : public CWriter
     * @param fid is the identifier of the function containing the loop edge
     * @param e is the feedback or outgoing edge
     */
-   virtual void print_loop_ending(unsigned fid, gc_edge_descriptor e);
+   virtual void print_loop_ending(unsigned fid, BBGraph::edge_descriptor e);
 
    /**
     * Dump operations requested for record information about a path which exit from a loop
     * @param fid is the identifier of the function containing the loop edge
     * @param e is the feedback or outgoing edge
     */
-   virtual void print_loop_escaping(unsigned fid, gc_edge_descriptor e);
+   virtual void print_loop_escaping(unsigned fid, BBGraph::edge_descriptor e);
 
    /**
     * Dump initializations of variable for recording a loop path
     * @param fid is the identifier of the function containing the loop edge
     * @param e is the incoming edged
     */
-   virtual void print_loop_starting(unsigned fid, gc_edge_descriptor e);
+   virtual void print_loop_starting(unsigned fid, BBGraph::edge_descriptor e);
 
    /**
     * Dump operation requested for instrument an edges
@@ -99,7 +99,7 @@ class EdgeCWriter : public CWriter
     * @param e is the edge
     * @param index is the index of the variable to be incremented
     */
-   virtual void print_edge(unsigned fid, gc_edge_descriptor e, unsigned int index);
+   virtual void print_edge(unsigned fid, BBGraph::edge_descriptor e, unsigned int index);
 
    /**
     * Print operations needed to store into symbol table information about last path
@@ -114,7 +114,7 @@ class EdgeCWriter : public CWriter
     * @param fid is the identifier of the function containing the loop edge
     * @param e is the edge
     */
-   virtual void print_loop_switching(unsigned fid, gc_edge_descriptor e);
+   virtual void print_loop_switching(unsigned fid, BBGraph::edge_descriptor e);
 
    /**
     * Write recursively instructions belonging to a basic block of task or of a function
@@ -123,7 +123,7 @@ class EdgeCWriter : public CWriter
     * @param bracket tells if bracket should be added before and after this basic block
     * @param variableFunctor is the functor used to print variables inside the generated code
     */
-   void writeRoutineInstructions_rec(unsigned fid, gc_vertex_descriptor current_vertex, bool bracket,
+   void writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_descriptor current_vertex, bool bracket,
                                      const std::unique_ptr<var_pp_functor>& variableFunctor);
 
    /**
@@ -136,8 +136,9 @@ class EdgeCWriter : public CWriter
     */
    void writeRoutineInstructions(
        const unsigned int function_index, const OpVertexSet& instructions,
-       const std::unique_ptr<var_pp_functor>& variableFunctor, gc_vertex_descriptor bb_start = gc_null_vertex(),
-       CustomOrderedSet<gc_vertex_descriptor> bb_end = CustomOrderedSet<gc_vertex_descriptor>()) override;
+       const std::unique_ptr<var_pp_functor>& variableFunctor,
+       BBGraph::vertex_descriptor bb_start = graph_storage_traits<BBGraphStoragePolicy>::null_vertex(),
+       CustomOrderedSet<BBGraph::vertex_descriptor> bb_end = CustomOrderedSet<BBGraph::vertex_descriptor>()) override;
 
    virtual void Initialize() override;
 

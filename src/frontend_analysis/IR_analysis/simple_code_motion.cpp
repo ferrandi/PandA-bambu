@@ -48,6 +48,7 @@
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_step.hpp"
@@ -599,8 +600,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
 
    /// store the BB graph ala boost::graph
    BBGraphsCollection bb_graphs_collection(BBGraphInfo(AppM, function_id));
-   auto& bb_graph_info = bb_graphs_collection.GetGraphInfo();
    BBGraph bb_graph(bb_graphs_collection, CFG_SELECTOR);
+   auto& bb_graph_info = graph_graph_info(bb_graph);
    CustomUnorderedMap<BBGraph::vertex_descriptor, unsigned int> direct_vertex_map;
    CustomUnorderedMap<unsigned int, BBGraph::vertex_descriptor> inverse_vertex_map;
    /// add vertices
@@ -642,7 +643,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                                 CFG_SELECTOR);
    /// sort basic block vertices from the entry till the exit
    std::list<BBGraph::vertex_descriptor> bb_sorted_vertices;
-   struct LocalDFSVisitor : public boost::dfs_visitor<>
+   struct LocalDFSVisitor : public graph_dfs_visitor
    {
       explicit LocalDFSVisitor(std::list<BBGraph::vertex_descriptor>& Out) : Lref(Out)
       {
@@ -655,10 +656,9 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
    };
    {
       LocalDFSVisitor vis(bb_sorted_vertices);
-      std::vector<boost::default_color_type> color_storage(boost::num_vertices(bb_graph));
-      const auto idmap = boost::get(boost::vertex_index_t(), bb_graph);
-      auto color_map = boost::make_iterator_property_map(color_storage.begin(), idmap, color_storage[0]);
-      boost::depth_first_search(bb_graph, boost::visitor(vis).color_map(color_map).vertex_index_map(idmap));
+      const auto idmap = graph_vertex_index_map(bb_graph);
+      auto color_map = graph_make_color_map(bb_graph);
+      graph_depth_first_search(bb_graph, graph_visitor(vis).color_map(color_map.get()).vertex_index_map(idmap));
    }
    static size_t counter = 0;
    if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC &&

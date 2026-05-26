@@ -51,6 +51,7 @@
 #include "dbgPrintHelper.hpp"
 #include "fu_binding.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "host_profiling_constants.hpp"
@@ -91,7 +92,7 @@ namespace
       {
       }
 
-      void write(const FunctionBehaviorConstRef function_behavior, gc_vertex_descriptor statement,
+      void write(const FunctionBehaviorConstRef function_behavior, OpGraph::vertex_descriptor statement,
                  const std::unique_ptr<var_pp_functor>& varFunctor) override
       {
          if(!enable)
@@ -100,7 +101,7 @@ namespace
          }
 
          const auto op_cfg = function_behavior->GetOpGraph(FunctionBehavior::CFG);
-         const auto& op_info = op_cfg.CGetNodeInfo(statement);
+         const auto& op_info = graph_node_info(op_cfg, statement);
          if(op_info.called.empty())
          {
             return InstructionWriter::write(function_behavior, statement, varFunctor);
@@ -113,7 +114,7 @@ namespace
             const auto op_fu = caller_hls->allocation_information->get_fu(caller_hls->Rfu->get_assign(op));
             THROW_ASSERT(op_fu && op_fu->get_kind() == functional_unit_K, "");
             const auto op_op_node = GetPointerS<functional_unit>(op_fu)->get_operation(
-                ir_helper::NormalizeTypename(op_cfg.CGetNodeInfo(op).GetOperation()));
+                ir_helper::NormalizeTypename(graph_node_info(op_cfg, op).GetOperation()));
             THROW_ASSERT(op_op_node && op_op_node->get_kind() == operation_K, "");
             return GetPointerS<operation>(op_op_node)->bounded;
          };
@@ -125,7 +126,7 @@ namespace
          const auto called_fnode = AppM->get_ir_manager()->GetIRNode(*op_info.called.begin());
          const auto& bb_collection = function_behavior->GetBBGraphsCollection();
          const auto& bb_info =
-             bb_collection.CGetNodeInfo(bb_collection.CGetGraphInfo().bb_index_map.at(op_info.bb_index));
+             graph_node_info(bb_collection, graph_graph_info(bb_collection).bb_index_map.at(op_info.bb_index));
          const auto& sch = caller_hls->Rsch;
          const auto get_owning_stage = [&](OpGraph::vertex_descriptor op) {
             auto cstep = sch->get_cstep(op).second;
@@ -141,7 +142,7 @@ namespace
          size_t statement_pos = 0;
          for(auto op : bb_info.statements_list)
          {
-            const auto& oi = op_cfg.CGetNodeInfo(op);
+            const auto& oi = graph_node_info(op_cfg, op);
             if(!oi.called.empty() && !is_bounded(op) && get_owning_stage(op) == stmt_stage)
             {
                concurrent_ops.push_back(op);
@@ -206,8 +207,8 @@ void BasicBlocksProfilingCWriter::print_edge(unsigned fid, BBGraph::edge_descrip
    {
       const auto function_behavior = HLSMgr->CGetFunctionBehavior(fid);
       const auto support_cfg = function_behavior->GetBBGraph(FunctionBehavior::BB);
-      const auto src_bbi = support_cfg.CGetNodeInfo(support_cfg.source(e)).block->number;
-      const auto tgt_bbi = support_cfg.CGetNodeInfo(support_cfg.target(e)).block->number;
+      const auto src_bbi = graph_node_info(support_cfg, graph_source(support_cfg, e)).block->number;
+      const auto tgt_bbi = graph_node_info(support_cfg, graph_target(support_cfg, e)).block->number;
       if(tgt_bbi != BB_EXIT)
       {
          const auto sch = HLSMgr->get_HLS(fid)->Rsch;
@@ -271,7 +272,7 @@ void BasicBlocksProfilingCWriter::InternalWriteGlobalDeclarations()
       {
          const auto function_behavior = HLSMgr->CGetFunctionBehavior(fid);
          const auto& bb_graphs = function_behavior->GetBBGraphsCollection();
-         const auto& bb_index_map = bb_graphs.CGetGraphInfo().bb_index_map;
+         const auto& bb_index_map = graph_graph_info(bb_graphs).bb_index_map;
          const auto fd = GetPointerS<const function_val_node>(fnode);
          const auto sl = GetPointerS<const statement_list_node>(fd->body);
          const auto max_bbi = sl->list_of_bloc.rbegin()->first + 1U;
@@ -293,7 +294,7 @@ void BasicBlocksProfilingCWriter::InternalWriteGlobalDeclarations()
             unsigned csteps = 0U;
             if(auto it = sl->list_of_bloc.find(bbi); it != sl->list_of_bloc.end())
             {
-               const auto& bb_info = bb_graphs.CGetNodeInfo(bb_index_map.at(bbi));
+               const auto& bb_info = graph_node_info(bb_graphs, bb_index_map.at(bbi));
                const auto [min_cstep, max_cstep] = compute_bb_csteps(bb_info, hls->Rsch);
                auto cstep_fix = 0u;
                if(!dummy_bbi.count(bbi))

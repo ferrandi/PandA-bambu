@@ -52,6 +52,7 @@
 #include "frontend_flow_step_factory.hpp"
 #include "function_behavior.hpp"
 #include "functions.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_device.hpp"
@@ -279,24 +280,24 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
          return CGM.CGetCallSubGraph(subset);
       }();
 
-      if(subgraph.num_vertices() < 2)
+      if(graph_num_vertices(subgraph) < 2)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Empty thread");
          continue;
       }
 
       /// we do not need the exit vertex since the post-dominator graph is not used
-      dominance<CallGraph> cg_dominators(subgraph, top_vertex, CallGraph::null_vertex());
+      dominance<CallGraph> cg_dominators(subgraph, top_vertex, graph_null_vertex<CallGraph>());
       CustomMap<std::string, CustomOrderedSet<CallGraph::vertex_descriptor>> fun_dom_map;
       CustomMap<std::string, CustomOrderedSet<unsigned int>> where_used;
       CustomMap<std::string, bool> indirectlyCalled;
 
       std::list<CallGraph::vertex_descriptor> topology_sorted_vertex;
-      subgraph.TopologicalSort(topology_sorted_vertex);
+      graph_topological_sort(subgraph, topology_sorted_vertex);
       for(const auto& current_vertex : topology_sorted_vertex)
       {
          CallGraph::vertex_descriptor vert_dominator;
-         if(subgraph.in_degree(current_vertex) != 1)
+         if(graph_in_degree(subgraph, current_vertex) != 1)
          {
             vert_dominator = cg_dominators.getImmediateDominator(current_vertex);
          }
@@ -304,16 +305,16 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
          {
             vert_dominator = current_vertex;
          }
-         if(subgraph.out_degree(current_vertex))
+         if(graph_out_degree(subgraph, current_vertex))
          {
             const auto current_id = CGM.get_function(current_vertex);
             THROW_ASSERT(HLSMgr->get_HLS(current_id),
                          "Missing HLS initialization for " +
                              HLSMgr->CGetFunctionBehavior(current_id)->CGetBehavioralHelper()->GetFunctionName());
             const auto HLS_C = HLSMgr->get_HLS(current_id)->HLS_C;
-            for(const auto& eo : subgraph.out_edges(current_vertex))
+            for(const auto& eo : graph_out_edges(subgraph, current_vertex))
             {
-               const auto called_fu_id = CGM.get_function(subgraph.target(eo));
+               const auto called_fu_id = CGM.get_function(graph_target(subgraph, eo));
                const auto called_fu_name = functions::GetFUName(called_fu_id, HLSMgr);
                unsigned multiplicity = 1;
                // check if global constraints are actually propagated. It may happen in case this class add them
@@ -370,7 +371,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
                    ))
                {
                   fun_dom_map[called_fu_name].insert(vert_dominator);
-                  const auto& info = subgraph.CGetEdgeInfo(eo);
+                  const auto& info = graph_edge_info(subgraph, eo);
 
                   if(info.direct_call_points.size())
                   {
@@ -414,12 +415,12 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
                              HLSMgr->CGetFunctionBehavior(cur_id)->CGetBehavioralHelper()->GetFunctionName());
             function_allocation_map[cur_id];
             const auto cur_instances = num_instances.at(cur_fu_name);
-            for(const auto& eo : subgraph.out_edges(cur))
+            for(const auto& eo : graph_out_edges(subgraph, cur))
             {
-               const auto tgt = subgraph.target(eo);
+               const auto tgt = graph_target(subgraph, eo);
                const auto tgt_fu_name = functions::GetFUName(CGM.get_function(tgt), HLSMgr);
                const auto n_call_points =
-                   static_cast<unsigned int>(subgraph.CGetEdgeInfo(eo).direct_call_points.size());
+                   static_cast<unsigned int>(graph_edge_info(subgraph, eo).direct_call_points.size());
                if(num_instances.find(tgt_fu_name) == num_instances.end())
                {
                   num_instances[tgt_fu_name] = cur_instances * n_call_points;

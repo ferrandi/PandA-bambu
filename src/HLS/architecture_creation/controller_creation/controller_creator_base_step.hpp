@@ -48,7 +48,7 @@
 #include "FSMInfo.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include "graph.hpp"
+#include "op_graph.hpp"
 #include "refcount.hpp"
 
 #include <fstream>
@@ -101,7 +101,7 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
    /// calling GetPointer<commandport_obj>(j->second)->get_vertex() to the elements into in_ports. The second
    /// element is the same number of the generic_objRef into in_ports to which get_vertex() was called
    /// Initialized after add_common_ports is called
-   std::map<gc_vertex_descriptor, unsigned int> cond_ports;
+   std::map<OpGraph::vertex_descriptor, unsigned int> cond_ports;
    /// This map put into relation fsm states and alldone multi_unbounded ports
    std::map<FSMInfo::state_descriptor, unsigned int> mu_ports;
 

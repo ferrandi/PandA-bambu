@@ -44,6 +44,7 @@
 #include "behavioral_helper.hpp"
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hash_helper.hpp"
 #include "op_graph.hpp"
 #include "string_manipulation.hpp"
@@ -85,11 +86,11 @@ void AddOpExitFlowEdges::Initialize()
    if(bb_version != 0 and bb_version != function_behavior->GetBBVersion())
    {
       const auto flg = function_behavior->GetOpGraph(FunctionBehavior::FLG);
-      if(flg.num_vertices() != 0)
+      if(graph_num_vertices(flg) != 0)
       {
-         for(const auto& edge : flg.edges())
+         for(const auto& edge : graph_edges(flg))
          {
-            if((flg.CGetNodeInfo(flg.target(edge)).node_type & TYPE_LAST_OP) != 0)
+            if((graph_node_info(flg, graph_target(flg, edge)).node_type & TYPE_LAST_OP) != 0)
             {
                function_behavior->ogc->RemoveSelector(edge, FLG_SELECTOR);
             }
@@ -107,17 +108,17 @@ DesignFlowStep_Status AddOpExitFlowEdges::InternalExec()
    const auto basic_block_graph = function_behavior->GetBBGraph(FunctionBehavior::BB);
 
    /// Adding operation to empty return
-   for(const auto& v : fcfg.vertices())
+   for(const auto& v : graph_vertices(fcfg))
    {
-      const auto& v_info = fcfg.CGetNodeInfo(v);
+      const auto& v_info = graph_node_info(fcfg, v);
       if((v_info.node_type & TYPE_LAST_OP) != 0)
       {
          for(const auto operation :
-             basic_block_graph.CGetNodeInfo(basic_block_graph.CGetGraphInfo().bb_index_map.at(v_info.bb_index))
+             graph_node_info(basic_block_graph, graph_graph_info(basic_block_graph).bb_index_map.at(v_info.bb_index))
                  .statements_list)
          {
             const auto reachability = function_behavior->CheckReachability(operation, v);
-            if(reachability && ((fcfg.CGetNodeInfo(operation).node_type & TYPE_LAST_OP) == 0))
+            if(reachability && ((graph_node_info(fcfg, operation).node_type & TYPE_LAST_OP) == 0))
             {
                function_behavior->ogc->AddEdge(operation, v, FLG_SELECTOR);
             }

@@ -44,6 +44,7 @@
 #include "fu_binding.hpp"
 #include "function_behavior.hpp"
 #include "functions.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_step.hpp"
@@ -54,7 +55,7 @@
 
 #include <utility>
 
-class HWCallPathCalculator : public boost::default_dfs_visitor
+class HWCallPathCalculator : public graph_default_dfs_visitor
 {
  protected:
    /// a refcount to the HLS_manager
@@ -89,7 +90,7 @@ void HWCallPathCalculator::start_vertex(UnfoldedCallGraph::vertex_descriptor v, 
 {
    scope = std::stack<std::string>();
    shared_fun_scope.clear();
-   const auto top_fu_name = ufcg.CGetNodeInfo(v).behavior->CGetBehavioralHelper()->GetFunctionName();
+   const auto top_fu_name = graph_node_info(ufcg, v).behavior->CGetBehavioralHelper()->GetFunctionName();
 
    top_fun_scope = "clocked_bambu_testbench" HIERARCHY_SEPARATOR "bambu_testbench" HIERARCHY_SEPARATOR
                    "system" HIERARCHY_SEPARATOR "DUT" HIERARCHY_SEPARATOR "top" HIERARCHY_SEPARATOR +
@@ -97,15 +98,15 @@ void HWCallPathCalculator::start_vertex(UnfoldedCallGraph::vertex_descriptor v, 
                    HIERARCHY_SEPARATOR;
 
    HLSMgr->RDiscr->unfolded_v_to_scope[v] = top_fun_scope;
-   const auto f_id = ufcg.CGetNodeInfo(v).f_id;
+   const auto f_id = graph_node_info(ufcg, v).f_id;
    HLSMgr->RDiscr->f_id_to_scope[f_id].insert(top_fun_scope);
 }
 
 void HWCallPathCalculator::discover_vertex(UnfoldedCallGraph::vertex_descriptor v, const UnfoldedCallGraph& ufcg)
 {
    // get the function id
-   const auto BH = ufcg.CGetNodeInfo(v).behavior->CGetBehavioralHelper();
-   const auto f_id = ufcg.CGetNodeInfo(v).f_id;
+   const auto BH = graph_node_info(ufcg, v).behavior->CGetBehavioralHelper();
+   const auto f_id = graph_node_info(ufcg, v).f_id;
    if(!BH->has_implementation() || !BH->function_has_to_be_printed(f_id))
    {
       scope.push("");
@@ -139,9 +140,9 @@ void HWCallPathCalculator::finish_vertex(UnfoldedCallGraph::vertex_descriptor, c
 
 void HWCallPathCalculator::examine_edge(const UnfoldedCallGraph::edge_descriptor& e, const UnfoldedCallGraph& ufcg)
 {
-   const auto tgt = ufcg.target(e);
-   const auto called_f_id = ufcg.CGetNodeInfo(tgt).f_id;
-   const auto BH = ufcg.CGetNodeInfo(tgt).behavior->CGetBehavioralHelper();
+   const auto tgt = graph_target(ufcg, e);
+   const auto called_f_id = graph_node_info(ufcg, tgt).f_id;
+   const auto BH = graph_node_info(ufcg, tgt).behavior->CGetBehavioralHelper();
    if(!BH->has_implementation() || !BH->function_has_to_be_printed(called_f_id))
    {
       return;
@@ -159,15 +160,15 @@ void HWCallPathCalculator::examine_edge(const UnfoldedCallGraph::edge_descriptor
    }
    else
    {
-      if(ufcg.CGetEdgeInfo(e).is_direct)
+      if(graph_edge_info(ufcg, e).is_direct)
       {
-         const auto call_id = ufcg.CGetEdgeInfo(e).call_id;
+         const auto call_id = graph_edge_info(ufcg, e).call_id;
          THROW_ASSERT(call_id != 0U, "No artificial calls allowed in UnfoldedCallGraph");
-         const auto src = ufcg.source(e);
-         const auto& caller_f_id = ufcg.CGetNodeInfo(src).f_id;
-         const auto& caller_behavior = ufcg.CGetNodeInfo(src).behavior;
+         const auto src = graph_source(ufcg, e);
+         const auto& caller_f_id = graph_node_info(ufcg, src).f_id;
+         const auto& caller_behavior = graph_node_info(ufcg, src).behavior;
          const auto op_graph = caller_behavior->GetOpGraph(FunctionBehavior::CFG);
-         const auto call_op_v = op_graph.CGetGraphInfo().ir_node_to_operation.at(call_id);
+         const auto call_op_v = graph_graph_info(op_graph).ir_node_to_operation.at(call_id);
          const auto& fu_bind = HLSMgr->get_HLS(caller_f_id)->Rfu;
          const auto fu_type_id = fu_bind->get_assign(call_op_v);
          const auto fu_instance_id = fu_bind->get_index(call_op_v);
@@ -179,9 +180,10 @@ void HWCallPathCalculator::examine_edge(const UnfoldedCallGraph::edge_descriptor
 
          if(fu_bind->get_operations(fu_type_id, fu_instance_id).size() == 1U)
          {
-            called_scope = HDL_manager::convert_to_identifier(scope.top() + "Datapath_i") + HIERARCHY_SEPARATOR +
-                           HDL_manager::convert_to_identifier("fu_" + op_graph.CGetNodeInfo(call_op_v).vertex_name) +
-                           HIERARCHY_SEPARATOR + extra_path;
+            called_scope =
+                HDL_manager::convert_to_identifier(scope.top() + "Datapath_i") + HIERARCHY_SEPARATOR +
+                HDL_manager::convert_to_identifier("fu_" + graph_node_info(op_graph, call_op_v).vertex_name) +
+                HIERARCHY_SEPARATOR + extra_path;
          }
          else
          {
@@ -246,13 +248,9 @@ DesignFlowStep_Status HWPathComputation::Exec()
    // Calculate the HW paths and store them in Discrepancy
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Unfolding call graph");
    HWCallPathCalculator sig_sel_v(HLSMgr);
-   std::vector<boost::default_color_type> sig_sel_color(HLSMgr->RDiscr->DiscrepancyCallGraph.num_vertices(),
-                                                        boost::white_color);
-   boost::depth_first_visit(
-       HLSMgr->RDiscr->DiscrepancyCallGraph, HLSMgr->RDiscr->unfolded_root_v, sig_sel_v,
-       boost::make_iterator_property_map(sig_sel_color.begin(),
-                                         boost::get(boost::vertex_index_t(), HLSMgr->RDiscr->DiscrepancyCallGraph),
-                                         boost::white_color));
+   auto sig_sel_color = graph_make_color_map(HLSMgr->RDiscr->DiscrepancyCallGraph);
+   graph_depth_first_visit(HLSMgr->RDiscr->DiscrepancyCallGraph, HLSMgr->RDiscr->unfolded_root_v, sig_sel_v,
+                           sig_sel_color.get());
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--Unfolded call graph");
    return DesignFlowStep_Status::SUCCESS;
 }

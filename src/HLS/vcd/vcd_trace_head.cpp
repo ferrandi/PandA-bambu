@@ -39,6 +39,7 @@
 #include "exceptions.hpp"
 #include "fu_binding.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "ir_helper.hpp"
@@ -131,14 +132,14 @@ static op_timing_info get_op_timing(const HLS_managerConstRef& HLSMgr, const uns
 {
    const auto FB = HLSMgr->CGetFunctionBehavior(fsm_fun_id);
    const auto& op_graph = FB->GetOpGraph(FunctionBehavior::FCFG);
-   const auto& op_graph_info = op_graph.CGetGraphInfo();
+   const auto& op_graph_info = graph_graph_info(op_graph);
    const auto op_it = op_graph_info.ir_node_to_operation.find(op_id);
    THROW_ASSERT(op_it != op_graph_info.ir_node_to_operation.end(), "cannot find operation for op id " + STR(op_id));
    const auto statement = op_it->second;
    const auto hls = HLSMgr->get_HLS(fsm_fun_id);
    const auto fu_tech_n = hls->allocation_information->get_fu(hls->Rfu->get_assign(statement));
    const auto op_tech_n = GetPointer<functional_unit>(fu_tech_n)->get_operation(
-       ir_helper::NormalizeTypename(op_graph.CGetNodeInfo(statement).GetOperation()));
+       ir_helper::NormalizeTypename(graph_node_info(op_graph, statement).GetOperation()));
    const auto* oper = GetPointer<operation>(op_tech_n);
    THROW_ASSERT(oper, "missing operation info for op id " + STR(op_id));
    op_timing_info timing;
@@ -152,7 +153,7 @@ static op_state_info get_op_state_info(const HLS_managerConstRef& HLSMgr, const 
 {
    const auto FB = HLSMgr->CGetFunctionBehavior(fsm_fun_id);
    const auto& op_graph = FB->GetOpGraph(FunctionBehavior::FCFG);
-   const auto& op_graph_info = op_graph.CGetGraphInfo();
+   const auto& op_graph_info = graph_graph_info(op_graph);
    const auto op_it = op_graph_info.ir_node_to_operation.find(op_id);
    THROW_ASSERT(op_it != op_graph_info.ir_node_to_operation.end(), "cannot find operation for op id " + STR(op_id));
    const auto statement = op_it->second;

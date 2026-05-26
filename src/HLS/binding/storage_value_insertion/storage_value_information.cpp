@@ -43,6 +43,7 @@
 #include "dbgPrintHelper.hpp"
 #include "fu_binding.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "ir_helper.hpp"
@@ -69,7 +70,7 @@ void StorageValueInformation::Initialize()
 
    vw2info.clear();
    /// initialize the vw2info relation
-   for(auto ki : data.vertices())
+   for(auto ki : graph_vertices(data))
    {
       const auto& scalar_defs = getVariablesScalarDef(data, ki);
       if(!scalar_defs.empty())
@@ -82,7 +83,7 @@ void StorageValueInformation::Initialize()
                if(ir_helper::IsSsaName(varNode) && !ir_helper::IsVirtual(varNode))
                {
                   const auto isParam = ir_helper::IsParameter(varNode);
-                  const auto& op_info = data.CGetNodeInfo(ki);
+                  const auto& op_info = graph_node_info(data, ki);
                   const auto isPhi = op_info.node_type & TYPE_PHI;
                   const auto isInt = ir_helper::IsSignedIntegerType(varNode);
                   const auto isReal = ir_helper::IsRealType(varNode);
@@ -142,28 +143,28 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
                          " and [" +
                          STR(HLS_mgr->get_ir_manager()->GetIRNode(var2)) + "]");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
-                     "---vertex names: [" + data.CGetNodeInfo(v1).vertex_name +
+                     "---vertex names: [" + graph_node_info(data, v1).vertex_name +
                          "]"
                          " and [" +
-                         data.CGetNodeInfo(v2).vertex_name + "]");
+                         graph_node_info(data, v2).vertex_name + "]");
 
       static const std::vector<std::string> labels = {"mul_node",        "widen_mul_node",  "ternary_add_node",
                                                       "ternary_ss_node", "ternary_as_node", "ternary_sa_node"};
-      const auto it_succ_v1 = boost::adjacent_vertices(v1, data);
-      const auto it_succ_v2 = boost::adjacent_vertices(v2, data);
+      const auto succ_v1 = graph_adjacent_vertices(data, v1);
+      const auto succ_v2 = graph_adjacent_vertices(data, v2);
       for(const auto& label : labels)
       {
          // check if v1 or v2 drive complex operations
          // variable coming from the Entry vertex have to be neglected in this analysis
          CustomOrderedSet<unsigned int> op_succ_of_v1_port0, op_succ_of_v1_port1, op_succ_of_v1_port2;
-         if(!(data.CGetNodeInfo(v1).node_type & TYPE_ENTRY))
+         if(!(graph_node_info(data, v1).node_type & TYPE_ENTRY))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "-->Statement with USE first variable");
-            std::for_each(it_succ_v1.first, it_succ_v1.second,
+            std::for_each(succ_v1.begin(), succ_v1.end(),
                           [this, &op_succ_of_v1_port0, &op_succ_of_v1_port1, &op_succ_of_v1_port2, &var1,
                            &label](const OpGraph::vertex_descriptor succ) {
-                             const std::string op_label = data.CGetNodeInfo(succ).GetOperation();
-                             const unsigned int succ_id = data.CGetNodeInfo(succ).GetNodeId();
+                             const std::string op_label = graph_node_info(data, succ).GetOperation();
+                             const unsigned int succ_id = graph_node_info(data, succ).GetNodeId();
                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
                                             "---[" + STR(succ_id) + "] type: " + STR(op_label));
                              if((op_label == label))
@@ -193,14 +194,14 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
          }
 
          CustomOrderedSet<unsigned int> op_succ_of_v2_port0, op_succ_of_v2_port1, op_succ_of_v2_port2;
-         if(!(data.CGetNodeInfo(v2).node_type & TYPE_ENTRY))
+         if(!(graph_node_info(data, v2).node_type & TYPE_ENTRY))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "-->Statement with USE second variable");
-            std::for_each(it_succ_v2.first, it_succ_v2.second,
+            std::for_each(succ_v2.begin(), succ_v2.end(),
                           [this, &op_succ_of_v2_port0, &op_succ_of_v2_port1, &op_succ_of_v2_port2, &var2,
                            &label](const OpGraph::vertex_descriptor succ) {
-                             const std::string op_label = data.CGetNodeInfo(succ).GetOperation();
-                             const unsigned int succ_id = data.CGetNodeInfo(succ).GetNodeId();
+                             const std::string op_label = graph_node_info(data, succ).GetOperation();
+                             const unsigned int succ_id = graph_node_info(data, succ).GetNodeId();
                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,
                                             "---[" + STR(succ_id) + "] type: " + STR(op_label));
                              if(op_label == label)

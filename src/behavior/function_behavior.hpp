@@ -128,6 +128,9 @@ struct OMPInfo
  */
 class FunctionBehavior
 {
+   using operation_vertex_descriptor = OpGraph::vertex_descriptor;
+   using basic_block_vertex_descriptor = BBGraph::vertex_descriptor;
+
    friend class BasicBlocksCfgComputation;
    friend class BasicBlocksProfiling;
    friend class BBCdgComputation;
@@ -155,19 +158,19 @@ class FunctionBehavior
 
    /// Map operation vertex to position in topological order in control flow graph; in the sorting then part vertices
    /// come before else part ones
-   std::map<gc_vertex_descriptor, unsigned int> map_levels;
+   std::map<operation_vertex_descriptor, unsigned int> map_levels;
 
    /// Map basic block vertex to position in topological order in control flow graph; in the sorting then part vertices
    /// come before else part ones
-   std::map<gc_vertex_descriptor, unsigned int> bb_map_levels;
+   std::map<basic_block_vertex_descriptor, unsigned int> bb_map_levels;
 
    /// list of operations vertices sorted by topological order in control flow graph; in the sorting then part vertices
    /// come before else part ones
-   std::deque<gc_vertex_descriptor> deque_levels;
+   std::deque<operation_vertex_descriptor> deque_levels;
 
    /// list of operations vertices sorted by topological order in control flow graph; in the sorting then part vertices
    /// come before else part ones
-   std::deque<gc_vertex_descriptor> bb_deque_levels;
+   std::deque<basic_block_vertex_descriptor> bb_deque_levels;
 
    /// Loops of the function
    LoopsRef loops;
@@ -322,29 +325,29 @@ class FunctionBehavior
     */
    CustomOrderedSet<unsigned int> get_local_variables(const application_managerConstRef AppM) const;
 
-   void add_level(gc_vertex_descriptor v, unsigned int index);
+   void add_level(operation_vertex_descriptor v, unsigned int index);
 
    /**
     * Return the vector of vertex index sorted in topological order.
     */
-   const std::deque<gc_vertex_descriptor>& get_levels() const;
+   const std::deque<operation_vertex_descriptor>& get_levels() const;
 
    /**
     * Return the map of vertex index sorted in topological order.
     */
-   const std::map<gc_vertex_descriptor, unsigned int>& get_map_levels() const;
+   const std::map<operation_vertex_descriptor, unsigned int>& get_map_levels() const;
 
-   void add_bb_level(gc_vertex_descriptor v, unsigned int index);
+   void add_bb_level(basic_block_vertex_descriptor v, unsigned int index);
 
    /**
     * Return the vector of bb vertex index sorted in topological order.
     */
-   const std::deque<gc_vertex_descriptor>& get_bb_levels() const;
+   const std::deque<basic_block_vertex_descriptor>& get_bb_levels() const;
 
    /**
     * Return the map of bb vertex index sorted in topological order.
     */
-   const std::map<gc_vertex_descriptor, unsigned int>& get_bb_map_levels() const;
+   const std::map<basic_block_vertex_descriptor, unsigned int>& get_bb_map_levels() const;
 
    const OpGraphsCollection& GetOpGraphsCollection() const;
 
@@ -362,7 +365,7 @@ class FunctionBehavior
     * @return the refcount to the subgraph
     */
    OpGraph GetOpGraph(FunctionBehavior::graph_type gt,
-                      const CustomUnorderedSet<gc_vertex_descriptor>& statements) const;
+                      const CustomUnorderedSet<operation_vertex_descriptor>& statements) const;
 
    const BBGraphsCollection& GetBBGraphsCollection() const;
 
@@ -647,8 +650,8 @@ class FunctionBehavior
     * @param second_operation is the second operation to be considered
     * @return true if there is a path from first_operation to second_operation in flcfg
     */
-   bool CheckReachability(const gc_vertex_descriptor first_operation,
-                          const gc_vertex_descriptor second_operation) const;
+   bool CheckReachability(const operation_vertex_descriptor first_operation,
+                          const operation_vertex_descriptor second_operation) const;
 
    /**
     * Check if a path from the first basic block to the second basic block exists in control flow graph (without
@@ -657,8 +660,8 @@ class FunctionBehavior
     * @param second_basic_block is the second operation to be considered
     * @return true if there is a path from first_basic_block to second_basic_block in flcfg
     */
-   bool CheckBBReachability(const gc_vertex_descriptor first_basic_block,
-                            const gc_vertex_descriptor second_basic_block) const;
+   bool CheckBBReachability(const basic_block_vertex_descriptor first_basic_block,
+                            const basic_block_vertex_descriptor second_basic_block) const;
 
    /**
     * Check if a path from first_operation to second_operation exists in control flow graph with feedback
@@ -666,8 +669,8 @@ class FunctionBehavior
     * @param second_operation is the second operation to be considered
     * @return true if there is a path from first_operation to second_operation in fcfg
     */
-   bool CheckFeedbackReachability(const gc_vertex_descriptor first_operation,
-                                  const gc_vertex_descriptor second_operation) const;
+   bool CheckFeedbackReachability(const operation_vertex_descriptor first_operation,
+                                  const operation_vertex_descriptor second_operation) const;
 
    /**
     * Check if a path from the first basic block to the second basic block exists in control flow graph with feedback
@@ -675,8 +678,8 @@ class FunctionBehavior
     * @param second_basic_block is the second operation to be considered
     * @return true if there is a path from first_basic_block to second_basic_block in flcfg
     */
-   bool CheckBBFeedbackReachability(const gc_vertex_descriptor first_basic_block,
-                                    const gc_vertex_descriptor second_basic_block) const;
+   bool CheckBBFeedbackReachability(const basic_block_vertex_descriptor first_basic_block,
+                                    const basic_block_vertex_descriptor second_basic_block) const;
 
    /**
     * Return the version of the basic block intermediate representation

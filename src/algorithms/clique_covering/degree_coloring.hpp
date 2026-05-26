@@ -44,7 +44,6 @@
 #define DEGREE_COLORING_HPP
 
 #include <boost/config.hpp>
-#include <boost/graph/properties.hpp>
 #include <boost/version.hpp>
 #if BOOST_VERSION >= 104000
 #include <boost/property_map/property_map.hpp>
@@ -52,11 +51,9 @@
 #include <boost/property_map.hpp>
 #endif
 #include "custom_set.hpp"
+#include "graph_facade.hpp"
 #include <algorithm>
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/visitors.hpp>
 #include <boost/limits.hpp>
-#include <boost/tuple/tuple.hpp>
 #include <vector>
 
 /**
@@ -82,7 +79,7 @@ namespace boost
       template <typename Vertex>
       bool operator()(Vertex v1, Vertex v2) const
       {
-         return out_degree(v1, G) < out_degree(v2, G);
+         return ::graph_out_degree(G, v1) < ::graph_out_degree(G, v2);
       }
       explicit degree_compare_functor(const VertexListGraph& _G) : G(_G)
       {
@@ -103,7 +100,7 @@ namespace boost
       using size_type = typename property_traits<ColorMap>::value_type;
 
       size_type max_color = 0;
-      const size_type V = num_vertices(G);
+      const size_type V = ::graph_num_vertices(G);
       if(V == 0)
       {
          return 0;
@@ -118,19 +115,18 @@ namespace boost
       std::vector<size_type> mark(V, std::numeric_limits<size_type>::max BOOST_PREVENT_MACRO_SUBSTITUTION());
       unsigned iheap = 0, heapsize;
       // Initialize colors
-      typename GraphTraits::vertex_iterator v, vend;
-      for(boost::tie(v, vend) = vertices(G); v != vend; ++v)
+      for(const auto& v : ::graph_vertices(G))
       {
-         put(color, *v, V - 1);
+         put(color, v, V - 1);
          iheap++;
       }
       heapsize = iheap;
       Vertex* heap_container;
       heap_container = new size_type[iheap];
-      for(boost::tie(v, vend) = vertices(G); v != vend; ++v)
+      for(const auto& v : ::graph_vertices(G))
       {
          --iheap;
-         heap_container[iheap] = *v;
+         heap_container[iheap] = v;
       }
       degree_compare_functor<VertexListGraph> HCF(G);
       std::make_heap(heap_container, heap_container + heapsize, HCF);
@@ -140,13 +136,11 @@ namespace boost
       {
          Vertex current = heap_container[0];
          std::pop_heap(heap_container, heap_container + heapsize - i, HCF);
-         typename GraphTraits::adjacency_iterator v1, v1end;
-
          // Mark the colors of vertices adjacent to current.
          // i can be the value for marking since i increases successively
-         for(boost::tie(v1, v1end) = adjacent_vertices(current, G); v1 != v1end; ++v1)
+         for(const auto& v1 : ::graph_adjacent_vertices(G, current))
          {
-            mark[get(color, *v1)] = i;
+            mark[get(color, v1)] = i;
          }
 
          // Next step is to assign the smallest un-marked color

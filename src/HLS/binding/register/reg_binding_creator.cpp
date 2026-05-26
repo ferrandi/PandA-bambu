@@ -49,6 +49,7 @@
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
 #include "functions.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "ir_helper.hpp"
@@ -174,9 +175,9 @@ CustomMap<FSMInfo::state_descriptor, bool> reg_binding_creator::ComputeContextSw
       const auto function_v = CGM.GetVertex(HLS->functionId);
 
       // Compute weak cs states from caller functions
-      for(const auto& e : CG.in_edges(function_v))
+      for(const auto& e : graph_in_edges(CG, function_v))
       {
-         const auto caller_id = CGM.get_function(CG.source(e));
+         const auto caller_id = CGM.get_function(graph_source(CG, e));
          const auto caller_FB = HLSMgr->CGetFunctionBehavior(caller_id);
          const auto caller_omp_info = caller_FB->GetOMPInfo();
          const auto caller_HLS = HLSMgr->get_HLS(caller_id);
@@ -184,9 +185,9 @@ CustomMap<FSMInfo::state_descriptor, bool> reg_binding_creator::ComputeContextSw
          {
             const auto caller_op_graph = caller_FB->GetOpGraph(FunctionBehavior::CFG);
 
-            CustomUnorderedSet<gc_vertex_descriptor> caller_ops;
-            const auto& stmt_to_op = caller_op_graph.CGetGraphInfo().ir_node_to_operation;
-            for(const auto call_point : CG.CGetEdgeInfo(e).direct_call_points)
+            CustomUnorderedSet<OpGraph::vertex_descriptor> caller_ops;
+            const auto& stmt_to_op = graph_graph_info(caller_op_graph).ir_node_to_operation;
+            for(const auto call_point : graph_edge_info(CG, e).direct_call_points)
             {
                THROW_ASSERT(stmt_to_op.count(call_point),
                             "Call point is not an operation. " + STR(call_point) + " - " +
@@ -200,7 +201,7 @@ CustomMap<FSMInfo::state_descriptor, bool> reg_binding_creator::ComputeContextSw
             {
                const auto& state_ops = caller_HLS->fsm_info->getState(state).startingOperations;
                if(std::count_if(state_ops.cbegin(), state_ops.cend(),
-                                [&](const gc_vertex_descriptor op) { return caller_ops.count(op); }))
+                                [&](const OpGraph::vertex_descriptor op) { return caller_ops.count(op); }))
                {
                   caller_states.insert(state);
                }
@@ -272,7 +273,7 @@ CustomMap<FSMInfo::state_descriptor, bool> reg_binding_creator::ComputeContextSw
          const auto& state_ops = HLS->fsm_info->getState(state).startingOperations;
          for(const auto op_v : state_ops)
          {
-            const auto op = op_graph.CGetNodeInfo(op_v).node;
+            const auto op = graph_node_info(op_graph, op_v).node;
             if(op)
             {
                if(ir_helper::IsLoad(op, function_mem) || ir_helper::IsStore(op, function_mem))

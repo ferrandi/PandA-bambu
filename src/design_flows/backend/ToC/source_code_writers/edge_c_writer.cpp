@@ -46,6 +46,7 @@
 #include "custom_map.hpp"
 #include "function_behavior.hpp"
 #include "graph.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "indented_output_stream.hpp"
@@ -118,10 +119,10 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
    const auto cfgGraph = function_behavior->GetOpGraph(FunctionBehavior::FCFG);
    const auto bb_fcfgGraph = function_behavior->GetBBGraph(FunctionBehavior::FBB);
-   const auto& bb_graph_info = bb_fcfgGraph.CGetGraphInfo();
+   const auto& bb_graph_info = graph_graph_info(bb_fcfgGraph);
    const auto& bb_index_map = bb_graph_info.bb_index_map;
 
-   const auto& bb_node_info = bb_fcfgGraph.CGetNodeInfo(current_vertex);
+   const auto& bb_node_info = graph_node_info(bb_fcfgGraph, current_vertex);
    const auto bb_number = bb_node_info.block->number;
 
    /// the entry vertex
@@ -154,12 +155,12 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
    /// get immediate post-dominator
    auto bb_PD = function_behavior->post_dominators->getImmediateDominator(current_vertex);
 #ifndef NDEBUG
-   const auto& bb_node_info_pd = bb_fcfgGraph.CGetNodeInfo(bb_PD);
+   const auto& bb_node_info_pd = graph_node_info(bb_fcfgGraph, bb_PD);
    const auto bb_number_PD = bb_node_info_pd.block->number;
    std::string frontier_string;
    for(const auto bb : bb_frontier)
    {
-      frontier_string += "BB" + std::to_string(bb_fcfgGraph.CGetNodeInfo(bb).block->number) + " ";
+      frontier_string += "BB" + std::to_string(graph_node_info(bb_fcfgGraph, bb).block->number) + " ";
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Frontier at the moment is: " + frontier_string);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Its post-dominator is BB" + std::to_string(bb_number_PD));
@@ -178,8 +179,8 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
    const auto& sch = HLSMgr->get_HLS(fid)->Rsch;
    std::stable_sort(stmts_list.begin(), stmts_list.end(),
                     [&](const OpGraph::vertex_descriptor a, const OpGraph::vertex_descriptor b) {
-                       const auto& a_info = cfgGraph.CGetNodeInfo(a);
-                       const auto& b_info = cfgGraph.CGetNodeInfo(b);
+                       const auto& a_info = graph_node_info(cfgGraph, a);
+                       const auto& b_info = graph_node_info(cfgGraph, b);
                        const auto a_is_cond = (a_info.node_type & (TYPE_MULTIIF | TYPE_GOTO)) != 0;
                        const auto b_is_cond = (b_info.node_type & (TYPE_MULTIIF | TYPE_GOTO)) != 0;
                        if(a_is_cond || b_is_cond)
@@ -196,7 +197,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
       {
          continue;
       }
-      const auto& op_info = cfgGraph.CGetNodeInfo(st);
+      const auto& op_info = graph_node_info(cfgGraph, st);
       if(op_info.node_type & TYPE_VPHI)
       {
          continue;
@@ -229,15 +230,15 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Basic block should start with a label");
    }
 
-   if(!add_bb_label and bb_fcfgGraph.in_degree(current_vertex) > 1)
+   if(!add_bb_label and graph_in_degree(bb_fcfgGraph, current_vertex) > 1)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "Basic block has an indegree > 1 and not associated label");
-      for(const auto& ie : bb_fcfgGraph.in_edges(current_vertex))
+      for(const auto& ie : graph_in_edges(bb_fcfgGraph, current_vertex))
       {
-         const auto source = bb_fcfgGraph.source(ie);
+         const auto source = graph_source(bb_fcfgGraph, ie);
          // Basic block start the body of a short circuit
-         if(!bb_analyzed.count(source) and !((FB_CFG_SELECTOR & bb_fcfgGraph.GetSelector(ie))))
+         if(!bb_analyzed.count(source) and !((FB_CFG_SELECTOR & graph_edge_selector(bb_fcfgGraph, ie))))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "Basic block should start with a label since is the body of a short-circuit");
@@ -272,10 +273,10 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "There is no local_inc");
       // Counting not feedback incoming edges
-      gc_edge_descriptor only_edge;
-      for(const auto& ei : bb_fcfgGraph.in_edges(current_vertex))
+      BBGraph::edge_descriptor only_edge;
+      for(const auto& ei : graph_in_edges(bb_fcfgGraph, current_vertex))
       {
-         if(!(FB_CFG_SELECTOR & bb_fcfgGraph.GetSelector(ei)))
+         if(!(FB_CFG_SELECTOR & graph_edge_selector(bb_fcfgGraph, ei)))
          {
             only_edge = ei;
          }
@@ -284,9 +285,9 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
       // Entry block
       if(current_vertex == entry_vertex)
       {
-         for(const auto& eo : bb_fcfgGraph.out_edges(current_vertex))
+         for(const auto& eo : graph_out_edges(bb_fcfgGraph, current_vertex))
          {
-            if(exit_vertex != bb_fcfgGraph.target(eo))
+            if(exit_vertex != graph_target(bb_fcfgGraph, eo))
             {
                print_loop_starting(fid, eo);
             }
@@ -299,8 +300,8 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
                      "---There is already an edge instrumentation associated with the current basic block");
       const auto e = local_inc[current_vertex];
       const auto support_cfg = function_behavior->GetBBGraph(FunctionBehavior::BB);
-      unsigned int first_loop_index = support_cfg.CGetNodeInfo(support_cfg.source(e)).loop_id;
-      unsigned int second_loop_index = support_cfg.CGetNodeInfo(support_cfg.target(e)).loop_id;
+      unsigned int first_loop_index = graph_node_info(support_cfg, graph_source(support_cfg, e)).loop_id;
+      unsigned int second_loop_index = graph_node_info(support_cfg, graph_target(support_cfg, e)).loop_id;
       // Different loop
       if(first_loop_index != second_loop_index)
       {
@@ -361,9 +362,9 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
    auto vIter = stmts_list.begin();
    if(!is_there)
    {
-      for(const auto& oi : bb_fcfgGraph.out_edges(current_vertex))
+      for(const auto& oi : graph_out_edges(bb_fcfgGraph, current_vertex))
       {
-         if(FB_CFG_SELECTOR & bb_fcfgGraph.GetSelector(oi))
+         if(FB_CFG_SELECTOR & graph_edge_selector(bb_fcfgGraph, oi))
          {
             break;
          }
@@ -397,7 +398,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
          {
             continue;
          }
-         const auto& v_info = cfgGraph.CGetNodeInfo(*vIter);
+         const auto& v_info = graph_node_info(cfgGraph, *vIter);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "Preparing printing of operation " + v_info.vertex_name);
          // Now I print the instruction
@@ -418,10 +419,10 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
          {
             // End of a loop with goto
             if(isLastIntruction and behavioral_helper->end_with_a_cond_or_goto(bb_node_info.block) and
-               bb_fcfgGraph.out_degree(current_vertex) == 1)
+               graph_out_degree(bb_fcfgGraph, current_vertex) == 1)
             {
-               const auto eo1 = bb_fcfgGraph.out_edges(current_vertex).front();
-               if(FB_CFG_SELECTOR & bb_fcfgGraph.GetSelector(eo1))
+               const auto eo1 = graph_out_edges(bb_fcfgGraph, current_vertex).front();
+               if(FB_CFG_SELECTOR & graph_edge_selector(bb_fcfgGraph, eo1))
                {
                   print_loop_ending(fid, eo1);
                }
@@ -454,11 +455,11 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
             indented_output_stream->Append(basic_block_tail.find(bb_number)->second);
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---This is not the last statement");
-         if(support_cfg.out_degree(current_vertex) == 1 and bb_fcfgGraph.out_degree(current_vertex) == 1)
+         if(graph_out_degree(support_cfg, current_vertex) == 1 and graph_out_degree(bb_fcfgGraph, current_vertex) == 1)
          {
-            const auto eo1 = support_cfg.out_edges(current_vertex).front();
-            const auto next = support_cfg.target(eo1);
-            if(bb_fcfgGraph.CGetNodeInfo(current_vertex).loop_id == bb_fcfgGraph.CGetNodeInfo(next).loop_id)
+            const auto eo1 = graph_out_edges(support_cfg, current_vertex).front();
+            const auto next = graph_target(support_cfg, eo1);
+            if(graph_node_info(bb_fcfgGraph, current_vertex).loop_id == graph_node_info(bb_fcfgGraph, next).loop_id)
             {
                THROW_ASSERT(fun_loop_to_index.find(fid) != fun_loop_to_index.end(),
                             "Function " + std::to_string(fid) + " not found");
@@ -473,7 +474,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
          if(v_info.node_type & TYPE_MULTIIF)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Operation is a multiif");
-            unsigned int node_id = cfgGraph.CGetNodeInfo(last_stmt).GetNodeId();
+            unsigned int node_id = graph_node_info(cfgGraph, last_stmt).GetNodeId();
             const auto node = TM->GetIRNode(node_id);
             THROW_ASSERT(node->get_kind() == multi_way_if_stmt_K, "unexpected node");
             auto* gmwi = GetPointer<multi_way_if_stmt>(node);
@@ -526,8 +527,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
                {
                   if(bb_analyzed.find(bb_vertex) == bb_analyzed.end())
                   {
-                     const auto [e, found] = boost::edge(current_vertex, bb_vertex, support_cfg);
-                     THROW_ASSERT(found, "Missing edge");
+                     const auto e = graph_get_edge(support_cfg, current_vertex, bb_vertex);
                      local_inc[bb_vertex] = e;
                      writeRoutineInstructions_rec(fid, bb_vertex, true, variableFunctor);
                   }
@@ -538,13 +538,14 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
                      THROW_ASSERT(basic_blocks_labels.find(bb_index_num) != basic_blocks_labels.end(),
                                   "I do not know the destination " + std::to_string(bb_index_num));
                      indented_output_stream->Append("{\n");
-                     const auto [e, found] = boost::edge(current_vertex, bb_vertex, bb_fcfgGraph);
-                     THROW_ASSERT(found, "Edge missing");
-                     if(not(FB_CFG_SELECTOR & bb_fcfgGraph.GetSelector(e)))
+                     const auto e = graph_get_edge(bb_fcfgGraph, current_vertex, bb_vertex);
+                     if(not(FB_CFG_SELECTOR & graph_edge_selector(bb_fcfgGraph, e)))
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Connected by feedback edge");
-                        unsigned int first_loop_index = support_cfg.CGetNodeInfo(support_cfg.source(e)).loop_id;
-                        unsigned int second_loop_index = support_cfg.CGetNodeInfo(support_cfg.target(e)).loop_id;
+                        unsigned int first_loop_index =
+                            graph_node_info(support_cfg, graph_source(support_cfg, e)).loop_id;
+                        unsigned int second_loop_index =
+                            graph_node_info(support_cfg, graph_target(support_cfg, e)).loop_id;
                         // Different loop
                         if(first_loop_index != second_loop_index)
                         {
@@ -598,9 +599,9 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Connected by forward edge");
                   indented_output_stream->Append("{\n");
-                  const auto [e, found] = boost::edge(current_vertex, bb_vertex, support_cfg);
-                  unsigned int first_loop_index = support_cfg.CGetNodeInfo(support_cfg.source(e)).loop_id;
-                  unsigned int second_loop_index = support_cfg.CGetNodeInfo(support_cfg.target(e)).loop_id;
+                  const auto e = graph_get_edge(support_cfg, current_vertex, bb_vertex);
+                  unsigned int first_loop_index = graph_node_info(support_cfg, graph_source(support_cfg, e)).loop_id;
+                  unsigned int second_loop_index = graph_node_info(support_cfg, graph_target(support_cfg, e)).loop_id;
                   // Different loop
                   if(first_loop_index != second_loop_index)
                   {
@@ -651,10 +652,10 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
             if(last_statement_is_a_cond_or_goto)
             {
                /// now we can analyze the following basic blocks
-               for(const auto& oe : bb_fcfgGraph.out_edges(current_vertex))
+               for(const auto& oe : graph_out_edges(bb_fcfgGraph, current_vertex))
                {
-                  const auto next_bb = bb_fcfgGraph.target(oe);
-                  if(bb_fcfgGraph.out_degree(current_vertex) > 1)
+                  const auto next_bb = graph_target(bb_fcfgGraph, oe);
+                  if(graph_out_degree(bb_fcfgGraph, current_vertex) > 1)
                   {
                      THROW_ERROR_CODE(PROFILING_EC, "Profiling does not support computed goto");
                      THROW_ERROR("Profiling does not support computed goto");
@@ -670,7 +671,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
          else
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---It is not a special operation");
-            const auto bbentry = bb_fcfgGraph.CGetGraphInfo().entry_vertex;
+            const auto bbentry = graph_graph_info(bb_fcfgGraph).entry_vertex;
             if(current_vertex == bbentry)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -678,15 +679,16 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
                               "<--Ended writing basic block " + std::to_string(bb_number));
                return;
             }
-            THROW_ASSERT(bb_fcfgGraph.out_degree(current_vertex) <= 1,
+            THROW_ASSERT(graph_out_degree(bb_fcfgGraph, current_vertex) <= 1,
                          "Only one edge expected as output of BB" +
-                             STR(bb_fcfgGraph.CGetNodeInfo(current_vertex).block->number));
-            for(const auto& oe : bb_fcfgGraph.out_edges(current_vertex))
+                             STR(graph_node_info(bb_fcfgGraph, current_vertex).block->number));
+            for(const auto& oe : graph_out_edges(bb_fcfgGraph, current_vertex))
             {
-               const auto next_bb = bb_fcfgGraph.target(oe);
+               const auto next_bb = graph_target(bb_fcfgGraph, oe);
                if(bb_frontier.find(next_bb) != bb_frontier.end())
                {
-                  if(bb_fcfgGraph.CGetNodeInfo(current_vertex).loop_id != bb_fcfgGraph.CGetNodeInfo(next_bb).loop_id)
+                  if(graph_node_info(bb_fcfgGraph, current_vertex).loop_id !=
+                     graph_node_info(bb_fcfgGraph, next_bb).loop_id)
                   {
                      print_loop_starting(fid, oe);
                   }
@@ -694,17 +696,18 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
                                  "Not adding goto since target is in the frontier");
                   continue;
                }
-               if(bb_fcfgGraph.CGetNodeInfo(current_vertex).loop_id != bb_fcfgGraph.CGetNodeInfo(next_bb).loop_id)
+               if(graph_node_info(bb_fcfgGraph, current_vertex).loop_id !=
+                  graph_node_info(bb_fcfgGraph, next_bb).loop_id)
                {
                   print_loop_starting(fid, oe);
                }
-               if(bb_fcfgGraph.in_degree(next_bb) == 1)
+               if(graph_in_degree(bb_fcfgGraph, next_bb) == 1)
                {
                   writeRoutineInstructions_rec(fid, next_bb, false, variableFunctor);
                }
                else
                {
-                  const auto& next_bb_node_info = bb_fcfgGraph.CGetNodeInfo(next_bb);
+                  const auto& next_bb_node_info = graph_node_info(bb_fcfgGraph, next_bb);
                   const unsigned int next_bb_number = next_bb_node_info.block->number;
                   THROW_ASSERT(basic_blocks_labels.find(next_bb_number) != basic_blocks_labels.end(),
                                "I do not know the destination");
@@ -732,7 +735,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
       if(!behavioral_helper->end_with_a_cond_or_goto(bb_node_info.block))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Not end with a cond or goto");
-         const auto bbentry = bb_fcfgGraph.CGetGraphInfo().entry_vertex;
+         const auto bbentry = graph_graph_info(bb_fcfgGraph).entry_vertex;
          if(current_vertex == bbentry)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -740,16 +743,17 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
                            "<--Ended writing basic block " + std::to_string(bb_number));
             return;
          }
-         THROW_ASSERT(bb_fcfgGraph.out_degree(current_vertex) <= 1,
+         THROW_ASSERT(graph_out_degree(bb_fcfgGraph, current_vertex) <= 1,
                       "only one edge expected BB(" + std::to_string(bb_number) + ") Fun(" + std::to_string(fid) + ")");
-         for(const auto& oe : bb_fcfgGraph.out_edges(current_vertex))
+         for(const auto& oe : graph_out_edges(bb_fcfgGraph, current_vertex))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Examining the only? successor");
-            const auto next_bb = bb_fcfgGraph.target(oe);
-            if(bb_fcfgGraph.in_degree(next_bb) == 1)
+            const auto next_bb = graph_target(bb_fcfgGraph, oe);
+            if(graph_in_degree(bb_fcfgGraph, next_bb) == 1)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Successor is the only");
-               if(bb_fcfgGraph.CGetNodeInfo(current_vertex).loop_id != bb_fcfgGraph.CGetNodeInfo(next_bb).loop_id)
+               if(graph_node_info(bb_fcfgGraph, current_vertex).loop_id !=
+                  graph_node_info(bb_fcfgGraph, next_bb).loop_id)
                {
                   print_loop_starting(fid, oe);
                }
@@ -758,7 +762,8 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
             if(bb_frontier.find(next_bb) != bb_frontier.end())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Successor belongs to frontier");
-               if(bb_fcfgGraph.CGetNodeInfo(current_vertex).loop_id != bb_fcfgGraph.CGetNodeInfo(next_bb).loop_id)
+               if(graph_node_info(bb_fcfgGraph, current_vertex).loop_id !=
+                  graph_node_info(bb_fcfgGraph, next_bb).loop_id)
                {
                   print_loop_starting(fid, oe);
                }
@@ -770,15 +775,15 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
             }
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Successor does not belong to frontier");
-            const auto& next_bb_node_info = bb_fcfgGraph.CGetNodeInfo(next_bb);
+            const auto& next_bb_node_info = graph_node_info(bb_fcfgGraph, next_bb);
             const unsigned int next_bb_number = next_bb_node_info.block->number;
             THROW_ASSERT(basic_blocks_labels.find(next_bb_number) != basic_blocks_labels.end(),
                          "I do not know the destination");
-            if(bb_fcfgGraph.CGetNodeInfo(current_vertex).loop_id != bb_fcfgGraph.CGetNodeInfo(next_bb).loop_id)
+            if(graph_node_info(bb_fcfgGraph, current_vertex).loop_id != graph_node_info(bb_fcfgGraph, next_bb).loop_id)
             {
                print_loop_starting(fid, oe);
             }
-            if(bb_fcfgGraph.CGetNodeInfo(next_bb).loop_id == bb_fcfgGraph.CGetNodeInfo(next_bb).block->number)
+            if(graph_node_info(bb_fcfgGraph, next_bb).loop_id == graph_node_info(bb_fcfgGraph, next_bb).block->number)
             {
                print_loop_ending(fid, oe);
             }
@@ -803,7 +808,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(unsigned fid, BBGraph::vertex_des
       // recurse on the post dominator
       bb_frontier.erase(bb_PD);
       THROW_ASSERT(bb_analyzed.find(bb_PD) == bb_analyzed.end(),
-                   "something wrong happened " + std::to_string(bb_fcfgGraph.CGetNodeInfo(bb_PD).block->number) +
+                   "something wrong happened " + std::to_string(graph_node_info(bb_fcfgGraph, bb_PD).block->number) +
                        " Fun(" + std::to_string(fid) + ")");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Printing the post dominator");
       writeRoutineInstructions_rec(fid, bb_PD, false, variableFunctor);
@@ -841,7 +846,7 @@ void EdgeCWriter::writeRoutineInstructions(const unsigned int fid, const OpVerte
    }
    else if(instructions.size() == 1)
    {
-      if(cfgGraph.CGetNodeInfo((*instructions.begin())).node_type & TYPE_ENTRY)
+      if(graph_node_info(cfgGraph, (*instructions.begin())).node_type & TYPE_ENTRY)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Edge profiling writer - Empty function");
          return;
@@ -849,11 +854,11 @@ void EdgeCWriter::writeRoutineInstructions(const unsigned int fid, const OpVerte
    }
    /// Then I compute all the labels associated with a basic block with more than one entering edge.
    basic_blocks_labels.clear();
-   OpGraph::vertex_descriptor bbentry;
-   CustomOrderedSet<OpGraph::vertex_descriptor> bb_exit;
-   if(!bb_start)
+   BBGraph::vertex_descriptor bbentry;
+   CustomOrderedSet<BBGraph::vertex_descriptor> bb_exit;
+   if(bb_start == graph_storage_traits<BBGraphStoragePolicy>::null_vertex())
    {
-      bbentry = bb_fcfgGraph.CGetGraphInfo().entry_vertex;
+      bbentry = graph_graph_info(bb_fcfgGraph).entry_vertex;
    }
    else
    {
@@ -861,7 +866,7 @@ void EdgeCWriter::writeRoutineInstructions(const unsigned int fid, const OpVerte
    }
    if(bb_end.empty())
    {
-      bb_exit.insert(bb_fcfgGraph.CGetGraphInfo().exit_vertex);
+      bb_exit.insert(graph_graph_info(bb_fcfgGraph).exit_vertex);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "There are " + std::to_string(bb_exit.size()) + " exit basic blocks");
    }
@@ -870,21 +875,21 @@ void EdgeCWriter::writeRoutineInstructions(const unsigned int fid, const OpVerte
       bb_exit = bb_end;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing labels");
-   for(const auto& v : bb_fcfgGraph.vertices())
+   for(const auto& v : graph_vertices(bb_fcfgGraph))
    {
       size_t delta = bb_exit.find(v) != bb_exit.end() ? 1u : 0u;
-      if(bb_fcfgGraph.in_degree(v) <= (1 + delta))
+      if(graph_in_degree(bb_fcfgGraph, v) <= (1 + delta))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Skipped BB" + std::to_string(bb_fcfgGraph.CGetNodeInfo(v).block->number));
+                        "---Skipped BB" + std::to_string(graph_node_info(bb_fcfgGraph, v).block->number));
          continue;
       }
-      const auto& bb_node_info = bb_fcfgGraph.CGetNodeInfo(v);
+      const auto& bb_node_info = graph_node_info(bb_fcfgGraph, v);
       basic_blocks_labels[bb_node_info.block->number] =
           ("BB_LABEL_" + std::to_string(bb_node_info.block->number)) +
           (bb_label_counter == 1 ? "" : "_" + std::to_string(bb_label_counter));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---Label of BB" + std::to_string(bb_fcfgGraph.CGetNodeInfo(v).block->number) + " is " +
+                     "---Label of BB" + std::to_string(graph_node_info(bb_fcfgGraph, v).block->number) + " is " +
                          basic_blocks_labels[bb_node_info.block->number]);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed labels");
@@ -901,17 +906,17 @@ void EdgeCWriter::writeRoutineInstructions(const unsigned int fid, const OpVerte
 
    /// some statements can be in entry
    writeRoutineInstructions_rec(fid, bbentry, false, variableFunctor);
-   if(!bb_start && bb_end.size() == 0)
+   if(bb_start == graph_storage_traits<BBGraphStoragePolicy>::null_vertex() && bb_end.empty())
    {
-      for(const auto& oe : bb_fcfgGraph.out_edges(bbentry))
+      for(const auto& oe : graph_out_edges(bb_fcfgGraph, bbentry))
       {
-         if(bb_exit.find(bb_fcfgGraph.target(oe)) != bb_exit.end())
+         if(bb_exit.find(graph_target(bb_fcfgGraph, oe)) != bb_exit.end())
          {
             continue;
          }
          else
          {
-            writeRoutineInstructions_rec(fid, bb_fcfgGraph.target(oe), false, variableFunctor);
+            writeRoutineInstructions_rec(fid, graph_target(bb_fcfgGraph, oe), false, variableFunctor);
          }
       }
    }
@@ -930,24 +935,25 @@ void EdgeCWriter::writeRoutineInstructions(const unsigned int fid, const OpVerte
                           bb_analyzed.begin(), bb_analyzed.end(), /*second set*/
                           std::inserter(not_yet_considered, not_yet_considered.begin()) /*result*/);
    }
-   const auto exit = bb_fcfgGraph.CGetGraphInfo().exit_vertex;
+   const auto exit = graph_graph_info(bb_fcfgGraph).exit_vertex;
    if(goto_list.find(exit) != goto_list.end() &&
       basic_blocks_labels.find(bloc::EXIT_BLOCK_ID) != basic_blocks_labels.end())
    {
       indented_output_stream->Append(basic_blocks_labels.find(bloc::EXIT_BLOCK_ID)->second + ":\n");
    }
-   for(const auto& e : support_cfg.edges())
+   for(const auto& e : graph_edges(support_cfg))
    {
       if(dumped_edges.find(e) == dumped_edges.end() &&
-         support_cfg.source(e) != support_cfg.CGetGraphInfo().entry_vertex &&
-         support_cfg.target(e) != support_cfg.CGetGraphInfo().exit_vertex)
+         graph_source(support_cfg, e) != graph_graph_info(support_cfg).entry_vertex &&
+         graph_target(support_cfg, e) != graph_graph_info(support_cfg).exit_vertex)
       {
          WriteFile("Error.c");
          THROW_ERROR_CODE(PROFILING_EC,
                           "Profiling Instrumentation of Edge of function " + behavioral_helper->GetFunctionName() +
                               " from vertex BB" +
-                              std::to_string(support_cfg.CGetNodeInfo(support_cfg.source(e)).block->number) + " to BB" +
-                              std::to_string(support_cfg.CGetNodeInfo(support_cfg.target(e)).block->number) +
+                              std::to_string(graph_node_info(support_cfg, graph_source(support_cfg, e)).block->number) +
+                              " to BB" +
+                              std::to_string(graph_node_info(support_cfg, graph_target(support_cfg, e)).block->number) +
                               " not printed");
       }
    }

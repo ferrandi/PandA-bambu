@@ -61,10 +61,6 @@
 #include "xml_node.hpp"
 
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/filtered_graph.hpp>
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/graphviz.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
 

@@ -47,8 +47,9 @@ class ReadFifoHDLGenerator : public HDLGenerator::Registrar<ReadFifoHDLGenerator
  public:
    ReadFifoHDLGenerator(const HLS_managerRef& HLSMgr);
 
-   void InternalExec(std::ostream& out, structural_objectRef mod, unsigned int function_id, gc_vertex_descriptor op_v,
-                     const HDLWriter_Language language, const std::vector<HDLGenerator::parameter>& _p,
+   void InternalExec(std::ostream& out, structural_objectRef mod, unsigned int function_id,
+                     OpGraph::vertex_descriptor op_v, const HDLWriter_Language language,
+                     const std::vector<HDLGenerator::parameter>& _p,
                      const std::vector<HDLGenerator::parameter>& _ports_in,
                      const std::vector<HDLGenerator::parameter>& _ports_out,
                      const std::vector<HDLGenerator::parameter>& _ports_inout) final;

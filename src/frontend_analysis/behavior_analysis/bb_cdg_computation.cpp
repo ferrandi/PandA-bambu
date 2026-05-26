@@ -44,6 +44,7 @@
 #include "basic_block.hpp"
 #include "basic_blocks_graph_constructor.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hash_helper.hpp"
 #include "op_graph.hpp"
 
@@ -84,9 +85,9 @@ void BBCdgComputation::Initialize()
    if(bb_version != 0 and bb_version != function_behavior->GetBBVersion())
    {
       const auto bb_cdg = function_behavior->GetBBGraph(FunctionBehavior::CDG_BB);
-      if(bb_cdg.num_vertices() != 0)
+      if(graph_num_vertices(bb_cdg) != 0)
       {
-         for(const auto& e : bb_cdg.edges())
+         for(const auto& e : graph_edges(bb_cdg))
          {
             function_behavior->bbgc->RemoveEdge(e, CDG_SELECTOR);
          }
@@ -101,7 +102,7 @@ DesignFlowStep_Status BBCdgComputation::InternalExec()
    const auto helper = function_behavior->CGetBehavioralHelper();
 
    std::list<BBGraph::vertex_descriptor> bb_levels;
-   bb.TopologicalSort(bb_levels);
+   graph_topological_sort(bb, bb_levels);
    std::map<BBGraph::vertex_descriptor, unsigned int> bb_sorted;
    unsigned int counter = 0;
    for(auto& bb_level : bb_levels)
@@ -109,17 +110,18 @@ DesignFlowStep_Status BBCdgComputation::InternalExec()
       bb_sorted[bb_level] = ++counter;
    }
    // iterate over outgoing edges of the basic block CFG.
-   for(const auto& ei : bb.edges())
+   for(const auto& ei : graph_edges(bb))
    {
-      const auto A = bb.source(ei);
-      const auto B = bb.target(ei);
+      const auto A = graph_source(bb, ei);
+      const auto B = graph_target(bb, ei);
       auto current_node = B;
-      while(current_node && current_node != A && current_node != post_dominators->getImmediateDominator(A))
+      while(current_node != BBGraph::null_vertex() && current_node != A &&
+            current_node != post_dominators->getImmediateDominator(A))
       {
          if(bb_sorted[current_node] > bb_sorted[A])
          {
             function_behavior->bbgc->AddEdge(A, current_node, CDG_SELECTOR);
-            const auto labels = bb.CGetEdgeInfo(ei).get_labels(CFG_SELECTOR);
+            const auto labels = graph_edge_info(bb, ei).get_labels(CFG_SELECTOR);
             for(const auto& label : labels)
             {
                function_behavior->bbgc->add_bb_edge_info(A, current_node, CDG_SELECTOR, label);
@@ -146,15 +148,15 @@ DesignFlowStep_Status BBCdgComputation::InternalExec()
    for(const auto& node : topological_sorted_nodes)
    {
       unsigned int cer_index = cer_counter;
-      auto& bb_node_info = cdg_bb.GetNodeInfo(node);
-      if(cdg_bb.in_degree(node) > 0)
+      auto& bb_node_info = graph_node_info(cdg_bb, node);
+      if(graph_in_degree(cdg_bb, node) > 0)
       {
          // codification of this basic block
          CustomOrderedSet<std::pair<BBGraph::vertex_descriptor, CustomOrderedSet<unsigned int>>> this_cod;
-         for(const auto& ei : cdg_bb.in_edges(node))
+         for(const auto& ei : graph_in_edges(cdg_bb, node))
          {
             this_cod.emplace(std::make_pair<BBGraph::vertex_descriptor, CustomOrderedSet<unsigned int>>(
-                cdg_bb.source(ei), cdg_bb.CGetEdgeInfo(ei).get_labels(CDG_SELECTOR)));
+                graph_source(cdg_bb, ei), graph_edge_info(cdg_bb, ei).get_labels(CDG_SELECTOR)));
          }
          if(cdg_to_index.find(this_cod) == cdg_to_index.end())
          {

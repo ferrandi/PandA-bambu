@@ -59,6 +59,7 @@
 #include "function_behavior.hpp"
 #include "function_frontend_flow_step.hpp"
 #include "functions.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "ir_basic_block.hpp"
@@ -91,7 +92,7 @@ bool PrioritySorter::operator()(OpGraph::vertex_descriptor x, OpGraph::vertex_de
    {
       return x_priority > y_priority;
    }
-   return op_graph.CGetNodeInfo(x).vertex_name < op_graph.CGetNodeInfo(y).vertex_name;
+   return graph_node_info(op_graph, x).vertex_name < graph_node_info(op_graph, y).vertex_name;
 }
 #endif
 
@@ -115,8 +116,8 @@ struct cs_ordering_functor
     */
    bool operator()(OpGraph::vertex_descriptor a, OpGraph::vertex_descriptor b) const
    {
-      return order.at(a) < order.at(b) || (order.at(a) == order.at(b) &&
-                                           op_graph.CGetNodeInfo(a).vertex_name < op_graph.CGetNodeInfo(b).vertex_name);
+      return order.at(a) < order.at(b) || (order.at(a) == order.at(b) && graph_node_info(op_graph, a).vertex_name <
+                                                                             graph_node_info(op_graph, b).vertex_name);
    }
 
    /**
@@ -193,7 +194,7 @@ class compare_vertex_by_name
 
    bool operator()(OpGraph::vertex_descriptor a, OpGraph::vertex_descriptor b) const
    {
-      return op_graph.CGetNodeInfo(a).vertex_name < op_graph.CGetNodeInfo(b).vertex_name;
+      return graph_node_info(op_graph, a).vertex_name < graph_node_info(op_graph, b).vertex_name;
    }
 };
 
@@ -242,13 +243,13 @@ class edge_integer_order_by_map
               const std::pair<std::pair<OpGraph::vertex_descriptor, OpGraph::vertex_descriptor>, unsigned int>& y) const
    {
       THROW_ASSERT(ref.find(x.first.first) != ref.end(),
-                   "Vertex " + g->CGetNodeInfo(x.first.first).vertex_name + " is not in topological_sort");
+                   "Vertex " + graph_node_info(*g, x.first.first).vertex_name + " is not in topological_sort");
       THROW_ASSERT(ref.find(y.first.first) != ref.end(),
-                   "Vertex " + g->CGetNodeInfo(y.first.first).vertex_name + " is not in topological_sort");
+                   "Vertex " + graph_node_info(*g, y.first.first).vertex_name + " is not in topological_sort");
       THROW_ASSERT(ref.find(x.first.second) != ref.end(),
-                   "Vertex " + g->CGetNodeInfo(x.first.second).vertex_name + " is not in topological_sort");
+                   "Vertex " + graph_node_info(*g, x.first.second).vertex_name + " is not in topological_sort");
       THROW_ASSERT(ref.find(y.first.second) != ref.end(),
-                   "Vertex " + g->CGetNodeInfo(y.first.second).vertex_name + " is not in topological_sort");
+                   "Vertex " + graph_node_info(*g, y.first.second).vertex_name + " is not in topological_sort");
       if(ref.find(x.first.first)->second != ref.find(y.first.first)->second)
       {
          return ref.find(x.first.first)->second < ref.find(y.first.first)->second;
@@ -264,11 +265,10 @@ class edge_integer_order_by_map
    }
 };
 
-static bool
-check_if_is_live_in_next_cycle(const std::set<OpGraph::vertex_descriptor, cs_ordering_functor>& live_vertices,
-                               const unsigned int current_cycle, const vertex2float<>& starting_time,
-                               const OpVertexMap<double>& ending_time, double clock_cycle, bool LPBB_predicate,
-                               hlsRef HLS)
+static bool check_if_is_live_in_next_cycle(
+    const std::set<OpGraph::vertex_descriptor, cs_ordering_functor>& live_vertices, const unsigned int current_cycle,
+    const vertex2float<OpGraph::vertex_descriptor>& starting_time, const OpVertexMap<double>& ending_time,
+    double clock_cycle, bool LPBB_predicate, hlsRef HLS)
 {
    auto live_vertex_it = live_vertices.begin();
    while(live_vertex_it != live_vertices.end())
@@ -382,12 +382,12 @@ void parametric_list_based::CheckSchedulabilityConditions(
     double& current_stage_period, double current_cycle_starting_time, double current_cycle_ending_time,
     double setup_hold_time, double& phi_extra_time, double scheduling_mux_margins, bool unbounded,
     bool unbounded_chaining, bool RWFunctions, bool LoadStoreOp, const std::set<std::string>& proxy_functions_used,
-    bool cstep_has_RET_conflict, unsigned int fu_type, const vertex2obj<unsigned int>& current_ASAP,
-    const fu_bindingRef res_binding, Schedule& schedule, bool& predecessorsCond, bool& pipeliningCond,
-    bool& cannotBeChained0, bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2,
-    bool& cannotBeChained3, bool& MultiCond0, bool& MultiCond1, bool& LoadStoreFunctionConflict,
-    bool& FunctionLoadStoreConflict, bool& proxyFunCond, bool unbounded_RW, bool seeMulticycle,
-    bool is_current_vertex_bounded)
+    bool cstep_has_RET_conflict, unsigned int fu_type,
+    const vertex2obj<unsigned int, OpGraph::vertex_descriptor>& current_ASAP, const fu_bindingRef res_binding,
+    Schedule& schedule, bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0, bool& chainingRetCond,
+    bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2, bool& cannotBeChained3, bool& MultiCond0,
+    bool& MultiCond1, bool& LoadStoreFunctionConflict, bool& FunctionLoadStoreConflict, bool& proxyFunCond,
+    bool unbounded_RW, bool seeMulticycle, bool is_current_vertex_bounded)
 {
    predecessorsCond = current_ASAP.find(current_vertex) != current_ASAP.end() &&
                       current_ASAP.find(current_vertex)->second > current_cycle;
@@ -411,7 +411,7 @@ void parametric_list_based::CheckSchedulabilityConditions(
    {
       return;
    }
-   const auto& curr_node = flow_graph.CGetNodeInfo(current_vertex);
+   const auto& curr_node = graph_node_info(flow_graph, current_vertex);
    const auto curr_vertex_type = curr_node.node_type;
    cannotBeChained0 =
        (current_starting_time >= current_cycle_ending_time) ||
@@ -495,10 +495,10 @@ void parametric_list_based::CheckSchedulabilityConditions(
    if(cannotBeChained3)
    {
       bool is_chained = false;
-      for(const auto& e : flow_graph.in_edges(current_vertex))
+      for(const auto& e : graph_in_edges(flow_graph, current_vertex))
       {
-         const auto from_vertex = flow_graph.source(e);
-         const auto& from_info = flow_graph.CGetNodeInfo(from_vertex);
+         const auto from_vertex = graph_source(flow_graph, e);
+         const auto& from_info = graph_node_info(flow_graph, from_vertex);
          if(operations.find(from_vertex) == operations.end())
          {
             continue;
@@ -753,7 +753,8 @@ bool parametric_list_based::compute_minmaxII(
    {
       //         INDENT_DBG_MEX(
       //             DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-      //             "---Creating variables for " + flow_graph.CGetNodeInfo(operation).vertex_name + " (executed by " +
+      //             "---Creating variables for " + graph_node_info(flow_graph, operation).vertex_name +
+      //             " (executed by " +
       //             " " +
       //                 HLS->allocation_information->get_fu_name(HLS->allocation_information->GetFuType(operation)).first
       //                 +
@@ -762,7 +763,7 @@ bool parametric_list_based::compute_minmaxII(
       {
          continue;
       }
-      if(flow_graph.CGetNodeInfo(operation).node_type & (TYPE_PHI | TYPE_VPHI))
+      if(graph_node_info(flow_graph, operation).node_type & (TYPE_PHI | TYPE_VPHI))
       {
          phi_to_position.emplace(operation, phi_curr);
          ++phi_curr;
@@ -780,7 +781,7 @@ bool parametric_list_based::compute_minmaxII(
       auto timeLatency = HLS->allocation_information->GetTimeLatency(operation, opFuType);
       auto isPipelined = HLS->allocation_information->get_initiation_time(opFuType, operation) > 0;
       auto op_varindex = operation_to_varindex.at(operation);
-      const auto& op_info = flow_graph.CGetNodeInfo(operation);
+      const auto& op_info = graph_node_info(flow_graph, operation);
       auto is_cond_op = op_info.node_type & TYPE_MULTIIF;
       auto cycles = HLS->allocation_information->GetCycleLatency(operation);
       if(is_cond_op)
@@ -796,21 +797,21 @@ bool parametric_list_based::compute_minmaxII(
             op_timing[op_varindex] += HLS->allocation_information->EstimateControllerDelay();
          }
       }
-      for(const auto& oe : flow_graph_with_feedbacks.out_edges(operation))
+      for(const auto& oe : graph_out_edges(flow_graph_with_feedbacks, operation))
       {
-         auto tgt = flow_graph_with_feedbacks.target(oe);
-         const auto& tgt_info = flow_graph.CGetNodeInfo(tgt);
+         auto tgt = graph_target(flow_graph_with_feedbacks, oe);
+         const auto& tgt_info = graph_node_info(flow_graph, tgt);
          auto isPartOf = Operations.find(tgt) != Operations.end();
          if(!isPartOf)
          {
             continue;
          }
-         auto edge_type = flow_graph_with_feedbacks.GetSelector(oe);
+         auto edge_type = graph_edge_selector(flow_graph_with_feedbacks, oe);
          if(edge_type & DFG_SELECTOR)
          {
             const double edge_delay = [&]() -> double {
                const auto operation_bb = op_info.bb_index;
-               const auto tgt_bb = flow_graph.CGetNodeInfo(tgt).bb_index;
+               const auto tgt_bb = graph_node_info(flow_graph, tgt).bb_index;
                auto connection_contrib =
                    operation_bb == tgt_bb ? HLS->allocation_information->GetConnectionTime(operation, tgt, false) : 0.0;
                auto fsm_correction = (HLS->allocation_information->is_one_cycle_direct_access_memory_unit(opFuType) &&
@@ -924,13 +925,13 @@ bool parametric_list_based::exec(
    auto& schedule = *HLS->Rsch;
 
    /// Current ASAP
-   vertex2obj<unsigned int> current_ASAP;
+   vertex2obj<unsigned int, OpGraph::vertex_descriptor> current_ASAP;
 
    /// The binding
    const auto res_binding = HLS->Rfu;
 
    /// Number of predecessors of a vertex already scheduled
-   vertex2obj<size_t> scheduled_predecessors;
+   vertex2obj<size_t, OpGraph::vertex_descriptor> scheduled_predecessors;
 
    double clock_period_resource_fraction = HLS->HLS_C->get_clock_period_resource_fraction();
 
@@ -1002,9 +1003,9 @@ bool parametric_list_based::exec(
       {
          /// Check if all its predecessors have been scheduled. In this case the vertex is ready
          bool all_ready = true;
-         for(const auto& ei : flow_graph.in_edges(operation))
+         for(const auto& ei : graph_in_edges(flow_graph, operation))
          {
-            auto source = flow_graph.source(ei);
+            auto source = graph_source(flow_graph, ei);
             if(operations.find(source) != operations.end() && !schedule.is_scheduled(source))
             {
                all_ready = false;
@@ -1041,7 +1042,7 @@ bool parametric_list_based::exec(
          CustomMap<std::string, int> string_priority_value = HLS->HLS_C->get_scheduling_priority();
          for(auto op : Operations)
          {
-            priority_value[op] = string_priority_value[flow_graph.CGetNodeInfo(op).vertex_name];
+            priority_value[op] = string_priority_value[graph_node_info(flow_graph, op).vertex_name];
          }
          Priority = refcount<priority_data<int>>(new priority_fixed(priority_value));
          break;
@@ -1109,7 +1110,7 @@ bool parametric_list_based::exec(
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "         Considering live vertices...");
       while(live_vertex_it != live_vertices.end())
       {
-         const auto& live_info = flow_graph.CGetNodeInfo(*live_vertex_it);
+         const auto& live_info = graph_node_info(flow_graph, *live_vertex_it);
          if(ending_time.find(*live_vertex_it)->second > current_cycle_ending_time)
          {
             seeMulticycle = true;
@@ -1231,7 +1232,7 @@ bool parametric_list_based::exec(
 #else
                auto current_vertex = *(queue.begin());
 #endif
-               const auto& current_info = flow_graph.CGetNodeInfo(current_vertex);
+               const auto& current_info = graph_node_info(flow_graph, current_vertex);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---First operation ready for this unit is " + current_info.vertex_name);
 #if HAVE_UNORDERED
@@ -1244,7 +1245,7 @@ bool parametric_list_based::exec(
                for(const auto temp_operation : queue)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---" + flow_graph.CGetNodeInfo(temp_operation).vertex_name + ": " +
+                                 "---" + graph_node_info(flow_graph, temp_operation).vertex_name + ": " +
                                      STR((*Priority)(temp_operation)));
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -1927,12 +1928,12 @@ bool parametric_list_based::exec(
                /// Check if some successors have become ready
 
                std::list<std::pair<std::string, OpGraph::vertex_descriptor>> successors;
-               for(const auto& eo : flow_graph.out_edges(current_vertex))
+               for(const auto& eo : graph_out_edges(flow_graph, current_vertex))
                {
-                  auto target = flow_graph.target(eo);
+                  auto target = graph_target(flow_graph, eo);
                   if(operations.find(target) != operations.end())
                   {
-                     successors.emplace_back(flow_graph.CGetNodeInfo(target).vertex_name, target);
+                     successors.emplace_back(graph_node_info(flow_graph, target).vertex_name, target);
                   }
                }
                // successors.sort();
@@ -1955,9 +1956,9 @@ bool parametric_list_based::exec(
                   }
                   /// check if to_v should be considered as ready
                   CustomUnorderedSet<OpGraph::vertex_descriptor> in_set;
-                  for(const auto ei : flow_graph.in_edges(successor.second))
+                  for(const auto ei : graph_in_edges(flow_graph, successor.second))
                   {
-                     auto source = flow_graph.source(ei);
+                     auto source = graph_source(flow_graph, ei);
                      if(operations.find(source) != operations.end())
                      {
                         in_set.insert(source);
@@ -2060,7 +2061,7 @@ bool parametric_list_based::exec(
                !schedule.is_scheduled(op.first))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "operation " + flow_graph.CGetNodeInfo(op.first).vertex_name +
+                              "operation " + graph_node_info(flow_graph, op.first).vertex_name +
                                   " not scheduled before the last stage");
                tabu_table.clear();
                return false;
@@ -2092,14 +2093,15 @@ bool parametric_list_based::exec(
          schedule.set_execution(curr, cs);
          schedule.set_execution_end(curr, cs);
          auto delta_time = (cs - old_cs) * clock_cycle;
-         auto current_statement = flow_graph.CGetNodeInfo(curr).GetNodeId();
+         auto current_statement = graph_node_info(flow_graph, curr).GetNodeId();
          auto curr_st = schedule.starting_times[current_statement];
          auto curr_et = schedule.ending_times[current_statement];
          schedule.starting_times[current_statement] = delta_time + curr_st;
          schedule.ending_times[current_statement] = delta_time + curr_et;
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---vertex=" + flow_graph.CGetNodeInfo(curr).vertex_name + " rescheduled at pos=" + STR(cs));
+                        "---vertex=" + graph_node_info(flow_graph, curr).vertex_name +
+                            " rescheduled at pos=" + STR(cs));
 
          if(feedback_last_vertices.find(curr) != feedback_last_vertices.end())
          {
@@ -2120,9 +2122,9 @@ bool parametric_list_based::exec(
 
                const auto cs_first_vertex = schedule.get_cstep(first_vertex).second;
                const auto cs_last_vertex = schedule.get_cstep(last_vertex).second;
-               const auto& first_info = flow_graph.CGetNodeInfo(first_vertex);
+               const auto& first_info = graph_node_info(flow_graph, first_vertex);
 #ifndef NDEBUG
-               const auto& last_info = flow_graph.CGetNodeInfo(last_vertex);
+               const auto& last_info = graph_node_info(flow_graph, last_vertex);
 #endif
                auto last_vertex_n_cycles = 1 + schedule.get_cstep_end(last_vertex).second - cs_last_vertex;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -2167,7 +2169,7 @@ bool parametric_list_based::exec(
                   for(auto p : phi_list)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "rescheduling phi vertex=" + flow_graph.CGetNodeInfo(p).vertex_name);
+                                    "rescheduling phi vertex=" + graph_node_info(flow_graph, p).vertex_name);
                      resched(p, latest_cs);
                   }
 
@@ -2249,15 +2251,15 @@ unsigned parametric_list_based::computeLatestStep(
 {
    auto latest_cs = cs_last_vertex;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "first vertex " + flow_graph.CGetNodeInfo(first_vertex).vertex_name);
-   for(const auto& eo : opDFG.out_edges(first_vertex))
+                  "first vertex " + graph_node_info(flow_graph, first_vertex).vertex_name);
+   for(const auto& eo : graph_out_edges(opDFG, first_vertex))
    {
-      auto target = opDFG.target(eo);
+      auto target = graph_target(opDFG, eo);
       if(Operations.find(target) != Operations.end())
       {
-         const auto& tgt_info = opDFG.CGetNodeInfo(target);
+         const auto& tgt_info = graph_node_info(opDFG, target);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "target vertex " + tgt_info.vertex_name);
-         const auto target_index = opDFG.CGetNodeInfo(target).GetNodeId();
+         const auto target_index = graph_node_info(opDFG, target).GetNodeId();
          const auto target_starting_time = schedule.GetStartingTime(target_index);
          const auto target_ending_time = schedule.GetEndingTime(target_index);
          if((target_ending_time - target_starting_time) < (connectionOffset + 10 * EPSILON))
@@ -2324,7 +2326,7 @@ void parametric_list_based::compute_starting_ending_time_asap(
     double& stage_period, bool& cannot_be_chained, fu_bindingRef res_binding, const Schedule& schedule,
     double& phi_extra_time, double setup_hold_time)
 {
-   const auto& op_info = flow_graph.CGetNodeInfo(v);
+   const auto& op_info = graph_node_info(flow_graph, v);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Computing starting and ending time " + op_info.vertex_name);
    current_starting_time = double(cs) * clock_cycle;
@@ -2337,10 +2339,10 @@ void parametric_list_based::compute_starting_ending_time_asap(
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                  "                  Initial value of cannot_be_chained=" +
                      (cannot_be_chained ? std::string("T") : std::string("F")));
-   for(const auto ei : flow_graph.in_edges(v))
+   for(const auto ei : graph_in_edges(flow_graph, v))
    {
-      auto from_vertex = flow_graph.source(ei);
-      const auto& from_info = flow_graph.CGetNodeInfo(from_vertex);
+      auto from_vertex = graph_source(flow_graph, ei);
+      const auto& from_info = graph_node_info(flow_graph, from_vertex);
       if(operations.find(from_vertex) == operations.end())
       {
          continue;
@@ -2351,7 +2353,7 @@ void parametric_list_based::compute_starting_ending_time_asap(
          continue;
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering predecessor " + from_info.vertex_name);
-      bool isDfgEdge = flow_graph_with_feedbacks.GetSelector(ei) & (DFG_SCA_SELECTOR | FB_DFG_SCA_SELECTOR);
+      bool isDfgEdge = graph_edge_selector(flow_graph_with_feedbacks, ei) & (DFG_SCA_SELECTOR | FB_DFG_SCA_SELECTOR);
       unsigned int from_fu_type = res_binding->get_assign(from_vertex);
       const auto cs_prev = schedule.get_cstep(from_vertex).second;
       const double fsm_correction = [&]() -> double {
@@ -2430,7 +2432,7 @@ void parametric_list_based::compute_exec_stage_time(const unsigned int fu_type, 
                                                     double& phi_extra_time, double current_starting_time,
                                                     double setup_hold_time)
 {
-   const auto& op_info = flow_graph.CGetNodeInfo(v);
+   const auto& op_info = graph_node_info(flow_graph, v);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing exec stage time of " + op_info.vertex_name);
    std::tie(op_execution_time, stage_period) = HLS->allocation_information->GetTimeLatency(v, fu_type);
 
@@ -2533,7 +2535,7 @@ void parametric_list_based::add_to_priority_queues(PriorityQueues& priority_queu
       priority_queue[fu_name].push(v);
 #else
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---" + flow_graph.CGetNodeInfo(v).vertex_name + " bound to " +
+                     "---" + graph_node_info(flow_graph, v).vertex_name + " bound to " +
                          HLS->allocation_information->get_fu_name(fu_name).first);
       priority_queue[fu_name].insert(v);
 #endif
@@ -2557,8 +2559,8 @@ void parametric_list_based::compute_function_topological_order()
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "compute function topological order...");
    const auto& CGM = HLSMgr->CGetCallGraphManager();
-   std::list<OpGraph::vertex_descriptor> topology_sorted_vertex;
-   CGM.GetCallGraph().TopologicalSort(topology_sorted_vertex);
+   std::list<CallGraph::vertex_descriptor> topology_sorted_vertex;
+   graph_topological_sort(CGM.GetCallGraph(), topology_sorted_vertex);
 
    CustomOrderedSet<unsigned> reachable_functions = CGM.GetReachedFunctionsFrom(funId);
 
@@ -2608,10 +2610,10 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    const auto bbg = FB->GetBBGraph();
    const auto op_graph = FB->GetOpGraph(FunctionBehavior::CFG);
    std::list<BBGraph::vertex_descriptor> vertices;
-   bbg.TopologicalSort(vertices);
+   graph_topological_sort(bbg, vertices);
    auto ctrl_steps = 0u;
    /// compute single basic loop pipelinable
-   CustomUnorderedSet<OpGraph::vertex_descriptor> LPBB;
+   CustomUnorderedSet<BBGraph::vertex_descriptor> LPBB;
    CustomUnorderedMap<OpGraph::vertex_descriptor, unsigned> tabu_table_dummy;
    std::vector<std::pair<OpGraph::vertex_descriptor, OpGraph::vertex_descriptor>> emptyVector;
 
@@ -2634,7 +2636,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
                auto LP_BB_list = parameters->GetParameter<std::string>("LP-BB-list");
                auto lbs = string_to_container<std::vector<int>>(LP_BB_list, ",");
                auto bb = loop->getHeader();
-               const auto& BBI = bbg.CGetNodeInfo(bb);
+               const auto& BBI = graph_node_info(bbg, bb);
                // std::set<unsigned> lbs = {55 /*, 67, 72, 78, 88, 91*/};
                if(std::find(lbs.begin(), lbs.end(), BBI.block->number) != lbs.end())
                {
@@ -2657,8 +2659,8 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    }
    if(FB->is_function_pipelined())
    {
-      const auto bb_entry = bbg.CGetGraphInfo().entry_vertex;
-      const auto bb_exit = bbg.CGetGraphInfo().exit_vertex;
+      const auto bb_entry = graph_graph_info(bbg).entry_vertex;
+      const auto bb_exit = graph_graph_info(bbg).exit_vertex;
       for(auto v : vertices)
       {
          if(v != bb_entry && v != bb_exit)
@@ -2674,7 +2676,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    {
       auto isLPBB = LPBB.find(vi) != LPBB.end();
       OpVertexSet operations(&FB->GetOpGraphsCollection());
-      const auto& BBI = bbg.CGetNodeInfo(vi);
+      const auto& BBI = graph_node_info(bbg, vi);
       auto bb_operations = BBI.statements_list;
       for(auto& bb_operation : bb_operations)
       {
@@ -2798,7 +2800,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
              FB->GetOpGraph(FunctionBehavior::FSDG,
                             CustomUnorderedSet<OpGraph::vertex_descriptor>(operations.begin(), operations.end()));
          HLS->Rsch->writeDot(FB->GetDotPath() /
-                                 ("HLS_scheduling_BB" + STR(bbg.CGetNodeInfo(vi).block->number) + ".dot"),
+                                 ("HLS_scheduling_BB" + STR(graph_node_info(bbg, vi).block->number) + ".dot"),
                              subgraph, operations);
       }
    }
@@ -2821,7 +2823,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                        std::string("Operation constraining the maximum frequency:") +
-                           op_graph.CGetNodeInfo(operation.first).vertex_name + " slack=" + STR(slack));
+                           graph_node_info(op_graph, operation.first).vertex_name + " slack=" + STR(slack));
       }
       min_slack = std::min(min_slack, slack);
    }
@@ -2872,7 +2874,7 @@ bool parametric_list_based::store_in_chaining_with_load_in(
     const CustomUnorderedSet<OpGraph::vertex_descriptor>& operations, unsigned int current_vertex_cstep,
     OpGraph::vertex_descriptor v)
 {
-   const auto& op_info = flow_graph.CGetNodeInfo(v);
+   const auto& op_info = graph_node_info(flow_graph, v);
    const auto operation = op_info.GetOperation();
    bool is_load_store = op_info.node_type & (TYPE_LOAD | TYPE_STORE);
    if(!is_load_store)
@@ -2880,9 +2882,9 @@ bool parametric_list_based::store_in_chaining_with_load_in(
       return false;
    }
    std::queue<OpGraph::vertex_descriptor> fifo;
-   for(const auto eo : flow_graph.in_edges(v))
+   for(const auto eo : graph_in_edges(flow_graph, v))
    {
-      auto s = flow_graph.source(eo);
+      auto s = graph_source(flow_graph, eo);
       if(operations.find(s) != operations.end())
       {
          fifo.push(s);
@@ -2894,13 +2896,13 @@ bool parametric_list_based::store_in_chaining_with_load_in(
       fifo.pop();
       if(current_vertex_cstep == static_cast<unsigned int>(floor(ending_time.find(current_op)->second / clock_cycle)))
       {
-         if(flow_graph.CGetNodeInfo(current_op).node_type & (TYPE_LOAD | TYPE_STORE))
+         if(graph_node_info(flow_graph, current_op).node_type & (TYPE_LOAD | TYPE_STORE))
          {
             return true;
          }
-         for(const auto eo : flow_graph.in_edges(current_op))
+         for(const auto eo : graph_in_edges(flow_graph, current_op))
          {
-            auto s = flow_graph.source(eo);
+            auto s = graph_source(flow_graph, eo);
             if(operations.find(s) != operations.end())
             {
                fifo.push(s);
@@ -2915,7 +2917,7 @@ bool parametric_list_based::store_in_chaining_with_load_out(
     const CustomUnorderedSet<OpGraph::vertex_descriptor>& operations, unsigned int current_vertex_cstep,
     OpGraph::vertex_descriptor v)
 {
-   const auto& op_info = flow_graph.CGetNodeInfo(v);
+   const auto& op_info = graph_node_info(flow_graph, v);
    const auto operation = op_info.GetOperation();
    bool is_load_store = op_info.node_type & (TYPE_LOAD | TYPE_STORE);
    if(not is_load_store)
@@ -2923,9 +2925,9 @@ bool parametric_list_based::store_in_chaining_with_load_out(
       return false;
    }
    std::queue<OpGraph::vertex_descriptor> fifo;
-   for(const auto eo : flow_graph.out_edges(v))
+   for(const auto eo : graph_out_edges(flow_graph, v))
    {
-      auto s = flow_graph.source(eo);
+      auto s = graph_source(flow_graph, eo);
       if(operations.find(s) != operations.end())
       {
          fifo.push(s);
@@ -2937,13 +2939,13 @@ bool parametric_list_based::store_in_chaining_with_load_out(
       fifo.pop();
       if(current_vertex_cstep == static_cast<unsigned int>(floor(starting_time(current_op) / clock_cycle)))
       {
-         if(flow_graph.CGetNodeInfo(current_op).node_type & (TYPE_LOAD | TYPE_STORE))
+         if(graph_node_info(flow_graph, current_op).node_type & (TYPE_LOAD | TYPE_STORE))
          {
             return true;
          }
-         for(const auto eo : flow_graph.out_edges(current_op))
+         for(const auto eo : graph_out_edges(flow_graph, current_op))
          {
-            auto s = flow_graph.source(eo);
+            auto s = graph_source(flow_graph, eo);
             if(operations.find(s) != operations.end())
             {
                fifo.push(s);
@@ -2975,9 +2977,9 @@ bool parametric_list_based::check_non_direct_operation_chaining(
 
    /// compute the set of operations on the control step frontier
    OpVertexSet to_be_analyzed(&flow_graph.GetGraphsCollection());
-   for(const auto ie : flow_graph.in_edges(current_v))
+   for(const auto ie : graph_in_edges(flow_graph, current_v))
    {
-      auto v = flow_graph.source(ie);
+      auto v = graph_source(flow_graph, ie);
       if(operations.find(v) != operations.end())
       {
          to_be_analyzed.insert(v);
@@ -2991,7 +2993,7 @@ bool parametric_list_based::check_non_direct_operation_chaining(
       if(cs == schedule.get_cstep_end(current_op).second)
       {
          unsigned int from_fu_type = res_binding->get_assign(current_op);
-         if((flow_graph.CGetNodeInfo(current_op).node_type & TYPE_LOAD) &&
+         if((graph_node_info(flow_graph, current_op).node_type & TYPE_LOAD) &&
             (v_is_indirect or
              (v_is_one_cycle_direct_access &&
               HLS->allocation_information->is_one_cycle_direct_access_memory_unit(from_fu_type)) or
@@ -2999,9 +3001,9 @@ bool parametric_list_based::check_non_direct_operation_chaining(
          {
             return true;
          }
-         for(const auto ie : flow_graph.in_edges(current_op))
+         for(const auto ie : graph_in_edges(flow_graph, current_op))
          {
-            const auto source = flow_graph.source(ie);
+            const auto source = graph_source(flow_graph, ie);
             if(operations.find(source) != operations.end() &&
                already_analyzed_operations.find(source) == already_analyzed_operations.end())
             {
@@ -3019,9 +3021,9 @@ bool parametric_list_based::check_direct_operation_chaining(
 {
    /// compute the set of operations on the control step frontier
    std::queue<OpGraph::vertex_descriptor> fifo;
-   for(const auto eo : flow_graph.in_edges(current_v))
+   for(const auto eo : graph_in_edges(flow_graph, current_v))
    {
-      auto v = flow_graph.source(eo);
+      auto v = graph_source(flow_graph, eo);
       if(operations.find(v) != operations.end())
       {
          fifo.push(v);
@@ -3034,14 +3036,14 @@ bool parametric_list_based::check_direct_operation_chaining(
       if(cs == schedule.get_cstep_end(current_op).second)
       {
          unsigned int from_fu_type = res_binding->get_assign(current_op);
-         if((flow_graph.CGetNodeInfo(current_op).node_type & TYPE_LOAD) &&
+         if((graph_node_info(flow_graph, current_op).node_type & TYPE_LOAD) &&
             HLS->allocation_information->is_direct_access_memory_unit(from_fu_type))
          {
             return true;
          }
-         for(const auto eo : flow_graph.in_edges(current_op))
+         for(const auto eo : graph_in_edges(flow_graph, current_op))
          {
-            auto v = flow_graph.source(eo);
+            auto v = graph_source(flow_graph, eo);
             if(operations.find(v) != operations.end())
             {
                fifo.push(v);
@@ -3058,9 +3060,9 @@ bool parametric_list_based::check_LOAD_chaining(const CustomUnorderedSet<OpGraph
 {
    /// compute the set of operations on the control step frontier
    std::queue<OpGraph::vertex_descriptor> fifo;
-   for(const auto eo : flow_graph.in_edges(current_v))
+   for(const auto eo : graph_in_edges(flow_graph, current_v))
    {
-      auto v = flow_graph.source(eo);
+      auto v = graph_source(flow_graph, eo);
       if(operations.find(v) != operations.end())
       {
          fifo.push(v);
@@ -3072,13 +3074,13 @@ bool parametric_list_based::check_LOAD_chaining(const CustomUnorderedSet<OpGraph
       fifo.pop();
       if(cs == schedule.get_cstep_end(current_op).second)
       {
-         if(flow_graph.CGetNodeInfo(current_op).node_type & TYPE_LOAD)
+         if(graph_node_info(flow_graph, current_op).node_type & TYPE_LOAD)
          {
             return true;
          }
-         for(const auto eo : flow_graph.in_edges(current_op))
+         for(const auto eo : graph_in_edges(flow_graph, current_op))
          {
-            auto v = flow_graph.source(eo);
+            auto v = graph_source(flow_graph, eo);
             if(operations.find(v) != operations.end())
             {
                fifo.push(v);

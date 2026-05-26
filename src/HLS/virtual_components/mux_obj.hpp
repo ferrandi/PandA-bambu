@@ -99,10 +99,10 @@ class mux_obj : public generic_obj
    generic_objRef get_final_target();
 
    /**
-    * Gets the selector
+    * Gets the multiplexer selector
     * @return a reference to the component representing the selector
     */
-   generic_objRef GetSelector() const;
+   generic_objRef GetMuxSelector() const;
 
    /**
     * Sets the element representing the selector

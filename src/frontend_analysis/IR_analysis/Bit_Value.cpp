@@ -63,6 +63,7 @@
 #include "custom_set.hpp"
 #include "design_flow_manager.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
 #include "ir_basic_block.hpp"
@@ -184,14 +185,14 @@ void Bit_Value::Initialize()
              bb_graphs_collection.AddEdge(dom_vertex, child, D_SELECTOR);
           }
        });
-   dt.GetGraphInfo().bb_index_map = std::move(inverse_vertex_map);
+   graph_graph_info(dt).bb_index_map = std::move(inverse_vertex_map);
 
    std::list<BBGraph::vertex_descriptor> v_topological;
-   dt.TopologicalSort(v_topological);
+   graph_topological_sort(dt, v_topological);
    THROW_ASSERT(v_topological.size(), "");
    bb_topological.reserve(v_topological.size());
    std::transform(v_topological.begin(), v_topological.end(), std::back_inserter(bb_topological),
-                  [&](const BBGraph::vertex_descriptor& v) { return dt.CGetNodeInfo(v).block; });
+                  [&](const BBGraph::vertex_descriptor& v) { return graph_node_info(dt, v).block; });
 }
 
 DesignFlowStep_Status Bit_Value::InternalExec()
@@ -416,12 +417,12 @@ void Bit_Value::initialize()
    const auto v = CGM.GetVertex(function_id);
 
    const auto rbf = CGM.GetReachedBodyFunctions();
-   for(const auto& oe : cg.out_edges(v))
+   for(const auto& oe : graph_out_edges(cg, v))
    {
-      const auto& call_edge_info = cg.CGetEdgeInfo(oe);
+      const auto& call_edge_info = graph_edge_info(cg, oe);
       for(const auto& i : call_edge_info.direct_call_points)
       {
-         const auto called_id = CGM.get_function(cg.target(oe));
+         const auto called_id = CGM.get_function(graph_target(cg, oe));
          if(i == 0)
          {
             // never analyze artificial calls

@@ -47,13 +47,11 @@
 #include "behavioral_helper.hpp"
 #include "function_behavior.hpp"
 #include "graph.hpp"
+#include "graph_facade.hpp"
 #include "ir_basic_block.hpp"
 #include "var_pp_functor.hpp"
 
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/detail/adjacency_list.hpp>
 #include <boost/graph/detail/edge.hpp>
-#include <boost/graph/filtered_graph.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 
 #include <filesystem>
@@ -69,7 +67,7 @@
 #include "profiling_information.hpp"
 #endif
 
-void BBNodeInfo::add_operation_node(const gc_vertex_descriptor op)
+void BBNodeInfo::add_operation_node(const BBOperationVertexDescriptor op)
 {
    statements_list.push_back(op);
 }
@@ -79,12 +77,12 @@ size_t BBNodeInfo::size() const
    return statements_list.size();
 }
 
-gc_vertex_descriptor BBNodeInfo::get_first_operation() const
+BBOperationVertexDescriptor BBNodeInfo::get_first_operation() const
 {
    return statements_list.front();
 }
 
-gc_vertex_descriptor BBNodeInfo::get_last_operation() const
+BBOperationVertexDescriptor BBNodeInfo::get_last_operation() const
 {
    return statements_list.back();
 }
@@ -137,7 +135,7 @@ void BBGraph::writeDot(const std::filesystem::path& file_name, const CustomUnord
 {
    BBVertexWriter bb_writer(*this, annotated);
    BBEdgeWriter bb_edge_writer(*this);
-   graph::writeDot(file_name, bb_writer, bb_edge_writer);
+   graph_write_dot(*this, file_name, bb_writer, bb_edge_writer);
 }
 
 size_t BBGraph::num_bblocks() const

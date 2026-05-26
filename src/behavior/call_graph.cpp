@@ -46,6 +46,7 @@
 #include "exceptions.hpp"
 #include "function_behavior.hpp"
 #include "graph.hpp"
+#include "graph_facade.hpp"
 #include "loops.hpp"
 #include "string_manipulation.hpp"
 
@@ -71,7 +72,7 @@ void CallGraph::writeDot(const std::filesystem::path& file_name) const
    std::filesystem::create_directories(file_name.parent_path());
    FunctionVertexWriter function_writer(*this);
    FunctionEdgeWriter function_edge_writer(*this);
-   graph::writeDot(file_name, function_writer, function_edge_writer);
+   graph_write_dot(*this, file_name, function_writer, function_edge_writer);
 }
 
 FunctionVertexWriter::FunctionVertexWriter(const CallGraph& call_graph)

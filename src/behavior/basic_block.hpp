@@ -52,6 +52,7 @@
 #include "graph.hpp"
 #include "graph_info.hpp"
 #include "node_info.hpp"
+#include "op_graph.hpp"
 #include "refcount.hpp"
 
 #include <cstddef>
@@ -68,6 +69,10 @@ CONSTREF_FORWARD_DECL(FunctionBehavior);
 CONSTREF_FORWARD_DECL(Schedule);
 REF_FORWARD_DECL(bloc);
 class BasicBlocksGraphConstructor;
+
+using BBGraphStoragePolicy = append_only_vec_graph_storage;
+using BBGraphVertexDescriptor = graph_storage_traits<BBGraphStoragePolicy>::vertex_descriptor;
+using BBOperationVertexDescriptor = OpGraph::vertex_descriptor;
 
 /**
  * Selectors used only in basic block graphs; numbers continue from cdfg_edge_info.hpp
@@ -97,7 +102,7 @@ struct BBNodeInfo : public NodeInfo
    blocRef block{nullptr};
 
    /// List of operation vertices associated with basic block node
-   std::list<gc_vertex_descriptor> statements_list;
+   std::list<BBOperationVertexDescriptor> statements_list;
 
    BBNodeInfo() = default;
 
@@ -113,19 +118,19 @@ struct BBNodeInfo : public NodeInfo
     * Adds an operation to the list of the statements
     * @param op is the operation to be added
     */
-   void add_operation_node(const gc_vertex_descriptor op);
+   void add_operation_node(const BBOperationVertexDescriptor op);
 
    /**
     * Returns the first operation vertex associated with the basic block
     * @return the first operation vertex of the basic block.
     */
-   gc_vertex_descriptor get_first_operation() const;
+   BBOperationVertexDescriptor get_first_operation() const;
 
    /**
     * Returns the last operation vertex associated with the basic block.
     * @return the last operation statement of the basic block.
     */
-   gc_vertex_descriptor get_last_operation() const;
+   BBOperationVertexDescriptor get_last_operation() const;
 
    /**
     * Returns true if there is no node associated with the basic block.
@@ -186,13 +191,13 @@ struct BBGraphInfo : public GraphInfo
    /// The index of the function
    unsigned int function_index{0};
 
-   CustomUnorderedMap<unsigned int, gc_vertex_descriptor> bb_index_map;
+   CustomUnorderedMap<unsigned int, BBGraphVertexDescriptor> bb_index_map;
 
    /// Index identifying the entry basic block.
-   gc_vertex_descriptor entry_vertex{gc_null_vertex()};
+   BBGraphVertexDescriptor entry_vertex{graph_storage_traits<BBGraphStoragePolicy>::null_vertex()};
 
    /// Index identifying the exit basic block.
-   gc_vertex_descriptor exit_vertex{gc_null_vertex()};
+   BBGraphVertexDescriptor exit_vertex{graph_storage_traits<BBGraphStoragePolicy>::null_vertex()};
 
    BBGraphInfo() = default;
 
@@ -204,9 +209,11 @@ struct BBGraphInfo : public GraphInfo
    BBGraphInfo(const application_managerConstRef AppM, const unsigned int function_index);
 };
 
-struct BBGraphsCollection : public graphs_collection<BBNodeInfo, BBEdgeInfo, BBGraphInfo>
+using BBGraphsCollectionBase = graphs_collection<BBNodeInfo, BBEdgeInfo, BBGraphInfo, BBGraphStoragePolicy>;
+
+struct BBGraphsCollection : public BBGraphsCollectionBase
 {
-   BBGraphsCollection(const BBGraphInfo& info) : graphs_collection<BBNodeInfo, BBEdgeInfo, BBGraphInfo>(info)
+   BBGraphsCollection(const BBGraphInfo& info) : BBGraphsCollectionBase(info)
    {
    }
 
@@ -283,14 +290,14 @@ class BBEdgeSorter
 class bb_vertex_order_by_map
 {
    /// Topological sorted vertices
-   const std::map<gc_vertex_descriptor, unsigned int>& ref;
+   const std::map<BBGraph::vertex_descriptor, unsigned int>& ref;
 
  public:
    /**
     * Constructor
     * @param _ref is the map with the topological sort of vertices
     */
-   explicit bb_vertex_order_by_map(const std::map<gc_vertex_descriptor, unsigned int>& _ref) : ref(_ref)
+   explicit bb_vertex_order_by_map(const std::map<BBGraph::vertex_descriptor, unsigned int>& _ref) : ref(_ref)
    {
    }
 
@@ -300,7 +307,7 @@ class bb_vertex_order_by_map
     * @param y is the second vertex
     * @return true if x precedes y in the topological order, false otherwise
     */
-   bool operator()(const gc_vertex_descriptor x, const gc_vertex_descriptor y) const
+   bool operator()(const BBGraph::vertex_descriptor x, const BBGraph::vertex_descriptor y) const
    {
       return ref.find(x)->second < ref.find(y)->second;
    }

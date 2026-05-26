@@ -45,6 +45,7 @@
 #include "behavioral_helper.hpp"
 #include "exceptions.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "ir_manager.hpp"
@@ -169,28 +170,21 @@ void OpNodeInfo::Print(std::ostream& stream, const BehavioralHelperConstRef beha
 
 void OpGraphInfo::clear()
 {
-   entry_vertex = gc_null_vertex();
-   exit_vertex = gc_null_vertex();
+   entry_vertex = graph_storage_traits<OpGraphStoragePolicy>::null_vertex();
+   exit_vertex = graph_storage_traits<OpGraphStoragePolicy>::null_vertex();
    ir_node_to_operation.clear();
    SSA2Def.clear();
 }
 
-OpGraphsCollection::OpGraphsCollection(const OpGraphInfo& _info)
-    : graphs_collection<OpNodeInfo, OpEdgeInfo, OpGraphInfo>(_info), operations(this)
+OpGraphsCollection::OpGraphsCollection(const OpGraphInfo& _info) : OpGraphsCollectionBase(_info), operations(this)
 {
 }
 
 OpGraphsCollection::vertex_descriptor OpGraphsCollection::AddVertex(const OpNodeInfo& info)
 {
-   const auto new_vertex = graphs_collection<OpNodeInfo, OpEdgeInfo, OpGraphInfo>::AddVertex(info);
+   const auto new_vertex = OpGraphsCollectionBase::AddVertex(info);
    operations.insert(new_vertex);
    return new_vertex;
-}
-
-void OpGraphsCollection::RemoveVertex(vertex_descriptor v)
-{
-   operations.erase(v);
-   graphs_collection<OpNodeInfo, OpEdgeInfo, OpGraphInfo>::RemoveVertex(v);
 }
 
 OpVertexSet OpGraphsCollection::CGetOperations() const
@@ -265,7 +259,7 @@ void OpGraph::writeDot(const std::filesystem::path& file_name, const int detail_
 {
    OpVertexWriter op_label_writer(*this, detail_level);
    OpEdgeWriter op_edge_property_writer(*this);
-   graph::writeDot(file_name, op_label_writer, op_edge_property_writer);
+   graph_write_dot(*this, file_name, op_label_writer, op_edge_property_writer);
 }
 
 CustomUnorderedMap<OpGraph::vertex_descriptor, OpVertexSet> OpGraph::GetSrcVertices(const OpVertexSet& toCheck,
@@ -299,7 +293,7 @@ OpVertexSet OpGraph::CGetOperations() const
 #if HAVE_UNORDERED
 auto OpGraph::CGetInEdges(const vertex_descriptor v) const
 {
-   return in_edges(v);
+   return graph_in_edges(*this, v);
 }
 #else
 OpEdgeSet OpGraph::CGetInEdges(const vertex_descriptor v) const
@@ -316,7 +310,7 @@ OpEdgeSet OpGraph::CGetInEdges(const vertex_descriptor v) const
 #if HAVE_UNORDERED
 auto OpGraph::CGetOutEdges(const vertex_descriptor v) const
 {
-   return out_edges(v);
+   return graph_out_edges(*this, v);
 }
 #else
 OpEdgeSet OpGraph::CGetOutEdges(const vertex_descriptor v) const
@@ -525,7 +519,7 @@ void OpGraph::writeDot(const std::filesystem::path& file_name, const hlsConstRef
 {
    TimedOpVertexWriter op_label_writer(*this, HLS, critical_paths);
    TimedOpEdgeWriter op_edge_property_writer(*this, HLS, critical_paths);
-   graph::writeDot(file_name, op_label_writer, op_edge_property_writer);
+   graph_write_dot(*this, file_name, op_label_writer, op_edge_property_writer);
 }
 
 TimedOpVertexWriter::TimedOpVertexWriter(const OpGraph& op_graph, const hlsConstRef _HLS,

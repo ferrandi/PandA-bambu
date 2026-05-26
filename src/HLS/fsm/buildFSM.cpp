@@ -54,6 +54,7 @@
 #include "fu_binding.hpp"
 #include "function_behavior.hpp"
 #include "functions.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "ir_basic_block.hpp"
@@ -71,8 +72,6 @@
 #include "time_info.hpp"
 
 #include <boost/foreach.hpp>
-#include <boost/graph/depth_first_search.hpp>
-#include <boost/graph/graph_traits.hpp>
 #include <boost/graph/incremental_components.hpp>
 
 #include <cmath>
@@ -192,9 +191,9 @@ DesignFlowStep_Status buildFSM::InternalExec()
    auto fsm_info = HLS->fsm_info;
 
    /// first state of a basic-block
-   CustomUnorderedMap<operation_descriptor, FSMInfo::state_descriptor> first_state;
+   CustomUnorderedMap<BBGraph::vertex_descriptor, FSMInfo::state_descriptor> first_state;
    /// last state of a basic-block
-   CustomUnorderedMap<operation_descriptor, FSMInfo::state_descriptor> last_state;
+   CustomUnorderedMap<BBGraph::vertex_descriptor, FSMInfo::state_descriptor> last_state;
 
    const auto dfg = FB->GetOpGraph(FunctionBehavior::DFG);
 
@@ -203,8 +202,8 @@ DesignFlowStep_Status buildFSM::InternalExec()
    const auto fbb = FB->GetBBGraph(FunctionBehavior::FBB);
 
    /// get entry and exit basic block
-   const auto bb_entry = fbb.CGetGraphInfo().entry_vertex;
-   const auto bb_exit = fbb.CGetGraphInfo().exit_vertex;
+   const auto bb_entry = graph_graph_info(fbb).entry_vertex;
+   const auto bb_exit = graph_graph_info(fbb).exit_vertex;
 
    bool first_state_p;
    bool have_previous = false;
@@ -219,9 +218,9 @@ DesignFlowStep_Status buildFSM::InternalExec()
 
    /// initialize the state entry and exit
    {
-      const auto& ogc_info = dfg.CGetGraphInfo();
+      const auto& ogc_info = graph_graph_info(dfg);
       std::list<operation_descriptor> entry_ops{ogc_info.entry_vertex};
-      unsigned int entry_bb_id = dfg.CGetNodeInfo(ogc_info.entry_vertex).bb_index;
+      unsigned int entry_bb_id = graph_node_info(dfg, ogc_info.entry_vertex).bb_index;
       std::map<operation_descriptor, unsigned> empty_steps_in;
       std::map<operation_descriptor, unsigned> empty_steps_out;
 
@@ -230,7 +229,7 @@ DesignFlowStep_Status buildFSM::InternalExec()
       if(!is_function_pipelined)
       {
          std::list<operation_descriptor> exit_ops{ogc_info.exit_vertex};
-         unsigned int exit_bb_id = dfg.CGetNodeInfo(ogc_info.exit_vertex).bb_index;
+         unsigned int exit_bb_id = graph_node_info(dfg, ogc_info.exit_vertex).bb_index;
          fsm_info->exitNode = fsm_info->createState(exit_ops, exit_ops, exit_ops, exit_bb_id, empty_steps_in,
                                                     empty_steps_out, 0, 0, false, false, dfg, "EXIT");
       }
@@ -274,7 +273,7 @@ DesignFlowStep_Status buildFSM::InternalExec()
       /// the analysis has to be performed only on the reachable functions
       /// functions to be analyzed
       const auto sort_list = CGM.GetReachedBodyFunctions();
-      CustomUnorderedSet<operation_descriptor> vertex_subset;
+      CustomUnorderedSet<CallGraph::vertex_descriptor> vertex_subset;
       for(auto cvertex : sort_list)
       {
          vertex_subset.insert(CGM.GetVertex(cvertex));
@@ -282,9 +281,9 @@ DesignFlowStep_Status buildFSM::InternalExec()
       const auto subgraph = CGM.CGetCallSubGraph(vertex_subset);
       const auto current_vertex = CGM.GetVertex(funId);
       size_t n_call_sites = 0;
-      for(const auto& ie : subgraph.in_edges(current_vertex))
+      for(const auto& ie : graph_in_edges(subgraph, current_vertex))
       {
-         const auto& info = subgraph.CGetEdgeInfo(ie);
+         const auto& info = graph_edge_info(subgraph, ie);
          n_call_sites += info.direct_call_points.size() + info.indirect_call_points.size();
       }
       HLS->call_sites_number = n_call_sites;
@@ -311,7 +310,7 @@ DesignFlowStep_Status buildFSM::InternalExec()
    HLS->registered_inputs = has_registered_inputs && !is_function_pipelined;
 
    /// build portion of the FSM associated with each BBs
-   for(const auto v : fbb.vertices())
+   for(const auto v : graph_vertices(fbb))
    {
       if(v == bb_entry)
       {
@@ -324,28 +323,29 @@ DesignFlowStep_Status buildFSM::InternalExec()
          continue;
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Building FSM of BB" + STR(fbb.CGetNodeInfo(v).block->number));
-      const auto& operations = fbb.CGetNodeInfo(v);
+                     "-->Building FSM of BB" + STR(graph_node_info(fbb, v).block->number));
+      const auto& operations = graph_node_info(fbb, v);
       OpVertexSchedSorter schSorter(*sch);
       std::multiset<operation_descriptor, OpVertexSchedSorter> ordered_operations(schSorter);
       for(auto ops : operations.statements_list)
       {
          ordered_operations.insert(ops);
       }
-      if(fbb.in_degree(v) == 1)
+      if(graph_in_degree(fbb, v) == 1)
       {
          /// for basic block connected only to entry bb
-         const auto bb_src = fbb.source(fbb.in_edges(v).front());
+         const auto bb_src = graph_source(fbb, graph_in_edges(fbb, v).front());
          if(bb_src == bb_entry)
          {
             for(auto stmt : ordered_operations)
             {
-               if((has_registered_inputs && !is_function_pipelined) || (dfg.CGetNodeInfo(stmt).node_type & TYPE_PHI))
+               if((has_registered_inputs && !is_function_pipelined) ||
+                  (graph_node_info(dfg, stmt).node_type & TYPE_PHI))
                {
                   /// add an empty state before the current basic block
                   std::list<operation_descriptor> exec_ops, start_ops, end_ops;
                   std::map<operation_descriptor, unsigned> vertex_step_in, vertex_step_out;
-                  const auto& entry_operations = fbb.CGetNodeInfo(bb_src);
+                  const auto& entry_operations = graph_node_info(fbb, bb_src);
                   auto entry_ops_it_end = entry_operations.statements_list.end();
                   for(auto entry_ops_it = entry_operations.statements_list.begin(); entry_ops_it_end != entry_ops_it;
                       ++entry_ops_it)
@@ -375,7 +375,7 @@ DesignFlowStep_Status buildFSM::InternalExec()
 
       for(auto op : ordered_operations)
       {
-         const auto& op_info = dfg.CGetNodeInfo(op);
+         const auto& op_info = graph_node_info(dfg, op);
          if(op_info.node_type & (TYPE_GOTO))
          {
             continue;
@@ -422,7 +422,7 @@ DesignFlowStep_Status buildFSM::InternalExec()
       }
 
       CustomOrderedMap<unsigned int, FSMInfo::state_descriptor> s_cur;
-      auto BBIndex = fbb.CGetNodeInfo(v).block->number;
+      auto BBIndex = graph_node_info(fbb, v).block->number;
       auto isLP = sch->IsLoopPipelined(BBIndex);
       auto LPII = sch->GetLoopPipeliningII(BBIndex);
       auto n_iter_LP_FSM_building =
@@ -436,22 +436,22 @@ DesignFlowStep_Status buildFSM::InternalExec()
       CustomOrderedMap<unsigned int, CustomOrderedSet<unsigned int>> no_backedge_cfg_edge_ids;
       if(isLP)
       {
-         for(const auto& oe : fbb.out_edges(v))
+         for(const auto& oe : graph_out_edges(fbb, v))
          {
-            auto bb_src = fbb.source(oe);
-            auto bb_tgt = fbb.target(oe);
-            const auto cfg_edge_ids = fbb.CGetEdgeInfo(oe).get_labels(CFG_SELECTOR);
-            if(is_function_pipelined && bb_tgt == fbb.CGetGraphInfo().exit_vertex)
+            auto bb_src = graph_source(fbb, oe);
+            auto bb_tgt = graph_target(fbb, oe);
+            const auto cfg_edge_ids = graph_edge_info(fbb, oe).get_labels(CFG_SELECTOR);
+            if(is_function_pipelined && bb_tgt == graph_graph_info(fbb).exit_vertex)
             {
                backedge_cfg_edge_ids = cfg_edge_ids;
             }
             else
             {
-               auto& bb_tgt_node_info = fbb.CGetNodeInfo(bb_tgt);
+               auto& bb_tgt_node_info = graph_node_info(fbb, bb_tgt);
                auto bb_tgt_index = bb_tgt_node_info.get_bb_index();
                if(bb_src == bb_tgt)
                {
-                  if(FB_CFG_SELECTOR & fbb.GetSelector(oe))
+                  if(FB_CFG_SELECTOR & graph_edge_selector(fbb, oe))
                   {
                      is_exit_edge_FB.insert(bb_tgt_index);
                   }
@@ -464,7 +464,7 @@ DesignFlowStep_Status buildFSM::InternalExec()
                {
                   THROW_ASSERT(is_nofeedback_assigned.find(bb_tgt_index) == is_nofeedback_assigned.end(),
                                "unexpected case");
-                  if(FB_CFG_SELECTOR & fbb.GetSelector(oe))
+                  if(FB_CFG_SELECTOR & graph_edge_selector(fbb, oe))
                   {
                      is_exit_edge_FB.insert(bb_tgt_index);
                   }
@@ -596,7 +596,7 @@ DesignFlowStep_Status buildFSM::InternalExec()
             for(const auto& exec_op : exec_ops)
             {
                const auto tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(exec_op));
-               const auto& op_info = dfg.CGetNodeInfo(exec_op);
+               const auto& op_info = graph_node_info(dfg, exec_op);
                const auto op_tn =
                    GetPointer<functional_unit>(tn)->get_operation(ir_helper::NormalizeTypename(op_info.GetOperation()));
                THROW_ASSERT(GetPointer<operation>(op_tn)->time_m,
@@ -625,7 +625,7 @@ DesignFlowStep_Status buildFSM::InternalExec()
 
                   for(const auto opv : global_ending_ops.at(s_curState))
                   {
-                     if((dfg.CGetNodeInfo(opv).node_type & TYPE_MULTIIF) != 0 &&
+                     if((graph_node_info(dfg, opv).node_type & TYPE_MULTIIF) != 0 &&
                         std::find(call_ops.begin(), call_ops.end(), opv) == call_ops.end())
                      {
                         call_ops.push_back(opv);
@@ -663,7 +663,7 @@ DesignFlowStep_Status buildFSM::InternalExec()
                      previous_LP_first_state.clear();
                      for(const auto& [bb_tgt, s_curState] : s_cur)
                      {
-                        const auto& bb_node_info = fbb.CGetNodeInfo(v);
+                        const auto& bb_node_info = graph_node_info(fbb, v);
                         THROW_ASSERT(bb_node_info.statements_list.size(),
                                      "at least one operation should belong to this basic block");
                         auto last_operation = *(bb_node_info.statements_list.rbegin());
@@ -701,7 +701,7 @@ DesignFlowStep_Status buildFSM::InternalExec()
                         THROW_ASSERT(call_states.count(previousState), "unexpected condition");
                         auto call_sets = call_states.find(previousState)->second;
 
-                        const auto& bb_node_info = fbb.CGetNodeInfo(v);
+                        const auto& bb_node_info = graph_node_info(fbb, v);
                         THROW_ASSERT(bb_node_info.statements_list.size(),
                                      "at least one operation should belong to this basic block");
                         auto last_operation = *(bb_node_info.statements_list.rbegin());
@@ -759,7 +759,7 @@ DesignFlowStep_Status buildFSM::InternalExec()
             if(isLP && l == min_cstep && LP_Index && has_previous_LP_first_state)
             {
                THROW_ASSERT(s_cur.size() == 1, "unexpected condition");
-               const auto& bb_node_info = fbb.CGetNodeInfo(v);
+               const auto& bb_node_info = graph_node_info(fbb, v);
                THROW_ASSERT(bb_node_info.statements_list.size(),
                             "at least one operation should belong to this basic block");
                auto last_operation = *(bb_node_info.statements_list.rbegin());
@@ -860,7 +860,7 @@ DesignFlowStep_Status buildFSM::InternalExec()
             {
                THROW_ASSERT(s_cur.size() == 1, "unexpected condition");
                const auto& s_curState = s_cur.begin()->second;
-               const auto& bb_node_info = fbb.CGetNodeInfo(v);
+               const auto& bb_node_info = graph_node_info(fbb, v);
                THROW_ASSERT(bb_node_info.statements_list.size(),
                             "at least one operation should belong to this basic block");
                auto last_operation = *(bb_node_info.statements_list.rbegin());
@@ -896,7 +896,7 @@ DesignFlowStep_Status buildFSM::InternalExec()
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "<--Built FSM of BB" + STR(fbb.CGetNodeInfo(v).block->number));
+                     "<--Built FSM of BB" + STR(graph_node_info(fbb, v).block->number));
       if(is_function_pipelined)
       {
          fsm_info->nStages = 1 + max_cstep - min_cstep;
@@ -915,16 +915,16 @@ DesignFlowStep_Status buildFSM::InternalExec()
 
    /// connect two states belonging to different basic blocks
    /// concurrently manage entry and exit state and completely merged basic blocks
-   for(const auto& e : fbb.edges())
+   for(const auto& e : graph_edges(fbb))
    {
-      const auto bb_src = fbb.source(e);
-      auto srcBBIndex = fbb.CGetNodeInfo(bb_src).block->number;
+      const auto bb_src = graph_source(fbb, e);
+      auto srcBBIndex = graph_node_info(fbb, bb_src).block->number;
       auto isLP = sch->IsLoopPipelined(srcBBIndex);
       if(last_state.find(bb_src) == last_state.end() && !isLP)
       {
          continue;
       }
-      auto bb_tgt = fbb.target(e);
+      auto bb_tgt = graph_target(fbb, e);
       /// removed the edge from entry to exit
       if(bb_src == bb_entry && bb_tgt == bb_exit)
       {
@@ -943,19 +943,19 @@ DesignFlowStep_Status buildFSM::InternalExec()
       {
          while(first_state.find(bb_tgt) == first_state.end())
          {
-            THROW_ASSERT(fbb.out_degree(bb_tgt) == 1, "unexpected pattern");
-            bb_tgt = fbb.target(fbb.out_edges(bb_tgt).front());
+            THROW_ASSERT(graph_out_degree(fbb, bb_tgt) == 1, "unexpected pattern");
+            bb_tgt = graph_target(fbb, graph_out_edges(fbb, bb_tgt).front());
          }
          s_tgt = first_state.at(bb_tgt);
       }
 
-      auto edge_type = (FB_CFG_SELECTOR & fbb.GetSelector(e)) ? stEdgeFeedback : stEdgeNormal;
+      auto edge_type = (FB_CFG_SELECTOR & graph_edge_selector(fbb, e)) ? stEdgeFeedback : stEdgeNormal;
       auto manage_edges_and_calls = [&](FSMInfo::state_descriptor ls) {
          /// compute the controlling vertex
-         const auto& bb_node_info = fbb.CGetNodeInfo(bb_src);
+         const auto& bb_node_info = graph_node_info(fbb, bb_src);
          THROW_ASSERT(bb_node_info.statements_list.size(), "at least one operation should belong to this basic block");
          const auto last_operation = *(bb_node_info.statements_list.rbegin());
-         const auto& cfg_edge_ids = fbb.CGetEdgeInfo(e).get_labels(CFG_SELECTOR);
+         const auto& cfg_edge_ids = graph_edge_info(fbb, e).get_labels(CFG_SELECTOR);
          FSMInfo::edgeData edgeInfoObj;
          edgeInfoObj.edgeSelector = edge_type;
 
@@ -1019,7 +1019,7 @@ DesignFlowStep_Status buildFSM::InternalExec()
       {
          if(bb_tgt != bb_src && !is_function_pipelined)
          {
-            auto tgtBBIndex = fbb.CGetNodeInfo(bb_tgt).block->number;
+            auto tgtBBIndex = graph_node_info(fbb, bb_tgt).block->number;
             THROW_ASSERT(last_LP_states.find(srcBBIndex) != last_LP_states.end(), "expected end states for a LPBB");
             THROW_ASSERT(last_LP_states.at(srcBBIndex).find(tgtBBIndex) != last_LP_states.at(srcBBIndex).end(),
                          "expected end states for a LPBB");
@@ -1032,8 +1032,8 @@ DesignFlowStep_Status buildFSM::InternalExec()
       else
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Analyzing BB" + STR(fbb.CGetNodeInfo(bb_src).block->number) + "-->BB" +
-                            STR(fbb.CGetNodeInfo(bb_tgt).block->number));
+                        "-->Analyzing BB" + STR(graph_node_info(fbb, bb_src).block->number) + "-->BB" +
+                            STR(graph_node_info(fbb, bb_tgt).block->number));
          FSMInfo::state_descriptor s_src;
          if(bb_src == bb_exit)
          {
@@ -1047,8 +1047,8 @@ DesignFlowStep_Status buildFSM::InternalExec()
          manage_edges_and_calls(s_src);
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--Analyzed BB" + STR(fbb.CGetNodeInfo(bb_src).block->number) + "-->BB" +
-                            STR(fbb.CGetNodeInfo(bb_tgt).block->number));
+                        "<--Analyzed BB" + STR(graph_node_info(fbb, bb_src).block->number) + "-->BB" +
+                            STR(graph_node_info(fbb, bb_tgt).block->number));
       }
    }
 
@@ -1081,9 +1081,9 @@ DesignFlowStep_Status buildFSM::InternalExec()
                   "-->State Transition Graph Information of function " + FB->CGetBehavioralHelper()->GetFunctionName() +
                       ":");
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                  "---Number of operations: " + STR(FB->GetOpGraph(FunctionBehavior::CFG).num_vertices() - 2));
+                  "---Number of operations: " + STR(graph_num_vertices(FB->GetOpGraph(FunctionBehavior::CFG)) - 2));
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                  "---Number of basic blocks: " + STR(FB->GetBBGraph(FunctionBehavior::BB).num_vertices() - 2));
+                  "---Number of basic blocks: " + STR(graph_num_vertices(FB->GetBBGraph(FunctionBehavior::BB)) - 2));
    print_statistics();
    if(has_registered_inputs)
    {

@@ -60,6 +60,7 @@
 #include "function_behavior.hpp"
 #include "funit_obj.hpp"
 #include "graph.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "ir_helper.hpp"
@@ -114,14 +115,14 @@ namespace
       return predicate;
    }
 
-   bool needsCommandPredicatePort(const hlsRef& HLS, const OpGraph& data, const gc_vertex_descriptor op)
+   bool needsCommandPredicatePort(const hlsRef& HLS, const OpGraph& data, const OpGraph::vertex_descriptor op)
    {
       const auto fu_id = HLS->Rfu->get_assign(op);
       const auto fu_type = HLS->allocation_information->get_fu(fu_id);
-      const auto op_name = ir_helper::NormalizeTypename(data.CGetNodeInfo(op).GetOperation());
+      const auto op_name = ir_helper::NormalizeTypename(graph_node_info(data, op).GetOperation());
       const auto op_descr = GetPointer<functional_unit>(fu_type)->get_operation(op_name);
       const auto* operation_descr = GetPointer<operation>(op_descr);
-      THROW_ASSERT(operation_descr, "Missing operation descriptor for " + data.CGetNodeInfo(op).vertex_name);
+      THROW_ASSERT(operation_descr, "Missing operation descriptor for " + graph_node_info(data, op).vertex_name);
       if(!operation_descr->is_bounded())
       {
          return true;
@@ -253,7 +254,7 @@ unsigned int mux_connection_binding::address_precision(unsigned int precision, O
                                                        const OpGraph& data, const ir_managerRef IRM)
 {
    auto fu_type = HLS->Rfu->get_assign(op);
-   auto node_id = data.CGetNodeInfo(op).GetNodeId();
+   auto node_id = graph_node_info(data, op).GetNodeId();
    const auto node = IRM->GetIRNode(node_id);
    const auto gm = GetPointer<const assign_stmt>(node);
    bool right_addr_node = false;
@@ -261,7 +262,7 @@ unsigned int mux_connection_binding::address_precision(unsigned int precision, O
    {
       right_addr_node = true;
    }
-   bool is_load_store = data.CGetNodeInfo(op).node_type & (TYPE_LOAD | TYPE_STORE);
+   bool is_load_store = graph_node_info(data, op).node_type & (TYPE_LOAD | TYPE_STORE);
    if(!right_addr_node && is_load_store && HLS->allocation_information->is_direct_access_memory_unit(fu_type))
    {
       unsigned var = HLS->allocation_information->is_memory_unit(fu_type) ?
@@ -306,7 +307,7 @@ void mux_connection_binding::determine_connection(OpGraph::vertex_descriptor op,
                                                   FSMInfo::state_descriptor state_src,
                                                   FSMInfo::state_descriptor state_tgt, unsigned src_phi_bb_index)
 {
-   bool is_not_a_phi = (data.CGetNodeInfo(op).node_type & TYPE_PHI) == 0;
+   bool is_not_a_phi = (graph_node_info(data, op).node_type & TYPE_PHI) == 0;
    auto ir_var = std::get<0>(_var);
    unsigned long long int constant_value = std::get<1>(_var);
    auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
@@ -326,7 +327,7 @@ void mux_connection_binding::determine_connection(OpGraph::vertex_descriptor op,
          case addr_node_K:
          {
             auto* ae = GetPointer<addr_node>(tn);
-            auto node_id = data.CGetNodeInfo(op).GetNodeId();
+            auto node_id = graph_node_info(data, op).GetNodeId();
             const auto node = IRM->GetIRNode(node_id);
             auto* gm = GetPointer<const assign_stmt>(node);
             const auto type = ir_helper::CGetType(ae->op);
@@ -566,7 +567,7 @@ void mux_connection_binding::connect_to_registers(OpGraph::vertex_descriptor op,
       {
          auto def_op = getDefOp(data, ir_var);
          const auto& def_op_ending_states = HLS->fsm_info->operationEndingStates.at(def_op);
-         if((data.CGetNodeInfo(def_op).node_type & TYPE_PHI) == 0 &&
+         if((graph_node_info(data, def_op).node_type & TYPE_PHI) == 0 &&
             def_op_ending_states.find(state_src) != def_op_ending_states.end())
          {
             const generic_objRef fu_src_obj = HLS->Rfu->get(def_op);
@@ -634,7 +635,7 @@ void mux_connection_binding::connect_to_registers(OpGraph::vertex_descriptor op,
       {
          auto def_op = getDefOp(data, ir_var);
          const auto& def_op_ending_states = HLS->fsm_info->operationEndingStates.at(def_op);
-         if((data.CGetNodeInfo(def_op).node_type & TYPE_PHI) == 0)
+         if((graph_node_info(data, def_op).node_type & TYPE_PHI) == 0)
          {
             bool same_stage = true;
             if(HLS->fsm_info->notSameStep(state_src, def_op, op))
@@ -882,9 +883,9 @@ void mux_connection_binding::create_connections()
    /// add the ports representing the parameters
    add_parameter_ports();
 
-   for(const auto op : data.vertices())
+   for(const auto op : graph_vertices(data))
    {
-      const auto& node_info = data.CGetNodeInfo(op);
+      const auto& node_info = graph_node_info(data, op);
       /// check for required and produced values
       if(node_info.node_type & (TYPE_VPHI | TYPE_EXIT | TYPE_ENTRY))
       {
@@ -904,7 +905,7 @@ void mux_connection_binding::create_connections()
       if((node_info.node_type & TYPE_PHI) == 0)
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                       "  * Operation: " + node_info.vertex_name + " " + data.CGetNodeInfo(op).GetOperation());
+                       "  * Operation: " + node_info.vertex_name + " " + graph_node_info(data, op).GetOperation());
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                        "     - FU: " + HLS->allocation_information->get_fu_name(fu).first);
 #ifndef NDEBUG
@@ -967,14 +968,14 @@ void mux_connection_binding::create_connections()
                   THROW_ERROR("Functional unit " + HLS->allocation_information->get_string_name(fu) +
                               " does not have an instance " + std::to_string(idx));
                }
-               const auto selector_obj =
-                   GetPointer<funit_obj>(HLS->Rfu->get(fu, idx))->GetSelector_op(data.CGetNodeInfo(op).GetOperation());
+               const auto selector_obj = GetPointer<funit_obj>(HLS->Rfu->get(fu, idx))
+                                             ->GetSelector_op(graph_node_info(data, op).GetOperation());
                if(!selector_obj)
                {
                   THROW_ERROR("Functional unit " + HLS->allocation_information->get_string_name(fu) +
-                              " does not exist or it does not have selector " + data.CGetNodeInfo(op).GetOperation() +
-                              "(" + std::to_string(idx) +
-                              ") Operation: " + std::to_string(data.CGetNodeInfo(op).GetNodeId()));
+                              " does not exist or it does not have selector " +
+                              graph_node_info(data, op).GetOperation() + "(" + std::to_string(idx) +
+                              ") Operation: " + std::to_string(graph_node_info(data, op).GetNodeId()));
                }
                GetPointer<commandport_obj>(selector_obj)
                    ->add_activation(commandport_obj::transition(
@@ -989,7 +990,7 @@ void mux_connection_binding::create_connections()
 
             if(node_info.node_type & (TYPE_LOAD | TYPE_STORE))
             {
-               auto node_id = data.CGetNodeInfo(op).GetNodeId();
+               auto node_id = graph_node_info(data, op).GetNodeId();
                const ir_nodeRef node = IRM->GetIRNode(node_id);
                auto* gm = GetPointer<assign_stmt>(node);
                THROW_ASSERT(gm, "only assign_stmt's are allowed as memory operations");
@@ -1140,7 +1141,7 @@ void mux_connection_binding::create_connections()
                   THROW_ERROR("Unit " + HLS->allocation_information->get_fu_name(fu).first + " not supported");
                }
             }
-            else if(data.CGetNodeInfo(op).GetOperation() == MULTI_READ_COND)
+            else if(graph_node_info(data, op).GetOperation() == MULTI_READ_COND)
             {
                for(unsigned int num = 0; num < var_read.size(); num++)
                {
@@ -1162,9 +1163,9 @@ void mux_connection_binding::create_connections()
                {
                   const auto ir_var = std::get<0>(var_read[port_num]);
                   const auto ir_var_node = ir_var == 0 ? nullptr : IRM->GetIRNode(ir_var);
-                  const auto& node = data.CGetNodeInfo(op).node;
+                  const auto& node = graph_node_info(data, op).node;
                   const auto form_par_type = ir_helper::GetFormalIth(node, port_num);
-                  const auto OperationType = data.CGetNodeInfo(op).GetOperation();
+                  const auto OperationType = graph_node_info(data, op).GetOperation();
                   if(ir_var && !first_valid)
                   {
                      first_valid = ir_var_node;
@@ -1211,7 +1212,7 @@ void mux_connection_binding::create_connections()
             /// phi must be differently managed
             auto var_written = HLSMgr->get_produced_value(HLS->functionId, op);
             const auto& state_info = HLS->fsm_info->getState(estate);
-            const auto gp = GetPointer<const phi_stmt>(IRM->GetIRNode(data.CGetNodeInfo(op).GetNodeId()));
+            const auto gp = GetPointer<const phi_stmt>(IRM->GetIRNode(graph_node_info(data, op).GetNodeId()));
             for(const auto& def_edge : gp->CGetDefEdgesList())
             {
                auto phi_input_ir_var = def_edge.first->index;
@@ -1298,7 +1299,7 @@ void mux_connection_binding::create_connections()
             if((node_info.node_type & TYPE_MULTIIF) != 0)
             {
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - Write: (multi-way if value)");
-               auto node_id = data.CGetNodeInfo(op).GetNodeId();
+               auto node_id = graph_node_info(data, op).GetNodeId();
                std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(HLS->functionId, op);
                generic_objRef TargetPort =
                    HLS->Rconn->bind_selector_port(conn_binding::OUT, commandport_obj::MULTIIF, op, data);

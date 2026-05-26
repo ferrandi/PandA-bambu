@@ -44,6 +44,7 @@
 #include "behavior/function_behavior.hpp"
 #include "funit_obj.hpp"
 #include "generic_device.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
@@ -268,13 +269,13 @@ void FSMInfo::writeDot(const std::filesystem::path& file_name, FunctionBehaviorC
       const auto critical_paths = schedule->ComputeCriticalPath(state_data);
 
       if(!state_data.executingOperations.empty() &&
-         op_function_graph.CGetNodeInfo(state_data.executingOperations.front()).node_type == TYPE_ENTRY)
+         graph_node_info(op_function_graph, state_data.executingOperations.front()).node_type == TYPE_ENTRY)
       {
          os << "START";
          return;
       }
       if(!state_data.executingOperations.empty() &&
-         op_function_graph.CGetNodeInfo(state_data.executingOperations.front()).node_type == TYPE_EXIT)
+         graph_node_info(op_function_graph, state_data.executingOperations.front()).node_type == TYPE_EXIT)
       {
          os << "END";
          return;
@@ -283,7 +284,7 @@ void FSMInfo::writeDot(const std::filesystem::path& file_name, FunctionBehaviorC
       os << "< " << state_data.name << " | { ";
       for(const auto& op : state_data.executingOperations)
       {
-         const auto& op_node_info = op_function_graph.CGetNodeInfo(op);
+         const auto& op_node_info = graph_node_info(op_function_graph, op);
          const auto first_index = op_node_info.GetNodeId();
          const bool critical = critical_paths.find(first_index) != critical_paths.end();
          if(detail_level == 0)
@@ -346,7 +347,7 @@ void FSMInfo::writeDot(const std::filesystem::path& file_name, FunctionBehaviorC
          os << " | ";
          for(const auto& op : state_data.endingOperations)
          {
-            const auto& op_node_info = op_function_graph.CGetNodeInfo(op);
+            const auto& op_node_info = graph_node_info(op_function_graph, op);
             const auto first_index = op_node_info.GetNodeId();
             const bool critical = critical_paths.find(first_index) != critical_paths.end();
             if(std::find(state_data.executingOperations.begin(), state_data.executingOperations.end(), op) ==
@@ -420,7 +421,7 @@ void FSMInfo::writeDot(const std::filesystem::path& file_name, FunctionBehaviorC
       else if(info.edgeFSMType == elseifEdgeCondition)
       {
          if(detail_level == 0)
-            os << op_function_graph.CGetNodeInfo(info.edgeOperations.front()).vertex_name;
+            os << graph_node_info(op_function_graph, info.edgeOperations.front()).vertex_name;
          os << " (";
          const std::unique_ptr<var_pp_functor> std_vppf = std::make_unique<std_var_pp_functor>(BH);
          bool first = true;
@@ -452,12 +453,12 @@ void FSMInfo::writeDot(const std::filesystem::path& file_name, FunctionBehaviorC
          {
             if(first)
             {
-               os << op_function_graph.CGetNodeInfo(op).vertex_name;
+               os << graph_node_info(op_function_graph, op).vertex_name;
                first = false;
             }
             else
             {
-               os << "," << op_function_graph.CGetNodeInfo(op).vertex_name;
+               os << "," << graph_node_info(op_function_graph, op).vertex_name;
             }
          }
          os << "(doneVariableLatencyOpEdgeCondition)\\n";
@@ -469,12 +470,12 @@ void FSMInfo::writeDot(const std::filesystem::path& file_name, FunctionBehaviorC
          {
             if(first)
             {
-               os << op_function_graph.CGetNodeInfo(op).vertex_name;
+               os << graph_node_info(op_function_graph, op).vertex_name;
                first = false;
             }
             else
             {
-               os << "," << op_function_graph.CGetNodeInfo(op).vertex_name;
+               os << "," << graph_node_info(op_function_graph, op).vertex_name;
             }
          }
          os << "(runningVariableLatencyOpEdgeCondition)\\n";
@@ -531,7 +532,7 @@ FSMInfo::state_descriptor FSMInfo::createState(const std::list<operation_descrip
    for(auto ex : exec_op)
    {
 #if HAVE_ASSERTS
-      const auto& op_info = data.CGetNodeInfo(ex);
+      const auto& op_info = graph_node_info(data, ex);
       THROW_ASSERT((op_info.node_type & TYPE_VPHI) == 0, "unexpected condition");
       THROW_ASSERT(!state_data.isDummy || (op_info.node_type & TYPE_PHI) == 0, "unexpected condition");
 #endif
@@ -676,14 +677,14 @@ void FSMInfo::finalizeFSMInfo(const OpGraph& data, const HLS_managerRef HLSMgr)
       const auto& state_info = st.second;
       for(const auto& op : state_info.executingOperations)
       {
-         const auto& op_info = data.CGetNodeInfo(op);
+         const auto& op_info = graph_node_info(data, op);
          if((op_info.node_type & TYPE_NOP) != 0)
          {
             continue;
          }
          if((op_info.node_type & TYPE_PHI) != 0)
          {
-            const auto phi_node = HLSMgr->get_ir_manager()->GetIRNode(data.CGetNodeInfo(op).GetNodeId());
+            const auto phi_node = HLSMgr->get_ir_manager()->GetIRNode(graph_node_info(data, op).GetNodeId());
             for(const auto& def_edge : GetPointer<const phi_stmt>(phi_node)->CGetDefEdgesList())
             {
                unsigned int ir_var = def_edge.first->index;
@@ -704,7 +705,7 @@ void FSMInfo::finalizeFSMInfo(const OpGraph& data, const HLS_managerRef HLSMgr)
                        source_state_info.isPrologue.count(op))))
                   {
                      THROW_ASSERT(src_state != entryNode,
-                                  "Source state for phi " + STR(data.CGetNodeInfo(op).GetNodeId()) + " not found");
+                                  "Source state for phi " + STR(graph_node_info(data, op).GetNodeId()) + " not found");
                      addVariableSourceState(st.first, op, ir_var, src_state);
 #if HAVE_ASSERTS
                      found_state = true;
@@ -745,7 +746,7 @@ unsigned FSMInfo::getStepInternal(const OpGraph& data, state_descriptor v, opera
    unsigned int step = 0;
    if(in)
    {
-      THROW_ASSERT(!(data.CGetNodeInfo(op).node_type & TYPE_PHI), "unexpected condition");
+      THROW_ASSERT(!(graph_node_info(data, op).node_type & TYPE_PHI), "unexpected condition");
       const auto& state_data = getState(v);
       const auto step_it = state_data.stepIn.find(op);
       if(step_it != state_data.stepIn.end())
@@ -777,10 +778,10 @@ unsigned FSMInfo::GetStep(const OpGraph& data, state_descriptor v, operation_des
 
    const auto& bb2max = BB2MaxStep;
    auto def_op = getDefOp(data, var);
-   auto def_op_BB_index = data.CGetNodeInfo(def_op).bb_index;
+   auto def_op_BB_index = graph_node_info(data, def_op).bb_index;
    if(bb2max.at(def_op_BB_index))
    {
-      auto op_BB_index = data.CGetNodeInfo(op).bb_index;
+      auto op_BB_index = graph_node_info(data, op).bb_index;
       if(def_op_BB_index == op_BB_index)
       {
          auto step = getStepInternal(data, v, op, var, in);
@@ -807,10 +808,10 @@ unsigned FSMInfo::GetStepPhiIn(const OpGraph& data, operation_descriptor op, uns
    THROW_ASSERT(schedule, "unexpected condition");
    const auto& bb2max = BB2MaxStep;
    auto def_op = getDefOp(data, var);
-   auto def_op_BB_index = data.CGetNodeInfo(def_op).bb_index;
+   auto def_op_BB_index = graph_node_info(data, def_op).bb_index;
    if(bb2max.at(def_op_BB_index))
    {
-      auto op_BB_index = data.CGetNodeInfo(op).bb_index;
+      auto op_BB_index = graph_node_info(data, op).bb_index;
       if(def_op_BB_index == op_BB_index)
       {
          THROW_ASSERT(opStepOut.count(def_op), "unexpected condition");
@@ -839,10 +840,10 @@ unsigned FSMInfo::GetStepPhiOut(const OpGraph& data, operation_descriptor op, un
    THROW_ASSERT(schedule, "unexpected condition");
    const auto& bb2max = BB2MaxStep;
    auto def_op = getDefOp(data, var);
-   auto def_op_BB_index = data.CGetNodeInfo(def_op).bb_index;
+   auto def_op_BB_index = graph_node_info(data, def_op).bb_index;
    if(bb2max.at(def_op_BB_index))
    {
-      auto op_BB_index = data.CGetNodeInfo(op).bb_index;
+      auto op_BB_index = graph_node_info(data, op).bb_index;
       if(def_op_BB_index == op_BB_index)
       {
          THROW_ASSERT(opStepOut.count(def_op), "unexpected condition");
@@ -867,7 +868,7 @@ unsigned FSMInfo::GetStepPhiOut(const OpGraph& data, operation_descriptor op, un
 unsigned FSMInfo::GetStepWrite(const OpGraph& data, operation_descriptor def_op) const
 {
    const auto& bb2max = BB2MaxStep;
-   auto def_op_BB_index = data.CGetNodeInfo(def_op).bb_index;
+   auto def_op_BB_index = graph_node_info(data, def_op).bb_index;
    if(bb2max.at(def_op_BB_index))
    {
       THROW_ASSERT(opStepOut.count(def_op), "unexpected condition");
@@ -880,7 +881,7 @@ unsigned FSMInfo::GetStepIn(const OpGraph& data, unsigned int ASSERT_PARAMETER(B
 {
    const auto& bb2max = BB2MaxStep;
    auto def_op = getDefOp(data, var);
-   auto def_op_BB_index = data.CGetNodeInfo(def_op).bb_index;
+   auto def_op_BB_index = graph_node_info(data, def_op).bb_index;
    if(bb2max.at(def_op_BB_index))
    {
       THROW_ASSERT(BB_index != def_op_BB_index, "unexpected condition");
@@ -893,7 +894,7 @@ unsigned FSMInfo::GetStepOut(const OpGraph& data, unsigned int var) const
 {
    const auto& bb2max = BB2MaxStep;
    auto def_op = getDefOp(data, var);
-   auto def_op_BB_index = data.CGetNodeInfo(def_op).bb_index;
+   auto def_op_BB_index = graph_node_info(data, def_op).bb_index;
    if(bb2max.at(def_op_BB_index))
    {
       return bb2max.at(def_op_BB_index) + 1;
@@ -908,7 +909,7 @@ std::pair<bool, unsigned> FSMInfo::GetPrevStep(const OpGraph& data, unsigned int
    if(var_register_compatible)
    {
       auto def_op = getDefOp(data, var);
-      auto def_op_BB_index = data.CGetNodeInfo(def_op).bb_index;
+      auto def_op_BB_index = graph_node_info(data, def_op).bb_index;
       if(bb2max.at(def_op_BB_index))
       {
          if(BB_index != def_op_BB_index)
@@ -935,7 +936,7 @@ std::pair<bool, unsigned> FSMInfo::GetPrevStep(const OpGraph& data, unsigned int
 unsigned FSMInfo::GetStepOp(const OpGraph& data, state_descriptor v, operation_descriptor exec_op) const
 {
    const auto& bb2max = BB2MaxStep;
-   auto op_BB_index = data.CGetNodeInfo(exec_op).bb_index;
+   auto op_BB_index = graph_node_info(data, exec_op).bb_index;
    if(bb2max.at(op_BB_index))
    {
       const auto& state_data = getState(v);

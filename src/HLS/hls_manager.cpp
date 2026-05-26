@@ -46,6 +46,7 @@
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
 #include "functions.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_device.hpp"
@@ -211,7 +212,7 @@ std::vector<HLS_manager::io_binding_type> HLS_manager::get_required_values(unsig
                                                                            OpGraph::vertex_descriptor v) const
 {
    const auto cfg = CGetFunctionBehavior(fun_id)->GetOpGraph(FunctionBehavior::CFG);
-   const auto& node = cfg.CGetNodeInfo(v).node;
+   const auto& node = graph_node_info(cfg, v).node;
    std::vector<io_binding_type> required;
    if(node)
    {

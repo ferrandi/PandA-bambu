@@ -62,6 +62,7 @@
 #include "function_frontend_flow_step.hpp"
 #include "functions.hpp"
 #include "generic_device.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_device.hpp"
@@ -1397,7 +1398,7 @@ DesignFlowStep_Status allocation::InternalExec()
    CustomUnorderedMap<std::string, std::map<unsigned int, unsigned int>> fu_name_to_id;
    CustomOrderedSet<OpGraph::vertex_descriptor> vertex_analysed;
    const auto cfg = FB->GetOpGraph(FunctionBehavior::CFG);
-   const auto g = cfg.num_vertices() != HLS->operations.size() ?
+   const auto g = graph_num_vertices(cfg) != HLS->operations.size() ?
                       FB->GetOpGraph(FunctionBehavior::CFG, CustomUnorderedSet<OpGraph::vertex_descriptor>(
                                                                 HLS->operations.begin(), HLS->operations.end())) :
                       cfg;
@@ -1405,9 +1406,9 @@ DesignFlowStep_Status allocation::InternalExec()
    std::map<std::string, technology_nodeRef> new_fu;
    bool return_stmt_allocated_p = false;
    unsigned int return_stmt_current_id = 0;
-   for(const auto v : g.vertices())
+   for(const auto v : graph_vertices(g))
    {
-      const auto& op_info = g.CGetNodeInfo(v);
+      const auto& op_info = graph_node_info(g, v);
       const auto current_op = ir_helper::NormalizeTypename(op_info.GetOperation());
       const auto node_id = op_info.GetNodeId();
       const auto node_operation = [&]() -> std::string {
@@ -1942,7 +1943,7 @@ DesignFlowStep_Status allocation::InternalExec()
             }
             for(const auto vert : vertex_to_analyse_partition.at(curr_op_name))
             {
-               const auto& vert_info = g.CGetNodeInfo(vert);
+               const auto& vert_info = graph_node_info(g, vert);
                const auto vert_node_id = vert_info.GetNodeId();
                const auto vert_node_operation = [&]() -> std::string {
                   if(vert_node_id == ENTRY_ID)
@@ -2296,8 +2297,8 @@ DesignFlowStep_Status allocation::InternalExec()
          }
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                         "---Operation for which does not exist a functional unit in the resource library: " +
-                            ir_helper::NormalizeTypename(g.CGetNodeInfo(ve).GetOperation()) +
-                            " in vertex: " + g.CGetNodeInfo(ve).vertex_name +
+                            ir_helper::NormalizeTypename(graph_node_info(g, ve).GetOperation()) +
+                            " in vertex: " + graph_node_info(g, ve).vertex_name +
                             " with vertex type: " + node_info->node_kind + " and vertex prec:" + precisions);
          completely_analyzed = false;
       }
@@ -2948,9 +2949,9 @@ void allocation::IntegrateTechnologyLibraries()
                      return nullptr;
                   }();
                   THROW_ASSERT(fnode, "Expected valid function node");
-                  techNode_obj =
-                      modGen->create_generic_module(shared_fu_name, nullptr, HLSMgr->CGetFunctionBehavior(fnode->index),
-                                                    libraryManager->get_library_name(), new_shared_fu_name);
+                  techNode_obj = modGen->create_generic_module(shared_fu_name, OpGraph::null_vertex(),
+                                                               HLSMgr->CGetFunctionBehavior(fnode->index),
+                                                               libraryManager->get_library_name(), new_shared_fu_name);
                   THROW_ASSERT(techNode_obj, "function not yet built: " + new_shared_fu_name);
                }
                add_proxy_function_wrapper(library_name, techNode_obj, shared_fu_name);

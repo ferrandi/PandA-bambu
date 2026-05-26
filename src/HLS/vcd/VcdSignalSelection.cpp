@@ -47,6 +47,7 @@
 #include "fu_binding.hpp"
 #include "function_behavior.hpp"
 #include "generic_obj.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "ir_helper.hpp"
@@ -224,9 +225,9 @@ void VcdSignalSelection::SelectInitialSsa(
       const auto FB = HLSMgr->CGetFunctionBehavior(fid);
       const auto op_graph = FB->GetOpGraph(FunctionBehavior::FCFG);
       const auto BH = FB->CGetBehavioralHelper();
-      for(const auto vi : op_graph.vertices())
+      for(const auto vi : graph_vertices(op_graph))
       {
-         const auto st_tn_id = op_graph.CGetNodeInfo(vi).GetNodeId();
+         const auto st_tn_id = graph_node_info(op_graph, vi).GetNodeId();
          if(st_tn_id == ENTRY_ID || st_tn_id == EXIT_ID)
          {
             continue;
@@ -326,9 +327,9 @@ void VcdSignalSelection::PropagateAddrParamToSsa(const CustomUnorderedMap<unsign
       const auto FB = HLSMgr->CGetFunctionBehavior(fid);
       const auto op_graph = FB->GetOpGraph(FunctionBehavior::FCFG);
       const auto BH = FB->CGetBehavioralHelper();
-      for(const auto vi : op_graph.vertices())
+      for(const auto vi : graph_vertices(op_graph))
       {
-         const auto& op_info = op_graph.CGetNodeInfo(vi);
+         const auto& op_info = graph_node_info(op_graph, vi);
          const auto st_tn_id = op_info.GetNodeId();
          if(st_tn_id == ENTRY_ID || st_tn_id == EXIT_ID)
          {
@@ -437,11 +438,11 @@ void VcdSignalSelection::DetectInvalidReturns(const CustomOrderedSet<unsigned in
       }
       const auto FB = HLSMgr->CGetFunctionBehavior(i);
       const auto op_graph = FB->GetOpGraph(FunctionBehavior::FCFG);
-      const auto exit_vertex = op_graph.CGetGraphInfo().exit_vertex;
-      for(const auto& edge : op_graph.CGetInEdges(exit_vertex))
+      const auto exit_vertex = graph_graph_info(op_graph).exit_vertex;
+      for(const auto& edge : graph_in_edges(op_graph, exit_vertex))
       {
-         const auto op = op_graph.source(edge);
-         const unsigned int node_id = op_graph.CGetNodeInfo(op).GetNodeId();
+         const auto op = graph_source(op_graph, edge);
+         const unsigned int node_id = graph_node_info(op_graph, op).GetNodeId();
          if(node_id == ENTRY_ID or node_id == EXIT_ID)
          {
             continue;
@@ -550,8 +551,8 @@ void VcdSignalSelection::CrossPropagateAddrSsa(
              * as parameter an address ssa, then the parameter itself is marked as
              * representing address
              */
-            if(op_graph.CGetGraphInfo().ir_node_to_operation.find(callid) ==
-               op_graph.CGetGraphInfo().ir_node_to_operation.end())
+            if(graph_graph_info(op_graph).ir_node_to_operation.find(callid) ==
+               graph_graph_info(op_graph).ir_node_to_operation.end())
             {
                THROW_WARNING("cannot find call for interprocedural address propagation:\n\t"
                              "caller id = " +
@@ -574,7 +575,8 @@ void VcdSignalSelection::CrossPropagateAddrSsa(
              * retrieve the OpNodeInfo related to the IR node corresponding to
              * the call id
              */
-            const auto& callopinfo = op_graph.CGetNodeInfo(op_graph.CGetGraphInfo().ir_node_to_operation.at(callid));
+            const auto& callopinfo =
+                graph_node_info(op_graph, graph_graph_info(op_graph).ir_node_to_operation.at(callid));
             if(callopinfo.called.size() == 0)
             {
                continue;
@@ -747,9 +749,9 @@ void VcdSignalSelection::SelectInternalSignals(
       const auto& fu_bind = HLSMgr->get_HLS(f_id)->Rfu;
       const auto& alloc_info = HLSMgr->get_HLS(f_id)->allocation_information;
       // loop on the opgraph
-      for(const auto v : op_graph.vertices())
+      for(const auto v : graph_vertices(op_graph))
       {
-         const auto& op_info = op_graph.CGetNodeInfo(v);
+         const auto& op_info = graph_node_info(op_graph, v);
          const auto op_node_id = op_info.GetNodeId();
          if(op_node_id == ENTRY_ID || op_node_id == EXIT_ID)
          {
@@ -855,7 +857,7 @@ DesignFlowStep_Status VcdSignalSelection::Exec()
    /* generate the scoped signal names and insert them in the selected signals*/
    for(const auto& [v, scope] : Discr->unfolded_v_to_scope)
    {
-      const auto& node_info = Discr->DiscrepancyCallGraph.CGetNodeInfo(v);
+      const auto& node_info = graph_node_info(Discr->DiscrepancyCallGraph, v);
       const auto f_id = node_info.f_id;
       const auto BH = node_info.behavior->CGetBehavioralHelper();
       if(!BH->has_implementation() || !BH->function_has_to_be_printed(f_id))

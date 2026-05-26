@@ -94,7 +94,7 @@ struct CallGraphInfo : public GraphInfo
    std::map<unsigned int, FunctionBehaviorRef> behaviors;
 };
 
-using CallGraphsCollection = graphs_collection<FunctionNodeInfo, FunctionEdgeInfo, CallGraphInfo>;
+using CallGraphsCollection = append_only_graphs_collection<FunctionNodeInfo, FunctionEdgeInfo, CallGraphInfo>;
 
 /**
  * This class is the view of a call graph

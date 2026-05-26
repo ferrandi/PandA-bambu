@@ -58,6 +58,7 @@
 #include "exceptions.hpp"
 #include "function_behavior.hpp"
 #include "graph.hpp"
+#include "graph_facade.hpp"
 #include "ir_basic_block.hpp"
 #include "ir_helper.hpp"
 #include "ir_manager.hpp"
@@ -208,7 +209,7 @@ namespace
       std::vector<VarUseRef> OpsToRename;
    };
 
-   struct IRVisitor : public boost::default_dfs_visitor
+   struct IRVisitor : public graph_default_dfs_visitor
    {
     public:
       using BBMap = decltype(statement_list_node::list_of_bloc);
@@ -1508,10 +1509,8 @@ void ConstraintGraph::buildGraph(unsigned int function_id, bool computeESSA)
                    debug_level
 #endif
       );
-      std::vector<boost::default_color_type> color_vec(dt.num_vertices(), boost::white_color);
-      boost::depth_first_visit(dt, entryVertex, bv,
-                               boost::make_iterator_property_map(color_vec.begin(), boost::get(boost::vertex_index, dt),
-                                                                 boost::white_color));
+      auto color_map = graph_make_color_map(dt);
+      graph_depth_first_visit(dt, entryVertex, bv, color_map.get());
    }
 
    if(computeESSA)

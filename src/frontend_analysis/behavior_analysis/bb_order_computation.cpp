@@ -45,6 +45,7 @@
 #include "behavioral_helper.hpp"
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hash_helper.hpp"
 #include "ir_basic_block.hpp"
 #include "string_manipulation.hpp"
@@ -96,7 +97,7 @@ DesignFlowStep_Status BBOrderComputation::InternalExec()
                       function_behavior->CGetBehavioralHelper()->GetFunctionName());
    const auto bb_cfg = function_behavior->GetBBGraph(FunctionBehavior::BB);
    std::list<BBGraph::vertex_descriptor> sorted_vertices;
-   bb_cfg.TopologicalSort(sorted_vertices);
+   graph_topological_sort(bb_cfg, sorted_vertices);
 
    function_behavior->bb_map_levels.clear();
    function_behavior->bb_deque_levels.clear();
@@ -105,7 +106,7 @@ DesignFlowStep_Status BBOrderComputation::InternalExec()
    for(const auto vertex : sorted_vertices)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Assigning vertex BB" + std::to_string(bb_cfg.CGetNodeInfo(vertex).block->number));
+                     "-->Assigning vertex BB" + std::to_string(graph_node_info(bb_cfg, vertex).block->number));
       function_behavior->add_bb_level(vertex, index++);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }

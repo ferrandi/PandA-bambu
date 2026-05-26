@@ -43,7 +43,7 @@
 #define _HDL_GENERATOR_MANAGER_HPP_
 #include "custom_map.hpp"
 #include "generic_device.hpp"
-#include "graph.hpp"
+#include "op_graph.hpp"
 #include "refcount.hpp"
 
 class module_o;
@@ -80,18 +80,18 @@ class HDLGeneratorManager
    virtual ~HDLGeneratorManager() = default;
 
    std::string GenerateHDL(const std::string& hdl_template, structural_objectRef mod, const FunctionBehaviorConstRef FB,
-                           gc_vertex_descriptor op_v,
+                           OpGraph::vertex_descriptor op_v,
                            const std::vector<std::tuple<unsigned int, unsigned int>>& required_variables,
                            HDLWriter_Language language);
 
    std::string getModuleNameSuffix(unsigned int firstIndexToSpecialize,
                                    const std::vector<std::tuple<unsigned int, unsigned int>>& required_variables) const;
 
-   technology_nodeRef specialize_fu(const std::string& fu_name, gc_vertex_descriptor ve,
+   technology_nodeRef specialize_fu(const std::string& fu_name, OpGraph::vertex_descriptor ve,
                                     const FunctionBehaviorConstRef FB, const std::string& libraryId,
                                     const std::string& new_fu_name);
 
-   technology_nodeRef create_generic_module(const std::string& fu_name, gc_vertex_descriptor ve,
+   technology_nodeRef create_generic_module(const std::string& fu_name, OpGraph::vertex_descriptor ve,
                                             const FunctionBehaviorConstRef FB, const std::string& libraryId,
                                             const std::string& new_fu_name);
 };

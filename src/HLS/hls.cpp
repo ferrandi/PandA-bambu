@@ -51,6 +51,7 @@
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "fu_binding.hpp"
+#include "graph_facade.hpp"
 #include "hls_constraints.hpp"
 #include "hls_device.hpp"
 #include "op_graph.hpp"
@@ -120,7 +121,7 @@ void hls::xload(const xml_element* node, const OpGraph& data)
 
    for(auto operation : operations)
    {
-      String2Vertex[data.CGetNodeInfo(operation).vertex_name] = operation;
+      String2Vertex[graph_node_info(data, operation).vertex_name] = operation;
    }
 
    for(unsigned int id = 0; id < allocation_information->get_number_fu_types(); id++)
@@ -203,7 +204,7 @@ void hls::xwrite(xml_element* rootnode, const OpGraph& data)
    for(auto operation : operations)
    {
       xml_element* EnodeC = Enode->add_child_element("scheduling_constraints");
-      std::string vertex_name = data.CGetNodeInfo(operation).vertex_name;
+      std::string vertex_name = graph_node_info(data, operation).vertex_name;
       const auto cstep = sch->get_cstep(operation).second;
       WRITE_XVM(vertex_name, EnodeC);
       WRITE_XVM(cstep, EnodeC);

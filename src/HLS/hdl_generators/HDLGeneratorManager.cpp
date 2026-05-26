@@ -49,6 +49,7 @@
 #include "constant_strings.hpp"
 #include "fileIO.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
 #include "ir_helper.hpp"
@@ -180,7 +181,7 @@ std::string HDLGeneratorManager::getModuleNameSuffix(
 
 std::string
 HDLGeneratorManager::GenerateHDL(const std::string& hdl_template, structural_objectRef mod,
-                                 const FunctionBehaviorConstRef FB, gc_vertex_descriptor op_v,
+                                 const FunctionBehaviorConstRef FB, OpGraph::vertex_descriptor op_v,
                                  const std::vector<std::tuple<unsigned int, unsigned int>>& required_variables,
                                  HDLWriter_Language language)
 {
@@ -223,7 +224,7 @@ HDLGeneratorManager::GenerateHDL(const std::string& hdl_template, structural_obj
    return HDLOutput.str();
 }
 
-technology_nodeRef HDLGeneratorManager::specialize_fu(const std::string& fu_name, gc_vertex_descriptor ve,
+technology_nodeRef HDLGeneratorManager::specialize_fu(const std::string& fu_name, OpGraph::vertex_descriptor ve,
                                                       const FunctionBehaviorConstRef FB, const std::string& libraryId,
                                                       const std::string& new_fu_name)
 {
@@ -310,11 +311,11 @@ technology_nodeRef HDLGeneratorManager::specialize_fu(const std::string& fu_name
       curr_port->copy(gen_port);
    }
    const auto cfg = FB->GetOpGraph(FunctionBehavior::CFG);
-   if(cfg.CGetNodeInfo(ve).GetOperation() == TOSTRING(KMP_FORK_CALL))
+   if(graph_node_info(cfg, ve).GetOperation() == TOSTRING(KMP_FORK_CALL))
    {
       const auto TM = HLSMgr->get_ir_manager();
       const auto TechM = HLS_D->get_technology_manager();
-      const auto omp_lambda_addr = *(++(cfg.CGetNodeInfo(ve).actual_parameters.begin()));
+      const auto omp_lambda_addr = *(++(graph_node_info(cfg, ve).actual_parameters.begin()));
       const auto omp_lambda_fnode = ir_helper::GetBaseVariable(TM->GetIRNode(omp_lambda_addr));
       const auto omp_lambda_function_name = ir_helper::GetFunctionName(omp_lambda_fnode);
 
@@ -395,7 +396,7 @@ technology_nodeRef HDLGeneratorManager::specialize_fu(const std::string& fu_name
    return new_techNode_obj;
 }
 
-technology_nodeRef HDLGeneratorManager::create_generic_module(const std::string& fu_name, gc_vertex_descriptor ve,
+technology_nodeRef HDLGeneratorManager::create_generic_module(const std::string& fu_name, OpGraph::vertex_descriptor ve,
                                                               const FunctionBehaviorConstRef FB,
                                                               const std::string& libraryId,
                                                               const std::string& new_fu_name)

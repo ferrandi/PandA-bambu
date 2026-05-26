@@ -45,6 +45,7 @@
 #include "dbgPrintHelper.hpp"
 #include "fsm/FSMInfo.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_manager.hpp"
@@ -111,7 +112,7 @@ static void update_liveout_with_prev(const HLS_managerRef HLSMgr, hlsRef HLS, co
    const auto& state_info = fsm_info->getState(prevState);
    for(const auto& exec_op : state_info.executingOperations)
    {
-      const auto& op_info = data.CGetNodeInfo(exec_op);
+      const auto& op_info = graph_node_info(data, exec_op);
       auto isAPhi = op_info.node_type & TYPE_PHI;
       auto manage_scalar_use = [&](unsigned scalar_use) {
          const bool scalar_is_register_compatible = HLSMgr->is_register_compatible(scalar_use);
@@ -236,9 +237,9 @@ DesignFlowStep_Status FSMSsaLivenessStep::InternalExec()
 
    /// Map between basic block node index and vertices
    CustomUnorderedMap<unsigned int, BBGraph::vertex_descriptor> BBIndexMap;
-   for(const auto v : fbb.vertices())
+   for(const auto v : graph_vertices(fbb))
    {
-      BBIndexMap[fbb.CGetNodeInfo(v).get_bb_index()] = v;
+      BBIndexMap[graph_node_info(fbb, v).get_bb_index()] = v;
    }
 
    auto fsm_info = HLS->fsm_info;
@@ -265,8 +266,8 @@ DesignFlowStep_Status FSMSsaLivenessStep::InternalExec()
 
    /// compute live out
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Computing live out");
-   const auto BBExit = fbb.CGetGraphInfo().exit_vertex;
-   unsigned int prevBBindex = fbb.CGetNodeInfo(BBExit).get_bb_index();
+   const auto BBExit = graph_graph_info(fbb).exit_vertex;
+   unsigned int prevBBindex = graph_node_info(fbb, BBExit).get_bb_index();
    auto prevState = exitState;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "---prevState: " + fsm_info->getState(prevState).name + " prevBBindex: " + STR(prevBBindex));
@@ -311,7 +312,7 @@ DesignFlowStep_Status FSMSsaLivenessStep::InternalExec()
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---adding live out of BB " + STR(bb_index) + " to live out of state " +
                                      state_info.name);
-                  for(const auto& lo : fbb.CGetNodeInfo(BBIndexMap[bb_index]).getLiveOutBbVariables())
+                  for(const auto& lo : graph_node_info(fbb, BBIndexMap[bb_index]).getLiveOutBbVariables())
                   {
                      const bool lo_register_compatible = HLSMgr->is_register_compatible(lo);
                      if(lo_register_compatible)
@@ -378,7 +379,7 @@ DesignFlowStep_Status FSMSsaLivenessStep::InternalExec()
                            "---PrevBB" + STR(prevBBindex) + " != BB" + STR(bb_index));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---copying BB live out " + STR(bb_index) + " to state " + state_info.name);
-            for(const auto lo : fbb.CGetNodeInfo(BBIndexMap[bb_index]).getLiveOutBbVariables())
+            for(const auto lo : graph_node_info(fbb, BBIndexMap[bb_index]).getLiveOutBbVariables())
             {
                const bool lo_register_compatible = HLSMgr->is_register_compatible(lo);
                if(lo_register_compatible)
@@ -456,7 +457,7 @@ DesignFlowStep_Status FSMSsaLivenessStep::InternalExec()
       }
 
       unsigned int bb_index = state_info.bbId;
-      const auto live_in_bb_index = fbb.CGetNodeInfo(BBIndexMap[bb_index]).getLiveInBbVariables();
+      const auto live_in_bb_index = graph_node_info(fbb, BBIndexMap[bb_index]).getLiveInBbVariables();
       if(state_info.isPipelinedState)
       {
          for(const auto& src_state : fsm_info->predecessors(osl))
@@ -466,7 +467,7 @@ DesignFlowStep_Status FSMSsaLivenessStep::InternalExec()
             auto adjust_phi = [&] {
                for(const auto& exec_op : state_info.executingOperations)
                {
-                  const auto& op_info = data.CGetNodeInfo(exec_op);
+                  const auto& op_info = graph_node_info(data, exec_op);
                   if((op_info.node_type & TYPE_PHI) != 0)
                   {
                      const auto phi_node = HLSMgr->get_ir_manager()->GetIRNode(op_info.GetNodeId());
@@ -482,7 +483,7 @@ DesignFlowStep_Status FSMSsaLivenessStep::InternalExec()
                            bool used_by_non_phi = false;
                            for(const auto& other_op : state_info.executingOperations)
                            {
-                              const auto& other_info = data.CGetNodeInfo(other_op);
+                              const auto& other_info = graph_node_info(data, other_op);
                               if((other_info.node_type & TYPE_PHI) == 0)
                               {
                                  const auto& other_uses = getVariablesScalarUse(data, other_op);
@@ -515,7 +516,7 @@ DesignFlowStep_Status FSMSsaLivenessStep::InternalExec()
             };
             if(prevBBindex != bb_index)
             {
-               for(const auto li : fbb.CGetNodeInfo(BBIndexMap[prevBBindex]).getLiveOutBbVariables())
+               for(const auto li : graph_node_info(fbb, BBIndexMap[prevBBindex]).getLiveOutBbVariables())
                {
                   if(HLSMgr->is_register_compatible(li))
                   {

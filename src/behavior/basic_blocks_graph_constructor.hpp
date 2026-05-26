@@ -43,6 +43,7 @@
 
 #include "basic_block.hpp"
 #include "custom_map.hpp"
+#include "op_graph.hpp"
 #include "refcount.hpp"
 
 REF_FORWARD_DECL(bloc);
@@ -142,7 +143,7 @@ class BasicBlocksGraphConstructor
     * @param op is the name of the operation vertex
     * @param index is the index of the basic blocks
     */
-   void add_operation_to_bb(BBGraph::vertex_descriptor op, unsigned int index);
+   void add_operation_to_bb(OpGraph::vertex_descriptor op, unsigned int index);
 };
 
 #endif

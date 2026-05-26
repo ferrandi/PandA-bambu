@@ -51,6 +51,7 @@
 #include "design_flow_manager.hpp"
 #include "frontend_flow_step_factory.hpp"
 #include "function_behavior.hpp"
+#include "graph_facade.hpp"
 #include "hls.hpp"
 #include "hls_device.hpp"
 #include "hls_flow_step_factory.hpp"
@@ -249,7 +250,7 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
                     frontend_flow_step_factory->CreateApplicationFrontendFlowStep(COMPLETE_CALL_GRAPH);
             design_flow_step_set.insert(cg_design_flow_step);
             /// Root function cannot be computed at the beginning
-            if(CGM.GetCallGraph().num_vertices() == 0)
+            if(graph_num_vertices(CGM.GetCallGraph()) == 0)
             {
                break;
             }
