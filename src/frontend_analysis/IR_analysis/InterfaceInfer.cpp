@@ -2581,6 +2581,154 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
           std::make_pair(n_resources, n_resources);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created");
    }
+   else
+   {
+      const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
+      THROW_ASSERT(fu->CM && fu->CM->get_circ(),
+                   "Missing structural description for interface resource '" + ResourceName + "'");
+      const auto interface_top = fu->CM->get_circ();
+      const auto module = GetPointerS<module_o>(interface_top);
+
+      // Validate that the existing resource is compatible with this invocation.
+#if HAVE_ASSERTS
+      const auto existing_channel_count = module->get_multi_unit_multiplicity();
+#endif
+      THROW_ASSERT(existing_channel_count == 0U || existing_channel_count == n_resources,
+                   "Incompatible channel count for array bundle '" + bundle_name + "' resource '" + ResourceName +
+                       "': existing resource has " + STR(existing_channel_count) + " channels but " + STR(n_resources) +
+                       " expected. The bundle must be used with consistent DP/SP mode across all dataflow modules.");
+      // Validate bit-width: if a data port already exists its type must match.
+      if(const auto existing_q = module->find_member("_" + bundle_name + "_q0", port_o_K, interface_top))
+      {
+#if HAVE_ASSERTS
+         const auto existing_bitwidth = STD_GET_SIZE(GetPointerS<const port_o>(existing_q)->get_typeRef());
+#endif
+         THROW_ASSERT(existing_bitwidth == info.bitwidth,
+                      "Incompatible data width for array bundle '" + bundle_name + "' resource '" + ResourceName +
+                          "': existing resource has " + STR(existing_bitwidth) + "-bit data port but " +
+                          STR(info.bitwidth) + " expected.");
+      }
+      // Validate global resource constraint consistency.
+      const auto constraint_it =
+          HLSMgr->global_resource_constraints.find(std::make_pair(ResourceName, INTERFACE_LIBRARY));
+      if(constraint_it != HLSMgr->global_resource_constraints.end())
+      {
+         THROW_ASSERT(constraint_it->second.first == n_resources && constraint_it->second.second == n_resources,
+                      "Incompatible resource constraint for array bundle '" + bundle_name + "' resource '" +
+                          ResourceName + "': existing constraint " + STR(constraint_it->second.first) + "/" +
+                          STR(constraint_it->second.second) + " differs from expected " + STR(n_resources));
+      }
+      // Validate HDL generator type: the existing resource must use the same generator.
+      const auto expected_gen = read_write_string + getHDLGeneratorNameToken(info.name) + "HDLGenerator";
+      const auto np_func = module->get_NP_functionality();
+      THROW_ASSERT(np_func && np_func->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR),
+                   "Existing interface resource '" + ResourceName + "' for bundle '" + bundle_name +
+                       "' is missing VERILOG_GENERATOR NP_functionality.");
+      const auto existing_gen = np_func->get_NP_functionality(NP_functionality::VERILOG_GENERATOR);
+      THROW_ASSERT(existing_gen == expected_gen,
+                   "Incompatible HDL generator for array bundle '" + bundle_name + "' resource '" + ResourceName +
+                       "': existing generator '" + existing_gen + "' differs from expected '" + expected_gen +
+                       "'. The bundle must use a consistent interface type across all dataflow modules.");
+      // Validate read/write operation set: any operations from this function that are already
+      // registered in the existing resource must be consistent (same signature). Operations from
+      // different functions using the same bundle are allowed and will be appended to the resource.
+      // Validate write-port bit-width: if _d0 already exists its type must match.
+      if(const auto existing_d = module->find_member("_" + bundle_name + "_d0", port_o_K, interface_top))
+      {
+#if HAVE_ASSERTS
+         const auto existing_d_bitwidth = STD_GET_SIZE(GetPointerS<const port_o>(existing_d)->get_typeRef());
+#endif
+         THROW_ASSERT(existing_d_bitwidth == info.bitwidth,
+                      "Incompatible data width for array bundle '" + bundle_name + "' resource '" + ResourceName +
+                          "': existing _d0 port has " + STR(existing_d_bitwidth) + "-bit data port but " +
+                          STR(info.bitwidth) + " expected.");
+      }
+      // Validate address port interface: check that the existing address port has the expected interface.
+      if(const auto existing_addr = module->find_member("_" + bundle_name + "_address0", port_o_K, interface_top))
+      {
+#if HAVE_ASSERTS
+         const auto addr_port = GetPointerS<const port_o>(existing_addr);
+#endif
+         THROW_ASSERT(addr_port->get_port_interface() == port_o::port_interface::PI_ADDRESS,
+                      "Existing address port '" + bundle_name + "_address0" + "' in resource '" + ResourceName +
+                          "' for bundle '" + bundle_name + "' has unexpected port interface " +
+                          STR(addr_port->get_port_interface()) + " (expected PI_ADDRESS).");
+      }
+      // Validate direction and interface for existing ports.
+      const auto check_port_interface = [&](const std::string& port_name, port_o::port_interface expected_if) {
+         (void)expected_if;
+         if(const auto port_k = module->find_member(port_name, port_o_K, interface_top))
+         {
+#if HAVE_ASSERTS
+            const auto port = GetPointerS<const port_o>(port_k);
+#endif
+            THROW_ASSERT(port->get_port_interface() == expected_if,
+                         "Incompatible port interface for '" + port_name + "' in resource '" + ResourceName +
+                             "' (bundle '" + bundle_name + "): expected '" + STR(static_cast<unsigned>(expected_if)) +
+                             "' but got '" + STR(static_cast<unsigned>(port->get_port_interface())) + "'.");
+         }
+      };
+      check_port_interface("_" + bundle_name + "_address0", port_o::port_interface::PI_ADDRESS);
+      if(isDP)
+      {
+         check_port_interface("_" + bundle_name + "_address1", port_o::port_interface::PI_ADDRESS);
+      }
+      check_port_interface("_" + bundle_name + "_ce0", port_o::port_interface::PI_CHIPENABLE);
+      if(isDP)
+      {
+         check_port_interface("_" + bundle_name + "_ce1", port_o::port_interface::PI_CHIPENABLE);
+      }
+      if(!operationsR.empty() || unused_port)
+      {
+         check_port_interface("_" + bundle_name + "_q0", port_o::port_interface::PI_DIN);
+         if(isDP)
+         {
+            check_port_interface("_" + bundle_name + "_q1", port_o::port_interface::PI_DIN);
+         }
+      }
+      if(!operationsW.empty())
+      {
+         check_port_interface("_" + bundle_name + "_we0", port_o::port_interface::PI_WRITEENABLE);
+         check_port_interface("_" + bundle_name + "_d0", port_o::port_interface::PI_DOUT);
+         if(isDP)
+         {
+            check_port_interface("_" + bundle_name + "_we1", port_o::port_interface::PI_WRITEENABLE);
+            check_port_interface("_" + bundle_name + "_d1", port_o::port_interface::PI_DOUT);
+         }
+      }
+
+      const auto dataType = structural_type_descriptorRef(new structural_type_descriptor("bool", info.bitwidth));
+      const auto bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+
+      const auto ensure_port = [&](const std::string& port_name, port_o::port_direction dir,
+                                   const structural_type_descriptorRef& type_descr,
+                                   const port_o::port_interface port_if) {
+         if(!module->has_port(port_name))
+         {
+            const auto port = fu->CM->add_port(port_name, dir, interface_top, type_descr);
+            GetPointerS<port_o>(port)->set_port_interface(port_if);
+         }
+      };
+
+      if(!operationsR.empty() || unused_port)
+      {
+         ensure_port("_" + bundle_name + "_q0", port_o::IN, dataType, port_o::port_interface::PI_DIN);
+         if(isDP)
+         {
+            ensure_port("_" + bundle_name + "_q1", port_o::IN, dataType, port_o::port_interface::PI_DIN);
+         }
+      }
+      if(!operationsW.empty())
+      {
+         ensure_port("_" + bundle_name + "_we0", port_o::OUT, bool_type, port_o::port_interface::PI_WRITEENABLE);
+         ensure_port("_" + bundle_name + "_d0", port_o::OUT, dataType, port_o::port_interface::PI_DOUT);
+         if(isDP)
+         {
+            ensure_port("_" + bundle_name + "_we1", port_o::OUT, bool_type, port_o::port_interface::PI_WRITEENABLE);
+            ensure_port("_" + bundle_name + "_d1", port_o::OUT, dataType, port_o::port_interface::PI_DOUT);
+         }
+      }
+   }
    for(const auto& fdName : operationsR)
    {
       TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);

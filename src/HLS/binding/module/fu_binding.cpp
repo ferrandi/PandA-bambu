@@ -97,9 +97,16 @@ namespace
       std::string index;
    };
 
+   enum class dataflow_memory_role
+   {
+      none,
+      reader,
+      writer
+   };
+
    bool parse_dataflow_memory_port(const structural_objectRef& port, dataflow_memory_port_info& info)
    {
-      const std::regex dataflow_memory_port_re("^(?:p)?_DF_bambu_[0-9]+_([0-9]+)FO[0-9]+_(q|address|ce)([0-9]*)$");
+      const std::regex dataflow_memory_port_re("^(?:p)?_DF_bambu_[0-9]+_([0-9]+)FO[0-9]+_(q|d|address|ce|we)([0-9]*)$");
       std::smatch match;
       const auto port_name = GetPointerS<const port_o>(port)->get_id();
       if(!std::regex_match(port_name, match, dataflow_memory_port_re))
@@ -112,29 +119,276 @@ namespace
       return true;
    }
 
+   dataflow_memory_role infer_dataflow_memory_role(const HLS_managerRef& HLSMgr, const unsigned int top_id,
+                                                   const structural_objectRef& module, const unsigned int var)
+   {
+      if(const auto ding_dong_candidate = HLSMgr->get_ding_dong_buffer_candidate(top_id, var))
+      {
+         static const auto top_function_wrapper_prefix = std::string("PBI_");
+         const auto mod_id = GET_TYPE_NAME(module);
+         const auto msymbol = (mod_id.size() && starts_with(mod_id, top_function_wrapper_prefix)) ?
+                                  mod_id.substr(top_function_wrapper_prefix.size()) :
+                                  mod_id;
+         if(const auto function_decl = HLSMgr->get_ir_manager()->GetFunction(msymbol))
+         {
+            const auto function_id = function_decl->index;
+            if(function_id == ding_dong_candidate->producer_function_id)
+            {
+               return dataflow_memory_role::writer;
+            }
+            if(function_id == ding_dong_candidate->consumer_function_id)
+            {
+               return dataflow_memory_role::reader;
+            }
+         }
+         return dataflow_memory_role::none;
+      }
+      const auto has_matching_kind = [&](const auto port_getter, const unsigned int port_count,
+                                         const std::initializer_list<const char*> kinds) {
+         for(unsigned int port_index = 0; port_index < port_count; ++port_index)
+         {
+            dataflow_memory_port_info port_info;
+            if(!parse_dataflow_memory_port(port_getter(port_index), port_info) || port_info.var != var)
+            {
+               continue;
+            }
+            if(std::find_if(kinds.begin(), kinds.end(), [&](const auto* kind) { return port_info.kind == kind; }) !=
+               kinds.end())
+            {
+               return true;
+            }
+         }
+         return false;
+      };
+      const auto module_obj = GetPointerS<const module_o>(module);
+      const auto has_reader_port =
+          has_matching_kind([&](const auto port_index) { return module_obj->get_in_port(port_index); },
+                            module_obj->get_in_port_size(), {"q"});
+      const auto has_writer_port =
+          has_matching_kind([&](const auto port_index) { return module_obj->get_out_port(port_index); },
+                            module_obj->get_out_port_size(), {"d", "we"});
+      THROW_ASSERT(!(has_reader_port && has_writer_port),
+                   "Ding-dong buffers currently support only one reader or one writer per dataflow module: " +
+                       module->get_path());
+      if(has_reader_port)
+      {
+         return dataflow_memory_role::reader;
+      }
+      if(has_writer_port)
+      {
+         return dataflow_memory_role::writer;
+      }
+      return dataflow_memory_role::none;
+   }
+
    structural_objectRef get_indexed_storage_port(const structural_objectRef& storage, const std::string& port_name,
                                                  so_kind requested_kind, const std::string& index)
    {
-      if(requested_kind == port_o_K && !index.empty())
+      const auto find_direct_storage_port = [&](const so_kind expected_kind) -> structural_objectRef {
+         const auto storage_module = GetPointer<module_o>(storage);
+         if(!storage_module)
+         {
+            return structural_objectRef();
+         }
+         const auto find_port = [&](const auto port_getter, const unsigned int port_count) -> structural_objectRef {
+            for(unsigned int port_index = 0; port_index < port_count; ++port_index)
+            {
+               const auto port = port_getter(port_index);
+               if(port->get_id() == port_name && port->get_kind() == expected_kind)
+               {
+                  return port;
+               }
+            }
+            return structural_objectRef();
+         };
+         if(const auto port = find_port([&](const auto port_index) { return storage_module->get_in_port(port_index); },
+                                        storage_module->get_in_port_size()))
+         {
+            return port;
+         }
+         if(const auto port = find_port([&](const auto port_index) { return storage_module->get_out_port(port_index); },
+                                        storage_module->get_out_port_size()))
+         {
+            return port;
+         }
+         return find_port([&](const auto port_index) { return storage_module->get_in_out_port(port_index); },
+                          storage_module->get_in_out_port_size());
+      };
+
+      if(!index.empty())
       {
-         const auto vector_port = storage->find_member(port_name, port_vector_o_K, storage);
-         if(vector_port)
+         if(const auto vector_port = find_direct_storage_port(port_vector_o_K))
          {
             const auto port_index = static_cast<unsigned int>(std::stoul(index));
             THROW_ASSERT(port_index < GetPointerS<const port_o>(vector_port)->get_ports_size(),
                          "Port index out of range for " + vector_port->get_path());
             return GetPointerS<port_o>(vector_port)->get_port(port_index);
          }
+         if(requested_kind == port_o_K && index == "0")
+         {
+            return find_direct_storage_port(port_o_K);
+         }
+         return structural_objectRef();
       }
-      if(const auto port = storage->find_member(port_name, requested_kind, storage))
+      return find_direct_storage_port(requested_kind);
+   }
+
+   structural_objectRef get_storage_port(const structural_objectRef& storage,
+                                         const std::vector<std::string>& port_names, so_kind requested_kind,
+                                         const std::string& index)
+   {
+      for(const auto& port_name : port_names)
       {
-         THROW_ASSERT(port->get_kind() == requested_kind, "Unexpected port kind for " + port->get_path());
-         return port;
+         if(const auto port = get_indexed_storage_port(storage, port_name, requested_kind, index))
+         {
+            return port;
+         }
       }
       return structural_objectRef();
    }
 
-   void connect_dataflow_memory_ports(const structural_managerRef& SM, const structural_objectRef& circuit,
+   void connect_constant_to_port(const structural_managerRef& SM, const structural_objectRef& circuit,
+                                 const structural_objectRef& port, const std::string& constant_name,
+                                 const std::string& constant_value)
+   {
+      if(!port)
+      {
+         return;
+      }
+      if(port->get_kind() == port_vector_o_K)
+      {
+         const auto port_size = GetPointerS<const port_o>(port)->get_ports_size();
+         for(unsigned int port_index = 0; port_index < port_size; ++port_index)
+         {
+            const auto indexed_port = GetPointerS<port_o>(port)->get_port(port_index);
+            const auto indexed_constant = SM->add_constant(constant_name + "_" + STR(port_index), circuit,
+                                                           indexed_port->get_typeRef(), constant_value);
+            SM->add_connection(indexed_port, indexed_constant);
+         }
+         return;
+      }
+      const auto constant = SM->add_constant(constant_name, circuit, port->get_typeRef(), constant_value);
+      SM->add_connection(port, constant);
+   }
+
+   unsigned int get_dataflow_memory_channel_count(const structural_objectRef& circuit, const unsigned int top_id,
+                                                  const unsigned int var)
+   {
+      const std::regex bundle_re("^_DF_bambu_" + STR(top_id) + "_" + STR(var) +
+                                 "FO[0-9]+_(?:q|d|address|ce|we)([0-9]+)$");
+      unsigned int max_channel = 0;
+      const auto inspect_port = [&](const structural_objectRef& port) {
+         std::smatch match;
+         const auto port_name = GetPointerS<const port_o>(port)->get_id();
+         if(std::regex_match(port_name, match, bundle_re))
+         {
+            max_channel = std::max(max_channel, static_cast<unsigned int>(std::stoul(match[1].str())));
+         }
+      };
+      const auto circuit_obj = GetPointerS<const module_o>(circuit);
+      for(unsigned int module_index = 0; module_index < circuit_obj->get_internal_objects_size(); ++module_index)
+      {
+         const auto module = circuit_obj->get_internal_object(module_index);
+         const auto module_obj = GetPointer<module_o>(module);
+         if(!module_obj)
+         {
+            continue;
+         }
+         for(unsigned int port_index = 0; port_index < module_obj->get_in_port_size(); ++port_index)
+         {
+            inspect_port(module_obj->get_in_port(port_index));
+         }
+         for(unsigned int port_index = 0; port_index < module_obj->get_out_port_size(); ++port_index)
+         {
+            inspect_port(module_obj->get_out_port(port_index));
+         }
+      }
+      return max_channel + 1U;
+   }
+
+   unsigned long long get_dataflow_memory_port_bitsize(const structural_objectRef& circuit, const unsigned int var,
+                                                       const std::string& kind)
+   {
+      unsigned long long max_bitsize = 0;
+      unsigned long long max_interface_bitsize = 0;
+      const auto inspect_port = [&](const structural_objectRef& port) {
+         dataflow_memory_port_info port_info;
+         if(parse_dataflow_memory_port(port, port_info) && port_info.var == var && port_info.kind == kind)
+         {
+            const auto bitsize = STD_GET_SIZE(port->get_typeRef());
+            max_bitsize = std::max(max_bitsize, bitsize);
+            if(starts_with(GetPointerS<const port_o>(port)->get_id(), "p_"))
+            {
+               max_interface_bitsize = std::max(max_interface_bitsize, bitsize);
+            }
+         }
+      };
+      const auto circuit_obj = GetPointerS<const module_o>(circuit);
+      for(unsigned int module_index = 0; module_index < circuit_obj->get_internal_objects_size(); ++module_index)
+      {
+         const auto module = circuit_obj->get_internal_object(module_index);
+         const auto module_obj = GetPointer<module_o>(module);
+         if(!module_obj)
+         {
+            continue;
+         }
+         for(unsigned int port_index = 0; port_index < module_obj->get_in_port_size(); ++port_index)
+         {
+            inspect_port(module_obj->get_in_port(port_index));
+         }
+         for(unsigned int port_index = 0; port_index < module_obj->get_out_port_size(); ++port_index)
+         {
+            inspect_port(module_obj->get_out_port(port_index));
+         }
+      }
+      return max_interface_bitsize != 0 ? max_interface_bitsize : max_bitsize;
+   }
+
+   structural_objectRef find_direct_module_port(const structural_objectRef& module, const std::string& port_name)
+   {
+      const auto module_obj = GetPointerS<const module_o>(module);
+      for(unsigned int port_index = 0; port_index < module_obj->get_in_port_size(); ++port_index)
+      {
+         const auto port = module_obj->get_in_port(port_index);
+         if(port->get_id() == port_name)
+         {
+            return port;
+         }
+      }
+      for(unsigned int port_index = 0; port_index < module_obj->get_out_port_size(); ++port_index)
+      {
+         const auto port = module_obj->get_out_port(port_index);
+         if(port->get_id() == port_name)
+         {
+            return port;
+         }
+      }
+      for(unsigned int port_index = 0; port_index < module_obj->get_in_out_port_size(); ++port_index)
+      {
+         const auto port = module_obj->get_in_out_port(port_index);
+         if(port->get_id() == port_name)
+         {
+            return port;
+         }
+      }
+      return structural_objectRef();
+   }
+
+   void resize_named_port(const structural_objectRef& module, const std::string& port_name,
+                          const unsigned long long bitsize, const int debug_level)
+   {
+      if(bitsize == 0)
+      {
+         return;
+      }
+      if(const auto port = find_direct_module_port(module, port_name))
+      {
+         port_o::resize_std_port(bitsize, 0U, debug_level, port);
+      }
+   }
+
+   void connect_dataflow_memory_ports(const HLS_managerRef& HLSMgr, const unsigned int top_id,
+                                      const structural_managerRef& SM, const structural_objectRef& circuit,
                                       const std::map<unsigned int, structural_objectRef>& storage_by_var,
                                       unsigned int& unique_id)
    {
@@ -178,23 +432,89 @@ namespace
             {
                continue;
             }
-            const std::string storage_port_name = port_info.kind == "address" ? "in2" :
-                                                  port_info.kind == "ce"      ? "sel_LOAD" :
-                                                                                "";
-            if(storage_port_name.empty())
+            const auto module_role = infer_dataflow_memory_role(HLSMgr, top_id, module, port_info.var);
+            std::string selected_storage_port_name;
+            const auto storage_port = [&]() -> structural_objectRef {
+               if(port_info.kind == "address")
+               {
+                  if(module_role == dataflow_memory_role::reader)
+                  {
+                     selected_storage_port_name =
+                         get_storage_port(storage_it->second, {"in2r"}, port->get_kind(), port_info.index) ? "in2r" :
+                                                                                                             "in2";
+                     return get_storage_port(storage_it->second, {selected_storage_port_name}, port->get_kind(),
+                                             port_info.index);
+                  }
+                  if(module_role == dataflow_memory_role::writer)
+                  {
+                     selected_storage_port_name =
+                         get_storage_port(storage_it->second, {"in2w"}, port->get_kind(), port_info.index) ? "in2w" :
+                                                                                                             "in2";
+                     return get_storage_port(storage_it->second, {selected_storage_port_name}, port->get_kind(),
+                                             port_info.index);
+                  }
+                  if(get_storage_port(storage_it->second, {"in2r"}, port->get_kind(), port_info.index))
+                  {
+                     selected_storage_port_name = "in2r";
+                  }
+                  else if(get_storage_port(storage_it->second, {"in2w"}, port->get_kind(), port_info.index))
+                  {
+                     selected_storage_port_name = "in2w";
+                  }
+                  else
+                  {
+                     selected_storage_port_name = "in2";
+                  }
+                  return get_storage_port(storage_it->second, {selected_storage_port_name}, port->get_kind(),
+                                          port_info.index);
+               }
+               if(port_info.kind == "ce")
+               {
+                  if(HLSMgr->get_ding_dong_buffer_candidate(top_id, port_info.var) &&
+                     module_role == dataflow_memory_role::writer)
+                  {
+                     return structural_objectRef();
+                  }
+                  selected_storage_port_name = "sel_LOAD";
+                  return get_storage_port(storage_it->second, {selected_storage_port_name}, port->get_kind(),
+                                          port_info.index);
+               }
+               if(port_info.kind == "we")
+               {
+                  if(HLSMgr->get_ding_dong_buffer_candidate(top_id, port_info.var) &&
+                     module_role != dataflow_memory_role::writer)
+                  {
+                     return structural_objectRef();
+                  }
+                  selected_storage_port_name = "sel_STORE";
+                  return get_storage_port(storage_it->second, {selected_storage_port_name}, port->get_kind(),
+                                          port_info.index);
+               }
+               if(port_info.kind == "d")
+               {
+                  if(HLSMgr->get_ding_dong_buffer_candidate(top_id, port_info.var) &&
+                     module_role != dataflow_memory_role::writer)
+                  {
+                     return structural_objectRef();
+                  }
+                  selected_storage_port_name = "in1";
+                  return get_storage_port(storage_it->second, {selected_storage_port_name}, port->get_kind(),
+                                          port_info.index);
+               }
+               return structural_objectRef();
+            }();
+            if(!storage_port)
             {
                continue;
             }
-            const auto storage_port =
-                get_indexed_storage_port(storage_it->second, storage_port_name, port->get_kind(), port_info.index);
-            THROW_ASSERT(storage_port, "Missing local storage input port for " + port->get_path());
             if(port->get_kind() == port_o_K && storage_port->get_kind() == port_o_K)
             {
                const auto* storage_module = GetPointerS<const module_o>(storage_it->second);
                const auto storage_bitsize_parameter =
-                   storage_port_name == "in2" && storage_module->ExistsParameter("BITSIZE_proxy_in2") ?
-                       "BITSIZE_proxy_in2" :
-                       "BITSIZE_" + storage_port_name;
+                   starts_with(selected_storage_port_name, "in2") &&
+                           storage_module->ExistsParameter("BITSIZE_proxy_" + selected_storage_port_name) ?
+                       "BITSIZE_proxy_" + selected_storage_port_name :
+                       "BITSIZE_" + selected_storage_port_name;
                const auto storage_bitsize = storage_module->ExistsParameter(storage_bitsize_parameter) ?
                                                 std::stoull(storage_module->GetParameter(storage_bitsize_parameter)) :
                                                 STD_GET_SIZE(storage_port->get_typeRef());
@@ -870,6 +1190,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    const auto omp_info = FB->GetOMPInfo();
    const auto is_sparse_memory =
        parameters->isOption(OPT_sparse_memory) && parameters->getOption<bool>(OPT_sparse_memory);
+   const auto& ding_dong_candidates = HLSMgr->get_ding_dong_buffer_candidates(HLS->functionId);
    std::map<unsigned int, unsigned int> memory_units = allocation_information->get_memory_units();
    std::map<unsigned int, structural_objectRef> mem_obj;
    std::map<unsigned int, structural_objectRef> storage_by_var;
@@ -877,6 +1198,13 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    {
       const auto fu_type_id = m.first;
       auto var = m.second;
+      if(ding_dong_candidates.count(var))
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "---Skipping standard memory instantiation for ding-dong candidate " +
+                            HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->PrintVariable(var));
+         continue;
+      }
       std::string name;
       const auto fun_unit_name = allocation_information->get_fu_name(fu_type_id).first;
       if(allocation_information->is_direct_access_memory_unit(fu_type_id))
@@ -1284,7 +1612,151 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    {
       manage_memory_ports_parallel_chained(HLSMgr, SM, memory_modules, circuit, HLS, unique_id);
    }
-   connect_dataflow_memory_ports(SM, circuit, storage_by_var, unique_id);
+
+   for(const auto& [var, ding_dong_info] : ding_dong_candidates)
+   {
+      const auto channel_count = get_dataflow_memory_channel_count(circuit, HLS->functionId, var);
+      const auto ding_dong_name = "ding_dong_array_" + STR(var);
+      const auto ding_dong_type = channel_count > 1U ? "ARRAY_1D_STD_BRAM_NN_SDS_BASE" : "ARRAY_1D_STD_BRAM_SDS_BASE";
+      const auto ding_dong_library = TechM->get_library(ding_dong_type);
+      THROW_ASSERT(!ding_dong_library.empty(), std::string("Library miss component ") + ding_dong_type);
+      INDENT_DBG_MEX(
+          DEBUG_LEVEL_PEDANTIC, debug_level,
+          "---Adding ding-dong buffer " + ding_dong_name + " of type " + ding_dong_type + " from library " +
+              ding_dong_library + " bundles=[" +
+              [&]() {
+                 std::string s;
+                 for(const auto& b : ding_dong_info.bundle_names)
+                 {
+                    if(!s.empty())
+                    {
+                       s += ",";
+                    }
+                    s += b;
+                 }
+                 return s;
+              }() +
+              "]");
+      const auto ding_dong_buffer =
+          SM->add_module_from_technology_library(ding_dong_name, ding_dong_type, ding_dong_library, circuit, TechM);
+      const auto ding_dong_module = GetPointerS<module_o>(ding_dong_buffer);
+      const auto size_ding_dong_port_vectors = [&](const auto port_getter, const unsigned int port_count) {
+         for(unsigned int port_index = 0; port_index < port_count; ++port_index)
+         {
+            const auto port = port_getter(port_index);
+            if(port->get_kind() == port_vector_o_K && GetPointerS<const port_o>(port)->get_ports_size() == 0)
+            {
+               GetPointerS<port_o>(port)->add_n_ports(channel_count, port);
+            }
+         }
+      };
+      size_ding_dong_port_vectors([&](const auto port_index) { return ding_dong_module->get_in_port(port_index); },
+                                  ding_dong_module->get_in_port_size());
+      size_ding_dong_port_vectors([&](const auto port_index) { return ding_dong_module->get_out_port(port_index); },
+                                  ding_dong_module->get_out_port_size());
+      // Validate that the instantiated component has the expected port topology before wiring.
+      // Multi-channel components must expose vector ports for every data/address/control port;
+      // single-channel components use scalar ports for the same roles.
+      const auto validate_ding_dong_port = [&](const std::string& port_name, so_kind expected_kind,
+                                               unsigned int ASSERT_PARAMETER(expected_count)) {
+         const auto port = find_direct_module_port(ding_dong_buffer, port_name);
+         THROW_ASSERT(port && port->get_kind() == expected_kind,
+                      "Ding-dong buffer port " + ding_dong_buffer->get_path() + "/" + port_name +
+                          " has unexpected kind (expected " +
+                          (expected_kind == port_vector_o_K ? "port_vector_o_K" : "port_o_K") + ")");
+         if(expected_kind == port_vector_o_K)
+         {
+#if HAVE_ASSERTS
+            const auto actual_count = GetPointerS<const port_o>(port)->get_ports_size();
+#endif
+            THROW_ASSERT(actual_count == expected_count, "Ding-dong buffer port " + ding_dong_buffer->get_path() + "/" +
+                                                             port_name + " has " + STR(actual_count) + " entries but " +
+                                                             STR(expected_count) + " (channel_count) expected");
+         }
+      };
+      for(const auto& pname : {"in1", "in2r", "in2w", "in3r", "in3w", "in4r", "in4w", "out1", "sel_LOAD", "sel_STORE"})
+      {
+         validate_ding_dong_port(pname, channel_count > 1U ? port_vector_o_K : port_o_K, channel_count);
+      }
+      const auto base_address = HLSMgr->Rmem->get_symbol(var, HLS->functionId)->get_symbol_name();
+      const auto type_node = ir_helper::CGetType(IRM->GetIRNode(var));
+      const auto ding_dong_element_bitsize = std::max(1ULL, ir_helper::AccessedMaximumBitsize(type_node, 1));
+      const auto ding_dong_num_elements =
+          ir_helper::IsArrayType(type_node) ? std::max(1ULL, ir_helper::GetArrayTotalSize(type_node)) : 1ULL;
+      const auto ding_dong_write_bitsize = std::max(1ULL, get_dataflow_memory_port_bitsize(circuit, var, "d"));
+      const auto ding_dong_read_bitsize =
+          std::max(ding_dong_element_bitsize, get_dataflow_memory_port_bitsize(circuit, var, "q"));
+      const auto ding_dong_address_bitsize =
+          std::max(std::max(1ULL, get_dataflow_memory_port_bitsize(circuit, var, "address")),
+                   std::max(1ULL, ceil_log2(std::max(2ULL, ding_dong_num_elements))));
+      const auto ding_dong_size_bitsize = std::max(1ULL, HLSMgr->Rmem->get_bus_size_bitsize());
+      HLSMgr->Rmem->set_sds_var(var, true, ding_dong_element_bitsize);
+      ding_dong_buffer->SetParameter("address_space_begin", STR(base_address));
+      // Dataflow array interfaces expose element indices in the SDS case. Keep the ding-dong address
+      // space in the same domain so the instantiated primitive does not widen the address ports back to the global
+      // byte-address bus width.
+      ding_dong_buffer->SetParameter("address_space_rangesize", STR(ding_dong_num_elements));
+      ding_dong_buffer->SetParameter("USE_SPARSE_MEMORY", is_sparse_memory ? "1" : "0");
+      // InterfaceInfer array ports export element indices, not byte addresses. Keep the SDS base primitive from
+      // stripping byte offsets a second time by forcing byte-granular addressing here.
+      ding_dong_buffer->SetParameter("ALIGNMENT", "8");
+      ding_dong_buffer->SetParameter("n_elements", STR(ding_dong_num_elements));
+      ding_dong_buffer->SetParameter("data_size", STR(ding_dong_element_bitsize));
+      ding_dong_buffer->SetParameter("PRIVATE_MEMORY", HLSMgr->Rmem->is_private_memory(var) ? "1" : "0");
+      ding_dong_buffer->SetParameter("READ_ONLY_MEMORY", HLSMgr->Rmem->is_read_only_variable(var) ? "1" : "0");
+      ding_dong_buffer->SetParameter("MEMORY_INIT_file", "\"\"\"\"");
+      if(omp_info)
+      {
+         ding_dong_buffer->SetParameter("CONTEXT_COUNT", STR(omp_info->context_count));
+         ding_dong_buffer->SetParameter("CONTEXT_PAGE_BITSIZE", STR(ceil_log2(omp_info->mem_page_size)));
+      }
+      resize_named_port(ding_dong_buffer, "in1", ding_dong_write_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "in2r", ding_dong_address_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "in2w", ding_dong_address_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "in3r", ding_dong_size_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "in3w", ding_dong_size_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "out1", ding_dong_read_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "proxy_in1", ding_dong_write_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "proxy_in2r", ding_dong_address_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "proxy_in2w", ding_dong_address_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "proxy_in3r", ding_dong_size_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "proxy_in3w", ding_dong_size_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "proxy_out1", ding_dong_read_bitsize, debug_level);
+      memory::add_memory_parameter(HLS->datapath, base_address,
+                                   STR(HLSMgr->Rmem->get_base_address(var, HLS->functionId)));
+      check_parametrization(ding_dong_buffer);
+      memory::propagate_memory_parameters(ding_dong_buffer, HLS->datapath);
+      storage_by_var[var] = ding_dong_buffer;
+
+      if(const auto clk_port = ding_dong_buffer->find_member(CLOCK_PORT_NAME, port_o_K, ding_dong_buffer))
+      {
+         SM->add_connection(clk_port, clock_port);
+      }
+      if(const auto rst_port = ding_dong_buffer->find_member(RESET_PORT_NAME, port_o_K, ding_dong_buffer))
+      {
+         SM->add_connection(rst_port, reset_port);
+      }
+
+      const auto data_size = ding_dong_buffer->GetParameter("data_size");
+      connect_constant_to_port(SM, circuit, find_direct_module_port(ding_dong_buffer, "in3r"),
+                               "ding_dong_in3r_" + STR(var), data_size);
+      connect_constant_to_port(SM, circuit, find_direct_module_port(ding_dong_buffer, "in3w"),
+                               "ding_dong_in3w_" + STR(var), data_size);
+      connect_constant_to_port(SM, circuit, find_direct_module_port(ding_dong_buffer, "in4r"),
+                               "ding_dong_in4r_" + STR(var), "1");
+      connect_constant_to_port(SM, circuit, find_direct_module_port(ding_dong_buffer, "in4w"),
+                               "ding_dong_in4w_" + STR(var), "1");
+
+      for(const auto& zero_port_name :
+          {"S_oe_ram", "S_we_ram", "S_addr_ram", "S_Wdata_ram", "Sin_Rdata_ram", "S_data_ram_size", "Sin_DataRdy",
+           "proxy_in1", "proxy_in2r", "proxy_in2w", "proxy_in3r", "proxy_in3w", "proxy_in4r", "proxy_in4w",
+           "proxy_sel_LOAD", "proxy_sel_STORE"})
+      {
+         connect_constant_to_port(SM, circuit, find_direct_module_port(ding_dong_buffer, zero_port_name),
+                                  "ding_dong_" + std::string(zero_port_name) + "_" + STR(var), "0");
+      }
+   }
+   connect_dataflow_memory_ports(HLSMgr, HLS->functionId, SM, circuit, storage_by_var, unique_id);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Managed memory ports");
 
    /// rename back all the memory proxies ports
@@ -3284,9 +3756,29 @@ void fu_binding::add_smart_connection(const structural_objectRef src_port, const
 {
    if(src_port->get_owner() != circuit && dst_port->get_owner() != circuit)
    {
-      structural_objectRef sig = add_smart_signal(src_port, _unique_id, circuit, SM);
-      SM->add_connection(sig, src_port);
-      SM->add_connection(sig, dst_port);
+      const auto src_signal = GetPointerS<port_o>(src_port)->get_connected_signal();
+      const auto dst_signal = GetPointerS<port_o>(dst_port)->get_connected_signal();
+      if(src_signal)
+      {
+         THROW_ASSERT(!dst_signal || dst_signal == src_signal,
+                      "The destination port " + dst_port->get_path() + " is already connected to another signal");
+         if(!dst_signal)
+         {
+            SM->add_connection(src_signal, dst_port);
+         }
+      }
+      else if(dst_signal)
+      {
+         THROW_ASSERT(!src_signal || src_signal == dst_signal,
+                      "The source port " + src_port->get_path() + " is already connected to another signal");
+         SM->add_connection(dst_signal, src_port);
+      }
+      else
+      {
+         structural_objectRef sig = add_smart_signal(src_port, _unique_id, circuit, SM);
+         SM->add_connection(sig, src_port);
+         SM->add_connection(sig, dst_port);
+      }
    }
    else
    {

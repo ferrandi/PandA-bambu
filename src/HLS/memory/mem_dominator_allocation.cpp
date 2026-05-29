@@ -830,6 +830,200 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Pointers classification completed");
 
+   HLSMgr->clear_ding_dong_buffer_candidates();
+   const auto is_dataflow_top_function = [&](const unsigned int function_id) {
+      const auto function_name = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->GetFunctionName();
+      const auto func_arch = HLSMgr->module_arch->GetArchitecture(function_name);
+      return func_arch && func_arch->attrs.count(FunctionArchitecture::func_dataflow_top) &&
+             func_arch->attrs.at(FunctionArchitecture::func_dataflow_top) == "1";
+   };
+   const auto is_dataflow_module_function = [&](const unsigned int function_id) {
+      const auto function_name = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->GetFunctionName();
+      const auto func_arch = HLSMgr->module_arch->GetArchitecture(function_name);
+      return func_arch && func_arch->attrs.count(FunctionArchitecture::func_dataflow_module) &&
+             func_arch->attrs.at(FunctionArchitecture::func_dataflow_module) == "1";
+   };
+   const auto get_dataflow_bundle_names = [&](const unsigned int top_id, const unsigned int var_id,
+                                              const CustomOrderedSet<unsigned int>& dataflow_functions) {
+      std::set<std::string> bundle_names;
+      const auto expected_prefix = "DF_bambu_" + STR(top_id) + "_" + STR(var_id) + "FO";
+      for(const auto function_id : dataflow_functions)
+      {
+         const auto function_name =
+             HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->GetFunctionName();
+         const auto func_arch = HLSMgr->module_arch->GetArchitecture(function_name);
+         if(!func_arch)
+         {
+            continue;
+         }
+         for(const auto& [_, parm_attrs] : func_arch->parms)
+         {
+            const auto bundle_it = parm_attrs.find(FunctionArchitecture::parm_bundle);
+            if(bundle_it == parm_attrs.end() || !starts_with(bundle_it->second, expected_prefix))
+            {
+               continue;
+            }
+            const auto iface_it = func_arch->ifaces.find(bundle_it->second);
+            if(iface_it == func_arch->ifaces.end())
+            {
+               continue;
+            }
+            const auto mode_it = iface_it->second.find(FunctionArchitecture::iface_mode);
+            if(mode_it != iface_it->second.end() && (mode_it->second == "array" || mode_it->second == "default"))
+            {
+               bundle_names.insert(bundle_it->second);
+            }
+         }
+      }
+      return bundle_names;
+   };
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Ding-dong candidate classification...");
+   for(const auto& [top_id, var_uses] : var_map)
+   {
+      if(!is_dataflow_top_function(top_id))
+      {
+         continue;
+      }
+      // Collect all candidate variables for this dataflow top: those directly in its var_map
+      // plus those appearing in callee dataflow-module var_maps that are internal to this top.
+      // The latter are needed in BAMBU-BALANCED mode where each callee is a separate root
+      // function and therefore excluded from the top's own subgraph.
+      CustomOrderedSet<var_id_t> candidate_vars;
+      for(const auto& [var_id, _] : var_uses)
+      {
+         if(is_internal_obj(var_id, top_id, false))
+         {
+            candidate_vars.insert(var_id);
+         }
+      }
+      for(const auto& [other_top_id, other_var_uses] : var_map)
+      {
+         if(other_top_id == top_id || !is_dataflow_module_function(other_top_id))
+         {
+            continue;
+         }
+         for(const auto& [var_id, _] : other_var_uses)
+         {
+            if(is_internal_obj(var_id, top_id, false))
+            {
+               candidate_vars.insert(var_id);
+            }
+         }
+      }
+      for(const auto var_id : candidate_vars)
+      {
+         CustomOrderedSet<unsigned int> writer_functions;
+         CustomOrderedSet<unsigned int> reader_functions;
+         CustomOrderedSet<unsigned int> dataflow_functions;
+         const auto expected_prefix = "DF_bambu_" + STR(top_id) + "_" + STR(var_id) + "FO";
+         for(const auto& [other_top_id, other_var_uses] : var_map)
+         {
+            if(other_top_id == top_id || !other_var_uses.count(var_id) || !is_dataflow_module_function(other_top_id))
+            {
+               continue;
+            }
+            const auto function_id = other_top_id;
+            const auto function_name =
+                HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->GetFunctionName();
+            const auto func_arch = HLSMgr->module_arch->GetArchitecture(function_name);
+            if(!func_arch)
+            {
+               continue;
+            }
+            auto function_has_matching_bundle = false;
+            for(const auto& [parm_name, parm_attrs] : func_arch->parms)
+            {
+               (void)parm_name;
+               const auto bundle_it = parm_attrs.find(FunctionArchitecture::parm_bundle);
+               if(bundle_it == parm_attrs.end() || !starts_with(bundle_it->second, expected_prefix))
+               {
+                  continue;
+               }
+               const auto iface_it = func_arch->ifaces.find(bundle_it->second);
+               if(iface_it == func_arch->ifaces.end())
+               {
+                  continue;
+               }
+               const auto mode_it = iface_it->second.find(FunctionArchitecture::iface_mode);
+               const auto direction_it = iface_it->second.find(FunctionArchitecture::iface_direction);
+               if(mode_it == iface_it->second.end() || direction_it == iface_it->second.end())
+               {
+                  continue;
+               }
+               if(mode_it->second != "array" && mode_it->second != "default")
+               {
+                  continue;
+               }
+               function_has_matching_bundle = true;
+               if(direction_it->second == "OUT")
+               {
+                  writer_functions.insert(function_id);
+               }
+               else if(direction_it->second == "IN")
+               {
+                  reader_functions.insert(function_id);
+               }
+            }
+            if(function_has_matching_bundle)
+            {
+               dataflow_functions.insert(function_id);
+            }
+         }
+         if(writer_functions.size() != 1U || reader_functions.size() != 1U)
+         {
+            THROW_ERROR_USAGE(
+                "Ding-dong candidate " + STR(TM->GetIRNode(var_id)) + " is used by " + STR(writer_functions.size()) +
+                " writers and " + STR(reader_functions.size()) +
+                " readers (expected exactly 1 writer and 1 reader). "
+                "Ensure the variable is connected to exactly one producer and one consumer in the dataflow graph.");
+         }
+         const auto producer_function_id = *writer_functions.begin();
+         const auto consumer_function_id = *reader_functions.begin();
+         if(producer_function_id == consumer_function_id)
+         {
+            THROW_ERROR_USAGE("Ding-dong candidate " + STR(TM->GetIRNode(var_id)) +
+                              " has the same function as both writer and reader. "
+                              "This variable is used locally and should not be part of the dataflow interface.");
+         }
+         const auto bundle_names = get_dataflow_bundle_names(top_id, var_id, dataflow_functions);
+         if(bundle_names.empty())
+         {
+            THROW_ERROR_USAGE("Ding-dong candidate " + STR(TM->GetIRNode(var_id)) +
+                              " has no dataflow bundle names. "
+                              "Check that the variable is correctly connected to a dataflow interface bundle.");
+         }
+         HLS_manager::ding_dong_buffer_info candidate_info{producer_function_id, consumer_function_id, bundle_names};
+         HLSMgr->add_ding_dong_buffer_candidate(top_id, var_id, candidate_info);
+         INDENT_DBG_MEX(
+             DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+             "---Classified ding-dong candidate " + STR(TM->GetIRNode(var_id)) + " in dataflow top " +
+                 HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName() + " producer=" +
+                 HLSMgr->CGetFunctionBehavior(producer_function_id)->CGetBehavioralHelper()->GetFunctionName() +
+                 " consumer=" +
+                 HLSMgr->CGetFunctionBehavior(consumer_function_id)->CGetBehavioralHelper()->GetFunctionName());
+      }
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Ding-dong candidate classification completed");
+   CustomMap<var_id_t, top_id_t> ding_dong_owner_map;
+   // Build owner map from the registered candidates directly so that variables
+   // that are not in var_map[top_id] are still captured.
+   for(const auto& [candidate_top_id, candidate_map] : HLSMgr->get_ding_dong_buffer_candidates())
+   {
+      for(const auto& [candidate_var_id, _] : candidate_map)
+      {
+#if HAVE_ASSERTS
+         const auto inserted =
+#endif
+             ding_dong_owner_map.insert(std::make_pair(candidate_var_id, candidate_top_id));
+         if(!(inserted.second || inserted.first->second == candidate_top_id))
+         {
+            THROW_ERROR_USAGE("Ding-dong candidate " + STR(TM->GetIRNode(candidate_var_id)) +
+                              " is assigned to multiple dataflow tops. Ensure the variable belongs to only one "
+                              "top-level function's dataflow interface.");
+         }
+      }
+   }
+
    /// compute the number of instances for each function
    CustomMap<top_id_t, CustomMap<CallGraph::vertex_descriptor, unsigned int>> num_instances;
    CustomMap<top_id_t, CustomMap<func_id_t, std::vector<std::pair<var_id_t, bool>>>> memory_allocation_map;
@@ -911,6 +1105,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                             ", uses: " + STR(uses.size()) + ")");
          auto funID = top_id;
          auto multiple_top_call_graph = false;
+         const auto ding_dong_owner_it = ding_dong_owner_map.find(var_id);
+         const auto is_ding_dong_candidate = ding_dong_owner_it != ding_dong_owner_map.end();
          for(const auto& [fid, vu] : var_map)
          {
             if(fid != top_id && vu.count(var_id))
@@ -921,56 +1117,125 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          }
          if(multiple_top_call_graph)
          {
-            const auto top_func_name = HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName();
-            const auto func_arch = HLSMgr->module_arch->GetArchitecture(top_func_name);
-            const auto is_df_top = func_arch && func_arch->attrs.count(FunctionArchitecture::func_dataflow_top) &&
-                                   func_arch->attrs.at(FunctionArchitecture::func_dataflow_top) == "1";
-            const auto is_df_module = func_arch && func_arch->attrs.count(FunctionArchitecture::func_dataflow_module) &&
-                                      func_arch->attrs.at(FunctionArchitecture::func_dataflow_module) == "1";
-            if(is_df_top)
+            if(is_ding_dong_candidate)
             {
-               /// Dataflow top function only passes variable addresses to sub-modules.
-               /// The memory will be allocated inside each sub-module, not here.
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "<--Skipping variable " + STR(TM->GetIRNode(var_id)) +
-                                  " in dataflow top (allocated in sub-modules)");
-               continue;
-            }
-            if(is_df_module)
-            {
-               /// Dataflow module: allocate the variable internally.
-               /// Check for concurrent writes across dataflow modules (race condition).
-               const auto is_written = HLSMgr->get_written_objects().count(var_id);
-               unsigned int df_module_count = 0;
-               for(const auto& [other_top, other_vu] : var_map)
+               const auto ding_dong_owner_top = ding_dong_owner_it->second;
+               if(top_id == ding_dong_owner_top)
                {
-                  if(other_vu.count(var_id))
+                  funID = top_id;
+                  multiple_top_call_graph = false;
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Allocating ding-dong candidate " + STR(TM->GetIRNode(var_id)) +
+                                     " in dataflow top " +
+                                     HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName());
+               }
+               else
+               {
+                  INDENT_DBG_MEX(
+                      DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                      "<--Skipping ding-dong candidate " + STR(TM->GetIRNode(var_id)) + " in function " +
+                          HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName() +
+                          " (allocated in dataflow top " +
+                          HLSMgr->CGetFunctionBehavior(ding_dong_owner_top)->CGetBehavioralHelper()->GetFunctionName() +
+                          ")");
+                  continue;
+               }
+            }
+            if(multiple_top_call_graph)
+            {
+               const auto top_func_name =
+                   HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName();
+               const auto func_arch = HLSMgr->module_arch->GetArchitecture(top_func_name);
+               const auto is_df_top = func_arch && func_arch->attrs.count(FunctionArchitecture::func_dataflow_top) &&
+                                      func_arch->attrs.at(FunctionArchitecture::func_dataflow_top) == "1";
+               const auto is_df_module = func_arch &&
+                                         func_arch->attrs.count(FunctionArchitecture::func_dataflow_module) &&
+                                         func_arch->attrs.at(FunctionArchitecture::func_dataflow_module) == "1";
+               if(is_df_top)
+               {
+                  /// Dataflow top function only passes variable addresses to sub-modules.
+                  /// The memory will be allocated inside each sub-module, not here.
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "<--Skipping variable " + STR(TM->GetIRNode(var_id)) +
+                                     " in dataflow top (allocated in sub-modules)");
+                  continue;
+               }
+               if(is_df_module)
+               {
+                  /// If the variable has a DF_bambu dataflow interface bundle in this function's
+                  /// architecture, it is managed by the ding-dong buffer mechanism and should NOT
+                  /// be allocated here. The dataflow top function's allocation run handles it.
+                  const auto var_df_substring = "_" + STR(var_id) + "FO";
+                  auto has_df_bambu_bundle = false;
+                  if(func_arch)
                   {
-                     const auto other_name =
-                         HLSMgr->CGetFunctionBehavior(other_top)->CGetBehavioralHelper()->GetFunctionName();
-                     const auto other_arch = HLSMgr->module_arch->GetArchitecture(other_name);
-                     const auto other_is_df_module =
-                         other_arch && other_arch->attrs.count(FunctionArchitecture::func_dataflow_module) &&
-                         other_arch->attrs.at(FunctionArchitecture::func_dataflow_module) == "1";
-                     if(other_is_df_module)
+                     for(const auto& [parm_name, parm_attrs] : func_arch->parms)
                      {
-                        ++df_module_count;
+                        (void)parm_name;
+                        const auto bundle_it = parm_attrs.find(FunctionArchitecture::parm_bundle);
+                        if(bundle_it != parm_attrs.end() && starts_with(bundle_it->second, "DF_bambu_") &&
+                           bundle_it->second.find(var_df_substring) != std::string::npos)
+                        {
+                           has_df_bambu_bundle = true;
+                           break;
+                        }
                      }
                   }
+                  if(has_df_bambu_bundle)
+                  {
+                     const auto& candidates = HLSMgr->get_ding_dong_buffer_candidates(top_id);
+                     if(candidates.count(var_id))
+                     {
+                        INDENT_DBG_MEX(
+                            DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                            "<--Skipping DF_bambu dataflow variable " + STR(TM->GetIRNode(var_id)) + " in df_module " +
+                                HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName() +
+                                " (managed by ding-dong buffer mechanism)");
+                        continue;
+                     }
+                     else
+                     {
+                        THROW_ERROR_USAGE(
+                            "DF_bambu dataflow variable " + STR(TM->GetIRNode(var_id)) + " in df_module " +
+                            HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName() +
+                            " is not registered as a ding-dong buffer candidate. "
+                            "This usually happens when the variable does not follow the 1-writer-1-reader rule.");
+                     }
+                  }
+                  /// Dataflow module: allocate the variable internally.
+                  /// Check for concurrent writes across dataflow modules (race condition).
+                  const auto is_written = HLSMgr->get_written_objects().count(var_id);
+                  unsigned int df_module_count = 0;
+                  for(const auto& [other_top, other_vu] : var_map)
+                  {
+                     if(other_vu.count(var_id))
+                     {
+                        const auto other_name =
+                            HLSMgr->CGetFunctionBehavior(other_top)->CGetBehavioralHelper()->GetFunctionName();
+                        const auto other_arch = HLSMgr->module_arch->GetArchitecture(other_name);
+                        const auto other_is_df_module =
+                            other_arch && other_arch->attrs.count(FunctionArchitecture::func_dataflow_module) &&
+                            other_arch->attrs.at(FunctionArchitecture::func_dataflow_module) == "1";
+                        if(other_is_df_module)
+                        {
+                           ++df_module_count;
+                        }
+                     }
+                  }
+                  if(is_written && df_module_count > 1)
+                  {
+                     THROW_ERROR("Variable " + STR(TM->GetIRNode(var_id)) +
+                                 " is written by multiple concurrent dataflow modules. "
+                                 "Concurrent writes to the same memory cause race conditions");
+                  }
+                  if(!is_written && df_module_count > 1)
+                  {
+                     THROW_WARNING("Read-only variable " + STR(TM->GetIRNode(var_id)) + " is duplicated across " +
+                                   STR(df_module_count) + " concurrent dataflow modules");
+                  }
+                  /// Treat as single-top for internal allocation
+                  multiple_top_call_graph = false;
                }
-               if(is_written && df_module_count > 1)
-               {
-                  THROW_ERROR("Variable " + STR(TM->GetIRNode(var_id)) +
-                              " is written by multiple concurrent dataflow modules. "
-                              "Concurrent writes to the same memory cause race conditions");
-               }
-               if(!is_written && df_module_count > 1)
-               {
-                  THROW_WARNING("Read-only variable " + STR(TM->GetIRNode(var_id)) + " is duplicated across " +
-                                STR(df_module_count) + " concurrent dataflow modules");
-               }
-               /// Treat as single-top for internal allocation
-               multiple_top_call_graph = false;
             }
          }
          if(!no_local_mem)

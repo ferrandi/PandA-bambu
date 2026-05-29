@@ -109,6 +109,43 @@ std::vector<hlsRef> HLS_manager::GetAllImplementations() const
    return implementations;
 }
 
+void HLS_manager::clear_ding_dong_buffer_candidates()
+{
+   ding_dong_buffer_candidates_.clear();
+}
+
+void HLS_manager::add_ding_dong_buffer_candidate(const unsigned int top_id, const unsigned int var_id,
+                                                 const ding_dong_buffer_info& info)
+{
+   ding_dong_buffer_candidates_[top_id][var_id] = info;
+}
+
+const std::map<unsigned int, std::map<unsigned int, HLS_manager::ding_dong_buffer_info>>&
+HLS_manager::get_ding_dong_buffer_candidates() const
+{
+   return ding_dong_buffer_candidates_;
+}
+
+const std::map<unsigned int, HLS_manager::ding_dong_buffer_info>&
+HLS_manager::get_ding_dong_buffer_candidates(const unsigned int top_id) const
+{
+   static const std::map<unsigned int, ding_dong_buffer_info> empty_candidates;
+   const auto candidate_it = ding_dong_buffer_candidates_.find(top_id);
+   return candidate_it == ding_dong_buffer_candidates_.end() ? empty_candidates : candidate_it->second;
+}
+
+const HLS_manager::ding_dong_buffer_info* HLS_manager::get_ding_dong_buffer_candidate(const unsigned int top_id,
+                                                                                      const unsigned int var_id) const
+{
+   const auto top_it = ding_dong_buffer_candidates_.find(top_id);
+   if(top_it == ding_dong_buffer_candidates_.end())
+   {
+      return nullptr;
+   }
+   const auto var_it = top_it->second.find(var_id);
+   return var_it == top_it->second.end() ? nullptr : &var_it->second;
+}
+
 hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functionId)
 {
    THROW_ASSERT(functionId, "No function");

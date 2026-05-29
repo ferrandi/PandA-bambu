@@ -47,6 +47,7 @@
 #include <boost/preprocessor/seq/for_each.hpp>
 
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -155,6 +156,13 @@ class HLS_manager : public application_manager
    /// node
    using io_binding_type = std::tuple<unsigned int, unsigned int>;
 
+   struct ding_dong_buffer_info
+   {
+      unsigned int producer_function_id;
+      unsigned int consumer_function_id;
+      std::set<std::string> bundle_names;
+   };
+
  private:
    /// information about the target device/technology for the synthesis
    HLS_deviceRef HLS_D;
@@ -167,6 +175,9 @@ class HLS_manager : public application_manager
 
    /// The version of memory representation on which this step was applied
    unsigned int memory_version;
+
+   /// candidate shared dataflow-top local arrays eligible for ding-dong buffering
+   std::map<unsigned int, std::map<unsigned int, ding_dong_buffer_info>> ding_dong_buffer_candidates_;
 
  public:
    /// base address for memory space addressing
@@ -289,6 +300,22 @@ class HLS_manager : public application_manager
 
    /// returns a pair with the nth element of bundle_required and true if the element exist, false otherwise
    std::pair<std::string, bool> bundle_required_get_nth_element(unsigned int index) const;
+
+   /// clears the cached ding-dong buffer candidates
+   void clear_ding_dong_buffer_candidates();
+
+   /// stores a ding-dong candidate for a dataflow top local array
+   void add_ding_dong_buffer_candidate(unsigned int top_id, unsigned int var_id, const ding_dong_buffer_info& info);
+
+   /// returns all ding-dong buffer candidates (full map)
+   const std::map<unsigned int, std::map<unsigned int, HLS_manager::ding_dong_buffer_info>>&
+   get_ding_dong_buffer_candidates() const;
+
+   /// returns the ding-dong candidates associated with the given dataflow top
+   const std::map<unsigned int, ding_dong_buffer_info>& get_ding_dong_buffer_candidates(unsigned int top_id) const;
+
+   /// returns the ding-dong candidate for a given top/variable pair, or null if absent
+   const ding_dong_buffer_info* get_ding_dong_buffer_candidate(unsigned int top_id, unsigned int var_id) const;
 };
 /// refcount definition of the class
 using HLS_managerRef = refcount<HLS_manager>;

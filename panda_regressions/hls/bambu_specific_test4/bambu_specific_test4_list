@@ -7,3 +7,5 @@ multipath4.cpp --top-fname=dataflow_top --generate-tb=BENCHMARKS_ROOT/tb_dataflo
 multipath5.cpp --top-fname=dataflow_top --generate-tb=BENCHMARKS_ROOT/tb_dataflow2.cpp
 dataflow-struct.cpp --top-fname=dataflow_top --generate-tb=BENCHMARKS_ROOT/tb_dataflow2.cpp
 hls_stream_dataflow.cpp --top-fname=hls_stream_dataflow_top --generate-tb=BENCHMARKS_ROOT/tb_hls_stream_dataflow.cpp
+pipe_dataflow_stream.cpp --top-fname=top --generate-tb=BENCHMARKS_ROOT/pipe_dataflow_stream_tb.cpp
+pipe_dataflow_stream.cpp --benchmark-name=pipe_dataflow_stream_balanced --top-fname=top --generate-tb=BENCHMARKS_ROOT/pipe_dataflow_stream_tb.cpp --experimental-setup=BAMBU-BALANCED
