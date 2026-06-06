@@ -1011,9 +1011,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    {
       for(const auto& [candidate_var_id, _] : candidate_map)
       {
-#if HAVE_ASSERTS
          const auto inserted =
-#endif
              ding_dong_owner_map.insert(std::make_pair(candidate_var_id, candidate_top_id));
          if(!(inserted.second || inserted.first->second == candidate_top_id))
          {
