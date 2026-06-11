@@ -344,9 +344,9 @@ void ReadWriteMAXIHDLGenerator::InternalExec(std::ostream& out, structural_objec
                        std::stoull(iface_attrs.find(FunctionArchitecture::iface_cache_word_size)->second) :
                        8ull,
                    STD_GET_SIZE(GetPointerS<port_o>(out1_port)->get_typeRef()));
-      THROW_ASSERT(fe_data_w <= std::stoull(be_data_w),
-                   "ERROR: Cache frontend word size (" + STR(fe_data_w) +
-                       " bits) cannot be larger than cache backend bus size (" + be_data_w + " bits)");
+      THROW_ASSERT(fe_data_w <= std::stoull(be_data_w), "ERROR: Cache frontend word size (" + STR(fe_data_w) +
+                                                            " bits) cannot be larger than cache backend bus size (" +
+                                                            be_data_w + " bits)");
       THROW_ASSERT((1ULL << std::stoull(word_off_w)) * fe_data_w >= std::stoull(be_data_w),
                    "ERROR: Cache line of " + STR((1ULL << std::stoull(word_off_w)) * fe_data_w) +
                        " bits is smaller than bus size (" + STR(be_data_w) + ")");

@@ -755,7 +755,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                  ((raw_interface_type == "bus" || raw_interface_type == "default") ? ir_helper::Size(arg_type) : 0ULL) :
                  ir_helper::Size(arg_type);
          auto& iface_bitwidth = iface_attrs[FunctionArchitecture::iface_bitwidth];
-         iface_bitwidth = STR(std::max(default_iface_bitwidth, iface_bitwidth.empty() ? 0ULL : std::stoull(iface_bitwidth)));
+         iface_bitwidth =
+             STR(std::max(default_iface_bitwidth, iface_bitwidth.empty() ? 0ULL : std::stoull(iface_bitwidth)));
          iface_attrs[FunctionArchitecture::iface_alignment] =
              std::to_string(get_aligned_bitsize(ir_helper::Size(arg_type)) >> 3);
          auto& interface_type = iface_attrs[FunctionArchitecture::iface_mode];
@@ -802,7 +803,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   {
                      storage_type = ir_helper::CGetArrayBaseType(storage_type);
                   }
-                  const auto cache_word_bitsize = ceil_pow2(std::max(info.bitwidth, ir_helper::SizeAlloc(storage_type)));
+                  const auto cache_word_bitsize =
+                      ceil_pow2(std::max(info.bitwidth, ir_helper::SizeAlloc(storage_type)));
                   auto& cache_word_size = iface_attrs[FunctionArchitecture::iface_cache_word_size];
                   cache_word_size = std::to_string(
                       std::max(cache_word_size.empty() ? 0ULL : std::stoull(cache_word_size), cache_word_bitsize));
@@ -980,7 +982,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                }();
                const auto& parm_bundle = parm_attrs.at(FunctionArchitecture::parm_bundle);
                const auto bundle_max_bitwidth =
-                   interface_type == "m_axi" && bundle_max_storage_bitwidth.find(parm_bundle) != bundle_max_storage_bitwidth.end() ?
+                   interface_type == "m_axi" &&
+                           bundle_max_storage_bitwidth.find(parm_bundle) != bundle_max_storage_bitwidth.end() ?
                        bundle_max_storage_bitwidth.at(parm_bundle) :
                        0ULL;
                iface_attrs[FunctionArchitecture::iface_bitwidth] =
@@ -2659,10 +2662,9 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       GetPointerS<module_o>(interface_top)->set_multi_unit_multiplicity(1U);
 
       const auto address_bitsize = HLSMgr->get_address_bitsize();
-      const auto interface_bitwidth =
-          iface_attrs.find(FunctionArchitecture::iface_bitwidth) != iface_attrs.end() ?
-              std::stoull(iface_attrs.find(FunctionArchitecture::iface_bitwidth)->second) :
-              info.bitwidth;
+      const auto interface_bitwidth = iface_attrs.find(FunctionArchitecture::iface_bitwidth) != iface_attrs.end() ?
+                                          std::stoull(iface_attrs.find(FunctionArchitecture::iface_bitwidth)->second) :
+                                          info.bitwidth;
       const auto nbitDataSize = 64u - static_cast<unsigned>(__builtin_clzll(interface_bitwidth));
       const auto backEndBitsize =
           iface_attrs.find(FunctionArchitecture::iface_cache_bus_size) != iface_attrs.end() ?
