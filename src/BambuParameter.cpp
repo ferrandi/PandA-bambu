@@ -2300,8 +2300,8 @@ void BambuParameter::CheckParameters()
 {
    Parameter::CheckParameters();
 
-   setOption(OPT_simulation_output, getOption<std::string>(OPT_output_directory) + "/results.txt");
-   setOption(OPT_profiling_output, getOption<std::string>(OPT_output_directory) + "/profiling_results.txt");
+   setOption(OPT_simulation_output, getOption<std::string>(OPT_output_directory) + "/bambu_time_simulation.txt");
+   setOption(OPT_profiling_output, getOption<std::string>(OPT_output_directory) + "/bambu_profiling_simulation.txt");
    // TODO: this is a temporary hack. Before starting anything, the directory HLS_output/simulation/ needs to be
    // removed.
    auto sim_dir = getOption<std::filesystem::path>(OPT_output_hls_directory) / "simulation";

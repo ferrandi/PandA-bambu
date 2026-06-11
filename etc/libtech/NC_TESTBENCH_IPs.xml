@@ -274,7 +274,7 @@ endfunction"/>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
           <license>PANDA_MIT</license>
           <structural_type_descriptor id_type="TestbenchFSM"/>
-          <parameter name="RESFILE">&quot;&quot;results.txt&quot;&quot;</parameter>
+          <parameter name="RESFILE">&quot;&quot;bambu_time_simulation.txt&quot;&quot;</parameter>
           <parameter name="RESET_ACTIVE">0</parameter>
           <parameter name="RESET_CYCLES">1</parameter>
           <parameter name="RESET_ALWAYS">0</parameter>
@@ -319,7 +319,7 @@ time over_time;
 
 initial
 begin
-  // Open file results will be written
+  // Open file storing the cycles
   automatic integer res_file;
   res_file = $fopen(RESFILE, &quot;w&quot;);
   if (res_file == 0)
@@ -344,7 +344,7 @@ begin
   start_next = 0;
   over_time = 0;
   
-  $display(&quot;Results file: %s&quot;, RESFILE);
+  $display(&quot;Timing simulation file: %s&quot;, RESFILE);
   $display(&quot;Reset active: %0s&quot;, RESET_ACTIVE ? &quot;HIGH&quot; : &quot;LOW&quot;);
 end
 

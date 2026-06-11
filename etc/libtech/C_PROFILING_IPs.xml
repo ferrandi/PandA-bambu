@@ -12,7 +12,7 @@
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_MIT</license>
           <structural_type_descriptor id_type="builtin_bambu_time_start_FU"/>
-          <parameter name="PRORESFILE">&quot;&quot;profiling_results.txt&quot;&quot;</parameter>
+          <parameter name="PRORESFILE">&quot;&quot;bambu_profiling_simulation.txt&quot;&quot;</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -48,7 +48,7 @@ always @(posedge clock) done_port &lt;= start_port;"/>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_MIT</license>
           <structural_type_descriptor id_type="builtin_bambu_time_stop_FU"/>
-          <parameter name="PRORESFILE">&quot;&quot;profiling_results.txt&quot;&quot;</parameter>
+          <parameter name="PRORESFILE">&quot;&quot;bambu_profiling_simulation.txt&quot;&quot;</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>

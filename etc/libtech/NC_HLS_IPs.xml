@@ -150,7 +150,7 @@ integer res_file;
 always @(negedge clock)
   if(start_port == 1&apos;b1)
   begin
-    res_file = $fopen(&quot;results.txt&quot;,&quot;w&quot;);
+    res_file = $fopen(&quot;bambu_time_simulation.txt&quot;,&quot;w&quot;);
     $display(&quot;__builtin_trap called&quot;);
     $fwrite(res_file, &quot;0\t&quot;);
     $fwrite(res_file, &quot;%d\t&quot;, $time);
@@ -196,7 +196,7 @@ integer res_file;
 always @(negedge clock)
   if(start_port == 1&apos;b1)
   begin
-    res_file = $fopen(&quot;results.txt&quot;,&quot;w&quot;);
+    res_file = $fopen(&quot;bambu_time_simulation.txt&quot;,&quot;w&quot;);
     $display(&quot;__builtin_unreachable called&quot;);
     $fwrite(res_file, &quot;0\t&quot;);
     $fwrite(res_file, &quot;%d\t&quot;, $time);
@@ -212,7 +212,7 @@ process(clock)
 begin
     if (clock&apos;event and clock = &apos;0&apos;) then
       if(start_port = &apos;1&apos;) then
-        file_open(res_file, &quot;results.txt&quot;, WRITE_MODE);
+        file_open(res_file, &quot;bambu_time_simulation.txt&quot;, WRITE_MODE);
         report(&quot;__builtin_unreachable called&quot;);
         write(res_file, &quot;0&quot; &amp; HT &amp; time&apos;image(now) &amp; LF);
         file_close(res_file);
@@ -242,7 +242,7 @@ end process;
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_MIT</license>
           <structural_type_descriptor id_type="builtin_exit_FU"/>
-          <parameter name="RESFILE">&quot;&quot;results.txt&quot;&quot;</parameter>
+          <parameter name="RESFILE">&quot;&quot;bambu_time_simulation.txt&quot;&quot;</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -297,7 +297,7 @@ always @(posedge clock) done_port &lt;= start_port;"/>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_MIT</license>
           <structural_type_descriptor id_type="builtin_abort_FU"/>
-          <parameter name="RESFILE">&quot;&quot;results.txt&quot;&quot;</parameter>
+          <parameter name="RESFILE">&quot;&quot;bambu_time_simulation.txt&quot;&quot;</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>

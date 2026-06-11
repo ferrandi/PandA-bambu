@@ -99,5 +99,5 @@ if [ -f "${SYS_ELF}" ] && [ "${TARGET}" != "static_driver" ]; then
   SYS_LOG="${SIM_DIR}/$(basename ${SYS_ELF}).log"
   echo "Sim: Launch user testbench: LD_PRELOAD=\"${TB_PRELOAD}:${LD_PRELOAD}\" ${SYS_ELF} $@"
   (LD_PRELOAD="${TB_PRELOAD}:$LD_PRELOAD" ${SYS_ELF} "$@" 2>&1 | tee "${SYS_LOG}"; exit ${PIPESTATUS[0]})
-  convert_results results.txt > "${SWD}/bambu_results.xml"
+  convert_results bambu_time_simulation.txt > "${SWD}/bambu_results.xml"
 fi
