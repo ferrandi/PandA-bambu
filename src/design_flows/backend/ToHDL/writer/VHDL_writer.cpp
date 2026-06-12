@@ -1648,13 +1648,14 @@ void VHDL_writer::write_transition_output_functions(
       {
          continue;
       }
-      default_output.emplace_back("0");
+      const auto is_idle_port = mod->get_out_port(i)->get_id() == IDLE_PORT_NAME;
+      default_output.emplace_back(is_idle_port ? "1" : "0");
       if(!single_proc && output_index != i)
       {
          continue;
       }
       std::string port_name = HDL_manager::convert_to_identifier(mod->get_out_port(i)->get_id());
-      indented_output_stream->Append(port_name + " <= '0';\n");
+      indented_output_stream->Append(port_name + (is_idle_port ? " <= '1';\n" : " <= '0';\n"));
    }
    if(single_proc || output_index == mod->get_out_port_size())
    {
@@ -1833,6 +1834,10 @@ void VHDL_writer::write_transition_output_functions(
                         }
                         indented_output_stream->Append(";\n");
                      }
+                  }
+                  else if(current_output[i] == "0")
+                  {
+                     indented_output_stream->Append(port_name + " <= '0';\n");
                   }
                   else if(current_output[i] == "2")
                   {

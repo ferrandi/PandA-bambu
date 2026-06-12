@@ -159,7 +159,8 @@
 #define OPT_RESET_NAME (1 + OPT_CLOCK_NAME)
 #define OPT_START_NAME (1 + OPT_RESET_NAME)
 #define OPT_DONE_NAME (1 + OPT_START_NAME)
-#define OPT_POWER_OPTIMIZATION (1 + OPT_DONE_NAME)
+#define OPT_IDLE_NAME (1 + OPT_DONE_NAME)
+#define OPT_POWER_OPTIMIZATION (1 + OPT_IDLE_NAME)
 #define OPT_PRETTY_PRINT (1 + OPT_POWER_OPTIMIZATION)
 #define OPT_REGISTER_ALLOCATION (1 + OPT_PRETTY_PRINT)
 #define OPT_REGISTERED_INPUTS (1 + OPT_REGISTER_ALLOCATION)
@@ -513,6 +514,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Specify the start signal name of the top interface (default = start_port).\n\n"
       << "    --done-name=id\n"
       << "        Specify the done signal name of the top interface (default = done_port).\n\n"
+      << "    --idle-name=id\n"
+      << "        Specify the idle signal name of the top interface (default = idle_port).\n\n"
       << "    --clock-period=value\n"
       << "        Specify the period of the clock signal (default = 10ns).\n\n"
       << "    --backend-script-extensions=file\n"
@@ -925,6 +928,7 @@ int BambuParameter::Exec()
       {"reset-name", required_argument, nullptr, OPT_RESET_NAME},
       {"start-name", required_argument, nullptr, OPT_START_NAME},
       {"done-name", required_argument, nullptr, OPT_DONE_NAME},
+      {"idle-name", required_argument, nullptr, OPT_IDLE_NAME},
       {"power-optimization", no_argument, nullptr, OPT_POWER_OPTIMIZATION},
       {"connect-iob", no_argument, nullptr, OPT_CONNECT_IOB},
       {"reset-type", required_argument, nullptr, OPT_RESET_TYPE},
@@ -1312,6 +1316,11 @@ int BambuParameter::Exec()
          case OPT_DONE_NAME:
          {
             setOption(OPT_done_name, optarg);
+            break;
+         }
+         case OPT_IDLE_NAME:
+         {
+            setOption(OPT_idle_name, optarg);
             break;
          }
          case OPT_POWER_OPTIMIZATION:
@@ -3266,10 +3275,11 @@ void BambuParameter::CheckParameters()
    }
 
    if(getOption<bool>(OPT_memory_mapped_top) &&
-      (isOption(OPT_clock_name) || isOption(OPT_reset_name) || isOption(OPT_start_name) || isOption(OPT_done_name)))
+      (isOption(OPT_clock_name) || isOption(OPT_reset_name) || isOption(OPT_start_name) || isOption(OPT_done_name) ||
+       isOption(OPT_idle_name)))
    {
       THROW_ERROR_USAGE("Memory-mapped top interface does not allow renaming control signals. "
-                        "Remove clock/reset/start/done renaming options.");
+                        "Remove clock/reset/start/done/idle renaming options.");
    }
 
    if(!isOption(OPT_input_file))

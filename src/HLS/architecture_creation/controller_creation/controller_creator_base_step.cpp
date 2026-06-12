@@ -41,6 +41,7 @@
 
 #include "BambuParameter.hpp"
 #include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
 #include "commandport_obj.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
@@ -118,6 +119,15 @@ void ControllerCreatorBaseStep::add_common_ports(structural_objectRef circuit, s
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the start port...");
    this->add_start_port(circuit, SM);
 
+   /// add idle_port only for top functions
+   const auto& CGM = HLSMgr->CGetCallGraphManager();
+   const bool is_top = CGM.GetRootFunctions().count(funId) != 0;
+   if(is_top)
+   {
+      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the idle port (top function)...");
+      this->add_idle_port(circuit, SM);
+   }
+
    const auto omp_info = HLSMgr->CGetFunctionBehavior(funId)->GetOMPInfo();
    if(omp_info && omp_info->context_count > 1U)
    {
@@ -164,6 +174,16 @@ void ControllerCreatorBaseStep::add_start_port(structural_objectRef circuit, str
    /// add the start port
    SM->add_port(START_PORT_NAME, port_o::IN, circuit, port_type);
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - Start signal added!");
+}
+
+void ControllerCreatorBaseStep::add_idle_port(structural_objectRef circuit, structural_managerRef SM)
+{
+   /// define Boolean type for the idle port
+   structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Start adding Idle signal...");
+   /// add idle port as output (high when the top is not operating)
+   SM->add_port(IDLE_PORT_NAME, port_o::OUT, circuit, port_type);
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - Idle signal added!");
 }
 
 void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit, structural_managerRef SM)

@@ -135,6 +135,14 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
    void add_start_port(structural_objectRef circuit, structural_managerRef SM);
 
    /**
+    * Adds the idle port to a circuit. Called by add_common_ports, only for top functions.
+    * The idle port is high when the top is not operating (no computation in progress).
+    * \param circuit the circuit where to add the idle port
+    * \param SM is the structural manager owning the circuit
+    */
+   void add_idle_port(structural_objectRef circuit, structural_managerRef SM);
+
+   /**
     * Adds the command ports to a circuit. Called by add_common_ports
     * Command ports are of three types:
     * - Selectors to enable functional units in the datapath, these go from the controller to the datapath

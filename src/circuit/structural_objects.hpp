@@ -84,6 +84,7 @@ class simple_indent;
 #define RESET_PORT_NAME "reset"
 #define CACHE_RESET_PORT_NAME "cache_reset"
 #define DONE_PORT_NAME "done_port"
+#define IDLE_PORT_NAME "idle_port"
 #define RETURN_PORT_NAME "return_port"
 #define START_PORT_NAME_CFC "start_port_CFC"
 #define DONE_PORT_NAME_CFC "done_port_CFC"

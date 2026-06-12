@@ -254,6 +254,18 @@ DesignFlowStep_Status top_entity::InternalExec()
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tDone signal added!");
 
+   /// propagate idle_port only for top functions
+   if(is_top)
+   {
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tStart adding Idle signal...");
+      const auto idle_obj = SM->add_port(IDLE_PORT_NAME, port_o::OUT, circuit, bool_type);
+      THROW_ASSERT(idle_obj, "Idle port not added in the top component");
+      const auto controller_idle = controller_circuit->find_member(IDLE_PORT_NAME, port_o_K, controller_circuit);
+      THROW_ASSERT(controller_idle, "Idle signal not found in the controller");
+      SM->add_connection(controller_idle, idle_obj);
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tIdle signal added!");
+   }
+
    /// add entry in in_port_map between port id and port index
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tAdding input/output ports...");

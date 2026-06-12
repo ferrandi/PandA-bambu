@@ -374,6 +374,14 @@ void TopEntityMemoryMapped::insertStartDoneLogic(structural_managerRef SM_mm, st
       SM_mm->add_connection(sig_done_port, if_done_port);
    }
 
+   const auto if_idle_port = interfaceObj->find_member(IDLE_PORT_NAME, port_o_K, interfaceObj);
+   if(if_idle_port)
+   {
+      const auto wrapped_idle_port = wrappedObj->find_member(IDLE_PORT_NAME, port_o_K, wrappedObj);
+      THROW_ASSERT(wrapped_idle_port, "Expected wrapped idle_port when propagating memory-mapped idle state");
+      connect_with_signal_name(SM_mm, wrapped_idle_port, if_idle_port, "sig_idle_port");
+   }
+
    if(!is_root_function && HLSMgr->CGetCallGraphManager().ExistsAddressedFunction())
    {
       const auto multi_channel_bus = _channels_type == MemoryAllocation_ChannelsType::MEM_ACC_NN;
@@ -474,6 +482,7 @@ static void propagateInterface(structural_managerRef SM, structural_objectRef wr
 
       const auto portID = portObj->get_id();
       if(portID != CLOCK_PORT_NAME && portID != RESET_PORT_NAME && portID != DONE_PORT_NAME &&
+         portID != IDLE_PORT_NAME &&
          (ParametersName.empty() || (portID != START_PORT_NAME && portID != RETURN_PORT_NAME &&
                                      !std::count(ParametersName.begin(), ParametersName.end(), portID))))
       {

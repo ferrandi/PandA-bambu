@@ -45,6 +45,7 @@
 #include "allocation_information.hpp"
 #include "basic_block.hpp"
 #include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
 #include "commandport_obj.hpp"
 #include "conn_binding.hpp"
 #include "copyrights_strings.hpp"
@@ -152,6 +153,9 @@ void fsm_controller::create_state_machine(std::string& parse)
    const auto is_function_pipelined = FB->is_function_pipelined();
    const auto IRM = HLSMgr->get_ir_manager();
    auto fsm_info = HLS->fsm_info;
+   const auto& CGM = HLSMgr->CGetCallGraphManager();
+   const bool is_top = CGM.GetRootFunctions().count(funId) != 0;
+   const auto fsm_output_size = out_num + (is_top ? 1U : 0U);
 
    const auto entry = fsm_info->entryNode;
    const auto get_fsm_state = [&](vertex_descriptor state) -> const FSMInfo::stateData& {
@@ -189,7 +193,7 @@ void fsm_controller::create_state_machine(std::string& parse)
       state_Xregs[v] = std::vector<bool>(HLS->Rreg->get_used_regs(), true);
       const auto& state_info = get_fsm_state(v);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + state_info.name);
-      present_state[v] = std::vector<long long int>(out_num, 0);
+      present_state[v] = std::vector<long long int>(fsm_output_size, 0);
 
       if(selectors.find(conn_binding::IN) != selectors.end())
       {
@@ -607,7 +611,7 @@ void fsm_controller::create_state_machine(std::string& parse)
             assert_done_port = last_transition;
          }
 
-         std::vector<long long int> transition_outputs(out_num, default_COND);
+         std::vector<long long int> transition_outputs(fsm_output_size, default_COND);
          for(unsigned int k = 0; k < out_num; k++)
          {
             if(present_state[v][k] == 1 && unbounded_ports.find(k) == unbounded_ports.end())

@@ -228,6 +228,12 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
    auto fsm_start = tb_fsm->find_member(START_PORT_NAME, port_o_K, tb_fsm);
    auto dut_done = dut->find_member(DONE_PORT_NAME, port_o_K, dut);
    THROW_ASSERT(dut_done, "DUT done_port is missing.");
+   const auto dut_idle = dut->find_member(IDLE_PORT_NAME, port_o_K, dut);
+   if(dut_idle)
+   {
+      const auto sig = tb_top->add_sign("sig_map_" IDLE_PORT_NAME, tb_cir, dut_idle->get_typeRef());
+      tb_top->add_connection(dut_idle, sig);
+   }
 
    std::list<structural_objectRef> if_modules;
    const auto interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);

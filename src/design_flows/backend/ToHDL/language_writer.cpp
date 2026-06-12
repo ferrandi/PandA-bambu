@@ -115,7 +115,7 @@ void language_writer::WriteFile(const std::string& filename) const
 
 const CustomSet<std::string>& language_writer::GetHDLReservedNames()
 {
-   static CustomSet<std::string> ret = {RESET_PORT_NAME, CLOCK_PORT_NAME,   DONE_PORT_NAME,
+   static CustomSet<std::string> ret = {RESET_PORT_NAME, CLOCK_PORT_NAME,   DONE_PORT_NAME,  IDLE_PORT_NAME,
                                         START_PORT_NAME, WENABLE_PORT_NAME, RETURN_PORT_NAME};
    return ret;
 }

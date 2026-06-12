@@ -1658,7 +1658,6 @@ void verilog_writer::write_transition_output_functions(
          stages_relations_in[tuple.at(0)][std::stoi(tuple.at(1))] = cmd_stage;
       }
    }
-
    /// state transitions description
 #ifdef VERILOG_2001_SUPPORTED
    indented_output_stream->Append("\nalways @(*)\nbegin");
@@ -1702,13 +1701,14 @@ void verilog_writer::write_transition_output_functions(
       {
          continue;
       }
-      default_output.emplace_back("0");
+      const auto is_idle_port = mod->get_out_port(i)->get_id() == IDLE_PORT_NAME;
+      default_output.emplace_back(is_idle_port ? "1" : "0");
       if(!single_proc && output_index != i)
       {
          continue;
       }
       port_name = HDL_manager::convert_to_identifier(mod->get_out_port(i)->get_id());
-      indented_output_stream->Append(port_name + " = 1'b0;\n");
+      indented_output_stream->Append(port_name + (is_idle_port ? " = 1'b1;\n" : " = 1'b0;\n"));
    }
 
    if(np->exist_NP_functionality(NP_functionality::FSM_CS))
@@ -1861,6 +1861,10 @@ void verilog_writer::write_transition_output_functions(
                         }
                         indented_output_stream->Append(";\n");
                      }
+                  }
+                  else if(current_output[i] == "0")
+                  {
+                     indented_output_stream->Append(port_name + " = 1'b0;\n");
                   }
                   else if(current_output[i] == "2")
                   {

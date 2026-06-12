@@ -1362,6 +1362,10 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
          {
             port_name = parameters->getOption<std::string>(OPT_done_name);
          }
+         else if(parameters->isOption(OPT_idle_name) && port_name == IDLE_PORT_NAME)
+         {
+            port_name = parameters->getOption<std::string>(OPT_idle_name);
+         }
          structural_objectRef ext_port;
          if(port_out->get_kind() == port_vector_o_K)
          {

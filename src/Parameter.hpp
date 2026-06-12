@@ -115,9 +115,9 @@ class xml_element;
        cc_optimizations)(cc_parameters)(cc_plugindir)(cc_standard)(cc_undefines)(cc_warnings)(cc_E)(cc_S)(openmp)(  \
        cc_xlang)
 
-#define SYNTHESIS_OPTIONS                                                                                            \
-   (clock_period)(clock_name)(reset_name)(start_name)(done_name)(device_string)(synthesis_flow)(target_device_file)( \
-       target_device_script)(writer_language)
+#define SYNTHESIS_OPTIONS                                                                                   \
+   (clock_period)(clock_name)(reset_name)(start_name)(done_name)(idle_name)(device_string)(synthesis_flow)( \
+       target_device_file)(target_device_script)(writer_language)
 
 #define EUCALIPTUS_OPTIONS (component_name)
 
