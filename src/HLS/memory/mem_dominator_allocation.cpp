@@ -969,6 +969,13 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                dataflow_functions.insert(function_id);
             }
          }
+         if(dataflow_functions.empty())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Skipping non-interface internal variable " + STR(TM->GetIRNode(var_id)) +
+                               " while classifying ding-dong candidates");
+            continue;
+         }
          if(writer_functions.size() != 1U || reader_functions.size() != 1U)
          {
             THROW_ERROR_USAGE(
