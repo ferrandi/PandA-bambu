@@ -160,6 +160,8 @@ class HLS_manager : public application_manager
    {
       unsigned int producer_function_id;
       unsigned int consumer_function_id;
+      std::set<unsigned int> producer_function_ids;
+      std::set<unsigned int> consumer_function_ids;
       std::set<std::string> bundle_names;
    };
 

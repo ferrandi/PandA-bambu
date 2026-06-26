@@ -94,6 +94,7 @@ void ReadAxisHDLGenerator::InternalExec(std::ostream& out, structural_objectRef 
    {
       THROW_ERROR("Registered AXI-Stream interface not yet implemented.");
    }
+
    out << "reg started;\n"
        << "wire started_0, active;\n\n";
 
@@ -114,7 +115,8 @@ void ReadAxisHDLGenerator::InternalExec(std::ostream& out, structural_objectRef 
 
    out << "assign " << _ports_out[o_out1].name << " = {" << _ports_in[i_tvalid].name << ", " << _ports_in[i_tdata].name
        << "};\n";
-   out << "assign " << _ports_out[o_done].name << " = active & (" << _ports_in[i_tvalid].name << "|(1&"
-       << _ports_in[i_async].name << "));\n";
-   out << "assign " << _ports_out[o_ready].name << " = active & " << _ports_in[i_tvalid].name << ";\n";
+   out << "assign " << _ports_out[o_done].name << " = active & (" << _ports_in[i_tvalid].name << "|(|"
+       << _ports_in[i_in2].name << "));\n";
+   out << "assign " << _ports_out[o_ready].name << " = (1&" << _ports_in[i_in1].name << ") & active & "
+       << _ports_in[i_tvalid].name << ";\n";
 }

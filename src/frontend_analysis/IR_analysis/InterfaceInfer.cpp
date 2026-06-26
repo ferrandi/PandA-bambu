@@ -164,6 +164,19 @@ namespace
       }
    }
 
+   void addVirtualOverToStatement(const ir_nodeRef& stmt, const ir_nodeRef& vssa)
+   {
+      if(!vssa)
+      {
+         return;
+      }
+      const auto stmt_node = GetPointerS<node_stmt>(stmt);
+      if(stmt_node->AddVover(vssa))
+      {
+         GetPointerS<ssa_node>(vssa)->AddUseStmt(stmt);
+      }
+   }
+
    void serializeInterfaceAccess(const ir_nodeRef& stmt, const std::string& interface_fname,
                                  std::map<std::string, ir_nodeRef>& last_interface_vdefs,
                                  const ir_manipulationRef& ir_man)
@@ -180,6 +193,75 @@ namespace
       stmt_node->SetVdef(new_vdef);
       GetPointerS<ssa_node>(new_vdef)->SetDefStmt(stmt);
       last_interface_vdefs[interface_fname] = new_vdef;
+   }
+
+   void preserveBlockingInterfaceAccess(const ir_nodeRef& stmt, const ir_nodeRef& original_stmt,
+                                        const std::string& interface_fname,
+                                        std::map<std::string, ir_nodeRef>& last_interface_vdefs,
+                                        const ir_manipulationRef& ir_man)
+   {
+      const auto stmt_node = GetPointerS<node_stmt>(stmt);
+      const auto original_stmt_node = GetPointerS<node_stmt>(original_stmt);
+      THROW_ASSERT(stmt_node, "Expected statement for blocking interface serialization");
+      THROW_ASSERT(original_stmt_node, "Expected original statement for blocking interface serialization");
+
+      if(original_stmt_node->memdef && !stmt_node->memdef)
+      {
+         stmt_node->memdef = original_stmt_node->memdef;
+         GetPointerS<ssa_node>(stmt_node->memdef)->SetDefStmt(stmt);
+      }
+      if(original_stmt_node->memuse && !stmt_node->memuse)
+      {
+         stmt_node->memuse = original_stmt_node->memuse;
+         GetPointerS<ssa_node>(stmt_node->memuse)->AddUseStmt(stmt);
+      }
+      for(const auto& vuse : original_stmt_node->vuses)
+      {
+         addVirtualUseToStatement(stmt, vuse);
+      }
+      for(const auto& vover : original_stmt_node->vovers)
+      {
+         addVirtualOverToStatement(stmt, vover);
+      }
+
+      const auto last_vdef = last_interface_vdefs.find(interface_fname);
+      if(last_vdef != last_interface_vdefs.end())
+      {
+         addVirtualUseToStatement(stmt, last_vdef->second);
+      }
+
+      ir_nodeRef stmt_vdef = stmt_node->vdef;
+      if(!stmt_vdef && original_stmt_node->vdef)
+      {
+         stmt_vdef = original_stmt_node->vdef;
+         stmt_node->SetVdef(stmt_vdef);
+         GetPointerS<ssa_node>(stmt_vdef)->SetDefStmt(stmt);
+      }
+      if(!stmt_vdef)
+      {
+         stmt_vdef = ir_man->create_ssa_name(ir_nodeRef(), ir_man->GetPointerType(ir_man->GetVoidType()), ir_nodeRef(),
+                                             ir_nodeRef(), true);
+         stmt_node->SetVdef(stmt_vdef);
+         GetPointerS<ssa_node>(stmt_vdef)->SetDefStmt(stmt);
+      }
+      last_interface_vdefs[interface_fname] = stmt_vdef;
+   }
+
+   bool isSimpleStreamInterface(const application_managerRef& AppM, unsigned int function_id,
+                                const std::string& bundle_name)
+   {
+      const auto HLSMgr = GetPointerS<HLS_manager>(AppM);
+      THROW_ASSERT(HLSMgr, "Expected HLS manager");
+      const auto top_fid = HLSMgr->CGetCallGraphManager().GetRootFunction(function_id);
+      const auto top_fname = HLSMgr->CGetFunctionBehavior(top_fid)->CGetBehavioralHelper()->GetFunctionName();
+      const auto& ifaces = HLSMgr->module_arch->GetArchitecture(top_fname)->ifaces;
+      const auto iface_it = ifaces.find(bundle_name);
+      if(iface_it == ifaces.end())
+      {
+         return false;
+      }
+      const auto mode_it = iface_it->second.find(FunctionArchitecture::iface_mode);
+      return mode_it != iface_it->second.end() && (mode_it->second == "axis" || mode_it->second == "fifo");
    }
 } // namespace
 
@@ -1163,6 +1245,7 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
    {
       ct_forward,
       ct_read,
+      ct_peek,
       ct_write
    };
    const auto propagate_arg_use = [&](ir_nodeRef arg_var, size_t use_count, ir_nodeRef fd_node,
@@ -1199,7 +1282,8 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
          }
          else if(called_fname.find("ac_channel") != std::string::npos)
          {
-            if(called_fname.find("_read_bambu_internal") != std::string::npos)
+            if(called_fname.find("_read_bambu_internal") != std::string::npos ||
+               called_fname.find("_peek_bambu_internal") != std::string::npos)
             {
                if(call_fd->list_of_args.size() >= 1 && call_fd->list_of_args.size() <= 4)
                {
@@ -1232,7 +1316,8 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
                {
                   THROW_ERROR("unexpected condition");
                }
-               return call_type::ct_read;
+               return called_fname.find("_peek_bambu_internal") != std::string::npos ? call_type::ct_peek :
+                                                                                       call_type::ct_read;
             }
             else if(called_fname.find("_write_bambu_internal") != std::string::npos)
             {
@@ -1304,7 +1389,7 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
       {
          return;
       }
-      if(ct == call_type::ct_read)
+      if(ct == call_type::ct_read || ct == call_type::ct_peek)
       {
          readStmt.push_back(stmt);
          info.update(val, "", parameters);
@@ -1514,6 +1599,21 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
    const auto ref_call = stmt->get_kind() == call_stmt_K;
    if(ret_call || ref_call)
    {
+      const auto is_peek_call = [&]() {
+         ir_nodeRef fnode;
+         if(ret_call)
+         {
+            const auto ga = GetPointerS<const assign_stmt>(stmt);
+            fnode = GetPointerS<const call_node>(ga->op1)->fn;
+         }
+         else
+         {
+            fnode = GetPointerS<const call_stmt>(stmt)->fn;
+         }
+         const auto raw_fname = ir_helper::GetFunctionName(fnode);
+         const auto demangled = cxa_demangle(raw_fname);
+         return (demangled.size() ? demangled : raw_fname).find("_peek_bambu_internal") != std::string::npos;
+      }();
       bool valid_var;
       ir_nodeRef valid_ptr;
       ir_nodeConstRef data_type;
@@ -1564,20 +1664,32 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
       const auto sel_type = ir_man->GetBooleanType();
       const auto ret_type = ir_man->GetCustomIntegerType(data_size + 1, true);
       const auto out_ptr_type = ir_man->GetPointerType(interface_datatype);
-      const auto interface_fname = ENCODE_FDNAME(arg_name, valid_var ? "_ReadAsync" : "_Read", "Channel");
+      const auto interface_fname = ENCODE_FDNAME(
+          arg_name, valid_var ? (is_peek_call ? "_PeekAsync" : "_ReadAsync") : (is_peek_call ? "_Peek" : "_Read"),
+          "Channel");
+      const auto preserve_blocking_dependences = !valid_var;
       const auto fdecl_node = [&]() {
          operationsR.insert(interface_fname);
          std::vector<ir_nodeConstRef> argsT;
+         argsT.push_back(sel_type);
          argsT.push_back(sel_type);
          return ir_man->create_function_decl(interface_fname, fd->parent, argsT, ret_type, BUILTIN_LOCINFO, false);
       }();
 
       std::vector<ir_nodeRef> args;
+      args.push_back(TM->CreateUniqueIntegerCst(!is_peek_call, sel_type));
       args.push_back(TM->CreateUniqueIntegerCst(valid_var, sel_type));
       const auto new_ce = ir_man->CreateCallExpr(fdecl_node, args, BUILTIN_LOCINFO);
       const auto new_call = ir_man->CreateAssignStmt(ret_type, nullptr, nullptr, new_ce, fd->index, BUILTIN_LOCINFO);
       curr_bb->PushBefore(new_call, stmt, AppM);
-      serializeInterfaceAccess(new_call, interface_fname, channel_read_vdefs, ir_man);
+      if(preserve_blocking_dependences)
+      {
+         preserveBlockingInterfaceAccess(new_call, stmt, interface_fname, channel_read_vdefs, ir_man);
+      }
+      else
+      {
+         serializeInterfaceAccess(new_call, interface_fname, channel_read_vdefs, ir_man);
+      }
       const auto retval = GetPointerS<const assign_stmt>(new_call)->op0;
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- AFTER: " + new_call->ToString());
 
@@ -1819,6 +1931,7 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
       const auto actual_type = ir_helper::CGetType(ga->op0);
       const auto bit_size_type = ir_man->GetUnsignedIntegerType();
       const auto boolean_type = ir_man->GetBooleanType();
+      const auto is_simple_stream_interface = isSimpleStreamInterface(AppM, fd->index, arg_name);
       const auto fdecl_node = [&]() {
          const auto interface_fname = ENCODE_FDNAME(arg_name, "_Read", "");
          operationsR.insert(interface_fname);
@@ -1831,9 +1944,9 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
                                              false);
       }();
       std::vector<ir_nodeRef> args;
-      const auto sel_value = TM->CreateUniqueIntegerCst(0, boolean_type);
-      const auto size_value =
-          TM->CreateUniqueIntegerCst(static_cast<long long>(ir_helper::Size(actual_type)), bit_size_type);
+      const auto sel_value = TM->CreateUniqueIntegerCst(is_simple_stream_interface ? 1 : 0, boolean_type);
+      const auto size_value = TM->CreateUniqueIntegerCst(
+          is_simple_stream_interface ? 0 : static_cast<long long>(ir_helper::Size(actual_type)), bit_size_type);
 
       const auto data_value = TM->CreateUniqueIntegerCst(0, interface_datatype);
       args.push_back(sel_value);
@@ -1937,6 +2050,7 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
       const auto bit_size_type = ir_man->GetUnsignedIntegerType();
       const auto out_ptr_type = ir_man->GetPointerType(interface_datatype);
       const auto interface_fname = ENCODE_FDNAME(arg_name, valid_var ? "_WriteAsync" : "_Write", "Channel");
+      const auto preserve_blocking_dependences = !valid_var;
       const auto fdecl_node = [&]() {
          operationsW.insert(interface_fname);
          std::vector<ir_nodeConstRef> argsT;
@@ -2073,9 +2187,16 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
          }
          else
          {
-            curr_bb->Replace(stmt, ga_call, false, AppM);
+            curr_bb->Replace(stmt, ga_call, preserve_blocking_dependences, AppM);
          }
-         serializeInterfaceAccess(ga_call, interface_fname, channel_write_vdefs, ir_man);
+         if(preserve_blocking_dependences)
+         {
+            preserveBlockingInterfaceAccess(ga_call, stmt, interface_fname, channel_write_vdefs, ir_man);
+         }
+         else
+         {
+            serializeInterfaceAccess(ga_call, interface_fname, channel_write_vdefs, ir_man);
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- AFTER: " + ga_call->ToString());
       }
       else
@@ -2087,9 +2208,16 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
          }
          else
          {
-            curr_bb->Replace(stmt, gc, false, AppM);
+            curr_bb->Replace(stmt, gc, preserve_blocking_dependences, AppM);
          }
-         serializeInterfaceAccess(gc, interface_fname, channel_write_vdefs, ir_man);
+         if(preserve_blocking_dependences)
+         {
+            preserveBlockingInterfaceAccess(gc, stmt, interface_fname, channel_write_vdefs, ir_man);
+         }
+         else
+         {
+            serializeInterfaceAccess(gc, interface_fname, channel_write_vdefs, ir_man);
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- AFTER: " + gc->ToString());
       }
    }
@@ -2122,6 +2250,7 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
       }
       const auto boolean_type = ir_man->GetBooleanType();
       const auto bit_size_type = ir_man->GetUnsignedIntegerType();
+      const auto is_simple_stream_interface = isSimpleStreamInterface(AppM, fd->index, arg_name);
 
       /// create the function_val_node
       const auto fdecl_node = [&]() {
@@ -2138,9 +2267,13 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
 
       std::vector<ir_nodeRef> args;
       args.push_back(TM->CreateUniqueIntegerCst(1, boolean_type));
-      args.push_back(TM->CreateUniqueIntegerCst(static_cast<long long>(ir_helper::Size(actual_type)), bit_size_type));
+      args.push_back(TM->CreateUniqueIntegerCst(
+          is_simple_stream_interface ? 0 : static_cast<long long>(ir_helper::Size(actual_type)), bit_size_type));
       args.push_back(value_node);
-      args.push_back(GetPointerS<const mem_access_node>(ga->op0)->op);
+      args.push_back(
+          is_simple_stream_interface ?
+              TM->CreateUniqueIntegerCst(0, ir_helper::CGetType(GetPointerS<const mem_access_node>(ga->op0)->op)) :
+              GetPointerS<const mem_access_node>(ga->op0)->op);
 
       const auto gc = ir_man->create_call_stmt(fdecl_node, args, ga->parent->index, BUILTIN_LOCINFO);
       curr_bb->Replace(stmt, gc, true, AppM);

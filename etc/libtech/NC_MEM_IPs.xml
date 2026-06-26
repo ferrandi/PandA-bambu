@@ -11582,7 +11582,7 @@ begin
     ReadData[i1*BITSIZE_dout_value+:BITSIZE_dout_value] = ReadDataOut[i1*BITSIZE_dout_value+:BITSIZE_dout_value];
     for(i2=1;i2&lt;PORTSIZE_address_inw;i2=i2+1)
     begin
-      ReadData[i1*BITSIZE_dout_value+:BITSIZE_dout_value] = ReadData[i1*BITSIZE_dout_value+:BITSIZE_dout_value]^ReadDataOut[(i2*PORTSIZE_address_inw+i1)*BITSIZE_dout_value+:BITSIZE_dout_value];
+      ReadData[i1*BITSIZE_dout_value+:BITSIZE_dout_value] = ReadData[i1*BITSIZE_dout_value+:BITSIZE_dout_value]^ReadDataOut[(i2*PORTSIZE_address_inr+i1)*BITSIZE_dout_value+:BITSIZE_dout_value];
     end
   end
   for(i1=0;i1&lt;PORTSIZE_address_inw;i1=i1+1)
@@ -11769,7 +11769,7 @@ begin
     ReadData[i1*BITSIZE_dout_value+:BITSIZE_dout_value] = ReadDataOut[i1*BITSIZE_dout_value+:BITSIZE_dout_value];
     for(i2=1;i2&lt;PORTSIZE_address_inw;i2=i2+1)
     begin
-      ReadData[i1*BITSIZE_dout_value+:BITSIZE_dout_value] = ReadData[i1*BITSIZE_dout_value+:BITSIZE_dout_value]^ReadDataOut[(i2*PORTSIZE_address_inw+i1)*BITSIZE_dout_value+:BITSIZE_dout_value];
+      ReadData[i1*BITSIZE_dout_value+:BITSIZE_dout_value] = ReadData[i1*BITSIZE_dout_value+:BITSIZE_dout_value]^ReadDataOut[(i2*PORTSIZE_address_inr+i1)*BITSIZE_dout_value+:BITSIZE_dout_value];
     end
   end
   for(i1=0;i1&lt;PORTSIZE_address_inw;i1=i1+1)
@@ -11803,6 +11803,7 @@ end
           <parameter name="n_elements">32</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="HIGH_LATENCY">0</parameter>
+          <parameter name="DISABLE_STD_DP_BRAM_MAPPING">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -11821,7 +11822,7 @@ end
           <port_vector_o id="dout_value" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="STD_NRNW_BRAM_GEN write_enable address_inr address_inw data_in dout_value MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY"
+          <NP_functionality LIBRARY="STD_NRNW_BRAM_GEN write_enable address_inr address_inw data_in dout_value MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY DISABLE_STD_DP_BRAM_MAPPING"
             IP_COMPONENT="STD_NRNW_BRAM_XOR,STD_DP_BRAM"
             VERILOG_PROVIDED="
 parameter nbit_addr = BITSIZE_address_inr &gt; BITSIZE_address_inw ? BITSIZE_address_inr : BITSIZE_address_inw;
@@ -11850,7 +11851,7 @@ begin
       .data_in(data_in[0+:BITSIZE_data_in]),
       .data_out(dout_value));
 end
-else if(PORTSIZE_address_inr == 2 &amp;&amp; PORTSIZE_address_inw == 2)
+else if(!DISABLE_STD_DP_BRAM_MAPPING &amp;&amp; PORTSIZE_address_inr == 2 &amp;&amp; PORTSIZE_address_inw == 2)
 begin
   assign address_in[0+:nbit_addr] = write_enable[0] ? address_inw[0+:BITSIZE_address_inw] : address_inr[0+:BITSIZE_address_inr];
   assign address_in[nbit_addr+:nbit_addr] = write_enable[1] ? address_inw[BITSIZE_address_inw+:BITSIZE_address_inw] : address_inr[BITSIZE_address_inr+:BITSIZE_address_inr];
@@ -17417,6 +17418,7 @@ begin
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <parameter name="HIGH_LATENCY">0</parameter>
           <parameter name="ALIGNMENT">32</parameter>
+          <parameter name="DISABLE_STD_DP_BRAM_MAPPING">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -17502,7 +17504,7 @@ begin
           <port_vector_o id="proxy_out1" dir="OUT" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_NN_SDS_BASE in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY HIGH_LATENCY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1"
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_NN_SDS_BASE in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY HIGH_LATENCY ALIGNMENT DISABLE_STD_DP_BRAM_MAPPING proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1"
             IP_COMPONENT="STD_NRNW_BRAM_GEN"
             VERILOG_PROVIDED="
 `ifndef _SIM_HAVE_CLOG2
@@ -17557,7 +17559,8 @@ STD_NRNW_BRAM_GEN #(
   .n_elements(n_elements),
   .MEMORY_INIT_file(MEMORY_INIT_file),
   .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
-  .HIGH_LATENCY(HIGH_LATENCY)
+  .HIGH_LATENCY(HIGH_LATENCY),
+  .DISABLE_STD_DP_BRAM_MAPPING(DISABLE_STD_DP_BRAM_MAPPING)
 ) STD_NRNW_BRAM_GEN_instance (
   .clock(clock),
   .write_enable(bram_write),

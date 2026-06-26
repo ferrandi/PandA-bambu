@@ -976,21 +976,24 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                                " while classifying ding-dong candidates");
             continue;
          }
-         if(writer_functions.size() != 1U || reader_functions.size() != 1U)
+         if(writer_functions.empty() || reader_functions.empty())
          {
-            THROW_ERROR_USAGE(
-                "Ding-dong candidate " + STR(TM->GetIRNode(var_id)) + " is used by " + STR(writer_functions.size()) +
-                " writers and " + STR(reader_functions.size()) +
-                " readers (expected exactly 1 writer and 1 reader). "
-                "Ensure the variable is connected to exactly one producer and one consumer in the dataflow graph.");
+            THROW_ERROR_USAGE("Ding-dong candidate " + STR(TM->GetIRNode(var_id)) + " is used by " +
+                              STR(writer_functions.size()) + " writers and " + STR(reader_functions.size()) +
+                              " readers (expected at least 1 writer and 1 reader). "
+                              "Ensure the variable is connected to producer and consumer dataflow modules.");
          }
-         const auto producer_function_id = *writer_functions.begin();
-         const auto consumer_function_id = *reader_functions.begin();
-         if(producer_function_id == consumer_function_id)
+         for(const auto writer_function_id : writer_functions)
          {
-            THROW_ERROR_USAGE("Ding-dong candidate " + STR(TM->GetIRNode(var_id)) +
-                              " has the same function as both writer and reader. "
-                              "This variable is used locally and should not be part of the dataflow interface.");
+            if(reader_functions.count(writer_function_id))
+            {
+               THROW_ERROR_USAGE(
+                   "Ding-dong candidate " + STR(TM->GetIRNode(var_id)) +
+                   " has the same function as both writer and reader: " +
+                   HLSMgr->CGetFunctionBehavior(writer_function_id)->CGetBehavioralHelper()->GetFunctionName() +
+                   ". Each dataflow module connected to a ding-dong buffer must be either a writer or "
+                   "a reader.");
+            }
          }
          const auto bundle_names = get_dataflow_bundle_names(top_id, var_id, dataflow_functions);
          if(bundle_names.empty())
@@ -999,15 +1002,17 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                               " has no dataflow bundle names. "
                               "Check that the variable is correctly connected to a dataflow interface bundle.");
          }
-         HLS_manager::ding_dong_buffer_info candidate_info{producer_function_id, consumer_function_id, bundle_names};
+         const auto producer_function_id = *writer_functions.begin();
+         const auto consumer_function_id = *reader_functions.begin();
+         HLS_manager::ding_dong_buffer_info candidate_info{
+             producer_function_id, consumer_function_id,
+             std::set<unsigned int>(writer_functions.begin(), writer_functions.end()),
+             std::set<unsigned int>(reader_functions.begin(), reader_functions.end()), bundle_names};
          HLSMgr->add_ding_dong_buffer_candidate(top_id, var_id, candidate_info);
-         INDENT_DBG_MEX(
-             DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-             "---Classified ding-dong candidate " + STR(TM->GetIRNode(var_id)) + " in dataflow top " +
-                 HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName() + " producer=" +
-                 HLSMgr->CGetFunctionBehavior(producer_function_id)->CGetBehavioralHelper()->GetFunctionName() +
-                 " consumer=" +
-                 HLSMgr->CGetFunctionBehavior(consumer_function_id)->CGetBehavioralHelper()->GetFunctionName());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Classified ding-dong candidate " + STR(TM->GetIRNode(var_id)) + " in dataflow top " +
+                            HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName() +
+                            " writers=" + STR(writer_functions.size()) + " readers=" + STR(reader_functions.size()));
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Ding-dong candidate classification completed");
@@ -1018,8 +1023,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    {
       for(const auto& [candidate_var_id, _] : candidate_map)
       {
-         const auto inserted =
-             ding_dong_owner_map.insert(std::make_pair(candidate_var_id, candidate_top_id));
+         const auto inserted = ding_dong_owner_map.insert(std::make_pair(candidate_var_id, candidate_top_id));
          if(!(inserted.second || inserted.first->second == candidate_top_id))
          {
             THROW_ERROR_USAGE("Ding-dong candidate " + STR(TM->GetIRNode(candidate_var_id)) +
@@ -1168,10 +1172,12 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                if(is_df_module)
                {
                   /// If the variable has a DF_bambu dataflow interface bundle in this function's
-                  /// architecture, it is managed by the ding-dong buffer mechanism and should NOT
-                  /// be allocated here. The dataflow top function's allocation run handles it.
+                  /// architecture, it is managed by the dataflow interconnect and should NOT be
+                  /// allocated here. Memory bundles are handled by the ding-dong buffer mechanism;
+                  /// stream bundles are handled by their channel interface.
                   const auto var_df_substring = "_" + STR(var_id) + "FO";
-                  auto has_df_bambu_bundle = false;
+                  auto has_df_bambu_memory_bundle = false;
+                  auto has_df_bambu_channel_bundle = false;
                   if(func_arch)
                   {
                      for(const auto& [parm_name, parm_attrs] : func_arch->parms)
@@ -1181,65 +1187,86 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                         if(bundle_it != parm_attrs.end() && starts_with(bundle_it->second, "DF_bambu_") &&
                            bundle_it->second.find(var_df_substring) != std::string::npos)
                         {
-                           has_df_bambu_bundle = true;
-                           break;
+                           const auto iface_it = func_arch->ifaces.find(bundle_it->second);
+                           auto is_memory_bundle = false;
+                           if(iface_it != func_arch->ifaces.end())
+                           {
+                              const auto mode_it = iface_it->second.find(FunctionArchitecture::iface_mode);
+                              is_memory_bundle = mode_it != iface_it->second.end() &&
+                                                 (mode_it->second == "array" || mode_it->second == "default");
+                           }
+                           has_df_bambu_memory_bundle |= is_memory_bundle;
+                           has_df_bambu_channel_bundle |= !is_memory_bundle;
                         }
                      }
                   }
-                  if(has_df_bambu_bundle)
+                  if(has_df_bambu_channel_bundle && !has_df_bambu_memory_bundle)
                   {
-                     const auto& candidates = HLSMgr->get_ding_dong_buffer_candidates(top_id);
-                     if(candidates.count(var_id))
-                     {
-                        INDENT_DBG_MEX(
-                            DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                            "<--Skipping DF_bambu dataflow variable " + STR(TM->GetIRNode(var_id)) + " in df_module " +
-                                HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName() +
-                                " (managed by ding-dong buffer mechanism)");
-                        continue;
-                     }
-                     else
-                     {
-                        THROW_ERROR_USAGE(
-                            "DF_bambu dataflow variable " + STR(TM->GetIRNode(var_id)) + " in df_module " +
-                            HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName() +
-                            " is not registered as a ding-dong buffer candidate. "
-                            "This usually happens when the variable does not follow the 1-writer-1-reader rule.");
-                     }
+                     INDENT_DBG_MEX(
+                         DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                         "---Allocating DF_bambu channel variable " + STR(TM->GetIRNode(var_id)) + " in df_module " +
+                             HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName() +
+                             " locally (shared access is managed by dataflow channel interface)");
+                     multiple_top_call_graph = false;
                   }
-                  /// Dataflow module: allocate the variable internally.
-                  /// Check for concurrent writes across dataflow modules (race condition).
-                  const auto is_written = HLSMgr->get_written_objects().count(var_id);
-                  unsigned int df_module_count = 0;
-                  for(const auto& [other_top, other_vu] : var_map)
+                  else
                   {
-                     if(other_vu.count(var_id))
+                     if(has_df_bambu_memory_bundle)
                      {
-                        const auto other_name =
-                            HLSMgr->CGetFunctionBehavior(other_top)->CGetBehavioralHelper()->GetFunctionName();
-                        const auto other_arch = HLSMgr->module_arch->GetArchitecture(other_name);
-                        const auto other_is_df_module =
-                            other_arch && other_arch->attrs.count(FunctionArchitecture::func_dataflow_module) &&
-                            other_arch->attrs.at(FunctionArchitecture::func_dataflow_module) == "1";
-                        if(other_is_df_module)
+                        const auto& candidates = HLSMgr->get_ding_dong_buffer_candidates(top_id);
+                        if(candidates.count(var_id))
                         {
-                           ++df_module_count;
+                           INDENT_DBG_MEX(
+                               DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                               "<--Skipping DF_bambu dataflow variable " + STR(TM->GetIRNode(var_id)) +
+                                   " in df_module " +
+                                   HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName() +
+                                   " (managed by ding-dong buffer mechanism)");
+                           continue;
+                        }
+                        else
+                        {
+                           THROW_ERROR_USAGE(
+                               "DF_bambu dataflow variable " + STR(TM->GetIRNode(var_id)) + " in df_module " +
+                               HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName() +
+                               " is not registered as a ding-dong buffer candidate. "
+                               "This usually happens when the variable does not follow the 1-writer-1-reader rule.");
                         }
                      }
+                     /// Dataflow module: allocate the variable internally.
+                     /// Check for concurrent writes across dataflow modules (race condition).
+                     const auto is_written = HLSMgr->get_written_objects().count(var_id);
+                     unsigned int df_module_count = 0;
+                     for(const auto& [other_top, other_vu] : var_map)
+                     {
+                        if(other_vu.count(var_id))
+                        {
+                           const auto other_name =
+                               HLSMgr->CGetFunctionBehavior(other_top)->CGetBehavioralHelper()->GetFunctionName();
+                           const auto other_arch = HLSMgr->module_arch->GetArchitecture(other_name);
+                           const auto other_is_df_module =
+                               other_arch && other_arch->attrs.count(FunctionArchitecture::func_dataflow_module) &&
+                               other_arch->attrs.at(FunctionArchitecture::func_dataflow_module) == "1";
+                           if(other_is_df_module)
+                           {
+                              ++df_module_count;
+                           }
+                        }
+                     }
+                     if(is_written && df_module_count > 1)
+                     {
+                        THROW_ERROR("Variable " + STR(TM->GetIRNode(var_id)) +
+                                    " is written by multiple concurrent dataflow modules. "
+                                    "Concurrent writes to the same memory cause race conditions");
+                     }
+                     if(!is_written && df_module_count > 1)
+                     {
+                        THROW_WARNING("Read-only variable " + STR(TM->GetIRNode(var_id)) + " is duplicated across " +
+                                      STR(df_module_count) + " concurrent dataflow modules");
+                     }
+                     /// Treat as single-top for internal allocation
+                     multiple_top_call_graph = false;
                   }
-                  if(is_written && df_module_count > 1)
-                  {
-                     THROW_ERROR("Variable " + STR(TM->GetIRNode(var_id)) +
-                                 " is written by multiple concurrent dataflow modules. "
-                                 "Concurrent writes to the same memory cause race conditions");
-                  }
-                  if(!is_written && df_module_count > 1)
-                  {
-                     THROW_WARNING("Read-only variable " + STR(TM->GetIRNode(var_id)) + " is duplicated across " +
-                                   STR(df_module_count) + " concurrent dataflow modules");
-                  }
-                  /// Treat as single-top for internal allocation
-                  multiple_top_call_graph = false;
                }
             }
          }

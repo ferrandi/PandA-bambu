@@ -82,6 +82,7 @@
 #include <fstream>
 #include <limits>
 #include <regex>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -104,6 +105,20 @@ namespace
       writer
    };
 
+   unsigned int get_dataflow_module_function_id(const HLS_managerRef& HLSMgr, const structural_objectRef& module)
+   {
+      static const auto top_function_wrapper_prefix = std::string("PBI_");
+      const auto mod_id = GET_TYPE_NAME(module);
+      const auto msymbol = (mod_id.size() && starts_with(mod_id, top_function_wrapper_prefix)) ?
+                               mod_id.substr(top_function_wrapper_prefix.size()) :
+                               mod_id;
+      if(const auto function_decl = HLSMgr->get_ir_manager()->GetFunction(msymbol))
+      {
+         return function_decl->index;
+      }
+      return 0U;
+   }
+
    bool parse_dataflow_memory_port(const structural_objectRef& port, dataflow_memory_port_info& info)
    {
       const std::regex dataflow_memory_port_re("^(?:p)?_DF_bambu_[0-9]+_([0-9]+)FO[0-9]+_(q|d|address|ce|we)([0-9]*)$");
@@ -124,19 +139,18 @@ namespace
    {
       if(const auto ding_dong_candidate = HLSMgr->get_ding_dong_buffer_candidate(top_id, var))
       {
-         static const auto top_function_wrapper_prefix = std::string("PBI_");
-         const auto mod_id = GET_TYPE_NAME(module);
-         const auto msymbol = (mod_id.size() && starts_with(mod_id, top_function_wrapper_prefix)) ?
-                                  mod_id.substr(top_function_wrapper_prefix.size()) :
-                                  mod_id;
-         if(const auto function_decl = HLSMgr->get_ir_manager()->GetFunction(msymbol))
+         const auto function_id = get_dataflow_module_function_id(HLSMgr, module);
+         if(function_id)
          {
-            const auto function_id = function_decl->index;
-            if(function_id == ding_dong_candidate->producer_function_id)
+            const auto is_writer = ding_dong_candidate->producer_function_ids.count(function_id);
+            const auto is_reader = ding_dong_candidate->consumer_function_ids.count(function_id);
+            THROW_ASSERT(!(is_writer && is_reader), "Dataflow module is both writer and reader for ding-dong buffer " +
+                                                        STR(var) + ": " + module->get_path());
+            if(is_writer)
             {
                return dataflow_memory_role::writer;
             }
-            if(function_id == ding_dong_candidate->consumer_function_id)
+            if(is_reader)
             {
                return dataflow_memory_role::reader;
             }
@@ -181,6 +195,101 @@ namespace
       return dataflow_memory_role::none;
    }
 
+   unsigned int get_dataflow_memory_local_port_index(const std::string& original_index)
+   {
+      return original_index.empty() ? 0U : static_cast<unsigned int>(std::stoul(original_index));
+   }
+
+   bool is_dataflow_memory_role_kind(const dataflow_memory_role role, const std::string& kind)
+   {
+      switch(role)
+      {
+         case dataflow_memory_role::reader:
+            return kind == "q" || kind == "address" || kind == "ce";
+         case dataflow_memory_role::writer:
+            return kind == "d" || kind == "address" || kind == "we";
+         case dataflow_memory_role::none:
+            return false;
+         default:
+            return false;
+      }
+   }
+
+   bool has_dataflow_memory_role_port(const structural_objectRef& module, const unsigned int var,
+                                      const dataflow_memory_role role)
+   {
+      const auto module_obj = GetPointer<module_o>(module);
+      if(!module_obj || role == dataflow_memory_role::none)
+      {
+         return false;
+      }
+      const auto inspect_port = [&](const structural_objectRef& port) {
+         dataflow_memory_port_info info;
+         return parse_dataflow_memory_port(port, info) && info.var == var &&
+                is_dataflow_memory_role_kind(role, info.kind);
+      };
+      for(unsigned int port_index = 0; port_index < module_obj->get_in_port_size(); ++port_index)
+      {
+         if(inspect_port(module_obj->get_in_port(port_index)))
+         {
+            return true;
+         }
+      }
+      for(unsigned int port_index = 0; port_index < module_obj->get_out_port_size(); ++port_index)
+      {
+         if(inspect_port(module_obj->get_out_port(port_index)))
+         {
+            return true;
+         }
+      }
+      return false;
+   }
+
+   unsigned int get_dataflow_module_channel_count(const HLS_managerRef& HLSMgr, const structural_objectRef& module)
+   {
+      const auto function_id = get_dataflow_module_function_id(HLSMgr, module);
+      if(function_id)
+      {
+         if(const auto FB = HLSMgr->CGetFunctionBehavior(function_id))
+         {
+            return std::max(1U, FB->GetChannelsNumber());
+         }
+      }
+      if(HLSMgr->get_parameter()->isOption(OPT_channels_number))
+      {
+         return std::max(1U, HLSMgr->get_parameter()->getOption<unsigned int>(OPT_channels_number));
+      }
+      return 1U;
+   }
+
+   unsigned int get_dataflow_memory_module_port_count(const HLS_managerRef& HLSMgr, const structural_objectRef& module,
+                                                      const unsigned int var, const dataflow_memory_role role)
+   {
+      if(!has_dataflow_memory_role_port(module, var, role))
+      {
+         return 0U;
+      }
+      return get_dataflow_module_channel_count(HLSMgr, module);
+   }
+
+   unsigned int get_dataflow_memory_role_port_count(const HLS_managerRef& HLSMgr, const unsigned int top_id,
+                                                    const structural_objectRef& circuit,
+                                                    const dataflow_memory_role role, const unsigned int var)
+   {
+      unsigned int port_count = 0U;
+      const auto circuit_obj = GetPointerS<const module_o>(circuit);
+      for(unsigned int module_index = 0; module_index < circuit_obj->get_internal_objects_size(); ++module_index)
+      {
+         const auto module = circuit_obj->get_internal_object(module_index);
+         if(infer_dataflow_memory_role(HLSMgr, top_id, module, var) != role)
+         {
+            continue;
+         }
+         port_count += get_dataflow_memory_module_port_count(HLSMgr, module, var, role);
+      }
+      return std::max(1U, port_count);
+   }
+
    structural_objectRef get_indexed_storage_port(const structural_objectRef& storage, const std::string& port_name,
                                                  so_kind requested_kind, const std::string& index)
    {
@@ -220,8 +329,10 @@ namespace
          if(const auto vector_port = find_direct_storage_port(port_vector_o_K))
          {
             const auto port_index = static_cast<unsigned int>(std::stoul(index));
-            THROW_ASSERT(port_index < GetPointerS<const port_o>(vector_port)->get_ports_size(),
-                         "Port index out of range for " + vector_port->get_path());
+            if(port_index >= GetPointerS<const port_o>(vector_port)->get_ports_size())
+            {
+               return structural_objectRef();
+            }
             return GetPointerS<port_o>(vector_port)->get_port(port_index);
          }
          if(requested_kind == port_o_K && index == "0")
@@ -271,39 +382,60 @@ namespace
       SM->add_connection(port, constant);
    }
 
-   unsigned int get_dataflow_memory_channel_count(const structural_objectRef& circuit, const unsigned int top_id,
-                                                  const unsigned int var)
+   std::string get_dataflow_storage_port_index(const HLS_managerRef& HLSMgr, const unsigned int top_id,
+                                               const structural_objectRef& circuit, const structural_objectRef& module,
+                                               const unsigned int var, const std::string& original_index)
    {
-      const std::regex bundle_re("^_DF_bambu_" + STR(top_id) + "_" + STR(var) +
-                                 "FO[0-9]+_(?:q|d|address|ce|we)([0-9]+)$");
-      unsigned int max_channel = 0;
-      const auto inspect_port = [&](const structural_objectRef& port) {
-         std::smatch match;
-         const auto port_name = GetPointerS<const port_o>(port)->get_id();
-         if(std::regex_match(port_name, match, bundle_re))
-         {
-            max_channel = std::max(max_channel, static_cast<unsigned int>(std::stoul(match[1].str())));
-         }
-      };
+      const auto ding_dong_candidate = HLSMgr->get_ding_dong_buffer_candidate(top_id, var);
+      if(!ding_dong_candidate)
+      {
+         return original_index;
+      }
+      const auto module_role = infer_dataflow_memory_role(HLSMgr, top_id, module, var);
+      if(module_role == dataflow_memory_role::none)
+      {
+         return original_index;
+      }
+      const auto local_port_index = get_dataflow_memory_local_port_index(original_index);
+      const auto local_port_count = get_dataflow_memory_module_port_count(HLSMgr, module, var, module_role);
+      if(local_port_index >= local_port_count)
+      {
+         THROW_ERROR("Local dataflow memory port index " + STR(local_port_index) + " exceeds " + STR(local_port_count) +
+                     " ports for " + module->get_path());
+      }
+      unsigned int global_port_index = local_port_index;
       const auto circuit_obj = GetPointerS<const module_o>(circuit);
       for(unsigned int module_index = 0; module_index < circuit_obj->get_internal_objects_size(); ++module_index)
       {
-         const auto module = circuit_obj->get_internal_object(module_index);
-         const auto module_obj = GetPointer<module_o>(module);
-         if(!module_obj)
+         const auto current_module = circuit_obj->get_internal_object(module_index);
+         if(current_module == module)
+         {
+            break;
+         }
+         if(infer_dataflow_memory_role(HLSMgr, top_id, current_module, var) != module_role)
          {
             continue;
          }
-         for(unsigned int port_index = 0; port_index < module_obj->get_in_port_size(); ++port_index)
-         {
-            inspect_port(module_obj->get_in_port(port_index));
-         }
-         for(unsigned int port_index = 0; port_index < module_obj->get_out_port_size(); ++port_index)
-         {
-            inspect_port(module_obj->get_out_port(port_index));
-         }
+         global_port_index += get_dataflow_memory_module_port_count(HLSMgr, current_module, var, module_role);
       }
-      return max_channel + 1U;
+      return STR(global_port_index);
+   }
+
+   bool is_active_dataflow_storage_port(const HLS_managerRef& HLSMgr, const unsigned int top_id,
+                                        const structural_objectRef& module, const unsigned int var,
+                                        const std::string& original_index)
+   {
+      if(!HLSMgr->get_ding_dong_buffer_candidate(top_id, var))
+      {
+         return true;
+      }
+      const auto role = infer_dataflow_memory_role(HLSMgr, top_id, module, var);
+      if(role == dataflow_memory_role::none)
+      {
+         return true;
+      }
+      return get_dataflow_memory_local_port_index(original_index) <
+             get_dataflow_memory_module_port_count(HLSMgr, module, var, role);
    }
 
    unsigned long long get_dataflow_memory_port_bitsize(const structural_objectRef& circuit, const unsigned int var,
@@ -414,9 +546,18 @@ namespace
             {
                continue;
             }
+            if(!is_active_dataflow_storage_port(HLSMgr, top_id, module, port_info.var, port_info.index))
+            {
+               continue;
+            }
+            const auto storage_port_index =
+                get_dataflow_storage_port_index(HLSMgr, top_id, circuit, module, port_info.var, port_info.index);
             const auto storage_port =
-                get_indexed_storage_port(storage_it->second, "out1", port->get_kind(), port_info.index);
-            THROW_ASSERT(storage_port, "Missing local storage output port for " + port->get_path());
+                get_indexed_storage_port(storage_it->second, "out1", port->get_kind(), storage_port_index);
+            if(!storage_port)
+            {
+               continue;
+            }
             fu_binding::add_smart_connection(storage_port, port, unique_id++, circuit, SM);
          }
          for(unsigned int port_index = 0; port_index < module_obj->get_out_port_size(); ++port_index)
@@ -432,7 +573,13 @@ namespace
             {
                continue;
             }
+            if(!is_active_dataflow_storage_port(HLSMgr, top_id, module, port_info.var, port_info.index))
+            {
+               continue;
+            }
             const auto module_role = infer_dataflow_memory_role(HLSMgr, top_id, module, port_info.var);
+            const auto storage_port_index =
+                get_dataflow_storage_port_index(HLSMgr, top_id, circuit, module, port_info.var, port_info.index);
             std::string selected_storage_port_name;
             const auto storage_port = [&]() -> structural_objectRef {
                if(port_info.kind == "address")
@@ -443,7 +590,7 @@ namespace
                          get_storage_port(storage_it->second, {"in2r"}, port->get_kind(), port_info.index) ? "in2r" :
                                                                                                              "in2";
                      return get_storage_port(storage_it->second, {selected_storage_port_name}, port->get_kind(),
-                                             port_info.index);
+                                             storage_port_index);
                   }
                   if(module_role == dataflow_memory_role::writer)
                   {
@@ -451,7 +598,7 @@ namespace
                          get_storage_port(storage_it->second, {"in2w"}, port->get_kind(), port_info.index) ? "in2w" :
                                                                                                              "in2";
                      return get_storage_port(storage_it->second, {selected_storage_port_name}, port->get_kind(),
-                                             port_info.index);
+                                             storage_port_index);
                   }
                   if(get_storage_port(storage_it->second, {"in2r"}, port->get_kind(), port_info.index))
                   {
@@ -466,7 +613,7 @@ namespace
                      selected_storage_port_name = "in2";
                   }
                   return get_storage_port(storage_it->second, {selected_storage_port_name}, port->get_kind(),
-                                          port_info.index);
+                                          storage_port_index);
                }
                if(port_info.kind == "ce")
                {
@@ -477,7 +624,7 @@ namespace
                   }
                   selected_storage_port_name = "sel_LOAD";
                   return get_storage_port(storage_it->second, {selected_storage_port_name}, port->get_kind(),
-                                          port_info.index);
+                                          storage_port_index);
                }
                if(port_info.kind == "we")
                {
@@ -488,7 +635,7 @@ namespace
                   }
                   selected_storage_port_name = "sel_STORE";
                   return get_storage_port(storage_it->second, {selected_storage_port_name}, port->get_kind(),
-                                          port_info.index);
+                                          storage_port_index);
                }
                if(port_info.kind == "d")
                {
@@ -499,7 +646,7 @@ namespace
                   }
                   selected_storage_port_name = "in1";
                   return get_storage_port(storage_it->second, {selected_storage_port_name}, port->get_kind(),
-                                          port_info.index);
+                                          storage_port_index);
                }
                return structural_objectRef();
             }();
@@ -1615,9 +1762,14 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
 
    for(const auto& [var, ding_dong_info] : ding_dong_candidates)
    {
-      const auto channel_count = get_dataflow_memory_channel_count(circuit, HLS->functionId, var);
+      const auto read_port_count =
+          get_dataflow_memory_role_port_count(HLSMgr, HLS->functionId, circuit, dataflow_memory_role::reader, var);
+      const auto write_port_count =
+          get_dataflow_memory_role_port_count(HLSMgr, HLS->functionId, circuit, dataflow_memory_role::writer, var);
+      const auto max_port_count = std::max(read_port_count, write_port_count);
       const auto ding_dong_name = "ding_dong_array_" + STR(var);
-      const auto ding_dong_type = channel_count > 1U ? "ARRAY_1D_STD_BRAM_NN_SDS_BASE" : "ARRAY_1D_STD_BRAM_SDS_BASE";
+      const std::string ding_dong_type =
+          max_port_count > 1U ? "ARRAY_1D_STD_BRAM_NN_SDS_BASE" : "ARRAY_1D_STD_BRAM_SDS_BASE";
       const auto ding_dong_library = TechM->get_library(ding_dong_type);
       THROW_ASSERT(!ding_dong_library.empty(), std::string("Library miss component ") + ding_dong_type);
       INDENT_DBG_MEX(
@@ -1640,13 +1792,47 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       const auto ding_dong_buffer =
           SM->add_module_from_technology_library(ding_dong_name, ding_dong_type, ding_dong_library, circuit, TechM);
       const auto ding_dong_module = GetPointerS<module_o>(ding_dong_buffer);
+      if(ding_dong_type == "ARRAY_1D_STD_BRAM_NN_SDS_BASE" &&
+         ding_dong_buffer->ExistsParameter("DISABLE_STD_DP_BRAM_MAPPING"))
+      {
+         ding_dong_buffer->SetParameter("DISABLE_STD_DP_BRAM_MAPPING", "1");
+      }
+      const auto ding_dong_port_count = [&](const std::string& port_name) {
+         if(port_name == "in1" || port_name == "in2w" || port_name == "in3w" || port_name == "in4w" ||
+            port_name == "sel_STORE" || port_name == "proxy_in1" || port_name == "proxy_in2w" ||
+            port_name == "proxy_in3w" || port_name == "proxy_in4w" || port_name == "proxy_sel_STORE")
+         {
+            return write_port_count;
+         }
+         if(port_name == "out1" || port_name == "in2r" || port_name == "in3r" || port_name == "in4r" ||
+            port_name == "sel_LOAD" || port_name == "proxy_out1" || port_name == "proxy_in2r" ||
+            port_name == "proxy_in3r" || port_name == "proxy_in4r" || port_name == "proxy_sel_LOAD")
+         {
+            return read_port_count;
+         }
+         return max_port_count;
+      };
+      const auto set_port_count_parameter = [&](const std::string& port_name) {
+         const auto parameter_name = "PORTSIZE_" + port_name;
+         if(ding_dong_buffer->ExistsParameter(parameter_name))
+         {
+            ding_dong_buffer->SetParameter(parameter_name, STR(ding_dong_port_count(port_name)));
+         }
+      };
+      for(const auto& pname :
+          {"in1",        "in2r",       "in2w",       "in3r",       "in3w",           "in4r",           "in4w",
+           "out1",       "sel_LOAD",   "sel_STORE",  "proxy_in1",  "proxy_in2r",     "proxy_in2w",     "proxy_in3r",
+           "proxy_in3w", "proxy_in4r", "proxy_in4w", "proxy_out1", "proxy_sel_LOAD", "proxy_sel_STORE"})
+      {
+         set_port_count_parameter(pname);
+      }
       const auto size_ding_dong_port_vectors = [&](const auto port_getter, const unsigned int port_count) {
          for(unsigned int port_index = 0; port_index < port_count; ++port_index)
          {
             const auto port = port_getter(port_index);
             if(port->get_kind() == port_vector_o_K && GetPointerS<const port_o>(port)->get_ports_size() == 0)
             {
-               GetPointerS<port_o>(port)->add_n_ports(channel_count, port);
+               GetPointerS<port_o>(port)->add_n_ports(ding_dong_port_count(port->get_id()), port);
             }
          }
       };
@@ -1671,12 +1857,12 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
 #endif
             THROW_ASSERT(actual_count == expected_count, "Ding-dong buffer port " + ding_dong_buffer->get_path() + "/" +
                                                              port_name + " has " + STR(actual_count) + " entries but " +
-                                                             STR(expected_count) + " (channel_count) expected");
+                                                             STR(expected_count) + " expected");
          }
       };
       for(const auto& pname : {"in1", "in2r", "in2w", "in3r", "in3w", "in4r", "in4w", "out1", "sel_LOAD", "sel_STORE"})
       {
-         validate_ding_dong_port(pname, channel_count > 1U ? port_vector_o_K : port_o_K, channel_count);
+         validate_ding_dong_port(pname, max_port_count > 1U ? port_vector_o_K : port_o_K, ding_dong_port_count(pname));
       }
       const auto base_address = HLSMgr->Rmem->get_symbol(var, HLS->functionId)->get_symbol_name();
       const auto type_node = ir_helper::CGetType(IRM->GetIRNode(var));

@@ -115,7 +115,8 @@ void ReadFifoHDLGenerator::InternalExec(std::ostream& out, structural_objectRef 
 
    out << "assign " << _ports_out[o_out1].name << " = {" << _ports_in[i_empty_n].name << ", " << _ports_in[i_dout].name
        << "};\n";
-   out << "assign " << _ports_out[o_done].name << " = active & (" << _ports_in[i_empty_n].name << "|(1&"
-       << _ports_in[i_async].name << "));\n";
-   out << "assign " << _ports_out[o_read].name << " = active & " << _ports_in[i_empty_n].name << ";\n";
+   out << "assign " << _ports_out[o_done].name << " = active & (" << _ports_in[i_empty_n].name << "|(|"
+       << _ports_in[i_in2].name << "));\n";
+   out << "assign " << _ports_out[o_read].name << " = (1&" << _ports_in[i_in1].name << ") & active & "
+       << _ports_in[i_empty_n].name << ";\n";
 }

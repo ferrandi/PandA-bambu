@@ -20,7 +20,6 @@ int main()
 
    // Call the kernel under test
    top(inputData, outputData);
-   top(inputData, outputData);
 
    int pass = 1;
    for(int j = 0; j < TOTAL_BATCHES; j++)
