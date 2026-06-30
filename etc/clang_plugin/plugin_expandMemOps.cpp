@@ -66,7 +66,7 @@
 #include <llvm/Transforms/Utils/LoopUtils.h>
 #include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
 
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
 #include <llvm/Analysis/CGSCCPassManager.h>
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/PassPlugin.h>
@@ -75,7 +75,7 @@
 #include <llvm/Transforms/InstCombine/InstCombine.h>
 #include <llvm/Transforms/Utils/Mem2Reg.h>
 #include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
 #include <llvm/Analysis/ScalarEvolution.h>
 #include <llvm/Transforms/Scalar/LowerAtomicPass.h>
 #else
@@ -91,14 +91,14 @@
 
 #define DEBUG_TYPE "expand-mem-ops"
 
-#if __clang_major__ >= 5
+#if PANDA_LLVM_CLANG_MAJOR >= 5
 #include "LowerMemIntrinsics.cpp"
 #endif
 
 namespace llvm
 {
    class expandMemOps : public ModulePass
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
        ,
                         public PassInfoMixin<expandMemOps>
 #endif
@@ -117,12 +117,12 @@ namespace llvm
             srcType = cast<llvm::ConstantExpr>(dst_addr)->getOperand(0)->getType();
          }
          if(srcType && srcType->isPointerTy()
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
             && !srcType->isOpaquePointerTy()
 #endif
          )
          {
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
             const auto pointee = llvm::cast<llvm::PointerType>(srcType)->getElementType();
 #else
             const auto pointee = srcType->getNonOpaquePointerElementType();
@@ -160,7 +160,7 @@ namespace llvm
       {
          if(auto* VTy = dyn_cast<llvm::VectorType>(Type))
          {
-#if __clang_major__ >= 12
+#if PANDA_LLVM_CLANG_MAJOR >= 12
             return (VTy->getElementCount().getFixedValue() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
 #else
             return (VTy->getNumElements() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
@@ -245,7 +245,7 @@ namespace llvm
                                  << ", left: " << RemainingBytes << "\n");
 
          bool do_unrolling;
-#if __clang_major__ == 7
+#if PANDA_LLVM_CLANG_MAJOR == 7
          do_unrolling = false;
 #else
          do_unrolling = true;
@@ -289,7 +289,7 @@ namespace llvm
                auto* SrcGEP =
                    Builder.CreateInBoundsGEP(LoopOpType, srcAddress, llvm::ConstantInt::get(TypeOfCopyLen, LI));
                auto* Load =
-#if __clang_major__ <= 11
+#if PANDA_LLVM_CLANG_MAJOR <= 11
                    Builder.CreateLoad(SrcGEP, src_volatile);
 #else
                    Builder.CreateLoad(LoopOpType, SrcGEP, src_volatile);
@@ -327,7 +327,7 @@ namespace llvm
             // Loop Body
             auto* SrcGEP = LoopBuilder.CreateInBoundsGEP(LoopOpType, src_addr, LoopIndex);
             auto* Load =
-#if __clang_major__ <= 11
+#if PANDA_LLVM_CLANG_MAJOR <= 11
                 LoopBuilder.CreateLoad(SrcGEP, src_volatile);
 #else
                 LoopBuilder.CreateLoad(LoopOpType, SrcGEP, src_volatile);
@@ -367,7 +367,7 @@ namespace llvm
                auto* SrcGEP =
                    RBuilder.CreateInBoundsGEP(OpTy, CastedSrc, llvm::ConstantInt::get(TypeOfCopyLen, GepIndex));
                auto* Load =
-#if __clang_major__ <= 11
+#if PANDA_LLVM_CLANG_MAJOR <= 11
                    RBuilder.CreateLoad(SrcGEP, src_volatile);
 #else
                    RBuilder.CreateLoad(OpTy, SrcGEP, src_volatile);
@@ -393,9 +393,9 @@ namespace llvm
          llvm::Value* CopyLen = Memset->getLength();
          llvm::Value* SetValue = Memset->getValue();
          unsigned Align =
-#if __clang_major__ <= 6
+#if PANDA_LLVM_CLANG_MAJOR <= 6
              Memset->getAlignment();
-#elif __clang_major__ < 16
+#elif PANDA_LLVM_CLANG_MAJOR < 16
              Memset->getDestAlignment();
 #else
              dst_addr->getPointerAlignment(*DL).value();
@@ -447,7 +447,7 @@ namespace llvm
 
          if(AlignCanBeUsed)
          {
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
             LoopBuilder.CreateAlignedStore(SetValue,
                                            LoopBuilder.CreateInBoundsGEP(SetValue->getType(), dst_addr, LoopIndex),
                                            llvm::MaybeAlign(Align), IsVolatile);
@@ -477,20 +477,20 @@ namespace llvm
          initializeLoopPassPass(*PassRegistry::getPassRegistry());
       }
 
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
       expandMemOps(const expandMemOps&) : expandMemOps()
       {
       }
 #endif
 
       bool exec(Module& M, llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> GetTTI
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
                 ,
                 llvm::function_ref<llvm::ScalarEvolution&(llvm::Function&)> GetSE
 #endif
       )
       {
-#if __clang_major__ < 13
+#if PANDA_LLVM_CLANG_MAJOR < 13
          if(skipModule(M))
          {
             return false;
@@ -546,13 +546,13 @@ namespace llvm
                if(auto Memcpy = dyn_cast<llvm::MemCpyInst>(MemCall))
                {
                   auto CI = dyn_cast<llvm::ConstantInt>(Memcpy->getLength());
-                  if(__clang_major__ < 16 && CI)
+                  if(PANDA_LLVM_CLANG_MAJOR < 16 && CI)
                   {
                      LLVM_DEBUG(llvm::dbgs() << "Expanding memcpy constant\n");
                      createMemCpyLoopKnownSizeLocal(Memcpy, Memcpy->getRawSource(), Memcpy->getRawDest(), CI,
-#if __clang_major__ <= 6
+#if PANDA_LLVM_CLANG_MAJOR <= 6
                                                     Memcpy->getAlignment(), Memcpy->getAlignment(),
-#elif __clang_major__ < 16
+#elif PANDA_LLVM_CLANG_MAJOR < 16
                                                     Memcpy->getSourceAlignment(), Memcpy->getDestAlignment(),
 #else
                                                     Memcpy->getRawSource()->getPointerAlignment(*DL).value(),
@@ -562,12 +562,12 @@ namespace llvm
                      do_erase = true;
                      res = true;
                   }
-#if __clang_major__ >= 5
+#if PANDA_LLVM_CLANG_MAJOR >= 5
                   else
                   {
                      LLVM_DEBUG(llvm::dbgs() << "Expanding memcpy as loop\n");
                      const auto& TTI = GetTTI(F);
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
                      auto& SE = GetSE(F);
                      expandMemCpyAsLoop(Memcpy, TTI, &SE);
 #else
@@ -581,7 +581,7 @@ namespace llvm
                else if(auto Memmove = dyn_cast<llvm::MemMoveInst>(MemCall))
                {
                   LLVM_DEBUG(llvm::dbgs() << "Expanding memmove\n");
-#if __clang_major__ >= 5
+#if PANDA_LLVM_CLANG_MAJOR >= 5
                   const auto& TTI = GetTTI(F);
                   expandMemMoveAsLoop(Memmove, TTI);
                   do_erase = true;
@@ -591,7 +591,7 @@ namespace llvm
                else if(auto Memset = dyn_cast<llvm::MemSetInst>(MemCall))
                {
                   LLVM_DEBUG(llvm::dbgs() << "Expanding memset\n");
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
                   expandMemSetAsLoop(Memset);
 #else
                   expandMemSetAsLoopLocal(Memset, DL);
@@ -614,13 +614,13 @@ namespace llvm
          auto GetTTI = [&](llvm::Function& F) -> llvm::TargetTransformInfo& {
             return getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
          };
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
          auto GetSE = [&](llvm::Function& F) -> llvm::ScalarEvolution& {
             return getAnalysis<llvm::ScalarEvolutionWrapperPass>(F).getSE();
          };
 #endif
          return exec(M, GetTTI
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
                      ,
                      GetSE
 #endif
@@ -636,12 +636,12 @@ namespace llvm
       {
          getLoopAnalysisUsage(AU);
          AU.addRequired<TargetTransformInfoWrapperPass>();
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
          AU.addRequired<ScalarEvolutionWrapperPass>();
 #endif
       }
 
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
       llvm::PreservedAnalyses run(llvm::Module& M, llvm::ModuleAnalysisManager& MAM)
       {
          LLVM_DEBUG(llvm::dbgs() << "Running mem ops expansion\n");
@@ -649,13 +649,13 @@ namespace llvm
          auto GetTTI = [&](llvm::Function& F) -> llvm::TargetTransformInfo& {
             return FAM.getResult<llvm::TargetIRAnalysis>(F);
          };
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
          auto GetSE = [&](llvm::Function& F) -> llvm::ScalarEvolution& {
             return FAM.getResult<ScalarEvolutionAnalysis>(F);
          };
 #endif
          const auto changed = exec(M, GetTTI
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
                                    ,
                                    GetSE
 #endif
@@ -673,7 +673,7 @@ static llvm::RegisterPass<llvm::expandMemOps> XPass("expandMemOps", "Make all pr
                                                     false /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
 llvm::PassPluginLibraryInfo getexpandMemOpsPluginInfo()
 {
    return {LLVM_PLUGIN_API_VERSION, "expandMemOps", "v0.12", [](llvm::PassBuilder& PB) {
@@ -694,7 +694,7 @@ llvm::PassPluginLibraryInfo getexpandMemOpsPluginInfo()
                  return false;
               });
               PB.registerOptimizerLastEPCallback([&](llvm::ModulePassManager& MPM,
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
                                                      llvm::PassBuilder::OptimizationLevel
 #else
                                                      llvm::OptimizationLevel

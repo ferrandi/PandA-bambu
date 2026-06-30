@@ -54,6 +54,7 @@
 #include "llvm/ADT/DenseSet.h"
 #include "llvm/ADT/SparseBitVector.h"
 #include "llvm/ADT/StringMap.h"
+#include "panda_clang_compat.hpp"
 
 namespace llvm
 {

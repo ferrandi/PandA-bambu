@@ -73,20 +73,20 @@
 #include <llvm/Transforms/Utils/LoopUtils.h>
 #include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
 
-#if __clang_major__ != 4
+#if PANDA_LLVM_CLANG_MAJOR != 4
 #include <llvm/Analysis/MemorySSA.h>
 #else
 #include <llvm/Transforms/Utils/MemorySSA.h>
 #endif
-#if __clang_major__ > 5
+#if PANDA_LLVM_CLANG_MAJOR > 5
 #include <llvm/Analysis/OptimizationRemarkEmitter.h>
 #endif
-#if __clang_major__ >= 7
+#if PANDA_LLVM_CLANG_MAJOR >= 7
 #ifndef VVD
 #include <llvm/Transforms/Utils.h>
 #endif
 #endif
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
 #include <llvm/Analysis/CGSCCPassManager.h>
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/PassPlugin.h>
@@ -115,7 +115,7 @@
 #include <llvm/Transforms/Scalar/SimplifyCFG.h>
 #include <llvm/Transforms/Scalar/TailRecursionElimination.h>
 #include <llvm/Transforms/Utils/Mem2Reg.h>
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
 #include <llvm/Transforms/Scalar/LowerAtomicPass.h>
 #include <llvm/Transforms/Scalar/SROA.h>
 #else
@@ -125,7 +125,7 @@
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
 #endif
 
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
 #include <llvm/IRPrinter/IRPrintingPasses.h>
 #else
 #include <llvm/IR/IRPrintingPasses.h>
@@ -197,7 +197,7 @@ namespace llvm
 
    static std::string getArgumentStringAttribute(const llvm::Function& F, unsigned int argIndex, const char* attrName)
    {
-#if __clang_major__ >= 5
+#if PANDA_LLVM_CLANG_MAJOR >= 5
       const auto argAttr = F.getAttributes().getParamAttr(argIndex, attrName);
 #else
       const auto argAttr = F.getAttributes().getAttribute(argIndex + 1, attrName);
@@ -501,7 +501,7 @@ namespace llvm
       auto& llvmContext = M.getContext();
       const auto addFunctionStringParamAttr = [](Function& F, unsigned int argIndex, const char* attrName,
                                                  const std::string& attrValue, LLVMContext& context) {
-#if __clang_major__ >= 5
+#if PANDA_LLVM_CLANG_MAJOR >= 5
          F.addParamAttr(argIndex, Attribute::get(context, attrName, attrValue));
 #else
          auto attrs = F.getAttributes();
@@ -560,7 +560,7 @@ namespace llvm
       return attrsChanged;
    }
 
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
    struct BambuParamTrackingPass : public PassInfoMixin<BambuParamTrackingPass>
    {
       llvm::PreservedAnalyses run(llvm::Module& M, llvm::ModuleAnalysisManager&)
@@ -586,7 +586,7 @@ namespace llvm
 #endif
 
    struct CLANG_VERSION_SYMBOL_DUMP_SSA : public ModulePass
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
        ,
                                           public PassInfoMixin<CLANG_VERSION_SYMBOL_DUMP_SSA>
 #endif
@@ -603,12 +603,12 @@ namespace llvm
          initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());
          initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());
          initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());
-#if __clang_major__ > 5
+#if PANDA_LLVM_CLANG_MAJOR > 5
          initializeOptimizationRemarkEmitterWrapperPassPass(*PassRegistry::getPassRegistry());
 #endif
       }
 
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
       CLANG_VERSION_SYMBOL_DUMP_SSA(const CLANG_VERSION_SYMBOL_DUMP_SSA& other)
           : CLANG_VERSION_SYMBOL_DUMP_SSA(other.earlyAnalysis)
       {
@@ -622,7 +622,7 @@ namespace llvm
                 llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA,
                 llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
                 llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC,
-#if __clang_major__ > 5
+#if PANDA_LLVM_CLANG_MAJOR > 5
                 llvm::function_ref<llvm::OptimizationRemarkEmitter&(llvm::Function&)> GetORE,
 #endif
                 const std::string& costTable)
@@ -662,7 +662,7 @@ namespace llvm
 
          DumpBambuIR RawWriter(outdir_name, first_filename, false, &Fun2Params, earlyAnalysis);
          auto res = RawWriter.exec(M, TopFunctionNames, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC,
-#if __clang_major__ > 5
+#if PANDA_LLVM_CLANG_MAJOR > 5
                                    GetORE,
 #endif
                                    costTable);
@@ -671,8 +671,8 @@ namespace llvm
 
       bool runOnModule(Module& M) override
       {
-#if __clang_major__ < 13
-#if __clang_major__ >= 10
+#if PANDA_LLVM_CLANG_MAJOR < 13
+#if PANDA_LLVM_CLANG_MAJOR >= 10
          auto GetTLI = [&](llvm::Function& F) -> llvm::TargetLibraryInfo& {
             return getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(F);
          };
@@ -699,9 +699,9 @@ namespace llvm
          auto GetAC = [&](llvm::Function& F) -> llvm::AssumptionCache& {
             return getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(F);
          };
-#if __clang_major__ > 5
+#if PANDA_LLVM_CLANG_MAJOR > 5
          auto GetORE = [&](llvm::Function& F) -> llvm::OptimizationRemarkEmitter& {
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
             return getAnalysis<llvm::OptimizationRemarkEmitterWrapperPass>(F).getORE();
 #else
             return getAnalysis<llvm::OptimizationRemarkEmitterWrapperPass>(F).getORE();
@@ -710,7 +710,7 @@ namespace llvm
 #endif
 
          return exec(M, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC,
-#if __clang_major__ > 5
+#if PANDA_LLVM_CLANG_MAJOR > 5
                      GetORE,
 #endif
                      CostTable);
@@ -735,12 +735,12 @@ namespace llvm
          AU.addRequired<TargetLibraryInfoWrapperPass>();
          AU.addRequired<AssumptionCacheTracker>();
          AU.addRequired<DominatorTreeWrapperPass>();
-#if __clang_major__ > 5
+#if PANDA_LLVM_CLANG_MAJOR > 5
          AU.addRequired<OptimizationRemarkEmitterWrapperPass>();
 #endif
       }
 
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
       llvm::PreservedAnalyses run(llvm::Module& M, llvm::ModuleAnalysisManager& MAM)
       {
          MAM.invalidate(M, llvm::PreservedAnalyses::none());
@@ -789,7 +789,7 @@ static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL_DUMP_SSA> XPass(CLANG_VERSI
                                                                      false /* Analysis Pass */);
 #endif
 
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
 llvm::PassPluginLibraryInfo getdumpSSAPluginInfo()
 {
    return {
@@ -826,7 +826,7 @@ llvm::PassPluginLibraryInfo getdumpSSAPluginInfo()
              {
                 llvm::FunctionPassManager FPM1;
                 FPM1.addPass(llvm::JumpThreadingPass());
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
                 FPM1.addPass(llvm::SROAPass(llvm::SROAOptions::ModifyCFG));
 #endif
                 FPM1.addPass(llvm::TailCallElimPass());
@@ -836,7 +836,7 @@ llvm::PassPluginLibraryInfo getdumpSSAPluginInfo()
 
                 llvm::FunctionPassManager FPM2;
                 FPM2.addPass(llvm::createFunctionToLoopPassAdaptor(llvm::LICMPass(
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
                                                                        llvm::LICMOptions()
 #endif
                                                                            ),
@@ -849,7 +849,7 @@ llvm::PassPluginLibraryInfo getdumpSSAPluginInfo()
 
                 llvm::LoopPassManager LPM2;
                 LPM2.addPass(llvm::LoopRotatePass());
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
                 LPM2.addPass(llvm::LoopFlattenPass());
 #endif
                 LPM2.addPass(llvm::IndVarSimplifyPass());
@@ -862,7 +862,7 @@ llvm::PassPluginLibraryInfo getdumpSSAPluginInfo()
                 MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM2)));
                 // MPM.addPass(llvm::PrintModulePass(llvm::errs()));
                 MPM.addPass(createModuleToFunctionPassAdaptor(llvm::SimplifyCFGPass(llvm::SimplifyCFGOptions()
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
                                                                                         .convertSwitchRangeToICmp(true)
 #endif
                                                                                         .sinkCommonInsts(false)
@@ -891,7 +891,7 @@ llvm::PassPluginLibraryInfo getdumpSSAPluginInfo()
              return false;
           });
           PB.registerPipelineStartEPCallback([&](llvm::ModulePassManager& MPM,
-#if __clang_major__ <= 13
+#if PANDA_LLVM_CLANG_MAJOR <= 13
                                                  llvm::PassBuilder::OptimizationLevel Opt
 #else
                   llvm::OptimizationLevel Opt
@@ -901,14 +901,14 @@ llvm::PassPluginLibraryInfo getdumpSSAPluginInfo()
              loadEarly(MPM);
           });
           PB.registerOptimizerLastEPCallback([&](llvm::ModulePassManager& MPM,
-#if __clang_major__ <= 13
+#if PANDA_LLVM_CLANG_MAJOR <= 13
                                                  llvm::PassBuilder::OptimizationLevel Opt
 #else
                  llvm::OptimizationLevel Opt
 #endif
                                              ) {
              loadLate(MPM,
-#if __clang_major__ <= 13
+#if PANDA_LLVM_CLANG_MAJOR <= 13
                       Opt != llvm::PassBuilder::OptimizationLevel::O0 && Opt != llvm::PassBuilder::OptimizationLevel::O1
 #else
                      Opt != llvm::OptimizationLevel::O0 && Opt != llvm::OptimizationLevel::O1

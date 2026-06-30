@@ -1940,12 +1940,12 @@ namespace
          if(isArgPartitioned(argPartInfoIt, argsPartitionInfos))
          {
             uint64_t numPartitions = argPartInfoIt->getNumPartitions();
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
             // The "cast<ArrayType>(argPartInfoIt->getPartitionedType())->getArrayElementType()->getPointerTo()" is done
             // for this reason: An array partition type is stored like this [4 x [3 x i32]] But in LLVM the arguments
             // types are *[3 x i32]
             auto* ty = cast<ArrayType>(argPartInfoIt->getPartitionedType())->getElementType()->getPointerTo();
-#elif __clang_major__ == 16
+#elif PANDA_LLVM_CLANG_MAJOR == 16
             auto* ty = argPartInfoIt->getPartitionedType()->isOpaquePointerTy() ?
                            argPartInfoIt->getPartitionedType() :
                            cast<ArrayType>(argPartInfoIt->getPartitionedType())->getElementType()->getPointerTo();
@@ -2843,7 +2843,7 @@ llvmGetPassPluginInfo()
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
    PM.add(llvm::createInstructionCombiningPass(1000));
 #else
    PM.add(llvm::createInstructionCombiningPass(true));

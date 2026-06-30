@@ -56,7 +56,7 @@
 
 #include "debug_print.hpp"
 
-#if __clang_major__ > 9
+#if PANDA_LLVM_CLANG_MAJOR > 9
 #define make_unique std::make_unique
 #else
 #define make_unique llvm::make_unique

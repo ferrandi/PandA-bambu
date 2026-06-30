@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *                Copyright (C) 2025-2026 Politecnico di Milano
+ *              Copyright (C) 2026 Politecnico di Milano
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
@@ -29,48 +29,24 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  *
- * @author Tommaso Fellegara <tommaso.fellegara@polimi.it>
- *
  */
-#ifndef BAMBU_POINTER_RESOLUTION_PASS_HPP
-#define BAMBU_POINTER_RESOLUTION_PASS_HPP
+#ifndef PANDA_CLANG_COMPAT_HPP
+#define PANDA_CLANG_COMPAT_HPP
 
-#include "llvm/IR/PassManager.h"
-#include "panda_clang_compat.hpp"
-#include <llvm/ADT/StringRef.h>
-#include <llvm/Pass.h>
-#include <string>
-#include <utility>
-
-namespace llvm
-{
-   struct PointerResolutionPass : public ModulePass
-#if LLVM_VERSION_MAJOR >= 13
-       ,
-                                  public PassInfoMixin<PointerResolutionPass>
-#endif
-   {
-    public:
-      static char ID;
-      std::string outdirNameCmd;
-
-      PointerResolutionPass(std::string outdirNameCmd) : ModulePass(ID), outdirNameCmd(std::move(outdirNameCmd))
-      {
-      }
-
-#if LLVM_VERSION_MAJOR >= 13
-      PointerResolutionPass(const PointerResolutionPass& other) : PointerResolutionPass(other.outdirNameCmd)
-      {
-      }
+#if defined(PANDA_CLANG_MAJOR)
+#define PANDA_LLVM_CLANG_MAJOR PANDA_CLANG_MAJOR
+#elif defined(__clang_major__)
+#define PANDA_LLVM_CLANG_MAJOR __clang_major__
+#else
+#error "PANDA_LLVM_CLANG_MAJOR is undefined"
 #endif
 
-      bool exec(Module& M);
-      PreservedAnalyses run(Module& M, ModuleAnalysisManager& AM);
-      bool runOnModule(Module& M) override;
-      StringRef getPassName() const override;
-      void getAnalysisUsage(AnalysisUsage& AU) const override;
-   };
+#if defined(PANDA_CLANG_VERSION_STR)
+#define PANDA_LLVM_CLANG_VERSION_STR PANDA_CLANG_VERSION_STR
+#elif defined(__clang_version__)
+#define PANDA_LLVM_CLANG_VERSION_STR __clang_version__
+#else
+#define PANDA_LLVM_CLANG_VERSION_STR "unknown"
+#endif
 
-} // end namespace llvm
-
-#endif // BAMBU_POINTER_RESOLUTION_PASS_HPP
+#endif // PANDA_CLANG_COMPAT_HPP

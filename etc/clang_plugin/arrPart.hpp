@@ -35,9 +35,11 @@
 #ifndef ARR_PART_HPP
 #define ARR_PART_HPP
 
-#include "llvm/Support/raw_ostream.h"
 #include <cstddef>
 #include <cstdint>
+
+#include "panda_clang_compat.hpp"
+#include "llvm/Support/raw_ostream.h"
 #include <llvm/ADT/Twine.h>
 #include <llvm/IR/Argument.h>
 #include <llvm/IR/Function.h>
@@ -217,9 +219,9 @@ struct ArgPartInfo
 
    Type* getPartitionedType() const
    {
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
       return getPartitionedTypeFromDims(arg->getType()->getPointerElementType(), getPartitionedDims());
-#elif __clang_major__ == 16
+#elif PANDA_LLVM_CLANG_MAJOR == 16
       return arg->getType()->isOpaquePointerTy() ?
                  arg->getType() :
                  getPartitionedTypeFromDims(arg->getType()->getNonOpaquePointerElementType(), getPartitionedDims());

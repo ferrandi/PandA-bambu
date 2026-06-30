@@ -431,7 +431,7 @@ namespace llvm
             {
                return getCost(bits, "xor_node");
             }
-#if __clang_major__ >= 10
+#if PANDA_LLVM_CLANG_MAJOR >= 10
             case Instruction::FNeg:
             {
                return 0;
@@ -702,7 +702,7 @@ namespace llvm
                      SmallVector<Loop*, 4> Worklist;
                      for(Loop* CurLoop : llvm::depth_first(L))
                      {
-#if __clang_major__ >= 12
+#if PANDA_LLVM_CLANG_MAJOR >= 12
                         if(CurLoop->isInnermost())
 #else
                         if(CurLoop->empty())

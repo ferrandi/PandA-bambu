@@ -58,7 +58,7 @@
 #include <llvm/Transforms/IPO.h>
 #include <llvm/Transforms/IPO/Internalize.h>
 
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/PassPlugin.h>
 #else
@@ -159,7 +159,7 @@ namespace llvm
                                     cl::value_desc("specify if pointer parameters are noalias"));
 
    struct topfname : public ModulePass
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
        ,
                      public PassInfoMixin<topfname>
 #endif
@@ -171,7 +171,7 @@ namespace llvm
          initializeCallGraphWrapperPassPass(*PassRegistry::getPassRegistry());
       }
 
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
       topfname(const topfname&) : topfname()
       {
       }
@@ -215,7 +215,7 @@ namespace llvm
                   }
                   F->addFnAttr(Attribute::NoInline);
                   F->setLinkage(GlobalValue::LinkageTypes::ExternalLinkage);
-#if __clang_major__ >= 7
+#if PANDA_LLVM_CLANG_MAJOR >= 7
                   F->setDSOLocal(false);
 #endif
                   preservedSyms.addSymbol(fsymbol);
@@ -349,7 +349,7 @@ namespace llvm
          {
             std::error_code EC;
             std::string filename = outdir_name + "/external-symbols.txt";
-#if __clang_major__ >= 7 && !defined(VVD)
+#if PANDA_LLVM_CLANG_MAJOR >= 7 && !defined(VVD)
             llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::FA_Read | llvm::sys::fs::FA_Write);
 #else
             llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
@@ -365,7 +365,7 @@ namespace llvm
 
       bool runOnModule(Module& M) override
       {
-#if __clang_major__ < 13
+#if PANDA_LLVM_CLANG_MAJOR < 13
 
          CallGraphWrapperPass* CGPass = getAnalysisIfAvailable<CallGraphWrapperPass>();
          if(!CGPass)
@@ -389,7 +389,7 @@ namespace llvm
          AU.addRequired<CallGraphWrapperPass>();
       }
 
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
       llvm::PreservedAnalyses run(llvm::Module& M, llvm::ModuleAnalysisManager& MAM)
       {
          const auto changed = exec(M, MAM.getResult<CallGraphAnalysis>(M));
@@ -407,7 +407,7 @@ static llvm::RegisterPass<llvm::topfname> XPass("topfname", "Make all private/st
                                                 false /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
 llvm::PassPluginLibraryInfo gettopfnamePluginInfo()
 {
    return {LLVM_PLUGIN_API_VERSION, "topfname", "v0.12", [](llvm::PassBuilder& PB) {
@@ -428,14 +428,14 @@ llvm::PassPluginLibraryInfo gettopfnamePluginInfo()
                  return false;
               });
               PB.registerPipelineEarlySimplificationEPCallback([&](llvm::ModulePassManager& MPM,
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
                                                                    llvm::PassBuilder::OptimizationLevel
 #else
                                                                    llvm::OptimizationLevel
 #endif
                                                                ) { return load(MPM); });
               PB.registerOptimizerLastEPCallback([&](llvm::ModulePassManager& MPM,
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
                                                      llvm::PassBuilder::OptimizationLevel
 #else
                                                                    llvm::OptimizationLevel
