@@ -27,8 +27,10 @@ else
    append_openroad_configuration "asap7-TC"
 fi
 
+OPENROAD_BENCH_LIST="${OPENROAD_BENCH_LIST:-panda_bench_openroad_list}"
+
 python3 $script_dir/../etc/scripts/mantis.py --tool=bambu \
    "${OPENROAD_ARGS[@]}" \
-   -lpanda_bench_openroad_list \
+   -l"${OPENROAD_BENCH_LIST}" \
    -o "out_${OUT_SUFFIX}" -b$script_dir \
    "$@"
