@@ -714,7 +714,7 @@ jobs:
       OPENROAD_BENCH_LIST: panda_bench_openroad_list_1
       args: -c=--evaluation -c=--parallel-backend=16
       datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
-      J: 2
+      J: 1
     steps:
       - name: Setup repository + distribution
         uses: ./.github/actions/panda-setup
@@ -782,7 +782,7 @@ jobs:
       OPENROAD_BENCH_LIST: panda_bench_openroad_list_2
       args: -c=--evaluation -c=--parallel-backend=16
       datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
-      J: 2
+      J: 1
     steps:
       - name: Setup repository + distribution
         uses: ./.github/actions/panda-setup
