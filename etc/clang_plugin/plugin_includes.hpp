@@ -49,12 +49,14 @@
 #include "llvm/IR/GlobalObject.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/Support/raw_ostream.h"
-#if __clang_major__ > 4
+#include "panda_clang_compat.hpp"
+
+#if PANDA_LLVM_CLANG_MAJOR > 4
 #include "llvm/Analysis/MemorySSA.h"
 #else
 #include "llvm/Transforms/Utils/MemorySSA.h"
 #endif
-#if __clang_major__ > 5
+#if PANDA_LLVM_CLANG_MAJOR > 5
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
 #endif
 
@@ -105,7 +107,7 @@ namespace RangeAnalysis
 class Andersen_AA;
 
 using MemorySSAAnalysisResult =
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
     llvm::MemorySSAAnalysis::Result;
 #else
     llvm::MemorySSAWrapperPass;
@@ -123,7 +125,7 @@ namespace llvm
 
    class DumpBambuIR
    {
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
       bool changed;
 #endif
 
@@ -134,7 +136,7 @@ namespace llvm
       llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA;
       llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI;
       llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC;
-#if __clang_major__ > 5
+#if PANDA_LLVM_CLANG_MAJOR > 5
       llvm::function_ref<llvm::OptimizationRemarkEmitter&(llvm::Function&)> GetORE;
 #endif
 
@@ -716,7 +718,7 @@ namespace llvm
                 llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA,
                 llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
                 llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC,
-#if __clang_major__ > 5
+#if PANDA_LLVM_CLANG_MAJOR > 5
                 llvm::function_ref<llvm::OptimizationRemarkEmitter&(llvm::Function&)> GetORE,
 #endif
                 const std::string& costTable);

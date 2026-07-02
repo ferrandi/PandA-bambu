@@ -3587,7 +3587,7 @@ void Andersen_AA::id_call_insn(const CallInstOrInvokeInst* I)
       llvm::errs() << "\n";
    }
 
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
    auto callee = I->getCalledOperand();
 #else
    auto callee = I->getCalledValue();
@@ -3936,12 +3936,12 @@ void Andersen_AA::id_bitcast_insn(const llvm::Instruction* I)
 }
 
 void Andersen_AA::id_freeze_insn(const llvm::Instruction*
-#if __clang_major__ > 9
+#if PANDA_LLVM_CLANG_MAJOR > 9
                                      I
 #endif
 )
 {
-#if __clang_major__ > 9
+#if PANDA_LLVM_CLANG_MAJOR > 9
    assert(I);
    auto FI = llvm::cast<const llvm::FreezeInst>(I);
    u32 vnI = get_val_node(FI);
@@ -4376,7 +4376,7 @@ void Andersen_AA::id_ind_call(const CallInstOrInvokeInst* I)
    {
       llvm::errs() << "    id_ind_call:  ";
    }
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
    auto C = I->getCalledOperand();
 #else
    auto C = I->getCalledValue();
@@ -4860,7 +4860,7 @@ void Andersen_AA::processBlock(const llvm::BasicBlock* BB, std::set<const llvm::
                id_extract_insn(I);
             }
             break;
-#if __clang_major__ > 9
+#if PANDA_LLVM_CLANG_MAJOR > 9
          case llvm::Instruction::Freeze:
          {
             if(is_ptr)
@@ -7425,7 +7425,7 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const CallInstOrInvokeInst
          // The function pointer may point to realloc at one time
          //  and to a function with fewer args at another time;
          //  we should skip the realloc if the current call has fewer args.
-#if __clang_major__ < 14
+#if PANDA_LLVM_CLANG_MAJOR < 14
          if(I->getNumArgOperands() < 1)
 #else
          if(I->arg_size() < 1)
@@ -7487,7 +7487,7 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const CallInstOrInvokeInst
             default:
                i_arg = 0;
          }
-#if __clang_major__ < 14
+#if PANDA_LLVM_CLANG_MAJOR < 14
          if(I->getNumArgOperands() <= i_arg)
 #else
          if(I->arg_size() <= i_arg)
@@ -9778,7 +9778,7 @@ static const llvm::Function* calledFunction(const llvm::CallInst* ci)
    {
       return F;
    }
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
    auto v = ci->getCalledOperand();
 #else
    auto v = ci->getCalledValue();
@@ -10027,7 +10027,7 @@ void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock* 
          else
          { // indirect call
             auto ci = llvm::cast<const llvm::CallInst>(I);
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
             auto calledValue = ci->getCalledOperand();
 #else
             auto calledValue = ci->getCalledValue();
@@ -10206,7 +10206,7 @@ void Staged_Flow_Sensitive_AA::icfg_inter_edges(llvm::Module& M)
       assert(call_succ.count(n));
       u32 succ = call_succ[n];
 
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
       auto calledValue = ci->getCalledOperand();
 #else
       auto calledValue = ci->getCalledValue();

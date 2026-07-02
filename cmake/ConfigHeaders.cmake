@@ -240,74 +240,53 @@ function(panda_generate_config_headers)
 
    set(_panda_plugin_test_cpp "${PANDA_CFG_BINARY_DIR}/clang_plugin_test.cpp")
    file(WRITE "${_panda_plugin_test_cpp}" "
+#include <cstdint>
 #include \"clang/Frontend/FrontendPluginRegistry.h\"
-#include \"clang/AST/AST.h\"
 #include \"clang/AST/ASTConsumer.h\"
-#include \"clang/AST/RecursiveASTVisitor.h\"
+#include \"clang/AST/Decl.h\"
 #include \"clang/Frontend/CompilerInstance.h\"
-#include \"clang/Sema/Sema.h\"
 #include \"llvm/Support/raw_ostream.h\"
-#include <set>
+
 using namespace clang;
+
 namespace {
-class PrintFunctionsConsumer : public ASTConsumer {
-  CompilerInstance &Instance;
-  std::set<std::string> ParsedTemplates;
+class ProbeConsumer : public ASTConsumer
+{
 public:
-  PrintFunctionsConsumer(CompilerInstance &Instance, std::set<std::string> ParsedTemplates) : Instance(Instance), ParsedTemplates(ParsedTemplates) {}
-  bool HandleTopLevelDecl(DeclGroupRef DG) override {
-    for (DeclGroupRef::iterator i = DG.begin(), e = DG.end(); i != e; ++i) {
-      const Decl *D = *i;
-      if (const NamedDecl *ND = dyn_cast<NamedDecl>(D)) llvm::errs() << \"top-level-decl: \\\"\" << ND->getNameAsString() << \"\\\"\\n\";
+  bool HandleTopLevelDecl(DeclGroupRef DG) override
+  {
+    for (DeclGroupRef::iterator I = DG.begin(), E = DG.end(); I != E; ++I)
+    {
+      if (const auto *ND = dyn_cast<NamedDecl>(*I))
+      {
+        llvm::errs() << ND->getDeclName().getAsString() << \"\\n\";
+      }
     }
     return true;
-  }
-  void HandleTranslationUnit(ASTContext& context) override {
-    if (!Instance.getLangOpts().DelayedTemplateParsing) return;
-    struct Visitor : public RecursiveASTVisitor<Visitor> {
-      const std::set<std::string> &ParsedTemplates;
-      Visitor(const std::set<std::string> &ParsedTemplates) : ParsedTemplates(ParsedTemplates) {}
-      bool VisitFunctionDecl(FunctionDecl *FD) {
-        if (FD->isLateTemplateParsed() &&
-            ParsedTemplates.count(FD->getNameAsString()))
-          LateParsedDecls.insert(FD);
-        return true;
-      }
-      std::set<FunctionDecl*> LateParsedDecls;
-    } v(ParsedTemplates);
-    v.TraverseDecl(context.getTranslationUnitDecl());
-    clang::Sema &sema = Instance.getSema();
-    for (const FunctionDecl *FD : v.LateParsedDecls) {
-      clang::LateParsedTemplate &LPT = *sema.LateParsedTemplateMap.find(FD)->second;
-      sema.LateTemplateParser(sema.OpaqueParser, LPT);
-      llvm::errs() << \"late-parsed-decl: \\\"\" << FD->getNameAsString() << \"\\\"\\n\";
-    }
   }
 };
-class PrintFunctionNamesAction : public PluginASTAction {
-  std::set<std::string> ParsedTemplates;
+
+class ProbeAction : public PluginASTAction
+{
 protected:
-  std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, llvm::StringRef) override {
-#if __clang_major__ >= 10
-    return std::make_unique<PrintFunctionsConsumer>(CI, ParsedTemplates);
-#else
-    return llvm::make_unique<PrintFunctionsConsumer>(CI, ParsedTemplates);
-#endif
+  std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance&, llvm::StringRef) override
+  {
+    return std::unique_ptr<ASTConsumer>(new ProbeConsumer());
   }
-  bool ParseArgs(const CompilerInstance &CI, const std::vector<std::string> &args) override {
-    for (unsigned i = 0, e = args.size(); i != e; ++i) {
-      if (args.at(i) == \"-parse-template\") {
-        if (i + 1 >= e) return false;
-        ++i;
-        ParsedTemplates.insert(args.at(i));
-      }
-    }
+
+  bool ParseArgs(const CompilerInstance&, const std::vector<std::string>&) override
+  {
     return true;
   }
-  PluginASTAction::ActionType getActionType() override { return AddAfterMainAction; }
+
+  PluginASTAction::ActionType getActionType() override
+  {
+    return AddAfterMainAction;
+  }
 };
 }
-static FrontendPluginRegistry::Add<PrintFunctionNamesAction>X1(\"print-fns\", \"print function names\");
+
+static FrontendPluginRegistry::Add<ProbeAction> X1(\"print-fns\", \"probe plugin\");
 ")
 
    set(_panda_plugin_client_cpp "${PANDA_CFG_BINARY_DIR}/clang_plugin_client.cpp")
@@ -550,7 +529,7 @@ static FrontendPluginRegistry::Add<PrintFunctionNamesAction>X1(\"print-fns\", \"
       endforeach()
 
       # ABI/flag prep
-      list(APPEND _plugin_flags "-D__clang_major__=${ver}" "-D__clang_version__=\\\"${_version_str}\\\"")
+      list(APPEND _plugin_flags "-D__clang_major__=${ver}" "-D__clang_version__=\"${_version_str}\"")
       if(ver GREATER 7)
          list(APPEND _plugin_flags "-DNDEBUG")
       endif()
@@ -571,12 +550,50 @@ static FrontendPluginRegistry::Add<PrintFunctionNamesAction>X1(\"print-fns\", \"
 
       set(_plugin_flags_base "${_plugin_flags}")
       set(_abi_candidates "0;1")
-      execute_process(COMMAND nm -D "${_found}"
-         OUTPUT_VARIABLE _nm_out
-         RESULT_VARIABLE _nm_res
-         ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-      if(_nm_res EQUAL 0 AND _nm_out MATCHES "N4llvm" AND _nm_out MATCHES "__cxx11")
+      set(_panda_abi_symbol_cxx11_declname
+         "_ZNK5clang15DeclarationName11getAsStringB5cxx11Ev")
+      set(_panda_abi_symbol_legacy_declname
+         "_ZNK5clang15DeclarationName11getAsStringEv")
+      # Prefer probing the actual LLVM/Clang runtime library because that is
+      # where plugin-facing std::string ABI boundaries live. The compiler
+      # executable alone is too weak a signal and can mis-detect minimal probes.
+      set(_abi_probe_libs
+         "${_libdir}/libclang-cpp.so"
+         "${_libdir}/libclang-cpp.so.${ver}"
+         "${_libdir}/libLLVM.so")
+      set(_abi_from_runtime "")
+      foreach(_abi_probe_lib IN LISTS _abi_probe_libs)
+         if(NOT EXISTS "${_abi_probe_lib}")
+            continue()
+         endif()
+         execute_process(COMMAND nm -D "${_abi_probe_lib}"
+            OUTPUT_VARIABLE _abi_nm_out
+            RESULT_VARIABLE _abi_nm_res
+            ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+         if(NOT _abi_nm_res EQUAL 0)
+            continue()
+         endif()
+         if(_abi_nm_out MATCHES "${_panda_abi_symbol_cxx11_declname}")
+            set(_abi_from_runtime "1")
+            break()
+         endif()
+         if(_abi_nm_out MATCHES "${_panda_abi_symbol_legacy_declname}")
+            set(_abi_from_runtime "0")
+            break()
+         endif()
+      endforeach()
+      if(_abi_from_runtime STREQUAL "1")
          set(_abi_candidates "1;0")
+      elseif(_abi_from_runtime STREQUAL "0")
+         set(_abi_candidates "0;1")
+      else()
+         execute_process(COMMAND nm -D "${_found}"
+            OUTPUT_VARIABLE _nm_out
+            RESULT_VARIABLE _nm_res
+            ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+         if(_nm_res EQUAL 0 AND _nm_out MATCHES "N4llvm" AND _nm_out MATCHES "__cxx11")
+            set(_abi_candidates "1;0")
+         endif()
       endif()
 
       set(_plugin_ok 0)
@@ -588,7 +605,7 @@ static FrontendPluginRegistry::Add<PrintFunctionNamesAction>X1(\"print-fns\", \"
          if(_libdir)
             set(_plugin_env "LD_LIBRARY_PATH=${_libdir}")
          endif()
-         execute_process(COMMAND "${CMAKE_COMMAND}" -E env ${_plugin_env} "${_clangpp_exe}" ${_plugin_flags} "${_std_flag}" "-fPIC" "-shared" "${_panda_plugin_test_cpp}" -o "${_plugin_so}"
+         execute_process(COMMAND "${CMAKE_COMMAND}" -E env ${_plugin_env} "${CMAKE_CXX_COMPILER}" ${_plugin_flags} "${_std_flag}" "-fPIC" "-shared" "${_panda_plugin_test_cpp}" -o "${_plugin_so}"
             WORKING_DIRECTORY "${PANDA_CFG_BINARY_DIR}"
             RESULT_VARIABLE _plugin_build_res
             OUTPUT_VARIABLE _plugin_build_out

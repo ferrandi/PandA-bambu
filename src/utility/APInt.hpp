@@ -157,7 +157,7 @@ std::ostream& operator<<(std::ostream& str, const APInt& v);
 std::istream& operator>>(std::istream& str, APInt& v);
 
 template <char... STR>
-constexpr APInt::number operator"" _apint()
+constexpr APInt::number operator""_apint()
 {
    typedef typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type pt;
    return boost::multiprecision::literals::detail::make_backend_from_pack<pt, APInt::backend>::value;

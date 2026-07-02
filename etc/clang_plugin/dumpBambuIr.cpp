@@ -44,7 +44,7 @@
 
 #include "HardekopfLin_AA.hpp"
 
-#if __clang_major__ > 5
+#if PANDA_LLVM_CLANG_MAJOR > 5
 #include "TreeHeightReduction.hpp"
 #endif
 
@@ -87,14 +87,14 @@
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Transforms/Utils/Local.h>
 
-#if __clang_major__ == 4
+#if PANDA_LLVM_CLANG_MAJOR == 4
 #include <llvm/Transforms/Utils/MemorySSA.h>
 #else
 #include <llvm/Analysis/MemorySSA.h>
 #include <llvm/Support/KnownBits.h>
 #include <llvm/Transforms/Utils/LowerMemIntrinsics.h>
 #endif
-#if __clang_major__ < 11
+#if PANDA_LLVM_CLANG_MAJOR < 11
 #include <llvm/IR/CallSite.h>
 #endif
 
@@ -125,7 +125,7 @@ namespace llvm
 
    static unsigned long long getAbiTypeAlignmentBytes(const llvm::DataLayout* DL, llvm::Type* ty)
    {
-#if __clang_major__ < 12
+#if PANDA_LLVM_CLANG_MAJOR < 12
       return DL->getABITypeAlignment(ty);
 #else
       return DL->getABITypeAlign(ty).value();
@@ -149,7 +149,7 @@ namespace llvm
    {
       if(const auto* allocaInst = llvm::dyn_cast<llvm::AllocaInst>(base))
       {
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
          if(allocaInst->getAlignment())
          {
             return allocaInst->getAlignment();
@@ -161,7 +161,7 @@ namespace llvm
       }
       if(const auto* globalVar = llvm::dyn_cast<llvm::GlobalVariable>(base))
       {
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
          if(globalVar->getAlignment())
          {
             return globalVar->getAlignment();
@@ -178,7 +178,7 @@ namespace llvm
       {
          if(arg->hasAttribute(llvm::Attribute::Alignment))
          {
-#if __clang_major__ < 10
+#if PANDA_LLVM_CLANG_MAJOR < 10
             return arg->getParamAlignment();
 #else
             if(const auto paramAlign = arg->getParamAlign())
@@ -190,13 +190,13 @@ namespace llvm
       }
       if(const auto* ptrTy = llvm::dyn_cast<llvm::PointerType>(base->getType()))
       {
-#if __clang_major__ >= 19
+#if PANDA_LLVM_CLANG_MAJOR >= 19
          // Opaque pointers carry no pointee type, so we cannot infer the
          // base alignment from the pointer alone.  Return 0 ("unknown") to
          // let the caller keep the instruction's own alignment unmodified.
          (void)ptrTy;
          return 0;
-#elif __clang_major__ >= 16
+#elif PANDA_LLVM_CLANG_MAJOR >= 16
          return ptrTy->isOpaque() ? 0 : getAbiTypeAlignmentBytes(DL, ptrTy->getPointerElementType());
 #else
          return getAbiTypeAlignmentBytes(DL, ptrTy->getPointerElementType());
@@ -316,7 +316,7 @@ namespace llvm
    static std::string getArgumentStringAttribute(const llvm::Function* fd, unsigned int arg_index,
                                                  const char* attribute_name)
    {
-#if __clang_major__ >= 5
+#if PANDA_LLVM_CLANG_MAJOR >= 5
       const auto arg_attr = fd->getAttributes().getParamAttr(arg_index, attribute_name);
 #else
       const auto arg_attr = fd->getAttributes().getAttribute(arg_index + 1, attribute_name);
@@ -345,7 +345,7 @@ namespace llvm
          outdir_name(_outdir_name),
          InFile(_InFile),
          filename(create_file_name_string(_outdir_name, _InFile)),
-#if __clang_major__ >= 7 && !defined(VVD)
+#if PANDA_LLVM_CLANG_MAJOR >= 7 && !defined(VVD)
          stream(create_file_name_string(_outdir_name, _InFile), EC, sys::fs::FA_Read | sys::fs::FA_Write),
 #else
          stream(create_file_name_string(_outdir_name, _InFile), EC, llvm::sys::fs::F_RW),
@@ -448,7 +448,7 @@ namespace llvm
    case llvm::Value::InstructionVal + llvm::Instruction::OPC: \
       return assignCode(t, IRC(IR_ASSIGN));
 #include "llvm/IR/Instruction.def"
-#if __clang_major__ >= 10
+#if PANDA_LLVM_CLANG_MAJOR >= 10
          case llvm::Value::InstructionVal + llvm::Instruction::FNeg:
          case llvm::Value::InstructionVal + llvm::Instruction::Freeze:
 #endif
@@ -491,7 +491,7 @@ namespace llvm
                   case llvm::Intrinsic::directive_scope_exit:
 #endif
                      return assignCode(t, IRC(IR_NOPMEM));
-#if __clang_major__ > 13
+#if PANDA_LLVM_CLANG_MAJOR > 13
                   case llvm::Intrinsic::is_fpclass:
 #endif
                   case llvm::Intrinsic::memcpy:
@@ -499,7 +499,7 @@ namespace llvm
                   case llvm::Intrinsic::memmove:
                   case llvm::Intrinsic::trap:
                      return ci->use_empty() ? assignCode(t, IRC(IR_CALL)) : assignCode(t, IRC(IR_ASSIGN));
-#if __clang_major__ != 4
+#if PANDA_LLVM_CLANG_MAJOR != 4
                   case llvm::Intrinsic::ssa_copy:
                      return assignCode(t, IRC(IR_SSACOPY));
 #endif
@@ -510,13 +510,13 @@ namespace llvm
                   case llvm::Intrinsic::fmuladd:
                   case llvm::Intrinsic::minnum:
                   case llvm::Intrinsic::maxnum:
-#if __clang_major__ > 7
+#if PANDA_LLVM_CLANG_MAJOR > 7
                   case llvm::Intrinsic::sadd_sat:
                   case llvm::Intrinsic::uadd_sat:
                   case llvm::Intrinsic::ssub_sat:
                   case llvm::Intrinsic::usub_sat:
 #endif
-#if __clang_major__ > 11
+#if PANDA_LLVM_CLANG_MAJOR > 11
                   case llvm::Intrinsic::fshl:
                   case llvm::Intrinsic::fshr:
                   case llvm::Intrinsic::abs:
@@ -525,7 +525,7 @@ namespace llvm
                   case llvm::Intrinsic::umax:
                   case llvm::Intrinsic::umin:
 #endif
-#if __clang_major__ > 12
+#if PANDA_LLVM_CLANG_MAJOR > 12
                   case llvm::Intrinsic::bitreverse:
 #endif
                      return assignCode(t, IRC(IR_ASSIGN));
@@ -536,7 +536,7 @@ namespace llvm
                      report_fatal_error("Plugin Error");
                }
             }
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
             auto calledFun = ci->getCalledOperand();
 #else
             llvm::ImmutableCallSite CS(ci);
@@ -661,7 +661,7 @@ namespace llvm
                return "sqrtl";
             fd->print(llvm::errs());
             report_fatal_error("Plugin Error");
-#if __clang_major__ > 13
+#if PANDA_LLVM_CLANG_MAJOR > 13
          case llvm::Intrinsic::is_fpclass:
          {
             auto funType = cast<llvm::FunctionType>(fd->getValueType());
@@ -713,7 +713,7 @@ namespace llvm
             return "__builtin_va_end";
          case llvm::Intrinsic::vacopy:
             return "__builtin_va_copy";
-#if __clang_major__ > 7
+#if PANDA_LLVM_CLANG_MAJOR > 7
          case llvm::Intrinsic::sadd_sat:
             return "__llvm_sadd_sat";
          case llvm::Intrinsic::uadd_sat:
@@ -723,7 +723,7 @@ namespace llvm
          case llvm::Intrinsic::usub_sat:
             return "__llvm_usub_sat";
 #endif
-#if __clang_major__ > 11
+#if PANDA_LLVM_CLANG_MAJOR > 11
          case llvm::Intrinsic::fshl:
             return "__llvm_fshl";
          case llvm::Intrinsic::fshr:
@@ -747,7 +747,7 @@ namespace llvm
             return "__llvm_umin";
          }
 #endif
-#if __clang_major__ > 12
+#if PANDA_LLVM_CLANG_MAJOR > 12
          case llvm::Intrinsic::bitreverse:
          {
             auto funType = cast<llvm::FunctionType>(fd->getValueType());
@@ -1079,7 +1079,7 @@ namespace llvm
       {
          res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
-#if __clang_major__ == 4
+#if PANDA_LLVM_CLANG_MAJOR == 4
          res.line = di->getLine();
 #endif
       }
@@ -1168,7 +1168,7 @@ namespace llvm
 
    static unsigned getPredicateTEC(const llvm::ConstantExpr* ce)
    {
-#if __clang_major__ < 19
+#if PANDA_LLVM_CLANG_MAJOR < 19
       return ce->getPredicate();
 #else
       // NOTE: Support for ICmpInst and FCmpInst was removed for ConstantExpr
@@ -1176,7 +1176,7 @@ namespace llvm
 #endif
    }
 
-#if __clang_major__ > 7
+#if PANDA_LLVM_CLANG_MAJOR > 7
    static Intrinsic::ID getIntrinsicIDTEC(const llvm::Instruction* inst)
    {
       auto ci = llvm::dyn_cast<const llvm::CallInst>(inst);
@@ -1189,8 +1189,8 @@ namespace llvm
    }
    static Intrinsic::ID getIntrinsicIDTEC(const llvm::ConstantExpr* ce)
    {
-#if __clang_major__ > 7
-#if __clang_major__ > 9
+#if PANDA_LLVM_CLANG_MAJOR > 7
+#if PANDA_LLVM_CLANG_MAJOR > 9
       auto ci = llvm::dyn_cast<llvm::CallInst>(ce->getAsInstruction());
 #else
       auto ci = llvm::dyn_cast<llvm::CallInst>(const_cast<llvm::ConstantExpr*>(ce)->getAsInstruction());
@@ -1211,7 +1211,7 @@ namespace llvm
       auto opcode = inst->getOpcode();
       switch(opcode)
       {
-#if __clang_major__ >= 10
+#if PANDA_LLVM_CLANG_MAJOR >= 10
          case llvm::Instruction::FNeg:
             return IRC(NEG_NODE);
          case llvm::Instruction::Freeze:
@@ -1264,13 +1264,13 @@ namespace llvm
             return IRC(BITCAST_NODE);
          case llvm::Instruction::Call:
          {
-#if __clang_major__ > 7
+#if PANDA_LLVM_CLANG_MAJOR > 7
             auto CallID = getIntrinsicIDTEC(inst);
             if(CallID == llvm::Intrinsic::sadd_sat || CallID == llvm::Intrinsic::uadd_sat)
                return IRC(ADD_SAT_NODE);
             else if(CallID == llvm::Intrinsic::ssub_sat || CallID == llvm::Intrinsic::usub_sat)
                return IRC(SUB_SAT_NODE);
-#if __clang_major__ > 11
+#if PANDA_LLVM_CLANG_MAJOR > 11
             else if(CallID == llvm::Intrinsic::fshl)
                return IRC(FSHL_NODE);
             else if(CallID == llvm::Intrinsic::fshr)
@@ -1441,7 +1441,7 @@ namespace llvm
          // any constant byte offset accumulated along the pointer derivation.
          // This keeps typed accesses on naturally aligned parameters aligned,
          // while still catching explicit byte-offset or cast-based misalignment.
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
          unsigned long long effectiveStoreAlign = store.getAlignment();
 #else
          unsigned long long effectiveStoreAlign = store.getAlign().value();
@@ -1716,12 +1716,12 @@ namespace llvm
             else
                return false;
          }
-#if __clang_major__ > 7
+#if PANDA_LLVM_CLANG_MAJOR > 7
          case llvm::Instruction::Call:
          {
             auto CallID = getIntrinsicIDTEC(inst);
             return (CallID == llvm::Intrinsic::sadd_sat || CallID == llvm::Intrinsic::ssub_sat
-#if __clang_major__ > 11
+#if PANDA_LLVM_CLANG_MAJOR > 11
                     || CallID == llvm::Intrinsic::smax || CallID == llvm::Intrinsic::smin ||
                     CallID == llvm::Intrinsic::abs
 #endif
@@ -2304,7 +2304,7 @@ namespace llvm
          // any constant byte offset accumulated along the pointer derivation.
          // This keeps typed accesses on naturally aligned parameters aligned,
          // while still catching explicit byte-offset or cast-based misalignment.
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
          unsigned long long effectiveLoadAlign = load.getAlignment();
 #else
          unsigned long long effectiveLoadAlign = load.getAlign().value();
@@ -2353,7 +2353,7 @@ namespace llvm
       else if(isa<llvm::ShuffleVectorInst>(inst) && index == 2)
       {
          const auto& svi = cast<const llvm::ShuffleVectorInst>(*inst);
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
          auto op = getOperand(svi.getShuffleMaskForBitcode(), currentFunction);
 #else
          auto op = getOperand(svi.getMask(), currentFunction);
@@ -2411,7 +2411,7 @@ namespace llvm
    const void* DumpBambuIR::ir_call_fn(const void* g)
    {
       const llvm::CallInst* ci = reinterpret_cast<const llvm::CallInst*>(g);
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
       auto calledFun = ci->getCalledOperand();
 #else
       llvm::ImmutableCallSite CS(ci);
@@ -2443,7 +2443,7 @@ namespace llvm
    unsigned int DumpBambuIR::ir_call_num_args(const void* g)
    {
       const llvm::CallInst* ci = reinterpret_cast<const llvm::CallInst*>(g);
-#if __clang_major__ < 14
+#if PANDA_LLVM_CLANG_MAJOR < 14
       return ci->getNumArgOperands();
 #else
       return ci->arg_size();
@@ -2761,7 +2761,7 @@ namespace llvm
       if(IR_CODE(t) == IRC(VARIABLE_VAL_NODE))
       {
          const llvm::GlobalVariable* llvm_obj = reinterpret_cast<const llvm::GlobalVariable*>(t);
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
          return std::max(8u, 8 * llvm_obj->getAlignment());
 #else
          return std::max(8u, 8 * static_cast<unsigned>(llvm_obj->getAlign()->value()));
@@ -2770,7 +2770,7 @@ namespace llvm
       else if(IR_CODE(t) == IRC(ALLOCAVARIABLE_VAL_NODE))
       {
          const alloca_var* av = reinterpret_cast<const alloca_var*>(t);
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
          auto algn = av->alloc_inst->getAlignment();
 #else
          auto algn = static_cast<unsigned>(av->alloc_inst->getAlign().value());
@@ -2921,7 +2921,7 @@ namespace llvm
             return assignCode(ty, IRC(ARRAY_TY_NODE));
          case llvm::Type::PointerTyID:
             return assignCode(ty, IRC(POINTER_TY_NODE));
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
          case llvm::Type::FixedVectorTyID:
          case llvm::Type::ScalableVectorTyID:
 #else
@@ -3015,13 +3015,13 @@ namespace llvm
             case llvm::Type::ArrayTyID:
                return assignCodeType(cast<llvm::ArrayType>(ty)->getElementType());
             case llvm::Type::PointerTyID:
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
                return assignCodeType(cast<llvm::PointerType>(ty)->getElementType());
 #else
                return assignCodeType(ty->isOpaquePointerTy() ? llvm::Type::getVoidTy(*moduleContext) :
                                                                ty->getNonOpaquePointerElementType());
 #endif
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
             case llvm::Type::FixedVectorTyID:
             case llvm::Type::ScalableVectorTyID:
 #else
@@ -3103,7 +3103,7 @@ namespace llvm
          case llvm::Type::FunctionTyID:
          case llvm::Type::ArrayTyID:
          case llvm::Type::PointerTyID:
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
          case llvm::Type::FixedVectorTyID:
          case llvm::Type::ScalableVectorTyID:
 #else
@@ -3217,7 +3217,7 @@ namespace llvm
       llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
       if(!ty->isSized())
          return 8;
-#if __clang_major__ < 12
+#if PANDA_LLVM_CLANG_MAJOR < 12
       return std::max(8u, 8 * DL->getABITypeAlignment(ty));
 #else
       return std::max(8ull, 8ull * DL->getABITypeAlign(ty).value());
@@ -3444,7 +3444,7 @@ namespace llvm
       llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
       llvm::Function* currentFunction = inst->getFunction();
       auto& MSSA = GetMSSA(*currentFunction).getMSSA();
-#if __clang_major__ > 14
+#if PANDA_LLVM_CLANG_MAJOR > 14
       MSSA.ensureOptimizedUses();
 #endif
       const llvm::MemoryUseOrDef* ma = MSSA.getMemoryAccess(inst);
@@ -3591,7 +3591,7 @@ namespace llvm
          llvm::Function* currentFunction = inst->getFunction();
          llvm::LazyValueInfo& LVI = GetLVI(*currentFunction);
          llvm::ConstantRange range =
-#if __clang_major__ < 12
+#if PANDA_LLVM_CLANG_MAJOR < 12
              LVI.getConstantRange(inst, BB, inst);
 #else
              LVI.getConstantRange(inst, inst, true);
@@ -3633,7 +3633,7 @@ namespace llvm
          auto isSigned = CheckSignedTag(IR_TYPE_NODE(t));
 
          llvm::ConstantRange range =
-#if __clang_major__ < 12
+#if PANDA_LLVM_CLANG_MAJOR < 12
              LVI.getConstantRange(inst, BB, inst);
 #else
              LVI.getConstantRange(inst, inst, true);
@@ -3665,7 +3665,7 @@ namespace llvm
             auto type = val->getType();
             if(dyn_cast<llvm::ArrayType>(type) || dyn_cast<llvm::VectorType>(type))
             {
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
                for(unsigned index = 0; index < val->getElementCount().getFixedValue(); ++index)
 #else
                for(unsigned index = 0; index < val->getNumElements(); ++index)
@@ -3684,7 +3684,7 @@ namespace llvm
             else
             {
                const void* ty = IR_TYPE_NODE(t);
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
                for(unsigned index = 0; index < val->getElementCount().getFixedValue(); ++index)
 #else
                for(unsigned index = 0; index < val->getNumElements(); ++index)
@@ -3789,7 +3789,7 @@ namespace llvm
       auto node_count_str = std::to_string(last_used_index);
       node_count_str = std::string(10 - node_count_str.size(), ' ') + node_count_str;
       stream.seek(0);
-      stream << "COMPILER_VERSION: \"Clang " __clang_version__ "\"\nPLUGIN_VERSION: \"" PANDA_PLUGIN_VERSION
+      stream << "COMPILER_VERSION: \"Clang " PANDA_LLVM_CLANG_VERSION_STR "\"\nPLUGIN_VERSION: \"" PANDA_PLUGIN_VERSION
                 "\"\nNODE_COUNT: "
              << node_count_str << "\n";
    }
@@ -3856,7 +3856,7 @@ namespace llvm
 
       unsigned ExpBiased = API.lshr(nbitsMan).getZExtValue() & ((1U << nbitsExp) - 1);
       const auto zeroVal =
-#if __clang_major__ < 17
+#if PANDA_LLVM_CLANG_MAJOR < 17
           llvm::APInt::getNullValue(API.getBitWidth());
 #else
           llvm::APInt::getZero(API.getBitWidth());
@@ -3866,7 +3866,7 @@ namespace llvm
       snprintf(buffer, size_buff, "p%+d", ExpUnbiased);
 
       const auto nOnes =
-#if __clang_major__ < 17
+#if PANDA_LLVM_CLANG_MAJOR < 17
           llvm::APInt::getAllOnesValue(nbitsMan);
 #else
           llvm::APInt::getAllOnes(nbitsMan);
@@ -5083,7 +5083,7 @@ namespace llvm
          case llvm::Intrinsic::fabs:
          case llvm::Intrinsic::fmuladd:
          case llvm::Intrinsic::maxnum:
-#if __clang_major__ > 13
+#if PANDA_LLVM_CLANG_MAJOR > 13
          case llvm::Intrinsic::is_fpclass:
 #endif
          case llvm::Intrinsic::memcpy:
@@ -5095,13 +5095,13 @@ namespace llvm
          case llvm::Intrinsic::stackrestore:
          case llvm::Intrinsic::stacksave:
          case llvm::Intrinsic::trap:
-#if __clang_major__ > 7
+#if PANDA_LLVM_CLANG_MAJOR > 7
          case llvm::Intrinsic::sadd_sat:
          case llvm::Intrinsic::ssub_sat:
          case llvm::Intrinsic::uadd_sat:
          case llvm::Intrinsic::usub_sat:
 #endif
-#if __clang_major__ > 11
+#if PANDA_LLVM_CLANG_MAJOR > 11
          case llvm::Intrinsic::abs:
          case llvm::Intrinsic::fshl:
          case llvm::Intrinsic::fshr:
@@ -5110,7 +5110,7 @@ namespace llvm
          case llvm::Intrinsic::umax:
          case llvm::Intrinsic::umin:
 #endif
-#if __clang_major__ > 12
+#if PANDA_LLVM_CLANG_MAJOR > 12
          case llvm::Intrinsic::bitreverse:
 #endif
 #ifdef VVD
@@ -5180,7 +5180,7 @@ namespace llvm
    {
       // Conservatively, avoid aggregate types. This is because we don't
       // want to worry about them partially overlapping other stores.
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
       if(!cast<llvm::PointerType>(C->getType())->getElementType()->isSingleValueType())
 #else
       if(C->getType()->isOpaquePointerTy() || !C->getType()->getNonOpaquePointerElementType()->isSingleValueType())
@@ -5212,7 +5212,7 @@ namespace llvm
 
                // The remaining indices must be compile-time known integers within the
                // notional bounds of the corresponding static array types.
-#if __clang_major__ > 15
+#if PANDA_LLVM_CLANG_MAJOR > 15
             Constant* StrippedC = cast<Constant>(CE->stripInBoundsConstantOffsets());
             if(StrippedC == C)
 #else
@@ -5220,11 +5220,11 @@ namespace llvm
 #endif
                return false;
 
-#if __clang_major__ > 18
+#if PANDA_LLVM_CLANG_MAJOR > 18
             return ConstantFoldLoadFromUniformValue(GV->getInitializer(), cType, DL);
-#elif __clang_major__ > 15
+#elif PANDA_LLVM_CLANG_MAJOR > 15
             return ConstantFoldLoadFromUniformValue(GV->getInitializer(), cType);
-#elif __clang_major__ >= 13
+#elif PANDA_LLVM_CLANG_MAJOR >= 13
             return ConstantFoldLoadThroughGEPConstantExpr(GV->getInitializer(), CE, cType, DL);
 #else
             return ConstantFoldLoadThroughGEPConstantExpr(GV->getInitializer(), CE);
@@ -5321,7 +5321,7 @@ namespace llvm
       }
       else if(dyn_cast<llvm::VectorType>(initType))
       {
-#if __clang_major__ >= 12
+#if PANDA_LLVM_CLANG_MAJOR >= 12
          NumElts = dyn_cast<llvm::VectorType>(initType)->getElementCount().getFixedValue();
 #else
          NumElts = dyn_cast<llvm::VectorType>(initType)->getNumElements();
@@ -5439,7 +5439,7 @@ namespace llvm
             }
             else if(auto* VTy = dyn_cast<llvm::VectorType>(Ty))
             {
-#if __clang_major__ >= 12
+#if PANDA_LLVM_CLANG_MAJOR >= 12
                NumElts = VTy->getElementCount().getFixedValue();
 #else
                NumElts = VTy->getNumElements();
@@ -5514,7 +5514,7 @@ namespace llvm
             // stored value.
             Ptr = CE->getOperand(0);
 
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
             llvm::Type* NewTy = cast<llvm::PointerType>(Ptr->getType())->getElementType();
 #else
             if(Ptr->getType()->isOpaquePointerTy())
@@ -5608,11 +5608,11 @@ namespace llvm
             case llvm::Instruction::GetElementPtr:
                if(auto* I = getInitializerLocal(CE->getOperand(0)))
                {
-#if __clang_major__ > 18
+#if PANDA_LLVM_CLANG_MAJOR > 18
                   return ConstantFoldLoadFromUniformValue(I, pType, DL);
-#elif __clang_major__ > 15
+#elif PANDA_LLVM_CLANG_MAJOR > 15
                   return ConstantFoldLoadFromUniformValue(I, pType);
-#elif __clang_major__ >= 13
+#elif PANDA_LLVM_CLANG_MAJOR >= 13
                   return llvm::ConstantFoldLoadThroughGEPConstantExpr(I, CE, pType, DL);
 #else
                   return llvm::ConstantFoldLoadThroughGEPConstantExpr(I, CE);
@@ -5825,9 +5825,9 @@ namespace llvm
             for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
                llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
             for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
-#if __clang_major__ >= 12
+#if PANDA_LLVM_CLANG_MAJOR >= 12
                llvm::simplifyCFG(&*BBIt++, TTI);
-#elif __clang_major__ >= 6
+#elif PANDA_LLVM_CLANG_MAJOR >= 6
                llvm::simplifyCFG(&*BBIt++, TTI, 1);
 #else
                llvm::SimplifyCFG(&*BBIt++, TTI, 1);
@@ -5881,7 +5881,7 @@ namespace llvm
                         assert(ci.use_empty() && "Lowering should have eliminated any uses of the intrinsic call!");
                         ci.eraseFromParent();
                      }
-#if __clang_major__ >= 8 || defined(_WIN32)
+#if PANDA_LLVM_CLANG_MAJOR >= 8 || defined(_WIN32)
                      else if(Callee->getIntrinsicID() == llvm::Intrinsic::is_constant)
                      {
                         auto C = llvm::ConstantInt::get(llvm::Type::getInt1Ty(ci.getContext()), 0, false);
@@ -5954,7 +5954,7 @@ namespace llvm
                           llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> _GetMSSA,
                           llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> _GetLVI,
                           llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> _GetAC,
-#if __clang_major__ > 5
+#if PANDA_LLVM_CLANG_MAJOR > 5
                           llvm::function_ref<llvm::OptimizationRemarkEmitter&(llvm::Function&)> GetORE,
 #endif
                           const std::string& costTable)
@@ -5970,7 +5970,7 @@ namespace llvm
       moduleContext = &M.getContext();
       TopFunctionNames = _TopFunctionNames;
       bool res = false;
-#if __clang_major__ > 5
+#if PANDA_LLVM_CLANG_MAJOR > 5
       if(!costTable.empty())
       {
          TreeHeightReduction THR;

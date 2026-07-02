@@ -52,7 +52,7 @@
 #include <clang/AST/RecordLayout.h>
 #include <clang/AST/RecursiveASTVisitor.h>
 #include <clang/AST/Type.h>
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
 #include <clang/Analysis/CallGraph.h>
 #endif
 #include <clang/Frontend/CompilerInstance.h>
@@ -77,7 +77,7 @@
 
 #define THIS_PARAM_NAME "this"
 
-#if __clang_major__ > 9
+#if PANDA_LLVM_CLANG_MAJOR > 9
 #define make_unique std::make_unique
 #else
 #define make_unique llvm::make_unique
@@ -328,7 +328,7 @@ static std::string MangledName(MangleContext* MC, NamedDecl* D)
    raw_string_ostream ss(fsym);
    if(auto CD = dyn_cast<CXXConstructorDecl>(D))
    {
-#if __clang_major__ > 10
+#if PANDA_LLVM_CLANG_MAJOR > 10
       MC->mangleName(GlobalDecl(CD, CXXCtorType::Ctor_Complete), ss);
 #else
       MC->mangleCXXCtor(CD, CXXCtorType::Ctor_Complete, ss);
@@ -336,7 +336,7 @@ static std::string MangledName(MangleContext* MC, NamedDecl* D)
    }
    else if(auto CD = dyn_cast<CXXDestructorDecl>(D))
    {
-#if __clang_major__ > 10
+#if PANDA_LLVM_CLANG_MAJOR > 10
       MC->mangleName(GlobalDecl(CD, CXXDtorType::Dtor_Complete), ss);
 #else
       MC->mangleCXXDtor(CD, CXXDtorType::Dtor_Complete, ss);
@@ -379,7 +379,7 @@ class HLSPragmaParser
     * @return bool true on pragma id match, false else
     */
    virtual bool HandlePragma(Preprocessor& PP,
-#if __clang_major__ >= 9
+#if PANDA_LLVM_CLANG_MAJOR >= 9
                              PragmaIntroducer
 #else
                              PragmaIntroducerKind
@@ -412,7 +412,7 @@ class HLSPragmaHandler : public PragmaHandler
    }
 
    void HandlePragma(Preprocessor& PP,
-#if __clang_major__ >= 9
+#if PANDA_LLVM_CLANG_MAJOR >= 9
                      PragmaIntroducer
 #else
                      PragmaIntroducerKind
@@ -567,7 +567,7 @@ class PipelineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
       for(const auto& stmt : FD->getBody()->children())
       {
          const auto endLoc =
-#if __clang_major__ >= 7
+#if PANDA_LLVM_CLANG_MAJOR >= 7
              stmt->getEndLoc();
 #else
              stmt->getLocEnd();
@@ -575,7 +575,7 @@ class PipelineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
          if(pragmaLoc < endLoc)
          {
             return pragmaLoc <
-#if __clang_major__ >= 7
+#if PANDA_LLVM_CLANG_MAJOR >= 7
                    stmt->getBeginLoc();
 #else
                    stmt->getLocStart();
@@ -666,7 +666,7 @@ class InlineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
          const auto& attr = *p.attrs.begin();
          if(iequals(attr.first.id, "recursive"))
          {
-#if __clang_major__ >= 10
+#if PANDA_LLVM_CLANG_MAJOR >= 10
             FD->addAttr(AlwaysInlineAttr::CreateImplicit(FD->getASTContext()));
 #else
             FD->addAttr(
@@ -691,7 +691,7 @@ class InlineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
       }
       else
       {
-#if __clang_major__ >= 10
+#if PANDA_LLVM_CLANG_MAJOR >= 10
          FD->addAttr(AlwaysInlineAttr::CreateImplicit(FD->getASTContext()));
 #else
          FD->addAttr(
@@ -730,7 +730,7 @@ class InlineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
 };
 const char* InlineHLSPragmaHandler::PragmaKeyword = "inline";
 
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
 namespace
 {
    struct PragmaLoopHintInfo
@@ -745,7 +745,7 @@ namespace
 class UnrollHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
 {
    bool HandlePragma(Preprocessor& PP,
-#if __clang_major__ >= 9
+#if PANDA_LLVM_CLANG_MAJOR >= 9
                      PragmaIntroducer
 #else
                      PragmaIntroducerKind
@@ -828,14 +828,14 @@ class UnrollHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
 
          ValueList.push_back(UnrollFactor);
          ValueList.push_back(EOFTok);
-#if __clang_major__ >= 9
+#if PANDA_LLVM_CLANG_MAJOR >= 9
          for(auto& T : ValueList)
          {
             T.setFlag(Token::IsReinjected);
          }
 #endif
          Info->Toks =
-#if __clang_major__ > 13
+#if PANDA_LLVM_CLANG_MAJOR > 13
              ArrayRef(ValueList).copy(PP.getPreprocessorAllocator());
 #else
              makeArrayRef(ValueList).copy(PP.getPreprocessorAllocator());
@@ -849,7 +849,7 @@ class UnrollHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
       TokenArray[0].setAnnotationValue(static_cast<void*>(Info));
       PP.EnterTokenStream(std::move(TokenArray), 1,
                           /*DisableMacroExpansion=*/false
-#if __clang_major__ >= 9
+#if PANDA_LLVM_CLANG_MAJOR >= 9
                           ,
                           /*IsReinject=*/false
 #endif
@@ -921,7 +921,7 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
             LLVM_DEBUG(dbgs() << "DATAFLOW: " << functionSym << "\n");
             forceNoInline(FD);
 
-#if __clang_major__ < 11
+#if PANDA_LLVM_CLANG_MAJOR < 11
             for(auto* stmt : FD->getBody()->children())
             {
                if(auto callExpr = dyn_cast<CallExpr>(stmt))
@@ -1596,7 +1596,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
 
       const auto manageArray = [&](const ConstantArrayType* CA, bool setInterfaceType) {
          const auto apIntToString = [](const llvm::APInt& apInt) {
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
             return toString(apInt, 10, false);
 #else
             return apInt.toString(10, false);
@@ -1804,7 +1804,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
             this_param[key_loc_t("bundle", SourceLocation())] = THIS_PARAM_NAME;
             this_param[key_loc_t("index", SourceLocation())] = "0";
             const auto thisType =
-#if __clang_major__ >= 8
+#if PANDA_LLVM_CLANG_MAJOR >= 8
                 dyn_cast<CXXMethodDecl>(FD)->getThisType();
 #else
                 dyn_cast<CXXMethodDecl>(FD)->getThisType(_CI.getASTContext());
@@ -1917,7 +1917,7 @@ class ArrayPartitionHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragm
    ~ArrayPartitionHLSPragmaHandler() = default;
 
    bool HandlePragma(Preprocessor& PP,
-#if __clang_major__ >= 9
+#if PANDA_LLVM_CLANG_MAJOR >= 9
                      PragmaIntroducer
 #else
                      PragmaIntroducerKind
@@ -2154,7 +2154,7 @@ class ArrayPartitionHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragm
 
       for(Token& currentTok : Toks)
       {
-#if __clang_major__ >= 9
+#if PANDA_LLVM_CLANG_MAJOR >= 9
          currentTok.setFlag(Token::IsReinjected);
 #endif
       }
@@ -2163,7 +2163,7 @@ class ArrayPartitionHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragm
       std::copy(Toks.begin(), Toks.end(), Buffer.get());
 
       PP.EnterTokenStream(std::move(Buffer), Toks.size(), true
-#if __clang_major__ >= 9
+#if PANDA_LLVM_CLANG_MAJOR >= 9
                           ,
                           /*IsReinject=*/false
 #endif
@@ -2254,7 +2254,7 @@ class HLSASTConsumer : public ASTConsumer
       if(FD->hasBody())
       {
          fd_end =
-#if __clang_major__ >= 7
+#if PANDA_LLVM_CLANG_MAJOR >= 7
              FD->getBody()->getEndLoc();
 #else
              FD->getBody()->getLocEnd();

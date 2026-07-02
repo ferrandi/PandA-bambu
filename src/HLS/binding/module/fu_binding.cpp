@@ -3942,8 +3942,10 @@ void fu_binding::add_smart_connection(const structural_objectRef src_port, const
 {
    if(src_port->get_owner() != circuit && dst_port->get_owner() != circuit)
    {
-      const auto src_signal = GetPointerS<port_o>(src_port)->get_connected_signal();
-      const auto dst_signal = GetPointerS<port_o>(dst_port)->get_connected_signal();
+      const auto raw_src_signal = GetPointerS<port_o>(src_port)->get_connected_signal();
+      const auto raw_dst_signal = GetPointerS<port_o>(dst_port)->get_connected_signal();
+      const auto src_signal = raw_src_signal && raw_src_signal->get_owner() == circuit ? raw_src_signal : nullptr;
+      const auto dst_signal = raw_dst_signal && raw_dst_signal->get_owner() == circuit ? raw_dst_signal : nullptr;
       if(src_signal)
       {
          THROW_ASSERT(!dst_signal || dst_signal == src_signal,

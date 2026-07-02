@@ -79,7 +79,15 @@ set(PANDA_LICENSING_INSTALLDIR_REL "${PANDA_DATA_INSTALLDIR_REL}/licensing")
 set(PANDA_DATA_INSTALLDIR "${PANDA_DATA_INSTALLDIR_REL}")
 set(PANDA_LICENSING_INSTALLDIR "${PANDA_LICENSING_INSTALLDIR_REL}")
 
-find_package(Boost 1.48 REQUIRED COMPONENTS headers)
+find_package(Boost 1.48 CONFIG QUIET COMPONENTS headers)
+if(NOT Boost_FOUND)
+   if(POLICY CMP0167)
+      message(FATAL_ERROR
+         "BoostConfig.cmake was not found. Install the Boost development package or set Boost_DIR; "
+         "CMake 4 no longer provides FindBoost.")
+   endif()
+   find_package(Boost 1.48 REQUIRED COMPONENTS headers)
+endif()
 find_package(ZLIB REQUIRED)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 

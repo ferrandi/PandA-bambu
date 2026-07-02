@@ -87,7 +87,7 @@ namespace llvm
       if(!hasTag(M))
       {
          llvm::legacy::PassManager PM;
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
          PM.add(llvm::createInstructionCombiningPass(1000));
 #else
          PM.add(llvm::createInstructionCombiningPass(true));

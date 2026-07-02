@@ -1,4 +1,4 @@
-file(GLOB_RECURSE PANDA_ALL_SOURCES CONFIGURE_DEPENDS
+file(GLOB_RECURSE PANDA_ALL_SOURCES
    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
 )
 
@@ -35,13 +35,13 @@ set(BAMBU_PARAM_REGISTRY_FILES
 )
 set_source_files_properties(${BAMBU_PARAM_REGISTRY_FILES} PROPERTIES GENERATED TRUE)
 
-file(GLOB_RECURSE BAMBU_PARAM_INPUTS CONFIGURE_DEPENDS
+file(GLOB_RECURSE BAMBU_PARAM_INPUTS
    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
 )
 list(FILTER BAMBU_PARAM_INPUTS EXCLUDE REGEX ".*/bambu_parameters_registry/.*\\.cpp$")
-file(GLOB_RECURSE BAMBU_PARAM_DEVICE_XML CONFIGURE_DEPENDS
+file(GLOB_RECURSE BAMBU_PARAM_DEVICE_XML
    "${CMAKE_SOURCE_DIR}/etc/libtech/*/*-seed.xml"
 )
 
@@ -106,13 +106,72 @@ add_dependencies(panda_core generate_constraints_std)
 # Generate branch/revision metadata headers
 set(BRANCH_NAME_HPP "${CMAKE_CURRENT_BINARY_DIR}/branch_name.hpp")
 set(REVISION_HASH_HPP "${CMAKE_CURRENT_BINARY_DIR}/revision_hash.hpp")
-# Always re-check git state; copy_if_different avoids unnecessary recompilation
-add_custom_target(panda_revision_headers
-   COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_CURRENT_BINARY_DIR}"
+set(_panda_revision_git_deps)
+if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
+   execute_process(
+      COMMAND git -C "${CMAKE_SOURCE_DIR}" rev-parse --git-path HEAD
+      OUTPUT_VARIABLE _panda_git_head_path
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      RESULT_VARIABLE _panda_git_head_path_res
+      ERROR_QUIET
+   )
+   if(_panda_git_head_path_res EQUAL 0 AND _panda_git_head_path)
+      if(NOT IS_ABSOLUTE "${_panda_git_head_path}")
+         get_filename_component(_panda_git_head_path "${_panda_git_head_path}" ABSOLUTE BASE_DIR "${CMAKE_SOURCE_DIR}")
+      endif()
+      list(APPEND _panda_revision_git_deps "${_panda_git_head_path}")
+   endif()
+   execute_process(
+      COMMAND git -C "${CMAKE_SOURCE_DIR}" symbolic-ref -q HEAD
+      OUTPUT_VARIABLE _panda_git_head_ref
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      RESULT_VARIABLE _panda_git_head_ref_res
+      ERROR_QUIET
+   )
+   if(_panda_git_head_ref_res EQUAL 0 AND _panda_git_head_ref)
+      execute_process(
+         COMMAND git -C "${CMAKE_SOURCE_DIR}" rev-parse --git-path "${_panda_git_head_ref}"
+         OUTPUT_VARIABLE _panda_git_head_ref_path
+         OUTPUT_STRIP_TRAILING_WHITESPACE
+         RESULT_VARIABLE _panda_git_head_ref_path_res
+         ERROR_QUIET
+      )
+      if(_panda_git_head_ref_path_res EQUAL 0 AND _panda_git_head_ref_path)
+         if(NOT IS_ABSOLUTE "${_panda_git_head_ref_path}")
+            get_filename_component(_panda_git_head_ref_path "${_panda_git_head_ref_path}" ABSOLUTE
+               BASE_DIR "${CMAKE_SOURCE_DIR}")
+         endif()
+         list(APPEND _panda_revision_git_deps "${_panda_git_head_ref_path}")
+      endif()
+   endif()
+   execute_process(
+      COMMAND git -C "${CMAKE_SOURCE_DIR}" rev-parse --git-path packed-refs
+      OUTPUT_VARIABLE _panda_git_packed_refs_path
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      RESULT_VARIABLE _panda_git_packed_refs_path_res
+      ERROR_QUIET
+   )
+   if(_panda_git_packed_refs_path_res EQUAL 0 AND _panda_git_packed_refs_path)
+      if(NOT IS_ABSOLUTE "${_panda_git_packed_refs_path}")
+         get_filename_component(_panda_git_packed_refs_path "${_panda_git_packed_refs_path}" ABSOLUTE
+            BASE_DIR "${CMAKE_SOURCE_DIR}")
+      endif()
+      if(EXISTS "${_panda_git_packed_refs_path}")
+         list(APPEND _panda_revision_git_deps "${_panda_git_packed_refs_path}")
+      endif()
+   endif()
+elseif(EXISTS "${CMAKE_SOURCE_DIR}/dist_revision_info")
+   list(APPEND _panda_revision_git_deps "${CMAKE_SOURCE_DIR}/dist_revision_info")
+endif()
+# Stamp-file output makes Ninja track idempotent generation correctly
+set(REVISION_STAMP "${CMAKE_CURRENT_BINARY_DIR}/revision_stamp")
+add_custom_command(
+   OUTPUT "${REVISION_STAMP}"
+   BYPRODUCTS "${BRANCH_NAME_HPP}" "${REVISION_HASH_HPP}"
    COMMAND bash -c "set -euo pipefail; \
-if [ -d \"${CMAKE_SOURCE_DIR}/.git\" ] && command -v git >/dev/null 2>&1; then \
-   printf '\"%s\"\\n' \"$(git --git-dir \"${CMAKE_SOURCE_DIR}/.git\" rev-parse --abbrev-ref HEAD)\" > \"${BRANCH_NAME_HPP}.tmp\"; \
-   printf '\"%s\"\\n' \"$(git --git-dir \"${CMAKE_SOURCE_DIR}/.git\" rev-parse HEAD)\" > \"${REVISION_HASH_HPP}.tmp\"; \
+if command -v git >/dev/null 2>&1 && git -C \"${CMAKE_SOURCE_DIR}\" rev-parse --git-dir >/dev/null 2>&1; then \
+   printf '\"%s\"\\n' \"$(git -C \"${CMAKE_SOURCE_DIR}\" rev-parse --abbrev-ref HEAD)\" > \"${BRANCH_NAME_HPP}.tmp\"; \
+   printf '\"%s\"\\n' \"$(git -C \"${CMAKE_SOURCE_DIR}\" rev-parse HEAD)\" > \"${REVISION_HASH_HPP}.tmp\"; \
 elif [ -f \"${CMAKE_SOURCE_DIR}/dist_revision_info\" ]; then \
    sed -n '2s/.*/\"&\"/p' \"${CMAKE_SOURCE_DIR}/dist_revision_info\" > \"${BRANCH_NAME_HPP}.tmp\"; \
    sed -n '1s/.*/\"&\"/p' \"${CMAKE_SOURCE_DIR}/dist_revision_info\" > \"${REVISION_HASH_HPP}.tmp\"; \
@@ -121,12 +180,14 @@ else \
    echo \"\\\"unknown\\\"\" > \"${REVISION_HASH_HPP}.tmp\"; \
 fi; \
 ${CMAKE_COMMAND} -E copy_if_different \"${BRANCH_NAME_HPP}.tmp\" \"${BRANCH_NAME_HPP}\"; \
-${CMAKE_COMMAND} -E copy_if_different \"${REVISION_HASH_HPP}.tmp\" \"${REVISION_HASH_HPP}\""
-   BYPRODUCTS "${BRANCH_NAME_HPP}" "${REVISION_HASH_HPP}"
+${CMAKE_COMMAND} -E copy_if_different \"${REVISION_HASH_HPP}.tmp\" \"${REVISION_HASH_HPP}\"; \
+${CMAKE_COMMAND} -E touch \"${REVISION_STAMP}\""
+   DEPENDS ${_panda_revision_git_deps}
    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-   COMMENT "Checking branch_name.hpp and revision_hash.hpp"
+   COMMENT "Updating branch/revision headers"
    VERBATIM
 )
+add_custom_target(panda_revision_headers DEPENDS "${REVISION_STAMP}")
 add_dependencies(panda_core panda_revision_headers)
 
 # License install (mirrors Automake install-data-hook_license)
@@ -257,7 +318,7 @@ endif()
 target_compile_options(panda_core PRIVATE ${_panda_core_noerror_flags})
 
 # Narrow archive for module generators (mirrors Automake whole-archive of lib_hdl_generators)
-file(GLOB PANDA_HDL_GENERATOR_SOURCES CONFIGURE_DEPENDS
+file(GLOB PANDA_HDL_GENERATOR_SOURCES
    "${CMAKE_CURRENT_SOURCE_DIR}/HLS/hdl_generators/*.cpp"
 )
 add_library(panda_hdl_generators STATIC ${PANDA_HDL_GENERATOR_SOURCES})

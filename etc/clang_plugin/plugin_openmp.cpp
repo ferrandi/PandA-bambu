@@ -95,9 +95,9 @@
 #include <llvm/Transforms/IPO.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
 #include <llvm/Transforms/Utils/LoopUtils.h>
-#if __clang_major__ < 13
+#if PANDA_LLVM_CLANG_MAJOR < 13
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
-#elif __clang_major__ >= 13
+#elif PANDA_LLVM_CLANG_MAJOR >= 13
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/PassPlugin.h>
 #endif
@@ -259,7 +259,7 @@ namespace llvm
    {
       assert(isa<PointerType>(inst->getType()) && isa<PointerType>(new_ptr->getType()));
       std::set<llvm::Instruction*> users;
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
       const auto elem_type = cast<PointerType>(new_ptr->getType())->getElementType();
 #else
       if(new_ptr->getType()->isOpaquePointerTy())
@@ -388,7 +388,7 @@ namespace llvm
                   }
                   else if(calledFunName == TOSTRING(KMP_SET_REDUCE_DATA))
                   {
-#if __clang_major__ < 14
+#if PANDA_LLVM_CLANG_MAJOR < 14
                      assert(call_inst->getNumArgOperands() >= 2 && "Expected to have at least 2 arguments!");
 #else
                      assert(call_inst->arg_size() >= 2 && "Expected to have at least 2 arguments!");
@@ -412,7 +412,7 @@ namespace llvm
                         LLVM_DEBUG(llvm::dbgs() << "    cast from: " << local_data_stack << "\n");
                      }
                      LLVM_DEBUG(llvm::dbgs() << "   local reduce stack: " << local_data_stack << "\n");
-#if __clang_major__ < 19
+#if PANDA_LLVM_CLANG_MAJOR < 19
                      assert((local_data_stack->getType()->isPointerTy() &&
                              local_data_stack->getType()->getPointerElementType()->isArrayTy()) &&
                             "Argument should be a pointer to array type!");
@@ -471,7 +471,7 @@ namespace llvm
                         std::vector<Type*> local_data_types;
                         for(const auto& val : local_data_ptrs)
                         {
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
                            local_data_types.push_back(cast<PointerType>(val->getType())->getElementType());
 #else
                            if(val->getType()->isOpaquePointerTy())
@@ -487,11 +487,11 @@ namespace llvm
                         local_data_struct_t = StructType::create(function.getContext(), local_data_types);
                         LLVM_DEBUG(llvm::dbgs() << "   local data type: " << local_data_struct_t << "\n");
                         // Allocate local reduce data structure
-#if __clang_major__ != 4
+#if PANDA_LLVM_CLANG_MAJOR != 4
                         const auto DL = function.getParent()->getDataLayout();
 #endif
                         const auto local_data_ptr = new AllocaInst(local_data_struct_t,
-#if __clang_major__ != 4
+#if PANDA_LLVM_CLANG_MAJOR != 4
                                                                    DL.getAllocaAddrSpace(),
 #endif
                                                                    nullptr, "", local_data_stack);
@@ -559,7 +559,7 @@ namespace llvm
                }
                else
                {
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
                   auto calledFun = call_inst->getCalledOperand();
 #else
                   auto calledFun = call_inst->getCalledValue();
@@ -601,7 +601,7 @@ namespace llvm
       bool hasDirectCall = false;
       for(Use& U : function->uses())
       {
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
          CallBase* CB = dyn_cast<CallBase>(U.getUser());
          // Must be an indirect call.
          if(CB == nullptr || !CB->isCallee(&U))
@@ -621,14 +621,14 @@ namespace llvm
       using ScalarizeTable = std::set<std::pair<Type*, IndicesVector>>;
       FunctionType* FTy = function->getFunctionType();
       std::vector<Type*> Params;
-#if __clang_major__ == 4
+#if PANDA_LLVM_CLANG_MAJOR == 4
       SmallVector<AttributeSet, 8> AttributesVec;
 #else
       SmallVector<AttributeSet, 8> ArgAttrVec;
 #endif
       auto PAL = function->getAttributes();
 
-#if __clang_major__ == 4
+#if PANDA_LLVM_CLANG_MAJOR == 4
       // Add any return attributes.
       if(PAL.hasAttributes(AttributeSet::ReturnIndex))
       {
@@ -648,7 +648,7 @@ namespace llvm
             if(I->user_empty())
             {
                deadArgToPromote.insert(ArgNo);
-#if __clang_major__ > 4 && __clang_major__ < 12
+#if PANDA_LLVM_CLANG_MAJOR > 4 && PANDA_LLVM_CLANG_MAJOR < 12
                // There may be remaining metadata uses of the argument for things like
                // llvm.dbg.value. Replace them with undef.
                I->replaceAllUsesWith(UndefValue::get(I->getType()));
@@ -659,7 +659,7 @@ namespace llvm
                if(I->user_empty())
                {
                   assert(I->getType()->isPointerTy());
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
                   Params.push_back(llvm::cast<llvm::PointerType>(I->getType())->getElementType());
 #else
                   if(I->getType()->isOpaquePointerTy())
@@ -669,13 +669,13 @@ namespace llvm
                   }
                   Params.push_back(llvm::cast<llvm::PointerType>(I->getType())->getNonOpaquePointerElementType());
 #endif
-#if __clang_major__ > 4
+#if PANDA_LLVM_CLANG_MAJOR > 4
                   ArgAttrVec.push_back(AttributeSet());
 #endif
                }
                else
                {
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
                   Type* AgTy = cast<PointerType>(I->getType())->getElementType();
 #else
                   if(I->getType()->isOpaquePointerTy())
@@ -693,7 +693,7 @@ namespace llvm
                         if(elType->isArrayTy())
                         {
                            auto aT = dyn_cast<ArrayType>(elType);
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
                            auto arrElType = aT->getElementType();
 #else
                            if(aT->isOpaquePointerTy())
@@ -708,7 +708,7 @@ namespace llvm
                            for(ind = 0; ind < nEl; ++ind)
                            {
                               Params.push_back(arrElType);
-#if __clang_major__ != 4
+#if PANDA_LLVM_CLANG_MAJOR != 4
                               ArgAttrVec.push_back(AttributeSet());
 #endif
                            }
@@ -716,7 +716,7 @@ namespace llvm
                         else
                         {
                            Params.push_back(elType);
-#if __clang_major__ != 4
+#if PANDA_LLVM_CLANG_MAJOR != 4
                            ArgAttrVec.push_back(AttributeSet());
 #endif
                         }
@@ -758,7 +758,7 @@ namespace llvm
                      for(const auto& ArgIndex : ArgIndices)
                      {
                         // not allowed to dereference ->begin() if size() is 0
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
                         Params.push_back(GetElementPtrInst::getIndexedType(
                             cast<PointerType>(I->getType()->getScalarType())->getElementType(), ArgIndex.second));
 #else
@@ -771,7 +771,7 @@ namespace llvm
                             cast<PointerType>(I->getType()->getScalarType())->getNonOpaquePointerElementType(),
                             ArgIndex.second));
 #endif
-#if __clang_major__ > 4
+#if PANDA_LLVM_CLANG_MAJOR > 4
                         ArgAttrVec.push_back(AttributeSet());
 #endif
                         assert(Params.back());
@@ -783,7 +783,7 @@ namespace llvm
          else
          {
             Params.push_back(I->getType());
-#if __clang_major__ == 4
+#if PANDA_LLVM_CLANG_MAJOR == 4
             auto ArgIndex = ArgNo + 1;
             AttributeSet attrs = PAL.getParamAttributes(ArgIndex);
             if(attrs.hasAttributes(ArgIndex))
@@ -791,7 +791,7 @@ namespace llvm
                AttrBuilder B(attrs, ArgIndex);
                AttributesVec.push_back(AttributeSet::get(function->getContext(), Params.size(), B));
             }
-#elif __clang_major__ < 16
+#elif PANDA_LLVM_CLANG_MAJOR < 16
             ArgAttrVec.push_back(PAL.getParamAttributes(ArgNo));
 #else
             ArgAttrVec.push_back(PAL.getParamAttrs(ArgNo));
@@ -799,7 +799,7 @@ namespace llvm
          }
       }
 
-#if __clang_major__ == 4
+#if PANDA_LLVM_CLANG_MAJOR == 4
       // Add any function attributes.
       if(PAL.hasAttributes(AttributeSet::FunctionIndex))
       {
@@ -816,7 +816,7 @@ namespace llvm
       NF->copyAttributesFrom(function);
 
       // Patch the pointer to LLVM function in debug info descriptor.
-#if __clang_major__ <= 11
+#if PANDA_LLVM_CLANG_MAJOR <= 11
       NF->setSubprogram(function->getSubprogram());
 #else
       NF->copyMetadata(function, 0);
@@ -825,10 +825,10 @@ namespace llvm
 
       // Recompute the parameter attributes list based on the new arguments for
       // the function.
-#if __clang_major__ == 4
+#if PANDA_LLVM_CLANG_MAJOR == 4
       NF->setAttributes(AttributeSet::get(function->getContext(), AttributesVec));
       AttributesVec.clear();
-#elif __clang_major__ < 16
+#elif PANDA_LLVM_CLANG_MAJOR < 16
       NF->setAttributes(
           AttributeList::get(function->getContext(), PAL.getFnAttributes(), PAL.getRetAttributes(), ArgAttrVec));
       ArgAttrVec.clear();
@@ -842,12 +842,12 @@ namespace llvm
 
       function->replaceAllUsesWith(NF);
 
-#if __clang_major__ != 4
+#if PANDA_LLVM_CLANG_MAJOR != 4
       const DataLayout& DL = function->getParent()->getDataLayout();
 #endif
 
       // Splice the body of the old function into the new function
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
       NF->getBasicBlockList().splice(NF->begin(), function->getBasicBlockList());
 #else
       NF->splice(NF->begin(), NF);
@@ -864,7 +864,7 @@ namespace llvm
             {
                continue;
             }
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
             Type* AgTy = cast<PointerType>(I->getType())->getElementType();
 #else
             if(I->getType()->isOpaquePointerTy())
@@ -883,17 +883,17 @@ namespace llvm
 
                // Just add all the struct element types.
                Value* TheAlloca = new AllocaInst(AgTy,
-#if __clang_major__ != 4
+#if PANDA_LLVM_CLANG_MAJOR != 4
                                                  DL.getAllocaAddrSpace(),
 #endif
                                                  nullptr,
-#if __clang_major__ == 4
+#if PANDA_LLVM_CLANG_MAJOR == 4
 
-#elif __clang_major__ < 10
+#elif PANDA_LLVM_CLANG_MAJOR < 10
                                                  I->getParamAlignment(),
-#elif __clang_major__ == 10
+#elif PANDA_LLVM_CLANG_MAJOR == 10
                                                  MaybeAlign(I->getParamAlignment()),
-#elif __clang_major__ < 16
+#elif PANDA_LLVM_CLANG_MAJOR < 16
                                                  I->getParamAlign().getValueOr(DL.getPrefTypeAlign(AgTy)),
 #else
                                                  I->getParamAlign().valueOrOne() == llvm::Align(1) ?
@@ -1185,7 +1185,7 @@ namespace llvm
       // For array types, check for padding within members.
       if(auto seqTy = dyn_cast<VectorType>(type))
       {
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
          return isDenselyPacked(seqTy->getElementType(), DL);
 #else
          if(seqTy->isOpaquePointerTy())
@@ -1198,7 +1198,7 @@ namespace llvm
       }
       if(auto seqTy = dyn_cast<ArrayType>(type))
       {
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
          return isDenselyPacked(seqTy->getElementType(), DL);
 #else
          if(seqTy->isOpaquePointerTy())
@@ -1254,7 +1254,7 @@ namespace llvm
          return false;
       }
 
-#if __clang_major__ >= 10
+#if PANDA_LLVM_CLANG_MAJOR >= 10
       auto Arg = F->getArg(argIndex);
 #else
       Argument* Arg;
@@ -1420,7 +1420,7 @@ namespace llvm
          }
       }
 
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
       Type* AgTy = cast<PointerType>(Arg->getType())->getElementType();
 #else
       if(Arg->getType()->isOpaquePointerTy())
@@ -1490,7 +1490,7 @@ namespace llvm
                }
                else
                {
-#if __clang_major__ < 19
+#if PANDA_LLVM_CLANG_MAJOR < 19
                   std::vector<Type*> Params;
                   auto ptrToFun = dyn_cast<PointerType>(V.getType());
                   auto ft = dyn_cast<FunctionType>(ptrToFun->getPointerElementType());
@@ -1548,7 +1548,7 @@ namespace llvm
                   }
                   else
                   {
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
                      auto calledFun = call_inst->getCalledOperand();
 #else
                      auto calledFun = call_inst->getCalledValue();
@@ -1622,7 +1622,7 @@ namespace llvm
                   {
                      if(deadArgToPromote.find(argNum - 1) == deadArgToPromote.end())
                      {
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
                         Type* AgTy = cast<PointerType>((*It)->getType())->getElementType();
 #else
                         if((*It)->getType()->isOpaquePointerTy())
@@ -1697,7 +1697,7 @@ namespace llvm
                                           cl::desc("Specify the default number of threads"));
 
    struct openmpBambu : public ModulePass
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
        ,
                         public PassInfoMixin<openmpBambu>
 #endif
@@ -1709,7 +1709,7 @@ namespace llvm
          initializeLoopPassPass(*PassRegistry::getPassRegistry());
       }
 
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
       openmpBambu(const openmpBambu&) : openmpBambu()
       {
       }
@@ -1793,7 +1793,7 @@ namespace llvm
          getLoopAnalysisUsage(AU);
       }
 
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
       PreservedAnalyses run(Module& M, ModuleAnalysisManager&)
       {
          const auto changed = exec(M);
@@ -1812,7 +1812,7 @@ static llvm::RegisterPass<llvm::openmpBambu> XPass("openmpBambu",
                                                    false /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
 llvm::PassPluginLibraryInfo getopenmpBambuPluginInfo()
 {
    return {LLVM_PLUGIN_API_VERSION, "openmpBambu", "v0.12", [](llvm::PassBuilder& PB) {
@@ -1829,7 +1829,7 @@ llvm::PassPluginLibraryInfo getopenmpBambuPluginInfo()
                  return false;
               });
               PB.registerPipelineEarlySimplificationEPCallback([&](llvm::ModulePassManager& MPM,
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
                                                                    llvm::PassBuilder::OptimizationLevel
 #else
                                                                    llvm::OptimizationLevel

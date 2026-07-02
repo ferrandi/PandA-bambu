@@ -231,12 +231,6 @@ namespace
       }
 
       ir_nodeRef stmt_vdef = stmt_node->vdef;
-      if(!stmt_vdef && original_stmt_node->vdef)
-      {
-         stmt_vdef = original_stmt_node->vdef;
-         stmt_node->SetVdef(stmt_vdef);
-         GetPointerS<ssa_node>(stmt_vdef)->SetDefStmt(stmt);
-      }
       if(!stmt_vdef)
       {
          stmt_vdef = ir_man->create_ssa_name(ir_nodeRef(), ir_man->GetPointerType(ir_man->GetVoidType()), ir_nodeRef(),
@@ -1654,7 +1648,7 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
          }
          else
          {
-            THROW_ASSERT(gc->args.size() == 2, "unexpected condition");
+            THROW_ASSERT(gc->args.size() == 1 || gc->args.size() == 2, "unexpected condition");
          }
       }
       THROW_ASSERT(!valid_ptr || ir_helper::IsPointerType(valid_ptr), "Valid type must be bool pointer");

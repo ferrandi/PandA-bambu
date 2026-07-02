@@ -16,7 +16,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/IntrinsicInst.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
 #include "llvm/Support/Debug.h"
 #include <llvm/Analysis/ScalarEvolution.h>
 #include <llvm/IR/MDBuilder.h>
@@ -25,7 +25,7 @@
 
 using namespace llvm;
 
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
 #define _Align Align
 #else
 #define _Align unsigned
@@ -43,11 +43,11 @@ static unsigned getLoopOperandSizeInBytes(Type* Type)
 
 static void createMemCpyLoopKnownSize(Instruction* InsertBefore, Value* SrcAddr, Value* DstAddr, ConstantInt* CopyLen,
                                       _Align SrcAlign, _Align DstAlign, bool SrcIsVolatile, bool DstIsVolatile,
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
                                       bool CanOverlap,
 #endif
                                       const TargetTransformInfo& TTI
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
                                       ,
                                       std::optional<uint32_t> AtomicElementSize = std::nullopt
 #endif
@@ -61,9 +61,9 @@ static void createMemCpyLoopKnownSize(Instruction* InsertBefore, Value* SrcAddr,
    BasicBlock* PostLoopBB = nullptr;
    Function* ParentFunc = PreLoopBB->getParent();
    LLVMContext& Ctx = PreLoopBB->getContext();
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
    const DataLayout& DL = ParentFunc->getParent()->getDataLayout();
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
    MDBuilder MDB(Ctx);
    MDNode* NewDomain = MDB.createAnonymousAliasScopeDomain("MemCopyDomain");
    StringRef Name = "MemCopyAliasScope";
@@ -75,7 +75,7 @@ static void createMemCpyLoopKnownSize(Instruction* InsertBefore, Value* SrcAddr,
    unsigned DstAS = cast<PointerType>(DstAddr->getType())->getAddressSpace();
 
    Type* TypeOfCopyLen = CopyLen->getType();
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
    Type* LoopOpType =
        TTI.getMemcpyLoopLoweringType(Ctx, CopyLen, SrcAS, DstAS, SrcAlign.value(), DstAlign.value(), AtomicElementSize);
    assert((!AtomicElementSize || !LoopOpType->isVectorTy()) &&
@@ -84,7 +84,7 @@ static void createMemCpyLoopKnownSize(Instruction* InsertBefore, Value* SrcAddr,
    unsigned LoopOpSize = DL.getTypeStoreSize(LoopOpType);
    assert((!AtomicElementSize || LoopOpSize % *AtomicElementSize == 0) &&
           "Atomic memcpy lowering is not supported for selected operand size");
-#elif __clang_major__ >= 11
+#elif PANDA_LLVM_CLANG_MAJOR >= 11
    Type* LoopOpType = TTI.getMemcpyLoopLoweringType(Ctx, CopyLen, SrcAS, DstAS, SrcAlign.value(), DstAlign.value());
 
    unsigned LoopOpSize = DL.getTypeStoreSize(LoopOpType);
@@ -104,7 +104,7 @@ static void createMemCpyLoopKnownSize(Instruction* InsertBefore, Value* SrcAddr,
 
       IRBuilder<> PLBuilder(PreLoopBB->getTerminator());
 
-#if __clang_major__ < 18
+#if PANDA_LLVM_CLANG_MAJOR < 18
       // Cast the Src and Dst pointers to pointers to the loop operand type (if
       // needed).
       PointerType* SrcOpType = PointerType::get(LoopOpType, SrcAS);
@@ -118,7 +118,7 @@ static void createMemCpyLoopKnownSize(Instruction* InsertBefore, Value* SrcAddr,
          DstAddr = PLBuilder.CreateBitCast(DstAddr, DstOpType);
       }
 #endif
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
       Align PartDstAlign(commonAlignment(DstAlign, LoopOpSize));
       Align PartSrcAlign(commonAlignment(SrcAlign, LoopOpSize));
 #endif
@@ -128,22 +128,22 @@ static void createMemCpyLoopKnownSize(Instruction* InsertBefore, Value* SrcAddr,
       LoopIndex->addIncoming(ConstantInt::get(TypeOfCopyLen, 0U), PreLoopBB);
       // Loop Body
       Value* SrcGEP = LoopBuilder.CreateInBoundsGEP(LoopOpType, SrcAddr, LoopIndex);
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
       LoadInst* Load = LoopBuilder.CreateAlignedLoad(LoopOpType, SrcGEP, PartSrcAlign, SrcIsVolatile);
       if(!CanOverlap)
       {
          // Set alias scope for loads.
          Load->setMetadata(LLVMContext::MD_alias_scope, MDNode::get(Ctx, NewScope));
       }
-#elif __clang_major__ >= 11
+#elif PANDA_LLVM_CLANG_MAJOR >= 11
       Value* Load = LoopBuilder.CreateAlignedLoad(LoopOpType, SrcGEP, PartSrcAlign, SrcIsVolatile);
-#elif __clang_major__ >= 9
+#elif PANDA_LLVM_CLANG_MAJOR >= 9
       Value* Load = LoopBuilder.CreateLoad(LoopOpType, SrcGEP, SrcIsVolatile);
 #else
       Value* Load = LoopBuilder.CreateLoad(SrcGEP, SrcIsVolatile);
 #endif
       Value* DstGEP = LoopBuilder.CreateInBoundsGEP(LoopOpType, DstAddr, LoopIndex);
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
       StoreInst* Store = LoopBuilder.CreateAlignedStore(Load, DstGEP, PartDstAlign, DstIsVolatile);
       if(!CanOverlap)
       {
@@ -155,7 +155,7 @@ static void createMemCpyLoopKnownSize(Instruction* InsertBefore, Value* SrcAddr,
          Load->setAtomic(AtomicOrdering::Unordered);
          Store->setAtomic(AtomicOrdering::Unordered);
       }
-#elif __clang_major__ >= 11
+#elif PANDA_LLVM_CLANG_MAJOR >= 11
       LoopBuilder.CreateAlignedStore(Load, DstGEP, PartDstAlign, DstIsVolatile);
 #else
       LoopBuilder.CreateStore(Load, DstGEP, DstIsVolatile);
@@ -175,10 +175,10 @@ static void createMemCpyLoopKnownSize(Instruction* InsertBefore, Value* SrcAddr,
       IRBuilder<> RBuilder(PostLoopBB ? PostLoopBB->getFirstNonPHI() : InsertBefore);
 
       SmallVector<Type*, 5> RemainingOps;
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
       TTI.getMemcpyLoopResidualLoweringType(RemainingOps, Ctx, RemainingBytes, SrcAS, DstAS, SrcAlign.value(),
                                             DstAlign.value(), AtomicElementSize);
-#elif __clang_major__ >= 11
+#elif PANDA_LLVM_CLANG_MAJOR >= 11
       TTI.getMemcpyLoopResidualLoweringType(RemainingOps, Ctx, RemainingBytes, SrcAS, DstAS, SrcAlign.value(),
                                             DstAlign.value());
 #else
@@ -190,13 +190,13 @@ static void createMemCpyLoopKnownSize(Instruction* InsertBefore, Value* SrcAddr,
 
       for(auto* OpTy : RemainingOps)
       {
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
          Align PartSrcAlign(commonAlignment(SrcAlign, BytesCopied));
          Align PartDstAlign(commonAlignment(DstAlign, BytesCopied));
 
          // Calculate the new index
          unsigned OperandSize = DL.getTypeStoreSize(OpTy);
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
          assert((!AtomicElementSize || OperandSize % *AtomicElementSize == 0) &&
                 "Atomic memcpy lowering is not supported for selected operand size");
 #endif
@@ -214,16 +214,16 @@ static void createMemCpyLoopKnownSize(Instruction* InsertBefore, Value* SrcAddr,
          Value* CastedSrc = SrcAddr;
 #endif
          Value* SrcGEP = RBuilder.CreateInBoundsGEP(OpTy, CastedSrc, ConstantInt::get(TypeOfCopyLen, GepIndex));
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
          LoadInst* Load = RBuilder.CreateAlignedLoad(OpTy, SrcGEP, PartSrcAlign, SrcIsVolatile);
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
          if(!CanOverlap)
          {
             // Set alias scope for loads.
             Load->setMetadata(LLVMContext::MD_alias_scope, MDNode::get(Ctx, NewScope));
          }
 #endif
-#elif __clang_major__ >= 9
+#elif PANDA_LLVM_CLANG_MAJOR >= 9
          Value* Load = RBuilder.CreateLoad(OpTy, SrcGEP, SrcIsVolatile);
 #else
          Value* Load = RBuilder.CreateLoad(SrcGEP, SrcIsVolatile);
@@ -237,7 +237,7 @@ static void createMemCpyLoopKnownSize(Instruction* InsertBefore, Value* SrcAddr,
          Value* CastedSrc = DstAddr;
 #endif
          Value* DstGEP = RBuilder.CreateInBoundsGEP(OpTy, CastedDst, ConstantInt::get(TypeOfCopyLen, GepIndex));
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
          StoreInst* Store = RBuilder.CreateAlignedStore(Load, DstGEP, PartDstAlign, DstIsVolatile);
          if(!CanOverlap)
          {
@@ -249,7 +249,7 @@ static void createMemCpyLoopKnownSize(Instruction* InsertBefore, Value* SrcAddr,
             Load->setAtomic(AtomicOrdering::Unordered);
             Store->setAtomic(AtomicOrdering::Unordered);
          }
-#elif __clang_major__ >= 11
+#elif PANDA_LLVM_CLANG_MAJOR >= 11
          RBuilder.CreateAlignedStore(Load, DstGEP, PartDstAlign, DstIsVolatile);
 #else
          RBuilder.CreateStore(Load, DstGEP, DstIsVolatile);
@@ -263,11 +263,11 @@ static void createMemCpyLoopKnownSize(Instruction* InsertBefore, Value* SrcAddr,
 
 static void createMemCpyLoopUnknownSize(Instruction* InsertBefore, Value* SrcAddr, Value* DstAddr, Value* CopyLen,
                                         _Align SrcAlign, _Align DstAlign, bool SrcIsVolatile, bool DstIsVolatile,
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
                                         bool CanOverlap,
 #endif
                                         const TargetTransformInfo& TTI
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
                                         ,
                                         std::optional<uint32_t> AtomicElementSize = std::nullopt
 #endif
@@ -278,9 +278,9 @@ static void createMemCpyLoopUnknownSize(Instruction* InsertBefore, Value* SrcAdd
 
    Function* ParentFunc = PreLoopBB->getParent();
    LLVMContext& Ctx = PreLoopBB->getContext();
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
    const DataLayout& DL = ParentFunc->getParent()->getDataLayout();
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
    MDBuilder MDB(Ctx);
    MDNode* NewDomain = MDB.createAnonymousAliasScopeDomain("MemCopyDomain");
    StringRef Name = "MemCopyAliasScope";
@@ -291,7 +291,7 @@ static void createMemCpyLoopUnknownSize(Instruction* InsertBefore, Value* SrcAdd
    unsigned SrcAS = cast<PointerType>(SrcAddr->getType())->getAddressSpace();
    unsigned DstAS = cast<PointerType>(DstAddr->getType())->getAddressSpace();
 
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
    Type* LoopOpType =
        TTI.getMemcpyLoopLoweringType(Ctx, CopyLen, SrcAS, DstAS, SrcAlign.value(), DstAlign.value(), AtomicElementSize);
    assert((!AtomicElementSize || !LoopOpType->isVectorTy()) &&
@@ -299,7 +299,7 @@ static void createMemCpyLoopUnknownSize(Instruction* InsertBefore, Value* SrcAdd
    unsigned LoopOpSize = DL.getTypeStoreSize(LoopOpType);
    assert((!AtomicElementSize || LoopOpSize % *AtomicElementSize == 0) &&
           "Atomic memcpy lowering is not supported for selected operand size");
-#elif __clang_major__ >= 11
+#elif PANDA_LLVM_CLANG_MAJOR >= 11
    Type* LoopOpType = TTI.getMemcpyLoopLoweringType(Ctx, CopyLen, SrcAS, DstAS, SrcAlign.value(), DstAlign.value());
    unsigned LoopOpSize = DL.getTypeStoreSize(LoopOpType);
 #else
@@ -309,7 +309,7 @@ static void createMemCpyLoopUnknownSize(Instruction* InsertBefore, Value* SrcAdd
 
    IRBuilder<> PLBuilder(PreLoopBB->getTerminator());
 
-#if __clang_major__ < 18
+#if PANDA_LLVM_CLANG_MAJOR < 18
    PointerType* SrcOpType = PointerType::get(LoopOpType, SrcAS);
    PointerType* DstOpType = PointerType::get(LoopOpType, DstAS);
    if(SrcAddr->getType() != SrcOpType)
@@ -334,7 +334,7 @@ static void createMemCpyLoopUnknownSize(Instruction* InsertBefore, Value* SrcAdd
    BasicBlock* LoopBB = BasicBlock::Create(Ctx, "loop-memcpy-expansion", ParentFunc, PostLoopBB);
    IRBuilder<> LoopBuilder(LoopBB);
 
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
    Align PartSrcAlign(commonAlignment(SrcAlign, LoopOpSize));
    Align PartDstAlign(commonAlignment(DstAlign, LoopOpSize));
 #endif
@@ -343,22 +343,22 @@ static void createMemCpyLoopUnknownSize(Instruction* InsertBefore, Value* SrcAdd
    LoopIndex->addIncoming(ConstantInt::get(CopyLenType, 0U), PreLoopBB);
 
    Value* SrcGEP = LoopBuilder.CreateInBoundsGEP(LoopOpType, SrcAddr, LoopIndex);
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
    LoadInst* Load = LoopBuilder.CreateAlignedLoad(LoopOpType, SrcGEP, PartSrcAlign, SrcIsVolatile);
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
    if(!CanOverlap)
    {
       // Set alias scope for loads.
       Load->setMetadata(LLVMContext::MD_alias_scope, MDNode::get(Ctx, NewScope));
    }
 #endif
-#elif __clang_major__ >= 9
+#elif PANDA_LLVM_CLANG_MAJOR >= 9
    Value* Load = LoopBuilder.CreateLoad(LoopOpType, SrcGEP, SrcIsVolatile);
 #else
    Value* Load = LoopBuilder.CreateLoad(SrcGEP, SrcIsVolatile);
 #endif
    Value* DstGEP = LoopBuilder.CreateInBoundsGEP(LoopOpType, DstAddr, LoopIndex);
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
    StoreInst* Store = LoopBuilder.CreateAlignedStore(Load, DstGEP, PartDstAlign, DstIsVolatile);
    if(!CanOverlap)
    {
@@ -370,7 +370,7 @@ static void createMemCpyLoopUnknownSize(Instruction* InsertBefore, Value* SrcAdd
       Load->setAtomic(AtomicOrdering::Unordered);
       Store->setAtomic(AtomicOrdering::Unordered);
    }
-#elif __clang_major__ >= 11
+#elif PANDA_LLVM_CLANG_MAJOR >= 11
    LoopBuilder.CreateAlignedStore(Load, DstGEP, PartDstAlign, DstIsVolatile);
 #else
    LoopBuilder.CreateStore(Load, DstGEP, DstIsVolatile);
@@ -379,7 +379,7 @@ static void createMemCpyLoopUnknownSize(Instruction* InsertBefore, Value* SrcAdd
    Value* NewIndex = LoopBuilder.CreateAdd(LoopIndex, ConstantInt::get(CopyLenType, 1U));
    LoopIndex->addIncoming(NewIndex, LoopBB);
 
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
    bool requiresResidual = !LoopOpIsInt8 && !(AtomicElementSize && LoopOpSize == AtomicElementSize);
    if(requiresResidual)
    {
@@ -420,7 +420,7 @@ static void createMemCpyLoopUnknownSize(Instruction* InsertBefore, Value* SrcAdd
       PHINode* ResidualIndex = ResBuilder.CreatePHI(CopyLenType, 2, "residual-loop-index");
       ResidualIndex->addIncoming(Zero, ResHeaderBB);
 
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
 #if __clang_major < 18
       Value* SrcAsResLoopOpType = ResBuilder.CreateBitCast(SrcAddr, PointerType::get(ResLoopOpType, SrcAS));
       Value* DstAsResLoopOpType = ResBuilder.CreateBitCast(DstAddr, PointerType::get(ResLoopOpType, DstAS));
@@ -454,15 +454,15 @@ static void createMemCpyLoopUnknownSize(Instruction* InsertBefore, Value* SrcAdd
       Value* DstAsInt8 = ResBuilder.CreateBitCast(DstAddr, PointerType::get(Int8Type, DstAS));
       Value* FullOffset = ResBuilder.CreateAdd(RuntimeBytesCopied, ResidualIndex);
       Value* SrcGEP = ResBuilder.CreateInBoundsGEP(Int8Type, SrcAsInt8, FullOffset);
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
       Value* Load = ResBuilder.CreateAlignedLoad(Int8Type, SrcGEP, PartSrcAlign, SrcIsVolatile);
-#elif __clang_major__ >= 9
+#elif PANDA_LLVM_CLANG_MAJOR >= 9
       Value* Load = ResBuilder.CreateLoad(Int8Type, SrcGEP, SrcIsVolatile);
 #else
       Value* Load = ResBuilder.CreateLoad(SrcGEP, SrcIsVolatile);
 #endif
       Value* DstGEP = ResBuilder.CreateInBoundsGEP(Int8Type, DstAsInt8, FullOffset);
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
       ResBuilder.CreateAlignedStore(Load, DstGEP, PartDstAlign, DstIsVolatile);
 #else
       ResBuilder.CreateStore(Load, DstGEP, DstIsVolatile);
@@ -487,7 +487,7 @@ static void createMemCpyLoopUnknownSize(Instruction* InsertBefore, Value* SrcAdd
    }
 }
 
-#if __clang_major__ < 6
+#if PANDA_LLVM_CLANG_MAJOR < 6
 static void createMemCpyLoop(Instruction* InsertBefore, Value* SrcAddr, Value* DstAddr, Value* CopyLen,
                              unsigned SrcAlign, unsigned DstAlign, bool SrcIsVolatile, bool DstIsVolatile)
 {
@@ -562,13 +562,13 @@ static void createMemMoveLoop(Instruction* InsertBefore, Value* SrcAddr, Value* 
    Type* TypeOfCopyLen = CopyLen->getType();
    BasicBlock* OrigBB = InsertBefore->getParent();
    Function* F = OrigBB->getParent();
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
    const DataLayout& DL = F->getParent()->getDataLayout();
 #endif
 
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
    Type* EltTy = Type::getInt8Ty(F->getContext());
-#elif __clang_major__ >= 9
+#elif PANDA_LLVM_CLANG_MAJOR >= 9
    Type* EltTy = cast<PointerType>(SrcAddr->getType())->getElementType();
 #endif
 
@@ -579,7 +579,7 @@ static void createMemMoveLoop(Instruction* InsertBefore, Value* SrcAddr, Value* 
    // structure. Its block terminators (unconditional branches) are replaced by
    // the appropriate conditional branches when the loop is built.
    ICmpInst* PtrCompare = new ICmpInst(InsertBefore, ICmpInst::ICMP_ULT, SrcAddr, DstAddr, "compare_src_dst");
-#if __clang_major__ >= 8
+#if PANDA_LLVM_CLANG_MAJOR >= 8
    Instruction *ThenTerm, *ElseTerm;
 #else
    TerminatorInst *ThenTerm, *ElseTerm;
@@ -598,7 +598,7 @@ static void createMemMoveLoop(Instruction* InsertBefore, Value* SrcAddr, Value* 
    BasicBlock* ExitBB = InsertBefore->getParent();
    ExitBB->setName("memmove_done");
 
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
    unsigned PartSize = DL.getTypeStoreSize(EltTy);
    Align PartSrcAlign(commonAlignment(SrcAlign, PartSize));
    Align PartDstAlign(commonAlignment(DstAlign, PartSize));
@@ -614,11 +614,11 @@ static void createMemMoveLoop(Instruction* InsertBefore, Value* SrcAddr, Value* 
    IRBuilder<> LoopBuilder(LoopBB);
    PHINode* LoopPhi = LoopBuilder.CreatePHI(TypeOfCopyLen, 0);
    Value* IndexPtr = LoopBuilder.CreateSub(LoopPhi, ConstantInt::get(TypeOfCopyLen, 1), "index_ptr");
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
    Value* Element = LoopBuilder.CreateAlignedLoad(EltTy, LoopBuilder.CreateInBoundsGEP(EltTy, SrcAddr, IndexPtr),
                                                   PartSrcAlign, "element");
    LoopBuilder.CreateAlignedStore(Element, LoopBuilder.CreateInBoundsGEP(EltTy, DstAddr, IndexPtr), PartDstAlign);
-#elif __clang_major__ >= 9
+#elif PANDA_LLVM_CLANG_MAJOR >= 9
    Value* Element = LoopBuilder.CreateLoad(EltTy, LoopBuilder.CreateInBoundsGEP(EltTy, SrcAddr, IndexPtr), "element");
    LoopBuilder.CreateStore(Element, LoopBuilder.CreateInBoundsGEP(EltTy, DstAddr, IndexPtr));
 #else
@@ -635,12 +635,12 @@ static void createMemMoveLoop(Instruction* InsertBefore, Value* SrcAddr, Value* 
    BasicBlock* FwdLoopBB = BasicBlock::Create(F->getContext(), "copy_forward_loop", F, ExitBB);
    IRBuilder<> FwdLoopBuilder(FwdLoopBB);
    PHINode* FwdCopyPhi = FwdLoopBuilder.CreatePHI(TypeOfCopyLen, 0, "index_ptr");
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
    Value* SrcGEP = FwdLoopBuilder.CreateInBoundsGEP(EltTy, SrcAddr, FwdCopyPhi);
    Value* FwdElement = FwdLoopBuilder.CreateAlignedLoad(EltTy, SrcGEP, PartSrcAlign, "element");
    Value* DstGEP = FwdLoopBuilder.CreateInBoundsGEP(EltTy, DstAddr, FwdCopyPhi);
    FwdLoopBuilder.CreateAlignedStore(FwdElement, DstGEP, PartDstAlign);
-#elif __clang_major__ >= 9
+#elif PANDA_LLVM_CLANG_MAJOR >= 9
    Value* FwdElement =
        FwdLoopBuilder.CreateLoad(EltTy, FwdLoopBuilder.CreateInBoundsGEP(EltTy, SrcAddr, FwdCopyPhi), "element");
    FwdLoopBuilder.CreateStore(FwdElement, FwdLoopBuilder.CreateInBoundsGEP(EltTy, DstAddr, FwdCopyPhi));
@@ -663,7 +663,7 @@ static void createMemSetLoop(Instruction* InsertBefore, Value* DstAddr, Value* C
    Type* TypeOfCopyLen = CopyLen->getType();
    BasicBlock* OrigBB = InsertBefore->getParent();
    Function* F = OrigBB->getParent();
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
    const DataLayout& DL = F->getParent()->getDataLayout();
 #endif
    BasicBlock* NewBB = OrigBB->splitBasicBlock(InsertBefore, "split");
@@ -671,7 +671,7 @@ static void createMemSetLoop(Instruction* InsertBefore, Value* DstAddr, Value* C
 
    IRBuilder<> Builder(OrigBB->getTerminator());
 
-#if __clang_major__ < 18
+#if PANDA_LLVM_CLANG_MAJOR < 18
    // Cast pointer to the type of value getting stored
    unsigned dstAS = cast<PointerType>(DstAddr->getType())->getAddressSpace();
    DstAddr = Builder.CreateBitCast(DstAddr, PointerType::get(SetValue->getType(), dstAS));
@@ -680,7 +680,7 @@ static void createMemSetLoop(Instruction* InsertBefore, Value* DstAddr, Value* C
    Builder.CreateCondBr(Builder.CreateICmpEQ(ConstantInt::get(TypeOfCopyLen, 0), CopyLen), NewBB, LoopBB);
    OrigBB->getTerminator()->eraseFromParent();
 
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
    unsigned PartSize = DL.getTypeStoreSize(SetValue->getType());
    Align PartAlign(commonAlignment(DstAlign, PartSize));
 #endif
@@ -689,7 +689,7 @@ static void createMemSetLoop(Instruction* InsertBefore, Value* DstAddr, Value* C
    PHINode* LoopIndex = LoopBuilder.CreatePHI(TypeOfCopyLen, 0);
    LoopIndex->addIncoming(ConstantInt::get(TypeOfCopyLen, 0), OrigBB);
 
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
    LoopBuilder.CreateAlignedStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex),
                                   PartAlign, IsVolatile);
 #else
@@ -703,7 +703,7 @@ static void createMemSetLoop(Instruction* InsertBefore, Value* DstAddr, Value* C
    LoopBuilder.CreateCondBr(LoopBuilder.CreateICmpULT(NewIndex, CopyLen), LoopBB, NewBB);
 }
 
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
 template <typename T>
 static bool canOverlap(MemTransferBase<T>* Memcpy, ScalarEvolution* SE)
 {
@@ -719,13 +719,13 @@ static bool canOverlap(MemTransferBase<T>* Memcpy, ScalarEvolution* SE)
 #endif
 
 static void expandMemCpyAsLoop(MemCpyInst* Memcpy, const TargetTransformInfo& TTI
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
                                ,
                                ScalarEvolution* SE
 #endif
 )
 {
-#if __clang_major__ < 6
+#if PANDA_LLVM_CLANG_MAJOR < 6
    // Original implementation
    if(!TTI.useWideIRMemcpyLoopLowering())
    {
@@ -741,7 +741,7 @@ static void expandMemCpyAsLoop(MemCpyInst* Memcpy, const TargetTransformInfo& TT
    else
 #endif
    {
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
       bool CanOverlap = canOverlap(Memcpy, SE);
 #endif
       if(ConstantInt* CI = dyn_cast<ConstantInt>(Memcpy->getLength()))
@@ -750,10 +750,10 @@ static void expandMemCpyAsLoop(MemCpyInst* Memcpy, const TargetTransformInfo& TT
                                    /* SrcAddr */ Memcpy->getRawSource(),
                                    /* DstAddr */ Memcpy->getRawDest(),
                                    /* CopyLen */ CI,
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
                                    /* SrcAlign */ Memcpy->getSourceAlign().valueOrOne(),
                                    /* DstAlign */ Memcpy->getDestAlign().valueOrOne(),
-#elif __clang_major__ >= 7
+#elif PANDA_LLVM_CLANG_MAJOR >= 7
                                    /* SrcAlign */ Memcpy->getSourceAlignment(),
                                    /* DstAlign */ Memcpy->getDestAlignment(),
 #else
@@ -762,7 +762,7 @@ static void expandMemCpyAsLoop(MemCpyInst* Memcpy, const TargetTransformInfo& TT
 #endif
                                    /* SrcIsVolatile */ Memcpy->isVolatile(),
                                    /* DstIsVolatile */ Memcpy->isVolatile(),
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
                                    /* CanOverlap */ CanOverlap,
 #endif
                                    /* TargetTransformInfo */ TTI);
@@ -773,10 +773,10 @@ static void expandMemCpyAsLoop(MemCpyInst* Memcpy, const TargetTransformInfo& TT
                                      /* SrcAddr */ Memcpy->getRawSource(),
                                      /* DstAddr */ Memcpy->getRawDest(),
                                      /* CopyLen */ Memcpy->getLength(),
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
                                      /* SrcAlign */ Memcpy->getSourceAlign().valueOrOne(),
                                      /* DstAlign */ Memcpy->getDestAlign().valueOrOne(),
-#elif __clang_major__ >= 7
+#elif PANDA_LLVM_CLANG_MAJOR >= 7
                                      /* SrcAlign */ Memcpy->getSourceAlignment(),
                                      /* DstAlign */ Memcpy->getDestAlignment(),
 #else
@@ -785,7 +785,7 @@ static void expandMemCpyAsLoop(MemCpyInst* Memcpy, const TargetTransformInfo& TT
 #endif
                                      /* SrcIsVolatile */ Memcpy->isVolatile(),
                                      /* DstIsVolatile */ Memcpy->isVolatile(),
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
                                      /* CanOverlap */ CanOverlap,
 #endif
                                      /* TargetTransfomrInfo */ TTI);
@@ -799,17 +799,17 @@ static void expandMemMoveAsLoop(MemMoveInst* Memmove, const TargetTransformInfo&
    Value* SrcAddr = Memmove->getRawSource();
    Value* DstAddr = Memmove->getRawDest();
    _Align SrcAlign =
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
        Memmove->getSourceAlign().valueOrOne();
-#elif __clang_major__ >= 7
+#elif PANDA_LLVM_CLANG_MAJOR >= 7
        Memmove->getSourceAlignment();
 #else
        Memmove->getAlignment();
 #endif
    _Align DstAlign =
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
        Memmove->getDestAlign().valueOrOne();
-#elif __clang_major__ >= 7
+#elif PANDA_LLVM_CLANG_MAJOR >= 7
        Memmove->getDestAlignment();
 #else
        Memmove->getAlignment();
@@ -817,7 +817,7 @@ static void expandMemMoveAsLoop(MemMoveInst* Memmove, const TargetTransformInfo&
    bool SrcIsVolatile = Memmove->isVolatile();
    bool DstIsVolatile = SrcIsVolatile;
 
-#if __clang_major__ >= 17
+#if PANDA_LLVM_CLANG_MAJOR >= 17
    IRBuilder<> CastBuilder(Memmove);
    unsigned SrcAS = SrcAddr->getType()->getPointerAddressSpace();
    unsigned DstAS = DstAddr->getType()->getPointerAddressSpace();
@@ -870,9 +870,9 @@ static void expandMemSetAsLoop(MemSetInst* Memset)
                     /* DstAddr */ Memset->getRawDest(),
                     /* CopyLen */ Memset->getLength(),
                     /* SetValue */ Memset->getValue(),
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
                     /* Alignment */ Memset->getDestAlign().valueOrOne(),
-#elif __clang_major__ >= 7
+#elif PANDA_LLVM_CLANG_MAJOR >= 7
                     /* Alignment */ Memset->getDestAlignment(),
 #else
                     /* Alignment */ Memset->getAlignment(),
@@ -880,7 +880,7 @@ static void expandMemSetAsLoop(MemSetInst* Memset)
                     Memset->isVolatile());
 }
 
-#if __clang_major__ >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 16
 static void expandAtomicMemCpyAsLoop(AtomicMemCpyInst* AtomicMemcpy, const TargetTransformInfo& TTI,
                                      ScalarEvolution* SE)
 {

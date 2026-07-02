@@ -699,9 +699,9 @@ jobs:
         run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
 
 
-  PandA-bench-openroad:
+  PandA-bench-openroad-1:
     needs: [build]
-    name: PandA-bench-openroad (${{ matrix.config.name }})
+    name: PandA-bench-openroad-1 (${{ matrix.config.name }})
     runs-on: [self-hosted]
     strategy:
       fail-fast: false
@@ -710,10 +710,79 @@ jobs:
           - { name: nangate45, outname: nangate45 }
           - { name: asap7-TC, outname: asap7-TC }
     env:
-      outname: panda_bench_openroad_${{matrix.config.outname}}
-      args: -c=--evaluation -c=--parallel-backend=8
+      outname: panda_bench_openroad_1_${{matrix.config.outname}}
+      OPENROAD_BENCH_LIST: panda_bench_openroad_list_1
+      args: -c=--evaluation -c=--parallel-backend=16
       datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
-      J: 2
+      J: 1
+    steps:
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
+        with:
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "false"
+      - name: Launch test suite
+        id: suite
+        shell: bash
+        run: |
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
+
+          # Force the OpenROAD backend to run in image-only mode.
+          unset OPENROAD_FLOW_DATA_INSTALLDIR
+          export OPENROAD_USE_DOCKER=1
+
+          OPENROAD_CONFIGURATION="${{matrix.config.name}}" \
+            ./examples/panda_bench_openroad.sh ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.xml
+          datapoints: ${{env.datapoints}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        shell: bash
+        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+      - name: Upload test reports
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{env.outname}}
+          path: ${{env.report-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
+
+  PandA-bench-openroad-2:
+    needs: [build]
+    name: PandA-bench-openroad-2 (${{ matrix.config.name }})
+    runs-on: [self-hosted]
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { name: nangate45, outname: nangate45 }
+          - { name: asap7-TC, outname: asap7-TC }
+    env:
+      outname: panda_bench_openroad_2_${{matrix.config.outname}}
+      OPENROAD_BENCH_LIST: panda_bench_openroad_list_2
+      args: -c=--evaluation -c=--parallel-backend=16
+      datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
+      J: 1
     steps:
       - name: Setup repository + distribution
         uses: ./.github/actions/panda-setup
@@ -1281,7 +1350,8 @@ jobs:
       - PandA-bench-nanoxplore
       - PandA-bench-sim
       - PandA-bench-xilinx_vvd
-      - PandA-bench-openroad
+      - PandA-bench-openroad-1
+      - PandA-bench-openroad-2
     runs-on: [self-hosted]
     steps:
       - name: Check 'GCC Regression Simple' status
@@ -1329,6 +1399,9 @@ jobs:
       - name: Check 'PandA benchmarks (xilinx_vvd)' status
         if: ${{ needs['PandA-bench-xilinx_vvd'].result != 'success' }}
         run: exit 1
-      - name: Check 'PandA benchmarks for OpenROAD' status
-        if: ${{ needs['PandA-bench-openroad'].result != 'success' }}
+      - name: Check 'PandA benchmarks for OpenROAD 1' status
+        if: ${{ needs['PandA-bench-openroad-1'].result != 'success' }}
+        run: exit 1
+      - name: Check 'PandA benchmarks for OpenROAD 2' status
+        if: ${{ needs['PandA-bench-openroad-2'].result != 'success' }}
         run: exit 1
