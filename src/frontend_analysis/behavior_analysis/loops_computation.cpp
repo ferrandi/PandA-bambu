@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -37,37 +37,31 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
-/// Header include
 #include "loops_computation.hpp"
 
 #include "Parameter.hpp"
 #include "application_manager.hpp"
 #include "basic_block.hpp"
 #include "behavioral_helper.hpp"
+#include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
 #include "graph.hpp"
+#include "hash_helper.hpp"
+#include "ir_basic_block.hpp"
 #include "loop.hpp"
 #include "loops.hpp"
-#include "tree_basic_block.hpp"
+#include "string_manipulation.hpp"
 
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
-#include "hash_helper.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
 #include <iosfwd>
 
 loops_computation::loops_computation(const ParameterConstRef _parameters, const application_managerRef _AppM,
-                                     unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+                                     unsigned int _function_id, const DesignFlowManager& _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, LOOPS_COMPUTATION, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
-
-loops_computation::~loops_computation() = default;
 
 CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 loops_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -104,34 +98,33 @@ void loops_computation::Initialize()
 
 DesignFlowStep_Status loops_computation::InternalExec()
 {
-   const BBGraphRef fbb = function_behavior->GetBBGraph(FunctionBehavior::FBB);
+   auto fbb = function_behavior->GetBBGraph(FunctionBehavior::FBB);
 
+   const auto entry_vertex = fbb.CGetGraphInfo().entry_vertex;
    THROW_ASSERT(function_behavior->dominators, "Dominators has to be computed!");
-   function_behavior->loops = LoopsRef(new Loops(function_behavior, parameters));
+   function_behavior->loops = LoopsRef(new Loops(fbb, entry_vertex, *function_behavior->dominators));
    if(parameters->getOption<bool>(OPT_print_dot))
    {
-      function_behavior->CGetLoops()->WriteDot("LF.dot");
+      function_behavior->getConstLoops()->writeDot(function_behavior->GetDotPath() / "LF.dot");
    }
-   std::list<LoopConstRef> loops = function_behavior->CGetLoops()->GetList();
-   auto loop_end = loops.end();
-   for(auto loop = loops.begin(); loop != loop_end; ++loop)
+   const auto& loops = function_behavior->getConstLoops()->getList();
+   for(const auto& loop : loops)
    {
       /// FIXME: zero loop
-      if((*loop)->GetId() == 0)
+      if(loop->getLoopId() == 0)
       {
          continue;
       }
-      const CustomUnorderedSet<vertex> blocks = (*loop)->get_blocks();
-      CustomUnorderedSet<vertex>::const_iterator bb_it, bb_it_end = blocks.end();
-      for(bb_it = blocks.begin(); bb_it != bb_it_end; ++bb_it)
+      const auto blocks = loop->getBlocks();
+      for(const auto bb_v : blocks)
       {
-         const BBNodeInfoRef bb_node_info = fbb->GetBBNodeInfo(*bb_it);
-         bb_node_info->loop_id = (*loop)->GetId();
+         auto& bb_node_info = fbb.GetNodeInfo(bb_v);
+         bb_node_info.loop_id = loop->getLoopId();
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                       "  Basic block " + std::to_string(bb_node_info->block->number));
+                       "  Basic block " + std::to_string(bb_node_info.block->number));
       }
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Number of reducible loops: " + std::to_string(function_behavior->CGetLoops()->NumLoops()));
+                 "Number of reducible loops: " + std::to_string(function_behavior->getConstLoops()->numLoops()));
    return DesignFlowStep_Status::SUCCESS;
 }

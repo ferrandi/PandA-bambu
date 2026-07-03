@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2023-2024 Politecnico di Milano
+ *              Copyright (C) 2023-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -41,28 +41,17 @@
 #define HLS_DEVICE_HPP
 
 #include "generic_device.hpp"
-/**
- * @name forward declarations
- */
-//@{
+
 REF_FORWARD_DECL(technology_manager);
 REF_FORWARD_DECL(generic_device);
 REF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(HLS_device);
-//@}
+CONSTREF_FORWARD_DECL(HLS_device);
 
 class HLS_device : public generic_device
 {
  public:
-   /**
-    * Constructor
-    */
    HLS_device(const ParameterConstRef& Param, const technology_managerRef& TM);
-
-   /**
-    * Destructor
-    */
-   ~HLS_device() override;
 
    /**
     * Factory method from XML file
@@ -71,5 +60,6 @@ class HLS_device : public generic_device
 };
 /// refcount definition of class
 using HLS_deviceRef = refcount<HLS_device>;
+using HLS_deviceConstRef = refcount<const HLS_device>;
 
 #endif

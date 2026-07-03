@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -37,9 +37,6 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "call_graph.hpp"
@@ -58,55 +55,36 @@
 
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 
-FunctionInfo::FunctionInfo() : nodeID(0)
+CallGraph::CallGraph(const CallGraphsCollection& call_graphs_collection, const int _selector)
+    : graph(call_graphs_collection, _selector)
 {
 }
 
-FunctionEdgeInfo::FunctionEdgeInfo() = default;
-
-CallGraphsCollection::CallGraphsCollection(const CallGraphInfoRef call_graph_info, const ParameterConstRef _parameters)
-    : graphs_collection(call_graph_info, _parameters)
+CallGraph::CallGraph(const CallGraphsCollection& call_graphs_collection, const int _selector,
+                     const CustomUnorderedSet<vertex_descriptor>& _vertices)
+    : graph(call_graphs_collection, _selector, _vertices)
 {
 }
 
-CallGraphsCollection::~CallGraphsCollection() = default;
+void CallGraph::writeDot(const std::filesystem::path& file_name) const
+{
+   std::filesystem::create_directories(file_name.parent_path());
+   FunctionVertexWriter function_writer(*this);
+   FunctionEdgeWriter function_edge_writer(*this);
+   graph::writeDot(file_name, function_writer, function_edge_writer);
+}
 
-CallGraph::CallGraph(const CallGraphsCollectionRef call_graphs_collection, const int _selector)
-    : graph(call_graphs_collection.get(), _selector)
+FunctionVertexWriter::FunctionVertexWriter(const CallGraph& call_graph)
+    : VertexWriter(call_graph, 0), behaviors(call_graph.CGetGraphInfo().behaviors)
 {
 }
 
-CallGraph::CallGraph(const CallGraphsCollectionRef call_graphs_collection, const int _selector,
-                     const CustomUnorderedSet<vertex>& _vertices)
-    : graph(call_graphs_collection.get(), _selector, _vertices)
+void FunctionVertexWriter::operator()(std::ostream& out, CallGraph::vertex_descriptor v) const
 {
-}
-
-CallGraph::~CallGraph() = default;
-
-void CallGraph::WriteDot(const std::string& file_name) const
-{
-   const auto output_directory = collection->parameters->getOption<std::filesystem::path>(OPT_dot_directory);
-   std::filesystem::create_directories(output_directory);
-   const auto full_name = output_directory / file_name;
-   const VertexWriterConstRef function_writer(new FunctionWriter(this));
-   const EdgeWriterConstRef function_edge_writer(new FunctionEdgeWriter(this));
-   InternalWriteDot<const FunctionWriter, const FunctionEdgeWriter>(full_name, function_writer, function_edge_writer);
-}
-
-FunctionWriter::FunctionWriter(const CallGraph* call_graph)
-    : VertexWriter(call_graph, 0), behaviors(call_graph->CGetCallGraphInfo()->behaviors)
-{
-}
-
-void FunctionWriter::operator()(std::ostream& out, const vertex& v) const
-{
-   THROW_ASSERT(behaviors.find(Cget_node_info<FunctionInfo, graph>(v, *printing_graph)->nodeID) != behaviors.end(),
-                "Function " + std::to_string(Cget_node_info<FunctionInfo, graph>(v, *printing_graph)->nodeID) +
-                    " not found");
-   const FunctionBehaviorRef FB =
-       behaviors.find(Cget_node_info<FunctionInfo, graph>(v, *printing_graph)->nodeID)->second;
-   out << "[shape=box, label=\"" << FB->CGetBehavioralHelper()->get_function_name();
+   THROW_ASSERT(behaviors.find(printing_graph.CGetNodeInfo(v).nodeID) != behaviors.end(),
+                "Function " + std::to_string(printing_graph.CGetNodeInfo(v).nodeID) + " not found");
+   const auto FB = behaviors.at(printing_graph.CGetNodeInfo(v).nodeID);
+   out << "[shape=box, label=\"" << FB->CGetBehavioralHelper()->GetFunctionName();
    const CustomOrderedSet<unsigned int>& mem_nodeID = FB->get_function_mem();
    if(mem_nodeID.size())
    {
@@ -122,27 +100,22 @@ void FunctionWriter::operator()(std::ostream& out, const vertex& v) const
    out << "\"]";
 }
 
-FunctionEdgeWriter::FunctionEdgeWriter(const CallGraph* call_graph)
-    : EdgeWriter(call_graph, 0), behaviors(call_graph->CGetCallGraphInfo()->behaviors)
+FunctionEdgeWriter::FunctionEdgeWriter(const CallGraph& call_graph)
+    : EdgeWriter(call_graph, 0), behaviors(call_graph.CGetGraphInfo().behaviors)
 {
 }
 
-FunctionEdgeWriter::~FunctionEdgeWriter() = default;
-
-void FunctionEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e) const
+void FunctionEdgeWriter::operator()(std::ostream& out, const CallGraph::edge_descriptor& e) const
 {
-   const CustomOrderedSet<unsigned int>& direct_call_points =
-       Cget_edge_info<FunctionEdgeInfo, graph>(e, *printing_graph)->direct_call_points;
-   const CustomOrderedSet<unsigned int>& indirect_call_points =
-       Cget_edge_info<FunctionEdgeInfo, graph>(e, *printing_graph)->indirect_call_points;
-   const CustomOrderedSet<unsigned int>& function_addresses =
-       Cget_edge_info<FunctionEdgeInfo, graph>(e, *printing_graph)->function_addresses;
+   const auto& direct_call_points = printing_graph.CGetEdgeInfo(e).direct_call_points;
+   const auto& indirect_call_points = printing_graph.CGetEdgeInfo(e).indirect_call_points;
+   const auto& function_addresses = printing_graph.CGetEdgeInfo(e).function_addresses;
    std::string color;
-   if(STD_SELECTOR & printing_graph->GetSelector(e))
+   if(STD_SELECTOR & printing_graph.GetSelector(e))
    {
       color = "blue";
    }
-   else if(FEEDBACK_SELECTOR & printing_graph->GetSelector(e))
+   else if(FEEDBACK_SELECTOR & printing_graph.GetSelector(e))
    {
       color = "red";
    }

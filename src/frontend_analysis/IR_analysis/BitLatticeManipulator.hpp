@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -47,14 +47,14 @@
 #include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(Parameter);
-CONSTREF_FORWARD_DECL(tree_manager);
-REF_FORWARD_DECL(tree_node);
-CONSTREF_FORWARD_DECL(tree_node);
+CONSTREF_FORWARD_DECL(ir_node);
+REF_FORWARD_DECL(ir_manager);
+REF_FORWARD_DECL(ir_node);
 
 class BitLatticeManipulator
 {
  protected:
-   const tree_managerConstRef TM;
+   const ir_managerRef TM;
 
    /**
     * @brief Map of the current bit-values of each variable.
@@ -79,47 +79,36 @@ class BitLatticeManipulator
    /// FrontendFlowStep::debug_level derived classes
    const int bl_debug_level;
 
-   bool IsSignedIntegerType(const tree_nodeConstRef& tn) const;
+   bool IsSignedIntegerType(const ir_nodeConstRef& tn) const;
 
    /**
     * Computes the sup between two bitstrings
     * @param a first bitstring variable
     * @param b second bitstring variable
-    * @param output_uid is the id of the tree node for which the bitvalue is * computed
+    * @param out_node is the IR node for which the bitvalue is computed
     * @return the sup of the two bitstrings.
     */
    std::deque<bit_lattice> sup(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b,
-                               const unsigned int output_uid) const;
-
-   std::deque<bit_lattice> sup(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b,
-                               const tree_nodeConstRef& out_node) const;
+                               const ir_nodeConstRef& out_node) const;
 
    /**
     * Computes the inf between two bitstrings
     * @param a first bitstring
     * @param b second bitstring
-    * @param output_uid is the id of the tree node for which the bitvalue is * computed
+    * @param out_node is the IR node for which the bitvalue is computed
     * @return inf between the two bitstrings
     */
    std::deque<bit_lattice> inf(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b,
-                               const unsigned int output_uid) const;
-
-   std::deque<bit_lattice> inf(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b,
-                               const tree_nodeConstRef& out_node) const;
+                               const ir_nodeConstRef& out_node) const;
 
    /**
     * auxiliary function used to build the bitstring lattice for read-only arrays
-    * @param ctor_tn is the tree reindex or a tree node of the contructor
-    * @param ssa_node_id is the ssa node id of the lattice destination
+    * @param ctor_tn is the IR reindex or an IR node of the contructor
+    * @param ssa_node is the ssa node of the lattice destination
+    * @param element_size is the size in bits of each array element
     */
-   std::deque<bit_lattice> constructor_bitstring(const tree_nodeRef& ctor_tn, unsigned int ssa_node_id) const;
-
-   /**
-    * auxiliary function used to build the bitstring lattice for read-only string_cst
-    * @param strcst_tn is a tree reindex or a tree node of the string_cst
-    * @param ssa_node_id is the ssa node id of the lattice destination
-    */
-   std::deque<bit_lattice> string_cst_bitstring(const tree_nodeRef& strcst_tn, unsigned int ssa_node_id) const;
+   std::deque<bit_lattice> constructor_bitstring(const ir_nodeRef& ctor_tn, const ir_nodeRef& ssa_node,
+                                                 unsigned long long element_size) const;
 
    /**
     * Mixes the content of current and best using the sup operation, storing
@@ -129,11 +118,11 @@ class BitLatticeManipulator
    bool mix();
 
    /**
-    * Given a bitstring res, and the id of a tree node ouput_uid, this
+    * Given a bitstring res, and the id of an IR node ouput_uid, this
     * functions checks if it is necessary to update the bistring stored in
     * the current map used by the bitvalue analysis algorithm.
     */
-   bool update_current(std::deque<bit_lattice>& res, const tree_nodeConstRef& tn);
+   bool update_current(std::deque<bit_lattice>& res, const ir_nodeConstRef& tn);
 
    /**
     * Clean up the internal data structures
@@ -141,22 +130,16 @@ class BitLatticeManipulator
    void clear();
 
  public:
-   /**
-    * Constructor
-    */
-   explicit BitLatticeManipulator(const tree_managerConstRef TM, const int debug_level);
+   explicit BitLatticeManipulator(const ir_managerRef& TM, const int debug_level);
+
+   virtual ~BitLatticeManipulator() = default;
 
    /**
-    * Destructor
+    * Check if given ir_node type is supported by the BitValue inference
+    * @param tn ir_node to check
+    * @return true Given ir_node type is supported
+    * @return false Given ir_node type is not supported
     */
-   virtual ~BitLatticeManipulator();
-
-   /**
-    * Check if given tree_node type is supported by the BitValue inference
-    * @param tn tree_node to check
-    * @return true Given tree_node type is supported
-    * @return false Given tree_node type is not supported
-    */
-   static bool IsHandledByBitvalue(const tree_nodeConstRef& tn);
+   static bool IsHandledByBitvalue(const ir_nodeConstRef& tn) __attribute__((pure));
 };
 #endif

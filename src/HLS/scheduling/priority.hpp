@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -39,27 +39,17 @@
  * @ingroup HLS
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef PRIORITY_HPP
 #define PRIORITY_HPP
 
 #include "Vertex.hpp"
-
 #include "custom_map.hpp"
+#include "op_graph.hpp"
 #include "refcount.hpp"
 
-#include "op_graph.hpp"
-
-/**
- * @name Forward declarations.
- */
-//@{
-REF_FORWARD_DECL(ASLAP);
-//@}
+class ASLAP;
 
 /**
  * Base class used to define the priority associated
@@ -68,6 +58,8 @@ REF_FORWARD_DECL(ASLAP);
 template <class dataType>
 struct priority_data
 {
+   virtual ~priority_data() = default;
+
    /**
     * this function updates the value of the priority at
     * the end of the control step analysis.
@@ -77,22 +69,20 @@ struct priority_data
     * Return the priority associated with the vertex. Constant version
     * @param _a is the vertex
     */
-   virtual dataType operator()(const vertex& _a) const
+
+   virtual dataType operator()(OpGraph::vertex_descriptor _a) const
    {
       return priority_values(_a);
    }
+
    /**
     * return the priority associated with the vertex. Constant version
     * @param _a is the vertex
     */
-   virtual dataType& operator[](const vertex& _a)
+   virtual dataType& operator[](OpGraph::vertex_descriptor _a)
    {
       return priority_values[_a];
    }
-   /**
-    * Destructor.
-    */
-   virtual ~priority_data() = default;
 
  private:
    /// data structure storing the priority values.
@@ -108,7 +98,7 @@ struct priority_static_mobility : public priority_data<int>
    /**
     * Constructor.
     */
-   explicit priority_static_mobility(const ASLAPRef& aslap);
+   priority_static_mobility(const ASLAP& aslap);
 
    /**
     * This specialization does not update the priorities at the end of the control step.
@@ -128,8 +118,7 @@ struct priority_dynamic_mobility : public priority_data<int>
    /**
     * Constructor.
     */
-   priority_dynamic_mobility(const ASLAPRef& aslap, const OpVertexSet& _ready_nodes,
-                             unsigned int _ctrl_step_multiplier);
+   priority_dynamic_mobility(const ASLAP& aslap, const OpVertexSet& _ready_nodes, unsigned int _ctrl_step_multiplier);
 
    /**
     * This specialization does update the priorities at the end of the control step only of ready nodes.
@@ -152,7 +141,7 @@ struct priority_fixed : public priority_data<int>
    /**
     * Constructor.
     */
-   explicit priority_fixed(const CustomUnorderedMapUnstable<vertex, int>& priority_value);
+   priority_fixed(const CustomUnorderedMapUnstable<OpGraph::vertex_descriptor, int>& priority_value);
 
    /**
     * This specialization does not update the priorities at the end of the control step.
@@ -175,7 +164,7 @@ struct priority_compare_functor
     * @param b is the second vertex
     * @return true when priority(a) < priority(b)
     */
-   bool operator()(const vertex& a, const vertex& b) const
+   bool operator()(OpGraph::vertex_descriptor a, OpGraph::vertex_descriptor b) const
    {
       return priority_values->operator()(a) < priority_values->operator()(b) ||
              (priority_values->operator()(a) == priority_values->operator()(b) && a > b);
@@ -185,29 +174,9 @@ struct priority_compare_functor
     * Constructor
     * @param pri is the priority data structure which associate at each vertex a priority value of type Type.
     */
-   explicit priority_compare_functor(const refcount<priority_data<Type>> pri) : priority_values(pri)
+   priority_compare_functor(const refcount<priority_data<Type>>& pri) : priority_values(pri)
    {
    }
-
-   /**
-    * Copy assignment
-    */
-   priority_compare_functor& operator=(const priority_compare_functor& in)
-   {
-      priority_values = in.priority_values;
-      return *this;
-   }
-   /**
-    * Copy constructor
-    */
-   priority_compare_functor(const priority_compare_functor& in) : priority_values(in.priority_values)
-   {
-   }
-
-   /**
-    * Destructor
-    */
-   ~priority_compare_functor() = default;
 
  private:
    /// copy of the priority values

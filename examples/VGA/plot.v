@@ -30,10 +30,10 @@
    * you are running your circuit on a DE1 board. */
 
 
-// This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2015-2024 Politecnico di Milano
+// This component is part of the PANDA/BAMBU IP LIBRARY
+// Copyright (C) 2015-2026 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
-// License: PANDA_LGPLv3
+// License: PANDA_MIT
 module frequency_divider_byX(reset, clk_in, clk_div_by_X);
 parameter DIVIDE_BY=2;
   input reset;
@@ -83,10 +83,10 @@ parameter DIVIDE_BY=2;
 
 endmodule
 
-// This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2015-2024 Politecnico di Milano
+// This component is part of the PANDA/BAMBU IP LIBRARY
+// Copyright (C) 2015-2026 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
-// License: PANDA_LGPLv3
+// License: PANDA_MIT
 module VideoMemory(clk_w,clk_r,we_w,addr_w,addr_r,data_w,data_r);
   parameter BITSIZE_addr=1, BITSIZE_data=1, BITSIZE_nwords=1;
   input clk_w;
@@ -117,10 +117,10 @@ module VideoMemory(clk_w,clk_r,we_w,addr_w,addr_r,data_w,data_r);
   end
 endmodule
 
-// This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2013-2024 Politecnico di Milano
+// This component is part of the PANDA/BAMBU IP LIBRARY
+// Copyright (C) 2013-2026 Politecnico di Milano
 // Author(s): Edoardo Giacomello <edoardo.giacomello@mail.polimi.it>
-// License: PANDA_LGPLv3
+// License: PANDA_MIT
 `timescale 1ns / 1ps
 module vga_address_translator(x, y, mem_address);
   parameter RESOLUTION = `RESOLUTION_320x240;
@@ -157,10 +157,10 @@ module vga_address_translator(x, y, mem_address);
 endmodule
 
 
-// This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2013-2024 Politecnico di Milano
+// This component is part of the PANDA/BAMBU IP LIBRARY
+// Copyright (C) 2013-2026 Politecnico di Milano
 // Author(s): Edoardo Giacomello <edoardo.giacomello@mail.polimi.it>
-// License: PANDA_LGPLv3
+// License: PANDA_MIT
 `timescale 1ns / 1ps
 module vga_controller(resetn, vga_clock, pixel_colour, memory_address, VGA_R, VGA_G, VGA_B, VGA_HS, VGA_VS, VGA_BLANK, VGA_SYNC, VGA_CLK);
 parameter BITS_PER_COLOUR_CHANNEL = 1, MONOCHROME = `MONOCHROME_FALSE, RESOLUTION = `RESOLUTION_320x240, USING_DE1 = `USING_DE1_TRUE;
@@ -341,12 +341,12 @@ parameter BITS_PER_COLOUR_CHANNEL = 1, MONOCHROME = `MONOCHROME_FALSE, RESOLUTIO
   end
 endmodule
 
-// This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2013-2024 Politecnico di Milano
+// This component is part of the PANDA/BAMBU IP LIBRARY
+// Copyright (C) 2013-2026 Politecnico di Milano
 // Author(s): Edoardo Giacomello <edoardo.giacomello@mail.polimi.it>, Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
-// License: PANDA_LGPLv3
+// License: PANDA_MIT
 `timescale 1ns / 1ps
-module plot(clock, reset, start_port, color, x, y, sel_plot, sel___plot, done_port, VGA_R, VGA_G, VGA_B, VGA_HS, VGA_VS, VGA_BLANK, VGA_SYNC, VGA_CLK);
+module plot(clock, reset, start_port, color, x, y, sel_plot, done_port, VGA_R, VGA_G, VGA_B, VGA_HS, VGA_VS, VGA_BLANK, VGA_SYNC, VGA_CLK);
 parameter BITS_PER_COLOUR_CHANNEL = 1, MONOCHROME = `MONOCHROME_FALSE, RESOLUTION = `RESOLUTION_160x120, USING_DE1 = `USING_DE1_TRUE;
   input clock;
   input reset;
@@ -355,7 +355,6 @@ parameter BITS_PER_COLOUR_CHANNEL = 1, MONOCHROME = `MONOCHROME_FALSE, RESOLUTIO
   input [8:0] x;
   input [7:0] y;
   input sel_plot;
-  input sel___plot;
   output done_port;
   output [9:0] VGA_R;
   output [9:0] VGA_G;

@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -39,15 +39,12 @@
  * @author Matteo Barbati <mbarbati@gmail.com>
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "structural_manager.hpp"
 
 #include "Parameter.hpp"
-#include "cg_node.hpp"
+#include "cg_graph.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
@@ -63,13 +60,6 @@
 #include "xml_element.hpp"
 #include "xml_node.hpp"
 
-#include <iosfwd>
-#include <list>
-#include <memory>
-#include <ostream>
-#include <utility>
-#include <vector>
-
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/filtered_graph.hpp>
@@ -78,36 +68,36 @@
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
 
+#include <iosfwd>
+#include <list>
+#include <memory>
+#include <ostream>
+#include <utility>
+#include <vector>
+
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 
-structural_manager::structural_manager(const ParameterConstRef _Param)
-    : Param(_Param), debug_level(_Param->get_class_debug_level(GET_CLASS(*this)))
+structural_manager::structural_manager(ParameterConstRef _Param)
+    : Param(std::move(_Param)),
+      debug_level(Param->get_class_debug_level(GET_CLASS(*this))),
+      data_graph(*this, PURE_DATA_SELECTOR),
+      circuit_graph(*this, ALL_LINES_SELECTOR)
 {
-   og = new graphs_collection(GraphInfoRef(new cg_graph_info), _Param);
-   data_graph = new graph(og, PURE_DATA_SELECTOR);
-   circuit_graph = new graph(og, ALL_LINES_SELECTOR);
 }
 
-structural_manager::~structural_manager()
-{
-   delete og;
-   delete data_graph;
-   delete circuit_graph;
-}
-
-bool structural_manager::check_type(structural_objectRef src_type, structural_objectRef dest_type)
+bool structural_manager::check_type(const structural_objectRef& src_type, const structural_objectRef& dest_type)
 {
    return structural_type_descriptor::check_type(src_type->get_typeRef(), dest_type->get_typeRef());
 }
 
-bool structural_manager::check_object(std::string id, structural_objectRef owner, so_kind type)
+bool structural_manager::check_object(std::string id, const structural_objectRef& owner, so_kind type)
 {
    THROW_ASSERT(id.find(HIERARCHY_SEPARATOR, 0) == std::string::npos,
                 std::string("Object id cannot contain the \"/\" character"));
    return owner->find_member(id, type, owner) != nullptr;
 }
 
-bool structural_manager::check_bound(structural_objectRef src, structural_objectRef sign)
+bool structural_manager::check_bound(const structural_objectRef& src, const structural_objectRef& sign)
 {
    auto* p = GetPointer<port_o>(src);
    for(unsigned int i = 0; i < p->get_connections_size(); i++)
@@ -120,13 +110,14 @@ bool structural_manager::check_bound(structural_objectRef src, structural_object
    return false;
 }
 
-void structural_manager::set_top_info(std::string id, structural_type_descriptorRef module_type, unsigned int treenode)
+void structural_manager::set_top_info(std::string id, structural_type_descriptorRef module_type,
+                                      unsigned int ir_node_id)
 {
    structural_objectRef nullobj;
-   circuit = structural_objectRef(new component_o(debug_level, nullobj));
-   auto* circ = GetPointer<component_o>(circuit);
+   circuit = structural_objectRef(new module_o(debug_level, nullobj));
+   auto* circ = GetPointer<module_o>(circuit);
    circ->set_id(id);
-   circ->set_treenode(treenode);
+   circ->set_ir_node_id(ir_node_id);
    circ->set_type(module_type);
 }
 
@@ -138,17 +129,17 @@ void structural_manager::set_top_info(const std::string& id, const technology_ma
 }
 
 structural_objectRef structural_manager::create(std::string id, so_kind ctype, structural_objectRef owner,
-                                                structural_type_descriptorRef obj_type, unsigned int treenode)
+                                                structural_type_descriptorRef obj_type, unsigned int ir_node_id)
 {
    THROW_ASSERT(owner, "missing the owner");
    THROW_ASSERT(!check_object(id, owner, ctype), "the object " + id + " is already present in " + owner->get_path());
    structural_objectRef cc;
    switch(ctype)
    {
-      case component_o_K:
+      case module_o_K:
       {
          {
-            cc = structural_objectRef(new component_o(debug_level, owner));
+            cc = structural_objectRef(new module_o(debug_level, owner));
          }
          break;
       }
@@ -159,17 +150,6 @@ structural_objectRef structural_manager::create(std::string id, so_kind ctype, s
          }
          break;
       }
-      case channel_o_K:
-      {
-         {
-            cc = structural_objectRef(new channel_o(debug_level, owner));
-         }
-         break;
-      }
-      case action_o_K:
-      case bus_connection_o_K:
-      case data_o_K:
-      case event_o_K:
       case port_o_K:
       case port_vector_o_K:
       case signal_o_K:
@@ -178,9 +158,9 @@ structural_objectRef structural_manager::create(std::string id, so_kind ctype, s
          THROW_ERROR(std::string("ctype not supported"));
    }
    cc->set_id(id);
-   cc->set_treenode(treenode);
+   cc->set_ir_node_id(ir_node_id);
    cc->set_type(obj_type);
-   auto* own = GetPointer<module>(owner);
+   auto* own = GetPointer<module_o>(owner);
    THROW_ASSERT(own, "Signal, port or interface couldn't own internal object");
    own->add_internal_object(cc);
    return cc;
@@ -188,20 +168,19 @@ structural_objectRef structural_manager::create(std::string id, so_kind ctype, s
 
 structural_objectRef structural_manager::add_port(const std::string& id, port_o::port_direction pdir,
                                                   structural_objectRef owner, structural_type_descriptorRef type_descr,
-                                                  unsigned int treenode)
+                                                  unsigned int ir_node_id)
 {
    THROW_ASSERT(owner, "missing the owner");
    THROW_ASSERT(!check_object(id, owner, port_o_K), "the object " + id + " is already present in " + owner->get_path());
    structural_objectRef cp = structural_objectRef(new port_o(owner->debug_level, owner, pdir, port_o_K));
    cp->set_id(id);
-   cp->set_treenode(treenode);
+   cp->set_ir_node_id(ir_node_id);
    cp->set_type(type_descr);
    switch(owner->get_kind())
    {
-      case channel_o_K:
-      case component_o_K:
+      case module_o_K:
       {
-         auto* own = GetPointer<module>(owner);
+         auto* own = GetPointer<module_o>(owner);
          switch(pdir)
          {
             case port_o::IN:
@@ -220,9 +199,9 @@ structural_objectRef structural_manager::add_port(const std::string& id, port_o:
                attributeRef direction(new attribute(attribute::STRING, "output"));
                cp->add_attribute("direction", direction);
 #endif
-               if(GetPointer<module>(owner))
+               if(GetPointer<module_o>(owner))
                {
-                  NP_functionalityRef NPF = GetPointer<module>(owner)->get_NP_functionality();
+                  NP_functionalityRef NPF = GetPointer<module_o>(owner)->get_NP_functionality();
                   if(NPF)
                   {
 #if HAVE_TECHNOLOGY_BUILT
@@ -252,20 +231,13 @@ structural_objectRef structural_manager::add_port(const std::string& id, port_o:
                own->add_gen_port(cp);
                break;
             }
-            case port_o::TLM_IN:
-            case port_o::TLM_INOUT:
-            case port_o::TLM_OUT:
             case port_o::UNKNOWN:
             default:
                THROW_ERROR(std::string("port type not supported"));
          }
          break;
       }
-      case action_o_K:
-      case bus_connection_o_K:
       case constant_o_K:
-      case data_o_K:
-      case event_o_K:
       case port_o_K:
       case port_vector_o_K:
       case signal_o_K:
@@ -277,23 +249,18 @@ structural_objectRef structural_manager::add_port(const std::string& id, port_o:
    return cp;
 }
 
-void structural_manager::change_port_direction(structural_objectRef port_object, port_o::port_direction pdir,
-                                               structural_objectRef owner)
+void structural_manager::change_port_direction(const structural_objectRef& port_object, port_o::port_direction pdir,
+                                               const structural_objectRef& owner)
 {
    switch(owner->get_kind())
    {
-      case channel_o_K:
-      case component_o_K:
+      case module_o_K:
       {
-         auto* own = GetPointer<module>(owner);
+         auto* own = GetPointer<module_o>(owner);
          own->change_port_direction(port_object, pdir);
          break;
       }
-      case action_o_K:
-      case bus_connection_o_K:
       case constant_o_K:
-      case data_o_K:
-      case event_o_K:
       case port_o_K:
       case port_vector_o_K:
       case signal_o_K:
@@ -304,16 +271,16 @@ void structural_manager::change_port_direction(structural_objectRef port_object,
 }
 
 structural_objectRef structural_manager::add_port_vector(std::string id, port_o::port_direction pdir,
-                                                         unsigned int n_ports, structural_objectRef owner,
+                                                         unsigned int n_ports, const structural_objectRef& owner,
                                                          structural_type_descriptorRef type_descr,
-                                                         unsigned int treenode)
+                                                         unsigned int ir_node_id)
 {
    THROW_ASSERT(owner, "missing the owner");
    THROW_ASSERT(!check_object(id, owner, port_vector_o_K),
                 "the object " + id + " is already present in " + owner->get_path());
    structural_objectRef cp = structural_objectRef(new port_o(owner->debug_level, owner, pdir, port_vector_o_K));
    cp->set_id(id);
-   cp->set_treenode(treenode);
+   cp->set_ir_node_id(ir_node_id);
    cp->set_type(type_descr);
    if(n_ports != port_o::PARAMETRIC_PORT)
    {
@@ -321,10 +288,9 @@ structural_objectRef structural_manager::add_port_vector(std::string id, port_o:
    }
    switch(owner->get_kind())
    {
-      case channel_o_K:
-      case component_o_K:
+      case module_o_K:
       {
-         auto* own = GetPointer<module>(owner);
+         auto* own = GetPointer<module_o>(owner);
          switch(pdir)
          {
             case port_o::IN:
@@ -347,20 +313,13 @@ structural_objectRef structural_manager::add_port_vector(std::string id, port_o:
                own->add_gen_port(cp);
                break;
             }
-            case port_o::TLM_IN:
-            case port_o::TLM_INOUT:
-            case port_o::TLM_OUT:
             case port_o::UNKNOWN:
             default:
                THROW_ERROR(std::string("port type not supported"));
          }
          break;
       }
-      case action_o_K:
-      case bus_connection_o_K:
       case constant_o_K:
-      case data_o_K:
-      case event_o_K:
       case port_o_K:
       case port_vector_o_K:
       case signal_o_K:
@@ -372,15 +331,16 @@ structural_objectRef structural_manager::add_port_vector(std::string id, port_o:
 }
 
 structural_objectRef structural_manager::add_sign_vector(std::string id, unsigned int n_signs,
-                                                         structural_objectRef owner,
-                                                         structural_type_descriptorRef sign_type, unsigned int treenode)
+                                                         const structural_objectRef& owner,
+                                                         structural_type_descriptorRef sign_type,
+                                                         unsigned int ir_node_id)
 {
    THROW_ASSERT(owner, "missing the owner");
    THROW_ASSERT(!check_object(id, owner, signal_o_K),
                 "the object " + id + " is already present in " + owner->get_path());
    structural_objectRef cs = structural_objectRef(new signal_o(owner->debug_level, owner, signal_vector_o_K));
    cs->set_id(id);
-   cs->set_treenode(treenode);
+   cs->set_ir_node_id(ir_node_id);
    cs->set_type(sign_type);
    if(n_signs != signal_o::PARAMETRIC_SIGNAL)
    {
@@ -388,18 +348,13 @@ structural_objectRef structural_manager::add_sign_vector(std::string id, unsigne
    }
    switch(owner->get_kind())
    {
-      case component_o_K:
+      case module_o_K:
       {
-         auto* own = GetPointer<module>(owner);
+         auto* own = GetPointer<module_o>(owner);
          own->add_internal_object(cs);
          break;
       }
-      case action_o_K:
-      case bus_connection_o_K:
-      case channel_o_K:
       case constant_o_K:
-      case data_o_K:
-      case event_o_K:
       case port_o_K:
       case port_vector_o_K:
       case signal_o_K:
@@ -410,35 +365,25 @@ structural_objectRef structural_manager::add_sign_vector(std::string id, unsigne
    return cs;
 }
 
-structural_objectRef structural_manager::add_sign(std::string id, structural_objectRef owner,
-                                                  structural_type_descriptorRef sign_type, unsigned int treenode)
+structural_objectRef structural_manager::add_sign(std::string id, const structural_objectRef& owner,
+                                                  structural_type_descriptorRef sign_type, unsigned int ir_node_id)
 {
    THROW_ASSERT(owner, "missing the owner");
    THROW_ASSERT(!check_object(id, owner, signal_o_K),
                 "the object " + id + " is already present in " + owner->get_path());
    structural_objectRef cs = structural_objectRef(new signal_o(owner->debug_level, owner, signal_o_K));
    cs->set_id(id);
-   cs->set_treenode(treenode);
+   cs->set_ir_node_id(ir_node_id);
    cs->set_type(sign_type);
    switch(owner->get_kind())
    {
-      case channel_o_K:
-      case component_o_K:
+      case module_o_K:
       {
-         auto* own = GetPointer<module>(owner);
+         auto* own = GetPointer<module_o>(owner);
          own->add_internal_object(cs);
          break;
       }
-      case bus_connection_o_K:
-      {
-         auto* own = GetPointer<bus_connection_o>(owner);
-         own->add_connection(cs);
-         break;
-      }
-      case action_o_K:
       case constant_o_K:
-      case data_o_K:
-      case event_o_K:
       case port_o_K:
       case port_vector_o_K:
       case signal_o_K:
@@ -449,7 +394,7 @@ structural_objectRef structural_manager::add_sign(std::string id, structural_obj
    return cs;
 }
 
-void structural_manager::remove_empty_signal(structural_objectRef& signal)
+void structural_manager::remove_empty_signal(const structural_objectRef& signal)
 {
    auto* sign(GetPointer<signal_o>(signal));
    THROW_ASSERT(sign, "Null argument or not a signal");
@@ -463,15 +408,10 @@ void structural_manager::remove_empty_signal(structural_objectRef& signal)
 
    switch(owner->get_kind())
    {
-      case channel_o_K:
-      case component_o_K:
-         GetPointer<module>(owner)->remove_internal_object(signal);
+      case module_o_K:
+         GetPointer<module_o>(owner)->remove_internal_object(signal);
          break;
-      case action_o_K:
-      case bus_connection_o_K:
       case constant_o_K:
-      case data_o_K:
-      case event_o_K:
       case port_o_K:
       case port_vector_o_K:
       case signal_o_K:
@@ -481,8 +421,9 @@ void structural_manager::remove_empty_signal(structural_objectRef& signal)
    }
 }
 
-void structural_manager::reconnect_signal_member(structural_objectRef& member, structural_objectRef& from_signal,
-                                                 structural_objectRef& to_signal)
+void structural_manager::reconnect_signal_member(const structural_objectRef& member,
+                                                 const structural_objectRef& from_signal,
+                                                 const structural_objectRef& to_signal)
 {
    // sanity checks
 
@@ -511,13 +452,8 @@ void structural_manager::reconnect_signal_member(structural_objectRef& member, s
          to->add_port(member);
          break;
       }
-      case action_o_K:
-      case bus_connection_o_K:
-      case channel_o_K:
-      case component_o_K:
+      case module_o_K:
       case constant_o_K:
-      case data_o_K:
-      case event_o_K:
       case port_vector_o_K:
       case signal_o_K:
       case signal_vector_o_K:
@@ -526,48 +462,55 @@ void structural_manager::reconnect_signal_member(structural_objectRef& member, s
    }
 }
 
-structural_objectRef structural_manager::add_constant(std::string id, structural_objectRef owner,
+structural_objectRef structural_manager::add_constant(std::string id, const structural_objectRef& owner,
                                                       structural_type_descriptorRef type, std::string value,
-                                                      unsigned int treenode)
+                                                      unsigned int ir_node_id)
 {
    THROW_ASSERT(owner, "missing the owner");
    THROW_ASSERT(!check_object(id, owner, constant_o_K),
                 "the object " + id + " is already present in " + owner->get_path());
    structural_objectRef c_obj(new constant_o(debug_level, owner, value));
    c_obj->set_id(id);
-   c_obj->set_treenode(treenode);
+   c_obj->set_ir_node_id(ir_node_id);
    c_obj->set_type(type);
-   auto* own = GetPointer<module>(owner);
+   auto* own = GetPointer<module_o>(owner);
    THROW_ASSERT(own, "Signal, port or interface couldn't own internal object");
    own->add_internal_object(c_obj);
    return c_obj;
 }
 
-void structural_manager::add_NP_functionality(structural_objectRef cir, NP_functionality::NP_functionaly_type dt,
-                                              std::string functionality_description)
+void structural_manager::add_NP_functionality(const structural_objectRef& cir, NP_functionality::NP_functionaly_type dt,
+                                              const std::string& functionality_description)
 {
-   THROW_ASSERT((cir->get_kind() == component_o_K), "Only components can have a Non SystemC functionality");
-   const auto com = GetPointer<module>(cir);
+   THROW_ASSERT((cir->get_kind() == module_o_K), "Only components can have a Non SystemC functionality");
+   const auto com = GetPointer<module_o>(cir);
    NP_functionalityRef f =
        (com->get_NP_functionality() ? com->get_NP_functionality() : NP_functionalityRef(new NP_functionality));
    f->add_NP_functionality(dt, functionality_description);
    com->set_NP_functionality(f);
 }
 
+void structural_manager::append_NP_functionality(const structural_objectRef& cir,
+                                                 NP_functionality::NP_functionaly_type dt,
+                                                 const std::string& functionality_description)
+{
+   THROW_ASSERT((cir->get_kind() == module_o_K), "Only components can have a Non SystemC functionality");
+   const auto com = GetPointer<module_o>(cir);
+   const auto f = com->get_NP_functionality() ? com->get_NP_functionality() : NP_functionalityRef(new NP_functionality);
+   const auto current_val = f->get_NP_functionality(dt);
+   f->add_NP_functionality(dt, current_val.empty() ? functionality_description :
+                                                     current_val + " " + functionality_description);
+   com->set_NP_functionality(f);
+}
+
 void structural_manager::SetParameter(const std::string& name, const std::string& value)
 {
-   THROW_ASSERT((get_circ()->get_kind() == component_o_K), "Only components can have a Non SystemC functionality");
-   auto* com = GetPointer<module>(get_circ());
+   THROW_ASSERT((get_circ()->get_kind() == module_o_K), "Only components can have a Non SystemC functionality");
+   auto* com = GetPointer<module_o>(get_circ());
    com->SetParameter(name, value);
 }
 
-void structural_manager::add_sensitivity(structural_objectRef obj, structural_objectRef pr)
-{
-   auto* ad = GetPointer<action_o>(pr);
-   ad->add_event_to_sensitivity(obj);
-}
-
-void structural_manager::add_connection(structural_objectRef src, structural_objectRef dest)
+void structural_manager::add_connection(const structural_objectRef& src, const structural_objectRef& dest)
 {
    THROW_ASSERT(src && dest,
                 "Missing src or dest: " + (src ? src->get_path() : "!src") + " " + (dest ? dest->get_path() : "!dest"));
@@ -589,9 +532,11 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
                THROW_ASSERT(check_type(src, dest),
                             "Ports have to be compatible: " + src->get_path() + " -> " + dest->get_path());
                THROW_ASSERT(!src->find_member(dest->get_id(), port_o_K, dest->get_owner()),
-                            "Port " + src->get_id() + " already bound to " + dest->get_id());
+                            "Port " + src->get_path() + " already bound to " + dest->get_path());
                THROW_ASSERT(!dest->find_member(src->get_id(), port_o_K, src->get_owner()),
-                            "Port " + dest->get_id() + " already bound to " + src->get_id());
+                            "Port " + dest->get_path() + " already bound to " + src->get_path());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "Adding connection between port: " + src->get_path() + " and port: " + dest->get_path());
                auto* p_d = GetPointerS<port_o>(dest);
                p_s->add_connection(dest);
                p_d->add_connection(src);
@@ -603,18 +548,6 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
                             "Ports and signals have to be compatible: " + src->get_path() + " -> " + dest->get_path());
                p_s->add_connection(dest);
                auto* c_d = GetPointerS<signal_o>(dest);
-               c_d->add_port(src);
-               break;
-            }
-            case channel_o_K:
-            {
-               THROW_ASSERT(src->get_owner() != dest->get_owner(),
-                            "A direct connection between port and channel of the same object is not allowed.");
-               THROW_ASSERT(!src->find_member(dest->get_id(), channel_o_K, dest->get_owner()),
-                            "Port " + src->get_id() + " already bound to " + dest->get_id());
-               /// the other check is not currently implemented.
-               p_s->add_connection(dest);
-               auto* c_d = GetPointerS<channel_o>(dest);
                c_d->add_port(src);
                break;
             }
@@ -630,11 +563,7 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
                c_d->add_connection(src);
                break;
             }
-            case action_o_K:
-            case bus_connection_o_K:
-            case component_o_K:
-            case data_o_K:
-            case event_o_K:
+            case module_o_K:
             case port_vector_o_K:
             case signal_vector_o_K:
             default:
@@ -676,15 +605,10 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
                c_d->add_port(src);
                break;
             }
-            case action_o_K:
-            case bus_connection_o_K:
-            case channel_o_K:
-            case component_o_K:
+            case module_o_K:
             case constant_o_K:
             case port_o_K:
             case signal_o_K:
-            case data_o_K:
-            case event_o_K:
             default:
             {
                THROW_ERROR("Cannot connect a port_vector_o (" + src->get_path() + ") to a " + dest->get_kind_text() +
@@ -708,13 +632,8 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
                p_d->add_connection(src);
                break;
             }
-            case action_o_K:
-            case bus_connection_o_K:
-            case channel_o_K:
-            case component_o_K:
+            case module_o_K:
             case constant_o_K:
-            case data_o_K:
-            case event_o_K:
             case port_vector_o_K:
             case signal_o_K:
             case signal_vector_o_K:
@@ -740,13 +659,8 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
                p_d->add_connection(src);
                break;
             }
-            case action_o_K:
-            case bus_connection_o_K:
-            case channel_o_K:
-            case component_o_K:
+            case module_o_K:
             case constant_o_K:
-            case data_o_K:
-            case event_o_K:
             case port_o_K:
             case signal_o_K:
             case signal_vector_o_K:
@@ -774,13 +688,8 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
                p_d->add_connection(src);
                break;
             }
-            case action_o_K:
-            case bus_connection_o_K:
-            case channel_o_K:
-            case component_o_K:
+            case module_o_K:
             case constant_o_K:
-            case data_o_K:
-            case event_o_K:
             case port_vector_o_K:
             case signal_o_K:
             case signal_vector_o_K:
@@ -791,12 +700,7 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
          }
          break; // case src = constant_o_K
       }
-      case action_o_K:
-      case bus_connection_o_K:
-      case channel_o_K:
-      case component_o_K:
-      case data_o_K:
-      case event_o_K:
+      case module_o_K:
       default:
       {
          THROW_ERROR("Cannot connect a " + src->get_kind_text() + " to a " + dest->get_kind_text());
@@ -804,35 +708,26 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
    } // switch src kind
 }
 
-void structural_manager::WriteDot(const std::string& function_name, const std::string& file_name, circuit_graph_type gt,
-                                  graph* g) const
+void structural_manager::writeDot(const std::filesystem::path& filename, circuit_graph_type gt) const
 {
-   const auto output_directory = Param->getOption<std::filesystem::path>(OPT_dot_directory) / function_name;
-   std::filesystem::create_directories(output_directory);
-   const auto full_name = output_directory / file_name;
-   std::ofstream f(full_name);
-   if(g == nullptr)
+   switch(gt)
    {
-      switch(gt)
-      {
-         case DATA_G:
-            g = data_graph;
-            break;
-         case COMPLETE_G:
-            g = circuit_graph;
-            break;
-         default:
-            THROW_ERROR(std::string("Not supported graph type"));
-      }
+      case DATA_G:
+         return data_graph.writeDot(filename, CGVertexWriter(data_graph), CGEdgeWriter(data_graph));
+         break;
+      case COMPLETE_G:
+         return circuit_graph.writeDot(filename, CGVertexWriter(circuit_graph), CGEdgeWriter(circuit_graph));
+         break;
+      default:
+         THROW_ERROR(std::string("Not supported graph type"));
    }
-   boost::write_graphviz(f, *g, cg_label_writer(g), cg_edge_writer(g));
 }
 
 void structural_manager::print(std::ostream& os) const
 {
    if(circuit && circuit->get_id() != "")
    {
-      auto* circ = GetPointer<component_o>(circuit);
+      auto* circ = GetPointer<module_o>(circuit);
       circ->print(os);
    }
    else
@@ -841,16 +736,9 @@ void structural_manager::print(std::ostream& os) const
    }
 }
 
-const vertex& structural_manager::get_PI(const structural_objectRef) const
+void structural_manager::check_structure(const structural_objectRef& obj, bool permissive)
 {
-   auto* gi = GetPointer<cg_graph_info>(circuit_graph->GetGraphInfo());
-   THROW_ASSERT(gi, "graph property not associated with the circuit graph");
-   return gi->Entry;
-}
-
-void structural_manager::check_structure(structural_objectRef obj, bool permissive)
-{
-   auto* top_c = GetPointer<module>(obj);
+   auto* top_c = GetPointer<module_o>(obj);
    if(top_c->get_internal_objects_size() == 0 && obj->get_owner()) // check has mean for all component but the top
    {
       for(unsigned int i = 0; i < top_c->get_in_port_size(); i++)
@@ -1019,8 +907,7 @@ void structural_manager::check_structure(structural_objectRef obj, bool permissi
    {
       switch(top_c->get_internal_object(i)->get_kind())
       {
-         case channel_o_K:
-         case component_o_K:
+         case module_o_K:
          {
             if(!top_c->get_internal_object(i)->get_black_box())
             {
@@ -1031,11 +918,7 @@ void structural_manager::check_structure(structural_objectRef obj, bool permissi
          case constant_o_K:
          case signal_o_K:
          case signal_vector_o_K:
-         case bus_connection_o_K:
             break;
-         case action_o_K:
-         case data_o_K:
-         case event_o_K:
          case port_o_K:
          case port_vector_o_K:
          default:
@@ -1047,22 +930,8 @@ void structural_manager::check_structure(structural_objectRef obj, bool permissi
 void structural_manager::INIT(bool permissive)
 {
    check_structure(circuit, permissive);
-   if(og)
-   {
-      delete og;
-   }
-   if(data_graph)
-   {
-      delete data_graph;
-   }
-   if(circuit_graph)
-   {
-      delete circuit_graph;
-   }
-   og = new graphs_collection(GraphInfoRef(new cg_graph_info), Param);
-   data_graph = new graph(og, PURE_DATA_SELECTOR);
-   circuit_graph = new graph(og, ALL_LINES_SELECTOR);
-   build_graph(circuit, og);
+   Base::clear();
+   build_graph(circuit);
 }
 
 structural_objectRef structural_manager::add_module_from_technology_library(const std::string& id,
@@ -1071,8 +940,7 @@ structural_objectRef structural_manager::add_module_from_technology_library(cons
                                                                             const structural_objectRef owner,
                                                                             const technology_managerConstRef TM)
 {
-   THROW_ASSERT(!owner || owner->get_kind() == component_o_K || owner->get_kind() == channel_o_K,
-                "Expected a component or a channel got something of different");
+   THROW_ASSERT(!owner || owner->get_kind() == module_o_K, "Expected a component got something different");
    technology_nodeRef port_tec_node = TM->get_fu(fu_name, library_name);
    THROW_ASSERT(port_tec_node,
                 std::string("gate not found: ") + fu_name + " " + std::string(" in library: ") + library_name);
@@ -1085,8 +953,8 @@ structural_objectRef structural_manager::add_module_from_technology_library(cons
    THROW_ASSERT(GetPointer<functional_unit>(port_tec_node)->CM,
                 "GetPointer<functional_unit>(port_tec_node)->CM is null for " + fu_name);
    structural_objectRef curr_lib_instance = GetPointer<functional_unit>(port_tec_node)->CM->get_circ();
-   THROW_ASSERT(curr_lib_instance->get_kind() == component_o_K, "Expected a component got something of different");
-   structural_objectRef curr_gate = structural_objectRef(new component_o(debug_level, owner));
+   THROW_ASSERT(curr_lib_instance->get_kind() == module_o_K, "Expected a component got something of different");
+   structural_objectRef curr_gate = structural_objectRef(new module_o(debug_level, owner));
    if(!owner)
    {
       circuit = curr_gate; // set the top component of the circuit manager.
@@ -1095,7 +963,7 @@ structural_objectRef structural_manager::add_module_from_technology_library(cons
    curr_gate->set_id(id);
    if(owner)
    {
-      GetPointer<module>(owner)->add_internal_object(curr_gate);
+      GetPointer<module_o>(owner)->add_internal_object(curr_gate);
    }
    return curr_gate;
 }
@@ -1103,60 +971,47 @@ structural_objectRef structural_manager::add_module_from_technology_library(cons
 /**
  * this template function adds an edge to the bulk graph and possibly a label to the edge. Parallel edges are allowed.
  */
-template <class Graph>
-void circuit_add_edge(typename boost::graph_traits<Graph>::vertex_descriptor A,
-                      typename boost::graph_traits<Graph>::vertex_descriptor B, int selector, Graph& g,
-                      const structural_objectRef from1, structural_objectRef to1, bool is_critical = false)
+void structural_manager::circuit_add_edge(CGGraphsCollection::vertex_descriptor A,
+                                          CGGraphsCollection::vertex_descriptor B, int selector,
+                                          const structural_objectRef from1, structural_objectRef to1, bool is_critical)
 {
-   typename boost::graph_traits<Graph>::out_edge_iterator oi, oi_end;
-   typename boost::graph_traits<Graph>::edge_descriptor e;
-   bool inserted;
-   for(boost::tie(oi, oi_end) = boost::out_edges(A, g); oi != oi_end; oi++)
+   for(const auto& oi : out_edges(A))
    {
-      if(boost::target(*oi, g) != B)
+      if(target(oi) != B)
       {
          continue;
       }
-      if(GET_FROM_PORT(&g, *oi) == from1 && GET_TO_PORT(&g, *oi) == to1)
+      const auto& edge_info = CGetEdgeInfo(oi);
+      if(edge_info.from_port == from1 && edge_info.to_port == to1)
       {
          return;
       }
    }
-   boost::tie(e, inserted) = boost::add_edge(A, B, EdgeProperty(selector), g);
-   EDGE_ADD_FROM_PORT(&g, e, from1);
-   EDGE_ADD_TO_PORT(&g, e, to1);
-   EDGE_SET_CRITICAL(&g, e, is_critical);
+   const auto e = AddEdge(A, B, selector);
+   auto& edge_info = GetEdgeInfo(e);
+   edge_info.from_port = from1;
+   edge_info.to_port = to1;
+   edge_info.is_critical = is_critical;
 }
 
-/**
- * Add a directed edge between the nodes associated with p1 and p2.
- * @param module_vertex_rel is the relation between modules and vertexes.
- * @param p1 is the first port.
- * @param p2 is the second port.
- * @param en is the entry vertex.
- * @param ex is the exit vertex.
- */
-static void add_directed_edge_single(
-    graphs_collection* bg,
-    const std::map<structural_objectRef, boost::graph_traits<graphs_collection>::vertex_descriptor>& module_vertex_rel,
-    const structural_objectRef& p1, const structural_objectRef& p2,
-    boost::graph_traits<graphs_collection>::vertex_descriptor en,
-    boost::graph_traits<graphs_collection>::vertex_descriptor ex, bool is_critical = false)
+void structural_manager::add_directed_edge_single(
+    const std::map<structural_objectRef, CGGraphsCollection::vertex_descriptor>& module_vertex_rel,
+    const structural_objectRef& p1, const structural_objectRef& p2, CGGraphsCollection::vertex_descriptor en,
+    CGGraphsCollection::vertex_descriptor ex, bool is_critical)
 {
    THROW_ASSERT(p1->get_kind() == port_o_K || p1->get_kind() == port_vector_o_K,
                 "Expected a port got something of different");
    THROW_ASSERT(p2->get_kind() == port_o_K || p2->get_kind() == port_vector_o_K,
                 "Expected a port got something of different");
 
-   structural_objectRef p_obj1 = p1;
-   structural_objectRef p_obj2 = p2;
+   auto p_obj1 = p1;
+   auto p_obj2 = p2;
 
    // now detect the vertex associated with the ports
-   boost::graph_traits<graphs_collection>::vertex_descriptor src,
-       tgt = boost::graph_traits<graphs_collection>::null_vertex();
+   CGGraphsCollection::vertex_descriptor src, tgt = CGGraphsCollection::null_vertex();
 
-   structural_objectRef owner1 = p_obj1->get_owner();
-   structural_objectRef owner2 = p_obj2->get_owner();
+   auto owner1 = p_obj1->get_owner();
+   auto owner2 = p_obj2->get_owner();
 
    // first detect the actual owner
    if(owner1 && owner1->get_kind() == port_vector_o_K)
@@ -1252,23 +1107,13 @@ static void add_directed_edge_single(
       }
    }
 
-   circuit_add_edge(src, tgt, edge_type, *bg, p_obj1, p_obj2, is_critical);
+   circuit_add_edge(src, tgt, edge_type, p_obj1, p_obj2, is_critical);
 }
 
-/**
- * Add a directed edge between the nodes associated with p1 and p2.
- * @param module_vertex_rel is the relation between modules and vertexes.
- * @param p1 is the first port.
- * @param p2 is the second object. It could be a port, a signal or a module.
- * @param en is the entry vertex.
- * @param ex is the exit vertex.
- */
-static void add_directed_edge(
-    graphs_collection* bg,
-    const std::map<structural_objectRef, boost::graph_traits<graphs_collection>::vertex_descriptor>& module_vertex_rel,
-    const structural_objectRef& p1, const structural_objectRef& p2,
-    boost::graph_traits<graphs_collection>::vertex_descriptor en,
-    boost::graph_traits<graphs_collection>::vertex_descriptor ex, bool is_critical = false)
+void structural_manager::add_directed_edge(
+    const std::map<structural_objectRef, CGGraphsCollection::vertex_descriptor>& module_vertex_rel,
+    const structural_objectRef& p1, const structural_objectRef& p2, CGGraphsCollection::vertex_descriptor en,
+    CGGraphsCollection::vertex_descriptor ex, bool is_critical)
 {
    // the port is not connected to any object
    if(!p2)
@@ -1287,7 +1132,7 @@ static void add_directed_edge(
       {
          // std::cerr << "p1: " << p1->get_path() << "(" << p1->get_kind_text() << ") -> p2: " << p2->get_path() << "("
          // << p2->get_kind_text() << ")" << std::endl;
-         add_directed_edge_single(bg, module_vertex_rel, p1, p2, en, ex, is_critical);
+         add_directed_edge_single(module_vertex_rel, p1, p2, en, ex, is_critical);
          break;
       }
       case signal_o_K:
@@ -1300,7 +1145,7 @@ static void add_directed_edge(
             {
                // std::cerr << "p1: " << p1->get_path() << "(" << p1->get_kind_text() << ") -> p2: " <<
                // conn->get_port(k)->get_path() << "(" << conn->get_port(k)->get_kind_text() << ")" << std::endl;
-               add_directed_edge_single(bg, module_vertex_rel, p1, conn->get_port(k), en, ex, is_critical);
+               add_directed_edge_single(module_vertex_rel, p1, conn->get_port(k), en, ex, is_critical);
             }
          }
          break;
@@ -1308,23 +1153,23 @@ static void add_directed_edge(
       case constant_o_K:
       {
          structural_objectRef owner1 = p1->get_owner();
-         boost::graph_traits<graphs_collection>::vertex_descriptor v1;
+         CGGraphsCollection::vertex_descriptor v1;
          if(owner1 && owner1->get_kind() == port_vector_o_K)
          {
             owner1 = owner1->get_owner();
          }
          THROW_ASSERT(module_vertex_rel.find(owner1) != module_vertex_rel.end(), "module not found");
          v1 = module_vertex_rel.find(owner1)->second;
-         circuit_add_edge(en, v1, DATA_SELECTOR, *bg, p2, p1, is_critical);
+         circuit_add_edge(en, v1, DATA_SELECTOR, p2, p1, is_critical);
          break;
       }
-      case component_o_K:
+      case module_o_K:
       {
          THROW_WARNING("Still to be checked!");
          /// gen port connection
-         structural_objectRef owner1 = p1->get_owner();
-         structural_objectRef owner2 = p2->get_owner();
-         boost::graph_traits<graphs_collection>::vertex_descriptor v1, v2;
+         auto owner1 = p1->get_owner();
+         auto owner2 = p2->get_owner();
+         CGGraphsCollection::vertex_descriptor v1, v2;
          if(owner1 && owner1->get_kind() == port_vector_o_K)
          {
             owner1 = owner1->get_owner();
@@ -1340,14 +1185,9 @@ static void add_directed_edge(
          }
          THROW_ASSERT(module_vertex_rel.find(p2) != module_vertex_rel.end(), "module not found");
          v2 = module_vertex_rel.find(p2)->second;
-         circuit_add_edge(v1, v2, CHANNEL_SELECTOR, *bg, p1, p2, is_critical);
+         circuit_add_edge(v1, v2, DATA_SELECTOR, p1, p2, is_critical);
          break;
       }
-      case action_o_K:
-      case bus_connection_o_K:
-      case channel_o_K:
-      case data_o_K:
-      case event_o_K:
       default:
       {
          THROW_ERROR("unexpected object type: " + std::string(p2->get_kind_text()));
@@ -1355,69 +1195,72 @@ static void add_directed_edge(
    }
 }
 
-void structural_manager::build_graph(const structural_objectRef& top, graphs_collection* bg)
+void structural_manager::build_graph(const structural_objectRef& top)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Building graph of " + top->get_typeRef()->id_type);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Creating the PI node");
+   auto& graph_info = GetGraphInfo();
+   const auto mod = GetPointer<module_o>(top);
    // create the entry node
-   vertex v_en = bg->AddVertex(NodeInfoRef(new cg_node_info()));
-   std::string v_en_name = "PI";
-   GET_NODE_INFO(bg, cg_node_info, v_en)->vertex_name = v_en_name;
-   GET_NODE_INFO(bg, cg_node_info, v_en)->node_type = TYPE_ENTRY;
-   GET_NODE_INFO(bg, cg_node_info, v_en)->node_operation = ENTRY;
-   const module* mod = GetPointer<module>(top);
-   for(unsigned int p = 0; p < mod->get_in_port_size(); p++)
+   auto v_en = AddVertex();
    {
-      structural_objectRef port = mod->get_in_port(p);
-      if(GetPointer<port_o>(port)->get_critical())
+      std::string v_en_name = "PI";
+      graph_info.Entry = v_en;
+      graph_info.Entry_name = v_en_name;
+      auto& vinfo = GetNodeInfo(v_en);
+      vinfo.vertex_name = v_en_name;
+      vinfo.node_type = TYPE_ENTRY;
+      vinfo.node_operation = ENTRY;
+      for(unsigned int p = 0; p < mod->get_in_port_size(); p++)
       {
-         GET_NODE_INFO(bg, cg_node_info, v_en)->is_critical = true;
+         structural_objectRef port = mod->get_in_port(p);
+         if(GetPointer<port_o>(port)->get_critical())
+         {
+            vinfo.is_critical = true;
+         }
       }
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Creating the PO node");
    // create the exit node
-   vertex v_ex = bg->AddVertex(NodeInfoRef(new cg_node_info()));
-   std::string v_ex_name = "PO";
-   GET_NODE_INFO(bg, cg_node_info, v_ex)->vertex_name = v_ex_name;
-   GET_NODE_INFO(bg, cg_node_info, v_ex)->node_type = TYPE_EXIT;
-   GET_NODE_INFO(bg, cg_node_info, v_ex)->node_operation = EXIT;
-   for(unsigned int p = 0; p < mod->get_out_port_size(); p++)
+   auto v_ex = AddVertex();
    {
-      structural_objectRef port = mod->get_out_port(p);
-      if(GetPointer<port_o>(port)->get_critical())
+      std::string v_ex_name = "PO";
+      graph_info.Exit = v_ex;
+      graph_info.Exit_name = v_ex_name;
+      auto& vinfo = GetNodeInfo(v_ex);
+      vinfo.vertex_name = v_ex_name;
+      vinfo.node_type = TYPE_EXIT;
+      vinfo.node_operation = EXIT;
+      for(unsigned int p = 0; p < mod->get_out_port_size(); p++)
       {
-         GET_NODE_INFO(bg, cg_node_info, v_ex)->is_critical = true;
+         structural_objectRef port = mod->get_out_port(p);
+         if(GetPointer<port_o>(port)->get_critical())
+         {
+            vinfo.is_critical = true;
+         }
       }
    }
 
-   // attach the graph property to the graph
-   auto* graph_info = GetPointer<cg_graph_info>(circuit_graph->GetGraphInfo());
-   graph_info->Entry = v_en;
-   graph_info->Entry_name = v_en_name;
-   graph_info->Exit = v_ex;
-   graph_info->Exit_name = v_ex_name;
-
    /// add all nodes
-   std::map<structural_objectRef, boost::graph_traits<graphs_collection>::vertex_descriptor> module_vertex_rel;
+   std::map<structural_objectRef, vertex_descriptor> module_vertex_rel;
    for(unsigned int i = 0; i < mod->get_internal_objects_size(); i++)
    {
       switch(mod->get_internal_object(i)->get_kind())
       {
-         case channel_o_K:
-         case component_o_K:
+         case module_o_K:
          {
-            vertex curr_v = bg->AddVertex(NodeInfoRef(new cg_node_info));
+            auto curr_v = AddVertex();
             module_vertex_rel[mod->get_internal_object(i)] = curr_v;
-            auto* mod_int = GetPointer<module>(mod->get_internal_object(i));
-            GET_NODE_INFO(bg, cg_node_info, curr_v)->vertex_name = mod_int->get_id();
-            GET_NODE_INFO(bg, cg_node_info, curr_v)->node_operation = GET_TYPE_NAME(mod_int);
-            GET_NODE_INFO(bg, cg_node_info, curr_v)->reference = mod->get_internal_object(i);
-            if(mod->get_internal_object(i)->get_kind() == component_o_K)
+            auto* mod_int = GetPointer<module_o>(mod->get_internal_object(i));
+            auto& vinfo = GetNodeInfo(curr_v);
+            vinfo.vertex_name = mod_int->get_id();
+            vinfo.node_operation = GET_TYPE_NAME(mod_int);
+            vinfo.reference = mod->get_internal_object(i);
+            if(mod->get_internal_object(i)->get_kind() == module_o_K)
             {
-               GET_NODE_INFO(bg, cg_node_info, curr_v)->is_critical =
-                   GetPointer<module>(mod->get_internal_object(i))->get_critical();
+               vinfo.is_critical = GetPointer<module_o>(mod->get_internal_object(i))->get_critical();
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            " - Creating the node for the instance " + mod_int->get_path());
@@ -1426,11 +1269,7 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
          case signal_o_K:
          case constant_o_K:
          case signal_vector_o_K:
-         case bus_connection_o_K:
             break; /// no action for signals and bus
-         case action_o_K:
-         case data_o_K:
-         case event_o_K:
          case port_o_K:
          case port_vector_o_K:
          default:
@@ -1441,10 +1280,9 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
    {
       switch(mod->get_internal_object(i)->get_kind())
       {
-         case channel_o_K:
-         case component_o_K:
+         case module_o_K:
          {
-            auto* mod_inst = GetPointer<module>(mod->get_internal_object(i));
+            auto* mod_inst = GetPointer<module_o>(mod->get_internal_object(i));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing instance " + mod_inst->get_path());
             if(mod_inst->get_in_port_size())
             {
@@ -1479,7 +1317,7 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
                               is_critical = true;
                            }
                         }
-                        add_directed_edge(bg, module_vertex_rel, in_port, bounded, v_en, v_ex, is_critical);
+                        add_directed_edge(module_vertex_rel, in_port, bounded, v_en, v_ex, is_critical);
                      }
                   }
                   else
@@ -1510,7 +1348,7 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
                               THROW_WARNING(
                                   "Critical paths are not correctly identified when port vectors are involved");
                            }
-                           add_directed_edge(bg, module_vertex_rel, in_port_i, bounded, v_en, v_ex);
+                           add_directed_edge(module_vertex_rel, in_port_i, bounded, v_en, v_ex);
                         }
                      }
                   }
@@ -1546,7 +1384,7 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
                            is_critical = true;
                         }
                      }
-                     add_directed_edge(bg, module_vertex_rel, out_port, target, v_en, v_ex, is_critical);
+                     add_directed_edge(module_vertex_rel, out_port, target, v_en, v_ex, is_critical);
                   }
                   else
                   {
@@ -1558,7 +1396,7 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "---Adding direct edge from " + pv->get_path() + " to " +
                                            target_vector->get_path());
-                        add_directed_edge(bg, module_vertex_rel, out_port, target_vector, v_en, v_ex);
+                        add_directed_edge(module_vertex_rel, out_port, target_vector, v_en, v_ex);
                      }
                      else
                      {
@@ -1577,7 +1415,7 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
                               THROW_WARNING(
                                   "Critical paths are not correctly identified when port vectors are involved");
                            }
-                           add_directed_edge(bg, module_vertex_rel, pv->get_port(k), target, v_en, v_ex);
+                           add_directed_edge(module_vertex_rel, pv->get_port(k), target, v_en, v_ex);
                         }
                      }
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -1600,7 +1438,7 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
                   }
                   if(mod_inst->get_in_out_port(j)->get_kind() == port_o_K)
                   {
-                     add_directed_edge(bg, module_vertex_rel, mod_inst->get_in_out_port(j), bounded, v_en, v_ex);
+                     add_directed_edge(module_vertex_rel, mod_inst->get_in_out_port(j), bounded, v_en, v_ex);
                   }
                   else
                   {
@@ -1613,7 +1451,7 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
                         {
                            continue;
                         }
-                        add_directed_edge(bg, module_vertex_rel, pv->get_port(k), bounded_k, v_en, v_ex);
+                        add_directed_edge(module_vertex_rel, pv->get_port(k), bounded_k, v_en, v_ex);
                      }
                   }
                }
@@ -1633,7 +1471,7 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
                   }
                   if(mod_inst->get_gen_port(j)->get_kind() == port_o_K)
                   {
-                     add_directed_edge(bg, module_vertex_rel, mod_inst->get_gen_port(j), bounded, v_en, v_ex);
+                     add_directed_edge(module_vertex_rel, mod_inst->get_gen_port(j), bounded, v_en, v_ex);
                   }
                   else
                   {
@@ -1646,7 +1484,7 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
                         {
                            continue;
                         }
-                        add_directed_edge(bg, module_vertex_rel, pv->get_port(k), bounded_k, v_en, v_ex);
+                        add_directed_edge(module_vertex_rel, pv->get_port(k), bounded_k, v_en, v_ex);
                      }
                   }
                }
@@ -1657,11 +1495,7 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
          case constant_o_K:
          case signal_o_K:
          case signal_vector_o_K:
-         case bus_connection_o_K:
             break; /// no action for signals and bus
-         case action_o_K:
-         case data_o_K:
-         case event_o_K:
          case port_o_K:
          case port_vector_o_K:
          default:
@@ -1678,7 +1512,7 @@ void structural_manager::xload(const xml_element* node, structural_managerRef co
    for(const auto& iter : list)
    {
       const auto* Enode = GetPointer<const xml_element>(iter);
-      if(!Enode || Enode->get_name() != GET_CLASS_NAME(component_o))
+      if(!Enode || Enode->get_name() != GET_CLASS_NAME(module_o))
       {
          continue;
       }
@@ -1709,12 +1543,12 @@ void remove_port_connection(const structural_objectRef& obj)
    }
 }
 
-void structural_manager::remove_module(structural_objectRef obj)
+void structural_manager::remove_module(const structural_objectRef& obj)
 {
    structural_objectRef top_obj = this->get_circ();
    CustomOrderedSet<structural_objectRef> remove;
 
-   auto* obj_mod = GetPointer<module>(obj);
+   auto* obj_mod = GetPointer<module_o>(obj);
    // std::cerr << "obj: " << obj->get_path() << std::endl;
    // std::cerr << "removing inport" << std::endl;
    for(unsigned int i = 0; i < obj_mod->get_in_port_size(); i++)
@@ -1750,7 +1584,7 @@ void structural_manager::remove_module(structural_objectRef obj)
    }
 
    // std::cerr << "removing signals" << std::endl;
-   auto* top = GetPointer<module>(top_obj);
+   auto* top = GetPointer<module_o>(top_obj);
    top->remove_internal_object(obj);
    for(const auto& k : remove)
    {
@@ -1758,13 +1592,13 @@ void structural_manager::remove_module(structural_objectRef obj)
    }
 }
 
-void structural_manager::remove_connection(structural_objectRef, structural_objectRef)
+void structural_manager::remove_connection(const structural_objectRef&, const structural_objectRef&)
 {
    THROW_ERROR("Not yet implemented");
 }
 
-void structural_manager::change_connection(structural_objectRef old_obj, structural_objectRef new_obj,
-                                           structural_objectRef owner)
+void structural_manager::change_connection(const structural_objectRef& old_obj, const structural_objectRef& new_obj,
+                                           const structural_objectRef& owner)
 {
    auto* p_old = GetPointer<port_o>(old_obj);
    THROW_ASSERT(p_old, "Only port can change their connection");

@@ -1,0 +1,941 @@
+<?xml version="1.0"?>
+<technology>
+  <library>
+    <name>STD</name>
+    <cell>
+      <name>bus_merger</name>
+      <circuit>
+        <module_o id="bus_merger">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="bus_merger"/>
+          <port_vector_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="bus_merger in1 out1" VERILOG_PROVIDED="
+function [BITSIZE_out1-1:0] merge;
+  input [BITSIZE_in1*PORTSIZE_in1-1:0] m;
+  reg [BITSIZE_out1-1:0] res;
+  integer i1;
+begin
+  res={BITSIZE_in1{1&apos;b0}};
+  for(i1 = 0; i1 &lt; PORTSIZE_in1; i1 = i1 + 1)
+  begin
+    res = res | m[i1*BITSIZE_in1 +:BITSIZE_in1];
+  end
+  merge = res;
+end
+endfunction
+
+assign out1 = merge(in1);" VHDL_PROVIDED="begin
+process(in1)
+variable temp_out1 : std_logic_vector(BITSIZE_out1-1 downto 0);
+begin
+  temp_out1 := (others =&gt; &apos;0&apos;);
+  for I in 0 to PORTSIZE_in1-1 loop
+    temp_out1 := temp_out1 or in1(((I+1)*BITSIZE_in1)-1 downto (I*BITSIZE_in1));
+  end loop;  out1 &lt;= temp_out1;
+end process;
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>and_gate</name>
+      <circuit>
+        <module_o id="and_gate">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="and_gate"/>
+          <port_vector_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="and_gate in1 out1" VERILOG_PROVIDED="
+function [BITSIZE_out1-1:0] merge;
+  input [BITSIZE_in1*PORTSIZE_in1-1:0] m;
+  reg [BITSIZE_out1-1:0] res;
+  integer i1;
+begin
+  res={BITSIZE_in1{1&apos;b1}};
+  for(i1 = 0; i1 &lt; PORTSIZE_in1; i1 = i1 + 1)
+  begin
+    res = res &amp; m[i1*BITSIZE_in1 +:BITSIZE_in1];
+  end
+  merge = res;
+end
+endfunction
+
+assign out1 = merge(in1);"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>join_signal</name>
+      <attribute name="area" value_type="float64">0</attribute>
+      <circuit>
+        <module_o id="join_signal">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="join_signal"/>
+          <port_vector_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="join_signal in1 out1" VERILOG_PROVIDED="
+generate
+genvar i1;
+for (i1=0; i1&lt;PORTSIZE_in1; i1=i1+1)
+  begin : L1
+    assign out1[(i1+1)*(BITSIZE_out1/PORTSIZE_in1)-1:i1*(BITSIZE_out1/PORTSIZE_in1)] = in1[(i1+1)*BITSIZE_in1-1:i1*BITSIZE_in1];
+  end
+endgenerate" VHDL_PROVIDED="
+begin
+  process(in1)
+  begin
+    for i1 in 0 to PORTSIZE_in1-1 loop
+    out1((i1+1)*(BITSIZE_out1/PORTSIZE_in1)-1 downto i1*(BITSIZE_out1/PORTSIZE_in1)) &lt;= in1((i1+1)*BITSIZE_in1-1 downto i1*BITSIZE_in1);
+     end loop;
+  end process;
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>register_AR</name>
+      <circuit>
+        <module_o id="register_AR">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="register_AR"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="register_AR in1 out1" VERILOG_PROVIDED="
+reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
+assign out1 = reg_out1;
+always @(posedge clock 1RESET_EDGE_FORCE)
+  if (1RESET_VALUE)
+    reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
+  else
+    reg_out1 &lt;= in1;" VHDL_PROVIDED="
+signal reg_out1 : std_logic_vector(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
+begin
+  out1 &lt;= reg_out1;
+  process(clock,reset)
+  begin
+    if(1RESET_VALUE) then
+      reg_out1 &lt;= (others =&gt; &apos;0&apos;);
+    elsif(clock&apos;event and clock = &apos;1&apos;) then
+      reg_out1 &lt;= in1;
+    end if;
+  end process;
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>register_AR_NORETIME</name>
+      <circuit>
+        <module_o id="register_AR_NORETIME">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="register_AR_NORETIME"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="register_AR_NORETIME in1 out1" VERILOG_PROVIDED="
+(* dont_retime *)(* keep = &quot;true&quot; *)(* syn_keep=1 *)(* DONT_TOUCH = &quot;true&quot; *) reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
+assign out1 = reg_out1;
+always @(posedge clock 1RESET_EDGE_FORCE)
+  if (1RESET_VALUE)
+    reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
+  else
+    reg_out1 &lt;= in1;" VHDL_PROVIDED="
+signal reg_out1 : std_logic_vector(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
+attribute dont_retime : boolean;
+attribute dont_retime of reg_out1 : signal is true;
+attribute syn_keep: boolean;
+attribute syn_keep of reg_out1: signal is true;
+attribute DONT_TOUCH : boolean;
+attribute DONT_TOUCH of reg_out1 : signal is true;
+begin
+  out1 &lt;= reg_out1;
+  process(clock,reset)
+  begin
+    if(1RESET_VALUE) then
+      reg_out1 &lt;= (others =&gt; &apos;0&apos;);
+    elsif(clock&apos;event and clock = &apos;1&apos;) then
+      reg_out1 &lt;= in1;
+    end if;
+  end process;
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>register_AR_NORETIME_INT</name>
+      <circuit>
+        <module_o id="register_AR_NORETIME_INT">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="register_AR_NORETIME_INT"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="register_AR_NORETIME_INT in1 out1" VERILOG_PROVIDED="
+(* dont_retime *)(* keep = &quot;true&quot; *)(* syn_keep=1 *)(* DONT_TOUCH = &quot;true&quot; *) reg signed [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
+assign out1 = reg_out1;
+always @(posedge clock 1RESET_EDGE_FORCE)
+  if (1RESET_VALUE)
+    reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
+  else
+    reg_out1 &lt;= in1;" VHDL_PROVIDED="
+signal reg_out1 : signed(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
+attribute dont_retime : boolean;
+attribute dont_retime of reg_out1 : signal is true;
+attribute syn_keep: boolean;
+attribute syn_keep of reg_out1: signal is true;
+attribute DONT_TOUCH : boolean;
+attribute DONT_TOUCH of reg_out1 : signal is true;
+begin
+  out1 &lt;= reg_out1;
+  process(clock,reset)
+  begin
+    if(1RESET_VALUE) then
+      reg_out1 &lt;= (others =&gt; &apos;0&apos;);
+    elsif(clock&apos;event and clock = &apos;1&apos;) then
+      reg_out1 &lt;= in1;
+    end if;
+  end process;
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>register_AR_NORETIME_UINT</name>
+      <circuit>
+        <module_o id="register_AR_NORETIME_UINT">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="register_AR_NORETIME_UINT"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="register_AR_NORETIME_UINT in1 out1" VERILOG_PROVIDED="
+(* dont_retime *)(* keep = &quot;true&quot; *)(* syn_keep=1 *)(* DONT_TOUCH = &quot;true&quot; *) reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
+assign out1 = reg_out1;
+always @(posedge clock 1RESET_EDGE_FORCE)
+  if (1RESET_VALUE)
+    reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
+  else
+    reg_out1 &lt;= in1;" VHDL_PROVIDED="
+signal reg_out1 : unsigned(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
+attribute dont_retime : boolean;
+attribute dont_retime of reg_out1 : signal is true;
+attribute syn_keep: boolean;
+attribute syn_keep of reg_out1: signal is true;
+attribute DONT_TOUCH : boolean;
+attribute DONT_TOUCH of reg_out1 : signal is true;
+begin
+  out1 &lt;= reg_out1;
+  process(clock,reset)
+  begin
+    if(1RESET_VALUE) then
+      reg_out1 &lt;= (others =&gt; &apos;0&apos;);
+    elsif(clock&apos;event and clock = &apos;1&apos;) then
+      reg_out1 &lt;= in1;
+    end if;
+  end process;
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>register_AR_NORETIME_REAL</name>
+      <circuit>
+        <module_o id="register_AR_NORETIME_REAL">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="register_AR_NORETIME_REAL"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="REAL" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="REAL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="register_AR_NORETIME_REAL in1 out1" VERILOG_PROVIDED="
+(* dont_retime *)(* keep = &quot;true&quot; *)(* syn_keep=1 *)(* DONT_TOUCH = &quot;true&quot; *) reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
+assign out1 = reg_out1;
+always @(posedge clock 1RESET_EDGE_FORCE)
+  if (1RESET_VALUE)
+    reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
+  else
+    reg_out1 &lt;= in1;" VHDL_PROVIDED="
+signal reg_out1 : std_logic_vector(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
+attribute dont_retime : boolean;
+attribute dont_retime of reg_out1 : signal is true;
+attribute syn_keep: boolean;
+attribute syn_keep of reg_out1: signal is true;
+attribute DONT_TOUCH : boolean;
+attribute DONT_TOUCH of reg_out1 : signal is true;
+begin
+  out1 &lt;= reg_out1;
+  process(clock,reset)
+  begin
+    if(1RESET_VALUE) then
+      reg_out1 &lt;= (others =&gt; &apos;0&apos;);
+    elsif(clock&apos;event and clock = &apos;1&apos;) then
+      reg_out1 &lt;= in1;
+    end if;
+  end process;
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>register_SARSE</name>
+      <circuit>
+        <module_o id="register_SARSE">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="register_SARSE"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="wenable" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="register_SARSE in1 out1" VERILOG_PROVIDED="
+reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
+assign out1 = reg_out1;
+always @(posedge clock 1RESET_EDGE_FORCE)
+  if (1RESET_VALUE)
+    reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
+  else if (wenable)
+    reg_out1 &lt;= in1;" VHDL_PROVIDED="
+signal reg_out1 : std_logic_vector(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
+begin
+  out1 &lt;= reg_out1;
+  process(clock,reset)
+  begin
+    if(1RESET_VALUE) then
+      reg_out1 &lt;= (others =&gt; &apos;0&apos;);
+    elsif(clock&apos;event and clock = &apos;1&apos;) then
+      if (wenable = &apos;1&apos;) then
+        reg_out1 &lt;= in1;
+      end if;
+    end if;
+  end process;
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>register_SE</name>
+      <circuit>
+        <module_o id="register_SE">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="register_SE"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="wenable" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="register_SE in1 out1" VERILOG_PROVIDED="
+reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
+assign out1 = reg_out1;
+always @(posedge clock)
+  if (wenable)
+    reg_out1 &lt;= in1;"
+            VHDL_PROVIDED="
+signal reg_out1 : std_logic_vector(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
+begin
+  out1 &lt;= reg_out1;
+  process(clock)
+  begin
+    if(clock&apos;event and clock = &apos;1&apos;) then
+      if(wenable = &apos;1&apos;) then
+        reg_out1 &lt;= in1;
+      end if;
+    end if;
+  end process;
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>register_SR</name>
+      <circuit>
+        <module_o id="register_SR">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="register_SR"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="register_SR in1 out1" VERILOG_PROVIDED="
+reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
+assign out1 = reg_out1;
+always @(posedge clock)
+  if (1RESET_VALUE)
+    reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
+  else
+    reg_out1 &lt;= in1;"
+            VHDL_PROVIDED="signal reg_out1 : std_logic_vector(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
+begin
+  out1 &lt;= reg_out1;
+  process(clock)
+  begin
+    if(clock&apos;event and clock = &apos;1&apos;) then
+      if(1RESET_VALUE) then
+        reg_out1 &lt;= (others =&gt; &apos;0&apos;);
+      else
+        reg_out1 &lt;= in1;
+      end if;
+    end if;
+  end process;
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>register_SRSE</name>
+      <circuit>
+        <module_o id="register_SRSE">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="register_SRSE"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="wenable" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="register_SRSE in1 out1" VERILOG_PROVIDED="
+reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
+assign out1 = reg_out1;
+always @(posedge clock)
+  if (1RESET_VALUE)
+    reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
+  else if (wenable)
+    reg_out1 &lt;= in1;" VHDL_PROVIDED="
+signal reg_out1 : std_logic_vector(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
+begin
+  out1 &lt;= reg_out1;
+  process(clock)
+  begin
+    if(clock&apos;event and clock = &apos;1&apos;) then
+      if(1RESET_VALUE) then
+        reg_out1 &lt;= (others =&gt; &apos;0&apos;);
+      elsif (wenable = &apos;1&apos;) then
+        reg_out1 &lt;= in1;
+      end if;
+    end if;
+  end process;
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>register_STD</name>
+      <circuit>
+        <module_o id="register_STD">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="register_STD"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="wenable" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="register_STD in1 out1" VERILOG_PROVIDED="reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
+assign out1 = reg_out1;
+always @(posedge clock)
+  reg_out1 &lt;= in1;
+" VHDL_PROVIDED="
+signal reg_out1 : std_logic_vector(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
+begin
+out1 &lt;= reg_out1;
+process(clock)
+begin
+  if(clock&apos;event and clock = &apos;1&apos;) then
+    reg_out1 &lt;= in1;
+  end if;
+end process;
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>register_SHIFT</name>
+      <circuit>
+        <module_o id="register_SHIFT">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="register_SHIFT"/>
+          <parameter name="CONTROLLER_LENGTH">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="wenable" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="register_SHIFT CONTROLLER_LENGTH" VERILOG_PROVIDED="
+generate if (CONTROLLER_LENGTH == 0) 
+begin
+  assign out1 = in1;
+end
+else
+begin
+  reg [CONTROLLER_LENGTH-1:0] reg_out1 1INIT_ZERO_VALUE;
+  assign out1 = reg_out1[CONTROLLER_LENGTH-1];
+  always @(posedge clock)
+    if(1RESET_VALUE)
+      reg_out1 &lt;= {CONTROLLER_LENGTH{1&apos;b0}};
+    else
+      reg_out1 &lt;= (reg_out1 &lt;&lt; 1) | in1;
+end
+endgenerate
+" VHDL_PROVIDED="
+begin
+zero_case: if CONTROLLER_LENGTH /= 0 generate 
+signal reg_out1 : std_logic_vector(CONTROLLER_LENGTH-1 downto 0) 1INIT_ZERO_VALUE;
+begin
+out1 &lt;= reg_out1(CONTROLLER_LENGTH-1);
+process(clock)
+begin
+  if(clock&apos;event and clock = &apos;1&apos;) then
+    if(1RESET_VALUE) then
+      reg_out1 &lt;= (others =&gt; &apos;0&apos;);
+    else
+      reg_out1(CONTROLLER_LENGTH-1 downto 1) &lt;= reg_out1(CONTROLLER_LENGTH-2 downto 0);
+      reg_out1(0) &lt;= in1;
+    end if;
+  end if;
+end process;
+end generate zero_case;
+
+nonzero_case: if CONTROLLER_LENGTH = 0 generate 
+  out1 &lt;= in1;
+end generate nonzero_case;
+
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>split_signal</name>
+      <attribute name="area" value_type="float64">0</attribute>
+      <circuit>
+        <module_o id="split_signal">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="split_signal"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_vector_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="split_signal in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
+  out1 &lt;= in1;"/>
+        </module_o>
+      </circuit>
+    </cell>
+  </library>
+  <library>
+    <name>STD_FU</name>
+    <cell>
+      <name>MUX_N_to_1</name>
+      <circuit>
+        <module_o id="MUX_N_to_1">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="MUX_N_to_1"/>
+          <port_o id="selector" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_vector_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="MUX_N_to_1 selector in1 out1" VERILOG_PROVIDED="
+wire [BITSIZE_in1-1:0] inputarray [0:PORTSIZE_in1-1];
+genvar i;
+generate
+for (i=0; i &lt; PORTSIZE_in1; i=i+1)
+  begin : MUX_pack_block
+    assign inputarray[i] = in1[i*BITSIZE_in1 +: BITSIZE_in1];
+  end
+endgenerate
+assign out1 = inputarray[selector];"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>entry_FU</name>
+      <attribute name="area" value_type="float64">0</attribute>
+      <operation operation_name="ENTRY"/>
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+    </cell>
+    <cell>
+      <name>phi_stmt_FU</name>
+      <attribute name="area" value_type="float64">0</attribute>
+      <operation operation_name="phi_stmt"/>
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+    </cell>
+    <cell>
+      <name>nop_FU</name>
+      <attribute name="area" value_type="float64">0</attribute>
+      <operation operation_name="NOP"/>
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+    </cell>
+    <cell>
+      <name>return_stmt_FU</name>
+      <attribute name="area" value_type="float64">0</attribute>
+      <operation operation_name="return_stmt"/>
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+    </cell>
+    <cell>
+      <name>nop_stmt_FU</name>
+      <attribute name="area" value_type="float64">0</attribute>
+      <operation operation_name="nop_stmt"/>
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+    </cell>
+    <cell>
+      <name>exit_FU</name>
+      <attribute name="area" value_type="float64">0</attribute>
+      <operation operation_name="EXIT"/>
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+    </cell>
+    <cell>
+      <name>multi_read_cond_FU</name>
+      <attribute name="area" value_type="float64">0</attribute>
+      <operation operation_name="MULTI_READ_COND" execution_time="0.0000001"/>
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+      <circuit>
+        <module_o id="multi_read_cond_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="multi_read_cond_FU"/>
+          <port_vector_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="multi_read_cond_FU in1 out1" VHDL_PROVIDED="begin
+  out1 &lt;= in1;" VERILOG_PROVIDED="assign out1 = in1;"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>SIMPLEJOIN_FU</name>
+      <operation operation_name="SIMPLEJOIN_FU"/>
+      <circuit>
+        <module_o id="SIMPLEJOIN_FU">
+          <structural_type_descriptor id_type="SIMPLEJOIN_FU"/>
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2012-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_o>
+          <port_o id="enable" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_o>
+          <port_vector_o id="ops" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_vector_o>
+          <port_o id="sop" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_o>
+          <NP_functionality LIBRARY="SIMPLEJOIN_FU ops" VERILOG_PROVIDED="
+// synthesis attribute use_sync_reset of current is no;
+reg [PORTSIZE_ops-1:0] current 1INIT_ZERO_VALUE;
+reg started 1INIT_ZERO_VALUE;
+wire started0;
+wire [PORTSIZE_ops-1:0] or_temp;
+wire sop_temp;
+function reduce_INs;
+input [PORTSIZE_ops-1 : 0] instring;
+integer i;
+begin
+   reduce_INs = 1&apos;b1;
+   for(i = 0; i &lt; PORTSIZE_ops; i = i + 1)
+   begin
+      reduce_INs = reduce_INs &amp; instring[i];
+   end
+end
+endfunction
+function [PORTSIZE_ops-1:0] NEXT_CURR ;
+input sop_temp1;
+input [PORTSIZE_ops-1 : 0] ops1;
+input [PORTSIZE_ops-1 : 0] current1;
+input st;
+integer i;
+begin
+   for(i = 0; i &lt; PORTSIZE_ops; i = i + 1)
+   begin
+      NEXT_CURR[i] = ~sop_temp1 &amp; ((current1[i]) | (st &amp; ops1[i]));
+   end
+end
+endfunction
+always @(posedge clock 1RESET_EDGE)
+  if (1RESET_VALUE)
+    started &lt;= 0;
+  else
+    started &lt;= started0;
+assign started0 = ~sop_temp &amp; (started | enable);
+assign or_temp = current | ops;
+assign sop_temp = reduce_INs(or_temp);
+assign sop = sop_temp;
+always @ (posedge clock 1RESET_EDGE)
+begin
+if(1RESET_VALUE)
+  begin
+    current &lt;= {PORTSIZE_ops{1&apos;b0}};
+  end
+else
+  begin
+    current &lt;= NEXT_CURR(sop_temp,ops,current,started0);
+  end
+end
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>COMPLEXJOIN_FU</name>
+      <operation operation_name="COMPLEXJOIN_FU"/>
+      <circuit>
+        <module_o id="COMPLEXJOIN_FU">
+          <structural_type_descriptor id_type="COMPLEXJOIN_FU"/>
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_o>
+          <port_o id="enable" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_o>
+          <port_vector_o id="ops" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_vector_o>
+          <port_vector_o id="starts" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_vector_o>
+          <port_o id="sop" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_o>
+          <NP_functionality LIBRARY="COMPLEXJOIN_FU ops starts" VERILOG_PROVIDED="
+// synthesis attribute use_sync_reset of current is no;
+reg [PORTSIZE_ops-1:0] current 1INIT_ZERO_VALUE;
+reg started 1INIT_ZERO_VALUE;
+wire started0;
+wire [PORTSIZE_ops-1:0] or_temp;
+wire [PORTSIZE_ops-1:0] ops2;
+wire sop_temp;
+function reduce_INs;
+input [PORTSIZE_ops-1 : 0] instring;
+integer i;
+begin
+   reduce_INs = 1&apos;b1;
+   for(i = 0; i &lt; PORTSIZE_ops; i = i + 1)
+   begin
+      reduce_INs = reduce_INs &amp; instring[i];
+   end
+end
+endfunction
+function [PORTSIZE_ops-1:0] NEXT_CURR ;
+input sop_temp1;
+input [PORTSIZE_ops-1 : 0] ops1;
+input [PORTSIZE_ops-1 : 0] current1;
+input st;
+integer i;
+begin
+   for(i = 0; i &lt; PORTSIZE_ops; i = i + 1)
+   begin
+      NEXT_CURR[i] = ~sop_temp1 &amp; ((current1[i]) | (st &amp; ops1[i]));
+   end
+end
+endfunction
+always @(posedge clock 1RESET_EDGE)
+  if (1RESET_VALUE)
+    started &lt;= 0;
+  else
+    started &lt;= started0;
+assign started0 = ~sop_temp &amp; (started | enable);
+assign ops2 = ops | ({PORTSIZE_ops{enable}} &amp; (~(starts)));
+assign or_temp = current | ops2;
+assign sop_temp = reduce_INs(or_temp);
+assign sop = sop_temp;
+always @ (posedge clock 1RESET_EDGE)
+begin
+if(1RESET_VALUE)
+  begin
+    current &lt;= {PORTSIZE_ops{1&apos;b0}};
+  end
+else
+  begin
+    current &lt;= NEXT_CURR(sop_temp,ops2,current,started0);
+  end
+end
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+  </library>
+</technology>

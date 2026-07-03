@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -40,14 +40,13 @@
 #ifndef DATA_DEPENDENCE_COMPUTATION_HPP
 #define DATA_DEPENDENCE_COMPUTATION_HPP
 
-/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
-/// utility include
 #include "custom_set.hpp"
+#include "graph.hpp"
 
 /// Forward declaration
-enum class FunctionBehavior_VariableAccessType;
+enum class VariableAccessType;
 
 class DataDependenceComputation : public FunctionFrontendFlowStep
 {
@@ -62,7 +61,6 @@ class DataDependenceComputation : public FunctionFrontendFlowStep
     * @param adg_selector is the selector to be used for ADG dependence
     * @param fb_adg_selector is the selector to be used for ADG feedback dependence
     */
-   template <typename type>
    DesignFlowStep_Status Computedependencies(const int dfg_selector, const int fb_dfg_selector, const int adg_selector,
                                              const int fb_adg_selector);
 
@@ -72,14 +70,13 @@ class DataDependenceComputation : public FunctionFrontendFlowStep
     * @param statement is the statement to be considered
     * @param variable_access_type is the type of accesses to be considered
     */
-   template <typename type>
-   CustomSet<type> GetVariables(const vertex statement,
-                                const FunctionBehavior_VariableAccessType variable_access_type) const;
+   CustomSet<unsigned int> getVariables(gc_vertex_descriptor statement,
+                                        const VariableAccessType variable_access_type) const;
 
  public:
    /**
     * Constructor.
-    * @param AppM is the application manager
+    * @param _AppM is the application manager
     * @param function_id is the node id of the function analyzed.
     * @param frontend_flow_step_type is the type of data flow analysis
     * @param design_flow_manager is the design flow manager
@@ -87,12 +84,7 @@ class DataDependenceComputation : public FunctionFrontendFlowStep
     * */
    DataDependenceComputation(const application_managerRef _AppM, unsigned int function_id,
                              const FrontendFlowStepType frontend_flow_step_type,
-                             const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
-
-   /**
-    *  Destructor
-    */
-   ~DataDependenceComputation() override;
+                             const DesignFlowManager& design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Cleans the fake data dependencies

@@ -1,0 +1,1 @@
+bfs_parallel/queue/bfs.cpp              --top-fname=bfs                --generate-tb=BENCHMARKS_ROOT/bfs_parallel/queue/local_support.cpp         --benchmark-name=bfs_queue_parallel     --tb-arg=BENCHMARKS_ROOT/bfs_parallel/queue/input.data         --tb-arg=BENCHMARKS_ROOT/bfs_parallel/queue/check.data

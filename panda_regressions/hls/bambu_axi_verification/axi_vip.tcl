@@ -4,6 +4,7 @@ set top_fname $::env(TOP_FNAME)
 set vip_name ${top_fname}_VIP
 # Add top-level design and bambu simulation design
 add_file -norecurse ${top_fname}.v
+add_file -norecurse panda_libtech.v
 add_file -fileset sim_1 -norecurse HLS_output/simulation/bambu_testbench.v
 set_property file_type SystemVerilog [get_files HLS_output/simulation/bambu_testbench.v]
 # Create Vivado IP Integrator design
@@ -28,11 +29,11 @@ create_bd_port -dir I -type rst reset
 connect_bd_net [get_bd_ports reset] [get_bd_pins top/reset] [get_bd_pins axi_vip_0/aresetn]
 # Propagate top-level interface ports as external ports
 make_bd_pins_external [get_bd_cells top]
-foreach port [get_bd_ports ] { 
+foreach port [get_bd_ports ] {
    set old_name [get_property name $port]
-   if {[string match *_0 $old_name]} { 
+   if {[string match *_0 $old_name]} {
       set new_name [string range $old_name 0 [expr {[string length $old_name] - 3}]]
-      set_property name $new_name $port 
+      set_property name $new_name $port
    }
 }
 save_bd_design
@@ -48,9 +49,9 @@ set_property -name {xsim.elaborate.load_glbl} -value {false} -objects [get_files
 set_property -name {xsim.elaborate.debug_level} -value {off} -objects [get_filesets sim_1]
 set_property -name {xsim.elaborate.relax} -value {false} -objects [get_filesets sim_1]
 set_property -name {xsim.elaborate.mt_level} -value {off} -objects [get_filesets sim_1]
-set_property -name {xsim.elaborate.xelab.more_options} -value "-sv_root $::env(OUT_DIR)/HLS_output/beh_sim -sv_lib libmdpi -define M64" -objects [get_filesets sim_1]
+set_property -name {xsim.elaborate.xelab.more_options} -value "-sv_root $::env(OUT_DIR)/HLS_output/simulation/xsim_backend -sv_lib libmdpi -define M64" -objects [get_filesets sim_1]
 exec mkdir -p axi_vip.sim/sim_1/behav/xsim/HLS_output/simulation
-set __testbench_pid [exec bash -c "cd axi_vip.sim/sim_1/behav/xsim; LD_LIBRARY_PATH=\"\" $::env(OUT_DIR)/HLS_output/simulation/testbench |& tee HLS_output/simulation/testbench.log" &]
+set __testbench_pid [exec bash -c "cd axi_vip.sim/sim_1/behav/xsim; LD_LIBRARY_PATH=\"\" $::env(OUT_DIR)/HLS_output/simulation/testbench |& tee HLS_output/simulation/testbench.log; exit \${PIPESTATUS[0]}" &]
 launch_simulation
 set finished [catch {exec ps -p ${__testbench_pid} >/dev/null}]
 close_sim

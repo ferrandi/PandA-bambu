@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -40,9 +40,10 @@
  */
 #include "Parameter.hpp"
 
+#include "BambuParameterRegistry.hpp"
+
 #include "constant_strings.hpp"
 #include "dbgPrintHelper.hpp"
-#include "experimental_setup_xml.hpp"
 #include "fileIO.hpp"
 #include "polixml.hpp"
 #include "refcount.hpp"
@@ -51,42 +52,101 @@
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
+namespace
+{
+   std::string JoinValues(const std::vector<std::string>& values, const std::string& separator)
+   {
+      std::string joined;
+      for(std::size_t i = 0; i < values.size(); ++i)
+      {
+         if(i != 0)
+         {
+            joined += separator;
+         }
+         joined += values[i];
+      }
+      return joined;
+   }
+
+   void PrintPandaParameterInfo(std::ostream& os, const PandaParameterInfo& info, bool show_details)
+   {
+      os << info.name;
+      if(info.type != PandaParamType::Unknown)
+      {
+         os << " [" << PandaParamTypeToString(info.type) << "]";
+      }
+      if(!info.default_value.empty())
+      {
+         os << " default=" << info.default_value;
+      }
+      if(!info.category.empty())
+      {
+         os << " category=" << info.category;
+      }
+      os << "\n";
+      if(!info.description.empty())
+      {
+         os << "  " << info.description << "\n";
+      }
+      if(show_details)
+      {
+         if(!info.allowed_values.empty())
+         {
+            os << "  allowed-values: " << JoinValues(info.allowed_values, ", ") << "\n";
+         }
+#ifndef NDEBUG
+         if(!info.declared_in.empty())
+         {
+            os << "  declared-in: " << info.declared_in << "\n";
+         }
+#endif
+      }
+   }
+
+   void PrintPandaParameterList(std::ostream& os)
+   {
+      const auto parameters = ListPandaParameters();
+      if(parameters.empty())
+      {
+         os << "No bambu-parameters registered.\n";
+         return;
+      }
+      for(const auto& info : parameters)
+      {
+         PrintPandaParameterInfo(os, info, false);
+      }
+   }
+} // namespace
+
 #include "config_HAVE_FROM_C_BUILT.hpp"
 #include "config_HAVE_I386_CLANG10_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG11_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG12_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG13_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG16_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG19_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG5_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG6_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG7_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG8_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG9_COMPILER.hpp"
-#include "config_HAVE_I386_CLANGVVD_COMPILER.hpp"
-#include "config_HAVE_I386_GCC49_COMPILER.hpp"
-#include "config_HAVE_I386_GCC5_COMPILER.hpp"
-#include "config_HAVE_I386_GCC6_COMPILER.hpp"
-#include "config_HAVE_I386_GCC7_COMPILER.hpp"
-#include "config_HAVE_I386_GCC8_COMPILER.hpp"
-#include "config_HAVE_TO_DATAFILE_BUILT.hpp"
+#include "config_HAVE_LIBBAMBU_M32.hpp"
+#include "config_HAVE_LIBBAMBU_M64.hpp"
+#include "config_HAVE_LIBBAMBU_MX32.hpp"
 #include "config_PACKAGE_BUGREPORT.hpp"
 #include "config_PACKAGE_STRING.hpp"
+#include "config_RELEASE.hpp"
 
 #if HAVE_HLS_BUILT
 #include "constraints_xml.hpp"
 #endif
-
-#if HAVE_TO_DATAFILE_BUILT
-#include "latex_table_xml.hpp"
-#endif
-
 #if HAVE_TECHNOLOGY_BUILT
 #include "technology_xml.hpp"
 #endif
 
 #if HAVE_FROM_C_BUILT
-#include "compiler_wrapper.hpp"
+#include "CompilerWrapper.hpp"
 #include "token_interface.hpp"
 #endif
 
@@ -109,9 +169,8 @@ const CustomMap<enum enum_option, std::string> Parameter::option_name = {
         BOOST_PP_SEQ_FOR_EACH(__TO_STRING_HELPER, BOOST_PP_EMPTY, EUCALIPTUS_OPTIONS)
             BOOST_PP_SEQ_FOR_EACH(__TO_STRING_HELPER, BOOST_PP_EMPTY, FRAMEWORK_OPTIONS)
                 BOOST_PP_SEQ_FOR_EACH(__TO_STRING_HELPER, BOOST_PP_EMPTY, COMPILER_OPTIONS)
-                    BOOST_PP_SEQ_FOR_EACH(__TO_STRING_HELPER, BOOST_PP_EMPTY, SPIDER_OPTIONS)
-                        BOOST_PP_SEQ_FOR_EACH(__TO_STRING_HELPER, BOOST_PP_EMPTY, SYNTHESIS_OPTIONS)
-                            BOOST_PP_SEQ_FOR_EACH(__TO_STRING_HELPER, BOOST_PP_EMPTY, TREE_PANDA_COMPILER_OPTIONS)};
+                    BOOST_PP_SEQ_FOR_EACH(__TO_STRING_HELPER, BOOST_PP_EMPTY, SYNTHESIS_OPTIONS)
+                        BOOST_PP_SEQ_FOR_EACH(__TO_STRING_HELPER, BOOST_PP_EMPTY, BAMBUCC_OPTIONS)};
 
 Parameter::Parameter(const std::string& _program_name, int _argc, char** const _argv, int _debug_level)
     : argc(_argc), argv(_argv), debug_level(_debug_level)
@@ -124,6 +183,8 @@ Parameter::Parameter(const Parameter& other)
     : argc(other.argc),
       argv(other.argv),
       Options(other.Options),
+      bambu_parameters(other.bambu_parameters),
+      bambu_parameters_cli(other.bambu_parameters_cli),
       enum_options(other.enum_options),
       debug_classes(other.debug_classes),
       debug_level(other.debug_level)
@@ -132,148 +193,86 @@ Parameter::Parameter(const Parameter& other)
 
 void Parameter::CheckParameters()
 {
-   const auto temporary_directory = getOption<std::string>(OPT_output_temporary_directory);
-   if(std::filesystem::exists(temporary_directory))
+   const auto setup_dir = [](const std::filesystem::path& dir) {
+      std::filesystem::create_directories(dir);
+      if(!std::filesystem::exists(dir))
+      {
+         THROW_ERROR("Unable to create directory " + dir.string());
+      }
+   };
+
+   if(!isOption(OPT_output_directory))
    {
-      std::filesystem::remove_all(temporary_directory);
+      setOption(OPT_output_directory, std::filesystem::current_path().string());
    }
-   std::filesystem::create_directory(temporary_directory);
-   /// Output directory is not removed since it can be the current one
-   const auto output_directory = getOption<std::string>(OPT_output_directory);
-   std::filesystem::create_directory(output_directory);
-   if(!std::filesystem::exists(output_directory))
+   if(!isOption(OPT_output_temporary_directory))
    {
-      THROW_ERROR("not able to create directory " + output_directory);
+      setOption(OPT_output_temporary_directory,
+                getOption<std::string>(OPT_output_directory) + "/" STR_CST_temporary_directory);
    }
+   if(!isOption(OPT_output_hls_directory))
+   {
+      setOption(OPT_output_hls_directory, getOption<std::string>(OPT_output_directory) + "/HLS_output");
+   }
+
+   setup_dir(getOption<std::filesystem::path>(OPT_output_directory));
+   // Remove stale temporary directory from a previous run to avoid leftover artifacts
+   const auto temp_dir = getOption<std::filesystem::path>(OPT_output_temporary_directory);
+   std::filesystem::remove_all(temp_dir);
+   setup_dir(temp_dir);
+   setup_dir(getOption<std::filesystem::path>(OPT_output_hls_directory));
+   if((!debug_classes.empty() && (!IsParameter("print-dot-FF") || GetParameter<unsigned int>("print-dot-FF"))))
+   {
+      setOption(OPT_print_dot, true);
+   }
+   setOption(OPT_dot_directory, getOption<std::string>(OPT_output_hls_directory) + "/dot");
    if(getOption<bool>(OPT_print_dot))
    {
-      const auto dot_directory = getOption<std::string>(OPT_dot_directory);
-      if(std::filesystem::exists(dot_directory))
-      {
-         std::filesystem::remove_all(dot_directory);
-      }
-      std::filesystem::create_directory(dot_directory);
-      if(!std::filesystem::exists(dot_directory))
-      {
-         THROW_ERROR("not able to create directory " + dot_directory);
-      }
+      setup_dir(getOption<std::filesystem::path>(OPT_dot_directory));
    }
 
 #if HAVE_FROM_C_BUILT
-   if(isOption(OPT_gcc_m_env))
+   if(isOption(OPT_default_compiler))
    {
-      const auto mopt = getOption<std::string>(OPT_gcc_m_env);
       const auto default_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
-      if((mopt == "-m32" && !CompilerWrapper::hasCompilerM32(default_compiler)) ||
-         (mopt == "-mx32" && !CompilerWrapper::hasCompilerMX32(default_compiler)) ||
-         (mopt == "-m64" && !CompilerWrapper::hasCompilerM64(default_compiler)))
+      if(isOption(OPT_cc_m_env))
       {
-         THROW_ERROR("Option " + mopt + " not supported by " + CompilerWrapper::getCompilerSuffix(default_compiler) +
-                     " compiler.");
+         const auto mopt = getOption<std::string>(OPT_cc_m_env);
+         if(false
+#if !HAVE_LIBBAMBU_M64
+            || mopt == "-m64"
+#endif
+#if !HAVE_LIBBAMBU_M32
+            || mopt == "-m32"
+#endif
+#if !HAVE_LIBBAMBU_MX32
+            || mopt == "-mx32"
+#endif
+         )
+         {
+            THROW_ERROR("Option " + mopt + " not supported by " + CompilerWrapper::getCompilerSuffix(default_compiler) +
+                        " compiler.");
+         }
+      }
+      else
+      {
+#if HAVE_LIBBAMBU_M32
+         setOption(OPT_cc_m_env, "-m32");
+#elif HAVE_LIBBAMBU_MX32
+         setOption(OPT_cc_m_env, "-mx32");
+#elif HAVE_LIBBAMBU_M64
+         setOption(OPT_cc_m_env, "-m64");
+#endif
       }
    }
 #endif
-}
-
-Parameter::~Parameter() = default;
-
-void Parameter::load_xml_configuration_file_rec(const xml_element* node)
-{
-   // Recurse through child nodes:
-   const xml_node::node_list list = node->get_children();
-   for(const auto& iter : list)
-   {
-      const auto* EnodeC = GetPointer<const xml_element>(iter);
-      if(!EnodeC)
-      {
-         continue;
-      }
-      /// general options
-      if(CE_XVM(value, EnodeC))
-      {
-         Options[GET_NODE_NAME(EnodeC)] = GET_STRING_VALUE(EnodeC);
-      }
-      if(EnodeC->get_children().size())
-      {
-         load_xml_configuration_file_rec(EnodeC);
-      }
-   }
-}
-
-void Parameter::load_xml_configuration_file(const std::string& filename)
-{
-   try
-   {
-      XMLDomParser parser(filename);
-      parser.Exec();
-      if(parser)
-      {
-         // Walk the tree:
-         const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
-
-         // Recurse through child nodes:
-         const xml_node::node_list list = node->get_children();
-         for(const auto& iter : list)
-         {
-            const auto* EnodeC = GetPointer<const xml_element>(iter);
-            if(!EnodeC)
-            {
-               continue;
-            }
-            /// general options
-            if(CE_XVM(value, EnodeC))
-            {
-               Options[GET_NODE_NAME(EnodeC)] = GET_STRING_VALUE(EnodeC);
-            }
-            if(EnodeC->get_children().size())
-            {
-               load_xml_configuration_file_rec(EnodeC);
-            }
-         }
-      }
-   }
-   catch(const char* msg)
-   {
-      std::cerr << msg << std::endl;
-   }
-   catch(const std::string& msg)
-   {
-      std::cerr << msg << std::endl;
-   }
-   catch(const std::exception& ex)
-   {
-      std::cout << "Exception caught: " << ex.what() << std::endl;
-   }
-   catch(...)
-   {
-      std::cerr << "unknown exception" << std::endl;
-   }
-}
-
-void Parameter::write_xml_configuration_file(const std::filesystem::path& filename)
-{
-   xml_document document;
-
-   xml_element* parameters = document.create_root_node("parameters");
-
-   for(auto Op = Options.begin(); Op != Options.end(); ++Op)
-   {
-      xml_element* node = parameters->add_child_element(Op->first);
-      WRITE_XNVM2("value", Op->second, node);
-   }
-
-   document.write_to_file_formatted(filename);
 }
 
 void Parameter::SetCommonDefaults()
 {
    setOption(STR_OPT_benchmark_fake_parameters, "<none>");
 
-   setOption(OPT_dot_directory, "dot");
-   setOption(OPT_output_temporary_directory, STR_CST_temporary_directory);
    setOption(OPT_print_dot, false);
-
-   setOption(OPT_gcc_openmp_simd, 0);
 
    setOption(OPT_no_clean, false);
    if(revision_hash == "")
@@ -284,7 +283,7 @@ void Parameter::SetCommonDefaults()
    {
       setOption(OPT_revision, revision_hash + (branch_name != "" ? "-" + branch_name : ""));
    }
-   setOption(OPT_seed, 0);
+   setOption(OPT_seed, 3869983262);
 
    setOption(OPT_max_transformations, std::numeric_limits<size_t>::max());
    setOption(OPT_find_max_transformations, false);
@@ -308,7 +307,7 @@ int Parameter::get_class_debug_level(const std::string& class_name, int _debug_l
 {
    auto temp = class_name;
    temp.erase(std::remove(temp.begin(), temp.end(), '_'), temp.end());
-   if(debug_classes.find(boost::to_upper_copy(temp)) != debug_classes.end() or
+   if(debug_classes.find(boost::to_upper_copy(temp)) != debug_classes.end() ||
       debug_classes.find(STR_CST_debug_all) != debug_classes.end())
    {
       return DEBUG_LEVEL_INFINITE;
@@ -355,7 +354,7 @@ void Parameter::PrintFullHeader(std::ostream& os) const
    os << "                         Politecnico di Milano - DEIB" << std::endl;
    os << "                          System Architectures Group" << std::endl;
    os << "********************************************************************************" << std::endl;
-   os << "                Copyright (C) 2004-2024 Politecnico di Milano" << std::endl;
+   os << "                Copyright (C) 2004-2026 Politecnico di Milano" << std::endl;
    std::string version = PrintVersion();
    if(version.size() < 80)
    {
@@ -395,19 +394,6 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
          PrintFullHeader(std::cout);
          exit_success = true;
          break;
-#if !RELEASE
-      case OPT_READ_PARAMETERS_XML:
-      {
-         setOption(OPT_read_parameter_xml, optarg_param);
-         load_xml_configuration_file(getOption<std::string>(OPT_read_parameter_xml));
-         break;
-      }
-      case OPT_WRITE_PARAMETERS_XML:
-      {
-         setOption(OPT_write_parameter_xml, optarg_param);
-         break;
-      }
-#endif
       case 'v':
       {
          setOption(OPT_output_level, optarg_param);
@@ -423,6 +409,7 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
          setOption(STR_OPT_benchmark_fake_parameters, optarg_param);
          break;
       }
+#ifndef NDEBUG
       case INPUT_OPT_MAX_TRANSFORMATIONS:
       {
          setOption(OPT_max_transformations, optarg_param);
@@ -433,6 +420,7 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
          setOption(OPT_find_max_transformations, true);
          break;
       }
+#endif
       case INPUT_OPT_CONFIGURATION_NAME:
       {
          setOption(OPT_configuration_name, optarg_param);
@@ -452,12 +440,7 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
 #endif
          if(std::string(optarg_param) == "N")
          {
-            std::string gcc_extra_options = "-dN";
-            if(isOption(OPT_gcc_extra_options))
-            {
-               gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
-            }
-            setOption(OPT_gcc_extra_options, gcc_extra_options);
+            appendOption(OPT_cc_extra_options, "-dN", " ");
             break;
          }
 #ifndef NDEBUG
@@ -497,11 +480,15 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
          setOption(OPT_seed, optarg_param);
          break;
       }
+      case OPT_OUTPUT_DIRECTORY:
+      {
+         setOption(OPT_output_directory, optarg_param);
+         break;
+      }
       case OPT_OUTPUT_TEMPORARY_DIRECTORY:
       {
          const auto path =
              std::filesystem::path(optarg_param) / unique_path(STR_CST_temporary_directory "-%%%%-%%%%-%%%%-%%%%");
-         std::filesystem::create_directories(path);
          setOption(OPT_output_temporary_directory, path.string());
          break;
       }
@@ -510,9 +497,15 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
          const auto splitted = string_to_container<std::vector<std::string>>(optarg_param, "=");
          if(splitted.size() != 2)
          {
-            THROW_ERROR("panda-parameter should be in the form <parameter>=<value>: " + std::string(optarg_param));
+            THROW_ERROR("bambu-parameter should be in the form <parameter>=<value>: " + std::string(optarg_param));
          }
-         panda_parameters[splitted[0]] = splitted[1];
+         SetPandaParameterFromCli(splitted[0], splitted[1]);
+         break;
+      }
+      case INPUT_OPT_LIST_PANDA_PARAMETERS:
+      {
+         PrintPandaParameterList(std::cout);
+         exit_success = true;
          break;
       }
       default:
@@ -525,50 +518,31 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
 }
 
 #if HAVE_FROM_C_BUILT
-bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
+bool Parameter::ManageCCOptions(int next_option, char* optarg_param)
 {
    switch(next_option)
    {
       case 'D':
       {
-         std::string defines;
-         if(isOption(OPT_gcc_defines))
-         {
-            defines = getOption<std::string>(OPT_gcc_defines) + STR_CST_string_separator;
-         }
-         defines += std::string(optarg_param);
-         setOption(OPT_gcc_defines, defines);
+         appendOption(OPT_cc_defines, std::string(optarg_param));
          break;
       }
       case 'f':
       {
-         if(std::string(optarg_param).find("openmp-simd") != std::string::npos)
+         if(std::string(optarg_param).find("openmp") != std::string::npos)
          {
-            if(std::string(optarg_param).find('=') != std::string::npos)
-            {
-               setOption(OPT_gcc_openmp_simd,
-                         std::string(optarg_param).substr(std::string(optarg_param).find('=') + 1));
-            }
-            else
-            {
-               setOption(OPT_gcc_openmp_simd, 4);
-            }
-            break;
-         }
-         else if(std::string(optarg_param).find("openmp") != std::string::npos)
-         {
-            setOption(OPT_parse_pragma, true);
+            setOption(OPT_openmp, true);
             break;
          }
          else
          {
             std::string optimizations;
-            if(isOption(OPT_gcc_optimizations))
+            if(isOption(OPT_cc_optimizations))
             {
-               optimizations = getOption<std::string>(OPT_gcc_optimizations) + STR_CST_string_separator;
+               optimizations = getOption<std::string>(OPT_cc_optimizations) + STR_CST_string_separator;
             }
             THROW_ASSERT(optarg_param != nullptr && optarg_param[0] != 0, "-f alone not allowed");
-            setOption(OPT_gcc_optimizations, optimizations + optarg_param);
+            setOption(OPT_cc_optimizations, optimizations + optarg_param);
             break;
          }
       }
@@ -584,15 +558,15 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
             const std::string opt_level(optarg_param);
             if(opt_level == "32")
             {
-               setOption(OPT_gcc_m_env, "-m32");
+               setOption(OPT_cc_m_env, "-m32");
             }
             else if(opt_level == "x32")
             {
-               setOption(OPT_gcc_m_env, "-mx32");
+               setOption(OPT_cc_m_env, "-mx32");
             }
             else if(opt_level == "64")
             {
-               setOption(OPT_gcc_m_env, "-m64");
+               setOption(OPT_cc_m_env, "-m64");
             }
             else
             {
@@ -603,47 +577,42 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       }
       case 'W':
       {
-         std::string gcc_warnings;
-         if(isOption(OPT_gcc_warnings))
+         std::string cc_warnings;
+         if(isOption(OPT_cc_warnings))
          {
-            gcc_warnings = getOption<std::string>(OPT_gcc_warnings) + STR_CST_string_separator;
+            cc_warnings = getOption<std::string>(OPT_cc_warnings) + STR_CST_string_separator;
          }
-         setOption(OPT_gcc_warnings, gcc_warnings + optarg_param);
+         setOption(OPT_cc_warnings, cc_warnings + optarg_param);
          break;
       }
       case 'E':
       {
-         setOption(OPT_gcc_E, true);
+         setOption(OPT_cc_E, true);
          break;
       }
       case 'I':
       {
-         std::string includes;
-         if(isOption(OPT_gcc_includes))
-         {
-            includes = getOption<std::string>(OPT_gcc_includes) + " ";
-         }
-         setOption(OPT_gcc_includes, includes + "-I " + std::string(optarg));
+         appendOption(OPT_cc_includes, "-I " + std::string(optarg), " ");
          break;
       }
       case 'l':
       {
          std::string libraries;
-         if(isOption(OPT_gcc_libraries))
+         if(isOption(OPT_cc_libraries))
          {
-            libraries = getOption<std::string>(OPT_gcc_libraries) + STR_CST_string_separator;
+            libraries = getOption<std::string>(OPT_cc_libraries) + STR_CST_string_separator;
          }
-         setOption(OPT_gcc_libraries, libraries + optarg_param);
+         setOption(OPT_cc_libraries, libraries + optarg_param);
          break;
       }
       case 'L':
       {
          std::string library_directories;
-         if(isOption(OPT_gcc_library_directories))
+         if(isOption(OPT_cc_library_directories))
          {
-            library_directories = getOption<std::string>(OPT_gcc_library_directories) + STR_CST_string_separator;
+            library_directories = getOption<std::string>(OPT_cc_library_directories) + STR_CST_string_separator;
          }
-         setOption(OPT_gcc_library_directories, library_directories + std::string(optarg_param));
+         setOption(OPT_cc_library_directories, library_directories + std::string(optarg_param));
          break;
       }
       case 'O':
@@ -675,10 +644,6 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
             {
                setOption(OPT_compiler_opt_level, CompilerWrapper_OptimizationSet::O5);
             }
-            else if(opt_level == "g")
-            {
-               setOption(OPT_compiler_opt_level, CompilerWrapper_OptimizationSet::Og);
-            }
             else if(opt_level == "s")
             {
                setOption(OPT_compiler_opt_level, CompilerWrapper_OptimizationSet::Os);
@@ -705,9 +670,9 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       case 'U':
       {
          std::string undefines;
-         if(isOption(OPT_gcc_undefines))
+         if(isOption(OPT_cc_undefines))
          {
-            undefines = getOption<std::string>(OPT_gcc_undefines) + STR_CST_string_separator;
+            undefines = getOption<std::string>(OPT_cc_undefines) + STR_CST_string_separator;
          }
          if(std::string(optarg_param).find('=') != std::string::npos)
          {
@@ -726,59 +691,33 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
          }
          else
          {
-            setOption(OPT_gcc_undefines, undefines + optarg_param);
+            setOption(OPT_cc_undefines, undefines + optarg_param);
          }
+         break;
+      }
+      case 'x':
+      {
+         std::string cc_extra_options = "-x " + std::string(optarg);
+         if(isOption(OPT_cc_extra_options))
+         {
+            cc_extra_options = getOption<std::string>(OPT_cc_extra_options) + " " + cc_extra_options;
+         }
+         setOption(OPT_cc_extra_options, cc_extra_options);
+         setOption(OPT_cc_xlang, std::string(optarg));
          break;
       }
       case INPUT_OPT_CUSTOM_OPTIONS:
       {
-         setOption(OPT_gcc_extra_options, optarg);
+         appendOption(OPT_cc_extra_options, std::string(optarg), " ");
          break;
       }
-#if !RELEASE
-      case INPUT_OPT_COMPUTE_SIZEOF:
+      case INPUT_OPT_SYSROOT:
       {
-         setOption(OPT_compute_size_of, true);
+         appendOption(OPT_cc_extra_options, "--sysroot=" + std::string(optarg), " ");
          break;
       }
-#endif
       case INPUT_OPT_COMPILER:
       {
-#if HAVE_I386_GCC49_COMPILER
-         if(std::string(optarg_param) == "I386_GCC49")
-         {
-            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC49);
-            break;
-         }
-#endif
-#if HAVE_I386_GCC5_COMPILER
-         if(std::string(optarg_param) == "I386_GCC5")
-         {
-            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC5);
-            break;
-         }
-#endif
-#if HAVE_I386_GCC6_COMPILER
-         if(std::string(optarg_param) == "I386_GCC6")
-         {
-            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC6);
-            break;
-         }
-#endif
-#if HAVE_I386_GCC7_COMPILER
-         if(std::string(optarg_param) == "I386_GCC7")
-         {
-            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC7);
-            break;
-         }
-#endif
-#if HAVE_I386_GCC8_COMPILER
-         if(std::string(optarg_param) == "I386_GCC8")
-         {
-            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC8);
-            break;
-         }
-#endif
 #if HAVE_I386_CLANG4_COMPILER
          if(std::string(optarg_param) == "I386_CLANG4")
          {
@@ -856,44 +795,29 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
             break;
          }
 #endif
-#if HAVE_I386_CLANGVVD_COMPILER
-         if(std::string(optarg_param) == "I386_CLANGVVD")
+#if HAVE_I386_CLANG19_COMPILER
+         if(std::string(optarg_param) == "I386_CLANG19")
          {
-            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD);
+            setOption(OPT_default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG19);
             break;
          }
 #endif
          THROW_ERROR("Unknown compiler " + std::string(optarg_param));
          break;
       }
-      case INPUT_OPT_GCC_CONFIG:
-      {
-         setOption(OPT_gcc_config, true);
-         break;
-      }
-      case INPUT_OPT_INCLUDE_SYSDIR:
-      {
-         setOption(OPT_gcc_include_sysdir, true);
-         break;
-      }
       case INPUT_OPT_PARAM:
       {
          std::string parameters;
-         if(isOption(OPT_gcc_parameters))
+         if(isOption(OPT_cc_parameters))
          {
-            parameters = getOption<std::string>(OPT_gcc_parameters) + STR_CST_string_separator;
+            parameters = getOption<std::string>(OPT_cc_parameters) + STR_CST_string_separator;
          }
-         setOption(OPT_gcc_parameters, parameters + optarg_param);
-         break;
-      }
-      case INPUT_OPT_READ_GCC_XML:
-      {
-         setOption(OPT_gcc_read_xml, std::string(optarg));
+         setOption(OPT_cc_parameters, parameters + optarg_param);
          break;
       }
       case INPUT_OPT_STD:
       {
-         setOption(OPT_gcc_standard, optarg_param);
+         setOption(OPT_cc_standard, optarg_param);
          break;
       }
       case INPUT_OPT_USE_RAW:
@@ -901,14 +825,9 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
          setOption(OPT_input_format, Parameters_FileFormat::FF_RAW);
          break;
       }
-      case INPUT_OPT_WRITE_GCC_XML:
-      {
-         setOption(OPT_gcc_write_xml, std::string(optarg));
-         break;
-      }
       default:
       {
-         /// next_option is not a GCC/CLANG parameter
+         /// next_option is not a CLANG parameter
          return true;
       }
    }
@@ -920,51 +839,58 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::filesystem::path& file
                                                const bool check_xml_root_node) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Getting file format of file " + file_name.string());
-   const auto extension = file_name.extension().string();
+   auto extension = file_name.extension().string();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Extension is " + extension);
-#if HAVE_FROM_AADL_ASN_BUILT
-   if(extension == ".aadl" or extension == ".AADL")
+   if(isOption(OPT_cc_xlang))
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--aadl file");
-      return Parameters_FileFormat::FF_AADL;
+      const auto xlang_string = getOption<std::string>(OPT_cc_xlang);
+      if(xlang_string == "c" || xlang_string == "c-header")
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--User-required C frontend");
+         return Parameters_FileFormat::FF_C;
+      }
+      else if(xlang_string.find("c++") != std::string::npos)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--User-required C++ frontend");
+         return Parameters_FileFormat::FF_CPP;
+      }
+      else if(xlang_string.find("f77") != std::string::npos || xlang_string.find("f95") != std::string::npos)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--User-required FORTRAN frontend");
+         return Parameters_FileFormat::FF_FORTRAN;
+      }
    }
-   if(extension == ".asn" or extension == ".ASN")
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--asn file");
-      return Parameters_FileFormat::FF_ASN;
-   }
-#endif
 #if HAVE_FROM_C_BUILT
-   if(extension == ".c" or extension == ".i")
+   if(extension == ".c" || extension == ".i")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--C source file");
       return Parameters_FileFormat::FF_C;
    }
-   if(extension == ".m" or extension == ".mi")
+   if(extension == ".m" || extension == ".mi")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Objective C source file");
       return Parameters_FileFormat::FF_OBJECTIVEC;
    }
-   if(extension == ".mm" or extension == ".M" or extension == ".mii")
+   if(extension == ".mm" || extension == ".M" || extension == ".mii")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Objective C++ source file");
       return Parameters_FileFormat::FF_OBJECTIVECPP;
    }
-   if(extension == ".ii" or extension == ".cc" or extension == ".cp" or extension == ".cxx" or extension == ".cpp" or
-      extension == ".CPP" or extension == ".c++" or extension == ".C")
+   if(extension == ".ii" || extension == ".cc" || extension == ".cp" || extension == ".cxx" || extension == ".cpp" ||
+      extension == ".CPP" || extension == ".c++" || extension == ".C")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--C++ source file");
       return Parameters_FileFormat::FF_CPP;
    }
-   if(extension == ".f" or extension == ".for" or extension == ".ftn" or extension == ".F" or extension == ".FOR" or
-      extension == ".fpp" or extension == ".FPP" or extension == ".FTN" or extension == ".f90" or extension == ".f95" or
-      extension == ".f03" or extension == ".f08" or extension == ".F90" or extension == ".F95" or extension == ".F03" or
+   if(extension == ".f" || extension == ".for" || extension == ".ftn" || extension == ".F" || extension == ".FOR" ||
+      extension == ".fpp" || extension == ".FPP" || extension == ".FTN" || extension == ".f90" || extension == ".f95" ||
+      extension == ".f03" || extension == ".f08" || extension == ".F90" || extension == ".F95" || extension == ".F03" ||
       extension == ".F08")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Fortran source file");
       return Parameters_FileFormat::FF_FORTRAN;
    }
-   if(extension == ".ll")
+   if(extension == ".ll" || extension == ".bc")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--LLVM bitcode source file");
       const auto sub_extension = std::filesystem::path(file_name).replace_extension().extension().string();
@@ -977,7 +903,7 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::filesystem::path& file
          return Parameters_FileFormat::FF_LLVM;
       }
    }
-   if(extension == ".LL")
+   if(extension == ".LL" || extension == ".BC")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--LLVM bitcode source file");
 
@@ -1000,7 +926,7 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::filesystem::path& file
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--verilog");
       return Parameters_FileFormat::FF_VERILOG;
    }
-   if(extension == ".vhd" or extension == ".vhdl")
+   if(extension == ".vhd" || extension == ".vhdl")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--vhdl");
       return Parameters_FileFormat::FF_VHDL;
@@ -1013,7 +939,6 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::filesystem::path& file
          parser.Exec();
          THROW_ASSERT(parser, "Impossible to parse xml file " + file_name.string());
 
-#if HAVE_TO_DATAFILE_BUILT
          const xml_element* root = parser.get_document()->get_root_node();
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Root node is " + root->get_name());
 #if HAVE_BAMBU_RESULTS_XML
@@ -1030,11 +955,6 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::filesystem::path& file
             return Parameters_FileFormat::FF_XML_CON;
          }
 #endif
-         if(root->get_name() == STR_XML_experimental_setup_root)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Experimental setup");
-            return Parameters_FileFormat::FF_XML_EXPERIMENTAL_SETUP;
-         }
 #if HAVE_TECHNOLOGY_BUILT
          if(root->get_name() == STR_XML_technology_target_root)
          {
@@ -1046,14 +966,6 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::filesystem::path& file
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Technology libraries");
             return Parameters_FileFormat::FF_XML_TEC;
          }
-#endif
-#if HAVE_TO_DATAFILE_BUILT
-         if(root->get_name() == STR_XML_latex_table_root)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latex table format");
-            return Parameters_FileFormat::FF_XML_TEX_TABLE;
-         }
-#endif
 #endif
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Generic XML");
@@ -1092,12 +1004,10 @@ void Parameter::PrintGeneralOptionsUsage(std::ostream& os) const
       << "        Display the version of the program.\n\n"
       << "    --seed=<number>\n"
       << "        Set the seed of the random number generator (default=0).\n\n"
-#if !RELEASE
-      << "    --read-parameters-XML=<xml_file_name>\n"
-      << "        Read command line options from a XML file.\n\n"
-      << "    --write-parameters-XML=<xml_file_name>\n"
-      << "        Dump the parsed command line options into a XML file.\n\n"
-#endif
+      << "    --bambu-parameter=<name>=<value>\n"
+      << "        Override a bambu-parameter value.\n\n"
+      << "    --list-bambu-parameters\n"
+      << "        List registered bambu-parameters and exit.\n\n"
       << std::endl;
 }
 
@@ -1129,8 +1039,8 @@ void Parameter::PrintOutputOptionsUsage(std::ostream& os) const
       << "    --max-transformations=<number>\n"
       << "        Set a maximum number of transformations.\n\n"
       << "        To reduce the disk usage two PandA parameter could be used:\n"
-      << "          --panda-parameter=print-tree-manager=0\n"
-      << "          --panda-parameter=print-dot-FF=0\n\n"
+      << "          --bambu-parameter=print-ir-manager=0\n"
+      << "          --bambu-parameter=print-dot-FF=0\n\n"
       << "    --find-max-transformations\n"
       << "        Find the maximum number of transformations raising an exception.\n\n"
 #endif
@@ -1146,6 +1056,9 @@ void Parameter::PrintOutputOptionsUsage(std::ostream& os) const
       << "        Set the parameters string for data collection. The parameters in the\n"
       << "        string are not actually used, but they are used for data collection in\n"
       << "        extensive regression tests.\n\n"
+      << "    --output-directory=<path>\n"
+      << "        Set the output directory.\n"
+      << "        Default is current working directory\n\n"
       << "    --output-temporary-directory=<path>\n"
       << "        Set the directory where temporary files are saved.\n"
       << "        Default is '" << STR_CST_temporary_directory << "'\n\n"
@@ -1160,27 +1073,12 @@ void Parameter::PrintOutputOptionsUsage(std::ostream& os) const
 }
 
 #if HAVE_FROM_C_BUILT
-void Parameter::PrintGccOptionsUsage(std::ostream& os) const
+void Parameter::PrintCCOptionsUsage(std::ostream& os) const
 {
-   os << "  GCC/CLANG front-end compiler options:\n\n"
+   os << "  CLANG front-end compiler options:\n\n"
       << "    --compiler=<compiler_version>\n"
       << "        Specify which compiler is used.\n"
       << "        Possible values for <compiler_version> are:\n"
-#if HAVE_I386_GCC49_COMPILER
-      << "            I386_GCC49\n"
-#endif
-#if HAVE_I386_GCC5_COMPILER
-      << "            I386_GCC5\n"
-#endif
-#if HAVE_I386_GCC6_COMPILER
-      << "            I386_GCC6\n"
-#endif
-#if HAVE_I386_GCC7_COMPILER
-      << "            I386_GCC7\n"
-#endif
-#if HAVE_I386_GCC8_COMPILER
-      << "            I386_GCC8\n"
-#endif
 #if HAVE_I386_CLANG4_COMPILER
       << "            I386_CLANG4\n"
 #endif
@@ -1214,8 +1112,8 @@ void Parameter::PrintGccOptionsUsage(std::ostream& os) const
 #if HAVE_I386_CLANG16_COMPILER
       << "            I386_CLANG16\n"
 #endif
-#if HAVE_I386_CLANGVVD_COMPILER
-      << "            I386_CLANGVVD\n"
+#if HAVE_I386_CLANG19_COMPILER
+      << "            I386_CLANG19\n"
 #endif
       << "\n"
       << "    -O<level>\n"
@@ -1223,20 +1121,20 @@ void Parameter::PrintGccOptionsUsage(std::ostream& os) const
       << "        optimization flags accepted by compilers, plus some others:\n"
       << "        -O0,-O1,-O2,-O3,-Os,-O4,-O5.\n\n"
       << "    -f<option>\n"
-      << "        Enable or disable a GCC/CLANG optimization option. All the -f or -fno options\n"
+      << "        Enable or disable a CLANG optimization option. All the -f or -fno options\n"
       << "        are supported. In particular, -ftree-vectorize option triggers the\n"
       << "        high-level synthesis of vectorized operations.\n\n"
       << "    -I<path>\n"
       << "        Specify a path where headers are searched for.\n\n"
       << "    -W<warning>\n"
-      << "        Specify a warning option passed to GCC/CLANG. All the -W options available in\n"
-      << "        GCC/CLANG are supported.\n\n"
+      << "        Specify a warning option passed to CLANG. All the -W options available in\n"
+      << "        CLANG are supported.\n\n"
       << "    -E\n"
-      << "        Enable preprocessing mode of GCC/CLANG.\n\n"
+      << "        Enable preprocessing mode of CLANG.\n\n"
       << "    --std=<standard>\n"
       << "        Assume that the input sources are for <standard>. All\n"
-      << "        the --std options available in GCC/CLANG are supported.\n"
-      << "        The default value is gnu90/gnu11 for C and gnu++98/gnu++14 for C++ \n"
+      << "        the --std options available in CLANG are supported.\n"
+      << "        The default value is gnu90/gnu11/c11 for C and gnu++98/gnu++14/c++14 for C++ \n"
       << "        depending on the selected frontend compiler support.\n\n"
       << "    -D<name>\n"
       << "        Predefine name as a macro, with definition 1.\n\n"
@@ -1245,7 +1143,7 @@ void Parameter::PrintGccOptionsUsage(std::ostream& os) const
       << "    -U<name>\n"
       << "        Remove existing definition for macro <name>.\n\n"
       << "    --param <name>=<value>\n"
-      << "        Set the amount <value> for the GCC/CLANG parameter <name> that could be used for\n"
+      << "        Set the amount <value> for the CLANG parameter <name> that could be used for\n"
       << "        some optimizations.\n\n"
       << "    -l<library>\n"
       << "        Search the library named <library> when linking.\n\n"
@@ -1255,22 +1153,7 @@ void Parameter::PrintGccOptionsUsage(std::ostream& os) const
       << "        Specify that input file is already a raw file and not a source file.\n\n"
       << "    -m<machine-option>\n"
       << "        Specify machine dependend options (currently not used).\n\n"
-#if !RELEASE
-      << "    --read-GCC-XML=<xml_file_name>\n"
-      << "        Read GCC options from a XML file.\n\n"
-      << "    --write-GCC-XML=<xml_file_name>\n"
-      << "        Dump the parsed GCC/CLANG compiler options into a XML file.\n\n"
-#endif
-      << "    --Include-sysdir\n"
-      << "        Return the system include directory used by the wrapped GCC/CLANG compiler.\n\n"
-      << "    --gcc-config\n"
-      << "        Return the GCC/CLANG configuration.\n\n"
-#if !RELEASE
-      << "    --compute-sizeof\n"
-      << "        Replace sizeof with the computed valued for the considered target\n"
-      << "        architecture.\n\n"
-#endif
-      << "    --extra-gcc-options\n"
+      << "    --extra-cc-options\n"
       << "        Specify custom extra options to the compiler.\n\n"
       << std::endl;
 }

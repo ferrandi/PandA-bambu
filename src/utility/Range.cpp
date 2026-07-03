@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -35,9 +35,6 @@
  * @brief
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -48,23 +45,13 @@
 #include "math_function.hpp"
 #include "string_manipulation.hpp"
 
-#define CASE_MISCELLANEOUS   \
-   aggr_init_expr_K:         \
-   case case_label_expr_K:   \
-   case lut_expr_K:          \
-   case target_expr_K:       \
-   case target_mem_ref_K:    \
-   case target_mem_ref461_K: \
-   case binfo_K:             \
-   case block_K:             \
-   case constructor_K:       \
-   case error_mark_K:        \
-   case identifier_node_K:   \
-   case ssa_name_K:          \
-   case statement_list_K:    \
-   case tree_list_K:         \
-   case tree_vec_K:          \
-   case call_expr_K
+#define CASE_MISCELLANEOUS     \
+   lut_node_K:                 \
+   case constructor_node_K:    \
+   case identifier_node_K:     \
+   case ssa_node_K:            \
+   case statement_list_node_K: \
+   case call_node_K
 
 using bw_t = Range::bw_t;
 
@@ -85,11 +72,6 @@ Range::Range(RangeType rType, bw_t rbw, const APInt& lb, const APInt& ub) : l(lb
    normalizeRange(lb, ub, rType);
 }
 
-Range* Range::clone() const
-{
-   return new Range(*this);
-}
-
 void Range::normalizeRange(const APInt& lb, const APInt& ub, RangeType rType)
 {
    type = rType;
@@ -108,95 +90,92 @@ void Range::normalizeRange(const APInt& lb, const APInt& ub, RangeType rType)
          {
             return normalizeRange(ub + MinDelta, lb - MinDelta, Regular);
          }
-         else if((lb == Min) && (ub == Max))
+         if((lb == Min) && (ub == Max))
          {
             type = Empty;
             return;
          }
-         else if(lb == Min)
+         if(lb == Min)
          {
             return normalizeRange(ub + MinDelta, Max, Regular);
          }
-         else if(ub == Max)
+         if(ub == Max)
          {
             return normalizeRange(Min, lb - MinDelta, Regular);
          }
-         else
+         THROW_ASSERT(ub >= lb, "");
+         const auto maxS = APInt::getSignedMaxValue(bw);
+         const auto minS = APInt::getSignedMinValue(bw);
+         const bool lbgt = lb > maxS;
+         const bool ubgt = ub > maxS;
+         const bool lblt = lb < minS;
+         const bool ublt = ub < minS;
+         if(lbgt && ubgt)
          {
-            THROW_ASSERT(ub >= lb, "");
-            const auto maxS = APInt::getSignedMaxValue(bw);
-            const auto minS = APInt::getSignedMinValue(bw);
-            const bool lbgt = lb > maxS;
-            const bool ubgt = ub > maxS;
-            const bool lblt = lb < minS;
-            const bool ublt = ub < minS;
-            if(lbgt && ubgt)
+            if((ub - lb).abs() < APInt::getMaxValue(bw))
             {
-               if((ub - lb).abs() < APInt::getMaxValue(bw))
-               {
-                  l = lb.extOrTrunc(bw, true);
-                  u = ub.extOrTrunc(bw, true);
-               }
-               else
-               {
-                  type = Regular;
-                  l = APInt::getSignedMinValue(bw);
-                  u = APInt::getSignedMaxValue(bw);
-               }
-            }
-            else if(lblt && ublt)
-            {
-               if((ub - lb).abs() < APInt::getMaxValue(bw))
-               {
-                  l = ub.extOrTrunc(bw, true);
-                  u = lb.extOrTrunc(bw, true);
-               }
-               else
-               {
-                  type = Regular;
-                  l = APInt::getSignedMinValue(bw);
-                  u = APInt::getSignedMaxValue(bw);
-               }
-            }
-            else if(!lblt && ubgt)
-            {
-               const auto ubnew = ub.extOrTrunc(bw, true);
-               type = Regular;
-               if((ub - lb).abs() < APInt::getMaxValue(bw) && ubnew != (lb - MinDelta))
-               {
-                  l = ubnew + MinDelta;
-                  u = lb - MinDelta;
-               }
-               else
-               {
-                  l = APInt::getSignedMinValue(bw);
-                  u = APInt::getSignedMaxValue(bw);
-               }
-            }
-            else if(lblt && !ubgt)
-            {
-               const auto lbnew = lb.extOrTrunc(bw, true);
-               type = Regular;
-               if((ub - lb).abs() < APInt::getMaxValue(bw) && lbnew != (ub + MinDelta))
-               {
-                  l = ub + MinDelta;
-                  u = lbnew - MinDelta;
-               }
-               else
-               {
-                  l = APInt::getSignedMinValue(bw);
-                  u = APInt::getSignedMaxValue(bw);
-               }
-            }
-            else if(!lblt && !ubgt)
-            {
-               l = lb;
-               u = ub;
+               l = lb.extOrTrunc(bw, true);
+               u = ub.extOrTrunc(bw, true);
             }
             else
             {
-               THROW_UNREACHABLE("unexpected condition");
+               type = Regular;
+               l = APInt::getSignedMinValue(bw);
+               u = APInt::getSignedMaxValue(bw);
             }
+         }
+         else if(lblt && ublt)
+         {
+            if((ub - lb).abs() < APInt::getMaxValue(bw))
+            {
+               l = ub.extOrTrunc(bw, true);
+               u = lb.extOrTrunc(bw, true);
+            }
+            else
+            {
+               type = Regular;
+               l = APInt::getSignedMinValue(bw);
+               u = APInt::getSignedMaxValue(bw);
+            }
+         }
+         else if(!lblt && ubgt)
+         {
+            const auto ubnew = ub.extOrTrunc(bw, true);
+            type = Regular;
+            if((ub - lb).abs() < APInt::getMaxValue(bw) && ubnew != (lb - MinDelta))
+            {
+               l = ubnew + MinDelta;
+               u = lb - MinDelta;
+            }
+            else
+            {
+               l = APInt::getSignedMinValue(bw);
+               u = APInt::getSignedMaxValue(bw);
+            }
+         }
+         else if(lblt && !ubgt)
+         {
+            const auto lbnew = lb.extOrTrunc(bw, true);
+            type = Regular;
+            if((ub - lb).abs() < APInt::getMaxValue(bw) && lbnew != (ub + MinDelta))
+            {
+               l = ub + MinDelta;
+               u = lbnew - MinDelta;
+            }
+            else
+            {
+               l = APInt::getSignedMinValue(bw);
+               u = APInt::getSignedMaxValue(bw);
+            }
+         }
+         else if(!lblt && !ubgt)
+         {
+            l = lb;
+            u = ub;
+         }
+         else
+         {
+            THROW_UNREACHABLE("unexpected condition");
          }
          break;
       }
@@ -361,7 +340,7 @@ bw_t Range::neededBits(const APInt& a, const APInt& b, bool sign)
    return std::max(a.minBitwidth(sign), b.minBitwidth(sign));
 }
 
-RangeRef Range::fromBitValues(const std::deque<bit_lattice>& bv, bw_t bitwidth, bool isSigned)
+Range Range::fromBitValues(const std::deque<bit_lattice>& bv, bw_t bitwidth, bool isSigned)
 {
    THROW_ASSERT(bv.size() <= bitwidth, "BitValues size not appropriate");
    auto bitstring_to_int = [&](const std::deque<bit_lattice>& bv_in) {
@@ -413,7 +392,7 @@ RangeRef Range::fromBitValues(const std::deque<bit_lattice>& bv, bw_t bitwidth, 
    }();
 
    THROW_ASSERT(min <= max, "");
-   return RangeRef(new Range(Regular, bitwidth, min, max));
+   return Range(Regular, bitwidth, min, max);
 }
 
 std::deque<bit_lattice> Range::getBitValues(bool isSigned) const
@@ -460,26 +439,26 @@ std::deque<bit_lattice> Range::getBitValues(bool isSigned) const
    return range_bv;
 }
 
-RangeRef Range::getAnti() const
+Range Range::getAnti() const
 {
    if(type == Anti)
    {
-      return RangeRef(new Range(Regular, bw, l, u));
+      return Range(Regular, bw, l, u);
    }
    if(type == Regular)
    {
-      return RangeRef(new Range(Anti, bw, l, u));
+      return Range(Anti, bw, l, u);
    }
    if(type == Empty)
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
    if(type == Unknown)
    {
-      return RangeRef(this->clone());
+      return *this;
    }
    THROW_UNREACHABLE("unexpected condition");
-   return nullptr;
+   return *this;
 }
 
 bw_t Range::getBitWidth() const
@@ -587,14 +566,14 @@ bool Range::isEmpty() const
    return type == Empty;
 }
 
-bool Range::isSameType(const RangeConstRef& other) const
+bool Range::isSameType(const Range& other) const
 {
-   return type == other->type;
+   return type == other.type;
 }
 
-bool Range::isSameRange(const RangeConstRef& other) const
+bool Range::isSameRange(const Range& other) const
 {
-   return this->bw == other->bw && isSameType(other) && (l == other->l) && (u == other->u);
+   return this->bw == other.bw && isSameType(other) && (l == other.l) && (u == other.u);
 }
 
 bool Range::isFullSet() const
@@ -621,206 +600,203 @@ bool Range::isConstant() const
    return isRegular() && l == u;
 }
 
-#define RETURN_EMPTY_ON_EMPTY(b)            \
-   if(this->isEmpty() || other->isEmpty())  \
-   {                                        \
-      return RangeRef(new Range(Empty, b)); \
+#define RETURN_EMPTY_ON_EMPTY(b)          \
+   if(this->isEmpty() || other.isEmpty()) \
+   {                                      \
+      return Range(Empty, b);             \
    }
-#define RETURN_UNKNOWN_ON_UNKNOWN(b)           \
-   if(this->isUnknown() || other->isUnknown()) \
-   {                                           \
-      return RangeRef(new Range(Unknown, b));  \
+#define RETURN_UNKNOWN_ON_UNKNOWN(b)          \
+   if(this->isUnknown() || other.isUnknown()) \
+   {                                          \
+      return Range(Unknown, b);               \
    }
 
-RangeRef Range::add(const RangeConstRef& other) const
+Range Range::add(const Range& other) const
 {
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
-   if(this->isFullSet() || other->isFullSet())
+   if(this->isFullSet() || other.isFullSet())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
-   if(isAnti() && other->isConstant())
+   if(isAnti() && other.isConstant())
    {
-      auto ol = other->getLower();
+      const auto& ol = other.getLower();
       if(ol >= (Max - u))
       {
-         return RangeRef(new Range(Regular, bw));
+         return Range(Regular, bw);
       }
-      return RangeRef(new Range(Anti, bw, l + ol, u + ol));
+      return Range(Anti, bw, l + ol, u + ol);
    }
-   if(this->isAnti() || other->isAnti())
+   if(this->isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
-   if(other->isConstant())
+   if(other.isConstant())
    {
-      auto ol = other->getLower();
+      const auto& ol = other.getLower();
       if(l == Min)
       {
          THROW_ASSERT(u != Max, "");
-         return RangeRef(new Range(Regular, bw, l, u + ol));
+         return Range(Regular, bw, l, u + ol);
       }
       if(u == Max)
       {
          THROW_ASSERT(l != Min, "");
-         return RangeRef(new Range(Regular, bw, l + ol, u));
+         return Range(Regular, bw, l + ol, u);
       }
 
-      return RangeRef(new Range(Regular, bw, l + ol, u + ol));
+      return Range(Regular, bw, l + ol, u + ol);
    }
 
-   const auto min = getLower() + other->getLower();
-   const auto max = getUpper() + other->getUpper();
-   RangeRef res(new Range(Regular, bw, min, max));
-   if(res->getSpan() <= getSpan() || res->getSpan() <= other->getSpan())
+   const auto min = getLower() + other.getLower();
+   const auto max = getUpper() + other.getUpper();
+   Range res(Regular, bw, min, max);
+   if(res.getSpan() <= getSpan() || res.getSpan() <= other.getSpan())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
    return res;
 }
 
-RangeRef Range::sat_add(const RangeConstRef& other) const
+Range Range::sat_add(const Range& other) const
 {
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
-   if(this->isFullSet() || other->isFullSet())
+   if(this->isFullSet() || other.isFullSet())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
-   if(isAnti() && other->isConstant())
+   if(isAnti() && other.isConstant())
    {
-      auto ol = other->getLower();
+      const auto& ol = other.getLower();
       if(ol == 0)
       {
-         return RangeRef(this->clone());
+         return *this;
       }
       if(ol > 0)
       {
-         return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw) + ol, APInt::getSignedMaxValue(bw)));
+         return Range(Regular, bw, APInt::getSignedMinValue(bw) + ol, APInt::getSignedMaxValue(bw));
       }
-      return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw), APInt::getSignedMaxValue(bw) + ol));
+      return Range(Regular, bw, APInt::getSignedMinValue(bw), APInt::getSignedMaxValue(bw) + ol);
    }
-   if(this->isAnti() || other->isAnti())
+   if(this->isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
-   if(other->isConstant())
+   if(other.isConstant())
    {
-      auto ol = other->getLower();
+      const auto& ol = other.getLower();
       if(ol == 0)
       {
-         return RangeRef(this->clone());
+         return *this;
       }
       if(l == Min)
       {
          THROW_ASSERT(u != Max, "");
          if(ol > 0)
          {
-            return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw) + ol,
-                                      std::min(APInt::getSignedMaxValue(bw), u + ol)));
+            return Range(Regular, bw, APInt::getSignedMinValue(bw) + ol,
+                         std::min(APInt::getSignedMaxValue(bw), u + ol));
          }
-         return RangeRef(
-             new Range(Regular, bw, APInt::getSignedMinValue(bw), std::max(APInt::getSignedMinValue(bw), u + ol)));
+         return Range(Regular, bw, APInt::getSignedMinValue(bw), std::max(APInt::getSignedMinValue(bw), u + ol));
       }
       if(u == Max)
       {
          THROW_ASSERT(l != Min, "");
          if(ol > 0)
          {
-            return RangeRef(
-                new Range(Regular, bw, std::min(APInt::getSignedMaxValue(bw), l + ol), APInt::getSignedMaxValue(bw)));
+            return Range(Regular, bw, std::min(APInt::getSignedMaxValue(bw), l + ol), APInt::getSignedMaxValue(bw));
          }
-         return RangeRef(
-             new Range(Regular, bw, std::max(APInt::getSignedMinValue(bw), l + ol), APInt::getSignedMaxValue(bw) + ol));
+         return Range(Regular, bw, std::max(APInt::getSignedMinValue(bw), l + ol), APInt::getSignedMaxValue(bw) + ol);
       }
    }
 
    const auto min =
-       std::max(APInt::getSignedMinValue(bw), std::min(APInt::getSignedMaxValue(bw), getLower() + other->getLower()));
+       std::max(APInt::getSignedMinValue(bw), std::min(APInt::getSignedMaxValue(bw), getLower() + other.getLower()));
    const auto max =
-       std::max(APInt::getSignedMinValue(bw), std::min(APInt::getSignedMaxValue(bw), getUpper() + other->getUpper()));
-   RangeRef res(new Range(Regular, bw, min, max));
-   if(res->getSpan() <= getSpan() || res->getSpan() <= other->getSpan())
+       std::max(APInt::getSignedMinValue(bw), std::min(APInt::getSignedMaxValue(bw), getUpper() + other.getUpper()));
+   Range res(Regular, bw, min, max);
+   if(res.getSpan() <= getSpan() || res.getSpan() <= other.getSpan())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
    return res;
 }
 
-RangeRef Range::usat_add(const RangeConstRef& other) const
+Range Range::usat_add(const Range& other) const
 {
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
-   if(this->isFullSet() || other->isFullSet())
+   if(this->isFullSet() || other.isFullSet())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
-   if(isAnti() && other->isConstant())
+   if(isAnti() && other.isConstant())
    {
-      auto ol = other->getLower();
+      auto ol = other.getLower();
       if(l + ol >= APInt::getMaxValue(bw))
       {
-         return RangeRef(new Range(Anti, bw, 0, u + ol));
+         return Range(Anti, bw, 0, u + ol);
       }
-      return RangeRef(new Range(Anti, bw, l + ol, u + ol));
+      return Range(Anti, bw, l + ol, u + ol);
    }
-   if(this->isAnti() || other->isAnti())
+   if(this->isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
-   if(other->isConstant())
+   if(other.isConstant())
    {
-      auto ol = other->getLower();
+      auto ol = other.getLower();
       if(l == Min)
       {
          THROW_ASSERT(u != Max, "");
-         return RangeRef(new Range(Regular, bw, 0, std::min(APInt::getMaxValue(bw), u + ol)));
+         return Range(Regular, bw, 0, std::min(APInt::getMaxValue(bw), u + ol));
       }
       if(u == Max)
       {
          THROW_ASSERT(l != Min, "");
-         return RangeRef(new Range(Regular, bw, std::min(APInt::getMaxValue(bw), l + ol), APInt::getMaxValue(bw)));
+         return Range(Regular, bw, std::min(APInt::getMaxValue(bw), l + ol), APInt::getMaxValue(bw));
       }
 
-      return RangeRef(new Range(Regular, bw, l + ol, std::min(APInt::getMaxValue(bw), u + ol)));
+      return Range(Regular, bw, l + ol, std::min(APInt::getMaxValue(bw), u + ol));
    }
 
-   const auto min = std::min(APInt::getMaxValue(bw), getLower() + other->getLower());
-   const auto max = std::min(APInt::getMaxValue(bw), getUpper() + other->getUpper());
-   RangeRef res(new Range(Regular, bw, min, max));
-   if(res->getSpan() <= getSpan() || res->getSpan() <= other->getSpan())
+   const auto min = std::min(APInt::getMaxValue(bw), getLower() + other.getLower());
+   const auto max = std::min(APInt::getMaxValue(bw), getUpper() + other.getUpper());
+   Range res(Regular, bw, min, max);
+   if(res.getSpan() <= getSpan() || res.getSpan() <= other.getSpan())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
    return res;
 }
 
-RangeRef Range::sub(const RangeConstRef& other) const
+Range Range::sub(const Range& other) const
 {
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
-   if(this->isFullSet() || other->isFullSet())
+   if(this->isFullSet() || other.isFullSet())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
-   if(this->isAnti() && other->isConstant())
+   if(this->isAnti() && other.isConstant())
    {
-      auto ol = other->getLower();
+      const auto& ol = other.getLower();
       if(l <= (Min + ol))
       {
-         return RangeRef(new Range(Regular, bw));
+         return Range(Regular, bw);
       }
 
-      return RangeRef(new Range(Anti, bw, l - ol, u - ol));
+      return Range(Anti, bw, l - ol, u - ol);
    }
-   if(this->isAnti() || other->isAnti())
+   if(this->isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
-   if(other->isConstant())
+   if(other.isConstant())
    {
-      auto ol = other->getLower();
+      auto ol = other.getLower();
       if(l == Min)
       {
          THROW_ASSERT(u != Max, "");
@@ -828,10 +804,10 @@ RangeRef Range::sub(const RangeConstRef& other) const
          auto upper = u - ol;
          if(minValue > upper)
          {
-            return RangeRef(new Range(Regular, bw));
+            return Range(Regular, bw);
          }
 
-         return RangeRef(new Range(Regular, bw, l, upper));
+         return Range(Regular, bw, l, upper);
       }
       if(u == Max)
       {
@@ -840,160 +816,157 @@ RangeRef Range::sub(const RangeConstRef& other) const
          auto lower = l - ol;
          if(maxValue < lower)
          {
-            return RangeRef(new Range(Regular, bw));
+            return Range(Regular, bw);
          }
 
-         return RangeRef(new Range(Regular, bw, l - ol, u));
+         return Range(Regular, bw, l - ol, u);
       }
 
       auto lower = (l - ol).extOrTrunc(bw, true);
       auto upper = (u - ol).extOrTrunc(bw, true);
       if(lower <= upper)
       {
-         return RangeRef(new Range(Regular, bw, lower, upper));
+         return Range(Regular, bw, lower, upper);
       }
-      return RangeRef(new Range(Anti, bw, upper + 1, lower - 1));
+      return Range(Anti, bw, upper + 1, lower - 1);
    }
 
-   const auto min = getLower() - other->getUpper();
-   const auto max = getUpper() - other->getLower();
-   RangeRef res(new Range(Regular, bw, min, max));
-   if(res->getSpan() < getSpan() || res->getSpan() < other->getSpan())
+   const auto min = getLower() - other.getUpper();
+   const auto max = getUpper() - other.getLower();
+   Range res(Regular, bw, min, max);
+   if(res.getSpan() < getSpan() || res.getSpan() < other.getSpan())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
    return res;
 }
 
-RangeRef Range::sat_sub(const RangeConstRef& other) const
+Range Range::sat_sub(const Range& other) const
 {
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
-   if(this->isFullSet() || other->isFullSet())
+   if(this->isFullSet() || other.isFullSet())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
-   if(this->isAnti() && other->isConstant())
+   if(this->isAnti() && other.isConstant())
    {
-      auto ol = other->getLower();
+      const auto& ol = other.getLower();
       if(ol == 0)
       {
-         return RangeRef(this->clone());
+         return *this;
       }
       if(ol < 0)
       {
-         return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw) - ol, APInt::getSignedMaxValue(bw)));
+         return Range(Regular, bw, APInt::getSignedMinValue(bw) - ol, APInt::getSignedMaxValue(bw));
       }
-      return RangeRef(new Range(Anti, bw, APInt::getSignedMinValue(bw), APInt::getSignedMaxValue(bw) - ol));
+      return Range(Anti, bw, APInt::getSignedMinValue(bw), APInt::getSignedMaxValue(bw) - ol);
    }
-   if(this->isAnti() || other->isAnti())
+   if(this->isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
-   if(other->isConstant())
+   if(other.isConstant())
    {
-      auto ol = other->getLower();
+      const auto& ol = other.getLower();
       if(l == Min)
       {
          THROW_ASSERT(u != Max, "");
          if(ol < 0)
          {
-            return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw) - ol,
-                                      std::min(APInt::getSignedMaxValue(bw), u - ol)));
+            return Range(Regular, bw, APInt::getSignedMinValue(bw) - ol,
+                         std::min(APInt::getSignedMaxValue(bw), u - ol));
          }
-         return RangeRef(
-             new Range(Regular, bw, APInt::getSignedMinValue(bw), std::max(APInt::getSignedMinValue(bw), u - ol)));
+         return Range(Regular, bw, APInt::getSignedMinValue(bw), std::max(APInt::getSignedMinValue(bw), u - ol));
       }
       if(u == Max)
       {
          THROW_ASSERT(l != Min, "");
          if(ol < 0)
          {
-            return RangeRef(
-                new Range(Regular, bw, std::min(APInt::getSignedMaxValue(bw), l - ol), APInt::getSignedMaxValue(bw)));
+            return Range(Regular, bw, std::min(APInt::getSignedMaxValue(bw), l - ol), APInt::getSignedMaxValue(bw));
          }
-         return RangeRef(
-             new Range(Regular, bw, std::max(APInt::getSignedMinValue(bw), l - ol), APInt::getSignedMaxValue(bw) - ol));
+         return Range(Regular, bw, std::max(APInt::getSignedMinValue(bw), l - ol), APInt::getSignedMaxValue(bw) - ol);
       }
    }
 
    const auto min =
-       std::max(APInt::getSignedMinValue(bw), std::min(APInt::getSignedMaxValue(bw), getLower() - other->getUpper()));
+       std::max(APInt::getSignedMinValue(bw), std::min(APInt::getSignedMaxValue(bw), getLower() - other.getUpper()));
    const auto max =
-       std::max(APInt::getSignedMinValue(bw), std::min(APInt::getSignedMaxValue(bw), getUpper() - other->getLower()));
-   RangeRef res(new Range(Regular, bw, min, max));
-   if(res->getSpan() < getSpan() || res->getSpan() < other->getSpan())
+       std::max(APInt::getSignedMinValue(bw), std::min(APInt::getSignedMaxValue(bw), getUpper() - other.getLower()));
+   Range res(Regular, bw, min, max);
+   if(res.getSpan() < getSpan() || res.getSpan() < other.getSpan())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
    return res;
 }
 
-RangeRef Range::usat_sub(const RangeConstRef& other) const
+Range Range::usat_sub(const Range& other) const
 {
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
-   if(this->isFullSet() || other->isFullSet())
+   if(this->isFullSet() || other.isFullSet())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
-   if(this->isAnti() && other->isConstant())
+   if(this->isAnti() && other.isConstant())
    {
-      auto ol = other->getLower();
+      auto ol = other.getLower();
       if(ol == 0)
       {
-         return RangeRef(this->clone());
+         return *this;
       }
       if(ol < 0)
       {
-         return RangeRef(new Range(Regular, bw, 0 - ol, APInt::getMaxValue(bw)));
+         return Range(Regular, bw, 0 - ol, APInt::getMaxValue(bw));
       }
-      return RangeRef(new Range(Regular, bw, 0, APInt::getMaxValue(bw) - ol));
+      return Range(Regular, bw, 0, APInt::getMaxValue(bw) - ol);
    }
-   if(this->isAnti() || other->isAnti())
+   if(this->isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
-   if(other->isConstant())
+   if(other.isConstant())
    {
-      auto ol = other->getLower();
+      auto ol = other.getLower();
       if(l == Min)
       {
          THROW_ASSERT(u != Max, "");
          if(ol < 0)
          {
-            return RangeRef(new Range(Regular, bw, 0 - ol, std::min(APInt::getMaxValue(bw), u - ol)));
+            return Range(Regular, bw, 0 - ol, std::min(APInt::getMaxValue(bw), u - ol));
          }
-         return RangeRef(new Range(Regular, bw, 0, std::max(APInt(0), u - ol)));
+         return Range(Regular, bw, 0, std::max(APInt(0), u - ol));
       }
       if(u == Max)
       {
          THROW_ASSERT(l != Min, "");
          if(ol < 0)
          {
-            return RangeRef(new Range(Regular, bw, std::min(APInt::getMaxValue(bw), l - ol), APInt::getMaxValue(bw)));
+            return Range(Regular, bw, std::min(APInt::getMaxValue(bw), l - ol), APInt::getMaxValue(bw));
          }
-         return RangeRef(new Range(Regular, bw, std::max(APInt(0), l - ol), APInt::getMaxValue(bw) - ol));
+         return Range(Regular, bw, std::max(APInt(0), l - ol), APInt::getMaxValue(bw) - ol);
       }
    }
 
-   const auto min = std::max(APInt(0), std::min(APInt::getMaxValue(bw), getLower() - other->getUpper()));
-   const auto max = std::max(APInt(0), std::min(APInt::getMaxValue(bw), getUpper() - other->getLower()));
-   RangeRef res(new Range(Regular, bw, min, max));
-   if(res->getSpan() < getSpan() || res->getSpan() < other->getSpan())
+   const auto min = std::max(APInt(0), std::min(APInt::getMaxValue(bw), getLower() - other.getUpper()));
+   const auto max = std::max(APInt(0), std::min(APInt::getMaxValue(bw), getUpper() - other.getLower()));
+   Range res(Regular, bw, min, max);
+   if(res.getSpan() < getSpan() || res.getSpan() < other.getSpan())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
    return res;
 }
 
-RangeRef Range::mul(const RangeConstRef& other) const
+Range Range::mul(const Range& other) const
 {
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
-   if(this->isFullSet() || other->isFullSet() || this->isAnti() || other->isAnti())
+   if(this->isFullSet() || other.isFullSet() || this->isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
 
    // Multiplication is signedness-independent. However different ranges can be
@@ -1005,8 +978,8 @@ RangeRef Range::mul(const RangeConstRef& other) const
    // Unsigned range first.
    auto this_min = getUnsignedMin();
    auto this_max = getUnsignedMax();
-   auto Other_min = other->getUnsignedMin();
-   auto Other_max = other->getUnsignedMax();
+   auto Other_min = other.getUnsignedMin();
+   auto Other_max = other.getUnsignedMax();
 
    const auto Result_zext = Range(Regular, static_cast<bw_t>(bw * 2), this_min * Other_min, this_max * Other_max);
    const auto UR = Result_zext.truncate(bw);
@@ -1019,42 +992,41 @@ RangeRef Range::mul(const RangeConstRef& other) const
 
    this_min = getSignedMin();
    this_max = getSignedMax();
-   Other_min = other->getSignedMin();
-   Other_max = other->getSignedMax();
+   Other_min = other.getSignedMin();
+   Other_max = other.getSignedMax();
 
    const auto res =
        std::minmax({this_min * Other_min, this_min * Other_max, this_max * Other_min, this_max * Other_max});
    const auto Result_sext = Range(Regular, static_cast<bw_t>(bw * 2), res.first, res.second);
    const auto SR = Result_sext.truncate(bw);
 
-   return UR->getSpan() < SR->getSpan() ? UR : SR;
+   return UR.getSpan() < SR.getSpan() ? UR : SR;
 }
 
-RangeRef Range::udiv(const RangeConstRef& other) const
+Range Range::udiv(const Range& other) const
 {
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(this->isFullSet())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
 
    auto a = getUnsignedMin();
    auto b = getUnsignedMax();
-   auto c = other->getUnsignedMin();
-   auto d = other->getUnsignedMax();
+   auto c = other.getUnsignedMin();
+   auto d = other.getUnsignedMax();
 
    // Deal with division by 0 exception
    if((c == 0) && (d == 0))
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
    if(c == 0)
    {
       c = 1;
    }
-   RangeRef res(new Range(Regular, bw, a / d, b / c));
-   return res;
+   return Range(Regular, bw, a / d, b / c);
 }
 
 #define DIV_HELPER(x, y)                            \
@@ -1063,51 +1035,51 @@ RangeRef Range::udiv(const RangeConstRef& other) const
        (((y) == Max) ? 0 :                          \
                        (((x) == Min) ? (((y) < 0) ? Max : (((y) == 0) ? 0 : Min)) : (((y) == Min) ? 0 : ((x) / (y)))))
 
-RangeRef Range::sdiv(const RangeConstRef& other) const
+Range Range::sdiv(const Range& other) const
 {
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(this->isFullSet() || this->isAnti())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
 
-   const APInt& a = this->getLower();
-   const APInt& b = this->getUpper();
+   const auto& a = this->getLower();
+   const auto& b = this->getUpper();
    APInt c1, d1, c2, d2;
    bool is_zero_in = false;
-   if(other->isAnti())
+   if(other.isAnti())
    {
-      auto antiRange = other->getAnti();
+      auto antiRange = other.getAnti();
       c1 = Min;
-      d1 = antiRange->getLower() - 1;
+      d1 = antiRange.getLower() - 1;
       if(d1 == 0)
       {
          d1 = -1;
       }
       else if(d1 > 0)
       {
-         return RangeRef(new Range(Regular, bw)); /// could be improved
+         return Range(Regular, bw); /// could be improved
       }
-      c2 = antiRange->getUpper() + 1;
+      c2 = antiRange.getUpper() + 1;
       if(c2 == 0)
       {
          c2 = 1;
       }
       else if(c2 < 0)
       {
-         return RangeRef(new Range(Regular, bw)); /// could be improved
+         return Range(Regular, bw); /// could be improved
       }
       d2 = Max;
    }
    else
    {
-      c1 = other->getLower();
-      d1 = other->getUpper();
+      c1 = other.getLower();
+      d1 = other.getUpper();
       // Deal with division by 0 exception
       if((c1 == 0) && (d1 == 0))
       {
-         return RangeRef(new Range(Regular, bw));
+         return Range(Regular, bw);
       }
       is_zero_in = (c1 < 0) && (d1 > 0);
       if(is_zero_in)
@@ -1117,19 +1089,19 @@ RangeRef Range::sdiv(const RangeConstRef& other) const
       }
       else
       {
-         c2 = other->getLower();
+         c2 = other.getLower();
          if(c2 == 0)
          {
             c1 = c2 = 1;
          }
       }
-      d2 = other->getUpper();
+      d2 = other.getUpper();
       if(d2 == 0)
       {
          d1 = d2 = -1;
       }
    }
-   auto n_iters = (is_zero_in || other->isAnti()) ? 8u : 4u;
+   auto n_iters = (is_zero_in || other.isAnti()) ? 8u : 4u;
 
    APInt candidates[8];
    candidates[0] = DIV_HELPER(a, c1);
@@ -1145,38 +1117,38 @@ RangeRef Range::sdiv(const RangeConstRef& other) const
    }
    // Lower bound is the min value from the vector, while upper bound is the max value
    auto res = std::minmax_element(candidates, candidates + n_iters);
-   return RangeRef(new Range(Regular, bw, *res.first, *res.second));
+   return Range(Regular, bw, *res.first, *res.second);
 }
 
-RangeRef Range::urem(const RangeConstRef& other) const
+Range Range::urem(const Range& other) const
 {
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
-   if(this->isAnti() || other->isAnti())
+   if(this->isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
-   if(other->isConstant())
+   if(other.isConstant())
    {
-      if(other->getLower() == 0)
+      if(other.getLower() == 0)
       {
-         return RangeRef(new Range(Empty, bw));
+         return Range(Empty, bw);
       }
-      else if(other->getUnsignedMin() == 1)
+      if(other.getUnsignedMin() == 1)
       {
-         return RangeRef(new Range(Regular, bw, 0, 0));
+         return Range(Regular, bw, 0, 0);
       }
    }
 
    const APInt& a = this->getUnsignedMin();
    const APInt& b = this->getUnsignedMax();
-   APInt c = other->getUnsignedMin();
-   const APInt& d = other->getUnsignedMax();
+   APInt c = other.getUnsignedMin();
+   const APInt& d = other.getUnsignedMax();
 
    // Deal with mod 0 exception
    if((c == 0) && (d == 0))
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
    if(c == 0)
    {
@@ -1196,27 +1168,27 @@ RangeRef Range::urem(const RangeConstRef& other) const
 
    // Lower bound is the min value from the vector, while upper bound is the max value
    auto res = std::minmax_element(candidates, candidates + 8);
-   return RangeRef(new Range(Regular, bw, *res.first, *res.second));
+   return Range(Regular, bw, *res.first, *res.second);
 }
 
-RangeRef Range::srem(const RangeConstRef& other) const
+Range Range::srem(const Range& other) const
 {
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
-   if(this->isFullSet() || this->isAnti() || other->isAnti())
+   if(this->isFullSet() || this->isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
 
    const auto& a = this->getLower();
    const auto& b = this->getUpper();
-   const auto& c = other->getLower();
-   const auto& d = other->getUpper();
+   const auto& c = other.getLower();
+   const auto& d = other.getUpper();
 
    // Deal with mod 0 exception
    if(c <= 0 && d >= 0)
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
 
    const auto dmin = std::min(c.abs(), d.abs());
@@ -1225,80 +1197,80 @@ RangeRef Range::srem(const RangeConstRef& other) const
    const auto abs_max = std::max(a.abs(), b.abs());
    if((abs_min < dmin && dmin < abs_max) || (abs_min < dmax && dmax < abs_max))
    {
-      return RangeRef(new Range(Regular, bw, a >= 0 ? 0 : (a.abs() < dmax ? a : -(dmax - 1)),
-                                b <= 0 ? 0 : (b.abs() < dmax ? b : (dmax - 1))));
+      return Range(Regular, bw, a >= 0 ? 0 : (a.abs() < dmax ? a : -(dmax - 1)),
+                   b <= 0 ? 0 : (b.abs() < dmax ? b : (dmax - 1)));
    }
-   else if(abs_max < dmin)
+   if(abs_max < dmin)
    {
-      return RangeRef(this->clone());
+      return *this;
    }
-   return RangeRef(new Range(Regular, bw, a < 0 ? -(dmax - 1) : 0, b > 0 ? (dmax - 1) : 0));
+   return Range(Regular, bw, a < 0 ? -(dmax - 1) : 0, b > 0 ? (dmax - 1) : 0);
 }
 
-RangeRef Range::shl(const RangeConstRef& other) const
+Range Range::shl(const Range& other) const
 {
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
-   if(this->isFullSet() || other->isFullSet() || this->isAnti() || other->isAnti())
+   if(this->isFullSet() || other.isFullSet() || this->isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
-   if(this->isConstant() && other->isConstant())
+   if(this->isConstant() && other.isConstant())
    {
-      const auto c = (this->getLower() << other->getLower().extOrTrunc(static_cast<APInt::bw_t>(ceil_log2(bw)), false))
+      const auto c = (this->getLower() << other.getLower().extOrTrunc(static_cast<APInt::bw_t>(ceil_log2(bw)), false))
                          .extOrTrunc(bw, true);
-      return RangeRef(new Range(Regular, bw, c, c));
+      return Range(Regular, bw, c, c);
    }
 
-   const auto a = this->getLower();
-   const auto b = this->getUpper();
-   const auto fix = other->zextOrTrunc(static_cast<bw_t>(ceil_log2(bw)));
-   const auto c = fix->getUnsignedMin();
-   const auto d = fix->getUnsignedMax();
+   const auto& a = this->getLower();
+   const auto& b = this->getUpper();
+   const auto fix = other.zextOrTrunc(static_cast<bw_t>(ceil_log2(bw)));
+   const auto c = fix.getUnsignedMin();
+   const auto d = fix.getUnsignedMax();
 
    if(c >= bw)
    {
-      return RangeRef(new Range(Regular, bw, 0, 0));
+      return Range(Regular, bw, 0, 0);
    }
    if(d >= bw)
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
    if(a < 0 && b < 0)
    {
       if(d > a.leadingOnes(bw))
       {
-         return RangeRef(new Range(Regular, bw));
+         return Range(Regular, bw);
       }
-      return RangeRef(new Range(Regular, bw, a << d, b << c));
+      return Range(Regular, bw, a << d, b << c);
    }
    if(a < 0 && b >= 0)
    {
       if(d > std::min(a.leadingOnes(bw), b.leadingZeros(bw)))
       {
-         return RangeRef(new Range(Regular, bw));
+         return Range(Regular, bw);
       }
-      return RangeRef(new Range(Regular, bw, a << d, b << d));
+      return Range(Regular, bw, a << d, b << d);
    }
    if(d > b.leadingZeros(bw))
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
-   return RangeRef(new Range(Regular, bw, a << c, b << d));
+   return Range(Regular, bw, a << c, b << d);
 }
 
-RangeRef Range::shr(const RangeConstRef& other, bool sign) const
+Range Range::shr(const Range& other, bool sign) const
 {
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
-   if(this->isAnti() || other->isAnti())
+   if(this->isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
 
-   const auto fix = other->zextOrTrunc(static_cast<bw_t>(ceil_log2(bw)));
-   const auto c = fix->getUnsignedMin();
-   const auto d = fix->getUnsignedMax();
+   const auto fix = other.zextOrTrunc(static_cast<bw_t>(ceil_log2(bw)));
+   const auto c = fix.getUnsignedMin();
+   const auto d = fix.getUnsignedMax();
 
    if(sign)
    {
@@ -1307,15 +1279,12 @@ RangeRef Range::shr(const RangeConstRef& other, bool sign) const
       const auto min = a >= 0 ? a >> d : a >> c;
       const auto max = b >= 0 ? b >> c : b >> d;
 
-      return RangeRef(new Range(Regular, bw, min, max));
+      return Range(Regular, bw, min, max);
    }
-   else
-   {
-      const auto a = getUnsignedMin();
-      const auto b = getUnsignedMax();
+   const auto a = getUnsignedMin();
+   const auto b = getUnsignedMax();
 
-      return RangeRef(new Range(Regular, bw, a >> d, b >> c));
-   }
+   return Range(Regular, bw, a >> d, b >> c);
 }
 
 /*
@@ -1579,439 +1548,439 @@ namespace
 
 } // namespace
 
-RangeRef Range::Or(const RangeConstRef& other) const
+Range Range::Or(const Range& other) const
 {
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(this->isConstant() && this->getSignedMax() == 0)
    {
-      return RangeRef(other->clone());
+      return other;
    }
-   if(other->isConstant() && other->getSignedMax() == 0)
+   if(other.isConstant() && other.getSignedMax() == 0)
    {
-      return RangeRef(this->clone());
+      return *this;
    }
 
    const auto& a = this->isAnti() ? Min : this->getLower();
    const auto& b = this->isAnti() ? Max : this->getUpper();
-   const auto& c = other->isAnti() ? Min : other->getLower();
-   const auto& d = other->isAnti() ? Max : other->getUpper();
+   const auto& c = other.isAnti() ? Min : other.getLower();
+   const auto& d = other.isAnti() ? Max : other.getUpper();
 
    const auto res = OR(bw, a, b, c, d);
-   return RangeRef(new Range(Regular, bw, res.first, res.second));
+   return Range(Regular, bw, res.first, res.second);
 }
 
-RangeRef Range::And(const RangeConstRef& other) const
+Range Range::And(const Range& other) const
 {
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(this->isConstant() && this->getSignedMax() == -1)
    {
-      return RangeRef(other->clone());
+      return other;
    }
-   if(other->isConstant() && other->getSignedMax() == -1)
+   if(other.isConstant() && other.getSignedMax() == -1)
    {
-      return RangeRef(this->clone());
+      return *this;
    }
 
    const auto& a = this->isAnti() ? Min : this->getLower();
    const auto& b = this->isAnti() ? Max : this->getUpper();
-   const auto& c = other->isAnti() ? Min : other->getLower();
-   const auto& d = other->isAnti() ? Max : other->getUpper();
+   const auto& c = other.isAnti() ? Min : other.getLower();
+   const auto& d = other.isAnti() ? Max : other.getUpper();
 
    const auto res = AND(bw, a, b, c, d);
-   return RangeRef(new Range(Regular, bw, res.first, res.second));
+   return Range(Regular, bw, res.first, res.second);
 }
 
-RangeRef Range::Xor(const RangeConstRef& other) const
+Range Range::Xor(const Range& other) const
 {
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
 
    const auto& a = this->isAnti() ? Min : this->getLower();
    const auto& b = this->isAnti() ? Max : this->getUpper();
-   const auto& c = other->isAnti() ? Min : other->getLower();
-   const auto& d = other->isAnti() ? Max : other->getUpper();
+   const auto& c = other.isAnti() ? Min : other.getLower();
+   const auto& d = other.isAnti() ? Max : other.getUpper();
 
    if(a >= 0 && b >= 0 && c >= 0 && d >= 0)
    {
       const auto res = uXOR(bw, a, b, c, d);
-      return RangeRef(new Range(Regular, bw, res.first, res.second));
+      return Range(Regular, bw, res.first, res.second);
    }
-   else if(a == -1 && b == -1 && c >= 0 && d >= 0)
+   if(a == -1 && b == -1 && c >= 0 && d >= 0)
    {
       return this->sub(other);
    }
-   else if(c == -1 && d == -1 && a >= 0 && b >= 0)
+   if(c == -1 && d == -1 && a >= 0 && b >= 0)
    {
-      return other->sub(RangeRef(this->clone()));
+      return other.sub(*this);
    }
-   return RangeRef(new Range(Regular, bw));
+   return Range(Regular, bw);
 }
 
-RangeRef Range::Not() const
+Range Range::Not() const
 {
    if(isEmpty() || isUnknown())
    {
-      return RangeRef(new Range(this->type, bw));
+      return Range(this->type, bw);
    }
 
    const auto min = ~this->u;
    const auto max = ~this->l;
 
-   return RangeRef(new Range(this->type, bw, min, max));
+   return Range(this->type, bw, min, max);
 }
 
-RangeRef Range::Eq(const RangeConstRef& other, bw_t _bw) const
+Range Range::Eq(const Range& other, bw_t _bw) const
 {
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
-   if(this->isAnti() && other->isAnti())
+   if(this->isAnti() && other.isAnti())
    {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
+      return Range(Regular, _bw, 0, 1);
    }
-   if(!this->isAnti() && !other->isAnti())
+   if(!this->isAnti() && !other.isAnti())
    {
-      if((l == Min) || (u == Max) || (other->l == Min) || (other->u == Max))
+      if((l == Min) || (u == Max) || (other.l == Min) || (other.u == Max))
       {
-         return RangeRef(new Range(Regular, _bw, 0, 1));
+         return Range(Regular, _bw, 0, 1);
       }
    }
-   bool areTheyEqual = !this->intersectWith(other)->isEmpty();
+   bool areTheyEqual = !this->intersectWith(other).isEmpty();
    bool areTheyDifferent = !((l == u) && this->isSameRange(other));
 
    if(areTheyEqual && areTheyDifferent)
    {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
+      return Range(Regular, _bw, 0, 1);
    }
    if(areTheyEqual && !areTheyDifferent)
    {
-      return RangeRef(new Range(Regular, _bw, 1, 1));
+      return Range(Regular, _bw, 1, 1);
    }
    if(!areTheyEqual && areTheyDifferent)
    {
-      return RangeRef(new Range(Regular, _bw, 0, 0));
+      return Range(Regular, _bw, 0, 0);
    }
 
    THROW_UNREACHABLE("condition unexpected");
-   return nullptr;
+   return *this;
 }
 
-RangeRef Range::Ne(const RangeConstRef& other, bw_t _bw) const
+Range Range::Ne(const Range& other, bw_t _bw) const
 {
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
-   if(this->isAnti() && other->isAnti())
+   if(this->isAnti() && other.isAnti())
    {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
+      return Range(Regular, _bw, 0, 1);
    }
-   if(!this->isAnti() && !other->isAnti())
+   if(!this->isAnti() && !other.isAnti())
    {
-      if((l == Min) || (u == Max) || (other->l == Min) || (other->u == Max))
+      if((l == Min) || (u == Max) || (other.l == Min) || (other.u == Max))
       {
-         return RangeRef(new Range(Regular, _bw, 0, 1));
+         return Range(Regular, _bw, 0, 1);
       }
    }
-   bool areTheyEqual = !this->intersectWith(other)->isEmpty();
+   bool areTheyEqual = !this->intersectWith(other).isEmpty();
    bool areTheyDifferent = !((l == u) && this->isSameRange(other));
    if(areTheyEqual && areTheyDifferent)
    {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
+      return Range(Regular, _bw, 0, 1);
    }
    if(areTheyEqual && !areTheyDifferent)
    {
-      return RangeRef(new Range(Regular, _bw, 0, 0));
+      return Range(Regular, _bw, 0, 0);
    }
    if(!areTheyEqual && areTheyDifferent)
    {
-      return RangeRef(new Range(Regular, _bw, 1, 1));
+      return Range(Regular, _bw, 1, 1);
    }
 
    THROW_UNREACHABLE("condition unexpected");
-   return nullptr;
+   return *this;
 }
 
-RangeRef Range::Ugt(const RangeConstRef& other, bw_t _bw) const
+Range Range::Ugt(const Range& other, bw_t _bw) const
 {
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
-   if(isAnti() || other->isAnti())
+   if(isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
+      return Range(Regular, _bw, 0, 1);
    }
 
    const auto a = this->getUnsignedMin();
    const auto b = this->getUnsignedMax();
-   const auto c = other->getUnsignedMin();
-   const auto d = other->getUnsignedMax();
+   const auto c = other.getUnsignedMin();
+   const auto d = other.getUnsignedMax();
    if(a > d)
    {
-      return RangeRef(new Range(Regular, _bw, 1, 1));
+      return Range(Regular, _bw, 1, 1);
    }
    if(c >= b)
    {
-      return RangeRef(new Range(Regular, _bw, 0, 0));
+      return Range(Regular, _bw, 0, 0);
    }
 
-   return RangeRef(new Range(Regular, _bw, 0, 1));
+   return Range(Regular, _bw, 0, 1);
 }
 
-RangeRef Range::Uge(const RangeConstRef& other, bw_t _bw) const
+Range Range::Uge(const Range& other, bw_t _bw) const
 {
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
-   if(isAnti() || other->isAnti())
+   if(isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
+      return Range(Regular, _bw, 0, 1);
    }
 
    const auto a = this->getUnsignedMin();
    const auto b = this->getUnsignedMax();
-   const auto c = other->getUnsignedMin();
-   const auto d = other->getUnsignedMax();
+   const auto c = other.getUnsignedMin();
+   const auto d = other.getUnsignedMax();
    if(a >= d)
    {
-      return RangeRef(new Range(Regular, _bw, 1, 1));
+      return Range(Regular, _bw, 1, 1);
    }
    if(c > b)
    {
-      return RangeRef(new Range(Regular, _bw, 0, 0));
+      return Range(Regular, _bw, 0, 0);
    }
 
-   return RangeRef(new Range(Regular, _bw, 0, 1));
+   return Range(Regular, _bw, 0, 1);
 }
 
-RangeRef Range::Ult(const RangeConstRef& other, bw_t _bw) const
+Range Range::Ult(const Range& other, bw_t _bw) const
 {
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
-   if(isAnti() || other->isAnti())
+   if(isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
+      return Range(Regular, _bw, 0, 1);
    }
 
    const auto a = this->getUnsignedMin();
    const auto b = this->getUnsignedMax();
-   const auto c = other->getUnsignedMin();
-   const auto d = other->getUnsignedMax();
+   const auto c = other.getUnsignedMin();
+   const auto d = other.getUnsignedMax();
    if(b < c)
    {
-      return RangeRef(new Range(Regular, _bw, 1, 1));
+      return Range(Regular, _bw, 1, 1);
    }
    if(d <= a)
    {
-      return RangeRef(new Range(Regular, _bw, 0, 0));
+      return Range(Regular, _bw, 0, 0);
    }
 
-   return RangeRef(new Range(Regular, _bw, 0, 1));
+   return Range(Regular, _bw, 0, 1);
 }
 
-RangeRef Range::Ule(const RangeConstRef& other, bw_t _bw) const
+Range Range::Ule(const Range& other, bw_t _bw) const
 {
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
-   if(isAnti() || other->isAnti())
+   if(isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
+      return Range(Regular, _bw, 0, 1);
    }
 
    const auto a = this->getUnsignedMin();
    const auto b = this->getUnsignedMax();
-   const auto c = other->getUnsignedMin();
-   const auto d = other->getUnsignedMax();
+   const auto c = other.getUnsignedMin();
+   const auto d = other.getUnsignedMax();
    if(b <= c)
    {
-      return RangeRef(new Range(Regular, _bw, 1, 1));
+      return Range(Regular, _bw, 1, 1);
    }
    if(d < a)
    {
-      return RangeRef(new Range(Regular, _bw, 0, 0));
+      return Range(Regular, _bw, 0, 0);
    }
 
-   return RangeRef(new Range(Regular, _bw, 0, 1));
+   return Range(Regular, _bw, 0, 1);
 }
 
-RangeRef Range::Sgt(const RangeConstRef& other, bw_t _bw) const
+Range Range::Sgt(const Range& other, bw_t _bw) const
 {
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
-   if(isAnti() || other->isAnti())
+   if(isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
+      return Range(Regular, _bw, 0, 1);
    }
 
    const auto a = this->getSignedMin();
    const auto b = this->getSignedMax();
-   const auto c = other->getSignedMin();
-   const auto d = other->getSignedMax();
+   const auto c = other.getSignedMin();
+   const auto d = other.getSignedMax();
    if(a > d)
    {
-      return RangeRef(new Range(Regular, _bw, 1, 1));
+      return Range(Regular, _bw, 1, 1);
    }
    if(c >= b)
    {
-      return RangeRef(new Range(Regular, _bw, 0, 0));
+      return Range(Regular, _bw, 0, 0);
    }
 
-   return RangeRef(new Range(Regular, _bw, 0, 1));
+   return Range(Regular, _bw, 0, 1);
 }
 
-RangeRef Range::Sge(const RangeConstRef& other, bw_t _bw) const
+Range Range::Sge(const Range& other, bw_t _bw) const
 {
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
-   if(isAnti() || other->isAnti())
+   if(isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
+      return Range(Regular, _bw, 0, 1);
    }
 
    const auto a = this->getSignedMin();
    const auto b = this->getSignedMax();
-   const auto c = other->getSignedMin();
-   const auto d = other->getSignedMax();
+   const auto c = other.getSignedMin();
+   const auto d = other.getSignedMax();
    if(a >= d)
    {
-      return RangeRef(new Range(Regular, _bw, 1, 1));
+      return Range(Regular, _bw, 1, 1);
    }
    if(c > b)
    {
-      return RangeRef(new Range(Regular, _bw, 0, 0));
+      return Range(Regular, _bw, 0, 0);
    }
 
-   return RangeRef(new Range(Regular, _bw, 0, 1));
+   return Range(Regular, _bw, 0, 1);
 }
 
-RangeRef Range::Slt(const RangeConstRef& other, bw_t _bw) const
+Range Range::Slt(const Range& other, bw_t _bw) const
 {
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
-   if(isAnti() || other->isAnti())
+   if(isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
+      return Range(Regular, _bw, 0, 1);
    }
 
    const auto a = this->getSignedMin();
    const auto b = this->getSignedMax();
-   const auto c = other->getSignedMin();
-   const auto d = other->getSignedMax();
+   const auto c = other.getSignedMin();
+   const auto d = other.getSignedMax();
    if(b < c)
    {
-      return RangeRef(new Range(Regular, _bw, 1, 1));
+      return Range(Regular, _bw, 1, 1);
    }
    if(d <= a)
    {
-      return RangeRef(new Range(Regular, _bw, 0, 0));
+      return Range(Regular, _bw, 0, 0);
    }
 
-   return RangeRef(new Range(Regular, _bw, 0, 1));
+   return Range(Regular, _bw, 0, 1);
 }
 
-RangeRef Range::Sle(const RangeConstRef& other, bw_t _bw) const
+Range Range::Sle(const Range& other, bw_t _bw) const
 {
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
-   if(isAnti() || other->isAnti())
+   if(isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
+      return Range(Regular, _bw, 0, 1);
    }
 
    const auto a = this->getSignedMin();
    const auto b = this->getSignedMax();
-   const auto c = other->getSignedMin();
-   const auto d = other->getSignedMax();
+   const auto c = other.getSignedMin();
+   const auto d = other.getSignedMax();
    if(b <= c)
    {
-      return RangeRef(new Range(Regular, _bw, 1, 1));
+      return Range(Regular, _bw, 1, 1);
    }
    if(d < a)
    {
-      return RangeRef(new Range(Regular, _bw, 0, 0));
+      return Range(Regular, _bw, 0, 0);
    }
 
-   return RangeRef(new Range(Regular, _bw, 0, 1));
+   return Range(Regular, _bw, 0, 1);
 }
 
-RangeRef Range::SMin(const RangeConstRef& other) const
+Range Range::SMin(const Range& other) const
 {
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
-   if(isAnti() || other->isAnti())
+   if(isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
 
    const auto thisMin = this->Slt(other, 1);
-   if(thisMin->isConstant())
+   if(thisMin.isConstant())
    {
-      return thisMin->getUnsignedMin() ? RangeRef(this->clone()) : RangeRef(other->clone());
+      return thisMin.getUnsignedMin() ? *this : other;
    }
-   const auto min = std::min({this->getSignedMin(), other->getSignedMin()});
-   const auto max = std::min({this->getSignedMax(), other->getSignedMax()});
-   return RangeRef(new Range(Regular, bw, min, max));
+   const auto min = std::min({this->getSignedMin(), other.getSignedMin()});
+   const auto max = std::min({this->getSignedMax(), other.getSignedMax()});
+   return Range(Regular, bw, min, max);
 }
 
-RangeRef Range::SMax(const RangeConstRef& other) const
+Range Range::SMax(const Range& other) const
 {
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
-   if(isAnti() || other->isAnti())
+   if(isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
 
    const auto thisMax = this->Sgt(other, 1);
-   if(thisMax->isConstant())
+   if(thisMax.isConstant())
    {
-      return thisMax->getUnsignedMin() ? RangeRef(this->clone()) : RangeRef(other->clone());
+      return thisMax.getUnsignedMin() ? *this : other;
    }
-   const auto min = std::max({this->getSignedMin(), other->getSignedMin()});
-   const auto max = std::max({this->getSignedMax(), other->getSignedMax()});
-   return RangeRef(new Range(Regular, bw, min, max));
+   const auto min = std::max({this->getSignedMin(), other.getSignedMin()});
+   const auto max = std::max({this->getSignedMax(), other.getSignedMax()});
+   return Range(Regular, bw, min, max);
 }
 
-RangeRef Range::UMin(const RangeConstRef& other) const
+Range Range::UMin(const Range& other) const
 {
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
-   if(isAnti() || other->isAnti())
+   if(isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
 
    const auto thisMin = this->Ult(other, 1);
-   if(thisMin->isConstant())
+   if(thisMin.isConstant())
    {
-      return thisMin->getUnsignedMin() ? RangeRef(this->clone()) : RangeRef(other->clone());
+      return thisMin.getUnsignedMin() ? *this : other;
    }
-   const auto min = std::min({this->getUnsignedMin(), other->getUnsignedMin()});
-   const auto max = std::min({this->getUnsignedMax(), other->getUnsignedMax()});
-   return RangeRef(new Range(Regular, bw, min, max));
+   const auto min = std::min({this->getUnsignedMin(), other.getUnsignedMin()});
+   const auto max = std::min({this->getUnsignedMax(), other.getUnsignedMax()});
+   return Range(Regular, bw, min, max);
 }
 
-RangeRef Range::UMax(const RangeConstRef& other) const
+Range Range::UMax(const Range& other) const
 {
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
-   if(isAnti() || other->isAnti())
+   if(isAnti() || other.isAnti())
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
 
    const auto thisMax = this->Ugt(other, 1);
-   if(thisMax->isConstant())
+   if(thisMax.isConstant())
    {
-      return thisMax->getUnsignedMin() ? RangeRef(this->clone()) : RangeRef(other->clone());
+      return thisMax.getUnsignedMin() ? *this : other;
    }
-   const auto min = std::max({this->getUnsignedMin(), other->getUnsignedMin()});
-   const auto max = std::max({this->getUnsignedMax(), other->getUnsignedMax()});
-   return RangeRef(new Range(Regular, bw, min, max));
+   const auto min = std::max({this->getUnsignedMin(), other.getUnsignedMin()});
+   const auto max = std::max({this->getUnsignedMax(), other.getUnsignedMax()});
+   return Range(Regular, bw, min, max);
 }
 
-RangeRef Range::abs() const
+Range Range::abs() const
 {
    if(isEmpty() || isUnknown())
    {
-      return RangeRef(this->clone());
+      return *this;
    }
    if(isAnti())
    {
@@ -2019,20 +1988,20 @@ RangeRef Range::abs() const
       {
          if(l == APInt::getSignedMinValue(bw))
          {
-            return RangeRef(new Range(Regular, bw, 0, APInt::getSignedMaxValue(bw)));
+            return Range(Regular, bw, 0, APInt::getSignedMaxValue(bw));
          }
-         return RangeRef(new Range(Anti, bw, APInt::getSignedMinValue(bw) + 1, -1));
+         return Range(Anti, bw, APInt::getSignedMinValue(bw) + 1, -1);
       }
       if(l < 0)
       {
          if(l == APInt::getSignedMinValue(bw))
          {
-            return RangeRef(new Range(Regular, bw, u + 1, APInt::getSignedMaxValue(bw)));
+            return Range(Regular, bw, u + 1, APInt::getSignedMaxValue(bw));
          }
          const auto min = std::min({-l, u});
-         return RangeRef(new Range(Anti, bw, APInt::getSignedMinValue(bw) + 1, min));
+         return Range(Anti, bw, APInt::getSignedMinValue(bw) + 1, min);
       }
-      return RangeRef(new Range(Anti, bw, APInt::getSignedMinValue(bw) + 1, l == 0 ? 0 : -1));
+      return Range(Anti, bw, APInt::getSignedMinValue(bw) + 1, l == 0 ? 0 : -1);
    }
 
    const auto smin = getSignedMin();
@@ -2041,57 +2010,57 @@ RangeRef Range::abs() const
    {
       if(smin == APInt::getSignedMinValue(bw))
       {
-         return RangeRef(new Range(Anti, bw, smin + 1, -smax - 1));
+         return Range(Anti, bw, smin + 1, -smax - 1);
       }
-      return RangeRef(new Range(Regular, bw, -smax, -smin));
+      return Range(Regular, bw, -smax, -smin);
    }
    if(smin < 0)
    {
       if(smin == APInt::getSignedMinValue(bw))
       {
-         return RangeRef(new Range(Anti, bw, smin + 1, -1));
+         return Range(Anti, bw, smin + 1, -1);
       }
       const auto max = std::max({smax, -smin});
-      return RangeRef(new Range(Regular, bw, 0, max));
+      return Range(Regular, bw, 0, max);
    }
-   return RangeRef(this->clone());
+   return *this;
 }
 
-RangeRef Range::negate() const
+Range Range::negate() const
 {
    if(isEmpty() || isUnknown())
    {
-      return RangeRef(this->clone());
+      return *this;
    }
    if(isAnti())
    {
-      return RangeRef(new Range(Anti, bw, -u, -l));
+      return Range(Anti, bw, -u, -l);
    }
-   return RangeRef(new Range(Regular, bw, -u, -l));
+   return Range(Regular, bw, -u, -l);
 }
 
 // Truncate
 // - if the source range is entirely inside max bit range, it is the result
 // - else, the result is the max bit range
-RangeRef Range::truncate(bw_t bitwidth) const
+Range Range::truncate(bw_t bitwidth) const
 {
    if(isEmpty())
    {
-      return RangeRef(new Range(Empty, bitwidth));
+      return Range(Empty, bitwidth);
    }
    if(isUnknown())
    {
-      return RangeRef(new Range(Unknown, bitwidth));
+      return Range(Unknown, bitwidth);
    }
    if(bitwidth == bw)
    {
-      return RangeRef(this->clone());
+      return *this;
    }
    const auto a = this->getSignedMin();
    const auto b = this->getSignedMax();
    if(isFullSet() || isAnti() || (b - a).abs() > APInt::getMaxValue(bitwidth))
    {
-      return RangeRef(new Range(Regular, bitwidth));
+      return Range(Regular, bitwidth);
    }
 
    const auto stmin = a.extOrTrunc(bitwidth, true);
@@ -2103,17 +2072,17 @@ RangeRef Range::truncate(bw_t bitwidth) const
       {
          if(stmax >= stmin)
          {
-            return RangeRef(new Range(Regular, bitwidth));
+            return Range(Regular, bitwidth);
          }
-         return RangeRef(new Range(Anti, bitwidth, stmax + 1, (stmin < 0 ? stmin : 0) - 1));
+         return Range(Anti, bitwidth, stmax + 1, (stmin < 0 ? stmin : 0) - 1);
       }
       if(stmin > 0) // underflow
       {
          if(stmax >= stmin)
          {
-            return RangeRef(new Range(Regular, bitwidth));
+            return Range(Regular, bitwidth);
          }
-         return RangeRef(new Range(Anti, bitwidth, stmax + 1, stmin - 1));
+         return Range(Anti, bitwidth, stmax + 1, stmin - 1);
       }
    }
 
@@ -2121,14 +2090,14 @@ RangeRef Range::truncate(bw_t bitwidth) const
    {
       if(a.sign() == 1)
       {
-         return RangeRef(new Range(Regular, bitwidth, stmax, stmin));
+         return Range(Regular, bitwidth, stmax, stmin);
       }
-      return RangeRef(new Range(Anti, bitwidth, stmax + 1, stmin - 1));
+      return Range(Anti, bitwidth, stmax + 1, stmin - 1);
    }
-   return RangeRef(new Range(Regular, bitwidth, stmin, stmax));
+   return Range(Regular, bitwidth, stmin, stmax);
 }
 
-RangeRef Range::sextOrTrunc(bw_t bitwidth) const
+Range Range::sextOrTrunc(bw_t bitwidth) const
 {
    if(bitwidth <= bw)
    {
@@ -2137,26 +2106,26 @@ RangeRef Range::sextOrTrunc(bw_t bitwidth) const
 
    if(isEmpty())
    {
-      return RangeRef(new Range(Empty, bitwidth));
+      return Range(Empty, bitwidth);
    }
    if(isUnknown())
    {
-      return RangeRef(new Range(Unknown, bitwidth));
+      return Range(Unknown, bitwidth);
    }
 
    const auto this_min = this->getSignedMin();
    const auto this_max = this->getSignedMax();
 
    const auto res = std::minmax({this_min.extOrTrunc(bitwidth, true), this_max.extOrTrunc(bitwidth, true)});
-   RangeRef sextRes(new Range(Regular, bitwidth, res.first, res.second));
-   if(sextRes->isFullSet())
+   Range sextRes(Regular, bitwidth, res.first, res.second);
+   if(sextRes.isFullSet())
    {
-      return RangeRef(new Range(Regular, bitwidth));
+      return Range(Regular, bitwidth);
    }
    return sextRes;
 }
 
-RangeRef Range::zextOrTrunc(bw_t bitwidth) const
+Range Range::zextOrTrunc(bw_t bitwidth) const
 {
    if(bitwidth <= bw)
    {
@@ -2165,31 +2134,31 @@ RangeRef Range::zextOrTrunc(bw_t bitwidth) const
 
    if(isEmpty())
    {
-      return RangeRef(new Range(Empty, bitwidth));
+      return Range(Empty, bitwidth);
    }
    if(isUnknown())
    {
-      return RangeRef(new Range(Unknown, bitwidth));
+      return Range(Unknown, bitwidth);
    }
    if(isAnti())
    {
       if(getUnsignedMax() < APInt::getMaxValue(bw))
       {
-         return RangeRef(new Range(Regular, bitwidth, u + 1, getUnsignedMax()));
+         return Range(Regular, bitwidth, u + 1, getUnsignedMax());
       }
-      return RangeRef(new Range(Regular, bitwidth, 0, APInt::getMaxValue(bw)));
+      return Range(Regular, bitwidth, 0, APInt::getMaxValue(bw));
    }
 
    if(this->getSignedMin() < 0 && this->getSignedMax() >= 0)
    {
-      return RangeRef(new Range(Regular, bitwidth, 0, APInt::getMaxValue(bw)));
+      return Range(Regular, bitwidth, 0, APInt::getMaxValue(bw));
    }
 
-   return RangeRef(new Range(Regular, bitwidth, this->getSignedMin().extOrTrunc(bw, false),
-                             this->getSignedMax().extOrTrunc(bw, false)));
+   return Range(Regular, bitwidth, this->getSignedMin().extOrTrunc(bw, false),
+                this->getSignedMax().extOrTrunc(bw, false));
 }
 
-RangeRef Range::intersectWith(const RangeConstRef& other) const
+Range Range::intersectWith(const Range& other) const
 {
 #ifdef DEBUG_RANGE_OP
    PRINT_MSG("intersectWith-this: " << *this << std::endl << "intersectWith-other: " << *other);
@@ -2198,92 +2167,92 @@ RangeRef Range::intersectWith(const RangeConstRef& other) const
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
 
-   if(!this->isAnti() && !other->isAnti())
+   if(!this->isAnti() && !other.isAnti())
    {
-      APInt res_l = getLower() > other->getLower() ? getLower() : other->getLower();
-      APInt res_u = getUpper() < other->getUpper() ? getUpper() : other->getUpper();
+      const auto& res_l = getLower() > other.getLower() ? getLower() : other.getLower();
+      const auto& res_u = getUpper() < other.getUpper() ? getUpper() : other.getUpper();
       if(res_u < res_l)
       {
-         return RangeRef(new Range(Empty, bw));
+         return Range(Empty, bw);
       }
 
-      return RangeRef(new Range(Regular, bw, res_l, res_u));
+      return Range(Regular, bw, res_l, res_u);
    }
-   if(this->isAnti() && !other->isAnti())
+   if(this->isAnti() && !other.isAnti())
    {
       auto antiRange = this->getAnti();
-      auto antil = antiRange->getLower();
-      auto antiu = antiRange->getUpper();
-      if(antil <= other->getLower())
+      const auto& antil = antiRange.getLower();
+      const auto& antiu = antiRange.getUpper();
+      if(antil <= other.getLower())
       {
-         if(other->getUpper() <= antiu)
+         if(other.getUpper() <= antiu)
          {
-            return RangeRef(new Range(Empty, bw));
+            return Range(Empty, bw);
          }
-         APInt res_l = other->getLower() > antiu ? other->getLower() : antiu + 1;
-         APInt res_u = other->getUpper();
-         return RangeRef(new Range(Regular, bw, res_l, res_u));
+         APInt res_l = other.getLower() > antiu ? other.getLower() : antiu + 1;
+         const auto& res_u = other.getUpper();
+         return Range(Regular, bw, res_l, res_u);
       }
-      if(antiu >= other->getUpper())
+      if(antiu >= other.getUpper())
       {
-         THROW_ASSERT(other->getLower() < antil, "");
-         APInt res_l = other->getLower();
-         APInt res_u = other->getUpper() < antil ? other->getUpper() : antil - 1;
-         return RangeRef(new Range(Regular, bw, res_l, res_u));
+         THROW_ASSERT(other.getLower() < antil, "");
+         const auto& res_l = other.getLower();
+         APInt res_u = other.getUpper() < antil ? other.getUpper() : antil - 1;
+         return Range(Regular, bw, res_l, res_u);
       }
-      if(other->getLower() == Min && other->getUpper() == Max)
+      if(other.getLower() == Min && other.getUpper() == Max)
       {
-         return RangeRef(this->clone());
+         return *this;
       }
-      if(antil > other->getUpper() || antiu < other->getLower())
+      if(antil > other.getUpper() || antiu < other.getLower())
       {
-         return RangeRef(other->clone());
+         return other;
       }
 
       // we approximate to the range of other
-      return RangeRef(other->clone());
+      return other;
    }
-   if(!this->isAnti() && other->isAnti())
+   if(!this->isAnti() && other.isAnti())
    {
-      auto antiRange = other->getAnti();
-      auto antil = antiRange->getLower();
-      auto antiu = antiRange->getUpper();
+      auto antiRange = other.getAnti();
+      const auto& antil = antiRange.getLower();
+      const auto& antiu = antiRange.getUpper();
       if(antil <= this->getLower())
       {
          if(this->getUpper() <= antiu)
          {
-            return RangeRef(new Range(Empty, bw));
+            return Range(Empty, bw);
          }
          APInt res_l = this->getLower() > antiu ? this->getLower() : antiu + 1;
-         APInt res_u = this->getUpper();
-         return RangeRef(new Range(Regular, bw, res_l, res_u));
+         const auto& res_u = this->getUpper();
+         return Range(Regular, bw, res_l, res_u);
       }
       if(antiu >= this->getUpper())
       {
          THROW_ASSERT(this->getLower() < antil, "");
-         APInt res_l = this->getLower();
+         const auto& res_l = this->getLower();
          APInt res_u = this->getUpper() < antil ? this->getUpper() : antil - 1;
-         return RangeRef(new Range(Regular, bw, res_l, res_u));
+         return Range(Regular, bw, res_l, res_u);
       }
       if(this->getLower() == Min && this->getUpper() == Max)
       {
-         return RangeRef(other->clone());
+         return other;
       }
       if(antil > this->getUpper() || antiu < this->getLower())
       {
-         return RangeRef(this->clone());
+         return *this;
       }
 
       // we approximate to the range of this
-      return RangeRef(this->clone());
+      return *this;
    }
 
    auto antiRange_a = this->getAnti();
-   auto antiRange_b = other->getAnti();
-   auto antil_a = antiRange_a->getLower();
-   auto antiu_a = antiRange_a->getUpper();
-   auto antil_b = antiRange_b->getLower();
-   auto antiu_b = antiRange_b->getUpper();
+   auto antiRange_b = other.getAnti();
+   auto antil_a = antiRange_a.getLower();
+   auto antiu_a = antiRange_a.getUpper();
+   auto antil_b = antiRange_b.getLower();
+   auto antiu_b = antiRange_b.getUpper();
    if(antil_a > antil_b)
    {
       std::swap(antil_a, antil_b);
@@ -2291,19 +2260,19 @@ RangeRef Range::intersectWith(const RangeConstRef& other) const
    }
    if(antil_b > (antiu_a + 1))
    {
-      return RangeRef(new Range(Anti, bw, antil_a, antiu_a));
+      return Range(Anti, bw, antil_a, antiu_a);
    }
    auto res_l = antil_a;
    auto res_u = antiu_a > antiu_b ? antiu_a : antiu_b;
    if(res_l == Min && res_u == Max)
    {
-      return RangeRef(new Range(Empty, bw));
+      return Range(Empty, bw);
    }
 
-   return RangeRef(new Range(Anti, bw, res_l, res_u));
+   return Range(Anti, bw, res_l, res_u);
 }
 
-RangeRef Range::unionWith(const RangeConstRef& other) const
+Range Range::unionWith(const Range& other) const
 {
 #ifdef DEBUG_RANGE_OP
    PRINT_MSG("unionWith-this: " << *this << std::endl << "unionWith-other: " << *other);
@@ -2311,104 +2280,104 @@ RangeRef Range::unionWith(const RangeConstRef& other) const
 
    if(this->isEmpty() || this->isUnknown())
    {
-      return RangeRef(other->clone());
+      return other;
    }
-   if(other->isEmpty() || other->isUnknown())
+   if(other.isEmpty() || other.isUnknown())
    {
-      return RangeRef(this->clone());
+      return *this;
    }
-   if(!this->isAnti() && !other->isAnti())
+   if(!this->isAnti() && !other.isAnti())
    {
-      APInt res_l = getLower() < other->getLower() ? getLower() : other->getLower();
-      APInt res_u = getUpper() > other->getUpper() ? getUpper() : other->getUpper();
-      return RangeRef(new Range(Regular, bw, res_l, res_u));
+      const auto& res_l = getLower() < other.getLower() ? getLower() : other.getLower();
+      const auto& res_u = getUpper() > other.getUpper() ? getUpper() : other.getUpper();
+      return Range(Regular, bw, res_l, res_u);
    }
-   if(this->isAnti() && !other->isAnti())
+   if(this->isAnti() && !other.isAnti())
    {
       auto antiRange = this->getAnti();
-      auto antil = antiRange->getLower();
-      auto antiu = antiRange->getUpper();
+      const auto& antil = antiRange.getLower();
+      const auto& antiu = antiRange.getUpper();
       THROW_ASSERT(antil != Min, "");
       THROW_ASSERT(antiu != Max, "");
-      if(antil > other->getUpper() || antiu < other->getLower())
+      if(antil > other.getUpper() || antiu < other.getLower())
       {
-         return RangeRef(this->clone());
+         return *this;
       }
-      if(antil > other->getLower() && antiu < other->getUpper())
+      if(antil > other.getLower() && antiu < other.getUpper())
       {
-         return RangeRef(new Range(Regular, bw));
+         return Range(Regular, bw);
       }
-      if(antil >= other->getLower() && antiu > other->getUpper())
+      if(antil >= other.getLower() && antiu > other.getUpper())
       {
-         return RangeRef(new Range(Anti, bw, other->getUpper() + 1, antiu));
+         return Range(Anti, bw, other.getUpper() + 1, antiu);
       }
-      if(antil < other->getLower() && antiu <= other->getUpper())
+      if(antil < other.getLower() && antiu <= other.getUpper())
       {
-         return RangeRef(new Range(Anti, bw, antil, other->getLower() - 1));
+         return Range(Anti, bw, antil, other.getLower() - 1);
       }
 
-      return RangeRef(new Range(Regular, bw)); // approximate to the full set
+      return Range(Regular, bw); // approximate to the full set
    }
-   if(!this->isAnti() && other->isAnti())
+   if(!this->isAnti() && other.isAnti())
    {
-      auto antiRange = other->getAnti();
-      auto antil = antiRange->getLower();
-      auto antiu = antiRange->getUpper();
+      auto antiRange = other.getAnti();
+      const auto& antil = antiRange.getLower();
+      const auto& antiu = antiRange.getUpper();
       THROW_ASSERT(antil != Min, "");
       THROW_ASSERT(antiu != Max, "");
       if(antil > this->getUpper() || antiu < this->getLower())
       {
-         return RangeRef(other->clone());
+         return other;
       }
       if(antil > this->getLower() && antiu < this->getUpper())
       {
-         return RangeRef(new Range(Regular, bw));
+         return Range(Regular, bw);
       }
       if(antil >= this->getLower() && antiu > this->getUpper())
       {
-         return RangeRef(new Range(Anti, bw, this->getUpper() + 1, antiu));
+         return Range(Anti, bw, this->getUpper() + 1, antiu);
       }
       if(antil < this->getLower() && antiu <= this->getUpper())
       {
-         return RangeRef(new Range(Anti, bw, antil, this->getLower() - 1));
+         return Range(Anti, bw, antil, this->getLower() - 1);
       }
 
-      return RangeRef(new Range(Regular, bw)); // approximate to the full set
+      return Range(Regular, bw); // approximate to the full set
    }
 
    auto antiRange_a = this->getAnti();
-   auto antiRange_b = other->getAnti();
-   auto antil_a = antiRange_a->getLower();
-   auto antiu_a = antiRange_a->getUpper();
+   auto antiRange_b = other.getAnti();
+   const auto& antil_a = antiRange_a.getLower();
+   const auto& antiu_a = antiRange_a.getUpper();
    THROW_ASSERT(antil_a != Min, "");
    THROW_ASSERT(antiu_a != Max, "");
-   auto antil_b = antiRange_b->getLower();
-   auto antiu_b = antiRange_b->getUpper();
+   const auto& antil_b = antiRange_b.getLower();
+   const auto& antiu_b = antiRange_b.getUpper();
    THROW_ASSERT(antil_b != Min, "");
    THROW_ASSERT(antiu_b != Max, "");
    if(antil_a > antiu_b || antiu_a < antil_b)
    {
-      return RangeRef(new Range(Regular, bw));
+      return Range(Regular, bw);
    }
    if(antil_a > antil_b && antiu_a < antiu_b)
    {
-      return RangeRef(this->clone());
+      return *this;
    }
    if(antil_b > antil_a && antiu_b < antiu_a)
    {
-      return RangeRef(this->clone());
+      return *this;
    }
    if(antil_a >= antil_b && antiu_b <= antiu_a)
    {
-      return RangeRef(new Range(Anti, bw, antil_a, antiu_b));
+      return Range(Anti, bw, antil_a, antiu_b);
    }
    if(antil_b >= antil_a && antiu_a <= antiu_b)
    {
-      return RangeRef(new Range(Anti, bw, antil_b, antiu_a));
+      return Range(Anti, bw, antil_b, antiu_a);
    }
 
    THROW_UNREACHABLE("unsupported condition");
-   return nullptr;
+   return *this;
 }
 
 void Range::print(std::ostream& OS) const

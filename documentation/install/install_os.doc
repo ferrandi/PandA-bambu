@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2023-2024 Politecnico di Milano
+ *              Copyright (c) 2023-2026 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,12 +32,22 @@
 */
 /*!
   \page install_supportedos Supported Operating Systems
-  PandA supports the following operating systems on x86 and x86-64 processor architectures.
-  - Red Hat Enterprise Workstation/Server 7.6; 8.3 (64-bit)
-  - CentOS 7 (64-bit)
-  - Ubuntu Linux 18.04.1 LTS; 18.04.2 LTS, 18.04.3 LTS; 18.04.4 LTS; 18.04.5 LTS; 18.04.6 LTS; and 20.04 LTS, 20.04.1 LTS, 20.04.2 LTS, 20.04.3 LTS, 20.04.4 LTS; 20.04.5 LTS; 22.04 LTS and 22.04.1 LTS (64-bit)
-  - Debian Linux 9, 10, 11 (64-bit)
+  PandA is developed and validated primarily on 64-bit Linux systems.
 
-  Operating systems not reported in the list above may still be supported but have not been tested.
+  This page intentionally avoids a frozen distro/version matrix: exact host distributions change over time more quickly than the documentation, while the practical requirement is a recent Linux environment with the tools needed by the selected build flow.
+
+  The most stable choices are:
+  - a recent Debian- or Ubuntu-based distribution;
+  - a recent Red Hat, Rocky, AlmaLinux, or Fedora-derived distribution;
+  - a containerized Linux environment built from the recipes shipped in the repository.
+
+  \section install_supportedos_notes Notes
+  Keep the following in mind:
+  - CMake is the preferred build system for current development flows;
+  - Autotools remains available for compatibility, but should not be treated as the default path for new instructions;
+  - synthesis, simulation, and FPGA back-end flows may require additional vendor tools beyond the base host OS;
+  - if host-package availability is a concern, prefer the container-based workflow described in \ref install_docker.
+
+  Operating systems not listed above may still work, but they should be treated as best-effort configurations unless they are covered by current CI or actively maintained developer environments.
 
 */

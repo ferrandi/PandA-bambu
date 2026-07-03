@@ -1,11 +1,15 @@
-#!/bin/bash
-set -e
+#!/bin/sh -e
 
-working_dir=$1
-script=$2
+WORKDIR="$1"
 shift
-shift
+CMD="$@"
 
-cd $working_dir
+export J="${J:-1}"
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
+echo "Parallel jobs    : ${J}"
+echo "Parallel threads : ${OMP_NUM_THREADS}"
+echo "Working directory: ${WORKDIR}"
+echo "User command line: ${CMD}"
 
-./$script $@
+cd "${WORKDIR}"
+eval "${CMD}"

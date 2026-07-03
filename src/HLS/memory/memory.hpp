@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -49,25 +49,42 @@
 #include <map>
 #include <string>
 
-/**
- * @name forward declarations
- */
-//@{
 REF_FORWARD_DECL(application_manager);
-CONSTREF_FORWARD_DECL(tree_manager);
+CONSTREF_FORWARD_DECL(ir_manager);
 REF_FORWARD_DECL(memory);
 REF_FORWARD_DECL(memory_symbol);
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(structural_object);
-//@}
 class xml_element;
 
 class memory
 {
+ public:
+   /**
+    * Memory access information for OMP processes
+    * OMP functions memory is addressed as follows:
+    * MSB | ... | 1 | omp lambda id | ... | proc id | var addr | LSB
+    */
+   struct OMPAllocationInfo
+   {
+      // Bitsize of the OMP process memory space
+      unsigned long long int proc_addr_bitsize;
+      // Bitsize of the OMP process id
+      unsigned long long int proc_id_bitsize;
+
+      unsigned fork_number;
+
+      OMPAllocationInfo(unsigned long long int _addr_bitsize, unsigned long long int _id_bitsize,
+                        unsigned int _fork_number)
+          : proc_addr_bitsize(_addr_bitsize), proc_id_bitsize(_id_bitsize), fork_number(_fork_number)
+      {
+      }
+   };
+
  private:
-   /// data-structure containing tree information
-   const tree_managerConstRef TreeM;
+   /// Data structure containing IR information.
+   const ir_managerConstRef IRM;
 
    /// set of variables allocated outside the top module
    std::map<unsigned int, memory_symbolRef> external;
@@ -102,13 +119,16 @@ class memory
    /// store if a given variable is accessed always with the same data_size or not
    std::map<unsigned int, unsigned int> same_data_size_accesses;
 
+   /// store the size of a SDS memory
+   std::map<unsigned int, unsigned long long> same_data_size_value;
+
    /// ssa_names assigned to a given memory variable
    std::map<unsigned int, CustomOrderedSet<unsigned int>> source_values;
 
-   /// parm_decl that has to be copied from the caller
+   /// argument_val_node that has to be copied from the caller
    CustomOrderedSet<unsigned int> parm_decl_copied;
 
-   /// parm_decl storage has to be initialized from the formal parameter
+   /// argument_val_node storage has to be initialized from the formal parameter
    CustomOrderedSet<unsigned int> parm_decl_stored;
 
    /// actual parameter that has to be loaded from a stored value
@@ -193,23 +213,29 @@ class memory
 
    bool enable_hls_bit_value;
 
+   CustomMap<unsigned int, OMPAllocationInfo> omp_allocation_info;
+
+   /// the position in an address that specifies if it is internal to the lambda
+   long long unsigned root_space_alignment;
+
+   /// the starting point of the address that specifies the omp lambda id
+   long long unsigned omp_lambda_page_id_start;
+
+   /// the end point of the address that specifies the omp lambda id
+   long long unsigned omp_lambda_page_id_end;
+
  public:
-   /**
-    * Constructor
-    */
-   memory(const tree_managerConstRef TreeM, unsigned long long int off_base_address, unsigned int max_bram,
+   memory(const ir_managerConstRef IRM, unsigned long long int off_base_address, unsigned int max_bram,
           bool null_pointer_check, bool initial_internal_address_p, unsigned long long initial_internal_address,
           const unsigned int& _bus_addr_bitsize);
 
-   /**
-    * Destructor
-    */
-   virtual ~memory();
+   virtual ~memory() = default;
 
-   static memoryRef create_memory(const ParameterConstRef _parameters, const tree_managerConstRef _TreeM,
-                                  unsigned long long int _off_base_address, unsigned int max_bram,
-                                  bool _null_pointer_check, bool initial_internal_address_p,
-                                  unsigned int initial_internal_address, const unsigned int& _address_bitsize);
+   static std::unique_ptr<memory> create_memory(const ParameterConstRef _parameters, const ir_managerConstRef _IRM,
+                                                unsigned long long int _off_base_address, unsigned int max_bram,
+                                                bool _null_pointer_check, bool initial_internal_address_p,
+                                                unsigned int initial_internal_address,
+                                                const unsigned int& _address_bitsize);
 
    /**
     * Return variables allocated out of the top module
@@ -299,8 +325,9 @@ class memory
     * set if a variable is always accessed with the same data size or not
     * @param var is the variable id
     * @param value is true when the variable is always accessed with the same data size or false otherwise
+    * @param size is the size in case of value is true
     */
-   void set_sds_var(unsigned int var, bool value);
+   void set_sds_var(unsigned int var, bool value, unsigned long long size);
 
    /**
     * add a value to the set of values written in a given memory variable
@@ -360,6 +387,12 @@ class memory
     */
    bool has_sds_var(unsigned int var) const;
 
+   /**
+    * @brief get_sds_var_size return the size of the sds var
+    * @param var is the sds var
+    * @return return the size of the sds var
+    */
+   unsigned long long get_sds_var_size(unsigned int var) const;
    /**
     * Test if a variable is into the set of interface registers
     */
@@ -465,22 +498,22 @@ class memory
    bool has_base_address(unsigned int var) const;
 
    /**
-    * return true in case the parm_decl parameter has to be copied from the caller
+    * return true in case the argument_val_node parameter has to be copied from the caller
     */
    bool is_parm_decl_copied(unsigned int var) const;
 
    /**
-    * add a parm_decl to the set of parm_decl written
+    * add a argument_val_node to the set of argument_val_node written
     */
    void add_parm_decl_copied(unsigned int var);
 
    /**
-    * return true in case the parm_decl parameter has to be initialized from the formal value
+    * return true in case the argument_val_node parameter has to be initialized from the formal value
     */
    bool is_parm_decl_stored(unsigned int var) const;
 
    /**
-    * add a parm_decl to the set of parm_decl that has to be initialized
+    * add a argument_val_node to the set of argument_val_node that has to be initialized
     */
    void add_parm_decl_stored(unsigned int var);
 
@@ -815,7 +848,7 @@ class memory
    unsigned int count_non_private_internal_symbols() const;
 
    /// return true in case the current memory object and the passed one are different
-   bool notEQ(refcount<memory> ref) const;
+   bool notEQ(const std::unique_ptr<memory>& ref) const;
 
    void set_enable_hls_bit_value(bool value)
    {
@@ -826,8 +859,40 @@ class memory
    {
       return enable_hls_bit_value;
    }
+
+   void set_omp_allocation_info(unsigned int omp_func, const OMPAllocationInfo& info);
+
+   const OMPAllocationInfo& get_omp_allocation_info(unsigned int omp_func) const;
+
+   void set_root_space_alignment(long long unsigned value)
+   {
+      root_space_alignment = value;
+   }
+
+   long long unsigned get_root_space_alignment()
+   {
+      return root_space_alignment;
+   }
+
+   void set_fork_page_id_start(long long unsigned value)
+   {
+      omp_lambda_page_id_start = value;
+   }
+
+   long long unsigned get_fork_page_id_start()
+   {
+      return omp_lambda_page_id_start;
+   }
+
+   void set_fork_page_id_end(long long unsigned value)
+   {
+      omp_lambda_page_id_end = value;
+   }
+
+   long long unsigned get_fork_page_id_end()
+   {
+      return omp_lambda_page_id_end;
+   }
 };
-/// refcount definition of the class
-using memoryRef = refcount<memory>;
 
 #endif

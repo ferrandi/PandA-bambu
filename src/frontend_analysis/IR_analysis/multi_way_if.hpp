@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -35,9 +35,6 @@
  * @brief Analysis step rebuilding multi-way if.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef MULTI_WAY_IF_HPP
@@ -47,16 +44,12 @@
 #include "function_frontend_flow_step.hpp"
 
 #include "refcount.hpp"
-/**
- * @name forward declarations
- */
-//@{
+
 REF_FORWARD_DECL(bloc);
-class statement_list;
-REF_FORWARD_DECL(tree_manager);
-REF_FORWARD_DECL(tree_manipulation);
-REF_FORWARD_DECL(tree_node);
-//@}
+class statement_list_node;
+REF_FORWARD_DECL(ir_manager);
+REF_FORWARD_DECL(ir_manipulation);
+REF_FORWARD_DECL(ir_node);
 
 /**
  * Structure the original short circuit
@@ -65,42 +58,21 @@ class multi_way_if : public FunctionFrontendFlowStep
 {
  private:
    /// The statement list of the analyzed function
-   statement_list* sl;
+   statement_list_node* sl;
 
-   /// The tree manager
-   tree_managerRef TM;
+   /// The IR manager
+   ir_managerRef TM;
 
-   /// The tree manipulation
-   tree_manipulationRef tree_man;
+   /// The IR manipulation
+   ir_manipulationRef ir_man;
 
    /// Modified file
    bool bb_modified;
 
    /**
-    * Merge two basic blocks both ending with gimple_cond_K
-    * @param pred_bb is the first basic block
-    * @param curr_bb is the second basic block
-    */
-   void MergeCondCond(const blocRef& pred_bb, const blocRef& curr_bb);
-
-   /**
-    * Build the gimple_multi_way_if by mergin a gimple_cond with a gimple_multi_way_if
-    * @param pred_bb is the basic block containing the gimple_cond
-    * @param second_bb is the basic block containg the gimple_multi_way_if
-    */
-   void MergeCondMulti(const blocRef& pred_bb, const blocRef& curr_bb);
-
-   /**
-    * Merge a gimple_cond in a gimple_multi_way_if
-    * @param pred_bb is the basic block containing the gimple_multi_way_if
-    * @param curr_bb is the basic block containing the gimple_cond
-    */
-   void MergeMultiCond(const blocRef& pred_bb, const blocRef& curr_bb);
-
-   /**
-    * Merge two gimple_multi_way_if in a single one
-    * @param pred_bb is the basic block containing the first gimple_multi_way_if
-    * @param curr_bb is the basic block containing the second gimple multi_way_if
+    * Merge two multi_way_if_stmt in a single one
+    * @param pred_bb is the basic block containing the first multi_way_if_stmt
+    * @param curr_bb is the basic block containing the second multi_way_if_stmt
     */
    void MergeMultiMulti(const blocRef& pred_bb, const blocRef& curr_bb);
 
@@ -118,43 +90,17 @@ class multi_way_if : public FunctionFrontendFlowStep
     */
    void FixCfg(const blocRef& pred_bb, const blocRef& succ_bb);
 
-   /**
-    * Return the set of analyses in relationship with this design step
-    * @param relationship_type is the type of relationship to be considered
-    */
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
-   /**
-    * Constructor.
-    * @param Param is the set of the parameters
-    * @param AppM is the application manager
-    * @param function_id is the identifier of the function
-    * @param DesignFlowManagerConstRef is the design flow manager
-    */
    multi_way_if(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id,
-                const DesignFlowManagerConstRef design_flow_manager);
+                const DesignFlowManager& design_flow_manager);
 
-   /**
-    *  Destructor
-    */
-   ~multi_way_if() override;
-
-   /**
-    * Restructures the unstructured code
-    */
    DesignFlowStep_Status InternalExec() override;
 
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
    void Initialize() override;
 
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
    bool HasToBeExecuted() const override;
 };
 #endif

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2021-2024 Politecnico di Milano
+ *              Copyright (C) 2021-2026 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -64,6 +64,12 @@
       return func##f(a, b);           \
    }
 
+#define F_TEST_IF(func)               \
+   FLOAT func##f_test(int a, FLOAT b) \
+   {                                  \
+      return func##f(a, b);           \
+   }
+
 #define F_TEST_FIP(func)                \
    FLOAT func##f_test(FLOAT a, int* pb) \
    {                                    \
@@ -92,6 +98,12 @@
 
 #define F_TEST_FI(func)              \
    FLOAT func##_test(FLOAT a, int b) \
+   {                                 \
+      return func(a, b);             \
+   }
+
+#define F_TEST_IF(func)              \
+   FLOAT func##_test(int a, FLOAT b) \
    {                                 \
       return func(a, b);             \
    }
@@ -127,6 +139,9 @@ F_TEST_F(ceil)
 F_TEST_FF(copysign)
 F_TEST_F(cos)
 F_TEST_F(cosh)
+F_TEST_FF(fdim)
+F_TEST_FF(fmax)
+F_TEST_FF(fmin)
 F_TEST_F(erf)
 F_TEST_F(erfc)
 F_TEST_F(exp)
@@ -137,40 +152,30 @@ F_TEST_FF(fmod)
 I_MULTITEST_F(fpclassify)
 F_TEST_FIP(frexp)
 
-FLOAT
-#if TEST_FLOAT
-gammaf_test
-#else
-gamma_test
-#endif
-    (FLOAT a, int* pb)
-{
-   signgam = 0;
-   FLOAT res;
-   res = FUNC(gamma)(a);
-   *pb = signgam;
-   return res;
-}
-
 F_TEST_FF(hypot)
 I_TEST_F(ilogb)
 I_MULTITEST_F(isfinite)
 I_MULTITEST_F(isnormal)
+F_TEST_F(j0)
+F_TEST_F(j1)
+F_TEST_IF(jn)
 F_TEST_FI(ldexp)
 
 FLOAT
 #if TEST_FLOAT
-lgammaf_test
+lgammaf_r_test
 #else
-lgamma_test
+lgamma_r_test
 #endif
     (FLOAT a, int* pb)
 {
-   signgam = 0;
-   FLOAT res;
-   res = FUNC(lgamma)(a);
-   *pb = signgam;
-   return res;
+   return
+#if TEST_FLOAT
+       lgammaf_r
+#else
+       lgamma_r
+#endif
+       (a, pb);
 }
 
 F_TEST_F(log)
@@ -189,6 +194,7 @@ modf_test
    return FUNC(modf)(a, pb);
 }
 
+F_TEST_FF(nextafter)
 F_TEST_FF(pow)
 F_TEST_FF(remainder)
 F_TEST_F(rint)

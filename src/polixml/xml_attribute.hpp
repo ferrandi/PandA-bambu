@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -35,41 +35,26 @@
  * @brief
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef XML_ATTRIBUTE_HPP
 #define XML_ATTRIBUTE_HPP
 
-/// STD include
-#include <string>
-
-/// STL include
 #include "custom_map.hpp"
-#include <list>
-
-/// Utility include
 #include "refcount.hpp"
-#include <cassert>
-
-/// XML include
 #include "xml_node.hpp"
 
-/**
- * @name forward declarations
- */
-//@{
+#include <cassert>
+#include <list>
+#include <string>
+
 REF_FORWARD_DECL(xml_attribute);
-//@}
 
 class xml_attribute : public xml_node
 {
    std::string at_value;
 
  public:
-   /// constructor
    explicit xml_attribute(const std::string& _name) : xml_node(_name)
    {
    }
@@ -78,10 +63,12 @@ class xml_attribute : public xml_node
     * Print the class.
     * @param os is the stream.
     * @param formatted when true the xml is formatted in human readable way.
-    * @param pp is the pretty print helper.
+    * @param pretty_printer is the pretty print helper.
     */
-   void print(std::ostream& os, bool, simple_indent*) const override
+   void print(std::ostream& os, bool formatted, simple_indent* pretty_printer) const override
    {
+      static_cast<void>(formatted);
+      static_cast<void>(pretty_printer);
       std::string escaped(at_value);
       convert_unescaped(escaped);
       /// replace '\n' character with the escaped version "\\n"
@@ -103,7 +90,7 @@ class xml_attribute : public xml_node
    }
    /**
     * Set the value of this attribute.
-    * @param The attribute's value.
+    * @param value The attribute's value.
     */
    void set_value(const std::string& value)
    {
@@ -169,8 +156,8 @@ struct attribute_sequence
          return a_map.find(name)->second.get();
       }
    }
-   /** Remove the attribute with this name.
-    * @param name The name of the attribute to be removed
+   /* Remove the attribute with this name.
+    * name is the attribute to be removed.
     */
    /*void remove_attribute(const std::string& name)
    {
@@ -182,17 +169,13 @@ struct attribute_sequence
       }
    }*/
 
-   /** Obtain the list of attributes for this element.
-    * @returns The list of attributes.
-    */
+   /// Obtain the list of attributes for this element.
    attribute_list get_attributes()
    {
       return a_list;
    }
 
-   /** Obtain the list of attributes for this element. Constant version.
-    * @returns The list of attributes.
-    */
+   /// Obtain the list of attributes for this element. Constant version.
    const attribute_list& get_attributes() const
    {
       return a_list;

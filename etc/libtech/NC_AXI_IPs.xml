@@ -1,0 +1,1152 @@
+<?xml version="1.0"?>
+<technology>
+  <library>
+    <name>STD</name>
+    <cell>
+      <name>MinimalIOBAdapter</name>
+      <circuit>
+        <module_o id="MinimalIOBAdapter">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="MinimalIOBAdapter"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_input" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_oe_ram" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_we_ram" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_addr_ram" dir="IN" is_memory="1" is_slave="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_Wdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_data_ram_size" dir="IN" is_memory="1" is_slave="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_tag" dir="IN" is_memory="1" is_slave="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_back_pressure" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="M_DataRdy" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="M_Rdata_ram" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="M_back_pressure" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="M_tag" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="dirty" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="flush" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="valid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="addr" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="wdata" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="wstrb" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="rdata" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="ready" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality
+            LIBRARY="MinimalIOBAdapter Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size Mout_tag M_Rdata_ram M_tag addr wdata wstrb rdata"
+            VERILOG_PROVIDED="
+reg waiting_state;
+wire waiting_state_next;
+reg flush_reg;
+reg done_reg;
+wire done_reg_next;
+reg M_DataRdy_reg_old;
+wire M_DataRdy_reg;
+reg M_back_pressure_reg_old;
+reg [BITSIZE_M_Rdata_ram -1 : 0] M_Rdata_ram_reg_old;
+wire [BITSIZE_M_Rdata_ram -1 : 0] M_Rdata_ram_reg;
+reg [BITSIZE_Mout_addr_ram -1 : 0] Mout_addr_ram_reg_old;
+wire [BITSIZE_Mout_addr_ram -1 : 0] Mout_addr_ram_reg;
+reg [BITSIZE_Mout_Wdata_ram -1 : 0] Mout_Wdata_ram_reg_old;
+wire [BITSIZE_Mout_Wdata_ram -1 : 0] Mout_Wdata_ram_reg;
+reg [BITSIZE_Mout_data_ram_size -1 : 0] Mout_data_ram_size_reg_old;
+wire [BITSIZE_Mout_data_ram_size -1 : 0] Mout_data_ram_size_reg;
+reg [BITSIZE_Mout_tag -1 :0] Mout_tag_reg;
+wire [BITSIZE_Mout_tag -1 :0] Mout_tag_reg_next;
+             
+always @(posedge clock) 
+begin
+  if(1RESET_VALUE)
+  begin
+    waiting_state &lt;= 0;
+    flush_reg &lt;= 0;
+    done_reg &lt;= 0;
+    Mout_tag_reg &lt;= 0;
+    Mout_addr_ram_reg_old &lt;= 0;
+    Mout_Wdata_ram_reg_old &lt;= 0;
+    Mout_data_ram_size_reg_old &lt;= 0;
+    M_DataRdy_reg_old &lt;= 0;
+    M_Rdata_ram_reg_old &lt;= 0;
+    M_back_pressure_reg_old &lt;= 0;
+  end
+  else
+  begin
+    waiting_state &lt;= waiting_state_next;
+    flush_reg &lt;= dirty;
+    done_reg &lt;= done_reg_next;
+    Mout_tag_reg &lt;= Mout_tag_reg_next;
+    Mout_addr_ram_reg_old &lt;= Mout_addr_ram_reg;
+    Mout_Wdata_ram_reg_old &lt;= Mout_Wdata_ram_reg;
+    Mout_data_ram_size_reg_old &lt;= Mout_data_ram_size_reg;
+    M_DataRdy_reg_old &lt;= M_DataRdy_reg;
+    M_Rdata_ram_reg_old &lt;= M_Rdata_ram_reg;
+    M_back_pressure_reg_old &lt;= M_back_pressure;
+  end 
+end
+
+assign flush = flush_reg &amp;&amp; done_reg;
+assign done = done_reg &amp;&amp; !dirty;
+assign done_reg_next = done_input || (done_reg &amp;&amp; dirty);
+assign waiting_state_next = (waiting_state &amp;&amp; !ready) || (!waiting_state &amp;&amp; (Mout_oe_ram || Mout_we_ram) &amp;&amp; !M_back_pressure);
+
+assign M_tag = Mout_tag_reg;
+assign M_Rdata_ram = M_DataRdy_reg ? M_Rdata_ram_reg : {BITSIZE_M_Rdata_ram{1&apos;b0}};
+assign M_DataRdy = M_DataRdy_reg;
+
+assign Mout_tag_reg_next = (M_back_pressure || (waiting_state &amp;&amp; !ready)) ? Mout_tag_reg : Mout_tag;
+assign M_DataRdy_reg = M_back_pressure_reg_old ? M_DataRdy_reg_old : ready;
+assign M_Rdata_ram_reg = M_back_pressure_reg_old ? M_Rdata_ram_reg_old : rdata;
+
+assign Mout_addr_ram_reg = (waiting_state &amp;&amp; !ready) ? Mout_addr_ram_reg_old : Mout_addr_ram;
+assign Mout_Wdata_ram_reg = (waiting_state &amp;&amp; !ready) ? Mout_Wdata_ram_reg_old : Mout_Wdata_ram;
+assign Mout_data_ram_size_reg = (waiting_state &amp;&amp; !ready) ? Mout_data_ram_size_reg_old :  Mout_data_ram_size;
+
+assign addr = Mout_addr_ram_reg[BITSIZE_Mout_addr_ram - 1:$clog2(BITSIZE_Mout_Wdata_ram / 8)];
+assign wdata = Mout_Wdata_ram_reg;
+assign valid = (Mout_oe_ram || Mout_we_ram) &amp;&amp; !M_back_pressure &amp;&amp; (!waiting_state || (waiting_state &amp;&amp; ready));
+assign wstrb = {BITSIZE_wstrb{Mout_we_ram}} &amp; ((1 &lt;&lt; (Mout_data_ram_size_reg >> 3)) - 1);
+assign Mout_back_pressure = M_back_pressure | ((Mout_oe_ram || Mout_we_ram) &amp;&amp; waiting_state);"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>MinimalAXI4Adapter</name>
+      <circuit>
+        <module_o id="MinimalAXI4Adapter">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <parameter name="BURST_TYPE">0</parameter>
+          <structural_type_descriptor id_type="MinimalAXI4Adapter"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_oe_ram" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_we_ram" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_addr_ram" dir="IN" is_memory="1" is_slave="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_Wdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_data_ram_size" dir="IN" is_memory="1" is_slave="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_tag" dir="IN" is_memory="1" is_slave="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_back_pressure" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="M_DataRdy" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="M_Rdata_ram" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="M_back_pressure" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="M_tag" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_arid" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_araddr" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_arlen" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_arsize" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
+          </port_o>
+          <port_o id="m_axi_arburst" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="m_axi_arlock" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_arcache" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="m_axi_arprot" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
+          </port_o>
+          <port_o id="m_axi_arqos" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="m_axi_arregion" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="m_axi_aruser" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_arvalid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_arready" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_rid" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_rdata" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_rresp" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="m_axi_rlast" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_rvalid" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_rready" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_awid" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_awaddr" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_awlen" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_awsize" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
+          </port_o>
+          <port_o id="m_axi_awburst" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="m_axi_awlock" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_awcache" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="m_axi_awprot" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
+          </port_o>
+          <port_o id="m_axi_awqos" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="m_axi_awregion" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="m_axi_awuser" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_awvalid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_awready" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_wdata" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_wstrb" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_wlast" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_wvalid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_wready" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_wuser" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_bid" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_bresp" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="m_axi_bvalid" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_bready" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality
+            LIBRARY="MinimalAXI4Adapter BURST_TYPE Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size Mout_tag M_Rdata_ram M_tag m_axi_arid m_axi_araddr m_axi_arlen m_axi_arsize m_axi_arburst m_axi_arcache m_axi_arprot m_axi_arqos m_axi_arregion m_axi_aruser m_axi_rid m_axi_rdata m_axi_rresp m_axi_awid m_axi_awaddr m_axi_awlen m_axi_awsize m_axi_awburst m_axi_awcache m_axi_awprot m_axi_awqos m_axi_awregion m_axi_awuser m_axi_wdata m_axi_wstrb m_axi_wuser m_axi_bid m_axi_bresp" VERILOG_PROVIDED="
+assign m_axi_arlen = 0;
+assign m_axi_arburst = BURST_TYPE;
+assign m_axi_arlock = 0;
+assign m_axi_arcache = 0;
+assign m_axi_arprot = 0;
+assign m_axi_arqos = 0;
+assign m_axi_awlen = 0;
+assign m_axi_awburst = BURST_TYPE;
+assign m_axi_awlock = 0;
+assign m_axi_awcache = 0;
+assign m_axi_awprot = 0;
+assign m_axi_awqos = 0;
+assign m_axi_wlast = 1;
+
+`ifndef _SIM_HAVE_CLOG2
+  `define CLOG2(x) \
+    (x &lt;= 2) ? 1 : \
+    (x &lt;= 4) ? 2 : \
+    (x &lt;= 8) ? 3 : \
+    (x &lt;= 16) ? 4 : \
+    (x &lt;= 32) ? 5 : \
+    (x &lt;= 64) ? 6 : \
+    (x &lt;= 128) ? 7 : \
+    -1
+`endif
+
+wire [2:0] size_next;
+
+generate
+  `ifdef _SIM_HAVE_CLOG2
+    assign size_next = $clog2(Mout_data_ram_size >> 3);
+  `else
+    assign size_next = `CLOG2(Mout_data_ram_size >> 3);
+  `endif
+endgenerate
+
+reg Mout_back_pressure_reg;
+reg double_answer_first;
+wire double_answer_first_next;
+reg double_answer_second;
+wire double_answer_second_next;
+
+reg m_axi_awvalid_reg, m_axi_awvalid_next;
+reg m_axi_wvalid_reg, m_axi_wvalid_next;
+reg m_axi_arvalid_reg, m_axi_arvalid_next;
+
+always @(*)
+begin
+  Mout_back_pressure_reg = 0;
+  if(m_axi_awvalid_reg &amp;&amp; !m_axi_awready)
+  begin
+    Mout_back_pressure_reg = 1;
+  end
+  else if(m_axi_wvalid_reg &amp;&amp; !m_axi_wready)
+  begin
+    Mout_back_pressure_reg = 1;
+  end
+  else if(m_axi_arvalid_reg &amp;&amp; !m_axi_arready)
+  begin
+    Mout_back_pressure_reg = 1;
+  end
+end
+
+assign Mout_back_pressure = Mout_back_pressure_reg;
+
+reg M_back_pressure_old;
+reg [BITSIZE_M_tag-1:0] m_axi_bid_reg;
+wire [BITSIZE_M_tag-1:0] m_axi_bid_reg_next;
+reg [BITSIZE_M_tag-1:0] m_axi_rid_reg;
+wire [BITSIZE_M_tag-1:0] m_axi_rid_reg_next;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    M_back_pressure_old &lt;= 0;
+  end
+  else
+  begin
+    M_back_pressure_old &lt;= M_back_pressure;
+  end
+end
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    m_axi_bid_reg &lt;= 0;
+    m_axi_rid_reg &lt;= 0;
+  end
+  else
+  begin
+    m_axi_bid_reg &lt;= m_axi_bid_reg_next;
+    m_axi_rid_reg &lt;= m_axi_rid_reg_next;
+  end
+end
+
+assign m_axi_bid_reg_next = (m_axi_bvalid &amp;&amp; m_axi_bready) ? m_axi_bid : m_axi_bid_reg;
+assign m_axi_rid_reg_next = (m_axi_rvalid &amp;&amp; m_axi_rready) ? m_axi_rid : m_axi_rid_reg;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    m_axi_awvalid_reg &lt;= 0;
+    m_axi_wvalid_reg &lt;= 0;
+  end
+  else 
+  begin
+    m_axi_awvalid_reg &lt;= m_axi_awvalid_next;
+    m_axi_wvalid_reg &lt;= m_axi_wvalid_next;
+  end 
+end
+
+always @(*)
+begin
+  m_axi_awvalid_next = m_axi_awvalid_reg;
+  m_axi_wvalid_next = m_axi_wvalid_reg;
+  if(Mout_we_ram &amp;&amp; !Mout_back_pressure_reg)
+  begin
+    m_axi_awvalid_next = 1;
+    m_axi_wvalid_next = 1;
+  end
+  else
+  begin
+    if(m_axi_awready)
+    begin
+      m_axi_awvalid_next = 0;  
+    end
+    if(m_axi_wready)
+    begin
+      m_axi_wvalid_next = 0;  
+    end
+  end
+end
+
+assign m_axi_wvalid = m_axi_wvalid_reg;
+assign m_axi_awvalid = m_axi_awvalid_reg;
+
+reg [BITSIZE_Mout_Wdata_ram-1:0] m_axi_wdata_reg, m_axi_wdata_next;
+reg [BITSIZE_m_axi_wstrb-1:0] m_axi_wstrb_reg, m_axi_wstrb_next;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    m_axi_wdata_reg &lt;= 0;
+    m_axi_wstrb_reg &lt;= 0;
+  end
+  else
+  begin
+    m_axi_wdata_reg &lt;= m_axi_wdata_next;
+    m_axi_wstrb_reg &lt;= m_axi_wstrb_next;
+  end
+end
+
+always @(*)
+begin
+  m_axi_wdata_next = m_axi_wdata_reg;
+  m_axi_wstrb_next = m_axi_wstrb_reg;
+  if(Mout_we_ram &amp;&amp; (!m_axi_wvalid_reg || m_axi_wready))
+  begin
+    m_axi_wdata_next = Mout_Wdata_ram;
+    m_axi_wstrb_next = ((1 &lt;&lt; (Mout_data_ram_size >> 3)) - 1);
+  end
+end
+
+assign m_axi_wdata = m_axi_wdata_reg; 
+assign m_axi_wstrb = m_axi_wstrb_reg;
+
+reg [BITSIZE_m_axi_awaddr-1:0] m_axi_awaddr_reg, m_axi_awaddr_next;
+reg [BITSIZE_m_axi_awsize-1:0] m_axi_awsize_reg, m_axi_awsize_next;
+reg [BITSIZE_m_axi_awid-1:0] m_axi_awid_reg, m_axi_awid_next;
+
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    m_axi_awaddr_reg &lt;= 0;
+    m_axi_awid_reg &lt;= 0;
+    m_axi_awsize_reg &lt;= 0;
+  end
+  else
+  begin
+    m_axi_awaddr_reg &lt;= m_axi_awaddr_next;
+    m_axi_awid_reg &lt;= m_axi_awid_next;
+    m_axi_awsize_reg &lt;= m_axi_awsize_next;
+  end
+end
+
+always @(*)
+begin
+  if(Mout_we_ram &amp;&amp; (!m_axi_awvalid_reg || m_axi_awready))
+  begin
+    m_axi_awaddr_next = Mout_addr_ram;
+    m_axi_awid_next = Mout_tag;
+    m_axi_awsize_next = size_next;
+  end
+  else
+  begin
+    m_axi_awaddr_next = m_axi_awaddr_reg;
+    m_axi_awid_next = m_axi_awid_reg;
+    m_axi_awsize_next = m_axi_awsize_reg;
+  end
+end
+
+assign m_axi_awaddr = m_axi_awaddr_reg;
+assign m_axi_awid = m_axi_awid_reg;
+assign m_axi_awsize = m_axi_awsize_reg;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    m_axi_arvalid_reg &lt;= 0;
+  end
+  else 
+  begin
+    m_axi_arvalid_reg &lt;= m_axi_arvalid_next;
+  end 
+end
+
+always @(*)
+begin
+  m_axi_arvalid_next = m_axi_arvalid_reg;
+  if(Mout_oe_ram &amp;&amp; !Mout_back_pressure_reg)
+  begin
+    m_axi_arvalid_next = 1;
+  end
+  else if(m_axi_arready)
+  begin
+    m_axi_arvalid_next = 0;  
+  end
+end
+
+assign m_axi_arvalid = m_axi_arvalid_reg;
+
+reg [BITSIZE_m_axi_araddr-1:0] m_axi_araddr_reg, m_axi_araddr_next;
+reg [BITSIZE_m_axi_arsize-1:0] m_axi_arsize_reg, m_axi_arsize_next;
+reg [BITSIZE_m_axi_awid-1:0] m_axi_arid_reg, m_axi_arid_next;
+
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    m_axi_araddr_reg &lt;= 0;
+    m_axi_arid_reg &lt;= 0;
+    m_axi_arsize_reg &lt;= 0;
+  end
+  else
+  begin
+    m_axi_araddr_reg &lt;= m_axi_araddr_next;
+    m_axi_arid_reg &lt;= m_axi_arid_next;
+    m_axi_arsize_reg &lt;= m_axi_arsize_next;
+  end
+end
+
+always @(*)
+begin
+  m_axi_araddr_next = m_axi_araddr_reg;
+  m_axi_arid_next = m_axi_arid_reg;
+  m_axi_arsize_next = m_axi_arsize_reg;
+  if(Mout_oe_ram &amp;&amp; (!m_axi_arvalid_reg || m_axi_arready))
+  begin
+    m_axi_araddr_next = Mout_addr_ram;
+    m_axi_arid_next = Mout_tag;
+    m_axi_arsize_next = size_next;
+  end
+end
+
+assign m_axi_araddr = m_axi_araddr_reg;
+assign m_axi_arid = m_axi_arid_reg;
+assign m_axi_arsize = m_axi_arsize_reg;
+
+reg M_DataRdy_reg;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    M_DataRdy_reg &lt;= 0;
+  end
+  else
+  begin
+    M_DataRdy_reg &lt;= M_back_pressure || double_answer_first_next || double_answer_second_next;
+  end
+end
+
+assign M_DataRdy = (m_axi_bvalid &amp;&amp; m_axi_bready) || (m_axi_rvalid &amp;&amp; m_axi_rready) || M_DataRdy_reg;
+
+reg [BITSIZE_M_Rdata_ram-1:0] M_Rdata_ram_reg;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    M_Rdata_ram_reg &lt;= 0;
+  end
+  else 
+  begin
+    M_Rdata_ram_reg &lt;= M_Rdata_ram;
+  end
+end
+
+
+assign M_Rdata_ram = m_axi_rvalid &amp; m_axi_rready ? m_axi_rdata : M_Rdata_ram_reg;
+
+reg m_axi_bready_reg;
+reg m_axi_rready_reg;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    m_axi_rready_reg &lt;= 0;
+    m_axi_bready_reg &lt;= 0;
+  end
+  else if(M_back_pressure)
+  begin
+    m_axi_rready_reg &lt;= 0;
+    m_axi_bready_reg &lt;= 0;
+  end
+  else if(double_answer_first_next || double_answer_second_next)
+  begin
+    m_axi_bready_reg &lt;= 0;
+    m_axi_rready_reg &lt;= 0;
+  end
+  else
+  begin
+    m_axi_rready_reg &lt;= 1;
+    m_axi_bready_reg &lt;= 1;
+  end
+end
+
+assign m_axi_bready = m_axi_bready_reg;
+assign m_axi_rready = m_axi_rready_reg;
+
+reg [BITSIZE_M_tag-1:0] M_tag_reg, M_tag_next;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    M_tag_reg &lt;= 0;
+    double_answer_first &lt;= 0;
+    double_answer_second &lt;= 0;
+  end
+  else
+  begin
+    M_tag_reg &lt;= M_tag_next;
+    double_answer_first &lt;= double_answer_first_next; 
+    double_answer_second &lt;= double_answer_second_next;   
+  end
+end
+
+assign double_answer_first_next = (M_back_pressure &amp;&amp; (m_axi_rready &amp;&amp; m_axi_rvalid &amp;&amp; m_axi_bready &amp;&amp; m_axi_bvalid)) || (M_back_pressure &amp;&amp; double_answer_first);
+assign double_answer_second_next = (m_axi_rready &amp;&amp; m_axi_rvalid &amp;&amp; m_axi_bready &amp;&amp; m_axi_bvalid) || (!double_answer_first_next &amp;&amp; double_answer_first) || (M_back_pressure &amp;&amp; double_answer_second);
+
+always @(*)
+begin
+  if(M_back_pressure_old)
+  begin
+    M_tag_next = M_tag_reg;
+  end
+  else if(double_answer_first)
+  begin
+    M_tag_next = m_axi_rid_reg;
+  end
+  else if(double_answer_second)
+  begin
+    M_tag_next = m_axi_bid_reg;
+  end
+  else if(m_axi_rvalid &amp;&amp; m_axi_rready)
+  begin
+    M_tag_next = m_axi_rid;
+  end
+  else if(m_axi_bvalid &amp;&amp; m_axi_bready)
+  begin
+    M_tag_next = m_axi_bid;
+  end
+  else
+  begin
+    M_tag_next = 0;
+  end
+end
+
+assign M_tag = M_tag_next;
+
+// synthesis translate_off
+always @(posedge clock)
+begin
+  if(m_axi_bresp != 0 || m_axi_rresp !=0)
+  begin
+    $display(&quot;ERROR: Sim: Abort incorret AXI answer from slave &quot;);
+    $finish;
+  end
+end
+// synthesis translate_on"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>MinimalAXI4AdapterSingleBeat</name>
+      <circuit>
+        <module_o id="MinimalAXI4AdapterSingleBeat">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="MinimalAXI4AdapterSingleBeat"/>
+          <parameter name="BURST_TYPE">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_oe_ram" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_we_ram" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_addr_ram" dir="IN" is_memory="1" is_slave="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_Wdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_data_ram_size" dir="IN" is_memory="1" is_slave="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="M_DataRdy" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="M_Rdata_ram" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_arid" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_araddr" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_arlen" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_arsize" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
+          </port_o>
+          <port_o id="m_axi_arburst" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="m_axi_arlock" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_arcache" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="m_axi_arprot" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
+          </port_o>
+          <port_o id="m_axi_arqos" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="m_axi_arregion" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="m_axi_aruser" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_arvalid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_arready" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_rid" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_rdata" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_rresp" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="m_axi_rlast" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_rvalid" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_rready" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_awid" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_awaddr" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_awlen" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_awsize" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
+          </port_o>
+          <port_o id="m_axi_awburst" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="m_axi_awlock" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_awcache" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="m_axi_awprot" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
+          </port_o>
+          <port_o id="m_axi_awqos" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="m_axi_awregion" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="m_axi_awuser" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_awvalid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_awready" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_wdata" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_wstrb" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_wlast" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_wvalid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_wready" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_wuser" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_bid" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_bresp" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="m_axi_bvalid" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_bready" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality
+            LIBRARY="MinimalAXI4AdapterSingleBeat BURST_TYPE Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size M_Rdata_ram m_axi_arid m_axi_araddr m_axi_arlen m_axi_arsize m_axi_arburst m_axi_arcache m_axi_arprot m_axi_arqos m_axi_arregion m_axi_aruser m_axi_rid m_axi_rdata m_axi_rresp m_axi_awid m_axi_awaddr m_axi_awlen m_axi_awsize m_axi_awburst m_axi_awcache m_axi_awprot m_axi_awqos m_axi_awregion m_axi_awuser m_axi_wdata m_axi_wstrb m_axi_wuser m_axi_bid m_axi_bresp" VERILOG_PROVIDED="
+assign m_axi_arlen = 0;
+assign m_axi_arburst = BURST_TYPE;
+assign m_axi_arlock = 0;
+assign m_axi_arcache = 0;
+assign m_axi_arprot = 0;
+assign m_axi_arqos = 0;
+assign m_axi_arregion = 0;
+assign m_axi_aruser = 0;
+assign m_axi_arid = 0;
+assign m_axi_awlen = 0;
+assign m_axi_awburst = BURST_TYPE;
+assign m_axi_awlock = 0;
+assign m_axi_awcache = 0;
+assign m_axi_awprot = 0;
+assign m_axi_awqos = 0;
+assign m_axi_awregion = 0;
+assign m_axi_awuser = 0;
+assign m_axi_awid = 0;
+assign m_axi_wlast = 1;
+assign m_axi_wuser = 0;
+
+`ifndef _SIM_HAVE_CLOG2
+  `define CLOG2(x) \
+    (x &lt;= 2) ? 1 : \
+    (x &lt;= 4) ? 2 : \
+    (x &lt;= 8) ? 3 : \
+    (x &lt;= 16) ? 4 : \
+    (x &lt;= 32) ? 5 : \
+    (x &lt;= 64) ? 6 : \
+    (x &lt;= 128) ? 7 : \
+    -1
+`endif
+
+wire [2:0] size_next;
+
+generate
+  `ifdef _SIM_HAVE_CLOG2
+    assign size_next = $clog2(Mout_data_ram_size >> 3);
+  `else
+    assign size_next = `CLOG2(Mout_data_ram_size >> 3);
+  `endif
+endgenerate
+
+reg double_answer_second;
+wire double_answer_second_next;
+
+reg m_axi_awvalid_reg, m_axi_awvalid_next;
+reg m_axi_wvalid_reg, m_axi_wvalid_next;
+reg m_axi_arvalid_reg, m_axi_arvalid_next;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    m_axi_awvalid_reg &lt;= 0;
+    m_axi_wvalid_reg &lt;= 0;
+  end
+  else 
+  begin
+    m_axi_awvalid_reg &lt;= m_axi_awvalid_next;
+    m_axi_wvalid_reg &lt;= m_axi_wvalid_next;
+  end 
+end
+
+always @(*)
+begin
+  m_axi_awvalid_next = m_axi_awvalid_reg;
+  m_axi_wvalid_next = m_axi_wvalid_reg;
+  if(Mout_we_ram)
+  begin
+    m_axi_awvalid_next = 1;
+    m_axi_wvalid_next = 1;
+  end
+  else
+  begin
+    if(m_axi_awready)
+    begin
+      m_axi_awvalid_next = 0;  
+    end
+    if(m_axi_wready)
+    begin
+      m_axi_wvalid_next = 0;  
+    end
+  end
+end
+
+assign m_axi_wvalid = m_axi_wvalid_reg;
+assign m_axi_awvalid = m_axi_awvalid_reg;
+
+reg [BITSIZE_Mout_Wdata_ram-1:0] m_axi_wdata_reg;
+reg [BITSIZE_m_axi_wstrb-1:0] m_axi_wstrb_reg;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    m_axi_wdata_reg &lt;= 0;
+    m_axi_wstrb_reg &lt;= 0;
+  end
+  else
+  begin
+    m_axi_wdata_reg &lt;= Mout_Wdata_ram;
+    m_axi_wstrb_reg &lt;= ((1 &lt;&lt; (Mout_data_ram_size >> 3)) - 1);
+  end
+end
+
+assign m_axi_wdata = m_axi_wdata_reg; 
+assign m_axi_wstrb = m_axi_wstrb_reg;
+
+reg [BITSIZE_m_axi_awaddr-1:0] m_axi_awaddr_reg;
+reg [BITSIZE_m_axi_awsize-1:0] m_axi_awsize_reg;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    m_axi_awaddr_reg &lt;= 0;
+    m_axi_awsize_reg &lt;= 0;
+  end
+  else
+  begin
+    m_axi_awaddr_reg &lt;= Mout_addr_ram;
+    m_axi_awsize_reg &lt;= size_next;
+  end
+end
+
+assign m_axi_awsize = m_axi_awsize_reg;
+assign m_axi_awaddr = m_axi_awaddr_reg;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    m_axi_arvalid_reg &lt;= 0;
+  end
+  else 
+  begin
+    m_axi_arvalid_reg &lt;= m_axi_arvalid_next;
+  end 
+end
+
+always @(*)
+begin
+  m_axi_arvalid_next = m_axi_arvalid_reg;
+  if(Mout_oe_ram)
+  begin
+    m_axi_arvalid_next = 1;
+  end
+  else if(m_axi_arready)
+  begin
+    m_axi_arvalid_next = 0;  
+  end
+end
+
+assign m_axi_arvalid = m_axi_arvalid_reg;
+
+reg [BITSIZE_m_axi_araddr-1:0] m_axi_araddr_reg;
+reg [BITSIZE_m_axi_arsize-1:0] m_axi_arsize_reg;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    m_axi_araddr_reg &lt;= 0;
+    m_axi_arsize_reg &lt;= 0;
+  end
+  else
+  begin
+    m_axi_araddr_reg &lt;= Mout_addr_ram;
+    m_axi_arsize_reg &lt;= size_next;
+  end
+end
+
+assign m_axi_arsize = m_axi_arsize_reg;
+assign m_axi_araddr = m_axi_araddr_reg;
+
+reg M_DataRdy_reg;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    M_DataRdy_reg &lt;= 0;
+  end
+  else
+  begin
+    M_DataRdy_reg &lt;= double_answer_second_next;
+  end
+end
+
+assign M_DataRdy = (m_axi_bvalid &amp;&amp; m_axi_bready) || (m_axi_rvalid &amp;&amp; m_axi_rready) || M_DataRdy_reg;
+assign M_Rdata_ram = m_axi_rdata;
+
+reg m_axi_bready_reg;
+reg m_axi_rready_reg;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    m_axi_rready_reg &lt;= 0;
+    m_axi_bready_reg &lt;= 0;
+  end
+  else if(double_answer_second_next)
+  begin
+    m_axi_bready_reg &lt;= 0;
+    m_axi_rready_reg &lt;= 0;
+  end
+  else
+  begin
+    m_axi_rready_reg &lt;= 1;
+    m_axi_bready_reg &lt;= 1;
+  end
+end
+
+assign m_axi_bready = m_axi_bready_reg;
+assign m_axi_rready = m_axi_rready_reg;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    double_answer_second &lt;= 0;
+  end
+  else
+  begin
+    double_answer_second &lt;= double_answer_second_next;   
+  end
+end
+
+assign double_answer_second_next = (m_axi_rready &amp;&amp; m_axi_rvalid &amp;&amp; m_axi_bready &amp;&amp; m_axi_bvalid);
+
+// synthesis translate_off
+always @(posedge clock)
+begin
+  if(m_axi_bresp != 0 || m_axi_rresp !=0)
+  begin
+    $display(&quot;ERROR: Sim: Abort incorret AXI answer from slave &quot;);
+    $finish;
+  end
+end
+// synthesis translate_on
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+  </library>
+</technology>

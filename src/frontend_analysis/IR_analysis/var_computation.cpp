@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -36,55 +36,34 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
-
-/// Header include
 #include "var_computation.hpp"
 
-/// Behavior include
+#include "CompilerWrapper.hpp"
+#include "Parameter.hpp"
 #include "application_manager.hpp"
 #include "behavioral_helper.hpp"
-#include "function_behavior.hpp"
-#include "graph.hpp"
-#include "op_graph.hpp"
-#include "operations_graph_constructor.hpp"
-
-/// Parameter include
-#include "Parameter.hpp"
-
-/// STD include
-#include <fstream>
-
-/// Tree include
-#include "ext_tree_node.hpp"
-#include "tree_helper.hpp"
-#include "tree_node.hpp"
-
-/// Utility include
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
+#include "function_behavior.hpp"
+#include "graph.hpp"
+#include "ir_helper.hpp"
+#include "ir_node.hpp"
+#include "op_graph.hpp"
+#include "operations_graph_constructor.hpp"
+#include "string_manipulation.hpp"
 
-/// wrapper/compiler include
-#include "compiler_wrapper.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include <fstream>
 
 #define TOSTRING(id) std::to_string(id)
 
 VarComputation::VarComputation(const ParameterConstRef _parameters, const application_managerRef _AppM,
-                               unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, VAR_ANALYSIS, _design_flow_manager, _parameters),
-      ogc(function_behavior->ogc),
-      cfg(function_behavior->CGetOpGraph(FunctionBehavior::CFG)),
-      behavioral_helper(function_behavior->GetBehavioralHelper())
+                               unsigned int _function_id, const DesignFlowManager& _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, VAR_ANALYSIS, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
-
-VarComputation::~VarComputation() = default;
 
 CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 VarComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -118,17 +97,15 @@ void VarComputation::Initialize()
 {
    if(bb_version != 0 && bb_version != function_behavior->GetBBVersion())
    {
-      const OpGraphRef mod_cfg = function_behavior->GetOpGraph(FunctionBehavior::CFG);
-      if(boost::num_vertices(*mod_cfg) != 0)
+      auto mod_cfg = function_behavior->GetOpGraph(FunctionBehavior::CFG);
+      if(mod_cfg.num_vertices() != 0)
       {
-         VertexIterator op, op_end;
-         for(boost::tie(op, op_end) = boost::vertices(*mod_cfg); op != op_end; op++)
+         for(const auto op : mod_cfg.vertices())
          {
-            const OpNodeInfoRef op_node_info = mod_cfg->GetOpNodeInfo(*op);
-            op_node_info->cited_variables.clear();
-            op_node_info->variables.clear();
-            op_node_info->actual_parameters.clear();
-            op_node_info->Initialize();
+            auto& op_node_info = mod_cfg.GetNodeInfo(op);
+            op_node_info.cited_variables.clear();
+            op_node_info.actual_parameters.clear();
+            op_node_info.Initialize();
          }
       }
    }
@@ -136,532 +113,314 @@ void VarComputation::Initialize()
 
 DesignFlowStep_Status VarComputation::InternalExec()
 {
-   VertexIterator VerIt, VerItEnd;
-   std::list<vertex> Vertices;
-   for(boost::tie(VerIt, VerItEnd) = boost::vertices(*cfg); VerIt != VerItEnd; VerIt++)
+   const auto cfg = function_behavior->GetOpGraph(FunctionBehavior::CFG);
+   const auto& ogc = function_behavior->ogc;
+   std::list<OpGraph::vertex_descriptor> Vertices;
+   for(const auto& v : cfg.vertices())
    {
-      Vertices.push_back(*VerIt);
+      Vertices.push_back(v);
    }
-   std::list<vertex> PhiNodes;
+   std::list<OpGraph::vertex_descriptor> PhiNodes;
    for(auto Ver = Vertices.begin(); Ver != Vertices.end();)
    {
       auto curr_Ver = Ver;
       ++Ver;
-      if(GET_TYPE(cfg, *curr_Ver) == TYPE_VPHI)
+      if(cfg.CGetNodeInfo(*curr_Ver).node_type == TYPE_VPHI)
       {
          PhiNodes.push_back(*curr_Ver);
          Vertices.erase(curr_Ver);
       }
    }
-   for(const auto& Ver : Vertices)
+   for(const auto Ver : Vertices)
    {
-      const auto& node = cfg->CGetOpNodeInfo(Ver)->node;
+      const auto& node = cfg.CGetNodeInfo(Ver).node;
       if(node)
       {
-         RecursivelyAnalyze(Ver, node, FunctionBehavior_VariableAccessType::UNKNOWN);
+         RecursivelyAnalyze(Ver, node, VariableAccessType::UNKNOWN, ogc);
       }
    }
    for(const auto& PhiNode : PhiNodes)
    {
-      const auto& node = cfg->CGetOpNodeInfo(PhiNode)->node;
+      const auto& node = cfg.CGetNodeInfo(PhiNode).node;
       if(node)
       {
-         RecursivelyAnalyze(PhiNode, node, FunctionBehavior_VariableAccessType::UNKNOWN);
+         RecursivelyAnalyze(PhiNode, node, VariableAccessType::UNKNOWN, ogc);
       }
    }
    if(parameters->getOption<bool>(OPT_print_dot))
    {
-      function_behavior->CGetOpGraph(FunctionBehavior::CFG)->WriteDot("OP_Variables.dot", 1);
+      cfg.writeDot(function_behavior->GetDotPath() / "OP_Variables.dot", 1);
    }
    return DesignFlowStep_Status::SUCCESS;
 }
 
-void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeConstRef& _tree_node,
-                                        const FunctionBehavior_VariableAccessType access_type) const
+void VarComputation::RecursivelyAnalyze(OpGraph::vertex_descriptor op_vertex, const ir_nodeConstRef& _ir_node,
+                                        const VariableAccessType access_type,
+                                        const std::unique_ptr<operations_graph_constructor>& ogc) const
 {
-   const auto tree_node = _tree_node;
-   const auto node_kind = tree_node->get_kind();
+   const auto ir_node = _ir_node;
+   const auto node_kind = ir_node->get_kind();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Analyzing node " + STR(tree_node) + "(" + tree_node::GetString(node_kind) + ")");
+                  "-->Analyzing node " + STR(ir_node) + "(" + ir_node::GetString(node_kind) + ")");
 
-   const auto gn = GetPointer<const gimple_node>(tree_node);
+   const auto gn = GetPointer<const node_stmt>(ir_node);
 
-   if(GetPointer<const gimple_node>(tree_node) && (gn->vuses.size() || gn->vdef))
+   if(GetPointer<const node_stmt>(ir_node) && (gn->vuses.size() || gn->vdef))
    {
-      AnalyzeVops(op_vertex, GetPointer<const gimple_node>(tree_node));
+      AnalyzeVops(op_vertex, GetPointer<const node_stmt>(ir_node), ogc);
    }
 
    switch(node_kind)
    {
-      case gimple_nop_K:
-      case gimple_pragma_K:
+      case nop_stmt_K:
          break;
-      case gimple_assign_K:
+      case assign_stmt_K:
       {
-         const auto* ga = GetPointerS<const gimple_assign>(tree_node);
-         RecursivelyAnalyze(op_vertex, ga->op0, FunctionBehavior_VariableAccessType::DEFINITION);
-         RecursivelyAnalyze(op_vertex, ga->op1, FunctionBehavior_VariableAccessType::USE);
+         const auto* ga = GetPointerS<const assign_stmt>(ir_node);
+         RecursivelyAnalyze(op_vertex, ga->op0, VariableAccessType::DEFINITION, ogc);
+         RecursivelyAnalyze(op_vertex, ga->op1, VariableAccessType::USE, ogc);
          if(ga->predicate)
          {
-            RecursivelyAnalyze(op_vertex, ga->predicate, FunctionBehavior_VariableAccessType::USE);
+            RecursivelyAnalyze(op_vertex, ga->predicate, VariableAccessType::USE, ogc);
          }
          break;
       }
-      case gimple_phi_K:
+      case phi_stmt_K:
       {
-         const auto* pn = GetPointerS<const gimple_phi>(tree_node);
+         const auto* pn = GetPointerS<const phi_stmt>(ir_node);
          for(const auto& def_edge : pn->CGetDefEdgesList())
          {
-            RecursivelyAnalyze(op_vertex, def_edge.first, FunctionBehavior_VariableAccessType::USE);
+            RecursivelyAnalyze(op_vertex, def_edge.first, VariableAccessType::USE, ogc);
          }
-         RecursivelyAnalyze(op_vertex, pn->res, FunctionBehavior_VariableAccessType::DEFINITION);
+         RecursivelyAnalyze(op_vertex, pn->res, VariableAccessType::DEFINITION, ogc);
          break;
       }
-      case gimple_return_K:
+      case return_stmt_K:
       {
-         const auto* gr = GetPointerS<const gimple_return>(tree_node);
+         const auto* gr = GetPointerS<const return_stmt>(ir_node);
          const auto& op = gr->op;
          if(op)
          {
-            RecursivelyAnalyze(op_vertex, op, FunctionBehavior_VariableAccessType::USE);
+            RecursivelyAnalyze(op_vertex, op, VariableAccessType::USE, ogc);
          }
          break;
       }
-      case aggr_init_expr_K:
-      case call_expr_K:
+      case call_node_K:
       {
-         const auto* ce = GetPointerS<const call_expr>(tree_node);
+         const auto* ce = GetPointerS<const call_node>(ir_node);
          /// Needed to correctly support function pointers
-         if(ce->fn->get_kind() == ssa_name_K)
+         if(ce->fn->get_kind() == ssa_node_K)
          {
-            RecursivelyAnalyze(op_vertex, ce->fn, FunctionBehavior_VariableAccessType::USE);
+            RecursivelyAnalyze(op_vertex, ce->fn, VariableAccessType::USE, ogc);
          }
          for(const auto& arg : ce->args)
          {
             /// add parameter to the vertex
             ogc->add_parameter(op_vertex, arg->index);
-            RecursivelyAnalyze(op_vertex, arg, FunctionBehavior_VariableAccessType::ARG);
+            RecursivelyAnalyze(op_vertex, arg, VariableAccessType::ARG, ogc);
          }
          break;
       }
-      case gimple_call_K:
+      case call_stmt_K:
       {
-         const auto* gc = GetPointer<const gimple_call>(tree_node);
+         const auto* gc = GetPointer<const call_stmt>(ir_node);
          /// Needed to correctly support function pointers
-         if(gc->fn->get_kind() == ssa_name_K)
+         if(gc->fn->get_kind() == ssa_node_K)
          {
-            RecursivelyAnalyze(op_vertex, gc->fn, FunctionBehavior_VariableAccessType::USE);
+            RecursivelyAnalyze(op_vertex, gc->fn, VariableAccessType::USE, ogc);
          }
          for(const auto& arg : gc->args)
          {
             /// add parameter to the vertex
             ogc->add_parameter(op_vertex, arg->index);
-            RecursivelyAnalyze(op_vertex, arg, FunctionBehavior_VariableAccessType::ARG);
+            RecursivelyAnalyze(op_vertex, arg, VariableAccessType::ARG, ogc);
+         }
+         if(gc->predicate)
+         {
+            RecursivelyAnalyze(op_vertex, gc->predicate, VariableAccessType::USE, ogc);
          }
 
          break;
       }
-      case gimple_cond_K:
+      case multi_way_if_stmt_K:
       {
-         RecursivelyAnalyze(op_vertex, GetPointerS<const gimple_cond>(tree_node)->op0,
-                            FunctionBehavior_VariableAccessType::USE);
-         break;
-      }
-      case gimple_while_K:
-      {
-         RecursivelyAnalyze(op_vertex, GetPointerS<const gimple_while>(tree_node)->op0,
-                            FunctionBehavior_VariableAccessType::USE);
-         break;
-      }
-      case gimple_for_K:
-      {
-         const auto* fe = GetPointerS<const gimple_for>(tree_node);
-         RecursivelyAnalyze(op_vertex, fe->op0, FunctionBehavior_VariableAccessType::USE);
-         RecursivelyAnalyze(op_vertex, fe->op1, FunctionBehavior_VariableAccessType::USE);
-         RecursivelyAnalyze(op_vertex, fe->op2, FunctionBehavior_VariableAccessType::USE);
-         break;
-      }
-      case gimple_multi_way_if_K:
-      {
-         const auto* gmwi = GetPointerS<const gimple_multi_way_if>(tree_node);
+         const auto* gmwi = GetPointerS<const multi_way_if_stmt>(ir_node);
          for(const auto& cond : gmwi->list_of_cond)
          {
             if(cond.first)
             {
-               RecursivelyAnalyze(op_vertex, cond.first, FunctionBehavior_VariableAccessType::USE);
+               RecursivelyAnalyze(op_vertex, cond.first, VariableAccessType::USE, ogc);
             }
          }
          break;
       }
-      case gimple_switch_K:
+      case function_val_node_K:
       {
-         const auto* gs = GetPointerS<const gimple_switch>(tree_node);
-         RecursivelyAnalyze(op_vertex, gs->op0, FunctionBehavior_VariableAccessType::USE);
-         if(gs->op1)
+         break;
+      }
+      case variable_val_node_K:
+      {
+         ogc->AddSourceCodeVariable(op_vertex, ir_node->index);
+         const auto* vd = GetPointer<const variable_val_node>(ir_node);
+         if(vd && (!vd->parent || vd->parent->get_kind() == module_unit_node_K))
          {
-            RecursivelyAnalyze(op_vertex, gs->op1, FunctionBehavior_VariableAccessType::USE);
+            AppM->AddGlobalVariable(_ir_node);
          }
          break;
       }
-      case gimple_label_K:
+      case argument_val_node_K:
       {
-         RecursivelyAnalyze(op_vertex, GetPointerS<const gimple_label>(tree_node)->op,
-                            FunctionBehavior_VariableAccessType::USE);
+         ogc->AddVariable(function_behavior->GetOpGraph(FunctionBehavior::CFG).CGetGraphInfo().entry_vertex,
+                          ir_node->index, VariableType::SCALAR, access_type);
+         ogc->AddSourceCodeVariable(op_vertex, ir_node->index);
          break;
       }
-      case gimple_goto_K:
+      case ssa_node_K:
       {
-         RecursivelyAnalyze(op_vertex, GetPointerS<const gimple_goto>(tree_node)->op,
-                            FunctionBehavior_VariableAccessType::USE);
-         break;
-      }
-      case gimple_asm_K:
-      {
-         const auto* asme = GetPointerS<const gimple_asm>(tree_node);
-         if(asme->out)
-         {
-            RecursivelyAnalyze(op_vertex, asme->out, FunctionBehavior_VariableAccessType::DEFINITION);
-         }
-         if(asme->in)
-         {
-            RecursivelyAnalyze(op_vertex, asme->in, FunctionBehavior_VariableAccessType::USE);
-         }
-         if(asme->clob)
-         {
-            RecursivelyAnalyze(op_vertex, asme->clob, FunctionBehavior_VariableAccessType::USE);
-         }
-         break;
-      }
-      case function_decl_K:
-      {
-         break;
-      }
-      case var_decl_K:
-      {
-         ogc->AddSourceCodeVariable(op_vertex, tree_node->index);
-         const auto* vd = GetPointer<const var_decl>(tree_node);
-         if(vd && (!vd->scpe || vd->scpe->get_kind() == translation_unit_decl_K))
-         {
-            AppM->AddGlobalVariable(_tree_node);
-         }
-         break;
-      }
-      case parm_decl_K:
-      {
-         ogc->AddVariable(cfg->CGetOpGraphInfo()->entry_vertex, tree_node->index, FunctionBehavior_VariableType::SCALAR,
-                          access_type);
-         ogc->AddSourceCodeVariable(op_vertex, tree_node->index);
-         break;
-      }
-      case result_decl_K:
-      {
-         ogc->AddSourceCodeVariable(op_vertex, tree_node->index);
-         break;
-      }
-      case ssa_name_K:
-      {
-         const auto* sn = GetPointer<const ssa_name>(tree_node);
+         const auto* sn = GetPointer<const ssa_node>(ir_node);
          if(sn->virtual_flag)
          {
             switch(access_type)
             {
-               case(FunctionBehavior_VariableAccessType::USE):
-               case(FunctionBehavior_VariableAccessType::DEFINITION):
-                  ogc->AddVariable(op_vertex, tree_node->index, FunctionBehavior_VariableType::VIRTUAL, access_type);
+               case(VariableAccessType::USE):
+               case(VariableAccessType::DEFINITION):
+                  ogc->AddVariable(op_vertex, ir_node->index, VariableType::VIRTUAL, access_type);
                   break;
-               case(FunctionBehavior_VariableAccessType::ARG):
-                  ogc->AddVariable(op_vertex, tree_node->index, FunctionBehavior_VariableType::VIRTUAL,
-                                   FunctionBehavior_VariableAccessType::USE);
+               case(VariableAccessType::ARG):
+                  ogc->AddVariable(op_vertex, ir_node->index, VariableType::VIRTUAL, VariableAccessType::USE);
                   break;
-               case(FunctionBehavior_VariableAccessType::ADDRESS):
-               case(FunctionBehavior_VariableAccessType::OVER):
+               case(VariableAccessType::ADDRESS):
+               case(VariableAccessType::OVER):
                   THROW_UNREACHABLE("Address expresion of a virtual variable");
                   break;
-               case(FunctionBehavior_VariableAccessType::UNKNOWN):
+               case(VariableAccessType::UNKNOWN):
                default:
                   THROW_UNREACHABLE("");
             }
          }
          else
          {
-            if((sn->volatile_flag ||
-                (sn->CGetDefStmts().size() == 1 && sn->CGetDefStmt()->get_kind() == gimple_nop_K)) &&
-               sn->var)
+            if(sn->GetDefStmt()->get_kind() == nop_stmt_K && sn->var)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Adding " + sn->ToString() + " to defs of Entry");
-               ogc->AddVariable(cfg->CGetOpGraphInfo()->entry_vertex, tree_node->index,
-                                FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
+               ogc->AddVariable(function_behavior->GetOpGraph(FunctionBehavior::CFG).CGetGraphInfo().entry_vertex,
+                                ir_node->index, VariableType::SCALAR, VariableAccessType::DEFINITION);
             }
-            ogc->AddSourceCodeVariable(op_vertex, tree_node->index);
+            ogc->AddSourceCodeVariable(op_vertex, ir_node->index);
             switch(access_type)
             {
-               case(FunctionBehavior_VariableAccessType::USE):
-               case(FunctionBehavior_VariableAccessType::DEFINITION):
-                  ogc->AddVariable(op_vertex, tree_node->index, FunctionBehavior_VariableType::SCALAR, access_type);
+               case(VariableAccessType::USE):
+               case(VariableAccessType::DEFINITION):
+                  ogc->AddVariable(op_vertex, ir_node->index, VariableType::SCALAR, access_type);
                   break;
-               case(FunctionBehavior_VariableAccessType::ARG):
-                  ogc->AddVariable(op_vertex, tree_node->index, FunctionBehavior_VariableType::SCALAR,
-                                   FunctionBehavior_VariableAccessType::USE);
+               case(VariableAccessType::ARG):
+                  ogc->AddVariable(op_vertex, ir_node->index, VariableType::SCALAR, VariableAccessType::USE);
                   break;
-               case(FunctionBehavior_VariableAccessType::ADDRESS):
+               case(VariableAccessType::ADDRESS):
                   break;
-               case(FunctionBehavior_VariableAccessType::OVER):
+               case(VariableAccessType::OVER):
                {
-                  ogc->AddVariable(op_vertex, tree_node->index, FunctionBehavior_VariableType::SCALAR,
-                                   FunctionBehavior_VariableAccessType::USE);
-                  ogc->AddVariable(op_vertex, tree_node->index, FunctionBehavior_VariableType::SCALAR,
-                                   FunctionBehavior_VariableAccessType::DEFINITION);
+                  ogc->AddVariable(op_vertex, ir_node->index, VariableType::SCALAR, VariableAccessType::USE);
+                  ogc->AddVariable(op_vertex, ir_node->index, VariableType::SCALAR, VariableAccessType::DEFINITION);
                   break;
                }
-               case(FunctionBehavior_VariableAccessType::UNKNOWN):
+               case(VariableAccessType::UNKNOWN):
                default:
                   THROW_UNREACHABLE("");
             }
          }
          break;
       }
-      case tree_list_K:
+      case CASE_UNARY_NODES:
       {
-         const auto* tl = GetPointerS<const tree_list>(tree_node);
-         if(tl->purp)
+         const auto* ue = GetPointerS<const unary_node>(ir_node);
+         if(ue->get_kind() == addr_node_K)
          {
-            RecursivelyAnalyze(op_vertex, tl->purp, FunctionBehavior_VariableAccessType::USE);
-         }
-         auto current_args = tree_node;
-         while(current_args)
-         {
-            const auto* current_tree_list = GetPointerS<const tree_list>(current_args);
-            RecursivelyAnalyze(op_vertex, current_tree_list->valu, access_type);
-            if(current_tree_list->chan)
-            {
-               current_args = current_tree_list->chan;
-            }
-            else
-            {
-               break;
-            }
-         }
-         break;
-      }
-      case tree_vec_K:
-      {
-         const auto* tv = GetPointerS<const tree_vec>(tree_node);
-         for(const auto& op : tv->list_of_op)
-         {
-            RecursivelyAnalyze(op_vertex, op, access_type);
-         }
-         break;
-      }
-      case CASE_UNARY_EXPRESSION:
-      {
-         const auto* ue = GetPointerS<const unary_expr>(tree_node);
-         if(ue->get_kind() == addr_expr_K)
-         {
-            RecursivelyAnalyze(op_vertex, ue->op, FunctionBehavior_VariableAccessType::ADDRESS);
+            RecursivelyAnalyze(op_vertex, ue->op, VariableAccessType::ADDRESS, ogc);
          }
          else
          {
-            RecursivelyAnalyze(op_vertex, ue->op, FunctionBehavior_VariableAccessType::USE);
+            RecursivelyAnalyze(op_vertex, ue->op, VariableAccessType::USE, ogc);
          }
          break;
       }
-      case CASE_BINARY_EXPRESSION:
+      case CASE_BINARY_NODES:
       {
-         const auto* be = GetPointerS<const binary_expr>(tree_node);
-         if(be->get_kind() == postincrement_expr_K || be->get_kind() == postdecrement_expr_K)
-         {
-            RecursivelyAnalyze(op_vertex, be->op0, FunctionBehavior_VariableAccessType::DEFINITION);
-            RecursivelyAnalyze(op_vertex, be->op1, FunctionBehavior_VariableAccessType::OVER);
-         }
-         RecursivelyAnalyze(op_vertex, be->op0, FunctionBehavior_VariableAccessType::USE);
-         RecursivelyAnalyze(op_vertex, be->op1, FunctionBehavior_VariableAccessType::USE);
+         const auto* be = GetPointerS<const binary_node>(ir_node);
+         RecursivelyAnalyze(op_vertex, be->op0, VariableAccessType::USE, ogc);
+         RecursivelyAnalyze(op_vertex, be->op1, VariableAccessType::USE, ogc);
          break;
       }
-      case CASE_TERNARY_EXPRESSION:
+      case CASE_TERNARY_NODES:
       {
-         const auto* te = GetPointerS<const ternary_expr>(tree_node);
-
-         if(te->get_kind() == component_ref_K || te->get_kind() == bit_field_ref_K)
-         {
-            RecursivelyAnalyze(op_vertex, te->op0, access_type);
-         }
-         else
-         {
-            RecursivelyAnalyze(op_vertex, te->op0, FunctionBehavior_VariableAccessType::USE);
-         }
-         RecursivelyAnalyze(op_vertex, te->op1, FunctionBehavior_VariableAccessType::USE);
+         const auto* te = GetPointerS<const ternary_node>(ir_node);
+         RecursivelyAnalyze(op_vertex, te->op0, VariableAccessType::USE, ogc);
+         RecursivelyAnalyze(op_vertex, te->op1, VariableAccessType::USE, ogc);
          if(te->op2)
          {
-            RecursivelyAnalyze(op_vertex, te->op2, FunctionBehavior_VariableAccessType::USE);
+            RecursivelyAnalyze(op_vertex, te->op2, VariableAccessType::USE, ogc);
          }
          break;
       }
-      case CASE_QUATERNARY_EXPRESSION:
+      case lut_node_K:
       {
-         const auto* qe = GetPointerS<const quaternary_expr>(tree_node);
-         if((qe->get_kind() == array_ref_K || qe->get_kind() == array_range_ref_K) &&
-            tree_helper::CGetType(qe->op0)->get_kind() == array_type_K)
-         {
-            RecursivelyAnalyze(op_vertex, qe->op0, access_type);
-         }
-         else
-         {
-            RecursivelyAnalyze(op_vertex, qe->op0, FunctionBehavior_VariableAccessType::USE);
-         }
-         RecursivelyAnalyze(op_vertex, qe->op1, FunctionBehavior_VariableAccessType::USE);
-         if(qe->op2)
-         {
-            RecursivelyAnalyze(op_vertex, qe->op2, FunctionBehavior_VariableAccessType::USE);
-         }
-         if(qe->op3)
-         {
-            RecursivelyAnalyze(op_vertex, qe->op3, FunctionBehavior_VariableAccessType::USE);
-         }
-         break;
-      }
-      case lut_expr_K:
-      {
-         auto* le = GetPointerS<const lut_expr>(tree_node);
-         RecursivelyAnalyze(op_vertex, le->op0, FunctionBehavior_VariableAccessType::USE);
-         RecursivelyAnalyze(op_vertex, le->op1, FunctionBehavior_VariableAccessType::USE);
+         auto* le = GetPointerS<const lut_node>(ir_node);
+         RecursivelyAnalyze(op_vertex, le->op0, VariableAccessType::USE, ogc);
+         RecursivelyAnalyze(op_vertex, le->op1, VariableAccessType::USE, ogc);
          if(le->op2)
          {
-            RecursivelyAnalyze(op_vertex, le->op2, FunctionBehavior_VariableAccessType::USE);
+            RecursivelyAnalyze(op_vertex, le->op2, VariableAccessType::USE, ogc);
          }
          if(le->op3)
          {
-            RecursivelyAnalyze(op_vertex, le->op3, FunctionBehavior_VariableAccessType::USE);
+            RecursivelyAnalyze(op_vertex, le->op3, VariableAccessType::USE, ogc);
          }
          if(le->op4)
          {
-            RecursivelyAnalyze(op_vertex, le->op4, FunctionBehavior_VariableAccessType::USE);
+            RecursivelyAnalyze(op_vertex, le->op4, VariableAccessType::USE, ogc);
          }
          if(le->op5)
          {
-            RecursivelyAnalyze(op_vertex, le->op5, FunctionBehavior_VariableAccessType::USE);
+            RecursivelyAnalyze(op_vertex, le->op5, VariableAccessType::USE, ogc);
          }
          if(le->op6)
          {
-            RecursivelyAnalyze(op_vertex, le->op6, FunctionBehavior_VariableAccessType::USE);
+            RecursivelyAnalyze(op_vertex, le->op6, VariableAccessType::USE, ogc);
          }
          if(le->op7)
          {
-            RecursivelyAnalyze(op_vertex, le->op7, FunctionBehavior_VariableAccessType::USE);
+            RecursivelyAnalyze(op_vertex, le->op7, VariableAccessType::USE, ogc);
          }
          if(le->op8)
          {
-            RecursivelyAnalyze(op_vertex, le->op8, FunctionBehavior_VariableAccessType::USE);
+            RecursivelyAnalyze(op_vertex, le->op8, VariableAccessType::USE, ogc);
          }
          break;
       }
-      case target_mem_ref_K:
+      case constructor_node_K:
       {
-         const auto* tm = GetPointerS<const target_mem_ref>(tree_node);
-         if(tm->symbol)
-         {
-            RecursivelyAnalyze(op_vertex, tm->symbol, access_type);
-         }
-         if(tm->base)
-         {
-            RecursivelyAnalyze(op_vertex, tm->base, FunctionBehavior_VariableAccessType::USE);
-         }
-         if(tm->idx)
-         {
-            RecursivelyAnalyze(op_vertex, tm->idx, FunctionBehavior_VariableAccessType::USE);
-         }
-         break;
-      }
-      case target_mem_ref461_K:
-      {
-         const auto* tm = GetPointerS<const target_mem_ref461>(tree_node);
-         if(tm->base)
-         {
-            RecursivelyAnalyze(op_vertex, tm->base, FunctionBehavior_VariableAccessType::USE);
-         }
-         if(tm->idx)
-         {
-            RecursivelyAnalyze(op_vertex, tm->idx, FunctionBehavior_VariableAccessType::USE);
-         }
-         if(tm->idx2)
-         {
-            RecursivelyAnalyze(op_vertex, tm->idx2, FunctionBehavior_VariableAccessType::USE);
-         }
-         break;
-      }
-      case constructor_K:
-      {
-         const auto* constr = GetPointerS<const constructor>(tree_node);
+         const auto* constr = GetPointerS<const constructor_node>(ir_node);
          for(const auto& valu : constr->list_of_idx_valu)
          {
-            RecursivelyAnalyze(op_vertex, valu.second, FunctionBehavior_VariableAccessType::USE);
+            RecursivelyAnalyze(op_vertex, valu.second, VariableAccessType::USE, ogc);
          }
          break;
       }
-      case case_label_expr_K:
-      {
-         const auto* cle = GetPointerS<const case_label_expr>(tree_node);
-         if(cle->op0)
-         {
-            RecursivelyAnalyze(op_vertex, cle->op0, FunctionBehavior_VariableAccessType::USE);
-         }
-         if(cle->op1)
-         {
-            RecursivelyAnalyze(op_vertex, cle->op1, FunctionBehavior_VariableAccessType::USE);
-         }
-         break;
-      }
-      case complex_cst_K:
-      case const_decl_K:
-      case field_decl_K:
-      case integer_cst_K:
-      case label_decl_K:
-      case namespace_decl_K:
-      case template_decl_K:
-      case real_cst_K:
-      case string_cst_K:
-      case vector_cst_K:
-      case void_cst_K:
+      case field_val_node_K:
+      case constant_int_val_node_K:
+      case constant_fp_val_node_K:
+      case constant_vector_val_node_K:
       {
          break;
       }
-      case binfo_K:
-      case block_K:
-      case gimple_bind_K:
-      case gimple_predict_K:
-      case gimple_resx_K:
       case identifier_node_K:
-      case translation_unit_decl_K:
-      case error_mark_K:
-      case using_decl_K:
-      case type_decl_K:
-      case CASE_CPP_NODES:
+      case module_unit_node_K:
       case CASE_FAKE_NODES:
-      case issue_pragma_K:
-      case blackbox_pragma_K:
-      case profiling_pragma_K:
-      case statistical_profiling_K:
-      case map_pragma_K:
-      case call_hw_pragma_K:
-      case call_point_hw_pragma_K:
-      case omp_pragma_K:
-      case null_node_K:
-      case omp_atomic_pragma_K:
-      case omp_critical_pragma_K:
-      case omp_declare_simd_pragma_K:
-      case omp_for_pragma_K:
-      case omp_parallel_pragma_K:
-      case omp_sections_pragma_K:
-      case omp_simd_pragma_K:
-      case omp_parallel_sections_pragma_K:
-      case omp_section_pragma_K:
-      case omp_task_pragma_K:
-      case omp_target_pragma_K:
-      case statement_list_K:
+      case statement_list_node_K:
       case CASE_TYPE_NODES:
-      case target_expr_K:
       {
-         THROW_UNREACHABLE("Unexpected tree node: " + tree_node::GetString(node_kind));
+         THROW_UNREACHABLE("Unexpected IR node: " + ir_node::GetString(node_kind));
          break;
       }
       default:
@@ -670,25 +429,23 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "<--Analyzed node " + STR(tree_node) + "(" + tree_node::GetString(node_kind) + ")");
+                  "<--Analyzed node " + STR(ir_node) + "(" + ir_node::GetString(node_kind) + ")");
    return;
 }
 
-void VarComputation::AnalyzeVops(const vertex op_vertex, const gimple_node* vop) const
+void VarComputation::AnalyzeVops(OpGraph::vertex_descriptor op_vertex, const node_stmt* vop,
+                                 const std::unique_ptr<operations_graph_constructor>& ogc) const
 {
    for(const auto& vuse : vop->vuses)
    {
-      ogc->AddVariable(op_vertex, vuse->index, FunctionBehavior_VariableType::VIRTUAL,
-                       FunctionBehavior_VariableAccessType::USE);
+      ogc->AddVariable(op_vertex, vuse->index, VariableType::VIRTUAL, VariableAccessType::USE);
    }
    if(vop->vdef)
    {
-      ogc->AddVariable(op_vertex, vop->vdef->index, FunctionBehavior_VariableType::VIRTUAL,
-                       FunctionBehavior_VariableAccessType::DEFINITION);
+      ogc->AddVariable(op_vertex, vop->vdef->index, VariableType::VIRTUAL, VariableAccessType::DEFINITION);
    }
    for(auto const& vover : vop->vovers)
    {
-      ogc->AddVariable(op_vertex, vover->index, FunctionBehavior_VariableType::VIRTUAL,
-                       FunctionBehavior_VariableAccessType::OVER);
+      ogc->AddVariable(op_vertex, vover->index, VariableType::VIRTUAL, VariableAccessType::OVER);
    }
 }

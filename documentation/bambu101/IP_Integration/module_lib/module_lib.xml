@@ -7,7 +7,7 @@
       <operation operation_name="module1" bounded="0" />
       <channels_type>MEM_ACC_11,MEM_ACC_N1</channels_type>
       <circuit>
-        <component_o id="module1">
+        <module_o id="module1">
           <description>Module 1 IP</description>
           <copyright>foo</copyright>
           <authors>foo</authors>
@@ -71,7 +71,7 @@
             <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <NP_functionality LIBRARY="module1 outputs Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" IP_COMPONENT="__builtin_memstore" VERILOG_FILE_PROVIDED="module1.v" />
-        </component_o>
+        </module_o>
       </circuit>
     </cell>
     <cell>
@@ -79,7 +79,7 @@
       <channels_type>MEM_ACC_11,MEM_ACC_N1</channels_type>
       <operation operation_name="module2" bounded="0" />
       <circuit>
-        <component_o id="module2">
+        <module_o id="module2">
           <description>Module 2 IP</description>
           <copyright>foo</copyright>
           <authors>foo</authors>
@@ -140,14 +140,14 @@
             <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <NP_functionality LIBRARY="module2 outputs Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" IP_COMPONENT="__builtin_memstore" VERILOG_FILE_PROVIDED="module2.v" />
-        </component_o>
+        </module_o>
       </circuit>
     </cell>
     <cell>
       <name>printer2</name>
       <operation operation_name="printer2" bounded="0" />
       <circuit>
-        <component_o id="printer2">
+        <module_o id="printer2">
           <description>Printer 2 IP</description>
           <copyright>foo</copyright>
           <authors>foo</authors>
@@ -175,14 +175,14 @@
             <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <NP_functionality LIBRARY="printer2 " VERILOG_FILE_PROVIDED="printer2.v" />
-        </component_o>
+        </module_o>
       </circuit>
     </cell>
     <cell>
       <name>printer1</name>
       <operation operation_name="printer1" bounded="0" />
       <circuit>
-        <component_o id="printer1">
+        <module_o id="printer1">
           <description>Printer 1 IP</description>
           <copyright>foo</copyright>
           <authors>foo</authors>
@@ -213,7 +213,7 @@
             <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <NP_functionality LIBRARY="printer1 " VERILOG_FILE_PROVIDED="printer1.v" />
-        </component_o>
+        </module_o>
       </circuit>
     </cell>
   </library>

@@ -1,0 +1,56 @@
+This copyright notice is intended for the following libraries
+distributed within the PandA Bambu HLS release:
+  - lib/panda/64/libsoftfloat.a
+  - lib/panda/32/libsoftfloat.a
+  - lib/panda/x32/libsoftfloat.a
+
+The implementation within these libraries is based on the Softfloat
+library by John R. Hauser, Release 2b. The original version of the
+library has been heavily modified and almost completely rewritten,
+still the related copyright notice has been preserved to pay credits
+to the original authors.
+
+The following copyright notices apply to the distributed libraries
+cited above:
+
+(1)
+  Copyright (C) 2013-2026 Politecnico di Milano
+  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
+  Licensed under the Apache License, Version 2.0, with the BAMBU exceptions
+  stated in the LICENSE file.
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+The complete Apache License, Version 2.0, with the BAMBU exceptions is reported
+in the installed LICENSE file for softfloat.
+
+(2)
+  This C header file is part of the SoftFloat IEC/IEEE Floating-point Arithmetic
+  Package, Release 2b.
+
+  Written by John R. Hauser.  This work was made possible in part by the
+  International Computer Science Institute, located at Suite 600, 1947 Center
+  Street, Berkeley, California 94704.  Funding was partially provided by the
+  National Science Foundation under grant MIP-9311980.  The original version
+  of this code was written as part of a project to build a fixed-point vector
+  processor in collaboration with the University of California at Berkeley,
+  overseen by Profs. Nelson Morgan and John Wawrzynek.  More information
+  is available through the Web page `http://www.cs.berkeley.edu/~jhauser/
+  arithmetic/SoftFloat.html'.
+
+  THIS SOFTWARE IS DISTRIBUTED AS IS, FOR FREE.  Although reasonable effort has
+  been made to avoid it, THIS SOFTWARE MAY CONTAIN FAULTS THAT WILL AT TIMES
+  RESULT IN INCORRECT BEHAVIOR.  USE OF THIS SOFTWARE IS RESTRICTED TO PERSONS
+  AND ORGANIZATIONS WHO CAN AND WILL TAKE FULL RESPONSIBILITY FOR ALL LOSSES,
+  COSTS, OR OTHER PROBLEMS THEY INCUR DUE TO THE SOFTWARE, AND WHO FURTHERMORE
+  EFFECTIVELY INDEMNIFY JOHN HAUSER AND THE INTERNATIONAL COMPUTER SCIENCE
+  INSTITUTE (possibly via similar legal warning) AGAINST ALL LOSSES, COSTS, OR
+  OTHER PROBLEMS INCURRED BY THEIR CUSTOMERS AND CLIENTS DUE TO THE SOFTWARE.
+
+  Derivative works are acceptable, even for commercial purposes, so long as
+  (1) the source code for the derivative work includes prominent notice that
+  the work is derivative, and (2) the source code includes prominent notice with
+  these four paragraphs for those parts of this code that are retained.

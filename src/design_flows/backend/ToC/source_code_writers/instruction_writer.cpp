@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -36,23 +36,20 @@
  *
  * @author Luca Fossati <fossati@elet.polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "instruction_writer.hpp"
 
 #include "Parameter.hpp"
-#include "actor_graph_backend.hpp"
 #include "application_manager.hpp"
 #include "behavioral_helper.hpp"
 #include "function_behavior.hpp"
 #include "indented_output_stream.hpp"
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
+#include "op_graph.hpp"
 #include "refcount.hpp"
 #include "string_manipulation.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
 #include "var_pp_functor.hpp"
 
 InstructionWriter::InstructionWriter(const application_managerConstRef _AppM,
@@ -63,36 +60,15 @@ InstructionWriter::InstructionWriter(const application_managerConstRef _AppM,
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-InstructionWriterRef InstructionWriter::CreateInstructionWriter(const ActorGraphBackend_Type actor_graph_backend_type,
-                                                                const application_managerConstRef AppM,
-                                                                const IndentedOutputStreamRef indented_output_stream,
-                                                                const ParameterConstRef parameters)
-{
-   switch(actor_graph_backend_type)
-   {
-      case(ActorGraphBackend_Type::BA_NONE):
-      {
-         return InstructionWriterRef(new InstructionWriter(AppM, indented_output_stream, parameters));
-      }
-      default:
-      {
-         THROW_UNREACHABLE("");
-      }
-   }
-   return InstructionWriterRef();
-}
-
-InstructionWriter::~InstructionWriter() = default;
-
 void InstructionWriter::Initialize()
 {
 }
 
-void InstructionWriter::write(const FunctionBehaviorConstRef function_behavior, const vertex statement,
-                              const var_pp_functorConstRef varFunctor)
+void InstructionWriter::write(const FunctionBehaviorConstRef function_behavior, OpGraph::vertex_descriptor statement,
+                              const std::unique_ptr<var_pp_functor>& varFunctor)
 {
    const auto statement_string = function_behavior->CGetBehavioralHelper()->print_vertex(
-       function_behavior->CGetOpGraph(FunctionBehavior::CFG), statement, varFunctor);
+       function_behavior->GetOpGraph(FunctionBehavior::CFG), statement, varFunctor);
 
    if(statement_string.size())
    {
@@ -102,10 +78,10 @@ void InstructionWriter::write(const FunctionBehaviorConstRef function_behavior, 
 
 void InstructionWriter::declareFunction(const unsigned int function_id)
 {
-   const auto TM = AppM->get_tree_manager();
+   const auto TM = AppM->get_ir_manager();
    const auto BH = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
-   const auto fdecl = tree_helper::PrintType(TM, TM->GetTreeNode(function_id), false, true, false, nullptr,
-                                             var_pp_functorConstRef(new std_var_pp_functor(BH)));
+   const auto fdecl =
+       ir_helper::PrintType(TM->GetIRNode(function_id), true, false, nullptr, std::make_unique<std_var_pp_functor>(BH));
    indented_output_stream->Append(fdecl);
 }
 

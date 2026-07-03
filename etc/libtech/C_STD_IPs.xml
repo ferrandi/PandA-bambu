@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<technology>
+  <library>
+    <name>STD_FU</name>
+    <template>
+      <name>MUX2_GATE</name>
+      <circuit>
+        <module_o id="MUX2_GATE">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="MUX2_GATE"/>
+          <port_o id="sel" dir="IN">
+            <structural_type_descriptor type="BOOL"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="MUX2_GATE in1 in2 out1" VERILOG_PROVIDED="
+reg [BITSIZE_out1-1:0] out1;
+always @(*)
+begin
+  if (sel == 1&apos;b0)
+  begin
+    out1 = in2;
+  end
+  else
+  begin
+    out1 = in1;
+  end
+end
+" VHDL_PROVIDED="
+begin
+  process(in1, in2, sel)
+  begin
+    if sel = &apos;0&apos; then
+      out1 &lt;= in2;
+    else
+      out1 &lt;= in1;
+    end if;
+  end process;
+"/>
+        </module_o>
+      </circuit>
+    </template>
+  </library>
+</technology>

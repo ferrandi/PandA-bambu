@@ -1,7 +1,6 @@
 int adders(int a, int b, int c, int d, int e, int f, int g, int h, int i, int j, int k, int l)
 {
-#pragma HLS pipeline II = 1
-
+#pragma HLS pipeline II = 2
    int aa = a + b;
    int ab = aa + c;
    int ac = ab + d;

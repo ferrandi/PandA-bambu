@@ -12,33 +12,30 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
  * @file var_decl_fix.cpp
- * @brief Pre-analysis step fixing var_decl duplication.
+ * @brief Pre-analysis step fixing variable_val_node duplication.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "var_decl_fix.hpp"
@@ -49,27 +46,22 @@
 #include "custom_map.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
-#include "ext_tree_node.hpp"
 #include "function_behavior.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "ir_basic_block.hpp"
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
+#include "ir_node.hpp"
+#include "string_manipulation.hpp"
 #include "token_interface.hpp"
-#include "tree_basic_block.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
-#include <fstream>
+
 #include <string>
 
 VarDeclFix::VarDeclFix(const application_managerRef _AppM, unsigned int _function_id,
-                       const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters,
-                       const FrontendFlowStepType _frontend_flow_step_type)
-    : FunctionFrontendFlowStep(_AppM, _function_id, _frontend_flow_step_type, _design_flow_manager, _parameters),
-      modified(false)
+                       const DesignFlowManager& _design_flow_manager, const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, VAR_DECL_FIX, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
-
-VarDeclFix::~VarDeclFix() = default;
 
 CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 VarDeclFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -80,16 +72,15 @@ VarDeclFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType 
       case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(CHECK_SYSTEM_TYPE, SAME_FUNCTION));
-         break;
-      }
-      case(INVALIDATION_RELATIONSHIP):
-      {
+         relationships.insert(std::make_pair(PARM_DECL_TAKEN_ADDRESS, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(PARM_DECL_TAKEN_ADDRESS, SAME_FUNCTION));
-         relationships.insert(std::make_pair(INTERFACE_INFER, WHOLE_APPLICATION));
+         break;
+      }
+      case(INVALIDATION_RELATIONSHIP):
+      {
          break;
       }
       default:
@@ -100,15 +91,22 @@ VarDeclFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType 
    return relationships;
 }
 
+bool VarDeclFix::HasToBeExecuted() const
+{
+   return (bb_version == 0 || GetStatus() == DesignFlowStep_Status::UNEXECUTED) &&
+          FunctionFrontendFlowStep::HasToBeExecuted();
+}
+
 DesignFlowStep_Status VarDeclFix::InternalExec()
 {
-   const tree_managerRef TM = AppM->get_tree_manager();
-   const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
-   auto* fd = GetPointer<function_decl>(curr_tn);
-   auto* sl = GetPointer<statement_list>(fd->body);
+   const auto TM = AppM->get_ir_manager();
+   const auto fnode = TM->GetIRNode(function_id);
+   const auto* fd = GetPointerS<const function_val_node>(fnode);
+   const auto* sl = GetPointerS<const statement_list_node>(fd->body);
+   const auto fname = ir_helper::GetFunctionName(fnode);
+
    /// Already considered decl_node
    CustomUnorderedSet<unsigned int> already_examinated_decls;
-   modified = false;
 
    /// Already found variable and parameter names
    CustomUnorderedSet<std::string> already_examinated_names;
@@ -119,67 +117,174 @@ DesignFlowStep_Status VarDeclFix::InternalExec()
    /// Already visited address expression (used to avoid infinite recursion)
    CustomUnorderedSet<unsigned int> already_visited_ae;
 
+   bool modified = false;
+
+   // Function parameters are part of the interface and their name is used as key by the user, thus they have precedence
+   // and may not be renamed when possible
    for(const auto& arg : fd->list_of_args)
    {
-      recursive_examinate(arg, already_examinated_decls, already_examinated_names, already_examinated_type_names,
-                          already_visited_ae);
+#if HAVE_ASSERTS
+      const auto* arg_decl = GetPointerS<argument_val_node>(arg);
+      THROW_ASSERT(arg_decl->name->get_kind() == identifier_node_K, "unexpected condition");
+      const auto orig_parm_name = GetPointerS<identifier_node>(arg_decl->name)->strg;
+#endif
+      modified |= recursive_examinate(arg, already_examinated_decls, already_examinated_names,
+                                      already_examinated_type_names, already_visited_ae);
+      THROW_ASSERT(orig_parm_name == GetPointerS<identifier_node>(arg_decl->name)->strg, "unexpected condition");
    }
 
-   std::map<unsigned int, blocRef>& blocks = sl->list_of_bloc;
-   std::map<unsigned int, blocRef>::iterator it, it_end;
-
-   it_end = blocks.end();
-   for(it = blocks.begin(); it != it_end; ++it)
+   for(const auto& [bbi, bb] : sl->list_of_bloc)
    {
-      for(const auto& stmt : it->second->CGetStmtList())
+      for(const auto& stmt : bb->CGetStmtList())
       {
-         recursive_examinate(stmt, already_examinated_decls, already_examinated_names, already_examinated_type_names,
-                             already_visited_ae);
+         modified |= recursive_examinate(stmt, already_examinated_decls, already_examinated_names,
+                                         already_examinated_type_names, already_visited_ae);
       }
    }
+
    return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
 
-void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<unsigned int>& already_examinated_decls,
+bool VarDeclFix::recursive_examinate(const ir_nodeRef& curr_tn,
+                                     CustomUnorderedSet<unsigned int>& already_examinated_decls,
                                      CustomUnorderedSet<std::string>& already_examinated_names,
                                      CustomUnorderedSet<std::string>& already_examinated_type_names,
                                      CustomUnorderedSet<unsigned int>& already_visited_ae)
 {
-   const tree_managerRef TM = AppM->get_tree_manager();
-   const tree_nodeRef curr_tn = tn;
+   bool modified = false;
+   const auto TM = AppM->get_ir_manager();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Analyzing recursively " + curr_tn->get_kind_text() + " " + STR(tn->index) + ": " +
+                  "-->Analyzing recursively " + curr_tn->get_kind_text() + " " + STR(curr_tn->index) + ": " +
                       curr_tn->ToString());
    switch(curr_tn->get_kind())
    {
-      case call_expr_K:
-      case aggr_init_expr_K:
+      case variable_val_node_K:
+      case argument_val_node_K:
       {
-         const call_expr* ce = GetPointer<call_expr>(curr_tn);
-         const std::vector<tree_nodeRef>& args = ce->args;
-         std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; ++arg)
+         if(already_examinated_decls.insert(curr_tn->index).second)
          {
-            recursive_examinate(*arg, already_examinated_decls, already_examinated_names, already_examinated_type_names,
+            auto* dn = GetPointerS<decl_node>(curr_tn);
+            recursive_examinate(dn->type, already_examinated_decls, already_examinated_names,
+                                already_examinated_type_names, already_visited_ae);
+            if(dn->name)
+            {
+               const auto decl_name = GetPointerS<const identifier_node>(dn->name)->strg;
+
+               // check if the variable_val_node
+               if(curr_tn->get_kind() == variable_val_node_K)
+               { /* this is a variable declaration */
+                  const auto* cast_res = GetPointerS<variable_val_node>(curr_tn);
+                  if(cast_res->static_flag)
+                  {
+                     PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                   "Found a static variable with identifier <" + decl_name + "> within function #" +
+                                       STR(function_id));
+                  }
+               }
+
+               if(!already_examinated_names.insert(decl_name).second)
+               {
+                  const auto name_id = ir_helper::NormalizeTypename(decl_name);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---" + name_id + " is a duplicated " + curr_tn->get_kind_text());
+                  /// create a new identifier_node IR node
+                  ir_manager::IRSchema IR_schema;
+                  unsigned int var_decl_name_nid_test;
+                  unsigned int var_decl_unique_id = 0;
+                  std::string id0;
+                  do
+                  {
+                     id0 = name_id + STR(var_decl_unique_id++);
+                     var_decl_name_nid_test = TM->find_identifier_nodeID(id0);
+                  } while(var_decl_name_nid_test);
+                  IR_schema[TOK(TOK_STRG)] = id0;
+                  dn->name = TM->create_ir_node(identifier_node_K, IR_schema);
+                  function_behavior->GetBehavioralHelper()->InvaildateVariableName(dn->index);
+                  modified = true;
+               }
+            }
+         }
+         break;
+      }
+      case CASE_UNARY_NODES:
+      {
+         if(curr_tn->get_kind() == addr_node_K && !already_visited_ae.insert(curr_tn->index).second)
+         {
+            break;
+         }
+         const auto* ue = GetPointerS<unary_node>(curr_tn);
+         recursive_examinate(ue->op, already_examinated_decls, already_examinated_names, already_examinated_type_names,
+                             already_visited_ae);
+         break;
+      }
+      case ssa_node_K:
+      {
+         const auto* sn = GetPointerS<ssa_node>(curr_tn);
+         if(sn->var)
+         {
+            recursive_examinate(sn->var, already_examinated_decls, already_examinated_names,
+                                already_examinated_type_names, already_visited_ae);
+         }
+         break;
+      }
+      case CASE_TYPE_NODES:
+      {
+         if(already_examinated_decls.insert(curr_tn->index).second)
+         {
+            if(curr_tn->get_kind() == struct_ty_node_K)
+            {
+               auto* ty = GetPointerS<struct_ty_node>(curr_tn);
+               if(!ty->system_flag && ty->name)
+               {
+                  const auto name_id = GetPointerS<identifier_node>(ty->name)->strg;
+                  if(!already_examinated_type_names.insert(name_id).second)
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + name_id + " is a duplicated type");
+                     /// create a new identifier_node IR node
+                     ir_manager::IRSchema IR_schema;
+                     unsigned int var_decl_name_nid_test;
+                     unsigned int var_decl_unique_id = 0;
+                     do
+                     {
+                        auto id0 = name_id + STR(var_decl_unique_id++);
+                        var_decl_name_nid_test = TM->find_identifier_nodeID(id0);
+                     } while(var_decl_name_nid_test);
+                     ty->name = TM->create_ir_node(identifier_node_K, IR_schema);
+                     modified = true;
+                  }
+               }
+            }
+         }
+         break;
+      }
+      case call_node_K:
+      {
+         const auto* ce = GetPointerS<call_node>(curr_tn);
+         for(const auto& arg : ce->args)
+         {
+            recursive_examinate(arg, already_examinated_decls, already_examinated_names, already_examinated_type_names,
                                 already_visited_ae);
          }
          break;
       }
-      case gimple_call_K:
+      case call_stmt_K:
       {
-         const gimple_call* ce = GetPointer<gimple_call>(curr_tn);
-         const std::vector<tree_nodeRef>& args = ce->args;
-         std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
-         for(arg = args.begin(); arg != arg_end; ++arg)
+         const auto* gc = GetPointerS<call_stmt>(curr_tn);
+         for(const auto& arg : gc->args)
          {
-            recursive_examinate(*arg, already_examinated_decls, already_examinated_names, already_examinated_type_names,
+            recursive_examinate(arg, already_examinated_decls, already_examinated_names, already_examinated_type_names,
                                 already_visited_ae);
+         }
+         if(gc->predicate)
+         {
+            recursive_examinate(gc->predicate, already_examinated_decls, already_examinated_names,
+                                already_examinated_type_names, already_visited_ae);
          }
          break;
       }
-      case gimple_assign_K:
+      case assign_stmt_K:
       {
-         auto* gm = GetPointer<gimple_assign>(curr_tn);
+         const auto* gm = GetPointerS<assign_stmt>(curr_tn);
          recursive_examinate(gm->op0, already_examinated_decls, already_examinated_names, already_examinated_type_names,
                              already_visited_ae);
          recursive_examinate(gm->op1, already_examinated_decls, already_examinated_names, already_examinated_type_names,
@@ -191,112 +296,18 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
          }
          break;
       }
-      case gimple_nop_K:
+      case CASE_BINARY_NODES:
       {
-         break;
-      }
-      case var_decl_K:
-      case parm_decl_K:
-      {
-         if(already_examinated_decls.find(tn->index) == already_examinated_decls.end())
-         {
-            already_examinated_decls.insert(tn->index);
-            auto* dn = GetPointer<decl_node>(tn);
-            recursive_examinate(dn->type, already_examinated_decls, already_examinated_names,
-                                already_examinated_type_names, already_visited_ae);
-            if(dn->name)
-            {
-               // check if the var_decl
-               if(curr_tn->get_kind() == var_decl_K)
-               { /* this is a variable declaration */
-                  auto* cast_res = GetPointer<var_decl>(curr_tn);
-                  if(cast_res->static_flag)
-                  {
-                     PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                   "Found a static variable with identifier <" +
-                                       GetPointer<identifier_node>(dn->name)->strg + "> within function #" +
-                                       STR(function_id));
-                  }
-               }
-
-               std::string original_name = Normalize(GetPointer<identifier_node>(dn->name)->strg);
-               std::string name_id = tree_helper::NormalizeTypename(original_name);
-               if(already_examinated_names.find(original_name) == already_examinated_names.end())
-               {
-                  already_examinated_names.insert(original_name);
-               }
-               else
-               {
-                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, name_id + " is a duplicated var_decl");
-                  /// create a new identifier_node tree node
-                  std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-                  unsigned int var_decl_name_nid_test;
-                  unsigned var_decl_unique_id = 0;
-                  do
-                  {
-                     IR_schema[TOK(TOK_STRG)] = name_id + STR(var_decl_unique_id++);
-                     var_decl_name_nid_test = TM->find(identifier_node_K, IR_schema);
-                  } while(var_decl_name_nid_test);
-                  unsigned int var_decl_name_nid = TM->new_tree_node_id();
-                  TM->create_tree_node(var_decl_name_nid, identifier_node_K, IR_schema);
-                  IR_schema.clear();
-                  tree_nodeRef tr_new_id = TM->GetTreeNode(var_decl_name_nid);
-                  dn->name = tr_new_id;
-                  function_behavior->GetBehavioralHelper()->InvaildateVariableName(dn->index);
-                  modified = true;
-               }
-            }
-         }
-         break;
-      }
-      case ssa_name_K:
-      {
-         const ssa_name* sn = GetPointer<ssa_name>(curr_tn);
-         if(sn->var)
-         {
-            recursive_examinate(sn->var, already_examinated_decls, already_examinated_names,
-                                already_examinated_type_names, already_visited_ae);
-         }
-         break;
-      }
-      case tree_list_K:
-      {
-         tree_nodeRef current = tn;
-         while(current)
-         {
-            recursive_examinate(GetPointer<tree_list>(current)->valu, already_examinated_decls,
-                                already_examinated_names, already_examinated_type_names, already_visited_ae);
-            current = GetPointer<tree_list>(current)->chan;
-         }
-         break;
-      }
-      case CASE_UNARY_EXPRESSION:
-      {
-         if(curr_tn->get_kind() == addr_expr_K)
-         {
-            if(already_visited_ae.find(tn->index) != already_visited_ae.end())
-            {
-               break;
-            }
-            already_visited_ae.insert(tn->index);
-         }
-         const unary_expr* ue = GetPointer<unary_expr>(curr_tn);
-         recursive_examinate(ue->op, already_examinated_decls, already_examinated_names, already_examinated_type_names,
-                             already_visited_ae);
-         break;
-      }
-      case CASE_BINARY_EXPRESSION:
-      {
-         const binary_expr* be = GetPointer<binary_expr>(curr_tn);
+         const auto* be = GetPointerS<binary_node>(curr_tn);
          recursive_examinate(be->op0, already_examinated_decls, already_examinated_names, already_examinated_type_names,
                              already_visited_ae);
          recursive_examinate(be->op1, already_examinated_decls, already_examinated_names, already_examinated_type_names,
                              already_visited_ae);
          break;
       }
-      case CASE_TERNARY_EXPRESSION:
+      case CASE_TERNARY_NODES:
       {
-         const ternary_expr* te = GetPointer<ternary_expr>(curr_tn);
+         const auto* te = GetPointerS<ternary_node>(curr_tn);
          recursive_examinate(te->op0, already_examinated_decls, already_examinated_names, already_examinated_type_names,
                              already_visited_ae);
          if(te->op1)
@@ -311,31 +322,9 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
          }
          break;
       }
-      case CASE_QUATERNARY_EXPRESSION:
+      case lut_node_K:
       {
-         const quaternary_expr* qe = GetPointer<quaternary_expr>(curr_tn);
-         recursive_examinate(qe->op0, already_examinated_decls, already_examinated_names, already_examinated_type_names,
-                             already_visited_ae);
-         if(qe->op1)
-         {
-            recursive_examinate(qe->op1, already_examinated_decls, already_examinated_names,
-                                already_examinated_type_names, already_visited_ae);
-         }
-         if(qe->op2)
-         {
-            recursive_examinate(qe->op2, already_examinated_decls, already_examinated_names,
-                                already_examinated_type_names, already_visited_ae);
-         }
-         if(qe->op3)
-         {
-            recursive_examinate(qe->op3, already_examinated_decls, already_examinated_names,
-                                already_examinated_type_names, already_visited_ae);
-         }
-         break;
-      }
-      case lut_expr_K:
-      {
-         auto* le = GetPointer<lut_expr>(curr_tn);
+         const auto* le = GetPointerS<lut_node>(curr_tn);
          recursive_examinate(le->op0, already_examinated_decls, already_examinated_names, already_examinated_type_names,
                              already_visited_ae);
          recursive_examinate(le->op1, already_examinated_decls, already_examinated_names, already_examinated_type_names,
@@ -377,35 +366,19 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
          }
          break;
       }
-      case constructor_K:
+      case constructor_node_K:
       {
-         const constructor* co = GetPointer<constructor>(curr_tn);
-         const std::vector<std::pair<tree_nodeRef, tree_nodeRef>>& list_of_idx_valu = co->list_of_idx_valu;
-         std::vector<std::pair<tree_nodeRef, tree_nodeRef>>::const_iterator it, it_end = list_of_idx_valu.end();
-         for(it = list_of_idx_valu.begin(); it != it_end; ++it)
+         const auto* co = GetPointerS<constructor_node>(curr_tn);
+         for(const auto& [idx, valu] : co->list_of_idx_valu)
          {
-            recursive_examinate(it->second, already_examinated_decls, already_examinated_names,
-                                already_examinated_type_names, already_visited_ae);
+            recursive_examinate(valu, already_examinated_decls, already_examinated_names, already_examinated_type_names,
+                                already_visited_ae);
          }
          break;
       }
-      case gimple_cond_K:
+      case multi_way_if_stmt_K:
       {
-         const gimple_cond* gc = GetPointer<gimple_cond>(curr_tn);
-         recursive_examinate(gc->op0, already_examinated_decls, already_examinated_names, already_examinated_type_names,
-                             already_visited_ae);
-         break;
-      }
-      case gimple_switch_K:
-      {
-         const gimple_switch* se = GetPointer<gimple_switch>(curr_tn);
-         recursive_examinate(se->op0, already_examinated_decls, already_examinated_names, already_examinated_type_names,
-                             already_visited_ae);
-         break;
-      }
-      case gimple_multi_way_if_K:
-      {
-         auto* gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
+         const auto* gmwi = GetPointerS<multi_way_if_stmt>(curr_tn);
          for(const auto& cond : gmwi->list_of_cond)
          {
             if(cond.first)
@@ -416,9 +389,9 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
          }
          break;
       }
-      case gimple_return_K:
+      case return_stmt_K:
       {
-         const gimple_return* re = GetPointer<gimple_return>(curr_tn);
+         const auto* re = GetPointerS<return_stmt>(curr_tn);
          if(re->op)
          {
             recursive_examinate(re->op, already_examinated_decls, already_examinated_names,
@@ -426,174 +399,18 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
          }
          break;
       }
-      case gimple_for_K:
-      {
-         const gimple_for* fe = GetPointer<gimple_for>(curr_tn);
-         recursive_examinate(fe->op0, already_examinated_decls, already_examinated_names, already_examinated_type_names,
-                             already_visited_ae);
-         recursive_examinate(fe->op1, already_examinated_decls, already_examinated_names, already_examinated_type_names,
-                             already_visited_ae);
-         recursive_examinate(fe->op2, already_examinated_decls, already_examinated_names, already_examinated_type_names,
-                             already_visited_ae);
+      case field_val_node_K:
+      case function_val_node_K:
+      case nop_stmt_K:
+      case constant_int_val_node_K:
+      case constant_fp_val_node_K:
+      case constant_vector_val_node_K:
          break;
-      }
-      case gimple_while_K:
-      {
-         const gimple_while* we = GetPointer<gimple_while>(curr_tn);
-         recursive_examinate(we->op0, already_examinated_decls, already_examinated_names, already_examinated_type_names,
-                             already_visited_ae);
-         break;
-      }
-      case CASE_TYPE_NODES:
-      {
-         if(already_examinated_decls.find(tn->index) == already_examinated_decls.end())
-         {
-            already_examinated_decls.insert(tn->index);
-            auto* ty = GetPointer<type_node>(tn);
-            if(ty && ty->name && ty->name->get_kind() == type_decl_K)
-            {
-               recursive_examinate(ty->name, already_examinated_decls, already_examinated_names,
-                                   already_examinated_type_names, already_visited_ae);
-            }
-            else if(ty and (not ty->system_flag) and ty->name and (ty->name->get_kind() == identifier_node_K) and
-                    (ty->get_kind() != integer_type_K))
-            {
-               std::string name_id = GetPointer<identifier_node>(ty->name)->strg;
-               if(already_examinated_type_names.find(name_id) == already_examinated_type_names.end())
-               {
-                  already_examinated_type_names.insert(name_id);
-               }
-               else
-               {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + name_id + " is a duplicated type");
-                  /// create a new identifier_node tree node
-                  std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-                  unsigned int var_decl_name_nid_test;
-                  unsigned var_decl_unique_id = 0;
-                  do
-                  {
-                     IR_schema[TOK(TOK_STRG)] = name_id + STR(var_decl_unique_id++);
-                     var_decl_name_nid_test = TM->find(identifier_node_K, IR_schema);
-                  } while(var_decl_name_nid_test);
-                  unsigned int var_decl_name_nid = TM->new_tree_node_id();
-                  TM->create_tree_node(var_decl_name_nid, identifier_node_K, IR_schema);
-                  IR_schema.clear();
-                  tree_nodeRef tr_new_id = TM->GetTreeNode(var_decl_name_nid);
-                  ty->name = tr_new_id;
-                  modified = true;
-               }
-            }
-         }
-         break;
-      }
-      case type_decl_K:
-      {
-         auto* td = GetPointer<type_decl>(tn);
-         if(td and td->name and td->include_name != "<built-in>" and (not td->operating_system_flag) and
-            (not td->library_system_flag))
-         {
-            std::string name_id = GetPointer<identifier_node>(td->name)->strg;
-            if(already_examinated_type_names.find(name_id) == already_examinated_type_names.end())
-            {
-               already_examinated_type_names.insert(name_id);
-            }
-            else
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + name_id + " is a duplicated type");
-               /// create a new identifier_node tree node
-               std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-               unsigned int var_decl_name_nid_test;
-               unsigned var_decl_unique_id = 0;
-               do
-               {
-                  IR_schema[TOK(TOK_STRG)] = name_id + STR(var_decl_unique_id++);
-                  var_decl_name_nid_test = TM->find(identifier_node_K, IR_schema);
-               } while(var_decl_name_nid_test);
-               unsigned int var_decl_name_nid = TM->new_tree_node_id();
-               TM->create_tree_node(var_decl_name_nid, identifier_node_K, IR_schema);
-               IR_schema.clear();
-               tree_nodeRef tr_new_id = TM->GetTreeNode(var_decl_name_nid);
-               td->name = tr_new_id;
-               modified = true;
-            }
-         }
-         break;
-      }
-      case target_mem_ref_K:
-      {
-         const target_mem_ref* tmr = GetPointer<target_mem_ref>(curr_tn);
-         if(tmr->symbol)
-         {
-            recursive_examinate(tmr->symbol, already_examinated_decls, already_examinated_names,
-                                already_examinated_type_names, already_visited_ae);
-         }
-         if(tmr->base)
-         {
-            recursive_examinate(tmr->base, already_examinated_decls, already_examinated_names,
-                                already_examinated_type_names, already_visited_ae);
-         }
-         if(tmr->idx)
-         {
-            recursive_examinate(tmr->idx, already_examinated_decls, already_examinated_names,
-                                already_examinated_type_names, already_visited_ae);
-         }
-         break;
-      }
-      case target_mem_ref461_K:
-      {
-         const target_mem_ref461* tmr = GetPointer<target_mem_ref461>(curr_tn);
-         if(tmr->base)
-         {
-            recursive_examinate(tmr->base, already_examinated_decls, already_examinated_names,
-                                already_examinated_type_names, already_visited_ae);
-         }
-         if(tmr->idx)
-         {
-            recursive_examinate(tmr->idx, already_examinated_decls, already_examinated_names,
-                                already_examinated_type_names, already_visited_ae);
-         }
-         if(tmr->idx2)
-         {
-            recursive_examinate(tmr->idx2, already_examinated_decls, already_examinated_names,
-                                already_examinated_type_names, already_visited_ae);
-         }
-         break;
-      }
-      case CASE_PRAGMA_NODES:
-      case case_label_expr_K:
-      case complex_cst_K:
-      case field_decl_K:
-      case function_decl_K:
-      case gimple_asm_K:
-      case gimple_goto_K:
-      case gimple_label_K:
-      case gimple_pragma_K:
-      case gimple_resx_K:
-      case integer_cst_K:
-      case label_decl_K:
-      case real_cst_K:
-      case result_decl_K:
-      case string_cst_K:
-      case template_decl_K:
-      case tree_vec_K:
-      case vector_cst_K:
-      case void_cst_K:
-         break;
-      case CASE_CPP_NODES:
-      case CASE_FAKE_NODES:
-      case binfo_K:
-      case block_K:
-      case const_decl_K:
-      case error_mark_K:
-      case gimple_bind_K:
-      case gimple_phi_K:
-      case gimple_predict_K:
+      case phi_stmt_K:
       case identifier_node_K:
-      case namespace_decl_K:
-      case statement_list_K:
-      case target_expr_K:
-      case translation_unit_decl_K:
-      case using_decl_K:
+      case statement_list_node_K:
+      case module_unit_node_K:
+      case CASE_FAKE_NODES:
       {
          THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + std::string(curr_tn->get_kind_text()));
          break;
@@ -601,11 +418,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
       default:
          THROW_UNREACHABLE("");
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed recursively " + STR(tn->index) + ": " + STR(tn));
-   return;
-}
-
-const std::string VarDeclFix::Normalize(const std::string& identifier) const
-{
-   return identifier;
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "<--Analyzed recursively " + STR(curr_tn->index) + ": " + STR(curr_tn));
+   return modified;
 }

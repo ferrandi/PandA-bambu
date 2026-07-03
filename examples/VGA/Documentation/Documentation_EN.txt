@@ -81,6 +81,7 @@ It has been tested on Ubuntu 14.04 LTS with Quartus II 13.0.1.
 
 
 ****************************LICENSES**************************
-This project is released under the GNU General Public License version 3 and being 
-developed at Politecnico di Milano (Italy). 
-Please refer to COPYING file included into this project.
+SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+This project is released under the Apache License, Version 2.0, with BAMBU exceptions,
+and is developed at Politecnico di Milano (Italy).
+Please refer to the repository license files for the full license terms.

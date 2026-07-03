@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -36,9 +36,6 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "memory_allocation.hpp"
@@ -51,18 +48,17 @@
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
-#include "ext_tree_node.hpp"
 #include "function_behavior.hpp"
 #include "generic_device.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
+#include "ir_node.hpp"
 #include "math_function.hpp"
 #include "memory.hpp"
 #include "op_graph.hpp"
 #include "string_manipulation.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
 
 #include <algorithm>
 #include <string>
@@ -87,6 +83,9 @@ std::string MemoryAllocationSpecialization::GetName() const
          break;
       case MemoryAllocation_Policy::GSS:
          ret += "GSS";
+         break;
+      case MemoryAllocation_Policy::GLSS:
+         ret += "GLSS";
          break;
       case MemoryAllocation_Policy::ALL_BRAM:
          ret += "ALL_BRAM";
@@ -113,12 +112,6 @@ std::string MemoryAllocationSpecialization::GetName() const
       case MemoryAllocation_ChannelsType::MEM_ACC_NN:
          ret += "NN";
          break;
-      case MemoryAllocation_ChannelsType::MEM_ACC_P1N:
-         ret += "P1N";
-         break;
-      case MemoryAllocation_ChannelsType::MEM_ACC_CS:
-         ret += "CS";
-         break;
       default:
          THROW_UNREACHABLE("");
    }
@@ -136,7 +129,7 @@ HLSFlowStepSpecialization::context_t MemoryAllocationSpecialization::GetSignatur
 }
 
 memory_allocation::memory_allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
-                                     const DesignFlowManagerConstRef _design_flow_manager,
+                                     const DesignFlowManager& _design_flow_manager,
                                      const HLSFlowStep_Type _hls_flow_step_type,
                                      const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_type,
@@ -152,15 +145,13 @@ memory_allocation::memory_allocation(const ParameterConstRef _parameters, const 
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-memory_allocation::~memory_allocation() = default;
-
 HLS_step::HLSRelationships
 memory_allocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    HLSRelationships ret;
    switch(relationship_type)
    {
-      case DEPENDENCE_RELATIONSHIP:
+      case(DEPENDENCE_RELATIONSHIP):
       {
          ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::ALL_FUNCTIONS));
@@ -168,11 +159,11 @@ memory_allocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipTyp
                                     HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
          break;
       }
-      case INVALIDATION_RELATIONSHIP:
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case PRECEDENCE_RELATIONSHIP:
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -184,8 +175,8 @@ memory_allocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipTyp
 
 void memory_allocation::setup_memory_allocation()
 {
-   const auto cg_man = HLSMgr->CGetCallGraphManager();
-   func_list = cg_man->GetReachedBodyFunctions();
+   const auto& CGM = HLSMgr->CGetCallGraphManager();
+   func_list = CGM.GetReachedBodyFunctions();
    /// the analysis has to be performed only on the reachable functions
    for(const auto It : func_list)
    {
@@ -216,10 +207,10 @@ void memory_allocation::finalize_memory_allocation()
    THROW_ASSERT(func_list.size(), "Empty list of functions to be analyzed");
    bool use_unknown_address = false;
    bool has_unaligned_accesses = false;
-   auto m64P = parameters->getOption<std::string>(OPT_gcc_m_env).find("-m64") != std::string::npos;
+   auto m64P = parameters->getOption<std::string>(OPT_cc_m_env).find("-m64") != std::string::npos;
    bool assume_aligned_access_p =
        parameters->isOption(OPT_aligned_access) && parameters->getOption<bool>(OPT_aligned_access);
-   const auto TreeM = HLSMgr->get_tree_manager();
+   const auto IRM = HLSMgr->get_ir_manager();
    for(const auto It : func_list)
    {
       const auto FB = HLSMgr->CGetFunctionBehavior(It);
@@ -229,7 +220,7 @@ void memory_allocation::finalize_memory_allocation()
       if(FB->get_dereference_unknown_addr())
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                        "---This function uses unknown addresses deref: " + BH->get_function_name());
+                        "---This function uses unknown addresses deref: " + BH->GetFunctionName());
       }
 
       use_unknown_address |= FB->get_dereference_unknown_addr();
@@ -237,7 +228,7 @@ void memory_allocation::finalize_memory_allocation()
       if(FB->get_unaligned_accesses())
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                        "---This function performs unaligned accesses: " + BH->get_function_name());
+                        "---This function performs unaligned accesses: " + BH->GetFunctionName());
          if(assume_aligned_access_p)
          {
             THROW_ERROR("Option --aligned-access have been specified on a function with unaligned accesses");
@@ -257,24 +248,24 @@ void memory_allocation::finalize_memory_allocation()
 
    if(HLSMgr->Rmem->has_implicit_memcpy())
    {
-      const auto memcpy_function = TreeM->GetFunction(MEMCPY);
+      const auto memcpy_function = IRM->GetFunction(MEMCPY);
       func_list.insert(memcpy_function->index);
    }
 
    unsigned long long maximum_bus_size = 0;
    bool use_databus_width = false;
    bool has_intern_shared_data = false;
-   bool has_misaligned_indirect_ref = HLSMgr->Rmem->has_packed_vars();
+   bool has_unaligned_mem_access = HLSMgr->Rmem->has_packed_vars();
    bool needMemoryMappedRegisters = false;
-   const auto call_graph_manager = HLSMgr->CGetCallGraphManager();
-   const auto root_functions = call_graph_manager->GetRootFunctions();
+   const auto& CGM = HLSMgr->CGetCallGraphManager();
+   const auto root_functions = CGM.GetRootFunctions();
    /// looking for the maximum data bus size needed
    for(auto fun_id : func_list)
    {
       const auto function_behavior = HLSMgr->CGetFunctionBehavior(fun_id);
       const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
       const auto is_interfaced = HLSMgr->hasToBeInterfaced(behavioral_helper->get_function_index());
-      const auto fname = behavioral_helper->GetMangledFunctionName();
+      const auto fname = behavioral_helper->GetFunctionName();
       const auto func_arch = HLSMgr->module_arch->GetArchitecture(fname);
       if(function_behavior->get_has_globals() && parameters->isOption(OPT_expose_globals) &&
          parameters->getOption<bool>(OPT_expose_globals))
@@ -291,7 +282,7 @@ void memory_allocation::finalize_memory_allocation()
                          "Parameter " + pname + " not found in function " + fname);
             const auto& parm_attrs = func_arch->parms.at(pname);
             const auto& iface_attrs = func_arch->ifaces.at(parm_attrs.at(FunctionArchitecture::parm_bundle));
-            const auto iface_mode = iface_attrs.at(FunctionArchitecture::iface_mode);
+            const auto& iface_mode = iface_attrs.at(FunctionArchitecture::iface_mode);
             if(iface_mode != "default")
             {
                continue;
@@ -303,33 +294,31 @@ void memory_allocation::finalize_memory_allocation()
             use_databus_width = true;
             maximum_bus_size = std::max(maximum_bus_size, 8ull);
          }
-         if(!use_unknown_address && is_interfaced && tree_helper::is_a_pointer(TreeM, function_parameter))
+         if(!use_unknown_address && is_interfaced && ir_helper::IsPointerType(IRM->GetIRNode(function_parameter)))
          {
             use_unknown_address = true;
             if(output_level > OUTPUT_LEVEL_NONE)
             {
-               THROW_WARNING("This function uses unknown addresses: " + behavioral_helper->get_function_name());
+               THROW_WARNING("This function uses unknown addresses: " + behavioral_helper->GetFunctionName());
             }
          }
       }
       if(function_behavior->has_packed_vars())
       {
-         has_misaligned_indirect_ref = true;
+         has_unaligned_mem_access = true;
       }
       const auto& parm_decl_stored = function_behavior->get_parm_decl_stored();
       for(unsigned int p : parm_decl_stored)
       {
-         maximum_bus_size =
-             std::max(maximum_bus_size, tree_helper::SizeAlloc(tree_helper::CGetType(TreeM->GetTreeNode(p))));
+         maximum_bus_size = std::max(maximum_bus_size, ir_helper::SizeAlloc(ir_helper::CGetType(IRM->GetIRNode(p))));
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "param with maximum_bus_size=" + STR(maximum_bus_size));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                    "Analyzing function for bus size: " + behavioral_helper->get_function_name());
-      const auto g = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
-      graph::vertex_iterator v, v_end;
-      const auto TM = HLSMgr->get_tree_manager();
-      const auto fnode = TM->GetTreeNode(fun_id);
-      CustomUnorderedSet<vertex> RW_stmts;
+                    "Analyzing function for bus size: " + behavioral_helper->GetFunctionName());
+      const auto g = function_behavior->GetOpGraph(FunctionBehavior::CFG);
+      const auto TM = HLSMgr->get_ir_manager();
+      const auto fnode = TM->GetIRNode(fun_id);
+      CustomUnorderedSet<OpGraph::vertex_descriptor> RW_stmts;
       if(HLSMgr->design_interface_io.find(fname) != HLSMgr->design_interface_io.end())
       {
          for(const auto& bb2arg2stmtsR : HLSMgr->design_interface_io.find(fname)->second)
@@ -340,8 +329,8 @@ void memory_allocation::finalize_memory_allocation()
                {
                   for(const auto& stmt : arg2stms.second)
                   {
-                     const auto op_it = g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt);
-                     if(op_it != g->CGetOpGraphInfo()->tree_node_to_operation.end())
+                     const auto op_it = g.CGetGraphInfo().ir_node_to_operation.find(stmt);
+                     if(op_it != g.CGetGraphInfo().ir_node_to_operation.end())
                      {
                         RW_stmts.insert(op_it->second);
                      }
@@ -351,22 +340,23 @@ void memory_allocation::finalize_memory_allocation()
          }
       }
 
-      for(boost::tie(v, v_end) = boost::vertices(*g); v != v_end; ++v)
+      for(const auto v : g.vertices())
       {
-         if(RW_stmts.find(*v) != RW_stmts.end())
+         if(RW_stmts.find(v) != RW_stmts.end())
          {
             continue;
          }
-         const auto current_op = g->CGetOpNodeInfo(*v)->GetOperation();
-         const auto var_read = HLSMgr->get_required_values(fun_id, *v);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing operation " + GET_NAME(g, *v));
-         if(GET_TYPE(g, *v) & (TYPE_LOAD | TYPE_STORE))
+         const auto& op_info = g.CGetNodeInfo(v);
+         const auto current_op = op_info.GetOperation();
+         const auto var_read = HLSMgr->get_required_values(fun_id, v);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing operation " + op_info.vertex_name);
+         if(op_info.node_type & (TYPE_LOAD | TYPE_STORE))
          {
-            const auto curr_tn = TreeM->GetTreeNode(g->CGetOpNodeInfo(*v)->GetNodeId());
-            const auto me = GetPointer<const gimple_assign>(curr_tn);
-            THROW_ASSERT(me, "only gimple_assign's are allowed as memory operations");
-            tree_nodeRef expr;
-            if(GET_TYPE(g, *v) | TYPE_STORE)
+            const auto curr_tn = IRM->GetIRNode(op_info.GetNodeId());
+            const auto me = GetPointer<const assign_stmt>(curr_tn);
+            THROW_ASSERT(me, "only assign_stmt's are allowed as memory operations");
+            ir_nodeRef expr;
+            if(op_info.node_type | TYPE_STORE)
             {
                expr = me->op0;
             }
@@ -374,15 +364,15 @@ void memory_allocation::finalize_memory_allocation()
             {
                expr = me->op1;
             }
-            const auto var = tree_helper::GetBaseVariable(expr);
-            if(tree_helper::is_a_misaligned_vector(TreeM, expr->index))
+            const auto var = ir_helper::GetBaseVariable(expr);
+            if(ir_helper::is_a_misaligned_vector(IRM, expr->index))
             {
-               has_misaligned_indirect_ref = true;
+               has_unaligned_mem_access = true;
             }
             /// check for packed struct/union accesses
-            if(!has_misaligned_indirect_ref)
+            if(!has_unaligned_mem_access)
             {
-               has_misaligned_indirect_ref = tree_helper::is_packed_access(TreeM, expr->index);
+               has_unaligned_mem_access = ir_helper::IsPackedAccess(expr);
             }
 
             /// check if a global variable may be accessed from an external component
@@ -390,27 +380,27 @@ void memory_allocation::finalize_memory_allocation()
                !HLSMgr->Rmem->is_private_memory(var->index) && parameters->isOption(OPT_expose_globals) &&
                parameters->getOption<bool>(OPT_expose_globals))
             {
-               const auto vd = GetPointer<const var_decl>(var);
-               if(vd && (((!vd->scpe || vd->scpe->get_kind() == translation_unit_decl_K) && !vd->static_flag) ||
-                         tree_helper::IsVolatile(var) || call_graph_manager->ExistsAddressedFunction()))
+               const auto vd = GetPointer<const variable_val_node>(var);
+               if(vd && (((!vd->parent || vd->parent->get_kind() == module_unit_node_K) && !vd->static_flag) ||
+                         CGM.ExistsAddressedFunction()))
                {
                   has_intern_shared_data =
                       true; /// an external component can access the var possibly (global and volatile vars)
                }
             }
             unsigned long long value_bitsize;
-            if(GET_TYPE(g, *v) & TYPE_STORE)
+            if(op_info.node_type & TYPE_STORE)
             {
                const auto size_var = std::get<0>(var_read[0]);
-               const auto size_type = tree_helper::CGetType(TreeM->GetTreeNode(size_var));
-               value_bitsize = tree_helper::SizeAlloc(size_type);
+               const auto size_type = ir_helper::CGetType(IRM->GetIRNode(size_var));
+               value_bitsize = ir_helper::SizeAlloc(size_type);
                PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "store with value_bitsize=" + STR(value_bitsize));
             }
             else
             {
-               const auto size_var = HLSMgr->get_produced_value(fun_id, *v);
-               const auto size_type = tree_helper::CGetType(TreeM->GetTreeNode(size_var));
-               value_bitsize = tree_helper::SizeAlloc(size_type);
+               const auto size_var = HLSMgr->get_produced_value(fun_id, v);
+               const auto size_type = ir_helper::CGetType(IRM->GetIRNode(size_var));
+               value_bitsize = ir_helper::SizeAlloc(size_type);
                PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "load with value_bitsize=" + STR(value_bitsize));
             }
             if(!(function_behavior->is_variable_mem(var->index) && HLSMgr->Rmem->is_private_memory(var->index)))
@@ -432,38 +422,31 @@ void memory_allocation::finalize_memory_allocation()
                }
             }
 
-            auto vr_it_end = var_read.end();
-            for(auto vr_it = var_read.begin(); vr_it != vr_it_end; ++vr_it)
+            for(const auto& [var, _] : var_read)
             {
-               const auto var = std::get<0>(*vr_it);
-               if(var && tree_helper::is_a_pointer(TreeM, var))
+               if(var && ir_helper::IsPointerType(IRM->GetIRNode(var)))
                {
-                  const auto var_node = TreeM->GetTreeNode(var);
-                  const auto type_node = tree_helper::CGetType(var_node);
-                  tree_nodeRef type_node_ptd;
-                  if(type_node->get_kind() == pointer_type_K)
+                  const auto var_node = IRM->GetIRNode(var);
+                  const auto type_node = ir_helper::CGetType(var_node);
+                  ir_nodeRef type_node_ptd;
+                  if(type_node->get_kind() == pointer_ty_node_K)
                   {
-                     type_node_ptd = GetPointerS<const pointer_type>(type_node)->ptd;
-                  }
-                  else if(type_node->get_kind() == reference_type_K)
-                  {
-                     type_node_ptd = GetPointerS<const reference_type>(type_node)->refd;
+                     type_node_ptd = GetPointerS<const pointer_ty_node>(type_node)->ptd;
                   }
                   else
                   {
                      THROW_ERROR("A pointer type is expected");
                   }
-                  const auto bitsize = tree_helper::AccessedMaximumBitsize(type_node_ptd, 1);
+                  const auto bitsize = ir_helper::AccessedMaximumBitsize(type_node_ptd, 1);
                   maximum_bus_size = std::max(maximum_bus_size, bitsize);
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                                " with maximum_bus_size=" + STR(maximum_bus_size) + " " +
-                                    g->CGetOpNodeInfo(*v)->node->ToString());
+                                " with maximum_bus_size=" + STR(maximum_bus_size) + " " + op_info.node->ToString());
                }
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed " + GET_NAME(g, *v));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed " + op_info.vertex_name);
       }
-      const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
+      const auto top_functions = HLSMgr->CGetCallGraphManager().GetRootFunctions();
       const auto local_needMemoryMappedRegisters = top_functions.count(fun_id) ?
                                                        parameters->getOption<bool>(OPT_memory_mapped_top) :
                                                        HLSMgr->hasToBeInterfaced(fun_id);
@@ -481,38 +464,39 @@ void memory_allocation::finalize_memory_allocation()
          }
          for(const auto& par : behavioral_helper->GetParameters())
          {
-            const auto type = tree_helper::CGetType(par);
-            const auto is_a_struct_union =
-                tree_helper::IsStructType(type) || tree_helper::IsUnionType(type) || tree_helper::IsComplexType(type);
+            const auto type = ir_helper::CGetType(par);
+            const auto is_a_struct_union = ir_helper::IsStructType(type);
             if(is_a_struct_union)
             {
                maximum_bus_size = std::max(addr_bus_bitsize, maximum_bus_size);
             }
             else
             {
-               maximum_bus_size = std::max(tree_helper::SizeAlloc(par), maximum_bus_size);
+               maximum_bus_size = std::max(ir_helper::SizeAlloc(par), maximum_bus_size);
             }
          }
-         const auto function_return = tree_helper::GetFunctionReturnType(fnode);
+         const auto function_return = ir_helper::GetFunctionReturnType(fnode);
          if(function_return)
          {
-            maximum_bus_size = std::max(tree_helper::SizeAlloc(function_return), maximum_bus_size);
+            maximum_bus_size = std::max(ir_helper::SizeAlloc(function_return), maximum_bus_size);
          }
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                    "Analyzed function for bus size: " + behavioral_helper->get_function_name());
+                    "Analyzed function for bus size: " + behavioral_helper->GetFunctionName());
    }
 
    const auto HLS_D = HLSMgr->get_HLS_device();
    unsigned long long bram_bitsize = 0;
    unsigned addr_bus_bitsize = 0;
-   const auto bram_bitsize_min = HLS_D->get_parameter<unsigned int>("BRAM_bitsize_min");
-   const auto bram_bitsize_max = HLS_D->get_parameter<unsigned int>("BRAM_bitsize_max");
+   const auto bram_bitsize_min =
+       HLSMgr->GetParameterFromParameterOrDeviceOrDefault<unsigned int>("BRAM_bitsize_min", HLS_D, 0U);
+   const auto bram_bitsize_max =
+       HLSMgr->GetParameterFromParameterOrDeviceOrDefault<unsigned int>("BRAM_bitsize_max", HLS_D, 0U);
    HLSMgr->Rmem->set_maxbram_bitsize(bram_bitsize_max);
 
    maximum_bus_size = ceil_pow2(maximum_bus_size);
 
-   if(has_misaligned_indirect_ref || has_unaligned_accesses)
+   if(has_unaligned_mem_access || has_unaligned_accesses)
    {
       if(maximum_bus_size > bram_bitsize_max)
       {
@@ -566,8 +550,7 @@ void memory_allocation::finalize_memory_allocation()
       unsigned long long int addr_range = HLSMgr->Rmem->get_max_address();
       if(addr_range)
       {
-         addr_range =
-             std::max(addr_range, ((2 * HLS_D->get_parameter<unsigned long long int>("BRAM_bitsize_max")) / 8));
+         addr_range = std::max(addr_range, ((2 * static_cast<unsigned long long int>(bram_bitsize_max)) / 8));
          --addr_range;
       }
       unsigned int index;
@@ -635,28 +618,33 @@ void memory_allocation::finalize_memory_allocation()
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
 }
 
-void memory_allocation::allocate_parameters(unsigned int functionId, memoryRef Rmem)
+void memory_allocation::allocate_parameters(unsigned int functionId, const std::unique_ptr<memory>& Rmem)
 {
    const auto out_lvl = Rmem == HLSMgr->Rmem ? output_level : OUTPUT_LEVEL_NONE;
-   if(!Rmem)
-   {
-      Rmem = HLSMgr->Rmem;
-   }
+   THROW_ASSERT(Rmem, "unexpected condition");
    const auto function_behavior = HLSMgr->CGetFunctionBehavior(functionId);
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
-   const auto function_return = behavioral_helper->GetFunctionReturnType(functionId);
+   const auto function_return = [&]() -> unsigned int {
+      const auto return_type = ir_helper::GetFunctionReturnType(HLSMgr->get_ir_manager()->GetIRNode(functionId));
+      return return_type ? return_type->index : 0;
+   }();
+   const auto is_omp = HLSMgr->isOmpLambdaFunction(functionId);
 
    // Allocate memory for the start register.
-   const auto functionName = tree_helper::name_function(HLSMgr->get_tree_manager(), functionId);
+   const auto functionName = behavioral_helper->GetFunctionName();
    Rmem->add_parameter(functionId, functionId, functionName,
-                       behavioral_helper->get_parameters().empty() && !function_return);
+                       (behavioral_helper->get_parameters().empty() && !function_return) || is_omp);
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl, "---Function: " + functionName);
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl, "---Id: " + STR(functionId));
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
                   "---Base Address: " + STR(Rmem->get_parameter_base_address(functionId, functionId)));
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
-                  "---Size: " + STR(compute_n_bytes(tree_helper::SizeAlloc(
-                                    tree_helper::CGetType(HLSMgr->get_tree_manager()->GetTreeNode(functionId))))));
+                  "---Size: " + STR(compute_n_bytes(ir_helper::SizeAlloc(
+                                    ir_helper::CGetType(HLSMgr->get_ir_manager()->GetIRNode(functionId))))));
+   if(is_omp)
+   {
+      return;
+   }
    // Allocate every parameter on chip.
    const auto& topParams = behavioral_helper->get_parameters();
    for(auto itr = topParams.begin(), end = topParams.end(); itr != end; ++itr)
@@ -670,7 +658,7 @@ void memory_allocation::allocate_parameters(unsigned int functionId, memoryRef R
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
                      "---Base Address: " + STR(Rmem->get_parameter_base_address(functionId, *itr)));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
-                     "---Size: " + STR(tree_helper::SizeAlloc(HLSMgr->get_tree_manager()->GetTreeNode(*itr)) / 8u));
+                     "---Size: " + STR(ir_helper::SizeAlloc(HLSMgr->get_ir_manager()->GetIRNode(*itr)) / 8u));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl, "<--");
    }
 
@@ -684,7 +672,7 @@ void memory_allocation::allocate_parameters(unsigned int functionId, memoryRef R
                      "---Base Address: " + STR(Rmem->get_parameter_base_address(functionId, function_return)));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
                      "---Size: " +
-                         STR(tree_helper::SizeAlloc(HLSMgr->get_tree_manager()->GetTreeNode(function_return)) / 8u));
+                         STR(ir_helper::SizeAlloc(HLSMgr->get_ir_manager()->GetIRNode(function_return)) / 8u));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl, "<--");
    }
 }
@@ -696,8 +684,8 @@ bool memory_allocation::HasToBeExecuted() const
       return true;
    }
    unsigned int curr_ver_sum = 0;
-   const auto CGMan = HLSMgr->CGetCallGraphManager();
-   for(const auto i : CGMan->GetReachedBodyFunctions())
+   const auto& CGM = HLSMgr->CGetCallGraphManager();
+   for(const auto i : CGM.GetReachedBodyFunctions())
    {
       const auto FB = HLSMgr->CGetFunctionBehavior(i);
       curr_ver_sum += FB->GetBBVersion() + FB->GetBitValueVersion();
@@ -708,9 +696,9 @@ bool memory_allocation::HasToBeExecuted() const
 DesignFlowStep_Status memory_allocation::Exec()
 {
    const auto status = InternalExec();
-   const auto CGMan = HLSMgr->CGetCallGraphManager();
+   const auto& CGM = HLSMgr->CGetCallGraphManager();
    last_ver_sum = 0;
-   for(const auto i : CGMan->GetReachedBodyFunctions())
+   for(const auto i : CGM.GetReachedBodyFunctions())
    {
       const auto FB = HLSMgr->CGetFunctionBehavior(i);
       last_ver_sum += FB->GetBBVersion() + FB->GetBitValueVersion();

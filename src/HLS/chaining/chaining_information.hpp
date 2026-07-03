@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -40,14 +40,10 @@
 #ifndef CHAINING_INFORMATION_HPP
 #define CHAINING_INFORMATION_HPP
 
-/// graph include
-#include "graph.hpp"
-
-/// STD include
-#include <cstddef>
-
-/// utility include
+#include "op_graph.hpp"
 #include "refcount.hpp"
+
+#include <cstddef>
 
 REF_FORWARD_DECL(ChainingSet);
 class HLS_manager;
@@ -61,13 +57,13 @@ class ChainingInformation
    friend class sched_based_chaining_computation;
 
    /// relation between operation and basic block
-   std::map<vertex, unsigned int> actual_bb_index_map;
+   std::map<OpGraph::vertex_descriptor, unsigned int> actual_bb_index_map;
 
    /// relation between vertices in terms of chaining in input or in output
    ChainingSetRef chaining_relation;
 
    /// set of vertices chained with something
-   CustomOrderedSet<vertex> is_chained_with;
+   CustomOrderedSet<OpGraph::vertex_descriptor> is_chained_with;
 
    /// The HLS manager
    const Wrefcount<const HLS_manager> HLS_mgr;
@@ -94,7 +90,7 @@ class ChainingInformation
     * @param op1 is the considered vertex
     * @return the representative vertex
     */
-   size_t get_representative_in(vertex op1) const;
+   size_t get_representative_in(OpGraph::vertex_descriptor op1) const;
 
    /**
     * Return the representative vertex associated with the chained vertices set in output.
@@ -102,35 +98,33 @@ class ChainingInformation
     * @param op1 is the considered vertex
     * @return the representative vertex
     */
-   size_t get_representative_out(vertex op1) const;
+   size_t get_representative_out(OpGraph::vertex_descriptor op1) const;
 
    /**
     * return true in case the vertex is in chaining with something
     * @param v is the operation
     */
-   bool is_chained_vertex(vertex v) const;
+   bool is_chained_vertex(OpGraph::vertex_descriptor v) const;
 
    /**
     * check if two operations are chained in at least one state
-    * @param op1 is the first vertex
-    * @param op2 is the second vertex
+    * @param tgt is the target vertex
+    * @param src is the source vertex
     */
-   bool may_be_chained_ops(vertex tgt, vertex src) const;
+   bool may_be_chained_ops(OpGraph::vertex_descriptor tgt, OpGraph::vertex_descriptor src) const;
 
    /**
     * put into relation the vertices whith respect the chained vertices connected with the input
     * @param op1 is the considered vertex
     * @param src is the chained vertex chained in input
     */
-   void add_chained_vertices_in(vertex op1, vertex src);
+   void add_chained_vertices_in(OpGraph::vertex_descriptor op1, OpGraph::vertex_descriptor src);
 
    /**
     * put into relation the vertices whith respect the chained vertices connected with the output
     * @param op1 is the considered vertex
     * @param tgt is the chained vertex chained in output
     */
-   void add_chained_vertices_out(vertex op1, vertex tgt);
+   void add_chained_vertices_out(OpGraph::vertex_descriptor op1, OpGraph::vertex_descriptor tgt);
 };
-/// refcount definition of the class
-using ChainingInformationRef = refcount<ChainingInformation>;
 #endif

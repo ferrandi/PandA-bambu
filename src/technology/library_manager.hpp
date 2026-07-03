@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -37,30 +37,20 @@
  * This class specifies the library_manager
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef _LIBRARY_MANAGER_HPP
 #define _LIBRARY_MANAGER_HPP
 
 #include "refcount.hpp"
+
 #include <boost/lexical_cast.hpp>
 
-/**
- * @name Forward declarations.
- */
-//@{
-/// RefCount type definition of the library_manager class structure
 REF_FORWARD_DECL(library_manager);
-/// RefCount type definition of the technology node data-structure
 REF_FORWARD_DECL(technology_node);
-/// RefCount type definition of the class containing all the parameters
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(attribute);
 class xml_element;
-//@}
 
 #include "custom_set.hpp"
 #include <map>
@@ -73,7 +63,7 @@ struct attribute
    using value_t = enum { FLOAT64 = 0, BOOLEAN, INT32, STRING };
 
  private:
-   std::string content;
+   std::string content{};
 
    value_t value_type{FLOAT64};
 
@@ -121,15 +111,10 @@ class library_manager
    /// typedef for the identification of the functional units contained into the library
    using fu_map_type = std::map<std::string, technology_nodeRef>;
 
-   /**
-    * @name Library output formats
-    */
-   //@{
    /// available information for the library
    using info_t = enum {
       XML,
    };
-   //@}
 
  private:
    /// class containing all the parameters
@@ -160,18 +145,9 @@ class library_manager
    CustomOrderedSet<std::string> dont_use;
 
  public:
-   /**
-    * @name Constructors and Destructors.
-    */
-   //@{
-   /// Constructor.
    library_manager(ParameterConstRef Param, bool std = true);
 
    library_manager(std::string library_name, ParameterConstRef Param, bool std = true);
-
-   /// Destructor.
-   ~library_manager();
-   //@}
 
    /**
     * Check if the library is virtual or not

@@ -5,13 +5,12 @@
     <cell>
       <name>plot</name>
       <operation operation_name="plot"/>
-      <operation operation_name="__plot"/>
       <circuit>
-        <component_o id="plot">
-          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2013-2024 Politecnico di Milano</copyright>  
+        <module_o id="plot">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>  
           <authors>Edoardo Giacomello &lt;edoardo.giacomello@mail.polimi.it&gt;, Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
-          <license>PANDA_LGPLv3</license>
+          <license>PANDA_MIT</license>
           <structural_type_descriptor id_type="plot"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -32,9 +31,6 @@
             <structural_type_descriptor type="UINT" size="8"/>
           </port_o>
           <port_o id="sel_plot" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="sel___plot" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="OUT">
@@ -65,18 +61,18 @@
             <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <NP_functionality LIBRARY="plot " VERILOG_FILE_PROVIDED="plot.v"/>
-        </component_o>
+        </module_o>
       </circuit>
     </cell>
     <cell>
       <name>leds_ctrl</name>
       <operation operation_name="leds_ctrl"/>
       <circuit>
-        <component_o id="leds_ctrl">
-          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2024 Politecnico di Milano</copyright>  
+        <module_o id="leds_ctrl">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
-          <license>PANDA_LGPLv3</license>
+          <license>PANDA_MIT</license>
           <structural_type_descriptor id_type="leds_ctrl"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -115,7 +111,7 @@
             <structural_type_descriptor type="UINT" size="8" />
           </port_o>
           <NP_functionality LIBRARY="leds_ctrl " VERILOG_FILE_PROVIDED="leds_ctrl.v"/>
-        </component_o>
+        </module_o>
       </circuit>
     </cell>
 

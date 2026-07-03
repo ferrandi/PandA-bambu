@@ -11,22 +11,22 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (C) 2004-2024 Politecnico di Milano
+ *            Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  * This file is part of the PandA framework.
  *
- * The PandA framework is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 #ifndef HW_CALL_INJECTION_HPP
@@ -37,30 +37,24 @@
 #include "refcount.hpp"
 
 REF_FORWARD_DECL(bloc);
-REF_FORWARD_DECL(tree_node);
+REF_FORWARD_DECL(ir_node);
 
 class HWCallInjection : public FunctionFrontendFlowStep
 {
  private:
-   static unsigned int builtinWaitCallDeclIdx;
+   static ir_nodeRef builtinWaitCallDecl;
 
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const override;
 
-   void buildBuiltinCall(const blocRef& block, const tree_nodeRef& stmt);
+   void buildBuiltinCall(const blocRef& block, const ir_nodeRef& stmt);
 
  public:
    HWCallInjection(const ParameterConstRef Param, const application_managerRef AppM, unsigned int funId,
-                   const DesignFlowManagerConstRef DFM);
-
-   ~HWCallInjection() override;
+                   const DesignFlowManager& DFM);
 
    DesignFlowStep_Status InternalExec() override;
 
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
    bool HasToBeExecuted() const override;
 };
 

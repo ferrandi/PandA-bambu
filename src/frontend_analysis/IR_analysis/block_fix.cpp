@@ -12,67 +12,52 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
  * @file block_fix.cpp
- * @brief Analysis step which modifies the control flow graph of the tree to make it more compliant and simple
+ * @brief Analysis step which modifies the control flow graph of the IR to make it more compliant and simple
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
-
-/// header include
 #include "block_fix.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// behavior includes
 #include "application_manager.hpp"
+#include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
+#include "ir_basic_block.hpp"
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
+#include "ir_node.hpp"
+#include "string_manipulation.hpp"
 
-/// STD include
 #include <fstream>
 
-/// tree includes
-#include "tree_basic_block.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
-
-/// utility include
-#include "dbgPrintHelper.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-
 BlockFix::BlockFix(const application_managerRef _AppM, unsigned int _function_id,
-                   const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+                   const DesignFlowManager& _design_flow_manager, const ParameterConstRef _parameters)
     : FunctionFrontendFlowStep(_AppM, _function_id, BLOCK_FIX, _design_flow_manager, _parameters)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
-
-BlockFix::~BlockFix() = default;
 
 CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
 BlockFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -82,7 +67,7 @@ BlockFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType re
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(CALL_EXPR_FIX, SAME_FUNCTION));
+         relationships.insert(std::make_pair(CALL_NODE_FIX, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
@@ -103,10 +88,10 @@ BlockFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType re
 
 DesignFlowStep_Status BlockFix::InternalExec()
 {
-   const tree_managerRef TM = AppM->get_tree_manager();
-   tree_nodeRef temp = TM->GetTreeNode(function_id);
-   auto* fd = GetPointer<function_decl>(temp);
-   auto* sl = GetPointer<statement_list>(fd->body);
+   const ir_managerRef TM = AppM->get_ir_manager();
+   ir_nodeRef temp = TM->GetIRNode(function_id);
+   auto* fd = GetPointer<function_val_node>(temp);
+   auto* sl = GetPointer<statement_list_node>(fd->body);
 
    std::map<unsigned int, blocRef>& list_of_bloc = sl->list_of_bloc;
    std::map<unsigned int, blocRef>::iterator it3, it3_end = list_of_bloc.end();
@@ -136,67 +121,11 @@ DesignFlowStep_Status BlockFix::InternalExec()
    sl->list_of_bloc[BB_ENTRY] = entry_bloc;
    sl->list_of_bloc[BB_EXIT] = exit_bloc;
 
-   /// Checking if there are gimple_labels which can be removed
-   /// Computing reachable labels
-   CustomSet<unsigned int> reachable_labels;
-   for(const auto& block : sl->list_of_bloc)
-   {
-      for(const auto& statement : block.second->CGetStmtList())
-      {
-         const auto* gg = GetPointer<const gimple_goto>(statement);
-         if(gg)
-         {
-            THROW_ASSERT(gg->op and GetPointer<const label_decl>(gg->op), "Unexpexted condition :" + gg->ToString());
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found a reachable label " + gg->op->ToString());
-            reachable_labels.insert(gg->op->index);
-         }
-         const auto gs = GetPointer<const gimple_switch>(statement);
-         if(gs)
-         {
-            for(const auto& vec_op : GetPointer<const tree_vec>(gs->op1)->list_of_op)
-            {
-               const auto cle = GetPointer<const case_label_expr>(vec_op);
-               if(cle->got and GetPointer<const label_decl>(cle->got))
-               {
-                  reachable_labels.insert(cle->got->index);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Found a reachable label " + cle->got->ToString());
-               }
-            }
-         }
-      }
-   }
-   std::list<std::pair<tree_nodeRef, unsigned int>> to_be_removed;
-   for(const auto& block : sl->list_of_bloc)
-   {
-      for(const auto& statement : block.second->CGetStmtList())
-      {
-         const auto* gl = GetPointer<const gimple_label>(statement);
-         if(gl)
-         {
-            const auto* ld = GetPointer<const label_decl>(gl->op);
-            if(ld and reachable_labels.find(ld->index) == reachable_labels.end())
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Found a removable label " + statement->ToString());
-               to_be_removed.push_back(std::pair<tree_nodeRef, unsigned int>(statement, block.first));
-            }
-         }
-      }
-   }
+   function_behavior->UpdateBBVersion();
+   return DesignFlowStep_Status::SUCCESS;
+}
 
-   for(const auto& removing : to_be_removed)
-   {
-      sl->list_of_bloc[removing.second]->RemoveStmt(removing.first, AppM);
-   }
-
-   if(to_be_removed.empty())
-   {
-      return DesignFlowStep_Status::UNCHANGED;
-   }
-   else
-   {
-      function_behavior->UpdateBBVersion();
-      return DesignFlowStep_Status::SUCCESS;
-   }
+bool BlockFix::HasToBeExecuted() const
+{
+   return bb_version == 0 && FunctionFrontendFlowStep::HasToBeExecuted();
 }

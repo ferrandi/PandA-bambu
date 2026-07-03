@@ -3,10 +3,12 @@
  * January, 27 2016.
  *
  */
+/* Public domain.  */
+
 #include <stddef.h>
 
 void bcopy(const void* src, void* dest, size_t n)
 {
-   extern void *memmove(void *dest, const void *src, size_t n);
+   extern void* memmove(void* dest, const void* src, size_t n);
    memmove(dest, src, n);
 }

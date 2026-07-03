@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2024 Politecnico di Milano
+ *              Copyright (c) 2018-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -38,7 +38,6 @@
  *
  */
 
-/// Header include
 #include "string_manipulation.hpp"
 
 #include "exceptions.hpp"
@@ -87,6 +86,38 @@ void remove_escaped(std::string& ioString)
    }
 }
 
+std::string shell_escape_argument(const std::string& argument)
+{
+   std::string escaped("'");
+   for(const auto c : argument)
+   {
+      if(c == '\'')
+      {
+         escaped += "'\\''";
+      }
+      else
+      {
+         escaped += c;
+      }
+   }
+   escaped += "'";
+   return escaped;
+}
+
+std::string shell_escape_argv(const int argc, char* const argv[])
+{
+   std::string escaped_command_line;
+   for(int i = 0; i < argc; ++i)
+   {
+      if(i != 0)
+      {
+         escaped_command_line += " ";
+      }
+      escaped_command_line += shell_escape_argument(argv[i] ? std::string(argv[i]) : std::string());
+   }
+   return escaped_command_line;
+}
+
 std::string cxa_demangle(const std::string& input)
 {
    int status;
@@ -94,39 +125,57 @@ std::string cxa_demangle(const std::string& input)
    return status == 0 ? std::string(res.get()) : "";
 }
 
-std::string cxa_rename_mangled(const std::string& signature, const std::string& new_fname)
+std::string cxa_rename_mangled(const std::string& symbol, const std::string& new_symbol)
 {
-   auto z_pos = signature.find('Z');
+   auto z_pos = symbol.find('Z');
    if(z_pos != std::string::npos)
    {
-      const char* z_start = signature.data() + z_pos + 1;
+      const char* z_start = symbol.data() + z_pos + 1;
       char* z_end;
       auto z_len = std::strtoul(z_start, &z_end, 10);
       if(z_start != z_end)
       {
-         return signature.substr(0, z_pos + 1) + std::to_string(new_fname.size()) + new_fname +
-                signature.substr(static_cast<size_t>(std::distance(signature.data(), static_cast<const char*>(z_end))) +
-                                 z_len);
+         return symbol.substr(0, z_pos + 1) + std::to_string(new_symbol.size()) + new_symbol +
+                symbol.substr(
+                    static_cast<size_t>(std::distance(symbol.data(), static_cast<const char*>(z_end + z_len))));
       }
    }
-   return new_fname;
+   return new_symbol;
 }
 
-std::string cxa_prefix_mangled(const std::string& signature, const std::string& prefix)
+std::string cxa_prefix_mangled(const std::string& symbol, const std::string& prefix)
 {
-   auto z_pos = signature.find('Z');
+   auto z_pos = symbol.find('Z');
    if(z_pos != std::string::npos)
    {
-      const char* z_start = signature.data() + z_pos + 1;
+      const char* z_start = symbol.data() + z_pos + 1;
       char* z_end;
       auto z_len = std::strtoul(z_start, &z_end, 10);
       if(z_start != z_end)
       {
-         return signature.substr(0, z_pos + 1) + std::to_string(prefix.size() + z_len) + prefix +
-                signature.substr(static_cast<size_t>(std::distance(signature.data(), static_cast<const char*>(z_end))));
+         return symbol.substr(0, z_pos + 1) + std::to_string(prefix.size() + z_len) + prefix +
+                symbol.substr(static_cast<size_t>(std::distance(symbol.data(), static_cast<const char*>(z_end))));
       }
    }
-   return prefix + signature;
+   return prefix + symbol;
+}
+
+std::string cxa_suffix_mangled(const std::string& symbol, const std::string& suffix)
+{
+   auto z_pos = symbol.find('Z');
+   if(z_pos != std::string::npos)
+   {
+      const char* z_start = symbol.data() + z_pos + 1;
+      char* z_end;
+      auto z_len = std::strtoul(z_start, &z_end, 10);
+      if(z_start != z_end)
+      {
+         const auto symbol_start = static_cast<size_t>(std::distance(symbol.data(), static_cast<const char*>(z_end)));
+         return symbol.substr(0, z_pos + 1) + std::to_string(z_len + suffix.size()) +
+                symbol.substr(symbol_start, z_len) + suffix + symbol.substr(symbol_start + z_len);
+      }
+   }
+   return symbol + suffix;
 }
 
 std::string capitalize(const std::string& str)
@@ -513,4 +562,37 @@ unsigned long long ac_type_bitwidth(const std::string& intType, bool& is_signed,
       return w;
    }
    return 0;
+}
+
+void replace_all_with_restart(const std::string& val, std::string& mangled, const std::string& old_string,
+                              const std::string& new_string)
+{
+   mangled = val;
+   size_t start_pos = 0;
+   while((start_pos = mangled.find(old_string, start_pos)) != std::string::npos)
+   {
+      mangled.replace(start_pos, old_string.length(), new_string);
+   }
+}
+
+bool is_unsigned_long_long(const std::string& str)
+{
+   if(str.empty() || str[0] == '-')
+      return false;
+
+   unsigned long long value = 0;
+   for(char c : str)
+   {
+      if(!std::isdigit(c))
+         return false;
+
+      auto digit = static_cast<unsigned long long>(c - '0');
+      if(value > (std::numeric_limits<unsigned long long>::max() - digit) / 10)
+      {
+         return false;
+      }
+
+      value = value * 10 + digit;
+   }
+   return true;
 }

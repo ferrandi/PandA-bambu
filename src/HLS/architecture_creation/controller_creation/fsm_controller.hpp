@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -46,7 +46,7 @@
 /// STD include
 #include <string>
 
-REF_FORWARD_DECL(tree_manager);
+REF_FORWARD_DECL(ir_manager);
 CONSTREF_FORWARD_DECL(OpGraph);
 
 class fsm_controller : public ControllerCreatorBaseStep
@@ -57,37 +57,31 @@ class fsm_controller : public ControllerCreatorBaseStep
    void create_state_machine(std::string& parse);
 
    /**
-    * Returns the value of the guard value of a case_label_expr
+    * Returns the value of the condition of an if else if
     * default is not managed
     */
-   std::string get_guard_value(const tree_managerRef TM, const unsigned int index, vertex op,
-                               const OpGraphConstRef data);
+   std::string get_guard_value(const ir_managerRef TM, const unsigned int index, gc_vertex_descriptor op,
+                               const OpGraph& data);
 
-   /**
-    * Execute the step
-    * @return the exit status of this step
-    */
    DesignFlowStep_Status InternalExec() override;
 
  protected:
    /**
-    * Set the correct NP functionality
+    * Set the FSM functionality
     * @param state_representation is the state representation of the FSM
+    * @param SM is the structural manager receiving the FSM logic
     */
-   virtual void add_correct_transition_memory(const std::string& state_representation, structural_managerRef SM);
+   virtual void add_FSM(const std::string& state_representation, structural_managerRef SM);
+
+   /**
+    * @brief add_FSM_stages serialize in a string all the stage information required for the FSM generation
+    * @param SM is the structural manager at which the info are added to.
+    */
+   virtual void add_FSM_stages(structural_managerRef SM);
 
  public:
-   /**
-    * Constructor.
-    * @param design_flow_manager is the design flow manager
-    */
    fsm_controller(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
-                  const DesignFlowManagerConstRef design_flow_manager,
+                  const DesignFlowManager& design_flow_manager,
                   const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::FSM_CONTROLLER_CREATOR);
-
-   /**
-    * Destructor.
-    */
-   ~fsm_controller() override;
 };
 #endif

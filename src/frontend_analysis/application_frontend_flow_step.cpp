@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -35,9 +35,6 @@
  * @brief This class contains the base representation for a generic frontend flow step which works on the whole function
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "application_frontend_flow_step.hpp"
@@ -49,15 +46,12 @@
 
 #include <iostream>
 
-#include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-#include "config_HAVE_ILP_BUILT.hpp"
-#include "config_HAVE_TASTE.hpp"
 
 ApplicationFrontendFlowStep::ApplicationFrontendFlowStep(DesignFlowStep::signature_t _signature,
                                                          const application_managerRef _AppM,
                                                          const FrontendFlowStepType _frontend_flow_step_type,
-                                                         const DesignFlowManagerConstRef _design_flow_manager,
+                                                         const DesignFlowManager& _design_flow_manager,
                                                          const ParameterConstRef _parameters)
     : FrontendFlowStep(_signature, _AppM, _frontend_flow_step_type, _design_flow_manager, _parameters)
 {
@@ -66,105 +60,76 @@ ApplicationFrontendFlowStep::ApplicationFrontendFlowStep(DesignFlowStep::signatu
 
 ApplicationFrontendFlowStep::ApplicationFrontendFlowStep(const application_managerRef _AppM,
                                                          const FrontendFlowStepType _frontend_flow_step_type,
-                                                         const DesignFlowManagerConstRef _design_flow_manager,
+                                                         const DesignFlowManager& _design_flow_manager,
                                                          const ParameterConstRef _parameters)
     : ApplicationFrontendFlowStep(ComputeSignature(_frontend_flow_step_type), _AppM, _frontend_flow_step_type,
                                   _design_flow_manager, _parameters)
 {
 }
 
-ApplicationFrontendFlowStep::~ApplicationFrontendFlowStep() = default;
-
 DesignFlowStep::signature_t
 ApplicationFrontendFlowStep::ComputeSignature(const FrontendFlowStepType frontend_flow_step_type)
 {
    switch(frontend_flow_step_type)
    {
-      case ADD_BB_ECFG_EDGES:
       case ADD_ARTIFICIAL_CALL_FLOW_EDGES:
       case ADD_OP_EXIT_FLOW_EDGES:
-      case ADD_OP_LOOP_FLOW_EDGES:
-      case ADD_OP_PHI_FLOW_EDGES:
       case BASIC_BLOCKS_CFG_COMPUTATION:
       case BB_CONTROL_DEPENDENCE_COMPUTATION:
       case BB_FEEDBACK_EDGES_IDENTIFICATION:
       case BB_ORDER_COMPUTATION:
-      case BB_REACHABILITY_COMPUTATION:
       case BIT_VALUE:
       case BIT_VALUE_OPT:
       case BITVALUE_RANGE:
       case BLOCK_FIX:
       case BUILD_VIRTUAL_PHI:
-      case CALL_EXPR_FIX:
+      case CALL_NODE_FIX:
       case CALL_GRAPH_BUILTIN_CALL:
       case CHECK_SYSTEM_TYPE:
       case COMPLETE_BB_GRAPH:
-      case COMPUTE_IMPLICIT_CALLS:
       case COMMUTATIVE_EXPR_RESTRUCTURING:
-      case COND_EXPR_RESTRUCTURING:
+      case SELECT_TREE_BALANCING:
       case CSE_STEP:
       case DATAFLOW_CG_EXT:
-      case DEAD_CODE_ELIMINATION:
+      case DCE_PASS:
       case DETERMINE_MEMORY_ACCESSES:
       case DOM_POST_DOM_COMPUTATION:
-      case ESSA:
       case(FANOUT_OPT):
-      case MULTIPLE_ENTRY_IF_REDUCTION:
-      case EXTRACT_GIMPLE_COND_OP:
-#if HAVE_FROM_PRAGMA_BUILT
-      case EXTRACT_OMP_ATOMIC:
-      case EXTRACT_OMP_FOR:
-#endif
+      case EXTRACT_COND_OP:
       case EXTRACT_PATTERNS:
       case FIX_STRUCTS_PASSED_BY_VALUE:
       case FIX_VDEF:
       case FUNCTION_CALL_TYPE_CLEANUP:
       case FUNCTION_CALL_OPT:
-      case HDL_VAR_DECL_FIX:
       case HWCALL_INJECTION:
       case IR_LOWERING:
       case LOOP_COMPUTATION:
-      case LOOPS_ANALYSIS_BAMBU:
       case LOOPS_COMPUTATION:
-      case LUT_TRANSFORMATION:
       case MULTI_WAY_IF:
       case NI_SSA_LIVENESS:
+      case OMP_CG_EXT:
+      case OMP_LOWERING:
       case OP_CONTROL_DEPENDENCE_COMPUTATION:
       case OP_FEEDBACK_EDGES_IDENTIFICATION:
       case OP_ORDER_COMPUTATION:
-      case OP_REACHABILITY_COMPUTATION:
       case OPERATIONS_CFG_COMPUTATION:
       case PARM2SSA:
       case PARM_DECL_TAKEN_ADDRESS:
       case PHI_OPT:
       case PREDICATE_STATEMENTS:
-      case REBUILD_INITIALIZATION:
       case REBUILD_INITIALIZATION2:
-      case REMOVE_CLOBBER_GA:
-      case REMOVE_ENDING_IF:
       case SCALAR_SSA_DATA_FLOW_ANALYSIS:
-#if HAVE_ILP_BUILT
       case SDC_CODE_MOTION:
-#endif
-      case SERIALIZE_MUTUAL_EXCLUSIONS:
-      case SPLIT_RETURN:
-      case SHORT_CIRCUIT_TAF:
       case SIMPLE_CODE_MOTION:
       case SOFT_FLOAT_CG_EXT:
-      case SWITCH_FIX:
-      case TREE2FUN:
-      case UN_COMPARISON_LOWERING:
-#if HAVE_ILP_BUILT
+      case IR2FUN:
       case UPDATE_SCHEDULE:
-#endif
       case UNROLLING_DEGREE:
       case USE_COUNTING:
       case VAR_ANALYSIS:
       case VAR_DECL_FIX:
-      case VECTORIZE:
       case VERIFICATION_OPERATION:
       case VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS:
-      case VIRTUAL_PHI_NODES_SPLIT:
       {
          return SymbolicApplicationFrontendFlowStep::ComputeSignature(frontend_flow_step_type);
       }
@@ -175,27 +140,16 @@ ApplicationFrontendFlowStep::ComputeSignature(const FrontendFlowStepType fronten
       case BASIC_BLOCKS_PROFILING:
 #endif
       case(COMPLETE_CALL_GRAPH):
-#if HAVE_TASTE
-      case CREATE_ADDRESS_TRANSLATION:
-#endif
-      case(CREATE_TREE_MANAGER):
+      case(CREATE_IR_MANAGER):
       case DEAD_CODE_ELIMINATION_IPA:
       case FIND_MAX_TRANSFORMATIONS:
       case(FUNCTION_ANALYSIS):
-      case HDL_FUNCTION_DECL_FIX:
 #if HAVE_HOST_PROFILING_BUILT
       case(HOST_PROFILING):
 #endif
-      case MULT_EXPR_FRACTURING:
-#if HAVE_FROM_PRAGMA_BUILT
-      case(PRAGMA_ANALYSIS):
-#endif
-#if HAVE_FROM_PRAGMA_BUILT
-      case(PRAGMA_SUBSTITUTION):
-#endif
+      case MUL_DECOMPOSITION:
       case RANGE_ANALYSIS:
       case SOFT_INT_CG_EXT:
-      case(STRING_CST_FIX):
       case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP):
       {
          return DesignFlowStep::ComputeSignature(APPLICATION_FRONTEND,

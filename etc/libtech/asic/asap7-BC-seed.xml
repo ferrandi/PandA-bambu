@@ -1,0 +1,960 @@
+<?xml version="1.0"?>
+<target>
+  <device>
+    <vendor value="Generic"/>
+    <family value="Generic-yosysOpenROAD"/>
+    <model value="asap7"/>
+    <package value="none"/>
+    <speed_grade value="BC"/>
+    <BRAM_bitsize_max value="4096"/>
+    <BRAM_bitsize_min value="8"/>
+    <DSPs_rx_sizes value="16"/>
+    <DSPs_ry_sizes value="16"/>
+    <DSPs_x_sizes value="16"/>
+    <DSPs_y_sizes value="16"/>
+    <max_lut_size value="6"/>
+    <USE_TIME_UNIT_PS value="1"/>
+    <PLATFORM is_bash_var="1" value="asap7"/>
+    <PLACE_DENSITY is_bash_var="1" value="0.60"/>
+    <CORE_UTILIZATION is_bash_var="1" value="&quot;10&quot;"/>
+  </device>
+  <backend>
+    <!-- OpenROAD flow scripts path is required:
+         set OPENROAD_FLOW_DATA_INSTALLDIR (and optional OPENROAD_USE_DOCKER/OR_IMAGE). -->
+    <flow id="synthesis" env="openroad/flow"/>
+    <flow id="characterization" env="openroad/flowC"/>
+  </backend>
+  <technology>
+      <library>
+      <name>STD_COMMON</name>
+    <cell>
+      <name>STD_SP_BRAM</name>
+      <circuit>
+        <module_o id="STD_SP_BRAM">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="STD_SP_BRAM"/>
+          <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
+          <parameter name="n_elements">32</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
+          <parameter name="HIGH_LATENCY">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="write_enable" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="data_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="address" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="data_out" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="STD_SP_BRAM data_in address data_out MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY" IP_COMPONENT="FAKERAM7_SP_SLICE" VERILOG_PROVIDED="
+  localparam integer MEM_W  = BITSIZE_data_out;
+  localparam integer ADDR_W = BITSIZE_address;
+
+  // -----------------------------
+  // Input pipeline for HIGH_LATENCY==2
+  // -----------------------------
+  wire [BITSIZE_address-1:0]     address_mem;
+  wire                           write_enable_mem;
+  wire [BITSIZE_data_in-1:0]     data_in_mem;
+
+  reg  [BITSIZE_address-1:0]     address1;
+  reg                            write_enable1;
+  reg  [BITSIZE_data_in-1:0]     data_in1;
+
+  generate
+    if (HIGH_LATENCY == 2) begin : G_INPIPE
+      always @(posedge clock) begin
+        address1      &lt;= address;
+        write_enable1 &lt;= write_enable;
+        data_in1      &lt;= data_in;
+      end
+      assign address_mem      = address1;
+      assign write_enable_mem = write_enable1;
+      assign data_in_mem      = data_in1;
+    end else begin : G_NOPIPE
+      assign address_mem      = address;
+      assign write_enable_mem = write_enable;
+      assign data_in_mem      = data_in;
+    end
+  endgenerate
+
+  // -----------------------------
+  // Single-port wrapper over fakeram7_*
+  // -----------------------------
+  wire [ADDR_W-1:0] op_addr;
+  wire              write_enable_eff;
+  assign op_addr = address_mem;
+  assign write_enable_eff = (READ_ONLY_MEMORY == 0) ? write_enable_mem : 1'b0;
+
+  // Assume equal widths; truncate/zero-extend behavior could be added if needed.
+  wire [MEM_W-1:0] din_mem_adj;
+  assign din_mem_adj = data_in_mem[MEM_W-1:0];
+
+  // -----------------------------
+  // Width slicing:
+  //   full 256-bit slices + one remainder slice
+  // -----------------------------
+  function integer rem_cover_w;
+    input integer w;
+    begin
+      if (w &lt;= 0)
+        rem_cover_w = 0;
+      else if (w &lt;= 25)
+        rem_cover_w = 25;
+      else if (w &lt;= 28)
+        rem_cover_w = 28;
+      else if (w &lt;= 32)
+        rem_cover_w = 32;
+      else if (w &lt;= 64)
+        rem_cover_w = 64;
+      else
+        rem_cover_w = 256;
+    end
+  endfunction
+
+  localparam integer N_FULL256 = MEM_W / 256;
+  localparam integer REM_W     = MEM_W % 256;
+
+  wire [MEM_W-1:0] data_out_mem_raw;
+
+  genvar gi;
+  generate
+    for (gi = 0; gi &lt; N_FULL256; gi = gi + 1) begin : G_FULL256
+      FAKERAM7_SP_SLICE #(
+        .DEPTH (n_elements),
+        .BITSIZE_addr(ADDR_W),
+        .BITSIZE_wd (256),
+        .BITSIZE_rd (256)
+      ) u_slice (
+        .clock (clock),
+        .ce  (1'b1),
+        .we  (write_enable_eff),
+        .addr(op_addr),
+        .wd  (din_mem_adj[(gi*256) +: 256]),
+        .rd  (data_out_mem_raw[(gi*256) +: 256])
+      );
+    end
+
+    if (REM_W > 0) begin : G_REM
+      FAKERAM7_SP_SLICE #(
+        .DEPTH (n_elements),
+        .BITSIZE_addr(ADDR_W),
+        .BITSIZE_wd (REM_W),
+        .BITSIZE_rd (REM_W)
+      ) u_slice (
+        .clock (clock),
+        .ce  (1'b1),
+        .we  (write_enable_eff),
+        .addr(op_addr),
+        .wd  (din_mem_adj[(N_FULL256*256) +: REM_W]),
+        .rd  (data_out_mem_raw[(N_FULL256*256) +: REM_W])
+      );
+    end
+  endgenerate
+
+  wire [MEM_W-1:0] data_out_mem;
+  assign data_out_mem = data_out_mem_raw;
+
+  // HIGH_LATENCY behavior aligned with original module:
+  //  - HIGH_LATENCY==0 : direct registered macro output
+  //  - HIGH_LATENCY!=0 : one extra output register
+  reg [MEM_W-1:0] data_out1;
+  assign data_out = (HIGH_LATENCY == 0) ? data_out_mem : data_out1;
+
+  always @(posedge clock)
+    data_out1 &lt;= data_out_mem;
+
+  // Optional diagnostics
+  initial begin
+    if (BITSIZE_data_in != BITSIZE_data_out)
+      $display(&quot;%m WARNING: this wrapper assumes BITSIZE_data_in == BITSIZE_data_out.&quot;);
+    if (MEMORY_INIT_file != &quot;&quot;)
+      $display(&quot;%m WARNING: MEMORY_INIT_file is intentionally ignored in this wrapper.&quot;);
+  end
+
+" />
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>FAKERAM7_SP_SLICE</name>
+      <circuit>
+        <module_o id="FAKERAM7_SP_SLICE">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="FAKERAM7_SP_SLICE"/>
+          <parameter name="DEPTH">256</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="ce" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="addr" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="wd" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="rd" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="FAKERAM7_SP_SLICE addr wd rd DEPTH" 
+          IP_COMPONENT="fakeram7_64x25,fakeram7_64x28,fakeram7_256x32,fakeram7_128x64,fakeram7_64x256,fakeram7_256x256" VERILOG_PROVIDED="
+  function integer ceil_div;
+    input integer a;
+    input integer b;
+    begin
+      ceil_div = (a + b - 1) / b;
+    end
+  endfunction
+
+  function integer clog2i;
+    input integer v;
+    integer i;
+    begin
+      i = 0;
+      v = v - 1;
+      while (v > 0) begin
+        v = v >> 1;
+        i = i + 1;
+      end
+      if (i == 0)
+        clog2i = 1;
+      else
+        clog2i = i;
+    end
+  endfunction
+
+  function integer phy_w;
+    input integer w;
+    begin
+      if (w &lt;= 25)
+        phy_w = 25;
+      else if (w &lt;= 28)
+        phy_w = 28;
+      else if (w &lt;= 32)
+        phy_w = 32;
+      else if (w &lt;= 64)
+        phy_w = 64;
+      else
+        phy_w = 256;
+    end
+  endfunction
+
+  function integer bank_depth;
+    input integer w;
+    input integer d;
+    begin
+      if (w &lt;= 25)
+        bank_depth = 64;
+      else if (w &lt;= 28)
+        bank_depth = 64;
+      else if (w &lt;= 32)
+        bank_depth = 256;
+      else if (w &lt;= 64)
+        bank_depth = 128;
+      else if (d &lt;= 64)
+        bank_depth = 64;   // use fakeram7_64x256 when shallow
+      else
+        bank_depth = 256;  // use fakeram7_256x256 otherwise
+    end
+  endfunction
+
+  localparam integer REQ_W   = BITSIZE_wd;
+  localparam integer ADDR_W   = BITSIZE_addr;
+  localparam integer PHY_W   = phy_w(REQ_W);
+  localparam integer BANK_D  = bank_depth(REQ_W, DEPTH);
+  localparam integer SUB_AW  = clog2i(BANK_D);
+  localparam integer NBANKS  = ceil_div(DEPTH, BANK_D);
+  localparam integer BANK_AW = clog2i(NBANKS);
+  localparam integer USED_AW = (DEPTH &lt;= 1) ? 0 : clog2i((DEPTH &lt; BANK_D) ? DEPTH : BANK_D);
+
+  wire [SUB_AW-1:0] macro_addr;
+  generate
+    if (USED_AW == 0) begin : G_ADDR_ZERO
+      assign macro_addr = {SUB_AW{1'b0}};
+    end else begin : G_ADDR_USED
+      assign macro_addr = {{(SUB_AW-USED_AW){1'b0}}, addr[USED_AW-1:0]};
+    end
+  endgenerate
+
+  wire [BANK_AW-1:0] bank_sel;
+  generate
+    if (NBANKS == 1) begin : G_ONEBANK_SEL
+      assign bank_sel = {BANK_AW{1'b0}};
+    end else begin : G_MANYBANK_SEL
+      assign bank_sel = addr[SUB_AW +: BANK_AW];
+    end
+  endgenerate
+
+  wire [PHY_W-1:0] wd_phy;
+  assign wd_phy = {{(PHY_W-REQ_W){1'b0}}, wd};
+
+  wire [NBANKS*PHY_W-1:0] rd_banks;
+
+  genvar bi;
+  generate
+    for (bi = 0; bi &lt; NBANKS; bi = bi + 1) begin : G_BANK
+
+      wire bank_ce;
+      if (NBANKS == 1) begin : G_CE1
+        assign bank_ce = ce;
+      end else begin : G_CEN
+        assign bank_ce = ce &amp;&amp; (bank_sel == bi);
+      end
+
+      if (PHY_W == 25) begin : G_RAM25
+        fakeram7_64x25 u_ram (
+          .rd_out (rd_banks[(bi*PHY_W) +: PHY_W]),
+          .addr_in(macro_addr),
+          .we_in  (we),
+          .wd_in  (wd_phy),
+          .clk    (clock),
+          .ce_in  (bank_ce)
+        );
+      end else if (PHY_W == 28) begin : G_RAM28
+        fakeram7_64x28 u_ram (
+          .rd_out (rd_banks[(bi*PHY_W) +: PHY_W]),
+          .addr_in(macro_addr),
+          .we_in  (we),
+          .wd_in  (wd_phy),
+          .clk    (clock),
+          .ce_in  (bank_ce)
+        );
+      end else if (PHY_W == 32) begin : G_RAM32
+        fakeram7_256x32 u_ram (
+          .rd_out (rd_banks[(bi*PHY_W) +: PHY_W]),
+          .addr_in(macro_addr),
+          .we_in  (we),
+          .wd_in  (wd_phy),
+          .clk    (clock),
+          .ce_in  (bank_ce)
+        );
+      end else if (PHY_W == 64) begin : G_RAM64
+        fakeram7_128x64 u_ram (
+          .rd_out (rd_banks[(bi*PHY_W) +: PHY_W]),
+          .addr_in(macro_addr),
+          .we_in  (we),
+          .wd_in  (wd_phy),
+          .clk    (clock),
+          .ce_in  (bank_ce)
+        );
+      end else if ((PHY_W == 256) &amp;&amp; (BANK_D == 64)) begin : G_RAM256_64D
+        fakeram7_64x256 u_ram (
+          .rd_out (rd_banks[(bi*PHY_W) +: PHY_W]),
+          .addr_in(macro_addr),
+          .we_in  (we),
+          .wd_in  (wd_phy),
+          .clk    (clock),
+          .ce_in  (bank_ce)
+        );
+      end else begin : G_RAM256_256D
+        fakeram7_256x256 u_ram (
+          .rd_out (rd_banks[(bi*PHY_W) +: PHY_W]),
+          .addr_in(macro_addr),
+          .we_in  (we),
+          .wd_in  (wd_phy),
+          .clk    (clock),
+          .ce_in  (bank_ce)
+        );
+      end
+    end
+  endgenerate
+
+  reg [PHY_W-1:0] rd_mux;
+  integer j;
+  always @(*) begin
+    rd_mux = {PHY_W{1'bx}};
+    for (j = 0; j &lt; NBANKS; j = j + 1)
+      if (bank_sel == j)
+        rd_mux = rd_banks[(j*PHY_W) +: PHY_W];
+  end
+
+  assign rd = rd_mux[REQ_W-1:0];
+
+" />
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>fakeram7_64x25</name>
+      <circuit>
+        <module_o id="fakeram7_64x25">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="fakeram7_64x25"/>
+          <port_o id="clk" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="ce_in" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we_in" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="addr_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="6"/>
+          </port_o>
+          <port_o id="wd_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="25"/>
+          </port_o>
+          <port_o id="rd_out" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="25"/>
+          </port_o>
+          <NP_functionality LIBRARY="fakeram7_64x25" VERILOG_PROVIDED="
+`ifdef __BAMBU_SIM__
+   localparam BITS = 25;
+   localparam WORD_DEPTH = 64;
+   localparam ADDR_WIDTH = 6;
+   localparam corrupt_mem_on_X_p = 1;
+
+
+   reg    [BITS-1:0]        rd_out;
+   reg    [BITS-1:0]        mem [0:WORD_DEPTH-1];
+
+   integer j;
+   initial begin
+      rd_out = {BITS{1'b0}};
+      for (j = 0; j &lt; WORD_DEPTH; j = j + 1)
+         mem[j] = {BITS{1'b0}};
+   end
+
+   always @(posedge clk)
+   begin
+      if (ce_in)
+      begin
+         //if ((we_in !== 1'b1 &amp;&amp; we_in !== 1'b0) &amp;&amp; corrupt_mem_on_X_p)
+         if (corrupt_mem_on_X_p &amp;&amp;
+             ((^we_in === 1'bx) || (we_in &amp;&amp; (^addr_in === 1'bx)))
+            )
+         begin
+            // WEN or ADDR is unknown, so corrupt entire array (using unsynthesizeable for loop)
+            for (j = 0; j &lt; WORD_DEPTH; j = j + 1)
+               mem[j] &lt;= 'x;
+            $display(&quot;warning: ce_in=1, we_in is %b, addr_in = %x in fakeram7_256x256&quot;, we_in, addr_in);
+         end
+         else if (we_in)
+         begin
+            mem[addr_in] &lt;= wd_in;
+         end
+         // read
+         rd_out &lt;= mem[addr_in];
+      end
+      else
+      begin
+         // Make sure read fails if ce_in is low
+         rd_out &lt;= 'x;
+      end
+   end
+
+   // Timing check placeholders (will be replaced during SDF back-annotation)
+   reg notifier;
+   specify
+      // Delay from clk to rd_out
+      (clk *> rd_out) = (0, 0);
+
+      // Timing checks
+      $width     (posedge clk,            0, 0, notifier);
+      $width     (negedge clk,            0, 0, notifier);
+      $period    (posedge clk,            0,    notifier);
+      $setuphold (posedge clk, we_in,     0, 0, notifier);
+      $setuphold (posedge clk, ce_in,     0, 0, notifier);
+      $setuphold (posedge clk, addr_in,   0, 0, notifier);
+      $setuphold (posedge clk, wd_in,     0, 0, notifier);
+   endspecify
+
+`endif
+" />
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>fakeram7_64x28</name>
+      <circuit>
+        <module_o id="fakeram7_64x28">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="fakeram7_64x28"/>
+          <port_o id="clk" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="ce_in" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we_in" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="addr_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="6"/>
+          </port_o>
+          <port_o id="wd_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="28"/>
+          </port_o>
+          <port_o id="rd_out" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="28"/>
+          </port_o>
+          <NP_functionality LIBRARY="fakeram7_64x28" VERILOG_PROVIDED="
+`ifdef __BAMBU_SIM__
+   localparam BITS = 28;
+   localparam WORD_DEPTH = 64;
+   localparam ADDR_WIDTH = 6;
+   localparam corrupt_mem_on_X_p = 1;
+
+
+   reg    [BITS-1:0]        rd_out;
+   reg    [BITS-1:0]        mem [0:WORD_DEPTH-1];
+
+   integer j;
+   initial begin
+      rd_out = {BITS{1'b0}};
+      for (j = 0; j &lt; WORD_DEPTH; j = j + 1)
+         mem[j] = {BITS{1'b0}};
+   end
+
+   always @(posedge clk)
+   begin
+      if (ce_in)
+      begin
+         //if ((we_in !== 1'b1 &amp;&amp; we_in !== 1'b0) &amp;&amp; corrupt_mem_on_X_p)
+         if (corrupt_mem_on_X_p &amp;&amp;
+             ((^we_in === 1'bx) || (we_in &amp;&amp; (^addr_in === 1'bx)))
+            )
+         begin
+            // WEN or ADDR is unknown, so corrupt entire array (using unsynthesizeable for loop)
+            for (j = 0; j &lt; WORD_DEPTH; j = j + 1)
+               mem[j] &lt;= 'x;
+            $display(&quot;warning: ce_in=1, we_in is %b, addr_in = %x in fakeram7_256x256&quot;, we_in, addr_in);
+         end
+         else if (we_in)
+         begin
+            mem[addr_in] &lt;= wd_in;
+         end
+         // read
+         rd_out &lt;= mem[addr_in];
+      end
+      else
+      begin
+         // Make sure read fails if ce_in is low
+         rd_out &lt;= 'x;
+      end
+   end
+
+   // Timing check placeholders (will be replaced during SDF back-annotation)
+   reg notifier;
+   specify
+      // Delay from clk to rd_out
+      (clk *> rd_out) = (0, 0);
+
+      // Timing checks
+      $width     (posedge clk,            0, 0, notifier);
+      $width     (negedge clk,            0, 0, notifier);
+      $period    (posedge clk,            0,    notifier);
+      $setuphold (posedge clk, we_in,     0, 0, notifier);
+      $setuphold (posedge clk, ce_in,     0, 0, notifier);
+      $setuphold (posedge clk, addr_in,   0, 0, notifier);
+      $setuphold (posedge clk, wd_in,     0, 0, notifier);
+   endspecify
+
+`endif
+" />
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>fakeram7_256x32</name>
+      <circuit>
+        <module_o id="fakeram7_256x32">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="fakeram7_256x32"/>
+          <port_o id="clk" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="ce_in" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we_in" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="addr_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="wd_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="rd_out" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <NP_functionality LIBRARY="fakeram7_256x32" VERILOG_PROVIDED="
+`ifdef __BAMBU_SIM__
+   localparam BITS = 32;
+   localparam WORD_DEPTH = 256;
+   localparam ADDR_WIDTH = 8;
+   localparam corrupt_mem_on_X_p = 1;
+
+
+   reg    [BITS-1:0]        rd_out;
+   reg    [BITS-1:0]        mem [0:WORD_DEPTH-1];
+
+   integer j;
+   initial begin
+      rd_out = {BITS{1'b0}};
+      for (j = 0; j &lt; WORD_DEPTH; j = j + 1)
+         mem[j] = {BITS{1'b0}};
+   end
+
+   always @(posedge clk)
+   begin
+      if (ce_in)
+      begin
+         //if ((we_in !== 1'b1 &amp;&amp; we_in !== 1'b0) &amp;&amp; corrupt_mem_on_X_p)
+         if (corrupt_mem_on_X_p &amp;&amp;
+             ((^we_in === 1'bx) || (we_in &amp;&amp; (^addr_in === 1'bx)))
+            )
+         begin
+            // WEN or ADDR is unknown, so corrupt entire array (using unsynthesizeable for loop)
+            for (j = 0; j &lt; WORD_DEPTH; j = j + 1)
+               mem[j] &lt;= 'x;
+            $display(&quot;warning: ce_in=1, we_in is %b, addr_in = %x in fakeram7_256x256&quot;, we_in, addr_in);
+         end
+         else if (we_in)
+         begin
+            mem[addr_in] &lt;= wd_in;
+         end
+         // read
+         rd_out &lt;= mem[addr_in];
+      end
+      else
+      begin
+         // Make sure read fails if ce_in is low
+         rd_out &lt;= 'x;
+      end
+   end
+
+   // Timing check placeholders (will be replaced during SDF back-annotation)
+   reg notifier;
+   specify
+      // Delay from clk to rd_out
+      (clk *> rd_out) = (0, 0);
+
+      // Timing checks
+      $width     (posedge clk,            0, 0, notifier);
+      $width     (negedge clk,            0, 0, notifier);
+      $period    (posedge clk,            0,    notifier);
+      $setuphold (posedge clk, we_in,     0, 0, notifier);
+      $setuphold (posedge clk, ce_in,     0, 0, notifier);
+      $setuphold (posedge clk, addr_in,   0, 0, notifier);
+      $setuphold (posedge clk, wd_in,     0, 0, notifier);
+   endspecify
+
+`endif
+" />
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>fakeram7_128x64</name>
+      <circuit>
+        <module_o id="fakeram7_128x64">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="fakeram7_128x64"/>
+          <port_o id="clk" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="ce_in" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we_in" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="addr_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="7"/>
+          </port_o>
+          <port_o id="wd_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="64"/>
+          </port_o>
+          <port_o id="rd_out" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="64"/>
+          </port_o>
+          <NP_functionality LIBRARY="fakeram7_128x64" VERILOG_PROVIDED="
+`ifdef __BAMBU_SIM__
+   localparam BITS = 64;
+   localparam WORD_DEPTH = 128;
+   localparam ADDR_WIDTH = 7;
+   localparam corrupt_mem_on_X_p = 1;
+
+
+   reg    [BITS-1:0]        rd_out;
+   reg    [BITS-1:0]        mem [0:WORD_DEPTH-1];
+
+   integer j;
+   initial begin
+      rd_out = {BITS{1'b0}};
+      for (j = 0; j &lt; WORD_DEPTH; j = j + 1)
+         mem[j] = {BITS{1'b0}};
+   end
+
+   always @(posedge clk)
+   begin
+      if (ce_in)
+      begin
+         //if ((we_in !== 1'b1 &amp;&amp; we_in !== 1'b0) &amp;&amp; corrupt_mem_on_X_p)
+         if (corrupt_mem_on_X_p &amp;&amp;
+             ((^we_in === 1'bx) || (we_in &amp;&amp; (^addr_in === 1'bx)))
+            )
+         begin
+            // WEN or ADDR is unknown, so corrupt entire array (using unsynthesizeable for loop)
+            for (j = 0; j &lt; WORD_DEPTH; j = j + 1)
+               mem[j] &lt;= 'x;
+            $display(&quot;warning: ce_in=1, we_in is %b, addr_in = %x in fakeram7_256x256&quot;, we_in, addr_in);
+         end
+         else if (we_in)
+         begin
+            mem[addr_in] &lt;= wd_in;
+         end
+         // read
+         rd_out &lt;= mem[addr_in];
+      end
+      else
+      begin
+         // Make sure read fails if ce_in is low
+         rd_out &lt;= 'x;
+      end
+   end
+
+   // Timing check placeholders (will be replaced during SDF back-annotation)
+   reg notifier;
+   specify
+      // Delay from clk to rd_out
+      (clk *> rd_out) = (0, 0);
+
+      // Timing checks
+      $width     (posedge clk,            0, 0, notifier);
+      $width     (negedge clk,            0, 0, notifier);
+      $period    (posedge clk,            0,    notifier);
+      $setuphold (posedge clk, we_in,     0, 0, notifier);
+      $setuphold (posedge clk, ce_in,     0, 0, notifier);
+      $setuphold (posedge clk, addr_in,   0, 0, notifier);
+      $setuphold (posedge clk, wd_in,     0, 0, notifier);
+   endspecify
+
+`endif
+" />
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>fakeram7_64x256</name>
+      <circuit>
+        <module_o id="fakeram7_64x256">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="fakeram7_64x256"/>
+          <port_o id="clk" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="ce_in" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we_in" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="addr_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="6"/>
+          </port_o>
+          <port_o id="wd_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="256"/>
+          </port_o>
+          <port_o id="rd_out" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="256"/>
+          </port_o>
+          <NP_functionality LIBRARY="fakeram7_64x256" VERILOG_PROVIDED="
+`ifdef __BAMBU_SIM__
+   localparam BITS = 256;
+   localparam WORD_DEPTH = 64;
+   localparam ADDR_WIDTH = 6;
+   localparam corrupt_mem_on_X_p = 1;
+
+
+   reg    [BITS-1:0]        rd_out;
+   reg    [BITS-1:0]        mem [0:WORD_DEPTH-1];
+
+   integer j;
+   initial begin
+      rd_out = {BITS{1'b0}};
+      for (j = 0; j &lt; WORD_DEPTH; j = j + 1)
+         mem[j] = {BITS{1'b0}};
+   end
+
+   always @(posedge clk)
+   begin
+      if (ce_in)
+      begin
+         //if ((we_in !== 1'b1 &amp;&amp; we_in !== 1'b0) &amp;&amp; corrupt_mem_on_X_p)
+         if (corrupt_mem_on_X_p &amp;&amp;
+             ((^we_in === 1'bx) || (we_in &amp;&amp; (^addr_in === 1'bx)))
+            )
+         begin
+            // WEN or ADDR is unknown, so corrupt entire array (using unsynthesizeable for loop)
+            for (j = 0; j &lt; WORD_DEPTH; j = j + 1)
+               mem[j] &lt;= 'x;
+            $display(&quot;warning: ce_in=1, we_in is %b, addr_in = %x in fakeram7_256x256&quot;, we_in, addr_in);
+         end
+         else if (we_in)
+         begin
+            mem[addr_in] &lt;= wd_in;
+         end
+         // read
+         rd_out &lt;= mem[addr_in];
+      end
+      else
+      begin
+         // Make sure read fails if ce_in is low
+         rd_out &lt;= 'x;
+      end
+   end
+
+   // Timing check placeholders (will be replaced during SDF back-annotation)
+   reg notifier;
+   specify
+      // Delay from clk to rd_out
+      (clk *> rd_out) = (0, 0);
+
+      // Timing checks
+      $width     (posedge clk,            0, 0, notifier);
+      $width     (negedge clk,            0, 0, notifier);
+      $period    (posedge clk,            0,    notifier);
+      $setuphold (posedge clk, we_in,     0, 0, notifier);
+      $setuphold (posedge clk, ce_in,     0, 0, notifier);
+      $setuphold (posedge clk, addr_in,   0, 0, notifier);
+      $setuphold (posedge clk, wd_in,     0, 0, notifier);
+   endspecify
+
+`endif
+" />
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>fakeram7_256x256</name>
+      <circuit>
+        <module_o id="fakeram7_256x256">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="fakeram7_256x256"/>
+          <port_o id="clk" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="ce_in" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we_in" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="addr_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="wd_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="256"/>
+          </port_o>
+          <port_o id="rd_out" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="256"/>
+          </port_o>
+          <NP_functionality LIBRARY="fakeram7_256x256" VERILOG_PROVIDED="
+`ifdef __BAMBU_SIM__
+   localparam BITS = 256;
+   localparam WORD_DEPTH = 256;
+   localparam ADDR_WIDTH = 8;
+   localparam corrupt_mem_on_X_p = 1;
+
+
+   reg    [BITS-1:0]        rd_out;
+   reg    [BITS-1:0]        mem [0:WORD_DEPTH-1];
+
+   integer j;
+   initial begin
+      rd_out = {BITS{1'b0}};
+      for (j = 0; j &lt; WORD_DEPTH; j = j + 1)
+         mem[j] = {BITS{1'b0}};
+   end
+
+   always @(posedge clk)
+   begin
+      if (ce_in)
+      begin
+         //if ((we_in !== 1'b1 &amp;&amp; we_in !== 1'b0) &amp;&amp; corrupt_mem_on_X_p)
+         if (corrupt_mem_on_X_p &amp;&amp;
+             ((^we_in === 1'bx) || (we_in &amp;&amp; (^addr_in === 1'bx)))
+            )
+         begin
+            // WEN or ADDR is unknown, so corrupt entire array (using unsynthesizeable for loop)
+            for (j = 0; j &lt; WORD_DEPTH; j = j + 1)
+               mem[j] &lt;= 'x;
+            $display(&quot;warning: ce_in=1, we_in is %b, addr_in = %x in fakeram7_256x256&quot;, we_in, addr_in);
+         end
+         else if (we_in)
+         begin
+            mem[addr_in] &lt;= wd_in;
+         end
+         // read
+         rd_out &lt;= mem[addr_in];
+      end
+      else
+      begin
+         // Make sure read fails if ce_in is low
+         rd_out &lt;= 'x;
+      end
+   end
+
+   // Timing check placeholders (will be replaced during SDF back-annotation)
+   reg notifier;
+   specify
+      // Delay from clk to rd_out
+      (clk *> rd_out) = (0, 0);
+
+      // Timing checks
+      $width     (posedge clk,            0, 0, notifier);
+      $width     (negedge clk,            0, 0, notifier);
+      $period    (posedge clk,            0,    notifier);
+      $setuphold (posedge clk, we_in,     0, 0, notifier);
+      $setuphold (posedge clk, ce_in,     0, 0, notifier);
+      $setuphold (posedge clk, addr_in,   0, 0, notifier);
+      $setuphold (posedge clk, wd_in,     0, 0, notifier);
+   endspecify
+
+`endif
+" />
+        </module_o>
+      </circuit>
+    </cell>
+    </library>
+</technology>
+</target>

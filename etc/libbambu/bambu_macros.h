@@ -1,47 +1,26 @@
-/*
- *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
- *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2015-2024 Politecnico di Milano
- *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- */
-/**
- * @file bambu_macros.h
- * @brief macros to restrict the bitsize of a variable.
- *
- * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
- *
- */
-#ifndef BAMBU_MACROS_H
-#define BAMBU_MACROS_H
+//    Copyright (C) 2015-2026 Politecnico di Milano
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//    This file is part of the PandA/Bambu libbambu IP Library.
+//
+//    author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+//    author Michele Fiorito <michele.fiorito@polimi.it>
+//
+// Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+#ifndef _BAMBU_MACROS_H
+#define _BAMBU_MACROS_H
+
+#include <stdbool.h>
 
 #include <boost/preprocessor/arithmetic/inc.hpp>
 #include <boost/preprocessor/arithmetic/mod.hpp>
@@ -464,9 +443,9 @@
 #if !defined(UDATATYPE_BITSIZE)
 #define UDATATYPE_BITSIZE 64
 #endif
-
 #define UDATATYPE unsigned long long
-#define BOOLTYPE _Bool
+#define BOOLTYPE bool
+
 #define VAL_RESIZE(VAR, nbit)                                       \
    ((UDATATYPE)(BOOST_PP_IF(BOOST_PP_LESS(nbit, UDATATYPE_BITSIZE), \
                             ((VAR) & ((UDATATYPE)(BOOST_PP_CAT(POW2(nbit), ULL) - 1))), VAR)))
@@ -484,13 +463,13 @@
                      val)
 #define CONCAT(var1, var2, var2bitsize) ((((UDATATYPE)(var1)) << (var2bitsize)) | VAL_RESIZE(var2, var2bitsize))
 
-#define MACRO_DEVECTORIZE_VALUE(z, n, text) _Bool BOOST_PP_CAT(text, BOOST_PP_CAT(_, n)) = (text >> n) & 1;
+#define MACRO_DEVECTORIZE_VALUE(z, n, text) bool BOOST_PP_CAT(text, BOOST_PP_CAT(_, n)) = (text >> n) & 1;
 #define DEVECTORIZE_VALUE(var, nbits) BOOST_PP_REPEAT_FROM_TO(0, nbits, MACRO_DEVECTORIZE_VALUE, var)
 
 #define MACRO_VECTORIZE_VALUE(z, n, text) text = text | (((UDATATYPE)(BOOST_PP_CAT(text, BOOST_PP_CAT(_, n)))) << n);
 #define VECTORIZE_VALUE(var, nbits) BOOST_PP_REPEAT_FROM_TO(0, nbits, MACRO_VECTORIZE_VALUE, var)
 
-#define MACRO_VECTORIZE_DECL(z, n, text) _Bool BOOST_PP_CAT(text, BOOST_PP_CAT(_, n));
+#define MACRO_VECTORIZE_DECL(z, n, text) bool BOOST_PP_CAT(text, BOOST_PP_CAT(_, n));
 #define VECTORIZE_DECL(var, nbits) BOOST_PP_REPEAT_FROM_TO(0, nbits, MACRO_VECTORIZE_DECL, var)
 
 #define RUNTIME_CEIL_LOG2(var) \
@@ -894,4 +873,4 @@
       }                                                                                                \
    }
 
-#endif
+#endif // _BAMBU_MACROS_H

@@ -1,16 +1,7 @@
-bambu_specific_test/930608-1.c.bambuir --use-raw -s --expose-globals
-bambu_specific_test/990829-1.c.bambuir --use-raw
-bambu_specific_test/20020108-1.c.bambuir --use-raw
 bambu_specific_test/bambu1.c -O0 --configuration-name=O0
 bambu_specific_test/bambu1.c -O1 --configuration-name=O1
 bambu_specific_test/bambu1.c -O2 --configuration-name=O2
 bambu_specific_test/bambu1.c -O3 --configuration-name=O3
-bambu_specific_test/divconst-2.c.bambuir --use-raw 
-bambu_specific_test/memset-chk.c -O0 --configuration-name=O0
-bambu_specific_test/memset-chk.c -O1 --configuration-name=O1
-bambu_specific_test/memset-chk.c -O2 --configuration-name=O2
-bambu_specific_test/pr35472.c.bambuir --use-raw -O3
-bambu_specific_test/pta-field-1.c.bambuir --use-raw -O1
 bambu_specific_test/soft_mul.c --top-fname=soft_mul --device-name=nx1h140tsp --generate-tb=a=0x5555555555555555,b=0xAAAAAAAAAAAAAAAA --benchmark-name=soft_mul_NF
 bambu_specific_test/soft_umul.c --top-fname=soft_umul --device-name=nx1h140tsp --generate-tb=a=0x5555555555555555,b=0xAAAAAAAAAAAAAAAA --benchmark-name=soft_umul_NF
 bambu_specific_test/soft_mul.c --top-fname=soft_mul --generate-tb=a=0x5555555555555555,b=0xAAAAAAAAAAAAAAAA --DSP-fracturing=16 --benchmark-name=soft_mul_F
@@ -19,8 +10,11 @@ bambu_specific_test/soft_mul2.c --top-fname=soft_mul --generate-tb=a=0x555555555
 bambu_specific_test/soft_umul2.c --top-fname=soft_umul --generate-tb=a=0x5555555555555555,b=0xAAAAAAAAAAAAAAAA --DSP-fracturing=16  --benchmark-name=soft_umul2_F
 bambu_specific_test/soft_mul3.c --top-fname=soft_mul --generate-tb=a=0x5555555555555555,b=0xAAAAAAAAAAAAAAAA --DSP-fracturing=16 --benchmark-name=soft_mul3_F
 bambu_specific_test/soft_umul3.c --top-fname=soft_umul --generate-tb=a=0x5555555555555555,b=0xAAAAAAAAAAAAAAAA --DSP-fracturing=16  --benchmark-name=soft_umul3_F
+BENCHMARK_ENV=MANTIS_EXPECT_FAILURE=1,MANTIS_EXPECT_FAILURE_REGEX=m_param_alloc\\( bambu_specific_test/void_ptr_requires_m_param_alloc.c --top-fname=void_ptr_requires_m_param_alloc --generate-tb=BENCHMARKS_ROOT/bambu_specific_test/void_ptr_requires_m_param_alloc.xml --benchmark-name=void_ptr_requires_m_param_alloc_expected_failure
 gcc_regression_simple/usmul.c --DSP-fracturing=16
 gcc_regression_simple/arith-rand.c --DSP-fracturing=16
 gcc_regression_simple/arith-rand-6432.c --DSP-fracturing=16
 gcc_regression_simple/arith-rand-ll.c --DSP-fracturing=16
-bambu_specific_test/unsafe-fp-assoc-1.c.bambuir --use-raw --pretty-print=output.c
+gcc_regression_simple/20080424-1.c -s
+bambu_specific_test/test_cse_same_base_load.c -O0 --configuration-name=O0 --top-fname=test_cse_same_base_load --generate-tb=BENCHMARKS_ROOT/bambu_specific_test/test_cse_same_base_load.c --simulate
+bambu_specific_test/test_cse_same_base_store.c -O0 --configuration-name=O0 --top-fname=test_cse_same_base_store --generate-tb=BENCHMARKS_ROOT/bambu_specific_test/test_cse_same_base_store.c --simulate

@@ -12,32 +12,29 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
- * @file HLS_step.hpp
+ * @file hls_step.hpp
  * @brief Base class for all HLS algorithms
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef HLS_STEP_HPP
@@ -48,11 +45,8 @@
 
 #include <string>
 
-#include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
-#include "config_HAVE_ILP_BUILT.hpp"
 #include "config_HAVE_LIBRARY_CHARACTERIZATION_BUILT.hpp"
 #include "config_HAVE_SIMULATION_WRAPPER_BUILT.hpp"
-#include "config_HAVE_TASTE.hpp"
 #include "config_HAVE_VCD_BUILT.hpp"
 
 CONSTREF_FORWARD_DECL(Parameter);
@@ -80,8 +74,7 @@ class HLSFlowStepSpecialization
 
    HLSFlowStepSpecialization();
 
-   virtual ~HLSFlowStepSpecialization();
-
+   virtual ~HLSFlowStepSpecialization() = default;
    /**
     * @brief Get the name of this specialization
     *
@@ -112,79 +105,40 @@ enum class HLSFlowStep_Type
    UNKNOWN = 0,
    ADD_LIBRARY,
    ALLOCATION,
-   BB_STG_CREATOR,
+   BUILD_FSM,
    CALL_GRAPH_UNFOLDING,
    CDFC_MODULE_BINDING,
    CHORDAL_COLORING_REGISTER_BINDING,
    CLASSIC_DATAPATH_CREATOR,
-   DATAPATH_CS_CREATOR,
-   DATAPATH_CS_PARALLEL_CREATOR,
    CLASSICAL_HLS_SYNTHESIS_FLOW,
    COLORING_REGISTER_BINDING,
-   CONTROL_FLOW_CHECKER,
-   C_TESTBENCH_EXECUTION,
+   C_TESTBENCH_GENERATION,
    DOMINATOR_ALLOCATION,
    DOMINATOR_FUNCTION_ALLOCATION,
    DOMINATOR_MEMORY_ALLOCATION,
-   DOMINATOR_MEMORY_ALLOCATION_CS,
-   DRY_RUN_EVALUATION,
    EASY_MODULE_BINDING,
    EVALUATION,
    FSM_CONTROLLER_CREATOR,
-   FSM_CS_CONTROLLER_CREATOR,
    FSM_NI_SSA_LIVENESS,
    GENERATE_HDL,
-   GENERATE_SIMULATION_SCRIPT,
-   GENERATE_SYNTHESIS_SCRIPT,
-#if HAVE_TASTE
-   GENERATE_TASTE_HDL_ARCHITECTURE,
-   GENERATE_TASTE_SYNTHESIS_SCRIPT,
-#endif
+   HDL_TESTBENCH_GENERATION,
    HLS_FUNCTION_BIT_VALUE,
    HLS_SYNTHESIS_FLOW,
    HW_PATH_COMPUTATION,
-   HW_DISCREPANCY_ANALYSIS,
    INFERRED_INTERFACE_GENERATION,
    INITIALIZE_HLS,
-   INTERFACE_CS_GENERATION,
+   BUS_INTERFACE_GENERATION,
    LIST_BASED_SCHEDULING,
    MINIMAL_INTERFACE_GENERATION,
    MUX_INTERCONNECTION_BINDING,
-#if HAVE_FROM_PRAGMA_BUILT
-   OMP_ALLOCATION,
-#endif
-#if HAVE_FROM_PRAGMA_BUILT
-#endif
-   OMP_BODY_LOOP_SYNTHESIS_FLOW,
-#if HAVE_FROM_PRAGMA_BUILT
-   OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW,
-#endif
-#if HAVE_FROM_PRAGMA_BUILT
-   OMP_FUNCTION_ALLOCATION,
-#endif
-#if HAVE_FROM_PRAGMA_BUILT
-   OMP_FUNCTION_ALLOCATION_CS,
-#endif
-   PIPELINE_CONTROLLER_CREATOR,
-   PORT_SWAPPING,
    SCHED_CHAINING,
-#if HAVE_ILP_BUILT
    SDC_SCHEDULING,
-#endif
 #if HAVE_SIMULATION_WRAPPER_BUILT
-   SIMULATION_EVALUATION,
 #endif
    STANDARD_HLS_FLOW,
-#if HAVE_LIBRARY_CHARACTERIZATION_BUILT
-   SYNTHESIS_EVALUATION,
-#endif
-#if HAVE_TASTE
-   TASTE_INTERFACE_GENERATION,
-#endif
    TESTBENCH_GENERATION,
    TEST_VECTOR_PARSER,
-   TOP_ENTITY_CS_CREATION,
-   TOP_ENTITY_CS_PARALLEL_CREATION,
+   TOP_ENTITY_OMP_CS_CREATION,
    TOP_ENTITY_CREATION,
    TOP_ENTITY_MEMORY_MAPPED_CREATION,
    UNIQUE_MODULE_BINDING,
@@ -260,7 +214,7 @@ class HLS_step : public DesignFlowStep
    const HLSFlowStepSpecializationConstRef hls_flow_step_specialization;
 
    HLS_step(signature_t signature, const ParameterConstRef _parameters, const HLS_managerRef HLSMgr,
-            const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
+            const DesignFlowManager& design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
             const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
 
    /**
@@ -275,16 +229,15 @@ class HLS_step : public DesignFlowStep
  public:
    /**
     * Constructor
-    * @param Param class containing all the parameters
-    * @param HLS class containing all the HLS data-structures
+    * @param _parameters class containing all the parameters
+    * @param HLSMgr class containing all the HLS data-structures
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the type of this hls flow step
+    * @param hls_flow_step_specialization is the optional specialization associated with this flow step
     */
    HLS_step(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr,
-            const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
+            const DesignFlowManager& design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
             const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
-
-   ~HLS_step() override;
 
    virtual std::string GetName() const override;
 
@@ -316,7 +269,6 @@ namespace std
     */
    template <>
    struct hash<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>>
-       : public unary_function<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>, size_t>
    {
       size_t operator()(std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> step) const
       {

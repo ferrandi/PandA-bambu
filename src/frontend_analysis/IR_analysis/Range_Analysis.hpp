@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -35,9 +35,6 @@
  * @brief
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -48,14 +45,9 @@
 
 #include "Range.hpp"
 #include "application_frontend_flow_step.hpp"
-#include "tree_node.hpp"
+#include "ir_node.hpp"
 
 REF_FORWARD_DECL(ConstraintGraph);
-
-struct tree_reindexCompare
-{
-   bool operator()(const tree_nodeConstRef& lhs, const tree_nodeConstRef& rhs) const;
-};
 
 enum SolverType
 {
@@ -65,6 +57,16 @@ enum SolverType
 
 class RangeAnalysis : public ApplicationFrontendFlowStep
 {
+   SolverType solverType;
+   bool computeESSA;
+   int execution_mode;
+
+   /* Stores the function ids of the functions whose Dead Code need to be restarted */
+   CustomOrderedSet<unsigned int> fun_id_to_restart;
+
+   /* Sum of reached body functions' bb+bitvalue versions after last Exec call */
+   unsigned int last_ver_sum;
+
 #ifndef NDEBUG
    int graph_debug;
    uint64_t iteration;
@@ -72,54 +74,27 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
    uint64_t stop_transformation;
 #endif
 
-   SolverType solverType;
-   bool requireESSA;
-   int execution_mode;
-
-   /// stores the function ids of the functions whose Dead Code need to be restarted
-   CustomOrderedSet<unsigned int> fun_id_to_restart;
-
-   /* Sum of reached body functions' bb+bitvalue versions after last Exec call */
-   unsigned int last_ver_sum;
-
-   bool finalize(ConstraintGraphRef);
+   bool finalize(const ConstraintGraphRef& CG);
 
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+
    void ComputeRelationships(DesignFlowStepSet& relationships,
                              const DesignFlowStep::RelationshipType relationship_type) override;
 
  public:
    /**
     * Constructor.
-    * @param _Param is the set of the parameters
-    * @param _AppM is the application manager
-    * @param function_id is the identifier of the function
-    * @param design_flow_manager is the design flow manager
+    * @param AM is the application manager
+    * @param dfm is the design flow manager
+    * @param parameters is the set of the parameters
     */
-   RangeAnalysis(const application_managerRef AM, const DesignFlowManagerConstRef dfm,
-                 const ParameterConstRef parameters);
+   RangeAnalysis(const application_managerRef AM, const DesignFlowManager& dfm, const ParameterConstRef parameters);
 
-   /**
-    *  Destructor
-    */
-   ~RangeAnalysis() override;
-
-   /**
-    * perform the range analysis
-    * @return the exit status of this step
-    */
    DesignFlowStep_Status Exec() override;
 
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
    void Initialize() override;
 
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
    bool HasToBeExecuted() const override;
 };
 

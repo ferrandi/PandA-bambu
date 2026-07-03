@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -40,35 +40,27 @@
  */
 #ifndef SOFT_FLOAT_CG_EXT_HPP
 #define SOFT_FLOAT_CG_EXT_HPP
-
-/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
 #include "bit_lattice.hpp"
 #include "call_graph.hpp"
-#include "function_behavior.hpp"
-#include "tree_node.hpp"
-
-/// Utility include
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "refcount.hpp"
-#include "string_manipulation.hpp"
+
 #include <array>
 #include <tuple>
 #include <vector>
 
-/**
- * @name forward declarations
- */
-//@{
+struct function_val_node;
+struct ssa_node;
+REF_FORWARD_DECL(bloc);
 REF_FORWARD_DECL(FloatFormat);
 REF_FORWARD_DECL(FunctionVersion);
 REF_FORWARD_DECL(soft_float_cg_ext);
-REF_FORWARD_DECL(tree_manager);
-REF_FORWARD_DECL(tree_manipulation);
-REF_FORWARD_DECL(tree_node);
-//@}
+REF_FORWARD_DECL(ir_manager);
+REF_FORWARD_DECL(ir_manipulation);
+REF_FORWARD_DECL(ir_node);
 
 /**
  * Add to the call graph the function calls associated with the floating point primitive operations
@@ -79,17 +71,17 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
    /// Floating-point function version map
    static CustomMap<CallGraph::vertex_descriptor, FunctionVersionRef> funcFF;
 
-   /// Static arguments list to feed specialization parameters of versioned functions
-   static CustomMap<unsigned int, std::array<tree_nodeRef, 8>> versioning_args;
+   /// Arguments list to feed specialization parameters of versioned functions
+   static CustomMap<std::string, std::array<ir_nodeRef, 8>> spec_parms_map;
 
    static bool inline_math;
    static bool inline_conversion;
-   static tree_nodeRef float32_type;
-   static tree_nodeRef float32_ptr_type;
-   static tree_nodeRef float64_type;
-   static tree_nodeRef float64_ptr_type;
+   static ir_nodeRef float32_type;
+   static ir_nodeRef float32_ptr_type;
+   static ir_nodeRef float64_type;
+   static ir_nodeRef float64_ptr_type;
 
-   static bool lowering_needed(const ssa_name* ssa);
+   static bool lowering_needed(const ssa_node* ssa);
 
    enum InterfaceType
    {
@@ -99,139 +91,120 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
       INTERFACE_TYPE_REAL = 4    // Floating-point type must be persisted
    };
 
-   /// Already visited tree node (used to avoid infinite recursion)
+   /// Already visited IR node (used to avoid infinite recursion)
    CustomUnorderedSet<unsigned int> already_visited;
 
-   /// Tree manager
-   const tree_managerRef TreeM;
+   /// IR manager
+   const ir_managerRef IRM;
 
-   /// tree manipulation
-   const tree_manipulationRef tree_man;
+   /// IR manipulation
+   const ir_manipulationRef ir_man;
 
-   function_decl* fd;
+   function_val_node* fd;
    bool isTopFunction;
-   std::vector<tree_nodeRef> topReturn;
+   std::vector<ir_nodeRef> topReturn;
    bool bindingCompleted;
-   std::vector<tree_nodeRef> paramBinding;
+   std::vector<ir_nodeRef> paramBinding;
 
    FunctionVersionRef _version;
 
-   tree_nodeRef int_type;
-   tree_nodeRef int_ptr_type;
+   ir_nodeRef int_type;
+   ir_nodeRef int_ptr_type;
 
-   // Real type variables to be aliased as integer type variables {ssa_name, internal_type}
-   CustomMap<ssa_name*, bool> viewConvert;
+   // Real type variables to be aliased as integer type variables {ssa_node, internal_type}
+   CustomMap<ssa_node*, bool> bitcastCandidates;
 
    // Real to integer view convert statements to be converted into nop statements
-   std::vector<tree_nodeRef> nopConvert;
+   std::vector<ir_nodeRef> nopConvertibleBitcasts;
 
    /// SSA variable which requires cast renaming from standard to user-defined float format in all but given statements
-   CustomMap<ssa_name*, std::tuple<FloatFormatRef, std::vector<unsigned int>>> inputInterface;
+   CustomMap<ssa_node*, std::tuple<FloatFormatRef, std::vector<unsigned int>>> inputInterface;
 
    /// SSA variable which requires cast renaming from user-defined to standard float format in given statements only
-   CustomMap<ssa_name*, std::tuple<FloatFormatRef, std::vector<tree_nodeRef>>> outputInterface;
+   CustomMap<ssa_node*, std::tuple<FloatFormatRef, std::vector<ir_nodeRef>>> outputInterface;
 
-   /// Hardware implemented functions need parameters specified as real_type, thus it is necessary to add a view_convert
-   CustomMap<ssa_name*, std::set<unsigned int>> hwParam;
+   /// Hardware implemented functions need parameters specified as real_ty_node, thus it is necessary to add a bitcast
+   CustomMap<ssa_node*, std::set<unsigned int>> hwParam;
 
-   /// Hardware implemented functions return values as real_type, thus a view_convert is necessary
-   std::vector<ssa_name*> hwReturn;
+   /// Hardware implemented functions return values as real_ty_node, thus a bitcast is necessary
+   std::vector<ssa_node*> hwReturn;
 
-   tree_nodeRef int_type_for(const tree_nodeRef& type, bool use_internal) const;
+   ir_nodeRef int_type_for(const ir_nodeRef& type, bool use_internal) const;
 
-   bool signature_lowering(function_decl* f_decl) const;
+   bool signature_lowering(function_val_node* f_decl) const;
 
-   void ssa_lowering(ssa_name* ssa, bool internal_type) const;
+   void ssa_lowering(ssa_node* ssa, bool internal_type) const;
 
    /**
-    * Replace current_tree_node with a call_expr to fu_name function specialized with specFF fp format in
+    * Replace current_ir_node with a call_node to fu_name function specialized with specFF fp format in
     * current_statement
     *
     * @param specFF FP format for fu_name function specialization
     * @param fu_name Function name
     * @param args Function arguments
     * @param current_statement
-    * @param current_tree_node
+    * @param current_ir_node
     * @param current_scrp
+    * @return ir_nodeRef IR node of specialized function
     */
-   void replaceWithCall(const FloatFormatRef& specFF, const std::string& fu_name, std::vector<tree_nodeRef> args,
-                        const tree_nodeRef& current_statement, const tree_nodeRef& current_tree_node,
-                        const std::string& current_scrp);
+   ir_nodeRef replaceWithCall(const FloatFormatRef& specFF, const std::string& fu_name, std::vector<ir_nodeRef> args,
+                              const ir_nodeRef& current_statement, const ir_nodeRef& current_ir_node,
+                              const std::string& current_scrp);
 
    /**
-    * Recursive examine tree node
+    * Recursive examine IR node
     * @param current_statement is the current analyzed statement
-    * @param current_tree_node is the current tree node
+    * @param current_ir_node is the current IR node
     * @param castRename is the required interface type bitmask reported using InterfaceType enum
     * @return bool True if IR has been modified, else false
     */
-   bool RecursiveExaminate(const tree_nodeRef& current_statement, const tree_nodeRef& current_tree_node,
-                           int castRename);
+   bool RecursiveExaminate(const ir_nodeRef& current_statement, const ir_nodeRef& current_ir_node, int castRename);
 
    /**
     * Generate necessary statements to convert ssa variable from inFF to outFF and insert them after stmt in bb
     * @param bb Generated operations will be inserted in this basic block
     * @param stmt Generated statements will be inserted after this statement, if nullptr they will be inserted at the
     * beginning of the BB
-    * @param ssa Real type ssa_name tree reindex to be converted from inFF to outFF
+    * @param ssa Real type ssa_node IR reindex to be converted from inFF to outFF
     * @param inFF Input float format, if nullptr will be deduced as standard IEEE 754 type from ssa bitwidth
     * @param outFF Output float format, if nullptr will be deduced as standard IEEE 754 type from ssa bitwidth
-    * @return tree_nodeRef New ssa_name tree reindex reference representing converted input ssa
+    * @return ir_nodeRef New ssa_node IR reindex reference representing converted input ssa
     */
-   tree_nodeRef generate_interface(const blocRef& bb, tree_nodeRef stmt, const tree_nodeRef& ssa, FloatFormatRef inFF,
-                                   FloatFormatRef outFF) const;
+   ir_nodeRef generate_interface(const blocRef& bb, ir_nodeRef stmt, const ir_nodeRef& ssa, FloatFormatRef inFF,
+                                 FloatFormatRef outFF) const;
 
    /**
     * Cast real type constant from inFF to outFF format
     * @param in Real type constant bits represented as inFF
     * @param inFF Input floating point format
     * @param outFF Output floating point format
-    * @return tree_nodeRef Unsigned integer constant bits representation of input bits using outFF format
+    * @return ir_nodeRef Unsigned integer constant bits representation of input bits using outFF format
     */
-   tree_nodeRef cstCast(uint64_t in, const FloatFormatRef& inFF, const FloatFormatRef& outFF) const;
+   ir_nodeRef cstCast(uint64_t in, const FloatFormatRef& inFF, const FloatFormatRef& outFF) const;
 
    /**
     * Generate float negate operation based on given floating-point format
     * @param op Negate operand
     * @param ff Floating-point format
-    * @return tree_nodeRef Floating-point format related negate expression to replace negate_expr with
+    * @return ir_nodeRef Floating-point format related negate operation to replace `neg_node` with
     */
-   tree_nodeRef floatNegate(const tree_nodeRef& op, const FloatFormatRef& ff) const;
+   ir_nodeRef floatNegate(const ir_nodeRef& op, const FloatFormatRef& ff) const;
 
    /**
     * Generate float absolute value operation based on given floating-point format
     * @param op Negate operand
     * @param ff Floating-point format
-    * @return tree_nodeRef Floating-point format related absolute value expression to replace abs_expr with
+    * @return ir_nodeRef Floating-point format related absolute value expression to replace abs_node with
     */
-   tree_nodeRef floatAbs(const tree_nodeRef& op, const FloatFormatRef& ff) const;
+   ir_nodeRef floatAbs(const ir_nodeRef& op, const FloatFormatRef& ff) const;
 
-   /**
-    * Return the set of analyses in relationship with this design step
-    * @param relationship_type is the type of relationship to be considered
-    */
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
-   /**
-    * Constructor.
-    * @param Param is the set of the parameters
-    * @param AppM is the application manager
-    * @param fun_id is the function index
-    * @param design_flow_manager is the design flow manager
-    */
    soft_float_cg_ext(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int _function_id,
-                     const DesignFlowManagerConstRef design_flow_manager);
+                     const DesignFlowManager& design_flow_manager);
 
-   /**
-    * Destructor
-    */
-   ~soft_float_cg_ext() override;
-
-   /**
-    * Fixes the var_decl duplication.
-    */
    DesignFlowStep_Status InternalExec() override;
 
    bool HasToBeExecuted() const override;
@@ -250,7 +223,8 @@ class FloatFormat
    {
       FPException_Overflow = 0,
       FPException_IEEE = 1,
-      FPException_Saturation = 2
+      FPException_Saturation = 2,
+      FPException_NoNan = 4
    };
 
    uint8_t exp_bits;
@@ -275,6 +249,8 @@ class FloatFormat
    std::string ToString() const;
 
    static FloatFormatRef FromString(std::string ff_str);
+
+   static FloatFormatRef FromArgs(const std::vector<ir_nodeRef>& args);
 };
 
 class FunctionVersion
@@ -297,8 +273,6 @@ class FunctionVersion
    FunctionVersion(CallGraph::vertex_descriptor func_v, const FloatFormatRef& userFormat = nullptr);
 
    FunctionVersion(const FunctionVersion& other);
-
-   ~FunctionVersion();
 
    int compare(const FunctionVersion& other, bool format_only = false) const;
 

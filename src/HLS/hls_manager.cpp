@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -35,81 +35,47 @@
  * @brief Data structure containing all the information for HLS.
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "hls_manager.hpp"
 
-#include "BackendFlow.hpp"
+#include "BackendWrapper.hpp"
 #include "Parameter.hpp"
+#include "SimulationInformation.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
-#include "ext_tree_node.hpp"
 #include "function_behavior.hpp"
+#include "functions.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_device.hpp"
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
 #include "memory.hpp"
 #include "op_graph.hpp"
 #include "polixml.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
+#include "storage_value_information.hpp"
 #include "utility.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
-#if HAVE_TASTE
-#include "aadl_information.hpp"
-#include "functions.hpp"
-#endif
 #define MAX_BITWIDTH_SIZE 4096
 
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#pragma clang diagnostic ignored "-Wsign-conversion"
-#pragma clang diagnostic ignored "-Wswitch-enum"
-#else
-#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#pragma GCC diagnostic ignored "-Wswitch-enum"
-#endif
-
-#define PUGIXML_HEADER_ONLY
 #include <pugixml.hpp>
 
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#else
-#pragma GCC diagnostic pop
-#endif
-
 HLS_manager::HLS_manager(const ParameterConstRef _Param, const HLS_deviceRef _HLS_D)
-    : application_manager(FunctionExpanderConstRef(new FunctionExpander()), false, _Param),
+    : application_manager(false, _Param),
       HLS_D(_HLS_D),
+      back_flow(nullptr),
       memory_version(1),
       base_address(0),
-      HLS_execution_time(0)
-#if HAVE_TASTE
-      ,
-      aadl_information(new AadlInformation())
-#endif
+      HLS_execution_time(0),
+      Rfuns(nullptr),
+      Rmem(nullptr),
+      RSim(nullptr),
+      module_arch(nullptr)
 {
-#if HAVE_TASTE
-   if(Param->isOption(OPT_context_switch))
-   {
-      ;
-   }
-   else
-   {
-      Rfuns = functionsRef(new functions());
-   }
-#endif
 }
-
-HLS_manager::~HLS_manager() = default;
 
 hlsRef HLS_manager::get_HLS(unsigned int funId) const
 {
@@ -129,22 +95,73 @@ HLS_deviceRef HLS_manager::get_HLS_device() const
    return HLS_D;
 }
 
+std::vector<hlsRef> HLS_manager::GetAllImplementations() const
+{
+   std::vector<hlsRef> implementations;
+   implementations.reserve(hlsMap.size());
+   for(const auto& [_, implementation] : hlsMap)
+   {
+      if(implementation)
+      {
+         implementations.push_back(implementation);
+      }
+   }
+   return implementations;
+}
+
+void HLS_manager::clear_ding_dong_buffer_candidates()
+{
+   ding_dong_buffer_candidates_.clear();
+}
+
+void HLS_manager::add_ding_dong_buffer_candidate(const unsigned int top_id, const unsigned int var_id,
+                                                 const ding_dong_buffer_info& info)
+{
+   ding_dong_buffer_candidates_[top_id][var_id] = info;
+}
+
+const std::map<unsigned int, std::map<unsigned int, HLS_manager::ding_dong_buffer_info>>&
+HLS_manager::get_ding_dong_buffer_candidates() const
+{
+   return ding_dong_buffer_candidates_;
+}
+
+const std::map<unsigned int, HLS_manager::ding_dong_buffer_info>&
+HLS_manager::get_ding_dong_buffer_candidates(const unsigned int top_id) const
+{
+   static const std::map<unsigned int, ding_dong_buffer_info> empty_candidates;
+   const auto candidate_it = ding_dong_buffer_candidates_.find(top_id);
+   return candidate_it == ding_dong_buffer_candidates_.end() ? empty_candidates : candidate_it->second;
+}
+
+const HLS_manager::ding_dong_buffer_info* HLS_manager::get_ding_dong_buffer_candidate(const unsigned int top_id,
+                                                                                      const unsigned int var_id) const
+{
+   const auto top_it = ding_dong_buffer_candidates_.find(top_id);
+   if(top_it == ding_dong_buffer_candidates_.end())
+   {
+      return nullptr;
+   }
+   const auto var_it = top_it->second.find(var_id);
+   return var_it == top_it->second.end() ? nullptr : &var_it->second;
+}
+
 hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functionId)
 {
    THROW_ASSERT(functionId, "No function");
-   const std::deque<vertex>& OperationsList = HLSMgr->CGetFunctionBehavior(functionId)->get_levels();
-   OpVertexSet Operations(HLSMgr->CGetFunctionBehavior(functionId)->CGetOpGraph(FunctionBehavior::CFG));
+   const auto& OperationsList = HLSMgr->CGetFunctionBehavior(functionId)->get_levels();
+   OpVertexSet Operations(&HLSMgr->CGetFunctionBehavior(functionId)->GetOpGraphsCollection());
    Operations.insert(OperationsList.begin(), OperationsList.end());
    if(HLSMgr->hlsMap.find(functionId) == HLSMgr->hlsMap.end())
    {
       /// creates the new HLS data structure associated with the function
-      const std::string function_name = tree_helper::name_function(HLSMgr->get_tree_manager(), functionId);
+      const auto function_name = ir_helper::GetFunctionName(HLSMgr->get_ir_manager()->GetIRNode(functionId));
       HLS_constraintsRef HLS_C = HLS_constraintsRef(new HLS_constraints(HLSMgr->get_parameter(), function_name));
-      for(const auto& globalRC : HLSMgr->global_resource_constraints)
+      for(const auto& [fu_info, constraints] : HLSMgr->global_resource_constraints)
       {
-         if(HLS_C->get_number_fu(globalRC.first.first, globalRC.first.second) == INFINITE_UINT)
+         if(HLS_C->get_number_fu(fu_info.first, fu_info.second) == INFINITE_UINT)
          {
-            HLS_C->set_number_fu(globalRC.first.first, globalRC.first.second, globalRC.second.first);
+            HLS_C->set_number_fu(fu_info.first, fu_info.second, constraints.first);
          }
       }
       HLSMgr->hlsMap[functionId] =
@@ -160,12 +177,12 @@ hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functio
 std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long long precision)
 {
    std::string trimmed_value;
-   const auto node = TM->GetTreeNode(node_id);
-   const auto node_type = tree_helper::CGetType(node);
-   if(tree_helper::IsRealType(node_type))
+   const auto node = TM->GetIRNode(node_id);
+   const auto node_type = ir_helper::CGetType(node);
+   if(ir_helper::IsRealType(node_type))
    {
-      THROW_ASSERT(tree_helper::Size(node_type) == precision, "real precision mismatch");
-      const auto rc = GetPointerS<const real_cst>(node);
+      THROW_ASSERT(ir_helper::Size(node_type) == precision, "real precision mismatch");
+      const auto rc = GetPointerS<const constant_fp_val_node>(node);
       std::string C_value = rc->valr;
       if(C_value == "Inf")
       {
@@ -177,9 +194,9 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long
       }
       trimmed_value = convert_fp_to_string(C_value, precision);
    }
-   else if(tree_helper::IsVectorType(node_type))
+   else if(ir_helper::IsVectorType(node_type))
    {
-      const auto vc = GetPointerS<const vector_cst>(node);
+      const auto vc = GetPointerS<const constant_vector_val_node>(node);
       auto n_elm = static_cast<unsigned int>(vc->list_of_valu.size());
       auto elm_prec = precision / n_elm;
       trimmed_value = "";
@@ -188,55 +205,11 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long
          trimmed_value = get_constant_string(vc->list_of_valu[i]->index, elm_prec) + trimmed_value;
       }
    }
-   else if(tree_helper::IsComplexType(node_type))
-   {
-      const auto cc = GetPointerS<const complex_cst>(node);
-      std::string trimmed_value_r;
-      if(cc->real->get_kind() == real_cst_K)
-      {
-         const auto rcc = GetPointerS<const real_cst>(cc->real);
-         std::string C_value_r = rcc->valr;
-         if(C_value_r == "Inf")
-         {
-            C_value_r = rcc->valx;
-         }
-         trimmed_value_r = convert_fp_to_string(C_value_r, precision / 2);
-      }
-      else
-      {
-         trimmed_value_r = convert_to_binary(tree_helper::GetConstValue(cc->real), precision / 2);
-      }
-      std::string trimmed_value_i;
-      if(cc->imag->get_kind() == real_cst_K)
-      {
-         const auto icc = GetPointerS<const real_cst>(cc->imag);
-         std::string C_value_i = icc->valr;
-         if(C_value_i == "Inf")
-         {
-            C_value_i = icc->valx;
-         }
-         trimmed_value_i = convert_fp_to_string(C_value_i, precision / 2);
-      }
-      else
-      {
-         trimmed_value_i = convert_to_binary(tree_helper::GetConstValue(cc->imag), precision / 2);
-      }
-      trimmed_value = trimmed_value_i + trimmed_value_r;
-   }
    else
    {
-      trimmed_value = convert_to_binary(tree_helper::GetConstValue(node), precision);
+      trimmed_value = convert_to_binary(ir_helper::GetConstValue(node), precision);
    }
    return trimmed_value;
-}
-
-const BackendFlowRef HLS_manager::get_backend_flow()
-{
-   if(!back_flow)
-   {
-      back_flow = BackendFlow::CreateFlow(Param, "Synthesis", HLS_D);
-   }
-   return back_flow;
 }
 
 void HLS_manager::xwrite(const std::string& filename)
@@ -249,7 +222,7 @@ void HLS_manager::xwrite(const std::string& filename)
       for(const auto top_function : call_graph_manager->GetRootFunctions())
       {
          hlsRef HLS = hlsMap[top_function];
-         HLS->xwrite(nodeRoot, CGetFunctionBehavior(top_function)->CGetOpGraph(FunctionBehavior::FDFG));
+         HLS->xwrite(nodeRoot, CGetFunctionBehavior(top_function)->GetOpGraph(FunctionBehavior::FDFG));
       }
       document.write_to_file_formatted(filename);
    }
@@ -271,43 +244,66 @@ void HLS_manager::xwrite(const std::string& filename)
    }
 }
 
-std::vector<HLS_manager::io_binding_type> HLS_manager::get_required_values(unsigned int fun_id, const vertex& v) const
+std::vector<HLS_manager::io_binding_type> HLS_manager::get_required_values(unsigned int fun_id,
+                                                                           OpGraph::vertex_descriptor v) const
 {
-   const OpGraphConstRef cfg = CGetFunctionBehavior(fun_id)->CGetOpGraph(FunctionBehavior::CFG);
-   const auto& node = cfg->CGetOpNodeInfo(v)->node;
+   const auto cfg = CGetFunctionBehavior(fun_id)->GetOpGraph(FunctionBehavior::CFG);
+   const auto& node = cfg.CGetNodeInfo(v).node;
    std::vector<io_binding_type> required;
    if(node)
    {
-      tree_helper::get_required_values(required, node);
+      ir_helper::get_required_values(required, node);
    }
    return required;
 }
 
 bool HLS_manager::is_register_compatible(unsigned int var) const
 {
-   return tree_helper::is_ssa_name(TM, var) and
-          not tree_helper::is_virtual(TM, var) and // virtual ssa_name is not considered
-          not tree_helper::is_parameter(
-              TM, var) and                 // parameters have been already stored in a register by the calling function
-          not Rmem->has_base_address(var); // ssa_name allocated in memory
+   const auto var_node = TM->GetIRNode(var);
+   return ir_helper::IsSsaName(var_node) && !ir_helper::IsVirtual(var_node) && // virtual ssa_node is not considered
+          !ir_helper::IsParameter(
+              var_node) &&              // parameters have been already stored in a register by the calling function
+          !Rmem->has_base_address(var); // ssa_node allocated in memory
 }
 
 bool HLS_manager::is_reading_writing_function(unsigned funID) const
 {
-   auto fun_node = TM->GetTreeNode(funID);
-   THROW_ASSERT(fun_node->get_kind() == function_decl_K, "unexpected condition");
-   auto fd = GetPointerS<function_decl>(fun_node);
+   auto fun_node = TM->GetIRNode(funID);
+   THROW_ASSERT(fun_node->get_kind() == function_val_node_K, "unexpected condition");
+   auto fd = GetPointerS<function_val_node>(fun_node);
    return fd->reading_memory || fd->writing_memory;
 }
 
 bool HLS_manager::IsSingleWriteMemory() const
 {
-   if(Param->getOption<bool>(OPT_gcc_serialize_memory_accesses))
+   if(Param->getOption<bool>(OPT_cc_serialize_memory_accesses))
    {
       return true;
    }
-   return get_HLS_device() and get_HLS_device()->has_parameter("is_single_write_memory") and
-          get_HLS_device()->get_parameter<std::string>("is_single_write_memory") == "1";
+   const auto hls_d = get_HLS_device();
+   return GetParameterFromParameterOrDeviceOrDefault<std::string>("is_single_write_memory", hls_d, "0") == "1";
+}
+
+bool HLS_manager::UseSinglePortSdsMemory() const
+{
+   const auto hls_d = get_HLS_device();
+   if(hls_d && hls_d->has_parameter("model") && hls_d->get_parameter<std::string>("model") == "asap7")
+   {
+      return true;
+   }
+   const auto sds_memory_mode =
+       GetParameterFromParameterOrDeviceOrDefault<std::string>("sds_memory_mode", hls_d, "SDS");
+   if(sds_memory_mode == "SDS")
+   {
+      return false;
+   }
+   if(sds_memory_mode == "SDS1")
+   {
+      return true;
+   }
+   THROW_ERROR_USAGE("Unsupported value '" + sds_memory_mode +
+                     "' for parameter sds_memory_mode. Allowed values are: SDS, SDS1");
+   return false;
 }
 
 unsigned int HLS_manager::GetMemVersion() const
@@ -338,21 +334,21 @@ void HLS_manager::check_bitwidth(unsigned long long prec)
 enum FunctionArchitecture::func_attr FunctionArchitecture::to_func_attr(const std::string& attr)
 {
    TO_ENUM(func_attr, FUNC_ARCH_ATTR_ENUM);
-   THROW_ASSERT(to_enum.find(attr) != to_enum.end(), "");
+   THROW_ASSERT(to_enum.find(attr) != to_enum.end(), attr);
    return to_enum.at(attr);
 }
 
 enum FunctionArchitecture::parm_attr FunctionArchitecture::to_parm_attr(const std::string& attr)
 {
    TO_ENUM(parm_attr, FUNC_ARCH_PARM_ATTR_ENUM);
-   THROW_ASSERT(to_enum.find(attr) != to_enum.end(), "");
+   THROW_ASSERT(to_enum.find(attr) != to_enum.end(), attr);
    return to_enum.at(attr);
 }
 
 enum FunctionArchitecture::iface_attr FunctionArchitecture::to_iface_attr(const std::string& attr)
 {
    TO_ENUM(iface_attr, FUNC_ARCH_IFACE_ATTR_ENUM);
-   THROW_ASSERT(to_enum.find(attr) != to_enum.end(), "");
+   THROW_ASSERT(to_enum.find(attr) != to_enum.end(), attr);
    return to_enum.at(attr);
 }
 
@@ -402,8 +398,6 @@ ModuleArchitecture::ModuleArchitecture(const std::string& filename)
    }
 }
 
-ModuleArchitecture::~ModuleArchitecture() = default;
-
 FunctionArchitectureRef ModuleArchitecture::GetArchitecture(const std::string& funcSymbol) const
 {
    auto it = _funcArchs.find(funcSymbol);
@@ -422,4 +416,20 @@ void ModuleArchitecture::AddArchitecture(const std::string& symbol, FunctionArch
 void ModuleArchitecture::RemoveArchitecture(const std::string& funcSymbol)
 {
    _funcArchs.erase(funcSymbol);
+}
+
+std::pair<std::string, bool> HLS_manager::bundle_required_get_nth_element(unsigned int index) const
+{
+   std::pair<std::string, bool> val;
+   if(bundle_required.size() > index)
+   {
+      auto it = next(bundle_required.begin(), index);
+      val.first = *it;
+      val.second = true;
+   }
+   else
+   {
+      val.second = false;
+   }
+   return val;
 }

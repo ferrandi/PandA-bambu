@@ -1,0 +1,7 @@
+-IBENCHMARKS_ROOT/common/ --benchmark-name=tq1-40DB  --generate-tb=BENCHMARKS_ROOT/OpenMP/trinityq1/test-40.xml  OpenMP/trinityq1/lubm_trinityq1.cpp --top-fname=search 
+-IBENCHMARKS_ROOT/common/ --benchmark-name=tq2-40DB  --generate-tb=BENCHMARKS_ROOT/OpenMP/trinityq2/test-40.xml  OpenMP/trinityq2/lubm_trinityq2.cpp --top-fname=search 
+-IBENCHMARKS_ROOT/common/ --benchmark-name=tq3-40DB  --generate-tb=BENCHMARKS_ROOT/OpenMP/trinityq3/test-40.xml  OpenMP/trinityq3/lubm_trinityq3.cpp --top-fname=search 
+-IBENCHMARKS_ROOT/common/ --benchmark-name=tq4-40DB  --generate-tb=BENCHMARKS_ROOT/OpenMP/trinityq4/test-40.xml  OpenMP/trinityq4/lubm_trinityq4.cpp --top-fname=search 
+-IBENCHMARKS_ROOT/common/ --benchmark-name=tq5-40DB  --generate-tb=BENCHMARKS_ROOT/OpenMP/trinityq5/test-40.xml  OpenMP/trinityq5/lubm_trinityq5.cpp --top-fname=search 
+-IBENCHMARKS_ROOT/common/ --benchmark-name=tq6-40DB  --generate-tb=BENCHMARKS_ROOT/OpenMP/trinityq6/test-40.xml  OpenMP/trinityq6/lubm_trinityq6.cpp --top-fname=search 
+-IBENCHMARKS_ROOT/common/ --benchmark-name=tq7-40DB  --generate-tb=BENCHMARKS_ROOT/OpenMP/trinityq7/test-40.xml  OpenMP/trinityq7/lubm_trinityq7.cpp --top-fname=search 

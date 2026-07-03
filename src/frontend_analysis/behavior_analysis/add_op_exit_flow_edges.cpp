@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -35,37 +35,25 @@
  * @brief Analysis step which adds flow edges for scheduling to operation graphs
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
-/// Header include
 #include "add_op_exit_flow_edges.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// behavior include
 #include "basic_block.hpp"
-#include "op_graph.hpp"
-#include "operations_graph_constructor.hpp"
-
-/// tree include
 #include "behavioral_helper.hpp"
-
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp"
+#include "function_behavior.hpp"
 #include "hash_helper.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "op_graph.hpp"
+#include "string_manipulation.hpp"
 
 AddOpExitFlowEdges::AddOpExitFlowEdges(const ParameterConstRef _parameters, const application_managerRef _AppM,
-                                       unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+                                       unsigned int _function_id, const DesignFlowManager& _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, ADD_OP_EXIT_FLOW_EDGES, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
-
-AddOpExitFlowEdges::~AddOpExitFlowEdges() = default;
 
 CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 AddOpExitFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -76,7 +64,7 @@ AddOpExitFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::Relations
       case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(OPERATIONS_CFG_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::make_pair(OP_REACHABILITY_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(OP_ORDER_COMPUTATION, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -96,15 +84,14 @@ void AddOpExitFlowEdges::Initialize()
 {
    if(bb_version != 0 and bb_version != function_behavior->GetBBVersion())
    {
-      const OpGraphConstRef flg = function_behavior->CGetOpGraph(FunctionBehavior::FLG);
-      if(boost::num_vertices(*flg) != 0)
+      const auto flg = function_behavior->GetOpGraph(FunctionBehavior::FLG);
+      if(flg.num_vertices() != 0)
       {
-         EdgeIterator edge, edge_end;
-         for(boost::tie(edge, edge_end) = boost::edges(*flg); edge != edge_end; edge++)
+         for(const auto& edge : flg.edges())
          {
-            if((GET_TYPE(flg, boost::target(*edge, *flg)) & TYPE_LAST_OP) != 0)
+            if((flg.CGetNodeInfo(flg.target(edge)).node_type & TYPE_LAST_OP) != 0)
             {
-               function_behavior->ogc->RemoveSelector(*edge, FLG_SELECTOR);
+               function_behavior->ogc->RemoveSelector(edge, FLG_SELECTOR);
             }
          }
       }
@@ -114,35 +101,34 @@ void AddOpExitFlowEdges::Initialize()
 DesignFlowStep_Status AddOpExitFlowEdges::InternalExec()
 {
    /// The control flow graph of operation
-   const OpGraphConstRef fcfg = function_behavior->CGetOpGraph(FunctionBehavior::FCFG);
+   const auto fcfg = function_behavior->GetOpGraph(FunctionBehavior::FCFG);
 
    /// The control flow graph of basic block
-   const auto basic_block_graph = function_behavior->CGetBBGraph(FunctionBehavior::BB);
+   const auto basic_block_graph = function_behavior->GetBBGraph(FunctionBehavior::BB);
 
    /// Adding operation to empty return
-   VertexIterator v, v_end;
-   for(boost::tie(v, v_end) = boost::vertices(*fcfg); v != v_end; ++v)
+   for(const auto& v : fcfg.vertices())
    {
-      if((GET_TYPE(fcfg, *v) & TYPE_LAST_OP) != 0)
+      const auto& v_info = fcfg.CGetNodeInfo(v);
+      if((v_info.node_type & TYPE_LAST_OP) != 0)
       {
-         for(const auto operation : basic_block_graph
-                                        ->CGetBBNodeInfo(basic_block_graph->CGetBBGraphInfo()
-                                                             ->bb_index_map.find(fcfg->CGetOpNodeInfo(*v)->bb_index)
-                                                             ->second)
-                                        ->statements_list)
+         for(const auto operation :
+             basic_block_graph.CGetNodeInfo(basic_block_graph.CGetGraphInfo().bb_index_map.at(v_info.bb_index))
+                 .statements_list)
          {
-            const auto reachability = function_behavior->CheckReachability(operation, *v);
-            if(reachability and ((GET_TYPE(fcfg, operation) & TYPE_LAST_OP) == 0))
+            const auto reachability = function_behavior->CheckReachability(operation, v);
+            if(reachability && ((fcfg.CGetNodeInfo(operation).node_type & TYPE_LAST_OP) == 0))
             {
-               function_behavior->ogc->AddEdge(operation, *v, FLG_SELECTOR);
+               function_behavior->ogc->AddEdge(operation, v, FLG_SELECTOR);
             }
          }
       }
    }
    if(parameters->getOption<bool>(OPT_print_dot))
    {
-      function_behavior->CGetOpGraph(FunctionBehavior::FLG)->WriteDot("OP_FL.dot");
-      function_behavior->CGetOpGraph(FunctionBehavior::FFLSAODG)->WriteDot("OP_FFLSAODG.dot");
+      const auto dot_path = function_behavior->GetDotPath();
+      function_behavior->GetOpGraph(FunctionBehavior::FLG).writeDot(dot_path / "OP_FL.dot");
+      function_behavior->GetOpGraph(FunctionBehavior::FFLSAODG).writeDot(dot_path / "OP_FFLSAODG.dot");
    }
    return DesignFlowStep_Status::SUCCESS;
 }

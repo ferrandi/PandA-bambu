@@ -12,26 +12,26 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
- * @file HLS_function_step.hpp
+ * @file hls_function_step.hpp
  * @brief Base class for all HLS algorithms
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
@@ -80,16 +80,16 @@ class HLSFunctionStep : public HLS_step
    /**
     * Constructor
     * @param Param class containing all the parameters
-    * @param HLS class containing all the HLS data structures
+    * @param HLSMgr class containing all the HLS data structures
+    * @param funId is the identifier of the function being processed
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the type of this hls flow step
+    * @param hls_flow_step_specialization is the optional specialization associated with this flow step
     */
    HLSFunctionStep(
        const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
-       const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
+       const DesignFlowManager& design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
        const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
-
-   ~HLSFunctionStep() override;
 
    virtual bool HasToBeExecuted() const override;
 

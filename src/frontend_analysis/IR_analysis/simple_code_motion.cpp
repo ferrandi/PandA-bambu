@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -35,87 +35,47 @@
  * @brief Analysis step that performs some simple code motions over the IR
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
-
-/// Skipping warnings due to operator() redefinition
-#pragma GCC diagnostic ignored "-Woverloaded-virtual"
-
-/// header include
 #include "simple_code_motion.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// algorithm/dominance include
-#include "Dominance.hpp"
-
-/// behavior includes
+#include "SemiNCADominance.hpp"
 #include "application_manager.hpp"
 #include "basic_block.hpp"
-#include "function_behavior.hpp"
-
-/// design_flows include
+#include "behavioral_helper.hpp"
+#include "dbgPrintHelper.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-#if HAVE_ILP_BUILT
-/// HLS includes
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_step.hpp"
-
-/// HLS/scheduling include
+#include "ir_basic_block.hpp"
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
+#include "ir_manipulation.hpp"
+#include "ir_node.hpp"
+#include "math_function.hpp"
 #include "schedule.hpp"
-#endif
-
-/// parser/compiler include
-#include "token_interface.hpp"
-
-/// STD include
+#include "string_manipulation.hpp"
 #include <fstream>
 
-/// tree includes
-#include "ext_tree_node.hpp"
-#include "tree_basic_block.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_manipulation.hpp"
-#include "tree_node.hpp"
-
-/// utility include
-#include "dbgPrintHelper.hpp"
-#include "math_function.hpp"
-
-#include "behavioral_helper.hpp"
-#include "cyclic_topological_sort.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-
 simple_code_motion::simple_code_motion(const ParameterConstRef _parameters, const application_managerRef _AppM,
-                                       unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+                                       unsigned int _function_id, const DesignFlowManager& _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, SIMPLE_CODE_MOTION, _design_flow_manager, _parameters),
       restart_ifmwi_opt(false),
       schedule(ScheduleRef()),
       conservative(
-#if HAVE_ILP_BUILT
           (parameters->IsParameter("enable-conservative-sdc") &&
            parameters->GetParameter<bool>("enable-conservative-sdc") &&
            parameters->isOption(OPT_scheduling_algorithm) and
            parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING) ?
               true :
-              false
-#else
-          false
-#endif
-      )
+              false)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
-
-simple_code_motion::~simple_code_motion() = default;
 
 CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
 simple_code_motion::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -127,15 +87,11 @@ simple_code_motion::ComputeFrontendRelationships(const DesignFlowStep::Relations
       {
          relationships.insert(std::make_pair(PREDICATE_STATEMENTS, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
-         relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
-         relationships.insert(std::make_pair(SWITCH_FIX, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-#if HAVE_ILP_BUILT
          relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));
-#endif
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION_IPA, WHOLE_APPLICATION));
          break;
       }
@@ -145,7 +101,6 @@ simple_code_motion::ComputeFrontendRelationships(const DesignFlowStep::Relations
          {
             if(restart_ifmwi_opt)
             {
-               relationships.insert(std::make_pair(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
                relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
                relationships.insert(std::make_pair(MULTI_WAY_IF, SAME_FUNCTION));
             }
@@ -162,71 +117,137 @@ simple_code_motion::ComputeFrontendRelationships(const DesignFlowStep::Relations
 
 void simple_code_motion::Initialize()
 {
-#if HAVE_ILP_BUILT
    if(GetPointer<const HLS_manager>(AppM) && GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) &&
       GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
    {
       if(parameters->isOption(OPT_scheduling_algorithm) &&
          parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
       {
-         const auto TM = AppM->get_tree_manager();
+         const auto TM = AppM->get_ir_manager();
          schedule = GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch;
       }
    }
-#endif
 }
 
-FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned int bb_index, tree_nodeRef tn,
-                                                                  bool& zero_delay, const tree_managerRef TM)
+FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned int bb_index, ir_nodeRef tn,
+                                                                  bool& zero_delay)
 {
-   if(AppM->CGetFunctionBehavior(function_id)->is_simple_pipeline())
+   if(AppM->CGetFunctionBehavior(function_id)->is_function_pipelined())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Yes because we aim to full pipelining");
       return FunctionFrontendFlowStep_Movable::MOVABLE;
    }
-   if(tn->get_kind() == gimple_nop_K)
+   if(tn->get_kind() == nop_stmt_K)
    {
       return FunctionFrontendFlowStep_Movable::MOVABLE;
    }
 
-   auto* ga = GetPointer<gimple_assign>(tn);
+   auto* ga = GetPointer<assign_stmt>(tn);
+   auto* gc = GetPointer<call_stmt>(tn);
+#if HAVE_ASSERTS || !defined(NDEBUG)
+   auto* ns = GetPointer<node_stmt>(tn);
+#endif
+   THROW_ASSERT(ns, "unexpected condition");
+#if HAVE_ASSERTS
+   const bool is_assign = ga != nullptr;
+#endif
+   const bool is_call_stmt = gc != nullptr;
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Checking if " + STR(ga->index) + " - " + ga->ToString() + " can be moved in BB" + STR(bb_index));
-   tree_nodeRef left = ga->op0;
-   if(!GetPointer<ssa_name>(left))
+                  "-->Checking if " + STR(ns->index) + " - " + ns->ToString() + " can be moved in BB" + STR(bb_index));
+   if(is_call_stmt)
+   {
+      if(schedule)
+      {
+         auto movable = schedule->CanBeMoved(gc->index, bb_index);
+         if(movable == FunctionFrontendFlowStep_Movable::UNMOVABLE or
+            movable == FunctionFrontendFlowStep_Movable::TIMING)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because of timing");
+         }
+         else
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because of timing");
+         }
+         return movable;
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because it is a call statement");
+      return FunctionFrontendFlowStep_Movable::MOVABLE;
+   }
+   THROW_ASSERT(is_assign, "unexpected condition");
+   ir_nodeRef left = ga->op0;
+   const bool is_assign_call = ga->op1->get_kind() == call_node_K;
+   if(is_assign_call)
+   {
+      if(schedule)
+      {
+         auto movable = schedule->CanBeMoved(ga->index, bb_index);
+         if(movable == FunctionFrontendFlowStep_Movable::UNMOVABLE or
+            movable == FunctionFrontendFlowStep_Movable::TIMING)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because of timing");
+         }
+         else
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because of timing");
+         }
+         return movable;
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because it is an assign call");
+      return FunctionFrontendFlowStep_Movable::MOVABLE;
+   }
+   bool storeCanBePredicated = false;
+   if(left->get_kind() == mem_access_node_K)
+   {
+      storeCanBePredicated = true;
+   }
+   if(storeCanBePredicated)
+   {
+      if(schedule)
+      {
+         auto movable = schedule->CanBeMoved(ga->index, bb_index);
+         if(movable == FunctionFrontendFlowStep_Movable::UNMOVABLE or
+            movable == FunctionFrontendFlowStep_Movable::TIMING)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because of timing");
+         }
+         else
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because of timing");
+         }
+         return movable;
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because it is a predicable store");
+      return FunctionFrontendFlowStep_Movable::MOVABLE;
+   }
+   if(!GetPointer<ssa_node>(left))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "<--No because of " + left->get_kind_text() + " in left part");
       return FunctionFrontendFlowStep_Movable::UNMOVABLE;
    }
-   /// FIXME: already added in master?
-   if(ga->op1->get_kind() == call_expr_K || ga->op1->get_kind() == aggr_init_expr_K)
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because of call_expr in right part");
-      return FunctionFrontendFlowStep_Movable::UNMOVABLE;
-   }
-   if(tree_helper::is_constant(TM, ga->op1->index))
+   if(ir_helper::IsConstant(ga->op1))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because right part is constant");
       return FunctionFrontendFlowStep_Movable::MOVABLE;
    }
-   if(ga->op0->get_kind() == ssa_name_K && ga->op1->get_kind() == constructor_K)
+   if(ga->op0->get_kind() == ssa_node_K && ga->op1->get_kind() == constructor_node_K)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because it is an assignment with a constructor");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "<--Yes because it is an assignment with a constructor_node");
       return FunctionFrontendFlowStep_Movable::MOVABLE;
    }
-   if(ga->op0->get_kind() == ssa_name_K && ga->op1->get_kind() == ssa_name_K)
+   if(ga->op0->get_kind() == ssa_node_K && ga->op1->get_kind() == ssa_node_K)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because it is an assignment");
       return FunctionFrontendFlowStep_Movable::MOVABLE;
    }
-   CustomOrderedSet<const ssa_name*> rhs_ssa_uses;
-   tree_helper::compute_ssa_uses_rec_ptr(ga->op1, rhs_ssa_uses);
-   tree_nodeRef right = ga->op1;
+   CustomOrderedSet<const ssa_node*> rhs_ssa_uses;
+   ir_helper::compute_ssa_uses_rec_ptr(ga->op1, rhs_ssa_uses);
+   ir_nodeRef right = ga->op1;
 
-   if(rhs_ssa_uses.empty() && right->get_kind() != call_expr_K && right->get_kind() != aggr_init_expr_K &&
-      right->get_kind() != var_decl_K && right->get_kind() != mem_ref_K)
+   if(rhs_ssa_uses.empty() && right->get_kind() != call_node_K && right->get_kind() != variable_val_node_K &&
+      right->get_kind() != mem_access_node_K)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "<--Yes because there is not any use of ssa in right part");
@@ -234,7 +255,6 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
    }
 
    /// If we have the ending time information use it
-#if HAVE_ILP_BUILT
    if(schedule)
    {
       auto movable = schedule->CanBeMoved(ga->index, bb_index);
@@ -248,27 +268,22 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       }
       return movable;
    }
-#endif
    switch(right->get_kind())
    {
-      case assert_expr_K:
-      case convert_expr_K:
-      case view_convert_expr_K:
-      case ssa_name_K:
-      case constructor_K:
+      case bitcast_node_K:
+      case ssa_node_K:
+      case constructor_node_K:
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
          return FunctionFrontendFlowStep_Movable::MOVABLE;
       }
       /// binary expressions
-      case eq_expr_K:
-      case lrotate_expr_K:
-      case lshift_expr_K:
-      case max_expr_K:
-      case min_expr_K:
-      case ne_expr_K:
-      case rrotate_expr_K:
-      case rshift_expr_K:
+      case eq_node_K:
+      case shl_node_K:
+      case max_node_K:
+      case min_node_K:
+      case ne_node_K:
+      case shr_node_K:
       {
          if(conservative)
          {
@@ -277,10 +292,9 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
          }
          else
          {
-            auto* be = GetPointer<binary_expr>(right);
-            auto n_bit = std::max(tree_helper::Size(be->op0), tree_helper::Size(be->op1));
-            bool is_constant =
-                tree_helper::is_constant(TM, be->op0->index) || tree_helper::is_constant(TM, be->op1->index);
+            auto* be = GetPointer<binary_node>(right);
+            auto n_bit = std::max(ir_helper::Size(be->op0), ir_helper::Size(be->op1));
+            bool is_constant = ir_helper::IsConstant(be->op0) || ir_helper::IsConstant(be->op1);
             if(n_bit > 9 && !is_constant)
             {
                zero_delay = false;
@@ -289,8 +303,8 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
             return FunctionFrontendFlowStep_Movable::MOVABLE;
          }
       }
-      case fshl_expr_K:
-      case fshr_expr_K:
+      case fshl_node_K:
+      case fshr_node_K:
       {
          if(conservative)
          {
@@ -299,9 +313,9 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
          }
          else
          {
-            auto* te = GetPointer<ternary_expr>(right);
-            auto n_bit = tree_helper::Size(te->op0);
-            bool is_constant = tree_helper::is_constant(TM, te->op1->index);
+            auto* te = GetPointer<ternary_node>(right);
+            auto n_bit = ir_helper::Size(te->op0);
+            bool is_constant = ir_helper::IsConstant(te->op1);
             if(n_bit > 9 && !is_constant)
             {
                zero_delay = false;
@@ -310,22 +324,21 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
             return FunctionFrontendFlowStep_Movable::MOVABLE;
          }
       }
-      case mult_expr_K:
-      case mult_highpart_expr_K:
-      case widen_mult_expr_K:
+      case mul_node_K:
+      case widen_mul_node_K:
       {
-         if(tree_helper::is_real(TM, ga->op1->index))
+         if(ir_helper::IsRealType(ga->op1))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because floating point operations");
             return FunctionFrontendFlowStep_Movable::UNMOVABLE;
          }
-         auto* be = GetPointer<binary_expr>(right);
-         if(tree_helper::IsConstant(be->op1))
+         auto* be = GetPointer<binary_node>(right);
+         if(ir_helper::IsConstant(be->op1))
          {
-            const auto ic = GetPointer<integer_cst>(be->op1);
+            const auto ic = GetPointer<constant_int_val_node>(be->op1);
             if(ic)
             {
-               const auto v = tree_helper::GetConstValue(be->op1);
+               const auto v = ir_helper::GetConstValue(be->op1);
                if(!(v && !(v & (v - 1))))
                {
                   zero_delay = false;
@@ -346,13 +359,13 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
                         "<--No because is a multiplication with non constant args");
          return FunctionFrontendFlowStep_Movable::UNMOVABLE;
       }
-      case nop_expr_K:
+      case nop_node_K:
       {
-         auto* ne = GetPointer<nop_expr>(right);
-         const auto left_type = tree_helper::CGetType(ga->op0);
-         const auto right_type = tree_helper::CGetType(ne->op);
-         const auto is_realR = tree_helper::IsRealType(right_type);
-         const auto is_realL = tree_helper::IsRealType(left_type);
+         auto* ne = GetPointer<nop_node>(right);
+         const auto left_type = ir_helper::CGetType(ga->op0);
+         const auto right_type = ir_helper::CGetType(ne->op);
+         const auto is_realR = ir_helper::IsRealType(right_type);
+         const auto is_realL = ir_helper::IsRealType(left_type);
          if(is_realR || is_realL)
          {
             zero_delay = false;
@@ -361,24 +374,18 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
          return FunctionFrontendFlowStep_Movable::MOVABLE;
       }
-      case addr_expr_K:
+      case addr_node_K:
       {
          zero_delay = false;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
          return FunctionFrontendFlowStep_Movable::MOVABLE;
       }
-      case bit_and_expr_K:
-      case bit_ior_expr_K:
-      case bit_xor_expr_K:
-      case truth_and_expr_K:
-      case truth_andif_expr_K:
-      case truth_or_expr_K:
-      case truth_orif_expr_K:
-      case truth_xor_expr_K:
-      case bit_not_expr_K:
-      case truth_not_expr_K:
-      case cond_expr_K:
-      case lut_expr_K:
+      case and_node_K:
+      case or_node_K:
+      case xor_node_K:
+      case not_node_K:
+      case select_node_K:
+      case lut_node_K:
       {
          if(conservative)
          {
@@ -391,35 +398,40 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
             return FunctionFrontendFlowStep_Movable::MOVABLE;
          }
       }
-      case bit_ior_concat_expr_K:
+      case concat_bit_node_K:
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
          return FunctionFrontendFlowStep_Movable::MOVABLE;
       }
-      case extractvalue_expr_K:
-      case insertvalue_expr_K:
-      case extract_bit_expr_K:
-      case extractelement_expr_K:
-      case insertelement_expr_K:
+      case extractvalue_node_K:
+      case insertvalue_node_K:
+      case extract_bit_node_K:
+      case extractelement_node_K:
+      case insertelement_node_K:
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
          return FunctionFrontendFlowStep_Movable::MOVABLE;
       }
-      case ge_expr_K:
-      case gt_expr_K:
-      case le_expr_K:
-      case lt_expr_K:
-      case minus_expr_K:
-      case plus_expr_K:
-      case pointer_plus_expr_K:
-      case postdecrement_expr_K:
-      case postincrement_expr_K:
-      case predecrement_expr_K:
-      case preincrement_expr_K:
-      case sat_plus_expr_K:
-      case sat_minus_expr_K:
+      case ge_node_K:
+      case gt_node_K:
+      case gep_node_K:
       {
-         if(tree_helper::is_real(TM, ga->op1->index))
+         if(conservative)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No");
+            return FunctionFrontendFlowStep_Movable::UNMOVABLE;
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
+         return FunctionFrontendFlowStep_Movable::MOVABLE;
+      }
+      case le_node_K:
+      case lt_node_K:
+      case sub_node_K:
+      case add_node_K:
+      case add_sat_node_K:
+      case sub_sat_node_K:
+      {
+         if(ir_helper::IsRealType(ga->op1))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because floating point operations");
             return FunctionFrontendFlowStep_Movable::UNMOVABLE;
@@ -431,11 +443,10 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
          }
          else
          {
-            auto* be = GetPointer<binary_expr>(right);
-            auto n_bit = std::max(tree_helper::Size(be->op0), tree_helper::Size(be->op1));
-            auto n_bit_min = std::min(tree_helper::Size(be->op0), tree_helper::Size(be->op1));
-            bool is_constant =
-                tree_helper::is_constant(TM, be->op0->index) || tree_helper::is_constant(TM, be->op1->index);
+            auto* be = GetPointer<binary_node>(right);
+            auto n_bit = std::max(ir_helper::Size(be->op0), ir_helper::Size(be->op1));
+            auto n_bit_min = std::min(ir_helper::Size(be->op0), ir_helper::Size(be->op1));
+            bool is_constant = ir_helper::IsConstant(be->op0) || ir_helper::IsConstant(be->op1);
             if((n_bit > 9 && !is_constant && n_bit_min != 1) || n_bit > 16)
             {
                zero_delay = false;
@@ -444,10 +455,10 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
             return FunctionFrontendFlowStep_Movable::MOVABLE;
          }
       }
-      case ternary_plus_expr_K:
-      case ternary_pm_expr_K:
-      case ternary_mp_expr_K:
-      case ternary_mm_expr_K:
+      case ternary_add_node_K:
+      case ternary_as_node_K:
+      case ternary_sa_node_K:
+      case ternary_ss_node_K:
       {
          if(conservative)
          {
@@ -456,13 +467,12 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
          }
          else
          {
-            auto* be = GetPointer<ternary_expr>(right);
+            auto* be = GetPointer<ternary_node>(right);
             auto n_bit =
-                std::max(std::max(tree_helper::Size(be->op0), tree_helper::Size(be->op1)), tree_helper::Size(be->op2));
+                std::max(std::max(ir_helper::Size(be->op0), ir_helper::Size(be->op1)), ir_helper::Size(be->op2));
             auto n_bit_min =
-                std::min(std::min(tree_helper::Size(be->op0), tree_helper::Size(be->op1)), tree_helper::Size(be->op2));
-            bool is_constant =
-                tree_helper::is_constant(TM, be->op0->index) || tree_helper::is_constant(TM, be->op1->index);
+                std::min(std::min(ir_helper::Size(be->op0), ir_helper::Size(be->op1)), ir_helper::Size(be->op2));
+            bool is_constant = ir_helper::IsConstant(be->op0) || ir_helper::IsConstant(be->op1);
             if((n_bit > 9 && !is_constant && n_bit_min != 1) || n_bit > 16)
             {
                zero_delay = false;
@@ -471,11 +481,11 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
             return FunctionFrontendFlowStep_Movable::MOVABLE;
          }
       }
-      case negate_expr_K:
+      case neg_node_K:
       {
-         auto* ne = GetPointer<negate_expr>(right);
-         auto n_bit = tree_helper::Size(ne->op);
-         bool is_constant = tree_helper::is_constant(TM, ne->op->index);
+         auto* ne = GetPointer<neg_node>(right);
+         auto n_bit = ir_helper::Size(ne->op);
+         bool is_constant = ir_helper::IsConstant(ne->op);
          if((n_bit > 9 && !is_constant) || n_bit > 16)
          {
             zero_delay = false;
@@ -483,23 +493,22 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
          return FunctionFrontendFlowStep_Movable::MOVABLE;
       }
-      case float_expr_K:
+      case itofp_node_K:
       {
          zero_delay = false;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
          return FunctionFrontendFlowStep_Movable::MOVABLE;
       }
-      case exact_div_expr_K:
-      case trunc_div_expr_K:
-      case trunc_mod_expr_K:
+      case idiv_node_K:
+      case irem_node_K:
       {
-         auto* be = GetPointer<binary_expr>(right);
-         if(tree_helper::IsConstant(be->op1))
+         auto* be = GetPointer<binary_node>(right);
+         if(ir_helper::IsConstant(be->op1))
          {
-            auto ic = GetPointer<integer_cst>(be->op1);
+            auto ic = GetPointer<constant_int_val_node>(be->op1);
             if(ic)
             {
-               const auto v = tree_helper::GetConstValue(be->op1);
+               const auto v = ir_helper::GetConstValue(be->op1);
                if(v)
                {
                   if(!(v && !(v & (v - 1))))
@@ -514,7 +523,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because is a division by a non constant");
          return FunctionFrontendFlowStep_Movable::UNMOVABLE;
       }
-      case abs_expr_K:
+      case abs_node_K:
       {
          if(conservative)
          {
@@ -523,119 +532,54 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
          }
          else
          {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
             return FunctionFrontendFlowStep_Movable::MOVABLE;
          }
       }
-      case catch_expr_K:
-      case ceil_div_expr_K:
-      case ceil_mod_expr_K:
-      case complex_expr_K:
-      case compound_expr_K:
-      case eh_filter_expr_K:
-      case fdesc_expr_K:
-      case floor_div_expr_K:
-      case floor_mod_expr_K:
-      case goto_subroutine_K:
-      case in_expr_K:
-      case init_expr_K:
-      case mem_ref_K:
-      case modify_expr_K:
-      case ordered_expr_K:
-      case range_expr_K:
-      case round_div_expr_K:
-      case round_mod_expr_K:
-      case set_le_expr_K:
-      case try_catch_expr_K:
-      case try_finally_K:
-      case uneq_expr_K:
-      case ltgt_expr_K:
-      case unge_expr_K:
-      case ungt_expr_K:
-      case unle_expr_K:
-      case unlt_expr_K:
-      case unordered_expr_K:
-      case widen_sum_expr_K:
-      case with_size_expr_K:
-      case vec_lshift_expr_K:
-      case vec_rshift_expr_K:
-      case widen_mult_hi_expr_K:
-      case widen_mult_lo_expr_K:
-      case vec_pack_trunc_expr_K:
-      case vec_pack_sat_expr_K:
-      case vec_pack_fix_trunc_expr_K:
-      case vec_extracteven_expr_K:
-      case vec_extractodd_expr_K:
-      case vec_interleavehigh_expr_K:
-      case vec_interleavelow_expr_K:
-      case CASE_CPP_NODES:
+      case mem_access_node_K:
+      {
+         zero_delay = false;
+         if(schedule)
+         {
+            auto movable = schedule->CanBeMoved(ga->index, bb_index);
+            if(movable == FunctionFrontendFlowStep_Movable::UNMOVABLE or
+               movable == FunctionFrontendFlowStep_Movable::TIMING)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because of timing");
+            }
+            else
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because of timing");
+            }
+            return movable;
+         }
+         if(conservative)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "<--No because conservative mode has no timing information for predicable loads");
+            return FunctionFrontendFlowStep_Movable::UNMOVABLE;
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because it is a predicable load");
+         return FunctionFrontendFlowStep_Movable::UNMOVABLE;
+      }
       case CASE_CST_NODES:
       case CASE_DECL_NODES:
-      case CASE_GIMPLE_NODES:
-      case component_ref_K:
-      case bit_field_ref_K:
-      case vtable_ref_K:
-      case with_cleanup_expr_K:
-      case obj_type_ref_K:
-      case save_expr_K:
-      case vec_cond_expr_K:
-      case vec_perm_expr_K:
-      case dot_prod_expr_K:
-      case call_expr_K:
-      case aggr_init_expr_K:
+      case CASE_NODE_STMTS:
+      case shufflevector_node_K:
+      case call_node_K:
       case CASE_FAKE_NODES:
-      case rdiv_expr_K:
-      case frem_expr_K:
-      case case_label_expr_K:
-      case target_mem_ref_K:
-      case binfo_K:
-      case block_K:
+      case fdiv_node_K:
+      case frem_node_K:
       case identifier_node_K:
-      case CASE_PRAGMA_NODES:
-      case statement_list_K:
-      case tree_list_K:
-      case tree_vec_K:
-      case CASE_QUATERNARY_EXPRESSION:
+      case statement_list_node_K:
       case CASE_TYPE_NODES:
-      case alignof_expr_K:
-      case arrow_expr_K:
-      case buffer_ref_K:
-      case card_expr_K:
-      case cleanup_point_expr_K:
-      case conj_expr_K:
-      case exit_expr_K:
-      case fix_ceil_expr_K:
-      case fix_floor_expr_K:
-      case fix_round_expr_K:
-      case fix_trunc_expr_K:
-      case imagpart_expr_K:
-      case indirect_ref_K:
-      case misaligned_indirect_ref_K:
-      case loop_expr_K:
-      case non_lvalue_expr_K:
-      case realpart_expr_K:
-      case reference_expr_K:
-      case reinterpret_cast_expr_K:
-      case sizeof_expr_K:
-      case static_cast_expr_K:
-      case throw_expr_K:
-      case unsave_expr_K:
-      case va_arg_expr_K:
-      case reduc_max_expr_K:
-      case reduc_min_expr_K:
-      case reduc_plus_expr_K:
-      case vec_unpack_hi_expr_K:
-      case vec_unpack_lo_expr_K:
-      case vec_unpack_float_hi_expr_K:
-      case vec_unpack_float_lo_expr_K:
-      case target_expr_K:
-      case target_mem_ref461_K:
-      case error_mark_K:
+      case fptoi_node_K:
+      case unaligned_mem_access_node_K:
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "<--No because right part is " + right->get_kind_text());
          return FunctionFrontendFlowStep_Movable::UNMOVABLE;
       }
-      case paren_expr_K:
       default:
       {
          THROW_UNREACHABLE("");
@@ -646,27 +590,24 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
 
 DesignFlowStep_Status simple_code_motion::InternalExec()
 {
-   const auto TM = AppM->get_tree_manager();
+   const auto TM = AppM->get_ir_manager();
    bool modified = false;
    restart_ifmwi_opt = false;
 
-   const auto fd = GetPointerS<const function_decl>(TM->GetTreeNode(function_id));
-   const auto sl = GetPointerS<const statement_list>(fd->body);
+   const auto fd = GetPointerS<const function_val_node>(TM->GetIRNode(function_id));
+   const auto sl = GetPointerS<const statement_list_node>(fd->body);
 
-   const auto isFunctionPipelined = AppM->CGetFunctionBehavior(function_id)->is_simple_pipeline();
-
-   /// store the GCC BB graph ala boost::graph
-   const auto bb_graph_info = BBGraphInfoRef(new BBGraphInfo(AppM, function_id));
-   BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(bb_graph_info, parameters));
-   BBGraphRef GCC_bb_graph(new BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR));
-   CustomUnorderedMap<vertex, unsigned int> direct_vertex_map;
-   CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;
+   /// store the BB graph ala boost::graph
+   BBGraphsCollection bb_graphs_collection(BBGraphInfo(AppM, function_id));
+   auto& bb_graph_info = bb_graphs_collection.GetGraphInfo();
+   BBGraph bb_graph(bb_graphs_collection, CFG_SELECTOR);
+   CustomUnorderedMap<BBGraph::vertex_descriptor, unsigned int> direct_vertex_map;
+   CustomUnorderedMap<unsigned int, BBGraph::vertex_descriptor> inverse_vertex_map;
    /// add vertices
    const auto& list_of_bloc = sl->list_of_bloc;
    for(const auto& block : list_of_bloc)
    {
-      inverse_vertex_map[block.first] =
-          GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)));
+      inverse_vertex_map[block.first] = bb_graphs_collection.AddVertex(BBNodeInfo(block.second));
       direct_vertex_map[inverse_vertex_map[block.first]] = block.first;
    }
    /// add edges
@@ -679,75 +620,59 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
          THROW_ASSERT(inverse_vertex_map.count(pred),
                       "BB" + STR(pred) + " (predecessor of " + STR(bbi) + ") does not exist");
          THROW_ASSERT(inverse_vertex_map.count(bbi), STR(bbi));
-         GCC_bb_graphs_collection->AddEdge(inverse_vertex_map.at(pred), inverse_vertex_map.at(bbi), CFG_SELECTOR);
+         bb_graphs_collection.AddEdge(inverse_vertex_map.at(pred), inverse_vertex_map.at(bbi), CFG_SELECTOR);
       }
       for(const auto& succ : bb->list_of_succ)
       {
          if(succ == bloc::EXIT_BLOCK_ID)
          {
-            GCC_bb_graphs_collection->AddEdge(inverse_vertex_map.at(bbi), inverse_vertex_map.at(succ), CFG_SELECTOR);
+            bb_graphs_collection.AddEdge(inverse_vertex_map.at(bbi), inverse_vertex_map.at(succ), CFG_SELECTOR);
          }
       }
       if(bb->list_of_succ.empty())
       {
-         GCC_bb_graphs_collection->AddEdge(inverse_vertex_map.at(bbi), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID),
-                                           CFG_SELECTOR);
+         bb_graphs_collection.AddEdge(inverse_vertex_map.at(bbi), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID),
+                                      CFG_SELECTOR);
       }
    }
-   bb_graph_info->entry_vertex = inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID);
-   bb_graph_info->exit_vertex = inverse_vertex_map.at(bloc::EXIT_BLOCK_ID);
+   bb_graph_info.entry_vertex = inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID);
+   bb_graph_info.exit_vertex = inverse_vertex_map.at(bloc::EXIT_BLOCK_ID);
    /// add a connection between entry and exit thus avoiding problems with non terminating code
-   GCC_bb_graphs_collection->AddEdge(inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID),
-                                     inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), CFG_SELECTOR);
+   bb_graphs_collection.AddEdge(inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID),
+                                CFG_SELECTOR);
    /// sort basic block vertices from the entry till the exit
-   std::list<vertex> bb_sorted_vertices;
-   cyclic_topological_sort(*GCC_bb_graph, std::front_inserter(bb_sorted_vertices));
+   std::list<BBGraph::vertex_descriptor> bb_sorted_vertices;
+   struct LocalDFSVisitor : public boost::dfs_visitor<>
+   {
+      explicit LocalDFSVisitor(std::list<BBGraph::vertex_descriptor>& Out) : Lref(Out)
+      {
+      }
+      void finish_vertex(const BBGraph::vertex_descriptor& u, const BBGraph&)
+      {
+         Lref.push_front(u);
+      }
+      std::list<BBGraph::vertex_descriptor>& Lref;
+   };
+   {
+      LocalDFSVisitor vis(bb_sorted_vertices);
+      std::vector<boost::default_color_type> color_storage(boost::num_vertices(bb_graph));
+      const auto idmap = boost::get(boost::vertex_index_t(), bb_graph);
+      auto color_map = boost::make_iterator_property_map(color_storage.begin(), idmap, color_storage[0]);
+      boost::depth_first_search(bb_graph, boost::visitor(vis).color_map(color_map).vertex_index_map(idmap));
+   }
    static size_t counter = 0;
    if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC &&
       (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
    {
-      GCC_bb_graph->WriteDot("BB_simple_code_motion_" + STR(counter) + ".dot");
+      bb_graph.writeDot(function_behavior->GetDotPath() / ("BB_simple_code_motion_" + STR(counter) + ".dot"));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "---Written BB_simple_code_motion_" + STR(counter) + ".dot");
       counter++;
    }
 
-   std::unique_ptr<dominance<BBGraph>> bb_dominators(
-       new dominance<BBGraph>(*GCC_bb_graph, inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID),
-                              inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), parameters));
-   bb_dominators->calculate_dominance_info(dominance<BBGraph>::CDI_DOMINATORS);
-   const auto& bb_dominator_map = bb_dominators->get_dominator_map();
-
-   /// If we are performing simd transformation, look for simd pragma
-   // cppcheck-suppress uninitvar
-   const CustomSet<vertex> simd_loop_headers =
-       parameters->getOption<int>(OPT_gcc_openmp_simd) == 0 ? CustomSet<vertex>() : [&]() -> CustomSet<vertex> const {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Looking for openmp simd pragma");
-      CustomSet<vertex> return_value;
-      for(const auto& block : list_of_bloc)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block.first));
-         for(const auto& statement : block.second->CGetStmtList())
-         {
-            const auto* gp = GetPointer<const gimple_pragma>(statement);
-            if(gp && GetPointer<const omp_pragma>(gp->scope) && GetPointer<const omp_simd_pragma>(gp->directive))
-            {
-               THROW_ASSERT(boost::out_degree(inverse_vertex_map[block.first], *GCC_bb_graph) == 1,
-                            "OpenMP simd pragma block has more than one successor");
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found openmp pragma");
-               OutEdgeIterator oe, oe_end;
-               boost::tie(oe, oe_end) = boost::out_edges(inverse_vertex_map[block.first], *GCC_bb_graph);
-               return_value.insert(boost::target(*oe, *GCC_bb_graph));
-               break;
-            }
-         }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Found " + STR(return_value.size()) + " simd pragmas");
-      return return_value;
-   }();
-
-   const tree_manipulationConstRef tree_man(new tree_manipulation(TM, parameters, AppM));
+   dominance<BBGraph> bb_dominators(bb_graph, inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID),
+                                    inverse_vertex_map.at(bloc::EXIT_BLOCK_ID));
+   const ir_manipulationConstRef ir_man(new ir_manipulation(TM, parameters, AppM));
 
    for(const auto bb_vertex : bb_sorted_vertices)
    {
@@ -767,44 +692,73 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
          if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC &&
             (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
          {
-            GCC_bb_graph->WriteDot("BB_simple_code_motion_" + STR(counter) + ".dot");
+            bb_graph.writeDot(function_behavior->GetDotPath() / ("BB_simple_code_motion_" + STR(counter) + ".dot"));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Written BB_simple_code_motion_" + STR(counter) + ".dot");
             counter++;
          }
          const auto& list_of_stmt = list_of_bloc.at(curr_bb)->CGetStmtList();
-         std::list<tree_nodeRef> to_be_removed;
+         std::list<ir_nodeRef> to_be_removed;
          CustomOrderedSet<unsigned int> zero_delay_stmts;
-         std::list<tree_nodeRef> to_be_added_back;
-         std::list<tree_nodeRef> to_be_added_front;
+         std::list<ir_nodeRef> to_be_added_back;
+         std::list<ir_nodeRef> to_be_added_front;
          /// We must use pointer since we are erasing elements in the list
          for(auto statement = list_of_stmt.begin(); statement != list_of_stmt.end(); statement++)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*statement)->ToString());
-            /// skip gimple statements defining or using virtual operands
-            tree_nodeRef tn = *statement;
-            auto* gn = GetPointer<gimple_node>(tn);
+            /// skip statements defining or using virtual operands
+            ir_nodeRef tn = *statement;
+            auto* gn = GetPointer<node_stmt>(tn);
+            auto* ga = GetPointer<assign_stmt>(tn);
+            auto* gc = GetPointer<call_stmt>(tn);
+            const bool is_nop = GetPointer<nop_stmt>(tn) != nullptr;
+            const bool is_assign = ga != nullptr;
+            const bool is_call_stmt = gc != nullptr;
+            const bool is_load_assign = is_assign && ga->op1->get_kind() == mem_access_node_K;
+            const bool is_store_assign = is_assign && ga->op0->get_kind() == mem_access_node_K;
+            const bool is_assign_call = is_assign && ga->op1->get_kind() == call_node_K;
+            bool loadCanBePredicated = false;
+            if(is_load_assign)
+            {
+               loadCanBePredicated = true;
+            }
+            bool storeCanBePredicated = false;
+            if(is_store_assign)
+            {
+               storeCanBePredicated = true;
+            }
+            if(is_call_stmt || is_assign_call)
+            {
+               if(gn->vdef)
+               {
+                  storeCanBePredicated = true;
+               }
+               else if(gn->vuses.size())
+               {
+                  loadCanBePredicated = true;
+               }
+            }
 
             THROW_ASSERT(gn, "unexpected condition");
-            if(!isFunctionPipelined && gn->vdef) /// load can be loop pipelined/predicated
+            if(!storeCanBePredicated && gn->vdef && !is_nop) /// load can be loop pipelined/predicated
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of memory store");
                continue;
             }
 
-            /// only gimple_assign are considered for code motion
-            if(!GetPointer<gimple_assign>(tn) && !GetPointer<gimple_nop>(tn))
+            /// only assign_stmt/call_stmt/nop_stmt are considered for code motion
+            if(!is_assign && !is_call_stmt && !is_nop)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because " + tn->get_kind_text());
                continue;
             }
 
             /// compute the SSA variables used by stmt
-            CustomOrderedSet<const ssa_name*> stmt_ssa_uses;
-            tree_helper::compute_ssa_uses_rec_ptr(*statement, stmt_ssa_uses);
+            CustomOrderedSet<const ssa_node*> stmt_ssa_uses;
+            ir_helper::compute_ssa_uses_rec_ptr(*statement, stmt_ssa_uses);
             for(const auto& vo : gn->vovers)
             {
-               tree_helper::compute_ssa_uses_rec_ptr(vo, stmt_ssa_uses);
+               ir_helper::compute_ssa_uses_rec_ptr(vo, stmt_ssa_uses);
             }
 
             /// compute BB where the SSA variables are defined
@@ -813,8 +767,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             for(auto stmt0 = list_of_stmt.begin(); stmt0 != list_of_stmt.end() && *stmt0 != *statement && gn->vdef;
                 stmt0++)
             {
-               tree_nodeRef tn0 = *stmt0;
-               const auto gn0 = GetPointerS<gimple_node>(tn0);
+               ir_nodeRef tn0 = *stmt0;
+               const auto gn0 = GetPointerS<node_stmt>(tn0);
                if(gn0->vuses.find(gn->vdef) != gn0->vuses.end())
                {
                   BB_def.insert(curr_bb);
@@ -826,30 +780,23 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             {
                const auto sn = *ssu_it;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---for variable " + sn->ToString());
-               for(auto const& def_stmt : sn->CGetDefStmts())
+               auto def_stmt = sn->GetDefStmt();
+               auto* def_gn = GetPointer<node_stmt>(def_stmt);
+               THROW_ASSERT(def_gn->get_kind() == nop_stmt_K or def_gn->index, sn->ToString() + " is defined in entry");
+               THROW_ASSERT(def_gn->get_kind() == nop_stmt_K or def_gn->bb_index or sn->virtual_flag,
+                            "Definition " + def_gn->ToString() + " of " + sn->ToString() + " is in BB" +
+                                STR(def_gn->bb_index));
+               if(statement == list_of_stmt.begin() && list_of_bloc.at(curr_bb)->list_of_pred.size() == 1 &&
+                  def_gn->bb_index == curr_bb && def_gn->get_kind() != phi_stmt_K)
                {
-                  auto* def_gn = GetPointer<gimple_node>(def_stmt);
-                  THROW_ASSERT(def_gn->get_kind() == gimple_nop_K or def_gn->index,
-                               sn->ToString() + " is defined in entry");
-                  THROW_ASSERT(def_gn->get_kind() == gimple_nop_K or
-                                   (def_gn->get_kind() == gimple_assign_K &&
-                                    GetPointer<const gimple_assign>(def_stmt)->clobber) or
-                                   def_gn->bb_index or sn->virtual_flag,
-                               "Definition " + def_gn->ToString() + " of " + sn->ToString() + " is in BB" +
-                                   STR(def_gn->bb_index));
-                  if(statement == list_of_stmt.begin() && list_of_bloc.at(curr_bb)->list_of_pred.size() == 1 &&
-                     def_gn->bb_index == curr_bb && def_gn->get_kind() != gimple_phi_K)
-                  {
-                     /// allow to move first statements later overwritten in the same BB
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---  no constraint because is the first one");
-                  }
-                  else
-                  {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---  Adding BB" + STR(def_gn->bb_index) + " because of " + def_gn->ToString());
-                     BB_def.insert(def_gn->bb_index);
-                  }
+                  /// allow to move first statements later overwritten in the same BB
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---  no constraint because is the first one");
+               }
+               else
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---  Adding BB" + STR(def_gn->bb_index) + " because of " + def_gn->ToString());
+                  BB_def.insert(def_gn->bb_index);
                }
             }
             /// skip the statement in case it uses ssa variables defined in the current BB
@@ -863,21 +810,13 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                {
                   can_be_pipelined = list_of_bloc.at(curr_bb)->loop_id >= list_of_bloc.at(*Lop_it)->loop_id;
                }
-               /// check if current statement can be loop pipelined
-               bool zero_delay = true;
-               if(can_be_pipelined && (gn->vuses.size() || CheckMovable(curr_bb, tn, zero_delay, TM) ==
-                                                               FunctionFrontendFlowStep_Movable::MOVABLE))
-               {
-                  THROW_ASSERT(bb_dominator_map.find(bb_vertex) != bb_dominator_map.end(), "unexpected condition");
-               }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "<--Skipped because uses ssa defined in the same block");
                continue;
             }
-            if((gn->vuses.size() ||
-                (GetPointer<gimple_assign>(tn) && (GetPointer<gimple_assign>(tn)->op1->get_kind() == call_expr_K ||
-                                                   GetPointer<gimple_assign>(tn)->op1->get_kind() == mem_ref_K))) &&
-               !isFunctionPipelined)
+            if((((gn->vuses.size() && !is_nop) || is_load_assign || is_assign_call || is_call_stmt)
+                // && (!schedule)
+                && !loadCanBePredicated && !is_assign_call && !is_call_stmt))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of vuses");
                continue; /// load cannot be code moved
@@ -886,15 +825,11 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking where it can be moved");
             auto dest_bb_index = curr_bb;
             auto prev_dest_bb_index = curr_bb;
-            if(gn->vdef || gn->vuses.size() ||
-               (tn->get_kind() == gimple_assign_K && GetPointer<gimple_assign>(tn)->op1->get_kind() == mem_ref_K))
+            if(gn->vdef || gn->vuses.size() || is_load_assign || is_assign_call || is_call_stmt)
             {
                if(list_of_bloc.at(curr_bb)->list_of_pred.size() == 1 &&
                   list_of_bloc.at(curr_bb)->list_of_pred.front() != bloc::ENTRY_BLOCK_ID &&
-                  ((tn->get_kind() == gimple_assign_K &&
-                    (GetPointer<gimple_assign>(tn)->op0->get_kind() == mem_ref_K ||
-                     GetPointer<gimple_assign>(tn)->op1->get_kind() == mem_ref_K)) ||
-                   tn->get_kind() == gimple_nop_K) &&
+                  (is_store_assign || is_load_assign || is_assign_call || is_call_stmt || is_nop) &&
                   list_of_bloc.at(list_of_bloc.at(curr_bb)->list_of_pred.front())->loop_id ==
                       list_of_bloc.at(curr_bb)->loop_id)
                {
@@ -903,21 +838,22 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                else
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "<--Skipped because is not a store/load or because we do not know the condition under "
-                                 "which the store/load is done");
+                                 "<--Skipped because is not a predicable store/load/call or because we do not know the "
+                                 "condition under which it is done");
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
                   continue;
                }
             }
             else
             {
-               vertex dom_bb = bb_vertex;
-               if(bb_dominator_map.find(dom_bb) != bb_dominator_map.end())
+               auto dom_bb = bb_vertex;
+               auto parent_bb = bb_dominators.getImmediateDominator(dom_bb);
+               if(parent_bb != dom_bb)
                {
-                  dom_bb = bb_dominator_map.find(dom_bb)->second;
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Considering its dominator BB" + STR(direct_vertex_map[dom_bb]));
+                  dom_bb = parent_bb;
                   auto dom_bb_index = direct_vertex_map[dom_bb];
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Considering its dominator BB" + STR(dom_bb_index));
                   while(dom_bb_index != bloc::ENTRY_BLOCK_ID)
                   {
                      unsigned loop_idU = list_of_bloc.at(dom_bb_index)->loop_id;
@@ -951,12 +887,15 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                                        "---It contains the definition of one SSA used by the statement to be moved");
                         break;
                      }
-                     if(bb_dominator_map.find(dom_bb) == bb_dominator_map.end())
+                     parent_bb = bb_dominators.getImmediateDominator(dom_bb);
+                     if(parent_bb == dom_bb)
                      {
                         break;
                      }
-                     dom_bb = bb_dominator_map.find(dom_bb)->second;
+                     dom_bb = parent_bb;
                      dom_bb_index = direct_vertex_map[dom_bb];
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Considering its dominator BB" + STR(dom_bb_index));
                   }
                }
             }
@@ -969,44 +908,9 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                               "<--Skipped (1) because destination would be the same bb");
                continue;
             }
-            /// check if the controlling condition of curr_bb is constant
-            bool is_controlling_condition_constant = true;
-            const auto Lop_it_end = list_of_bloc.at(curr_bb)->list_of_pred.end();
-            for(auto Lop_it = list_of_bloc.at(curr_bb)->list_of_pred.begin();
-                Lop_it != Lop_it_end && is_controlling_condition_constant; ++Lop_it)
-            {
-               if(sl->list_of_bloc.at(*Lop_it)->CGetStmtList().empty())
-               {
-                  is_controlling_condition_constant = false;
-               }
-               else
-               {
-                  auto last_statement = sl->list_of_bloc.at(*Lop_it)->CGetStmtList().back();
-                  if(last_statement->get_kind() == gimple_cond_K)
-                  {
-                     auto* gc = GetPointer<gimple_cond>(last_statement);
-                     if(gc->op0->get_kind() != integer_cst_K)
-                     {
-                        is_controlling_condition_constant = false;
-                     }
-                  }
-                  else if(last_statement->get_kind() == gimple_multi_way_if_K)
-                  {
-                     is_controlling_condition_constant = false;
-                  }
-                  else
-                  {
-                     is_controlling_condition_constant = false;
-                  }
-               }
-            }
             bool zero_delay = true;
-            auto check_movable = CheckMovable(dest_bb_index, tn, zero_delay, TM);
-            if((check_movable == FunctionFrontendFlowStep_Movable::TIMING) && is_controlling_condition_constant)
-            {
-               check_movable = FunctionFrontendFlowStep_Movable::MOVABLE;
-            }
-            if(!isFunctionPipelined && check_movable == FunctionFrontendFlowStep_Movable::UNMOVABLE)
+            auto check_movable = CheckMovable(dest_bb_index, tn, zero_delay);
+            if(check_movable == FunctionFrontendFlowStep_Movable::UNMOVABLE)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because cannot be moved");
                continue;
@@ -1019,23 +923,27 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             }
 
             /// finally we found something of meaningful
-
             /// check if the current uses in dest_bb_index are due only to phis
             bool only_phis = true;
             for(const auto sn : stmt_ssa_uses)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking definition of " + sn->ToString());
-               for(auto const& def_stmt : sn->CGetDefStmts())
+               auto def_stmt = sn->GetDefStmt();
+
+               auto* def_gn = GetPointer<node_stmt>(def_stmt);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checked definition " + def_gn->ToString());
+               if(def_gn->bb_index == dest_bb_index && def_gn->get_kind() != phi_stmt_K &&
+                  zero_delay_stmts.find(def_stmt->index) == zero_delay_stmts.end())
                {
-                  auto* def_gn = GetPointer<gimple_node>(def_stmt);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checked definition " + def_gn->ToString());
-                  if(def_gn->bb_index == dest_bb_index && def_gn->get_kind() != gimple_phi_K &&
-                     zero_delay_stmts.find(def_stmt->index) == zero_delay_stmts.end())
+                  bool def_zero_delay = true;
+                  CheckMovable(dest_bb_index, def_stmt, def_zero_delay);
+                  if(!def_zero_delay)
                   {
                      only_phis = false;
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not a phi");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not a phi or zero-delay stmt");
                   }
                }
+
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
             }
             if(only_phis && zero_delay)
@@ -1060,8 +968,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             AppM->RegisterTransformation(GetName(), *statement);
 
             /// add predication in case is required
-            if(tn->get_kind() == gimple_assign_K && (GetPointer<gimple_assign>(tn)->op0->get_kind() == mem_ref_K ||
-                                                     GetPointer<gimple_assign>(tn)->op1->get_kind() == mem_ref_K))
+            if(is_store_assign || is_load_assign || is_assign_call || is_call_stmt)
             {
                if(list_of_bloc.at(dest_bb_index)->CGetStmtList().empty())
                {
@@ -1071,50 +978,34 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                {
                   const auto& lastStmt = *(list_of_bloc.at(dest_bb_index)->CGetStmtList().rbegin());
                   auto lastStmtNode = lastStmt;
-                  auto ga = GetPointer<gimple_assign>(tn);
-                  if(lastStmtNode->get_kind() == gimple_cond_K)
-                  {
-                     if(ga->predicate && ga->predicate->get_kind() == integer_cst_K)
+                  const auto scheduleNewOp = [&](const ir_nodeRef& ssa_ref) {
+                     if(schedule)
                      {
-                        auto cond = tree_helper::GetConstValue(ga->predicate);
+                        schedule->UpdateTime(GetPointerS<const ssa_node>(ssa_ref)->GetDefStmt()->index, true);
+                     }
+                  };
+                  const auto updatePredicate = [&](const ir_nodeRef& new_cond) {
+                     THROW_ASSERT(gn->predicate,
+                                  "PredicateStatements did not initialize the predicate of " + STR(*statement));
+                     if(gn->predicate->get_kind() == constant_int_val_node_K)
+                     {
+                        const auto cond = ir_helper::GetConstValue(gn->predicate);
                         if(cond != 0)
                         {
-                           if(list_of_bloc.at(dest_bb_index)->true_edge == curr_bb)
-                           {
-                              TM->ReplaceTreeNode(*statement, ga->predicate,
-                                                  GetPointer<gimple_cond>(lastStmtNode)->op0);
-                           }
-                           else
-                           {
-                              /// create a negated condition
-                              auto not_cond = tree_man->CreateNotExpr(GetPointer<gimple_cond>(lastStmtNode)->op0,
-                                                                      list_of_bloc.at(dest_bb_index), function_id);
-                              TM->ReplaceTreeNode(*statement, ga->predicate, not_cond);
-                           }
+                           TM->ReplaceIRNode(*statement, gn->predicate, new_cond);
                         }
                      }
                      else
                      {
-                        if(list_of_bloc.at(dest_bb_index)->true_edge == curr_bb)
-                        {
-                           auto and_cond =
-                               tree_man->CreateAndExpr(GetPointer<gimple_cond>(lastStmtNode)->op0, ga->predicate,
-                                                       list_of_bloc.at(dest_bb_index), function_id);
-                           TM->ReplaceTreeNode(*statement, ga->predicate, and_cond);
-                        }
-                        else
-                        {
-                           auto not_cond = tree_man->CreateNotExpr(GetPointer<gimple_cond>(lastStmtNode)->op0,
-                                                                   list_of_bloc.at(dest_bb_index), function_id);
-                           auto and_cond = tree_man->CreateAndExpr(not_cond, ga->predicate,
-                                                                   list_of_bloc.at(dest_bb_index), function_id);
-                           TM->ReplaceTreeNode(*statement, ga->predicate, and_cond);
-                        }
+                        auto and_cond =
+                            ir_man->CreateAndExpr(new_cond, gn->predicate, list_of_bloc.at(dest_bb_index), function_id);
+                        scheduleNewOp(and_cond);
+                        TM->ReplaceIRNode(*statement, gn->predicate, and_cond);
                      }
-                  }
-                  else if(lastStmtNode->get_kind() == gimple_multi_way_if_K)
+                  };
+                  if(lastStmtNode->get_kind() == multi_way_if_stmt_K)
                   {
-                     auto gmwi = GetPointer<gimple_multi_way_if>(lastStmtNode);
+                     auto gmwi = GetPointer<multi_way_if_stmt>(lastStmtNode);
                      bool found_condition = false;
                      for(const auto& gmwicond : gmwi->list_of_cond)
                      {
@@ -1125,7 +1016,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                            {
                               /// compute default condition
                               auto firstCond = true;
-                              tree_nodeRef Cur;
+                              ir_nodeRef Cur;
                               for(const auto& gmwicond0 : gmwi->list_of_cond)
                               {
                                  if(gmwicond0.first)
@@ -1137,43 +1028,19 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                                     }
                                     else
                                     {
-                                       Cur = tree_man->CreateOrExpr(Cur, gmwicond0.first,
-                                                                    list_of_bloc.at(dest_bb_index), function_id);
+                                       Cur = ir_man->CreateOrExpr(Cur, gmwicond0.first, list_of_bloc.at(dest_bb_index),
+                                                                  function_id);
+                                       scheduleNewOp(Cur);
                                     }
                                  }
                               }
-                              Cur = tree_man->CreateNotExpr(Cur, list_of_bloc.at(dest_bb_index), function_id);
-                              if(ga->predicate && ga->predicate->get_kind() == integer_cst_K)
-                              {
-                                 const auto cond = tree_helper::GetConstValue(ga->predicate);
-                                 if(cond != 0)
-                                 {
-                                    TM->ReplaceTreeNode(*statement, ga->predicate, Cur);
-                                 }
-                              }
-                              else
-                              {
-                                 auto and_cond = tree_man->CreateAndExpr(Cur, ga->predicate,
-                                                                         list_of_bloc.at(dest_bb_index), function_id);
-                                 TM->ReplaceTreeNode(*statement, ga->predicate, and_cond);
-                              }
+                              Cur = ir_man->CreateNotExpr(Cur, list_of_bloc.at(dest_bb_index), function_id);
+                              scheduleNewOp(Cur);
+                              updatePredicate(Cur);
                            }
                            else
                            {
-                              if(ga->predicate && ga->predicate->get_kind() == integer_cst_K)
-                              {
-                                 const auto cond = tree_helper::GetConstValue(ga->predicate);
-                                 if(cond != 0)
-                                 {
-                                    TM->ReplaceTreeNode(*statement, ga->predicate, gmwicond.first);
-                                 }
-                              }
-                              else
-                              {
-                                 auto and_cond = tree_man->CreateAndExpr(gmwicond.first, ga->predicate,
-                                                                         list_of_bloc.at(dest_bb_index), function_id);
-                                 TM->ReplaceTreeNode(*statement, ga->predicate, and_cond);
-                              }
+                              updatePredicate(gmwicond.first);
                            }
                            break;
                         }
@@ -1207,6 +1074,10 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                restart_ifmwi_opt = true;
             }
             list_of_bloc.at(dest_bb_index)->PushBack(temp_statement, AppM);
+            if(schedule)
+            {
+               schedule->UpdateTime(temp_statement->index, true);
+            }
             /// Going one step back since pointer is already increment in for loop
             --tmp_it;
             statement = tmp_it;
@@ -1240,7 +1111,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
          if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC &&
             (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
          {
-            GCC_bb_graph->WriteDot("BB_simple_code_motion_" + STR(counter) + ".dot");
+            bb_graph.writeDot(function_behavior->GetDotPath() / ("BB_simple_code_motion_" + STR(counter) + ".dot"));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Written BB_simple_code_motion_" + STR(counter) + ".dot");
             counter++;

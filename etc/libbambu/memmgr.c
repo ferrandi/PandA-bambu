@@ -6,10 +6,14 @@
 //
 // This code is in the public domain.
 //----------------------------------------------------------------
-#include <stdio.h>
 
-/// Bambu specific macro
 #include "bambu_macros.h"
+
+#include <stddef.h>
+
+#ifdef DEBUG_SAMM_SUPPORT_STATS
+#include <stdio.h>
+#endif
 
 //
 // Memory manager: dynamically allocates memory from

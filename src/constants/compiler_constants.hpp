@@ -12,59 +12,48 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
- * @file treegcc_constants.hpp
- * @brief constants used by gcc wrapper
+ * @file compiler_constants.hpp
+ * @brief constants used by compiler wrapper
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Date$
- * Last modified by $Author$
  *
  */
 
-#ifndef TREEGCC_CONSTANTS_HPP
-#define TREEGCC_CONSTANTS_HPP
+#ifndef COMPILER_CONSTANTS_HPP
+#define COMPILER_CONSTANTS_HPP
 
-/// The suffix of gcc initial dump
-#define STR_CST_gcc_empty_suffix ".001t.tu"
-
-/// The output file for tree-panda-gcc
-#define STR_CST_gcc_obj_file "run-%%%%-%%%%-%%%%-%%%%.o"
-
-/// bitcode LLVM temporary file
-#define STR_CST_llvm_obj_file "run-%%%%-%%%%-%%%%-%%%%.bc"
+/// The output file for bambu-cc
+#define STR_CST_cc_obj_file "run-%%%%-%%%%-%%%%-%%%%.o"
 
 /// concatenated C temporary file
 #define STR_CST_concat_c_file ".concat-%%%%-%%%%-%%%%-%%%%.c"
 
-/// The file where output messages of gcc are saved
-#define STR_CST_gcc_output "__gcc_output"
+/// The file where output messages of cc are saved
+#define STR_CST_cc_output "__cc_output"
 
-/// The suffix of gimple files
+/// The suffix of bambu IR files
 #define STR_CST_bambu_ir_suffix ".bambuir"
 
-/// The string used to replace sizeof keyword in the original source code (first step)
-#define STR_CST_panda_sizeof "__panda_sizeof"
-
-/// The string used to replace sizeof keyword in the original source code (second step)
-#define STR_CST_string_sizeof "__string_sizeof"
+/// OpenMP source library file
+#define STR_CST_libopenmp_filename "libopenmp/kmp_single_file.cpp"
 
 #endif

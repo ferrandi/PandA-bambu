@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -43,34 +43,22 @@
 
 #ifndef CONTROLLER_CREATOR_BASE_STEP_HPP
 #define CONTROLLER_CREATOR_BASE_STEP_HPP
-
-/// Superclass include
 #include "hls_function_step.hpp"
 
-/// graph include
-#include "graph.hpp"
-
-/// STD include
-#include <fstream>
-
-/// STL includes
+#include "FSMInfo.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include <tuple>
-
-/// utility include
+#include "graph.hpp"
 #include "refcount.hpp"
 
-/**
- * @name forward declarations
- */
-//@{
+#include <fstream>
+#include <tuple>
+
 REF_FORWARD_DECL(hls);
 REF_FORWARD_DECL(structural_object);
 REF_FORWARD_DECL(generic_obj);
 REF_FORWARD_DECL(structural_manager);
 class xml_element;
-//@}
 
 /**
  * Generic class managing controller creation algorithms.
@@ -85,17 +73,8 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
    HLSRelationships ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
-   /**
-    * Constructor
-    */
    ControllerCreatorBaseStep(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
-                             const DesignFlowManagerConstRef design_flow_manager,
-                             const HLSFlowStep_Type hls_flow_step_type);
-
-   /**
-    * Destructor.
-    */
-   ~ControllerCreatorBaseStep() override;
+                             const DesignFlowManager& design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
 
  protected:
    /**
@@ -106,6 +85,7 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
    /**
     * This member function adds the standard ports (clock, reset, done and command ones) to a circuit.
     * \param circuit it is the data-structure of the component where to add these ports
+    * \param SM is the structural manager owning the circuit
     */
    virtual void add_common_ports(structural_objectRef circuit, structural_managerRef SM);
 
@@ -121,9 +101,9 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
    /// calling GetPointer<commandport_obj>(j->second)->get_vertex() to the elements into in_ports. The second
    /// element is the same number of the generic_objRef into in_ports to which get_vertex() was called
    /// Initialized after add_common_ports is called
-   std::map<vertex, unsigned int> cond_ports;
+   std::map<gc_vertex_descriptor, unsigned int> cond_ports;
    /// This map put into relation fsm states and alldone multi_unbounded ports
-   std::map<vertex, unsigned int> mu_ports;
+   std::map<FSMInfo::state_descriptor, unsigned int> mu_ports;
 
    /// Initialized after add_common_ports is called. It represents the current number of output ports
    unsigned int out_num;
@@ -135,6 +115,7 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
    /**
     * Adds the clock and reset ports to a circuit. Called by add_common_ports
     * \param circuit the circuit where to add the clock and reset ports
+    * \param SM is the structural manager owning the circuit
     */
    void add_clock_reset(structural_objectRef circuit, structural_managerRef SM);
 
@@ -142,14 +123,24 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
     * Adds the done port to a circuit. Called by add_common_ports
     * The done port appears to go high once all the calculation of a function are completed
     * \param circuit the circuit where to add the done port
+    * \param SM is the structural manager owning the circuit
     */
    void add_done_port(structural_objectRef circuit, structural_managerRef SM);
 
    /**
     * Adds the start port to a circuit. Called by add_common_ports
     * \param circuit the circuit where to add the start port
+    * \param SM is the structural manager owning the circuit
     */
    void add_start_port(structural_objectRef circuit, structural_managerRef SM);
+
+   /**
+    * Adds the idle port to a circuit. Called by add_common_ports, only for top functions.
+    * The idle port is high when the top is not operating (no computation in progress).
+    * \param circuit the circuit where to add the idle port
+    * \param SM is the structural manager owning the circuit
+    */
+   void add_idle_port(structural_objectRef circuit, structural_managerRef SM);
 
    /**
     * Adds the command ports to a circuit. Called by add_common_ports
@@ -159,6 +150,7 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
     * - Conditions, used to modify instruction flow in constructs such as for, if, while,
     *   these go in the opposite direction, from the datapath to the controller
     * \param circuit the circuit where to add the command ports
+    * \param SM is the structural manager owning the circuit
     */
    void add_command_ports(structural_objectRef circuit, structural_managerRef SM);
 };

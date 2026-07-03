@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -42,24 +42,15 @@
 #ifndef PROFILING_INFORMATION_HPP
 #define PROFILING_INFORMATION_HPP
 
-/// Autoheader
-#include "config_HAVE_UNORDERED.hpp"
-
-/// Behavior include
 #include "basic_block.hpp"
-
-/// Graph include
-#include "graph.hpp"
-
-/// STL include
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-
-/// Utility include
 #include "refcount.hpp"
 
-CONSTREF_FORWARD_DECL(BBGraph);
-CONSTREF_FORWARD_DECL(Loop);
+#include "algorithms/loops_detection/loop.hpp"
+
+#include "config_HAVE_UNORDERED.hpp"
+
 class xml_element;
 
 /**
@@ -80,24 +71,24 @@ class PathProfilingInformation : public std::map<unsigned int, std::map<CustomOr
  * Map storing number of executions of each basic block
  */
 #if HAVE_UNORDERED
-class BBExecutions : public CustomUnorderedMap<vertex, unsigned long long int>
+class BBExecutions : public CustomUnorderedMap<BBGraphsCollection::vertex_descriptor, unsigned long long int>
 {
  public:
    /**
     * Constructor
     * @param bb_graph is the basic block graph
     */
-   explicit BBExecutions(const BBGraphConstRef bb_graph);
+   explicit BBExecutions(const BBGraphsCollection* bb_graph);
 };
 #else
-class BBExecutions : public std::map<vertex, unsigned long long int, BBVertexSorter>
+class BBExecutions : public std::map<BBGraphsCollection::vertex_descriptor, unsigned long long int, BBVertexSorter>
 {
  public:
    /**
     * Constructor
     * @param bb_graph is the basic block graph
     */
-   explicit BBExecutions(const BBGraphConstRef bb_graph);
+   explicit BBExecutions(const BBGraphsCollection* bb_graph);
 };
 #endif
 
@@ -105,24 +96,24 @@ class BBExecutions : public std::map<vertex, unsigned long long int, BBVertexSor
  * Map storing number of executions of each basic block edge
  */
 #if HAVE_UNORDERED
-class BBEdgeExecutions : public CustomUnorderedMap<EdgeDescriptor, unsigned long long int>
+class BBEdgeExecutions : public CustomUnorderedMap<BBGraph::edge_descriptor, unsigned long long int>
 {
  public:
    /**
     * Constructor
     * @param bb_graph is the basic block graph
     */
-   explicit BBEdgeExecutions(const BBGraphConstRef bb_graph);
+   explicit BBEdgeExecutions(const BBGraphsCollection* bb_graph);
 };
 #else
-class BBEdgeExecutions : public std::map<EdgeDescriptor, unsigned long long int, BBEdgeSorter>
+class BBEdgeExecutions : public std::map<BBGraph::edge_descriptor, unsigned long long int, BBEdgeSorter>
 {
  public:
    /**
     * Constructor
     * @param bb_graph is the basic block graph
     */
-   explicit BBEdgeExecutions(const BBGraphConstRef bb_graph);
+   explicit BBEdgeExecutions(const BBGraphsCollection* bb_graph);
 };
 #endif
 
@@ -160,12 +151,7 @@ class ProfilingInformation
  private:
    /// Friend defintion of profiling classes
    friend class BasicBlocksProfiling;
-   friend class hpp_profiling;
-   friend class LoopsProfiling;
-   friend class probability_path;
    friend class HostProfiling;
-   friend class read_profiling_data;
-   friend class tp_profiling;
 
    /// map that represents, for each execution path of each loop (represented by the set of the executed control
    /// equivalent regions), the execution frequency
@@ -192,12 +178,7 @@ class ProfilingInformation
     * Constructor
     * @param bb_graph is the basic block graph
     */
-   explicit ProfilingInformation(const BBGraphConstRef bb_graph);
-
-   /**
-    * Destructor
-    */
-   ~ProfilingInformation();
+   explicit ProfilingInformation(const BBGraphsCollection* bb_graph);
 
    /**
     * Return the path profiling information
@@ -207,17 +188,17 @@ class ProfilingInformation
 
    /**
     * Return the absolute number of executions of a basic block
-    * @param basic_block is the basic block
+    * @param bb_vertex is the basic block
     * @return the absolute number of executions of a basic block
     */
-   unsigned long long int GetBBExecutions(const vertex bb_vertex) const;
+   unsigned long long int GetBBExecutions(BBGraph::vertex_descriptor bb_vertex) const;
 
    /**
     * Return the absolute number of the executions of an edge
     * @param edge is the edge
     * @return the absolute number of executions of the edge
     */
-   unsigned long long int GetEdgeExecutions(const EdgeDescriptor edge) const;
+   unsigned long long int GetEdgeExecutions(const BBGraph::edge_descriptor& edge) const;
 
    /**
     * Return number of average iterations of a loop
@@ -266,14 +247,12 @@ class ProfilingInformation
     * @param root is the root xml node to which append the information contained in this profiling information
     * @param fcfg is the basic block graph of the function
     */
-   void WriteToXml(xml_element* root, const BBGraphConstRef fcfg) const;
+   void WriteToXml(xml_element* root, const BBGraph& fcfg) const;
 
    /**
     * Clear
     */
    void Clear();
 };
-
-using ProfilingInformationRef = refcount<ProfilingInformation>;
 
 #endif

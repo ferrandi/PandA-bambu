@@ -11,22 +11,22 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (C) 2004-2024 Politecnico di Milano
+ *            Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  * This file is part of the PandA framework.
  *
- * The PandA framework is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 /// @file
@@ -36,22 +36,21 @@
 
 #ifndef CALL_GRAPH_BUILTIN_CALL_HPP
 #define CALL_GRAPH_BUILTIN_CALL_HPP
-
 #include "function_frontend_flow_step.hpp"
 
 #include "custom_set.hpp"
-
 #include "refcount.hpp"
 
-REF_FORWARD_DECL(tree_node);
+CONSTREF_FORWARD_DECL(ir_node);
+REF_FORWARD_DECL(ir_node);
 
-/// @brief Pass to add function called through pointers to the call graph.
 class CallGraphBuiltinCall : public FunctionFrontendFlowStep
 {
- private:
    using TypeDeclarationMap = std::map<std::string, CustomOrderedSet<unsigned int>>;
+
    bool modified;
-   /// Already visited tree node (used to avoid infinite recursion)
+
+   /// Already visited IR node (used to avoid infinite recursion)
    CustomUnorderedSet<unsigned int> already_visited;
 
    /**
@@ -59,33 +58,17 @@ class CallGraphBuiltinCall : public FunctionFrontendFlowStep
     */
    TypeDeclarationMap typeToDeclaration;
 
-   bool typeToDeclarationBuilt;
+   void lookForBuiltinCall(const ir_nodeRef& tn);
 
-   void lookForBuiltinCall(const tree_nodeRef TN);
+   void ExtendCallGraph(unsigned int callerIdx, const ir_nodeConstRef& funType, unsigned int stmtIdx);
 
-   void ExtendCallGraph(unsigned int callerIdx, tree_nodeRef funType, unsigned int stmtIdx);
-
-   // Build the typeToDeclarationMap
-   void buildTypeToDeclaration();
-
- protected:
-   /// @brief State relationship with other design step
-   ///
-   /// @param RT Type of the relationship to be considered
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(DesignFlowStep::RelationshipType RT) const override;
 
  public:
-   /// @brief Ctor.
-   ///
-   /// @param AM Application Manager
-   /// @param functionId Function id of the analyzed function.
-   /// @param DFM Design Flow Manager
-   /// @param P Set of parameters
-   CallGraphBuiltinCall(const application_managerRef AM, unsigned int functionId, const DesignFlowManagerConstRef DFM,
+   CallGraphBuiltinCall(const application_managerRef AM, unsigned int functionId, const DesignFlowManager& DFM,
                         const ParameterConstRef P);
 
-   ~CallGraphBuiltinCall() override;
    void Initialize() override;
 
    DesignFlowStep_Status InternalExec() override;

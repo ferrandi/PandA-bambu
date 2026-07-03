@@ -1,0 +1,121 @@
+ARG BASE=oraclelinux:7.6
+
+FROM ${BASE} AS core
+RUN printf "\n[ol7_software_collections]\n" >> /etc/yum.repos.d/oracle-linux-ol7.repo \
+   && printf "name=Software Collection Library release 3.0 packages for Oracle Linux 7 (x86_64)\n" >> /etc/yum.repos.d/oracle-linux-ol7.repo \
+   && printf "baseurl=https://yum.oracle.com/repo/OracleLinux/OL7/SoftwareCollections/x86_64/\n" >> /etc/yum.repos.d/oracle-linux-ol7.repo \
+   && printf "gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle\n" >> /etc/yum.repos.d/oracle-linux-ol7.repo \
+   && printf "gpgcheck=1\n" >> /etc/yum.repos.d/oracle-linux-ol7.repo \
+   && printf "enabled=1\n" >> /etc/yum.repos.d/oracle-linux-ol7.repo \
+   && yum-config-manager --enable ol7_optional_latest \
+   && yum install -y \
+   bison bzip2 ca-certificates ccache curl file gettext-devel ghostscript git make texinfo time wget zlib-devel \
+   devtoolset-8-gcc devtoolset-8-gcc-c++ \
+   && yum clean all \
+   && rm -rf /var/cache/yum \
+   && update-ca-trust
+ENV PATH=/opt/rh/devtoolset-8/root/usr/bin:$PATH
+
+FROM core AS libtool
+ARG LIBTOOL_VERSION=2.4.7
+RUN wget https://release.bambuhls.eu/libs/libtool-${LIBTOOL_VERSION}.tar.gz -qO- | tar xz \
+   && cd libtool-${LIBTOOL_VERSION} \
+   && ./configure --prefix=/usr --libdir=/usr/lib64 \
+   && make -j16 \
+   && make DESTDIR="/opt/sysroot" install \
+   && cd .. \
+   && rm -rf libtool-*
+
+FROM core AS flex
+ARG FLEX_VERSION=2.6.4
+RUN yum install -y flex help2man \
+   && wget https://github.com/westes/flex/releases/download/v${FLEX_VERSION}/flex-${FLEX_VERSION}.tar.gz -qO- | tar xz \
+   && cd flex-${FLEX_VERSION} \
+   && ./configure \
+   && make -j16 \
+   && make DESTDIR="/opt/sysroot" install \
+   && cd .. \
+   && rm -rf flex-* \
+   && yum remove -y flex help2man \
+   && yum clean all \
+   && rm -rf /var/cache/yum
+
+FROM core AS cmake
+ARG CMAKE_VERSION=3.26.6
+RUN yum install -y openssl-devel \
+   && wget https://gitlab.kitware.com/cmake/cmake/-/archive/v${CMAKE_VERSION}/cmake-v${CMAKE_VERSION}.tar.gz -qO- | tar xz \
+   && cd cmake-v${CMAKE_VERSION} \
+   && ./bootstrap --parallel=16 -- -DCMAKE_BUILD_TYPE:STRING=Release \
+   && make -j16 \
+   && make DESTDIR="/opt/sysroot" install \
+   && cd .. \
+   && rm -rf cmake-*\
+   && yum remove -y openssl-devel \
+   && yum clean all \
+   && rm -rf /var/cache/yum
+
+FROM core AS boost
+ARG BOOST_VERSION=1.82.0
+RUN wget https://github.com/boostorg/boost/releases/download/boost-1.82.0/boost-1.82.0.tar.xz -qO- | tar xJ \
+   && cd boost-1.82.0 \
+   && ./bootstrap.sh --with-libraries=headers,test --without-icu --prefix=/opt/sysroot/usr \
+   && ./b2 release install \
+   && cd .. \
+   && rm -rf boost*
+
+FROM core AS libmpfi
+COPY --link --from=libtool /opt/sysroot/ /
+ARG MPFI_VERSION=1.5.3
+RUN yum install -y autoconf automake gmp-devel mpfr-devel pkgconfig \
+   && wget https://gitlab.inria.fr/mpfi/mpfi/-/archive/${MPFI_VERSION}/mpfi-${MPFI_VERSION}.tar.gz -qO- | tar xz \
+   && cd mpfi-${MPFI_VERSION}/mpfi \
+   && ./autogen.sh \
+   && ./configure --prefix=/usr --libdir=/usr/lib64 \
+   && make -j16 \
+   && make DESTDIR="/opt/sysroot" install \
+   && cd .. \
+   && rm -rf mpfi-*
+
+FROM core AS libxml2
+RUN wget https://download.gnome.org/sources/libxml2/2.13/libxml2-2.13.3.tar.xz -qO- | tar xJ \
+   && cd libxml2-2.13.3 \
+   && ./configure --prefix=/usr --libdir=/usr/lib64 --without-modules --without-python --without-threads --without-iconv \
+   && make -j16 \
+   && make DESTDIR="/opt/sysroot" install \
+   && cd .. \
+   && rm -rf libxml2-*
+
+
+FROM ${BASE} AS dev
+ENV LANG=en_US.UTF-8
+RUN printf "\n[ol7_software_collections]\n" >> /etc/yum.repos.d/oracle-linux-ol7.repo \
+   && printf "name=Software Collection Library release 3.0 packages for Oracle Linux 7 (x86_64)\n" >> /etc/yum.repos.d/oracle-linux-ol7.repo \
+   && printf "baseurl=https://yum.oracle.com/repo/OracleLinux/OL7/SoftwareCollections/x86_64/\n" >> /etc/yum.repos.d/oracle-linux-ol7.repo \
+   && printf "gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle\n" >> /etc/yum.repos.d/oracle-linux-ol7.repo \
+   && printf "gpgcheck=1\n" >> /etc/yum.repos.d/oracle-linux-ol7.repo \
+   && printf "enabled=1\n" >> /etc/yum.repos.d/oracle-linux-ol7.repo \
+   && yum-config-manager --enable ol7_optional_latest \
+   && yum install -y \
+   autoconf autoconf-archive automake bison bzip2 ca-certificates ccache curl doxygen file \
+   gettext-devel ghostscript git graphviz glibc-devel glibc-devel.i686 libgcc libgcc.i686 \
+   libmpc-devel make ncurses-libs pkgconfig python3 rsync texinfo time wget zlib-devel \
+   devtoolset-8-gcc devtoolset-8-gcc-c++ \
+   # Missing: texlive-fonts-recommended texlive-latex-extra texlive-latex-recommended
+   # Clean yum cache
+   && yum clean all \
+   && rm -rf /var/cache/yum \
+   && update-ca-trust \
+   # Install AppImage tools
+   && wget "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" \
+   && chmod +x appimagetool-x86_64.AppImage \
+   && ./appimagetool-x86_64.AppImage --appimage-extract \
+   && mv squashfs-root /opt/appimage-tool.AppDir \
+   && ln -sf /opt/appimage-tool.AppDir/AppRun /usr/bin/appimagetool \
+   && rm -f appimagetool-x86_64.AppImage
+ENV PATH=/opt/rh/devtoolset-8/root/usr/bin:$PATH
+COPY --link --from=libtool /opt/sysroot /
+COPY --link --from=flex /opt/sysroot /
+COPY --link --from=boost /opt/sysroot /
+COPY --link --from=cmake /opt/sysroot /
+COPY --link --from=libmpfi /opt/sysroot /
+COPY --link --from=libxml2 /opt/sysroot /

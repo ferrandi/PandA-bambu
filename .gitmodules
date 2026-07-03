@@ -8,9 +8,33 @@
 	path = examples/PolyBench/PolyBenchC
 	url = https://github.com/ferrandi/PolyBenchC.git
 	branch = dev/panda-hls
+[submodule "BuDDy"]
+	path = ext/buddy
+	url = https://github.com/ferrandi/libbdd.git
+[submodule "mockturtle"]
+	path = ext/mockturtle/mockturtle
+	url = https://github.com/lsils/mockturtle.git
 [submodule "pugixml"]
 	path = ext/pugixml
 	url = https://github.com/zeux/pugixml.git
+[submodule "GAPBS"]
+	path = examples/OpenMP/GAPBS/gapbs
+	url = https://github.com/ferrandi/gapbs.git
+	branch = dev/panda-hls
+[submodule "examples/cpp_examples/fir_filter/gcem"]
+	path = examples/cpp_examples/fir_filter/gcem
+	url = https://github.com/kthohr/gcem.git
+[submodule "ext/glaze"]
+	path = ext/glaze
+	url = https://github.com/stephenberry/glaze.git
+[submodule "etc/ac_types"]
+	path = etc/ac_types
+	url = https://github.com/ferrandi/ac_types.git
+	branch = dev/panda-hls
+[submodule "etc/ac_math"]
+	path = etc/ac_math
+	url = https://github.com/ferrandi/ac_math.git
+	branch = dev/panda-hls
 [submodule "abseil-cpp"]
 	path = ext/abseil/abseil-cpp
 	url = https://github.com/abseil/abseil-cpp.git

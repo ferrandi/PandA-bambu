@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -45,26 +45,23 @@
 #include "Parameter.hpp"
 #include "SimulationInformation.hpp"
 #include "behavioral_helper.hpp"
-#include "c_initialization_parser.hpp"
 #include "call_graph_manager.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_NONE
+#include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
 #include "hls_manager.hpp"
 #include "indented_output_stream.hpp"
 #include "instruction_writer.hpp"
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
+#include "ir_node.hpp"
 #include "math_function.hpp"
 #include "memory.hpp"
-#include "memory_initialization_c_writer.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "string_manipulation.hpp"
 #include "structural_objects.hpp"
 #include "technology_node.hpp"
-#include "testbench_generation.hpp"
 #include "testbench_generation_constants.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
 #include "var_pp_functor.hpp"
 
 #include <boost/algorithm/string/trim_all.hpp>
@@ -87,8 +84,6 @@ HLSCWriter::HLSCWriter(const CBackendInformationConstRef _c_backend_info, const 
    debug_level = Param->get_class_debug_level(GET_CLASS(*this));
 }
 
-HLSCWriter::~HLSCWriter() = default;
-
 void HLSCWriter::InternalInitialize()
 {
 }
@@ -101,13 +96,12 @@ void HLSCWriter::InternalWriteHeader()
 #define __Inf (1.0 / 0.0)
 #define __Nan (0.0 / 0.0)
 
+#include <stdbool.h>
 #ifdef __cplusplus
 #undef printf
 
 #include <cstdio>
 #include <cstdlib>
-
-typedef bool _Bool;
 #else
 #include <stdio.h>
 #include <stdlib.h>
@@ -127,8 +121,7 @@ using namespace __AC_NAMESPACE;
    const auto top_symbols = Param->getOption<std::vector<std::string>>(OPT_top_functions_names);
    THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
    const auto top_fnode = TM->GetFunction(top_symbols.front());
-   const auto fd = GetPointerS<const function_decl>(top_fnode);
-   const auto top_fname = tree_helper::GetMangledFunctionName(fd);
+   const auto top_fname = ir_helper::GetFunctionName(top_fnode);
    const auto& parms = HLSMgr->module_arch->GetArchitecture(top_fname)->parms;
 
    CustomOrderedSet<std::filesystem::path> includes;
@@ -145,7 +138,8 @@ using namespace __AC_NAMESPACE;
       indented_output_stream->Append("#define " + top_fname + " __keep_your_declaration_out_of_my_code\n");
       indented_output_stream->Append("#define main __keep_your_main_out_of_my_code\n");
 
-      const auto output_directory = Param->getOption<std::filesystem::path>(OPT_output_directory) / "simulation";
+      const auto output_hls_directory =
+          Param->getOption<std::filesystem::path>(OPT_output_hls_directory) / "simulation";
       for(const auto& inc : includes)
       {
          if(inc.is_absolute())
@@ -154,7 +148,9 @@ using namespace __AC_NAMESPACE;
          }
          else
          {
-            indented_output_stream->Append("#include \"" + inc.lexically_proximate(output_directory).string() + "\"\n");
+            indented_output_stream->Append(
+                "#include \"" +
+                (std::filesystem::current_path() / inc).lexically_proximate(output_hls_directory).string() + "\"\n");
          }
       }
       indented_output_stream->Append("#undef " + top_fname + "\n");
@@ -192,13 +188,13 @@ void HLSCWriter::WriteParamDecl(const BehavioralHelperConstRef BH)
 
    for(const auto& par : BH->GetParameters())
    {
-      const auto parm_type = tree_helper::CGetType(par);
-      const auto type = tree_helper::IsPointerType(par) ? "void*" : tree_helper::PrintType(TM, parm_type);
+      const auto parm_type = ir_helper::CGetType(par);
+      const auto type = ir_helper::IsPointerType(par) ? "void*" : ir_helper::PrintType(parm_type);
       const auto param = BH->PrintVariable(par->index);
 
-      if(tree_helper::IsVectorType(parm_type))
+      if(ir_helper::IsVectorType(parm_type))
       {
-         THROW_ERROR("parameter " + param + " of function under test " + BH->get_function_name() + " has type " + type +
+         THROW_ERROR("parameter " + param + " of function under test " + BH->GetFunctionName() + " has type " + type +
                      "\nco-simulation does not support vectorized parameters at top level");
       }
       indented_output_stream->Append(type + " " + param + ";\n");
@@ -208,13 +204,13 @@ void HLSCWriter::WriteParamDecl(const BehavioralHelperConstRef BH)
 void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
                                           const std::map<std::string, std::string>& curr_test_vector)
 {
-   const auto fname = BH->GetMangledFunctionName();
+   const auto fname = BH->GetFunctionName();
    const auto& parm_attrs = HLSMgr->module_arch->GetArchitecture(fname)->parms;
    const auto params = BH->GetParameters();
    for(auto par_idx = 0U; par_idx < params.size(); ++par_idx)
    {
       const auto& par = params.at(par_idx);
-      const auto parm_type = tree_helper::CGetType(par);
+      const auto parm_type = ir_helper::CGetType(par);
       const auto param = BH->PrintVariable(par->index);
       const auto has_file_init = [&]() {
          if(parm_attrs.size()) // FIX: this is probably always true
@@ -234,7 +230,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
       }
       const auto test_v =
           (has_file_init && ends_with(init_it->second, ".dat")) ? ("\"" + init_it->second + "\"") : init_it->second;
-      if(tree_helper::IsPointerType(parm_type))
+      if(ir_helper::IsPointerType(parm_type))
       {
          const auto is_binary_init = ends_with(test_v, ".dat");
 
@@ -266,11 +262,11 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
          }
          if(temp_var_decl == "")
          {
-            const auto var_functor = var_pp_functorRef(new std_var_pp_functor(BH));
-            const auto ptd = tree_helper::CGetPointedType(parm_type);
-            temp_var_decl = tree_helper::PrintType(TM, ptd, false, false, false, par, var_functor);
+            const std::unique_ptr<var_pp_functor> var_functor = std::make_unique<std_var_pp_functor>(BH);
+            const auto ptd = ir_helper::CGetPointedType(parm_type);
+            temp_var_decl = ir_helper::PrintType(ptd, false, false, par, var_functor);
             var_ptdtype = temp_var_decl.substr(0, temp_var_decl.find_last_of((*var_functor)(par->index)));
-            if(tree_helper::IsVoidType(ptd))
+            if(ir_helper::IsVoidType(ptd))
             {
                boost::replace_all(temp_var_decl, "void ", "char ");
                boost::replace_all(var_ptdtype, "void ", "char ");
@@ -286,9 +282,9 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
             }
          }
          THROW_ASSERT(temp_var_decl.size() && var_ptdtype.size(),
-                      "var_decl: " + temp_var_decl + ", ptd_type: " + var_ptdtype);
+                      "variable_val_node: " + temp_var_decl + ", ptd_type: " + var_ptdtype);
          const auto arg_channel = std::regex_search(var_ptdtype, std::regex("(ac_channel|stream|hls::stream)<(.*)>"));
-         const auto ptd_type = tree_helper::GetRealType(tree_helper::CGetPointedType(parm_type));
+         const auto ptd_type = (ir_helper::CGetPointedType(parm_type));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Pointed type: " + ptd_type->get_kind_text() + " - " + STR(ptd_type));
 
@@ -332,7 +328,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
       else
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Inline initialization");
-         if(tree_helper::IsRealType(parm_type) && test_v == "-0")
+         if(ir_helper::IsRealType(parm_type) && test_v == "-0")
          {
             indented_output_stream->Append(param + " = -0.0;\n");
          }
@@ -347,23 +343,21 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
 
 void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef BH)
 {
-   const auto function_index = BH->get_function_index();
-   const auto return_type_index = BH->GetFunctionReturnType(function_index);
+   const auto return_type_index = BH->GetFunctionReturnType();
 
-   const auto top_fname_mngl = BH->GetMangledFunctionName();
+   const auto top_fname = BH->GetFunctionName();
    const auto function_name = [&]() -> std::string {
-      const auto is_discrepancy = (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) ||
-                                  (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw));
+      const auto is_discrepancy = Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy);
       if(is_discrepancy)
       {
          // avoid collision with the main
-         if(top_fname_mngl == "main")
+         if(top_fname == "main")
          {
             return "_main";
          }
-         return BH->get_function_name();
+         return BH->GetFunctionName();
       }
-      return top_fname_mngl;
+      return top_fname;
    }();
    if(return_type_index)
    {
@@ -372,7 +366,7 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef BH)
 
    indented_output_stream->Append(function_name + "(");
    bool is_first_argument = true;
-   const auto& parms = HLSMgr->module_arch->GetArchitecture(top_fname_mngl)->parms;
+   const auto& parms = HLSMgr->module_arch->GetArchitecture(top_fname)->parms;
    for(const auto& par : BH->GetParameters())
    {
       const auto param = BH->PrintVariable(par->index);
@@ -384,7 +378,7 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef BH)
       {
          is_first_argument = false;
       }
-      if(tree_helper::IsPointerType(par))
+      if(ir_helper::IsPointerType(par))
       {
          auto arg_typename = parms.at(param).at(FunctionArchitecture::parm_original_typename);
          if(arg_typename.find("(*)") != std::string::npos)
@@ -425,17 +419,17 @@ void HLSCWriter::InternalWriteFile()
    const auto top_fnode = TM->GetFunction(top_symbols.front());
    const auto top_fb = HLSMgr->CGetFunctionBehavior(top_fnode->index);
    const auto top_bh = top_fb->CGetBehavioralHelper();
-   const auto top_fname = top_bh->get_function_name();
-   const auto top_fname_mngl = top_bh->GetMangledFunctionName();
-   const auto& func_arch = HLSMgr->module_arch->GetArchitecture(top_fname_mngl);
-   THROW_ASSERT(func_arch, "Expected interface architecture for function " + top_fname_mngl);
+   const auto top_fname = top_bh->GetFunctionName();
+   const auto func_arch = HLSMgr->module_arch->GetArchitecture(top_fname);
+   THROW_ASSERT(func_arch, "Expected interface architecture for function " + top_fname);
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->C-based testbench generation for function " + top_fname);
 
-   const auto return_type = tree_helper::GetFunctionReturnType(top_fnode);
+   const auto return_type = ir_helper::GetFunctionReturnType(top_fnode);
+   const auto return_type_str = return_type ? ir_helper::PrintType(return_type) : "void";
    const auto top_params = top_bh->GetParameters();
 
-   std::string top_decl = return_type ? tree_helper::PrintType(TM, return_type) : "void";
-   top_decl += " " + top_fname_mngl + "(";
+   std::string top_decl = top_fname == "main" ? "int" : return_type_str;
+   top_decl += " " + top_fname + "(";
    if(top_params.size())
    {
       for(const auto& arg : top_params)
@@ -473,14 +467,13 @@ void HLSCWriter::InternalWriteFile()
       // declaration of the return variable of the top function, if not void
       if(return_type)
       {
-         const auto ret_type = tree_helper::PrintType(TM, return_type);
-         if(tree_helper::IsVectorType(return_type))
+         if(ir_helper::IsVectorType(return_type))
          {
-            THROW_ERROR("return type of function under test " + top_fname + " is " + STR(ret_type) +
+            THROW_ERROR("return type of function under test " + top_fname + " is " + STR(return_type_str) +
                         "\nco-simulation does not support vectorized return types at top level");
          }
          indented_output_stream->Append("// return variable initialization\n");
-         indented_output_stream->Append("volatile " + ret_type + " " RETURN_PORT_NAME ";\n");
+         indented_output_stream->Append("volatile " + return_type_str + " " RETURN_PORT_NAME ";\n");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written parameters declaration");
       // ---- WRITE PARAMETERS INITIALIZATION AND FUNCTION CALLS ----

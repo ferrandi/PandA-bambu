@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -36,63 +36,49 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "application_manager.hpp"
 
 #include "Parameter.hpp"
-#include "UnfoldedFunctionInfo.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
-#include "ext_tree_node.hpp"
 #include "function_behavior.hpp"
+#include "ir_common.hpp"
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
+#include "ir_node.hpp"
 #include "loops.hpp"
 #include "op_graph.hpp"
 #include "string_manipulation.hpp"
-#include "tree_common.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
 
 #include "config_HAVE_FROM_DISCREPANCY_BUILT.hpp"
-#include "config_HAVE_PRAGMA_BUILT.hpp"
 
 #if HAVE_FROM_DISCREPANCY_BUILT
 #include "Discrepancy.hpp"
 #endif
 
-#if HAVE_PRAGMA_BUILT
-#include "pragma_manager.hpp"
-#endif
-
 #include <limits>
 
-application_manager::application_manager(const FunctionExpanderConstRef function_expander,
-                                         const bool _allow_recursive_functions, const ParameterConstRef _Param)
+application_manager::application_manager(const bool _allow_recursive_functions, const ParameterConstRef _Param)
     : cfg_transformations(0),
+#ifndef NDEBUG
       cfg_max_transformations(_Param->getOption<size_t>(OPT_max_transformations)),
-      TM(new tree_manager(_Param)),
-      call_graph_manager(new CallGraphManager(function_expander, _allow_recursive_functions, TM, _Param)),
+#endif
+      TM(new ir_manager(_Param)),
+      call_graph_manager(std::make_unique<CallGraphManager>(_allow_recursive_functions, TM, _Param)),
       Param(_Param),
       address_bitsize(_Param->isOption(OPT_addr_bus_bitsize) ?
                           _Param->getOption<unsigned int>(OPT_addr_bus_bitsize) :
-                          (_Param->getOption<std::string>(OPT_gcc_m_env).find("-m64") != std::string::npos ? 64 : 32)),
-#if HAVE_PRAGMA_BUILT
-      PM(new pragma_manager(application_managerRef(this, null_deleter()), _Param)),
-#endif
+                          (_Param->getOption<std::string>(OPT_cc_m_env).find("-m64") != std::string::npos ? 64 : 32)),
       debug_level(_Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE))
 #if HAVE_FROM_DISCREPANCY_BUILT
       ,
-      RDiscr(((_Param->isOption(OPT_discrepancy) and _Param->getOption<bool>(OPT_discrepancy)) or
-              (_Param->isOption(OPT_discrepancy_hw) and _Param->getOption<bool>(OPT_discrepancy_hw))) ?
-                 new Discrepancy() :
-                 nullptr)
+      RDiscr(((_Param->isOption(OPT_discrepancy) and _Param->getOption<bool>(OPT_discrepancy))) ? new Discrepancy() :
+                                                                                                  nullptr)
 #endif
 {
    const auto in_files = _Param->getOption<std::list<std::string>>(OPT_input_file);
@@ -100,55 +86,63 @@ application_manager::application_manager(const FunctionExpanderConstRef function
    std::copy(in_files.begin(), in_files.end(), std::back_inserter(input_files));
 }
 
-application_manager::~application_manager() = default;
-
-const ParameterConstRef application_manager::get_parameter() const
+ParameterConstRef application_manager::get_parameter() const
 {
    return Param;
 }
 
-const tree_managerRef application_manager::get_tree_manager() const
+ir_managerRef application_manager::get_ir_manager() const
 {
    return TM;
 }
 
-CallGraphManagerRef application_manager::GetCallGraphManager()
+CallGraphManager& application_manager::GetCallGraphManager()
 {
-   return call_graph_manager;
+   return *call_graph_manager;
 }
 
-const CallGraphManagerConstRef application_manager::CGetCallGraphManager() const
+const CallGraphManager& application_manager::CGetCallGraphManager() const
 {
-   return call_graph_manager;
+   return *call_graph_manager;
 }
 
 bool application_manager::hasToBeInterfaced(unsigned int funId) const
 {
    // all the root functions and the reached addressed functions must be interfaced
-   return CGetCallGraphManager()->GetRootFunctions().count(funId) ||
-          CGetCallGraphManager()->GetAddressedFunctions().count(funId);
+   return call_graph_manager->GetRootFunctions().count(funId) ||
+          call_graph_manager->GetAddressedFunctions().count(funId);
+}
+
+bool application_manager::isOmpLambdaFunction(unsigned int funId) const
+{
+   return call_graph_manager->IsOMPLambdaFunction(funId);
+}
+
+unsigned application_manager::GetOMPThreadsCount(unsigned int funId) const
+{
+   return call_graph_manager->GetOMPThreadsCount(funId);
 }
 
 FunctionBehaviorRef application_manager::GetFunctionBehavior(unsigned int index)
 {
-   const auto& behaviors = call_graph_manager->CGetCallGraph()->CGetCallGraphInfo()->behaviors;
-   THROW_ASSERT(behaviors.find(index) != behaviors.end(), "There is no function with index " + STR(index));
-   return behaviors.at(index);
-}
-
-const FunctionBehaviorConstRef application_manager::CGetFunctionBehavior(unsigned int index) const
-{
-   const auto& behaviors = call_graph_manager->CGetCallGraph()->CGetCallGraphInfo()->behaviors;
+   const auto& behaviors = call_graph_manager->GetCallGraph().CGetGraphInfo().behaviors;
    THROW_ASSERT(behaviors.count(index), "There is no function with index " + STR(index));
    return behaviors.at(index);
 }
 
-const TreeNodeConstSet& application_manager::GetGlobalVariables() const
+FunctionBehaviorConstRef application_manager::CGetFunctionBehavior(unsigned int index) const
+{
+   const auto& behaviors = call_graph_manager->GetCallGraph().CGetGraphInfo().behaviors;
+   THROW_ASSERT(behaviors.count(index), "There is no function with index " + STR(index));
+   return behaviors.at(index);
+}
+
+const IRNodeConstSet& application_manager::GetGlobalVariables() const
 {
    return global_variables;
 }
 
-void application_manager::AddGlobalVariable(const tree_nodeConstRef& var)
+void application_manager::AddGlobalVariable(const ir_nodeConstRef& var)
 {
    global_variables.insert(var);
 }
@@ -163,95 +157,49 @@ CustomOrderedSet<unsigned int> application_manager::get_functions_without_body()
    return call_graph_manager->GetReachedLibraryFunctions();
 }
 
-#if HAVE_PRAGMA_BUILT
-const pragma_managerRef application_manager::get_pragma_manager() const
-{
-   return PM;
-}
-#endif
-
-unsigned int application_manager::get_produced_value(unsigned int fun_id, const vertex& v) const
+unsigned int application_manager::get_produced_value(unsigned int fun_id, OpGraph::vertex_descriptor v) const
 {
    const auto node = GetProducedValue(fun_id, v);
    return node ? node->index : 0;
 }
 
-tree_nodeConstRef application_manager::GetProducedValue(unsigned int fun_id, const vertex& v) const
+ir_nodeConstRef application_manager::GetProducedValue(unsigned int fun_id, OpGraph::vertex_descriptor v) const
 {
-   const auto cfg = CGetFunctionBehavior(fun_id)->CGetOpGraph(FunctionBehavior::CFG);
-   const auto node = cfg->CGetOpNodeInfo(v)->node;
+   const auto node = CGetFunctionBehavior(fun_id)->GetOpGraphsCollection().CGetNodeInfo(v).node;
    return node ? GetProducedValue(node) : nullptr;
 }
 
-unsigned int application_manager::get_produced_value(const tree_nodeRef& tn) const
+unsigned int application_manager::get_produced_value(const ir_nodeRef& tn) const
 {
    const auto node = GetProducedValue(tn);
    return node ? node->index : 0;
 }
 
-tree_nodeConstRef application_manager::GetProducedValue(const tree_nodeConstRef& tn) const
+ir_nodeConstRef application_manager::GetProducedValue(const ir_nodeConstRef& tn) const
 {
    switch(tn->get_kind())
    {
-      case gimple_while_K:
-      {
-         const auto we = GetPointerS<const gimple_while>(tn);
-         return we->op0;
-      }
-      case gimple_cond_K:
-      {
-         const auto gc = GetPointerS<const gimple_cond>(tn);
-         return gc->op0;
-      }
-      case gimple_label_K:
-      case gimple_return_K:
-      case gimple_call_K:
-      case gimple_goto_K:
-      case CASE_PRAGMA_NODES:
-      case gimple_multi_way_if_K:
-      case gimple_nop_K:
+      case return_stmt_K:
+      case call_stmt_K:
+      case multi_way_if_stmt_K:
+      case nop_stmt_K:
       {
          break;
       }
-      case gimple_phi_K:
+      case phi_stmt_K:
       {
-         const auto gp = GetPointerS<const gimple_phi>(tn);
+         const auto gp = GetPointerS<const phi_stmt>(tn);
          return gp->res;
       }
-      case gimple_switch_K:
+      case assign_stmt_K:
       {
-         const auto se = GetPointerS<const gimple_switch>(tn);
-         return se->op0;
-      }
-      case gimple_assign_K:
-      {
-         const auto gm = GetPointerS<const gimple_assign>(tn);
+         const auto gm = GetPointerS<const assign_stmt>(tn);
          const auto op0 = gm->op0;
-         if(gm->init_assignment || gm->clobber)
+         if(op0->get_kind() == unaligned_mem_access_node_K)
          {
             break;
          }
-         else if(op0->get_kind() == array_ref_K)
-         {
-            break;
-         }
-         else if(op0->get_kind() == indirect_ref_K)
-         {
-            break;
-         }
-         else if(op0->get_kind() == misaligned_indirect_ref_K)
-         {
-            break;
-         }
-         else if(op0->get_kind() == mem_ref_K)
-         {
-            break;
-         }
-         else if(op0->get_kind() == target_mem_ref_K)
-         {
-            break;
-         }
-         else if(op0->get_kind() == target_mem_ref461_K)
+         else if(op0->get_kind() == mem_access_node_K)
          {
             break;
          }
@@ -261,58 +209,19 @@ tree_nodeConstRef application_manager::GetProducedValue(const tree_nodeConstRef&
          }
          break;
       }
-      case gimple_asm_K:
-      {
-         const auto ga = GetPointerS<const gimple_asm>(tn);
-         if(ga->out)
-         {
-            const auto tl = GetPointerS<const tree_list>(ga->out);
-            /// only the first output and so only single output gimple_asm are supported
-            if(tl->valu)
-            {
-               return tl->valu;
-            }
-            else
-            {
-               THROW_ERROR("unexpected condition");
-            }
-         }
-         else
-         {
-            return nullptr;
-         }
-         break;
-      }
-      case binfo_K:
-      case block_K:
-      case call_expr_K:
-      case aggr_init_expr_K:
-      case case_label_expr_K:
-      case constructor_K:
-      case gimple_bind_K:
-      case gimple_for_K:
-      case gimple_pragma_K:
-      case gimple_predict_K:
-      case gimple_resx_K:
+      case call_node_K:
+      case constructor_node_K:
       case identifier_node_K:
-      case ssa_name_K:
-      case statement_list_K:
-      case target_expr_K:
-      case target_mem_ref_K:
-      case target_mem_ref461_K:
-      case tree_list_K:
-      case tree_vec_K:
-      case error_mark_K:
-      case lut_expr_K:
-      case CASE_BINARY_EXPRESSION:
-      case CASE_CPP_NODES:
+      case ssa_node_K:
+      case statement_list_node_K:
+      case lut_node_K:
+      case CASE_BINARY_NODES:
       case CASE_CST_NODES:
       case CASE_DECL_NODES:
       case CASE_FAKE_NODES:
-      case CASE_QUATERNARY_EXPRESSION:
-      case CASE_TERNARY_EXPRESSION:
+      case CASE_TERNARY_NODES:
       case CASE_TYPE_NODES:
-      case CASE_UNARY_EXPRESSION:
+      case CASE_UNARY_NODES:
          THROW_ERROR("Operation not yet supported: " + tn->get_kind_text());
          break;
       default:
@@ -340,15 +249,13 @@ void application_manager::clean_written_objects()
 }
 
 #ifndef NDEBUG
-void application_manager::RegisterTransformation(const std::string& step, const tree_nodeConstRef& tn)
+void application_manager::RegisterTransformation(const std::string& step, const ir_nodeConstRef& tn)
 {
    std::string tn_str = "";
    if(tn)
    {
-      tn_str = tn->get_kind() == function_decl_K ?
-                   ("@" + STR(tn->index) +
-                    tree_helper::print_function_name(get_tree_manager(), GetPointerS<const function_decl>(tn))) :
-                   tn->ToString();
+      tn_str = tn->get_kind() == function_val_node_K ? ("@" + STR(tn->index) + ir_helper::GetFunctionName(tn)) :
+                                                       tn->ToString();
    }
    THROW_ASSERT(cfg_transformations < cfg_max_transformations,
                 step + " - " + tn_str + " Transformations " + STR(cfg_transformations));
@@ -362,7 +269,7 @@ void application_manager::RegisterTransformation(const std::string& step, const 
 
 unsigned application_manager::getSSAFromParm(unsigned int functionID, unsigned parm_index) const
 {
-   THROW_ASSERT(parm_index, "unexpected null parm_decl index");
+   THROW_ASSERT(parm_index, "unexpected null argument_val_node index");
    const auto fun_parms = Parm2SSA_map.find(functionID);
    if(fun_parms != Parm2SSA_map.end())
    {
@@ -378,8 +285,8 @@ unsigned application_manager::getSSAFromParm(unsigned int functionID, unsigned p
 void application_manager::setSSAFromParm(unsigned int functionID, unsigned int parm_index, unsigned ssa_index)
 {
    THROW_ASSERT(functionID, "unexpected null function id: " + STR(functionID));
-   THROW_ASSERT(parm_index, "unexpected null parm_decl index " + STR(parm_index));
-   THROW_ASSERT(ssa_index, "unexpected null ssa_name index " + STR(ssa_index));
+   THROW_ASSERT(parm_index, "unexpected null argument_val_node index " + STR(parm_index));
+   THROW_ASSERT(ssa_index, "unexpected null ssa_node index " + STR(ssa_index));
    if(Parm2SSA_map.find(functionID) == Parm2SSA_map.end())
    {
       Parm2SSA_map[functionID][parm_index] = ssa_index;

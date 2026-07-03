@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -39,41 +39,33 @@
  * @ingroup HLS
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef REHASHED_HEAP_HPP
 #define REHASHED_HEAP_HPP
-
-#include <algorithm>
-#include <queue>
-#include <vector>
 
 #include "custom_map.hpp"
 #include "graph.hpp"
 #include "priority.hpp"
 #include "refcount.hpp"
 
-/**
- * @name Forward declarations.
- */
-//@{
-//@}
+#include <algorithm>
+#include <queue>
+#include <vector>
 
 /**
  * Class used to represent a priority queue of vertex with rehash.
  */
-template <class _Type>
-struct rehashed_heap : public std::priority_queue<vertex, std::vector<vertex>, priority_compare_functor<_Type>>
+template <class _Type, typename vertex_descriptor = gc_vertex_descriptor>
+struct rehashed_heap
+    : public std::priority_queue<vertex_descriptor, std::vector<vertex_descriptor>, priority_compare_functor<_Type>>
 {
    /**
     * Constructor
-    * @param pri is the priority functor.
+    * @param _comp is the priority functor.
     */
    rehashed_heap(const priority_compare_functor<_Type>& _comp)
-       : std::priority_queue<vertex, std::vector<vertex>, priority_compare_functor<_Type>>(_comp)
+       : std::priority_queue<vertex_descriptor, std::vector<vertex_descriptor>, priority_compare_functor<_Type>>(_comp)
    {
    }
    /**
@@ -81,16 +73,21 @@ struct rehashed_heap : public std::priority_queue<vertex, std::vector<vertex>, p
     */
    void rehash()
    {
-      std::make_heap(std::priority_queue<vertex, std::vector<vertex>, priority_compare_functor<_Type>>::c.begin(),
-                     std::priority_queue<vertex, std::vector<vertex>, priority_compare_functor<_Type>>::c.end(),
-                     std::priority_queue<vertex, std::vector<vertex>, priority_compare_functor<_Type>>::comp);
+      std::make_heap(
+          std::priority_queue<vertex_descriptor, std::vector<vertex_descriptor>, priority_compare_functor<_Type>>::c
+              .begin(),
+          std::priority_queue<vertex_descriptor, std::vector<vertex_descriptor>, priority_compare_functor<_Type>>::c
+              .end(),
+          std::priority_queue<vertex_descriptor, std::vector<vertex_descriptor>,
+                              priority_compare_functor<_Type>>::comp);
    }
 
-   std::vector<vertex>::const_iterator begin()
+   auto begin()
    {
       return rehashed_heap::c.begin();
    }
-   std::vector<vertex>::const_iterator end()
+
+   auto end()
    {
       return rehashed_heap::c.end();
    }
@@ -99,8 +96,9 @@ struct rehashed_heap : public std::priority_queue<vertex, std::vector<vertex>, p
 /**
  * Class used to represent a tree of priority queues.
  */
-template <class _Type>
-struct tree_rehashed_heap : public CustomUnorderedMap<vertex, std::vector<rehashed_heap<_Type>>>
+template <class _Type, typename vertex_descriptor = gc_vertex_descriptor>
+struct tree_rehashed_heap
+    : public CustomUnorderedMap<vertex_descriptor, std::vector<rehashed_heap<_Type, vertex_descriptor>>>
 {
    /**
     * Return the vertex with the highest priority. Precondition: empty() is false.
@@ -110,19 +108,19 @@ struct tree_rehashed_heap : public CustomUnorderedMap<vertex, std::vector<rehash
     * @param b_tag filled with the branch tag when found is true.
     * @param found is true when there exists a queue with candidate vertices.
     */
-   typename std::vector<rehashed_heap<_Type>>::iterator
-   top(const CustomUnorderedMap<vertex, CustomOrderedSet<unsigned int>>& curren_black_list,
-       const priority_data<_Type>& priority_functor, vertex& controlling_vertex, unsigned int& b_tag, bool& found)
+   auto top(const CustomUnorderedMap<vertex_descriptor, CustomOrderedSet<unsigned int>>& curren_black_list,
+            const priority_data<_Type>& priority_functor, vertex_descriptor controlling_vertex, unsigned int& b_tag,
+            bool& found)
    {
       found = false;
-      typename std::vector<rehashed_heap<_Type>>::iterator res;
-      typename tree_rehashed_heap::const_iterator it_end = this->end();
-      for(typename tree_rehashed_heap::iterator it = this->begin(); it != it_end; ++it)
+      auto it_end = this->end();
+      typename std::vector<rehashed_heap<_Type, vertex_descriptor>>::iterator res;
+      for(auto it = this->begin(); it != it_end; ++it)
       {
-         typename std::vector<rehashed_heap<_Type>>::const_iterator vit_end = it->second.end();
+         auto vit_end = it->second.end();
          unsigned int i = 0;
          bool cv_not_in_bl = curren_black_list.find(it->first) == curren_black_list.end();
-         for(typename std::vector<rehashed_heap<_Type>>::iterator vit = it->second.begin(); vit != vit_end; ++vit, ++i)
+         for(auto vit = it->second.begin(); vit != vit_end; ++vit, ++i)
          {
             if(!vit->empty() && (cv_not_in_bl || curren_black_list.find(it->first)->second.find(i) ==
                                                      curren_black_list.find(it->first)->second.end()))
@@ -151,11 +149,11 @@ struct tree_rehashed_heap : public CustomUnorderedMap<vertex, std::vector<rehash
     */
    void rehash()
    {
-      typename tree_rehashed_heap::iterator it_end = this->end();
-      for(typename tree_rehashed_heap::iterator it = this->begin(); it != it_end; ++it)
+      auto it_end = this->end();
+      for(auto it = this->begin(); it != it_end; ++it)
       {
-         typename std::vector<rehashed_heap<_Type>>::iterator vit_end = it->second.end();
-         for(typename std::vector<rehashed_heap<_Type>>::iterator vit = it->second.begin(); vit != vit_end; ++vit)
+         auto vit_end = it->second.end();
+         for(auto vit = it->second.begin(); vit != vit_end; ++vit)
          {
             vit->rehash();
          }

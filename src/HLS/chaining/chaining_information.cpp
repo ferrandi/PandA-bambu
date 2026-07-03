@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -36,22 +36,17 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-/// Header include
 #include "chaining_information.hpp"
 
-/// behavior include
-#include "op_graph.hpp"
-
-/// boost include
-#include <boost/pending/disjoint_sets.hpp>
-
-/// HLS includes
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 
+#include <boost/pending/disjoint_sets.hpp>
+
 struct ChainingSet
 {
-   using const_vertex_index_pmap_t = boost::property_map<OpGraph, boost::vertex_index_t>::const_type;
+   using const_vertex_index_pmap_t = boost::property_map<OpGraph::Base, boost::vertex_index_t>::const_type;
    using rank_pmap_type = boost::iterator_property_map<std::vector<std::size_t>::iterator, boost::identity_property_map,
                                                        std::vector<std::size_t>::value_type>;
    using pred_pmap_type = boost::iterator_property_map<std::vector<std::size_t>::iterator, boost::identity_property_map,
@@ -59,16 +54,16 @@ struct ChainingSet
 
    const_vertex_index_pmap_t cindex_pmap;
 
-   boost::graph_traits<graph>::vertices_size_type n_vert;
+   OpGraph::vertices_size_type n_vert;
    std::vector<std::size_t> rank_map;
    std::vector<std::size_t> pred_map;
    rank_pmap_type rank_pmap;
    pred_pmap_type pred_pmap;
    boost::disjoint_sets<rank_pmap_type, pred_pmap_type> ds;
 
-   explicit ChainingSet(const OpGraphConstRef flow_graph)
-       : cindex_pmap(boost::get(boost::vertex_index_t(), *flow_graph)),
-         n_vert(boost::num_vertices(*flow_graph)),
+   ChainingSet(const OpGraph& flow_graph)
+       : cindex_pmap(boost::get(boost::vertex_index_t(), flow_graph)),
+         n_vert(flow_graph.num_vertices()),
          rank_map(2 * n_vert),
          pred_map(2 * n_vert),
          rank_pmap(rank_map.begin()),
@@ -77,11 +72,11 @@ struct ChainingSet
    {
    }
 
-   std::size_t get_index0(vertex v) const
+   std::size_t get_index0(OpGraph::vertex_descriptor v) const
    {
       return cindex_pmap[v] * 2;
    }
-   std::size_t get_index1(vertex v) const
+   std::size_t get_index1(OpGraph::vertex_descriptor v) const
    {
       return cindex_pmap[v] * 2 + 1;
    }
@@ -92,38 +87,35 @@ ChainingInformation::ChainingInformation(const HLS_managerConstRef _HLS_mgr, con
 {
 }
 
-size_t ChainingInformation::get_representative_in(vertex op1) const
+size_t ChainingInformation::get_representative_in(OpGraph::vertex_descriptor op1) const
 {
    return chaining_relation->ds.find_set(chaining_relation->get_index0(op1));
 }
 
-size_t ChainingInformation::get_representative_out(vertex op1) const
+size_t ChainingInformation::get_representative_out(OpGraph::vertex_descriptor op1) const
 {
    return chaining_relation->ds.find_set(chaining_relation->get_index1(op1));
 }
 
 void ChainingInformation::Initialize()
 {
-   const OpGraphConstRef flow_graph =
-       HLS_mgr.lock()->CGetFunctionBehavior(function_id)->CGetOpGraph(FunctionBehavior::FLSAODG);
-   const hlsRef HLS = HLS_mgr.lock()->get_HLS(function_id);
+   const auto flow_graph = HLS_mgr.lock()->CGetFunctionBehavior(function_id)->GetOpGraph(FunctionBehavior::FLSAODG);
+   const auto HLS = HLS_mgr.lock()->get_HLS(function_id);
 
    HLS->chaining_information->chaining_relation = ChainingSetRef(new ChainingSet(flow_graph));
-   VertexIterator vi, vi_end;
-   for(boost::tie(vi, vi_end) = boost::vertices(*flow_graph); vi != vi_end; ++vi)
+   for(const auto v : flow_graph.vertices())
    {
-      vertex s = *vi;
-      HLS->chaining_information->chaining_relation->ds.make_set(chaining_relation->get_index0(s));
-      HLS->chaining_information->chaining_relation->ds.make_set(chaining_relation->get_index1(s));
+      HLS->chaining_information->chaining_relation->ds.make_set(chaining_relation->get_index0(v));
+      HLS->chaining_information->chaining_relation->ds.make_set(chaining_relation->get_index1(v));
    }
 }
 
-bool ChainingInformation::is_chained_vertex(vertex v) const
+bool ChainingInformation::is_chained_vertex(OpGraph::vertex_descriptor v) const
 {
    return is_chained_with.find(v) != is_chained_with.end();
 }
 
-bool ChainingInformation::may_be_chained_ops(vertex tgt, vertex src) const
+bool ChainingInformation::may_be_chained_ops(OpGraph::vertex_descriptor tgt, OpGraph::vertex_descriptor src) const
 {
    return (chaining_relation->ds.find_set(chaining_relation->get_index0(tgt)) ==
                chaining_relation->ds.find_set(chaining_relation->get_index1(src)) ||
@@ -131,12 +123,12 @@ bool ChainingInformation::may_be_chained_ops(vertex tgt, vertex src) const
                chaining_relation->ds.find_set(chaining_relation->get_index0(src)));
 }
 
-void ChainingInformation::add_chained_vertices_in(vertex op1, vertex src)
+void ChainingInformation::add_chained_vertices_in(OpGraph::vertex_descriptor op1, OpGraph::vertex_descriptor src)
 {
    chaining_relation->ds.union_set(chaining_relation->get_index0(op1), chaining_relation->get_index1(src));
 }
 
-void ChainingInformation::add_chained_vertices_out(vertex op1, vertex tgt)
+void ChainingInformation::add_chained_vertices_out(OpGraph::vertex_descriptor op1, OpGraph::vertex_descriptor tgt)
 {
    chaining_relation->ds.union_set(chaining_relation->get_index1(op1), chaining_relation->get_index0(tgt));
 }

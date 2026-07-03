@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -36,9 +36,6 @@
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef OP_GRAPH_HPP
@@ -46,10 +43,9 @@
 #include "cdfg_edge_info.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include "function_behavior.hpp"
 #include "graph.hpp"
+#include "graph_info.hpp"
 #include "refcount.hpp"
-#include "strong_typedef.hpp"
 #include "typed_node_info.hpp"
 
 #include <boost/graph/graph_traits.hpp>
@@ -63,21 +59,18 @@
 #include "config_HAVE_HLS_BUILT.hpp"
 #include "config_HAVE_UNORDERED.hpp"
 
-CONSTREF_FORWARD_DECL(BehavioralHelper);
-enum class FunctionBehavior_VariableAccessType;
-CONSTREF_FORWARD_DECL(hls);
+class OpGraph;
+class OpGraphsCollection;
 class OpVertexSet;
+CONSTREF_FORWARD_DECL(BehavioralHelper);
+CONSTREF_FORWARD_DECL(hls);
+REF_FORWARD_DECL(ir_node);
 
-UINT_STRONG_TYPEDEF(MemoryAddress);
-/// constant used to represent tree node index of entry operation
+/// constant used to represent IR node index of entry operation
 #define ENTRY_ID (std::numeric_limits<unsigned int>::max())
-/// constant used to represent tree node index of exit operation
+/// constant used to represent IR node index of exit operation
 #define EXIT_ID (std::numeric_limits<unsigned int>::max() - 1)
 
-/**
- * @name Node name and type definition for the cdfg node.
- */
-//@{
 /**
  * constant identifying a node of opaque type
  */
@@ -87,31 +80,6 @@ UINT_STRONG_TYPEDEF(MemoryAddress);
  * constant identifying the node type of a EXTERNAL operation (a function call)
  */
 #define TYPE_EXTERNAL 1 << 4
-
-/**
- * constant identifying the node type of an IF operation.
- */
-#define TYPE_IF 1 << 5
-
-/**
- * constant identifying the node type of a SWITCH operation.
- */
-#define TYPE_SWITCH 1 << 6
-
-/**
- * constant string identifying the node type of an WHILE operation.
- */
-#define TYPE_WHILE 1 << 7
-
-/**
- * constant string identifying the node type of an WHILE operation.
- */
-#define TYPE_FOR 1 << 8
-
-/**
- * constant string identifying the node type of an DO operation.
- */
-#define TYPE_DO 1 << 9
 
 /**
  * constant string identifying the node type of an ASSIGN operation.
@@ -176,9 +144,9 @@ UINT_STRONG_TYPEDEF(MemoryAddress);
 #define TYPE_MEMCPY 1 << 21
 
 /**
- * A vertex is of type TYPE_WAS_GIMPLE_PHI when it is comes from a split of phi nodes
+ * A vertex is of type TYPE_WAS_PHI_STMT when it is comes from a split of phi nodes
  */
-#define TYPE_WAS_GIMPLE_PHI 1 << 22
+#define TYPE_WAS_PHI_STMT 1 << 22
 
 /**
  * A vertex of type FIRST_OP if it is the first operation of the application
@@ -201,40 +169,24 @@ UINT_STRONG_TYPEDEF(MemoryAddress);
 #define TYPE_ATOMIC 1 << 26
 
 /**
- * Constant identifying a predicated operation
- */
-#define TYPE_PREDICATED 1 << 27
-
-/**
  * Constant identifying if a TYPE_EXTERNAL write  or read memory
  */
 #define TYPE_RW 1 << 28
-
-//@}
 
 /**
  * constant string identifying the operation performed by an assignment.
  */
 #define ASSIGN "ASSIGN"
-/**
- * constant string identifying the operation performed by an assignment.
- */
-#define ASSERT_EXPR "assert_expr"
 
 /**
- * constant string identifying the operation performed by an extract_bit_expr.
+ * constant string identifying the operation performed by an extract_bit_node.
  */
-#define EXTRACT_BIT_EXPR "extract_bit_expr"
+#define EXTRACT_BIT_NODE "extract_bit_node"
 
 /**
- * constant string identifying the operation performed by an extract_bit_expr.
+ * constant string identifying the operation performed by an extract_bit_node.
  */
-#define LUT_EXPR "lut_expr"
-
-/**
- * constant string identifying the operation performed by a READ_COND.
- */
-#define READ_COND "READ_COND"
+#define LUT_NODE "lut_node"
 
 /**
  * constant string identifying the operation performed by a MULTI_READ_COND.
@@ -242,54 +194,29 @@ UINT_STRONG_TYPEDEF(MemoryAddress);
 #define MULTI_READ_COND "MULTI_READ_COND"
 
 /**
- * constant string identifying the operation performed by a SWITCH_COND.
- */
-#define SWITCH_COND "SWITCH_COND"
-
-/**
- * constant string identifying the operation performed by a GIMPLE_LABEL.
- */
-#define GIMPLE_LABEL "gimple_label"
-
-/**
- * constant string identifying the operation performed by a GIMPLE_GOTO.
- */
-#define GIMPLE_GOTO "gimple_goto"
-
-/**
  * constant string identifying a no operation. Only used for operations associated with empty basic blocks.
  */
 #define NOP "NOP"
 
 /**
- * constant string identifying the operation performed by a gimple_return.
+ * constant string identifying the operation performed by a return_stmt.
  */
-#define GIMPLE_RETURN "gimple_return"
+#define RETURN_STMT "return_stmt"
 
 /**
- * constant string identifying the operation performed by a gimple_return.
+ * constant string identifying the operation performed by a return_stmt.
  */
-#define GIMPLE_NOP "gimple_nop"
+#define NOP_STMT "nop_stmt"
 
 /**
- * constant string identifying the operation performed by a gimple_phi.
+ * constant string identifying the operation performed by a phi_stmt.
  */
-#define GIMPLE_PHI "gimple_phi"
-
-/**
- * constant string identifying the operation performed by a gimple_asm.
- */
-#define GIMPLE_ASM "gimple_asm"
-
-/**
- * constant string identifying the operation performed by a GIMPLE_PRAGMA.
- */
-#define GIMPLE_PRAGMA "gimple_pragma"
+#define PHI_STMT "phi_stmt"
 
 /**
  * constant string identifying the operation performed when two objects are memcopied.
  */
-#define MEMCPY "__internal_bambu_memcpy"
+#define MEMCPY "memcpy"
 
 /**
  * constant string identifying the operation performed when two objects are memcompared.
@@ -299,7 +226,7 @@ UINT_STRONG_TYPEDEF(MemoryAddress);
 /**
  * constant string identifying the operation performed when two objects are memsetted.
  */
-#define MEMSET "__internal_bambu_memset"
+#define MEMSET "memset"
 
 /**
  * constant string identifying the operation performed when a vector concatenation is considered.
@@ -309,118 +236,30 @@ UINT_STRONG_TYPEDEF(MemoryAddress);
 /**
  * constant string identifying the addressing operation.
  */
-#define ADDR_EXPR "addr_expr"
+#define ADDR_NODE "addr_node"
 
 /**
  * constant string identifying some conversion expressions
  */
-#define NOP_EXPR "nop_expr"
+#define NOP_NODE "nop_node"
 
 /**
  * constant string identifying integer to float conversions
  */
-#define FLOAT_EXPR "float_expr"
+#define ITOFP_NODE "itofp_node"
 
 /**
  * constant string identifying float to integer conversions
  */
-#define FIX_TRUNC_EXPR "fix_trunc_expr"
-
-/**
- * constant string identifying some conversion expressions
- */
-#define CONVERT_EXPR "convert_expr"
+#define FPTOI_NODE "fptoi_node"
 
 /**
  * constant string identifying view convert expressions
  */
-#define VIEW_CONVERT_EXPR "view_convert_expr"
+#define BITCAST_NODE "bitcast_node"
 
 /// constant defining the builtin wait call intrinsic function
 #define BUILTIN_WAIT_CALL "__builtin_wait_call"
-
-/**
- * Information associated with a generic operation node.
- */
-struct OpNodeInfo : public TypedNodeInfo
-{
-   /// set of cited variables (i.e., variables which are included in the c printing of this statement)
-   CustomSet<unsigned int> cited_variables;
-
-   /// set of scalar ssa accessed in this node
-   CustomMap<FunctionBehavior_VariableType, CustomMap<FunctionBehavior_VariableAccessType, CustomSet<unsigned int>>>
-       variables;
-
-   /// Set of actual parameters of called function (used in pthread backend
-   std::list<unsigned int> actual_parameters;
-
-   /// The tree node associated with this vertex
-   tree_nodeRef node;
-
-   /// Store the index of called functions
-   CustomSet<unsigned int> called;
-
-   /// Store the index of the basic block which this operation vertex belongs to
-   unsigned int bb_index;
-
-   /// Store the index of the control equivalent region
-   unsigned int cer;
-
-   /**
-    * Constructor
-    */
-   OpNodeInfo();
-
-   /**
-    * Destructor
-    */
-   ~OpNodeInfo() override;
-
-   /**
-    * Initialize variable maps
-    */
-   void Initialize();
-
-   /**
-    * Return a set of accessed scalar variables
-    * @param variable_type is the type of variables to be considered
-    * @param access_type is the type of accesses to be considered
-    */
-   const CustomSet<unsigned int>& GetVariables(const FunctionBehavior_VariableType variable_type,
-                                               const FunctionBehavior_VariableAccessType access_type) const;
-
-   /**
-    * Return the operation associated with the vertex
-    */
-   const std::string GetOperation() const;
-
-   /**
-    * Return the node id of the operation associated with the vertex
-    */
-   unsigned int GetNodeId() const;
-
-   /**
-    * Print the content of this node
-    * @param stream is the stream on which this node has to be printed
-    * @param behavioral_helper is the helper associated with the function
-    * @param dotty_format specifies if the output has to be formatted for a dotty label
-    */
-   void Print(std::ostream& stream, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format) const;
-};
-using OpNodeInfoRef = refcount<OpNodeInfo>;
-using OpNodeInfoConstRef = refcount<const OpNodeInfo>;
-
-/**
- * Macro returning the index of the basic block which the node belongs to
- * @param vertex_index is the index of the cdfg node.
- */
-#define GET_BB_INDEX(data, vertex_index) Cget_node_info<OpNodeInfo>(vertex_index, *(data))->bb_index
-
-/**
- * Macro returning the control equivalent region of the node
- * @param var_index is the NodeID of the variable
- */
-#define GET_CER(data, vertex_index) Cget_node_info<OpNodeInfo>(vertex_index, *(data))->cer
 
 /**
  * Selectors used only in operation graphs; numbers continue from cdfg_edge_info.hpp
@@ -502,124 +341,168 @@ using OpNodeInfoConstRef = refcount<const OpNodeInfo>;
 /// Debug selector
 #define DEBUG_SELECTOR 1 << 23
 
+/// The access type to a variable
+enum class VariableAccessType : int
+{
+   UNKNOWN = 0,
+   ADDRESS,
+   USE,
+   DEFINITION,
+   OVER,
+   ARG
+};
+
+/// The possible type of a variable
+enum class VariableType : int
+{
+   UNKNOWN = 0,
+   MEMORY,
+   SCALAR,
+   VIRTUAL
+};
+
+/**
+ * Information associated with a generic operation node.
+ */
+struct OpNodeInfo : public TypedNodeInfo
+{
+   /// set of cited variables (i.e., variables which are included in the c printing of this statement)
+   CustomSet<unsigned int> cited_variables;
+
+   /// Set of actual parameters of called function (used in pthread backend
+   std::list<unsigned int> actual_parameters;
+
+   /// The IR node associated with this vertex
+   ir_nodeRef node;
+
+   /// Store the index of called functions
+   CustomSet<unsigned int> called;
+
+   /// Store the index of the basic block which this operation vertex belongs to
+   unsigned int bb_index;
+
+   /// Store the index of the control equivalent region
+   unsigned int cer;
+
+   OpNodeInfo();
+
+   /**
+    * Initialize variable maps
+    */
+   void Initialize();
+
+   void AddVariable(VariableType variable_type, VariableAccessType access_type, unsigned int var);
+
+   /**
+    * Return a set of accessed scalar variables
+    * @param variable_type is the type of variables to be considered
+    * @param access_type is the type of accesses to be considered
+    */
+   const CustomSet<unsigned int>& getVariables(VariableType variable_type, VariableAccessType access_type) const;
+
+   /**
+    * Return the operation associated with the vertex
+    */
+   const std::string GetOperation() const;
+
+   /**
+    * Return the node id of the operation associated with the vertex
+    */
+   unsigned int GetNodeId() const;
+
+   /**
+    * Print the content of this node
+    * @param stream is the stream on which this node has to be printed
+    * @param behavioral_helper is the helper associated with the function
+    * @param dotty_format specifies if the output has to be formatted for a dotty label
+    */
+   void Print(std::ostream& stream, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format) const;
+
+ private:
+   /// set of scalar ssa accessed in this node
+   std::vector<CustomSet<unsigned int>> variables;
+};
+
 /**
  * The info associated with an edge of operation graph
  */
-class OpEdgeInfo : public CdfgEdgeInfo
+struct OpEdgeInfo : public CdfgEdgeInfo
 {
- public:
-   /**
-    * Constructor
-    */
-   OpEdgeInfo();
-
-   /**
-    * Destructor
-    */
-   ~OpEdgeInfo() override;
-
-   /**
-    * Function returning true when the edge is a then flow edge
-    */
-   bool FlgEdgeT() const;
-
-   /**
-    * Function returning true when the edge is an else flow edge
-    */
-   bool FlgEdgeF() const;
 };
-/// Refcount definition for OpEdgeInfo
-using OpEdgeInfoRef = refcount<OpEdgeInfo>;
-using OpEdgeInfoConstRef = refcount<const OpEdgeInfo>;
 
 /**
  * information associated with the whole graph
  */
 struct OpGraphInfo : public GraphInfo
 {
-   /**
-    * Constructor
-    */
-   OpGraphInfo();
-
-   /**
-    * Destructor();
-    */
-   ~OpGraphInfo() override;
-
    /// Index identifying the entry vertex
-   vertex entry_vertex;
+   gc_vertex_descriptor entry_vertex{gc_null_vertex()};
 
    /// Index identifying the exit vertex
-   vertex exit_vertex;
+   gc_vertex_descriptor exit_vertex{gc_null_vertex()};
 
    /// The behavioral helper
-   const BehavioralHelperConstRef BH;
+   BehavioralHelperConstRef BH{nullptr};
 
    /// For each statement, the vertex in which it is contained
-   CustomMap<unsigned int, vertex> tree_node_to_operation;
+   CustomMap<unsigned int, gc_vertex_descriptor> ir_node_to_operation;
+
+   /// For each ssa var, the vertex defining it
+   CustomMap<unsigned int, gc_vertex_descriptor> SSA2Def;
+
+   OpGraphInfo() = default;
 
    /**
     * Constructor
-    * @param BH is the helper of the function associated with this graph
+    * @param _BH is the helper of the function associated with this graph
     */
-   explicit OpGraphInfo(const BehavioralHelperConstRef BH);
-};
+   OpGraphInfo(const BehavioralHelperConstRef& _BH) : BH(_BH)
+   {
+   }
 
-/// Refcount definition for OpGraphInfo
-using OpGraphInfoRef = refcount<OpGraphInfo>;
-using OpGraphInfoConstRef = refcount<const OpGraphInfo>;
+   void clear();
+};
 
 #if HAVE_UNORDERED
 /**
  * A set of operation vertices
  */
-class OpVertexSet : public CustomUnorderedSet<vertex>
+class OpVertexSet : public CustomUnorderedSet<gc_vertex_descriptor>
 {
  public:
-   /**
-    * Constructor
-    */
-   explicit OpVertexSet(const OpGraphConstRef op_graph);
+   explicit OpVertexSet(const OpGraphsCollection* op_graph);
 };
 
 /**
  * Map from operation vertices to value
  */
 template <typename value>
-class OpVertexMap : public CustomUnorderedMap<vertex, value>
+class OpVertexMap : public CustomUnorderedMap<gc_vertex_descriptor, value>
 {
  public:
-   /**
-    * Constructor
-    */
-   explicit OpVertexMap(const OpGraphConstRef) : CustomUnorderedMap<vertex, value>()
+   explicit OpVertexMap(const OpGraphsCollection*) : CustomUnorderedMap<gc_vertex_descriptor, value>()
    {
    }
 };
 
-class OpEdgeSet : public CustomUnorderedSet<EdgeDescriptor>
+class OpEdgeSet : public CustomUnorderedSet<gc_edge_descriptor>
 {
  public:
-   /**
-    * Constructor
-    */
-   explicit OpEdgeSet(const OpGraphConstRef op_graph);
+   explicit OpEdgeSet(const OpGraphsCollection* op_graph);
 };
 #else
-class OpVertexSorter : std::binary_function<vertex, vertex, bool>
+class OpVertexSorter
 {
- private:
    /// The operation graph to which vertices belong
    /// Note: this should be const, but can not because of assignment operator
-   OpGraphConstRef op_graph;
+   const OpGraphsCollection* op_graph;
 
  public:
    /**
     * Constructor
     * @param op_graph is the operation graph to which vertices belong
     */
-   explicit OpVertexSorter(const OpGraphConstRef op_graph);
+   OpVertexSorter(const OpGraphsCollection* op_graph);
 
    /**
     * Compare position of two vertices
@@ -627,50 +510,44 @@ class OpVertexSorter : std::binary_function<vertex, vertex, bool>
     * @param y is the second step
     * @return true if x is necessary and y is unnecessary
     */
-   bool operator()(const vertex x, const vertex y) const;
+   bool operator()(gc_vertex_descriptor x, gc_vertex_descriptor y) const;
 };
 
 /**
  * A set of operation vertices
  */
-class OpVertexSet : public std::set<vertex, OpVertexSorter>
+class OpVertexSet : public std::set<gc_vertex_descriptor, OpVertexSorter>
 {
  public:
-   /**
-    * Constructor
-    */
-   explicit OpVertexSet(const OpGraphConstRef op_graph);
+   explicit OpVertexSet(const OpGraphsCollection* op_graph);
 };
 
 /**
  * Map from operation vertices to value
  */
 template <typename value>
-class OpVertexMap : public std::map<vertex, value, OpVertexSorter>
+class OpVertexMap : public std::map<gc_vertex_descriptor, value, OpVertexSorter>
 {
  public:
-   /**
-    * Constructor
-    */
-   explicit OpVertexMap(const OpGraphConstRef op_graph)
-       : std::map<vertex, value, OpVertexSorter>(OpVertexSorter(op_graph))
+   explicit OpVertexMap(const OpGraphsCollection* op_graph)
+       : std::map<gc_vertex_descriptor, value, OpVertexSorter>(OpVertexSorter(op_graph))
    {
    }
 };
 
-class OpEdgeSorter : std::binary_function<EdgeDescriptor, EdgeDescriptor, bool>
+class OpEdgeSorter
 {
  private:
    /// The operation graph to which vertices belong
    /// Note: this should be const, but can not because of assignment operator
-   OpGraphConstRef op_graph;
+   const OpGraphsCollection* op_graph;
 
  public:
    /**
     * Constructor
     * @param op_graph is the operation graph to which vertices belong
     */
-   explicit OpEdgeSorter(const OpGraphConstRef op_graph);
+   explicit OpEdgeSorter(const OpGraphsCollection* op_graph);
 
    /**
     * Compare position of two edges
@@ -678,23 +555,20 @@ class OpEdgeSorter : std::binary_function<EdgeDescriptor, EdgeDescriptor, bool>
     * @param y is the second edge
     * @return true if x < y
     */
-   bool operator()(const EdgeDescriptor x, const EdgeDescriptor y) const;
+   bool operator()(const gc_edge_descriptor& x, const gc_edge_descriptor& y) const;
 };
 
-class OpEdgeSet : public std::set<EdgeDescriptor, OpEdgeSorter>
+class OpEdgeSet : public std::set<gc_edge_descriptor, OpEdgeSorter>
 {
  public:
-   /**
-    * Constructor
-    */
-   explicit OpEdgeSet(const OpGraphConstRef op_graph);
+   explicit OpEdgeSet(const OpGraphsCollection* op_graph);
 };
 #endif
 
 /**
  * This structure defines graphs where nodes are operations
  */
-class OpGraphsCollection : public graphs_collection
+class OpGraphsCollection : public graphs_collection<OpNodeInfo, OpEdgeInfo, OpGraphInfo>
 {
  protected:
    /// The set of operations
@@ -704,51 +578,21 @@ class OpGraphsCollection : public graphs_collection
    /**
     * Empty Constructror
     * @param info is the info associated with the graph
-    * @param parameters is the set of input parameters
     */
-   OpGraphsCollection(const OpGraphInfoRef info, const ParameterConstRef parameters);
+   OpGraphsCollection(const OpGraphInfo& info);
 
-   /**
-    * Destructor
-    */
-   ~OpGraphsCollection() override;
-
-   /**
-    * Add an edge with empty information associated
-    * @param source is the source of the edge
-    * @param target is the target of the edge
-    * @param selector is the selector to be added
-    * @return the created edge
-    */
-   inline EdgeDescriptor AddEdge(const vertex source, const vertex target, const int selector)
-   {
-      if(ExistsEdge(source, target))
-      {
-         return AddSelector(source, target, selector);
-      }
-      else
-      {
-         return InternalAddEdge(source, target, selector, EdgeInfoRef(new OpEdgeInfo()));
-      }
-   }
-
-   /**
-    * Add a vertex to this graph with a property
-    * @param info is the property to be associated with the new vertex
-    * @return the added vertex
-    */
-   boost::graph_traits<boost_graphs_collection>::vertex_descriptor AddVertex(const NodeInfoRef info) override;
+   vertex_descriptor AddVertex(const OpNodeInfo& info) override;
 
    /**
     * Remove a vertex from this graph
     * @param v is the vertex to be removed
     */
-   void RemoveVertex(boost::graph_traits<boost_graphs_collection>::vertex_descriptor v) override;
+   void RemoveVertex(vertex_descriptor v) override;
 
    /**
     * Return the vertices belonging to the graph
     */
-   const OpVertexSet CGetOperations() const;
+   OpVertexSet CGetOperations() const;
 
    /**
     * Remove all the edges and vertices from the graph
@@ -756,13 +600,10 @@ class OpGraphsCollection : public graphs_collection
    void Clear();
 };
 
-/// Refcount definition for OpGraphsCollectionRef
-using OpGraphsCollectionRef = refcount<OpGraphsCollection>;
-
 /**
  * Class used to describe a particular graph with operations as nodes
  */
-struct OpGraph : public graph
+struct OpGraph : public graph<OpGraphsCollection>
 {
    /// Friend declaration of schedule to allow dot writing
    friend class Schedule;
@@ -770,31 +611,26 @@ struct OpGraph : public graph
  public:
    /**
     * Standard constructor.
-    * @param g is the bulk graph.
+    * @param _op_graphs_collection is the bulk graph.
     * @param selector is the selector used to filter the bulk graph.
     */
-   OpGraph(const OpGraphsCollectionRef _op_graphs_collection, int selector);
+   OpGraph(const OpGraphsCollection& _op_graphs_collection, int selector);
 
    /**
     * Sub-graph constructor.
-    * @param g is the bulk graph.
+    * @param _op_graphs_collection is the bulk graph.
     * @param selector is the selector used to filter the bulk graph.
     * @param sub is the set of vertices on which the graph is filtered.
     */
-   OpGraph(const OpGraphsCollectionRef _op_graphs_collection, int selector,
-           const CustomUnorderedSet<boost::graph_traits<OpGraphsCollection>::vertex_descriptor>& sub);
-
-   /**
-    * Destructor
-    */
-   ~OpGraph() override;
+   OpGraph(const OpGraphsCollection& _op_graphs_collection, int selector,
+           const CustomUnorderedSet<vertex_descriptor>& sub);
 
    /**
     * Writes this graph in dot format
     * @param file_name is the file where the graph has to be printed
     * @param detail_level is the detail level of the printed graph
     */
-   void WriteDot(const std::filesystem::path& file_name, const int detail_level = 0) const;
+   void writeDot(const std::filesystem::path& file_name, const int detail_level = 0) const;
 
 #if HAVE_HLS_BUILT
    /**
@@ -803,66 +639,9 @@ struct OpGraph : public graph
     * @param HLS is the high level synthesis structure
     * @param critical_paths is the set of operations belonging to critical paths
     */
-   void WriteDot(const std::filesystem::path& file_name, const hlsConstRef HLS,
-                 const CustomSet<unsigned int> critical_paths) const;
+   void writeDot(const std::filesystem::path& file_name, const hlsConstRef& HLS,
+                 const CustomSet<unsigned int>& critical_paths) const;
 #endif
-
-   /**
-    * Returns the info associated with a node
-    * @param node is the operation to be considered
-    * @return the associated property
-    */
-   inline OpNodeInfoRef GetOpNodeInfo(const vertex node)
-   {
-      return std::static_pointer_cast<OpNodeInfo>(graph::GetNodeInfo(node));
-   }
-
-   /**
-    * Returns the info associated with a node
-    * @param node is the operation to be considered
-    * @return the associated property
-    */
-   inline OpNodeInfoConstRef CGetOpNodeInfo(const vertex node) const
-   {
-      return std::static_pointer_cast<const OpNodeInfo>(graph::CGetNodeInfo(node));
-   }
-
-   /**
-    * Returns the info associated with an edge
-    * @param edge is the edge to be analyzed
-    * @return the associated property
-    */
-   inline OpEdgeInfoConstRef CGetOpEdgeInfo(const EdgeDescriptor edge) const
-   {
-      return std::static_pointer_cast<const OpEdgeInfo>(graph::CGetEdgeInfo(edge));
-   }
-
-   /**
-    * Returns the property associated with the graph
-    * @return the property associated with the graph
-    */
-   inline OpGraphInfoRef GetOpGraphInfo()
-   {
-      return std::static_pointer_cast<OpGraphInfo>(GetGraphInfo());
-   }
-
-   /**
-    * Returns the property associated with the graph
-    * @return the graph property
-    */
-   inline OpGraphInfoConstRef CGetOpGraphInfo() const
-   {
-      return std::static_pointer_cast<const OpGraphInfo>(CGetGraphInfo());
-   }
-
-   /**
-    * Returns the property associated with the graph
-    * @return the graph property
-    */
-   inline OpGraphInfoRef CGetOpGraphInfo()
-   {
-      return std::static_pointer_cast<OpGraphInfo>(GetGraphInfo());
-   }
 
    /**
     * Given a set of vertices, this function computes the edges
@@ -873,21 +652,21 @@ struct OpGraph : public graph
     * @param toCheck is the set of vertices to be considered as taarget
     * @param edgeType is the type of edges to be considered
     */
-   CustomUnorderedMap<vertex, OpVertexSet> GetSrcVertices(const OpVertexSet& toCheck, int edgeType) const;
+   CustomUnorderedMap<vertex_descriptor, OpVertexSet> GetSrcVertices(const OpVertexSet& toCheck, int edgeType) const;
 
    /**
     * Return the vertices belonging to the graph
     */
-   const OpVertexSet CGetOperations() const;
+   OpVertexSet CGetOperations() const;
 
    /**
     * Return the edge ingoing in a vertex
     * @param v is the vertex
     */
 #if HAVE_UNORDERED
-   boost::iterator_range<InEdgeIterator> CGetInEdges(const vertex v) const;
+   boost::iterator_range<InEdgeIterator> CGetInEdges(vertex_descriptor v) const;
 #else
-   OpEdgeSet CGetInEdges(const vertex v) const;
+   OpEdgeSet CGetInEdges(vertex_descriptor v) const;
 #endif
 
    /**
@@ -895,13 +674,105 @@ struct OpGraph : public graph
     * @param v is the vertex
     */
 #if HAVE_UNORDERED
-   boost::iterator_range<OutEdgeIterator> CGetOutEdges(const vertex v) const;
+   boost::iterator_range<OutEdgeIterator> CGetOutEdges(vertex_descriptor v) const;
 #else
-   OpEdgeSet CGetOutEdges(const vertex v) const;
+   OpEdgeSet CGetOutEdges(vertex_descriptor v) const;
 #endif
 };
-/// refcount definition of the class
-using OpGraphRef = refcount<OpGraph>;
-using OpGraphConstRef = refcount<const OpGraph>;
+
+struct OpVertexWriter : public VertexWriter<OpGraph>
+{
+   /**
+    * Constructor
+    * @param operation_graph is the operation graph
+    * @param detail_level is the level of detail:
+    *  0 - print operation
+    *  1 - print operation and accessed variables
+    */
+   OpVertexWriter(const OpGraph& operation_graph, const int detail_level);
+
+   virtual ~OpVertexWriter() override = default;
+
+   virtual void operator()(std::ostream& out, OpGraph::vertex_descriptor v) const override;
+};
+
+/**
+ * Edge writer for operation graph
+ */
+struct OpEdgeWriter : public EdgeWriter<OpGraph>
+{
+   /**
+    * Constructor
+    * @param operation_graph is the operation graph
+    */
+   OpEdgeWriter(const OpGraph& operation_graph);
+
+   virtual ~OpEdgeWriter() override = default;
+
+   virtual void operator()(std::ostream& out, const OpGraph::edge_descriptor& e) const override;
+};
+
+#if HAVE_HLS_BUILT
+class TimedOpVertexWriter : public OpVertexWriter
+{
+ protected:
+   /// The HLS data structure
+   const hlsConstRef HLS;
+
+   /// The set of operations belonging to critical_paths
+   CustomSet<unsigned int> critical_paths;
+
+ public:
+   /**
+    * Constructor
+    * @param op_graph is the operation graph to be printed
+    * @param HLS is the HLS data structure
+    * @param critical_paths is the set of operations belonging to critical paths
+    */
+   TimedOpVertexWriter(const OpGraph& op_graph, const hlsConstRef HLS, CustomSet<unsigned int> critical_paths);
+
+   void operator()(std::ostream& out, OpGraph::vertex_descriptor v) const override;
+};
+
+class TimedOpEdgeWriter : public OpEdgeWriter
+{
+ protected:
+   /// The HLS data structure
+   const hlsConstRef HLS;
+
+   /// The set of operations belonging to critical_paths
+   CustomSet<unsigned int> critical_paths;
+
+ public:
+   /**
+    * Constructor
+    * @param _g is the operation graph
+    * @param HLS is the HLS data structure
+    * @param critical_paths is the set of operations belonging to critical paths
+    */
+   TimedOpEdgeWriter(const OpGraph& operation_graph, const hlsConstRef HLS, CustomSet<unsigned int> critical_paths);
+
+   void operator()(std::ostream& out, const OpGraph::edge_descriptor& e) const override;
+};
+#endif
+
+/// Helpers
+
+inline const CustomSet<unsigned int>& getVariables(const OpGraph& data, OpGraph::vertex_descriptor op,
+                                                   const VariableType variable_type,
+                                                   const VariableAccessType access_type)
+{
+   return data.CGetNodeInfo(op).getVariables(variable_type, access_type);
+}
+inline const CustomSet<unsigned int>& getVariablesScalarDef(const OpGraph& data, OpGraph::vertex_descriptor op)
+{
+   return data.CGetNodeInfo(op).getVariables(VariableType::SCALAR, VariableAccessType::DEFINITION);
+}
+inline const CustomSet<unsigned int>& getVariablesScalarUse(const OpGraph& data, OpGraph::vertex_descriptor op)
+{
+   return data.CGetNodeInfo(op).getVariables(VariableType::SCALAR, VariableAccessType::USE);
+}
+
+OpGraph::vertex_descriptor getDefOp(const OpGraph& data, unsigned int var);
 
 #endif

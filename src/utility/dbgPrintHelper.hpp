@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -38,9 +38,6 @@
  *
  * @author Luca Fossati <fossati@elet.polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -52,10 +49,6 @@
 #include <iostream>
 #include <string>
 
-/**
- * @name OUTPUT levels
- */
-//@{
 /// no output print is performed.
 #define OUTPUT_LEVEL_NONE 0
 /// minimum debugging print is performed.
@@ -68,12 +61,7 @@
 #define OUTPUT_LEVEL_VERY_PEDANTIC 4
 /// verbose debugging print is performed.
 #define OUTPUT_LEVEL_VERY_VERY_PEDANTIC 5
-//@}
 
-/**
- * @name DEBUGGING levels
- */
-//@{
 /// no debugging print is performed.
 #define DEBUG_LEVEL_NONE 0
 /// minimum debugging print is performed.
@@ -88,8 +76,6 @@
 #define DEBUG_LEVEL_PARANOIC 5
 /// everything is printed.
 #define DEBUG_LEVEL_INFINITE 11
-
-//@}
 
 extern size_t indentation;
 
@@ -112,10 +98,10 @@ extern std::string panda_message;
 #else
 
 /// We are producing a debug version of the program, so the message is printed;
-///@param dbglevel the minimum debug level at which we desire to print the message:
+///@param dbgLevel the minimum debug level at which we desire to print the message:
 /// if the actual debug level is smaller than that, no message is printed
 ///@param curDbgLevel the current debug level at which the algorithm is executing
-///@param formatMex the array of chars containing the message to print: this message
+///@param mex the array of chars containing the message to print: this message
 /// can be written using a printf like syntax.
 #define PRINT_DBG_MEX(dbgLevel, curDbgLevel, mex) \
    (((dbgLevel) <= (curDbgLevel)) ? std::cerr << mex << std::endl : std::cerr)
@@ -123,19 +109,19 @@ extern std::string panda_message;
 /**
  * We are producing a debug version of the program, so the message is printed;
  * no newline is added;
- * @param dbglevel the minimum debug level at which we desire to print the message:
+ * @param dbgLevel the minimum debug level at which we desire to print the message:
  * if the actual debug level is smaller than that, no message is printed
  * @param curDbgLevel the current debug level at which the algorithm is executing
- * @param formatMex the array of chars containing the message to print: this message
+ * @param mex the array of chars containing the message to print: this message
  * can be written using a printf like syntax.
  */
 #define PRINT_DBG_STRING(dbgLevel, curDbgLevel, mex) (((dbgLevel) <= (curDbgLevel)) ? std::cerr << mex : std::cerr)
 
 /// We are producing a debug version of the program, so the message is printed;
-///@param dbglevel the minimum debug level at which we desire to print the message:
+///@param dbgLevel the minimum debug level at which we desire to print the message:
 /// if the actual debug level is smaller than that, no message is printed
 ///@param curDbgLevel the current debug level at which the algorithm is executing
-///@param formatMex the array of chars containing the message to print: this message
+///@param mex the array of chars containing the message to print: this message
 /// can be written using a printf like syntax.
 #define INDENT_DBG_MEX(dbgLevel, curDbgLevel, mex)                                                                   \
    (((dbgLevel) <= (curDbgLevel)) ?                                                                                  \

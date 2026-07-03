@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -38,9 +38,6 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "basic_block.hpp"
@@ -48,10 +45,10 @@
 #include "Parameter.hpp"
 #include "application_manager.hpp"
 #include "behavioral_helper.hpp"
-#include "behavioral_writer_helper.hpp"
 #include "function_behavior.hpp"
 #include "graph.hpp"
-#include "tree_basic_block.hpp"
+#include "ir_basic_block.hpp"
+#include "var_pp_functor.hpp"
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/detail/adjacency_list.hpp>
@@ -62,15 +59,17 @@
 #include <filesystem>
 #include <utility>
 
-BBNodeInfo::BBNodeInfo() : loop_id(0), cer(0)
-{
-}
+#if HAVE_HLS_BUILT
+#include "allocation_information.hpp"
+#include "hls.hpp"
+#include "hls_manager.hpp"
+#include "schedule.hpp"
+#endif
+#if HAVE_HOST_PROFILING_BUILT
+#include "profiling_information.hpp"
+#endif
 
-BBNodeInfo::BBNodeInfo(blocRef _block) : loop_id(0), cer(0), block(std::move(_block))
-{
-}
-
-void BBNodeInfo::add_operation_node(const vertex op)
+void BBNodeInfo::add_operation_node(const gc_vertex_descriptor op)
 {
    statements_list.push_back(op);
 }
@@ -80,12 +79,12 @@ size_t BBNodeInfo::size() const
    return statements_list.size();
 }
 
-vertex BBNodeInfo::get_first_operation() const
+gc_vertex_descriptor BBNodeInfo::get_first_operation() const
 {
    return statements_list.front();
 }
 
-vertex BBNodeInfo::get_last_operation() const
+gc_vertex_descriptor BBNodeInfo::get_last_operation() const
 {
    return statements_list.back();
 }
@@ -100,122 +99,53 @@ unsigned int BBNodeInfo::get_bb_index() const
    return block->number;
 }
 
-const CustomOrderedSet<unsigned int>& BBNodeInfo::get_live_in() const
+const CustomOrderedSet<unsigned int>& BBNodeInfo::getLiveInBbVariables() const
 {
    return block->live_in;
 }
 
-const CustomOrderedSet<unsigned int>& BBNodeInfo::get_live_out() const
+const CustomOrderedSet<unsigned int>& BBNodeInfo::getLiveOutBbVariables() const
 {
    return block->live_out;
 }
 
-/*const std::map<unsigned int, unsigned int> & BBNodeInfo::get_live_out_phi_defs() const
-{
-   return block->live_out_phi_defs;
-}*/
-
-BBEdgeInfo::BBEdgeInfo() : epp_value(0)
-{
-}
-
-BBEdgeInfo::~BBEdgeInfo() = default;
-
-void BBEdgeInfo::set_epp_value(unsigned long long _epp_value)
-{
-   epp_value = _epp_value;
-}
-
-unsigned long long BBEdgeInfo::get_epp_value() const
-{
-   return epp_value;
-}
-
 BBGraphInfo::BBGraphInfo(const application_managerConstRef _AppM, const unsigned int _function_index)
-    : GraphInfo(), AppM(_AppM), function_index(_function_index), entry_vertex(NULL_VERTEX), exit_vertex(NULL_VERTEX)
+    : AppM(_AppM),
+      function_index(_function_index),
+      entry_vertex(BBGraph::null_vertex()),
+      exit_vertex(BBGraph::null_vertex())
 {
 }
 
-BBGraphsCollection::BBGraphsCollection(const BBGraphInfoRef bb_graph_info, const ParameterConstRef _parameters)
-    : graphs_collection(std::static_pointer_cast<GraphInfo>(bb_graph_info), _parameters)
+BBGraph::BBGraph(const BBGraphsCollection& g, int _selector) : graph(g, _selector)
 {
 }
 
-BBGraphsCollection::~BBGraphsCollection() = default;
-
-BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector) : graph(_g.get(), _selector)
+BBGraph::BBGraph(const BBGraphsCollection& g, int _selector, const CustomUnorderedSet<vertex_descriptor>& sub)
+    : graph(g, _selector, sub)
 {
 }
 
-BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector, CustomUnorderedSet<vertex>& sub)
-    : graph(_g.get(), _selector, sub)
+void BBGraph::writeDot(const std::filesystem::path& file_name, const int detail_level) const
 {
+   CustomUnorderedSet<vertex_descriptor> annotated;
+   writeDot(file_name, annotated, detail_level);
 }
 
-void BBGraph::WriteDot(const std::filesystem::path& file_name, const int detail_level) const
-{
-   const CustomUnorderedSet<vertex> annotated = CustomUnorderedSet<vertex>();
-   WriteDot(file_name, annotated, detail_level);
-}
-
-void BBGraph::WriteDot(const std::filesystem::path& file_name, const CustomUnorderedSet<vertex>& annotated,
+void BBGraph::writeDot(const std::filesystem::path& file_name, const CustomUnorderedSet<vertex_descriptor>& annotated,
                        const int) const
 {
-   const auto bb_graph_info = CGetBBGraphInfo();
-   auto function_name = bb_graph_info->AppM->CGetFunctionBehavior(bb_graph_info->function_index)
-                            ->CGetBehavioralHelper()
-                            ->get_function_name();
-   if(function_name.size() > 256)
-   {
-      THROW_WARNING("Function name too long: " + function_name +
-                    ".\nChanged to the the function index:" + STR(bb_graph_info->function_index));
-      function_name = STR(bb_graph_info->function_index);
-   }
-   const auto output_directory =
-       collection->parameters->getOption<std::filesystem::path>(OPT_dot_directory) / function_name;
-   std::filesystem::create_directories(output_directory);
-   const auto full_name = output_directory / file_name;
-   const VertexWriterConstRef bb_writer(new BBWriter(this, annotated));
-   const EdgeWriterConstRef bb_edge_writer(new BBEdgeWriter(this));
-   InternalWriteDot<const BBWriter, const BBEdgeWriter>(full_name, bb_writer, bb_edge_writer);
+   BBVertexWriter bb_writer(*this, annotated);
+   BBEdgeWriter bb_edge_writer(*this);
+   graph::writeDot(file_name, bb_writer, bb_edge_writer);
 }
 
 size_t BBGraph::num_bblocks() const
 {
-   return boost::num_vertices(m_g) - 2;
+   return num_vertices() - 2U;
 }
 
-bool BBEdgeInfo::cdg_edge_T() const
-{
-   return labels.find(CDG_SELECTOR) != labels.end() and
-          labels.find(CDG_SELECTOR)->second.find(T_COND) != labels.find(CDG_SELECTOR)->second.end();
-}
-
-bool BBEdgeInfo::cdg_edge_F() const
-{
-   return labels.find(CDG_SELECTOR) != labels.end() and
-          labels.find(CDG_SELECTOR)->second.find(F_COND) != labels.find(CDG_SELECTOR)->second.end();
-}
-
-bool BBEdgeInfo::cfg_edge_T() const
-{
-   return labels.find(CFG_SELECTOR) != labels.end() and
-          labels.find(CFG_SELECTOR)->second.find(T_COND) != labels.find(CFG_SELECTOR)->second.end();
-}
-
-bool BBEdgeInfo::cfg_edge_F() const
-{
-   return labels.find(CFG_SELECTOR) != labels.end() and
-          labels.find(CFG_SELECTOR)->second.find(F_COND) != labels.find(CFG_SELECTOR)->second.end();
-}
-
-bool BBEdgeInfo::switch_p() const
-{
-   return !cdg_edge_T() and !cdg_edge_F() and !cfg_edge_T() and !cfg_edge_F() and
-          (labels.find(CDG_SELECTOR) != labels.end() or labels.find(CFG_SELECTOR) != labels.end());
-}
-
-const CustomOrderedSet<unsigned int> BBEdgeInfo::get_labels(const int selector) const
+CustomOrderedSet<unsigned int> BBEdgeInfo::get_labels(const int selector) const
 {
    if(labels.find(selector) != labels.end())
    {
@@ -228,26 +158,26 @@ const CustomOrderedSet<unsigned int> BBEdgeInfo::get_labels(const int selector) 
 }
 
 #if !HAVE_UNORDERED
-BBVertexSorter::BBVertexSorter(const BBGraphConstRef _bb_graph) : bb_graph(_bb_graph)
+BBVertexSorter::BBVertexSorter(const BBGraphsCollection* _bb_graph) : bb_graph(_bb_graph)
 {
 }
 
-bool BBVertexSorter::operator()(const vertex x, const vertex y) const
+bool BBVertexSorter::operator()(BBGraph::vertex_descriptor x, BBGraph::vertex_descriptor y) const
 {
-   return bb_graph->CGetBBNodeInfo(x)->block->number < bb_graph->CGetBBNodeInfo(y)->block->number;
+   return bb_graph->CGetNodeInfo(x).block->number < bb_graph->CGetNodeInfo(y).block->number;
 }
 
-BBEdgeSorter::BBEdgeSorter(const BBGraphConstRef _bb_graph) : bb_graph(_bb_graph), bb_sorter(_bb_graph)
+BBEdgeSorter::BBEdgeSorter(const BBGraphsCollection* _bb_graph) : bb_graph(_bb_graph), bb_sorter(_bb_graph)
 {
 }
 
-bool BBEdgeSorter::operator()(const EdgeDescriptor x, const EdgeDescriptor y) const
+bool BBEdgeSorter::operator()(const BBGraph::edge_descriptor& x, const BBGraph::edge_descriptor& y) const
 {
-   const vertex source_x = boost::source(x, *bb_graph);
-   const vertex source_y = boost::source(y, *bb_graph);
+   const auto source_x = bb_graph->source(x);
+   const auto source_y = bb_graph->source(y);
    if(source_x == source_y)
    {
-      return bb_sorter(boost::target(x, *bb_graph), boost::target(y, *bb_graph));
+      return bb_sorter(bb_graph->target(x), bb_graph->target(y));
    }
    else
    {
@@ -255,3 +185,204 @@ bool BBEdgeSorter::operator()(const EdgeDescriptor x, const EdgeDescriptor y) co
    }
 }
 #endif
+
+BBVertexWriter::BBVertexWriter(const BBGraph& _g, CustomUnorderedSet<BBGraph::vertex_descriptor> _annotated)
+    : VertexWriter(_g, 0),
+      function_behavior(_g.CGetGraphInfo().AppM->CGetFunctionBehavior(_g.CGetGraphInfo().function_index)),
+      helper(function_behavior->CGetBehavioralHelper()),
+      annotated(std::move(_annotated))
+#if HAVE_HLS_BUILT
+      ,
+      schedule((GetPointer<const HLS_manager>(_g.CGetGraphInfo().AppM) &&
+                GetPointer<const HLS_manager>(_g.CGetGraphInfo().AppM)->get_HLS(helper->get_function_index())) ?
+                   GetPointer<const HLS_manager>(_g.CGetGraphInfo().AppM)->get_HLS(helper->get_function_index())->Rsch :
+                   ScheduleConstRef())
+#endif
+{
+}
+
+void BBVertexWriter::operator()(std::ostream& out, BBGraph::vertex_descriptor v) const
+{
+   const auto& info = printing_graph.CGetGraphInfo();
+   const auto& bb_node_info = printing_graph.CGetNodeInfo(v);
+   if(v == info.entry_vertex)
+   {
+      out << "[color=blue,shape=Msquare, ";
+      if(annotated.find(v) != annotated.end())
+      {
+         out << " style=filled, fillcolor=black, fontcolor=white,";
+      }
+      out << "label=\"ENTRY";
+   }
+   else if(v == info.exit_vertex)
+   {
+      out << "[color=blue,shape=Msquare, ";
+      if(annotated.find(v) != annotated.end())
+      {
+         out << " style=filled, fillcolor=black, fontcolor=white,";
+      }
+      out << "label=\"EXIT";
+   }
+   else
+   {
+      out << "[shape=box";
+      if(annotated.find(v) != annotated.end())
+      {
+         out << ", style=filled, fillcolor=black, fontcolor=white";
+      }
+      if(bb_node_info.block)
+      {
+         out << ", label=\"BB" << bb_node_info.block->number << " - CLANGLI: " << bb_node_info.block->loop_id
+             << " - Cer: " << bb_node_info.cer;
+         out << " - Loop " << bb_node_info.loop_id;
+#if HAVE_HOST_PROFILING_BUILT
+         out << " - Executions: " << function_behavior->CGetProfilingInformation()->GetBBExecutions(v);
+#endif
+      }
+      const std::unique_ptr<var_pp_functor> svpf = std::make_unique<std_var_pp_functor>(helper);
+      if(bb_node_info.block->CGetPhiList().size())
+      {
+         out << "\\l";
+         for(const auto& phi : bb_node_info.block->CGetPhiList())
+         {
+            auto res = STR(phi->index);
+#if HAVE_HLS_BUILT
+            if(schedule && schedule->is_scheduled(phi->index))
+            {
+               res += " " + schedule->PrintTimingInformation(phi->index) + " ";
+            }
+#endif
+            res += " -> " + helper->PrintNode(phi, svpf);
+            std::string temp;
+            for(char re : res)
+            {
+               if(re == '\"')
+               {
+                  temp += "\\\"";
+               }
+               else if(re != '\n')
+               {
+                  temp += re;
+               }
+            }
+            out << temp << "\\l";
+         }
+      }
+      if(bb_node_info.block->CGetStmtList().size())
+      {
+         if(bb_node_info.block->CGetPhiList().empty())
+         {
+            out << "\\n";
+         }
+         for(const auto& statement : bb_node_info.block->CGetStmtList())
+         {
+            auto res = STR(statement->index);
+#if HAVE_HLS_BUILT
+            if(schedule && schedule->is_scheduled(statement->index))
+            {
+               res += " " + schedule->PrintTimingInformation(statement->index) + " ";
+            }
+#endif
+            res += " -> " + helper->PrintNode(statement, svpf);
+            switch(statement->get_kind())
+            {
+               case assign_stmt_K:
+               case call_stmt_K:
+                  res += ";";
+                  break;
+               case constructor_node_K:
+               case call_node_K:
+               case multi_way_if_stmt_K:
+               case nop_stmt_K:
+               case phi_stmt_K:
+               case return_stmt_K:
+               case identifier_node_K:
+               case ssa_node_K:
+               case statement_list_node_K:
+               case lut_node_K:
+               case CASE_BINARY_NODES:
+               case CASE_CST_NODES:
+               case CASE_DECL_NODES:
+               case CASE_FAKE_NODES:
+               case CASE_TERNARY_NODES:
+               case CASE_TYPE_NODES:
+               case CASE_UNARY_NODES:
+               default:
+                  break;
+            }
+            std::string temp;
+            for(char re : res)
+            {
+               if(re == '\"')
+               {
+                  temp += "\\\"";
+               }
+               else if(re != '\n')
+               {
+                  temp += re;
+               }
+            }
+            out << temp << "\\l";
+         }
+      }
+   }
+   out << "\"]";
+}
+
+BBEdgeWriter::BBEdgeWriter(const BBGraph& _g)
+    : EdgeWriter(_g, 0),
+      BH(_g.CGetGraphInfo().AppM->CGetFunctionBehavior(_g.CGetGraphInfo().function_index)->CGetBehavioralHelper())
+{
+}
+
+void BBEdgeWriter::operator()(std::ostream& out, const BBGraph::edge_descriptor& e) const
+{
+   if(FB_CFG_SELECTOR & printing_graph.GetSelector(e))
+   {
+      out << "[fontcolor=blue, color=gold";
+   }
+   else if(CFG_SELECTOR & printing_graph.GetSelector(e))
+   {
+      out << "[fontcolor=blue, color=red3";
+   }
+   else if(CDG_SELECTOR & printing_graph.GetSelector(e))
+   {
+      out << "[fontcolor=blue, color=red3";
+   }
+   else if(D_SELECTOR & printing_graph.GetSelector(e))
+   {
+      out << "[fontcolor=blue";
+   }
+   else if(PD_SELECTOR & printing_graph.GetSelector(e))
+   {
+      out << "[fontcolor=blue";
+   }
+   else if(J_SELECTOR & printing_graph.GetSelector(e))
+   {
+      out << "[fontcolor=blue, color=gold";
+   }
+   else
+   {
+      THROW_UNREACHABLE("Not supported graph type in printing: " + STR(printing_graph.GetSelector(e)));
+   }
+   const auto& bb_edge_info = printing_graph.CGetEdgeInfo(e);
+   if(selector & FCFG_SELECTOR)
+   {
+      if(bb_edge_info.IfElseIf())
+      {
+         out << ",label=\"";
+         out << bb_edge_info.PrintLabels(CFG_SELECTOR, BH);
+         out << "\"";
+      }
+   }
+   else if(selector & FCDG_SELECTOR)
+   {
+      if(bb_edge_info.IfElseIf())
+      {
+         out << ",label=\"";
+         out << bb_edge_info.PrintLabels(CDG_SELECTOR, BH);
+         out << "\"";
+      }
+   }
+   out << "]";
+}

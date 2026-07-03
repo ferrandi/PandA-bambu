@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -37,8 +37,6 @@
  * Implementation of the methods for the manager of the tool wrapped in PandA
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "ToolManager.hpp"
@@ -54,18 +52,19 @@
 
 #define OUTPUT_FILE "__stdouterr"
 
-// constructor
 ToolManager::ToolManager(const ParameterConstRef& _Param)
-    : Param(_Param), local(true), debug_level(_Param->get_class_debug_level(GET_CLASS(*this)))
+    : Param(_Param),
+      local(true),
+      outerr(_Param->getOption<std::filesystem::path>(OPT_output_directory) / OUTPUT_FILE),
+      debug_level(_Param->get_class_debug_level(GET_CLASS(*this)))
 {
 }
 
-// destructor
 ToolManager::~ToolManager()
 {
-   if(std::filesystem::exists(OUTPUT_FILE))
+   if(std::filesystem::exists(outerr))
    {
-      std::filesystem::remove(OUTPUT_FILE);
+      std::filesystem::remove(outerr);
    }
 }
 
@@ -75,7 +74,7 @@ int ToolManager::execute_command(const std::string& _command_, const std::string
    /// on Ubuntu sh is different from bash so we enforce it
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Executing command: " + _command_);
    THROW_ASSERT(!log_file.empty(), "Log file not set");
-   int ret = PandaSystem(Param, _command_, true, log_file);
+   const auto ret = PandaSystem(Param, _command_, true, log_file);
    if(IsError(ret))
    {
       if(permissive)
@@ -94,12 +93,8 @@ int ToolManager::execute_command(const std::string& _command_, const std::string
          }
          THROW_ERROR(error_message);
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Executed command: " + _command_);
    }
-   else
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Executed command: " + _command_);
-   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Executed command: " + _command_);
    return ret;
 }
 
@@ -126,14 +121,14 @@ int ToolManager::check_command(const std::string& _tool_, const std::string& set
    }
 
    command +=
-       "if test -f " + _tool_ + " ; then true; else if test `which " + _tool_ + "`; then true; else false; fi fi";
+       "if test -f " + _tool_ + " ; then true; else if test `command -v " + _tool_ + "`; then true; else false; fi fi";
 
    if(!_host_.empty())
    {
       command += "'";
    }
 
-   command += ">& " OUTPUT_FILE;
+   command += ">& " + outerr.string();
    const auto ret = execute_command(
        command,
        "Problems in checking \"" + _tool_ + "\" executable" +
@@ -172,7 +167,9 @@ void ToolManager::configure(const std::string& _tool_, const std::string& setups
       /// check if the host is reachable
       if(check_command(_tool_, setupscr, _host_) == -1)
       {
-         THROW_ERROR("Login problems on host \"" + _host_ + "\" or executable not available!");
+         THROW_ERROR_USAGE(
+             "Cannot access host '" + _host_ +
+             "' or executable is not available there. Check host connectivity, credentials, and setup script.");
       }
 
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " Correctly connected to Host \"" + _host_ + "\"");
@@ -194,7 +191,7 @@ void ToolManager::configure(const std::string& _tool_, const std::string& setups
       if(!_remote_path_.empty())
       {
          command = "ssh " + _host_ + " ";
-         command += "'mkdir -p " + _remote_path_ + "' >& " OUTPUT_FILE;
+         command += "'mkdir -p " + _remote_path_ + "' >& " + outerr.string();
          execute_command(command, "Remote path cannot be created on the host machine \"" + host + "\"!",
                          Param->getOption<std::string>(OPT_output_temporary_directory) + "/configure_output");
       }
@@ -202,7 +199,7 @@ void ToolManager::configure(const std::string& _tool_, const std::string& setups
    }
    else
    {
-      std::ifstream output_file(OUTPUT_FILE);
+      std::ifstream output_file(outerr);
       if(!force_remote && output_file.is_open() && !output_file.eof())
       {
          local = true;
@@ -210,20 +207,14 @@ void ToolManager::configure(const std::string& _tool_, const std::string& setups
       }
       else
       {
-         THROW_ERROR("Command \"" + _tool_ + "\" not found!");
+         THROW_ERROR_USAGE("Command '" + _tool_ + "' not found. Install it or provide the correct executable path.");
       }
    }
 }
 
-std::string ToolManager::create_command_line(const std::vector<std::string>& parameters) const
+std::string ToolManager::create_remote_command_line(const std::string& remote_cmd) const
 {
-   THROW_ASSERT(!parameters.empty(), "Executable has not been specified");
-   return container_to_string(parameters, " ");
-}
-
-std::string ToolManager::create_remote_command_line(const std::vector<std::string>& parameters) const
-{
-   return "ssh " + host + " 'cd " + remote_path + "; " + container_to_string(parameters, " ") + "'";
+   return "ssh " + host + " 'cd " + remote_path + "; " + remote_cmd + "'";
 }
 
 std::vector<std::string> ToolManager::determine_paths(std::vector<std::string>& files, bool overwrite)
@@ -276,7 +267,7 @@ std::string ToolManager::determine_paths(std::string& file_name, bool overwrite)
    {
       if(!std::filesystem::exists(file))
       {
-         THROW_ERROR("File \"" + file.string() + "\" does not exists");
+         THROW_ERROR_USAGE("File '" + file.string() + "' does not exist. Check the path and input generation steps.");
       }
       file_to_be_copied = file_name;
    }
@@ -290,20 +281,17 @@ void ToolManager::prepare_input_files(const std::vector<std::string>& files)
    if(!local && files.size())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Preparing input files");
-      std::vector<std::string> move_to_host(1, "scp");
-      move_to_host.reserve(files.size() + 3);
+      std::string command = "scp";
       for(const auto& file : files)
       {
          if(!std::filesystem::exists(file))
          {
-            THROW_ERROR("File \"" + file + "\" does not exists");
+            THROW_ERROR_USAGE("File '" + file + "' does not exist. Check the path and input generation steps.");
          }
-         move_to_host.push_back(file);
+         command += " " + file;
       }
 
-      move_to_host.push_back(host + ":" + remote_path);
-      move_to_host.push_back(">& " OUTPUT_FILE);
-      const auto command = create_command_line(move_to_host);
+      command += " " + host + ":" + remote_path + " >& " + outerr.string();
       execute_command(command, "Input files cannot be moved on the host machine",
                       Param->getOption<std::string>(OPT_output_temporary_directory) + "/prepare_input_files_output");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Prepared input files");
@@ -322,12 +310,11 @@ int ToolManager::execute(const std::vector<std::string>& parameters, const std::
    remove_files(input_files, output_files);
 
    /// execute the command
-   std::vector<std::string> command_line(1, executable);
-   for(const auto& parameter : parameters)
+   std::string command = executable + " " + container_to_string(parameters, " ");
+   if(!local)
    {
-      command_line.push_back(parameter);
+      command = create_remote_command_line(command);
    }
-   std::string command = local ? create_command_line(command_line) : create_remote_command_line(command_line);
 
    THROW_ASSERT(!log_file.empty(), "Log file not set during executable " + executable);
    const auto ret = execute_command(command, "Returned error code!", log_file, permissive);
@@ -341,47 +328,52 @@ int ToolManager::execute(const std::vector<std::string>& parameters, const std::
 
 void ToolManager::remove_files(const std::vector<std::string>& input_files, const std::vector<std::string>& files)
 {
-   std::vector<std::string> removing(1, "rm -rf");
+   std::string command;
    for(const auto& file : files)
    {
-      if(std::filesystem::exists(file) && std::find(input_files.begin(), input_files.end(), file) == input_files.end())
+      if(std::find(input_files.begin(), input_files.end(), file) == input_files.end())
       {
-         removing.push_back(file);
-         std::filesystem::remove(file);
+         if(local)
+         {
+            if(std::filesystem::exists(file))
+            {
+               std::filesystem::remove(file);
+            }
+         }
+         else
+            command += " " + file;
       }
    }
-   if(removing.size() > 1 && !local)
+   if(!command.empty())
    {
-      const auto command = create_remote_command_line(removing);
-      execute_command(command, "Files cannot correctly removed",
+      const auto remote_command = create_remote_command_line("rm -rf" + command);
+      execute_command(remote_command, "Files could not be removed",
                       Param->getOption<std::string>(OPT_output_temporary_directory) + "/remove_files_output");
    }
 }
 
 void ToolManager::check_output_files(const std::vector<std::string>& files)
 {
-   std::vector<std::string> move_from_host(1, "scp ");
-   for(const auto& i : files)
+   std::string command;
+   for(const auto& file : files)
    {
       if(local)
       {
-         std::filesystem::path file(i);
          if(!std::filesystem::exists(file))
          {
-            THROW_ERROR("File \"" + file.string() + "\" has not been correctly created");
+            THROW_ERROR_USAGE("Expected output file '" + file +
+                              "' was not created. Check tool options and backend setup.");
          }
       }
       else
       {
-         move_from_host.push_back(host + ":" + remote_path + "/" + i);
+         command += " " + host + ":" + remote_path + "/" + file;
       }
    }
-   if(!local)
+   if(!command.empty())
    {
-      move_from_host.emplace_back(".");
-      move_from_host.push_back(">& " OUTPUT_FILE);
-      const auto command = create_command_line(move_from_host);
-      auto output_level = Param->getOption<unsigned int>(OPT_output_level);
+      command = create_remote_command_line("scp " + command + " . >& " + outerr.string());
+      const auto output_level = Param->getOption<unsigned int>(OPT_output_level);
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " Moving output files from the host machine...");
       execute_command(command, "Generated files cannot be moved from the host machine",
                       Param->getOption<std::string>(OPT_output_temporary_directory) + "/check_output_files_output");

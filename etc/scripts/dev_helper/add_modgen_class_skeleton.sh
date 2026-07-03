@@ -1,6 +1,6 @@
 #!/bin/bash
 script_dir="$(dirname $(readlink -e $0))"
-modgen_dir="$(readlink -f ${script_dir}/../../../src/HLS/module_generator)"
+modgen_dir="$(readlink -f ${script_dir}/../../../src/HLS/hdl_generators)"
 
 read -r -d '' copyright_notice << EOM
 /*
@@ -18,21 +18,21 @@ read -r -d '' copyright_notice << EOM
  *                        System Architectures Group
  *             ***********************************************
  *              Copyright (C) $(date +"%Y")-$(date +"%Y") Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 EOM
@@ -46,14 +46,14 @@ classname="$1"
 
 define_name="$(sed -r 's/([a-z0-9])([A-Z])/\1_\L\2/g' <<< $classname)"
 
-out_base="${modgen_dir}/${classname}ModuleGenerator"
+out_base="${modgen_dir}/${classname}HDLGenerator"
 out_hpp="${out_base}.hpp"
 out_cpp="${out_base}.cpp"
 
 cat > ${out_cpp} << EOF
 ${copyright_notice}
 /**
- * @file ${classname}ModuleGenerator.cpp
+ * @file ${classname}HDLGenerator.cpp
  * @brief
  *
  * @author Name Surname <your.contact@email.com>
@@ -63,20 +63,20 @@ ${copyright_notice}
  *
  */
 
-#include "${classname}ModuleGenerator.hpp"
+#include "${classname}HDLGenerator.hpp"
 
 #include "language_writer.hpp"
 
-${classname}ModuleGenerator::${classname}ModuleGenerator(const HLS_managerRef& _HLSMgr) : Registrar(_HLSMgr)
+${classname}HDLGenerator::${classname}HDLGenerator(const HLS_managerRef& _HLSMgr) : Registrar(_HLSMgr)
 {
 }
 
-void ${classname}ModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */, unsigned int /* function_id */,
+void ${classname}HDLGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */, unsigned int /* function_id */,
                                             vertex /* op_v */, const HDLWriter_Language /* language */,
-                                            const std::vector<ModuleGenerator::parameter>& /* _p */,
-                                            const std::vector<ModuleGenerator::parameter>& /* _ports_in */,
-                                            const std::vector<ModuleGenerator::parameter>& /* _ports_out */,
-                                            const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
+                                            const std::vector<HDLGenerator::parameter>& /* _p */,
+                                            const std::vector<HDLGenerator::parameter>& /* _ports_in */,
+                                            const std::vector<HDLGenerator::parameter>& /* _ports_out */,
+                                            const std::vector<HDLGenerator::parameter>& /* _ports_inout */)
 {
    out << "${classname}" << std::endl;
 }
@@ -85,30 +85,27 @@ EOF
 cat > ${out_hpp} << EOF
 ${copyright_notice}
 /**
- * @file ${classname}ModuleGenerator.hpp
+ * @file ${classname}HDLGenerator.hpp
  * @brief
  *
  * @author Name Surname <your.contact@email.com>
- * \$Revision\$
- * \$Date\$
- * Last modified by \$Author\$
  *
  */
-#ifndef _${define_name^^}_MODULE_GENERATOR_HPP_
-#define _${define_name^^}_MODULE_GENERATOR_HPP_
+#ifndef _${define_name^^}_HDL_GENERATOR_HPP_
+#define _${define_name^^}_HDL_GENERATOR_HPP_
 
-#include "ModuleGenerator.hpp"
+#include "HDLGenerator.hpp"
 
-class ${classname}ModuleGenerator : public ModuleGenerator::Registrar<${classname}ModuleGenerator>
+class ${classname}HDLGenerator : public HDLGenerator::Registrar<${classname}HDLGenerator>
 {
  public:
-   ${classname}ModuleGenerator(const HLS_managerRef& HLSMgr);
+   ${classname}HDLGenerator(const HLS_managerRef& HLSMgr);
 
    void InternalExec(std::ostream& out, structural_objectRef mod, unsigned int function_id, vertex op_v,
-                     const HDLWriter_Language language, const std::vector<ModuleGenerator::parameter>& _p,
-                     const std::vector<ModuleGenerator::parameter>& _ports_in,
-                     const std::vector<ModuleGenerator::parameter>& _ports_out,
-                     const std::vector<ModuleGenerator::parameter>& _ports_inout) final;
+                     const HDLWriter_Language language, const std::vector<HDLGenerator::parameter>& _p,
+                     const std::vector<HDLGenerator::parameter>& _ports_in,
+                     const std::vector<HDLGenerator::parameter>& _ports_out,
+                     const std::vector<HDLGenerator::parameter>& _ports_inout) final;
 };
 
 #endif
@@ -116,6 +113,6 @@ EOF
 
 echo "Module generator derive class skeleton added in ${out_base}.{hpp,cpp}"
 echo "TODO:"
-echo "  - Fill in the ${classname}ModuleGenerator::InternalExec with the implementation"
+echo "  - Fill in the ${classname}HDLGenerator::InternalExec with the implementation"
 echo "  - Fill in the file description and @author filed at the top of each file"
-echo "  - Add files to noinst_HEADERS and lib_module_generator_la_SOURCE in src/HLS/Makefile.am"
+echo "  - Add files to noinst_HEADERS and lib_hdl_generators_la_SOURCE in src/HLS/Makefile.am"

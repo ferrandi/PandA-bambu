@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -36,24 +36,20 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "classical_synthesis_flow.hpp"
 
 #include "Parameter.hpp"
 #include "dbgPrintHelper.hpp"
+#include "evaluation_mode.hpp"
 
 ClassicalHLSSynthesisFlow::ClassicalHLSSynthesisFlow(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
-                                                     const DesignFlowManagerConstRef _design_flow_manager)
+                                                     const DesignFlowManager& _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW)
 {
    composed = true;
 }
-
-ClassicalHLSSynthesisFlow::~ClassicalHLSSynthesisFlow() = default;
 
 HLS_step::HLSRelationships
 ClassicalHLSSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -61,7 +57,7 @@ ClassicalHLSSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::Relatio
    HLSRelationships ret;
    switch(relationship_type)
    {
-      case DEPENDENCE_RELATIONSHIP:
+      case(DEPENDENCE_RELATIONSHIP):
       {
          ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_function_allocation_algorithm),
                                     HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
@@ -69,47 +65,21 @@ ClassicalHLSSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::Relatio
                                     HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
          ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_HDL, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::TOP_FUNCTION));
-#if HAVE_TASTE
-         if(parameters->getOption<bool>(OPT_generate_taste_architecture))
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_TASTE_HDL_ARCHITECTURE,
-                                       HLSFlowStepSpecializationConstRef(),
-                                       HLSFlowStep_Relationship::WHOLE_APPLICATION));
-            ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_TASTE_SYNTHESIS_SCRIPT,
-                                       HLSFlowStepSpecializationConstRef(),
-                                       HLSFlowStep_Relationship::WHOLE_APPLICATION));
-         }
-         else
-#endif
-             if(parameters->isOption(OPT_top_functions_names) and
-                parameters->getOption<std::list<std::string>>(OPT_top_functions_names).size() == 1)
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_SYNTHESIS_SCRIPT, HLSFlowStepSpecializationConstRef(),
-                                       HLSFlowStep_Relationship::WHOLE_APPLICATION));
-         }
+
          if(parameters->isOption(OPT_export_core_mode))
          {
             ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_export_core_mode),
                                        HLSFlowStepSpecializationConstRef(),
                                        HLSFlowStep_Relationship::WHOLE_APPLICATION));
          }
-         if(output_level >= OUTPUT_LEVEL_VERBOSE)
+         ret.insert(std::make_tuple(HLSFlowStep_Type::WRITE_HLS_SUMMARY, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::EVALUATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
+         if(parameters->isOption(OPT_generate_testbench) && parameters->getOption<bool>(OPT_generate_testbench))
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::WRITE_HLS_SUMMARY, HLSFlowStepSpecializationConstRef(),
-                                       HLSFlowStep_Relationship::WHOLE_APPLICATION));
-         }
-         if(parameters->getOption<int>(OPT_evaluation))
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::EVALUATION, HLSFlowStepSpecializationConstRef(),
-                                       HLSFlowStep_Relationship::TOP_FUNCTION));
-         }
-         if(parameters->getOption<bool>(OPT_generate_testbench))
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_SIMULATION_SCRIPT,
-                                       HLSFlowStepSpecializationConstRef(),
-                                       HLSFlowStep_Relationship::WHOLE_APPLICATION));
             ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_GENERATION, HLSFlowStepSpecializationConstRef(),
-                                       HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                                       HLSFlowStep_Relationship::TOP_FUNCTION));
          }
 #if HAVE_VCD_BUILT
          if(parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy))
@@ -120,11 +90,11 @@ ClassicalHLSSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::Relatio
 #endif
          break;
       }
-      case INVALIDATION_RELATIONSHIP:
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case PRECEDENCE_RELATIONSHIP:
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }

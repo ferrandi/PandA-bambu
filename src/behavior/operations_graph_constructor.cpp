@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -36,154 +36,157 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
-
-/// Header include
 #include "operations_graph_constructor.hpp"
-#include "custom_map.hpp"        // for CustomMap
-#include "custom_set.hpp"        // for CustomSet
-#include "exceptions.hpp"        // for THROW_ASSERT
-#include "function_behavior.hpp" // for tree_nodeRef, Funct...
+
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "exceptions.hpp"
+#include "function_behavior.hpp"
+#include "ir_manager.hpp"
+#include "ir_node.hpp"
 #include "op_graph.hpp"
 #include "string_manipulation.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
-#include "typed_node_info.hpp"   // for GET_NAME, ENTRY, EXIT
-#include <boost/tuple/tuple.hpp> // for tie
-#include <list>                  // for list
-#include <utility>               // for pair
+#include "typed_node_info.hpp"
 
-operations_graph_constructor::operations_graph_constructor(OpGraphsCollectionRef _og)
-    : og(std::move(_og)), op_graph(new OpGraph(og, -1))
+#include <boost/tuple/tuple.hpp>
+
+#include <list>
+#include <utility>
+
+operations_graph_constructor::operations_graph_constructor(OpGraphsCollection& _og) : og(_og)
 {
 }
-
-operations_graph_constructor::~operations_graph_constructor() = default;
 
 void operations_graph_constructor::Clear()
 {
-   og->Clear();
+   og.Clear();
    index_map.clear();
 }
 
-vertex operations_graph_constructor::getIndex(const std::string& source)
+OpGraph::vertex_descriptor operations_graph_constructor::getIndex(const std::string& source)
 {
    if(index_map.find(source) != index_map.end())
    {
       return index_map.find(source)->second;
    }
-   NodeInfoRef node_info(new OpNodeInfo());
-   GetPointerS<OpNodeInfo>(node_info)->vertex_name = source;
-   const vertex v_og = og->AddVertex(node_info);
+   OpNodeInfo node_info;
+   node_info.vertex_name = source;
+   const auto v_og = og.AddVertex(node_info);
    index_map[source] = v_og;
    return index_map[source];
 }
 
-vertex operations_graph_constructor::CgetIndex(const std::string& source) const
+OpGraph::vertex_descriptor operations_graph_constructor::CgetIndex(const std::string& source) const
 {
    THROW_ASSERT(index_map.find(source) != index_map.end(), "Index with name " + source + " doesn't exist");
    return index_map.find(source)->second;
 }
 
-EdgeDescriptor operations_graph_constructor::AddEdge(const vertex source, const vertex dest, int selector)
+OpGraph::edge_descriptor operations_graph_constructor::AddEdge(OpGraph::vertex_descriptor source,
+                                                               OpGraph::vertex_descriptor dest, int selector)
 {
-   return og->AddEdge(source, dest, selector);
+   return og.AddEdge(source, dest, selector);
 }
 
-void operations_graph_constructor::RemoveEdge(const vertex source, const vertex dest, int selector)
+void operations_graph_constructor::RemoveEdge(OpGraph::vertex_descriptor source, OpGraph::vertex_descriptor dest,
+                                              int selector)
 {
-   og->RemoveSelector(source, dest, selector);
+   og.RemoveSelector(source, dest, selector);
 }
 
-void operations_graph_constructor::RemoveSelector(const EdgeDescriptor edge, const int selector)
+void operations_graph_constructor::RemoveSelector(const OpGraph::edge_descriptor& edge, const int selector)
 {
-   og->RemoveSelector(edge, selector);
+   og.RemoveSelector(edge, selector);
 }
 
 void operations_graph_constructor::CompressEdges()
 {
-   og->CompressEdges();
+   og.CompressEdges();
 }
 
-void operations_graph_constructor::add_edge_info(const vertex src, const vertex tgt, const int selector,
-                                                 unsigned int NodeID)
+void operations_graph_constructor::add_edge_info(OpGraph::vertex_descriptor src, OpGraph::vertex_descriptor tgt,
+                                                 const int selector, unsigned int NodeID)
 {
-   EdgeDescriptor e;
-   bool inserted;
-   boost::tie(e, inserted) = boost::edge(src, tgt, *og);
-   THROW_ASSERT(inserted, "Edge from " + GET_NAME(og, src) + " to " + GET_NAME(og, tgt) + " doesn't exists");
-   get_edge_info<OpEdgeInfo>(e, *(og))->add_nodeID(NodeID, selector);
+   const auto [e, inserted] = boost::edge(src, tgt, og);
+   THROW_ASSERT(inserted, "Edge from " + og.CGetNodeInfo(src).vertex_name + " to " + og.CGetNodeInfo(tgt).vertex_name +
+                              " doesn't exists");
+   og.GetEdgeInfo(e).add_nodeID(NodeID, selector);
 }
 
-void operations_graph_constructor::AddOperation(const tree_managerRef TM, const std::string& src,
+void operations_graph_constructor::AddOperation(const ir_managerRef TM, const std::string& src,
                                                 const std::string& operation_t, unsigned int bb_index,
                                                 const unsigned int node_id)
 {
    THROW_ASSERT(src != "", "Vertex name empty");
    THROW_ASSERT(operation_t != "", "Operation empty");
-   vertex current = getIndex(src);
-   THROW_ASSERT(!op_graph->CGetOpNodeInfo(current)->node || node_id == 0 ||
-                    node_id == op_graph->CGetOpNodeInfo(current)->GetNodeId(),
+   auto current = getIndex(src);
+   auto& node_info = og.GetNodeInfo(current);
+   THROW_ASSERT(!node_info.node || node_id == 0 || node_id == node_info.GetNodeId(),
                 "Trying to set node_id " + STR(node_id) + " to vertex " + src + " that has already node_id " +
-                    STR(op_graph->CGetOpNodeInfo(current)->GetNodeId()));
+                    STR(node_info.GetNodeId()));
    if(node_id > 0 && node_id != ENTRY_ID && node_id != EXIT_ID)
    {
-      op_graph->GetOpNodeInfo(current)->node = TM->GetTreeNode(node_id);
+      og.GetNodeInfo(current).node = TM->GetIRNode(node_id);
    }
-   const unsigned int updated_node_id = op_graph->GetOpNodeInfo(current)->GetNodeId();
+   const auto updated_node_id = node_info.GetNodeId();
    if(updated_node_id != 0 && updated_node_id != ENTRY_ID && updated_node_id != EXIT_ID)
    {
-      GetPointerS<gimple_node>(TM->GetTreeNode(updated_node_id))->operation = operation_t;
+      GetPointerS<node_stmt>(TM->GetIRNode(updated_node_id))->operation = operation_t;
    }
-   GET_NODE_INFO(og, OpNodeInfo, current)->bb_index = bb_index;
+   node_info.bb_index = bb_index;
    if(src == ENTRY)
    {
-      op_graph->GetOpGraphInfo()->entry_vertex = current;
+      og.GetGraphInfo().entry_vertex = current;
    }
    if(src == EXIT)
    {
-      op_graph->GetOpGraphInfo()->exit_vertex = current;
+      og.GetGraphInfo().exit_vertex = current;
    }
-   op_graph->GetOpGraphInfo()->tree_node_to_operation[node_id] = current;
+   og.GetGraphInfo().ir_node_to_operation[node_id] = current;
 }
 
 void operations_graph_constructor::add_type(const std::string& src, unsigned int type_t)
 {
    THROW_ASSERT(src != "", "Vertex name empty");
    THROW_ASSERT(type_t != 0, "Type of vertex " + src + " is zero");
-   vertex src_index = getIndex(src);
-   if(GET_NODE_INFO(og, OpNodeInfo, src_index)->node_type != TYPE_GENERIC)
+   auto src_index = getIndex(src);
+   auto& node_info = og.GetNodeInfo(src_index);
+   if(node_info.node_type != TYPE_GENERIC)
    {
-      GET_NODE_INFO(og, OpNodeInfo, src_index)->node_type |= type_t;
+      node_info.node_type |= type_t;
    }
    else
    {
-      GET_NODE_INFO(og, OpNodeInfo, src_index)->node_type = type_t;
+      node_info.node_type = type_t;
    }
 }
 
-void operations_graph_constructor::AddVariable(const vertex op_vertex, const unsigned int variable,
-                                               const FunctionBehavior_VariableType variable_type,
-                                               const FunctionBehavior_VariableAccessType access_type)
+void operations_graph_constructor::AddVariable(OpGraph::vertex_descriptor op_vertex, const unsigned int variable,
+                                               const VariableType variable_type, const VariableAccessType access_type)
 {
-   op_graph->GetOpNodeInfo(op_vertex)->variables[variable_type][access_type].insert(variable);
+   og.GetNodeInfo(op_vertex).AddVariable(variable_type, access_type, variable);
+   if(access_type == VariableAccessType::DEFINITION)
+   {
+      THROW_ASSERT(og.GetGraphInfo().SSA2Def.find(variable) == og.GetGraphInfo().SSA2Def.end() ||
+                       og.GetGraphInfo().SSA2Def.find(variable)->second == op_vertex,
+                   "unexpected condition: multiple vertex defining the same variable: " + STR(variable));
+      og.GetGraphInfo().SSA2Def.emplace(variable, op_vertex);
+   }
 }
 
-void operations_graph_constructor::add_parameter(const vertex& Ver, unsigned int Var)
+void operations_graph_constructor::add_parameter(OpGraph::vertex_descriptor Ver, unsigned int Var)
 {
-   op_graph->GetOpNodeInfo(Ver)->actual_parameters.push_back(Var);
+   og.GetNodeInfo(Ver).actual_parameters.push_back(Var);
 }
 
 void operations_graph_constructor::add_called_function(const std::string& source, unsigned int called_function)
 {
-   op_graph->GetOpNodeInfo(getIndex(source))->called.insert(called_function);
+   og.GetNodeInfo(getIndex(source)).called.insert(called_function);
 }
 
-void operations_graph_constructor::AddSourceCodeVariable(const vertex& Ver, unsigned int Vargc)
+void operations_graph_constructor::AddSourceCodeVariable(OpGraph::vertex_descriptor Ver, unsigned int Vargc)
 {
-   op_graph->GetOpNodeInfo(Ver)->cited_variables.insert(Vargc);
+   og.GetNodeInfo(Ver).cited_variables.insert(Vargc);
 }

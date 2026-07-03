@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2023-2024 Politecnico di Milano
+ *              Copyright (C) 2023-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -39,24 +39,24 @@
 #include "generic_device.hpp"
 
 #include "Parameter.hpp"
-#include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "constant_strings.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "fileIO.hpp"
 #include "polixml.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "string_manipulation.hpp"
 #include "technology_manager.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
+
 #include <filesystem>
+
+#include "config_PANDA_LIB_INSTALLDIR.hpp"
 
 generic_device::generic_device(const ParameterConstRef& _Param, const technology_managerRef& _TM)
     : Param(_Param), TM(_TM), debug_level(_Param->get_class_debug_level(GET_CLASS(*this)))
 {
 }
-
-generic_device::~generic_device() = default;
 
 generic_deviceRef generic_device::factory(const ParameterConstRef& param, const technology_managerRef& TM)
 {
@@ -73,14 +73,33 @@ void generic_device::xload(const xml_element* node)
          const auto* dev_xml = GetPointer<const xml_element>(n);
          xload_device_parameters(dev_xml);
       }
+      else if(n->get_name() == "backend")
+      {
+         const auto back_xml = GetPointer<const xml_element>(n);
+         for(const auto& t : back_xml->get_children())
+         {
+            const auto* t_elem = GetPointer<const xml_element>(t);
+            if(!t_elem)
+            {
+               continue;
+            }
+
+            std::string id, env;
+            LOAD_XVM(id, t_elem);
+            LOAD_XVM(env, t_elem);
+
+            if(!backends.emplace(id, env).second)
+            {
+               THROW_WARNING("Duplicate backend flow for " + Param->getOption<std::string>(OPT_device_string) +
+                             " device.");
+            }
+         }
+      }
    }
 
    for(const auto& n : c_list)
    {
-      // The second part of the condition is false when we are generating the list of functional units in spider
-      if(n->get_name() == "technology" and
-         (not Param->isOption(OPT_input_format) or
-          Param->getOption<Parameters_FileFormat>(OPT_input_format) != Parameters_FileFormat::FF_XML_TEC))
+      if(n->get_name() == "technology")
       {
          const auto* tech_xml = GetPointer<const xml_element>(n);
          TM->xload(tech_xml);
@@ -127,95 +146,51 @@ void generic_device::xwrite(xml_element* nodeRoot)
       xml_element* elRoot = tmRoot->add_child_element(p->first);
       WRITE_XNVM2("value", p->second, elRoot);
    }
+
+   xml_element* backendRoot = nodeRoot->add_child_element("backend");
+   for(const auto& [id, env] : backends)
+   {
+      xml_element* flow = backendRoot->add_child_element("flow");
+      WRITE_XNVM2("id", id, flow);
+      WRITE_XNVM2("env", env, flow);
+   }
 }
 
 void generic_device::load_devices()
 {
-   /// map between the default device string and the corresponding configuration stream
-   std::map<std::string, std::string> default_device_data;
-   /// Load default device options
-   default_device_data["xc4vlx100-10ff1513"] = "xc4vlx100-10ff1513.data";
-   default_device_data["xc5vlx50-3ff1153"] = "xc5vlx50-3ff1153.data";
-   default_device_data["xc5vlx110t-1ff1136"] = "xc5vlx110t-1ff1136.data";
-   default_device_data["xc5vlx330t-2ff1738"] = "xc5vlx330t-2ff1738.data";
-   default_device_data["xc6vlx240t-1ff1156"] = "xc6vlx240t-1ff1156.data";
-   default_device_data["xc7z020-1clg484"] = "xc7z020-1clg484.data";
-   default_device_data["xc7z020-1clg484-VVD"] = "xc7z020-1clg484-VVD.data";
-   default_device_data["xc7z045-2ffg900-VVD"] = "xc7z045-2ffg900-VVD.data";
-   default_device_data["xc7z020-1clg484-YOSYS-VVD"] = "xc7z020-1clg484-YOSYS-VVD.data";
-   default_device_data["xc7vx485t-2ffg1761-VVD"] = "xc7vx485t-2ffg1761-VVD.data";
-   default_device_data["xc7vx690t-3ffg1930-VVD"] = "xc7vx690t-3ffg1930-VVD.data";
-   default_device_data["xc7vx330t-1ffg1157"] = "xc7vx330t-1ffg1157.data";
-   default_device_data["xc7a100t-1csg324-VVD"] = "xc7a100t-1csg324-VVD.data";
-   default_device_data["xcku060-3ffva1156-VVD"] = "xcku060-3ffva1156-VVD.data";
-   default_device_data["xcu280-2Lfsvh2892-VVD"] = "xcu280-2Lfsvh2892-VVD.data";
-   default_device_data["xcu55c-2Lfsvh2892-VVD"] = "xcu55c-2Lfsvh2892-VVD.data";
-
-   default_device_data["EP2C70F896C6"] = "EP2C70F896C6.data";
-   default_device_data["EP2C70F896C6-R"] = "EP2C70F896C6-R.data";
-   default_device_data["5CSEMA5F31C6"] = "5CSEMA5F31C6.data";
-   default_device_data["EP4SGX530KH40C2"] = "EP4SGX530KH40C2.data";
-   default_device_data["5SGXEA7N2F45C1"] = "5SGXEA7N2F45C1.data";
-   default_device_data["LFE335EA8FN484C"] = "LFE335EA8FN484C.data";
-   default_device_data["LFE5UM85F8BG756C"] = "LFE5UM85F8BG756C.data";
-   default_device_data["LFE5U85F8BG756C"] = "LFE5U85F8BG756C.data";
-   default_device_data["nx1h35S"] = "nx1h35S.data";
-   default_device_data["nx1h140tsp"] = "nx1h140tsp.data";
-   default_device_data["nx2h540tsc"] = "nx2h540tsc.data";
-
-   default_device_data["nangate45"] = "nangate45.data";
-   default_device_data["asap7-BC"] = "asap7-BC.data";
-   default_device_data["asap7-TC"] = "asap7-TC.data";
-   default_device_data["asap7-WC"] = "asap7-WC.data";
-
-   auto output_level = Param->getOption<unsigned int>(OPT_output_level);
+   const auto load_data = [&](const std::string& device_data) {
+      XMLDomParser parser(device_data);
+      parser.Exec();
+      if(parser)
+      {
+         xload(parser.get_document()->get_root_node());
+      }
+   };
+   std::vector<std::string> data_files;
+   auto out_lvl = Param->getOption<unsigned int>(OPT_output_level);
 
    try
    {
-      PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Available devices:");
-      for(auto d = default_device_data.begin(); d != default_device_data.end(); ++d)
+      if(Param->isOption(OPT_target_device_file))
       {
-         PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " - " + d->first);
+         const auto file_devices = Param->getOption<std::vector<std::string>>(OPT_target_device_file);
+         for(const auto& file_device : file_devices)
+         {
+            PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, out_lvl, "Imported user data from file " + file_device);
+            load_data(file_device);
+         }
       }
-
-      const CustomSet<XMLDomParserRef> parsers = [&]() -> CustomSet<XMLDomParserRef> {
-         CustomSet<XMLDomParserRef> ret;
-         if(Param->isOption(OPT_target_device_file))
-         {
-            const auto file_devices = Param->getOption<std::vector<std::string>>(OPT_target_device_file);
-            for(const auto& file_device : file_devices)
-            {
-               PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Imported user data from file " + file_device);
-               ret.insert(XMLDomParserRef(new XMLDomParser(file_device)));
-            }
-         }
-         else
-         {
-            auto device_string = Param->getOption<std::string>(OPT_device_string);
-
-            if(default_device_data.find(device_string) != default_device_data.end())
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Loading " + device_string);
-               ret.insert(XMLDomParserRef(
-                   new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/technology/", true) +
-                                    default_device_data[device_string])));
-            }
-            else
-            {
-               THROW_ERROR("Target device not supported: " + device_string);
-            }
-         }
-         return ret;
-      }();
-
-      for(const auto& parser : parsers)
+      else
       {
-         parser->Exec();
-         if(parser and *parser)
+         const auto device_string = Param->getOption<std::string>(OPT_device_string);
+         const auto device_data =
+             relocate_install_path(PANDA_LIB_INSTALLDIR "/libtech/targets/" + device_string + ".spec_data");
+         if(!std::filesystem::exists(device_data))
          {
-            const xml_element* node = parser->get_document()->get_root_node(); // deleted by DomParser.
-            xload(node);
+            THROW_ERROR("Target device not supported: " + device_string);
          }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Loading " + device_string);
+         load_data(device_data);
       }
 
       return;
@@ -265,6 +240,7 @@ void generic_device::xload_device_parameters(const xml_element* dev_xml)
       else
       {
          parameters[t_elem->get_name()] = value;
+         const_cast<Parameter*>(Param.get())->SetPandaParameterFromDevice(t_elem->get_name(), value);
       }
       if(t_elem->get_name() == "model")
       {
@@ -279,9 +255,9 @@ void generic_device::xload_device_parameters(const xml_element* dev_xml)
          const_cast<Parameter*>(Param.get())->setOption("device_package", value);
       }
    }
-   std::string device_string = Param->getOption<std::string>("device_name") +
-                               Param->getOption<std::string>("device_speed") +
-                               Param->getOption<std::string>("device_package");
+   const auto device_string = Param->getOption<std::string>("device_name") +
+                              Param->getOption<std::string>("device_speed") +
+                              Param->getOption<std::string>("device_package");
    const_cast<Parameter*>(Param.get())->setOption(OPT_device_string, device_string);
 }
 

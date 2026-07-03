@@ -1,0 +1,10 @@
+--benchmark-name=ars-un arf_res_sharing/module.c --top-fname=arf --generate-tb=BENCHMARKS_ROOT/arf_res_sharing/test.xml --generate-interface=WB4 --cprf=0.9 --skip-pipe-parameter=1
+--benchmark-name=ars-co arf_res_sharing/module.c --top-fname=arf --generate-tb=BENCHMARKS_ROOT/arf_res_sharing/test.xml --generate-interface=WB4 --cprf=0.9 --skip-pipe-parameter=1 arf_res_sharing/constraints_STD.xml
+
+crypto_designs/Keccak_asic.c --benchmark-name=Keccak_asic --top-fname=kekka_coproc --generate-tb=BENCHMARKS_ROOT/crypto_designs/test_asic.xml -O3 --generate-interface=INFER
+
+crypto_designs/Keccak_asic.c --benchmark-name=keccak_sds1_bram_asic --top-fname=kekka_coproc --generate-tb=BENCHMARKS_ROOT/crypto_designs/test_asic.xml -O3 --memory-allocation-policy=ALL_BRAM --channels-type=MEM_ACC_11 --do-not-use-asynchronous-memories --sparse-memory=off
+
+mm/module.c --benchmark-name=mm --top-fname=mm --generate-tb=BENCHMARKS_ROOT/mm/test.xml -O3
+
+mm_float/module.c --benchmark-name=mm_float --top-fname=mm --generate-tb=BENCHMARKS_ROOT/mm_float/test.xml -O3

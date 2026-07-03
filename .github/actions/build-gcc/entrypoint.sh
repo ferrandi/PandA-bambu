@@ -1,37 +1,62 @@
-#!/bin/bash
-set -e
+#!/bin/bash -e
+if [ -z "$GITHUB_OUTPUT" ]; then
+  export GITHUB_OUTPUT=`mktemp`
+  echo "Warning: Environment variable GITHUB_OUTPUT is not set."
+  echo "Writing output variables to $GITHUB_OUTPUT"
+fi
 
-BRANCH=$1
-PATCH_FILE="$(compgen -G gcc-*.patch || echo '')"
-DIST_NAME="$2-$(lsb_release -is)_$(lsb_release -rs)"
-DIST_DIR="$GITHUB_WORKSPACE/$DIST_NAME"
+workspace_dir="$PWD"
+
+REF="$1"
+DIST_NAME="$2"
+PATCH_FILE="${workspace_dir}/$(compgen -G gcc-*.patch || echo '')"
+DESTDIR="${workspace_dir}/${DIST_NAME}"
 shift
 shift
 
-workspace_dir=$PWD
-
-ln -s /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h
+echo "GCC reference: ${REF}"
+echo "Package name : ${DIST_NAME}"
+echo "Patch file   : ${PATCH_FILE}"
+echo "Build CC     : `gcc --version|head -n 1`"
+echo "Build CXX    : `g++ --version|head -n 1`"
+echo "Build options: $@"
 
 function cleanup {
-   cd $workspace_dir
-   rm -rf gcc
+   rm -rf ${workspace_dir}/gcc
 }
 trap cleanup EXIT
 
-git clone --depth 1 --branch $BRANCH git://gcc.gnu.org/git/gcc.git
+git -c http.sslVerify=false clone --depth 1 --branch "${REF}" https://gcc.gnu.org/git/gcc.git gcc
 
 cd gcc
-if [[ -f "../$PATCH_FILE" ]]; then
-   git apply ../$PATCH_FILE
-   echo "Patch '$PATCH_FILE' applied successfully"
+if test -f "${PATCH_FILE}"; then
+   git apply "${PATCH_FILE}"
+   echo "Patch '$(basename ${PATCH_FILE})' applied successfully"
 fi
 ./contrib/download_prerequisites
 mkdir build
 cd build
-../configure $@
-make -j$J bootstrap
-make DESTDIR="$DIST_DIR" install
+eval ../configure "$@" --prefix=/ --enable-version-specific-runtime-libs
+make -j$J
+make DESTDIR="$DESTDIR" install -j$J
 
-lsb_release -a >> "$DIST_DIR/VERSION"
+# Fix libgcc location
+version_specific_lib_dir="${DESTDIR}/lib/gcc/x86_64-linux-gnu/`ls ${DESTDIR}/lib/gcc/x86_64-linux-gnu | head -n 1`"
+IFS=$'\n'; for lib in `find ${DESTDIR} -name 'libgcc_s.so*'`
+do
+   case $lib in
+      *lib64* )
+         mv ${lib} ${version_specific_lib_dir}/ ;;
+      *libx32* )
+         mv ${lib} ${version_specific_lib_dir}/x32 ;;
+      * )
+         mv ${lib} ${version_specific_lib_dir}/32 ;;
+   esac
+done
+rm -rf ${DESTDIR}/lib/gcc/x86_64-linux-gnu/lib*
+rm -rf ${DESTDIR}/lib64
 
-echo "dist-dir=$DIST_NAME" >> $GITHUB_OUTPUT
+# libtoolize should mind its own business and stop bloating my distributions
+rm -f `find "${DESTDIR}" -name '*.la'`
+
+echo "dist-dir=${DESTDIR#${workspace_dir}/}" >> ${GITHUB_OUTPUT}

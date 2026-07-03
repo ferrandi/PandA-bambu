@@ -1,7 +1,7 @@
-// This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2016-2024 Politecnico di Milano
+// This component is part of the PANDA/BAMBU IP LIBRARY
+// Copyright (C) 2016-2026 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
-// License: PANDA_LGPLv3
+// License: PANDA_MIT
 `timescale 1ns / 1ps
 module sevensegments_ctrl(clock, reset, start_port, val, mask, sseg_ca, sseg_an);
   // IN

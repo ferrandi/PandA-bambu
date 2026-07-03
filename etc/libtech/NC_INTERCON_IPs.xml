@@ -1,0 +1,2947 @@
+<?xml version="1.0"?>
+<technology>
+  <library>
+    <name>STD</name>
+    <cell>
+      <name>PROFILING_MODULE_PRE_NOC</name>
+      <circuit>
+        <module_o id="PROFILING_MODULE_PRE_NOC">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="PROFILING_MODULE_PRE_NOC"/>
+          <parameter name="CHANNEL_NUMBER">0</parameter>
+          <parameter name="DATA_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_oe_ram" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_we_ram" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_addr_ram" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="node_id_dest" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_back_pressure" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="PROFILING_MODULE_PRE_NOC CHANNEL_NUMBER DATA_file Mout_addr_ram node_id_dest" VERILOG_PROVIDED="
+integer res_file, clock_counter, bp_counter;
+  
+initial
+begin
+  res_file = $fopen(DATA_file,&quot;w&quot;);
+  clock_counter = 0;
+  bp_counter = 0;
+end
+
+always @(posedge clock)
+begin  
+  clock_counter &lt;= clock_counter + 1;
+  if(Mout_back_pressure == 1)
+  begin
+    bp_counter = bp_counter + 1;
+  end
+  if((Mout_oe_ram == 1 || Mout_we_ram == 1) &amp;&amp; Mout_back_pressure == 0)  
+  begin 
+    $fwrite(res_file, &quot;%0d,%0d,%0d,%0d,%0d \n&quot;, clock_counter, CHANNEL_NUMBER, node_id_dest, Mout_addr_ram, bp_counter);  
+  end
+end"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>PROFILING_MODULE_POST_NOC</name>
+      <circuit>
+        <module_o id="PROFILING_MODULE_POST_NOC">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="PROFILING_MODULE_POST_NOC"/>
+          <parameter name="BANK_NUMBER">0</parameter>
+          <parameter name="NODE_ID_SIZE">0</parameter>
+          <parameter name="DATA_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_oe_ram" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_we_ram" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_addr_ram" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="M_tag" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_back_pressure" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="PROFILING_MODULE_POST_NOC BANK_NUMBER NODE_ID_SIZE DATA_file Mout_addr_ram M_tag" VERILOG_PROVIDED="
+integer res_file, clock_counter, bp_counter;
+  
+initial
+begin
+  res_file = $fopen(DATA_file,&quot;w&quot;);
+  clock_counter = 0;
+  bp_counter = 0;
+end
+
+always @(posedge clock)
+begin  
+  clock_counter &lt;= clock_counter + 1;
+  if(Mout_back_pressure == 1)
+  begin
+    bp_counter = bp_counter + 1;
+  end
+  if((Mout_oe_ram == 1 || Mout_we_ram == 1) &amp;&amp; Mout_back_pressure == 0)  
+  begin 
+    $fwrite(res_file, &quot;%0d,%0d,%0d,%0d,%0d \n&quot;, clock_counter, M_tag[NODE_ID_SIZE-1:0], BANK_NUMBER, Mout_addr_ram, bp_counter);  
+  end
+end"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>middle_node</name>
+      <circuit>
+        <module_o id="middle_node">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <keep_hierarchy>1</keep_hierarchy>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="middle_node"/>
+          <parameter name="BITSIZE_ADDR">4</parameter>
+          <parameter name="BITSIZE_DATA">32</parameter>
+          <parameter name="LEVEL">0</parameter>
+          <parameter name="REGISTERED">1</parameter>
+          <port_o id="clock" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="i_inside" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="i_inside_valid" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="i_outside" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="i_outside_valid" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="o_0" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="o_0_valid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="o_1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="o_1_valid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="middle_node i_inside i_outside o_0 o_1 BITSIZE_ADDR BITSIZE_DATA LEVEL REGISTERED" VERILOG_PROVIDED="
+reg [BITSIZE_ADDR+BITSIZE_DATA-1:0] o_0_reg;
+reg o_0_valid_reg;
+reg [BITSIZE_ADDR+BITSIZE_DATA-1:0] o_1_reg;
+reg o_1_valid_reg;          
+reg [BITSIZE_o_0-1:0] o_0;
+reg o_0_valid;
+reg [BITSIZE_o_1-1:0] o_1;
+reg o_1_valid;
+wire i_inside_addrbit;
+wire i_outside_addrbit;
+
+assign i_inside_addrbit = i_inside[BITSIZE_DATA+LEVEL];
+assign i_outside_addrbit = i_outside[BITSIZE_DATA+LEVEL];
+// o_1
+always @(*)
+begin
+  if(i_inside_addrbit &amp;&amp; i_inside_valid)
+  begin
+    o_1_reg = i_inside;
+  end
+  else
+  begin
+    o_1_reg = i_outside;
+  end
+end
+// o_1_valid
+always @(*)
+begin
+  if(i_inside_addrbit &amp;&amp; i_inside_valid)
+  begin
+    o_1_valid_reg = 1&apos;b1;
+  end
+  else if((i_outside_addrbit || (!i_inside_addrbit &amp;&amp; i_inside_valid)) &amp;&amp; i_outside_valid)
+  begin
+    o_1_valid_reg = 1&apos;b1;
+  end
+  else
+  begin
+    o_1_valid_reg = 1&apos;b0;
+  end
+end
+// o_0
+always @(*)
+begin
+  if(!i_inside_addrbit &amp;&amp; i_inside_valid)
+  begin
+    o_0_reg = i_inside;
+  end
+  else
+  begin
+    o_0_reg = i_outside;
+  end
+end
+// o_0_valid
+always @(*)
+begin
+  if(!i_inside_addrbit &amp;&amp; i_inside_valid)
+  begin
+    o_0_valid_reg = 1&apos;b1;
+  end
+  else if((!i_outside_addrbit &amp;&amp; i_outside_valid) || (i_outside_addrbit &amp;&amp; i_outside_valid &amp;&amp; i_inside_addrbit &amp;&amp; i_inside_valid))
+  begin
+    o_0_valid_reg = 1&apos;b1;
+  end
+  else
+  begin
+    o_0_valid_reg = 1&apos;b0;
+  end
+end
+generate
+  if(REGISTERED==1)
+  begin
+    always @(posedge clock)
+    begin
+      o_1 &lt;= o_1_reg;
+      o_1_valid &lt;= o_1_valid_reg;
+      o_0 &lt;= o_0_reg;
+      o_0_valid &lt;= o_0_valid_reg;
+    end
+  end
+  else
+    begin
+    always @(*)
+    begin
+      o_1 = o_1_reg;
+      o_1_valid = o_1_valid_reg;
+      o_0 = o_0_reg;
+      o_0_valid = o_0_valid_reg;
+    end
+  end
+endgenerate"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>swap_node3</name>
+      <circuit>
+        <module_o id="swap_node3">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <keep_hierarchy>1</keep_hierarchy>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="swap_node3"/>
+          <parameter name="BITSIZE_ADDR">4</parameter>
+          <parameter name="BITSIZE_DATA">32</parameter>
+          <parameter name="REGISTERED">1</parameter>
+          <port_o id="clock" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="i" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="i_inside" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="i_outside" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="sel" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="t_0" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="t_1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="swap_node3 i i_inside i_outside t_0 t_1 BITSIZE_ADDR BITSIZE_DATA REGISTERED" VERILOG_PROVIDED="
+reg [BITSIZE_ADDR+BITSIZE_DATA-1:0] t_1_reg;
+reg [BITSIZE_ADDR+BITSIZE_DATA-1:0] t_0_reg;
+reg [BITSIZE_ADDR+BITSIZE_DATA-1:0] t_1_reg_t;
+reg [BITSIZE_ADDR+BITSIZE_DATA-1:0] t_0_reg_t;
+
+assign t_1 = t_1_reg_t;
+assign t_0 = t_0_reg_t;
+
+always @(*)
+begin
+  case(sel)
+    2&apos;b00:
+    begin
+      t_1_reg = i_inside;
+      t_0_reg = i_outside;
+    end
+    2&apos;b01:
+    begin
+      t_1_reg = i_outside;
+      t_0_reg = i_inside;
+    end
+    2&apos;b10:
+    begin
+      t_1_reg = i;
+      t_0_reg = i_inside;
+    end
+    2&apos;b11:
+    begin
+      t_1_reg = i_inside;
+      t_0_reg = i;
+    end
+  endcase
+end
+
+generate
+  if(REGISTERED==1)
+  begin
+    always @(posedge clock)
+    begin
+      t_1_reg_t &lt;= t_1_reg;
+      t_0_reg_t &lt;= t_0_reg;
+    end
+  end
+  else
+  begin
+    always @(*)
+    begin
+      t_1_reg_t = t_1_reg;
+      t_0_reg_t  = t_0_reg;
+    end
+  end
+endgenerate"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>io_node6</name>
+      <circuit>
+        <module_o id="io_node6">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <keep_hierarchy>1</keep_hierarchy>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="io_node6"/>
+          <parameter name="BITSIZE_ADDR">4</parameter>
+          <parameter name="BITSIZE_DATA">32</parameter>
+          <parameter name="LEVEL">0</parameter>
+          <parameter name="REGISTERED">1</parameter>
+          <parameter name="ADDRESS">0</parameter>
+          <port_o id="clock" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="i" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="i_valid" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="i_bp" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="i_inside" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="i_inside_valid" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="i_outside" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="i_outside_valid" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="o" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="o_valid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="o_bp" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="o_0" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="o_0_valid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="o_1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="o_1_valid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="io_node6 i i_inside i_outside o o_0 o_1 BITSIZE_ADDR BITSIZE_DATA LEVEL REGISTERED ADDRESS" IP_COMPONENT="swap_node3" VERILOG_PROVIDED="
+parameter CTRL_BIT = ADDRESS[LEVEL];  
+wire i_addrbit;
+wire inside_addrbit;
+wire outside_addrbit;
+wire [BITSIZE_ADDR-1:0] addr_i;
+wire [BITSIZE_ADDR-1:0] addr_inside;
+wire [BITSIZE_ADDR-1:0] addr_outside;
+wire is_addr_i;
+wire is_addr_inside;
+wire is_addr_outside;
+wire [BITSIZE_ADDR+BITSIZE_DATA-1:0] t_1;
+reg t_1_valid_reg;
+wire [BITSIZE_ADDR+BITSIZE_DATA-1:0] t_0;
+reg t_0_valid_reg;
+wire go_inside_1;
+wire go_inside_0;
+wire go_outside_1;
+wire go_outside_0;
+wire go_i_1;
+wire go_i_0;
+reg o_0_valid_reg;
+wire to_0_valid_reg;
+reg o_1_valid_reg;
+wire to_1_valid_reg;
+reg o_valid_reg;
+reg t_valid_reg;
+reg [1:0] sel;
+
+
+assign i_addrbit = i[BITSIZE_DATA+LEVEL];
+assign inside_addrbit = i_inside[BITSIZE_DATA+LEVEL];
+assign outside_addrbit = i_outside[BITSIZE_DATA+LEVEL];
+assign addr_i = i[BITSIZE_ADDR+BITSIZE_DATA-1:BITSIZE_DATA];
+assign addr_inside = i_inside[BITSIZE_ADDR+BITSIZE_DATA-1:BITSIZE_DATA];
+assign addr_outside = i_outside[BITSIZE_ADDR+BITSIZE_DATA-1:BITSIZE_DATA];
+assign is_addr_inside = addr_inside == ADDRESS;  
+assign is_addr_outside = addr_outside == ADDRESS;  
+assign is_addr_i = addr_i == ADDRESS;
+
+
+assign go_inside_1 = inside_addrbit &amp;&amp; i_inside_valid;
+assign go_inside_0 = (!inside_addrbit) &amp;&amp; i_inside_valid;
+
+assign go_outside_1 = (outside_addrbit || go_inside_0) &amp;&amp; i_outside_valid &amp;&amp; !go_inside_1;
+assign go_outside_0 = ((!outside_addrbit) || go_inside_1)  &amp;&amp; i_outside_valid &amp;&amp; !go_inside_0;
+
+assign go_i_1 = (i_addrbit || go_inside_0) &amp;&amp; i_valid &amp;&amp; !go_outside_1 &amp;&amp; !go_outside_0;
+assign go_i_0 = (!i_addrbit || go_inside_1) &amp;&amp; i_valid &amp;&amp; !go_outside_0 &amp;&amp; !go_outside_1;
+
+always @(*)
+begin
+if(go_inside_1 &amp;&amp; i_outside_valid)
+  sel = 2&apos;b00;
+else if(go_inside_0 &amp;&amp; i_outside_valid)
+  sel = 2&apos;b01;
+else if(!i_inside_valid &amp;&amp; outside_addrbit &amp;&amp; i_outside_valid)
+  sel = 2&apos;b01;
+else if(!i_inside_valid &amp;&amp; !outside_addrbit &amp;&amp; i_outside_valid)
+  sel = 2&apos;b00;
+else if(go_inside_1 &amp;&amp; !i_outside_valid)
+  sel = 2&apos;b11;
+else if(go_inside_0 &amp;&amp; !i_outside_valid)
+  sel = 2&apos;b10;
+else if(i_addrbit)
+  sel = 2&apos;b10;
+else
+  sel = 2&apos;b11;
+end
+
+swap_node3 #(.BITSIZE_i(BITSIZE_ADDR+BITSIZE_DATA), .BITSIZE_i_inside(BITSIZE_ADDR+BITSIZE_DATA), .BITSIZE_i_outside(BITSIZE_ADDR+BITSIZE_DATA),
+           .BITSIZE_t_0(BITSIZE_ADDR+BITSIZE_DATA), .BITSIZE_t_1(BITSIZE_ADDR+BITSIZE_DATA),  
+           .BITSIZE_ADDR(BITSIZE_ADDR), .BITSIZE_DATA(BITSIZE_DATA), .REGISTERED(REGISTERED)) swap_node_inst (.clock(clock), .i(i), .i_inside(i_inside), .i_outside(i_outside), .sel(sel), .t_0(t_0), .t_1(t_1));
+
+// t_1_valid
+always @(*)
+begin
+  if(go_inside_1)
+  begin
+    t_1_valid_reg = 1&apos;b1;
+  end
+  else if(go_outside_1)
+  begin
+    t_1_valid_reg = 1&apos;b1;
+  end
+  else if(go_i_1)
+  begin
+    t_1_valid_reg = 1&apos;b1;
+  end
+  else
+  begin
+    t_1_valid_reg = 1&apos;b0;
+  end
+end 
+// o_0_valid
+always @(*)
+begin
+  if(go_inside_0)
+  begin
+    t_0_valid_reg = 1&apos;b1;
+  end
+  else if(go_outside_0)
+  begin
+    t_0_valid_reg = 1&apos;b1;
+  end
+  else if(go_i_0)
+  begin
+    t_0_valid_reg = 1&apos;b1;
+  end
+  else
+  begin
+    t_0_valid_reg = 1&apos;b0;
+  end
+end
+
+generate
+  if(CTRL_BIT==1)
+  begin
+    always @(*)
+    begin
+      if(go_inside_1)
+        t_valid_reg = is_addr_inside;
+      else if(go_outside_1)
+        t_valid_reg = is_addr_outside;
+      else if(go_i_1)
+        t_valid_reg = is_addr_i;
+      else
+        t_valid_reg = 1&apos;b0;
+    end
+  end
+  else
+  begin
+    always @(*)
+    begin
+      if(go_inside_0)
+        t_valid_reg = is_addr_inside;
+      else if(go_outside_0)
+        t_valid_reg = is_addr_outside;
+      else if(go_i_0)
+        t_valid_reg = is_addr_i;
+      else
+        t_valid_reg = 1&apos;b0;
+    end
+  end
+endgenerate
+
+generate
+  if(CTRL_BIT==1)
+  begin
+    assign to_0_valid_reg = t_0_valid_reg;
+    assign to_1_valid_reg = t_1_valid_reg &amp;&amp; (!t_valid_reg || o_bp);
+  end
+  else
+  begin
+    assign to_0_valid_reg = t_0_valid_reg &amp;&amp; (!t_valid_reg || o_bp);
+    assign to_1_valid_reg = t_1_valid_reg;
+  end
+endgenerate
+
+generate
+  if(REGISTERED==1)
+  begin
+    always @(posedge clock)
+    begin
+      if(1RESET_VALUE)
+      begin
+        o_1_valid_reg &lt;= 0;
+        o_0_valid_reg &lt;= 0;
+        o_valid_reg &lt;= 0;
+      end
+      else
+      begin
+        o_1_valid_reg &lt;= to_1_valid_reg;
+        o_0_valid_reg &lt;= to_0_valid_reg;
+        o_valid_reg &lt;= t_valid_reg &amp;&amp; !o_bp;
+      end
+    end
+  end
+  else
+  begin
+    always @(*)
+    begin
+      o_1_valid_reg = to_1_valid_reg;
+      o_0_valid_reg = to_0_valid_reg;
+      o_valid_reg = t_valid_reg &amp;&amp; !o_bp; 
+    end
+  end
+endgenerate
+
+assign o_1 = t_1;
+assign o_1_valid = o_1_valid_reg;
+assign o_0 = t_0;
+assign o_0_valid = o_0_valid_reg;
+assign i_bp = i_valid &amp;&amp; (go_outside_1 || go_outside_0);
+assign o_valid = o_valid_reg;
+generate
+  if(CTRL_BIT==1)
+  begin
+    assign o = t_1;
+  end
+  else
+  begin
+    assign o = t_0;
+  end
+endgenerate"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>minimal_noc</name>
+      <circuit>
+        <module_o id="minimal_noc">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="minimal_noc"/>
+          <parameter name="REGISTERED">1</parameter>
+          <parameter name="N_NODES_COL">8</parameter>
+          <parameter name="N_NODES">24</parameter>
+          <parameter name="BITSIZE_DATA">64</parameter>
+          <parameter name="BITSIZE_ADDR">$clog2(N_NODES_COL)</parameter>
+          <parameter name="BITSIZE_ADDR_EXT">(N_NODES/N_NODES_COL &gt; 0 ? $clog2(N_NODES/N_NODES_COL) : 0)</parameter>
+          <port_o id="clock" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_vector_o id="i" dir="IN" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="i_valid" dir="IN" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="i_bp" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="o" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="o_valid" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="o_bp" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="minimal_noc i i_valid i_bp o o_valid o_bp REGISTERED N_NODES_COL N_NODES BITSIZE_DATA BITSIZE_ADDR BITSIZE_ADDR_EXT" IP_COMPONENT="io_node6,middle_node" VERILOG_PROVIDED="
+parameter nlevel = $clog2(N_NODES_COL);
+function integer FLIP_BIT;
+input integer level;
+input integer address;
+begin
+  FLIP_BIT = address ^ (1 &lt;&lt; level);
+end
+endfunction
+wire [BITSIZE_ADDR_EXT+BITSIZE_ADDR+BITSIZE_DATA-1:0] i_inside [0:N_NODES_COL-1][0:nlevel-1];
+wire inside_valid [0:N_NODES_COL-1][0:nlevel-1];
+wire [BITSIZE_ADDR_EXT+BITSIZE_ADDR+BITSIZE_DATA-1:0] outside [0:N_NODES_COL-1][0:nlevel-1];
+wire outside_valid [0:N_NODES_COL-1][0:nlevel-1];
+
+generate
+genvar column;
+for (column = 0; column &lt; N_NODES_COL; column = column + 1) 
+begin : column_inst
+  genvar level;
+  for (level = 1; level &lt; nlevel; level = level + 1) 
+  begin : lev
+    if(column+level*N_NODES_COL &lt; N_NODES)
+    begin
+      if(column[nlevel-level-1])
+      begin : io_node_n_1
+        io_node6 #(.BITSIZE_i(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), .BITSIZE_i_inside(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), 
+                    .BITSIZE_i_outside(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), .BITSIZE_o(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), 
+                    .BITSIZE_o_0(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), .BITSIZE_o_1(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA),
+                    .BITSIZE_ADDR(BITSIZE_ADDR_EXT+BITSIZE_ADDR), .BITSIZE_DATA(BITSIZE_DATA), 
+                    .LEVEL(nlevel-level-1), .REGISTERED(1), .ADDRESS(column+level*N_NODES_COL)) 
+          io_node6_inst_1 (.clock(clock), .reset(reset), .i(i[(column+level*N_NODES_COL)*BITSIZE_i+:BITSIZE_i]), .i_valid(i_valid[column+level*N_NODES_COL]), .i_bp(i_bp[column+level*N_NODES_COL]), 
+            .i_inside(i_inside[column][level-1]), .i_inside_valid(inside_valid[column][level-1]), .i_outside(outside[column][level-1]), .i_outside_valid(outside_valid[column][level-1]), 
+            .o(o[(column+level*N_NODES_COL)*BITSIZE_o+:BITSIZE_o]), .o_valid(o_valid[column+level*N_NODES_COL]), 
+            .o_0(outside[FLIP_BIT(nlevel-1-level,column)][level]), .o_0_valid(outside_valid[FLIP_BIT(nlevel-1-level,column)][level]), .o_bp(o_bp[column+level*N_NODES_COL]), .o_1(i_inside[column][level]), .o_1_valid(inside_valid[column][level]));
+      end
+      else
+      begin : io_node_n_0
+        io_node6 #(.BITSIZE_i(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), .BITSIZE_i_inside(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), 
+                    .BITSIZE_i_outside(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), .BITSIZE_o(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), 
+                    .BITSIZE_o_0(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), .BITSIZE_o_1(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA),
+                    .BITSIZE_ADDR(BITSIZE_ADDR_EXT+BITSIZE_ADDR), .BITSIZE_DATA(BITSIZE_DATA), 
+                    .LEVEL(nlevel-level-1), .REGISTERED(1), .ADDRESS(column+level*N_NODES_COL)) 
+          io_node6_inst_0 (.clock(clock), .reset(reset), .i(i[(column+level*N_NODES_COL)*BITSIZE_i+:BITSIZE_i]), .i_valid(i_valid[column+level*N_NODES_COL]), .i_bp(i_bp[column+level*N_NODES_COL]), 
+            .i_inside(i_inside[column][level-1]), .i_inside_valid(inside_valid[column][level-1]), .i_outside(outside[column][level-1]), .i_outside_valid(outside_valid[column][level-1]), 
+            .o(o[(column+level*N_NODES_COL)*BITSIZE_o+:BITSIZE_o]), .o_valid(o_valid[column+level*N_NODES_COL]), 
+            .o_0(i_inside[column][level]), .o_0_valid(inside_valid[column][level]), .o_bp(o_bp[column+level*N_NODES_COL]), .o_1(outside[FLIP_BIT(nlevel-1-level,column)][level]), .o_1_valid(outside_valid[FLIP_BIT(nlevel-1-level,column)][level]));
+      end
+    end
+    else
+    begin
+      if(column[nlevel-level-1])
+      begin : mid_1
+        middle_node #(.BITSIZE_i_inside(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), .BITSIZE_i_outside(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), 
+                      .BITSIZE_o_0(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), .BITSIZE_o_1(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA),
+                      .BITSIZE_ADDR(BITSIZE_ADDR_EXT+BITSIZE_ADDR), .BITSIZE_DATA(BITSIZE_DATA), 
+                      .LEVEL(nlevel-level-1), .REGISTERED(REGISTERED)) 
+          middle_node_inst_1 (.clock(clock),
+            .i_inside(i_inside[column][level-1]), .i_inside_valid(inside_valid[column][level-1]), .i_outside(outside[column][level-1]), .i_outside_valid(outside_valid[column][level-1]), 
+            .o_0(outside[FLIP_BIT(nlevel-1-level,column)][level]), .o_0_valid(outside_valid[FLIP_BIT(nlevel-1-level,column)][level]), .o_1(i_inside[column][level]), .o_1_valid(inside_valid[column][level]));
+      end
+    else
+      begin : mid_0
+        middle_node #(.BITSIZE_i_inside(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), .BITSIZE_i_outside(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), 
+                    .BITSIZE_o_0(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), .BITSIZE_o_1(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA),
+                    .BITSIZE_ADDR(BITSIZE_ADDR_EXT+BITSIZE_ADDR), .BITSIZE_DATA(BITSIZE_DATA), 
+                    .LEVEL(nlevel-level-1), .REGISTERED(REGISTERED)) 
+          middle_node_inst_0 (.clock(clock),
+            .i_inside(i_inside[column][level-1]), .i_inside_valid(inside_valid[column][level-1]), .i_outside(outside[column][level-1]), .i_outside_valid(outside_valid[column][level-1]), 
+            .o_0(i_inside[column][level]), .o_0_valid(inside_valid[column][level]), .o_1(outside[FLIP_BIT(nlevel-1-level,column)][level] ), .o_1_valid(outside_valid[FLIP_BIT(nlevel-1-level,column)][level]));
+      end
+    end
+  end
+  if(column &lt; N_NODES)
+  begin
+    if(column[nlevel-1])
+    begin : io_node_1
+      io_node6 #(.BITSIZE_i(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), .BITSIZE_i_inside(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), 
+                  .BITSIZE_i_outside(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), .BITSIZE_o(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), 
+                  .BITSIZE_o_0(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), .BITSIZE_o_1(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA),
+                  .BITSIZE_ADDR(BITSIZE_ADDR_EXT+BITSIZE_ADDR), .BITSIZE_DATA(BITSIZE_DATA), 
+                  .LEVEL(nlevel-1), .REGISTERED(1), .ADDRESS(column)) 
+        io_node6_inst_1 (.clock(clock), .reset(reset), .i(i[column*BITSIZE_i+:BITSIZE_i]), .i_valid(i_valid[column]), .i_bp(i_bp[column]), 
+          .i_inside(i_inside[column][nlevel-1]), .i_inside_valid(inside_valid[column][nlevel-1]), .i_outside(outside[column][nlevel-1]), .i_outside_valid(outside_valid[column][nlevel-1]), 
+          .o(o[column*BITSIZE_o+:BITSIZE_o]), .o_valid(o_valid[column]), .o_bp(o_bp[column]), .o_0(outside[FLIP_BIT(nlevel-1,column)][0]), .o_0_valid(outside_valid[FLIP_BIT(nlevel-1,column)][0]), .o_1(i_inside[column][0]), .o_1_valid(inside_valid[column][0]));
+    end
+    else
+    begin : io_node_0
+      io_node6 #(.BITSIZE_i(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), .BITSIZE_i_inside(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), 
+                      .BITSIZE_i_outside(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), .BITSIZE_o(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), 
+                      .BITSIZE_o_0(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), .BITSIZE_o_1(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA),
+                      .BITSIZE_ADDR(BITSIZE_ADDR_EXT+BITSIZE_ADDR), .BITSIZE_DATA(BITSIZE_DATA), 
+                      .LEVEL(nlevel-1), .REGISTERED(1), .ADDRESS(column)) 
+        io_node6_inst_0 (.clock(clock), .reset(reset), .i(i[column*BITSIZE_i+:BITSIZE_i]), .i_valid(i_valid[column]), .i_bp(i_bp[column]), 
+          .i_inside(i_inside[column][nlevel-1]), .i_inside_valid(inside_valid[column][nlevel-1]), .i_outside(outside[column][nlevel-1]), .i_outside_valid(outside_valid[column][nlevel-1]), 
+          .o(o[column*BITSIZE_o+:BITSIZE_o]), .o_valid(o_valid[column]), .o_bp(o_bp[column]), .o_0(i_inside[column][0]), .o_0_valid(inside_valid[column][0]), .o_1(outside[FLIP_BIT(nlevel-1,column)][0]), .o_1_valid(outside_valid[FLIP_BIT(nlevel-1,column)][0]));
+    end
+  end
+  else
+  begin
+    if(column[nlevel-1])
+    begin : mid_1
+      middle_node #(.BITSIZE_i_inside(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), .BITSIZE_i_outside(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), 
+                    .BITSIZE_o_0(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), .BITSIZE_o_1(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA),
+                    .BITSIZE_ADDR(BITSIZE_ADDR_EXT+BITSIZE_ADDR), .BITSIZE_DATA(BITSIZE_DATA), 
+                    .LEVEL(nlevel-1), .REGISTERED(REGISTERED)) 
+        middle_node_inst_1 (.clock(clock), 
+          .i_inside(i_inside[column][nlevel-1]), .i_inside_valid(inside_valid[column][nlevel-1]), .i_outside(outside[column][nlevel-1]), .i_outside_valid(outside_valid[column][nlevel-1]), 
+          .o_0(outside[FLIP_BIT(nlevel-1,column)][0]), .o_0_valid(outside_valid[FLIP_BIT(nlevel-1,column)][0]), .o_1(i_inside[column][0]), .o_1_valid(inside_valid[column][0]));
+    end      
+    else
+    begin : mid_0
+      middle_node #(.BITSIZE_i_inside(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), .BITSIZE_i_outside(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), 
+                  .BITSIZE_o_0(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA), .BITSIZE_o_1(BITSIZE_ADDR+BITSIZE_ADDR_EXT+BITSIZE_DATA),
+                  .BITSIZE_ADDR(BITSIZE_ADDR_EXT+BITSIZE_ADDR), .BITSIZE_DATA(BITSIZE_DATA), 
+                  .LEVEL(nlevel-1), .REGISTERED(REGISTERED)) 
+        middle_node_inst_0 (.clock(clock), 
+          .i_inside(i_inside[column][nlevel-1]), .i_inside_valid(inside_valid[column][nlevel-1]), .i_outside(outside[column][nlevel-1]), .i_outside_valid(outside_valid[column][nlevel-1]), 
+          .o_0(i_inside[column][0]), .o_0_valid(inside_valid[column][0]), .o_1(outside[FLIP_BIT(nlevel-1,column)][0] ), .o_1_valid(outside_valid[FLIP_BIT(nlevel-1,column)][0]));
+    end
+  end
+end
+endgenerate"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>noc_mapping_unit</name>
+      <circuit>
+        <module_o id="noc_mapping_unit">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="noc_mapping_unit"/>
+          <parameter name="SELECTOR_START">0</parameter>
+          <parameter name="SELECTOR_END">0</parameter>
+          <port_o id="selector" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_vector_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="noc_mapping_unit SELECTOR_START SELECTOR_END selector in1 out1" VERILOG_PROVIDED="
+wire [BITSIZE_in1-1:0] inputarray [0:PORTSIZE_in1-1];
+genvar i;
+generate
+for (i=0; i &lt; PORTSIZE_in1; i=i+1)
+  begin : MUX_pack_block
+      assign inputarray[i] = in1[i*BITSIZE_in1 +: BITSIZE_in1];
+  end
+endgenerate
+
+generate 
+  if(SELECTOR_START == SELECTOR_END)
+  begin
+    assign out1 = inputarray[selector[SELECTOR_START]];
+  end
+  else
+  begin
+    assign out1 = inputarray[selector[SELECTOR_START - 1: SELECTOR_END]];
+  end
+endgenerate"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>noc_addr_adapter</name>
+      <circuit>
+        <module_o id="noc_addr_adapter">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="noc_addr_adapter"/>
+          <parameter name="BUNDLE_START">0</parameter>
+          <parameter name="BUNDLE_END">0</parameter>
+          <parameter name="BANK_START">0</parameter>
+          <parameter name="BANK_END">0</parameter>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="noc_addr_adapter BUNDLE_START BUNDLE_END BANK_START BANK_END in1 out1" VERILOG_PROVIDED="
+generate 
+  if(BUNDLE_START == BUNDLE_END)
+  begin
+    assign out1 = {in1[BITSIZE_in1-1:BANK_START],in1[BANK_END-1:0]};
+  end
+  else
+  begin
+    assign out1 = {in1[BITSIZE_in1-1:BUNDLE_START],in1[BUNDLE_END-1:BANK_START],in1[BANK_END-1:0]};
+  end
+endgenerate"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>noc_banked_memory_accelerator_interface</name>
+      <circuit>
+        <module_o id="noc_banked_memory_accelerator_interface">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="noc_banked_memory_accelerator_interface"/>
+          <parameter name="NODE_ID">0</parameter>
+          <parameter name="NODE_ID_SIZE">0</parameter>
+          <parameter name="BASE_ADDR">0</parameter>
+          <port_o id="node_id_dest" dir="IN" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_oe_ram" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_we_ram" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_addr_ram" dir="IN" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_Wdata_ram" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_data_ram_size" dir="IN" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_tag" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="noc_from_memory_o" dir="IN" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="noc_from_memory_o_valid" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="M_DataRdy_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="M_Rdata_ram_out" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="M_tag_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="noc_to_memory_i" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="noc_to_memory_i_valid" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="noc_banked_memory_accelerator_interface node_id_dest Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size Mout_tag noc_from_memory_o M_Rdata_ram_out M_tag_out noc_to_memory_i NODE_ID_SIZE NODE_ID BASE_ADDR" VERILOG_PROVIDED="
+localparam [NODE_ID_SIZE-1:0] NODE_ID_local= NODE_ID;  
+
+assign noc_to_memory_i = Mout_oe_ram ? {node_id_dest,1&apos;b0,Mout_addr_ram,Mout_Wdata_ram,Mout_data_ram_size,Mout_tag,NODE_ID_local} : {node_id_dest,1&apos;b1,Mout_addr_ram,Mout_Wdata_ram,Mout_data_ram_size,Mout_tag,NODE_ID_local};
+assign noc_to_memory_i_valid = (Mout_oe_ram || Mout_we_ram) &amp;&amp; Mout_addr_ram &gt;= BASE_ADDR;   
+
+assign M_DataRdy_out = noc_from_memory_o_valid == 1;
+assign M_Rdata_ram_out = (noc_from_memory_o_valid == 1) ? noc_from_memory_o[BITSIZE_M_Rdata_ram_out+BITSIZE_M_tag_out-1:BITSIZE_M_tag_out] : 0;
+assign M_tag_out = (noc_from_memory_o_valid == 1) ? noc_from_memory_o[BITSIZE_M_tag_out-1:0] : 0;"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>noc_banked_memory_memory_interface</name>
+      <circuit>
+        <module_o id="noc_banked_memory_memory_interface">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="noc_banked_memory_memory_interface"/>
+          <parameter name="NODE_ID_SIZE">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="M_DataRdy" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="M_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="M_tag" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="noc_to_memory_o" dir="IN" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="noc_to_memory_o_valid" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="noc_to_memory_o_bp" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_oe_ram_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_we_ram_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_addr_ram_out" dir="OUT" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_Wdata_ram_out" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_data_ram_size_out" dir="OUT" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_tag_out" dir="OUT" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="noc_from_memory_i" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="noc_from_memory_i_valid" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_back_pressure_out" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="noc_banked_memory_memory_interface M_Rdata_ram Mout_tag_out noc_to_memory_o M_tag Mout_addr_ram_out Mout_Wdata_ram_out Mout_data_ram_size_out noc_from_memory_i NODE_ID_SIZE" VERILOG_PROVIDED="
+reg Mout_oe_ram_out_reg;
+reg Mout_oe_ram_out_reg_next;
+reg Mout_we_ram_out_reg;
+reg Mout_we_ram_out_reg_next;
+reg [BITSIZE_Mout_addr_ram_out - 1 :0] Mout_addr_ram_out_reg;
+reg [BITSIZE_Mout_addr_ram_out - 1 :0] Mout_addr_ram_out_reg_next;
+reg [BITSIZE_Mout_Wdata_ram_out - 1 :0] Mout_Wdata_ram_out_reg;
+reg [BITSIZE_Mout_Wdata_ram_out - 1 :0] Mout_Wdata_ram_out_reg_next;
+reg [BITSIZE_Mout_data_ram_size_out - 1 :0] Mout_data_ram_size_out_reg;
+reg [BITSIZE_Mout_data_ram_size_out - 1 :0] Mout_data_ram_size_out_reg_next;
+reg [BITSIZE_Mout_tag_out - 1 :0] Mout_tag_out_reg;
+reg [BITSIZE_Mout_tag_out - 1 :0] Mout_tag_out_reg_next;
+reg Mout_back_pressure_out_reg;
+reg noc_to_memory_o_valid_reg;
+wire noc_to_memory_o_valid_next;
+wire use_reg;
+
+assign use_reg = Mout_back_pressure_out_reg || noc_to_memory_o_valid_reg;
+assign noc_to_memory_o_valid_next = noc_to_memory_o_valid &amp;&amp; ((Mout_back_pressure_out_reg &amp;&amp; !Mout_back_pressure_out) || noc_to_memory_o_valid_reg); 
+
+always @(posedge clock)
+begin
+  if(1RESET_VALUE)
+  begin
+    Mout_oe_ram_out_reg &lt;= 0;
+    Mout_we_ram_out_reg &lt;= 0;
+    Mout_addr_ram_out_reg &lt;= 0;
+    Mout_Wdata_ram_out_reg &lt;= 0;
+    Mout_data_ram_size_out_reg &lt;= 0;
+    Mout_tag_out_reg &lt;= 0;
+    Mout_back_pressure_out_reg &lt;= 0;
+    noc_to_memory_o_valid_reg &lt;= 0;
+  end
+  else
+  begin
+    Mout_oe_ram_out_reg &lt;= Mout_oe_ram_out_reg_next;
+    Mout_we_ram_out_reg &lt;= Mout_we_ram_out_reg_next;
+    Mout_addr_ram_out_reg &lt;= Mout_addr_ram_out_reg_next;
+    Mout_Wdata_ram_out_reg &lt;= Mout_Wdata_ram_out_reg_next;
+    Mout_data_ram_size_out_reg &lt;= Mout_data_ram_size_out_reg_next;
+    Mout_tag_out_reg &lt;= Mout_tag_out_reg_next;
+    Mout_back_pressure_out_reg &lt;= Mout_back_pressure_out;
+    noc_to_memory_o_valid_reg &lt;= noc_to_memory_o_valid_next;
+  end
+end
+
+always @(*) 
+begin
+  if(Mout_back_pressure_out &amp;&amp; noc_to_memory_o_valid)
+  begin
+    Mout_oe_ram_out_reg_next = noc_to_memory_o[BITSIZE_Mout_addr_ram_out+BITSIZE_Mout_Wdata_ram_out+BITSIZE_Mout_data_ram_size_out+BITSIZE_Mout_tag_out] == 1 ? 0 : 1;
+    Mout_we_ram_out_reg_next = noc_to_memory_o[BITSIZE_Mout_addr_ram_out+BITSIZE_Mout_Wdata_ram_out+BITSIZE_Mout_data_ram_size_out+BITSIZE_Mout_tag_out] == 0 ? 0 : 1;
+    Mout_addr_ram_out_reg_next = noc_to_memory_o[BITSIZE_Mout_addr_ram_out+BITSIZE_Mout_Wdata_ram_out+BITSIZE_Mout_data_ram_size_out+BITSIZE_Mout_tag_out-1:BITSIZE_Mout_Wdata_ram_out+BITSIZE_Mout_data_ram_size_out+BITSIZE_Mout_tag_out];
+    Mout_Wdata_ram_out_reg_next = noc_to_memory_o[BITSIZE_Mout_Wdata_ram_out+BITSIZE_Mout_data_ram_size_out+BITSIZE_Mout_tag_out-1:BITSIZE_Mout_data_ram_size_out+BITSIZE_Mout_tag_out];
+    Mout_data_ram_size_out_reg_next = noc_to_memory_o[BITSIZE_Mout_data_ram_size_out+BITSIZE_Mout_tag_out-1:BITSIZE_Mout_tag_out];  
+    Mout_tag_out_reg_next = noc_to_memory_o[BITSIZE_Mout_tag_out-1:0];
+  end
+  else if(Mout_back_pressure_out)
+  begin
+    Mout_oe_ram_out_reg_next = Mout_oe_ram_out_reg;
+    Mout_we_ram_out_reg_next = Mout_we_ram_out_reg;
+    Mout_addr_ram_out_reg_next = Mout_addr_ram_out_reg;
+    Mout_Wdata_ram_out_reg_next = Mout_Wdata_ram_out_reg;
+    Mout_data_ram_size_out_reg_next = Mout_data_ram_size_out_reg;
+    Mout_tag_out_reg_next = Mout_tag_out_reg;
+  end
+  else
+  begin
+    Mout_oe_ram_out_reg_next = 0;
+    Mout_we_ram_out_reg_next = 0;
+    Mout_addr_ram_out_reg_next = 0;
+    Mout_Wdata_ram_out_reg_next = 0;
+    Mout_data_ram_size_out_reg_next = 0;
+    Mout_tag_out_reg_next = 0;
+  end
+end
+
+assign Mout_oe_ram_out = use_reg ? Mout_oe_ram_out_reg : (noc_to_memory_o_valid ? (noc_to_memory_o[BITSIZE_Mout_addr_ram_out+BITSIZE_Mout_Wdata_ram_out+BITSIZE_Mout_data_ram_size_out+BITSIZE_Mout_tag_out] == 1 ? 0 : 1) : 0);
+assign Mout_we_ram_out = use_reg ? Mout_we_ram_out_reg : (noc_to_memory_o_valid ? (noc_to_memory_o[BITSIZE_Mout_addr_ram_out+BITSIZE_Mout_Wdata_ram_out+BITSIZE_Mout_data_ram_size_out+BITSIZE_Mout_tag_out] == 0 ? 0 : 1) : 0);
+assign Mout_addr_ram_out = use_reg ? Mout_addr_ram_out_reg : (noc_to_memory_o_valid ? noc_to_memory_o[BITSIZE_Mout_addr_ram_out+BITSIZE_Mout_Wdata_ram_out+BITSIZE_Mout_data_ram_size_out+BITSIZE_Mout_tag_out-1:BITSIZE_Mout_Wdata_ram_out+BITSIZE_Mout_data_ram_size_out+BITSIZE_Mout_tag_out] : 0);
+assign Mout_Wdata_ram_out = use_reg ? Mout_Wdata_ram_out_reg : (noc_to_memory_o_valid ? noc_to_memory_o[BITSIZE_Mout_Wdata_ram_out+BITSIZE_Mout_data_ram_size_out+BITSIZE_Mout_tag_out-1:BITSIZE_Mout_data_ram_size_out+BITSIZE_Mout_tag_out] : 0);
+assign Mout_data_ram_size_out = use_reg ? Mout_data_ram_size_out_reg : (noc_to_memory_o_valid ? noc_to_memory_o[BITSIZE_Mout_data_ram_size_out+BITSIZE_Mout_tag_out-1:BITSIZE_Mout_tag_out] : 0);
+assign Mout_tag_out = use_reg ? Mout_tag_out_reg : (noc_to_memory_o_valid ? noc_to_memory_o[BITSIZE_Mout_tag_out-1:0] : 0);
+assign noc_from_memory_i = M_DataRdy ? {M_tag[NODE_ID_SIZE-1:0],M_Rdata_ram,M_tag[BITSIZE_M_tag-1 : NODE_ID_SIZE]} : 0;
+assign noc_from_memory_i_valid = M_DataRdy ? 1&apos;b1 : 0;
+assign noc_to_memory_o_bp = Mout_back_pressure_out;"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>Noc_banked_memory_connection_interface</name>
+      <circuit>
+        <module_o id="Noc_banked_memory_connection_interface">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="Noc_banked_memory_connection_interface"/>
+          <parameter name="NODE_ID_SIZE">0</parameter>
+          <parameter name="BASE_ADDR">0</parameter>
+          <parameter name="DATA_SIZE_NOC_TO">0</parameter>
+          <parameter name="DATA_SIZE_NOC_FROM">0</parameter>
+          <parameter name="ADDRESS_SIZE_NOC">0</parameter>
+          <parameter name="ADDRESS_EXT_SIZE_NOC">0</parameter>
+          <parameter name="NOC_NODES">0</parameter>
+          <parameter name="NOC_COLUMNS">0</parameter>
+          <parameter name="REGISTERED">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_vector_o id="Mout_oe_ram" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_we_ram" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="node_id_dest" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_addr_ram" dir="IN" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_Wdata_ram" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_data_ram_size" dir="IN" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_tag" dir="IN" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_back_pressure" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_DataRdy_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_Rdata_ram_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_tag_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_oe_ram_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_we_ram_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_addr_ram_out" dir="OUT" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_Wdata_ram_out" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_data_ram_size_out" dir="OUT" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_tag_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_back_pressure_out" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_DataRdy" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_tag" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_back_pressure" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="Noc_banked_memory_connection_interface node_id_dest Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size Mout_tag M_DataRdy M_Rdata_ram M_tag Mout_oe_ram_out Mout_we_ram_out Mout_addr_ram_out Mout_Wdata_ram_out Mout_data_ram_size_out Mout_tag_out M_DataRdy_out M_Rdata_ram_out M_tag_out NODE_ID_SIZE DATA_SIZE_NOC_TO DATA_SIZE_NOC_FROM ADDRESS_SIZE_NOC ADDRESS_EXT_SIZE_NOC NOC_NODES NOC_COLUMNS REGISTERED BASE_ADDR Mout_back_pressure M_back_pressure Mout_back_pressure_out" IP_COMPONENT="minimal_noc,noc_banked_memory_memory_interface,noc_banked_memory_accelerator_interface" VERILOG_PROVIDED="
+wire [((DATA_SIZE_NOC_TO + ADDRESS_SIZE_NOC + ADDRESS_EXT_SIZE_NOC) * NOC_NODES) - 1 :0] noc_to_memory_i;
+wire [((DATA_SIZE_NOC_FROM + ADDRESS_SIZE_NOC + ADDRESS_EXT_SIZE_NOC) * NOC_NODES) - 1 :0] noc_from_memory_i;
+wire [NOC_NODES - 1 :0] noc_to_memory_i_bp;
+wire [NOC_NODES - 1 :0] noc_to_memory_i_valid;
+wire [NOC_NODES - 1 :0] noc_from_memory_i_valid;
+wire [NOC_NODES - 1 :0] noc_to_memory_o_bp;
+wire [((DATA_SIZE_NOC_TO + ADDRESS_SIZE_NOC + ADDRESS_EXT_SIZE_NOC) * NOC_NODES) - 1 :0] noc_to_memory_o;
+wire [((DATA_SIZE_NOC_FROM + ADDRESS_SIZE_NOC + ADDRESS_EXT_SIZE_NOC) * NOC_NODES) - 1 :0] noc_from_memory_o;
+wire [NOC_NODES - 1 :0] noc_to_memory_o_valid;
+wire [NOC_NODES - 1 :0] noc_from_memory_o_valid;
+
+minimal_noc #(.BITSIZE_i(DATA_SIZE_NOC_TO + ADDRESS_SIZE_NOC + ADDRESS_EXT_SIZE_NOC), 
+.PORTSIZE_i(NOC_NODES),
+.BITSIZE_i_valid(1),
+.PORTSIZE_i_valid(NOC_NODES),
+.BITSIZE_i_bp(1),
+.PORTSIZE_i_bp(NOC_NODES),
+.BITSIZE_o(DATA_SIZE_NOC_TO + ADDRESS_SIZE_NOC + ADDRESS_EXT_SIZE_NOC),
+.PORTSIZE_o(NOC_NODES),
+.BITSIZE_o_valid(1),
+.PORTSIZE_o_valid(NOC_NODES),
+.BITSIZE_o_bp(1),
+.PORTSIZE_o_bp(NOC_NODES),
+.REGISTERED(REGISTERED),
+.N_NODES_COL(NOC_COLUMNS),
+.N_NODES(NOC_NODES),
+.BITSIZE_DATA(DATA_SIZE_NOC_TO),
+.BITSIZE_ADDR(ADDRESS_SIZE_NOC),
+.BITSIZE_ADDR_EXT(ADDRESS_EXT_SIZE_NOC)) noc_to_memory (.clock(clock),
+.reset(reset),
+.i(noc_to_memory_i),
+.i_valid(noc_to_memory_i_valid),
+.i_bp(noc_to_memory_i_bp),
+.o(noc_to_memory_o),
+.o_valid(noc_to_memory_o_valid),
+.o_bp(noc_to_memory_o_bp));
+minimal_noc #(.BITSIZE_i(DATA_SIZE_NOC_FROM + ADDRESS_SIZE_NOC + ADDRESS_EXT_SIZE_NOC),
+.PORTSIZE_i(NOC_NODES),
+.BITSIZE_i_valid(1),
+.PORTSIZE_i_valid(NOC_NODES),
+.BITSIZE_i_bp(1),
+.PORTSIZE_i_bp(NOC_NODES),
+.BITSIZE_o(DATA_SIZE_NOC_FROM + ADDRESS_SIZE_NOC + ADDRESS_EXT_SIZE_NOC),
+.PORTSIZE_o(NOC_NODES),
+.BITSIZE_o_valid(1),
+.PORTSIZE_o_valid(NOC_NODES),
+.BITSIZE_o_bp(1),
+.PORTSIZE_o_bp(NOC_NODES),
+.REGISTERED(REGISTERED),
+.N_NODES_COL(NOC_COLUMNS),
+.N_NODES(NOC_NODES),
+.BITSIZE_DATA(DATA_SIZE_NOC_FROM),
+.BITSIZE_ADDR(ADDRESS_SIZE_NOC),
+.BITSIZE_ADDR_EXT(ADDRESS_EXT_SIZE_NOC)) noc_from_memory (.clock(clock),
+.reset(reset),
+.i(noc_from_memory_i),
+.i_valid(noc_from_memory_i_valid),
+.i_bp(M_back_pressure),
+.o(noc_from_memory_o),
+.o_valid(noc_from_memory_o_valid),
+.o_bp({NOC_NODES{1&apos;b0}}));
+
+generate
+  genvar i;
+  for (i = 0; i &lt; NOC_NODES; i = i + 1) 
+  begin : ni
+    noc_banked_memory_accelerator_interface #(.NODE_ID(i),
+    .NODE_ID_SIZE(NODE_ID_SIZE),
+    .BASE_ADDR(BASE_ADDR),
+    .BITSIZE_node_id_dest(BITSIZE_node_id_dest),
+    .BITSIZE_Mout_addr_ram(BITSIZE_Mout_addr_ram),
+    .BITSIZE_Mout_Wdata_ram(BITSIZE_Mout_Wdata_ram),
+    .BITSIZE_Mout_data_ram_size(BITSIZE_Mout_data_ram_size),
+    .BITSIZE_Mout_tag(BITSIZE_Mout_tag),
+    .BITSIZE_noc_to_memory_i(DATA_SIZE_NOC_TO + ADDRESS_SIZE_NOC + ADDRESS_EXT_SIZE_NOC),
+    .BITSIZE_noc_from_memory_o(DATA_SIZE_NOC_FROM),
+    .BITSIZE_M_Rdata_ram_out(BITSIZE_M_Rdata_ram_out),
+    .BITSIZE_M_tag_out(BITSIZE_M_tag_out)) noc_interface_accelerator (.Mout_oe_ram(Mout_oe_ram[i]),
+    .Mout_we_ram(Mout_we_ram[i]),
+    .node_id_dest(node_id_dest[i*BITSIZE_node_id_dest+:BITSIZE_node_id_dest]),
+    .Mout_addr_ram(Mout_addr_ram[i*BITSIZE_Mout_addr_ram+:BITSIZE_Mout_addr_ram]),
+    .Mout_Wdata_ram(Mout_Wdata_ram[i*BITSIZE_Mout_Wdata_ram+:BITSIZE_Mout_Wdata_ram]),
+    .Mout_data_ram_size(Mout_data_ram_size[i*BITSIZE_Mout_data_ram_size+:BITSIZE_Mout_data_ram_size]),
+    .Mout_tag(Mout_tag[i*BITSIZE_Mout_tag+:BITSIZE_Mout_tag]),
+    .M_DataRdy_out(M_DataRdy_out[i]),
+    .M_Rdata_ram_out(M_Rdata_ram_out[i*BITSIZE_M_Rdata_ram_out+:BITSIZE_M_Rdata_ram_out]),
+    .M_tag_out(M_tag_out[i*BITSIZE_M_tag_out+:BITSIZE_M_tag_out]),
+    .noc_to_memory_i(noc_to_memory_i[i*(DATA_SIZE_NOC_TO + ADDRESS_SIZE_NOC + ADDRESS_EXT_SIZE_NOC) +: DATA_SIZE_NOC_TO + ADDRESS_SIZE_NOC + ADDRESS_EXT_SIZE_NOC]),
+    .noc_to_memory_i_valid(noc_to_memory_i_valid[i]),
+    .noc_from_memory_o(noc_from_memory_o[i*(DATA_SIZE_NOC_FROM + ADDRESS_SIZE_NOC + ADDRESS_EXT_SIZE_NOC) +: DATA_SIZE_NOC_FROM]),
+    .noc_from_memory_o_valid(noc_from_memory_o_valid[i]));
+    noc_banked_memory_memory_interface #(.NODE_ID_SIZE(NODE_ID_SIZE),
+    .BITSIZE_noc_to_memory_o(DATA_SIZE_NOC_TO + ADDRESS_SIZE_NOC + ADDRESS_EXT_SIZE_NOC),
+    .BITSIZE_noc_from_memory_i(DATA_SIZE_NOC_FROM + ADDRESS_SIZE_NOC + ADDRESS_EXT_SIZE_NOC),
+    .BITSIZE_M_Rdata_ram(BITSIZE_M_Rdata_ram),
+    .BITSIZE_M_tag(BITSIZE_M_tag),
+    .BITSIZE_Mout_addr_ram_out(BITSIZE_Mout_addr_ram_out),
+    .BITSIZE_Mout_Wdata_ram_out(BITSIZE_Mout_Wdata_ram_out),
+    .BITSIZE_Mout_data_ram_size_out(BITSIZE_Mout_data_ram_size_out),
+    .BITSIZE_Mout_tag_out(BITSIZE_Mout_tag_out)) noc_interface_memory (.clock(clock),
+    .reset(reset),
+    .M_DataRdy(M_DataRdy[i]),
+    .M_Rdata_ram(M_Rdata_ram[i*BITSIZE_M_Rdata_ram+:BITSIZE_M_Rdata_ram]),
+    .M_tag(M_tag[i*BITSIZE_M_tag+:BITSIZE_M_tag]),
+    .Mout_oe_ram_out(Mout_oe_ram_out[i]),
+    .Mout_we_ram_out(Mout_we_ram_out[i]),
+    .Mout_addr_ram_out(Mout_addr_ram_out[i*BITSIZE_Mout_addr_ram_out+:BITSIZE_Mout_addr_ram_out]),
+    .Mout_Wdata_ram_out(Mout_Wdata_ram_out[i*BITSIZE_Mout_Wdata_ram_out+:BITSIZE_Mout_Wdata_ram_out]),
+    .Mout_data_ram_size_out(Mout_data_ram_size_out[i*BITSIZE_Mout_data_ram_size_out+:BITSIZE_Mout_data_ram_size_out]),
+    .Mout_tag_out(Mout_tag_out[i*BITSIZE_Mout_tag_out+:BITSIZE_Mout_tag_out]),
+    .noc_to_memory_o(noc_to_memory_o[i*(DATA_SIZE_NOC_TO + ADDRESS_SIZE_NOC + ADDRESS_EXT_SIZE_NOC)+: DATA_SIZE_NOC_TO + ADDRESS_SIZE_NOC + ADDRESS_EXT_SIZE_NOC]),
+    .noc_to_memory_o_valid(noc_to_memory_o_valid[i]),
+    .noc_to_memory_o_bp(noc_to_memory_o_bp[i]),
+    .Mout_back_pressure_out(Mout_back_pressure_out[i]),
+    .noc_from_memory_i(noc_from_memory_i[i*(DATA_SIZE_NOC_FROM + ADDRESS_SIZE_NOC + ADDRESS_EXT_SIZE_NOC)+: DATA_SIZE_NOC_FROM + ADDRESS_SIZE_NOC + ADDRESS_EXT_SIZE_NOC]),
+    .noc_from_memory_i_valid(noc_from_memory_i_valid[i]));
+  end
+endgenerate
+
+assign Mout_back_pressure = noc_to_memory_i_bp;"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>Banked_memory_connection_interface</name>
+      <circuit>
+        <module_o id="Banked_memory_connection_interface">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="Banked_memory_connection_interface"/>
+          <parameter name="SELECTOR_SIZE">0</parameter>
+          <parameter name="ARBITER_TYPE">0</parameter>
+          <parameter name="INNER_TAG">0</parameter>
+          <parameter name="IS_PIPELINED">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_vector_o id="Mout_oe_ram" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_we_ram" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_addr_ram" dir="IN" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_Wdata_ram" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_data_ram_size" dir="IN" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_tag" dir="IN" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_DataRdy_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_Rdata_ram_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_tag_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_oe_ram_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_we_ram_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_addr_ram_out" dir="OUT" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_Wdata_ram_out" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_data_ram_size_out" dir="OUT" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_tag_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_DataRdy" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_Rdata_ram" dir="IN" is_memory="1" is_slave="1"  is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_tag" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_back_pressure" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_back_pressure_out" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="Banked_memory_connection_interface SELECTOR_SIZE ARBITER_TYPE INNER_TAG IS_PIPELINED Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size Mout_tag M_DataRdy M_Rdata_ram Mout_oe_ram_out Mout_we_ram_out Mout_addr_ram_out Mout_Wdata_ram_out Mout_data_ram_size_out Mout_tag_out M_DataRdy_out M_Rdata_ram_out Mout_back_pressure Mout_back_pressure_out M_tag M_tag_out" VERILOG_PROVIDED="
+localparam CHANNEL_NUMBER = PORTSIZE_Mout_oe_ram;
+
+wire [CHANNEL_NUMBER - 1 :0] channel_active;
+
+assign Mout_oe_ram_out = Mout_oe_ram &amp; channel_active;
+assign Mout_we_ram_out = Mout_we_ram &amp; channel_active;
+assign Mout_addr_ram_out = Mout_addr_ram;
+assign Mout_Wdata_ram_out = Mout_Wdata_ram;
+assign Mout_data_ram_size_out = Mout_data_ram_size;
+assign M_DataRdy_out = M_DataRdy;
+assign M_Rdata_ram_out = M_Rdata_ram;
+assign Mout_back_pressure = (Mout_oe_ram | Mout_we_ram) &amp; ~(channel_active &amp; ~Mout_back_pressure_out);
+
+generate
+  if(!IS_PIPELINED)
+  begin
+    genvar i;
+    for (i = 0; i &lt; CHANNEL_NUMBER; i = i + 1)
+    begin
+      reg channel_status_reg;
+      wire channel_status_next;
+
+      always @(posedge clock 1RESET_EDGE)
+      begin
+        if(1RESET_VALUE)
+        begin
+          channel_status_reg &lt;= 1&apos;b0;
+        end
+        else
+        begin
+          channel_status_reg &lt;= channel_status_next;
+        end
+      end
+
+      assign channel_status_next = Mout_back_pressure_out[i] ? channel_status_reg : (channel_status_reg &amp;&amp; ~M_DataRdy[i]) || (~channel_status_reg &amp;&amp; (Mout_oe_ram[i] || Mout_we_ram[i]));
+      assign channel_active[i] = ~channel_status_reg;
+
+      if(INNER_TAG)
+      begin
+        reg [BITSIZE_Mout_tag -1 : 0] channel_selector_reg;
+        wire [BITSIZE_Mout_tag -1 : 0] channel_selector_next;
+        
+        always @(posedge clock 1RESET_EDGE)
+        begin
+          if (1RESET_VALUE)
+          begin
+            channel_selector_reg &lt;= 0;
+          end
+          else
+          begin
+            channel_selector_reg &lt;= channel_selector_next;
+          end
+        end
+
+        assign channel_selector_next = ~channel_status_reg &amp;&amp; (Mout_oe_ram[i] || Mout_we_ram[i]) ? Mout_tag[i*BITSIZE_Mout_tag+:BITSIZE_Mout_tag] : channel_selector_reg;
+        assign M_tag_out[i*BITSIZE_M_tag_out +: BITSIZE_M_tag_out] = channel_selector_reg;
+      end
+      else
+      begin
+        assign M_tag_out[i*BITSIZE_M_tag_out +: BITSIZE_M_tag_out] = 0;
+      end
+    end
+    assign Mout_tag_out = 0;
+  end
+  else
+  begin
+    assign channel_active = {CHANNEL_NUMBER{1&apos;b1}};
+    assign Mout_tag_out = Mout_tag;
+    assign M_tag_out = M_tag;
+  end
+endgenerate"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>Simple_arbiter_connection_interface</name>
+      <circuit>
+        <module_o id="Simple_arbiter_connection_interface">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="Simple_arbiter_connection_interface"/>
+          <parameter name="SELECTOR_SIZE">0</parameter>
+          <parameter name="ARBITER_TYPE">0</parameter>
+          <parameter name="INNER_TAG">0</parameter>
+          <parameter name="IS_PIPELINED">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_vector_o id="Mout_oe_ram" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_we_ram" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_addr_ram" dir="IN" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_Wdata_ram" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_data_ram_size" dir="IN" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_tag" dir="IN" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_DataRdy_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_Rdata_ram_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_tag_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_oe_ram_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_we_ram_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_addr_ram_out" dir="OUT" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_Wdata_ram_out" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_data_ram_size_out" dir="OUT" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_tag_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_DataRdy" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_tag" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_back_pressure" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_back_pressure_out" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="Simple_arbiter_connection_interface Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size Mout_tag M_DataRdy M_Rdata_ram Mout_oe_ram_out Mout_we_ram_out Mout_addr_ram_out Mout_Wdata_ram_out Mout_data_ram_size_out Mout_tag_out M_DataRdy_out M_Rdata_ram_out Mout_back_pressure Mout_back_pressure_out SELECTOR_SIZE ARBITER_TYPE INNER_TAG IS_PIPELINED M_tag_out M_tag" IP_COMPONENT="MUX_N_to_1_enabled,MUX_N_to_1,DEMUX_1_to_N_enabled,DEMUX_1_to_N,priority_arbiter_core,left_priority_arbiter_core,round_robin_arbiter_core,pipelined_channel_controller,sequential_channel_controller" VERILOG_PROVIDED="
+localparam PRIORITY_ARBITER = 0;
+localparam ROUND_ROBIN_ARBITER = 1;
+localparam LEFT_PRIORITY_ARBITER = 2;
+
+wire [SELECTOR_SIZE -1 : 0] selector, channel_selector;	
+wire valid, channel_active;
+
+generate
+  if(ARBITER_TYPE == PRIORITY_ARBITER)
+  begin    
+    priority_arbiter_core #(.BITSIZE_in1(PORTSIZE_Mout_oe_ram),
+    .BITSIZE_out1(SELECTOR_SIZE)) priority_arbiter (.clock(clock),
+    .reset(reset),
+    .in1(Mout_oe_ram | Mout_we_ram),
+    .out1(selector),
+    .valid(valid));
+  end
+  else if(ARBITER_TYPE == ROUND_ROBIN_ARBITER)
+  begin
+    round_robin_arbiter_core #(.BITSIZE_in1(PORTSIZE_Mout_oe_ram),
+    .BITSIZE_out1(SELECTOR_SIZE)) round_robin_arbiter (.clock(clock),
+    .reset(reset),
+    .in1(Mout_oe_ram | Mout_we_ram),
+    .out1(selector),
+    .valid(valid));
+  end
+  else if(ARBITER_TYPE == LEFT_PRIORITY_ARBITER)
+  begin
+    left_priority_arbiter_core #(.BITSIZE_in1(PORTSIZE_Mout_oe_ram),
+    .BITSIZE_out1(SELECTOR_SIZE)) left_priority_arbiter (.clock(clock),
+    .reset(reset),
+    .in1(Mout_oe_ram | Mout_we_ram),
+    .out1(selector),
+    .valid(valid));
+  end
+  else
+  begin
+    // synthesis translate_off
+    $fatal;
+    // synthesis translate_on
+  end
+endgenerate
+
+assign Mout_back_pressure = (Mout_oe_ram | Mout_we_ram) &amp; ~((valid &amp;&amp; channel_active &amp;&amp; ~Mout_back_pressure_out) &lt;&lt; selector);
+  
+MUX_N_to_1_enabled #(
+.PORTSIZE_in1(PORTSIZE_Mout_oe_ram),
+.BITSIZE_in1(1),
+.BITSIZE_selector(SELECTOR_SIZE),
+.BITSIZE_out1(1)) MUX_N_to_1_Mout_oe_ram (.selector(selector),
+.out1(Mout_oe_ram_out),
+.in1(Mout_oe_ram),
+.enabled(valid &amp;&amp; channel_active));  
+MUX_N_to_1_enabled #(
+.PORTSIZE_in1(PORTSIZE_Mout_we_ram),
+.BITSIZE_in1(1),
+.BITSIZE_selector(SELECTOR_SIZE),
+.BITSIZE_out1(1)) MUX_N_to_1_Mout_we_ram (.selector(selector),
+.out1(Mout_we_ram_out),
+.in1(Mout_we_ram),
+.enabled(valid &amp;&amp; channel_active));  
+MUX_N_to_1 #(
+.PORTSIZE_in1(PORTSIZE_Mout_oe_ram),
+.BITSIZE_in1(BITSIZE_Mout_addr_ram),
+.BITSIZE_selector(SELECTOR_SIZE),
+.BITSIZE_out1(BITSIZE_Mout_addr_ram)) MUX_N_to_1_Mout_addr_ram (.selector(selector),
+.out1(Mout_addr_ram_out),
+.in1(Mout_addr_ram));  
+MUX_N_to_1 #(
+.PORTSIZE_in1(PORTSIZE_Mout_oe_ram),
+.BITSIZE_in1(BITSIZE_Mout_Wdata_ram),
+.BITSIZE_selector(SELECTOR_SIZE),
+.BITSIZE_out1(BITSIZE_Mout_Wdata_ram)) MUX_N_to_1_Mout_Wdata_ram (.selector(selector),
+.out1(Mout_Wdata_ram_out),
+.in1(Mout_Wdata_ram));   
+MUX_N_to_1 #(
+.PORTSIZE_in1(PORTSIZE_Mout_oe_ram),
+.BITSIZE_in1(BITSIZE_Mout_data_ram_size),
+.BITSIZE_selector(SELECTOR_SIZE),
+.BITSIZE_out1(BITSIZE_Mout_data_ram_size)) MUX_N_to_1_Mout_data_ram_size (.selector(selector),
+.out1(Mout_data_ram_size_out),
+.in1(Mout_data_ram_size)); 
+
+generate
+  if(IS_PIPELINED)
+  begin
+    pipelined_channel_controller #(.INNER_TAG(INNER_TAG),
+    .BITSIZE_input_selector(SELECTOR_SIZE),
+    .BITSIZE_channel_selector(SELECTOR_SIZE),
+    .PORTSIZE_Mout_tag(PORTSIZE_Mout_oe_ram),
+    .BITSIZE_Mout_tag(BITSIZE_Mout_tag),
+    .BITSIZE_Mout_tag_out(BITSIZE_Mout_tag_out),
+    .PORTSIZE_M_tag_out(PORTSIZE_M_tag_out),
+    .BITSIZE_M_tag_out(BITSIZE_M_tag_out),
+    .BITSIZE_M_tag(BITSIZE_M_tag)) pipelined_channel_controller (.clock(clock),
+    .reset(reset),
+    .channel_active(channel_active),
+    .input_selector(selector),
+    .channel_selector(channel_selector),
+    .Mout_tag(Mout_tag),
+    .Mout_tag_out(Mout_tag_out),
+    .M_tag(M_tag),
+    .M_tag_out(M_tag_out));  
+  end
+  else
+  begin
+    sequential_channel_controller #(.INNER_TAG(INNER_TAG),
+    .BITSIZE_input_selector(SELECTOR_SIZE),
+    .BITSIZE_channel_selector(SELECTOR_SIZE),
+    .PORTSIZE_Mout_tag(PORTSIZE_Mout_oe_ram),
+    .BITSIZE_Mout_tag(BITSIZE_Mout_tag),
+    .PORTSIZE_M_tag_out(PORTSIZE_M_tag_out),
+    .BITSIZE_M_tag_out(BITSIZE_M_tag_out)) sequential_channel_controller (.clock(clock),
+    .reset(reset),
+    .M_DataRdy(M_DataRdy),
+    .Mout_back_pressure_out(Mout_back_pressure_out),
+    .active_request(valid),
+    .channel_active(channel_active),
+    .input_selector(selector),
+    .channel_selector(channel_selector),
+    .Mout_tag(Mout_tag),
+    .M_tag_out(M_tag_out));
+
+    assign Mout_tag_out = 0;
+  end
+endgenerate
+
+DEMUX_1_to_N_enabled #(.BITSIZE_in1(1),
+.BITSIZE_selector(SELECTOR_SIZE),
+.PORTSIZE_out1(PORTSIZE_M_DataRdy_out),
+.BITSIZE_out1(1)) DEMUX_N_to_1_M_DataRdy_out (.selector(channel_selector),
+.out1(M_DataRdy_out),
+.in1(M_DataRdy),
+.enabled(M_DataRdy));
+DEMUX_1_to_N #(.BITSIZE_in1(BITSIZE_M_Rdata_ram),
+.BITSIZE_selector(SELECTOR_SIZE),
+.PORTSIZE_out1(PORTSIZE_M_DataRdy_out),
+.BITSIZE_out1(BITSIZE_M_Rdata_ram_out)) DEMUX_N_to_1_M_RData_ram_out (.selector(channel_selector),
+.out1(M_Rdata_ram_out),
+.in1(M_Rdata_ram));"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>Single_source_connection_interface</name>
+      <circuit>
+        <module_o id="Single_source_connection_interface">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="Single_source_connection_interface"/>
+          <parameter name="INNER_TAG">0</parameter>
+          <parameter name="SUBMASK_START">0</parameter>
+          <parameter name="SUBMASK_END">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_vector_o id="Mout_oe_ram" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_we_ram" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_addr_ram" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_Wdata_ram" dir="IN" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_data_ram_size" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_tag" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_DataRdy" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_Rdata_ram" dir="IN" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_oe_ram_out" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_we_ram_out" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_addr_ram_out" dir="OUT" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_Wdata_ram_out" dir="OUT" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_data_ram_size_out" dir="OUT" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_DataRdy_out" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_Rdata_ram_out" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_tag_out" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_back_pressure_out" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="Single_source_connection_interface INNER_TAG SUBMASK_START SUBMASK_END Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size Mout_tag M_DataRdy M_Rdata_ram Mout_oe_ram_out Mout_we_ram_out Mout_addr_ram_out Mout_Wdata_ram_out Mout_data_ram_size_out M_DataRdy_out M_Rdata_ram_out M_tag_out  M_back_pressure_out" VERILOG_PROVIDED="
+wire [(SUBMASK_START == SUBMASK_END ? 0 : SUBMASK_START - SUBMASK_END -1) : 0] sel;
+reg M_back_pressure_old;
+reg M_DataRdy_reg_old;
+reg [BITSIZE_M_Rdata_ram-1:0] M_Rdata_ram_reg;
+reg [BITSIZE_M_Rdata_ram-1:0] M_Rdata_ram_reg_old;
+integer i;
+
+always @(*) 
+begin
+  M_Rdata_ram_reg = 0;
+  for (i = 0; i &lt; PORTSIZE_M_Rdata_ram; i = i + 1) 
+  begin
+    M_Rdata_ram_reg = M_Rdata_ram_reg | M_Rdata_ram[i*BITSIZE_M_Rdata_ram +:BITSIZE_M_Rdata_ram];
+  end
+end
+
+generate
+  if(SUBMASK_START == SUBMASK_END)
+  begin
+    assign sel = 0; 
+  end
+  else
+  begin
+    assign sel = Mout_addr_ram[SUBMASK_START -1 : SUBMASK_END]; 
+  end
+endgenerate
+
+assign Mout_oe_ram_out = Mout_oe_ram &lt;&lt; sel;
+assign Mout_we_ram_out = Mout_we_ram &lt;&lt; sel;
+assign Mout_addr_ram_out = Mout_addr_ram &lt;&lt; sel*BITSIZE_Mout_addr_ram;
+assign Mout_Wdata_ram_out =  Mout_Wdata_ram &lt;&lt; sel*BITSIZE_Mout_Wdata_ram;
+assign Mout_data_ram_size_out = Mout_data_ram_size &lt;&lt; sel*BITSIZE_Mout_data_ram_size;
+assign M_DataRdy_out = M_back_pressure_old ? M_DataRdy_reg_old : |M_DataRdy;
+assign M_Rdata_ram_out = M_back_pressure_old ? M_Rdata_ram_reg_old : M_Rdata_ram_reg;
+
+always @(posedge clock)
+begin
+  if(1RESET_VALUE)
+  begin
+    M_DataRdy_reg_old &lt;= 0;
+    M_Rdata_ram_reg_old &lt;= 0;
+    M_back_pressure_old &lt;= 0;
+  end
+  else 
+  begin
+    M_DataRdy_reg_old &lt;= M_DataRdy_out;
+    M_Rdata_ram_reg_old &lt;= M_Rdata_ram_out;
+    M_back_pressure_old &lt;= M_back_pressure_out[0];
+  end
+end
+
+generate
+if(INNER_TAG == 1)
+begin
+  reg [BITSIZE_M_tag_out-1:0] M_tag_out_reg;
+  wire [BITSIZE_M_tag_out-1:0] M_tag_out_next;
+
+  always @(posedge clock)
+  begin
+    if(1RESET_VALUE)
+    begin
+      M_tag_out_reg &lt;= 0;
+    end
+    else 
+    begin
+      M_tag_out_reg &lt;= M_tag_out_next;
+    end
+  end
+
+  assign M_tag_out_next = (Mout_oe_ram || Mout_we_ram) ? Mout_tag : M_tag_out_reg;
+  assign M_tag_out = M_tag_out_reg;
+end
+else
+begin
+  assign M_tag_out = {BITSIZE_M_tag_out{1&apos;b0}};
+end
+endgenerate"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>Grouped_channel_connection_interface</name>
+      <circuit>
+        <module_o id="Grouped_channel_connection_interface">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="Grouped_channel_connection_interface"/>
+          <parameter name="ARBITER_TYPE">0</parameter>
+          <parameter name="INNER_TAG">0</parameter>
+          <parameter name="CHANNEL_GROUP_NUMBER">0</parameter>
+          <parameter name="CHANNEL_PER_GROUP">0</parameter>
+          <parameter name="CHANNEL_GROUP_SIZE">0</parameter>
+          <parameter name="IS_PIPELINED">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_vector_o id="Mout_oe_ram" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_we_ram" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_addr_ram" dir="IN" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_Wdata_ram" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_data_ram_size" dir="IN" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_tag" dir="IN" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_back_pressure" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_DataRdy_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_Rdata_ram_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_tag_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_oe_ram_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_we_ram_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_addr_ram_out" dir="OUT" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_Wdata_ram_out" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_data_ram_size_out" dir="OUT" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_tag_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_back_pressure_out" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_DataRdy" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_tag" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="Grouped_channel_connection_interface Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size Mout_tag M_DataRdy M_Rdata_ram M_tag Mout_oe_ram_out Mout_we_ram_out Mout_addr_ram_out Mout_Wdata_ram_out Mout_data_ram_size_out Mout_tag_out M_tag_out M_DataRdy_out M_Rdata_ram_out Mout_back_pressure Mout_back_pressure_out CHANNEL_GROUP_NUMBER CHANNEL_PER_GROUP CHANNEL_GROUP_SIZE ARBITER_TYPE INNER_TAG IS_PIPELINED" IP_COMPONENT="MUX_N_to_1_enabled,MUX_N_to_1,DEMUX_1_to_N_enabled,DEMUX_1_to_N,round_robin_arbiter_core,priority_arbiter_core,left_priority_arbiter_core,pipelined_channel_controller,sequential_channel_controller" VERILOG_PROVIDED="
+localparam PRIORITY_ARBITER = 0;
+localparam ROUND_ROBIN_ARBITER = 1;
+localparam LEFT_PRIORITY_ARBITER = 2;
+
+generate
+genvar channel;
+  for (channel = 0; channel &lt; CHANNEL_GROUP_NUMBER; channel = channel + 1)
+  begin : channel_group
+    wire [CHANNEL_GROUP_SIZE -1 : 0] selector, channel_selector;	
+    wire valid, channel_active;
+
+    if(ARBITER_TYPE == PRIORITY_ARBITER)
+    begin    
+      priority_arbiter_core #(.BITSIZE_in1(CHANNEL_PER_GROUP),
+      .BITSIZE_out1(CHANNEL_GROUP_SIZE)) priority_arbiter (.clock(clock),
+      .reset(reset),
+      .in1(Mout_oe_ram[channel*CHANNEL_PER_GROUP+:CHANNEL_PER_GROUP] | Mout_we_ram[channel*CHANNEL_PER_GROUP+:CHANNEL_PER_GROUP]),
+      .out1(selector),
+      .valid(valid));
+    end
+    else if(ARBITER_TYPE == ROUND_ROBIN_ARBITER)
+    begin
+      round_robin_arbiter_core #(.BITSIZE_in1(CHANNEL_PER_GROUP),
+      .BITSIZE_out1(CHANNEL_GROUP_SIZE)) round_robin_arbiter (.clock(clock),
+      .reset(reset),
+      .in1(Mout_oe_ram[channel*CHANNEL_PER_GROUP+:CHANNEL_PER_GROUP] | Mout_we_ram[channel*CHANNEL_PER_GROUP+:CHANNEL_PER_GROUP]),
+      .out1(selector),
+      .valid(valid));
+    end
+    else if(ARBITER_TYPE == LEFT_PRIORITY_ARBITER)
+    begin
+      left_priority_arbiter_core #(.BITSIZE_in1(CHANNEL_PER_GROUP),
+      .BITSIZE_out1(CHANNEL_GROUP_SIZE)) left_priority_arbiter (.clock(clock),
+      .reset(reset),
+      .in1(Mout_oe_ram[channel*CHANNEL_PER_GROUP+:CHANNEL_PER_GROUP] | Mout_we_ram[channel*CHANNEL_PER_GROUP+:CHANNEL_PER_GROUP]),
+      .out1(selector),
+      .valid(valid));
+    end
+    else
+    begin
+      // synthesis translate_off
+      $fatal;
+      // synthesis translate_on
+    end
+
+    assign Mout_back_pressure[channel*CHANNEL_PER_GROUP+:CHANNEL_PER_GROUP] = (Mout_oe_ram[channel*CHANNEL_PER_GROUP+:CHANNEL_PER_GROUP] | Mout_we_ram[channel*CHANNEL_PER_GROUP+:CHANNEL_PER_GROUP]) &amp; ~((valid &amp;&amp; channel_active &amp;&amp; ~Mout_back_pressure_out) &lt;&lt; selector);
+      
+    MUX_N_to_1_enabled #(
+    .PORTSIZE_in1(CHANNEL_PER_GROUP),
+    .BITSIZE_in1(1),
+    .BITSIZE_selector(CHANNEL_GROUP_SIZE),
+    .BITSIZE_out1(1)) MUX_N_to_1_Mout_oe_ram (.selector(selector),
+    .out1(Mout_oe_ram_out[channel]),
+    .in1(Mout_oe_ram[channel*CHANNEL_PER_GROUP+:CHANNEL_PER_GROUP]),
+    .enabled(valid &amp;&amp; channel_active));  
+    MUX_N_to_1_enabled #(
+    .PORTSIZE_in1(CHANNEL_PER_GROUP),
+    .BITSIZE_in1(1),
+    .BITSIZE_selector(CHANNEL_GROUP_SIZE),
+    .BITSIZE_out1(1)) MUX_N_to_1_Mout_we_ram (.selector(selector),
+    .out1(Mout_we_ram_out[channel]),
+    .in1(Mout_we_ram[channel*CHANNEL_PER_GROUP+:CHANNEL_PER_GROUP]),
+    .enabled(valid &amp;&amp; channel_active));  
+    MUX_N_to_1 #(
+    .PORTSIZE_in1(CHANNEL_PER_GROUP),
+    .BITSIZE_in1(BITSIZE_Mout_addr_ram),
+    .BITSIZE_selector(CHANNEL_GROUP_SIZE),
+    .BITSIZE_out1(BITSIZE_Mout_addr_ram)) MUX_N_to_1_Mout_addr_ram (.selector(selector),
+    .out1(Mout_addr_ram_out[channel*BITSIZE_Mout_addr_ram+:BITSIZE_Mout_addr_ram]),
+    .in1(Mout_addr_ram[channel*CHANNEL_PER_GROUP*BITSIZE_Mout_addr_ram+:CHANNEL_PER_GROUP*BITSIZE_Mout_addr_ram]));  
+    MUX_N_to_1 #(
+    .PORTSIZE_in1(CHANNEL_PER_GROUP),
+    .BITSIZE_in1(BITSIZE_Mout_Wdata_ram),
+    .BITSIZE_selector(CHANNEL_GROUP_SIZE),
+    .BITSIZE_out1(BITSIZE_Mout_Wdata_ram)) MUX_N_to_1_Mout_Wdata_ram (.selector(selector),
+    .out1(Mout_Wdata_ram_out[channel*BITSIZE_Mout_Wdata_ram+:BITSIZE_Mout_Wdata_ram]),
+    .in1(Mout_Wdata_ram[channel*CHANNEL_PER_GROUP*BITSIZE_Mout_Wdata_ram+:CHANNEL_PER_GROUP*BITSIZE_Mout_Wdata_ram]));   
+    MUX_N_to_1 #(
+    .PORTSIZE_in1(CHANNEL_PER_GROUP),
+    .BITSIZE_in1(BITSIZE_Mout_data_ram_size),
+    .BITSIZE_selector(CHANNEL_GROUP_SIZE),
+    .BITSIZE_out1(BITSIZE_Mout_data_ram_size)) MUX_N_to_1_Mout_data_ram_size (.selector(selector),
+    .out1(Mout_data_ram_size_out[channel*BITSIZE_Mout_data_ram_size+:BITSIZE_Mout_data_ram_size]),
+    .in1(Mout_data_ram_size[channel*CHANNEL_PER_GROUP*BITSIZE_Mout_data_ram_size+:CHANNEL_PER_GROUP*BITSIZE_Mout_data_ram_size])); 
+
+    if(IS_PIPELINED)
+    begin
+      pipelined_channel_controller #(.INNER_TAG(INNER_TAG),
+      .BITSIZE_input_selector(CHANNEL_GROUP_SIZE),
+      .BITSIZE_channel_selector(CHANNEL_GROUP_SIZE),
+      .PORTSIZE_Mout_tag(CHANNEL_PER_GROUP),
+      .BITSIZE_Mout_tag(BITSIZE_Mout_tag),
+      .BITSIZE_Mout_tag_out(BITSIZE_Mout_tag_out),
+      .PORTSIZE_M_tag_out(CHANNEL_PER_GROUP),
+      .BITSIZE_M_tag_out(BITSIZE_M_tag_out),
+      .BITSIZE_M_tag(BITSIZE_M_tag)) pipelined_channel_controller (.clock(clock),
+      .reset(reset),
+      .channel_active(channel_active),
+      .input_selector(selector),
+      .channel_selector(channel_selector),
+      .Mout_tag(Mout_tag[channel*CHANNEL_PER_GROUP*BITSIZE_Mout_tag+:CHANNEL_PER_GROUP*BITSIZE_Mout_tag]),
+      .Mout_tag_out(Mout_tag_out[channel*BITSIZE_Mout_tag_out+:BITSIZE_Mout_tag_out]),
+      .M_tag(M_tag[channel*BITSIZE_M_tag+:BITSIZE_M_tag]),
+      .M_tag_out(M_tag_out[channel*CHANNEL_PER_GROUP*BITSIZE_M_tag_out+:CHANNEL_PER_GROUP*BITSIZE_M_tag_out]));  
+    end
+    else
+    begin
+      sequential_channel_controller #(.INNER_TAG(INNER_TAG),
+      .BITSIZE_input_selector(CHANNEL_GROUP_SIZE),
+      .BITSIZE_channel_selector(CHANNEL_GROUP_SIZE),
+      .PORTSIZE_Mout_tag(CHANNEL_PER_GROUP),
+      .BITSIZE_Mout_tag(BITSIZE_Mout_tag),
+      .PORTSIZE_M_tag_out(CHANNEL_PER_GROUP),
+      .BITSIZE_M_tag_out(BITSIZE_M_tag_out)) sequential_channel_controller (.clock(clock),
+      .reset(reset),
+      .M_DataRdy(M_DataRdy[channel]),
+      .Mout_back_pressure_out(Mout_back_pressure_out[channel]),
+      .active_request(valid),
+      .channel_active(channel_active),
+      .input_selector(selector),
+      .channel_selector(channel_selector),
+      .Mout_tag(Mout_tag[channel*CHANNEL_PER_GROUP*BITSIZE_Mout_tag+:CHANNEL_PER_GROUP*BITSIZE_Mout_tag]),
+      .M_tag_out(M_tag_out[channel*CHANNEL_PER_GROUP*BITSIZE_M_tag_out+:CHANNEL_PER_GROUP*BITSIZE_M_tag_out]));
+
+      assign Mout_tag_out = 0;
+    end
+
+    DEMUX_1_to_N_enabled #(.BITSIZE_in1(1),
+    .BITSIZE_selector(CHANNEL_GROUP_SIZE),
+    .PORTSIZE_out1(CHANNEL_PER_GROUP),
+    .BITSIZE_out1(1)) DEMUX_N_to_1_M_DataRdy_out (.selector(channel_selector),
+    .out1(M_DataRdy_out[channel*CHANNEL_PER_GROUP+:CHANNEL_PER_GROUP]),
+    .in1(M_DataRdy[channel]),
+    .enabled(M_DataRdy[channel]));
+    DEMUX_1_to_N #(.BITSIZE_in1(BITSIZE_M_Rdata_ram),
+    .BITSIZE_selector(CHANNEL_GROUP_SIZE),
+    .PORTSIZE_out1(CHANNEL_PER_GROUP),
+    .BITSIZE_out1(BITSIZE_M_Rdata_ram_out)) DEMUX_N_to_1_M_RData_ram_out (.selector(channel_selector),
+    .out1(M_Rdata_ram_out[channel*CHANNEL_PER_GROUP*BITSIZE_M_Rdata_ram_out+:CHANNEL_PER_GROUP*BITSIZE_M_Rdata_ram_out]),
+    .in1(M_Rdata_ram[channel*BITSIZE_M_Rdata_ram+:BITSIZE_M_Rdata_ram])); 
+  end
+endgenerate"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>pipelined_channel_controller</name>
+      <circuit>
+        <module_o id="pipelined_channel_controller">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="pipelined_channel_controller"/>
+          <parameter name="INNER_TAG">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="channel_active" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="input_selector" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="channel_selector" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_vector_o id="Mout_tag" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_o id="Mout_tag_out" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="M_tag" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_vector_o id="M_tag_out" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="pipelined_channel_controller INNER_TAG input_selector channel_selector Mout_tag Mout_tag_out M_tag M_tag_out" IP_COMPONENT="MUX_N_to_1,DEMUX_1_to_N" VERILOG_PROVIDED="
+assign channel_active = 1&apos;b1;
+localparam INPUT_CHANNEL_NUMBER = PORTSIZE_Mout_tag;
+
+generate
+  if(INNER_TAG)
+  begin
+    wire [INPUT_CHANNEL_NUMBER * BITSIZE_Mout_tag_out -1 : 0] tag_wire;
+    genvar i;
+    for(i=0; i &lt; INPUT_CHANNEL_NUMBER; i = i + 1)
+    begin
+      assign tag_wire[i*BITSIZE_Mout_tag_out +: BITSIZE_Mout_tag_out] = {i[BITSIZE_input_selector-1:0],Mout_tag[i*BITSIZE_Mout_tag +: BITSIZE_Mout_tag]};
+    end
+
+    wire [BITSIZE_Mout_tag -1 : 0] Mout_tag_out_temp;
+    MUX_N_to_1 #(
+    .PORTSIZE_in1(INPUT_CHANNEL_NUMBER),
+    .BITSIZE_in1(BITSIZE_Mout_tag_out),
+    .BITSIZE_selector(BITSIZE_input_selector),
+    .BITSIZE_out1(BITSIZE_Mout_tag_out)) MUX_N_to_1_Mout_tag (.selector(input_selector),
+    .out1(Mout_tag_out_temp),
+    .in1(tag_wire)); 
+    assign Mout_tag_out = {input_selector,Mout_tag_out_temp};
+
+    assign channel_selector = M_tag[BITSIZE_M_tag -1: BITSIZE_Mout_tag];
+    DEMUX_1_to_N #(.BITSIZE_in1(BITSIZE_M_tag_out),
+    .BITSIZE_selector(BITSIZE_M_tag - BITSIZE_Mout_tag),
+    .PORTSIZE_out1(INPUT_CHANNEL_NUMBER),
+    .BITSIZE_out1(BITSIZE_M_tag_out)) DEMUX_N_to_1_M_tag (.selector(channel_selector),
+    .out1(M_tag_out),
+    .in1(M_tag));
+    
+  end
+  else
+  begin
+    assign channel_selector = M_tag;
+    assign Mout_tag_out = input_selector;
+    assign M_tag_out = 0;
+  end
+endgenerate"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>sequential_channel_controller</name>
+      <circuit>
+        <module_o id="sequential_channel_controller">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="sequential_channel_controller"/>
+          <parameter name="INNER_TAG">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="M_DataRdy" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="active_request" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="channel_active" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="input_selector" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="channel_selector" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_vector_o id="Mout_tag" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_tag_out" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_o id="Mout_back_pressure_out" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="sequential_channel_controller INNER_TAG input_selector channel_selector Mout_tag M_tag_out Mout_back_pressure_out" IP_COMPONENT="MUX_N_to_1,DEMUX_1_to_N" VERILOG_PROVIDED="
+reg channel_status_reg;
+wire channel_status_next;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if (1RESET_VALUE)
+  begin
+    channel_status_reg &lt;= 1&apos;b0;
+  end
+  else
+  begin
+    channel_status_reg &lt;= channel_status_next;
+  end
+end
+
+assign channel_status_next = Mout_back_pressure_out ? channel_status_reg : (channel_status_reg &amp;&amp; ~M_DataRdy) || (~channel_status_reg &amp;&amp; active_request);
+assign channel_active = ~channel_status_reg;
+
+generate
+  if(INNER_TAG)
+  begin
+    reg [BITSIZE_Mout_tag + BITSIZE_input_selector -1 : 0] channel_selector_reg;
+    wire [BITSIZE_Mout_tag + BITSIZE_input_selector -1 : 0] channel_selector_next;
+    
+    always @(posedge clock 1RESET_EDGE)
+    begin
+      if (1RESET_VALUE)
+      begin
+        channel_selector_reg &lt;= 0;
+      end
+      else
+      begin
+        channel_selector_reg &lt;= channel_selector_next;
+      end
+    end
+
+    assign channel_selector_next = ~channel_status_reg &amp;&amp; active_request ? {input_selector,Mout_tag[input_selector*BITSIZE_Mout_tag+:BITSIZE_Mout_tag]} : channel_selector_reg;
+    assign channel_selector = channel_selector_reg[BITSIZE_input_selector + BITSIZE_Mout_tag -1 : BITSIZE_Mout_tag];
+    assign M_tag_out = channel_selector_reg[BITSIZE_M_tag_out -1 : 0] &lt;&lt; (BITSIZE_M_tag_out * channel_selector_reg[BITSIZE_input_selector + BITSIZE_Mout_tag -1 : BITSIZE_Mout_tag]);
+  end
+  else
+  begin
+    reg [BITSIZE_input_selector -1 : 0] channel_selector_reg;
+    wire [BITSIZE_input_selector -1 : 0] channel_selector_next;
+
+    always @(posedge clock 1RESET_EDGE)
+    begin
+      if (1RESET_VALUE)
+      begin
+        channel_selector_reg &lt;= 0;
+      end
+      else
+      begin
+        channel_selector_reg &lt;= channel_selector_next;
+      end
+    end
+
+    assign channel_selector_next = ~channel_status_reg &amp;&amp; active_request ? input_selector : channel_selector_reg;
+    assign channel_selector = channel_selector_reg;
+    assign M_tag_out =0;
+
+  end
+endgenerate"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>Arbiter_connection_interface</name>
+      <circuit>
+        <module_o id="Arbiter_connection_interface">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="Arbiter_connection_interface"/>
+          <parameter name="SELECTOR_SIZE">0</parameter>
+          <parameter name="ARBITER_TYPE">0</parameter>
+          <parameter name="INNER_TAG">0</parameter>
+          <parameter name="IS_PIPELINED">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_vector_o id="Mout_oe_ram" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_we_ram" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_addr_ram" dir="IN" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_Wdata_ram" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_data_ram_size" dir="IN" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_tag" dir="IN" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_DataRdy" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_tag" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_oe_ram_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_we_ram_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_addr_ram_out" dir="OUT" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_Wdata_ram_out" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_data_ram_size_out" dir="OUT" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_DataRdy_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_Rdata_ram_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_tag_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_tag_out" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_back_pressure" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_back_pressure_out" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="Arbiter_connection_interface ARBITER_TYPE INNER_TAG SELECTOR_SIZE IS_PIPELINED Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size Mout_tag M_DataRdy M_Rdata_ram M_tag Mout_oe_ram_out Mout_we_ram_out Mout_addr_ram_out Mout_Wdata_ram_out Mout_data_ram_size_out Mout_tag_out M_DataRdy_out M_Rdata_ram_out M_tag_out Mout_back_pressure Mout_back_pressure_out" IP_COMPONENT="round_robin_arbiter_core,priority_arbiter_core,left_priority_arbiter_core,MUX_N_to_1_enabled,MUX_N_to_1,DEMUX_1_to_N,DEMUX_1_to_N_enabled,pipelined_channel_controller,sequential_channel_controller" VERILOG_PROVIDED="
+localparam PRIORITY_ARBITER = 0;
+localparam ROUND_ROBIN_ARBITER = 1;
+localparam LEFT_PRIORITY_ARBITER = 2;
+localparam CHANNEL_NUMBER = PORTSIZE_Mout_oe_ram_out;
+
+wire [CHANNEL_NUMBER*SELECTOR_SIZE -1 : 0] selector, channel_selector;	
+wire [CHANNEL_NUMBER-1:0] valid, channel_active;
+wire [CHANNEL_NUMBER*PORTSIZE_M_tag_out*BITSIZE_M_tag_out-1:0] M_tag_out_wire;
+
+generate
+  if(ARBITER_TYPE == PRIORITY_ARBITER)
+  begin    
+    priority_arbiter_core #(.BITSIZE_in1(PORTSIZE_Mout_oe_ram),
+    .BITSIZE_out1(SELECTOR_SIZE)) priority_arbiter (.clock(clock),
+    .reset(reset),
+    .in1(Mout_oe_ram | Mout_we_ram),
+    .out1(selector[SELECTOR_SIZE-1:0]),
+    .valid(valid[0]));
+    priority_arbiter_core #(.BITSIZE_in1(PORTSIZE_Mout_oe_ram),
+    .BITSIZE_out1(SELECTOR_SIZE)) priority_arbiter_1 (.clock(clock),
+    .reset(reset),
+    .in1((Mout_oe_ram | Mout_we_ram) &amp; ~(valid[0] &lt;&lt; selector[SELECTOR_SIZE-1:0])),
+    .out1(selector[2*SELECTOR_SIZE-1:SELECTOR_SIZE]),
+    .valid(valid[1]));
+  end
+  else if(ARBITER_TYPE == ROUND_ROBIN_ARBITER)
+  begin
+    round_robin_arbiter_core #(.BITSIZE_in1(PORTSIZE_Mout_oe_ram),
+    .BITSIZE_out1(SELECTOR_SIZE)) round_robin_arbiter_0 (.clock(clock),
+    .reset(reset),
+    .in1(Mout_oe_ram | Mout_we_ram),
+    .out1(selector[SELECTOR_SIZE-1:0]),
+    .valid(valid[0]));
+    round_robin_arbiter_core #(.BITSIZE_in1(PORTSIZE_Mout_oe_ram),
+    .BITSIZE_out1(SELECTOR_SIZE)) round_robin_arbiter_1 (.clock(clock),
+    .reset(reset),
+    .in1((Mout_oe_ram | Mout_we_ram) &amp; ~(valid[0] &lt;&lt; selector[SELECTOR_SIZE-1:0])),
+    .out1(selector[2*SELECTOR_SIZE-1:SELECTOR_SIZE]),
+    .valid(valid[1]));
+  end
+  else if(ARBITER_TYPE == LEFT_PRIORITY_ARBITER)
+  begin
+    left_priority_arbiter_core #(.BITSIZE_in1(PORTSIZE_Mout_oe_ram),
+    .BITSIZE_out1(SELECTOR_SIZE)) left_priority_arbiter (.clock(clock),
+    .reset(reset),
+    .in1(Mout_oe_ram | Mout_we_ram),
+    .out1(selector[SELECTOR_SIZE-1:0]),
+    .valid(valid[0]));
+    left_priority_arbiter_core #(.BITSIZE_in1(PORTSIZE_Mout_oe_ram),
+    .BITSIZE_out1(SELECTOR_SIZE)) left_priority_arbiter_1 (.clock(clock),
+    .reset(reset),
+    .in1((Mout_oe_ram | Mout_we_ram) &amp; ~(valid[0] &lt;&lt; selector[SELECTOR_SIZE-1:0])),
+    .out1(selector[2*SELECTOR_SIZE-1:SELECTOR_SIZE]),
+    .valid(valid[1]));
+  end
+  else
+  begin
+    // synthesis translate_off
+    $fatal;
+    // synthesis translate_on
+  end
+endgenerate
+
+assign Mout_back_pressure = (Mout_oe_ram | Mout_we_ram) &amp; ~((valid[0] &amp;&amp; channel_active[0] &amp;&amp; ~Mout_back_pressure_out[0]) &lt;&lt; selector[SELECTOR_SIZE-1:0]) &amp; ~((valid[1] &amp;&amp; channel_active[1] &amp;&amp; ~Mout_back_pressure_out[1]) &lt;&lt; selector[2*SELECTOR_SIZE-1:SELECTOR_SIZE]);
+  
+generate 
+genvar j;
+  for(j=0; j &lt; CHANNEL_NUMBER; j = j + 1)
+  begin : channel
+    MUX_N_to_1_enabled #(
+    .PORTSIZE_in1(PORTSIZE_Mout_oe_ram),
+    .BITSIZE_in1(1),
+    .BITSIZE_selector(SELECTOR_SIZE),
+    .BITSIZE_out1(1)) MUX_N_to_1_Mout_oe_ram (.selector(selector[j*SELECTOR_SIZE +: SELECTOR_SIZE]),
+    .out1(Mout_oe_ram_out[j]),
+    .in1(Mout_oe_ram),
+    .enabled(valid[j] &amp;&amp; channel_active[j]));
+    MUX_N_to_1_enabled #(
+    .PORTSIZE_in1(PORTSIZE_Mout_we_ram),
+    .BITSIZE_in1(1),
+    .BITSIZE_selector(SELECTOR_SIZE),
+    .BITSIZE_out1(1)) MUX_N_to_1_Mout_we_ram (.selector(selector[j*SELECTOR_SIZE +: SELECTOR_SIZE]),
+    .out1(Mout_we_ram_out[j]),
+    .in1(Mout_we_ram),
+    .enabled(valid[j] &amp;&amp; channel_active[j]));  
+    MUX_N_to_1 #(
+    .PORTSIZE_in1(PORTSIZE_Mout_oe_ram),
+    .BITSIZE_in1(BITSIZE_Mout_addr_ram),
+    .BITSIZE_selector(SELECTOR_SIZE),
+    .BITSIZE_out1(BITSIZE_Mout_addr_ram)) MUX_N_to_1_Mout_addr_ram (.selector(selector[j*SELECTOR_SIZE +: SELECTOR_SIZE]),
+    .out1(Mout_addr_ram_out[j*BITSIZE_Mout_addr_ram +: BITSIZE_Mout_addr_ram]),
+    .in1(Mout_addr_ram));  
+    MUX_N_to_1 #(
+    .PORTSIZE_in1(PORTSIZE_Mout_oe_ram),
+    .BITSIZE_in1(BITSIZE_Mout_Wdata_ram),
+    .BITSIZE_selector(SELECTOR_SIZE),
+    .BITSIZE_out1(BITSIZE_Mout_Wdata_ram)) MUX_N_to_1_Mout_Wdata_ram (.selector(selector[j*SELECTOR_SIZE +: SELECTOR_SIZE]),
+    .out1(Mout_Wdata_ram_out[j*BITSIZE_Mout_Wdata_ram +: BITSIZE_Mout_Wdata_ram]),
+    .in1(Mout_Wdata_ram));   
+    MUX_N_to_1 #(
+    .PORTSIZE_in1(PORTSIZE_Mout_oe_ram),
+    .BITSIZE_in1(BITSIZE_Mout_data_ram_size),
+    .BITSIZE_selector(SELECTOR_SIZE),
+    .BITSIZE_out1(BITSIZE_Mout_data_ram_size)) MUX_N_to_1_Mout_data_ram_size (.selector(selector[j*SELECTOR_SIZE +: SELECTOR_SIZE]),
+    .out1(Mout_data_ram_size_out[j*BITSIZE_Mout_data_ram_size +: BITSIZE_Mout_data_ram_size]),
+    .in1(Mout_data_ram_size)); 
+
+    if(IS_PIPELINED)
+    begin
+      pipelined_channel_controller #(.INNER_TAG(INNER_TAG),
+      .BITSIZE_input_selector(SELECTOR_SIZE),
+      .BITSIZE_channel_selector(SELECTOR_SIZE),
+      .PORTSIZE_Mout_tag(PORTSIZE_Mout_oe_ram),
+      .BITSIZE_Mout_tag(BITSIZE_Mout_tag),
+      .BITSIZE_Mout_tag_out(BITSIZE_Mout_tag_out),
+      .PORTSIZE_M_tag_out(PORTSIZE_M_tag_out),
+      .BITSIZE_M_tag_out(BITSIZE_M_tag_out),
+      .BITSIZE_M_tag(BITSIZE_M_tag)) pipelined_channel_controller (.clock(clock),
+      .reset(reset),
+      .channel_active(channel_active[j]),
+      .input_selector(selector[j*SELECTOR_SIZE +: SELECTOR_SIZE]),
+      .channel_selector(channel_selector[j*SELECTOR_SIZE +: SELECTOR_SIZE]),
+      .Mout_tag(Mout_tag),
+      .Mout_tag_out(Mout_tag_out[j*BITSIZE_Mout_tag_out +: BITSIZE_Mout_tag_out]),
+      .M_tag(M_tag[j*BITSIZE_M_tag +: BITSIZE_M_tag]),
+      .M_tag_out(M_tag_out_wire[j*PORTSIZE_M_tag_out*BITSIZE_M_tag_out +: PORTSIZE_M_tag_out*BITSIZE_M_tag_out]));  
+    end
+    else
+    begin
+      sequential_channel_controller #(.INNER_TAG(INNER_TAG),
+      .BITSIZE_input_selector(SELECTOR_SIZE),
+      .BITSIZE_channel_selector(SELECTOR_SIZE),
+      .PORTSIZE_Mout_tag(PORTSIZE_Mout_oe_ram),
+      .BITSIZE_Mout_tag(BITSIZE_Mout_tag),
+      .PORTSIZE_M_tag_out(PORTSIZE_M_tag_out),
+      .BITSIZE_M_tag_out(BITSIZE_M_tag_out)) sequential_channel_controller (.clock(clock),
+      .reset(reset),
+      .M_DataRdy(M_DataRdy[j]),
+      .Mout_back_pressure_out(Mout_back_pressure_out[j]),
+      .active_request(valid[j]),
+      .channel_active(channel_active[j]),
+      .input_selector(selector[j*SELECTOR_SIZE +: SELECTOR_SIZE]),
+      .channel_selector(channel_selector[j*SELECTOR_SIZE +: SELECTOR_SIZE]),
+      .Mout_tag(Mout_tag),
+      .M_tag_out(M_tag_out_wire[j*PORTSIZE_M_tag_out*BITSIZE_M_tag_out +: PORTSIZE_M_tag_out*BITSIZE_M_tag_out]));
+
+      assign Mout_tag_out = 0;
+    end
+  end
+
+  genvar k;
+  wire [CHANNEL_NUMBER*PORTSIZE_M_DataRdy_out-1:0] M_DataRdy_wire;
+  wire [CHANNEL_NUMBER*PORTSIZE_M_Rdata_ram_out*BITSIZE_M_Rdata_ram_out-1:0] M_Rdata_ram_wire;
+
+  for(k=0; k &lt; CHANNEL_NUMBER; k = k + 1)
+  begin
+    DEMUX_1_to_N_enabled #(.BITSIZE_in1(1),
+    .BITSIZE_selector(SELECTOR_SIZE),
+    .PORTSIZE_out1(PORTSIZE_M_DataRdy_out),
+    .BITSIZE_out1(1)) DEMUX_N_to_1_M_DataRdy_out (.selector(channel_selector[k*SELECTOR_SIZE +: SELECTOR_SIZE]),
+    .out1(M_DataRdy_wire[k*PORTSIZE_M_DataRdy_out +: PORTSIZE_M_DataRdy_out]),
+    .in1(M_DataRdy[k]),
+    .enabled(M_DataRdy[k]));
+    DEMUX_1_to_N #(.BITSIZE_in1(BITSIZE_M_Rdata_ram),
+    .BITSIZE_selector(SELECTOR_SIZE),
+    .PORTSIZE_out1(PORTSIZE_M_DataRdy_out),
+    .BITSIZE_out1(BITSIZE_M_Rdata_ram_out)) DEMUX_N_to_1_M_RData_ram_out (.selector(channel_selector[k*SELECTOR_SIZE +: SELECTOR_SIZE]),
+    .out1(M_Rdata_ram_wire[k*PORTSIZE_M_Rdata_ram_out*BITSIZE_M_Rdata_ram_out +: PORTSIZE_M_Rdata_ram_out*BITSIZE_M_Rdata_ram_out]),
+    .in1(M_Rdata_ram[k*BITSIZE_M_Rdata_ram +: BITSIZE_M_Rdata_ram]));
+  end  
+endgenerate  
+  
+reg [PORTSIZE_M_DataRdy_out-1:0] M_DataRdy_out_temp;
+reg [PORTSIZE_M_Rdata_ram_out*BITSIZE_M_Rdata_ram_out-1:0] M_Rdata_ram_out_temp;
+reg [PORTSIZE_M_tag_out*BITSIZE_M_tag_out-1:0] M_tag_out_temp;
+  
+integer s;
+always @(*)
+begin
+  M_DataRdy_out_temp = 0;
+  M_Rdata_ram_out_temp = 0;
+  M_tag_out_temp = 0;
+  for(s=0; s &lt; CHANNEL_NUMBER; s = s + 1)
+  begin
+    M_DataRdy_out_temp = M_DataRdy_out_temp | M_DataRdy_wire[s*PORTSIZE_M_DataRdy_out +: PORTSIZE_M_DataRdy_out];
+    M_Rdata_ram_out_temp = M_Rdata_ram_out_temp | M_Rdata_ram_wire[s*PORTSIZE_M_Rdata_ram_out*BITSIZE_M_Rdata_ram_out +: PORTSIZE_M_Rdata_ram_out*BITSIZE_M_Rdata_ram_out];
+    M_tag_out_temp = M_tag_out_temp | (M_tag_out_wire[s*PORTSIZE_M_tag_out*BITSIZE_M_tag_out +: PORTSIZE_M_tag_out*BITSIZE_M_tag_out] &amp; {PORTSIZE_M_tag_out*BITSIZE_M_tag_out{M_DataRdy[s]}});
+  end
+end
+
+assign M_DataRdy_out = M_DataRdy_out_temp;
+assign M_Rdata_ram_out = M_Rdata_ram_out_temp;
+assign M_tag_out = M_tag_out_temp;"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>MUX_N_to_1_enabled</name>
+      <circuit>
+        <module_o id="MUX_N_to_1_enabled">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="MUX_N_to_1_enabled"/>
+          <port_o id="selector" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_vector_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="enabled" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="MUX_N_to_1_enabled selector in1 out1" VERILOG_PROVIDED="
+          wire [BITSIZE_in1-1:0] inputarray [0:PORTSIZE_in1-1];
+          genvar i;
+          generate
+            for (i=0; i &lt; PORTSIZE_in1; i=i+1)
+            begin : MUX_pack_block
+              assign inputarray[i] = in1[i*BITSIZE_in1 +: BITSIZE_in1];
+            end
+          endgenerate
+          assign out1 = (inputarray[selector] &amp; {BITSIZE_in1{enabled}});"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>DEMUX_1_to_N</name>
+      <circuit>
+        <module_o id="DEMUX_1_to_N">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="DEMUX_1_to_N"/>
+          <port_o id="selector" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_vector_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="DEMUX_1_to_N selector in1 out1" VERILOG_PROVIDED="
+          genvar i;
+          generate
+          for (i=0; i &lt; PORTSIZE_out1; i=i+1)
+            begin 
+              assign out1[i*BITSIZE_out1+:BITSIZE_out1] = ((i == selector) ? in1 : {BITSIZE_out1 {1&apos;b0}});
+            end
+          endgenerate"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>DEMUX_1_to_N_enabled</name>
+      <circuit>
+        <module_o id="DEMUX_1_to_N_enabled">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="DEMUX_1_to_N_enabled"/>
+          <port_o id="selector" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_vector_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_o id="enabled" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="DEMUX_1_to_N_enabled selector in1 out1" VERILOG_PROVIDED="
+          genvar i;
+          generate
+          for (i=0; i &lt; PORTSIZE_out1; i=i+1)
+            begin 
+              assign out1[i*BITSIZE_out1+:BITSIZE_out1] = ((i == selector) ? (in1 &amp; {BITSIZE_in1{enabled}}) : {BITSIZE_out1 {1&apos;b0}});
+            end
+          endgenerate"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>priority_arbiter_core</name>
+      <circuit>
+        <module_o id="priority_arbiter_core">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="priority_arbiter_core"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="valid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="priority_arbiter_core in1 out1" IP_COMPONENT="multiple_priority_encoder_1_1,multiple_priority_encoder_2_1,multiple_priority_encoder_4_2,multiple_priority_encoder_8_3,multiple_priority_encoder_16_4,multiple_priority_encoder_32_5,multiple_priority_encoder_64_6" VERILOG_PROVIDED="
+wire empty;
+assign valid = !empty;
+
+generate
+  if(BITSIZE_in1 == 1)
+  begin
+    multiple_priority_encoder_1_1 encoder (.empty(empty),
+      .i(in1),
+      .o(out1));
+  end
+  else if(BITSIZE_in1 == 2)
+  begin
+    multiple_priority_encoder_2_1 encoder (.empty(empty),
+      .i(in1),
+      .o(out1));
+  end
+  else if(BITSIZE_in1 &lt;= 4)
+  begin
+    wire [3:0] in1_temp;
+    assign in1_temp = in1 | {4{1'b0}};
+    multiple_priority_encoder_4_2 encoder (.empty(empty),
+      .i(in1_temp),
+      .o(out1));
+  end
+  else if(BITSIZE_in1 &lt;= 8)
+  begin
+    wire [7:0] in1_temp;
+    assign in1_temp = in1 | {8{1'b0}};
+    multiple_priority_encoder_8_3 encoder (.empty(empty),
+      .i(in1_temp),
+      .o(out1));
+  end
+  else if(BITSIZE_in1 &lt;= 16)
+  begin
+    wire [15:0] in1_temp;
+    assign in1_temp = in1 | {16{1'b0}};
+    multiple_priority_encoder_16_4 encoder (.empty(empty),
+      .i(in1_temp),
+      .o(out1));
+  end
+  else if(BITSIZE_in1 &lt;= 32)
+  begin
+    wire [31:0] in1_temp;
+    assign in1_temp = in1 | {32{1'b0}};
+    multiple_priority_encoder_32_5 encoder (.empty(empty),
+      .i(in1_temp),
+      .o(out1));
+  end
+  else if(BITSIZE_in1 &lt;= 64)
+  begin
+    wire [63:0] in1_temp;
+    assign in1_temp = in1 | {64{1'b0}};
+    multiple_priority_encoder_64_6 encoder (.empty(empty),
+      .i(in1_temp),
+      .o(out1));
+  end
+  else
+  begin
+    // synthesis translate_off
+    $fatal;
+    // synthesis translate_on
+  end
+endgenerate
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>round_robin_arbiter_core</name>
+      <circuit>
+        <module_o id="round_robin_arbiter_core">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="round_robin_arbiter_core"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="valid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="round_robin_arbiter_core in1 out1" IP_COMPONENT="multiple_priority_encoder_1_1,multiple_priority_encoder_2_1,multiple_priority_encoder_4_2,multiple_priority_encoder_8_3,multiple_priority_encoder_16_4,multiple_priority_encoder_32_5,multiple_priority_encoder_64_6" VERILOG_PROVIDED="
+`ifndef CLOG2
+`define CLOG2(x) \
+  (x &lt;= 2) ? 1 : \
+  (x &lt;= 4) ? 2 : \
+  (x &lt;= 8) ? 3 : \
+  (x &lt;= 16) ? 4 : \
+  (x &lt;= 32) ? 5 : \
+  (x &lt;= 64) ? 6 : \
+  (x &lt;= 128) ? 7 : \
+  (x &lt;= 256) ? 8 : \
+  -1
+`endif
+
+localparam BITSIZE_counter = `CLOG2(BITSIZE_in1);
+
+reg [BITSIZE_in1-1:0] last_mask;
+wire [BITSIZE_in1-1:0] upper_in, next_mask;
+wire [BITSIZE_counter-1:0] upper_out, lower_out;
+wire empty_lower, empty_upper;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    last_mask &lt;= {BITSIZE_in1{1&apos;b1}};
+  end
+  else 
+  begin
+    last_mask &lt;= next_mask;
+  end 
+end
+
+assign valid = !empty_lower || !empty_upper;
+assign upper_in = in1 &amp; last_mask;
+assign next_mask = (empty_lower &amp;&amp; empty_upper) ? last_mask : (empty_upper ? ({BITSIZE_in1{1&apos;b1}} &lt;&lt; lower_out) : ({BITSIZE_in1{1&apos;b1}} &lt;&lt; upper_out));
+assign out1 = empty_upper ? lower_out : upper_out;
+
+generate
+  if(BITSIZE_in1 == 1)
+  begin
+    multiple_priority_encoder_1_1 upper (.empty(empty_upper),
+      .i(upper_in),
+      .o(upper_out));
+    multiple_priority_encoder_1_1 lower (.empty(empty_lower),
+      .i(in1),
+      .o(lower_out));
+  end
+  else if(BITSIZE_in1 == 2)
+  begin
+    multiple_priority_encoder_2_1 upper (.empty(empty_upper),
+      .i(upper_in),
+      .o(upper_out));
+    multiple_priority_encoder_2_1 lower (.empty(empty_lower),
+      .i(in1),
+      .o(lower_out));
+  end
+  else if(BITSIZE_in1 &lt;= 4)
+  begin
+    wire [3:0] in1_temp, upper_in_temp;
+    assign in1_temp = in1 | {4{1'b0}};
+    assign upper_in_temp = upper_in | {4{1'b0}};
+    multiple_priority_encoder_4_2 upper (.empty(empty_upper),
+      .i(upper_in_temp),
+      .o(upper_out));
+    multiple_priority_encoder_4_2 lower (.empty(empty_lower),
+      .i(in1_temp),
+      .o(lower_out));
+  end
+  else if(BITSIZE_in1 &lt; 8)
+  begin
+    wire [7:0] in1_temp, upper_in_temp;
+    assign in1_temp = in1 | {8{1'b0}};
+    assign upper_in_temp = upper_in | {8{1'b0}};
+    multiple_priority_encoder_8_3 upper (.empty(empty_upper),
+      .i(upper_in_temp),
+      .o(upper_out));
+    multiple_priority_encoder_8_3 lower (.empty(empty_lower),
+      .i(in1_temp),
+      .o(lower_out));
+  end
+  else if(BITSIZE_in1 &lt; 16)
+  begin
+    wire [15:0] in1_temp, upper_in_temp;
+    assign in1_temp = in1 | {16{1'b0}};
+    assign upper_in_temp = upper_in | {16{1'b0}};
+    multiple_priority_encoder_16_4 upper (.empty(empty_upper),
+      .i(upper_in_temp),
+      .o(upper_out));
+    multiple_priority_encoder_16_4 lower (.empty(empty_lower),
+      .i(in1_temp),
+      .o(lower_out));
+  end
+  else if(BITSIZE_in1 &lt; 32)
+  begin
+    wire [31:0] in1_temp, upper_in_temp;
+    assign in1_temp = in1 | {32{1'b0}};
+    assign upper_in_temp = upper_in | {32{1'b0}};
+    multiple_priority_encoder_32_5 upper (.empty(empty_upper),
+      .i(upper_in_temp),
+      .o(upper_out));
+    multiple_priority_encoder_32_5 lower (.empty(empty_lower),
+      .i(in1_temp),
+      .o(lower_out));
+  end
+  else if(BITSIZE_in1 &lt; 64)
+  begin
+    wire [63:0] in1_temp, upper_in_temp;
+    assign in1_temp = in1 | {64{1'b0}};
+    assign upper_in_temp = upper_in | {64{1'b0}};
+    multiple_priority_encoder_64_6 upper (.empty(empty_upper),
+      .i(upper_in_temp),
+      .o(upper_out));
+    multiple_priority_encoder_64_6 lower (.empty(empty_lower),
+      .i(in1_temp),
+      .o(lower_out));
+  end
+  else
+  begin
+    // synthesis translate_off
+    $fatal;
+    // synthesis translate_on
+  end
+endgenerate"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>left_priority_arbiter_core</name>
+      <circuit>
+        <module_o id="left_priority_arbiter_core">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="left_priority_arbiter_core"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="valid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="left_priority_arbiter_core in1 out1" IP_COMPONENT="priority_arbiter_core" VERILOG_PROVIDED="
+`ifndef POW_TO_2
+`define POW_TO_2(x) \
+  (x &lt;= 2) ? 2 : \
+  (x &lt;= 4) ? 4 : \
+  (x &lt;= 8) ? 8 : \
+  (x &lt;= 16) ? 16 : \
+  (x &lt;= 32) ? 32 : \
+  (x &lt;= 64) ? 64 : \
+  (x &lt;= 128) ? 128 : \
+  (x &lt;= 256) ? 256 : \
+  -1
+`endif
+
+localparam BITSIZE_in1_internal = `POW_TO_2(BITSIZE_in1);
+
+wire [BITSIZE_in1_internal-1:0] in1_rev;
+wire [BITSIZE_in1_internal-1:0] in1_temp;
+wire [BITSIZE_out1-1:0] selector;
+
+assign in1_temp = in1 | {BITSIZE_in1_internal{1'b0}};
+
+genvar i;
+generate
+  for (i = 0; i &lt; BITSIZE_in1_internal; i = i + 1) begin : reverse_bits
+    assign in1_rev[i] = in1_temp[BITSIZE_in1_internal-1-i];
+  end
+endgenerate
+  
+priority_arbiter_core #(.BITSIZE_in1(BITSIZE_in1_internal),
+.BITSIZE_out1(BITSIZE_out1)) priority_arbiter (.clock(clock),
+.reset(reset),
+.in1(in1_rev),
+.out1(selector),
+.valid(valid));
+
+assign out1 = valid ? ~selector : 0;"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>SIMPLEJOIN2_FU</name>
+      <circuit>
+        <module_o id="SIMPLEJOIN2_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
+          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="SIMPLEJOIN2_FU"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_vector_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="SIMPLEJOIN2_FU in1 " VERILOG_PROVIDED="
+          reg [PORTSIZE_in1*BITSIZE_in1-1:0] rin1;
+          wire [PORTSIZE_in1*BITSIZE_in1-1:0] rin1_next;
+          wire temp;
+
+          assign temp = &amp;rin1;
+          assign rin1_next = temp ? 0 : (rin1 | in1);
+
+          always @(posedge clock 1RESET_EDGE) 
+          begin
+            if (1RESET_VALUE)
+            begin
+              rin1 &lt;= 0;
+            end
+            else
+            begin
+              rin1 &lt;= rin1_next;
+            end
+          end
+
+          assign out1 = &amp;rin1_next;"/>
+        </module_o>
+      </circuit>
+    </cell>
+  </library>
+</technology>

@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2021-2024 Politecnico di Milano
+ *              Copyright (C) 2021-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -35,30 +35,27 @@
  * @brief Simplifies memory dependency data structure by merging memdeps in virtual dependencies.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "FixVdef.hpp"
 
-#include "Parameter.hpp"                    // for Parameter
-#include "application_manager.hpp"          // for application_manager, app...
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_VERY_PEDANTIC
-#include "design_flow_graph.hpp"            // for DesignFlowGraph, DesignF...
-#include "design_flow_manager.hpp"          // for DesignFlowManager, Desig...
-#include "design_flow_step_factory.hpp"     // for DesignFlowManagerConstRef
-#include "exceptions.hpp"                   // for THROW_ASSERT, THROW_UNRE...
-#include "hls_manager.hpp"                  // for HLS_manager
-#include "string_manipulation.hpp"          // for STR, GET_CLASS
-#include "technology_flow_step.hpp"         // for TechnologyFlowStep_Type
-#include "technology_flow_step_factory.hpp" // for TechnologyFlowStepFactory
-#include "tree_basic_block.hpp"             // for bloc
-#include "tree_manager.hpp"                 // for tree_manager
-#include "tree_node.hpp"                    // for gimple_assign
+#include "Parameter.hpp"
+#include "application_manager.hpp"
+#include "dbgPrintHelper.hpp"
+#include "design_flow_graph.hpp"
+#include "design_flow_manager.hpp"
+#include "design_flow_step_factory.hpp"
+#include "exceptions.hpp"
+#include "hls_manager.hpp"
+#include "ir_basic_block.hpp"
+#include "ir_manager.hpp"
+#include "ir_node.hpp"
+#include "string_manipulation.hpp"
+#include "technology_flow_step.hpp"
+#include "technology_flow_step_factory.hpp"
 
 FixVdef::FixVdef(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id,
-                 const DesignFlowManagerConstRef _design_flow_manager)
+                 const DesignFlowManager& _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, FIX_VDEF, _design_flow_manager, Param)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -72,13 +69,10 @@ FixVdef::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType rel
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, SAME_FUNCTION));
          relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(HWCALL_INJECTION, SAME_FUNCTION));
-         relationships.insert(std::make_pair(REBUILD_INITIALIZATION, SAME_FUNCTION));
-         relationships.insert(std::make_pair(REMOVE_CLOBBER_GA, SAME_FUNCTION));
-         relationships.insert(std::make_pair(SWITCH_FIX, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -95,8 +89,6 @@ FixVdef::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType rel
    return relationships;
 }
 
-FixVdef::~FixVdef() = default;
-
 void FixVdef::ComputeRelationships(DesignFlowStepSet& relationship,
                                    const DesignFlowStep::RelationshipType relationship_type)
 {
@@ -106,14 +98,14 @@ void FixVdef::ComputeRelationships(DesignFlowStepSet& relationship,
       {
          break;
       }
-      case DEPENDENCE_RELATIONSHIP:
+      case(DEPENDENCE_RELATIONSHIP):
       {
-         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto design_flow_graph = design_flow_manager.CGetDesignFlowGraph();
          const auto technology_flow_step_factory = GetPointerS<const TechnologyFlowStepFactory>(
-             design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::TECHNOLOGY));
+             design_flow_manager.CGetDesignFlowStepFactory(DesignFlowStep::TECHNOLOGY));
          const auto technology_flow_signature =
              TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
-         const auto technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
+         const auto technology_flow_step = design_flow_manager.GetDesignFlowStep(technology_flow_signature);
          const auto technology_design_flow_step =
              technology_flow_step != DesignFlowGraph::null_vertex() ?
                  design_flow_graph->CGetNodeInfo(technology_flow_step)->design_flow_step :
@@ -121,7 +113,7 @@ void FixVdef::ComputeRelationships(DesignFlowStepSet& relationship,
          relationship.insert(technology_design_flow_step);
          break;
       }
-      case INVALIDATION_RELATIONSHIP:
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
@@ -133,12 +125,12 @@ void FixVdef::ComputeRelationships(DesignFlowStepSet& relationship,
 
 DesignFlowStep_Status FixVdef::InternalExec()
 {
-   const auto TM = AppM->get_tree_manager();
-   const auto tn = TM->GetTreeNode(function_id);
-   const auto fd = GetPointer<const function_decl>(tn);
+   const auto TM = AppM->get_ir_manager();
+   const auto tn = TM->GetIRNode(function_id);
+   const auto fd = GetPointer<const function_val_node>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   const auto sl = GetPointer<const statement_list>(fd->body);
-   THROW_ASSERT(sl, "Body is not a statement_list");
+   const auto sl = GetPointer<const statement_list_node>(fd->body);
+   THROW_ASSERT(sl, "Body is not a statement_list_node");
    THROW_ASSERT(GetPointer<const HLS_manager>(AppM), "unexpected condition");
    const auto isSingleMem = GetPointerS<const HLS_manager>(AppM)->IsSingleWriteMemory();
    for(const auto& block : sl->list_of_bloc)
@@ -147,7 +139,7 @@ DesignFlowStep_Status FixVdef::InternalExec()
       for(const auto& s : block.second->CGetStmtList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing statement " + s->ToString());
-         const auto gn = GetPointerS<gimple_node>(s);
+         const auto gn = GetPointerS<node_stmt>(s);
          if(isSingleMem)
          {
             gn->vdef = gn->memdef;

@@ -1,5 +1,0 @@
-<?xml version="1.0"?>
-<function>
-  <testbench a="{0,1,2,3,4,5,6,7}" n_ptr="{0}" />
-  <testbench a="{15, -21, 74, 18}" n_ptr="{4}" />
-</function>

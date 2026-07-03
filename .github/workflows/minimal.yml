@@ -7,91 +7,123 @@ on:
     paths-ignore:
       - "documentation/**"
   workflow_dispatch:
+    inputs:
+      upload-artifacts:
+        description: 'Upload artifacts (1=yes, 0=no)'
+        required: false
+        default: '0'
+      no-clean:
+        description: 'Pass --no-clean to regression scripts'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
 
 concurrency:
-  group: minimal-${{ github.head_ref }}
+  group: minimal-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 env:
+  upload-artifacts: ${{ inputs.upload-artifacts || '0' }}
+  NO_CLEAN_ARG: ${{ inputs['no-clean'] && '--no-clean' || '' }}
   report-dir: test-reports
   storage-url: "${{secrets.CI_STORAGE_URL}}"
   storage-user: "${{secrets.CI_STORAGE_USER}}"
   storage-token: "${{secrets.CI_STORAGE_TOKEN}}"
   host_jobs: $J
+  host_threads: $OMP_NUM_THREADS
+  dist-dir: panda_dist
+  CI_COMPILERS: clang-4.0,clang-6.0,clang-7,clang-11,clang-13,clang-16,clang-19
 
 jobs:
   build:
-    uses: ./.github/workflows/build-appimage.yml
+    uses: ./.github/workflows/build-panda.yml
     with:
       package-name: bambu-minimal
-      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,clang-4,clang-6,clang-7,clang-11,clang-13,clang-16
+      compilers: clang-4.0,clang-6.0,clang-7,clang-11,clang-13,clang-16,clang-19
+      package-compilers: false
     secrets: inherit
 
-  changes:
+  cppcheck:
+    needs: [build]
+    if: ${{ needs.build.outputs.compilation-db != '' }}
     runs-on: [self-hosted]
+    env:
+      cppcheck-dir: cppcheck-report
+      cppcheck-args: --enable=all --force --suppress=missingIncludeSystem --suppress=unknownMacro --inline-suppr -i ext
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          submodules: "true"
+      - name: Download compilation database
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{needs.build.outputs.compilation-db}}
+          storage-url: ${{env.storage-url}}
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Env setup
+        id: host
+        shell: bash
+        run: |
+          echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
+          echo "threads=${{env.host_threads}}" >> $GITHUB_OUTPUT
+          cat > docker_exec.sh << EOF
+          #!/bin/bash -e
+          # Remove generated sources from compilation database
+          python3 -c 'import json, sys; print(json.dumps([obj for obj in json.load(open(sys.argv[1], "r")) if not obj.get("file", "").startswith(sys.argv[2])], indent=2))' compilation_db/build/compile_commands.json /github/workspace/build > compilation_db/build/compile_commands.filtered.json
+          mkdir -p ${{env.cppcheck-dir}}
+          cppcheck ${{env.cppcheck-args}} --project="compilation_db/build/compile_commands.filtered.json" --xml --xml-version=2 --output-file="${{env.cppcheck-dir}}/cppcheck.xml" "\$@"
+          cppcheck-htmlreport --source-dir=. --title=Bambu --file="${{env.cppcheck-dir}}/cppcheck.xml" --report-dir="${{env.cppcheck-dir}}"
+          EOF
+          chmod +x docker_exec.sh
+      - name: Run CPPCheck
+        uses: ./.github/actions/codechecks-runner
+        with:
+          command: ./docker_exec.sh -j${{env.host_jobs}}
+          jobs: ${{steps.host.outputs.jobs}}
+          threads: ${{steps.host.outputs.threads}}
+      - name: Upload CPPCheck HTML report
+        if: ${{ env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: CPPCheck-report
+          path: ${{env.cppcheck-dir}}
+      - name: Check for errors
+        id: error
+        shell: bash
+        run: |
+          echo "count=$(grep -o -i severity=\"error\" ${{env.cppcheck-dir}}/cppcheck.xml | wc -l)" >> $GITHUB_OUTPUT
+      - name: CPPCheck found some errors
+        uses: actions/github-script@v8
+        if: ${{ steps.error.outputs.count > 0 }}
+        with:
+          script: core.setFailed('CPPCheck detected ${{steps.error.outputs.count}} errors.')
+
+  changes:
     permissions:
       pull-requests: read
+      contents: read
+    runs-on: [self-hosted]
     outputs:
       softfloat: ${{ steps.filter.outputs.softfloat }}
       libm: ${{ steps.filter.outputs.libm }}
-      ac_types: ${{ steps.filter.outputs.ac_types }}
     steps:
       - name: Detect changes
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         id: filter
         with:
           filters: |
-            softfloat:
-              - 'etc/libbambu/bambu_macros.h'
-              - 'etc/libbambu/mul64.c'
-              - 'etc/libbambu/softfloat/**'
-            libm:
-              - 'etc/libbambu/bambu_macros.h'
-              - 'etc/libbambu/mul64.c'
-              - 'etc/libbambu/libm/**'
-              - 'etc/libbambu/softfloat/**'
-            ac_types:
-              - 'etc/libbambu/ac_math/**'
-              - 'etc/libbambu/ac_types/**'
-
-  ACMath-tests:
-    needs: [changes]
-    if: ${{needs.changes.outputs.ac_types == 'true'}}
-    runs-on: [self-hosted]
-    container:
-      image: bambuhls/dev:focal-23.10
-      env:
-        J: ${{env.host_jobs}}
-    strategy:
-      matrix:
-        include:
-          - compiler: g++
-          - compiler: g++
-            flags: -std=c++17
-          - compiler: clang++
-          - compiler: clang++
-            flags: -std=c++17
-          - compiler: clang++-16
-            flags: -std=c++17
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Install Clang
-        if: ${{ matrix.compiler == 'clang++' }}
-        shell: bash
-        run: |
-          apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends clang
-      - name: Install Clang 16
-        if: ${{ matrix.compiler == 'clang++-16' }}
-        shell: bash
-        run: |
-          bash .devcontainer/library-scripts/compiler-download.sh / clang-16
-          bash .devcontainer/library-scripts/compiler-setup.sh
-      - name: Launch ACMath tests for ${{matrix.compiler}} ${{matrix.flags}}
-        working-directory: ./etc/libbambu/ac_math
-        shell: bash
-        run: ./ac_math_test.sh $(mktemp -d /tmp/ac_math_XXX) CXX=${{matrix.compiler}} CXXUSERFLAGS="${{matrix.flags}}"
+            softfloat: ['etc/libbambu/bambu_macros.h', 'etc/libbambu/softfloat/**']
+            libm: ['etc/libbambu/bambu_macros.h', 'etc/libbambu/libm/**', 'etc/libbambu/softfloat/**']
 
   specific-test:
     needs: [build]
@@ -99,58 +131,59 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        id: ["", "2", "3", "4", "5", "6"]
+        id: ["", "2", "3", "4", "5", "6", "7"]
     env:
-      args: -c=--simulator=VERILATOR -c=--verilator-parallel=4
+      args: -c=--simulator=VERILATOR -c=--parallel-backend=2
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
         with:
-          name: ${{needs.build.outputs.package-name}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "false"
       - name: Launch Bambu specific test ${{matrix.id}}
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
-          ./panda_regressions/hls/bambu_specific_test${{matrix.id}}.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
+          ./panda_regressions/hls/bambu_specific_test${{matrix.id}}.sh ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
       - name: Compare results
         id: perf-check
         uses: ./.github/actions/perf-check
         with:
           test-id: bambu_specific_test${{matrix.id}}
-          new-results: ${{env.report-dir}}/perf.csv
+          new-results: ${{env.report-dir}}/perf.xml
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
         if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
-        run: |
-          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
         with:
           name: bambu_specific_test${{matrix.id}}
           path: ${{env.report-dir}}
-  
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
+
   interface-test:
-    needs: [build, ACMath-tests]
-    if: ${{ !cancelled() && needs.build.result == 'success' }}
-    runs-on: [self-hosted,mentor]
+    needs: [build]
+    if: ${{!cancelled() && needs.build.result == 'success' }}
+    runs-on: [self-hosted, mentor]
     strategy:
       fail-fast: false
       matrix:
@@ -160,578 +193,648 @@ jobs:
       args: -c=--simulator=${{matrix.simulator}}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
         with:
-          name: ${{needs.build.outputs.package-name}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "false"
       - name: Launch Bambu interface test ${{matrix.simulator}}
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
-          ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
+          ${{env.script}} ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
       - name: Compare results
         id: perf-check
         uses: ./.github/actions/perf-check
         with:
           test-id: bambu_interface_test${{matrix.simulator}}
-          new-results: ${{env.report-dir}}/perf.csv
+          new-results: ${{env.report-dir}}/perf.xml
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
         if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
-        run: |
-          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
         with:
           name: bambu_interface_test${{matrix.simulator}}
           path: ${{env.report-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
 
   AXI4-verification:
     needs: [build]
-    runs-on: [self-hosted,mentor]
+    runs-on: [self-hosted, xilinx]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
         with:
-          name: ${{needs.build.outputs.package-name}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "false"
       - name: Launch AXI test
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          source ${{env.dist-dir}}/settings.sh
           ./panda_regressions/hls/bambu_axi_verification.sh
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
 
   gcc_regression_simple:
     needs: [build, specific-test]
     runs-on: [self-hosted, mentor]
-    env:
-      outname: ${{matrix.setup}}_regression_simple
     strategy:
       fail-fast: false
       matrix:
         include:
-          - setup: gcc-4.9
-            script: generic_gcc_regression_simple_eg_ext_pipelined.sh
-            args: -c=--compiler=I386_GCC49 -c=--reset-type=sync -c=--simulator=VERILATOR -c=--verilator-parallel=2
-          - setup: clang-4.0
-            script: generic_gcc_regression_simple_eg.sh
-            args: -c=--compiler=I386_CLANG4 -c=--simulator=MODELSIM 
-          - setup: clang-6.0
-            script: generic_gcc_regression_simple_bambu.sh
-            args: -c=--compiler=I386_CLANG6 -c=--simulator=XSIM 
-          - setup: clang-7
-            script: generic_gcc_regression_simple_bambu.sh
-            args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR -c=--verilator-parallel=2
-          - setup: clang-11
-            script: generic_gcc_regression_simple_bambu.sh
-            args: -c=--compiler=I386_CLANG11 -c=--simulator=VERILATOR -c=--verilator-parallel=2
-          - setup: clang-13
-            script: generic_gcc_regression_simple_eg_ext_pipelined.sh
-            args: -c=--compiler=I386_CLANG13 -c=--simulator=VERILATOR -c=--verilator-parallel=2
-          - setup: clang-16
-            script: generic_gcc_regression_simple_eg_ext_pipelined.sh
-            args: -c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR -c=-Wno-int-conversion -c=--verilator-parallel=2
+          - { setup: clang-4.0, script: generic_gcc_regression_simple_eg.sh, args: "-c=--compiler=I386_CLANG4 -c=--simulator=MODELSIM" }
+          - { setup: clang-6.0, script: generic_gcc_regression_simple_bambu.sh, args: "-c=--compiler=I386_CLANG6 -c=--simulator=VERILATOR" }
+          - { setup: clang-7, script: generic_gcc_regression_simple_bambu.sh, args: "-c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR" }
+          - { setup: clang-11, script: generic_gcc_regression_simple_bambu.sh, args: "-c=--compiler=I386_CLANG11 -c=--simulator=VERILATOR" }
+          - { setup: clang-13, script: generic_gcc_regression_simple_eg_ext_pipelined.sh, args: "-c=--compiler=I386_CLANG13 -c=--simulator=VERILATOR" }
+          - { setup: clang-16, script: generic_gcc_regression_simple_eg_ext_pipelined.sh, args: "-c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR -c=-Wno-int-conversion" }
+          - { setup: clang-19, script: generic_gcc_regression_simple_eg_ext_pipelined.sh, args: "-c=--compiler=I386_CLANG19 -c=--simulator=VERILATOR -c=-Wno-int-conversion" }
+    env:
+      outname: ${{matrix.setup}}_regression_simple
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
         with:
-          name: ${{needs.build.outputs.package-name}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "false"
       - name: Launch GCC regression test suite
         id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
           echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
-          ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{matrix.args}}
+          ./panda_regressions/hls/${{matrix.script}} ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{matrix.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
       - name: Compare results
         id: perf-check
         uses: ./.github/actions/perf-check
         with:
           test-id: ${{env.outname}}
-          new-results: ${{env.report-dir}}/perf.csv
+          new-results: ${{env.report-dir}}/perf.xml
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
         if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
-        run: |
-          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
 
   gcc_regression_simple-pretty_print:
     needs: [build, specific-test]
     runs-on: [self-hosted]
     env:
-      setup: gcc-4.9
+      setup: clang-16
       script: generic_gcc_regression_simple_bambu_pretty_print.sh
-      args: -c=--compiler=I386_GCC49 -c=--simulator=VERILATOR -c=--verilator-parallel=4
-      outname: gcc-4.9_regression_simple-pretty_print
+      args: -c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR -c=--parallel-backend=2
+      outname: clang-16_regression_simple-pretty_print
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
         with:
-          name: ${{needs.build.outputs.package-name}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "false"
       - name: Launch GCC regression test suite with pretty-print
         id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
           echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          ./panda_regressions/hls/${{env.script}} ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
       - name: Compare results
         id: perf-check
         uses: ./.github/actions/perf-check
         with:
           test-id: ${{env.outname}}
-          new-results: ${{env.report-dir}}/perf.csv
+          new-results: ${{env.report-dir}}/perf.xml
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
         if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
-        run: |
-          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
 
   gcc_regression_simple-vhdl:
     needs: [build, specific-test]
     runs-on: [self-hosted, mentor]
     env:
-      setup: gcc-7
+      setup: clang-16
       script: generic_gcc_regression_simple_bambu_vhdl.sh
-      args: -c=--compiler=I386_GCC7 -c=--simulator=MODELSIM 
-      outname: gcc-7_regression_simple-vhdl
+      args: -c=--compiler=I386_CLANG16 -c=--simulator=MODELSIM
+      outname: clang16_regression_simple-vhdl
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
         with:
-          name: ${{needs.build.outputs.package-name}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "false"
       - name: Launch GCC regression test suite with VHDL target
         id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
           echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          ./panda_regressions/hls/${{env.script}} ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
       - name: Compare results
         id: perf-check
         uses: ./.github/actions/perf-check
         with:
           test-id: ${{env.outname}}
-          new-results: ${{env.report-dir}}/perf.csv
+          new-results: ${{env.report-dir}}/perf.xml
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
         if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
-        run: |
-          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
 
   discrepancy-test:
     needs: [build, specific-test]
     runs-on: [self-hosted]
     env:
-      setup: gcc-7
+      setup: clang-16
       script: generic_discrepancy_eg_bambu.sh
-      args: -c=--compiler=I386_GCC7
-      outname: gcc-7_discrepancy
+      args: -c=--compiler=I386_CLANG16
+      outname: clang-16_discrepancy
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
         with:
-          name: ${{needs.build.outputs.package-name}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "false"
       - name: Launch Bambu discrepancy tests
         id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
           echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          ./panda_regressions/hls/${{env.script}} ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
       - name: Upload test reports
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
 
   softfloat-preliminary:
     needs: [changes]
-    if: ${{needs.changes.outputs.softfloat == 'true'}}
+    if: ${{ needs.changes.outputs.softfloat == 'true' }}
     runs-on: [self-hosted]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Env setup
+        uses: actions/checkout@v5
+      - name: Read host parallelism
         id: host
         shell: bash
         run: |
-          echo "Current host supports ${{env.host_jobs}} parallel jobs"
-          echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
+          echo "jobs=${{env.host_jobs}}" >> "$GITHUB_OUTPUT"
+          echo "threads=${{env.host_threads}}" >> "$GITHUB_OUTPUT"
       - name: Verify SoftFloat implementation
-        uses: ./.github/actions/docker-runner
+        uses: ./.github/actions/base-runner
         with:
-          script: ./panda_regressions/hls/test_softfloat.sh
-          jobs: ${{steps.host.outputs.jobs}}
+          command: ./panda_regressions/hls/test_softfloat.sh
+          jobs: ${{ steps.host.outputs.jobs }}
+          threads: ${{ steps.host.outputs.threads }}
 
   softfloat-tests:
     needs: [build, softfloat-preliminary]
-    if: ${{ !cancelled() && needs.build.result == 'success' }}
+    if: ${{ !cancelled() && needs.build.result == 'success' && needs['softfloat-preliminary'].result == 'success' }}
     runs-on: [self-hosted, mentor]
     env:
       script: multi_softfloat-tests.sh
-      args: -c=--simulator=VERILATOR -c=--verilator-parallel=4
+      args: -c=--simulator=VERILATOR -c=--parallel-backend=2
       outname: multi_softfloat-tests
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
         with:
-          name: ${{needs.build.outputs.package-name}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "false"
       - name: Launch SoftFloat test suite
         id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
           echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          ./panda_regressions/hls/${{env.script}} ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
       - name: Compare results
         id: perf-check
         uses: ./.github/actions/perf-check
         with:
           test-id: ${{env.outname}}
-          new-results: ${{env.report-dir}}/perf.csv
+          new-results: ${{env.report-dir}}/perf.xml
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
         if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
-        run: |
-          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
 
   libm-preliminary:
     needs: [changes]
-    if: ${{needs.changes.outputs.libm == 'true'}}
+    if: ${{ needs.changes.outputs.libm == 'true' }}
     runs-on: [self-hosted]
-    strategy:
-      matrix:
-        func: [expf, logf, powf, sinecosine, sqrt, sqrtf]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Env setup
+        uses: actions/checkout@v5
+      - name: Read host parallelism
         id: host
         shell: bash
         run: |
-          echo "Current host supports ${{env.host_jobs}} parallel jobs"
-          echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
-      - name: Verify ${{matrix.func}} implementation
-        uses: ./.github/actions/docker-runner
+          echo "jobs=${{env.host_jobs}}" >> "$GITHUB_OUTPUT"
+          echo "threads=${{env.host_threads}}" >> "$GITHUB_OUTPUT"
+      - name: Verify LibM functions implementation
+        uses: ./.github/actions/base-runner
         with:
-          script: ./panda_regressions/hls/test_libm_${{matrix.func}}.sh
-          jobs: ${{steps.host.outputs.jobs}}
+          command: ./panda_regressions/hls/test_libm.sh
+          jobs: ${{ steps.host.outputs.jobs }}
+          threads: ${{ steps.host.outputs.threads }}
 
   libm-tests:
     needs: [build, libm-preliminary, softfloat-tests]
-    if: ${{ !cancelled() && needs.build.result == 'success' }}
+    if: ${{ !cancelled() && needs.build.result == 'success' && needs['libm-preliminary'].result != 'failure' && needs['softfloat-tests'].result != 'failure' }}
     runs-on: [self-hosted, mentor]
     strategy:
       fail-fast: false
       matrix:
         include:
-          - setup: gcc-4.9
-            args: -c=--compiler=I386_GCC49 -c=--simulator=MODELSIM 
-          - setup: clang-4.0
-            args: -c=--compiler=I386_CLANG4 -c=--simulator=VERILATOR -c=--verilator-parallel=2
-          - setup: clang-6.0
-            args: -c=--compiler=I386_CLANG6 -c=--simulator=VERILATOR -c=--verilator-parallel=2
-          - setup: clang-7
-            args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR -c=--verilator-parallel=2
-          - setup: clang-11
-            args: -c=--compiler=I386_CLANG11 -c=--simulator=MODELSIM 
-          - setup: clang-13
-            args: -c=--compiler=I386_CLANG13 -c=--simulator=VERILATOR -c=--verilator-parallel=2
-          - setup: clang-16
-            args: -c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR -c=--verilator-parallel=2
+          - { setup: clang-4.0, args: "-c=--compiler=I386_CLANG4 -c=--simulator=VERILATOR" }
+          - { setup: clang-6.0, args: "-c=--compiler=I386_CLANG6 -c=--simulator=VERILATOR" }
+          - { setup: clang-7.0, args: "-c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR" }
+          - { setup: clang-11, args: "-c=--compiler=I386_CLANG11 -c=--simulator=MODELSIM" }
+          - { setup: clang-13, args: "-c=--compiler=I386_CLANG13 -c=--simulator=VERILATOR" }
+          - { setup: clang-16, args: "-c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR" }
+          - { setup: clang-19, args: "-c=--compiler=I386_CLANG19 -c=--simulator=MODELSIM" }
     env:
       script: generic_libm-tests.sh
       args: -c=--speculative-sdc-scheduling
       outname: ${{matrix.setup}}_libm
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
         with:
-          name: ${{needs.build.outputs.package-name}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "false"
       - name: Launch LibM test suite
         id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
           echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{matrix.args}} ${{env.args}}
+          ./panda_regressions/hls/${{env.script}} ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{matrix.args}} ${{env.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
       - name: Compare results
         id: perf-check
         uses: ./.github/actions/perf-check
         with:
           test-id: ${{env.outname}}
-          new-results: ${{env.report-dir}}/perf.csv
+          new-results: ${{env.report-dir}}/perf.xml
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
         if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
-        run: |
-          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
 
   CHStone-multi:
     needs: [build]
     runs-on: [self-hosted, mentor]
     env:
       script: multi_CHStone-frontend.sh
-      args: -c=--simulator=MODELSIM 
+      args: -c=--simulator=MODELSIM
       outname: multi_CHStone-frontend
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
         with:
-          submodules: 'true'
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
-        with:
-          name: ${{needs.build.outputs.package-name}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "true"
       - name: Launch CHStone test suite
         id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
           echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          ./panda_regressions/hls/${{env.script}} ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
       - name: Compare results
         id: perf-check
         uses: ./.github/actions/perf-check
         with:
           test-id: ${{env.outname}}
-          new-results: ${{env.report-dir}}/perf.csv
+          new-results: ${{env.report-dir}}/perf.xml
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
         if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
-        run: |
-          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
 
-  Panda-bench-yosys:
+
+  PandA-bench-openroad-1:
     needs: [build]
+    name: PandA-bench-openroad-1 (${{ matrix.config.name }})
     runs-on: [self-hosted]
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { name: nangate45, outname: nangate45 }
+          - { name: asap7-TC, outname: asap7-TC }
     env:
-      outname: panda_bench_yosys
-      script: ./examples/panda_bench_yosys.sh
-      OMP_NUM_THREADS: 4
-      J: 5
+      outname: panda_bench_openroad_1_${{matrix.config.outname}}
+      OPENROAD_BENCH_LIST: panda_bench_openroad_list_1
+      args: -c=--evaluation -c=--parallel-backend=16
+      datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
+      J: 1
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
         with:
-          name: ${{needs.build.outputs.package-name}}
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "false"
+      - name: Launch test suite
+        id: suite
+        shell: bash
+        run: |
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
+
+          # Force the OpenROAD backend to run in image-only mode.
+          unset OPENROAD_FLOW_DATA_INSTALLDIR
+          export OPENROAD_USE_DOCKER=1
+
+          OPENROAD_CONFIGURATION="${{matrix.config.name}}" \
+            ./examples/panda_bench_openroad.sh ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.xml
+          datapoints: ${{env.datapoints}}
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
-      - name: Setup exec script
-        id: setup
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
-        run: |
-          cat > docker_exec.sh << EOF
-          mkdir bin
-          ./*.AppImage --appimage-extract > /dev/null
-          rm ./*.AppImage
-          ln -s \$PWD/squashfs-root/usr/bin/bambu bin/bambu
-          ln -s \$PWD/squashfs-root/usr/bin/spider bin/spider
-          echo "local-bin=\$PWD/bin" >> \$GITHUB_OUTPUT
-          echo "appdir=\$PWD/squashfs-root" >> \$GITHUB_OUTPUT
-          export PATH=\$PWD/bin:\$PATH
-          export APPDIR=\$PWD/squashfs-root
-          export LD_LIBRARY_PATH=\$APPDIR/usr/lib/:\$APPDIR/lib/x86_64-linux-gnu/
-          mkdir ${{env.report-dir}}
-          echo "test-reports-dir=$PWD/${{env.report-dir}}" >> \$GITHUB_OUTPUT
-          ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
-          EOF
-          chmod +x docker_exec.sh
-      - name: Launch test suite
-        id: suite
-        uses: ./.github/actions/yosys-runner
-        with:
-          script: ./docker_exec.sh
+        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
-          path: ${{steps.suite.outputs.test-reports-dir}}
+          path: ${{env.report-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
+
+  PandA-bench-openroad-2:
+    needs: [build]
+    name: PandA-bench-openroad-2 (${{ matrix.config.name }})
+    runs-on: [self-hosted]
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { name: nangate45, outname: nangate45 }
+          - { name: asap7-TC, outname: asap7-TC }
+    env:
+      outname: panda_bench_openroad_2_${{matrix.config.outname}}
+      OPENROAD_BENCH_LIST: panda_bench_openroad_list_2
+      args: -c=--evaluation -c=--parallel-backend=16
+      datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
+      J: 1
+    steps:
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
+        with:
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "false"
+      - name: Launch test suite
+        id: suite
+        shell: bash
+        run: |
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
+
+          # Force the OpenROAD backend to run in image-only mode.
+          unset OPENROAD_FLOW_DATA_INSTALLDIR
+          export OPENROAD_USE_DOCKER=1
+
+          OPENROAD_CONFIGURATION="${{matrix.config.name}}" \
+            ./examples/panda_bench_openroad.sh ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.xml
+          datapoints: ${{env.datapoints}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        shell: bash
+        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+      - name: Upload test reports
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{env.outname}}
+          path: ${{env.report-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
+
 
   memarch-tests:
     needs: [build, CHStone-multi]
@@ -740,284 +843,565 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - compiler: I386_GCC7
-            script: generic_CHStone-memarch1.sh
-            args: ""
-          - compiler: I386_GCC7
-            script: generic_CHStone-memarch1.sh
-            args: -c=-wH -c=--simulator=MODELSIM
-          - compiler: I386_CLANG13
-            script: generic_CHStone-memarch2.sh
-            args: ""
-          - compiler: I386_CLANG13
-            script: generic_CHStone-memarch2.sh
-            args: -c=-wH -c=--simulator=XSIM
-          - compiler: I386_CLANG11
-            script: generic_gcc-memarch3.sh
-            args: ""
-          - compiler: I386_CLANG11
-            script: generic_gcc-memarch3.sh
-            args: -c=-wH -c=--simulator=XSIM
-    env:
-      args: -c=--compiler=${{matrix.compiler}} ${{matrix.args}}
+          - { setup: clang-16, script: generic_CHStone-memarch1.sh, args: "-c=--compiler=I386_CLANG16" }
+          - { setup: clang-16, script: generic_CHStone-memarch1.sh, args: "-c=--compiler=I386_CLANG16 -c=-wH -c=--simulator=MODELSIM" }
+          - { setup: clang-13, script: generic_CHStone-memarch2.sh, args: "-c=--compiler=I386_CLANG13" }
+          - { setup: clang-13, script: generic_CHStone-memarch2.sh, args: "-c=--compiler=I386_CLANG13 -c=-wH -c=--simulator=MODELSIM" }
+          - { setup: clang-11, script: generic_gcc-memarch3.sh, args: "-c=--compiler=I386_CLANG11" }
+          - { setup: clang-11, script: generic_gcc-memarch3.sh, args: "-c=--compiler=I386_CLANG11 -c=-wH -c=--simulator=MODELSIM" }
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
         with:
-          submodules: 'true'
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
-        with:
-          name: ${{needs.build.outputs.package-name}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "true"
       - name: Launch CHStone test suite
         id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
           echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
-          ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          ./panda_regressions/hls/${{matrix.script}} ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{matrix.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
       - name: Generate out name
         if: ${{ !cancelled() }}
         id: get
         shell: bash
         run: |
-          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_memarch-tests_"
-          
-          if [[ "${{env.args}}" = *-c=-wH* ]]; then
+          OUTNAME="${{matrix.setup}}_memarch-tests_"
+          if [[ "${{matrix.args}}" = *-c=-wH* ]]; then
             OUTNAME+="vhdl"
           else
             OUTNAME+="verilog"
           fi
           echo "outname=$OUTNAME" >> $GITHUB_OUTPUT
       - name: Upload test reports
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
         with:
           name: ${{steps.get.outputs.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
 
-  omp-simd:
+  OpenMP-support:
     needs: [build]
     runs-on: [self-hosted, mentor]
     strategy:
       fail-fast: false
+      max-parallel: 3
       matrix:
-        device: [5SGXEA7N2F45C1, xc7vx690t-3ffg1930-VVD]
+        include:
+          - { test: functional, script: ./examples/OpenMP/functional/openmp_functional.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG13" }
+          - { test: arbiter, script: ./examples/OpenMP/functional/openmp_arbiter.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG13" }
+          - { test: banked, script: ./examples/OpenMP/banked-memory/openmp_banked.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG13" }
+          - { test: banked_profiling, script: ./examples/OpenMP/banked-memory/openmp_banked.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--noc-profiling -c=--compiler=I386_CLANG13" }
+          - { test: banked_cache, script: ./examples/OpenMP/banked-memory/openmp_banked_cache.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG13" }
+          - { test: banked_allocation, script: ./examples/OpenMP/banked-memory/openmp_banked_allocation.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG13" }
     env:
-      outname: omp_simd_${{matrix.device}}
-      script: ./examples/omp_simd/generic_omp_simd.sh
-      args: -c=--simulator=MODELSIM -c=--compiler=I386_GCC49 -c=--clock-period=10 -c=--device-name=${{matrix.device}} 
+      outname: OpenMP_${{matrix.test}}
+      args: -c=--simulator=MODELSIM ${{matrix.args}}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
         with:
-          name: ${{needs.build.outputs.package-name}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "false"
+      - name: Launch omp evaluation
         shell: bash
         run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
-      - name: Launch omp simd evaluation on ${{matrix.device}}
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
+          ${{matrix.script}} ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
         shell: bash
-        run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
-          ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
       - name: Compare results
         id: perf-check
         uses: ./.github/actions/perf-check
         with:
           test-id: ${{env.outname}}
-          new-results: ${{env.report-dir}}/perf.csv
+          new-results: ${{env.report-dir}}/perf.xml
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
         if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
-        run: |
-          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
           path: ${{env.report-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
 
-  Panda-bench:
+  PandA-bench-altera:
     needs: [build]
-    runs-on: [self-hosted, altera, intelFPGA, lattice, mentor, xilinx]
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - test: altera
-            datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
-          - test: hw
-            args: -c=--evaluation=PERIOD,AREA,FREQUENCY,CLOCK_SLACK,REGISTERS,DSPS,BRAMS
-            datapoints: PERIOD,AREA,REGISTERS,DSPS,BRAMS
-          - test: lattice
-            datapoints: CYCLES
-          - test: nanoxplore
-            datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
-          - test: sim
-            datapoints: CYCLES
-          - test: xilinx_ise
-            datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
-          - test: xilinx_vvd
-            datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
+    runs-on: [self-hosted, altera, intelFPGA, mentor]
     env:
-      outname: panda_bench_${{matrix.test}}
-      OMP_NUM_THREADS: 4
+      test: altera
+      outname: panda_bench_altera
+      args: -c=--simulate -c=--parallel-backend=4
+      datapoints: CYCLES
       J: 5
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
         with:
-          submodules: 'true'
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
-        with:
-          name: ${{needs.build.outputs.package-name}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
-      - name: Launch Panda bench ${{matrix.test}}
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "true"
+      - name: Launch PandA bench ${{env.test}}
         id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
           echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
-          ./examples/panda_bench_${{matrix.test}}.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{matrix.args}}
+          ./examples/panda_bench_${{env.test}}.sh ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
       - name: Compare results
         id: perf-check
         uses: ./.github/actions/perf-check
         with:
           test-id: ${{env.outname}}
-          new-results: ${{env.report-dir}}/perf.csv
-          datapoints: ${{matrix.datapoints}}
+          new-results: ${{env.report-dir}}/perf.xml
+          datapoints: ${{env.datapoints}}
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
         if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
-        run: |
-          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
+
+  PandA-bench-hw:
+    needs: [build]
+    runs-on: [self-hosted, mentor, xilinx]
+    env:
+      test: hw
+      outname: panda_bench_hw
+      args: -c=--evaluation=PERIOD,AREA,FREQUENCY,CLOCK_SLACK,REGISTERS,DSPS,BRAMS -c=--parallel-backend=4
+      datapoints: PERIOD,AREA,REGISTERS,DSPS,BRAMS
+      J: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
+        with:
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "true"
+      - name: Launch PandA bench ${{env.test}}
+        id: suite
+        shell: bash
+        run: |
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
+          echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
+          ./examples/panda_bench_${{env.test}}.sh ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.xml
+          datapoints: ${{env.datapoints}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        shell: bash
+        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+      - name: Upload test reports
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{env.outname}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
+
+  PandA-bench-lattice:
+    needs: [build]
+    runs-on: [self-hosted, lattice, mentor]
+    env:
+      test: lattice
+      outname: panda_bench_lattice
+      args: -c=--simulate -c=--parallel-backend=4
+      datapoints: CYCLES
+      J: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
+        with:
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "true"
+      - name: Launch PandA bench ${{env.test}}
+        id: suite
+        shell: bash
+        run: |
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
+          echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
+          ./examples/panda_bench_${{env.test}}.sh ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.xml
+          datapoints: ${{env.datapoints}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        shell: bash
+        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+      - name: Upload test reports
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{env.outname}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
+
+  PandA-bench-nanoxplore:
+    needs: [build]
+    runs-on: [self-hosted, nanoxplore, mentor]
+    env:
+      test: nanoxplore
+      outname: panda_bench_nanoxplore
+      args: -c=--simulate -c=--parallel-backend=4
+      datapoints: CYCLES
+      J: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
+        with:
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "true"
+      - name: Launch PandA bench ${{env.test}}
+        id: suite
+        shell: bash
+        run: |
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
+          echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
+          ./examples/panda_bench_${{env.test}}.sh ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.xml
+          datapoints: ${{env.datapoints}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        shell: bash
+        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+      - name: Upload test reports
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{env.outname}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
+
+  PandA-bench-sim:
+    needs: [build]
+    runs-on: [self-hosted, mentor]
+    env:
+      test: sim
+      outname: panda_bench_sim
+      args: -c=--simulate
+      datapoints: CYCLES
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
+        with:
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "true"
+      - name: Launch PandA bench ${{env.test}}
+        id: suite
+        shell: bash
+        run: |
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
+          echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
+          ./examples/panda_bench_${{env.test}}.sh ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.xml
+          datapoints: ${{env.datapoints}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        shell: bash
+        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+      - name: Upload test reports
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{env.outname}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
+
+  PandA-bench-xilinx_vvd:
+    needs: [build]
+    runs-on: [self-hosted, mentor, xilinx]
+    env:
+      test: xilinx_vvd
+      outname: panda_bench_xilinx_vvd
+      args: -c=--evaluation -c=--parallel-backend=4
+      datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
+      J: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
+        with:
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "true"
+      - name: Launch PandA bench ${{env.test}}
+        id: suite
+        shell: bash
+        run: |
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
+          echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
+          ./examples/panda_bench_${{env.test}}.sh ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.xml
+          datapoints: ${{env.datapoints}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        shell: bash
+        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+      - name: Upload test reports
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{env.outname}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
 
   Make-checks:
     needs: [build]
     runs-on: [self-hosted, mentor, xilinx]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
         with:
-          name: ${{needs.build.outputs.package-name}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          ln -s $PWD/*.AppImage bin/tree-panda-gcc
-          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "true"
       - name: Launch script
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          source ${{env.dist-dir}}/settings.sh
           ./examples/cpp_examples/fir_filter/bambu.sh
           ./examples/cpp_examples/gcd_example/bambu.sh
           ./examples/crypto_designs/multi.sh
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
 
   success:
     if: ${{ !cancelled() }}
     needs:
-      [
-        gcc_regression_simple,
-        gcc_regression_simple-vhdl,
-        gcc_regression_simple-pretty_print,
-        interface-test,
-        libm-tests,
-        discrepancy-test,
-        omp-simd,
-        Make-checks,
-        memarch-tests,
-        Panda-bench,
-        Panda-bench-yosys,
-      ]
+      - gcc_regression_simple
+      - gcc_regression_simple-vhdl
+      - gcc_regression_simple-pretty_print
+      - interface-test
+      - libm-tests
+      - discrepancy-test
+      - OpenMP-support
+      - Make-checks
+      - memarch-tests
+      - PandA-bench-altera
+      - PandA-bench-hw
+      - PandA-bench-lattice
+      - PandA-bench-nanoxplore
+      - PandA-bench-sim
+      - PandA-bench-xilinx_vvd
+      - PandA-bench-openroad-1
+      - PandA-bench-openroad-2
     runs-on: [self-hosted]
     steps:
-      - name: Check GCC Regression Simple Multi status
-        if: ${{ needs.gcc_regression_simple.result != 'success' }}
+      - name: Check 'GCC Regression Simple' status
+        if: ${{ needs['gcc_regression_simple'].result != 'success' }}
         run: exit 1
-      - name: Check GCC Regression Simple VHDL status
-        if: ${{ needs.gcc_regression_simple-vhdl.result != 'success' }}
+      - name: Check 'GCC Regression Simple VHDL' status
+        if: ${{ needs['gcc_regression_simple-vhdl'].result != 'success' }}
         run: exit 1
-      - name: Check GCC Regression Simple pretty print status
-        if: ${{ needs.gcc_regression_simple-pretty_print.result != 'success' }}
+      - name: Check 'GCC Regression Simple pretty print' status
+        if: ${{ needs['gcc_regression_simple-pretty_print'].result != 'success' }}
         run: exit 1
-      - name: Check Interface Test status
-        if: ${{ needs.interface-test.result != 'success' }}
+      - name: Check 'Interface Test' status
+        if: ${{ needs['interface-test'].result != 'success' }}
         run: exit 1
-      - name: Check LibM Multi status
-        if: ${{ needs.libm-tests.result != 'success' }}
+      - name: Check 'LibM Tests' status
+        if: ${{ needs['libm-tests'].result != 'success' }}
         run: exit 1
-      - name: Check GCC Regression Discrepancy status
-        if: ${{ needs.discrepancy-test.result != 'success' }}
+      - name: Check 'GCC Regression Discrepancy' status
+        if: ${{ needs['discrepancy-test'].result != 'success' }}
         run: exit 1
-      - name: Check OMP simd status
-        if: ${{ needs.omp-simd.result != 'success' }}
+      - name: Check 'OpenMP-support' status
+        if: ${{ needs['OpenMP-support'].result != 'success' }}
         run: exit 1
-      - name: Check Make Checks status
-        if: ${{ needs.Make-checks.result != 'success' }}
+      - name: Check 'Make Checks' status
+        if: ${{ needs['Make-checks'].result != 'success' }}
         run: exit 1
-      - name: Check CHStone memory architecture 1 status
-        if: ${{ needs.memarch-tests.result != 'success' }}
+      - name: Check 'CHStone memory architecture' status
+        if: ${{ needs['memarch-tests'].result != 'success' }}
         run: exit 1
-      - name: Check PandA benchmarks status
-        if: ${{ needs.Panda-bench.result != 'success' }}
+      - name: Check 'PandA benchmarks (altera)' status
+        if: ${{ needs['PandA-bench-altera'].result != 'success' }}
         run: exit 1
-      - name: Check PandA benchmarks for Yosys status
-        if: ${{ needs.Panda-bench-yosys.result != 'success' }}
+      - name: Check 'PandA benchmarks (hw)' status
+        if: ${{ needs['PandA-bench-hw'].result != 'success' }}
+        run: exit 1
+      - name: Check 'PandA benchmarks (lattice)' status
+        if: ${{ needs['PandA-bench-lattice'].result != 'success' }}
+        run: exit 1
+      - name: Check 'PandA benchmarks (nanoxplore)' status
+        if: ${{ needs['PandA-bench-nanoxplore'].result != 'success' }}
+        run: exit 1
+      - name: Check 'PandA benchmarks (sim)' status
+        if: ${{ needs['PandA-bench-sim'].result != 'success' }}
+        run: exit 1
+      - name: Check 'PandA benchmarks (xilinx_vvd)' status
+        if: ${{ needs['PandA-bench-xilinx_vvd'].result != 'success' }}
+        run: exit 1
+      - name: Check 'PandA benchmarks for OpenROAD 1' status
+        if: ${{ needs['PandA-bench-openroad-1'].result != 'success' }}
+        run: exit 1
+      - name: Check 'PandA benchmarks for OpenROAD 2' status
+        if: ${{ needs['PandA-bench-openroad-2'].result != 'success' }}
         run: exit 1

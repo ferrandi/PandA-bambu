@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2024 Politecnico di Milano
+ *              Copyright (C) 2018-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -38,7 +38,9 @@
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
-// #undef NDEBUG
+#ifndef NDEBUG
+#define NDEBUG
+#endif
 #include "plugin_includes.hpp"
 
 #include <clang/AST/AST.h>
@@ -50,7 +52,7 @@
 #include <clang/AST/RecordLayout.h>
 #include <clang/AST/RecursiveASTVisitor.h>
 #include <clang/AST/Type.h>
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
 #include <clang/Analysis/CallGraph.h>
 #endif
 #include <clang/Frontend/CompilerInstance.h>
@@ -61,9 +63,6 @@
 #include <clang/Sema/Sema.h>
 #include <llvm/Support/raw_ostream.h>
 
-#define PUGIXML_NO_EXCEPTIONS
-#define PUGIXML_HEADER_ONLY
-
 #include <pugixml.hpp>
 
 #include <fstream>
@@ -71,13 +70,14 @@
 #include <map>
 #include <memory>
 #include <regex>
+#include <set>
 #include <string>
 
 #define REWRITE_REGEX
 
 #define THIS_PARAM_NAME "this"
 
-#if __clang_major__ > 9
+#if PANDA_LLVM_CLANG_MAJOR > 9
 #define make_unique std::make_unique
 #else
 #define make_unique llvm::make_unique
@@ -328,7 +328,7 @@ static std::string MangledName(MangleContext* MC, NamedDecl* D)
    raw_string_ostream ss(fsym);
    if(auto CD = dyn_cast<CXXConstructorDecl>(D))
    {
-#if __clang_major__ > 10
+#if PANDA_LLVM_CLANG_MAJOR > 10
       MC->mangleName(GlobalDecl(CD, CXXCtorType::Ctor_Complete), ss);
 #else
       MC->mangleCXXCtor(CD, CXXCtorType::Ctor_Complete, ss);
@@ -336,7 +336,7 @@ static std::string MangledName(MangleContext* MC, NamedDecl* D)
    }
    else if(auto CD = dyn_cast<CXXDestructorDecl>(D))
    {
-#if __clang_major__ > 10
+#if PANDA_LLVM_CLANG_MAJOR > 10
       MC->mangleName(GlobalDecl(CD, CXXDtorType::Dtor_Complete), ss);
 #else
       MC->mangleCXXDtor(CD, CXXDtorType::Dtor_Complete, ss);
@@ -362,7 +362,7 @@ static func_attr_t& GetFuncAttr(std::map<std::string, func_attr_t>& funcAttrs, M
    {
       funcIt = funcAttrs.emplace(funcSymbol, func_attr_t()).first;
       funcIt->second.attrs.emplace(key_loc_t("symbol", FD->getLocation()), funcSymbol);
-      funcIt->second.attrs.emplace(key_loc_t("name", FD->getLocation()), FD->getNameInfo().getName().getAsString());
+      funcIt->second.attrs.emplace(key_loc_t("name", FD->getLocation()), FD->getQualifiedNameAsString());
    }
    return funcIt->second;
 }
@@ -379,7 +379,7 @@ class HLSPragmaParser
     * @return bool true on pragma id match, false else
     */
    virtual bool HandlePragma(Preprocessor& PP,
-#if __clang_major__ >= 9
+#if PANDA_LLVM_CLANG_MAJOR >= 9
                              PragmaIntroducer
 #else
                              PragmaIntroducerKind
@@ -412,7 +412,7 @@ class HLSPragmaHandler : public PragmaHandler
    }
 
    void HandlePragma(Preprocessor& PP,
-#if __clang_major__ >= 9
+#if PANDA_LLVM_CLANG_MAJOR >= 9
                      PragmaIntroducer
 #else
                      PragmaIntroducerKind
@@ -449,6 +449,20 @@ class HLSPragmaHandler : public PragmaHandler
                   {
                      attr_val = PP.getSpelling(Tok);
                      PP.Lex(Tok);
+                     while(Tok.is(tok::comma))
+                     {
+                        PP.Lex(Tok);
+                        if(Tok.isOneOf(tok::identifier, tok::raw_identifier, tok::kw_true, tok::kw_false) ||
+                           tok::isLiteral(Tok.getKind()))
+                        {
+                           attr_val += "," + PP.getSpelling(Tok);
+                           PP.Lex(Tok);
+                        }
+                        else
+                        {
+                           return Report(PP, Tok.getLocation(), DiagnosticsEngine::Error, "Unexpected token");
+                        }
+                     }
                      continue;
                   }
                }
@@ -529,6 +543,14 @@ class HLSPragmaAnalyzer
    }
 
    /**
+    * @brief Return true if the analyzer can handle a pragma associated with a dependent function template pattern.
+    */
+   virtual bool allowDependentFunctionDecl() const
+   {
+      return false;
+   }
+
+   /**
     * @brief Called for each function declaration after all associated pragmas have been analyzed
     *
     * @param FD Function declaration
@@ -545,7 +567,7 @@ class PipelineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
       for(const auto& stmt : FD->getBody()->children())
       {
          const auto endLoc =
-#if __clang_major__ >= 7
+#if PANDA_LLVM_CLANG_MAJOR >= 7
              stmt->getEndLoc();
 #else
              stmt->getLocEnd();
@@ -553,7 +575,7 @@ class PipelineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
          if(pragmaLoc < endLoc)
          {
             return pragmaLoc <
-#if __clang_major__ >= 7
+#if PANDA_LLVM_CLANG_MAJOR >= 7
                    stmt->getBeginLoc();
 #else
                    stmt->getLocStart();
@@ -582,7 +604,7 @@ class PipelineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
       {
          if(iequals(attr.first.id, "style"))
          {
-            if(!iequals(attr.second, "frp"))
+            if(!(iequals(attr.second, "stp") || iequals(attr.second, "flp") || iequals(attr.second, "frp")))
             {
                ReportError(attr.first.loc, "Not supported function pipelining style");
             }
@@ -634,7 +656,6 @@ class InlineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
 
    void operator()(FunctionDecl* FD, const pragma_line_t& p) override
    {
-      auto& attrs = GetFuncAttr(FD).attrs;
       if(p.attrs.size() > 1)
       {
          ReportError(p.loc, "Unexpected attributes");
@@ -645,7 +666,7 @@ class InlineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
          const auto& attr = *p.attrs.begin();
          if(iequals(attr.first.id, "recursive"))
          {
-#if __clang_major__ >= 10
+#if PANDA_LLVM_CLANG_MAJOR >= 10
             FD->addAttr(AlwaysInlineAttr::CreateImplicit(FD->getASTContext()));
 #else
             FD->addAttr(
@@ -663,18 +684,29 @@ class InlineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             ReportError(attr.first.loc, "Unknown inline mode");
             return;
          }
-         attrs.emplace(key_loc_t("inline", attr.first.loc), to_lower(attr.first.id));
+         if(!FD->isDependentContext())
+         {
+            GetFuncAttr(FD).attrs.emplace(key_loc_t("inline", attr.first.loc), to_lower(attr.first.id));
+         }
       }
       else
       {
-#if __clang_major__ >= 10
+#if PANDA_LLVM_CLANG_MAJOR >= 10
          FD->addAttr(AlwaysInlineAttr::CreateImplicit(FD->getASTContext()));
 #else
          FD->addAttr(
              AlwaysInlineAttr::CreateImplicit(FD->getASTContext(), AlwaysInlineAttr::Spelling::Keyword_forceinline));
 #endif
-         attrs.emplace(key_loc_t("inline", p.loc), "self");
+         if(!FD->isDependentContext())
+         {
+            GetFuncAttr(FD).attrs.emplace(key_loc_t("inline", p.loc), "self");
+         }
       }
+   }
+
+   bool allowDependentFunctionDecl() const override
+   {
+      return true;
    }
 
    void finalize(FunctionDecl* FD) override
@@ -698,7 +730,7 @@ class InlineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
 };
 const char* InlineHLSPragmaHandler::PragmaKeyword = "inline";
 
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
 namespace
 {
    struct PragmaLoopHintInfo
@@ -713,7 +745,7 @@ namespace
 class UnrollHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
 {
    bool HandlePragma(Preprocessor& PP,
-#if __clang_major__ >= 9
+#if PANDA_LLVM_CLANG_MAJOR >= 9
                      PragmaIntroducer
 #else
                      PragmaIntroducerKind
@@ -796,14 +828,14 @@ class UnrollHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
 
          ValueList.push_back(UnrollFactor);
          ValueList.push_back(EOFTok);
-#if __clang_major__ >= 9
+#if PANDA_LLVM_CLANG_MAJOR >= 9
          for(auto& T : ValueList)
          {
             T.setFlag(Token::IsReinjected);
          }
 #endif
          Info->Toks =
-#if __clang_major__ > 13
+#if PANDA_LLVM_CLANG_MAJOR > 13
              ArrayRef(ValueList).copy(PP.getPreprocessorAllocator());
 #else
              makeArrayRef(ValueList).copy(PP.getPreprocessorAllocator());
@@ -817,7 +849,7 @@ class UnrollHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
       TokenArray[0].setAnnotationValue(static_cast<void*>(Info));
       PP.EnterTokenStream(std::move(TokenArray), 1,
                           /*DisableMacroExpansion=*/false
-#if __clang_major__ >= 9
+#if PANDA_LLVM_CLANG_MAJOR >= 9
                           ,
                           /*IsReinject=*/false
 #endif
@@ -889,7 +921,7 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
             LLVM_DEBUG(dbgs() << "DATAFLOW: " << functionSym << "\n");
             forceNoInline(FD);
 
-#if __clang_major__ < 11
+#if PANDA_LLVM_CLANG_MAJOR < 11
             for(auto* stmt : FD->getBody()->children())
             {
                if(auto callExpr = dyn_cast<CallExpr>(stmt))
@@ -961,6 +993,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
       {
          if(iequals(attr.first.id, "bundle"))
          {
+            iface.emplace(key_loc_t("global", attr.first.loc), "1");
             iface.emplace(key_loc_t("name", attr.first.loc), attr.second);
             continue;
          }
@@ -1026,6 +1059,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             ReportError(attr.first.loc, "Unexpected attribute");
             continue;
          }
+         iface.emplace(key_loc_t("global", attr.first.loc), "1");
          auto it_new = iface.emplace(key_loc_t("cache_" + attr.first.id, attr.first.loc), attr.second);
          if(!it_new.second)
          {
@@ -1045,13 +1079,99 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
       }
    }
 
+   void finalize(FunctionDecl* FD) override
+   {
+      const auto functionSym = MangledName(FD);
+      const auto funcIt = _func_attributes.find(functionSym);
+      if(funcIt == _func_attributes.end())
+      {
+         return;
+      }
+      auto& func_ifaces = funcIt->second.ifaces;
+      for(const auto& bundle : func_ifaces.bundles)
+      {
+         const auto& iface = bundle.second;
+         if(iface.find(key_loc_t("cache_line_count", SourceLocation())) != iface.end() &&
+            iface.find(key_loc_t("mode", SourceLocation())) == iface.end())
+         {
+            auto nameAttr = iface.find(key_loc_t("name", SourceLocation()));
+            const auto loc = nameAttr != iface.end() ? nameAttr->first.loc : FD->getLocation();
+            ReportError(loc, "Cache pragma references unknown interface bundle '" + bundle.first + "'");
+         }
+      }
+   }
+
    static const char* PragmaKeyword;
 };
 const char* CacheHLSPragmaHandler::PragmaKeyword = "cache";
 
+class BusHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
+{
+ public:
+   BusHLSPragmaHandler(ASTContext& ctx, PrintingPolicy& pp, std::map<std::string, func_attr_t>& func_attributes)
+       : HLSPragmaAnalyzer(ctx, pp, func_attributes), HLSPragmaParser()
+   {
+   }
+   ~BusHLSPragmaHandler() = default;
+
+   void operator()(FunctionDecl* FD, const pragma_line_t& p) override
+   {
+      auto& iface = GetFuncAttr(FD).ifaces.bundles["bus"];
+      iface.emplace(key_loc_t("name", SourceLocation()), "bus");
+      iface.emplace(key_loc_t("global", SourceLocation()), "1");
+      for(const auto& attr : p.attrs)
+      {
+         if(iequals(attr.first.id, "bank_number"))
+         {
+            auto bank_number = std::stoi(attr.second);
+            if((bank_number & (bank_number - 1)) != 0 || bank_number <= 0)
+            {
+               ReportError(attr.first.loc, "Invalid bank number");
+               continue;
+            }
+         }
+         else if(iequals(attr.first.id, "chunk_size"))
+         {
+            auto bank_chunk = std::stoi(attr.second);
+            if((bank_chunk & (bank_chunk - 1)) != 0 || bank_chunk <= 0)
+            {
+               ReportError(attr.first.loc, "Invalid bank chunk");
+               continue;
+            }
+         }
+         else if(iequals(attr.first.id, "mode"))
+         {
+            if(attr.second != "m_axi" && attr.second != "minimal")
+            {
+               ReportError(attr.first.loc, "Invalid bus mode");
+               continue;
+            }
+         }
+         else
+         {
+            ReportError(attr.first.loc, "Unexpected attribute");
+            continue;
+         }
+         iface.emplace(key_loc_t("global", attr.first.loc), "1");
+         auto it_new = iface.emplace(key_loc_t(attr.first.id, attr.first.loc), attr.second);
+         if(!it_new.second)
+         {
+            ReportDuplicate(attr.first.loc, it_new.first->first.loc,
+                            "Duplicate definition of attribute '" + attr.first.id + "'");
+         }
+      }
+      iface.emplace(key_loc_t("alignment", SourceLocation()), "1");
+      iface.emplace(key_loc_t("bank_number", SourceLocation()), "0");
+      iface.emplace(key_loc_t("mode", SourceLocation()), "minimal");
+   }
+
+   static const char* PragmaKeyword;
+};
+const char* BusHLSPragmaHandler::PragmaKeyword = "bus";
+
 class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
 {
-   ASTContext& _ASTContext;
+   CompilerInstance& _CI;
    SourceManager& _SM;
    int _parseAction;
 
@@ -1146,29 +1266,145 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
       return includes;
    }
 
-   int64_t getSizeInBytes(QualType T)
+   void materializeCompleteTypeImpl(const SourceLocation& loc, QualType T, std::set<const clang::Type*>& visited) const
    {
-      if(T->isDependentType() || T->isIncompleteType() || T->isTemplateTypeParmType())
+      auto& ASTContext = _CI.getASTContext();
+      T = T.IgnoreParens().getLocalUnqualifiedType();
+      if(T.isNull() || T->isDependentType() || T->isVoidType() || T->isFunctionType())
       {
-         return 1;
+         return;
       }
-      if(isa<InjectedClassNameType>(T))
+
+      if(T->isReferenceType())
       {
-         return getSizeInBytes(cast<InjectedClassNameType>(T)->getInjectedSpecializationType());
+         return;
       }
-      else if(isa<TemplateSpecializationType>(T))
+      if(T->isPointerType())
       {
-         const auto TST = cast<TemplateSpecializationType>(T);
-         return TST->isTypeAlias() ? getSizeInBytes(TST->getAliasedType()) : 1;
+         return;
       }
-      return _ASTContext.getTypeInfoDataSizeInChars(T)
-          .
-#if __clang_major__ <= 11
-          first
-#else
-          Width
-#endif
-          .getQuantity();
+      if(const auto* ET = T->getAs<ElaboratedType>())
+      {
+         materializeCompleteTypeImpl(loc, ET->getNamedType(), visited);
+         return;
+      }
+      if(const auto* TT = T->getAs<TypedefType>())
+      {
+         materializeCompleteTypeImpl(loc, TT->getDecl()->getUnderlyingType(), visited);
+         return;
+      }
+
+      const auto* canonicalType = T.getCanonicalType().getTypePtrOrNull();
+      if(!canonicalType || !visited.insert(canonicalType).second)
+      {
+         return;
+      }
+
+      if(const auto* AT = ASTContext.getAsArrayType(T))
+      {
+         materializeCompleteTypeImpl(loc, AT->getElementType(), visited);
+      }
+
+      const auto payloadType = getChannelPayloadType(T);
+      if(!payloadType.isNull())
+      {
+         materializeCompleteTypeImpl(loc, payloadType, visited);
+      }
+
+      if(const auto* specializationDecl = dyn_cast_or_null<ClassTemplateSpecializationDecl>(T->getAsTagDecl()))
+      {
+         const auto& templateArgs = specializationDecl->getTemplateArgs();
+         for(unsigned i = 0; i < templateArgs.size(); ++i)
+         {
+            const auto& arg = templateArgs[i];
+            if(arg.getKind() == TemplateArgument::ArgKind::Type)
+            {
+               materializeCompleteTypeImpl(loc, arg.getAsType(), visited);
+            }
+         }
+      }
+
+      (void)_CI.getSema().RequireCompleteType(loc, T, /*DiagID=*/0);
+   }
+
+   void materializeCompleteType(const SourceLocation& loc, QualType T) const
+   {
+      std::set<const clang::Type*> visited;
+      materializeCompleteTypeImpl(loc, T, visited);
+   }
+
+   int64_t getSizeInBytes(QualType T) const
+   {
+      if(T.isNull() || T->isDependentType() || T->isIncompleteType())
+      {
+         return 0;
+      }
+      return _CI.getASTContext().getTypeSizeInChars(T).getQuantity();
+   }
+
+   int64_t getSizeInBytes(const SourceLocation& loc, QualType T) const
+   {
+      materializeCompleteType(loc, T);
+      return getSizeInBytes(T);
+   }
+
+   QualType getChannelPayloadType(QualType T) const
+   {
+      if(T.isNull())
+      {
+         return QualType();
+      }
+
+      const auto* ty = T.getTypePtrOrNull();
+      if(!ty)
+      {
+         return QualType();
+      }
+
+      if(ty->isPointerType() || ty->isReferenceType())
+      {
+         return getChannelPayloadType(ty->getPointeeType());
+      }
+      if(isa<ElaboratedType>(ty))
+      {
+         return getChannelPayloadType(ty->getAs<ElaboratedType>()->getNamedType());
+      }
+      if(isa<TypedefType>(ty) || ty->getTypeClass() == clang::Type::Typedef)
+      {
+         return getChannelPayloadType(ty->getAs<TypedefType>()->getDecl()->getUnderlyingType());
+      }
+
+      const auto* recordType = ty->getAs<RecordType>();
+      if(!recordType)
+      {
+         return QualType();
+      }
+
+      const auto* specializationDecl = dyn_cast<ClassTemplateSpecializationDecl>(recordType->getDecl());
+      if(!specializationDecl || !specializationDecl->getSpecializedTemplate())
+      {
+         return QualType();
+      }
+
+      const auto templateName = specializationDecl->getSpecializedTemplate()->getQualifiedNameAsString();
+      if(templateName != "ac_channel" && templateName != "stream" && templateName != "hls::stream")
+      {
+         return QualType();
+      }
+
+      const auto& templateArgs = specializationDecl->getTemplateArgs();
+      if(templateArgs.size() == 0 || templateArgs[0].getKind() != TemplateArgument::ArgKind::Type)
+      {
+         return QualType();
+      }
+
+      return templateArgs[0].getAsType();
+   }
+
+   int64_t getInterfaceTypeSizeInBytes(const SourceLocation& loc, QualType T) const
+   {
+      const auto payloadType = getChannelPayloadType(T);
+      return getSizeInBytes(loc, payloadType.isNull() ? T : payloadType);
    }
 
    bool hasThisParameter(FunctionDecl* FD)
@@ -1236,6 +1472,12 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
 #endif
    }
 
+   static bool IsScalarPartitionInterfaceMode(const std::string& ifaceMode)
+   {
+      return ifaceMode == "none" || ifaceMode == "ptrdefault" || ifaceMode == "handshake" || ifaceMode == "valid" ||
+             ifaceMode == "ovalid" || ifaceMode == "acknowledge";
+   }
+
    void AnalyzeParameterInterface(FunctionDecl* FD, const pragma_line_t& p)
    {
       if(isUnsupportedInterface(FD))
@@ -1247,6 +1489,34 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
       if(portName == p.attrs.end())
       {
          ReportError(p.loc, "Missing interface port attribute");
+         return;
+      }
+      if(portName->second.find(',') != std::string::npos)
+      {
+         const auto& portList = portName->second;
+         size_t start = 0;
+         while(start <= portList.size())
+         {
+            const auto end = portList.find(',', start);
+            const auto rawPort = portList.substr(start, end == std::string::npos ? std::string::npos : end - start);
+            const auto first = rawPort.find_first_not_of(" \t");
+            if(first == std::string::npos)
+            {
+               ReportError(portName->first.loc, "Invalid interface port list");
+               return;
+            }
+            const auto last = rawPort.find_last_not_of(" \t");
+            const auto singlePort = rawPort.substr(first, last - first + 1);
+            pragma_line_t singlePragma(p.PP, p.pragmaLoc, p.id, p.loc);
+            singlePragma.attrs = p.attrs;
+            singlePragma.attrs[key_loc_t("port", portName->first.loc)] = singlePort;
+            AnalyzeParameterInterface(FD, singlePragma);
+            if(end == std::string::npos)
+            {
+               break;
+            }
+            start = end + 1;
+         }
          return;
       }
       ParmVarDecl* parmDecl = nullptr;
@@ -1300,14 +1570,16 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
                                "Mismatching duplicate interface attribute definition");
             }
          }
-         else if(iequals(attr.first.id, "offset") || iequals(attr.first.id, "elem_count"))
+         else if(iequals(attr.first.id, "offset") || iequals(attr.first.id, "elem_count") ||
+                 iequals(attr.first.id, "bank_allocation"))
          {
             parm_attrs.emplace(key_loc_t(to_lower(attr.first.id), attr.first.loc), attr.second);
          }
       }
 
       const auto argType = parmDecl->getType();
-      auto& ifaceMode = bundle_attrs.insert(*ifaceModeReq).first->second;
+      auto& ifaceMode = bundle_attrs[key_loc_t(to_lower(ifaceModeReq->first.id), ifaceModeReq->first.loc)];
+      ifaceMode = ifaceModeReq->second;
       if(_ifMapper.find(ifaceMode) != _ifMapper.end())
       {
          ifaceMode = _ifMapper.at(ifaceMode);
@@ -1323,36 +1595,36 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
       auto& parmIncludePaths = parm_attrs[key_loc_t("includes", SourceLocation())];
 
       const auto manageArray = [&](const ConstantArrayType* CA, bool setInterfaceType) {
+         const auto apIntToString = [](const llvm::APInt& apInt) {
+#if PANDA_LLVM_CLANG_MAJOR >= 13
+            return toString(apInt, 10, false);
+#else
+            return apInt.toString(10, false);
+#endif
+         };
+
          auto OrigTotArraySize = CA->getSize();
+         std::string OrigDimensions = apIntToString(OrigTotArraySize);
          std::string Dimensions;
          if(!setInterfaceType)
          {
-#if __clang_major__ >= 13
-            Dimensions = "[" + toString(OrigTotArraySize, 10, false) + "]";
-#else
-            Dimensions = "[" + OrigTotArraySize.toString(10, false) + "]";
-#endif
+            Dimensions = "[" + apIntToString(OrigTotArraySize) + "]";
          }
          while(CA->getElementType()->isConstantArrayType())
          {
             CA = cast<ConstantArrayType>(CA->getElementType());
             const auto n_el = CA->getSize();
-#if __clang_major__ >= 13
-            Dimensions = Dimensions + "[" + toString(n_el, 10, false) + "]";
-#else
-            Dimensions = Dimensions + "[" + n_el.toString(10, false) + "]";
-#endif
+            Dimensions += "[" + apIntToString(n_el) + "]";
+            OrigDimensions += "," + apIntToString(n_el);
             OrigTotArraySize *= n_el;
          }
          if(setInterfaceType)
          {
             ifaceMode = "array";
             auto& array_size = parm_attrs[key_loc_t("elem_count", SourceLocation())];
-#if __clang_major__ >= 13
-            array_size = toString(OrigTotArraySize, 10, false);
-#else
-            array_size = OrigTotArraySize.toString(10, false);
-#endif
+            auto& array_dims = parm_attrs[key_loc_t("array_dims", SourceLocation())];
+            array_size = apIntToString(OrigTotArraySize);
+            array_dims = OrigDimensions;
             assert(array_size != "0");
          }
          const auto paramTypeRemTD = RemoveTypedef(CA->getElementType());
@@ -1365,22 +1637,30 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
       if(isa<DecayedType>(argType))
       {
          const auto DT = cast<DecayedType>(argType)->getOriginalType().IgnoreParens();
-         parmSizeInBytes = std::to_string(getSizeInBytes(DT));
          if(isa<ConstantArrayType>(DT))
          {
-            manageArray(cast<ConstantArrayType>(DT), ifaceMode == "default");
+            parmSizeInBytes = std::to_string(getInterfaceTypeSizeInBytes(parmDecl->getLocation(), DT));
+            const auto requestedIfaceMode = ifaceMode;
+            const auto partitionedScalarIface = IsScalarPartitionInterfaceMode(requestedIfaceMode);
+            manageArray(cast<ConstantArrayType>(DT), ifaceMode == "default" || partitionedScalarIface);
+            if(partitionedScalarIface)
+            {
+               ifaceMode = requestedIfaceMode;
+            }
          }
          else
          {
             const auto paramTypeRemTD = RemoveTypedef(argType);
+            parmSizeInBytes = std::to_string(getInterfaceTypeSizeInBytes(parmDecl->getLocation(), paramTypeRemTD));
             parmTypename = GetTypeNameCanonical(paramTypeRemTD, _PP);
             parmOriginalTypename = GetTypeNameCanonical(argType, _PP);
             parmIncludePaths = getIncludePaths(argType);
          }
          if(ifaceMode != "default")
          {
+            const auto partitionedScalarIface = IsScalarPartitionInterfaceMode(ifaceMode);
             if(ifaceMode != "handshake" && ifaceMode != "fifo" && ifaceMode != "array" && ifaceMode != "bus" &&
-               ifaceMode != "m_axi" && ifaceMode != "axis")
+               ifaceMode != "m_axi" && ifaceMode != "axis" && !partitionedScalarIface)
             {
                ReportError(ifaceModeReq->first.loc, "Invalid HLS interface mode");
                return;
@@ -1390,7 +1670,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
       else if(argType->isPointerType() || argType->isReferenceType())
       {
          const auto ptdType = argType->getPointeeType().IgnoreParens();
-         parmSizeInBytes = std::to_string(getSizeInBytes(ptdType));
+         parmSizeInBytes = std::to_string(getInterfaceTypeSizeInBytes(parmDecl->getLocation(), ptdType));
          if(isa<ConstantArrayType>(ptdType))
          {
             manageArray(cast<ConstantArrayType>(ptdType), false);
@@ -1424,7 +1704,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
       else
       {
          const auto paramTypeRemTD = RemoveTypedef(argType);
-         parmSizeInBytes = std::to_string(getSizeInBytes(paramTypeRemTD));
+         parmSizeInBytes = std::to_string(getInterfaceTypeSizeInBytes(parmDecl->getLocation(), paramTypeRemTD));
          parmTypename = GetTypeNameCanonical(paramTypeRemTD, _PP);
          parmOriginalTypename = GetTypeNameCanonical(argType, _PP);
          parmIncludePaths = getIncludePaths(argType);
@@ -1468,12 +1748,12 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
    }
 
  public:
-   InterfaceHLSPragmaHandler(ASTContext& ctx, PrintingPolicy& pp, int ParseAction,
+   InterfaceHLSPragmaHandler(CompilerInstance& CI, PrintingPolicy& pp, int ParseAction,
                              std::map<std::string, func_attr_t>& func_attributes)
-       : HLSPragmaAnalyzer(ctx, pp, func_attributes),
+       : HLSPragmaAnalyzer(CI.getASTContext(), pp, func_attributes),
          HLSPragmaParser(),
-         _ASTContext(ctx),
-         _SM(ctx.getSourceManager()),
+         _CI(CI),
+         _SM(CI.getASTContext().getSourceManager()),
          _parseAction(ParseAction)
    {
    }
@@ -1524,14 +1804,15 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
             this_param[key_loc_t("bundle", SourceLocation())] = THIS_PARAM_NAME;
             this_param[key_loc_t("index", SourceLocation())] = "0";
             const auto thisType =
-#if __clang_major__ >= 8
+#if PANDA_LLVM_CLANG_MAJOR >= 8
                 dyn_cast<CXXMethodDecl>(FD)->getThisType();
 #else
-                dyn_cast<CXXMethodDecl>(FD)->getThisType(_ASTContext);
+                dyn_cast<CXXMethodDecl>(FD)->getThisType(_CI.getASTContext());
 #endif
             const auto ptdType = thisType->getPointeeType().IgnoreParens();
             const auto paramTypeRemTD = RemoveTypedef(ptdType);
-            this_param[key_loc_t("size_in_bytes", SourceLocation())] = std::to_string(getSizeInBytes(ptdType));
+            this_param[key_loc_t("size_in_bytes", SourceLocation())] =
+                std::to_string(getSizeInBytes(FD->getLocation(), ptdType));
             this_param[key_loc_t("typename", SourceLocation())] = GetTypeNameCanonical(paramTypeRemTD, _PP) + "*";
             this_param[key_loc_t("original_typename", SourceLocation())] = GetTypeNameCanonical(thisType, _PP);
             this_param[key_loc_t("includes", SourceLocation())] = getIncludePaths(ptdType);
@@ -1571,8 +1852,346 @@ const std::map<std::string, std::string> InterfaceHLSPragmaHandler::_ifMapper = 
     {"ap_ack", "acknowledge"}, {"ap_hs", "handshake"}, {"ap_memory", "array"}, {"bram", ""}};
 const char* InterfaceHLSPragmaHandler::PragmaKeyword = "interface";
 
+class ArrayPartitionHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
+{
+   const std::string csroa_partition_func = "__bambu_csroa_partition__";
+
+   bool assignOrReportError(Token& lhs, const Token& rhs, const char* errorMessage)
+   {
+      if(lhs.is(tok::unknown))
+      {
+         lhs = rhs;
+         return true;
+      }
+      ReportError(rhs.getLocation(), errorMessage);
+      return false;
+   }
+
+   bool expect(const Token& tok, tok::TokenKind kind, const char* errorMessage)
+   {
+      if(tok.is(kind))
+      {
+         return true;
+      }
+      ReportError(tok.getLocation(), errorMessage);
+      return false;
+   }
+
+   bool parseQualifiedIdentifier(Preprocessor& PP, Token& tok, SmallVectorImpl<Token>& valueTokens,
+                                 const char* firstTokenErrorMessage)
+   {
+      if(!tok.isOneOf(tok::identifier, tok::raw_identifier))
+      {
+         ReportError(tok.getLocation(), firstTokenErrorMessage);
+         return false;
+      }
+
+      valueTokens.push_back(tok);
+      for(;;)
+      {
+         PP.Lex(tok);
+         if(!tok.is(tok::coloncolon))
+         {
+            return true;
+         }
+
+         valueTokens.push_back(tok);
+         PP.Lex(tok);
+         if(!tok.isOneOf(tok::identifier, tok::raw_identifier))
+         {
+            ReportError(tok.getLocation(), "Expect an identifier after `::` in `variable=` option");
+            return false;
+         }
+
+         valueTokens.push_back(tok);
+      }
+   }
+
+ public:
+   ArrayPartitionHLSPragmaHandler(ASTContext& ctx, PrintingPolicy& pp,
+                                  std::map<std::string, func_attr_t>& func_attributes)
+       : HLSPragmaAnalyzer(ctx, pp, func_attributes), HLSPragmaParser()
+   {
+   }
+
+   ~ArrayPartitionHLSPragmaHandler() = default;
+
+   bool HandlePragma(Preprocessor& PP,
+#if PANDA_LLVM_CLANG_MAJOR >= 9
+                     PragmaIntroducer
+#else
+                     PragmaIntroducerKind
+#endif
+                         Introducer,
+                     Token& PragmaTok, Token& ArrayPartitionTok) override
+   {
+      Token tok;
+      Token factorTok;
+      Token dimTok;
+      Token typeTok;
+      SmallVector<Token, 8> varToks;
+
+      tok.startToken();
+      factorTok.startToken();
+      dimTok.startToken();
+      typeTok.startToken();
+
+      PP.Lex(tok);
+      while(tok.isNot(tok::eod))
+      {
+         const auto id = PP.getSpelling(tok);
+         if(iequals(id, "factor"))
+         {
+            PP.Lex(tok);
+            if(!expect(tok, tok::equal, "Expect an equal after `factor` option"))
+            {
+               return false;
+            }
+
+            PP.Lex(tok);
+            if(!expect(tok, tok::numeric_constant, "Expect a numeric constant after `factor=`"))
+            {
+               return false;
+            }
+
+            if(!assignOrReportError(factorTok, tok, "Already defined the `factor` option"))
+            {
+               return false;
+            }
+
+            PP.Lex(tok);
+            continue;
+         }
+         else if(iequals(id, "dim"))
+         {
+            PP.Lex(tok);
+            if(!expect(tok, tok::equal, "Expect an equal after `dim` option"))
+            {
+               return false;
+            }
+
+            PP.Lex(tok);
+            if(!expect(tok, tok::numeric_constant, "Expect a numeric constant after `dim=` option"))
+            {
+               return false;
+            }
+
+            if(!assignOrReportError(dimTok, tok, "Already defined the `dim` option"))
+            {
+               return false;
+            }
+
+            PP.Lex(tok);
+            continue;
+         }
+         else if(iequals(id, "type"))
+         {
+            PP.Lex(tok);
+            if(!expect(tok, tok::equal, "Expect an equal after `type` option"))
+            {
+               return false;
+            }
+
+            PP.Lex(tok);
+            if(!expect(tok, tok::identifier, "Expect cyclic/complete/block after `type=` option"))
+            {
+               return false;
+            }
+
+            if(!assignOrReportError(typeTok, tok, "Already defined the `type` option"))
+            {
+               return false;
+            }
+
+            PP.Lex(tok);
+            continue;
+         }
+         else if(iequals(id, "complete") || iequals(id, "block") || iequals(id, "cyclic"))
+         {
+            if(!assignOrReportError(typeTok, tok, "Already defined the `type` option"))
+            {
+               return false;
+            }
+
+            PP.Lex(tok);
+            continue;
+         }
+         else if(iequals(id, "variable"))
+         {
+            PP.Lex(tok);
+            if(!expect(tok, tok::equal, "Expect an equal after variable="))
+            {
+               return false;
+            }
+
+            PP.Lex(tok);
+            if(!varToks.empty())
+            {
+               ReportError(tok.getLocation(), "Already defined the `variable` option");
+               return false;
+            }
+
+            if(!parseQualifiedIdentifier(PP, tok, varToks, "Expect an identifier after `variable=` option"))
+            {
+               return false;
+            }
+
+            continue;
+         }
+         else
+         {
+            ReportError(tok.getLocation(), "Unexpected token");
+            return false;
+         }
+      }
+
+      if(varToks.empty())
+      {
+         ReportError(tok.getLocation(), "Array partition pragma without a reference to a `variable` option");
+         return false;
+      }
+
+      // From Vitis HLS user guide https://docs.amd.com/r/en-US/ug1399-vitis-hls/pragma-HLS-array_partition
+      // if there no type is specified the default is complete
+      if(typeTok.is(tok::unknown))
+      {
+         typeTok.setKind(tok::identifier);
+         typeTok.setIdentifierInfo(PP.getIdentifierInfo("complete"));
+      }
+
+      const auto getTokenSpelling = [&PP](const Token& t) -> std::string {
+         if(t.is(tok::identifier) && t.getIdentifierInfo())
+         {
+            return t.getIdentifierInfo()->getName().str();
+         }
+         return PP.getSpelling(t);
+      };
+
+      // If the type of the partitioning is "block" or "cyclic", a factor should be present
+      const auto typeStr = getTokenSpelling(typeTok);
+      if(factorTok.is(tok::unknown) && !iequals(typeStr, "complete"))
+      {
+         ReportError(tok.getLocation(), "Array partition pragma without a `factor` option");
+         return false;
+      }
+
+      // If the dimension is not specified, the default is to partition the first dimension
+      if(dimTok.is(tok::unknown))
+      {
+         dimTok.setKind(tok::numeric_constant);
+         dimTok.setLength(1);
+         dimTok.setLiteralData("1");
+      }
+
+      Token injectedTypeTok;
+      injectedTypeTok.startToken();
+      injectedTypeTok.setKind(tok::numeric_constant);
+      injectedTypeTok.setLength(1);
+      if(iequals(typeStr, "complete"))
+      {
+         injectedTypeTok.setLiteralData("0");
+      }
+      else if(iequals(typeStr, "block"))
+      {
+         injectedTypeTok.setLiteralData("1");
+      }
+      else if(iequals(typeStr, "cyclic"))
+      {
+         injectedTypeTok.setLiteralData("2");
+      }
+      else
+      {
+         ReportError(tok.getLocation(), "Expected a type of array partition (complete/block/cyclic)");
+         return false;
+      }
+
+      Token injectedFactorTok;
+      if(factorTok.is(tok::unknown))
+      {
+         injectedFactorTok.startToken();
+         injectedFactorTok.setKind(tok::numeric_constant);
+         injectedFactorTok.setLength(1);
+         injectedFactorTok.setLiteralData("0");
+      }
+      else
+      {
+         injectedFactorTok = factorTok;
+      }
+
+      Token funcNameTok;
+      funcNameTok.startToken();
+      funcNameTok.setKind(tok::identifier);
+      funcNameTok.setIdentifierInfo(PP.getIdentifierInfo(csroa_partition_func));
+
+      Token commaTok;
+      commaTok.startToken();
+      commaTok.setKind(tok::comma);
+
+      Token lParTok;
+      lParTok.startToken();
+      lParTok.setKind(tok::l_paren);
+
+      Token rParTok;
+      rParTok.startToken();
+      rParTok.setKind(tok::r_paren);
+
+      Token semiTok;
+      semiTok.startToken();
+      semiTok.setKind(tok::semi);
+
+      llvm::SmallVector<Token, 18> Toks;
+      Toks.push_back(funcNameTok);
+      Toks.push_back(lParTok);
+      Toks.append(varToks.begin(), varToks.end());
+      Toks.push_back(commaTok);
+      Toks.push_back(injectedTypeTok);
+      Toks.push_back(commaTok);
+      Toks.push_back(injectedFactorTok);
+      Toks.push_back(commaTok);
+      Toks.push_back(dimTok);
+      Toks.push_back(rParTok);
+      Toks.push_back(semiTok);
+
+      for(Token& currentTok : Toks)
+      {
+#if PANDA_LLVM_CLANG_MAJOR >= 9
+         currentTok.setFlag(Token::IsReinjected);
+#endif
+      }
+
+      auto Buffer = make_unique<Token[]>(Toks.size());
+      std::copy(Toks.begin(), Toks.end(), Buffer.get());
+
+      PP.EnterTokenStream(std::move(Buffer), Toks.size(), true
+#if PANDA_LLVM_CLANG_MAJOR >= 9
+                          ,
+                          /*IsReinject=*/false
+#endif
+      );
+
+      LLVM_DEBUG({
+         dbgs() << "ARRAY PARTITION\n";
+         dbgs() << "  VAR     ";
+         for(const auto& varTok : varToks)
+         {
+            dbgs() << getTokenSpelling(varTok);
+         }
+         dbgs() << "\n";
+      });
+      LLVM_DEBUG(dbgs() << "  TYPE    " << typeStr << "\n");
+      LLVM_DEBUG(dbgs() << "  FACTOR  " << getTokenSpelling(injectedFactorTok) << "\n");
+      LLVM_DEBUG(dbgs() << "  DIM     " << PP.getSpelling(dimTok) << "\n\n");
+
+      return true;
+   }
+
+   static const char* PragmaKeyword;
+};
+const char* ArrayPartitionHLSPragmaHandler::PragmaKeyword = "array_partition";
+
 class HLSASTConsumer : public ASTConsumer
 {
+   CompilerInstance& _CI;
    DiagnosticsEngine& _D;
    SourceManager& _SM;
    MangleContext* _MC;
@@ -1631,9 +2250,47 @@ class HLSASTConsumer : public ASTConsumer
 
    void AnalyzeFunctionDecl(FunctionDecl* FD)
    {
-      const auto fd_end = FD->getSourceRange().getEnd();
+      auto fd_end = FD->getSourceRange().getEnd();
+      if(FD->hasBody())
+      {
+         fd_end =
+#if PANDA_LLVM_CLANG_MAJOR >= 7
+             FD->getBody()->getEndLoc();
+#else
+             FD->getBody()->getLocEnd();
+#endif
+      }
       if(_SM.isInSystemHeader(fd_end) || FD->isImplicit() || FD->isInStdNamespace())
       {
+         return;
+      }
+      if(FD->isDependentContext())
+      {
+         for(auto it = _pragmas.begin(); it != _pragmas.end();)
+         {
+            if(isBefore(it->loc, fd_end))
+            {
+               const auto analyzer_it = _analyzers.find(it->id);
+               if(analyzer_it != _analyzers.end() && analyzer_it->second->allowDependentFunctionDecl())
+               {
+                  const pragma_line_t pragma_line = *it;
+                  it = _pragmas.erase(it);
+                  AnalyzePragma(FD, pragma_line);
+               }
+               else
+               {
+                  ++it;
+               }
+            }
+            else if(_SM.getFilename(it->loc) == _SM.getFilename(fd_end))
+            {
+               break;
+            }
+            else
+            {
+               ++it;
+            }
+         }
          return;
       }
       LLVM_DEBUG({
@@ -1647,19 +2304,30 @@ class HLSASTConsumer : public ASTConsumer
          LLVM_DEBUG(dbgs() << "Import attributes from template pattern " << MangledName(patternDecl) << "\n");
          GetFuncAttr(FD) = GetFuncAttr(patternDecl);
       }
-      while(_pragmas.size() && isBefore(_pragmas.front().loc, fd_end))
+      for(auto it = _pragmas.begin(); it != _pragmas.end();)
       {
-         const pragma_line_t pragma_line = _pragmas.front();
-         _pragmas.pop_front();
-         LLVM_DEBUG({
-            dbgs() << "  " << pragma_line.loc.printToString(_SM) << " " << pragma_line.id;
-            for(auto& attr : pragma_line.attrs)
-            {
-               dbgs() << " " << attr.first.id << (attr.second.size() ? ("=" + attr.second) : "");
-            }
-            dbgs() << "\n";
-         });
-         AnalyzePragma(FD, pragma_line);
+         if(isBefore(it->loc, fd_end))
+         {
+            const pragma_line_t pragma_line = *it;
+            it = _pragmas.erase(it);
+            LLVM_DEBUG({
+               dbgs() << "  " << pragma_line.loc.printToString(_SM) << " " << pragma_line.id;
+               for(auto& attr : pragma_line.attrs)
+               {
+                  dbgs() << " " << attr.first.id << (attr.second.size() ? ("=" + attr.second) : "");
+               }
+               dbgs() << "\n";
+            });
+            AnalyzePragma(FD, pragma_line);
+         }
+         else if(_SM.getFilename(it->loc) == _SM.getFilename(fd_end))
+         {
+            break;
+         }
+         else
+         {
+            ++it;
+         }
       }
       if(FD->hasBody())
       {
@@ -1712,14 +2380,16 @@ class HLSASTConsumer : public ASTConsumer
    }
 
  public:
-   HLSASTConsumer(ASTContext& ctx, PrintingPolicy& pp, const std::string outdir, int _pa)
-       : _D(ctx.getDiagnostics()),
-         _SM(ctx.getSourceManager()),
-         _MC(ctx.createMangleContext()),
+   HLSASTConsumer(CompilerInstance& CI, PrintingPolicy& pp, const std::string outdir, int _pa)
+       : _CI(CI),
+         _D(CI.getASTContext().getDiagnostics()),
+         _SM(CI.getASTContext().getSourceManager()),
+         _MC(CI.getASTContext().createMangleContext()),
          _PP(pp),
          _archXML(outdir + "/architecture.xml"),
          _parseAction(_pa)
    {
+      auto& ctx = CI.getASTContext();
 #define ADD_HANDLER(Name, ...)                                                                 \
    do                                                                                          \
    {                                                                                           \
@@ -1728,19 +2398,21 @@ class HLSASTConsumer : public ASTConsumer
       _analyzers[Name::PragmaKeyword] = std::static_pointer_cast<HLSPragmaAnalyzer>(_handler); \
    } while(false)
 
-      ADD_HANDLER(InterfaceHLSPragmaHandler, ctx, _PP, _pa, _func_attributes);
+      ADD_HANDLER(InterfaceHLSPragmaHandler, CI, _PP, _pa, _func_attributes);
       ADD_HANDLER(DataflowHLSPragmaHandler, ctx, _PP, _pa, _func_attributes);
 
       if(_pa & ParseAction_Analyze)
       {
          ADD_HANDLER(PipelineHLSPragmaHandler, ctx, _PP, _func_attributes);
          ADD_HANDLER(CacheHLSPragmaHandler, ctx, _PP, _func_attributes);
+         ADD_HANDLER(BusHLSPragmaHandler, ctx, _PP, _func_attributes);
       }
 
       if(_pa & ParseAction_Optimize)
       {
          ADD_HANDLER(InlineHLSPragmaHandler, ctx, _PP, _func_attributes);
          ADD_HANDLER(UnrollHLSPragmaHandler, ctx, _PP, _func_attributes);
+         ADD_HANDLER(ArrayPartitionHLSPragmaHandler, ctx, _PP, _func_attributes);
       }
 
 #undef ADD_HANDLER
@@ -1777,7 +2449,20 @@ class HLSASTConsumer : public ASTConsumer
          {
             AnalyzeFunctionDecl(FD);
          }
-         else if(isa<LinkageSpecDecl>(decl) || isa<NamespaceDecl>(decl))
+         else if(auto FTD = dyn_cast<FunctionTemplateDecl>(decl))
+         {
+            AnalyzeFunctionDecl(FTD->getTemplatedDecl());
+         }
+         else if(auto CTD = dyn_cast<ClassTemplateDecl>(decl))
+         {
+            declQueue.push_back(CTD->getTemplatedDecl());
+         }
+         else if(auto CMD = dyn_cast<CXXMethodDecl>(decl))
+         {
+            AnalyzeFunctionDecl(CMD);
+         }
+
+         else if(isa<DeclContext>(decl))
          {
             auto declContext = cast<DeclContext>(decl);
             if(declContext->isStdNamespace())
@@ -1815,7 +2500,7 @@ class HLSASTConsumer : public ASTConsumer
       {
          const pragma_line_t p = _pragmas.front();
          _pragmas.pop_front();
-         ReportError(p.loc, "Unassociated HLS pragma");
+         Report(p.loc, DiagnosticsEngine::Warning, "HLS pragma not associated to any decl");
       }
 
       if(_parseAction & ParseAction_Analyze)
@@ -1833,7 +2518,7 @@ class EmptyASTConsumer : public ASTConsumer
 
 namespace clang
 {
-   class CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer) : public PluginASTAction
+   class ASTAnalyzer : public PluginASTAction
    {
       int _action;
       std::string _outdir;
@@ -1849,7 +2534,7 @@ namespace clang
             {
                pp.adjustForCPlusPlus();
             }
-            auto pragmaConsumer = make_unique<HLSASTConsumer>(CI.getASTContext(), pp, _outdir, _action);
+            auto pragmaConsumer = make_unique<HLSASTConsumer>(CI, pp, _outdir, _action);
             pragmaConsumer->addPragmaHandler(CI.getPreprocessor());
             return pragmaConsumer;
          }
@@ -1908,11 +2593,11 @@ namespace clang
 
       void PrintHelp(raw_ostream& ros)
       {
-         ros << "Help for " CLANG_VERSION_STRING(_plugin_ASTAnalyzer) " plugin:\n";
-         ros << " -outputdir <directory>\n";
-         ros << "   Directory where the architecture.xml file will be written\n";
-         ros << " -cppflag\n";
-         ros << "   Input source file is C++\n";
+         ros << "Help for ASTAnalyzer plugin:\n"
+             << " -outputdir <directory>\n"
+             << "   Directory where the architecture.xml file will be written\n"
+             << " -cppflag\n"
+             << "   Input source file is C++\n";
       }
 
       PluginASTAction::ActionType getActionType() override
@@ -1921,25 +2606,24 @@ namespace clang
       }
 
     public:
-      CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)
-      () : _action(ParseAction_None), _outdir(""), _cppflag(false)
+      ASTAnalyzer() : _action(ParseAction_None), _outdir(""), _cppflag(false)
       {
       }
-      CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)(const CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer) & step) = delete;
-      CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer) & operator=(const CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer) &) = delete;
+      ASTAnalyzer(const ASTAnalyzer& step) = delete;
+      ASTAnalyzer& operator=(const ASTAnalyzer&) = delete;
    };
 
 #ifdef _WIN32
 
    void initializeplugin_ASTAnalyzer()
    {
-      static FrontendPluginRegistry::Add<CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)> X(
-          CLANG_VERSION_STRING(_plugin_ASTAnalyzer), "Analyze Clang AST to retrieve information useful for PandA");
+      static FrontendPluginRegistry::Add<ASTAnalyzer> X("ASTAnalyzer",
+                                                        "Analyze Clang AST to retrieve information useful for PandA");
    }
 #endif
 } // namespace clang
 
 #ifndef _WIN32
-static FrontendPluginRegistry::Add<CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)>
-    X(CLANG_VERSION_STRING(_plugin_ASTAnalyzer), "Analyze Clang AST to retrieve information useful for PandA");
+static FrontendPluginRegistry::Add<ASTAnalyzer> X("ASTAnalyzer",
+                                                  "Analyze Clang AST to retrieve information useful for PandA");
 #endif

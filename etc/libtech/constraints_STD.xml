@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<constraints>
+   <HLS_constraints>
+      <tech_constraints fu_name="ui_ternary_alu_node_FU" fu_library="STD_FU" n="0"/>
+      <tech_constraints fu_name="ternary_alu_node_FU" fu_library="STD_FU" n="0"/>
+      <tech_constraints fu_name="builtin_putchar_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="KMP_BAMBU_CRITICAL_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="KMP_BAMBU_END_CRITICAL_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="KMP_BAMBU_WAIT_ALL_THREADS_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="KMP_BAMBU_CS_WAIT_ALL_THREADS_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="KMP_BAMBU_BARRIER_REACHED_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="KMP_BAMBU_SET_TH_LOCAL_REDUCE_DATA_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="KMP_BAMBU_GET_TH_LOCAL_REDUCE_DATA_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="KMP_BAMBU_CS_GET_GTID_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="KMP_BAMBU_CS_GET_TID_FU" fu_library="STD_FU" n="1"/>
+   </HLS_constraints>
+</constraints>

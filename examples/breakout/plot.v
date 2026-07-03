@@ -1,7 +1,7 @@
-// This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2016-2024 Politecnico di Milano
+// This component is part of the PANDA/BAMBU IP LIBRARY
+// Copyright (C) 2016-2026 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
-// License: PANDA_LGPLv3
+// License: PANDA_MIT
 `timescale 1ns / 1ps
 module vga_address_translator(x, y, mem_address);
   parameter horizontal_display_width = 640, BITSIZE_memory_address=32;
@@ -29,10 +29,10 @@ module vga_address_translator(x, y, mem_address);
   end
 endmodule
 
-// This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2016-2024 Politecnico di Milano
+// This component is part of the PANDA/BAMBU IP LIBRARY
+// Copyright (C) 2016-2026 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
-// License: PANDA_LGPLv3
+// License: PANDA_MIT
 module generic_vga_controller(reset, clk_in, pixel_colour, memory_address, VGA_R, VGA_G, VGA_B, VGA_HS, VGA_VS, VGA_BLANK, VGA_SYNC, VGA_CLK);
 parameter horizontal_sync_pulse_width =96, //horizontal sync pulse width in pixels
     horizontal_back_porch_width = 48,      //horizontal back porch width in pixels
@@ -167,10 +167,10 @@ parameter horizontal_sync_pulse_width =96, //horizontal sync pulse width in pixe
  
 endmodule
 
-// This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2015-2024 Politecnico di Milano
+// This component is part of the PANDA/BAMBU IP LIBRARY
+// Copyright (C) 2015-2026 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
-// License: PANDA_LGPLv3
+// License: PANDA_MIT
 module frequency_divider_byX(reset, clk_in, clk_div_by_X);
 parameter DIVIDE_BY=2;
   input reset;
@@ -331,10 +331,10 @@ module clk_generator_25_170MHz(reset, clk_in1, clk_out1);
 endmodule
 
 
-// This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2015-2024 Politecnico di Milano
+// This component is part of the PANDA/BAMBU IP LIBRARY
+// Copyright (C) 2015-2026 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
-// License: PANDA_LGPLv3
+// License: PANDA_MIT
 module VideoMemory(clk_w,clk_r,we_w,addr_w,addr_r,data_w,data_r);
   parameter BITSIZE_addr=1, BITSIZE_data=1, BITSIZE_nwords=1;
   input clk_w;
@@ -366,12 +366,12 @@ module VideoMemory(clk_w,clk_r,we_w,addr_w,addr_r,data_w,data_r);
 
 endmodule
 
-// This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2016-2024 Politecnico di Milano
+// This component is part of the PANDA/BAMBU IP LIBRARY
+// Copyright (C) 2016-2026 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
-// License: PANDA_LGPLv3
+// License: PANDA_MIT
 `timescale 1ns / 1ps
-module plot(clock, reset, start_port, color, x, y, sel_plot, sel___plot, done_port, VGA_R, VGA_G, VGA_B, VGA_HS, VGA_VS);
+module plot(clock, reset, start_port, color, x, y, sel_plot, done_port, VGA_R, VGA_G, VGA_B, VGA_HS, VGA_VS);
 parameter horizontal_sync_pulse_width =96, //horizontal sync pulse width in pixels
     horizontal_back_porch_width = 48,      //horizontal back porch width in pixels
     horizontal_display_width = 640,        //horizontal display width in pixels
@@ -394,7 +394,6 @@ parameter horizontal_sync_pulse_width =96, //horizontal sync pulse width in pixe
   input [BITSIZE_memory_address-1:0] x;
   input [BITSIZE_memory_address-1:0] y;
   input sel_plot;
-  input sel___plot;
   output done_port;
   output [RGB_DIGITAL_BITSIZE-1:0] VGA_R;
   output [RGB_DIGITAL_BITSIZE-1:0] VGA_G;

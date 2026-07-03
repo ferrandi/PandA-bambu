@@ -8,11 +8,11 @@
  *
  *             ***********************************************
  *                              PandA Project 
- *                     URL: http://panda.dei.polimi.it
+ *                     URL: https://github.com/ferrandi/PandA-bambu
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2023-2024 Politecnico di Milano
+ *              Copyright (c) 2023-2026 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -37,19 +37,8 @@
 
   \section dev_page_style Coding and documentation 
   Here you will find useful information on how to contribute to the existing codebase in a proper and productive manner following code standards, coding styles, and documentation:
-  - \ref dev_guide_makefiles
   - \ref dev_guide_programming
   - \ref dev_guide_documentation
-
-
-  \section dev_page_bambu Extend PandA Bambu HLS tool
-  Bambu HLS is the High-Level Synthesis tool of the PandA framework. 
-  The HLS flow implemented by Bambu HLS may be extended at many levels adding optimization passes in the frontend, new HLS algorithms in the backend, or new hardware modules in the hardware 
-  generation engine.
-  How to extend Bambu HLS under its many aspects is described in the following chapters:
-  - \ref dev_bambu_frontend
-  - \ref dev_bambu_modgen
-  - \ref dev_bambu_device
 
 
 */

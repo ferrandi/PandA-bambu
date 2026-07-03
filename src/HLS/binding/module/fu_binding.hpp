@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -37,17 +37,17 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef FU_BINDING_HPP
 #define FU_BINDING_HPP
 
 #include "custom_set.hpp"
+#include "graph.hpp"
 #include "op_graph.hpp"
 #include "refcount.hpp"
+#include "structural_objects.hpp"
+#include "utility.hpp"
 
 #include <iosfwd>
 #include <limits>
@@ -55,27 +55,23 @@
 #include <map>
 #include <utility>
 
-/**
- * @name forward declarations
- */
-//@{
 class funit_obj;
-class module;
+class memory;
+class module_o;
 REF_FORWARD_DECL(AllocationInformation);
 REF_FORWARD_DECL(fu_binding);
 REF_FORWARD_DECL(generic_obj);
 REF_FORWARD_DECL(hls);
 REF_FORWARD_DECL(HLS_manager);
-REF_FORWARD_DECL(memory);
+REF_FORWARD_DECL(OMPInfo);
 REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(structural_object);
 REF_FORWARD_DECL(technology_node);
-REF_FORWARD_DECL(tree_node);
+REF_FORWARD_DECL(ir_node);
 CONSTREF_FORWARD_DECL(AllocationInformation);
 CONSTREF_FORWARD_DECL(HLS_manager);
-CONSTREF_FORWARD_DECL(OpGraph);
-CONSTREF_FORWARD_DECL(tree_manager);
-//@}
+CONSTREF_FORWARD_DECL(Parameter);
+CONSTREF_FORWARD_DECL(ir_manager);
 
 struct jms_sorter
 {
@@ -105,14 +101,14 @@ class fu_binding
    /// allocation manager. Used to retrieve the string name of the functional units.
    AllocationInformationRef allocation_information;
 
-   /// information about the tree data-structure
-   const tree_managerConstRef TreeM;
+   /// information about the IR data-structure
+   const ir_managerConstRef IRM;
 
    /// The operation graph
-   const OpGraphConstRef op_graph;
+   const OpGraph op_graph;
 
    /// port assignment: ports are swapped predicate
-   CustomOrderedSet<vertex> ports_are_swapped;
+   CustomOrderedSet<OpGraph::vertex_descriptor> ports_are_swapped;
 
    /// The set of input parameters
    const ParameterConstRef parameters;
@@ -147,6 +143,7 @@ class fu_binding
     * @param memory_units is the list o memory ports
     * @param curr_gate is the current gate
     * @param var_call_sites_rel put into relation proxied variables and modules referring to such variables
+    * @param reverse_memory_units maps proxied variables back to the functional unit serving them
     */
    void kill_proxy_memory_units(std::map<unsigned int, unsigned int>& memory_units, structural_objectRef curr_gate,
                                 std::map<unsigned int, std::list<structural_objectRef>>& var_call_sites_rel,
@@ -156,12 +153,16 @@ class fu_binding
                                   std::map<std::string, std::list<structural_objectRef>>& fun_call_sites_rel,
                                   std::map<std::string, unsigned int>& reverse_wrapped_units);
 
+   void kill_s_memory_ports(structural_objectRef curr_gate);
+
    /**
     * connect proxies with storage components
     * @param mem_obj is the relation between fu_id and structural objects
     * @param reverse_memory_units is the relation between var and functional units
     * @param var_call_sites_rel is the relation between var and call sites having a proxy as module parameter
     * @param SM is the structural manager
+    * @param HLS is the HLS data structure used to specialize the proxy connections
+    * @param _unique_id is the running identifier used while creating fresh structural objects
     */
    void manage_killing_memory_proxies(std::map<unsigned int, structural_objectRef>& mem_obj,
                                       std::map<unsigned int, unsigned int>& reverse_memory_units,
@@ -179,7 +180,7 @@ class fu_binding
 
    /**
     * Constructor.
-    * @param HLS_mgr is the HLS manager
+    * @param _HLSMgr is the HLS manager
     * @param function_id is the index of the function
     * @param parameters is the set of input parameters
     */
@@ -189,10 +190,7 @@ class fu_binding
 
    fu_binding& operator=(const fu_binding&) = delete;
 
-   /**
-    * Destructor.
-    */
-   virtual ~fu_binding();
+   virtual ~fu_binding() = default;
 
    /**
     * @brief create_fu_binding: factory method for fu_binding
@@ -205,20 +203,27 @@ class fu_binding
                                           const ParameterConstRef _parameters);
 
    /**
+    * @brief reset_allocation initialize the allocated resources to 0
+    * @param unit is the resource unit id
+    */
+   void reset_allocation(unsigned int unit);
+
+   /**
     * Binds an operation vertex to a functional unit. The functional unit is identified by an id and
     * its index
     * @param v is operation vertex
-    * @param id is the identifier of the functional unit
+    * @param unit is the identifier of the functional unit
     * @param index is the functional unit index
     */
-   void bind(const vertex& v, unsigned int unit, unsigned int index = std::numeric_limits<unsigned int>::max());
+   void bind(OpGraph::vertex_descriptor v, unsigned int unit,
+             unsigned int index = std::numeric_limits<unsigned int>::max());
 
    /**
     * Returns the functional unit assigned to the vertex.
     * @param v is the considered vertex.
     * @return the functional unit assigned with the vertex.
     */
-   unsigned int get_assign(const vertex& v) const;
+   unsigned int get_assign(OpGraph::vertex_descriptor v) const;
 
    /**
     * Returns the functional unit assigned to the operation.
@@ -232,14 +237,14 @@ class fu_binding
     * @param v is the considered vertex.
     * @return the index of the functional unit assigned to the vertex.
     */
-   unsigned int get_index(const vertex& v) const;
+   unsigned int get_index(OpGraph::vertex_descriptor v) const;
 
    /**
     * Returns the name of the functional unit
     * @param v is the considered vertex.
     * @return the name of the functional unit assigned to the vertex.
     */
-   std::string get_fu_name(vertex const& v) const;
+   std::string get_fu_name(OpGraph::vertex_descriptor v) const;
 
    /**
     * Returns number of functional unit allocated
@@ -267,14 +272,14 @@ class fu_binding
     * @param v is the vertex you want to get the object
     * @return the constant object related to vertex
     */
-   const funit_obj& operator[](const vertex& v);
+   const funit_obj& operator[](OpGraph::vertex_descriptor v);
 
    /**
     * Returns reference to funit object associated with this vertex
     * @param v is the given vertex
     * @return the associated reference
     */
-   generic_objRef get(const vertex v) const;
+   generic_objRef get(OpGraph::vertex_descriptor v) const;
 
    generic_objRef get(unsigned int name, unsigned int index)
    {
@@ -293,7 +298,7 @@ class fu_binding
     * @param v
     * @return true in case v has been previously assigned
     */
-   bool is_assigned(const vertex& v) const;
+   bool is_assigned(OpGraph::vertex_descriptor v) const;
 
    /**
     * return true in case the operation has been previously assigned
@@ -339,7 +344,7 @@ class fu_binding
     */
    void specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj,
                                unsigned int ar, const std::string& base_address, unsigned long long rangesize,
-                               bool is_memory_splitted, bool is_sparse_memory, bool is_sds);
+                               bool is_memory_splitted, bool is_sparse_memory, bool is_sds, OMPInfoRef fork_info);
 
    virtual bool manage_module_ports(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM,
                                     const structural_objectRef curr_gate, unsigned int num);
@@ -349,14 +354,14 @@ class fu_binding
     * @param v is the vertex
     * @param condition is true when ports are swapped, false otherwise
     */
-   void set_ports_are_swapped(vertex v, bool condition);
+   void set_ports_are_swapped(OpGraph::vertex_descriptor v, bool condition);
 
    /**
     * Check if vertex v has its ports swapped or not
     * @param v is the vertex
     * @return true when ports of v are swapped, false otherwise
     */
-   bool get_ports_are_swapped(vertex v) const
+   bool get_ports_are_swapped(OpGraph::vertex_descriptor v) const
    {
       return ports_are_swapped.find(v) != ports_are_swapped.end();
    }
@@ -373,26 +378,82 @@ class fu_binding
                     const structural_objectRef circuit, unsigned int& unique_id);
 
    /**
-    * fill the memory of the array ref
-    * @param TreeM is the tree_manager
+    * Adds a new port to the specified component copyng the proprieties of an old one.
+    * The type of the port (scalar or vector) is automatically determined looking at the size:
+    * in this context size is equal to the number of elements belonging to the port;
+    * the bitsize of each element of the port has to be specified after this operation.
+    * @param new_port the reference to the new port
+    * @param old_port the reference to the old port
+    * @param size the size of the new port (it can be different from the old one)
+    * @param pname the name of the new port
+    * @param direction the direction of the new port
+    * @param circuit the component to which the new port is added
+    * @param SM the structural manager that perfroms the operation
+    */
+   static void add_smart_port(structural_objectRef& new_port, const structural_objectRef old_port, unsigned int size,
+                              const std::string pname, port_o::port_direction direction,
+                              const structural_objectRef& circuit, const structural_managerRef& SM);
+
+   /**
+    * Adds a new connection between the two specified ports.
+    * The connection is direct (without a signal) if one of the two elements contains the other,
+    * otherwise the connection is created using a local signal.
+    * The size and type of the signal is determined looking at the information of the src_port.
+    * @param src_port the reference to the source port
+    * @param dst_port the reference to the destination port
+    * @param _unique_id the unique identifier of the signal if needed
+    * @param circuit the component to which the new port is added
+    * @param SM the structural manager that perfroms the operation
+    */
+   static void add_smart_connection(const structural_objectRef src_port, const structural_objectRef dst_port,
+                                    unsigned int _unique_id, const structural_objectRef& circuit,
+                                    const structural_managerRef& SM);
+
+   /**
+    * Creates a new signals compatible with the specified port: the two elements are NOT connected
+    * The type and bitsize of the signal are copied from the source port.
+    * @param src_port the reference to the source port
+    * @param _unique_id the unique identifier of the signal
+    * @param circuit the component to which the new port is added
+    * @param SM the structural manager that perfroms the operation
+    * @return A reference to the signal.
+    */
+   static structural_objectRef add_smart_signal(const structural_objectRef src_port, unsigned int _unique_id,
+                                                const structural_objectRef& circuit, const structural_managerRef& SM);
+
+   /**
+    * Tries to find a specific port of a specific type in a component
+    * Return true if the operation is succesfull and puts a reference to the port in port_obj
+    * @param port_name the name of the searched port
+    * @param id_module the component on which the research is performed
+    * @param port_type the type of the port searched
+    * @param port_obj the reference to the searched port. It is equal to null if the search fails.
+    * @return The result of the operation.
+    */
+   static bool try_find_port(const std::string& port_name, const structural_objectRef& id_module, so_kind port_type,
+                             structural_objectRef& port_obj);
+
+   /**
+    * fill the memory of an array
     * @param init_file_a is the file where the data is written (all data stored in this file in case is_memory_splitted
     * is false
-    * @param initi_file_b is the file where the data is written (only the odd elements are store in this file and only
+    * @param init_file_b is the file where the data is written (only the odd elements are store in this file and only
     * if is open)
     * @param ar is the array ref variable declaration
     * @param vec_size is the number of the element of the array
     * @param elts_size is the element size in bits
     * @param mem is the memory reference
-    * @param TM is the tree manager reference
+    * @param TM is the IR manager reference
     * @param is_sds is true if SDS memory alignment is required
     * @param bitsize_align is the memory alignment bitsize
     */
-   static void fill_array_ref_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar,
-                                     unsigned long long& vec_size, unsigned long long& elts_size, const memoryRef mem,
-                                     tree_managerConstRef TM, bool is_sds, unsigned long long bitsize_align);
+   static void fill_array_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar,
+                                 unsigned long long& vec_size, unsigned long long& elts_size,
+                                 const std::unique_ptr<memory>& mem, ir_managerConstRef TM, bool is_sds,
+                                 unsigned long long bitsize_align);
 
-   static void write_init(const tree_managerConstRef TreeM, tree_nodeRef var_node, tree_nodeRef init_node,
-                          std::vector<std::string>& init_file, const memoryRef mem,
+   static void write_init(const ir_managerConstRef IRM, ir_nodeRef var_node, ir_nodeRef init_node,
+                          std::vector<std::string>& init_file, const std::unique_ptr<memory>& mem,
                           unsigned long long element_precision);
 };
 

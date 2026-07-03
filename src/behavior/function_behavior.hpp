@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -39,69 +39,57 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef FUNCTION_BEHAVIOR_HPP
 #define FUNCTION_BEHAVIOR_HPP
 
+#include "algorithms/loops_detection/loops_fwd.hpp"
+#include "basic_block.hpp"
 #include "config_HAVE_ASSERTS.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-
 #include "custom_map.hpp"
 #include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
 #include "graph.hpp"
+#include "operations_graph_constructor.hpp"
 #include "refcount.hpp"
+#include <deque>
+#include <iosfwd>
+#include <typeindex>
 
-#include <deque>      // for deque
-#include <functional> // for binary_function
-#include <iosfwd>     // for ostream, size_t
-#include <typeindex>  // for hash
-
-/**
- * @name forward declarations
- */
-//@{
+class BasicBlocksGraphConstructor;
+class OpGraph;
+class OpGraphsCollection;
+class OpVertexSet;
 CONSTREF_FORWARD_DECL(application_manager);
-REF_FORWARD_DECL(FunctionBehavior);
-REF_FORWARD_DECL(BasicBlocksGraphConstructor);
-REF_FORWARD_DECL(BBGraph);
-CONSTREF_FORWARD_DECL(BBGraph);
-REF_FORWARD_DECL(BBGraphsCollection);
-REF_FORWARD_DECL(BehavioralHelper);
 CONSTREF_FORWARD_DECL(BehavioralHelper);
-REF_FORWARD_DECL(EpdGraphsCollection);
+CONSTREF_FORWARD_DECL(OMPInfo);
+CONSTREF_FORWARD_DECL(Parameter);
+REF_FORWARD_DECL(BehavioralHelper);
 REF_FORWARD_DECL(EpdGraph);
+REF_FORWARD_DECL(EpdGraphsCollection);
 REF_FORWARD_DECL(extended_pdg_constructor);
-REF_FORWARD_DECL(Loops);
+REF_FORWARD_DECL(FunctionBehavior);
+REF_FORWARD_DECL(OMPInfo);
 REF_FORWARD_DECL(ParallelRegionsGraph);
 REF_FORWARD_DECL(ParallelRegionsGraphConstructor);
-REF_FORWARD_DECL(level_constructor);
-REF_FORWARD_DECL(OpGraph);
-CONSTREF_FORWARD_DECL(OpGraph);
-REF_FORWARD_DECL(OpGraphsCollection);
-REF_FORWARD_DECL(operations_graph_constructor);
-class OpVertexSet;
 REF_FORWARD_DECL(ParallelRegionsGraphsCollection);
-REF_FORWARD_DECL(Parameter);
+REF_FORWARD_DECL(ir_node);
+
 #if HAVE_HOST_PROFILING_BUILT
 CONSTREF_FORWARD_DECL(ProfilingInformation);
 REF_FORWARD_DECL(ProfilingInformation);
 #endif
-REF_FORWARD_DECL(tree_node);
-CONSTREF_FORWARD_DECL(Loops);
 
-template <typename Graph>
+template <typename Graph, bool ComputePostDominators>
 class dominance;
 class ParallelRegionsGraphsCollection;
 class sequence_info;
 class xml_element;
 enum class MemoryAllocation_ChannelsType;
 enum class MemoryAllocation_Policy;
-using tree_class = unsigned int;
-//@}
+using ir_class = unsigned int;
 
 /// Struct representing memory information
 struct memory_access
@@ -116,192 +104,49 @@ struct memory_access
 };
 using memory_accessRef = refcount<memory_access>;
 
-/// The access type to a variable
-enum class FunctionBehavior_VariableAccessType
+struct OMPInfo
 {
-   UNKNOWN = 0,
-   ADDRESS,
-   USE,
-   DEFINITION,
-   OVER,
-   ARG
+   const unsigned int fork_call_id;
+   const unsigned int ncore;
+   const unsigned int core_id;
+   unsigned int kmp_t_nproc;
+   const unsigned int context_count;
+   unsigned long long int mem_page_size;
+   std::stack<unsigned int> critical;
+   const unsigned int local_idx;
+   const unsigned int global_idx;
+   const OMPInfoConstRef parent;
+
+   OMPInfo(unsigned int _local_idx, unsigned int _context_count, unsigned int _core_id, unsigned int _ncore,
+           unsigned int _fork_call_id, const OMPInfoConstRef& parent, unsigned int _kmp_t_nproc);
+
+   static unsigned int make_global(unsigned int idx, unsigned int ncore, OMPInfoConstRef parent);
 };
 
-/// The possible type of a variable
-enum class FunctionBehavior_VariableType
-{
-   UNKNOWN = 0,
-   MEMORY,
-   SCALAR,
-   VIRTUAL
-};
-
-#if NO_ABSEIL_HASH
-
-/**
- * Definition of hash function for FunctionBehavior_VariableAccessType
- */
-namespace std
-{
-   template <>
-   struct hash<FunctionBehavior_VariableAccessType> : public unary_function<FunctionBehavior_VariableAccessType, size_t>
-   {
-      size_t operator()(FunctionBehavior_VariableAccessType variable_access_type) const
-      {
-         hash<int> hasher;
-         return hasher(static_cast<int>(variable_access_type));
-      }
-   };
-} // namespace std
-
-/**
- * Definition of hash function for FunctionBehavior_VariableType
- */
-namespace std
-{
-   template <>
-   struct hash<FunctionBehavior_VariableType> : public unary_function<FunctionBehavior_VariableType, size_t>
-   {
-      size_t operator()(FunctionBehavior_VariableType variable_access_type) const
-      {
-         hash<int> hasher;
-         return hasher(static_cast<int>(variable_access_type));
-      }
-   };
-} // namespace std
-
-#endif
 /**
  *
  */
 class FunctionBehavior
 {
- private:
-   /**
-    * @name some friend classes
-    */
-   //@{
+   friend class BasicBlocksCfgComputation;
    friend class BasicBlocksProfiling;
    friend class BBCdgComputation;
-   friend class OpCdgComputation;
-   friend class hpp_profiling;
-   friend class loops_computation;
-   friend class instr_sequences_detection;
-   friend struct loop_regions_computation;
-   friend class LoopsProfiling;
-   friend class probability_path;
-   friend class HostProfiling;
-   friend class read_profiling_data;
-   friend class tp_profiling;
    friend class BBOrderComputation;
+   friend class HostProfiling;
+   friend class instr_sequences_detection;
+   friend class loops_computation;
+   friend class OpCdgComputation;
    friend class OpOrderComputation;
-   friend class BasicBlocksCfgComputation;
-   //@}
+   friend struct loop_regions_computation;
 
    /// Behavioral helper associated with this behavioral_graph_manager
    const BehavioralHelperRef helper;
 
    /// Global graph storing CFG, dominators and post-dominators. The nodes of this graph are basic blocks.
-   const BBGraphsCollectionRef bb_graphs_collection;
+   const std::unique_ptr<BBGraphsCollection> bb_graphs_collection;
 
    /// Global graph storing CFG, DFG, FCFG, FDFG, SDG, FSDG, CDG. The nodes of this graph are operations.
-   const OpGraphsCollectionRef op_graphs_collection;
-
-   /// The basic block CFG.
-   const BBGraphRef bb;
-
-   /// The basic block Control Flow Graph extended with edges that impose that basic block inside a loop are executed
-   /// before what follows the loop
-   const BBGraphRef extended_bb;
-
-   /// The control dependence graph among basic blocks
-   const BBGraphRef cdg_bb;
-
-   /// The dj graph (used for loop computation)
-   const BBGraphRef dj;
-
-   /// The dominator tree of the CFG on basic blocks.
-   const BBGraphRef dt;
-
-   /// The basic block CFG with feedback
-   const BBGraphRef fbb;
-
-   /// The post-dominator tree of the CFG on basic blocks.
-   const BBGraphRef pdt;
-
-   /// The support basic block graph for path profiling
-   const BBGraphRef ppg;
-
-   /// The control flow graph.
-   const OpGraphRef cfg;
-
-   /// The extended control flow graph
-   const OpGraphRef extended_cfg;
-
-   /// The control flow graph with feedback.
-   const OpGraphRef fcfg;
-
-   /// The anti-dependencies graph.
-   const OpGraphRef adg;
-
-   /// The anti-dependencies graph with feedback
-   const OpGraphRef fadg;
-
-   /// The control dependence graph.
-   const OpGraphRef cdg;
-
-   /// The control dependence graph with feedback
-   const OpGraphRef fcdg;
-
-   /// The data flow graph.
-   const OpGraphRef dfg;
-
-   /// The data flow graph with feedback.
-   const OpGraphRef fdfg;
-
-   /// The flow edge operation graph
-   const OpGraphRef flg;
-
-   /// The output-dependencies flow graph.
-   const OpGraphRef odg;
-
-   /// The output-dependencies flow graph with feedback.
-   const OpGraphRef fodg;
-
-   /// The anti-dependence + data dependence + output dependence + flow graph
-   const OpGraphRef flaoddg;
-
-   /// The anti-dependence + data dependence + output dependence + flow graph with freedback
-   const OpGraphRef fflaoddg;
-
-   /// The system dependence, antidependence, output dependence and flow graph.
-   const OpGraphRef flsaodg;
-
-#ifndef NDEBUG
-   /// The system dependence, antidependence, output dependence, flow and debug graph.
-   const OpGraphRef flsaoddg;
-#endif
-
-   /// The system dependence, antidependence, output dependence and flow graph with feedback;
-   const OpGraphRef fflsaodg;
-
-   /// The system dependence, antidependence and output dependence graph.
-   const OpGraphRef saodg;
-
-   /// The system dependence, antidependence and output dependence graph with feedback.
-   const OpGraphRef fsaodg;
-
-   /// The system dependence graph
-   const OpGraphRef sdg;
-
-   /// The system dependence graph with feedback
-   const OpGraphRef fsdg;
-
-   /// The speculation graph
-   const OpGraphRef sg;
-
-   /// Anti + Data flow graph on aggregates
-   const OpGraphRef agg_virtualg;
+   const std::unique_ptr<OpGraphsCollection> op_graphs_collection;
 
 #if HAVE_HOST_PROFILING_BUILT
    /// Profiling information about this function
@@ -310,19 +155,19 @@ class FunctionBehavior
 
    /// Map operation vertex to position in topological order in control flow graph; in the sorting then part vertices
    /// come before else part ones
-   std::map<vertex, unsigned int> map_levels;
+   std::map<gc_vertex_descriptor, unsigned int> map_levels;
 
    /// Map basic block vertex to position in topological order in control flow graph; in the sorting then part vertices
    /// come before else part ones
-   std::map<vertex, unsigned int> bb_map_levels;
+   std::map<gc_vertex_descriptor, unsigned int> bb_map_levels;
 
    /// list of operations vertices sorted by topological order in control flow graph; in the sorting then part vertices
    /// come before else part ones
-   std::deque<vertex> deque_levels;
+   std::deque<gc_vertex_descriptor> deque_levels;
 
    /// list of operations vertices sorted by topological order in control flow graph; in the sorting then part vertices
    /// come before else part ones
-   std::deque<vertex> bb_deque_levels;
+   std::deque<gc_vertex_descriptor> bb_deque_levels;
 
    /// Loops of the function
    LoopsRef loops;
@@ -370,11 +215,11 @@ class FunctionBehavior
    /// true when pipelining is enabled for the function
    bool pipeline_enabled;
 
-   /// true when the requested pipeline does not include unbounded functions
-   bool simple_pipeline;
+   /// true when functional pipelining uses STP style
+   bool is_stallable_pipelined_function;
 
-   /// used only for stallable pipelines
-   int initiation_time;
+   /// initiation time of the pipelined function
+   unsigned initiation_time;
 
    /// Function scope channels number
    unsigned int _channels_number;
@@ -383,6 +228,12 @@ class FunctionBehavior
    MemoryAllocation_ChannelsType _channels_type;
 
    MemoryAllocation_Policy _allocation_policy;
+
+   bool _omp_core;
+
+   OMPInfoRef _omp_info;
+
+   FunctionBehavior(const FunctionBehavior&) = delete;
 
  public:
    /**
@@ -393,12 +244,6 @@ class FunctionBehavior
     */
    FunctionBehavior(const application_managerConstRef AppM, const BehavioralHelperRef _helper,
                     const ParameterConstRef parameters);
-   FunctionBehavior(const FunctionBehavior&) = delete;
-
-   /**
-    * Destructor
-    */
-   ~FunctionBehavior();
 
    /**
     * Declaration of enum representing the type of graph
@@ -406,7 +251,6 @@ class FunctionBehavior
    enum graph_type
    {
       CFG,     /**< Control flow graph */
-      ECFG,    /**< Extended control flow graph */
       FCFG,    /**< Control flow graph with feedback */
       CDG,     /**< Control dependence graph */
       FCDG,    /**< Control dependence graph with feedback */
@@ -437,40 +281,25 @@ class FunctionBehavior
     */
    enum bb_graph_type
    {
-      BB,     /**< Basic block control flow graph */
-      FBB,    /**< Basic block control flow graph with feedback*/
-      EBB,    /**< Basic block control flow graph with edges imposing that basic block inside a loop are executed before
-                 what follows the loop*/
-      CDG_BB, /**< Basic block control dependence graph */
+      BB,            /**< Basic block control flow graph */
+      FBB,           /**< Basic block control flow graph with feedback*/
+      CDG_BB,        /**< Basic block control dependence graph */
       DOM_TREE,      /**< Basic block dominator tree */
       POST_DOM_TREE, /**< Basic block post-dominator tree */
-      PPG,           /**< Support basic block for path profiling */
       DJ             /**< DJ basic block graph (used for loop computation) */
    };
 
-   /// Mutual exclusion between basic blocks (based on control flow graph with flow edges)
-   CustomUnorderedMapStable<vertex, CustomUnorderedSet<vertex>> bb_reachability;
-
-   /// Reachability between basic blocks based on control flow graph with feedback
-   CustomUnorderedMapStable<vertex, CustomUnorderedSet<vertex>> feedback_bb_reachability;
-
    /// reference to the operations graph constructor
-   const operations_graph_constructorRef ogc;
+   const std::unique_ptr<operations_graph_constructor> ogc;
 
    /// reference to the basic block graph constructor
-   const BasicBlocksGraphConstructorRef bbgc;
-
-   /// reference to the level constructor
-   const level_constructorRef lm;
-
-   /// reference to the level constructor
-   const level_constructorRef bb_lm;
+   const std::unique_ptr<BasicBlocksGraphConstructor> bbgc;
 
    /// This class stores dominator information.
-   dominance<BBGraph>* dominators;
+   std::unique_ptr<dominance<BBGraph, false>> dominators;
 
    /// This class stores post-dominator information.
-   dominance<BBGraph>* post_dominators;
+   std::unique_ptr<dominance<BBGraph, true>> post_dominators;
 
    /// map between node id and the corresponding memory allocation
    std::map<unsigned int, memory_accessRef> memory_info;
@@ -493,73 +322,61 @@ class FunctionBehavior
     */
    CustomOrderedSet<unsigned int> get_local_variables(const application_managerConstRef AppM) const;
 
+   void add_level(gc_vertex_descriptor v, unsigned int index);
+
    /**
     * Return the vector of vertex index sorted in topological order.
     */
-   const std::deque<vertex>& get_levels() const;
-
-   /**
-    * Return the vector of bb vertex index sorted in topological order.
-    */
-   const std::deque<vertex>& get_bb_levels() const;
+   const std::deque<gc_vertex_descriptor>& get_levels() const;
 
    /**
     * Return the map of vertex index sorted in topological order.
     */
-   const std::map<vertex, unsigned int>& get_map_levels() const;
+   const std::map<gc_vertex_descriptor, unsigned int>& get_map_levels() const;
+
+   void add_bb_level(gc_vertex_descriptor v, unsigned int index);
+
+   /**
+    * Return the vector of bb vertex index sorted in topological order.
+    */
+   const std::deque<gc_vertex_descriptor>& get_bb_levels() const;
 
    /**
     * Return the map of bb vertex index sorted in topological order.
     */
-   const std::map<vertex, unsigned int>& get_bb_map_levels() const;
+   const std::map<gc_vertex_descriptor, unsigned int>& get_bb_map_levels() const;
+
+   const OpGraphsCollection& GetOpGraphsCollection() const;
 
    /**
     * This method returns the operation graphs.
     * @param gt is the type of the graph to be returned
     * @return the pointer to the graph.
     */
-   OpGraphRef GetOpGraph(FunctionBehavior::graph_type gt);
-
-   /**
-    * This method returns the operation graphs.
-    * @param gt is the type of the graph to be returned
-    * @return the pointer to the graph.
-    */
-   const OpGraphConstRef CGetOpGraph(FunctionBehavior::graph_type gt) const;
+   OpGraph GetOpGraph(FunctionBehavior::graph_type gt) const;
 
    /**
     * This method returns the operation graph having as vertices the vertices of subset
     * @param gt is the type of the graph to be returned
-    * @param subset is the set of subgraph vertices
+    * @param statements is the set of subgraph vertices
     * @return the refcount to the subgraph
     */
-   const OpGraphConstRef CGetOpGraph(FunctionBehavior::graph_type gt, const OpVertexSet& statements) const;
+   OpGraph GetOpGraph(FunctionBehavior::graph_type gt,
+                      const CustomUnorderedSet<gc_vertex_descriptor>& statements) const;
+
+   const BBGraphsCollection& GetBBGraphsCollection() const;
 
    /**
     * This method returns the basic block graphs.
     * @param gt is the type of the bb_graph to be returned
-    * @return the pointer to the bb_graph.
+    * @return the bb_graph.
     */
-   BBGraphRef GetBBGraph(FunctionBehavior::bb_graph_type gt = FunctionBehavior::BB);
-
-   /**
-    * This method returns the basic block graphs.
-    * @param gt is the type of the bb_graph to be returned
-    * @return the pointer to the bb_graph.
-    */
-   const BBGraphConstRef CGetBBGraph(FunctionBehavior::bb_graph_type gt = FunctionBehavior::BB) const;
+   BBGraph GetBBGraph(FunctionBehavior::bb_graph_type gt = FunctionBehavior::BB) const;
 
    /**
     * Function that prints the class behavioral_manager.
     */
    void print(std::ostream& os) const;
-
-   /**
-    * Set epp associated with an edges
-    * @param e is the edges
-    * @param value is the value
-    */
-   void set_epp(EdgeDescriptor e, unsigned long long value);
 
    /**
     * Friend definition of the << operator.
@@ -584,15 +401,9 @@ class FunctionBehavior
       return os;
    }
 
-   /**
-    * Return the loops
-    */
-   const LoopsConstRef CGetLoops() const;
+   LoopsConstRef getConstLoops() const;
 
-   /**
-    * Return the loops
-    */
-   const LoopsRef GetLoops() const;
+   LoopsRef getLoops() const;
 
 #if HAVE_HOST_PROFILING_BUILT
    /**
@@ -800,24 +611,33 @@ class FunctionBehavior
       return packed_vars;
    }
 
-   bool is_pipeline_enabled() const
+   bool is_function_pipelined() const
    {
       return pipeline_enabled;
    }
 
-   bool is_simple_pipeline() const
+   void disable_function_pipelining()
    {
-      if(simple_pipeline)
-      {
-         THROW_ASSERT(pipeline_enabled, "Simple pipeline is true but pipeline is not enabled");
-      }
-      return simple_pipeline;
+      pipeline_enabled = false;
    }
 
-   int get_initiation_time() const
+   void enable_function_pipelining()
    {
-      THROW_ASSERT(pipeline_enabled && !simple_pipeline,
-                   "Should not request initiation time when pipeline is not enabled or simple pipeline is requested");
+      pipeline_enabled = true;
+   }
+
+   void disable_stp()
+   {
+      is_stallable_pipelined_function = false;
+   }
+
+   bool is_stp() const
+   {
+      return is_stallable_pipelined_function;
+   }
+
+   unsigned int get_initiation_time() const
+   {
       return initiation_time;
    }
 
@@ -827,7 +647,8 @@ class FunctionBehavior
     * @param second_operation is the second operation to be considered
     * @return true if there is a path from first_operation to second_operation in flcfg
     */
-   bool CheckReachability(const vertex first_operation, const vertex second_operation) const;
+   bool CheckReachability(const gc_vertex_descriptor first_operation,
+                          const gc_vertex_descriptor second_operation) const;
 
    /**
     * Check if a path from the first basic block to the second basic block exists in control flow graph (without
@@ -836,7 +657,8 @@ class FunctionBehavior
     * @param second_basic_block is the second operation to be considered
     * @return true if there is a path from first_basic_block to second_basic_block in flcfg
     */
-   bool CheckBBReachability(const vertex first_basic_block, const vertex second_basic_block) const;
+   bool CheckBBReachability(const gc_vertex_descriptor first_basic_block,
+                            const gc_vertex_descriptor second_basic_block) const;
 
    /**
     * Check if a path from first_operation to second_operation exists in control flow graph with feedback
@@ -844,7 +666,8 @@ class FunctionBehavior
     * @param second_operation is the second operation to be considered
     * @return true if there is a path from first_operation to second_operation in fcfg
     */
-   bool CheckFeedbackReachability(const vertex first_operation, const vertex second_operation) const;
+   bool CheckFeedbackReachability(const gc_vertex_descriptor first_operation,
+                                  const gc_vertex_descriptor second_operation) const;
 
    /**
     * Check if a path from the first basic block to the second basic block exists in control flow graph with feedback
@@ -852,7 +675,8 @@ class FunctionBehavior
     * @param second_basic_block is the second operation to be considered
     * @return true if there is a path from first_basic_block to second_basic_block in flcfg
     */
-   bool CheckBBFeedbackReachability(const vertex first_basic_block, const vertex second_basic_block) const;
+   bool CheckBBFeedbackReachability(const gc_vertex_descriptor first_basic_block,
+                                    const gc_vertex_descriptor second_basic_block) const;
 
    /**
     * Return the version of the basic block intermediate representation
@@ -889,49 +713,15 @@ class FunctionBehavior
    MemoryAllocation_Policy GetMemoryAllocationPolicy() const;
 
    void SetMemoryAllocationPolicy(MemoryAllocation_Policy val);
+
+   bool IsOMPCore() const;
+
+   void SetOMPCore(bool val);
+
+   OMPInfoRef GetOMPInfo() const;
+
+   void SetOMPInfo(OMPInfoRef omp_info);
+
+   std::filesystem::path GetDotPath() const;
 };
-
-using FunctionBehaviorRef = refcount<FunctionBehavior>;
-using FunctionBehaviorConstRef = refcount<const FunctionBehavior>;
-
-/**
- * The key comparison function for vertices set based on levels
- */
-class op_vertex_order_by_map : std::binary_function<vertex, vertex, bool>
-{
- private:
-   /// Topological sorted vertices
-   const std::map<vertex, unsigned int>& ref;
-
-/// Graph
-#if HAVE_ASSERTS
-   const graph* g;
-#endif
-
- public:
-   /**
-    * Constructor
-    * @param ref_ is the map with the topological sort of vertices
-    * @param g_ is a graph used only for debugging purpose to print name of vertex
-    */
-   op_vertex_order_by_map(const std::map<vertex, unsigned int>& ref_, const graph*
-#if HAVE_ASSERTS
-                                                                          g_)
-       : ref(ref_), g(g_)
-#else
-                          )
-       : ref(ref_)
-#endif
-   {
-   }
-
-   /**
-    * Compare position of two vertices in topological sorted
-    * @param x is the first vertex
-    * @param y is the second vertex
-    * @return true if x precedes y in topological sort, false otherwise
-    */
-   bool operator()(const vertex x, const vertex y) const;
-};
-
 #endif

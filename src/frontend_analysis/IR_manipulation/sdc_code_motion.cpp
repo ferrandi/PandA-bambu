@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -38,9 +38,10 @@
  *
  */
 #include "sdc_code_motion.hpp"
+
 #include "Parameter.hpp"
 #include "basic_block.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "frontend_flow_step_factory.hpp"
@@ -48,24 +49,22 @@
 #include "hls.hpp"
 #include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
+#include "ir_basic_block.hpp"
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
+#include "ir_node.hpp"
 #include "op_graph.hpp"
-#include "sdc_scheduling.hpp"
+#include "sdc_scheduling_base.hpp"
 #include "simple_code_motion.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-#include "tree_basic_block.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
+#include "string_manipulation.hpp"
 
 SDCCodeMotion::SDCCodeMotion(const application_managerRef _AppM, unsigned int _function_id,
-                             const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+                             const DesignFlowManager& _design_flow_manager, const ParameterConstRef _parameters)
     : FunctionFrontendFlowStep(_AppM, _function_id, SDC_CODE_MOTION, _design_flow_manager, _parameters),
       restart_ifmwi_opt(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
-
-SDCCodeMotion::~SDCCodeMotion() = default;
 
 CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 SDCCodeMotion::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -84,7 +83,6 @@ SDCCodeMotion::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
          {
             if(restart_ifmwi_opt)
             {
-               relationships.insert(std::make_pair(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
                relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
                relationships.insert(std::make_pair(MULTI_WAY_IF, SAME_FUNCTION));
                relationships.insert(std::make_pair(UPDATE_SCHEDULE, SAME_FUNCTION));
@@ -94,7 +92,6 @@ SDCCodeMotion::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
          relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
          relationships.insert(std::make_pair(MULTI_WAY_IF, SAME_FUNCTION));
          relationships.insert(std::make_pair(UPDATE_SCHEDULE, SAME_FUNCTION));
@@ -110,32 +107,29 @@ SDCCodeMotion::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
 
 bool SDCCodeMotion::HasToBeExecuted() const
 {
-   if(bb_version != 0)
-   {
-      return false;
-   }
-   return parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and
-          GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
-          GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch &&
+   return bb_version == 0 &&
+          parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING &&
+          GetPointer<const HLS_manager>(AppM) && GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id) &&
+          GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch &&
           FunctionFrontendFlowStep::HasToBeExecuted();
 }
 
 DesignFlowStep_Status SDCCodeMotion::InternalExec()
 {
-   const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+   const auto design_flow_graph = design_flow_manager.CGetDesignFlowGraph();
    restart_ifmwi_opt = false;
 
-   const tree_managerRef TM = AppM->get_tree_manager();
-   auto* fd = GetPointer<function_decl>(TM->GetTreeNode(function_id));
-   auto* sl = GetPointer<statement_list>(fd->body);
+   const ir_managerRef TM = AppM->get_ir_manager();
+   auto* fd = GetPointer<function_val_node>(TM->GetIRNode(function_id));
+   auto* sl = GetPointer<statement_list_node>(fd->body);
    std::map<unsigned int, blocRef>& list_of_bloc = sl->list_of_bloc;
 
    /// Retrieve result of sdc scheduling
-   const auto sdc_scheduling_step = design_flow_manager.lock()->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(
+   const auto sdc_scheduling_step = design_flow_manager.GetDesignFlowStep(HLSFunctionStep::ComputeSignature(
        HLSFlowStep_Type::SDC_SCHEDULING, HLSFlowStepSpecializationConstRef(), function_id));
    THROW_ASSERT(sdc_scheduling_step != DesignFlowGraph::null_vertex(), "SDC scheduling hls step not found");
    const auto sdc_scheduling =
-       GetPointer<const SDCScheduling>(design_flow_graph->CGetNodeInfo(sdc_scheduling_step)->design_flow_step);
+       GetPointer<const SDCScheduling_base>(design_flow_graph->CGetNodeInfo(sdc_scheduling_step)->design_flow_step);
    const auto& movements_list = sdc_scheduling->movements_list;
    if(movements_list.empty())
    {
@@ -150,22 +144,22 @@ DesignFlowStep_Status SDCCodeMotion::InternalExec()
                        list_of_bloc.find(new_basic_block) != list_of_bloc.end(),
                    "unexpected condition: BB are missing");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Moving " + STR(TM->GetTreeNode(statement_index)) + " from BB" + STR(old_basic_block) +
-                         " to BB" + STR(new_basic_block));
+                     "-->Moving " + STR(TM->GetIRNode(statement_index)) + " from BB" + STR(old_basic_block) + " to BB" +
+                         STR(new_basic_block));
       if(not AppM->ApplyNewTransformation())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "<--Skipped because reached limit of cfg transformations");
          continue;
       }
-      list_of_bloc.at(old_basic_block)->RemoveStmt(TM->GetTreeNode(statement_index), AppM);
+      list_of_bloc.at(old_basic_block)->RemoveStmt(TM->GetIRNode(statement_index), AppM);
       if(list_of_bloc.at(old_basic_block)->CGetStmtList().empty() &&
          list_of_bloc.at(old_basic_block)->CGetPhiList().empty())
       {
          restart_ifmwi_opt = true;
       }
-      list_of_bloc.at(new_basic_block)->PushBack(TM->GetTreeNode(statement_index), AppM);
-      AppM->RegisterTransformation(GetName(), TM->GetTreeNode(statement_index));
+      list_of_bloc.at(new_basic_block)->PushBack(TM->GetIRNode(statement_index), AppM);
+      AppM->RegisterTransformation(GetName(), TM->GetIRNode(statement_index));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Moved " + STR(statement_index));
    }
    function_behavior->UpdateBBVersion();

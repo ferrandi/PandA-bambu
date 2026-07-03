@@ -1,0 +1,49 @@
+/**
+ * umul32 primitive adapted to the PandA infrastructure by Fabrizio Ferrandi from Politecnico di Milano.
+ * January, 4 2024.
+ *
+ */
+/* Public domain.  */
+
+#include "bambu_config.h"
+
+__uint32_t __umul32(__uint32_t u, __uint32_t v)
+{
+   __uint32_t t;
+   __uint16_t u0, u1, v0, v1, k;
+   __uint16_t w0, w1;
+   __uint16_t tlast;
+   u1 = u >> 16;
+   u0 = u;
+   v1 = v >> 16;
+   v0 = v;
+   t = ((__uint32_t)u0) * ((__uint32_t)v0);
+   w0 = t;
+   k = t >> 16;
+   tlast = u1 * v0 + k;
+   w1 = tlast;
+   tlast = u0 * v1 + w1;
+   return (((__uint32_t)tlast) << 16) | ((__uint32_t)w0);
+}
+
+__int32_t __mul32(__int32_t _u, __int32_t _v)
+{
+   __uint32_t u, v, t;
+   __uint16_t u0, u1, v0, v1, k;
+   __uint16_t w0, w1;
+   __uint16_t tlast;
+   u = ((__uint32_t)_u);
+   v = ((__uint32_t)_v);
+   u1 = u >> 16;
+   u0 = u;
+   v1 = v >> 16;
+   v0 = v;
+   t = ((__uint32_t)u0) * ((__uint32_t)v0);
+   w0 = t;
+   k = t >> 16;
+   tlast = u1 * v0 + k;
+   w1 = tlast;
+   tlast = u0 * v1 + w1;
+   return (__int32_t)((((__uint32_t)tlast) << 16) | ((__uint32_t)w0));
+}
+

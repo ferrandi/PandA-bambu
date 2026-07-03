@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -55,9 +55,9 @@
 #include "function_behavior.hpp"
 #include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
 #include "string_manipulation.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
 #include "utility.hpp"
 #include "xml_document.hpp"
 #include "xml_dom_parser.hpp"
@@ -68,7 +68,7 @@
 #include <utility>
 
 TestVectorParser::TestVectorParser(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
-                                   const DesignFlowManagerConstRef _design_flow_manager)
+                                   const DesignFlowManager& _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TEST_VECTOR_PARSER)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -80,17 +80,17 @@ TestVectorParser::ComputeHLSRelationships(const DesignFlowStep::RelationshipType
    HLSRelationships ret;
    switch(relationship_type)
    {
-      case DEPENDENCE_RELATIONSHIP:
+      case(DEPENDENCE_RELATIONSHIP):
       {
          ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::TOP_FUNCTION));
          break;
       }
-      case INVALIDATION_RELATIONSHIP:
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case PRECEDENCE_RELATIONSHIP:
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -107,16 +107,16 @@ bool TestVectorParser::HasToBeExecuted() const
 
 DesignFlowStep_Status TestVectorParser::Exec()
 {
-   HLSMgr->RSim = SimulationInformationRef(new SimulationInformation());
+   HLSMgr->RSim = std::make_unique<SimulationInformation>();
 
    if(parameters->isOption(OPT_testbench_input_file))
    {
-      const auto tb_files = parameters->getOption<CustomSet<std::string>>(OPT_testbench_input_file);
-      if(ends_with(*tb_files.begin(), ".xml"))
+      const auto tb_files = parameters->getOption<std::vector<std::string>>(OPT_testbench_input_file);
+      if(ends_with(tb_files.front(), ".xml"))
       {
          THROW_ASSERT(tb_files.size() == 1, "XML testbench initialization must be in a single file.");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining " + *tb_files.begin());
-         HLSMgr->RSim->test_vectors = ParseXMLFile(*tb_files.begin());
+         HLSMgr->RSim->test_vectors = ParseXMLFile(tb_files.front());
       }
       else
       {
@@ -133,7 +133,9 @@ DesignFlowStep_Status TestVectorParser::Exec()
    }
    else
    {
-      THROW_UNREACHABLE("");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---No testbench information provided, generating simulation driver library only.");
+      return DesignFlowStep_Status::SUCCESS;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
                   "<--Number of input test vectors: " + STR(HLSMgr->RSim->test_vectors.size()));
@@ -168,7 +170,8 @@ std::vector<std::map<std::string, std::string>> TestVectorParser::ParseUserStrin
          const auto temp = string_to_container<std::vector<std::string>>(parameter, "=");
          if(temp.size() != 2)
          {
-            THROW_ERROR("Error in processing --generate-tb arg");
+            THROW_ERROR_USAGE("Invalid --generate-tb argument format. "
+                              "Use comma-separated key=value pairs (example: a=1,b=2).");
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + temp[0] + "=" + temp[1]);
          test_vectors.back()[temp[0]] = temp[1];
@@ -181,11 +184,11 @@ std::vector<std::map<std::string, std::string>> TestVectorParser::ParseUserStrin
 std::vector<std::map<std::string, std::string>>
 TestVectorParser::ParseXMLFile(const std::filesystem::path& input_xml_filename) const
 {
-   const auto CGM = HLSMgr->CGetCallGraphManager();
-   THROW_ASSERT(boost::num_vertices(*(CGM->CGetCallGraph())) != 0, "The call graph has not been computed yet");
+   THROW_ASSERT(HLSMgr->CGetCallGraphManager().GetCallGraph().num_vertices() != 0,
+                "The call graph has not been computed yet");
    const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
    THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
-   const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(top_symbols.front());
+   const auto top_fnode = HLSMgr->get_ir_manager()->GetFunction(top_symbols.front());
    const auto BH = HLSMgr->CGetFunctionBehavior(top_fnode->index)->CGetBehavioralHelper();
 
    if(!std::filesystem::exists(input_xml_filename))
@@ -198,7 +201,7 @@ TestVectorParser::ParseXMLFile(const std::filesystem::path& input_xml_filename) 
 
       for(const auto& function_parameter : BH->GetParameters())
       {
-         if(tree_helper::IsPointerType(function_parameter))
+         if(ir_helper::IsPointerType(function_parameter))
          {
             THROW_UNREACHABLE("Random testbench parameters generation is not available for pointer parameters. Please "
                               "provide a valid testbench XML file.");
@@ -207,7 +210,7 @@ TestVectorParser::ParseXMLFile(const std::filesystem::path& input_xml_filename) 
          const auto param = BH->PrintVariable(function_parameter->index);
 
          auto value = (rand() % 20);
-         if(tree_helper::IsBooleanType(function_parameter))
+         if(ir_helper::IsBooleanType(function_parameter))
          {
             value = value % 2;
          }
@@ -269,7 +272,8 @@ TestVectorParser::ParseXMLFile(const std::filesystem::path& input_xml_filename) 
                }
                else if(!BH->is_a_pointer(function_parameter))
                {
-                  THROW_ERROR("Missing input value for parameter: " + param);
+                  THROW_ERROR_USAGE("Missing input value for parameter '" + param +
+                                    "' in testbench XML. Add the attribute in each <testbench> entry.");
                }
             }
             test_vectors.emplace_back(std::move(test_vector));
@@ -293,6 +297,7 @@ TestVectorParser::ParseXMLFile(const std::filesystem::path& input_xml_filename) 
    {
       std::cerr << "unknown exception" << std::endl;
    }
-   THROW_ERROR("Error parsing the test vectors file " + input_xml_filename.string());
+   THROW_ERROR_USAGE("Error parsing test vectors file '" + input_xml_filename.string() +
+                     "'. Please verify XML syntax and required testbench attributes.");
    return std::vector<std::map<std::string, std::string>>();
 }

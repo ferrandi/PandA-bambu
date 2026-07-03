@@ -12,50 +12,45 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2024 Politecnico di Milano
+ *              Copyright (C) 2015-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
-
 #include "vcd_trace_head.hpp"
 
-// include from HLS/
+#include "allocation_information.hpp"
+#include "exceptions.hpp"
+#include "fu_binding.hpp"
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
-
-// include from HLS/binding/storage_value_information/
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
+#include "ir_node.hpp"
+#include "op_graph.hpp"
 #include "storage_value_information.hpp"
-
-// include from HLS/stg/
-#include "state_transition_graph.hpp"
-#include "state_transition_graph_manager.hpp"
-
-// include from tree/
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
-
-// include from utility/
-#include "exceptions.hpp"
 #include "string_manipulation.hpp"
+#include "technology_node.hpp"
+#include "time_info.hpp"
 
-// include from STL
+#include <algorithm>
 #include <functional>
 #include <utility>
 
@@ -106,7 +101,7 @@ static bool is_binary_string_repr(const std::string& s, unsigned int id, bool on
    return compute_state_id(s, one_hot_fsm_encoding) == id;
 }
 
-static bool string_represents_one_of_the_states(const std::string& val, const CustomOrderedSet<unsigned int>& state_ids,
+static bool string_represents_one_of_the_states(const std::string& val, const std::vector<unsigned int>& state_ids,
                                                 bool one_hot_fsm_encoding)
 {
    if(!is_valid_state_string(val, one_hot_fsm_encoding))
@@ -114,26 +109,114 @@ static bool string_represents_one_of_the_states(const std::string& val, const Cu
       return false;
    }
    const auto id = compute_state_id(val, one_hot_fsm_encoding);
-   return state_ids.count(id);
+   return std::find(state_ids.begin(), state_ids.end(), id) != state_ids.end();
 }
 
-static bool is_exec(const sig_variation& state_var, const DiscrepancyOpInfo& i, bool one_hot_fsm_encoding)
+static unsigned int get_fsm_fun_id(const ir_managerConstRef& TM, const unsigned int op_id)
 {
-   THROW_ASSERT(!i.exec_states.empty(), "no executing states for operation " + STR(i.stg_fun_id) + "_" + STR(i.op_id));
-   return string_represents_one_of_the_states(state_var.value, i.exec_states, one_hot_fsm_encoding);
+   const auto fid = ir_helper::GetFunctionIdFromOpId(TM, op_id);
+   THROW_ASSERT(fid != 0, "op_trace event op id " + STR(op_id) + " has no function context");
+   return fid;
 }
 
-static bool is_start(const sig_variation& state_var, const DiscrepancyOpInfo& i, bool one_hot_fsm_encoding)
+static unsigned int get_ssa_name_node_id(const ir_managerConstRef& TM, const unsigned int op_id)
 {
-   THROW_ASSERT(!i.start_states.empty(), "no starting states for operation " + STR(i.stg_fun_id) + "_" + STR(i.op_id));
-   return string_represents_one_of_the_states(state_var.value, i.start_states, one_hot_fsm_encoding);
+   const auto ssa_id = ir_helper::GetSsaNameNodeIdFromOpId(TM, op_id);
+   THROW_ASSERT(ssa_id != 0, "op_trace event op id " + STR(op_id) + " has no ssa_node");
+   return ssa_id;
+}
+
+static op_timing_info get_op_timing(const HLS_managerConstRef& HLSMgr, const unsigned int fsm_fun_id,
+                                    const unsigned int op_id)
+{
+   const auto FB = HLSMgr->CGetFunctionBehavior(fsm_fun_id);
+   const auto& op_graph = FB->GetOpGraph(FunctionBehavior::FCFG);
+   const auto& op_graph_info = op_graph.CGetGraphInfo();
+   const auto op_it = op_graph_info.ir_node_to_operation.find(op_id);
+   THROW_ASSERT(op_it != op_graph_info.ir_node_to_operation.end(), "cannot find operation for op id " + STR(op_id));
+   const auto statement = op_it->second;
+   const auto hls = HLSMgr->get_HLS(fsm_fun_id);
+   const auto fu_tech_n = hls->allocation_information->get_fu(hls->Rfu->get_assign(statement));
+   const auto op_tech_n = GetPointer<functional_unit>(fu_tech_n)->get_operation(
+       ir_helper::NormalizeTypename(op_graph.CGetNodeInfo(statement).GetOperation()));
+   const auto* oper = GetPointer<operation>(op_tech_n);
+   THROW_ASSERT(oper, "missing operation info for op id " + STR(op_id));
+   op_timing_info timing;
+   timing.is_bounded = oper->is_bounded();
+   timing.n_cycles = timing.is_bounded ? oper->time_m->get_cycles() : 0;
+   return timing;
+}
+
+static op_state_info get_op_state_info(const HLS_managerConstRef& HLSMgr, const unsigned int fsm_fun_id,
+                                       const unsigned int op_id)
+{
+   const auto FB = HLSMgr->CGetFunctionBehavior(fsm_fun_id);
+   const auto& op_graph = FB->GetOpGraph(FunctionBehavior::FCFG);
+   const auto& op_graph_info = op_graph.CGetGraphInfo();
+   const auto op_it = op_graph_info.ir_node_to_operation.find(op_id);
+   THROW_ASSERT(op_it != op_graph_info.ir_node_to_operation.end(), "cannot find operation for op id " + STR(op_id));
+   const auto statement = op_it->second;
+   const auto fsm_info = HLSMgr->get_HLS(fsm_fun_id)->fsm_info;
+   op_state_info info;
+   const auto insert_state = [](std::vector<unsigned int>& states, const unsigned int state_id) {
+      if(std::find(states.begin(), states.end(), state_id) == states.end())
+      {
+         states.push_back(state_id);
+      }
+   };
+   for(const auto& kv : fsm_info->verticesWithData())
+   {
+      const auto& state_data = kv.second;
+      const bool has_start = std::find(state_data.startingOperations.begin(), state_data.startingOperations.end(),
+                                       statement) != state_data.startingOperations.end();
+      const bool has_exec = std::find(state_data.executingOperations.begin(), state_data.executingOperations.end(),
+                                      statement) != state_data.executingOperations.end();
+      const bool has_end = std::find(state_data.endingOperations.begin(), state_data.endingOperations.end(),
+                                     statement) != state_data.endingOperations.end();
+      if(!(has_start || has_exec || has_end))
+      {
+         continue;
+      }
+      const auto state_id = fsm_info->getStateId(kv.first);
+      if(has_start)
+      {
+         insert_state(info.start_states, state_id);
+      }
+      if(has_exec)
+      {
+         insert_state(info.exec_states, state_id);
+      }
+      if(has_end)
+      {
+         insert_state(info.end_states, state_id);
+      }
+   }
+   return info;
+}
+
+static bool is_exec(const sig_variation& state_var, const op_state_info& info,
+                    const unsigned int ASSERT_PARAMETER(fsm_fun_id), const unsigned int ASSERT_PARAMETER(op_id),
+                    bool one_hot_fsm_encoding)
+{
+   THROW_ASSERT(!info.exec_states.empty(), "no executing states for operation " + STR(fsm_fun_id) + "_" + STR(op_id));
+   return string_represents_one_of_the_states(state_var.value, info.exec_states, one_hot_fsm_encoding);
+}
+
+static bool is_start(const sig_variation& state_var, const op_state_info& info,
+                     const unsigned int ASSERT_PARAMETER(fsm_fun_id), const unsigned int ASSERT_PARAMETER(op_id),
+                     bool one_hot_fsm_encoding)
+{
+   THROW_ASSERT(!info.start_states.empty(), "no starting states for operation " + STR(fsm_fun_id) + "_" + STR(op_id));
+   return string_represents_one_of_the_states(state_var.value, info.start_states, one_hot_fsm_encoding);
 }
 
 #if HAVE_ASSERTS
-static bool is_end(const sig_variation& state_var, const DiscrepancyOpInfo& i, bool one_hot_fsm_encoding)
+static bool is_end(const sig_variation& state_var, const op_state_info& info,
+                   const unsigned int ASSERT_PARAMETER(fsm_fun_id), const unsigned int ASSERT_PARAMETER(op_id),
+                   bool one_hot_fsm_encoding)
 {
-   THROW_ASSERT(!i.end_states.empty(), "no ending states for operation " + STR(i.stg_fun_id) + "_" + STR(i.op_id));
-   return string_represents_one_of_the_states(state_var.value, i.end_states, one_hot_fsm_encoding);
+   THROW_ASSERT(!info.end_states.empty(), "no ending states for operation " + STR(fsm_fun_id) + "_" + STR(op_id));
+   return string_represents_one_of_the_states(state_var.value, info.end_states, one_hot_fsm_encoding);
 }
 #endif
 
@@ -152,18 +235,21 @@ static bool var_is_later_or_equal(const sig_variation& v, const unsigned long lo
    return v >= time;
 }
 
-vcd_trace_head::vcd_trace_head(const DiscrepancyOpInfo& op, std::string signame, const std::list<sig_variation>& fv,
+vcd_trace_head::vcd_trace_head(const unsigned int op, std::string signame, const std::list<sig_variation>& fv,
                                const std::list<sig_variation>& ov, const std::list<sig_variation>& sv,
                                unsigned int init_state_id, unsigned long long clock_p,
-                               const HLS_managerConstRef _HLSMgr, const tree_managerConstRef _TM,
+                               const HLS_managerConstRef _HLSMgr, const ir_managerConstRef _TM,
                                const bool _one_hot_fsm_encoding)
     : state(uninitialized),
       failed(fail_none),
       one_hot_fsm_encoding(_one_hot_fsm_encoding),
-      op_info(op),
-      is_phi(_TM->GetTreeNode(op.op_id)->get_kind() == gimple_phi_K),
-      is_in_reg(_HLSMgr->get_HLS(op_info.stg_fun_id)
-                    ->storage_value_information->is_a_storage_value(nullptr, op.ssa_name_node_id)),
+      op_id(op),
+      fsm_fun_id(get_fsm_fun_id(_TM, op)),
+      op_timing(get_op_timing(_HLSMgr, fsm_fun_id, op)),
+      op_states(get_op_state_info(_HLSMgr, fsm_fun_id, op)),
+      is_phi(_TM->GetIRNode(op)->get_kind() == phi_stmt_K),
+      is_in_reg(_HLSMgr->get_HLS(fsm_fun_id)
+                    ->storage_value_information->is_a_storage_value(0, get_ssa_name_node_id(_TM, op), 0)),
       HLSMgr(_HLSMgr),
       TM(_TM),
       initial_state_id(init_state_id),
@@ -183,7 +269,7 @@ vcd_trace_head::vcd_trace_head(const DiscrepancyOpInfo& op, std::string signame,
       exec_times_in_current_state(0),
       consecutive_state_executions(0),
       has_been_initialized(false),
-      fsm_has_a_single_state(boost::num_vertices(*_HLSMgr->get_HLS(op.stg_fun_id)->STG->CGetStg()) == 3),
+      fsm_has_a_single_state(_HLSMgr->get_HLS(fsm_fun_id)->fsm_info->getNumberOfStates(false) == 1),
       start_state_is_initial(false)
 {
 }
@@ -229,12 +315,12 @@ void vcd_trace_head::unbounded_find_end_time()
    if(exec_times_in_current_state == consecutive_state_executions - 1)
    {
       auto fsm_es_it = fsm_ss_it;
-      THROW_ASSERT(is_end(*fsm_es_it, op_info, one_hot_fsm_encoding),
-                   "unbounded operation " + STR(op_info.stg_fun_id) + "_" + STR(op_info.op_id) +
-                       " with starting state " + fsm_es_it->value + " which is not ending\n");
+      THROW_ASSERT(is_end(*fsm_es_it, op_states, fsm_fun_id, op_id, one_hot_fsm_encoding),
+                   "unbounded operation " + STR(fsm_fun_id) + "_" + STR(op_id) + " with starting state " +
+                       fsm_es_it->value + " which is not ending\n");
       THROW_ASSERT(not is_phi, "\n/--------------------------------------------------------------------\n"
                                "|  operation: " +
-                                   STR(op_info.stg_fun_id) + "_" + STR(op_info.op_id) +
+                                   STR(fsm_fun_id) + "_" + STR(op_id) +
                                    "\n"
                                    "|  is UNBOUNDED and is a phi\n"
                                    "\\--------------------------------------------------------------------\n");
@@ -248,8 +334,8 @@ void vcd_trace_head::unbounded_find_end_time()
        * until we find that the next is not in execution or it is a new
        * starting state
        */
-      if(is_exec(*std::next(fsm_es_it), op_info, one_hot_fsm_encoding) and
-         not is_start(*std::next(fsm_es_it), op_info, one_hot_fsm_encoding))
+      if(is_exec(*std::next(fsm_es_it), op_states, fsm_fun_id, op_id, one_hot_fsm_encoding) and
+         not is_start(*std::next(fsm_es_it), op_states, fsm_fun_id, op_id, one_hot_fsm_encoding))
       {
          fsm_es_it++;
          if(fsm_es_it == fsm_end)
@@ -258,15 +344,15 @@ void vcd_trace_head::unbounded_find_end_time()
             failed = no_end_state;
             return;
          }
-         THROW_ASSERT(is_end(*fsm_es_it, op_info, one_hot_fsm_encoding),
-                      "dummy state of unbounded operation " + STR(op_info.stg_fun_id) + "_" + STR(op_info.op_id) +
+         THROW_ASSERT(is_end(*fsm_es_it, op_states, fsm_fun_id, op_id, one_hot_fsm_encoding),
+                      "dummy state of unbounded operation " + STR(fsm_fun_id) + "_" + STR(op_id) +
                           " must be ending state\n");
       }
       op_end_time = std::next(fsm_es_it)->time_stamp;
    }
    else
    {
-      THROW_ASSERT(consecutive_state_executions > 1, STR(op_info.op_id));
+      THROW_ASSERT(consecutive_state_executions > 1, STR(op_id));
       op_end_time = op_start_time + clock_period;
    }
 }
@@ -278,7 +364,9 @@ void vcd_trace_head::update()
    {
       ++fsm_ss_it;
    }
-   const auto is_starting_state = [&](const sig_variation& s) { return is_start(s, op_info, one_hot_fsm_encoding); };
+   const auto is_starting_state = [&](const sig_variation& s) {
+      return is_start(s, op_states, fsm_fun_id, op_id, one_hot_fsm_encoding);
+   };
    const auto fsm_prev_ss_it = fsm_ss_it;
    fsm_ss_it = std::find_if(fsm_ss_it, fsm_end, is_starting_state);
    if(fsm_ss_it == fsm_end)
@@ -298,7 +386,7 @@ void vcd_trace_head::update()
     *    stays until the start port rises
     * 2) when the state has a self edge. in such a case multiple execution
     *    of the same operation can be performed without variation in the
-    *    vcd signal _present_state.
+    *    vcd signal present_state.
     */
    op_start_time = fsm_ss_it->time_stamp;
    start_state_is_initial = is_binary_string_repr(fsm_ss_it->value, initial_state_id, one_hot_fsm_encoding);
@@ -330,10 +418,10 @@ void vcd_trace_head::update()
    /*
     * now we found the correct starting time for the current operation.
     * but we have to analyze the output signal at the end of the operation
-    * in order to perform discrepancy analysis. so we have to dectect the
+    * in order to perform discrepancy analysis. so we have to detect the
     * time when the current execution of this operation ends.
     */
-   if(op_info.is_bounded_op)
+   if(op_timing.is_bounded)
    {
       /*
        * if the operation is bounded the ending state does not matter, because
@@ -341,32 +429,13 @@ void vcd_trace_head::update()
        * that we know its execution time
        */
       /* default calculation of the end time */
-      if(op_info.n_cycles == 0)
+      if(op_timing.n_cycles == 0)
       {
          op_end_time = op_start_time + clock_period;
       }
       else
       {
-         op_end_time = op_start_time + ((op_info.n_cycles) * clock_period);
-      }
-      /* handle duplicated operations in more than one state */
-      if(is_in_reg && is_phi)
-      {
-         const auto gp = GetPointer<const gimple_phi>(TM->GetTreeNode(op_info.op_id));
-         const auto state_id = compute_state_id(fsm_ss_it->value, one_hot_fsm_encoding);
-         const auto state_info = HLSMgr->get_HLS(op_info.stg_fun_id)->STG->CGetStg()->CGetStateInfo(state_id);
-         if(state_info->is_duplicated && !state_info->isOriginalState && !state_info->all_paths)
-         {
-            for(const auto& def_edge : gp->CGetDefEdgesList())
-            {
-               if(state_info->moved_op_def_set.find(def_edge.first->index) != state_info->moved_op_def_set.end() or
-                  state_info->moved_op_use_set.find(op_info.ssa_name_node_id) != state_info->moved_op_use_set.end())
-               {
-                  op_end_time += clock_period;
-                  break;
-               }
-            }
-         }
+         op_end_time = op_start_time + ((op_timing.n_cycles) * clock_period);
       }
    }
    else
@@ -378,7 +447,7 @@ void vcd_trace_head::update()
 void vcd_trace_head::detect_new_start_end_times()
 {
    op_start_time += clock_period;
-   if(op_info.is_bounded_op)
+   if(op_timing.is_bounded)
    {
       op_end_time += clock_period;
    }
@@ -395,7 +464,7 @@ void vcd_trace_head::advance()
       case uninitialized:
       case running:
       {
-         THROW_ASSERT(state != uninitialized or not has_been_initialized, STR(op_info.op_id));
+         THROW_ASSERT(state != uninitialized or not has_been_initialized, STR(op_id));
          update();
          if(state == init_fail)
          {

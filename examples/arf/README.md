@@ -16,4 +16,4 @@ R. Jain, "High-Level Area-Delay Prediction with Application to Behavioral Synthe
 This directory includes a simple example of RTL synthesis and simulation of the ARF benchmark.
 
 Bambu HLS generates several dot files by passing the option `--print-dot`; in this case you may pass the option to the `generic_arf.sh` script as `--c=--print-dot`.
-The scheduling of the arf function is stored in file _HLS_output/dot/arf/HLS_scheduling.dot_ while the FSM of the arf function annotated with the C statements is stored in file _HLS_output/dot/arf/HLS_STGraph.dot_.
+The scheduling of the arf function is stored in file _HLS_output/dot/arf/HLS_scheduling.dot_ while the FSM of the arf function annotated with the C statements is stored in file _HLS_output/dot/arf/HLS_FSM.dot_.

@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -41,9 +41,6 @@
  * - Olivier Coudert, "Exact Coloring of Real-Life Graphs is Easy". DAC 1997.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef MAXCLIQUE_DSATUR_COLORING_HPP
@@ -64,7 +61,7 @@
 #include <boost/serialization/array_wrapper.hpp>
 #endif
 #include <algorithm>
-#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_sparse.hpp>
 #include <cassert>
 #include <vector>
 
@@ -215,8 +212,7 @@ namespace boost
       size_type BestColoring;
       std::vector<size_type> ColorClass;
       std::vector<bool> valid;
-      //, boost::numeric::ublas::row_major, std::vector<size_type>
-      typename boost::numeric::ublas::matrix<size_type> ColorAdj;
+      typename boost::numeric::ublas::mapped_matrix<size_type> ColorAdj;
       std::vector<size_type> ColorCount;
       std::vector<size_type> DegreeCount;
       size_type& lb;
@@ -262,7 +258,6 @@ namespace boost
             heap_container[iheap] = i;
             iheap++;
          }
-         boost::numeric::ublas::noalias(ColorAdj) = boost::numeric::ublas::zero_matrix<size_type>(_num_node, _num_node);
       }
       ~maxclique_dsatur_coloring_helper()
       {

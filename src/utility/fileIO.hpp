@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -37,15 +37,12 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * @author Michele Fiorito <michele.fiorito@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef FILEIO_HPP
 #define FILEIO_HPP
 
-#include "gzstream.hpp"
+#include "gzstream/gzstream.hpp"
 #include "refcount.hpp"
 
 #include <filesystem>
@@ -120,38 +117,14 @@ inline void CopyStdout(const std::string& filename)
    fclose(filese);
 }
 
-inline std::string relocate_compiler_path(const std::string& path, bool resolve_path = false)
-{
-   if(getenv("MINGW_INST_DIR"))
-   {
-      if(resolve_path)
-      {
-         const auto app_prefix = getenv("MINGW_INST_DIR");
-         return app_prefix + path;
-      }
-      return "$MINGW_INST_DIR" + path;
-   }
-   else if(getenv("APPDIR"))
-   {
-      if(resolve_path)
-      {
-         const auto app_prefix = getenv("APPDIR");
-         return app_prefix + path;
-      }
-      return "$APPDIR" + path;
-   }
-#ifdef _WIN32
-   else
-   {
-      return "c:/msys64/" + path;
-   }
-#else
-   else
-   {
-      return path;
-   }
-#endif
-}
+/**
+ * @brief Convert relative path to install prefix to absolute path
+ *
+ * @param path Relative path to install prefix
+ * @param relocatable Leave unresolved environment variables in computed path
+ * @return std::filesystem::path Absolute input path
+ */
+std::filesystem::path relocate_install_path(const std::filesystem::path& path, bool relocatable = false);
 
 /**
  * Copy file; if target already exist, overwrite
@@ -182,18 +155,55 @@ inline void CopyFile(std::filesystem::path file_source, std::filesystem::path fi
  * @param system_command is the  to be executed
  * @param host_exec specifies if the executable is expected to be in the host system or distributed within the AppImage
  * @param output is the file where output has to be saved
- * @param type specifies which streams have to be saved; possible values are 0 (none), 1 (stdout), 2 (stderr), 3(stdout
- * and stderr)
- * @param background specifies if the command has to be executed in background
- * @param timeout is the timeout for the command (in minutes)
- * @return the value returned by the shell
+ * @return int return value of system function call (error code or 'wait status' of the executed process)
  */
-int PandaSystem(const ParameterConstRef Param, const std::string& system_command, bool host_exec = true,
-                const std::filesystem::path& output = "", const unsigned int type = 3, const bool background = false,
-                const size_t timeout = 0);
+int PandaSystem(const ParameterConstRef& Param, const std::string& system_command, bool host_exec = true,
+                const std::filesystem::path& output = "");
+
+/**
+ * Return true if wstatus corresponds to an error
+ * @param wstatus is the return value of PandaSystem
+ * @return true if wstatus corresponds to an error
+ */
+bool IsError(int wstatus);
 
 bool NaturalVersionOrder(const std::filesystem::path& _x, const std::filesystem::path& _y);
 
 std::filesystem::path unique_path(const std::filesystem::path& model);
+
+inline bool is_subpath(const std::filesystem::path& path, const std::filesystem::path& base)
+{
+   const auto rel = std::filesystem::relative(path, base);
+   return !rel.empty() && rel.native()[0] != '.';
+}
+
+inline std::filesystem::path proximate_if_subpath(const std::filesystem::path& p, const std::filesystem::path& base)
+{
+   if(is_subpath(p, base))
+   {
+      return p.lexically_proximate(base);
+   }
+   return std::filesystem::absolute(p);
+}
+
+inline bool is_elf(const std::filesystem::path& path)
+{
+   if(!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path))
+   {
+      return false;
+   }
+
+   std::ifstream file(path, std::ios::binary);
+   if(!file.is_open())
+   {
+      return false;
+   }
+
+   uint32_t magicNumber = 0;
+   file.read(reinterpret_cast<char*>(&magicNumber), sizeof(magicNumber));
+
+   // ELF magic number in little-endian: 0x464C457F ('F' 'L' 'E' 0x7F)
+   return magicNumber == 0x464C457F;
+}
 
 #endif

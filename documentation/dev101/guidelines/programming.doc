@@ -8,11 +8,11 @@
  *
  *             ***********************************************
  *                              PandA Project 
- *                     URL: http://panda.dei.polimi.it
+ *                     URL: https://github.com/ferrandi/PandA-bambu
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2024 Politecnico di Milano
+ *              Copyright (c) 2004-2026 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -36,10 +36,11 @@
 \section programming_intro Introduction
 In this document we plan to shortly explain some useful guidelines to help you writing "good" code into the PandA Project. The main features which will be explained are:
 - \ref prog_style
+- \ref clang_format
 - \ref special_function
 - \ref check_errors
 - \ref header_including
-- \ref refcounts_how_to
+- \ref memory_management
 - \ref debugging_statements
 
 \section prog_style Coding Style
@@ -52,6 +53,9 @@ for(int i = 0; i < n; i++)
 }
 \endverbatim
 - Indentation must be enforced by the use of 3 spaces, not the tabulator character.
+- All formatting conventions (brace style, column width, include ordering) are enforced by
+  \c .clang-format (Allman braces, 120-column lines, sorted includes). Run \c clang-format
+  (version 11 or newer) on touched files before committing.
 - Doxygen (see \ref dev_guide_documentation) comments of classes and methods must be written as:
 \verbatim
 /**
@@ -83,28 +87,32 @@ class MyClass
 \endverbatim
 Note the use of "this->attr1" and not simply "attr1".
 
+\section clang_format Automated Formatting
+
+The project ships a version-controlled \c .clang-format that enforces:
+- Allman-style braces (opening brace on a new line)
+- 3-space indentation
+- 120-column line width
+- Sorted \#include directives
+
+Always run \c clang-format (v11+) on modified files before committing:
+\verbatim
+clang-format-11 -i path/to/file.hpp path/to/file.cpp
+\endverbatim
+The \c .clangd configuration references the same project and can auto-format on save.
+
 \section special_function C++ Specific Functions
-We would like to use pure C++ instructions and coding style, hence functions such as \c printf, \c sprintf or \c atoi shouldn't be used. Most of the replacements for these functions can be found in the STL standard C++ library (http://www.sgi.com/tech/stl/) or in the BOOST library (http://www.boost.org/); for example:
--\c printf can be replaced by the \c << operator: in order to write something to the standard output you do:
-\verbatim
-int a = 5;
-std::cout << "Writing to stdout the number " << a << std::endl;
-\endverbatim
-- functions to convert a type into something else can be replaces by the boost::lexical_cast method; for example to convert an integer number into a string you may do:
-\verbatim
-int a = 5;
-std::string newString(boost::lexical_cast<std::string>(a));
-\endverbatim
+The project now targets C++23. Use idiomatic C++ over C-style functions: prefer \c std::cout / \c std::ostringstream over \c printf, and \c std::to_string or \c std::format (C++23) over \c sprintf / \c atoi. The \c boost::lexical_cast method is still available and commonly used in legacy PandA code; prefer \c std::to_string for new code.
 
 \section check_errors Error Checking
 Using exceptions and assertion to check errors is a good programming habit; you are strongly advised to used exceptions whenever you feel in order to signal that a method terminated because of an error or because of a particular condition. You may define your own exceptions and most of the time you should do this. Anyway PandA provides two mechanisms you may use to signal that en error occurred and that the program must terminate:
 -# \c THROW_ERROR(msg) is a macro included in src/utility/exceptions.hpp; when used, it terminates the program writing the "msg" string to the screen.
--# \c THROW_ASSERT(cond, msg) is a macro included in src/utility/exceptions.hpp; it is used to check that the boolean condition "cond" is true, otherwise the program termiantes and "msg" is written to the screen.
+-# \c THROW_ASSERT(cond, msg) is a macro included in src/utility/exceptions.hpp; it is used to check that the boolean condition "cond" is true, otherwise the program terminates and "msg" is written to the screen.
 
-Yuo may also write your own exception types, but first of all give a look in src/exceptions: this directory contains the definition of many common exceptions which are used throughout PandA, so you may find what you need here. Moreover, when defining you own exceptions, you may used the ones in src/exceptions as example.
+You may also write your own exception types, but first of all give a look in src/exceptions: this directory contains the definition of many common exceptions which are used throughout PandA, so you may find what you need here. Moreover, when defining your own exceptions, you may use the ones in src/exceptions as example.
 
 \section header_including How to Deal with Header Files
-In order to speed-up the compilation and in order to avoid some weird errors that sometimes happen, you should try to put all the \c #include directives in the .cpp file and not in the .hpp. Instead of the inclusion in the hpp file you can use forward declarations. An example to make the concept clearer; lets suppose I have file1.hpp and file1.cpp which need the declaration of the class contained in file2.hpp:
+To reduce compilation times and avoid fragile dependency cycles, prefer putting all \c \#include directives in the .cpp file and use forward declarations in the .hpp. The project uses \c .clang-format with sorted includes, so include ordering is automated. An example to make the concept clearer; lets suppose I have file1.hpp and file1.cpp which need the declaration of the class contained in file2.hpp:
 \verbatim
 file2.hpp:
 
@@ -208,7 +216,7 @@ file1.cpp:
 \endverbatim
 In this situation we are forced to include "file2.hpp" in "file1.hpp" file: this because in "file1.hpp" we don't simply use the declaration of class2 but also the details about its internal implementation (i.e. the knowledge of the method \c doSomething).
 
-Regarding header files, you know that at the beginning of the file you have to used an \c #ifndef clause (this is done in order to avoid multiple compilations of the definitions contained in the file). The convention used is that the argument of the \c #ifndef must be the upper case version of the name of the file itself. For example for file "nameExample.hpp":
+Regarding header files, you know that at the beginning of the file you have to used an \c \#ifndef clause (this is done in order to avoid multiple compilations of the definitions contained in the file). The convention used is that the argument of the \c \#ifndef must be the upper case version of the name of the file itself. For example for file "nameExample.hpp":
 \verbatim
 #ifndef NAMEEXAMPLE_HPP
 #define NAMEEXAMPLE_HPP
@@ -218,38 +226,66 @@ Regarding header files, you know that at the beginning of the file you have to u
 #endif
 \endverbatim
 
-\section refcounts_how_to Using Refcounts instead of Pointers
-It is common knowledge that it is possible to easily create pointers to C++ objects (using the \c new keyword), and that these pointers can be passed around in your program. The main limitation of this approach regards the fact that the developer must remember to deallocate these dynamically created objects, no garbage collection is performed (as opposed to what happens with the Java language). PandA uses a special a trick to implements a kind of garbage collection: the \b refcount; if you are using the boost library with a version greater than 1.33 then the refcount mechanism inside boost is automatically enabled, otherwise you will be using the library contained in src/utility/refcount.hpp (actually all the developers must include in their files src/utility/refcount.hpp: then the file itself decides whether it is appropriate to use the boost library or not).
+\section memory_management Ownership and Smart Pointers
 
-This is a simple example on the utilization of refcounts:
+The project targets C++23. Prefer standard smart pointers for ownership:
+- \c std::unique_ptr for exclusive ownership
+- \c std::shared_ptr when ownership must be shared across multiple owners
+- Raw pointers (non-owning) only for borrowing / observing references
+
+Legacy PandA code uses a custom \b refcount wrapper (defined in \c src/utility/refcount.hpp
+and conditionally backed by Boost when available). The \c REF_FORWARD_DECL(className)
+macro is required in .hpp files when the declaration wraps a type into refcount.
+
+For new code, prefer \c std::unique_ptr / \c std::shared_ptr. Only introduce custom refcount
+where a legacy dependency requires it or when a custom allocator strategy is needed.
+
+Example with smart pointers:
 \verbatim
-#include "refcount.hpp"
+#include <memory>
 
-int main()
-{
-   //Creation of a dynamic object
-   class1 *dynObject = new class1();
-
-   //Wrapping of the object into a refcount
-   refcount<class1> dynObjectRef(dynObject);
-
-   //Utilization of the refcount
-   dynObjectRef->oneMethod();
-}
+std::unique_ptr<class1> owner = std::make_unique<class1>();
+std::shared_ptr<class1> shared = std::make_shared<class1>();
 \endverbatim
 
-Note that in case you use refcounts, the forward declaration (technique seen in the previous paragraph) changes a bit: using "class className;" for the forward declaration may not be enough, it your code uses refcounts you need to substitute "class className;" with "REF_FORWARD_DECL(className);".
+\section debugging_statements Debug Statements
 
-<B>Wherever it is possible you should use refcounts instead of pointers to objects.</B>
+Debug helpers live in \c src/utility/dbgPrintHelper.hpp. The preferred macros are:
+- \c INDENT_DBG_MEX — respects the global indentation; automatically indents child lines
+- \c PRINT_DBG_MEX — prints at the current indentation level without structural changes
 
-\section debugging_statements Debugging Statements
-It is important to often insert in your code debugging statements, which prints useful information about the state of your program; all the helper mechanisms which can be used for this purpose are contained in file "dbgPrintHelper.hpp". So far five verbosity levels are defined, the lowest the less verbose, the highest the most. You may used the \c PRINT_DBG_MEX macro to print your messages. Note that it may happen that the debugging statements you want to used are something more than a mere message: you may then insert your own debug instructions in the code, but make sure they are inserted into a "#ifndef NDEBUG" statement: this way, it the variable NDEBUG is defines (so if we are producing a release of the code), no debug statement is inserted and the code can run faster. For example
+Verbosity levels (lowest → highest):
+\verbatim
+DEBUG_LEVEL_NORMAL
+DEBUG_LEVEL_VERBOSE
+DEBUG_LEVEL_PEDANTIC
+\endverbatim
+
+For multi-line debug output that respects indentation hierarchy, use the \c INDENT_DBG_MEX
+pattern with \c "-->" and \c "<--" markers (the macro tracks indentation level
+internally):
+\verbatim
+INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debugLevel, "-->Analyzing state " + stateName);
+// ... detailed logging ...
+INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debugLevel, "<--Analyzed state " + stateName);
+\endverbatim
+
+Child lines that should align beneath the current level use a \c "---" prefix:
+\verbatim
+INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debugLevel, "---Child detail 1");
+INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debugLevel, "---Child detail 2");
+\endverbatim
+
+Do not modify the global \c indentation variable directly. Always balance \c "-->" with a
+matching \c "<--" on every exit path so that indentation returns to its previous value.
+
+For simple conditional debug output, wrap in \c #ifndef NDEBUG to skip in release builds:
 \verbatim
 #ifndef NDEBUG
 if(this->debugLevel >= DEBUG_LEVEL_PEDANTIC)
 {
    for(int i = 0; i < this->numFunctions; i++)
-      this->taskGraph[i]->writeDot((std::string("TaskGraph") + boost::lexical_cast<std::string>(i)).c_str());
+      this->taskGraph[i]->writeDot((std::string("TaskGraph") + std::to_string(i)).c_str());
 }
 #endif
 \endverbatim

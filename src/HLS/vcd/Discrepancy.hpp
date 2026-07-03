@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2024 Politecnico di Milano
+ *              Copyright (C) 2015-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -40,22 +40,13 @@
 #define DISCREPANCY_HPP
 
 #include "Parameter.hpp"
-
-// include from HLS/vcd/
 #include "UnfoldedCallGraph.hpp"
-
-// includes from parser/discrepancy/
-#include "DiscrepancyOpInfo.hpp"
-#include "vcd_parser.hpp"
-
-// includes from tree/
-#include "tree_node.hpp"
-
-// includes from utility/
-#include "refcount.hpp"
-
 #include "custom_map.hpp"
 #include "custom_set.hpp"
+#include "ir_node.hpp"
+#include "refcount.hpp"
+#include "vcd_parser.hpp"
+
 #include <string>
 
 REF_FORWARD_DECL(structural_manager);
@@ -71,9 +62,6 @@ struct CallSitesInfo
    /// Set of taken addresses
    CustomUnorderedSet<unsigned int> taken_addresses;
 };
-
-using CallSitesInfoRef = refcount<CallSitesInfo>;
-using CallSitesInfoConstRef = refcount<const CallSitesInfo>;
 
 struct HWDiscrepancyInfo
 {
@@ -96,7 +84,7 @@ struct HWDiscrepancyInfo
     * These edges are StateTransition edges of the StateTransitionGraph of
     * the associated function.
     */
-   CustomUnorderedMap<unsigned int, UnorderedSetStdStable<EdgeDescriptor>> fu_id_to_reset_edges;
+   CustomUnorderedMap<unsigned int, UnorderedSetStdStable<UnfoldedCallGraph::edge_descriptor>> fu_id_to_reset_edges;
 
    /**
     * Maps every function ID to the bitsize of the epp trace that is
@@ -119,22 +107,19 @@ struct HWDiscrepancyInfo
    CustomUnorderedSet<unsigned int> fu_id_control_flow_skip;
 };
 
-using HWDiscrepancyInfoRef = refcount<HWDiscrepancyInfo>;
-using HWDiscrepancyInfoConstRef = refcount<const HWDiscrepancyInfo>;
-
 struct Discrepancy
 {
    /// Reference to a struct holding info on the call sites
-   CallSitesInfoRef call_sites_info;
+   CallSitesInfo call_sites_info;
 
    /// Reference to a struct holding info on the control flow traces for hw discrepancy analysis
-   HWDiscrepancyInfoRef hw_discrepancy_info;
+   HWDiscrepancyInfo hw_discrepancy_info;
 
    /// Reference to the unfolded call graph used for the discrepancy analysis
    UnfoldedCallGraph DiscrepancyCallGraph;
 
    /// UnfoldedVertexDescriptor of the root of the DiscrepancyCallGraph
-   UnfoldedVertexDescriptor unfolded_root_v;
+   UnfoldedCallGraph::vertex_descriptor unfolded_root_v{UnfoldedCallGraph::null_vertex()};
 
    /**
     * A map to store the vcd signals to be dumped. The key is the scope, and
@@ -149,26 +134,26 @@ struct Discrepancy
    CustomUnorderedMap<unsigned int, std::string> opid_to_outsignal;
 
    /// Map every vertex of the UnfoldedCallGraph to a scope in HW
-   CustomUnorderedMap<UnfoldedVertexDescriptor, std::string> unfolded_v_to_scope;
+   CustomUnorderedMap<UnfoldedCallGraph::vertex_descriptor, std::string> unfolded_v_to_scope;
 
    /// Map every fun_id to the set of HW scopes of the functional modules
    CustomUnorderedMap<unsigned int, CustomOrderedSet<std::string>> f_id_to_scope;
 
    /**
-    * Set of tree nodes representing the ssa_name to be skipped in discrepancy analysis
+    * Set of IR nodes representing the ssa_node to be skipped in discrepancy analysis
     */
-   TreeNodeSet ssa_to_skip;
+   IRNodeSet ssa_to_skip;
 
    /**
-    * Set of tree nodes. SSA in this set must not be checked in the
+    * Set of IR nodes. SSA in this set must not be checked in the
     * discrepancy analysis if they are also marked as addresses.
     */
-   TreeNodeSet ssa_to_skip_if_address;
+   IRNodeSet ssa_to_skip_if_address;
 
    /**
-    * Set of tree nodes representing the ssa_name to be treated as addresses in discrepancy analysis
+    * Set of IR nodes representing the ssa_node to be treated as addresses in discrepancy analysis
     */
-   TreeNodeSet address_ssa;
+   IRNodeSet address_ssa;
 
    /**
     * Map a discrepancy info to the list of pairs representing the
@@ -177,7 +162,7 @@ struct Discrepancy
     * string representation assigned by the operation identified by the
     * primary key.
     */
-   std::map<DiscrepancyOpInfo, std::list<std::pair<uint64_t, std::string>>> c_op_trace;
+   std::map<unsigned int, std::list<std::pair<uint64_t, std::string>>> c_op_trace;
 
    /**
     * This contains the control flow traces gathered from software execution.
@@ -203,19 +188,18 @@ struct Discrepancy
    /// name of the file that contains the c trace to parse
    std::string c_trace_filename;
 
-   unsigned long long n_total_operations = 0;
+   unsigned long long n_total_operations{0};
 
-   unsigned long long n_checked_operations = 0;
+   unsigned long long n_checked_operations{0};
 
-   Discrepancy()
-       : call_sites_info(CallSitesInfoRef(new CallSitesInfo())),
-         hw_discrepancy_info(HWDiscrepancyInfoRef(new HWDiscrepancyInfo())),
-         DiscrepancyCallGraph(GraphInfoRef(new GraphInfo())){};
+   Discrepancy() : call_sites_info(), hw_discrepancy_info(), DiscrepancyCallGraph()
+   {
+   }
 
    void clear()
    {
-      call_sites_info.reset(new CallSitesInfo);
-      DiscrepancyCallGraph = UnfoldedCallGraph(GraphInfoRef(new GraphInfo()));
+      call_sites_info = CallSitesInfo();
+      DiscrepancyCallGraph = UnfoldedCallGraph();
       unfolded_root_v = {};
       selected_vcd_signals.clear();
       opid_to_outsignal.clear();

@@ -1,0 +1,36 @@
+This copyright notice is intended for the following libraries
+distributed within the PandA Bambu HLS release:
+  - lib/panda/clang-<version>/ASTAnalyzer.so
+  - lib/panda/clang-<version>/dumpBambuIrEmpty.so
+  - lib/panda/clang-<version>/dumpBambuIrSSA.so
+  - lib/panda/clang-<version>/dumpBambuIrSSACpp.so
+  - lib/panda/clang-<version>/expandMemOps.so
+  - lib/panda/clang-<version>/opt_customSROA.so
+  - lib/panda/clang-<version>/customSROA.so
+  - lib/panda/clang-<version>/opt_ASTAnalyzer.so
+  - lib/panda/clang-<version>/opt_dumpBambuIrEmpty.so
+  - lib/panda/clang-<version>/opt_dumpBambuIrSSA.so
+  - lib/panda/clang-<version>/opt_dumpBambuIrSSACpp.so
+  - lib/panda/clang-<version>/opt_expandMemOps.so
+  - lib/panda/clang-<version>/opt_topfname.so
+  - lib/panda/clang-<version>/topfname.so
+
+The PandA/Bambu Clang plugins are a collection of Clang/LLVM plugins based
+on proprietary work in addition to LLVM, modified and compiled to fit specific 
+requirements for the purpose of the PandA/Bambu HLS software. A copy of the
+Apache License, Version 2.0, with BAMBU exceptions is provided in this
+directory.
+
+The following copyright notice applies to those portions of the library
+based on proprietary work:
+
+(1)
+    Copyright (C) 2018-2026 Politecnico di Milano
+    SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
+    Licensed under the Apache License, Version 2.0, with BAMBU exceptions
+    stated in the LICENSE-2.0e file.
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.

@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -35,9 +35,6 @@
  * @brief Analysis step creating the control flow graph for the operations.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef OPERATIONS_CFG_COMPUTATION_HPP
@@ -49,25 +46,17 @@
 #include <list>
 #include <string>
 
-/**
- * @name forward declarations
- */
-//@{
 REF_FORWARD_DECL(operations_cfg_computation);
 REF_FORWARD_DECL(operations_graph_constructor);
-REF_FORWARD_DECL(tree_manager);
-REF_FORWARD_DECL(tree_node);
-//@}
-//
+REF_FORWARD_DECL(ir_manager);
+REF_FORWARD_DECL(ir_node);
+
 /**
  * Compute the control flow graph for the operations.
  */
 class operations_cfg_computation : public FunctionFrontendFlowStep
 {
  private:
-   /// relation between label declaration and first statement id
-   std::map<unsigned int, std::string> label_decl_map;
-
    /// relation between basic block and first statement id
    std::map<unsigned int, std::string> first_statement;
 
@@ -78,12 +67,12 @@ class operations_cfg_computation : public FunctionFrontendFlowStep
    std::string actual_name;
 
    /**
-    * Return the name of the first node given a tree node.
-    * @param tn is the tree node.
+    * Return the name of the first node given an IR node.
+    * @param tn is the IR node.
     * @param f_name is the name of the function of the node we are analyzing
     * @return the name of the first node
     */
-   std::string get_first_node(const tree_nodeRef& tn, const std::string& f_name) const;
+   std::string get_first_node(const ir_nodeRef& tn, const std::string& f_name) const;
 
    /**
     * Clean the list of start nodes
@@ -112,56 +101,30 @@ class operations_cfg_computation : public FunctionFrontendFlowStep
     * Connect start_node with the next node.
     * @param ogc is the operation graph constructor used to add the edges.
     * @param next is the ending node of the edge that must be added to g.
-    * @param true_edge when it is true the control edge is the true branch of an if then else statement.
-    * @param false_edge when it is true the control edge is the false branch of an if then else statement.
-    * @param nodeid is meaningful only in case true_edge and false_edge are both true and the control edge is associated
-    * with a switch statement.
     */
-   void connect_start_nodes(const operations_graph_constructorRef ogc, const std::string& next, bool true_edge = false,
-                            bool false_edge = false, unsigned int nodeid = 0);
+   void connect_start_nodes(const std::unique_ptr<operations_graph_constructor>& ogc, const std::string& next);
 
    /**
-    * Builds recursively the operation for a given tree node. We assume a one to one mapping between nodeids and
+    * Builds recursively the operation for a given IR node. We assume a one to one mapping between nodeids and
     * vertices
-    * @param TM is the tree manager.
+    * @param TM is the IR manager.
     * @param ogc is the operation graph constructor used to add the vertices.
-    * @param tn is the reference of the tree node we are currently analyzing
+    * @param tn is the reference of the IR node we are currently analyzing
     * @param f_name is the name of the function which the node we are analyzing belongs to
+    * @param bb_index is the basic block index of the operation being built
     */
-   void build_operation_recursive(const tree_managerRef TM, const operations_graph_constructorRef ogc,
-                                  const tree_nodeRef tn, const std::string& f_name, unsigned int bb_index);
+   void build_operation_recursive(const ir_managerRef TM, const std::unique_ptr<operations_graph_constructor>& ogc,
+                                  const ir_nodeRef tn, const std::string& f_name, unsigned int bb_index);
 
-   /**
-    * Return the set of analyses in relationship with this design step
-    * @param relationship_type is the type of relationship to be considered
-    */
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
-   /**
-    * Constructor.
-    * @param Param is the set of the parameters
-    * @param AppM is the application manager
-    * @param function_id is the identifier of the function
-    */
    operations_cfg_computation(const ParameterConstRef _parameters, const application_managerRef AppM,
-                              unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+                              unsigned int function_id, const DesignFlowManager& design_flow_manager);
 
-   /**
-    *  Destructor
-    */
-   ~operations_cfg_computation() override;
-
-   /**
-    * Computes the operations CFG graph data structure.
-    * @return the exit status of this step
-    */
    DesignFlowStep_Status InternalExec() override;
 
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
    void Initialize() override;
 };
 

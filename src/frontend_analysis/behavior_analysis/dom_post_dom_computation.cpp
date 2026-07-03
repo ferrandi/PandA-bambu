@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -39,45 +39,29 @@
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
  */
-/// Header include
 #include "dom_post_dom_computation.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// algorithms/dominance include
-#include "Dominance.hpp"
-
-/// behavior includes
+#include "SemiNCADominance.hpp"
 #include "application_manager.hpp"
 #include "basic_block.hpp"
 #include "basic_blocks_graph_constructor.hpp"
-#include "function_behavior.hpp"
-
-/// design_flows includes
+#include "behavioral_helper.hpp"
+#include "custom_map.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-/// graph include
+#include "function_behavior.hpp"
 #include "graph.hpp"
-
-/// tree include
-#include "behavioral_helper.hpp"
-
-/// utility include
-#include "custom_map.hpp"
 #include "hash_helper.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "string_manipulation.hpp"
 
 dom_post_dom_computation::dom_post_dom_computation(const ParameterConstRef _parameters,
                                                    const application_managerRef _AppM, unsigned int _function_id,
-                                                   const DesignFlowManagerConstRef _design_flow_manager)
+                                                   const DesignFlowManager& _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, DOM_POST_DOM_COMPUTATION, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
-
-dom_post_dom_computation::~dom_post_dom_computation() = default;
 
 CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 dom_post_dom_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -111,46 +95,43 @@ void dom_post_dom_computation::Initialize()
 
 DesignFlowStep_Status dom_post_dom_computation::InternalExec()
 {
-   const BBGraphConstRef fbb = function_behavior->CGetBBGraph(FunctionBehavior::FBB);
+   const auto fbb = function_behavior->GetBBGraph(FunctionBehavior::FBB);
 
    const BehavioralHelperConstRef helper = function_behavior->CGetBehavioralHelper();
    /// dominators computation
    THROW_ASSERT(!function_behavior->dominators, "Dominators already built");
-   const vertex bbentry = fbb->CGetBBGraphInfo()->entry_vertex;
-   const vertex bbexit = fbb->CGetBBGraphInfo()->exit_vertex;
-   function_behavior->dominators = new dominance<BBGraph>(*fbb, bbentry, bbexit, parameters);
-   function_behavior->dominators->calculate_dominance_info(dominance<BBGraph>::CDI_DOMINATORS);
-   const auto& dominator_map = function_behavior->dominators->get_dominator_map();
-   for(auto& it : dominator_map)
-   {
-      if(it.first != bbentry)
-      {
-         function_behavior->bbgc->AddEdge(it.second, it.first, D_SELECTOR);
-      }
-   }
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Built dominators tree of " + helper->get_function_name());
+   const auto bbentry = fbb.CGetGraphInfo().entry_vertex;
+   const auto bbexit = fbb.CGetGraphInfo().exit_vertex;
+   function_behavior->dominators = std::make_unique<dominance<BBGraph>>(fbb, bbentry, bbexit);
+   function_behavior->dominators->forEachDominanceRelation(
+       [&](const BBGraph::vertex_descriptor child, const BBGraph::vertex_descriptor dom_vertex) {
+          if(child != bbentry)
+          {
+             function_behavior->bbgc->AddEdge(dom_vertex, child, D_SELECTOR);
+          }
+       });
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Built dominators tree of " + helper->GetFunctionName());
    if(parameters->getOption<bool>(OPT_print_dot))
    {
-      function_behavior->GetBBGraph(FunctionBehavior::DOM_TREE)->WriteDot("BB_dom_tree.dot");
+      function_behavior->GetBBGraph(FunctionBehavior::DOM_TREE)
+          .writeDot(function_behavior->GetDotPath() / "BB_dom_tree.dot");
    }
    /// post-dominators computation
    THROW_ASSERT(!function_behavior->post_dominators, "Post dominators yet built");
-   function_behavior->post_dominators = new dominance<BBGraph>(*fbb, bbentry, bbexit, parameters);
-   function_behavior->post_dominators->calculate_dominance_info(dominance<BBGraph>::CDI_POST_DOMINATORS);
-   const auto& post_dominator_map = function_behavior->post_dominators->get_dominator_map();
-   for(auto& it : post_dominator_map)
-   {
-      if(it.first != bbexit)
-      {
-         function_behavior->bbgc->AddEdge(it.second, it.first, PD_SELECTOR);
-      }
-   }
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Built post-dominators tree of " + helper->get_function_name());
+   function_behavior->post_dominators = std::make_unique<dominance<BBGraph, true>>(fbb, bbentry, bbexit);
+   function_behavior->post_dominators->forEachDominanceRelation(
+       [&](const BBGraph::vertex_descriptor child, const BBGraph::vertex_descriptor dom_vertex) {
+          if(child != bbexit)
+          {
+             function_behavior->bbgc->AddEdge(dom_vertex, child, PD_SELECTOR);
+          }
+       });
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Built post-dominators tree of " + helper->GetFunctionName());
 
    if(parameters->getOption<bool>(OPT_print_dot))
    {
-      function_behavior->GetBBGraph(FunctionBehavior::POST_DOM_TREE)->WriteDot("BB_post_dom_tree.dot");
+      function_behavior->GetBBGraph(FunctionBehavior::POST_DOM_TREE)
+          .writeDot(function_behavior->GetDotPath() / "BB_post_dom_tree.dot");
    }
    return DesignFlowStep_Status::SUCCESS;
 }

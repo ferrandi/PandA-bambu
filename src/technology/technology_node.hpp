@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -50,33 +50,19 @@
 
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
 
-/**
- * @name forward declarations
- */
-//@{
-/// RefCount type definition of the technology_node class structure
 REF_FORWARD_DECL(technology_node);
 #if HAVE_CIRCUIT_BUILT
-/// RefCount type definition of the structural_manager class structure
 REF_FORWARD_DECL(structural_manager);
 #endif
-/// forward decl of xml Element
 class xml_element;
-/// forward decl of xml Element
 REF_FORWARD_DECL(xml_node);
-/// RefCount type definition of the technology_manager class structure
 REF_FORWARD_DECL(technology_manager);
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(attribute);
-/// RefCount definition of the resource information of the component
 REF_FORWARD_DECL(area_info);
-/// RefCount definition of the layout information of the component
 REF_FORWARD_DECL(layout_model);
-/// RefCount definition of the timing information of the component
 REF_FORWARD_DECL(time_info);
-/// RefCount definition of the power information of the component
 REF_FORWARD_DECL(power_model);
-//@}
 
 /// FPGA modules
 #define LUT_GATE_STD "LUT"
@@ -92,39 +78,34 @@ REF_FORWARD_DECL(power_model);
 #define XNOR_GATE_STD "XNOR_GATE"
 #define NOT_GATE_STD "NOT_GATE"
 #define DFF_GATE_STD "DFF_GATE"
-#define BUFF_GATE_STD "BUFF_GATE"
+#define ASSIGN_GATE_STD "ASSIGN_GATE"
+#define MUX2_GATE_STD "MUX2_GATE"
 
 #define TEST_MUL_MUX_8 "TEST_MUL_MUX_8"
-#define MUX_GATE_STD "MUX_GATE"
 #define DEMUX_GATE_STD "DEMUX_GATE"
-#define MUX_N_TO_1 "MUX_N_to_1"
-#define MULTIPLIER_STD "mult_expr_FU"
-#define UI_MULTIPLIER_STD "ui_mult_expr_FU"
-#define UI_CONST_MULTIPLIER_STD "ui_const_mult_expr_FU"
-#define ADDER_STD "plus_expr_FU"
-#define COND_EXPR_STD "cond_expr_FU"
-#define UI_ADDER_STD "ui_plus_expr_FU"
-#define UI_ALIGN_ADDER_STD "ui_align_plus_expr_FU"
+#define MULTIPLIER_STD "mul_node_FU"
+#define UI_MULTIPLIER_STD "ui_mul_node_FU"
+#define ADDER_STD "add_node_FU"
+#define COND_EXPR_STD "select_node_FU"
+#define UI_ADDER_STD "ui_add_node_FU"
 #define CONCAT4_STD "concat_4_constructor"
 #define SIGNED_BITFIELD_FU_STD "Sbitfield_FU"
 #define UNSIGNED_BITFIELD_FU_STD "Ubitfield_FU"
-#define CONSTANT_STD "constant_value"
 #define ASSIGN_SIGNED_STD "ASSIGN_SIGNED_FU"
 #define ASSIGN_UNSIGNED_STD "ASSIGN_UNSIGNED_FU"
 #define ASSIGN_REAL_STD "ASSIGN_REAL_FU"
 #define ASSIGN_VECTOR_BOOL_STD "ASSIGN_VECTOR_BOOL_FU"
 #define ASSIGN_VEC_SIGNED_STD "ASSIGN_VEC_SIGNED_FU"
 #define ASSIGN_VEC_UNSIGNED_STD "ASSIGN_VEC_UNSIGNED_FU"
-#define ADDR_EXPR_STD "addr_expr_FU"
-#define ASSERT_EXPR_SIGNED_STD "assert_expr_FU"
-#define ASSERT_EXPR_UNSIGNED_STD "ui_assert_expr_FU"
-#define ASSERT_EXPR_REAL_STD "fp_assert_expr_FU"
+#define ADDR_NODE_STD "addr_node_FU"
 #define BMEMORY_STD "BMEMORY_CTRL"
 #define BMEMORY_STDN "BMEMORY_CTRLN"
-#define MEMCPY_STD "__internal_bambu_memcpy"
+#define MEMCPY_STD "memcpy"
 #define ARRAY_1D_STD_BRAM "ARRAY_1D_STD_BRAM"
 #define ARRAY_1D_STD_BRAM_SDS "ARRAY_1D_STD_BRAM_SDS"
+#define ARRAY_1D_STD_BRAM_SDS1 "ARRAY_1D_STD_BRAM_SDS1"
 #define ARRAY_1D_STD_BRAM_SDS_BUS "ARRAY_1D_STD_BRAM_SDS_BUS"
+#define ARRAY_1D_STD_BRAM_SDS_BUS1 "ARRAY_1D_STD_BRAM_SDS_BUS1"
 #define ARRAY_1D_STD_DISTRAM_SDS "ARRAY_1D_STD_DISTRAM_SDS"
 #define ARRAY_1D_STD_BRAM_N1 "ARRAY_1D_STD_BRAM_N1"
 #define ARRAY_1D_STD_BRAM_N1_SDS "ARRAY_1D_STD_BRAM_N1_SDS"
@@ -136,13 +117,8 @@ REF_FORWARD_DECL(power_model);
 #define ARRAY_1D_STD_DISTRAM_NN_SDS "ARRAY_1D_STD_DISTRAM_NN_SDS"
 #define STD_BRAM "STD_BRAM"
 #define STD_BRAMN "STD_BRAMN"
-#define MEMLOAD_STD "__builtin_memload"
-#define MEMSTORE_STD "__builtin_memstore"
-#define MEMLOAD_STDN "__builtin_memload_N"
-#define MEMSTORE_STDN "__builtin_memstore_N"
-#define BUILTIN_EXIT_STD "__builtin_exit"
-#define BUILTIN_ABORT_STD "__builtin_abort"
-#define BUILTIN_WAIT_CALL_STD "__builtin_wait_call"
+#define MEMSTORE_STD "builtin_memstore_FU"
+#define MEMSTORE_STDN "builtin_memstore_N_FU"
 #define PROXY_CTRL "PROXY_CTRL"
 #define PROXY_CTRLN "PROXY_CTRLN"
 #define DPROXY_CTRL "DPROXY_CTRL"
@@ -153,13 +129,13 @@ REF_FORWARD_DECL(power_model);
 #define MEMORY_TYPE_ASYNCHRONOUS "ASYNCHRONOUS"
 #define MEMORY_TYPE_SYNCHRONOUS_UNALIGNED "SYNCHRONOUS_UNALIGNED"
 #define MEMORY_TYPE_SYNCHRONOUS_SDS "SYNCHRONOUS_SDS"
+#define MEMORY_TYPE_SYNCHRONOUS_SDS1 "SYNCHRONOUS_SDS1"
 #define MEMORY_TYPE_SYNCHRONOUS_SDS_BUS "SYNCHRONOUS_SDS_BUS"
+#define MEMORY_TYPE_SYNCHRONOUS_SDS_BUS1 "SYNCHRONOUS_SDS_BUS1"
 
 #define CHANNELS_TYPE_MEM_ACC_11 "MEM_ACC_11"
 #define CHANNELS_TYPE_MEM_ACC_N1 "MEM_ACC_N1"
 #define CHANNELS_TYPE_MEM_ACC_NN "MEM_ACC_NN"
-#define CHANNELS_TYPE_MEM_ACC_P1N "MEM_ACC_P1N"
-#define CHANNELS_TYPE_MEM_ACC_CS "MEM_ACC_CS"
 
 #define MEMORY_CTRL_TYPE_D00 "D00"
 #define MEMORY_CTRL_TYPE_PROXY "PROXY"
@@ -173,9 +149,8 @@ REF_FORWARD_DECL(power_model);
 #define IUDATA_CONVERTER_STD "IUdata_converter_FU"
 #define UIDATA_CONVERTER_STD "UIdata_converter_FU"
 #define IIDATA_CONVERTER_STD "IIdata_converter_FU"
-#define BIVECTOR_CONVERTER_STD "BIvector_converter_FU"
-#define BUVECTOR_CONVERTER_STD "BUvector_converter_FU"
 #define UBVECTOR_CONVERTER_STD "UBvector_converter_FU"
+#define IBVECTOR_CONVERTER_STD "IBvector_converter_FU"
 #define IIVECTOR_CONVERTER_STD "IIvector_converter_FU"
 #define UUVECTOR_CONVERTER_STD "UUvector_converter_FU"
 #define UIVECTOR_CONVERTER_STD "UIvector_converter_FU"
@@ -185,30 +160,17 @@ REF_FORWARD_DECL(power_model);
 #define SF_FFDATA_CONVERTER_32_64_STD "sf_FFdata_converter_FU_32_64"
 #define SF_FFDATA_CONVERTER_64_32_STD "sf_FFdata_converter_FU_64_32"
 
-#define UUCONVERTER_EXPR_STD "UUconvert_expr_FU"
-#define IUCONVERTER_EXPR_STD "IUconvert_expr_FU"
-#define UICONVERTER_EXPR_STD "UIconvert_expr_FU"
-#define IICONVERTER_EXPR_STD "IIconvert_expr_FU"
-#define VIEW_CONVERT_STD_INT "view_convert_expr_FU"
-#define VIEW_CONVERT_STD_UINT "ui_view_convert_expr_FU"
-#define VIEW_CONVERT_STD_REAL "fp_view_convert_expr_FU"
+#define BITCAST_STD_INT "bitcast_node_FU"
+#define BITCAST_STD_UINT "ui_bitcast_node_FU"
+#define BITCAST_STD_REAL "fp_bitcast_node_FU"
 
-#define EXTRACT_BIT_EXPR_SIGNED_STD "extract_bit_expr_FU"
-#define EXTRACT_BIT_EXPR_UNSIGNED_STD "ui_extract_bit_expr_FU"
-#define LUT_EXPR_STD "lut_expr_FU"
+#define EXTRACT_BIT_NODE_SIGNED_STD "extract_bit_node_FU"
+#define EXTRACT_BIT_NODE_UNSIGNED_STD "ui_extract_bit_node_FU"
+#define LUT_NODE_STD "lut_node_FU"
 
-// For distributed controller
-#define CE_STD "CE_FU"
-#define CE_FSM "CE_FSM"
-#define CE_BYPASS "CE_BYPASS"
-#define JOIN_STD "JOIN_FU"
+/// for variable latency operations
 #define SIMPLEJOIN_STD "SIMPLEJOIN_FU"
-#define PT_STD "PT_FU"
-#define START_STD "START_FU"
-#define COND_STD "COND_FU"
-#define SWITCH_CASE_STD "SWITCH_CASE_FU"
-#define MC_STD "MC_FU"
-#define FC_STD "FC_FU"
+#define COMPLEXJOIN_STD "COMPLEXJOIN_FU"
 
 /// simple shift register with reset
 #define register_SHIFT "register_SHIFT"
@@ -219,14 +181,8 @@ REF_FORWARD_DECL(power_model);
 /// register with synchronous reset
 #define register_SR "register_SR"
 
-/// flipflop with synchronous reset
-#define flipflop_SR "flipflop_SR"
-
 /// register with asynchronous reset
 #define register_AR "register_AR"
-
-/// flipflop with asynchronous reset
-#define flipflop_AR "flipflop_AR"
 
 /// register with asynchronous reset no retime
 #define register_AR_NORETIME "register_AR_NORETIME"
@@ -288,15 +244,9 @@ enum tec_kind
  */
 struct technology_node
 {
-   /**
-    * Constructor
-    */
    technology_node();
 
-   /**
-    * Destructor
-    */
-   virtual ~technology_node();
+   virtual ~technology_node() = default;
 
    /**
     * Return the name of the technology node.
@@ -305,15 +255,17 @@ struct technology_node
 
    /**
     * Load a technology_node starting from an xml file.
-    * @param node is a node of the xml tree.
+    * @param Enode is the XML node describing the technology object.
     * @param owner is the refcount version of this.
-    * @param TM is the technology manager.
+    * @param Param is the parameter set used while loading the technology object.
     */
    virtual void xload(const xml_element* Enode, const technology_nodeRef owner, const ParameterConstRef Param) = 0;
 
    /**
     * Add a technology_node to an xml tree.
     * @param rootnode is the root node at which the xml representation of the technology node is attached.
+    * @param tn is the technology node to be serialized.
+    * @param Param is the parameter set used while writing the technology object.
     */
    virtual void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param) = 0;
 
@@ -387,15 +339,7 @@ struct operation : public technology_node
    /// comma separed string with the parameter for different portsize values.
    std::string portsize_parameters;
 
-   /**
-    * Constructor
-    */
    operation();
-
-   /**
-    * Destructor
-    */
-   ~operation() override;
 
    /**
     * Returns the name of the operation.
@@ -417,17 +361,22 @@ struct operation : public technology_node
     * If the attribute "supported_types" is not defined, it will always return true.
     * @param type_name is the name of the type
     * @param type_prec is the type precision
+    * @param no_constant_characterization is true if the operation is relative to a functional unit template with
+    * no_constant_characterization flag set
     */
-   bool is_type_supported(const std::string& type_name, unsigned long long type_prec) const;
+   bool is_type_supported(const std::string& type_name, unsigned long long type_prec,
+                          bool no_constant_characterization) const;
 
    /**
     * Checks if the specified type name is supported with the max precision in type_prec.
     * If the attribute "supported_types" is not defined, it will always return true.
     * @param type_name is the name of the type
     * @param type_prec is the vector of type precisions
+    * @param no_constant_characterization is true if the operation is relative to a functional unit template with
+    * no_constant_characterization flag set
     */
    bool is_type_supported(const std::string& type_name, const std::vector<unsigned long long>& type_prec,
-                          const std::vector<unsigned long long>& type_n_element) const;
+                          bool no_constant_characterization) const;
 
    /**
     * Returns the supported type as a string
@@ -436,15 +385,17 @@ struct operation : public technology_node
 
    /**
     * Load a operation node starting from an xml file.
-    * @param node is a node of the xml tree.
-    * @param owner is the refcount version of this.
-    * @param TM is the technology manager.
+    * @param Enode is the XML node describing the operation.
+    * @param fu is the functional unit owning the operation.
+    * @param Param is the parameter set used while loading the operation.
     */
    void xload(const xml_element* Enode, const technology_nodeRef fu, const ParameterConstRef Param) override;
 
    /**
     * Add a operation node to an xml tree.
     * @param rootnode is the root node at which the xml representation of the operation is attached.
+    * @param tn is the technology node to be serialized.
+    * @param Param is the parameter set used while writing the operation.
     */
    void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param) override;
 
@@ -545,20 +496,9 @@ struct functional_unit : public technology_node
    /// The timestamp of the characterization of this functional unit
    TimeStamp characterization_timestamp;
 
-   /**
-    * Constructor
-    */
    functional_unit();
 
-   /**
-    * Constructor
-    */
    explicit functional_unit(const xml_nodeRef XML_description);
-
-   /**
-    * Destructor
-    */
-   ~functional_unit() override;
 
    /**
     * Add the given operation to the current functional_unit.
@@ -640,14 +580,17 @@ struct functional_unit : public technology_node
 
    /**
     * Load a functional unit starting from an xml file.
-    * @param node is a node of the xml tree.
-    * @param owner is the refcount version of this.
+    * @param node is the XML node describing the functional unit.
+    * @param fu is the functional unit object being populated.
+    * @param Param is the parameter set used while loading the functional unit.
     */
    void xload(const xml_element* node, const technology_nodeRef fu, const ParameterConstRef Param) override;
 
    /**
     * Add a functional unit to an xml tree.
     * @param rootnode is the root node at which the xml representation of the functional unit is attached.
+    * @param tn is the technology node to be serialized.
+    * @param Param is the parameter set used while writing the functional unit.
     */
    void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param) override;
 
@@ -709,12 +652,9 @@ struct functional_unit_template : public technology_node
    /// The template will not consider constants connected to the inputs during the module characterization
    bool no_constant_characterization;
 
-   /// Constructor
-   //@{
    functional_unit_template();
 
    explicit functional_unit_template(const xml_nodeRef XML_description);
-   //@}
 
    /**
     * Return the name of the operation.
@@ -726,14 +666,17 @@ struct functional_unit_template : public technology_node
 
    /**
     * Load a functional unit starting from an xml file.
-    * @param node is a node of the xml tree.
-    * @param owner is the refcount version of this.
+    * @param Enode is the XML node describing the functional unit template.
+    * @param tnd is the template node being populated.
+    * @param Param is the parameter set used while loading the template.
     */
    void xload(const xml_element* Enode, const technology_nodeRef tnd, const ParameterConstRef Param) override;
 
    /**
     * Add a functional unit to an xml tree.
     * @param rootnode is the root node at which the xml representation of the functional unit is attached.
+    * @param tn is the technology node to be serialized.
+    * @param Param is the parameter set used while writing the template.
     */
    void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param) override;
 

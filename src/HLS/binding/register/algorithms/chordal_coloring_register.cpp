@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -35,9 +35,6 @@
  * @brief Class implementation of register allocation algorithm based on chordal algorithm
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "chordal_coloring_register.hpp"
@@ -46,9 +43,10 @@
 #include "behavioral_helper.hpp"
 #include "cpu_time.hpp"
 #include "dbgPrintHelper.hpp"
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
-#include "liveness.hpp"
+#include "liveVariables.hpp"
 #include "reg_binding.hpp"
 #include "storage_value_information.hpp"
 #include "utility.hpp"
@@ -58,14 +56,11 @@
 #include <vector>
 
 chordal_coloring_register::chordal_coloring_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
-                                                     unsigned int _funId,
-                                                     const DesignFlowManagerConstRef _design_flow_manager)
+                                                     unsigned int _funId, const DesignFlowManager& _design_flow_manager)
     : conflict_based_register(_Param, _HLSMgr, _funId, _design_flow_manager,
                               HLSFlowStep_Type::CHORDAL_COLORING_REGISTER_BINDING)
 {
 }
-
-chordal_coloring_register::~chordal_coloring_register() = default;
 
 bool chordal_coloring_register::lex_compare_gt(const std::vector<unsigned int>& v1,
                                                const std::vector<unsigned int>& v2) const
@@ -122,8 +117,10 @@ DesignFlowStep_Status chordal_coloring_register::RegisterBinding()
    {
       START_TIME(step_time);
    }
-   create_conflict_graph();
    unsigned int cg_num_vertices = HLS->storage_value_information->get_number_of_storage_values();
+   auto cg_ptr = new conflict_graph(cg_num_vertices);
+   conflict_graph& cg = *cg_ptr;
+   create_conflict_graph(cg);
    const unsigned int NO_ORDER = std::numeric_limits<unsigned int>::max();
    std::vector<cg_vertex_descriptor> vertex_order(cg_num_vertices);
 
@@ -154,24 +151,22 @@ DesignFlowStep_Status chordal_coloring_register::RegisterBinding()
       }
       THROW_ASSERT(found, "maximal not found");
       seq[vx_index] = i;
-      cg_vertex_descriptor vx = boost::vertex(vx_index, *cg);
+      auto vx = boost::vertex(vx_index, cg);
       vertex_order[i] = vx;
       // for each unnumbered vertex v adjacent to vx
       // label(v)=label(v) + i
-      boost::graph_traits<conflict_graph>::adjacency_iterator adj_i, adj_e;
-      for(boost::tie(adj_i, adj_e) = boost::adjacent_vertices(vx, *cg); adj_i != adj_e; ++adj_i)
+      for(const auto adj : boost::make_iterator_range(boost::adjacent_vertices(vx, cg)))
       {
-         long unsigned int vindex = get(boost::vertex_index, *cg, *adj_i);
+         long unsigned int vindex = get(boost::vertex_index, cg, adj);
          if(seq[vindex] == NO_ORDER)
          {
-            bool add;
-            add = true;
-            auto it_end = label[vindex].end();
-            for(auto it = label[vindex].begin(); it != it_end && add; ++it)
+            bool add = true;
+            for(auto it : label[vindex])
             {
-               if(*it == i)
+               if(it == i)
                {
                   add = false;
+                  break;
                }
             }
             if(add)
@@ -183,30 +178,27 @@ DesignFlowStep_Status chordal_coloring_register::RegisterBinding()
    }
 
    /// sequential vertex coloring based on left edge sorting
-   cg_vertices_size_type num_colors = boost::sequential_vertex_coloring(
-       *cg,
+   auto num_colors = boost::sequential_vertex_coloring(
+       cg,
        boost::make_iterator_property_map(vertex_order.begin(), boost::identity_property_map(),
                                          boost::graph_traits<conflict_graph>::null_vertex()),
        color);
 
    /// finalize
    HLS->Rreg = reg_bindingRef(new reg_binding(HLS, HLSMgr));
-   const std::list<vertex>& support = HLS->Rliv->get_support();
+   const auto states = HLS->fsm_info->vertices();
 
-   const auto vEnd = support.end();
-   for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
+   for(const auto v : states)
    {
-      const auto& live = HLS->Rliv->get_live_in(*vIt);
-      auto k_end = live.end();
-      for(auto k = live.begin(); k != k_end; ++k)
+      const auto& live = HLS->Rliv->getLiveInFsmVariables(v);
+      for(const auto& [var, stage] : live)
       {
-         unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(*vIt, *k);
-         HLS->Rreg->bind(storage_value_index,
-                         static_cast<unsigned int>(color[boost::vertex(storage_value_index, *cg)]));
+         const auto storage_value_index = HLS->storage_value_information->get_storage_value_index(v, var, stage);
+         HLS->Rreg->bind(storage_value_index, static_cast<unsigned int>(color[boost::vertex(storage_value_index, cg)]));
       }
    }
-   delete cg;
    HLS->Rreg->set_used_regs(static_cast<unsigned int>(num_colors));
+   delete cg_ptr;
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
       STOP_TIME(step_time);
@@ -217,7 +209,7 @@ DesignFlowStep_Status chordal_coloring_register::RegisterBinding()
    }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                   "-->Register binding information for function " +
-                      HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
+                      HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->GetFunctionName() + ":");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                   std::string("---Register allocation algorithm obtains ") +
                       (num_colors == register_lower_bound ? "an optimal" : "a sub-optimal") +

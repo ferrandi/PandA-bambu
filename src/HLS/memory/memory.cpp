@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -38,41 +38,28 @@
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Michele Fiorito <michele.fiorito@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "memory.hpp"
-#include "memory_cs.hpp"
-
-#include "memory_symbol.hpp"
-
-#include "application_manager.hpp"
-#include "call_graph_manager.hpp"
 
 #include "Parameter.hpp"
+#include "application_manager.hpp"
+#include "call_graph_manager.hpp"
+#include "exceptions.hpp"
 #include "funit_obj.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
+#include "ir_node.hpp"
+#include "math_function.hpp"
+#include "memory_symbol.hpp"
+#include "polixml.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
-
-#include "exceptions.hpp"
 #include "utility.hpp"
-
-#include "polixml.hpp"
 #include "xml_helper.hpp"
 
-#include "math_function.hpp"
-
-/// STL includes
 #include <algorithm>
 #include <vector>
-
-/// tree include
-#include "tree_node.hpp"
 
 /**
  * Alignment utility function
@@ -85,10 +72,10 @@ static inline unsigned long long int align(unsigned long long int address, unsig
 /// we start to allocate from internal_base_address_alignment byte to align address to internal_base_address_alignment
 /// bits we can use address 0 in some cases but it is not safe in general.
 
-memory::memory(const tree_managerConstRef _TreeM, unsigned long long int _off_base_address, unsigned int max_bram,
+memory::memory(const ir_managerConstRef _IRM, unsigned long long int _off_base_address, unsigned int max_bram,
                bool _null_pointer_check, bool initial_internal_address_p,
                unsigned long long int initial_internal_address, const unsigned int& _bus_addr_bitsize)
-    : TreeM(_TreeM),
+    : IRM(_IRM),
       maximum_private_memory_size(0),
       total_amount_of_private_memory(0),
       total_amount_of_parameter_memory(0),
@@ -107,7 +94,10 @@ memory::memory(const tree_managerConstRef _TreeM, unsigned long long int _off_ba
       null_pointer_check(_null_pointer_check),
       packed_vars(false),
       bus_addr_bitsize(_bus_addr_bitsize),
-      enable_hls_bit_value(false)
+      enable_hls_bit_value(false),
+      root_space_alignment(0),
+      omp_lambda_page_id_start(0),
+      omp_lambda_page_id_end(0)
 {
    const auto max_bus_size = 2U * max_bram;
    external_base_address_alignment = internal_base_address_alignment = max_bus_size / 8;
@@ -126,23 +116,14 @@ memory::memory(const tree_managerConstRef _TreeM, unsigned long long int _off_ba
    }
 }
 
-memory::~memory() = default;
-
-memoryRef memory::create_memory(const ParameterConstRef _parameters, const tree_managerConstRef _TreeM,
-                                unsigned long long _off_base_address, unsigned int max_bram, bool _null_pointer_check,
-                                bool initial_internal_address_p, unsigned int initial_internal_address,
-                                const unsigned int& _address_bitsize)
+std::unique_ptr<memory> memory::create_memory(const ParameterConstRef, const ir_managerConstRef _IRM,
+                                              unsigned long long _off_base_address, unsigned int max_bram,
+                                              bool _null_pointer_check, bool initial_internal_address_p,
+                                              unsigned int initial_internal_address,
+                                              const unsigned int& _address_bitsize)
 {
-   if(_parameters->getOption<bool>(OPT_parse_pragma) && _parameters->isOption(OPT_context_switch))
-   {
-      return memoryRef(new memory_cs(_TreeM, _off_base_address, max_bram, _null_pointer_check,
-                                     initial_internal_address_p, initial_internal_address, _address_bitsize));
-   }
-   else
-   {
-      return memoryRef(new memory(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p,
-                                  initial_internal_address, _address_bitsize));
-   }
+   return std::make_unique<memory>(_IRM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p,
+                                   initial_internal_address, _address_bitsize);
 }
 
 std::map<unsigned int, memory_symbolRef> memory::get_ext_memory_variables() const
@@ -153,19 +134,19 @@ std::map<unsigned int, memory_symbolRef> memory::get_ext_memory_variables() cons
 unsigned long long int memory::compute_next_base_address(unsigned long long int address, unsigned int var,
                                                          unsigned long long int alignment) const
 {
-   const auto node = TreeM->GetTreeNode(var);
+   const auto node = IRM->GetIRNode(var);
    unsigned long long size = 0;
 
    // The __builtin_wait_call associate an address to the call site to
    // identify it.  For this case we are allocating a word.
-   if(GetPointer<const gimple_call>(node))
+   if(GetPointer<const call_stmt>(node))
    {
       size = compute_n_bytes(bus_addr_bitsize);
    }
    else
    {
       /// compute the next base address
-      size = compute_n_bytes(tree_helper::SizeAlloc(tree_helper::CGetType(node)));
+      size = compute_n_bytes(ir_helper::SizeAlloc(ir_helper::CGetType(node)));
    }
    /// align the memory address
    return align(address + size, alignment);
@@ -182,7 +163,7 @@ void memory::add_internal_variable(unsigned int funID_scope, unsigned int var, c
    {
       if(null_pointer_check)
       {
-         internal_base_address_start = align(internal_base_address_start, tree_helper::get_var_alignment(TreeM, var));
+         internal_base_address_start = align(internal_base_address_start, ir_helper::get_var_alignment(IRM, var));
          m_sym = memory_symbolRef(new memory_symbol(var, var_name, internal_base_address_start, funID_scope));
       }
       else
@@ -192,7 +173,7 @@ void memory::add_internal_variable(unsigned int funID_scope, unsigned int var, c
    }
    else
    {
-      next_base_address = align(next_base_address, tree_helper::get_var_alignment(TreeM, var));
+      next_base_address = align(next_base_address, ir_helper::get_var_alignment(IRM, var));
       m_sym = memory_symbolRef(new memory_symbol(var, var_name, next_base_address, funID_scope));
    }
    add_internal_symbol(funID_scope, var, m_sym);
@@ -244,7 +225,7 @@ void memory::add_internal_symbol(unsigned int funID_scope, unsigned int var, con
                 "variable already allocated inside this module");
 
    internal[funID_scope][var] = m_sym;
-   if(GetPointer<const gimple_call>(TreeM->GetTreeNode(var)))
+   if(GetPointer<const call_stmt>(IRM->GetIRNode(var)))
    {
       callSites[var] = m_sym;
    }
@@ -255,7 +236,7 @@ void memory::add_internal_symbol(unsigned int funID_scope, unsigned int var, con
 
    if(is_private_memory(var))
    {
-      const unsigned long long allocated_memory = compute_n_bytes(tree_helper::SizeAlloc(TreeM->GetTreeNode(var)));
+      const unsigned long long allocated_memory = compute_n_bytes(ir_helper::SizeAlloc(IRM->GetIRNode(var)));
       rangesize[var] = align(allocated_memory, internal_base_address_alignment);
       total_amount_of_private_memory += allocated_memory;
       maximum_private_memory_size = std::max(maximum_private_memory_size, allocated_memory);
@@ -284,7 +265,7 @@ unsigned int memory::count_non_private_internal_symbols() const
 
 void memory::add_external_variable(unsigned int var, const std::string& var_name)
 {
-   next_off_base_address = align(next_off_base_address, tree_helper::get_var_alignment(TreeM, var));
+   next_off_base_address = align(next_off_base_address, ir_helper::get_var_alignment(IRM, var));
    memory_symbolRef m_sym = memory_symbolRef(new memory_symbol(var, var_name, next_off_base_address, 0));
    add_external_symbol(var, m_sym);
 }
@@ -309,9 +290,10 @@ void memory::add_private_memory(unsigned int var)
    private_memories.insert(var);
 }
 
-void memory::set_sds_var(unsigned int var, bool value)
+void memory::set_sds_var(unsigned int var, bool value, unsigned long long size)
 {
    same_data_size_accesses[var] = value;
+   same_data_size_value[var] = size;
 }
 
 void memory::add_source_value(unsigned int var, unsigned int value)
@@ -375,6 +357,12 @@ bool memory::is_sds_var(unsigned int var) const
 {
    THROW_ASSERT(has_sds_var(var), "variable not classified " + STR(var));
    return same_data_size_accesses.find(var)->second;
+}
+
+unsigned long long memory::get_sds_var_size(unsigned int var) const
+{
+   THROW_ASSERT(has_sds_var(var), "variable not classified " + STR(var));
+   return same_data_size_value.find(var)->second;
 }
 
 bool memory::has_sds_var(unsigned int var) const
@@ -522,8 +510,8 @@ unsigned long long int memory::get_last_address(unsigned int funId, const applic
          const auto& var = internalVar.first;
          if(!is_private_memory(var) && !has_parameter_base_address(var, funId) && has_base_address(var))
          {
-            maxAddress = std::max(maxAddress, internalVar.second->get_address() +
-                                                  tree_helper::SizeAlloc(TreeM->GetTreeNode(var)) / 8);
+            maxAddress =
+                std::max(maxAddress, internalVar.second->get_address() + ir_helper::SizeAlloc(IRM->GetIRNode(var)) / 8);
          }
       }
    }
@@ -533,11 +521,10 @@ unsigned long long int memory::get_last_address(unsigned int funId, const applic
       for(const auto& itr : paramsVar)
       {
          const auto& var = itr.first;
-         maxAddress =
-             std::max(maxAddress, itr.second->get_address() + tree_helper::SizeAlloc(TreeM->GetTreeNode(var)) / 8);
+         maxAddress = std::max(maxAddress, itr.second->get_address() + ir_helper::SizeAlloc(IRM->GetIRNode(var)) / 8);
       }
    }
-   const auto calledSet = AppMgr->CGetCallGraphManager()->get_called_by(funId);
+   const auto calledSet = AppMgr->CGetCallGraphManager().get_called_by(funId);
    for(const auto Itr : calledSet)
    {
       if(!AppMgr->hasToBeInterfaced(Itr))
@@ -666,7 +653,7 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
       }
    }
 
-   const auto srcModule = GetPointer<const module>(src);
+   const auto srcModule = GetPointer<const module_o>(src);
    // std::cout << srcModule->get_id() << std::endl;
    if(srcModule)
    {
@@ -760,7 +747,7 @@ void memory::xwrite(xml_element* node)
          const auto ScopeNode = IntNode->add_child_element("scope");
          const auto id = "@" + STR(iIt->first);
          WRITE_XVM(id, ScopeNode);
-         const auto name = tree_helper::name_function(TreeM, iIt->first);
+         const auto name = ir_helper::GetFunctionName(IRM->GetIRNode(iIt->first));
          WRITE_XVM(name, ScopeNode);
          for(auto vIt = iIt->second.begin(); vIt != iIt->second.end(); ++vIt)
          {
@@ -802,7 +789,7 @@ void memory::xwrite(xml_element* node)
             const auto ScopeNode = IntNode->add_child_element("scope");
             const auto id = "@" + STR(iIt->first);
             WRITE_XVM(id, ScopeNode);
-            const auto name = tree_helper::name_function(TreeM, iIt->first);
+            const auto name = ir_helper::GetFunctionName(IRM->GetIRNode(iIt->first));
             WRITE_XVM(name, ScopeNode);
             const auto params0 = parameter.find(iIt->first)->second;
             for(auto vIt = params0.begin(); vIt != params0.end(); ++vIt)
@@ -836,7 +823,7 @@ void memory::xwrite(xml_element* node)
    }
 }
 
-bool memory::notEQ(refcount<memory> ref) const
+bool memory::notEQ(const std::unique_ptr<memory>& ref) const
 {
    if(!ref)
    {
@@ -1068,7 +1055,7 @@ void memory::xwrite2(xml_element* node)
       for(const auto& var_obj : int_obj.second)
       {
          const auto ObjNode = Enode->add_child_element("object");
-         const auto scope = tree_helper::name_function(TreeM, int_obj.first);
+         const auto scope = ir_helper::GetFunctionName(IRM->GetIRNode(int_obj.first));
          WRITE_XVM(scope, ObjNode);
          const auto name = var_obj.second->get_name();
          WRITE_XVM(name, ObjNode);
@@ -1109,4 +1096,16 @@ void memory::xwrite(const std::string& filename)
    {
       std::cerr << "unknown exception" << std::endl;
    }
+}
+
+void memory::set_omp_allocation_info(unsigned int omp_func, const memory::OMPAllocationInfo& info)
+{
+   omp_allocation_info.insert(std::make_pair(omp_func, info));
+}
+
+const memory::OMPAllocationInfo& memory::get_omp_allocation_info(unsigned int omp_func) const
+{
+   THROW_ASSERT(omp_allocation_info.count(omp_func),
+                "Required OMP function allocation information has not been generated");
+   return omp_allocation_info.at(omp_func);
 }

@@ -8,26 +8,26 @@
  *
  *             ***********************************************
  *                              PandA Project 
- *                     URL: http://panda.dei.polimi.it
+ *                     URL: https://github.com/ferrandi/PandA-bambu
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
 */
 /*!
@@ -50,11 +50,9 @@
   \image html bambu_methodology.png "Overall structure of the bambu framework." width=6cm
   \image latex bambu_methodology.png "Overall structure of the bambu framework." width=6cm
 
-  As front-end, <i>bambu</i> uses a customized interface to GCC ver. 4.5 since it provides the possibility of exporting the internal representation of the source code after 
-  the target-independent optimizations. 
-  This allows to integrate several compiler optimizations into our framework, such as loop unrolling, constant propagation, dead-code elimination that can be easily 
-  enabled/disabled with command-line options or through the input configuration file. 
-  The call graph of the input application is then derived starting from this syntax tree structure (step <B>1</B> in the figure). 
+  As front-end, <i>bambu</i> translates the input program into the PandA internal representation used by the synthesis flow.
+  This project-specific representation is the basis for compiler analyses, target-independent optimizations, and the HLS-specific steps controlled through command-line options or configuration files.
+  The call graph of the input application is then derived starting from this internal representation (step <B>1</B> in the figure).
 
   The resulting call graph is then analyzed to perform specific analysis, such as the memory allocation (step <B>2</B> in the figure). 
   In details, this compile-time analysis determines the data (e.g., scalar variables, arrays, structs) to be allocated in memories. 
@@ -72,8 +70,7 @@
   As a result, complex applications (e.g., the CHStone benchmarks -- JPEG, ADPCM, GSM) can be thus generated taking the technology effects into account. 
   In fact, considering the part step <B>C</B> in the figure, we adopt specific wrappers to synthesis tools to characterize the resource library. 
   Then, for each module/function, it is possible to generate different area/time trade-off by performing a multi-objective design space exploration, taking into account the 
-  interconnection effects and the target device. It is thus possible to adopt the proper implementation for each of the different functions contained in the specification. 
-  The FloPoCo library is integrated for supporting floating-point operations. 
+  interconnection effects and the target device. It is thus possible to adopt the proper implementation for each of the different functions contained in the specification.
 
   A novel architecture is then generate (step <B>4</B> in the figure) to build the modules and to deal with the different memory interfaces (one for each of them), avoiding to use 
   three-states for its implementation. 
@@ -84,9 +81,8 @@
   We also integrate a toolflow (step <B>5</B> in the figure) with different wrappers to commercial synthesis tools (e.g., Altera Quartus, Xilinx ISE, Synopsys Design Compiler), 
   based on a common XML configuration schema, to generate the scripts for targeting the related devices. 
 
-  Finally, <i>bambu</i> offers the possibility to generate testbenches (step <B>6</B> in the figure) starting from the initial C specification and a dataset represented in XML file. 
-  Then, after generating the HDL description and the resulting testbench, it compares the produced results with the corresponding software counterpart to verify the execution. 
-  We adopt the GCC regression test suite for verifying the different aspects of our framework and the supported constructs. 
-  Moreover, we are able to synthesize all the CHStone benchmarks with different configurations.
+  Finally, <i>bambu</i> offers the possibility to generate testbenches (step <B>6</B> in the figure) starting from the initial C specification and a dataset represented in XML file.
+  Then, after generating the HDL description and the resulting testbench, it compares the produced results with the corresponding software counterpart to verify the execution.
+  The framework is validated through regression suites and benchmark collections covering both language support and synthesis behavior, including the tests kept under \c panda_regressions/hls/gcc_regression_simple/.
 
 */

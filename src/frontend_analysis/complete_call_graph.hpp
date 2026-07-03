@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -40,12 +40,13 @@
 
 #ifndef COMPLETE_CALL_GRAPH_HPP
 #define COMPLETE_CALL_GRAPH_HPP
+#include "application_frontend_flow_step.hpp"
 
-#include "application_frontend_flow_step.hpp" // for ApplicationFrontendFlo...
-#include "custom_set.hpp"                     // for unordered_set
-#include "design_flow_step.hpp"               // for DesignFlowManagerConstRef
-#include "frontend_flow_step.hpp"             // for FrontendFlowStep::Func...
-#include <utility>                            // for pair
+#include "custom_set.hpp"
+#include "design_flow_step.hpp"
+#include "frontend_flow_step.hpp"
+
+#include <utility>
 
 class CompleteCallGraph : public ApplicationFrontendFlowStep
 {
@@ -62,15 +63,10 @@ class CompleteCallGraph : public ApplicationFrontendFlowStep
     * Constructor
     * @param AppM is the application manager
     * @param design_flow_manager is the design flow manager
-    * @param _Param is the set of the parameters
+    * @param parameters is the set of the parameters
     */
-   CompleteCallGraph(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager,
+   CompleteCallGraph(const application_managerRef AppM, const DesignFlowManager& design_flow_manager,
                      const ParameterConstRef parameters);
-
-   /**
-    * Destructor
-    */
-   ~CompleteCallGraph() override;
 
    /**
     * Execute this step

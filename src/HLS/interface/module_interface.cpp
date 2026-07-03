@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -36,11 +36,6 @@
  *
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
- * $Locker:  $
- * $State: Exp $
  *
  */
 #include "module_interface.hpp"
@@ -57,21 +52,18 @@
 #include "hls_manager.hpp"
 #include "memory.hpp"
 #include "memory_symbol.hpp"
-#include "omp_functions.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 
 #include <tuple>
 
 module_interface::module_interface(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
-                                   unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager,
+                                   unsigned int _funId, const DesignFlowManager& _design_flow_manager,
                                    const HLSFlowStep_Type _hls_flow_step_type)
     : HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
    THROW_ASSERT(_parameters, "Parameter null");
 }
-
-module_interface::~module_interface() = default;
 
 HLS_step::HLSRelationships
 module_interface::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -79,11 +71,11 @@ module_interface::ComputeHLSRelationships(const DesignFlowStep::RelationshipType
    HLSRelationships ret;
    switch(relationship_type)
    {
-      case DEPENDENCE_RELATIONSHIP:
+      case(DEPENDENCE_RELATIONSHIP):
       {
-         const auto cg_man = HLSMgr->CGetCallGraphManager();
+         const auto& CGM = HLSMgr->CGetCallGraphManager();
          if(HLSMgr->hasToBeInterfaced(funId) &&
-            (cg_man->ExistsAddressedFunction() || parameters->getOption<bool>(OPT_memory_mapped_top)))
+            (CGM.ExistsAddressedFunction() || parameters->getOption<bool>(OPT_memory_mapped_top)))
          {
             ret.insert(std::make_tuple(HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION,
                                        HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
@@ -95,45 +87,24 @@ module_interface::ComputeHLSRelationships(const DesignFlowStep::RelationshipType
                                        HLSFlowStep_Relationship::SAME_FUNCTION)); // add dependence to omp_function
             if(HLSMgr->Rfuns)
             {
-               bool found = false;
-               if(parameters->isOption(OPT_context_switch))
-               {
-                  auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
-                  THROW_ASSERT(omp_functions, "OMP_functions must not be null");
-                  if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
-                  {
-                     found = true;
-                  }
-                  if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end())
-                  {
-                     found = true;
-                  }
-                  if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end())
-                  {
-                     found = true;
-                  }
-                  if(found) // use new top_entity
-                  {
-                     const HLSFlowStep_Type top_entity_type = HLSFlowStep_Type::TOP_ENTITY_CS_CREATION;
-                     ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(),
-                                                HLSFlowStep_Relationship::SAME_FUNCTION));
-                  }
-               }
-               if(!found) // use standard
-               {
-                  const HLSFlowStep_Type top_entity_type = HLSFlowStep_Type::TOP_ENTITY_CREATION;
-                  ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(),
-                                             HLSFlowStep_Relationship::SAME_FUNCTION));
-               }
+               const auto is_context_handler = [&]() {
+                  const auto FB = HLSMgr->CGetFunctionBehavior(funId);
+                  const auto omp_info = FB->GetOMPInfo();
+                  return FB->IsOMPCore() && omp_info && omp_info->context_count > 1U;
+               }();
+               const auto top_entity_type = is_context_handler ? HLSFlowStep_Type::TOP_ENTITY_OMP_CS_CREATION :
+                                                                 HLSFlowStep_Type::TOP_ENTITY_CREATION;
+               ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(),
+                                          HLSFlowStep_Relationship::SAME_FUNCTION));
             }
          }
          break;
       }
-      case INVALIDATION_RELATIONSHIP:
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case PRECEDENCE_RELATIONSHIP:
+      case(PRECEDENCE_RELATIONSHIP):
       {
          ret.insert(std::make_tuple(HLSFlowStep_Type::ADD_LIBRARY,
                                     HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(false)),
@@ -314,6 +285,6 @@ void module_interface::AddConstant(const structural_managerRef SM, const structu
    structural_type_descriptorRef constant_type =
        structural_type_descriptorRef(new structural_type_descriptor("bool", std::max(size, constant_size)));
    constant->set_type(constant_type);
-   GetPointer<module>(SM->get_circ())->add_internal_object(constant);
+   GetPointer<module_o>(SM->get_circ())->add_internal_object(constant);
    SM->add_connection(constant, port);
 }

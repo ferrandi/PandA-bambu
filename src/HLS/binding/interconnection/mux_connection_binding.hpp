@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -36,9 +36,6 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -46,18 +43,14 @@
 #define MUX_CONNECTION_BINDING_HPP
 
 #include "conn_binding_creator.hpp"
-REF_FORWARD_DECL(graph);
-class array_ref;
 
+#include "HLS/fsm/FSMInfo.hpp"
 #include "conn_binding.hpp"
-
+#include "graph.hpp"
 #include "hls_manager.hpp"
 
-#include "state_transition_graph.hpp"
-
+class OpGraph;
 REF_FORWARD_DECL(conn_binding);
-CONSTREF_FORWARD_DECL(OpGraph);
-CONSTREF_FORWARD_DECL(StateTransitionGraph);
 
 /**
  * @class mux_connection_binding
@@ -71,7 +64,6 @@ CONSTREF_FORWARD_DECL(StateTransitionGraph);
  */
 class mux_connection_binding : public conn_binding_creator
 {
- private:
    /// type representing a resource identifier
    using resource_id_type = std::pair<unsigned int, unsigned int>;
 
@@ -82,19 +74,11 @@ class mux_connection_binding : public conn_binding_creator
    /// store the resource in IN for each resource and for each port
    std::map<resource_id_type, std::map<unsigned int, CustomOrderedSet<resource_id_type>>> module_in;
 
-   /// store the operations for which a port swapping is beneficial
-   CustomOrderedSet<vertex> swap_computed_table;
-
-   /// store the operations for which a port swapping is not beneficial
-   CustomOrderedSet<vertex> noswap_computed_table;
-
    /// variable used to assign a unique id to sparse logic
    unsigned int id;
 
    /// store the current phi use. Used during the analysis of phi nodes
-   unsigned int cur_phi_tree_var;
-
-   bool is_PC;
+   unsigned int cur_phi_ir_var;
 
    /// cache connection type
    enum cacheType
@@ -120,6 +104,7 @@ class mux_connection_binding : public conn_binding_creator
     * @param tgt is the reference to connection target
     * @param op is i-th operand of target element, where source is attached
     * @param port_index is the i-th port index of the given target port.
+    * @param iteration identifies the iteration for replicated connections
     * @return number of multiplexer allocated
     */
    unsigned int input_logic(const conn_binding::ConnectionSources& src, const generic_objRef tgt, unsigned int op,
@@ -128,63 +113,47 @@ class mux_connection_binding : public conn_binding_creator
    /**
     * Determine the actual interconnection
     */
-   void determine_connection(const vertex& op, const HLS_manager::io_binding_type& var, generic_objRef fu_obj,
-                             unsigned int port_num, unsigned int port_index, const OpGraphConstRef data,
-                             unsigned int precision, unsigned int alignment = 0);
+   void determine_connection(gc_vertex_descriptor op, const HLS_manager::io_binding_type& var, generic_objRef fu_obj,
+                             unsigned int port_num, unsigned int port_index, const OpGraph& data,
+                             unsigned int precision, unsigned int alignment, FSMInfo::state_descriptor state_src,
+                             FSMInfo::state_descriptor state_tgt, unsigned int src_phi_bb_index);
 
    /**
     * Compute the bitsize given a io_binding type
     */
-   unsigned long long object_bitsize(const tree_managerRef TreeM, const HLS_manager::io_binding_type& obj) const;
+   unsigned long long object_bitsize(const ir_managerRef IRM, const HLS_manager::io_binding_type& obj) const;
 
- private:
    /**
     *  create the connection object and update the unique table
     */
-   void create_single_conn(const OpGraphConstRef data, const vertex& op, generic_objRef fu_obj_src,
-                           generic_objRef fu_obj, unsigned int port_num, unsigned int port_index, unsigned int tree_var,
-                           unsigned int precision, const bool is_not_a_phi);
+   void create_single_conn(gc_vertex_descriptor op, generic_objRef fu_obj_src, generic_objRef fu_obj,
+                           unsigned int port_num, unsigned int port_index, unsigned int ir_var, unsigned int precision,
+                           const bool is_not_a_phi, FSMInfo::state_descriptor state_src,
+                           FSMInfo::state_descriptor state_tgt);
 
    /**
     * connect the fu_obj with the associated registers.
     */
-   void connect_to_registers(vertex op, const OpGraphConstRef data, generic_objRef fu_obj, unsigned int port_num,
-                             unsigned int port_index, unsigned int tree_var, unsigned long long precision,
-                             const bool is_not_a_phi);
+   void connect_to_registers(gc_vertex_descriptor op, const OpGraph& data, generic_objRef fu_obj, unsigned int port_num,
+                             unsigned int port_index, unsigned int ir_var, unsigned long long precision,
+                             const bool is_not_a_phi, FSMInfo::state_descriptor state_src,
+                             FSMInfo::state_descriptor state_tgt, unsigned int src_phi_bb_index);
 
-   unsigned int extract_parm_decl(unsigned int tree_var, const tree_managerRef TreeM);
+   unsigned int extract_parm_decl(unsigned int ir_var, const ir_managerRef IRM);
 
-   void add_conversion(unsigned int num, vertex op, unsigned int form_par_type, unsigned long long form_par_bitsize,
-                       unsigned int port_index, const generic_objRef fu_obj, const OpGraphConstRef data,
-                       const tree_managerRef TreeM, unsigned int tree_var);
+   void connect_pipelined_registers(FSMInfo::state_descriptor state, const OpGraph& data);
 
-   unsigned int address_precision(unsigned int precision, const vertex& op, const OpGraphConstRef data,
-                                  const tree_managerRef TreeM);
+   unsigned int address_precision(unsigned int precision, gc_vertex_descriptor op, const OpGraph& data,
+                                  const ir_managerRef IRM);
 
-   bool isConstantObj(unsigned int tree_index, const tree_managerRef TreeM);
+   bool isConstantObj(unsigned int ir_node_index, const ir_managerRef IRM);
 
  public:
-   /**
-    * Main constructor
-    * @param design_flow_manager is the design flow manager
-    */
    mux_connection_binding(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
-                          const DesignFlowManagerConstRef design_flow_manager);
+                          const DesignFlowManager& design_flow_manager);
 
-   /**
-    * Destructor
-    */
-   ~mux_connection_binding() override;
-
-   /**
-    * Execute the step
-    * @return the exit status of this step
-    */
    DesignFlowStep_Status InternalExec() override;
 
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
    void Initialize() override;
 
    /**
