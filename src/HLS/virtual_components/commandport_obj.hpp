@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -37,28 +37,20 @@
  *
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
 #ifndef COMMANDPORT_OBJ_HPP
 #define COMMANDPORT_OBJ_HPP
 
+#include "FSMInfo.hpp"
+#include "conn_binding.hpp"
+#include "generic_obj.hpp"
 #include "refcount.hpp"
+
 #include <utility>
 
-#include "generic_obj.hpp"
-
-#include "conn_binding.hpp"
-
-/**
- * @name Forward declarations.
- */
-//@{
 REF_FORWARD_DECL(commandport_obj);
-//@}
 
 /**
  * @class commandport_obj
@@ -71,35 +63,30 @@ class commandport_obj : public generic_obj
  public:
    /// Available command types
    using command_type = enum {
-      OPERATION = 0, /// operation enable
-      CONDITION, /// conditional value. it represents a readcond if it goes to the controller or a condition if it goes
-                 /// to the datapath
-      SWITCH,    /// switch value, it represents the value of the switch statement
-      MULTIIF,   /// represents the multi conditions
-      SELECTOR,  /// mux selector
-      UNBOUNDED, /// signal representing a communication for an unbounded object (function call)
+      OPERATION = 0,          /// operation enable
+      MULTIIF,                /// represents the multi conditions
+      SELECTOR,               /// mux selector
+      UNBOUNDED,              /// signal representing a communication for an unbounded object (function call)
       MULTI_UNBOUNDED,        /// signal representing when a multi unbounded call ends
       MULTI_UNBOUNDED_ENABLE, /// signal enabling the multi unbounded component
       WRENABLE                /// enable for register writing
    };
 
-   using data_operation_pair = std::pair<unsigned int, vertex>;
-   /// describe a transition from a source state to the target state plus the tree_node of the data transferred and the
+   using data_operation_pair = std::pair<unsigned int, gc_vertex_descriptor>;
+   /// describe a transition from a source state to the target state plus the ir_node of the data transferred and the
    /// operation vertex where the computation is performed
-   using transition = std::tuple<vertex, vertex, data_operation_pair>;
+   using transition = std::tuple<FSMInfo::state_descriptor, FSMInfo::state_descriptor, data_operation_pair>;
 
  private:
    /// TODO: substitute with a functor
    /// operation vertex associated with the command port signal (if type is condition or operation) or
    /// state vertex associated with the command port signal
-   vertex signal;
+   gc_vertex_descriptor signal;
 
    generic_objRef elem;
 
    /// It's command type for the port
    unsigned int mode;
-
-   bool is_a_phi_write_enable;
 
    CustomOrderedSet<transition> activations;
 
@@ -110,35 +97,30 @@ class commandport_obj : public generic_obj
    /**
     * This is the constructor of the commandport_obj class. It initializes type for generic_obj superclass
     * @param signal_ is vertex associated to port
-    * @param mode is command type
+    * @param _mode is command type
+    * @param _name is the port name
     */
-   commandport_obj(const vertex& signal_, unsigned int _mode, const std::string& _name)
-       : generic_obj(COMMAND_PORT, _name), signal(signal_), mode(_mode), is_a_phi_write_enable(false)
+   commandport_obj(gc_vertex_descriptor signal_, unsigned int _mode, const std::string& _name)
+       : generic_obj(COMMAND_PORT, _name), signal(signal_), mode(_mode)
    {
-      THROW_ASSERT(mode == OPERATION or mode == CONDITION or mode == SWITCH or mode == MULTIIF or mode == UNBOUNDED,
+      THROW_ASSERT(mode == OPERATION or mode == MULTIIF or mode == UNBOUNDED,
                    "Command mode not allowed into this constructor");
    }
 
    commandport_obj(generic_objRef _elem, unsigned int _mode, const std::string& _name)
-       : generic_obj(COMMAND_PORT, _name), elem(_elem), mode(_mode), is_a_phi_write_enable(false)
+       : generic_obj(COMMAND_PORT, _name), signal(gc_null_vertex()), elem(_elem), mode(_mode)
    {
       THROW_ASSERT(mode == SELECTOR || mode == WRENABLE || mode == MULTI_UNBOUNDED or mode == MULTI_UNBOUNDED_ENABLE,
                    "Selector port is wrong");
    }
 
    /**
-    * Destructor.
-    */
-   ~commandport_obj() override = default;
-
-   /**
     * Gets the vertex associated with port
     * @return reference to vertex
     */
-   const vertex& get_vertex() const
+   gc_vertex_descriptor get_vertex() const
    {
-      THROW_ASSERT(mode == OPERATION or mode == CONDITION or mode == SWITCH or mode == MULTIIF or mode == UNBOUNDED,
-                   "Command mode not allowed");
+      THROW_ASSERT(mode == OPERATION || mode == MULTIIF || mode == UNBOUNDED, "Command mode not allowed");
       return signal;
    }
 
@@ -192,10 +174,6 @@ class commandport_obj : public generic_obj
       {
          case OPERATION:
             return "OPERATION";
-         case CONDITION:
-            return "CONDITION";
-         case SWITCH:
-            return "SWITCH";
          case MULTIIF:
             return "MULTIIF";
          case UNBOUNDED:
@@ -212,16 +190,6 @@ class commandport_obj : public generic_obj
             THROW_ERROR("Command mode not allowed for port");
       }
       return "";
-   }
-
-   void set_phi_write_enable()
-   {
-      is_a_phi_write_enable = true;
-   }
-
-   bool get_phi_write_enable()
-   {
-      return is_a_phi_write_enable;
    }
 };
 

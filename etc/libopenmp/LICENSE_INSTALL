@@ -1,0 +1,53 @@
+This copyright notice is intended for the following sources
+distributed within the PandA Bambu HLS release:
+  - share/panda/libopenmp/kmp.h
+  - share/panda/libopenmp/kmp_bambu.h
+  - share/panda/libopenmp/kmp_bambu_names.h
+  - share/panda/libopenmp/kmp_barrier.cpp
+  - share/panda/libopenmp/kmp_csupport.cpp
+  - share/panda/libopenmp/kmp_dispatch.cpp
+  - share/panda/libopenmp/kmp_dispatch.h
+  - share/panda/libopenmp/kmp_os.h
+  - share/panda/libopenmp/kmp_runtime.cpp
+  - share/panda/libopenmp/kmp_sched.cpp
+  - share/panda/libopenmp/kmp_single_file.cpp
+  - share/panda/libopenmp/omp.cpp
+  - share/panda/libopenmp/omp.h
+
+The implementation within these files is a derived work from the original
+LLVM OpenMP library distributed within the LLVM project.
+This work has been derived from the source code distributed at
+https://github.com/llvm/llvm-project/tree/master/openmp.
+
+The following copyright notice apply to the original sources of the
+LLVM OpenMP library:
+
+(1)
+  Copyright 2020
+
+  Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+  See https://llvm.org/LICENSE.txt for license information.
+  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
+----------------------------------------------------------------------
+
+Specific changes to the original sources are reported in each file.
+Changes to the original source code includes the following:
+  - Adaptation of the code for the High-Level Synthesis process
+  - Removal of debugging code
+  - Internal API refactoring to allow proper interconnection to 
+    hardware implemented OpenMP library components
+
+The PandA/Bambu OpenMP library as a whole is subject to the following 
+copyright notice:
+
+(2)
+  Copyright (C) 2020-2026 Politecnico di Milano
+  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
+  Licensed under the Apache License, Version 2.0, with BAMBU exceptions
+  stated in the LICENSE file.
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.

@@ -8,11 +8,11 @@
  *
  *             ***********************************************
  *                              PandA Project 
- *                     URL: http://panda.dei.polimi.it
+ *                     URL: https://github.com/ferrandi/PandA-bambu
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2023-2024 Politecnico di Milano
+ *              Copyright (C) 2023-2026 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -51,18 +51,16 @@
 
 
   \section bambu101_base Basic usage
-  - \ref bambu101_basic_usage
-  - \ref bambu101_interface
-  - \ref bambu101_memory
-  - \ref bambu101_ip_integration
+  - Interface generation and protocol customization
+  - Memory architecture and data placement
+  - External IP integration
 
 
   \section bambu101_advanced Advanced features
-  - \ref bambu101_frontendopt
-  - \ref bambu101_hardwareopt
-  - \ref bambu101_scheduling
-  - \ref bambu101_systemsim
-  - \ref bambu101_truefloat
-  - \ref bambu101_cache
+  - Frontend and IR optimizations
+  - Hardware-oriented optimizations
+  - Scheduling strategies
+  - TrueFloat integration
+  - Compilation caching and reuse
 
 */

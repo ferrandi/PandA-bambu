@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -35,12 +35,10 @@
  * @brief Class implementation of the partial module binding based on simple conditions.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "easy_module_binding.hpp"
+
 #include "Parameter.hpp"
 #include "allocation_information.hpp"
 #include "behavioral_helper.hpp"
@@ -53,40 +51,31 @@
 #include "graph.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
+#include "ir_manager.hpp"
+#include "ir_node.hpp"
 #include "op_graph.hpp"
-#include "parallel_memory_fu_binding.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "string_manipulation.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_node.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
+
 #include <iosfwd>
 #include <string>
 #include <tuple>
 
 easy_module_binding::easy_module_binding(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
-                                         unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
+                                         unsigned int _funId, const DesignFlowManager& _design_flow_manager)
     : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::EASY_MODULE_BINDING)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
 }
 
-easy_module_binding::~easy_module_binding() = default;
-
 void easy_module_binding::Initialize()
 {
    HLSFunctionStep::Initialize();
-   if(not HLS->Rfu)
+   if(!HLS->Rfu)
    {
-      if(parameters->getOption<int>(OPT_memory_banks_number) > 1 && !parameters->isOption(OPT_context_switch))
-      {
-         HLS->Rfu = fu_bindingRef(new ParallelMemoryFuBinding(HLSMgr, funId, parameters));
-      }
-      else
-      {
-         HLS->Rfu = fu_bindingRef(fu_binding::create_fu_binding(HLSMgr, funId, parameters));
-      }
+      HLS->Rfu = fu_bindingRef(fu_binding::create_fu_binding(HLSMgr, funId, parameters));
    }
 }
 
@@ -96,7 +85,7 @@ easy_module_binding::ComputeHLSRelationships(const DesignFlowStep::RelationshipT
    HLSRelationships ret;
    switch(relationship_type)
    {
-      case DEPENDENCE_RELATIONSHIP:
+      case(DEPENDENCE_RELATIONSHIP):
       {
          ret.insert(std::make_tuple(HLSFlowStep_Type::DOMINATOR_ALLOCATION, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::WHOLE_APPLICATION));
@@ -107,11 +96,11 @@ easy_module_binding::ComputeHLSRelationships(const DesignFlowStep::RelationshipT
          }
          break;
       }
-      case INVALIDATION_RELATIONSHIP:
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case PRECEDENCE_RELATIONSHIP:
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -128,20 +117,20 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
    {
       START_TIME(step_time);
    }
-   const auto TM = HLSMgr->get_tree_manager();
+   const auto TM = HLSMgr->get_ir_manager();
    // resource binding and allocation  info
    fu_binding& fu = *(HLS->Rfu);
    const auto allocation_information = HLS->allocation_information;
    // pointer to a Control, Data dependence and antidependence graph graph
    const auto FB = HLSMgr->CGetFunctionBehavior(funId);
-   const auto sdg = FB->CGetOpGraph(FunctionBehavior::SDG);
+   const auto sdg = FB->GetOpGraph(FunctionBehavior::SDG);
 
    unsigned int fu_unit;
    /// compute unshared resources
    std::map<unsigned int, unsigned int> n_shared_fu;
-   for(const auto operation : sdg->CGetOperations())
+   for(const auto operation : sdg.CGetOperations())
    {
-      const auto id = sdg->CGetOpNodeInfo(operation)->GetNodeId();
+      const auto id = sdg.CGetNodeInfo(operation).GetNodeId();
       if(id == ENTRY_ID || id == EXIT_ID)
       {
          continue;
@@ -165,73 +154,44 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                  "-->Easy binding information for function " + FB->CGetBehavioralHelper()->get_function_name() + ":");
+                  "-->Easy binding information for function " + FB->CGetBehavioralHelper()->GetFunctionName() + ":");
    /// check easy binding and compute the list of vertices for which a sharing is possible
-   if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
+
+   CustomOrderedSet<OpGraph::vertex_descriptor> easy_bound_vertices;
+   for(const auto op : sdg.CGetOperations())
    {
-      std::set<vertex> bound_vertices;
-      std::map<unsigned int, unsigned int> fu_instances;
-      for(const auto op : sdg->CGetOperations())
+      if(fu.get_index(op) != INFINITE_UINT)
       {
-         if(fu.get_index(op) != INFINITE_UINT)
+         continue;
+      }
+      fu_unit = fu.get_assign(op);
+      if(allocation_information->is_vertex_bounded(fu_unit) ||
+         (allocation_information->is_memory_unit(fu_unit) &&
+          (!allocation_information->is_readonly_memory_unit(fu_unit) ||
+           (!allocation_information->is_one_cycle_direct_access_memory_unit(fu_unit) &&
+            (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) &&
+          allocation_information->get_number_channels(fu_unit) == 1) ||
+         n_shared_fu.find(fu_unit)->second == 1)
+      {
+         fu.bind(op, fu_unit, 0);
+         easy_bound_vertices.insert(op);
+         const auto node_info = sdg.CGetNodeInfo(op);
+         if(node_info.GetNodeId())
          {
-            continue;
-         }
-         fu_unit = fu.get_assign(op);
-         if(fu_instances.find(fu_unit) == fu_instances.end())
-         {
-            fu_instances.insert(std::pair<unsigned int, unsigned int>(fu_unit, 0));
-         }
-         fu.bind(op, fu_unit, fu_instances[fu_unit]);
-         fu_instances[fu_unit]++;
-         bound_vertices.insert(op);
-         const auto node_id = sdg->CGetOpNodeInfo(op)->GetNodeId();
-         if(node_id)
-         {
-            INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
-                           "---" + GET_NAME(sdg, op) + "(" +
-                               (node_id == ENTRY_ID ?
-                                    "ENTRY" :
-                                    (node_id == EXIT_ID ? "EXIT" : TM->GetTreeNode(node_id)->ToString())) +
-                               ") bound to " + allocation_information->get_fu_name(fu_unit).first + "(0)");
+            INDENT_OUT_MEX(
+                OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
+                "---" + node_info.vertex_name + "(" +
+                    (node_info.GetNodeId() == ENTRY_ID ?
+                         "ENTRY" :
+                         (node_info.GetNodeId() == EXIT_ID ? "EXIT" :
+                                                             TM->GetIRNode(node_info.GetNodeId())->ToString())) +
+                    ") bound to " + allocation_information->get_fu_name(fu_unit).first + "(0)");
          }
       }
    }
-   else
-   {
-      CustomOrderedSet<vertex> easy_bound_vertices;
-      for(const auto op : sdg->CGetOperations())
-      {
-         if(fu.get_index(op) != INFINITE_UINT)
-         {
-            continue;
-         }
-         fu_unit = fu.get_assign(op);
-         if(allocation_information->is_vertex_bounded(fu_unit) ||
-            (allocation_information->is_memory_unit(fu_unit) &&
-             (!allocation_information->is_readonly_memory_unit(fu_unit) ||
-              (!allocation_information->is_one_cycle_direct_access_memory_unit(fu_unit) &&
-               (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) &&
-             allocation_information->get_number_channels(fu_unit) == 1) ||
-            n_shared_fu.find(fu_unit)->second == 1)
-         {
-            fu.bind(op, fu_unit, 0);
-            easy_bound_vertices.insert(op);
-            const auto node_id = sdg->CGetOpNodeInfo(op)->GetNodeId();
-            if(node_id)
-            {
-               INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
-                              "---" + GET_NAME(sdg, op) + "(" +
-                                  (node_id == ENTRY_ID ?
-                                       "ENTRY" :
-                                       (node_id == EXIT_ID ? "EXIT" : TM->GetTreeNode(node_id)->ToString())) +
-                                  ") bound to " + allocation_information->get_fu_name(fu_unit).first + "(0)");
-            }
-         }
-      }
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                     "---Bound operations:" + STR(easy_bound_vertices.size()) + "/" + STR(boost::num_vertices(*sdg)));
-   }
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---Bound operations:" + STR(easy_bound_vertices.size()) + "/" + STR(boost::num_vertices(sdg)));
+
    if(output_level >= OUTPUT_LEVEL_MINIMUM && output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
       STOP_TIME(step_time);

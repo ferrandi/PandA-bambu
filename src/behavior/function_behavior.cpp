@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -37,48 +37,41 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "function_behavior.hpp"
 
+#include "BasicBlockReachability.hpp"
+#include "Parameter.hpp"
+#include "SemiNCADominance.hpp"
+#include "application_manager.hpp"
+#include "basic_block.hpp"
+#include "basic_blocks_graph_constructor.hpp"
+#include "behavioral_helper.hpp"
+#include "cdfg_edge_info.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-
-#include "Dominance.hpp"                      // for dominance
-#include "Parameter.hpp"                      // for ParameterConstRef
-#include "application_manager.hpp"            // for application_manager
-#include "basic_block.hpp"                    // for BBGraph, BBGraphInfo
-#include "basic_blocks_graph_constructor.hpp" // for BBGraphRef, BasicBl...
-#include "behavioral_helper.hpp"              // for BehavioralHelper
-#include "cdfg_edge_info.hpp"                 // for CFG_SELECTOR, CDG_S...
-#include "custom_set.hpp"                     // for CustomSet
-#include "exceptions.hpp"                     // for THROW_ASSERT, THROW...
-#include "graph.hpp"                          // for vertex, VertexIterator
-#include "level_constructor.hpp"              // for level_constructor
-#include "loop.hpp"                           // for LoopsRef
-#include "loops.hpp"                          // for ProfilingInformatio...
-#include "op_graph.hpp"                       // for OpGraph, OpGraphCon...
-#include "operations_graph_constructor.hpp"   // for OpGraphRef, operati...
-#include "tree_helper.hpp"
-#include "tree_manager.hpp" // for pipeline_enabled
-#include "tree_node.hpp"    // for pipeline_enabled
+#include "custom_set.hpp"
+#include "exceptions.hpp"
+#include "graph.hpp"
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
+#include "ir_node.hpp"
+#include "op_graph.hpp"
+#include "operations_graph_constructor.hpp"
+#include "typed_node_info.hpp"
 #include "utility.hpp"
 #if HAVE_HOST_PROFILING_BUILT
-#include "profiling_information.hpp" // for BBGraphConstRef
+#include "profiling_information.hpp"
 #endif
-#include "typed_node_info.hpp" // for GET_NAME
-
-#include <boost/graph/adjacency_list.hpp>     // for adjacency_list
-#include <boost/graph/filtered_graph.hpp>     // for filtered_graph<>::v...
-#include <boost/iterator/filter_iterator.hpp> // for filter_iterator
-#include <boost/iterator/iterator_facade.hpp> // for operator!=, operator++
-#include <boost/tuple/tuple.hpp>              // for tie
-#include <list>                               // for list, _List_const_i...
-#include <ostream>                            // for operator<<, basic_o...
-#include <string>                             // for operator+, char_traits
-#include <utility>                            // for pair
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/filtered_graph.hpp>
+#include <boost/iterator/filter_iterator.hpp>
+#include <boost/iterator/iterator_facade.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <list>
+#include <ostream>
+#include <string>
+#include <utility>
 
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #pragma GCC diagnostic push
@@ -89,48 +82,51 @@ memory_access::memory_access(unsigned int _node_id, unsigned int _base_address, 
 {
 }
 
+OMPInfo::OMPInfo(unsigned int _local_idx, unsigned int _context_count, unsigned int _core_id, unsigned int _ncore,
+                 unsigned int _fork_call_id, const OMPInfoConstRef& _parent, unsigned int _kmp_t_nproc)
+    : fork_call_id(_fork_call_id),
+      ncore(_ncore),
+      core_id(_core_id),
+      kmp_t_nproc(_kmp_t_nproc),
+      context_count(_context_count),
+      mem_page_size(0ULL),
+      critical(),
+      local_idx(_local_idx),
+      global_idx(make_global(_local_idx, _ncore, _parent)),
+      parent(_parent)
+{
+}
+
+unsigned int OMPInfo::make_global(unsigned int idx, unsigned int ncore, OMPInfoConstRef _parent)
+{
+   if(!idx)
+   {
+      return _parent ? _parent->global_idx : 0U;
+   }
+   if(_parent)
+   {
+      auto ancestor_idx = _parent->parent ? _parent->parent->local_idx : 0U;
+      idx = (_parent->ncore * ancestor_idx + _parent->local_idx) * (ncore - 1U) + idx;
+      unsigned int prev_idx = 0U;
+      while(_parent->parent)
+      {
+         const auto ancestor_ncore = _parent->parent->ncore;
+         prev_idx += (_parent->ncore - 1U) * ancestor_ncore;
+         _parent = _parent->parent;
+      }
+      const auto root_ncore = _parent->ncore;
+      return (root_ncore - 1U) + prev_idx + idx;
+   }
+   return idx;
+}
+
 FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, const BehavioralHelperRef _helper,
                                    const ParameterConstRef _parameters)
     : helper(_helper),
-      bb_graphs_collection(
-          new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(_AppM, _helper->get_function_index())), _parameters)),
-      op_graphs_collection(new OpGraphsCollection(OpGraphInfoRef(new OpGraphInfo(helper)), _parameters)),
-      bb(new BBGraph(bb_graphs_collection, CFG_SELECTOR)),
-      extended_bb(new BBGraph(bb_graphs_collection, CFG_SELECTOR | ECFG_SELECTOR)),
-      cdg_bb(new BBGraph(bb_graphs_collection, CDG_SELECTOR)),
-      dj(new BBGraph(bb_graphs_collection, D_SELECTOR | J_SELECTOR)),
-      dt(new BBGraph(bb_graphs_collection, D_SELECTOR)),
-      fbb(new BBGraph(bb_graphs_collection, FCFG_SELECTOR)),
-      pdt(new BBGraph(bb_graphs_collection, PD_SELECTOR)),
-      ppg(new BBGraph(bb_graphs_collection, PP_SELECTOR | CFG_SELECTOR)),
-      cfg(new OpGraph(op_graphs_collection, CFG_SELECTOR)),
-      extended_cfg(new OpGraph(op_graphs_collection, CFG_SELECTOR | ECFG_SELECTOR)),
-      fcfg(new OpGraph(op_graphs_collection, FCFG_SELECTOR)),
-      adg(new OpGraph(op_graphs_collection, ADG_SELECTOR)),
-      fadg(new OpGraph(op_graphs_collection, FADG_SELECTOR)),
-      cdg(new OpGraph(op_graphs_collection, CDG_SELECTOR)),
-      fcdg(new OpGraph(op_graphs_collection, FCDG_SELECTOR)),
-      dfg(new OpGraph(op_graphs_collection, DFG_SELECTOR)),
-      fdfg(new OpGraph(op_graphs_collection, FDFG_SELECTOR)),
-      flg(new OpGraph(op_graphs_collection, FLG_SELECTOR)),
-      odg(new OpGraph(op_graphs_collection, ODG_SELECTOR)),
-      fodg(new OpGraph(op_graphs_collection, FODG_SELECTOR)),
-      flaoddg(new OpGraph(op_graphs_collection, FLG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR | DFG_SELECTOR)),
-      fflaoddg(new OpGraph(op_graphs_collection, FLG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR | FDFG_SELECTOR)),
-      flsaodg(new OpGraph(op_graphs_collection, FLG_SELECTOR | SDG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR)),
-#ifndef NDEBUG
-      flsaoddg(new OpGraph(op_graphs_collection,
-                           FLG_SELECTOR | SDG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR | DEBUG_SELECTOR)),
-#endif
-      fflsaodg(new OpGraph(op_graphs_collection, FLG_SELECTOR | FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR)),
-      saodg(new OpGraph(op_graphs_collection, SDG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR)),
-      fsaodg(new OpGraph(op_graphs_collection, FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR)),
-      sdg(new OpGraph(op_graphs_collection, SDG_SELECTOR)),
-      fsdg(new OpGraph(op_graphs_collection, FSDG_SELECTOR)),
-      sg(new OpGraph(op_graphs_collection, SG_SELECTOR | FLG_SELECTOR)),
-      agg_virtualg(new OpGraph(op_graphs_collection, DFG_AGG_SELECTOR | ADG_AGG_SELECTOR)),
+      bb_graphs_collection(new BBGraphsCollection(BBGraphInfo(_AppM, _helper->get_function_index()))),
+      op_graphs_collection(new OpGraphsCollection(OpGraphInfo(helper))),
 #if HAVE_HOST_PROFILING_BUILT
-      profiling_information(ProfilingInformationRef(new ProfilingInformation(bb))),
+      profiling_information(ProfilingInformationRef(new ProfilingInformation(bb_graphs_collection.get()))),
 #endif
       map_levels(),
       bb_map_levels(),
@@ -151,46 +147,39 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       has_undefined_function_receiveing_pointers(false),
       state_variables(),
       pipeline_enabled(false),
-      simple_pipeline(false),
+      is_stallable_pipelined_function(false),
       initiation_time(1),
       _channels_number(
           _parameters->isOption(OPT_channels_number) ? _parameters->getOption<unsigned int>(OPT_channels_number) : 0),
       _channels_type(_parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type)),
       _allocation_policy(_parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy)),
-      bb_reachability(),
-      feedback_bb_reachability(),
-      ogc(new operations_graph_constructor(op_graphs_collection)),
-      bbgc(new BasicBlocksGraphConstructor(bb_graphs_collection)),
-      lm(new level_constructor(map_levels, deque_levels)),
-      bb_lm(new level_constructor(bb_map_levels, bb_deque_levels)),
+      _omp_core(false),
+      _omp_info(nullptr),
+      ogc(new operations_graph_constructor(*op_graphs_collection)),
+      bbgc(new BasicBlocksGraphConstructor(*bb_graphs_collection)),
       dominators(nullptr),
       post_dominators(nullptr),
       memory_info(),
       packed_vars(false)
 {
-   THROW_ASSERT(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index())->get_kind() == function_decl_K,
-                "Called function_behavior on a node which is not a function_decl");
-   auto* decl_node = GetPointer<function_decl>(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index()));
-   const auto fname = tree_helper::GetMangledFunctionName(decl_node);
-   if(!_parameters->isOption(OPT_pipelining))
-   {
-      pipeline_enabled = decl_node->is_pipelined();
-      simple_pipeline = decl_node->is_simple_pipeline();
-      initiation_time = decl_node->get_initiation_time();
-      if(pipeline_enabled && simple_pipeline)
-      {
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
-                        "Required pipelining with II=1 for function: " + fname);
-      }
-      else if(pipeline_enabled)
-      {
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
-                        "Required pipelining with II=" + STR(initiation_time) + " for function: " + fname);
-      }
-   }
-   else
+   const auto fnode = _AppM->get_ir_manager()->GetIRNode(_helper->get_function_index());
+   THROW_ASSERT(fnode->get_kind() == function_val_node_K,
+                "Called function_behavior on a node which is not a function_val_node");
+   auto* fd = GetPointerS<function_val_node>(fnode);
+   const auto fname = helper->GetFunctionName();
+   const auto out_lvl = _parameters->getOption<int>(OPT_output_level);
+
+   pipeline_enabled = fd->is_pipelined();
+   is_stallable_pipelined_function = fd->get_pipeline_style() == function_val_node::STP_STYLE;
+   initiation_time = fd->get_initiation_time();
+
+   if(_parameters->isOption(OPT_pipelining))
    {
       auto tmp_string = _parameters->getOption<std::string>(OPT_pipelining);
+      if(tmp_string.at(0) == '=')
+      {
+         tmp_string = tmp_string.substr(1);
+      }
       if(tmp_string == "no-@ll")
       {
          // force no pipelining
@@ -198,173 +187,97 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       else if(tmp_string == "@ll")
       {
          pipeline_enabled = true;
-         simple_pipeline = true;
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
-                        "Required pipelining with II=1 for function: " + fname);
+         initiation_time = 1;
       }
       else
       {
          const auto funcs_values = string_to_container<std::vector<std::string>>(tmp_string, ",");
-         for(auto fun_pipeline : funcs_values)
+         const auto demangle_fname = [&]() {
+            std::string fsymbol = cxa_demangle(fname);
+            return fsymbol.substr(0, fsymbol.find('('));
+         }();
+         for(const auto& fun_pipeline : funcs_values)
          {
-            if(!fun_pipeline.empty() && fun_pipeline.at(0) == '=')
+            const auto fsymbol = fun_pipeline.substr(0, fun_pipeline.find('='));
+            const auto ii_str = fun_pipeline.substr(fsymbol.size() + (fun_pipeline.size() > fsymbol.size()));
+            if(fsymbol.size() && (fname == fsymbol || demangle_fname == fsymbol ||
+                                  (fname.find("__float") == 0 && fname.find(fsymbol) == 0)))
             {
-               fun_pipeline = fun_pipeline.substr(1);
-            }
-            const auto splitted = string_to_container<std::vector<std::string>>(fun_pipeline, "=");
-            if(!splitted.empty() &&
-               (fname == splitted.at(0) || (fname.find("__float") == 0 && fname.find(splitted.at(0)) == 0)))
-            {
-               if(splitted.size() == 1)
-               {
-                  pipeline_enabled = true;
-                  simple_pipeline = true;
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
-                                 "Required pipelining with II=1 for function: " + fname);
-               }
-               else if(splitted.size() == 2)
-               {
-                  pipeline_enabled = true;
-                  initiation_time = std::stoi(splitted.at(1));
-                  if(initiation_time == 1)
-                  {
-                     simple_pipeline = true;
-                  }
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
-                                 "Required pipelining with II=" + STR(initiation_time) + " for function: " + fname);
-               }
+               pipeline_enabled = true;
+               initiation_time = ii_str.size() ? static_cast<unsigned int>(std::stoul((ii_str))) : 1U;
             }
          }
       }
    }
+
+   if(pipeline_enabled)
+   {
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, out_lvl,
+                     "Required pipelining with II=" + STR(initiation_time) + " for function: " + fname);
+   }
 }
 
-FunctionBehavior::~FunctionBehavior()
+const OpGraphsCollection& FunctionBehavior::GetOpGraphsCollection() const
 {
-   if(dominators)
-   {
-      delete dominators;
-   }
-   if(post_dominators)
-   {
-      delete post_dominators;
-   }
+   return *op_graphs_collection;
 }
 
-OpGraphRef FunctionBehavior::GetOpGraph(FunctionBehavior::graph_type gt)
-{
-   switch(gt)
-   {
-      case CFG:
-         return cfg;
-      case ECFG:
-         return extended_cfg;
-      case FCFG:
-         return fcfg;
-      case CDG:
-         return cdg;
-      case FCDG:
-         return fcdg;
-      case DFG:
-         return dfg;
-      case FDFG:
-         return fdfg;
-      case ADG:
-         return adg;
-      case FADG:
-         return fadg;
-      case ODG:
-         return odg;
-      case FODG:
-         return fodg;
-      case SDG:
-         return sdg;
-      case FSDG:
-         return fsdg;
-      case SAODG:
-         return saodg;
-      case FSAODG:
-         return fsaodg;
-      case FLSAODG:
-         return flsaodg;
-#ifndef NDEBUG
-      case FLSAODDG:
-         return flsaoddg;
-#endif
-      case FFLSAODG:
-         return fflsaodg;
-      case FLAODDG:
-         return flaoddg;
-      case FFLAODDG:
-         return fflaoddg;
-      case FLG:
-         return flg;
-      case SG:
-         return sg;
-      case AGG_VIRTUALG:
-         return agg_virtualg;
-      default:
-         THROW_UNREACHABLE("Not supported graph type");
-   }
-   return OpGraphRef();
-}
-
-const OpGraphConstRef FunctionBehavior::CGetOpGraph(FunctionBehavior::graph_type gt) const
+OpGraph FunctionBehavior::GetOpGraph(FunctionBehavior::graph_type gt) const
 {
    switch(gt)
    {
       case CFG:
-         return cfg;
-      case ECFG:
-         return extended_cfg;
+         return OpGraph(*op_graphs_collection, CFG_SELECTOR);
       case FCFG:
-         return fcfg;
+         return OpGraph(*op_graphs_collection, FCFG_SELECTOR);
       case CDG:
-         return cdg;
+         return OpGraph(*op_graphs_collection, CDG_SELECTOR);
       case FCDG:
-         return fcdg;
+         return OpGraph(*op_graphs_collection, FCDG_SELECTOR);
       case DFG:
-         return dfg;
+         return OpGraph(*op_graphs_collection, DFG_SELECTOR);
       case FDFG:
-         return fdfg;
+         return OpGraph(*op_graphs_collection, FDFG_SELECTOR);
       case ADG:
-         return adg;
+         return OpGraph(*op_graphs_collection, ADG_SELECTOR);
       case FADG:
-         return fadg;
+         return OpGraph(*op_graphs_collection, FADG_SELECTOR);
       case ODG:
-         return odg;
+         return OpGraph(*op_graphs_collection, ODG_SELECTOR);
       case FODG:
-         return fodg;
+         return OpGraph(*op_graphs_collection, FODG_SELECTOR);
       case SDG:
-         return sdg;
+         return OpGraph(*op_graphs_collection, SDG_SELECTOR);
       case FSDG:
-         return fsdg;
+         return OpGraph(*op_graphs_collection, FSDG_SELECTOR);
       case SAODG:
-         return saodg;
+         return OpGraph(*op_graphs_collection, SDG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR);
       case FSAODG:
-         return fsaodg;
+         return OpGraph(*op_graphs_collection, FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR);
       case FLSAODG:
-         return flsaodg;
+         return OpGraph(*op_graphs_collection, FLG_SELECTOR | SDG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR);
 #ifndef NDEBUG
       case FLSAODDG:
-         return flsaoddg;
+         return OpGraph(*op_graphs_collection,
+                        FLG_SELECTOR | SDG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR | DEBUG_SELECTOR);
 #endif
       case FFLSAODG:
-         return fflsaodg;
+         return OpGraph(*op_graphs_collection, FLG_SELECTOR | FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR);
       case FLAODDG:
-         return flaoddg;
+         return OpGraph(*op_graphs_collection, FLG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR | DFG_SELECTOR);
       case FFLAODDG:
-         return fflaoddg;
+         return OpGraph(*op_graphs_collection, FLG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR | FDFG_SELECTOR);
       case FLG:
-         return flg;
+         return OpGraph(*op_graphs_collection, FLG_SELECTOR);
       case SG:
-         return sg;
+         return OpGraph(*op_graphs_collection, SG_SELECTOR | FLG_SELECTOR);
       case AGG_VIRTUALG:
-         return agg_virtualg;
+         return OpGraph(*op_graphs_collection, DFG_AGG_SELECTOR | ADG_AGG_SELECTOR);
       default:
-         THROW_UNREACHABLE("Not supported graph type");
+         break;
    }
-   return OpGraphConstRef();
+   THROW_UNREACHABLE("Not supported graph type");
+   return OpGraph(*op_graphs_collection, CFG_SELECTOR);
 }
 
 BehavioralHelperRef FunctionBehavior::GetBehavioralHelper()
@@ -378,184 +291,162 @@ const BehavioralHelperConstRef FunctionBehavior::CGetBehavioralHelper() const
 }
 
 /// optimization in case the subset is equal to the whole set of vertices is possible
-const OpGraphConstRef FunctionBehavior::CGetOpGraph(FunctionBehavior::graph_type gt,
-                                                    const OpVertexSet& statements) const
+OpGraph FunctionBehavior::GetOpGraph(FunctionBehavior::graph_type gt,
+                                     const CustomUnorderedSet<OpGraph::vertex_descriptor>& subset) const
 {
-   /// This "transformation" is necessary because of graph constructor
-   CustomUnorderedSet<vertex> subset;
-   subset.insert(statements.begin(), statements.end());
+   if(subset.size() == op_graphs_collection->num_vertices())
+   {
+      return GetOpGraph(gt);
+   }
+
    switch(gt)
    {
       case CFG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, CFG_SELECTOR, subset));
+         return OpGraph(*op_graphs_collection, CFG_SELECTOR, subset);
 
       case FCFG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, FCFG_SELECTOR, subset));
-
-      case ECFG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, CFG_SELECTOR | ECFG_SELECTOR, subset));
+         return OpGraph(*op_graphs_collection, FCFG_SELECTOR, subset);
 
       case CDG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, CDG_SELECTOR, subset));
+         return OpGraph(*op_graphs_collection, CDG_SELECTOR, subset);
 
       case FCDG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, FCDG_SELECTOR, subset));
+         return OpGraph(*op_graphs_collection, FCDG_SELECTOR, subset);
 
       case DFG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, DFG_SELECTOR, subset));
+         return OpGraph(*op_graphs_collection, DFG_SELECTOR, subset);
 
       case FDFG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, FDFG_SELECTOR, subset));
+         return OpGraph(*op_graphs_collection, FDFG_SELECTOR, subset);
 
       case ADG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, ADG_SELECTOR, subset));
+         return OpGraph(*op_graphs_collection, ADG_SELECTOR, subset);
 
       case FADG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, ADG_SELECTOR | FB_ADG_SELECTOR, subset));
+         return OpGraph(*op_graphs_collection, ADG_SELECTOR | FB_ADG_SELECTOR, subset);
 
       case ODG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, ODG_SELECTOR, subset));
+         return OpGraph(*op_graphs_collection, ODG_SELECTOR, subset);
 
       case FODG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, FODG_SELECTOR, subset));
+         return OpGraph(*op_graphs_collection, FODG_SELECTOR, subset);
 
       case SDG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, SDG_SELECTOR, subset));
+         return OpGraph(*op_graphs_collection, SDG_SELECTOR, subset);
 
       case FSDG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, FSDG_SELECTOR, subset));
+         return OpGraph(*op_graphs_collection, FSDG_SELECTOR, subset);
 
       case SAODG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, SAODG_SELECTOR, subset));
+         return OpGraph(*op_graphs_collection, SAODG_SELECTOR, subset);
 
       case FSAODG:
-         return OpGraphRef(
-             new OpGraph(op_graphs_collection, FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR | FDFG_SELECTOR, subset));
+         return OpGraph(*op_graphs_collection, FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR | FDFG_SELECTOR, subset);
 
       case FLSAODG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, SAODG_SELECTOR | FLG_SELECTOR, subset));
+         return OpGraph(*op_graphs_collection, SAODG_SELECTOR | FLG_SELECTOR, subset);
 
 #ifndef NDEBUG
       case FLSAODDG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, SAODG_SELECTOR | FLG_SELECTOR | DEBUG_SELECTOR, subset));
+         return OpGraph(*op_graphs_collection, SAODG_SELECTOR | FLG_SELECTOR | DEBUG_SELECTOR, subset);
 #endif
 
       case FFLSAODG:
-         return OpGraphRef(
-             new OpGraph(op_graphs_collection, FLG_SELECTOR | FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR, subset));
+         return OpGraph(*op_graphs_collection, FLG_SELECTOR | FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR, subset);
 
       case FLAODDG:
-         return OpGraphRef(
-             new OpGraph(op_graphs_collection, DFG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR | FLG_SELECTOR, subset));
+         return OpGraph(*op_graphs_collection, DFG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR | FLG_SELECTOR, subset);
 
       case FFLAODDG:
-         return OpGraphRef(
-             new OpGraph(op_graphs_collection, FLG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR | FDFG_SELECTOR));
+         return OpGraph(*op_graphs_collection, FLG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR | FDFG_SELECTOR);
 
       case FLG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, FLG_SELECTOR, subset));
+         return OpGraph(*op_graphs_collection, FLG_SELECTOR, subset);
 
       case SG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, SG_SELECTOR, subset));
+         return OpGraph(*op_graphs_collection, SG_SELECTOR, subset);
 
       case AGG_VIRTUALG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, DFG_AGG_SELECTOR | ADG_AGG_SELECTOR, subset));
+         return OpGraph(*op_graphs_collection, DFG_AGG_SELECTOR | ADG_AGG_SELECTOR, subset);
       default:
          THROW_UNREACHABLE("");
    }
-   return OpGraphConstRef();
+   return GetOpGraph(gt);
 }
 
-BBGraphRef FunctionBehavior::GetBBGraph(FunctionBehavior::bb_graph_type gt)
+const BBGraphsCollection& FunctionBehavior::GetBBGraphsCollection() const
+{
+   return *bb_graphs_collection;
+}
+
+BBGraph FunctionBehavior::GetBBGraph(FunctionBehavior::bb_graph_type gt) const
 {
    switch(gt)
    {
       case BB:
-         return bb;
+         return BBGraph(*bb_graphs_collection, CFG_SELECTOR);
       case FBB:
-         return fbb;
-      case EBB:
-         return extended_bb;
+         return BBGraph(*bb_graphs_collection, FCFG_SELECTOR);
       case CDG_BB:
-         return cdg_bb;
+         return BBGraph(*bb_graphs_collection, CDG_SELECTOR);
       case DOM_TREE:
-         return dt;
+         return BBGraph(*bb_graphs_collection, D_SELECTOR);
       case POST_DOM_TREE:
-         return pdt;
-      case PPG:
-         return ppg;
+         return BBGraph(*bb_graphs_collection, PD_SELECTOR);
       case DJ:
-         return dj;
+         return BBGraph(*bb_graphs_collection, D_SELECTOR | J_SELECTOR);
       default:
-         THROW_UNREACHABLE("");
+         break;
    }
-   return BBGraphRef();
-}
-
-const BBGraphConstRef FunctionBehavior::CGetBBGraph(FunctionBehavior::bb_graph_type gt) const
-{
-   switch(gt)
-   {
-      case BB:
-         return bb;
-      case FBB:
-         return fbb;
-      case EBB:
-         return extended_bb;
-      case CDG_BB:
-         return cdg_bb;
-      case DOM_TREE:
-         return dt;
-      case POST_DOM_TREE:
-         return pdt;
-      case PPG:
-         return ppg;
-      case DJ:
-         return dj;
-      default:
-         THROW_UNREACHABLE("");
-   }
-   return BBGraphRef();
+   THROW_UNREACHABLE("");
+   return BBGraph(*bb_graphs_collection, CFG_SELECTOR);
 }
 
 void FunctionBehavior::print(std::ostream& os) const
 {
-   os << "Function " << helper->get_function_name();
+   os << "Function " << helper->GetFunctionName();
    // os << "Bulk operation graph of " << og;
    // os << ", , ";
 }
 
-const std::deque<vertex>& FunctionBehavior::get_levels() const
+void FunctionBehavior::add_level(gc_vertex_descriptor v, unsigned int index)
+{
+   map_levels[v] = index;
+   deque_levels.push_back(v);
+}
+
+const std::deque<gc_vertex_descriptor>& FunctionBehavior::get_levels() const
 {
    return deque_levels;
 }
 
-const std::deque<vertex>& FunctionBehavior::get_bb_levels() const
-{
-   return bb_deque_levels;
-}
-
-const std::map<vertex, unsigned int>& FunctionBehavior::get_map_levels() const
+const std::map<gc_vertex_descriptor, unsigned int>& FunctionBehavior::get_map_levels() const
 {
    return map_levels;
 }
 
-const std::map<vertex, unsigned int>& FunctionBehavior::get_bb_map_levels() const
+void FunctionBehavior::add_bb_level(gc_vertex_descriptor v, unsigned int index)
+{
+   bb_map_levels[v] = index;
+   bb_deque_levels.push_back(v);
+}
+
+const std::deque<gc_vertex_descriptor>& FunctionBehavior::get_bb_levels() const
+{
+   return bb_deque_levels;
+}
+
+const std::map<gc_vertex_descriptor, unsigned int>& FunctionBehavior::get_bb_map_levels() const
 {
    return bb_map_levels;
 }
 
-void FunctionBehavior::set_epp(EdgeDescriptor e, unsigned long long value)
-{
-   ppg->GetBBEdgeInfo(e)->set_epp_value(value);
-}
-
-const LoopsConstRef FunctionBehavior::CGetLoops() const
+LoopsConstRef FunctionBehavior::getConstLoops() const
 {
    return loops;
 }
 
-const LoopsRef FunctionBehavior::GetLoops() const
+LoopsRef FunctionBehavior::getLoops() const
 {
    return loops;
 }
@@ -658,10 +549,10 @@ CustomOrderedSet<unsigned int> FunctionBehavior::get_local_variables(const appli
    // I simply have to go over all the vertices and get the used variables;
    // the variables which have to be declared are all those variables but
    // the globals ones
-   VertexIterator v, vEnd;
-   for(boost::tie(v, vEnd) = boost::vertices(*cfg); v != vEnd; v++)
+   const auto cfg = GetOpGraph(FunctionBehavior::CFG);
+   for(const auto& v : cfg.vertices())
    {
-      const auto& varsTemp = cfg->CGetOpNodeInfo(*v)->cited_variables;
+      const auto& varsTemp = cfg.CGetNodeInfo(v).cited_variables;
       vars.insert(varsTemp.begin(), varsTemp.end());
    }
    for(const auto& funParam : helper->GetParameters())
@@ -675,53 +566,32 @@ CustomOrderedSet<unsigned int> FunctionBehavior::get_local_variables(const appli
    return vars;
 }
 
-bool op_vertex_order_by_map::operator()(const vertex x, const vertex y) const
+bool FunctionBehavior::CheckBBReachability(BBGraph::vertex_descriptor first_basic_block,
+                                           BBGraph::vertex_descriptor second_basic_block) const
 {
-   THROW_ASSERT(ref.find(x) != ref.end(), "Vertex " + GET_NAME(g, x) + " is not in topological_sort");
-   THROW_ASSERT(ref.find(y) != ref.end(), "Second " + GET_NAME(g, y) + " vertex is not in topological_sort");
-   return ref.find(x)->second < ref.find(y)->second;
-}
-
-bool FunctionBehavior::CheckBBReachability(const vertex first_basic_block, const vertex second_basic_block) const
-{
-   if(bb_reachability.find(first_basic_block) != bb_reachability.end() and
-      bb_reachability.find(first_basic_block)->second.find(second_basic_block) !=
-          bb_reachability.find(first_basic_block)->second.end())
-   {
-      return true;
-   }
-   else
+   if(first_basic_block == second_basic_block)
    {
       return false;
    }
+   const auto fcfg = GetBBGraph(FunctionBehavior::BB);
+   return reachability::HasPath(fcfg, first_basic_block, second_basic_block);
 }
 
-bool FunctionBehavior::CheckBBFeedbackReachability(const vertex first_basic_block,
-                                                   const vertex second_basic_block) const
+bool FunctionBehavior::CheckBBFeedbackReachability(BBGraph::vertex_descriptor first_basic_block,
+                                                   BBGraph::vertex_descriptor second_basic_block) const
 {
-   if(CheckBBReachability(first_basic_block, second_basic_block))
-   {
-      return true;
-   }
-   if(feedback_bb_reachability.find(first_basic_block) != feedback_bb_reachability.end() and
-      feedback_bb_reachability.find(first_basic_block)->second.find(second_basic_block) !=
-          feedback_bb_reachability.find(first_basic_block)->second.end())
-   {
-      return true;
-   }
-   else
-   {
-      return false;
-   }
+   const auto fcfg = GetBBGraph(FunctionBehavior::FBB);
+   return reachability::HasPath(fcfg, first_basic_block, second_basic_block);
 }
 
-bool FunctionBehavior::CheckReachability(const vertex first_operation, const vertex second_operation) const
+bool FunctionBehavior::CheckReachability(OpGraph::vertex_descriptor first_operation,
+                                         OpGraph::vertex_descriptor second_operation) const
 {
-   const CustomUnorderedMap<unsigned int, vertex>& bb_index_map = bb->CGetBBGraphInfo()->bb_index_map;
-   const unsigned int first_bb_index = cfg->CGetOpNodeInfo(first_operation)->bb_index;
-   const unsigned int second_bb_index = cfg->CGetOpNodeInfo(second_operation)->bb_index;
-   const vertex first_bb_vertex = bb_index_map.find(first_bb_index)->second;
-   const vertex second_bb_vertex = bb_index_map.find(second_bb_index)->second;
+   const auto& bb_index_map = bb_graphs_collection->CGetGraphInfo().bb_index_map;
+   const unsigned int first_bb_index = op_graphs_collection->CGetNodeInfo(first_operation).bb_index;
+   const unsigned int second_bb_index = op_graphs_collection->CGetNodeInfo(second_operation).bb_index;
+   const auto first_bb_vertex = bb_index_map.find(first_bb_index)->second;
+   const auto second_bb_vertex = bb_index_map.find(second_bb_index)->second;
    if(CheckBBReachability(first_bb_vertex, second_bb_vertex))
    {
       return true;
@@ -730,9 +600,9 @@ bool FunctionBehavior::CheckReachability(const vertex first_operation, const ver
    {
       THROW_ASSERT(map_levels.size(), "");
       THROW_ASSERT(map_levels.find(first_operation) != map_levels.end(),
-                   "Level of " + GET_NAME(cfg, first_operation) + " not found");
+                   "Level of " + op_graphs_collection->CGetNodeInfo(first_operation).vertex_name + " not found");
       THROW_ASSERT(map_levels.find(second_operation) != map_levels.end(),
-                   "Level of " + GET_NAME(cfg, second_operation) + " not found");
+                   "Level of " + op_graphs_collection->CGetNodeInfo(second_operation).vertex_name + " not found");
       if(map_levels.find(first_operation)->second < map_levels.find(second_operation)->second)
       {
          return true;
@@ -741,13 +611,14 @@ bool FunctionBehavior::CheckReachability(const vertex first_operation, const ver
    return false;
 }
 
-bool FunctionBehavior::CheckFeedbackReachability(const vertex first_operation, const vertex second_operation) const
+bool FunctionBehavior::CheckFeedbackReachability(OpGraph::vertex_descriptor first_operation,
+                                                 OpGraph::vertex_descriptor second_operation) const
 {
-   const CustomUnorderedMap<unsigned int, vertex>& bb_index_map = bb->CGetBBGraphInfo()->bb_index_map;
-   const unsigned int first_bb_index = cfg->CGetOpNodeInfo(first_operation)->bb_index;
-   const unsigned int second_bb_index = cfg->CGetOpNodeInfo(second_operation)->bb_index;
-   const vertex first_bb_vertex = bb_index_map.find(first_bb_index)->second;
-   const vertex second_bb_vertex = bb_index_map.find(second_bb_index)->second;
+   const auto& bb_index_map = bb_graphs_collection->CGetGraphInfo().bb_index_map;
+   const auto first_bb_index = op_graphs_collection->CGetNodeInfo(first_operation).bb_index;
+   const auto second_bb_index = op_graphs_collection->CGetNodeInfo(second_operation).bb_index;
+   const auto first_bb_vertex = bb_index_map.find(first_bb_index)->second;
+   const auto second_bb_vertex = bb_index_map.find(second_bb_index)->second;
    return CheckBBFeedbackReachability(first_bb_vertex, second_bb_vertex);
 }
 
@@ -803,6 +674,40 @@ void FunctionBehavior::SetMemoryAllocationPolicy(MemoryAllocation_Policy val)
    _allocation_policy = val;
 }
 
+bool FunctionBehavior::IsOMPCore() const
+{
+   return _omp_core;
+}
+
+void FunctionBehavior::SetOMPCore(bool val)
+{
+   _omp_core = val;
+}
+
+OMPInfoRef FunctionBehavior::GetOMPInfo() const
+{
+   return _omp_info;
+}
+
+void FunctionBehavior::SetOMPInfo(OMPInfoRef info)
+{
+   THROW_ASSERT(info, "");
+   _omp_info = info;
+}
+
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #pragma GCC diagnostic pop
 #endif
+
+std::filesystem::path FunctionBehavior::GetDotPath() const
+{
+   THROW_ASSERT(parameters->getOption<bool>(OPT_print_dot), "unexpected condition");
+   auto function_name = helper->GetFunctionName();
+   if(function_name.size() > 256)
+   {
+      THROW_WARNING("Function name too long: " + function_name +
+                    ".\nChanged to the the function index:" + STR(helper->get_function_index()));
+      function_name = STR(helper->get_function_index());
+   }
+   return parameters->getOption<std::filesystem::path>(OPT_dot_directory) / function_name;
+}

@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -39,9 +39,6 @@
  * @author Luca Fossati <fossati@elet.polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef CWRITER_HPP
@@ -56,29 +53,25 @@
 #include <list>
 #include <vector>
 
-CONSTREF_FORWARD_DECL(BBGraph);
-CONSTREF_FORWARD_DECL(BBNodeInfo);
+class BBGraph;
+class BBNodeInfo;
+class OpVertexSet;
+class instrumented_call_instr_writer;
 CONSTREF_FORWARD_DECL(BehavioralHelper);
 CONSTREF_FORWARD_DECL(CBackendInformation);
 CONSTREF_FORWARD_DECL(FunctionBehavior);
 CONSTREF_FORWARD_DECL(InstructionWriter);
 CONSTREF_FORWARD_DECL(HLS_manager);
-CONSTREF_FORWARD_DECL(OpGraph);
 CONSTREF_FORWARD_DECL(Parameter);
-CONSTREF_FORWARD_DECL(tree_manager);
-CONSTREF_FORWARD_DECL(tree_node);
+CONSTREF_FORWARD_DECL(ir_manager);
+CONSTREF_FORWARD_DECL(ir_node);
 CONSTREF_FORWARD_DECL(var_pp_functor);
 REF_FORWARD_DECL(CWriter);
 REF_FORWARD_DECL(IndentedOutputStream);
 REF_FORWARD_DECL(InstructionWriter);
-REF_FORWARD_DECL(Loop);
 REF_FORWARD_DECL(machine_node);
 
-class OpVertexSet;
-class graph;
-class instrumented_call_instr_writer;
-
-template <typename Graph>
+template <typename Graph, bool ComputePostDominators>
 class dominance;
 
 /**
@@ -89,7 +82,7 @@ class dominance;
  */
 class CWriter
 {
-   void AnalyzeInclude(const tree_nodeConstRef& tn, const BehavioralHelperConstRef& BH,
+   void AnalyzeInclude(const ir_nodeConstRef& tn, const BehavioralHelperConstRef& BH,
                        CustomOrderedSet<std::string>& includes_to_write, CustomSet<unsigned int>& already_visited);
 
    /**
@@ -108,8 +101,8 @@ class CWriter
    /// the hls manager
    const HLS_managerConstRef HLSMgr;
 
-   /// The tree manager
-   const tree_managerConstRef TM;
+   /// The IR manager
+   const ir_managerConstRef TM;
 
    /// Represents the stream we are currently writing to
    const IndentedOutputStreamRef indented_output_stream;
@@ -142,7 +135,7 @@ class CWriter
    /// the output level
    int output_level;
 
-   unsigned int fake_max_tree_node_id;
+   unsigned int fake_max_ir_node_id;
 
    /// string to be printed at the beginning of a given basic block
    std::map<unsigned int, std::string> basic_block_prefix;
@@ -151,27 +144,20 @@ class CWriter
    std::map<unsigned int, std::string> basic_block_tail;
 
    /// renaming table used by phi node destruction procedure
-   std::map<vertex, std::map<unsigned int, std::string>> renaming_table;
+   std::map<gc_vertex_descriptor, std::map<unsigned int, std::string>> renaming_table;
 
-   CustomOrderedSet<vertex> bb_frontier;
-   CustomOrderedSet<vertex> bb_analyzed;
+   CustomOrderedSet<gc_vertex_descriptor> bb_frontier;
+   CustomOrderedSet<gc_vertex_descriptor> bb_analyzed;
    std::map<unsigned int, std::string> basic_blocks_labels;
-   CustomOrderedSet<vertex> goto_list;
-   var_pp_functorConstRef local_rec_variableFunctor;
-   FunctionBehaviorConstRef local_rec_function_behavior;
-   CustomOrderedSet<vertex> local_rec_instructions;
-   const dominance<BBGraph>* dominators;
-   const dominance<BBGraph>* post_dominators;
-   BBGraphConstRef local_rec_bb_fcfgGraph;
-   OpGraphConstRef local_rec_cfgGraph;
-   BehavioralHelperConstRef local_rec_behavioral_helper;
+   CustomOrderedSet<gc_vertex_descriptor> goto_list;
+   CustomOrderedSet<gc_vertex_descriptor> local_rec_instructions;
 
    std::vector<std::string> additionalIncludes;
    CustomOrderedSet<std::string> writtenIncludes;
 
    /**
     * Constructor of the class
-    * @param HLSMgr is the hls manager
+    * @param _HLSMgr is the HLS manager
     * @param instruction_writer is the instruction writer to use to print the single instruction
     * @param indented_output_stream is the stream where code has to be printed
     */
@@ -182,17 +168,19 @@ class CWriter
 
    /**
     * Write recursively instructions belonging to a basic block of task or of a function
+    * @param fid is the identifier of the function to which instructions belong
     * @param current_vertex is the basic block which is being printed
     * @param bracket tells if bracket should be added before and after this basic block
-    * @param function_index is the identifier of the function to which instructions belong
+    * @param variableFunctor is the functor used to print variables inside the generated code
     */
-   void writeRoutineInstructions_rec(vertex current_vertex, bool bracket, const unsigned int function_index);
+   void writeRoutineInstructions_rec(unsigned fid, gc_vertex_descriptor current_vertex, bool bracket,
+                                     const std::unique_ptr<var_pp_functor>& variableFunctor);
 
    /**
     * Determines the instructions coming out from phi-node splitting
     */
    void compute_phi_nodes(const FunctionBehaviorConstRef function_behavior, const OpVertexSet& instructions,
-                          var_pp_functorConstRef variableFunctor);
+                          const std::unique_ptr<var_pp_functor>& variableFunctor);
 
    /**
     * Compute the copy assignments needed by the phi nodes destruction
@@ -201,8 +189,9 @@ class CWriter
     *   "Practical Improvements to the Construction and Destruction of Static Single Assignment Form",
     *   Software -- Practice and Experience 1998
     */
-   void insert_copies(vertex b, const BBGraphConstRef bb_domGraph, const BBGraphConstRef bb_fcfgGraph,
-                      var_pp_functorConstRef variableFunctor, const CustomSet<unsigned int>& phi_instructions,
+   void insert_copies(gc_vertex_descriptor b, const BBGraph& bb_domGraph, const BBGraph& bb_fcfgGraph,
+                      const std::unique_ptr<var_pp_functor>& variableFunctor,
+                      const CustomSet<unsigned int>& phi_instructions,
                       std::map<unsigned int, unsigned int>& created_variables,
                       std::map<unsigned int, std::string>& symbol_table,
                       std::map<unsigned int, std::deque<std::string>>& array_of_stacks);
@@ -210,8 +199,9 @@ class CWriter
    /**
     * insert copies according the algorithm described in Briggs et. al.
     */
-   void schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const BBGraphConstRef bb_fcfgGraph,
-                        var_pp_functorConstRef variableFunctor, const CustomSet<unsigned int>& phi_instructions,
+   void schedule_copies(gc_vertex_descriptor b, const BBGraph& bb_domGraph, const BBGraph& bb_fcfgGraph,
+                        const std::unique_ptr<var_pp_functor>& variableFunctor,
+                        const CustomSet<unsigned int>& phi_instructions,
                         std::map<unsigned int, unsigned int>& created_variables,
                         std::map<unsigned int, std::string>& symbol_table, std::list<unsigned int>& pushed,
                         std::map<unsigned int, std::deque<std::string>>& array_of_stacks);
@@ -246,7 +236,7 @@ class CWriter
     * The default for this function is to do nothing, but every derived class
     * can specify its own additional information to print
     */
-   virtual void writePreInstructionInfo(const FunctionBehaviorConstRef, const vertex);
+   virtual void writePreInstructionInfo(const FunctionBehaviorConstRef, gc_vertex_descriptor);
 
    /**
     * Write additional information on the given statement vertex, after the
@@ -254,7 +244,7 @@ class CWriter
     * The default for this function is to do nothing, but every derived class
     * can specify its own additional information to print
     */
-   virtual void writePostInstructionInfo(const FunctionBehaviorConstRef, const vertex);
+   virtual void writePostInstructionInfo(const FunctionBehaviorConstRef, gc_vertex_descriptor);
 
    /**
     * Write the instructions belonging to a body loop
@@ -262,9 +252,11 @@ class CWriter
     * @param loop_id is the index of the loop to be printed
     * @param current_vertex is the first basic block of the loop
     * @param bracket tells if bracket should be added before and after this basic block
+    * @param variableFunctor is the functor used to print variables inside the generated code
     */
-   virtual void WriteBodyLoop(const unsigned int function_index, const unsigned int, vertex current_vertex,
-                              bool bracket);
+   virtual void WriteBodyLoop(const unsigned int function_index, const unsigned int loop_id,
+                              gc_vertex_descriptor current_vertex, bool bracket,
+                              const std::unique_ptr<var_pp_functor>& variableFunctor);
 
    /*
     * writes code at the beginning of the basic block denoted by the
@@ -294,7 +286,7 @@ class CWriter
 
    /**
     * Writes the body of the function to the specified stream
-    * @param funId is the index of the function
+    * @param function_id is the index of the function
     */
    virtual void StartFunctionBody(const unsigned int function_id);
 
@@ -318,9 +310,11 @@ class CWriter
     * @param bb_start is the first basic block to be printed
     * @param bb_end is the set of first basic block not to be printed
     */
-   virtual void writeRoutineInstructions(const unsigned int function_index, const OpVertexSet& instructions,
-                                         var_pp_functorConstRef variableFunctor, vertex bb_start = NULL_VERTEX,
-                                         CustomOrderedSet<vertex> bb_end = CustomOrderedSet<vertex>());
+   virtual void
+   writeRoutineInstructions(const unsigned int function_index, const OpVertexSet& instructions,
+                            const std::unique_ptr<var_pp_functor>& variableFunctor,
+                            gc_vertex_descriptor bb_start = gc_null_vertex(),
+                            CustomOrderedSet<gc_vertex_descriptor> bb_end = CustomOrderedSet<gc_vertex_descriptor>());
 
    /**
     * Writes an include directive
@@ -334,30 +328,29 @@ class CWriter
     * declared yet, it declares it; this method is used to declared new types
     * with scope limited to a routine (be it a function of a task)
     * @param varType the type to be declared
-    * @param BH the behavioral helper associated to the function which declare type
+    * @param behavioral_helper is the behavioral helper associated with the routine declaring the type
     * @param locally_declared_type is the set of type already declared in this function
-    * @param routine_name is the name of the routina (function or thread)
     */
-   virtual void DeclareType(const tree_nodeConstRef& varType, const BehavioralHelperConstRef& behavioral_helper,
+   virtual void DeclareType(const ir_nodeConstRef& varType, const BehavioralHelperConstRef& behavioral_helper,
                             CustomSet<std::string>& locally_declared_type);
 
    /**
     * Declares the local variable; in case the variable used in the intialization of
     * curVar hasn't been declared yet it get declared
     * @param curVar is the variable to be declared
-    * @param already_decl_variables is the set of already declared variables
+    * @param already_declared_variables is the set of already declared variables
     * @param locally_declared_type is the set of already declared types
     * @param behavioral_helper is the behavioral helper
     * @param varFunc is the printer functor
     */
-   virtual void DeclareVariable(const tree_nodeConstRef& curVar, CustomSet<unsigned int>& already_declared_variables,
+   virtual void DeclareVariable(const ir_nodeConstRef& curVar, CustomSet<unsigned int>& already_declared_variables,
                                 CustomSet<std::string>& locally_declared_type,
                                 const BehavioralHelperConstRef& behavioral_helper,
-                                const var_pp_functorConstRef& varFunc);
+                                const std::unique_ptr<var_pp_functor>& varFunc);
 
    /**
     * Declare all the types used in conversions
-    * @param function_id is the function to be condiered
+    * @param funId is the function to be considered
     * @param locally_declared_types is the set of already declared types
     */
    virtual void declare_cast_types(unsigned int funId, CustomSet<std::string>& locally_declared_types);
@@ -366,25 +359,25 @@ class CWriter
     * Declares the local variable; in case the variable used in the intialization of
     * curVar hasn't been declared yet it get declared
     * @param to_be_declared is the set of variables which have to be declared
-    * @param already_decl_variables is the set of already declared variables
-    * @param locally_declared_type is the set of already declared types
-    * @param helper is the behavioral helper associated with the function
+    * @param already_declared_variables is the set of already declared variables
+    * @param already_declared_types is the set of already declared types
+    * @param behavioral_helper is the behavioral helper associated with the function
     * @param varFunc is the printer functor
     */
    virtual void DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declared,
                                       CustomSet<unsigned int>& already_declared_variables,
                                       CustomSet<std::string>& already_declared_types,
                                       const BehavioralHelperConstRef behavioral_helper,
-                                      const var_pp_functorConstRef varFunc);
+                                      const std::unique_ptr<var_pp_functor>& varFunc);
 
    /**
     * Declares the types of the parameters of a function
-    * @param fun_id is the index of the function
+    * @param tn is the IR node describing the function declaration
     */
-   virtual void DeclareFunctionTypes(const tree_nodeConstRef& tn);
+   virtual void DeclareFunctionTypes(const ir_nodeConstRef& tn);
 
    /**
-    * Writes the declaration of the function whose id in the tree is funId
+    * Writes the declaration of the function whose IR node id is funId
     */
    virtual void WriteFunctionDeclaration(const unsigned int funId);
 
@@ -406,7 +399,7 @@ class CWriter
    virtual void InternalWriteFile();
 
  public:
-   virtual ~CWriter();
+   virtual ~CWriter() = default;
 
    /**
     * Factory method

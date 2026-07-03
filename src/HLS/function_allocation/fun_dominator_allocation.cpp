@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -35,18 +35,12 @@
  * @brief Function allocation based on the dominator tree of the call graph.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "fun_dominator_allocation.hpp"
 
-#include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
-#include "config_HAVE_PRAGMA_BUILT.hpp"
-
-#include "Dominance.hpp"
 #include "Parameter.hpp"
+#include "SemiNCADominance.hpp"
 #include "application_frontend_flow_step.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph.hpp"
@@ -62,6 +56,9 @@
 #include "hls_constraints.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
+#include "ir_node.hpp"
 #include "library_manager.hpp"
 #include "op_graph.hpp"
 #include "string_manipulation.hpp"
@@ -69,35 +66,29 @@
 #include "technology_flow_step_factory.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
 #include "utility.hpp"
-
 #include <boost/range/adaptor/reversed.hpp>
 
 fun_dominator_allocation::fun_dominator_allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
-                                                   const DesignFlowManagerConstRef _design_flow_manager,
+                                                   const DesignFlowManager& _design_flow_manager,
                                                    const HLSFlowStep_Type _hls_flow_step_type)
     : function_allocation(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_type), already_executed(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-fun_dominator_allocation::~fun_dominator_allocation() = default;
-
 void fun_dominator_allocation::ComputeRelationships(DesignFlowStepSet& relationship,
                                                     const DesignFlowStep::RelationshipType relationship_type)
 {
    switch(relationship_type)
    {
-      case DEPENDENCE_RELATIONSHIP:
+      case(DEPENDENCE_RELATIONSHIP):
       {
-         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto design_flow_graph = design_flow_manager.CGetDesignFlowGraph();
          const auto frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(
-             design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
+             design_flow_manager.CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
          const auto frontend_flow_signature = ApplicationFrontendFlowStep::ComputeSignature(BAMBU_FRONTEND_FLOW);
-         const auto frontend_flow_step = design_flow_manager.lock()->GetDesignFlowStep(frontend_flow_signature);
+         const auto frontend_flow_step = design_flow_manager.GetDesignFlowStep(frontend_flow_signature);
          const auto design_flow_step =
              frontend_flow_step != DesignFlowGraph::null_vertex() ?
                  design_flow_graph->CGetNodeInfo(frontend_flow_step)->design_flow_step :
@@ -105,10 +96,10 @@ void fun_dominator_allocation::ComputeRelationships(DesignFlowStepSet& relations
          relationship.insert(design_flow_step);
 
          const auto technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(
-             design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::TECHNOLOGY));
+             design_flow_manager.CGetDesignFlowStepFactory(DesignFlowStep::TECHNOLOGY));
          const auto technology_flow_signature =
              TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
-         const auto technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
+         const auto technology_flow_step = design_flow_manager.GetDesignFlowStep(technology_flow_signature);
          const auto technology_design_flow_step =
              technology_flow_step != DesignFlowGraph::null_vertex() ?
                  design_flow_graph->CGetNodeInfo(technology_flow_step)->design_flow_step :
@@ -120,7 +111,7 @@ void fun_dominator_allocation::ComputeRelationships(DesignFlowStepSet& relations
       {
          break;
       }
-      case INVALIDATION_RELATIONSHIP:
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
@@ -130,7 +121,7 @@ void fun_dominator_allocation::ComputeRelationships(DesignFlowStepSet& relations
    function_allocation::ComputeRelationships(relationship, relationship_type);
 }
 
-const std::set<std::string> fun_dominator_allocation::simple_functions = {"__builtin_cond_expr32", "llabs",
+const std::set<std::string> fun_dominator_allocation::simple_functions = {"__builtin_select32", "llabs",
                                                                           "__builtin_llabs", "labs", "__builtin_labs"};
 
 bool fun_dominator_allocation::HasToBeExecuted() const
@@ -141,17 +132,17 @@ bool fun_dominator_allocation::HasToBeExecuted() const
 DesignFlowStep_Status fun_dominator_allocation::Exec()
 {
    already_executed = true;
-   const auto CGM = HLSMgr->GetCallGraphManager();
+   const auto& CGM = HLSMgr->GetCallGraphManager();
    const auto HLS_D = HLSMgr->get_HLS_device();
    const auto TechM = HLS_D->get_technology_manager();
    const auto io_proxies_only =
        parameters->isOption(OPT_disable_function_proxy) && parameters->getOption<bool>(OPT_disable_function_proxy);
 
-   auto root_functions = CGM->GetRootFunctions();
+   auto root_functions = CGM.GetRootFunctions();
    if(parameters->isOption(OPT_top_design_name)) // top design function become the top_vertex
    {
       const auto top_rtldesign_function =
-          HLSMgr->get_tree_manager()->GetFunction(parameters->getOption<std::string>(OPT_top_design_name));
+          HLSMgr->get_ir_manager()->GetFunction(parameters->getOption<std::string>(OPT_top_design_name));
       if(top_rtldesign_function && root_functions.count(top_rtldesign_function->index))
       {
          root_functions.clear();
@@ -162,7 +153,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
    CustomOrderedSet<unsigned int> reached_from_all;
    for(const auto f_id : root_functions)
    {
-      for(const auto reached_f_id : CGM->GetReachedFunctionsFrom(f_id, false))
+      for(const auto reached_f_id : CGM.GetReachedFunctionsFrom(f_id, false))
       {
          reached_from_all.insert(reached_f_id);
       }
@@ -181,12 +172,11 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
             fun_resources = fun_resources.substr(1);
          }
          const auto splitted = string_to_container<std::vector<std::string>>(fun_resources, "=");
-         auto TM = HLSMgr->get_tree_manager();
+         auto TM = HLSMgr->get_ir_manager();
          for(auto funid : reached_from_all)
          {
-            auto* decl_node = GetPointer<function_decl>(TM->GetTreeNode(funid));
-            const auto fname = tree_helper::GetMangledFunctionName(decl_node);
-            const auto fu_name = functions::GetFUName(fname, HLSMgr);
+            const auto fu_name = functions::GetFUName(funid, HLSMgr);
+            auto* decl_node = GetPointer<function_val_node>(TM->GetIRNode(funid));
             if(fu_name.find(STR_CST_interface_parameter_keyword) != std::string::npos || TM->is_top_function(decl_node))
             {
                continue;
@@ -234,7 +224,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       {
          const auto function_behavior = HLSMgr->CGetFunctionBehavior(f_id);
          const auto BH = function_behavior->CGetBehavioralHelper();
-         const auto fname = BH->get_function_name();
+         const auto fname = BH->GetFunctionName();
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                         "---The top function inferred from the specification is: " + fname);
       }
@@ -252,9 +242,9 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
    {
       const auto function_behavior = HLSMgr->CGetFunctionBehavior(funID);
       const auto BH = function_behavior->CGetBehavioralHelper();
-      const auto fname = BH->get_function_name();
-      if(tree_helper::is_a_nop_function_decl(
-             GetPointerS<const function_decl>(HLSMgr->get_tree_manager()->GetTreeNode(funID))))
+      const auto fname = BH->GetFunctionName();
+      if(ir_helper::is_a_nop_function_decl(
+             GetPointerS<const function_val_node>(HLSMgr->get_ir_manager()->GetIRNode(funID))))
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                         "---Warning: " + fname + " is empty or the compiler killed all the statements");
@@ -278,92 +268,90 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                      "-->Allocation thread: " +
-                         HLSMgr->CGetFunctionBehavior(top_fid)->CGetBehavioralHelper()->get_function_name());
-      const auto top_vertex = CGM->GetVertex(top_fid);
-      const auto reached_from_top = CGM->GetReachedFunctionsFrom(top_fid, false);
-      const auto subgraph = [&]() {
-         CustomUnorderedSet<vertex> subset;
+                         HLSMgr->CGetFunctionBehavior(top_fid)->CGetBehavioralHelper()->GetFunctionName());
+      const auto top_vertex = CGM.GetVertex(top_fid);
+      const auto reached_from_top = CGM.GetReachedFunctionsFrom(top_fid, false);
+      auto subgraph = [&]() {
+         CustomUnorderedSet<CallGraph::vertex_descriptor> subset;
          subset.insert(top_vertex);
          std::transform(reached_from_top.begin(), reached_from_top.end(), std::inserter(subset, subset.end()),
-                        [&](unsigned int fid) { return CGM->GetVertex(fid); });
-         return CGM->CGetCallSubGraph(subset);
+                        [&](unsigned int fid) { return CGM.GetVertex(fid); });
+         return CGM.CGetCallSubGraph(subset);
       }();
 
-      if(boost::num_vertices(*subgraph) < 2)
+      if(subgraph.num_vertices() < 2)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Empty thread");
          continue;
       }
 
       /// we do not need the exit vertex since the post-dominator graph is not used
-      const auto cg_dominators =
-          refcount<dominance<graph>>(new dominance<graph>(*subgraph, top_vertex, NULL_VERTEX, parameters));
-      cg_dominators->calculate_dominance_info(dominance<graph>::CDI_DOMINATORS);
-      const auto& cg_dominator_map = cg_dominators->get_dominator_map();
-      CustomMap<std::string, CustomOrderedSet<vertex>> fun_dom_map;
+      dominance<CallGraph> cg_dominators(subgraph, top_vertex, CallGraph::null_vertex());
+      CustomMap<std::string, CustomOrderedSet<CallGraph::vertex_descriptor>> fun_dom_map;
       CustomMap<std::string, CustomOrderedSet<unsigned int>> where_used;
       CustomMap<std::string, bool> indirectlyCalled;
 
-      std::list<vertex> topology_sorted_vertex;
-      subgraph->TopologicalSort(topology_sorted_vertex);
+      std::list<CallGraph::vertex_descriptor> topology_sorted_vertex;
+      subgraph.TopologicalSort(topology_sorted_vertex);
       for(const auto& current_vertex : topology_sorted_vertex)
       {
-         vertex vert_dominator;
-         if(boost::in_degree(current_vertex, *subgraph) != 1)
+         CallGraph::vertex_descriptor vert_dominator;
+         if(subgraph.in_degree(current_vertex) != 1)
          {
-            vert_dominator = cg_dominator_map.at(current_vertex);
+            vert_dominator = cg_dominators.getImmediateDominator(current_vertex);
          }
          else
          {
             vert_dominator = current_vertex;
          }
-         if(boost::out_degree(current_vertex, *subgraph))
+         if(subgraph.out_degree(current_vertex))
          {
-            const auto current_id = CGM->get_function(current_vertex);
+            const auto current_id = CGM.get_function(current_vertex);
             THROW_ASSERT(HLSMgr->get_HLS(current_id),
                          "Missing HLS initialization for " +
-                             HLSMgr->CGetFunctionBehavior(current_id)->CGetBehavioralHelper()->get_function_name());
+                             HLSMgr->CGetFunctionBehavior(current_id)->CGetBehavioralHelper()->GetFunctionName());
             const auto HLS_C = HLSMgr->get_HLS(current_id)->HLS_C;
-            THROW_ASSERT(cg_dominator_map.find(current_vertex) != cg_dominator_map.end(),
-                         "Dominator vertex not in the dominator tree: " +
-                             HLSMgr->CGetFunctionBehavior(current_id)->CGetBehavioralHelper()->get_function_name());
-            BOOST_FOREACH(EdgeDescriptor eo, boost::out_edges(current_vertex, *subgraph))
+            for(const auto& eo : subgraph.out_edges(current_vertex))
             {
-               auto called_fu_id = CGM->get_function(boost::target(eo, *subgraph));
+               const auto called_fu_id = CGM.get_function(subgraph.target(eo));
                const auto called_fu_name = functions::GetFUName(called_fu_id, HLSMgr);
                unsigned multiplicity = 1;
                // check if global constraints are actually propagated. It may happen in case this class add them
                if(HLSMgr->global_resource_constraints.find(std::make_pair(called_fu_name, WORK_LIBRARY)) !=
                   HLSMgr->global_resource_constraints.end())
                {
-                  auto c = HLSMgr->global_resource_constraints.at(std::make_pair(called_fu_name, WORK_LIBRARY));
-                  auto curr_res_n = HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY);
-                  if(curr_res_n != c.first)
+                  const auto& [res_count, res_mult] =
+                      HLSMgr->global_resource_constraints.at(std::make_pair(called_fu_name, WORK_LIBRARY));
+                  const auto curr_res_count = HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY);
+                  if(curr_res_count != res_count)
                   {
                      INDENT_OUT_MEX(
                          OUTPUT_LEVEL_MINIMUM, parameters->getOption<int>(OPT_output_level),
                          "---Upgraded function constraints for " +
-                             HLSMgr->CGetFunctionBehavior(current_id)->CGetBehavioralHelper()->get_function_name() +
-                             " with " + STR(c.first) + " resources of " + called_fu_name + ", before was " +
-                             (curr_res_n == INFINITE_UINT ? "INF" : STR(curr_res_n)));
-                     HLS_C->set_number_fu(called_fu_name, WORK_LIBRARY, c.first);
+                             HLSMgr->CGetFunctionBehavior(current_id)->CGetBehavioralHelper()->GetFunctionName() +
+                             " with " + STR(res_count) + " resources of " + called_fu_name + ", before was " +
+                             (curr_res_count == INFINITE_UINT ? "INF" : STR(curr_res_count)));
+                     HLS_C->set_number_fu(called_fu_name, WORK_LIBRARY, res_count);
                   }
-                  multiplicity = c.second;
+                  multiplicity = res_mult;
                }
                else if(HLSMgr->global_resource_constraints.find(std::make_pair(called_fu_name, INTERFACE_LIBRARY)) !=
                        HLSMgr->global_resource_constraints.end())
                {
-                  auto c = HLSMgr->global_resource_constraints.at(std::make_pair(called_fu_name, INTERFACE_LIBRARY));
-                  if(HLS_C->get_number_fu(called_fu_name, INTERFACE_LIBRARY) != c.first)
+                  const auto& [res_count, res_mult] =
+                      HLSMgr->global_resource_constraints.at(std::make_pair(called_fu_name, INTERFACE_LIBRARY));
+                  const auto curr_res_count = HLS_C->get_number_fu(called_fu_name, INTERFACE_LIBRARY);
+                  if(curr_res_count != res_count)
                   {
-                     HLS_C->set_number_fu(called_fu_name, INTERFACE_LIBRARY, c.first);
                      INDENT_OUT_MEX(
                          OUTPUT_LEVEL_MINIMUM, parameters->getOption<int>(OPT_output_level),
                          "---Upgraded function constraints for " +
-                             HLSMgr->CGetFunctionBehavior(current_id)->CGetBehavioralHelper()->get_function_name() +
-                             " with " + STR(c.first) + " resources of " + called_fu_name);
+                             HLSMgr->CGetFunctionBehavior(current_id)->CGetBehavioralHelper()->GetFunctionName() +
+                             " with " + STR(res_count) + " resources of " + called_fu_name + ", before was " +
+                             (curr_res_count == INFINITE_UINT ? "INF" : STR(curr_res_count)));
+                     HLS_C->set_number_fu(called_fu_name, INTERFACE_LIBRARY, res_count);
                   }
-                  multiplicity = c.second;
+                  multiplicity = res_mult;
                }
 
                //               std::cerr << "called_fu_name=" << called_fu_name << "\n";
@@ -382,9 +370,9 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
                    ))
                {
                   fun_dom_map[called_fu_name].insert(vert_dominator);
-                  const auto info = subgraph->CGetFunctionEdgeInfo(eo);
+                  const auto& info = subgraph.CGetEdgeInfo(eo);
 
-                  if(info->direct_call_points.size())
+                  if(info.direct_call_points.size())
                   {
                      where_used[called_fu_name].insert(current_id);
                   }
@@ -393,7 +381,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
                      where_used[called_fu_name];
                   }
 
-                  if(info->indirect_call_points.size() || info->function_addresses.size())
+                  if(info.indirect_call_points.size() || info.function_addresses.size())
                   {
                      indirectlyCalled[called_fu_name] = true;
                   }
@@ -404,9 +392,9 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                               "---Dominator vertex: " +
-                                  HLSMgr->CGetFunctionBehavior(CGM->get_function(vert_dominator))
+                                  HLSMgr->CGetFunctionBehavior(CGM.get_function(vert_dominator))
                                       ->CGetBehavioralHelper()
-                                      ->get_function_name() +
+                                      ->GetFunctionName() +
                                   " => " + called_fu_name);
             }
          }
@@ -417,21 +405,21 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       CustomMap<unsigned int, std::vector<std::string>> function_allocation_map;
       for(const auto& cur : topology_sorted_vertex)
       {
-         const auto cur_id = CGM->get_function(cur);
+         const auto cur_id = CGM.get_function(cur);
          if(reached_from_top.find(cur_id) != reached_from_top.end())
          {
             const auto cur_fu_name = functions::GetFUName(cur_id, HLSMgr);
             THROW_ASSERT(num_instances.count(cur_fu_name),
                          "missing number of instances of function " +
-                             HLSMgr->CGetFunctionBehavior(cur_id)->CGetBehavioralHelper()->get_function_name());
+                             HLSMgr->CGetFunctionBehavior(cur_id)->CGetBehavioralHelper()->GetFunctionName());
             function_allocation_map[cur_id];
             const auto cur_instances = num_instances.at(cur_fu_name);
-            BOOST_FOREACH(EdgeDescriptor eo, boost::out_edges(cur, *subgraph))
+            for(const auto& eo : subgraph.out_edges(cur))
             {
-               const auto tgt = boost::target(eo, *subgraph);
-               const auto tgt_fu_name = functions::GetFUName(CGM->get_function(tgt), HLSMgr);
+               const auto tgt = subgraph.target(eo);
+               const auto tgt_fu_name = functions::GetFUName(CGM.get_function(tgt), HLSMgr);
                const auto n_call_points =
-                   static_cast<unsigned int>(subgraph->CGetFunctionEdgeInfo(eo)->direct_call_points.size());
+                   static_cast<unsigned int>(subgraph.CGetEdgeInfo(eo).direct_call_points.size());
                if(num_instances.find(tgt_fu_name) == num_instances.end())
                {
                   num_instances[tgt_fu_name] = cur_instances * n_call_points;
@@ -453,11 +441,11 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
          if(dom_map.second.size() == 1)
          {
             auto cur = *dom_map.second.begin();
-            while(num_instances.at(functions::GetFUName(CGM->get_function(cur), HLSMgr)) != 1)
+            while(num_instances.at(functions::GetFUName(CGM.get_function(cur), HLSMgr)) != 1)
             {
-               cur = cg_dominator_map.at(cur);
+               cur = cg_dominators.getImmediateDominator(cur);
             }
-            cur_id = CGM->get_function(cur);
+            cur_id = CGM.get_function(cur);
          }
          else
          {
@@ -469,33 +457,31 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
             {
                auto vert_it = dom_map.second.begin();
                const auto vert_it_end = dom_map.second.end();
-               std::list<vertex> dominator_list1;
-               vertex cur = *vert_it;
+               std::list<CallGraph::vertex_descriptor> dominator_list1;
+               auto cur = *vert_it;
                dominator_list1.push_front(cur);
                do
                {
-                  THROW_ASSERT(cg_dominator_map.count(cur), "");
-                  cur = cg_dominator_map.at(cur);
+                  cur = cg_dominators.getImmediateDominator(cur);
                   dominator_list1.push_front(cur);
                } while(cur != top_vertex);
                ++vert_it;
                auto last = dominator_list1.end();
                for(; vert_it != vert_it_end; ++vert_it)
                {
-                  std::list<vertex> dominator_list2;
+                  std::list<CallGraph::vertex_descriptor> dominator_list2;
                   cur = *vert_it;
                   dominator_list2.push_front(cur);
                   do
                   {
-                     THROW_ASSERT(cg_dominator_map.count(cur), "");
-                     cur = cg_dominator_map.at(cur);
+                     cur = cg_dominators.getImmediateDominator(cur);
                      dominator_list2.push_front(cur);
                   } while(cur != top_vertex);
                   /// find the common dominator between two candidates
                   auto dl1_it = dominator_list1.begin(), dl2_it = dominator_list2.begin(),
                        dl2_it_end = dominator_list2.end(), cur_last = dominator_list1.begin();
                   while(dl1_it != last && dl2_it != dl2_it_end && *dl1_it == *dl2_it &&
-                        (num_instances.at(functions::GetFUName(CGM->get_function(*dl1_it), HLSMgr)) == 1))
+                        (num_instances.at(functions::GetFUName(CGM.get_function(*dl1_it), HLSMgr)) == 1))
                   {
                      cur = *dl1_it;
                      ++dl1_it;
@@ -503,7 +489,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
                      ++dl2_it;
                   }
                   last = cur_last;
-                  cur_id = CGM->get_function(cur);
+                  cur_id = CGM.get_function(cur);
                   if(cur == top_vertex)
                   {
                      break;
@@ -514,7 +500,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
          THROW_ASSERT(cur_id, "null function id index unexpected");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                         "---Function " + functions::GetFUName(dom_map.first, HLSMgr) + " may be allocated in " +
-                            HLSMgr->CGetFunctionBehavior(cur_id)->CGetBehavioralHelper()->get_function_name());
+                            HLSMgr->CGetFunctionBehavior(cur_id)->CGetBehavioralHelper()->GetFunctionName());
          function_allocation_map[cur_id].push_back(dom_map.first);
       }
 
@@ -523,7 +509,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       {
          THROW_ASSERT(function_allocation_map.find(funID) != function_allocation_map.end(),
                       "Expected function allocation map for function " +
-                          HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name());
+                          HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->GetFunctionName());
          for(const auto& fu_name : function_allocation_map.at(funID))
          {
             if(io_proxies_only && fu_name.find(STR_CST_interface_parameter_keyword) == std::string::npos)
@@ -538,19 +524,24 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                            "Allocating " + fu_name + " in " +
-                               HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name());
+                               HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->GetFunctionName());
             THROW_ASSERT(where_used.at(fu_name).size() > 0 || indirectlyCalled.at(fu_name),
                          fu_name + " not used anywhere");
-            if(where_used.at(fu_name).size() == 1)
+            if(where_used.at(fu_name).size() == 1 && funID == *where_used.at(fu_name).begin())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                               "---Skipped because called only by one other function");
                continue;
             }
-            const auto fnode = HLSMgr->get_tree_manager()->GetFunction(fu_name);
+            const auto fnode = HLSMgr->get_ir_manager()->GetFunction(fu_name);
             if(fnode && HLSMgr->hasToBeInterfaced(fnode->index))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Skipped because it has to be interfaced");
+               continue;
+            }
+            if(fnode && HLSMgr->isOmpLambdaFunction(fnode->index))
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Skipped because is an OMP lambda function");
                continue;
             }
             const auto library_name = TechM->get_library(fu_name);
@@ -569,7 +560,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
             const auto cur_function_behavior = HLSMgr->CGetFunctionBehavior(funID);
             const auto cur_BH = cur_function_behavior->CGetBehavioralHelper();
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                           "---Adding proxy wrapper in function " + cur_BH->get_function_name());
+                           "---Adding proxy wrapper in function " + cur_BH->GetFunctionName());
             /// add proxies
             for(const auto& wu_id : where_used.at(fu_name))
             {
@@ -578,7 +569,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
                   const auto wiu_function_behavior = HLSMgr->CGetFunctionBehavior(wu_id);
                   const auto wiu_BH = wiu_function_behavior->CGetBehavioralHelper();
                   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                                 "---Adding proxy function in function " + wiu_BH->get_function_name());
+                                 "---Adding proxy function in function " + wiu_BH->GetFunctionName());
                   HLSMgr->Rfuns->add_shared_function_proxy(wu_id, fu_name);
                }
             }

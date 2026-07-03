@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -42,7 +42,7 @@
  */
 #include "RTL_characterization.hpp"
 
-#include "BackendFlow.hpp"
+#include "BackendWrapper.hpp"
 #include "HDL_manager.hpp"
 #include "NP_functionality.hpp"
 #include "Parameter.hpp"
@@ -67,35 +67,23 @@
 #include "time_info.hpp"
 #include "xml_helper.hpp"
 
-#include "config_HAVE_FLOPOCO.hpp"
-
-#if HAVE_FLOPOCO
-#include "flopoco_wrapper.hpp"
-#endif
-
 #include <algorithm>
+#include <filesystem>
 #include <list>
 #include <string>
 
 #define PORT_VECTOR_N_PORTS 2
 
 RTLCharacterization::RTLCharacterization(const generic_deviceRef _device, const std::string& _cells,
-                                         const DesignFlowManagerConstRef _design_flow_manager,
+                                         const DesignFlowManager& _design_flow_manager,
                                          const ParameterConstRef _parameters)
     : DesignFlowStep(DesignFlowStep::ComputeSignature(RTL_CHARACTERIZATION, 0, 0), _design_flow_manager, _parameters),
       FunctionalUnitStep(_device),
       component(ComputeComponent(_cells)),
       cells(ComputeCells(_cells))
-#ifndef NDEBUG
-      ,
-      dummy_synthesis(_parameters->IsParameter("dummy_synthesis") and
-                      _parameters->GetParameter<std::string>("dummy_synthesis") == "yes")
-#endif
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
-
-RTLCharacterization::~RTLCharacterization() = default;
 
 std::string RTLCharacterization::GetName() const
 {
@@ -106,8 +94,6 @@ void RTLCharacterization::Initialize()
 {
    FunctionalUnitStep::Initialize();
    LM = TM->get_library_manager(TM->get_library(component));
-   prev_area_characterization = area_infoRef();
-   prev_timing_characterization = time_infoRef();
 }
 
 DesignFlowStep_Status RTLCharacterization::Exec()
@@ -153,12 +139,12 @@ void RTLCharacterization::fix_muxes()
       technology_nodeRef f_unit_mult = TM->get_fu(
           std::string(MULTIPLIER_STD) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_0", LIBRARY_STD_FU);
       auto* fu_mult = GetPointer<functional_unit>(f_unit_mult);
-      technology_nodeRef op_mult_node = fu_mult->get_operation("mult_expr");
-      auto* op_mult = GetPointer<operation>(op_mult_node);
+      technology_nodeRef op_mul_node = fu_mult->get_operation("mul_node");
+      auto* op_mult = GetPointer<operation>(op_mul_node);
       double mult_exec_time = op_mult->time_m->get_execution_time();
 
       technology_nodeRef f_unit_mux = TM->get_fu(
-          std::string(MUX_GATE_STD) + "_1_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it), LIBRARY_STD_FU);
+          std::string(MUX2_GATE_STD) + "_1_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it), LIBRARY_STD_FU);
       auto* fu_mux = GetPointer<functional_unit>(f_unit_mux);
       const functional_unit::operation_vec& ops = fu_mux->get_operations();
       for(const auto& op : ops)
@@ -392,6 +378,68 @@ void RTLCharacterization::xwrite_characterization(xml_element* nodeRoot)
    xml_element* name_el = lmRoot->add_child_element("name");
    name_el->add_child_text(LM->get_library_name());
 
+   auto write_characterized_cell = [&](functional_unit* current_fu, const std::string& cell_name,
+                                       const std::string& template_parameters,
+                                       const std::string& characterizing_constant_value) {
+      xml_element* cell_el = lmRoot->add_child_element("cell");
+      xml_element* cell_name_el = cell_el->add_child_element("name");
+      cell_name_el->add_child_text(cell_name);
+
+      for(const auto& [key, value] : current_fu->area_m->resources)
+      {
+         auto attribute_el = cell_el->add_child_element("attribute");
+         WRITE_XNVM2("name", area_info::to_string(key), attribute_el);
+         WRITE_XNVM2("value_type", "float64", attribute_el);
+         attribute_el->add_child_text(std::to_string(value));
+      }
+
+      if(current_fu->fu_template_name != "" && template_parameters != "")
+      {
+         xml_element* template_el = cell_el->add_child_element("template");
+         WRITE_XNVM2("name", current_fu->fu_template_name, template_el);
+         WRITE_XNVM2("parameter", template_parameters, template_el);
+
+         if(characterizing_constant_value != "")
+         {
+            xml_element* constant_el = cell_el->add_child_element(GET_CLASS_NAME(characterizing_constant_value));
+            constant_el->add_child_text(characterizing_constant_value);
+         }
+      }
+      auto characterization_timestamp_el = cell_el->add_child_element("characterization_timestamp");
+      characterization_timestamp_el->add_child_text(STR(TimeStamp::GetCurrentTimeStamp()));
+      const functional_unit::operation_vec& ops = current_fu->get_operations();
+      for(const auto& op : ops)
+      {
+         auto* current_op = GetPointer<operation>(op);
+         current_op->xwrite(cell_el, op, parameters);
+      }
+      if(current_fu->CM && current_fu->CM->get_circ() && GetPointer<module_o>(current_fu->CM->get_circ()) &&
+         GetPointer<module_o>(current_fu->CM->get_circ())->get_specialized() != "")
+      {
+         if(current_fu->memory_type != "")
+         {
+            xml_element* item_el = cell_el->add_child_element(GET_CLASS_NAME(memory_type));
+            item_el->add_child_text(STR(current_fu->memory_type));
+         }
+         if(current_fu->channels_type != "")
+         {
+            xml_element* item_el = cell_el->add_child_element(GET_CLASS_NAME(channels_type));
+            item_el->add_child_text(STR(current_fu->channels_type));
+         }
+         if(current_fu->memory_ctrl_type != "")
+         {
+            xml_element* item_el = cell_el->add_child_element(GET_CLASS_NAME(memory_ctrl_type));
+            item_el->add_child_text(STR(current_fu->memory_ctrl_type));
+         }
+         if(current_fu->bram_load_latency != "")
+         {
+            xml_element* item_el = cell_el->add_child_element(GET_CLASS_NAME(bram_load_latency));
+            item_el->add_child_text(STR(current_fu->bram_load_latency));
+         }
+         current_fu->CM->xwrite(cell_el);
+      }
+   };
+
    const library_manager::fu_map_type& fus = LM->get_library_fu();
    for(const auto& cell : cells)
    {
@@ -421,111 +469,93 @@ void RTLCharacterization::xwrite_characterization(xml_element* nodeRoot)
          if(!current_fu->area_m)
          {
             /// set to the default value
-            current_fu->area_m = area_info::factory(parameters);
+            current_fu->area_m = std::make_shared<area_info>();
          }
 
-         xml_element* cell_el = lmRoot->add_child_element("cell");
-         xml_element* cell_name_el = cell_el->add_child_element("name");
-         cell_name_el->add_child_text(current_fu->get_name());
+         write_characterized_cell(current_fu, current_fu->get_name(), current_fu->fu_template_parameters,
+                                  current_fu->characterizing_constant_value);
 
-         xml_element* attribute_el = cell_el->add_child_element("attribute");
-         WRITE_XNVM2("name", "area", attribute_el);
-         WRITE_XNVM2("value_type", "float64", attribute_el);
-         attribute_el->add_child_text(STR(current_fu->area_m->get_area_value()));
-         if(current_fu->area_m && current_fu->area_m->get_resource_value(area_info::REGISTERS) != 0)
+         const auto& ops = current_fu->get_operations();
+         const bool is_commutative =
+             !ops.empty() && std::all_of(ops.begin(), ops.end(), [](const technology_nodeRef& op) {
+                const auto* current_op = GetPointer<const operation>(op);
+                return current_op && current_op->commutative;
+             });
+         if(is_commutative && current_fu->fu_template_name != "" && current_fu->CM &&
+            GetPointer<module_o>(current_fu->CM->get_circ()))
          {
-            attribute_el = cell_el->add_child_element("attribute");
-            WRITE_XNVM2("name", "REGISTERS", attribute_el);
-            WRITE_XNVM2("value_type", "float64", attribute_el);
-            attribute_el->add_child_text(STR(current_fu->area_m->get_resource_value(area_info::REGISTERS)));
-         }
-         if(current_fu->area_m && current_fu->area_m->get_resource_value(area_info::SLICE_LUTS) != 0)
-         {
-            attribute_el = cell_el->add_child_element("attribute");
-            WRITE_XNVM2("name", "SLICE_LUTS", attribute_el);
-            WRITE_XNVM2("value_type", "float64", attribute_el);
-            attribute_el->add_child_text(STR(current_fu->area_m->get_resource_value(area_info::SLICE_LUTS)));
-         }
-         if(current_fu->area_m && current_fu->area_m->get_resource_value(area_info::SLICE) != 0)
-         {
-            attribute_el = cell_el->add_child_element("attribute");
-            WRITE_XNVM2("name", "SLICE", attribute_el);
-            WRITE_XNVM2("value_type", "float64", attribute_el);
-            attribute_el->add_child_text(STR(current_fu->area_m->get_resource_value(area_info::SLICE)));
-         }
-         if(current_fu->area_m && current_fu->area_m->get_resource_value(area_info::LUT_FF_PAIRS) != 0)
-         {
-            attribute_el = cell_el->add_child_element("attribute");
-            WRITE_XNVM2("name", "LUT_FF_PAIRS", attribute_el);
-            WRITE_XNVM2("value_type", "float64", attribute_el);
-            attribute_el->add_child_text(STR(current_fu->area_m->get_resource_value(area_info::LUT_FF_PAIRS)));
-         }
-         if(current_fu->area_m && current_fu->area_m->get_resource_value(area_info::DSP) != 0)
-         {
-            attribute_el = cell_el->add_child_element("attribute");
-            WRITE_XNVM2("name", "DSP", attribute_el);
-            WRITE_XNVM2("value_type", "float64", attribute_el);
-            attribute_el->add_child_text(STR(current_fu->area_m->get_resource_value(area_info::DSP)));
-         }
-         if(current_fu->area_m && current_fu->area_m->get_resource_value(area_info::BRAM) != 0)
-         {
-            attribute_el = cell_el->add_child_element("attribute");
-            WRITE_XNVM2("name", "BRAM", attribute_el);
-            WRITE_XNVM2("value_type", "float64", attribute_el);
-            attribute_el->add_child_text(STR(current_fu->area_m->get_resource_value(area_info::BRAM)));
-         }
-         if(current_fu->area_m && current_fu->area_m->get_resource_value(area_info::DRAM) != 0)
-         {
-            attribute_el = cell_el->add_child_element("attribute");
-            WRITE_XNVM2("name", "DRAM", attribute_el);
-            WRITE_XNVM2("value_type", "float64", attribute_el);
-            attribute_el->add_child_text(STR(current_fu->area_m->get_resource_value(area_info::DRAM)));
-         }
+            const auto params = string_to_container<std::vector<std::string>>(current_fu->fu_template_parameters, " ");
+            const auto* mod = GetPointer<module_o>(current_fu->CM->get_circ());
+            std::vector<size_t> eligible_chunk_sizes;
+            for(unsigned int iport = 0; iport < mod->get_in_port_size(); ++iport)
+            {
+               const auto port = mod->get_in_port(iport);
+               if(port->get_id() == CLOCK_PORT_NAME || port->get_id() == RESET_PORT_NAME ||
+                  port->get_id() == START_PORT_NAME ||
+                  (GetPointer<port_o>(port) && GetPointer<port_o>(port)->get_is_memory()) ||
+                  port->get_id().find("sel_") == 0)
+               {
+                  continue;
+               }
+               size_t chunk_size = 1;
+               if(port->get_typeRef()->type == structural_type_descriptor::VECTOR_INT ||
+                  port->get_typeRef()->type == structural_type_descriptor::VECTOR_UINT ||
+                  port->get_typeRef()->type == structural_type_descriptor::VECTOR_REAL)
+               {
+                  ++chunk_size;
+               }
+               eligible_chunk_sizes.push_back(chunk_size);
+            }
 
-         if(current_fu->fu_template_name != "" && current_fu->fu_template_parameters != "")
-         {
-            xml_element* template_el = cell_el->add_child_element("template");
-            WRITE_XNVM2("name", current_fu->fu_template_name, template_el);
-            WRITE_XNVM2("parameter", current_fu->fu_template_parameters, template_el);
+            if(eligible_chunk_sizes.size() == 2)
+            {
+               const size_t variable_chunk_0 = eligible_chunk_sizes[0];
+               const size_t variable_chunk_1 = eligible_chunk_sizes[1];
+               for(size_t const_index = 0; const_index < 2; ++const_index)
+               {
+                  const size_t first_chunk = const_index == 0 ? 1 : variable_chunk_0;
+                  const size_t second_chunk = const_index == 1 ? 1 : variable_chunk_1;
+                  if(params.size() < first_chunk + second_chunk || params[const_index == 0 ? 0 : first_chunk] != "0")
+                  {
+                     continue;
+                  }
 
-            if(current_fu->characterizing_constant_value != "")
-            {
-               xml_element* constant_el = cell_el->add_child_element(GET_CLASS_NAME(characterizing_constant_value));
-               constant_el->add_child_text(STR(current_fu->characterizing_constant_value));
+                  std::vector<std::string> alias_params;
+                  if(const_index == 0)
+                  {
+                     const auto second_chunk_end = static_cast<std::ptrdiff_t>(1 + second_chunk);
+                     alias_params.insert(alias_params.end(), params.begin() + 1, params.begin() + second_chunk_end);
+                     alias_params.push_back("0");
+                     alias_params.insert(alias_params.end(), params.begin() + second_chunk_end, params.end());
+                  }
+                  else
+                  {
+                     const auto first_chunk_end = static_cast<std::ptrdiff_t>(first_chunk);
+                     alias_params.push_back("0");
+                     alias_params.insert(alias_params.end(), params.begin(), params.begin() + first_chunk_end);
+                     alias_params.insert(alias_params.end(), params.begin() + first_chunk_end + 1, params.end());
+                  }
+
+                  std::string alias_template_parameters;
+                  std::string alias_name = current_fu->fu_template_name;
+                  for(const auto& alias_param : alias_params)
+                  {
+                     if(alias_template_parameters != "")
+                     {
+                        alias_template_parameters += " ";
+                     }
+                     alias_template_parameters += alias_param;
+                     alias_name += "_" + alias_param;
+                  }
+
+                  if(alias_name != current_fu->get_name())
+                  {
+                     write_characterized_cell(current_fu, alias_name, alias_template_parameters,
+                                              current_fu->characterizing_constant_value);
+                  }
+                  break;
+               }
             }
-         }
-         auto characterization_timestamp_el = cell_el->add_child_element("characterization_timestamp");
-         characterization_timestamp_el->add_child_text(STR(TimeStamp::GetCurrentTimeStamp()));
-         const functional_unit::operation_vec& ops = current_fu->get_operations();
-         for(const auto& op : ops)
-         {
-            auto* current_op = GetPointer<operation>(op);
-            current_op->xwrite(cell_el, op, parameters);
-         }
-         if(current_fu->CM && current_fu->CM->get_circ() && GetPointer<module>(current_fu->CM->get_circ()) &&
-            GetPointer<module>(current_fu->CM->get_circ())->get_specialized() != "")
-         {
-            if(current_fu->memory_type != "")
-            {
-               xml_element* item_el = cell_el->add_child_element(GET_CLASS_NAME(memory_type));
-               item_el->add_child_text(STR(current_fu->memory_type));
-            }
-            if(current_fu->channels_type != "")
-            {
-               xml_element* item_el = cell_el->add_child_element(GET_CLASS_NAME(channels_type));
-               item_el->add_child_text(STR(current_fu->channels_type));
-            }
-            if(current_fu->memory_ctrl_type != "")
-            {
-               xml_element* item_el = cell_el->add_child_element(GET_CLASS_NAME(memory_ctrl_type));
-               item_el->add_child_text(STR(current_fu->memory_ctrl_type));
-            }
-            if(current_fu->bram_load_latency != "")
-            {
-               xml_element* item_el = cell_el->add_child_element(GET_CLASS_NAME(bram_load_latency));
-               item_el->add_child_text(STR(current_fu->bram_load_latency));
-            }
-            current_fu->CM->xwrite(cell_el);
          }
       }
    }
@@ -575,7 +605,7 @@ void RTLCharacterization::resize_port(const structural_objectRef& port, unsigned
    }
 }
 
-void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, unsigned int bus_data_bitsize,
+void RTLCharacterization::specialize_fu(const module_o* mod, unsigned int prec, unsigned int bus_data_bitsize,
                                         unsigned int bus_addr_bitsize, unsigned int bus_size_bitsize,
                                         unsigned int bus_tag_bitsize, size_t portsize_value)
 {
@@ -658,8 +688,8 @@ void RTLCharacterization::add_input_register(structural_objectRef port_in, const
       reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME, register_library,
                                                        circuit, TM);
    }
-   GetPointer<module>(reg_mod)->get_in_port(2)->type_resize(GET_TYPE_SIZE(port_in));
-   GetPointer<module>(reg_mod)->get_out_port(0)->type_resize(GET_TYPE_SIZE(port_in));
+   GetPointer<module_o>(reg_mod)->get_in_port(2)->type_resize(GET_TYPE_SIZE(port_in));
+   GetPointer<module_o>(reg_mod)->get_out_port(0)->type_resize(GET_TYPE_SIZE(port_in));
 
    structural_objectRef port_ck = reg_mod->find_member(CLOCK_PORT_NAME, port_o_K, reg_mod);
    SM->add_connection(clock_port, port_ck);
@@ -672,10 +702,10 @@ void RTLCharacterization::add_input_register(structural_objectRef port_in, const
 
    r_signal = SM->add_sign(port_prefix + "_SIGI1", circuit, port_in->get_typeRef());
    SM->add_connection(e_port, r_signal);
-   SM->add_connection(GetPointer<module>(reg_mod)->get_in_port(2), r_signal);
+   SM->add_connection(GetPointer<module_o>(reg_mod)->get_in_port(2), r_signal);
 
    r_signal = SM->add_sign(port_prefix + "_SIGI2", circuit, port_in->get_typeRef());
-   SM->add_connection(GetPointer<module>(reg_mod)->get_out_port(0), r_signal);
+   SM->add_connection(GetPointer<module_o>(reg_mod)->get_out_port(0), r_signal);
    SM->add_connection(port_in, r_signal);
 }
 
@@ -706,8 +736,8 @@ void RTLCharacterization::add_output_register(structural_managerRef SM, structur
       reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME, register_library,
                                                        circuit, TM);
    }
-   GetPointer<module>(reg_mod)->get_in_port(2)->type_resize(GET_TYPE_SIZE(port_out));
-   GetPointer<module>(reg_mod)->get_out_port(0)->type_resize(GET_TYPE_SIZE(port_out));
+   GetPointer<module_o>(reg_mod)->get_in_port(2)->type_resize(GET_TYPE_SIZE(port_out));
+   GetPointer<module_o>(reg_mod)->get_out_port(0)->type_resize(GET_TYPE_SIZE(port_out));
 
    structural_objectRef port_ck = reg_mod->find_member(CLOCK_PORT_NAME, port_o_K, reg_mod);
    SM->add_connection(clock_port, port_ck);
@@ -720,9 +750,9 @@ void RTLCharacterization::add_output_register(structural_managerRef SM, structur
 
    r_signal = SM->add_sign(port_prefix + "_SIGO1", circuit, port_out->get_typeRef());
    SM->add_connection(port_out, r_signal);
-   SM->add_connection(GetPointer<module>(reg_mod)->get_in_port(2), r_signal);
+   SM->add_connection(GetPointer<module_o>(reg_mod)->get_in_port(2), r_signal);
    r_signal = SM->add_sign(port_prefix + "_SIGO2", circuit, port_out->get_typeRef());
-   SM->add_connection(GetPointer<module>(reg_mod)->get_out_port(0), r_signal);
+   SM->add_connection(GetPointer<module_o>(reg_mod)->get_out_port(0), r_signal);
    SM->add_connection(e_port, r_signal);
 }
 
@@ -738,12 +768,12 @@ void RTLCharacterization::ComputeRelationships(DesignFlowStepSet& relationship,
    {
       case DesignFlowStep::DEPENDENCE_RELATIONSHIP:
       {
-         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto design_flow_graph = design_flow_manager.CGetDesignFlowGraph();
          const auto technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(
-             design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::TECHNOLOGY));
+             design_flow_manager.CGetDesignFlowStepFactory(DesignFlowStep::TECHNOLOGY));
          const auto technology_flow_signature =
              TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
-         const auto technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
+         const auto technology_flow_step = design_flow_manager.GetDesignFlowStep(technology_flow_signature);
          const DesignFlowStepRef technology_design_flow_step =
              technology_flow_step != DesignFlowGraph::null_vertex() ?
                  design_flow_graph->CGetNodeInfo(technology_flow_step)->design_flow_step :
@@ -772,7 +802,7 @@ DesignFlowStepFactoryConstRef RTLCharacterization::CGetDesignFlowStepFactory() c
 void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int prec,
                                       const std::vector<std::string>& portsize_parameters, const size_t portsize_index,
                                       const std::vector<std::string>& pipe_parameters, const size_t stage_index,
-                                      const unsigned int constPort, const bool is_commutative, size_t max_lut_size)
+                                      const unsigned int constPort, const bool, size_t max_lut_size)
 {
    const auto fu_name = fu->get_name();
    const auto fu_base_name = fu->fu_template_name != "" ? fu->fu_template_name : fu_name;
@@ -782,8 +812,8 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
       size_t n_pipe_parameters = pipe_parameters.size();
 
       const structural_objectRef obj = fu->CM->get_circ();
-      unsigned int n_ports = GetPointer<module>(obj)->get_in_port_size();
-      const NP_functionalityRef NPF = GetPointer<module>(obj)->get_NP_functionality();
+      unsigned int n_ports = GetPointer<module_o>(obj)->get_in_port_size();
+      const NP_functionalityRef NPF = GetPointer<module_o>(obj)->get_NP_functionality();
       const bool isTemplate = fu->fu_template_parameters != "";
       if(constPort < n_ports)
       {
@@ -797,15 +827,12 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
       {
          fu->characterizing_constant_value = "";
       }
-#ifndef NDEBUG
-      const bool assertion_argument = NPF->exist_NP_functionality(NP_functionality::VERILOG_PROVIDED)
-#if HAVE_FLOPOCO
-                                      || NPF->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED)
-#endif
-                                      || NPF->exist_NP_functionality(NP_functionality::VHDL_PROVIDED) ||
+#if HAVE_ASSERTS
+      const bool assertion_argument = NPF->exist_NP_functionality(NP_functionality::VERILOG_PROVIDED) ||
+                                      NPF->exist_NP_functionality(NP_functionality::VHDL_PROVIDED) ||
                                       NPF->exist_NP_functionality(NP_functionality::SYSTEM_VERILOG_PROVIDED);
       THROW_ASSERT(assertion_argument,
-                   "Verilog, VHDL, SystemVerilog or Flopoco description not provided for functional unit " + fu_name);
+                   "Verilog, VHDL, or SystemVerilog description not provided for functional unit " + fu_name);
 #endif
       structural_managerRef SM = structural_managerRef(new structural_manager(parameters));
       /// main circuit type
@@ -821,7 +848,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
           fu_base_name + "_inst0", fu_base_name, LM->get_library_name(), circuit, TM);
 
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " - Generating HDL of functional unit " + fu_name);
-      auto* spec_module = GetPointer<module>(template_circuit);
+      auto* spec_module = GetPointer<module_o>(template_circuit);
 
       std::string memory_type = fu->memory_type;
       std::string channels_type = fu->channels_type;
@@ -830,30 +857,30 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
       {
          BRAM_BITSIZE = device->get_parameter<unsigned int>("BRAM_bitsize_max");
       }
-      unsigned int ALIGNED_BITSIZE = 2 * BRAM_BITSIZE;
-      unsigned int BUS_DATA_BITSIZE = 2 * BRAM_BITSIZE;
-      unsigned int BUS_ADDR_BITSIZE = 15;
-      unsigned int BUS_SIZE_BITSIZE = 7;
-      unsigned int BUS_TAG_BITSIZE = 8;
-      unsigned int NUMBER_OF_BYTES_ALLOCATED = 1024;
+      unsigned int ALIGNED_BITSIZE = 2U * BRAM_BITSIZE;
+      unsigned int BUS_DATA_BITSIZE = 2U * BRAM_BITSIZE;
+      unsigned int BUS_ADDR_BITSIZE = 15U;
+      unsigned int BUS_SIZE_BITSIZE = 7U;
+      unsigned int BUS_TAG_BITSIZE = 8U;
+      unsigned int NUMBER_OF_BYTES_ALLOCATED = 1024U;
       if(memory_type == MEMORY_TYPE_ASYNCHRONOUS)
       {
-         NUMBER_OF_BYTES_ALLOCATED = NUMBER_OF_BYTES_ALLOCATED / 16;
+         NUMBER_OF_BYTES_ALLOCATED = NUMBER_OF_BYTES_ALLOCATED / 16U;
+         if(device->has_parameter("max_distram_nn_size") &&
+            (channels_type.find(CHANNELS_TYPE_MEM_ACC_NN) != std::string::npos ||
+             channels_type.find(CHANNELS_TYPE_MEM_ACC_N1) != std::string::npos))
+         {
+            NUMBER_OF_BYTES_ALLOCATED = device->get_parameter<unsigned int>("max_distram_nn_size") / 8U;
+         }
       }
       specialize_fu(spec_module, prec, BUS_DATA_BITSIZE, BUS_ADDR_BITSIZE, BUS_SIZE_BITSIZE, BUS_TAG_BITSIZE,
                     n_portsize_parameters > 0 ? static_cast<unsigned>(std::stoul(portsize_parameters[portsize_index])) :
                                                 PORT_VECTOR_N_PORTS);
 
-      if(fu_base_name == "MC_FU") /// add further specializations for this module
-      {
-         spec_module->SetParameter("EXECUTION_TIME", STR(2));
-         spec_module->SetParameter("BITSIZE", STR(8));
-         spec_module->SetParameter("INITIATION_TIME", STR(1));
-      }
-      else if(memory_type != "")
+      if(memory_type != "")
       {
          unsigned int base_address = 0;
-         std::string init_filename = "array_ref_" + STR(base_address) + ".mem";
+         std::string init_filename = "array_" + STR(base_address) + ".mem";
          unsigned int counter = 0;
          unsigned int nbyte_on_memory = BRAM_BITSIZE / 8;
          unsigned int elts_size = BUS_DATA_BITSIZE;
@@ -864,7 +891,8 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
             nbyte_on_memory = elts_size / 8;
             base_address = 0;
          }
-         if(memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS || memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS_BUS)
+         if(memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS || memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS1 ||
+            memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS_BUS || memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS_BUS1)
          {
             BRAM_BITSIZE = elts_size;
             nbyte_on_memory = elts_size / 8;
@@ -874,8 +902,10 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
              (channels_type.find(CHANNELS_TYPE_MEM_ACC_N1) != std::string::npos &&
               channels_type.find(CHANNELS_TYPE_MEM_ACC_11) == std::string::npos)))
          {
-            std::ofstream init_file_a(init_filename);
-            std::ofstream init_file_b("0_" + init_filename);
+            const auto output_directory = parameters->getOption<std::filesystem::path>(OPT_output_directory);
+            std::filesystem::create_directories(output_directory);
+            std::ofstream init_file_a(output_directory / init_filename);
+            std::ofstream init_file_b(output_directory / ("0_" + init_filename));
             bool is_even = true;
             for(unsigned int i = 0; i < vec_size; ++i)
             {
@@ -945,17 +975,14 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          }
          spec_module->SetParameter("n_elements", STR(vec_size));
          spec_module->SetParameter("data_size", STR(elts_size));
-         if(memory_type != MEMORY_TYPE_SYNCHRONOUS_SDS && memory_type != MEMORY_TYPE_SYNCHRONOUS_SDS_BUS &&
+         if(memory_type != MEMORY_TYPE_SYNCHRONOUS_SDS && memory_type != MEMORY_TYPE_SYNCHRONOUS_SDS1 &&
+            memory_type != MEMORY_TYPE_SYNCHRONOUS_SDS_BUS && memory_type != MEMORY_TYPE_SYNCHRONOUS_SDS_BUS1 &&
             memory_type != MEMORY_TYPE_ASYNCHRONOUS)
          {
             spec_module->SetParameter("BRAM_BITSIZE", STR(BRAM_BITSIZE));
          }
          spec_module->SetParameter("BUS_PIPELINED", "1");
          spec_module->SetParameter("PRIVATE_MEMORY", "0");
-      }
-      else if(fu_base_name == MEMLOAD_STD)
-      {
-         spec_module->SetParameter("base_address", "8");
       }
       else if(fu_base_name == MEMSTORE_STD)
       {
@@ -1041,13 +1068,13 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          {
             continue;
          }
-         if(fu_base_name == LUT_EXPR_STD && i == 0)
+         if(fu_base_name == LUT_NODE_STD && i == 0)
          {
             resize_port(port_in, 64);
             e_port = SM->add_constant("constant_0", circuit, port_in->get_typeRef(), STR(0xFF7F3F1F0F070301));
             SM->add_connection(port_in, e_port);
          }
-         else if(fu_base_name == LUT_EXPR_STD && i > max_lut_size)
+         else if(fu_base_name == LUT_NODE_STD && i > max_lut_size)
          {
             e_port = SM->add_constant("constant_" + STR(i), circuit, port_in->get_typeRef(), STR(0));
             SM->add_connection(port_in, e_port);
@@ -1108,23 +1135,9 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          }
       }
 
-#if HAVE_FLOPOCO
-      bool is_doubled_out = false;
-      bool is_halved_out = false;
-#endif
       for(unsigned int i = 0; i < spec_module->get_out_port_size(); i++)
       {
          structural_objectRef port_out = spec_module->get_out_port(i);
-#if HAVE_FLOPOCO
-         if(GetPointer<port_o>(port_out)->get_is_doubled())
-         {
-            is_doubled_out = true;
-         }
-         else if(GetPointer<port_o>(port_out)->get_is_halved())
-         {
-            is_halved_out = true;
-         }
-#endif
          if(port_out->get_kind() == port_vector_o_K)
          {
             e_port = SM->add_port_vector(GetPointer<port_o>(port_out)->get_id(), port_o::OUT,
@@ -1157,104 +1170,43 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
 
       // get the wrapped circuit.
       HDL_managerRef HDL = HDL_managerRef(new HDL_manager(HLS_managerRef(), device, parameters));
-      std::list<std::string> hdl_files, aux_files;
+      std::list<std::string> hdl_files;
       std::list<structural_objectRef> circuits;
       circuits.push_back(circuit);
-      HDL->hdl_gen(fu_name, circuits, hdl_files, aux_files);
+      HDL->hdl_gen(parameters->getOption<std::string>(OPT_output_directory) + "/" + fu_name, circuits, hdl_files,
+                   hdl_files);
       int PipelineDepth = -1;
-#if HAVE_FLOPOCO
-      if(n_pipe_parameters > 0 && NPF && NPF->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) &&
-         HDL->get_flopocowrapper())
-      {
-         if(is_doubled_out)
-         {
-            PipelineDepth = static_cast<int>(HDL->get_flopocowrapper()->get_FUPipelineDepth(
-                fu_base_name, prec, 2 * prec, pipe_parameters[stage_index]));
-         }
-         else if(is_halved_out)
-         {
-            PipelineDepth = static_cast<int>(HDL->get_flopocowrapper()->get_FUPipelineDepth(
-                fu_base_name, prec, prec / 2, pipe_parameters[stage_index]));
-         }
-         else
-         {
-            PipelineDepth = static_cast<int>(
-                HDL->get_flopocowrapper()->get_FUPipelineDepth(fu_base_name, prec, prec, pipe_parameters[stage_index]));
-         }
-      }
-#endif
       /// generate the synthesis scripts
-      BackendFlowRef flow = BackendFlow::CreateFlow(parameters, "Characterization", device);
-      flow->GenerateSynthesisScripts(fu->get_name(), SM, hdl_files, aux_files);
+      BackendWrapper flow(parameters, device, {"characterization"});
+      flow.init(fu->get_name(), SM, hdl_files);
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Performing characterization of functional unit " + fu_name);
-#ifndef NDEBUG
-      if(not dummy_synthesis)
-#endif
-      {
-         if(constPort < n_ports && is_commutative && constPort > has_first_synthesis_id && prev_area_characterization &&
-            prev_timing_characterization)
-         {
-            fu->area_m = prev_area_characterization;
-         }
-         else
-         {
-            flow->ExecuteSynthesis();
-            has_first_synthesis_id = constPort;
-            /// the synthesis has been successfully completed
-            /// setting the used resources
-            fu->area_m = flow->get_used_resources();
-         }
-      }
-#ifndef NDEBUG
-      else
-      {
-         fu->area_m = area_info::factory(parameters);
-      }
-#endif
+      const auto results_xml = flow.run();
+      area_info resource_info;
+      time_info timing_info;
+      BackendWrapper::ParseResults(results_xml, resource_info, timing_info);
+
+      has_first_synthesis_id = constPort;
+      /// the synthesis has been successfully completed
+      /// setting the used resources
+      fu->area_m = std::make_shared<area_info>(resource_info);
+
       /// setting the timing values for each operation
       const functional_unit::operation_vec& ops = fu->get_operations();
       for(const auto& op : ops)
       {
          auto* new_op = GetPointer<operation>(op);
-         time_infoRef synthesis_results;
-#ifndef NDEBUG
-         if(not dummy_synthesis)
-#endif
-         {
-            if(constPort < n_ports && is_commutative && constPort > has_first_synthesis_id &&
-               prev_area_characterization && prev_timing_characterization)
-            {
-               synthesis_results = prev_timing_characterization;
-            }
-            else
-            {
-               synthesis_results = flow->get_timing_results();
-            }
-         }
-#ifndef NDEBUG
-         else
-         {
-            synthesis_results = time_info::factory(parameters);
-            synthesis_results->set_execution_time(7.75);
-         }
-#endif
-         double exec_time = 0.0;
-         if(synthesis_results)
-         {
-            exec_time = synthesis_results->get_execution_time();
-         }
+         double exec_time = timing_info.get_execution_time();
 
          if(!new_op->time_m)
          {
-            new_op->time_m = time_info::factory(parameters);
+            new_op->time_m = std::make_shared<time_info>();
          }
 
          if(n_pipe_parameters > 0)
          {
             new_op->time_m->set_stage_period(time_info::stage_period_DEFAULT);
-            new_op->time_m->set_execution_time(time_info::execution_time_DEFAULT, time_info::cycles_time_DEFAULT);
-            const ControlStep ii_default(time_info::initiation_time_DEFAULT);
-            new_op->time_m->set_initiation_time(ii_default);
+            new_op->time_m->set_execution_time(time_info::execution_time_DEFAULT, time_info::cycles_DEFAULT);
+            new_op->time_m->set_initiation_time(time_info::initiation_time_DEFAULT);
 
             unsigned int n_cycles;
             n_cycles = static_cast<unsigned>(std::stoul(pipe_parameters[stage_index]));
@@ -1263,8 +1215,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
             if(n_cycles > 0 && PipelineDepth != 0)
             {
                new_op->time_m->set_stage_period(exec_time);
-               const ControlStep ii(1u);
-               new_op->time_m->set_initiation_time(ii);
+               new_op->time_m->set_initiation_time(1u);
                if(PipelineDepth == -1)
                {
                   new_op->time_m->set_execution_time(exec_time, n_cycles + 1);
@@ -1285,33 +1236,14 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          }
          else if(new_op->time_m->get_cycles() == 0)
          {
-            new_op->time_m->set_execution_time(exec_time, time_info::cycles_time_DEFAULT);
+            new_op->time_m->set_execution_time(exec_time, time_info::cycles_DEFAULT);
          }
          else
          {
             new_op->time_m->set_stage_period(exec_time);
          }
       }
-
-#ifndef NDEBUG
-      if(not dummy_synthesis)
-#endif
-      {
-         if(constPort < n_ports && is_commutative && constPort == has_first_synthesis_id &&
-            flow->get_used_resources() && flow->get_timing_results())
-         {
-            prev_area_characterization = flow->get_used_resources();
-            prev_timing_characterization = flow->get_timing_results();
-            THROW_ASSERT(prev_area_characterization, "expected a previous synthesis result");
-            THROW_ASSERT(prev_timing_characterization, "expected a previous synthesis result");
-         }
-      }
       completed.insert(fu->functional_unit_name);
-   }
-   else
-   {
-      prev_area_characterization = area_infoRef();
-      prev_timing_characterization = time_infoRef();
    }
 }
 

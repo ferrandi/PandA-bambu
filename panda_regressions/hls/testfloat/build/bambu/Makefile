@@ -35,30 +35,37 @@
 #
 #=============================================================================
 
+GIT_ROOT ?= ../../../../..
 SOURCE_DIR ?= ../../source
 SOFTFLOAT_DIR ?= ../../berkeley-softfloat
 PLATFORM ?= bambu
 
 SUBJ_SOURCE_DIR = $(SOURCE_DIR)/subj-C
 SOFTFLOAT_INCLUDE_DIR = $(SOFTFLOAT_DIR)/source/include
+LIBBAMBU_ROOT = $(GIT_ROOT)/etc/libbambu
 
 SOFTFLOAT_H = \
   $(SOFTFLOAT_INCLUDE_DIR)/softfloat_types.h \
   $(SOFTFLOAT_INCLUDE_DIR)/softfloat.h
 SOFTFLOAT_LIB = $(SOFTFLOAT_DIR)/build/$(PLATFORM)/softfloat$(LIB)
 
-TESTFLOAT_OPTS ?= -DNO_PARAMETRIC -DIEEE_SUBJ_SUBNORM=0 -DFLOAT64 -DFLOAT16
+TESTFLOAT_OPTS ?= -DIEEE_SUBJ_SUBNORM=0 -DFLOAT64 -DFLOAT16
 #    -DEXTFLOAT80 -DFLOAT128 -DFLOAT_ROUND_ODD -DLONG_DOUBLE_IS_EXTFLOAT80
 
 DELETE = rm -f
 C_INCLUDES = \
-  -I. -I$(SUBJ_SOURCE_DIR) -I../../../../../etc/libbambu -I$(SOURCE_DIR) -I$(SOFTFLOAT_INCLUDE_DIR)
+  -I. -I$(SUBJ_SOURCE_DIR) -I$(SOURCE_DIR) -I$(SOFTFLOAT_INCLUDE_DIR)
 COMPILE_C = \
   $(CC) -c -Werror-implicit-function-declaration $(TESTFLOAT_OPTS) \
     $(C_INCLUDES) -O2 -o $@
 COMPILE_SLOWFLOAT_C = \
   $(CC) -c -Werror-implicit-function-declaration $(TESTFLOAT_OPTS) \
     $(C_INCLUDES) -O3 -o $@
+COMPILE_LIBBAMBU_C = \
+  $(CC) -c -Werror=uninitialized -Wno-shift-count-negative \
+    -fno-math-errno -fno-signaling-nans -fno-trapping-math \
+    -fno-tree-loop-distribute-patterns -finline-limit=10000 \
+    -I$(LIBBAMBU_ROOT) -O2 -o $@
 MAKELIB = ar crs $@
 LINK = $(CC) -o $@
 OTHER_LIBS =
@@ -73,8 +80,7 @@ all: \
   timesoftfloat$(EXE) \
   testfloat_gen$(EXE) \
   testfloat_ver$(EXE) \
-  testfloat$(EXE) \
-  testfloat-sf$(EXE) \
+  testfloat$(EXE)
 
 OBJS_GENCASES = \
   genCases_ui32$(OBJ) \
@@ -324,20 +330,23 @@ testfloat_ver$(OBJ): \
 testfloat_ver$(EXE): $(OBJS_TESTFLOAT_VER) testfloat$(LIB) $(SOFTFLOAT_LIB)
 	$(LINK) $^ $(OTHER_LIBS)
 
-OBJS_TESTFLOAT = subjfloat_functions$(OBJ) testfloat$(OBJ)
+OBJS_TESTFLOAT = testfloat$(OBJ) testfloat$(LIB)
 
 subjfloat$(OBJ): \
   platform.h $(SOFTFLOAT_H) $(SUBJ_SOURCE_DIR)/subjfloat_config.h \
-  $(SOURCE_DIR)/subjfloat.h $(SUBJ_SOURCE_DIR)/subjfloat.c
-	$(COMPILE_C) $(SUBJ_SOURCE_DIR)/subjfloat.c
-subjfloat-sf$(OBJ): \
-  platform.h $(SOFTFLOAT_H) $(SUBJ_SOURCE_DIR)/subjfloat_config.h \
-  $(SOURCE_DIR)/subjfloat.h $(SUBJ_SOURCE_DIR)/subjfloat.c
-	$(COMPILE_C) $(SUBJ_SOURCE_DIR)/subjfloat.c -DSOFT_FP_LIB
+  $(SOURCE_DIR)/subjfloat.h $(LIBBAMBU_ROOT)/softfloat/softfloat_features.h \
+  $(LIBBAMBU_ROOT)/softfloat/softfloat.h $(LIBBAMBU_ROOT)/bambu_config.h \
+  $(SUBJ_SOURCE_DIR)/subjfloat.c
+	$(COMPILE_C) -I$(LIBBAMBU_ROOT) $(SUBJ_SOURCE_DIR)/subjfloat.c
 subjfloat_functions$(OBJ): \
   platform.h $(SUBJ_SOURCE_DIR)/subjfloat_config.h $(SOURCE_DIR)/subjfloat.h \
   $(SOURCE_DIR)/functions.h $(SOURCE_DIR)/subjfloat_functions.c
 	$(COMPILE_C) $(SOURCE_DIR)/subjfloat_functions.c
+bambu_softfloat$(OBJ): $(LIBBAMBU_ROOT)/softfloat/softfloat_features.h \
+  $(LIBBAMBU_ROOT)/softfloat/softfloat.h $(LIBBAMBU_ROOT)/bambu_config.h \
+  $(LIBBAMBU_ROOT)/softfloat/softfloat.c
+	$(COMPILE_LIBBAMBU_C) $(LIBBAMBU_ROOT)/softfloat/softfloat.c
+
 testfloat$(OBJ): \
   platform.h $(SOURCE_DIR)/uint128.h $(SOURCE_DIR)/fail.h $(SOFTFLOAT_H) \
   $(SUBJ_SOURCE_DIR)/subjfloat_config.h $(SOURCE_DIR)/subjfloat.h \
@@ -345,10 +354,7 @@ testfloat$(OBJ): \
   $(SOURCE_DIR)/testLoops.h $(SOURCE_DIR)/testfloat.c
 	$(COMPILE_C) $(SOURCE_DIR)/testfloat.c
 
-testfloat$(EXE): subjfloat$(OBJ) $(OBJS_TESTFLOAT) testfloat$(LIB) $(SOFTFLOAT_LIB)
-	$(LINK) $^ $(OTHER_LIBS)
-
-testfloat-sf$(EXE): subjfloat-sf$(OBJ) $(OBJS_TESTFLOAT) testfloat$(LIB) $(SOFTFLOAT_LIB)
+testfloat$(EXE): subjfloat$(OBJ) subjfloat_functions$(OBJ) bambu_softfloat$(OBJ) $(OBJS_TESTFLOAT) $(SOFTFLOAT_LIB)
 	$(LINK) $^ $(OTHER_LIBS)
 
 .PHONY: clean
@@ -358,5 +364,5 @@ clean:
 	$(DELETE) $(OBJS_TIMESOFTFLOAT) timesoftfloat$(EXE)
 	$(DELETE) $(OBJS_TESTFLOAT_GEN) testfloat_gen$(EXE)
 	$(DELETE) $(OBJS_TESTFLOAT_VER) testfloat_ver$(EXE)
-	$(DELETE) subjfloat$(OBJ)  subjfloat-sf$(OBJ) $(OBJS_TESTFLOAT) testfloat$(EXE)
+	$(DELETE) subjfloat$(OBJ) subjfloat_functions$(OBJ) bambu_softfloat$(OBJ) testfloat$(EXE)
 

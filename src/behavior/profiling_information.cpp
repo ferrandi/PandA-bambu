@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -39,56 +39,56 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "profiling_information.hpp"
 
-#include "basic_block.hpp"                // for BBEdgeSorter, BBVertexS...
-#include "host_profiling_xml.hpp"         // for STR_XML_host_profiling_id
-#include "loop.hpp"                       // for LoopConstRef, Loop
-#include "tree_basic_block.hpp"           // for bloc
-#include "xml_element.hpp"                // for xml_element
-#include "xml_helper.hpp"                 // for WRITE_XNVM2
-#include <boost/graph/adjacency_list.hpp> // for adjacency_list, source
-#include <boost/graph/filtered_graph.hpp> // for source, target
-#include <string>                         // for string, operator+
-#include <utility>                        // for pair
+#include "basic_block.hpp"
+#include "host_profiling_xml.hpp"
+#include "ir_basic_block.hpp"
+#include "loop.hpp"
+#include "xml_element.hpp"
+#include "xml_helper.hpp"
+
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/filtered_graph.hpp>
+
+#include <string>
+#include <utility>
 
 #if HAVE_UNORDERED
-BBExecutions::BBExecutions(const BBGraphConstRef) : CustomUnorderedMap<vertex, unsigned long long int>()
+BBExecutions::BBExecutions(const BBGraphsCollection*)
+    : CustomUnorderedMap<BBGraphsCollection::vertex_descriptor, unsigned long long int>()
 {
 }
 #else
-BBExecutions::BBExecutions(const BBGraphConstRef _bb_graph)
-    : std::map<vertex, unsigned long long int, BBVertexSorter>(BBVertexSorter(_bb_graph))
+BBExecutions::BBExecutions(const BBGraphsCollection* _bb_graph)
+    : std::map<BBGraphsCollection::vertex_descriptor, unsigned long long int, BBVertexSorter>(BBVertexSorter(_bb_graph))
 {
 }
 #endif
 
 #if HAVE_UNORDERED
-BBEdgeExecutions::BBEdgeExecutions(const BBGraphConstRef) : CustomUnorderedMap<EdgeDescriptor, unsigned long long int>()
+BBEdgeExecutions::BBEdgeExecutions(const BBGraphsCollection*)
+    : CustomUnorderedMap<BBGraphsCollection::edge_descriptor, unsigned long long int>()
 {
 }
 #else
-BBEdgeExecutions::BBEdgeExecutions(const BBGraphConstRef _bb_graph)
-    : std::map<EdgeDescriptor, unsigned long long int, BBEdgeSorter>(BBEdgeSorter(_bb_graph))
+BBEdgeExecutions::BBEdgeExecutions(const BBGraphsCollection* _bb_graph)
+    : std::map<BBGraph::edge_descriptor, unsigned long long int, BBEdgeSorter>(BBEdgeSorter(_bb_graph))
 {
 }
 #endif
 
-ProfilingInformation::ProfilingInformation(const BBGraphConstRef _bb_graph)
-    : bb_executions(_bb_graph), edge_executions(_bb_graph)
+ProfilingInformation::ProfilingInformation(const BBGraphsCollection* bb_graph)
+    : bb_executions(bb_graph), edge_executions(bb_graph)
 {
 }
-
-ProfilingInformation::~ProfilingInformation() = default;
 
 const PathProfilingInformation& ProfilingInformation::GetPathProfiling() const
 {
    return path_profiling;
 }
 
-unsigned long long int ProfilingInformation::GetBBExecutions(const vertex bb_vertex) const
+unsigned long long int ProfilingInformation::GetBBExecutions(BBGraph::vertex_descriptor bb_vertex) const
 {
    if(bb_executions.find(bb_vertex) != bb_executions.end())
    {
@@ -97,7 +97,7 @@ unsigned long long int ProfilingInformation::GetBBExecutions(const vertex bb_ver
    return 0.0;
 }
 
-unsigned long long int ProfilingInformation::GetEdgeExecutions(const EdgeDescriptor edge) const
+unsigned long long int ProfilingInformation::GetEdgeExecutions(const BBGraph::edge_descriptor& edge) const
 {
    if(edge_executions.find(edge) != edge_executions.end())
    {
@@ -135,20 +135,20 @@ unsigned long long int ProfilingInformation::GetLoopAbsIterations(const unsigned
 
 long double ProfilingInformation::GetLoopAvgIterations(const LoopConstRef loop) const
 {
-   return GetLoopAvgIterations(loop->GetId());
+   return GetLoopAvgIterations(loop->getLoopId());
 }
 
 unsigned long long int ProfilingInformation::GetLoopMaxIterations(const LoopConstRef loop) const
 {
-   return GetLoopMaxIterations(loop->GetId());
+   return GetLoopMaxIterations(loop->getLoopId());
 }
 
 unsigned long long ProfilingInformation::GetLoopAbsIterations(const LoopConstRef loop) const
 {
-   return GetLoopAbsIterations(loop->GetId());
+   return GetLoopAbsIterations(loop->getLoopId());
 }
 
-void ProfilingInformation::WriteToXml(xml_element* root, const BBGraphConstRef fcfg) const
+void ProfilingInformation::WriteToXml(xml_element* root, const BBGraph& fcfg) const
 {
    xml_element* path_profiling_xml = root->add_child_element(STR_XML_host_profiling_paths);
    PathProfilingInformation::const_iterator loop, loop_end = path_profiling.end();
@@ -181,7 +181,7 @@ void ProfilingInformation::WriteToXml(xml_element* root, const BBGraphConstRef f
    BBExecutions::const_iterator bb_execution, bb_execution_end = bb_executions.end();
    for(bb_execution = bb_executions.begin(); bb_execution != bb_execution_end; ++bb_execution)
    {
-      ordered_bb_executions[fcfg->CGetBBNodeInfo(bb_execution->first)->block->number] = bb_execution->second;
+      ordered_bb_executions[fcfg.CGetNodeInfo(bb_execution->first).block->number] = bb_execution->second;
    }
 
    std::map<unsigned int, long double>::const_iterator ordered_bb_execution,
@@ -202,8 +202,8 @@ void ProfilingInformation::WriteToXml(xml_element* root, const BBGraphConstRef f
    for(edge_execution = edge_executions.begin(); edge_execution != edge_execution_end; ++edge_execution)
    {
       ordered_edge_executions[std::pair<unsigned int, unsigned int>(
-          fcfg->CGetBBNodeInfo(boost::source(edge_execution->first, *fcfg))->block->number,
-          fcfg->CGetBBNodeInfo(boost::target(edge_execution->first, *fcfg))->block->number)] = edge_execution->second;
+          fcfg.CGetNodeInfo(fcfg.source(edge_execution->first)).block->number,
+          fcfg.CGetNodeInfo(fcfg.target(edge_execution->first)).block->number)] = edge_execution->second;
    }
 
    std::map<std::pair<unsigned int, unsigned int>, long double>::const_iterator ordered_edge_execution,

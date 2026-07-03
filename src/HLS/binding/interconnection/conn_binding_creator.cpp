@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -36,9 +36,6 @@
  *
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "behavioral_helper.hpp"
@@ -53,15 +50,14 @@
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "utility.hpp"
+#include "var_pp_functor.hpp"
 
 conn_binding_creator::conn_binding_creator(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
-                                           unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager,
+                                           unsigned int _funId, const DesignFlowManager& _design_flow_manager,
                                            const HLSFlowStep_Type _hls_flow_step_type)
     : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
 }
-
-conn_binding_creator::~conn_binding_creator() = default;
 
 HLS_step::HLSRelationships
 conn_binding_creator::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -69,44 +65,22 @@ conn_binding_creator::ComputeHLSRelationships(const DesignFlowStep::Relationship
    HLSRelationships ret;
    switch(relationship_type)
    {
-      case DEPENDENCE_RELATIONSHIP:
+      case(DEPENDENCE_RELATIONSHIP):
       {
-         if(parameters->IsParameter("PortSwapping") and parameters->GetParameter<bool>("PortSwapping"))
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::PORT_SWAPPING, HLSFlowStepSpecializationConstRef(),
-                                       HLSFlowStep_Relationship::SAME_FUNCTION));
-         }
          if(HLSMgr->get_HLS(funId))
          {
-            if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
-            {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_MODULE_BINDING, HLSFlowStepSpecializationConstRef(),
-                                          HLSFlowStep_Relationship::SAME_FUNCTION));
-            }
-            else
-            {
-               ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm,
-                                          HLSFlowStepSpecializationConstRef(),
-                                          HLSFlowStep_Relationship::SAME_FUNCTION));
-            }
-         }
-         if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_REGISTER_BINDING, HLSFlowStepSpecializationConstRef(),
-                                       HLSFlowStep_Relationship::SAME_FUNCTION));
-         }
-         else
-         {
-            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm),
+            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm,
                                        HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          }
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm),
+                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          break;
       }
-      case INVALIDATION_RELATIONSHIP:
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case PRECEDENCE_RELATIONSHIP:
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -131,7 +105,7 @@ void conn_binding_creator::add_parameter_ports()
       PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "IN)-@" + STR(function_parameter) + " ");
       input_ports[function_parameter] = HLS->Rconn->bind_port(function_parameter, conn_binding::IN);
    }
-   const unsigned int return_type_index = BH->GetFunctionReturnType(BH->get_function_index());
+   const unsigned int return_type_index = BH->GetFunctionReturnType();
    if(return_type_index)
    {
       PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level,

@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2023-2024 Politecnico di Milano
+ *              Copyright (C) 2023-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -35,58 +35,68 @@
  * @brief Collect information about resource area
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
 #include "area_info.hpp"
-#include "exceptions.hpp"
-#include "generic_device.hpp"
 
-const double area_info::area_DEFAULT = 1.0;
+#include <algorithm>
+#include <stdexcept>
+#include <utility>
 
-area_info::area_info(const ParameterConstRef& _Param) : Param(_Param)
+namespace
 {
-}
-
-area_info::~area_info() = default;
-
-area_infoRef area_info::factory(const ParameterConstRef& Param)
-{
-   return area_infoRef(new area_info(Param));
-}
-
-double area_info::get_area_value() const
-{
-   return static_cast<double>(area);
-}
-
-void area_info::set_area_value(const double& _area)
-{
-   area = _area;
-}
-
-void area_info::set_resource_value(value_t val, double num)
-{
-   used_resources[val] = num;
-}
-
-bool area_info::is_used_resource(value_t val) const
-{
-   return used_resources.find(val) != used_resources.end();
-}
-
-double area_info::get_resource_value(value_t val) const
-{
-   if(!is_used_resource(val))
+   template <std::size_t N, std::size_t... I>
+   std::array<std::string, N> make_owned_names_impl(const std::array<std::string_view, N>& names,
+                                                    std::index_sequence<I...>)
    {
-      return 0;
+      return {std::string{names[I]}...};
    }
-   return used_resources.find(val)->second;
-}
+
+   template <std::size_t N>
+   std::array<std::string, N> make_owned_names(const std::array<std::string_view, N>& names)
+   {
+      return make_owned_names_impl(names, std::make_index_sequence<N>{});
+   }
+
+   template <std::size_t N>
+   const std::string& enum_to_string(const std::size_t index, const std::array<std::string, N>& names,
+                                     const char* const error_message)
+   {
+      if(index < names.size())
+      {
+         return names[index];
+      }
+      throw std::out_of_range(error_message);
+   }
+
+   template <typename Enum, std::size_t N>
+   Enum string_to_enum(const std::string& value, const std::array<std::string_view, N>& names, const Enum error_value)
+   {
+      if(const auto it = std::find(names.begin(), names.end(), value); it != names.end())
+      {
+         return static_cast<Enum>(it - names.begin());
+      }
+      return error_value;
+   }
+} // namespace
 
 void area_info::print(std::ostream& os) const
 {
-   if(used_resources.find(LUT_FF_PAIRS) != used_resources.end())
+   if(auto luts = resources.find(resource_type::LUT); luts != resources.end())
    {
-      os << "LUT/FF pairs: " << used_resources.find(LUT_FF_PAIRS)->second << std::endl;
+      os << "LUTs: " << luts->second << std::endl;
    }
+}
+
+const std::string& area_info::to_string(enum area_info::resource_type v)
+{
+   static const auto resource_strings = make_owned_names(namedResourceTypes);
+
+   return enum_to_string(static_cast<std::size_t>(v), resource_strings, "Invalid area_info::resource_type value");
+}
+
+enum area_info::resource_type area_info::to_resource_type(const std::string& v)
+{
+   return string_to_enum(v, namedResourceTypes, resource_type::ERROR);
 }

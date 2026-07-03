@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -39,23 +39,15 @@
  */
 #ifndef SOFT_INT_CG_EXT_HPP
 #define SOFT_INT_CG_EXT_HPP
-
-/// Superclass include
 #include "application_frontend_flow_step.hpp"
 
-/// Utility include
 #include "custom_set.hpp"
 #include "refcount.hpp"
 
-/**
- * @name forward declarations
- */
-//@{
 REF_FORWARD_DECL(soft_int_cg_ext);
-REF_FORWARD_DECL(tree_manager);
-REF_FORWARD_DECL(tree_manipulation);
-REF_FORWARD_DECL(tree_node);
-//@}
+REF_FORWARD_DECL(ir_manager);
+REF_FORWARD_DECL(ir_manipulation);
+REF_FORWARD_DECL(ir_node);
 
 /**
  * Add to the call graph the function calls associated with the integer division and modulus operations.
@@ -63,20 +55,20 @@ REF_FORWARD_DECL(tree_node);
 class soft_int_cg_ext : public ApplicationFrontendFlowStep
 {
  private:
-   /// Already visited tree node (used to avoid infinite recursion)
+   /// Already visited IR node (used to avoid infinite recursion)
    CustomUnorderedSet<unsigned int> already_visited;
 
-   const tree_managerRef TreeM;
+   const ir_managerRef IRM;
 
    bool doSoftDiv;
 
    CustomOrderedSet<unsigned int> fun_id_to_restart;
 
    /**
-    * Recursive examine tree node
+    * Recursive examine IR node
     */
-   bool recursive_transform(unsigned int function_id, const tree_nodeRef& current_tree_node,
-                            const tree_nodeRef& current_statement, const tree_manipulationRef tree_man);
+   bool recursive_transform(unsigned int function_id, const ir_nodeRef& current_ir_node,
+                            const ir_nodeRef& current_statement, const ir_manipulationRef ir_man);
 
    /**
     * Return the set of analyses in relationship with this design step
@@ -95,12 +87,7 @@ class soft_int_cg_ext : public ApplicationFrontendFlowStep
     * @param dfm is the design flow manager
     * @param par is the set of the parameters
     */
-   soft_int_cg_ext(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par);
-
-   /**
-    * Destructor
-    */
-   ~soft_int_cg_ext() override;
+   soft_int_cg_ext(const application_managerRef AM, const DesignFlowManager& dfm, const ParameterConstRef par);
 
    /**
     * transform soft int operation into function call

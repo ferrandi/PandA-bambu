@@ -8,38 +8,40 @@
  *
  *             ***********************************************
  *                              PandA Project 
- *                     URL: http://panda.dei.polimi.it
+ *                     URL: https://github.com/ferrandi/PandA-bambu
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
 */
 /*!
 
 \page src_behavior_page Intermediate representation
 
-TODO: add a part about graph created starting from c short circuits
 
+Language-based specifications are translated into internal intermediate representations so that the framework can analyze control, data, memory,
+and scheduling properties in a uniform way. In PandA, this representation includes several graph views built over the same program semantics.
+At code level, these views are managed by \c FunctionBehavior objects (see \c src/behavior/function_behavior.hpp), which expose both operation-level
+graphs through \c GetOpGraph(...) and basic-block graphs through \c GetBBGraph(...).
+They can be grouped into two broad classes:
 
-Language based specification usually are translated into intermediate representations to efficiently manage and analyze the design specification. Panda as intermediate representation uses different types of graph. They can be divided into two main class:
-
-- Representation at operation level: in these types of graphs every vertex corresponds to an operation and every edge corresponds to a precedence or a dependence (all graphs in this class are directed). There are also two nodes which doesn't correspond to any real operation: ENTRY and EXIT. The first represents the specification begining, the second the specification ending. In all graphs there all vertices are directed connected to node ENTRY. The graphs which belongs to this class are:
+- Representation at operation level: in these graphs every vertex corresponds to an operation and every edge corresponds to a precedence relation or a dependency. These graphs are directed. Two distinguished nodes, ENTRY and EXIT, represent the begin and end of the analyzed region. In the code, these graphs are represented through \c OpGraph and the related graph collections. The graphs in this class include:
  - Control-Flow Graph (CFG): it represents the control constructs of a description, like loops, branches, jumps, etc.
  - Control Dependence Graph (CDG): it represents the control dependence of the description, i. e. by which operations the execution of every one is controlled
  - Data-Flow Graph (DFG): since it is based of data dependency, it is the most parallel representation of the description. It Nevertheless it is not sufficient to fully represent control intensive representations.
@@ -49,15 +51,15 @@ Language based specification usually are translated into intermediate representa
  - Speculation Graph: System Dependence where some control dependences are eliminated in order to enable speculation in scheduling; there are also some edges added in order to reduce the possible speculation
  - Transitive reducted system dependence graph with feedback edges (RFSDG) (graph without feedback edges does not exist because it is not used)
  - Helping Graph (HG): representation used by ILP scheduler
-- Representation at basic block level: in these types of graphs every vertex corresponds to a set of control equivalent operations (basic block):
+- Representation at basic block level: in these graphs every vertex corresponds to a basic block, namely a set of control-equivalent operations. In the code, these graphs are represented through \c BBGraph, \c BBGraphInfo, and \c BBNodeInfo:
  - Basic Block Control-Flow Graph (BB): it represents the control constructs of a description at basic block level
  - Dominator Tree (DT): dominator tree built on Basic Block Control-Flow Graph
  - Post-Dominator Tree (PDT): post-dominator tree built on Basic Block Control-Flow Graph
 
-For many of these types of graphs there are two different version: the first hasn't feedback edges, the second does.
+For many of these graph families there are two variants: one without feedback edges and one with explicit feedback edges.
 An edge is of feedback type if it closes a cycle in some path starting from ENTRY.
 
-In following subsection all types will be more accurately described and it will be given the correspondent graph of the following example:
+The following subsections describe the main graph types using the same running example:
 \verbatim
  1  a = 1;
  2  b = 2;
@@ -82,13 +84,14 @@ In following subsection all types will be more accurately described and it will 
 16  c = c + 1;
 \endverbatim
 
+\section IR_graphs Intermediate representation graphs
+Each graph described below captures a different view of the same behavioral region shown in the example above.
+
 \subsection IR_CFG Control-Flow Graph (CFG)
 
 The control flow graph represents the sequencing of the operations as described in the language specification. The CFG is a directed graph whose vertexes are represented by set V = {\f$v_i\f$ ; i = 1, 2, ... , \f$no_p\f$ }. The set of edges is E = {(\f$v_i\f$ , \f$v_j\f$ ); i , j = 1, 2, ... , \f$no_p\f$ }. It takes into account all constructs that cause a re-direction of the computational flow, such as branch statements, loop statements, jump statements, etc. The advantages of this representation is that it is quite simple to extract from the system specification even if it does not express the potential parallelism of the operations.
 
-On the other side one of the main disadvantages is that CFG generation for multi-process systems specifications does not appear to be simple, since a CFG has to manage at the same time all the flows of control of all the processes that compose the system. Thus the CFG model results intrinsically suitable just for single-process descriptions.
-
-Some of the algorithms and tools which work on graph in PandA assume that the only type of cycle construct present in specification is the repeat-until. So if in specification some while-construct is present, it will be transformed into a "if repeat until" structure.
+On the other side, CFGs are not by themselves sufficient to expose all the information needed by optimization and scheduling passes, which is why PandA complements them with additional dependence-oriented graph views.
 
 An example of CFG is:
 \dot
@@ -589,7 +592,7 @@ digraph CFG_BB {
 
 \subsection IR_Dominator Dominator
 
-In computer science, in compilers, a dominator is an object which is always executed before another object, where the object is typically either a statement or a basic block. By definition an object dominates itself as well. A block M dominates a block N if every path from the entry that reaches block N has to pass through block M. The entry block dominates all blocks. Note that an object may have many dominators. Sometimes more useful is the concept of an immediate dominator, which is the unique object that dominates an object, while not dominating any other dominator of the object. A block M immediately dominates a block N if M dominates N, and there is no intervening block P such that M dominates P and P dominates N . In other words, M is the last dominator on any path from entry to N . Each block has a unique immediate dominator, if it has any at all. In the Basic Block Control flow graph used in Panda every blocks but ENTRY has an immediate dominator.
+In computer science, in compilers, a dominator is an object which is always executed before another object, where the object is typically either a statement or a basic block. By definition an object dominates itself as well. A block M dominates a block N if every path from the entry that reaches block N has to pass through block M. The entry block dominates all blocks. Note that an object may have many dominators. Sometimes more useful is the concept of an immediate dominator, which is the unique object that dominates an object, while not dominating any other dominator of the object. A block M immediately dominates a block N if M dominates N, and there is no intervening block P such that M dominates P and P dominates N . In other words, M is the last dominator on any path from entry to N . Each block has a unique immediate dominator, if it has any at all. In the Basic Block Control flow graph used in PandA every blocks but ENTRY has an immediate dominator.
 
 \subsection IR_Dominator_tree Dominators tree
 The dominator tree is an ancillary data structure where each object's parent is its immediate dominator. There is an arc from block M to block N if M is an immediate dominator of N. This graph is a tree, since each block has a unique immediate dominator. This tree is rooted at the entry block. 

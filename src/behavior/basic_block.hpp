@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -42,41 +42,32 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef BASIC_BLOCK_HPP
 #define BASIC_BLOCK_HPP
-
-#include "config_HAVE_UNORDERED.hpp"
-
-#include "cdfg_edge_info.hpp" // for CdfgEdgeInfo
-#include "edge_info.hpp"      // for EdgeInfoRef
-#include "graph.hpp"          // for vertex, EdgeDesc...
-#include "graph_info.hpp"     // for GraphInfo
-#include "node_info.hpp"      // for NodeInfo
-#include "refcount.hpp"       // for refcount, Refcou...
-#include <cstddef>            // for size_t
-#include <functional>         // for binary_function
-#include <list>               // for list
-#include <string>             // for string
-#include <utility>            // for pair
-
+#include "cdfg_edge_info.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
+#include "graph.hpp"
+#include "graph_info.hpp"
+#include "node_info.hpp"
+#include "refcount.hpp"
 
-/**
- * @name forward declarations
- */
-//@{
+#include <cstddef>
+#include <list>
+#include <string>
+#include <utility>
+
+#include "config_HAVE_HLS_BUILT.hpp"
+#include "config_HAVE_UNORDERED.hpp"
+
 CONSTREF_FORWARD_DECL(application_manager);
-class BasicBlocksGraphConstructor;
+CONSTREF_FORWARD_DECL(BehavioralHelper);
+CONSTREF_FORWARD_DECL(FunctionBehavior);
+CONSTREF_FORWARD_DECL(Schedule);
 REF_FORWARD_DECL(bloc);
-class FunctionBehavior;
-CONSTREF_FORWARD_DECL(Parameter);
-//@}
+class BasicBlocksGraphConstructor;
 
 /**
  * Selectors used only in basic block graphs; numbers continue from cdfg_edge_info.hpp
@@ -90,56 +81,51 @@ CONSTREF_FORWARD_DECL(Parameter);
 /// j graph edge selector for dj graph (used during loop computation)
 #define J_SELECTOR (1 << 9)
 
-/// Path Profiling Basic Block edge selector
-#define PP_SELECTOR (1 << 10)
-
 /**
  * Definition of the node_info object for the basic_block graph.
  * This object info defines the list of vertices associated with the basic block node.
  */
 struct BBNodeInfo : public NodeInfo
 {
- public:
    /// id of the loop to which basic block belongs to (0 if it doesn't belong to any loop)
-   unsigned int loop_id;
+   unsigned int loop_id{0};
 
    /// id of the control equivalent region
-   unsigned int cer;
+   unsigned int cer{0};
 
-   /// Structure associated with this basic block in the GCC tree
-   blocRef block;
+   /// Clang/LLVM info associated with this basic block
+   blocRef block{nullptr};
 
    /// List of operation vertices associated with basic block node
-   std::list<vertex> statements_list;
+   std::list<gc_vertex_descriptor> statements_list;
+
+   BBNodeInfo() = default;
 
    /**
-    * Empty constructor
+    * Constructor which uses Clang/LLVM information
+    * @param _block is the block in the Clang/LLVM dump
     */
-   BBNodeInfo();
-
-   /**
-    * Constructor which uses gcc information
-    * @param _block is the block in the gcc dump
-    */
-   explicit BBNodeInfo(blocRef _block);
+   BBNodeInfo(const blocRef& _block) : block(_block)
+   {
+   }
 
    /**
     * Adds an operation to the list of the statements
     * @param op is the operation to be added
     */
-   void add_operation_node(const vertex op);
+   void add_operation_node(const gc_vertex_descriptor op);
 
    /**
     * Returns the first operation vertex associated with the basic block
     * @return the first operation vertex of the basic block.
     */
-   vertex get_first_operation() const;
+   gc_vertex_descriptor get_first_operation() const;
 
    /**
     * Returns the last operation vertex associated with the basic block.
     * @return the last operation statement of the basic block.
     */
-   vertex get_last_operation() const;
+   gc_vertex_descriptor get_last_operation() const;
 
    /**
     * Returns true if there is no node associated with the basic block.
@@ -163,83 +149,31 @@ struct BBNodeInfo : public NodeInfo
    /**
     * Returns the live in of the basic block
     */
-   const CustomOrderedSet<unsigned int>& get_live_in() const;
+   const CustomOrderedSet<unsigned int>& getLiveInBbVariables() const;
 
    /**
     * Returns the live in of the basic block
     */
-   const CustomOrderedSet<unsigned int>& get_live_out() const;
+   const CustomOrderedSet<unsigned int>& getLiveOutBbVariables() const;
 };
-/// refcount definition of the class
-using BBNodeInfoRef = refcount<BBNodeInfo>;
-using BBNodeInfoConstRef = refcount<const BBNodeInfo>;
 
 /**
  * Information associated with a basic block edge
  */
 struct BBEdgeInfo : public CdfgEdgeInfo
 {
+   /**
+    * Return the labels associated with a selector
+    */
+   CustomOrderedSet<unsigned int> get_labels(const int selector) const;
+
  private:
    friend class BasicBlocksGraphConstructor;
    friend class FunctionBehavior;
 
    /// edge instrumented weight
-   unsigned long long epp_value;
-
- public:
-   /**
-    * Constructor
-    */
-   BBEdgeInfo();
-
-   /**
-    * Destructor
-    */
-   ~BBEdgeInfo() override;
-
-   /**
-    * Function returning true when the edge is a then control dependence edge, false otherwise
-    */
-   bool cdg_edge_T() const;
-
-   /**
-    * Function returning true when the edge is an else control dependence edge, false otherwise
-    */
-   bool cdg_edge_F() const;
-
-   /**
-    * Function returning true when the edge is a then control flow edge, false otherwise
-    */
-   bool cfg_edge_T() const;
-
-   /**
-    * Function returning true when the edge is an else control flow edge, false otherwise
-    */
-   bool cfg_edge_F() const;
-
-   /**
-    * Function returning true when the edge is a control flow edge exiting from a switch, false otherwise
-    */
-   bool switch_p() const;
-
-   /**
-    * Return the labels associated with a selector
-    */
-   const CustomOrderedSet<unsigned int> get_labels(const int selector) const;
-
-   /**
-    * Function that sets the epp_edge associated with the edge
-    */
-   void set_epp_value(unsigned long long _epp_value);
-
-   /**
-    * Function returning the epp_value associated with the edge
-    */
-   unsigned long long get_epp_value() const;
+   unsigned long long epp_value{0};
 };
-/// refcount definition of the class
-using BBEdgeInfoRef = refcount<BBEdgeInfo>;
-using BBEdgeInfoConstRef = refcount<const BBEdgeInfo>;
 
 /**
  * Information associated with the whole basic-block graph
@@ -247,18 +181,20 @@ using BBEdgeInfoConstRef = refcount<const BBEdgeInfo>;
 struct BBGraphInfo : public GraphInfo
 {
    /// NOTE: this is equivalent to a weakrefcount since deleter should be null
-   const application_managerConstRef AppM;
+   application_managerConstRef AppM{nullptr};
 
    /// The index of the function
-   const unsigned int function_index;
+   unsigned int function_index{0};
 
-   CustomUnorderedMap<unsigned int, vertex> bb_index_map;
+   CustomUnorderedMap<unsigned int, gc_vertex_descriptor> bb_index_map;
 
    /// Index identifying the entry basic block.
-   vertex entry_vertex;
+   gc_vertex_descriptor entry_vertex{gc_null_vertex()};
 
    /// Index identifying the exit basic block.
-   vertex exit_vertex;
+   gc_vertex_descriptor exit_vertex{gc_null_vertex()};
+
+   BBGraphInfo() = default;
 
    /**
     * Constructor with profiling information
@@ -267,176 +203,44 @@ struct BBGraphInfo : public GraphInfo
     */
    BBGraphInfo(const application_managerConstRef AppM, const unsigned int function_index);
 };
-/// refcount definition of the class
-using BBGraphInfoRef = refcount<BBGraphInfo>;
-using BBGraphInfoConstRef = refcount<const BBGraphInfo>;
 
-/**
- * This structure defines graphs where nodes are basic_blocks.
- * Graphs defined are: control flow graph, control dependence graph, dominator tree and post-dominator tree
- * The basic_block structure and the control flow graph can be extracted directly from the raw structure when cfg
- * pass is done or built up starting from a CFG where nodes are standard vertices.
- */
-class BBGraphsCollection : public graphs_collection
+struct BBGraphsCollection : public graphs_collection<BBNodeInfo, BBEdgeInfo, BBGraphInfo>
 {
- private:
-   friend class BasicBlocksGraphConstructor;
-
- public:
-   /**
-    * Constructor
-    * @param bb_node_info is the info to be associated with the graph
-    * @param parameters is the set of input parameters
-    */
-   BBGraphsCollection(const BBGraphInfoRef bb_graph_info, const ParameterConstRef parameters);
-
-   /**
-    * Destructor
-    */
-   ~BBGraphsCollection() override;
-
-   /**
-    * Add an edge with empty information associated
-    * @param source is the source of the edge
-    * @param target is the target of the edge
-    * @param selector is the selector to be added
-    * @return the created edge
-    */
-   inline EdgeDescriptor AddEdge(const vertex source, const vertex target, const int selector)
+   BBGraphsCollection(const BBGraphInfo& info) : graphs_collection<BBNodeInfo, BBEdgeInfo, BBGraphInfo>(info)
    {
-      if(ExistsEdge(source, target))
-      {
-         return AddSelector(source, target, selector);
-      }
-      else
-      {
-         return InternalAddEdge(source, target, selector, EdgeInfoRef(new BBEdgeInfo()));
-      }
    }
-};
-/// refcount definition of the class
-using BBGraphsCollectionRef = refcount<BBGraphsCollection>;
-using BBGraphsCollectionConstRef = refcount<const BBGraphsCollection>;
 
-/**
- * Class used to describe a particular graph with basic blocks as nodes
- */
-struct BBGraph : public graph
+   virtual ~BBGraphsCollection() = default;
+};
+
+class BBGraph : public graph<BBGraphsCollection>
 {
  public:
-   /**
-    * Standard constructor.
-    * @param BBGraphsCollection is the bulk graph.
-    * @param selector is the selector used to filter the bulk graph.
-    */
-   BBGraph(const BBGraphsCollectionRef _g, int selector);
+   BBGraph(const BBGraphsCollection& g, int _selector);
 
-   /**
-    * Sub-graph constructor.
-    * @param bb_graphs_collection is the bulk graph.
-    * @param selector is the selector used to filter the bulk graph.
-    * @param sub is the set of vertices on which the graph is filtered.
-    */
-   BBGraph(const BBGraphsCollectionRef _g, int selector, CustomUnorderedSet<vertex>& sub);
+   BBGraph(const BBGraphsCollection& g, int _selector, const CustomUnorderedSet<vertex_descriptor>& sub);
 
-   /**
-    * Destructor
-    */
-   ~BBGraph() override = default;
-
-   /**
-    * Writes this graph in dot format
-    * @param file_name is the file where the graph has to be printed
-    * @param detail_level is the detail level of the printed graph
-    */
-   void WriteDot(const std::filesystem::path& file_name, const int detail_level = 0) const;
-
-   /**
-    * Write this graph in dot format with some basic blocks highlightened
-    * @param file_name is the name of the file
-    * @param detail_level is the detail level of the printed graph
-    * @param annotated is the set of the vertices to be annotated
-    */
-   void WriteDot(const std::filesystem::path& file_name, const CustomUnorderedSet<vertex>& annotated,
-                 const int detail_level = 0) const;
-
-   /**
-    * Returns the number of basic blocks contained into the graph
-    */
    size_t num_bblocks() const;
 
-   /**
-    * Return the info associated with a basic block
-    * @param node is the basic block vertex to be considered
-    * @return the info associated with a basic block
-    */
-   inline BBNodeInfoRef GetBBNodeInfo(const vertex node)
-   {
-      return std::static_pointer_cast<BBNodeInfo>(graph::GetNodeInfo(node));
-   }
+   void writeDot(const std::filesystem::path& file_name, const int detail_level = 0) const;
 
-   /**
-    * Return the info associated with a basic block
-    * @param node is the basic block vertex to be considered
-    * @return the info associated with a basic block
-    */
-   inline BBNodeInfoConstRef CGetBBNodeInfo(const vertex node) const
-   {
-      return std::static_pointer_cast<const BBNodeInfo>(graph::CGetNodeInfo(node));
-   }
-
-   /**
-    * Returns the info associated with an edge
-    */
-   inline BBEdgeInfoRef GetBBEdgeInfo(const EdgeDescriptor e)
-   {
-      return std::static_pointer_cast<BBEdgeInfo>(graph::GetEdgeInfo(e));
-   }
-
-   /**
-    * Returns the info associated with an edge
-    */
-   inline BBEdgeInfoConstRef CGetBBEdgeInfo(const EdgeDescriptor e) const
-   {
-      return std::static_pointer_cast<const BBEdgeInfo>(graph::CGetEdgeInfo(e));
-   }
-
-   /**
-    * Returns the property associated with the graph
-    * @return the property associated with the graph
-    */
-   inline BBGraphInfoRef GetBBGraphInfo()
-   {
-      return std::static_pointer_cast<BBGraphInfo>(graph::GetGraphInfo());
-   }
-
-   /**
-    * Returns the property associated with the graph
-    * @return the proprty associated with the graph
-    */
-   inline BBGraphInfoConstRef CGetBBGraphInfo() const
-   {
-      return std::static_pointer_cast<const BBGraphInfo>(graph::CGetGraphInfo());
-   }
+   void writeDot(const std::filesystem::path& file_name, const CustomUnorderedSet<vertex_descriptor>& annotated,
+                 const int detail_level = 0) const;
 };
-/// refcount definition of the class
-using BBGraphRef = refcount<BBGraph>;
-using BBGraphConstRef = refcount<const BBGraph>;
 
 #if !HAVE_UNORDERED
-class BBVertexSorter : std::binary_function<vertex, vertex, bool>
+class BBVertexSorter
 {
- private:
    /// The basic block graph to which vertices belong
    /// Note: this should be const, but can not because of assignment operator
-   BBGraphConstRef bb_graph;
+   const BBGraphsCollection* bb_graph;
 
  public:
    /**
     * Constructor
     * @param bb_graph is the basic block graph to which vertices belong
     */
-   explicit BBVertexSorter(const BBGraphConstRef bb_graph);
+   BBVertexSorter(const BBGraphsCollection* bb_graph);
 
    /**
     * Compare position of two vertices
@@ -444,15 +248,14 @@ class BBVertexSorter : std::binary_function<vertex, vertex, bool>
     * @param y is the second step
     * @return true if x is necessary and y is unnecessary
     */
-   bool operator()(const vertex x, const vertex y) const;
+   bool operator()(const BBGraphsCollection::vertex_descriptor x, const BBGraphsCollection::vertex_descriptor y) const;
 };
 
-class BBEdgeSorter : std::binary_function<EdgeDescriptor, EdgeDescriptor, bool>
+class BBEdgeSorter
 {
- private:
    /// The basic block graph to which edges belong
    /// Note: this should be const, but can not because of assignment operator
-   BBGraphConstRef bb_graph;
+   const BBGraphsCollection* bb_graph;
 
    /// The vertex sorter
    BBVertexSorter bb_sorter;
@@ -462,7 +265,7 @@ class BBEdgeSorter : std::binary_function<EdgeDescriptor, EdgeDescriptor, bool>
     * Constructor
     * @param bb_graph is the basic block graph to which edges belong
     */
-   explicit BBEdgeSorter(const BBGraphConstRef bb_graph);
+   explicit BBEdgeSorter(const BBGraphsCollection* bb_graph);
 
    /**
     * Compare position of two edges
@@ -470,25 +273,24 @@ class BBEdgeSorter : std::binary_function<EdgeDescriptor, EdgeDescriptor, bool>
     * @param y is the second step
     * @return true if x is necessary and y is unnecessary
     */
-   bool operator()(const EdgeDescriptor x, const EdgeDescriptor y) const;
+   bool operator()(const BBGraphsCollection::edge_descriptor& x, const BBGraphsCollection::edge_descriptor& y) const;
 };
 #endif
 
 /**
  * The key comparison function for vertices set based on levels
  */
-class bb_vertex_order_by_map : std::binary_function<vertex, vertex, bool>
+class bb_vertex_order_by_map
 {
- private:
    /// Topological sorted vertices
-   const std::map<vertex, unsigned int>& ref;
+   const std::map<gc_vertex_descriptor, unsigned int>& ref;
 
  public:
    /**
     * Constructor
-    * @param ref_ is the map with the topological sort of vertices
+    * @param _ref is the map with the topological sort of vertices
     */
-   explicit bb_vertex_order_by_map(const std::map<vertex, unsigned int>& _ref) : ref(_ref)
+   explicit bb_vertex_order_by_map(const std::map<gc_vertex_descriptor, unsigned int>& _ref) : ref(_ref)
    {
    }
 
@@ -498,9 +300,57 @@ class bb_vertex_order_by_map : std::binary_function<vertex, vertex, bool>
     * @param y is the second vertex
     * @return true if x precedes y in the topological order, false otherwise
     */
-   bool operator()(const vertex x, const vertex y) const
+   bool operator()(const gc_vertex_descriptor x, const gc_vertex_descriptor y) const
    {
       return ref.find(x)->second < ref.find(y)->second;
    }
 };
+
+class BBVertexWriter : public VertexWriter<BBGraph>
+{
+ private:
+   /// The function behavior
+   const FunctionBehaviorConstRef function_behavior;
+
+   /// The helper
+   const BehavioralHelperConstRef helper;
+
+   /// The set of vertices to be annotated
+   CustomUnorderedSet<BBGraph::vertex_descriptor> annotated;
+
+#if HAVE_HLS_BUILT
+   /// The scheduling solution
+   const ScheduleConstRef schedule;
+#endif
+
+ public:
+   /**
+    * The constructor
+    * @param g is the graph to be printed
+    * @param annotated is the set of the vertices to be annotated
+    */
+   BBVertexWriter(const BBGraph& g, CustomUnorderedSet<BBGraph::vertex_descriptor> annotated =
+                                        CustomUnorderedSet<BBGraph::vertex_descriptor>());
+
+   void operator()(std::ostream& out, BBGraph::vertex_descriptor v) const override;
+};
+
+/**
+ * Class which prints the edge of a basic block graph in dot format
+ */
+class BBEdgeWriter : public EdgeWriter<BBGraph>
+{
+   /// The helper used to print the labels
+   const BehavioralHelperConstRef BH;
+
+ public:
+   /**
+    * Constructor
+    * @param g is the bb_graph to be printed
+    */
+   explicit BBEdgeWriter(const BBGraph& g);
+
+   void operator()(std::ostream& out, const BBGraph::edge_descriptor& e) const override;
+};
+
 #endif

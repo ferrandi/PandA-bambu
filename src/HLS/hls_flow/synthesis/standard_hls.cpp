@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -42,40 +42,31 @@
 
 #include "Parameter.hpp"
 #include "TopEntityMemoryMapped.hpp"
+#include "add_library.hpp"
 #include "application_manager.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
 #include "cpu_time.hpp"
+#include "custom_set.hpp"
 #include "datapath_creator.hpp"
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
-#include "module_interface.hpp"
-#include "omp_functions.hpp"
-#include "technology_manager.hpp"
-
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_device.hpp"
-#include "hls_manager.hpp"
-
-/// HLS include
 #include "hls_flow_step_factory.hpp"
+#include "hls_manager.hpp"
+#include "module_interface.hpp"
+#include "technology_manager.hpp"
 
-/// HLS/module_allocation includes
-#include "add_library.hpp"
-
-/// STL include
-#include "custom_set.hpp"
 #include <tuple>
 
 standard_hls::standard_hls(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId,
-                           const DesignFlowManagerConstRef _design_flow_manager)
+                           const DesignFlowManager& _design_flow_manager)
     : HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::STANDARD_HLS_FLOW)
 {
    composed = true;
 }
-
-standard_hls::~standard_hls() = default;
 
 HLS_step::HLSRelationships
 standard_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -83,16 +74,15 @@ standard_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rel
    HLSRelationships ret;
    switch(relationship_type)
    {
-      case DEPENDENCE_RELATIONSHIP:
+      case(DEPENDENCE_RELATIONSHIP):
       {
-         HLSFlowStep_Type synthesis_flow = HLSFlowStep_Type::VIRTUAL_DESIGN_FLOW;
-         ret.insert(std::make_tuple(synthesis_flow, HLSFlowStepSpecializationConstRef(),
+         ret.insert(std::make_tuple(HLSFlowStep_Type::VIRTUAL_DESIGN_FLOW, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::SAME_FUNCTION));
          ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_architecture),
                                     HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          if(HLSMgr->get_HLS(funId))
          {
-            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->controller_type, HLSFlowStepSpecializationConstRef(),
+            ret.insert(std::make_tuple(HLSFlowStep_Type::FSM_CONTROLLER_CREATOR, HLSFlowStepSpecializationConstRef(),
                                        HLSFlowStep_Relationship::SAME_FUNCTION));
          }
          HLSFlowStep_Type top_entity_type;
@@ -100,23 +90,15 @@ standard_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rel
          bool found = false;
          if(parameters->isOption(OPT_context_switch))
          {
-            auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
-            THROW_ASSERT(omp_functions, "OMP_functions must not be null");
-            if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
+            const auto is_context_handler = [&]() {
+               const auto FB = HLSMgr->CGetFunctionBehavior(funId);
+               const auto omp_info = FB->GetOMPInfo();
+               return FB->IsOMPCore() && omp_info && omp_info->context_count > 1U;
+            }();
+            if(is_context_handler)
             {
                found = true;
-            }
-            if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end())
-            {
-               found = true;
-            }
-            if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end())
-            {
-               found = true;
-            }
-            if(found) // use new top_entity
-            {
-               top_entity_type = HLSFlowStep_Type::TOP_ENTITY_CS_CREATION;
+               top_entity_type = HLSFlowStep_Type::TOP_ENTITY_OMP_CS_CREATION;
                ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(),
                                           HLSFlowStep_Relationship::SAME_FUNCTION));
             }
@@ -124,7 +106,7 @@ standard_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rel
          if(!found) // use standard
          {
             top_entity_type =
-                HLSMgr->hasToBeInterfaced(funId) && (HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction() ||
+                HLSMgr->hasToBeInterfaced(funId) && (HLSMgr->CGetCallGraphManager().ExistsAddressedFunction() ||
                                                      parameters->getOption<bool>(OPT_memory_mapped_top)) ?
                     HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION :
                     HLSFlowStep_Type::TOP_ENTITY_CREATION;
@@ -141,14 +123,16 @@ standard_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rel
                                        HLSFlowStep_Relationship::SAME_FUNCTION));
             ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_interface_type),
                                        HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::BUS_INTERFACE_GENERATION, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::SAME_FUNCTION));
          }
          break;
       }
-      case INVALIDATION_RELATIONSHIP:
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case PRECEDENCE_RELATIONSHIP:
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -160,7 +144,7 @@ standard_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rel
 
 DesignFlowStep_Status standard_hls::InternalExec()
 {
-   if(HLSMgr->CGetCallGraphManager()->GetRootFunctions().count(funId))
+   if(HLSMgr->CGetCallGraphManager().GetRootFunctions().count(funId))
    {
       STOP_TIME(HLSMgr->HLS_execution_time);
    }

@@ -1,10 +1,26 @@
+//    Copyright (C) 2013-2026 Politecnico di Milano
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//    This file is part of the PandA/Bambu IP Library.
+//
+//    author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+//    author Michele Fiorito <michele.fiorito@polimi.it>
+//
+// Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 /**
- * SoftFloat package modified by:
- *    Fabrizio Ferrandi - Politecnico di Milano
- *    Michele Fiorito - Politecnico di Milano
- * Changes made are mainly oriented to improve the results of a generic high
- * level synthesis framework and to add support for custom floating-point
- * data types.
+ * The original version of the Softfloat library by John R. Hauser has been
+ * heavily modified and almost completely rewritten, still the related
+ * copyright notice has been preserved to pay credits to the original authors.
  */
 /*============================================================================
 
@@ -36,297 +52,222 @@ the work is derivative, and (2) the source code includes prominent notice with
 these four paragraphs for those parts of this code that are retained.
 
 =============================================================================*/
+#ifndef _SOFTFLOAT_H
+#define _SOFTFLOAT_H
 
-#define __FORCE_INLINE __attribute__((always_inline)) inline
+#include <bambu_config.h>
 
-/*----------------------------------------------------------------------------
-| The macro `FLOATX80' must be defined to enable the extended double-precision
-| floating-point format `__floatx80'.  If this macro is not defined, the
-| `__floatx80' type will not be defined, and none of the functions that either
-| input or output the `__floatx80' type will be defined.  The same applies to
-| the `FLOAT128' macro and the quadruple-precision format `__float128'.
-*----------------------------------------------------------------------------*/
-//#define FLOATX80
-//#define FLOAT128
+#include "softfloat_features.h"
 
-/*----------------------------------------------------------------------------
-| Software IEC/IEEE floating-point types.
-*----------------------------------------------------------------------------*/
-#define __float32 __bits32
-#define __float64 __bits64
-#define __float __bits64
-#define FLOAT_RND_TYPE __bits8
-#define FLOAT_EXC_TYPE __bits8
-#ifdef FLOATX80
-typedef struct
+#ifdef __cplusplus
+extern "C"
 {
-   __bits16 high;
-   __bits64 low;
-} __floatx80;
-#endif
-#ifdef FLOAT128
-typedef struct
-{
-   __bits64 high, low;
-} __float128;
 #endif
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE floating-point underflow tininess-detection mode.
 *----------------------------------------------------------------------------*/
 #ifdef NO_PARAMETRIC
-static const __int8 __float_detect_tininess = 0;
+#define __float_detect_tininess 0
 #else
-extern __int8 __float_detect_tininess;
+extern __int8_t __float_detect_tininess;
 #endif
-enum
-{
-   float_tininess_after_rounding = 0,
-   float_tininess_before_rounding = 1
-};
+   enum
+   {
+      float_tininess_after_rounding = 0,
+      float_tininess_before_rounding = 1
+   };
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE floating-point rounding mode.
 *----------------------------------------------------------------------------*/
 #ifdef NO_PARAMETRIC
-static const __int8 __float_rounding_mode = 0;
+#define __float_rounding_mode 0
 #else
-extern __int8 __float_rounding_mode;
+extern __int8_t __float_rounding_mode;
 #endif
-enum
-{
-   float_round_nearest_even = 0,
-   float_round_to_zero = 1,
-   float_round_down = 2,
-   float_round_up = 3
-};
+   enum
+   {
+      float_round_nearest_even = 0,
+      float_round_to_zero = 1,
+      float_round_down = 2,
+      float_round_up = 3
+   };
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE floating-point exception flags.
 *----------------------------------------------------------------------------*/
 #ifdef NO_PARAMETRIC
-static const __int8 __float_exception_flags = 0;
+#define __float_exception_flags 0
 #else
-extern __int8 __float_exception_flags;
+extern __int8_t __float_exception_flags;
 #endif
-enum
-{
-   float_flag_inexact = 1,
-   float_flag_underflow = 2,
-   float_flag_overflow = 4,
-   float_flag_divbyzero = 8,
-   float_flag_invalid = 16
-};
+   enum
+   {
+      float_flag_inexact = 1,
+      float_flag_underflow = 2,
+      float_flag_overflow = 4,
+      float_flag_divbyzero = 8,
+      float_flag_invalid = 16
+   };
 
 /*----------------------------------------------------------------------------
-| Routine to raise any or all of the software IEC/IEEE floating-point
-| exception flags.
+| Raises the exceptions specified by `flags'.  Floating-point traps can be
+| defined here if desired.  It is currently not possible for such a trap
+| to substitute a result value.  If traps are not implemented, this routine
+| should be simply `__float_exception_flags |= flags;'.
 *----------------------------------------------------------------------------*/
-void __float_raise(__int8);
+#ifdef NO_PARAMETRIC
+#define __float_raise(x)
+#else
+#define __float_raise(x) __float_exception_flags |= x
+#endif
+
+#define TRUEFLOAT(...) (__VA_ARGS__, __uint8_t, __uint8_t, __int32_t, __rnd_mode_t, __exc_mode_t, bool, bool, __int8_t)
+
+   /*----------------------------------------------------------------------------
+   | Software IEC/IEEE integer-to-floating-point conversion routines.
+   *----------------------------------------------------------------------------*/
+   __tfloat_t __int_to_float TRUEFLOAT(__int64_t, __uint8_t);
+   __tfloat_t __int64_to_float TRUEFLOAT(__int64_t);
+   __tfloat_t __int32_to_float TRUEFLOAT(__int32_t);
+   __tfloat_t __int16_to_float TRUEFLOAT(__int16_t);
+   __tfloat_t __int8_to_float TRUEFLOAT(__int8_t);
+
+   __tfloat_t __uint_to_float TRUEFLOAT(__uint64_t, __uint8_t);
+   __tfloat_t __uint64_to_float TRUEFLOAT(__uint64_t);
+   __tfloat_t __uint32_to_float TRUEFLOAT(__uint32_t);
+   __tfloat_t __uint16_to_float TRUEFLOAT(__uint16_t);
+   __tfloat_t __uint8_to_float TRUEFLOAT(__uint8_t);
+
+   /*----------------------------------------------------------------------------
+   | Software IEC/IEEE floating-point conversion routines.
+   *----------------------------------------------------------------------------*/
+   __int64_t __float_to_int TRUEFLOAT(__tfloat_t, __uint8_t);
+   __int64_t __float_to_int64 TRUEFLOAT(__tfloat_t);
+   __int32_t __float_to_int32 TRUEFLOAT(__tfloat_t);
+   __uint64_t __float_to_uint TRUEFLOAT(__tfloat_t, __uint8_t);
+   __uint64_t __float_to_uint64 TRUEFLOAT(__tfloat_t);
+   __uint32_t __float_to_uint32 TRUEFLOAT(__tfloat_t);
+   __float64_t __float32_to_float64_ieee(__float32_t, __exc_mode_t, bool);
+   __float32_t __float64_to_float32_ieee(__float64_t, __exc_mode_t, bool);
+
+   /*----------------------------------------------------------------------------
+   | Software IEC/IEEE arbitrary precision conversion routines.
+   *----------------------------------------------------------------------------*/
+   __tfloat_t __float_cast(__tfloat_t, __uint8_t, __uint8_t, __int32_t, __rnd_mode_t, __exc_mode_t, bool, bool,
+                           __int8_t, __uint8_t, __uint8_t, __int32_t, __rnd_mode_t, __exc_mode_t, bool, bool, __int8_t);
+
+   /*----------------------------------------------------------------------------
+   | Software IEC/IEEE arbitrary precision operations.
+   *----------------------------------------------------------------------------*/
+   __tfloat_t __float_add TRUEFLOAT(__tfloat_t, __tfloat_t);
+   __tfloat_t __float_sub TRUEFLOAT(__tfloat_t, __tfloat_t);
+   __tfloat_t __float_mul TRUEFLOAT(__tfloat_t, __tfloat_t);
+   __tfloat_t __float_divSRT4 TRUEFLOAT(__tfloat_t, __tfloat_t);
+   __tfloat_t __float_divG TRUEFLOAT(__tfloat_t, __tfloat_t);
+   bool __float_eq TRUEFLOAT(__tfloat_t, __tfloat_t);
+   bool __float_le TRUEFLOAT(__tfloat_t, __tfloat_t);
+   bool __float_lt TRUEFLOAT(__tfloat_t, __tfloat_t);
+   bool __float_ge TRUEFLOAT(__tfloat_t, __tfloat_t);
+   bool __float_gt TRUEFLOAT(__tfloat_t, __tfloat_t);
+   bool __float_is_signaling_nan TRUEFLOAT(__tfloat_t);
+   bool __float_ltgt_quiet TRUEFLOAT(__tfloat_t, __tfloat_t);
+   __int32_t __isunordered TRUEFLOAT(__tfloat_t, __tfloat_t);
+
+   /*----------------------------------------------------------------------------
+   | Returns the fraction bits of the floating-point value `a'.
+   *----------------------------------------------------------------------------*/
+
+   static __FORCE_INLINE __uint64_t __extractFloatFrac(__tfloat_t a, __uint8_t __frac_bits)
+   {
+      return a & ((1ULL << __frac_bits) - 1ULL);
+   }
+
+   /*----------------------------------------------------------------------------
+   | Returns the exponent bits of the floating-point value `a'.
+   *----------------------------------------------------------------------------*/
+
+   static __FORCE_INLINE __uint64_t __extractFloatExp(__tfloat_t a, __uint8_t __exp_bits, __uint8_t __frac_bits)
+   {
+      return (a >> __frac_bits) & ((1ULL << __exp_bits) - 1ULL);
+   }
+
+   /*----------------------------------------------------------------------------
+   | Returns the sign bit of the floating-point value `a'.
+   *----------------------------------------------------------------------------*/
+
+   static __FORCE_INLINE bool __extractFloatSign(__tfloat_t a, __uint8_t __exp_bits, __uint8_t __frac_bits,
+                                                 __int8_t __sign)
+   {
+      return __sign == -1 ? (a >> (__exp_bits + __frac_bits)) : __sign;
+   }
 
 /*----------------------------------------------------------------------------
-| Software IEC/IEEE integer-to-floating-point conversion routines.
+| The pattern for a default generated arbitrary-precision quiet NaN.
 *----------------------------------------------------------------------------*/
-__float32 __int32_to_float32(__int32, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                             __sbits8);
-__float32 __int16_to_float32(__int16, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                             __sbits8);
-__float32 __int8_to_float32(__int8, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                            __sbits8);
-__float32 __uint32_to_float32(__uint32, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                              __sbits8);
-__float32 __uint16_to_float32(__uint16, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                              __sbits8);
-__float32 __uint8_to_float32(__uint8, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                             __sbits8);
-__float64 __int32_to_float64(__int32, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                             __sbits8);
-__float64 __uint32_to_float64(__uint32, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                              __sbits8);
-#ifdef FLOATX80
-__floatx80 __int32_to_floatx80_ieee(__int32);
-#endif
-#ifdef FLOAT128
-__float128 __int32_to_float128_ieee(__int32);
-#endif
-__float32 __int64_to_float32(__int64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                             __sbits8);
-__float32 __uint64_to_float32(__uint64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                              __sbits8);
-__float64 __int64_to_float64(__int64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                             __sbits8);
-__float64 __uint64_to_float64(__uint64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                              __sbits8);
-#ifdef FLOATX80
-__floatx80 __int64_to_floatx80_ieee(__int64);
-#endif
-#ifdef FLOAT128
-__float128 __int64_to_float128_ieee(__int64);
-#endif
+#define __float_nan(__exp_bits, __frac_bits, __sign)                                                            \
+   ((((__uint64_t)(__sign == -1)) << (__exp_bits + __frac_bits)) | (((1LL << __exp_bits) - 1) << __frac_bits) | \
+    (1LL << (__frac_bits - 1)))
 
-/*----------------------------------------------------------------------------
-| Software IEC/IEEE single-precision conversion routines.
-*----------------------------------------------------------------------------*/
-__int32 __float32_to_int32(__float32, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                           __sbits8);
-__int32 __float32_to_int32_round_to_zero(__float32, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag,
-                                         __flag, __sbits8);
-__uint32 __float32_to_uint32_round_to_zero(__float32, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag,
-                                           __flag, __sbits8);
-__int64 __float32_to_int64(__float32, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                           __sbits8);
-__int64 __float32_to_int64_round_to_zero(__float32, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag,
-                                         __flag, __sbits8);
-__uint64 __float32_to_uint64_round_to_zero(__float32, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag,
-                                           __flag, __sbits8);
-__float64 __float32_to_float64_ieee(__float32, FLOAT_EXC_TYPE, __flag);
-#ifdef FLOATX80
-__floatx80 __float32_to_floatx80_ieee(__float32);
-#endif
-#ifdef FLOAT128
-__float128 __float32_to_float128_ieee(__float32);
-#endif
+   /*----------------------------------------------------------------------------
+   | Shifts `a' right by the number of bits given in `count'.  If any nonzero
+   | bits are shifted off, they are ``jammed'' into the least significant bit of
+   | the result by setting the least significant bit to 1.  The value of `count'
+   | can be arbitrarily large; in particular, if `count' is greater than 32, the
+   | result will be either 0 or 1, depending on whether `a' is zero or nonzero.
+   | The result is stored in the location pointed to by `zPtr'.
+   *----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------
-| Software IEC/IEEE single-precision operations.
-*----------------------------------------------------------------------------*/
-__float32 __float32_round_to_int_ieee(__float32);
+   static __FORCE_INLINE void __shift32RightJamming(__uint32_t a, __int16_t count, __uint32_t* zPtr)
+   {
+      __uint32_t z;
 
-// __float32 __float32_muladd_ieee(__float32 uiA, __float32 uiB, __float32 uiC);
+      if(count == 0)
+      {
+         z = a;
+      }
+      else if(count < 32)
+      {
+         z = (a >> count) | ((a << ((-count) & 31)) != 0);
+      }
+      else
+      {
+         z = (a != 0);
+      }
+      *zPtr = z;
+   }
 
-/*----------------------------------------------------------------------------
-| Software IEC/IEEE double-precision conversion routines.
-*----------------------------------------------------------------------------*/
-__int32 __float64_to_int32(__float64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                           __sbits8);
-__int32 __float64_to_int32_round_to_zero(__float64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag,
-                                         __flag, __sbits8);
-__uint32 __float64_to_uint32_round_to_zero(__float64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag,
-                                           __flag, __sbits8);
-__int64 __float64_to_int64(__float64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                           __sbits8);
-__int64 __float64_to_int64_round_to_zero(__float64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag,
-                                         __flag, __sbits8);
-__uint64 __float64_to_uint64_round_to_zero(__float64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag,
-                                           __flag, __sbits8);
-__float32 __float64_to_float32_ieee(__float64, FLOAT_EXC_TYPE, __flag);
-#ifdef FLOATX80
-__floatx80 __float64_to_floatx80_ieee(__float64);
-#endif
-#ifdef FLOAT128
-__float128 __float64_to_float128_ieee(__float64);
+   /*----------------------------------------------------------------------------
+   | Shifts `a' right by the number of bits given in `count'.  If any nonzero
+   | bits are shifted off, they are ``jammed'' into the least significant bit of
+   | the result by setting the least significant bit to 1.  The value of `count'
+   | can be arbitrarily large; in particular, if `count' is greater than 64, the
+   | result will be either 0 or 1, depending on whether `a' is zero or nonzero.
+   | The result is stored in the location pointed to by `zPtr'.
+   *----------------------------------------------------------------------------*/
+
+   static __FORCE_INLINE void __shift64RightJamming(__uint64_t a, __int16_t count, __uint64_t* zPtr)
+   {
+      __uint64_t z;
+
+      if(count == 0)
+      {
+         z = a;
+      }
+      else if(count < 64)
+      {
+         z = (a >> count) | ((a << ((-count) & 63)) != 0);
+      }
+      else
+      {
+         z = (a != 0);
+      }
+      *zPtr = z;
+   }
+
+#ifdef __cplusplus
+}
 #endif
 
-/*----------------------------------------------------------------------------
-| Software IEC/IEEE arbitrary precision conversion routines.
-*----------------------------------------------------------------------------*/
-__float __float_cast(__float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag, __sbits8,
-                     __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag, __sbits8);
-
-/*----------------------------------------------------------------------------
-| Software IEC/IEEE arbitrary precision operations.
-*----------------------------------------------------------------------------*/
-__float __float_add(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                    __sbits8);
-__float __float_sub(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                    __sbits8);
-__float __float_mul(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                    __sbits8);
-__float __float_divSRT4(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                        __sbits8);
-__float __float_divG(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                     __sbits8);
-__flag __float_eq(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                  __sbits8);
-__flag __float_le(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                  __sbits8);
-__flag __float_lt(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                  __sbits8);
-__flag __float_ge(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                  __sbits8);
-__flag __float_gt(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                  __sbits8);
-__flag __float_is_signaling_nan(__float64, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                                __sbits8);
-__flag __float_ltgt_quiet(__float, __float, __bits8, __bits8, __int32, FLOAT_RND_TYPE, FLOAT_EXC_TYPE, __flag, __flag,
-                          __sbits8);
-
-#ifdef FLOATX80
-
-/*----------------------------------------------------------------------------
-| Software IEC/IEEE extended double-precision conversion routines.
-*----------------------------------------------------------------------------*/
-__int32 __floatx80_to_int32_ieee(__floatx80);
-__int32 __floatx80_to_int32_round_to_zero_ieee(__floatx80);
-__int64 __floatx80_to_int64_ieee(__floatx80);
-__int64 __floatx80_to_int64_round_to_zero_ieee(__floatx80);
-__float32 __floatx80_to_float32_ieee(__floatx80);
-__float64 __floatx80_to_float64_ieee(__floatx80);
-#ifdef FLOAT128
-__float128 __floatx80_to_float128_ieee(__floatx80);
-#endif
-
-/*----------------------------------------------------------------------------
-| Software IEC/IEEE extended double-precision rounding precision.  Valid
-| values are 32, 64, and 80.
-*----------------------------------------------------------------------------*/
-extern __int8 __floatx80_rounding_precision;
-
-/*----------------------------------------------------------------------------
-| Software IEC/IEEE extended double-precision operations.
-*----------------------------------------------------------------------------*/
-__floatx80 __floatx80_round_to_int_ieee(__floatx80);
-__floatx80 floatx80_add_ieee(__floatx80, __floatx80);
-__floatx80 __floatx80_sub_ieee(__floatx80, __floatx80);
-__floatx80 __floatx80_mul_ieee(__floatx80, __floatx80);
-__floatx80 __floatx80_div_ieee(__floatx80, __floatx80);
-__floatx80 __floatx80_rem_ieee(__floatx80, __floatx80);
-__floatx80 __floatx80_sqrt(__floatx80);
-__flag __floatx80_eq_ieee(__floatx80, __floatx80);
-__flag __floatx80_le_ieee(__floatx80, __floatx80);
-__flag __floatx80_lt_ieee(__floatx80, __floatx80);
-__flag __floatx80_ge_ieee(__floatx80 a, __floatx80 b);
-__flag __floatx80_gt_ieee(__floatx80 a, __floatx80 b);
-__flag __floatx80_eq_signaling_ieee(__floatx80, __floatx80);
-__flag __floatx80_le_quiet_ieee(__floatx80, __floatx80);
-__flag __floatx80_lt_quiet_ieee(__floatx80, __floatx80);
-__flag __floatx80_is_signaling_nan_ieee(__floatx80);
-
-#endif
-
-#ifdef FLOAT128
-
-/*----------------------------------------------------------------------------
-| Software IEC/IEEE quadruple-precision conversion routines.
-*----------------------------------------------------------------------------*/
-__int32 __float128_to_int32_ieee(__float128);
-__int32 __float128_to_int32_round_to_zero_ieee(__float128);
-__int64 __float128_to_int64_ieee(__float128);
-__int64 __float128_to_int64_round_to_zero_ieee(__float128);
-__float32 __float128_to_float32_ieee(__float128);
-__float64 __float128_to_float64_ieee(__float128);
-#ifdef FLOATX80
-__floatx80 __float128_to_floatx80_ieee(__float128);
-#endif
-
-/*----------------------------------------------------------------------------
-| Software IEC/IEEE quadruple-precision operations.
-*----------------------------------------------------------------------------*/
-__float128 __float128_round_to_int_ieee(__float128);
-__float128 __float128_add_ieee(__float128, __float128);
-__float128 __float128_sub_ieee(__float128, __float128);
-__float128 __float128_mul_ieee(__float128, __float128);
-__float128 __float128_div_ieee(__float128, __float128);
-__float128 __float128_rem_ieee(__float128, __float128);
-__float128 __float128_sqrt(__float128);
-__flag __float128_eq_ieee(__float128, __float128);
-__flag __float128_le_ieee(__float128, __float128);
-__flag __float128_lt_ieee(__float128, __float128);
-__flag __float128_ge_ieee(__float128 a, __float128 b);
-__flag __float128_gt_ieee(__float128 a, __float128 b);
-__flag __float128_eq_signaling_ieee(__float128, __float128);
-__flag __float128_le_quiet_ieee(__float128, __float128);
-__flag __float128_lt_quiet_ieee(__float128, __float128);
-__flag __float128_is_signaling_nan_ieee(__float128);
-
-#endif
+#endif // _SOFTFLOAT_H

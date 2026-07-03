@@ -3,6 +3,8 @@
  * January, 27 2016.
  *
  */
+/* Public domain.  */
+
 #include <stddef.h>
 
 void bzero(void* s, size_t n)

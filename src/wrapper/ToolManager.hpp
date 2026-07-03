@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -37,8 +37,6 @@
  * A object used to manage the access to a wrapped tool
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef _TOOL_MANAGER_HPP_
@@ -47,6 +45,7 @@
 #include "refcount.hpp"
 CONSTREF_FORWARD_DECL(Parameter);
 
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -67,8 +66,11 @@ class ToolManager
 
    /// this string represent the host machine if remote
    std::string host;
+
    /// it represents the paths on the host where the files have to be copied
    std::string remote_path;
+
+   std::filesystem::path outerr;
 
    /// debug level of the class
    int debug_level;
@@ -76,7 +78,11 @@ class ToolManager
    /**
     * Execute the command and check the return code. If an error is occurred, an exception is raised with the given
     * message If the permissive flag is given, it raises simply a warning
+    * @param _command_ is the command to execute
+    * @param error_message is the message reported on failure
     * @param log_file is the file where output will be saved
+    * @param permissive controls whether failures are downgraded to warnings
+    * @param throw_message controls whether the error message is thrown
     */
    int execute_command(const std::string& _command_, const std::string& error_message, const std::string& log_file,
                        bool permissive = false, bool throw_message = true);
@@ -89,7 +95,7 @@ class ToolManager
    /**
     * Generate the command to the executed on the remote host
     */
-   std::string create_remote_command_line(const std::vector<std::string>& parameters) const;
+   std::string create_remote_command_line(const std::string& remote_command) const;
 
    /**
     * Check that the input files exist.
@@ -104,12 +110,6 @@ class ToolManager
    void check_output_files(const std::vector<std::string>& files);
 
    /**
-    *  Simply creates the command line starting from the list of parameters.
-    *  Note that the executable has to be the first parameter
-    */
-   std::string create_command_line(const std::vector<std::string>& parameters) const;
-
-   /**
     *  Removed the specified files.
     */
    void remove_files(const std::vector<std::string>& input_files, const std::vector<std::string>& files);
@@ -121,9 +121,6 @@ class ToolManager
     */
    explicit ToolManager(const ParameterConstRef& Param);
 
-   /**
-    * Destructor
-    */
    virtual ~ToolManager();
 
    /**
@@ -135,8 +132,10 @@ class ToolManager
    /**
     * Execute the tool
     * @param parameters list of parameters to be given to the tool executable
+    * @param input_files list of input files to be provided to the tool
     * @param output_files list of expected output files to be verified
     * @param log_file is the log file
+    * @param permissive controls whether failures are downgraded to warnings
     * @return the return value of the executed process.
     */
    int execute(const std::vector<std::string>& parameters, const std::vector<std::string>& input_files,
@@ -150,8 +149,5 @@ class ToolManager
 
    std::string determine_paths(std::string& file_name, bool overwrite = true);
 };
-
-/// Refcount definition for the class
-using ToolManagerRef = refcount<ToolManager>;
 
 #endif

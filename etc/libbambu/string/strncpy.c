@@ -4,6 +4,7 @@
  *
  */
 /* Public domain.  */
+
 #include <stddef.h>
 
 char* strncpy(char* __restrict dest, const char* __restrict src, size_t n)

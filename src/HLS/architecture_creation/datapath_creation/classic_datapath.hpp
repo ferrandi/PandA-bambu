@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -36,9 +36,6 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  * $Locker:  $
  * $State: Exp $
  *
@@ -55,8 +52,8 @@ class classic_datapath : public datapath_creator
  protected:
    /**
     * Adds the clock and reset ports to the structural description of the circuit
-    * @param clock_sign is the object representing the clock signal
-    * @param reset_sign is the object representing the reset signal
+    * @param clock_obj is the object representing the clock signal
+    * @param reset_obj is the object representing the reset signal
     */
    void add_clock_reset(structural_objectRef& clock_obj, structural_objectRef& reset_obj);
 
@@ -66,23 +63,10 @@ class classic_datapath : public datapath_creator
    virtual void add_ports();
 
  public:
-   /**
-    * Constructor.
-    * @param design_flow_manager is the design flow manager
-    */
    classic_datapath(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
-                    const DesignFlowManagerConstRef design_flow_manager,
+                    const DesignFlowManager& design_flow_manager,
                     const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::CLASSIC_DATAPATH_CREATOR);
 
-   /**
-    * Destructor.
-    */
-   ~classic_datapath() override;
-
-   /**
-    * Execute the step
-    * @return the exit status of this step
-    */
    DesignFlowStep_Status InternalExec() override;
 };
 #endif

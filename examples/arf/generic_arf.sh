@@ -5,8 +5,8 @@ script_dir="$(dirname $(readlink -e $0))"
 BATCH_ARGS=("--simulate" "--experimental-setup=BAMBU")
 OUT_SUFFIX="output_arf"
 
-python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu  \
+python3 $script_dir/../../etc/scripts/mantis.py --tool=bambu  \
    --args="--configuration-name=arf ${BATCH_ARGS[*]}"\
    -larf_list \
-   -o "out${OUT_SUFFIX}" -b$script_dir \
-   --name="${OUT_SUFFIX}" "$@"
+   -o "out_${OUT_SUFFIX}" -b$script_dir \
+   "$@"

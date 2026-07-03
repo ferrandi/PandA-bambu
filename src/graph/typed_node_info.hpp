@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -36,35 +36,23 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef TYPED_NODE_INFO_HPP
 #define TYPED_NODE_INFO_HPP
-
-/// Superclass include
 #include "node_info.hpp"
 
-/// Graph include
-#include "graph.hpp"
-
-/// STD include
 #include <ostream>
-
-/// Utility include
-#include "refcount.hpp"
 
 /**
  * constant string identifying an operation node of type entry. Used during the behavioral_manager building starting
- * from the tree(GCC) data structure.
+ * from the compiler IR data structure.
  */
 #define ENTRY "ENTRY"
 
 /**
  * constant string identifying an operation node of type exit. Used during the behavioral_manager building starting from
- * the tree(GCC) data structure.
+ * the compiler IR data structure.
  */
 #define EXIT "EXIT"
 
@@ -88,31 +76,6 @@
  * This class is associated with the graph data structure.
  */
 
-/// FIXME: change in function of graph
-/**
- * Helper function checking if a node is an entry node.
- * @param g is the graph.
- * @param node is the examined node.
- * @return true when node is an entry node.
- */
-template <class Graph>
-bool is_entry_node(const Graph* g, typename boost::graph_traits<Graph>::vertex_descriptor node)
-{
-   return (GET_TYPE(g, node) == TYPE_ENTRY && boost::in_degree(node, *g) == 0);
-}
-
-/**
- * Helper function checking if a node is an exit node.
- * @param g is the graph.
- * @param node is the examined node.
- * @return true when node is an exit node.
- */
-template <class Graph>
-bool is_exit_node(const Graph* g, typename boost::graph_traits<Graph>::vertex_descriptor node)
-{
-   return (GET_TYPE(g, node) == TYPE_EXIT && boost::out_degree(node, *g) == 0);
-}
-
 struct TypedNodeInfo : public NodeInfo
 {
    /**
@@ -131,23 +94,16 @@ struct TypedNodeInfo : public NodeInfo
     * This property defines which type of node is: read and write a port, read a constant, if, case, wait and notify or
     * generic operation.
     */
-   unsigned int node_type;
+   unsigned int node_type{TYPE_GENERIC};
 
-   /**
-    * Constructor
-    */
-   TypedNodeInfo();
-
-   /**
-    * Destructor
-    */
-   ~TypedNodeInfo() override;
+   virtual ~TypedNodeInfo() override = default;
 
    /**
     * Print the information associated with the node of the graph.
     * @param os is the output stream.
+    * @param detail_level selects the amount of detail to print
     */
-   void print(std::ostream&, int detail_level = 0) const override;
+   void print(std::ostream& os, int detail_level = 0) const override;
 
    /**
     * Friend definition of the << operator.
@@ -161,27 +117,9 @@ struct TypedNodeInfo : public NodeInfo
    }
 };
 
-/**
- * Helper macro returning the operation associated with a node. This function should be carefully used. For example it
- * can only be used by cdfg based graphs and not by basic_block based graphs.
- * @param data is the graph.
- * @param vertex_index is the index of the node.
- */
-#define GET_OPERATION(data, vertex_index) Cget_node_info<TypedNodeInfo>(vertex_index, *(data))->node_operation
+inline void TypedNodeInfo::print(std::ostream& os, int) const
+{
+   os << node_type << " " << node_operation << " " << vertex_name << "\n";
+}
 
-/**
- * Helper macro returning the name associated with a node. This function should be carefully used. For example it can
- * only be used by cdfg based graphs and not by basic_block based graphs.
- * @param data is the graph.
- * @param vertex_index is the index of the node.
- */
-#define GET_NAME(data, vertex_index) Cget_node_info<TypedNodeInfo>(vertex_index, *(data))->vertex_name
-
-/**
- * Helper macro returning the type associated with a node. This function should be carefully used. For example it can
- * only be used by cdfg based graphs and not by basic_block based graphs.
- * @param data is the graph.
- * @param vertex_index is the index of the node.
- */
-#define GET_TYPE(data, vertex_index) Cget_node_info<TypedNodeInfo>(vertex_index, *(data))->node_type
 #endif

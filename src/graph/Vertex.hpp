@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -36,43 +36,32 @@
  *
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef VERTEX_HPP
 #define VERTEX_HPP
 
 #include "custom_map.hpp"
-#include <iosfwd>
-
 #include "graph.hpp"
-#include "typed_node_info.hpp"
+
+#include <iosfwd>
 
 #define COLUMN_SIZE 30
 
 /**
  * Class managing map of the vertexes on a generic object.
  */
-template <class data_obj>
+template <class data_obj, typename vertex = gc_vertex_descriptor>
 struct vertex2obj : public CustomUnorderedMapUnstable<vertex, data_obj>
 {
-   /**
-    * Constructor.
-    */
-   vertex2obj() = default;
-
-   /**
-    * Destructor.
-    */
    virtual ~vertex2obj() = default;
 
    /**
     * Function that print the information associated with a vertex.
     * @param os is the output stream
+    * @param it is the iterator pointing to the vertex to print
     */
-   virtual void print_el(std::ostream& os, const graph*, typename vertex2obj<data_obj>::const_iterator& it) const
+   virtual void print_el(std::ostream& os, typename vertex2obj<data_obj>::const_iterator& it) const
    {
       os << "(" << it->second << ") ";
    }
@@ -80,54 +69,34 @@ struct vertex2obj : public CustomUnorderedMapUnstable<vertex, data_obj>
    /**
     * Function that print the name and the operation performed by the vertex.
     * @param os is the output stream
+    * @param it is the iterator pointing to the vertex to print
     */
-   virtual void print_rowHead(std::ostream& os, const graph* data,
-                              typename vertex2obj<data_obj>::const_iterator& it) const
+   virtual void print_rowHead(std::ostream& os, typename vertex2obj<data_obj>::const_iterator& it) const
    {
-      if(data)
-      {
-         os << "Operation: ";
-         os.width(COLUMN_SIZE);
-         os.setf(std::ios_base::left, std::ios_base::adjustfield);
-         ///         os << GET_NAME(data, it->first) + "(" + GET_OP(data, it->first) + ")";
-         os.width(0);
-      }
-      else
-      {
-         os << it->first;
-      }
+      os << it->first;
    }
    /**
     * Function that prints the class vertex2obj.
     * @param os is the output stream
     */
-   virtual void print(std::ostream& os, const graph* data = nullptr) const
+   virtual void print(std::ostream& os) const
    {
       auto i_end = this->end();
       for(auto i = this->begin(); i != i_end; ++i)
       {
-         print_rowHead(os, data, i);
-         print_el(os, data, i);
-         if(data)
-         {
-            os << std::endl;
-         }
-         else
-         {
-            os << " ";
-         }
+         print_rowHead(os, i);
+         print_el(os, i);
+         os << " ";
       }
-      if(!data)
-      {
-         os << std::endl;
-      }
+      os << std::endl;
    }
 
-   const data_obj operator()(const vertex& __k) const
+   const data_obj& operator()(const vertex& __k) const
    {
       THROW_ASSERT(this->find(__k) != this->end(), "expected a meaningful vertex");
       return this->find(__k)->second;
    }
+
    template <class Iterator, class data_type>
    void resize(Iterator left, Iterator right, data_type val)
    {
@@ -161,12 +130,10 @@ struct vertex2obj : public CustomUnorderedMapUnstable<vertex, data_obj>
    }
 };
 
-struct vertex2int : public vertex2obj<int>
-{
-};
+template <typename vertex = gc_vertex_descriptor>
+using vertex2int = vertex2obj<int, vertex>;
 
-struct vertex2float : public vertex2obj<double>
-{
-};
+template <typename vertex = gc_vertex_descriptor>
+using vertex2float = vertex2obj<double, vertex>;
 
 #endif

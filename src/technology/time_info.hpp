@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2023-2024 Politecnico di Milano
+ *              Copyright (C) 2023-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -41,72 +41,80 @@
 #define TIME_INFO_HPP
 
 #include "refcount.hpp"
-#include "schedule.hpp"
-
-/// refcount definition for the class
-CONSTREF_FORWARD_DECL(Parameter);
-UINT_STRONG_TYPEDEF_FORWARD_DECL(ControlStep);
-REF_FORWARD_DECL(time_info);
-class xml_element;
 
 class time_info
 {
-   /// class containing all the parameters
-   const ParameterConstRef Param;
+ public:
+   /// zero means that the operation is not pipelined
+   static constexpr unsigned int initiation_time_DEFAULT{0u};
+
+   /// zero means that the operation last in ceil(execution_time/clock_period)
+   static constexpr unsigned int cycles_DEFAULT{0u};
+
+   /// zero means a non-pipelined operation
+   static constexpr double stage_period_DEFAULT{0.0};
+
+   static constexpr double execution_time_DEFAULT{0.0};
+
+ private:
    /// initiation time, in terms of cycle_units, for this type of operation on a given functional unit.
-   ControlStep initiation_time;
+   unsigned int initiation_time{initiation_time_DEFAULT};
    /// number of cycles required to complete the computation
-   unsigned int cycles;
+   unsigned int cycles{cycles_DEFAULT};
    /// flag to check if the number of cycles are dependent on the synthesis or not
-   bool synthesis_dependent;
+   bool synthesis_dependent{false};
    /// critical timing execution path, in term of ns, of a potentially pipelined operation.
-   double stage_period;
+   double stage_period{stage_period_DEFAULT};
    /// execution time, in terms of ns, for this type of operation on a given functional unit.
-   double execution_time;
+   double execution_time{execution_time_DEFAULT};
 
  public:
-   /**
-    * Constructor.
-    */
-   explicit time_info(const ParameterConstRef _Param);
+   void set_initiation_time(unsigned int _initiation_time)
+   {
+      initiation_time = _initiation_time;
+   }
 
-   /**
-    * Destructor.
-    */
-   ~time_info();
+   unsigned int get_initiation_time() const
+   {
+      return initiation_time;
+   }
 
-   static time_infoRef factory(const ParameterConstRef Param);
+   unsigned int get_cycles() const
+   {
+      return cycles;
+   }
 
-   void set_initiation_time(const ControlStep _initiation_time);
+   double get_stage_period() const
+   {
+      return stage_period;
+   }
 
-   ControlStep get_initiation_time() const;
+   void set_stage_period(double st_per)
+   {
+      stage_period = st_per;
+   }
 
-   unsigned int get_cycles() const;
+   void set_execution_time(double _execution_time, unsigned int _cycles = time_info::cycles_DEFAULT)
+   {
+      execution_time = _execution_time;
+      cycles = _cycles;
+   }
 
-   double get_stage_period() const;
+   double get_execution_time() const
+   {
+      return execution_time;
+   }
 
-   void set_stage_period(double st_per);
+   void set_synthesis_dependent(bool value)
+   {
+      synthesis_dependent = value;
+   }
 
-   void set_execution_time(double execution_time, unsigned int cycles = time_info::cycles_time_DEFAULT);
-
-   void set_synthesis_dependent(bool value);
-
-   bool get_synthesis_dependent() const;
-
-   double get_execution_time() const;
-
- public:
-   /**
-    * @name Default values associated with the members of the operation class.
-    */
-   //@{
-   static const double execution_time_DEFAULT /*= 0.0*/;
-   static const ControlStep initiation_time_DEFAULT /*= 0*/;
-   static const unsigned int cycles_time_DEFAULT /*=0*/;
-   static const double stage_period_DEFAULT /*= 0.0*/;
-   //@}
+   bool get_synthesis_dependent() const
+   {
+      return synthesis_dependent;
+   }
 };
-/// refcount definition of the class
 using time_infoRef = refcount<time_info>;
 
 #endif

@@ -27,6 +27,7 @@ env:
   storage-user: ${{secrets.CI_STORAGE_USER}}
   storage-token: ${{secrets.CI_STORAGE_TOKEN}}
   host_jobs: $J
+  dist-dir: panda_dist
 
 jobs:
   altera:
@@ -34,14 +35,14 @@ jobs:
     timeout-minutes: 600
     env:
       basename: altera
-      args: --spider-style="latex_format_bambu_results_altera.xml" -c=--evaluation -t180m
+      args: --latex-format=etc/scripts/latex_table_format/latex_format_bambu_results_altera.xml -c=--evaluation -t180m
     strategy:
       fail-fast: false
       matrix:
         include:
           - basename: softfloat
             script: ./examples/softfloat/generic_softfloat.sh
-            batch: "5CSEMA5F31C6_6.6,5CSEMA5F31C6_10.0,5SGXEA7N2F45C1_3.3,5SGXEA7N2F45C1_10.0,5CSEMA5F31C6_6.6 --flopoco,5CSEMA5F31C6_10.0 --flopoco,5SGXEA7N2F45C1_3.3 --flopoco,5SGXEA7N2F45C1_10.0 --flopoco"
+            batch: "5CSEMA5F31C6_6.6,5CSEMA5F31C6_10.0,5SGXEA7N2F45C1_3.3,5SGXEA7N2F45C1_10.0"
           - basename: truefloat
             script: ./examples/truefloat/generic_truefloat.sh
             args: -c=--evaluation=CYCLES
@@ -49,9 +50,6 @@ jobs:
           - basename: libm
             script: ./examples/libm/generic_libm.sh
             batch: "5SGXEA7N2F45C1_3.3,5SGXEA7N2F45C1_5.0,5SGXEA7N2F45C1_10.0"
-          - basename: libm-flopoco
-            script: ./examples/libm/generic_libm.sh
-            batch: "5SGXEA7N2F45C1_3.3 --flopoco,5SGXEA7N2F45C1_5.0 --flopoco,5SGXEA7N2F45C1_10.0 --flopoco"
           - basename: CHStone_O2
             script: ./examples/CHStone/generic_CHStone.sh
             args: -c=--experimental-setup=BAMBU-BALANCED-MP -c=--aligned-access
@@ -63,30 +61,18 @@ jobs:
           - basename: hls_study
             script: ./examples/hls_study/generic_hls_study.sh
             batch: "5SGXEA7N2F45C1_2.5"
-          - basename: omp_simd
-            script: ./examples/omp_simd/generic_omp_simd.sh
-            args: "--skip_list inline_blackscholes8,blackscholes8"
-            batch: "5SGXEA7N2F45C1_10.0"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: 'true'
-      - name: Download Bambu AppImage
+      - name: Download PandA distribution
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.package-name}}
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Generate out name
         id: get
         shell: bash
@@ -98,7 +84,7 @@ jobs:
         id: batch
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          source ${{env.dist-dir}}/settings.sh
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           test_dir="test_out"
@@ -120,7 +106,7 @@ jobs:
           done
       - name: Upload test reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{steps.get.outputs.outname}}
           path: ${{steps.batch.outputs.test-reports-dir}}
@@ -130,66 +116,51 @@ jobs:
     timeout-minutes: 600
     env:
       basename: xilinx
-      args: --spider-style="latex_format_bambu_results_xilinx.xml" -c=--evaluation -t180m
+      args: --latex-format=etc/scripts/latex_table_format/latex_format_bambu_results_xilinx.xml -c=--evaluation -t180m
     strategy:
       fail-fast: false
       matrix:
         include:
           - basename: softfloat
             script: ./examples/softfloat/generic_softfloat.sh
-            batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930-VVD_5.0,xc7vx690t-3ffg1930-VVD_10.0,xc7z020-1clg484-VVD_5.0,xc7z020-1clg484-VVD_10.0,xc7vx330t-1ffg1157_10.0 --flopoco,xc7vx690t-3ffg1930-VVD_5.0 --flopoco,xc7vx690t-3ffg1930-VVD_10.0 --flopoco,xc7z020-1clg484-VVD_5.0 --flopoco,xc7z020-1clg484-VVD_10.0 --flopoco"
+            batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930_5.0,xc7vx690t-3ffg1930_10.0,xc7z020-1clg484_5.0,xc7z020-1clg484_10.0"
           - basename: truefloat
             script: ./examples/truefloat/generic_truefloat.sh
             args: -c=--evaluation=CYCLES
-            batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930-VVD_5.0,xc7vx690t-3ffg1930-VVD_10.0,xc7z020-1clg484-VVD_5.0,xc7z020-1clg484-VVD_10.0"
+            batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930_5.0,xc7vx690t-3ffg1930_10.0,xc7z020-1clg484_5.0,xc7z020-1clg484_10.0"
           - basename: libm
             script: ./examples/libm/generic_libm.sh
-            batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930-VVD_5.0,xc7vx690t-3ffg1930-VVD_10.0,xc7z020-1clg484-VVD_5.0,xc7z020-1clg484-VVD_10.0"
-          - basename: libm-flopoco
-            script: ./examples/libm/generic_libm.sh
-            batch: "xc7vx330t-1ffg1157_10.0 --flopoco,xc7vx690t-3ffg1930-VVD_5.0 --flopoco,xc7vx690t-3ffg1930-VVD_10.0 --flopoco,xc7z020-1clg484-VVD_5.0 --flopoco,xc7z020-1clg484-VVD_10.0 --flopoco"
+            batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930_5.0,xc7vx690t-3ffg1930_10.0,xc7z020-1clg484_5.0,xc7z020-1clg484_10.0"
           - basename: CHStone_O2
             script: ./examples/CHStone/generic_CHStone.sh
             args: -c=--experimental-setup=BAMBU-BALANCED-MP -c=--aligned-access
-            batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930-VVD_5.0,xc7vx690t-3ffg1930-VVD_10.0,xc7z020-1clg484-VVD_10.0,xc7z020-1clg484-VVD_15.0"
+            batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930_5.0,xc7vx690t-3ffg1930_10.0,xc7z020-1clg484_10.0,xc7z020-1clg484_15.0"
           - basename: CHStone_O3
             script: ./examples/CHStone/generic_CHStone.sh
             args: -c=--experimental-setup=BAMBU-PERFORMANCE-MP
-            batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930-VVD_5.0,xc7vx690t-3ffg1930-VVD_10.0,xc7z020-1clg484-VVD_10.0,xc7z020-1clg484-VVD_15.0"
+            batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930_5.0,xc7vx690t-3ffg1930_10.0,xc7z020-1clg484_10.0,xc7z020-1clg484_15.0"
           - basename: MachSuite
             script: ./examples/MachSuite/generic_MachSuite.sh
-            batch: "xc7vx690t-3ffg1930-VVD_10.0"
+            batch: "xc7vx690t-3ffg1930_10.0"
           - basename: hls_study
             script: ./examples/hls_study/generic_hls_study.sh
-            batch: "xc7vx690t-3ffg1930-VVD_2.5"
-          - basename: omp_simd
-            script: ./examples/omp_simd/generic_omp_simd.sh
-            args: "--skip_list inline_blackscholes8,blackscholes8"
-            batch: "xc7vx690t-3ffg1930-VVD_10.0"
+            batch: "xc7vx690t-3ffg1930_2.5"
           # - basename: parallel_queries
           #   script: ./examples/parallel_queries/context_switch_xilinx_10_1DB_simulate.sh
           #   args: -c=--evaluation=CYCLES
-          #   batch: "xc7vx690t-3ffg1930-VVD_10.0"
+          #   batch: "xc7vx690t-3ffg1930_10.0"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: 'true'
-      - name: Download Bambu AppImage
+      - name: Download PandA distribution
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.package-name}}
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Generate out name
         id: get
         shell: bash
@@ -201,7 +172,7 @@ jobs:
         id: batch
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          source ${{env.dist-dir}}/settings.sh
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           test_dir="test_out"
@@ -223,7 +194,7 @@ jobs:
           done
       - name: Upload test reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{steps.get.outputs.outname}}
           path: ${{steps.batch.outputs.test-reports-dir}}
@@ -232,7 +203,7 @@ jobs:
     runs-on: [self-hosted, long, lattice]
     env:
       basename: lattice
-      args: --spider-style="latex_format_bambu_results_lattice.xml" -c=--evaluation=CYCLES -t180m
+      args: --latex-format=etc/scripts/latex_table_format/latex_format_bambu_results_lattice.xml -c=--evaluation=CYCLES -t180m
     continue-on-error: ${{ matrix.known-issues }}
     strategy:
       fail-fast: false
@@ -241,7 +212,7 @@ jobs:
           - basename: softfloat
             script: ./examples/softfloat/generic_softfloat.sh
             known-issues: false
-            batch: "LFE335EA8FN484C_10.0,LFE335EA8FN484C_10.0 --flopoco"
+            batch: "LFE335EA8FN484C_10.0"
           - basename: truefloat
             script: ./examples/truefloat/generic_truefloat.sh
             known-issues: false
@@ -250,7 +221,7 @@ jobs:
           - basename: libm
             script: ./examples/libm/generic_libm.sh
             known-issues: true
-            batch: "LFE335EA8FN484C_10.0,LFE335EA8FN484C_10.0 --flopoco"
+            batch: "LFE335EA8FN484C_10.0"
           - basename: CHStone_O2
             script: ./examples/CHStone/generic_CHStone.sh
             known-issues: true
@@ -263,24 +234,16 @@ jobs:
             batch: "LFE335EA8FN484C_15.0"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: 'true'
-      - name: Download Bambu AppImage
+      - name: Download PandA distribution
         uses: ./.github/actions/storage-download
         with:
           name: ${{env.package-name}}
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Generate out name
         id: get
         shell: bash
@@ -292,7 +255,7 @@ jobs:
         id: batch
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          source ${{env.dist-dir}}/settings.sh
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           test_dir="test_out"
@@ -314,7 +277,7 @@ jobs:
           done
       - name: Upload test reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{steps.get.outputs.outname}}
           path: ${{steps.batch.outputs.test-reports-dir}}

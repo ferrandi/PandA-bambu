@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -38,10 +38,10 @@
  *
  */
 #include "technology_node.hpp"
+
 #include "Parameter.hpp"
 #include "area_info.hpp"
-#include "config_HAVE_CIRCUIT_BUILT.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "library_manager.hpp"
 #include "polixml.hpp"
@@ -51,23 +51,22 @@
 #include "technology_manager.hpp"
 #include "time_info.hpp"
 #include "xml_helper.hpp"
+
 #include <algorithm>
 #include <list>
 #include <utility>
+
+#include "config_HAVE_CIRCUIT_BUILT.hpp"
 
 simple_indent technology_node::PP('[', ']', 3);
 
 technology_node::technology_node() = default;
 
-technology_node::~technology_node() = default;
-
 operation::operation() : commutative(false), bounded(true), primary_inputs_registered(false)
 {
 }
 
-operation::~operation() = default;
-
-void operation::xload(const xml_element* Enode, const technology_nodeRef fu, const ParameterConstRef Param)
+void operation::xload(const xml_element* Enode, const technology_nodeRef fu, const ParameterConstRef)
 {
    THROW_ASSERT(CE_XVM(operation_name, Enode), "An operation must have a name");
    /// name of the operation
@@ -139,10 +138,10 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
    }
 
    /// time characterization
-   time_m = time_info::factory(Param);
+   time_m = std::make_shared<time_info>();
    double execution_time = time_info::execution_time_DEFAULT;
-   auto initiation_time = from_strongtype_cast<unsigned int>(time_info::initiation_time_DEFAULT);
-   unsigned int cycles = time_info::cycles_time_DEFAULT;
+   auto initiation_time = time_info::initiation_time_DEFAULT;
+   unsigned int cycles = time_info::cycles_DEFAULT;
    double stage_period = time_info::stage_period_DEFAULT;
    if(CE_XVM(execution_time, Enode))
    {
@@ -176,8 +175,7 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
       execution_time = cycles * clock_period * clock_period_resource_fraction;
    }
    time_m->set_execution_time(execution_time, cycles);
-   const ControlStep ii(initiation_time);
-   time_m->set_initiation_time(ii);
+   time_m->set_initiation_time(initiation_time);
    time_m->set_synthesis_dependent(synthesis_dependent);
    time_m->set_stage_period(stage_period);
    const xml_node::node_list list_int = Enode->get_children();
@@ -252,7 +250,7 @@ void operation::xwrite(xml_element* rootnode, const technology_nodeRef, const Pa
    /// timing characterization, if any
    if(time_m)
    {
-      if(time_m->get_cycles() != time_info::cycles_time_DEFAULT)
+      if(time_m->get_cycles() != time_info::cycles_DEFAULT)
       {
          unsigned int cycles = time_m->get_cycles();
          WRITE_XVM(cycles, Enode);
@@ -265,7 +263,7 @@ void operation::xwrite(xml_element* rootnode, const technology_nodeRef, const Pa
 
       if(time_m->get_initiation_time() != time_info::initiation_time_DEFAULT)
       {
-         auto initiation_time = from_strongtype_cast<unsigned int>(time_m->get_initiation_time());
+         auto initiation_time = time_m->get_initiation_time();
          WRITE_XVM(initiation_time, Enode);
       }
       if(time_m->get_stage_period() != time_info::stage_period_DEFAULT)
@@ -299,30 +297,36 @@ bool operation::is_type_supported(const std::string& type_name) const
    return supported_types.empty() || supported_types.count(type_name);
 }
 
-bool operation::is_type_supported(const std::string& type_name, unsigned long long type_prec) const
+bool operation::is_type_supported(const std::string& type_name, unsigned long long type_prec,
+                                  bool no_constant_characterization) const
 {
    if(!supported_types.empty())
    {
-      if(!is_type_supported(type_name))
+      auto supported_type = supported_types.find(type_name);
+      if(supported_type == supported_types.end())
       {
          return false;
       }
+
       /// check also for the precision
-      auto supported_type = supported_types.find(type_name);
-      if(!supported_type->second.empty() && std::find(supported_type->second.begin(), supported_type->second.end(),
-                                                      type_prec) == supported_type->second.end())
+      if(!supported_type->second.empty())
       {
-         return false;
+         if((type_prec != 0 || !no_constant_characterization) &&
+            std::find(supported_type->second.begin(), supported_type->second.end(), type_prec) ==
+                supported_type->second.end())
+         {
+            return false;
+         }
       }
    }
    return true;
 }
 
 bool operation::is_type_supported(const std::string& type_name, const std::vector<unsigned long long>& type_prec,
-                                  const std::vector<unsigned long long>& /*type_n_element*/) const
+                                  bool no_constant_characterization) const
 {
    const auto max_prec = type_prec.empty() ? 0 : *max_element(type_prec.begin(), type_prec.end());
-   return is_type_supported(type_name, max_prec);
+   return is_type_supported(type_name, max_prec, no_constant_characterization);
 }
 
 std::string operation::get_type_supported_string() const
@@ -354,8 +358,6 @@ functional_unit::functional_unit(const xml_nodeRef _XML_description)
       characterization_timestamp()
 {
 }
-
-functional_unit::~functional_unit() = default;
 
 void functional_unit::set_clock_period(double _clock_period)
 {
@@ -399,7 +401,7 @@ void functional_unit::print(std::ostream& os) const
    }
    if(area_m)
    {
-      PP(os, "A: " + std::to_string(area_m->get_area_value()) + "\n");
+      PP(os, "A: " + std::to_string(area_m->resource_or_default(area_info::AREA)) + "\n");
    }
 #if HAVE_CIRCUIT_BUILT
    if(CM)
@@ -588,7 +590,7 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
                 structural_type_descriptorRef(new structural_type_descriptor(functional_unit_name));
             CM->set_top_info(functional_unit_name, build_type);
          }
-         // top must be a component_o
+         // top must be a module_o
          const xml_node::node_list listC = EnodeC->get_children();
          for(const auto& iterC : listC)
          {
@@ -597,7 +599,7 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
             {
                continue;
             }
-            if(EnodeCC->get_name() == GET_CLASS_NAME(component_o))
+            if(EnodeCC->get_name() == GET_CLASS_NAME(module_o))
             {
                CM->get_circ()->xload(EnodeCC, CM->get_circ(), CM);
             }
@@ -644,38 +646,14 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
       add(op_curr);
    }
 
-   area_m = area_info::factory(Param);
-   if(attributes.find("area") != attributes.end())
+   area_m = std::make_shared<area_info>();
+   for(const auto& [key, attr] : attributes)
    {
-      area_m->set_area_value(attributes["area"]->get_content<double>());
-   }
-   if(attributes.find("REGISTERS") != attributes.end())
-   {
-      area_m->set_resource_value(area_info::REGISTERS, attributes["REGISTERS"]->get_content<double>());
-   }
-   if(attributes.find("SLICE_LUTS") != attributes.end())
-   {
-      area_m->set_resource_value(area_info::SLICE_LUTS, attributes["SLICE_LUTS"]->get_content<double>());
-   }
-   if(attributes.find("SLICE") != attributes.end())
-   {
-      area_m->set_resource_value(area_info::SLICE, attributes["SLICE"]->get_content<double>());
-   }
-   if(attributes.find("LUT_FF_PAIRS") != attributes.end())
-   {
-      area_m->set_resource_value(area_info::LUT_FF_PAIRS, attributes["LUT_FF_PAIRS"]->get_content<double>());
-   }
-   if(attributes.find("DSP") != attributes.end())
-   {
-      area_m->set_resource_value(area_info::DSP, attributes["DSP"]->get_content<double>());
-   }
-   if(attributes.find("BRAM") != attributes.end())
-   {
-      area_m->set_resource_value(area_info::BRAM, attributes["BRAM"]->get_content<double>());
-   }
-   if(attributes.find("DRAM") != attributes.end())
-   {
-      area_m->set_resource_value(area_info::DRAM, attributes["DRAM"]->get_content<double>());
+      const auto res_key = area_info::to_resource_type(boost::to_upper_copy(key));
+      if(res_key != area_info::ERROR)
+      {
+         area_m->resources[res_key] = attr->get_content<double>();
+      }
    }
 }
 
@@ -696,44 +674,9 @@ void functional_unit::xwrite(xml_element* rootnode, const technology_nodeRef tn,
    /// area attributes
    if(area_m)
    {
-      double area_value = area_m->get_area_value();
-      if(std::find(ordered_attributes.begin(), ordered_attributes.end(), "area") == ordered_attributes.end())
+      for(const auto& [key, value] : area_m->resources)
       {
-         ordered_attributes.push_back("area");
-      }
-      attributes["area"] = attributeRef(new attribute(attribute::FLOAT64, std::to_string(area_value)));
-      if(area_m)
-      {
-         if(area_m->get_resource_value(area_info::REGISTERS) != 0.0)
-         {
-            attributes["REGISTERS"] = attributeRef(
-                new attribute(attribute::FLOAT64, std::to_string(area_m->get_resource_value(area_info::REGISTERS))));
-         }
-         if(area_m->get_resource_value(area_info::SLICE_LUTS) != 0.0)
-         {
-            attributes["SLICE_LUTS"] = attributeRef(
-                new attribute(attribute::FLOAT64, std::to_string(area_m->get_resource_value(area_info::SLICE_LUTS))));
-         }
-         if(area_m->get_resource_value(area_info::LUT_FF_PAIRS) != 0.0)
-         {
-            attributes["LUT_FF_PAIRS"] = attributeRef(
-                new attribute(attribute::FLOAT64, std::to_string(area_m->get_resource_value(area_info::LUT_FF_PAIRS))));
-         }
-         if(area_m->get_resource_value(area_info::DSP) != 0.0)
-         {
-            attributes["DSP"] = attributeRef(
-                new attribute(attribute::FLOAT64, std::to_string(area_m->get_resource_value(area_info::DSP))));
-         }
-         if(area_m->get_resource_value(area_info::BRAM) != 0.0)
-         {
-            attributes["BRAM"] = attributeRef(
-                new attribute(attribute::FLOAT64, std::to_string(area_m->get_resource_value(area_info::BRAM))));
-         }
-         if(area_m->get_resource_value(area_info::DRAM) != 0.0)
-         {
-            attributes["DRAM"] = attributeRef(
-                new attribute(attribute::FLOAT64, std::to_string(area_m->get_resource_value(area_info::DRAM))));
-         }
+         attributes[area_info::to_string(key)] = attributeRef(new attribute(attribute::FLOAT64, std::to_string(value)));
       }
    }
 

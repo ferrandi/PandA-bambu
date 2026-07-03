@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -35,39 +35,24 @@
  * @brief Class specifying ALAP and ASAP algorithms.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef ASLAP_HPP
 #define ASLAP_HPP
 
+#include "op_graph.hpp"
+#include "refcount.hpp"
+#include "schedule.hpp"
+
 #include <deque>
 #include <iosfwd>
 
-#include "graph.hpp"
-#include "refcount.hpp"
-
-/// HLS/scheduling include
-#include "schedule.hpp"
-
-/**
- * @name Forward declarations.
- */
-//@{
-CONSTREF_FORWARD_DECL(AllocationInformation);
-REF_FORWARD_DECL(HLS_constraints);
-CONSTREF_FORWARD_DECL(Schedule);
-REF_FORWARD_DECL(Schedule);
-REF_FORWARD_DECL(hls);
+class AllocationInformation;
 CONSTREF_FORWARD_DECL(HLS_manager);
-CONSTREF_FORWARD_DECL(OpGraph);
 CONSTREF_FORWARD_DECL(Parameter);
-class graph;
-class OpVertexSet;
 enum class Allocation_MinMax;
-//@}
+REF_FORWARD_DECL(HLS_constraints);
+REF_FORWARD_DECL(hls);
 
 /**
  * Class managing ALAP and ASAP algorithms.
@@ -75,30 +60,30 @@ enum class Allocation_MinMax;
 class ASLAP
 {
  private:
+   /// the graph to be scheduled
+   const OpGraph beh_graph;
+
    /// Array storing the ASAP values of the nodes in the graph.
-   ScheduleRef ASAP;
+   Schedule ASAP;
 
    /// Array storing the ALAP values of the nodes in the graph.
-   ScheduleRef ALAP;
+   Schedule ALAP;
 
    /// variable storing the minimum number of control steps required to schedule the graph.
-   ControlStep min_tot_csteps;
+   unsigned int min_tot_csteps;
 
    /// variable storing the maximum number of control steps required to schedule the graph.
-   ControlStep max_tot_csteps;
-
-   /// the graph to be scheduled
-   OpGraphConstRef beh_graph;
+   unsigned int max_tot_csteps;
 
    /// constant variable storing the reference to the array of vertexes sorted by topological order associated with
    /// the SDG(it can be used also for SG).
-   std::deque<vertex> levels;
+   std::deque<OpGraph::vertex_descriptor> levels;
 
    /// is true if the beh_graph has at least one branching block
    bool has_branching_blocks;
 
    /// The allocation data structure
-   const AllocationInformationConstRef allocation_information;
+   const AllocationInformation& allocation_information;
 
    /// speculation
    bool speculation;
@@ -113,17 +98,15 @@ class ASLAP
    unsigned int ctrl_step_multiplier;
 
    /// relevant vertex for the aslap scheduling
-   const CustomUnorderedSet<vertex>& operations;
+   const CustomUnorderedSet<OpGraph::vertex_descriptor>& operations;
    /**
     * Modify the ALAP scheduling taking into account also technology constraints.
-    * @param ALL is the allocation manager.
     */
    void add_constraints_to_ALAP();
 
    /**
     * Modify the ASAP scheduling taking into account also technology constraints.
     * Currently this function does not correcty work when alternative paths are present.
-    * @param ALL is the allocation manager.
     */
    void add_constraints_to_ASAP();
 
@@ -139,13 +122,11 @@ class ASLAP
     * minimum execution time is possible when it is already computed the max_tot_csteps. The standard ALAP algorithms
     * should use the maximum execution time since it does not know the total number of control steps thus requiring
     * a worst estimation of the ALAP time for each operation.
-    * @param ALL is the allocation manager.
     */
    void compute_ALAP_LB();
 
    /**
     * Compute ALAP using list based euristic to identify the total number of control steps.
-    * @param ALL is the allocation manager.
     */
    void compute_ALAP_worst_case();
 
@@ -153,7 +134,7 @@ class ASLAP
     * This method returns the minimum number of control steps to schedule the graph.
     * @return the best-case estimation of control steps.
     */
-   ControlStep get_min_csteps() const
+   unsigned int get_min_csteps() const
    {
       return min_tot_csteps;
    }
@@ -163,7 +144,7 @@ class ASLAP
     * by the specification and by the technology constraints.
     * @return a worst-case estimation of number of control steps.
     */
-   ControlStep get_max_csteps() const
+   unsigned int get_max_csteps() const
    {
       return max_tot_csteps;
    }
@@ -174,25 +155,20 @@ class ASLAP
     * @param minmax specifies if the minimum or the maximum execution time must be returned
     * @return the number of cycles
     */
-   ControlStep GetCycleLatency(const vertex operation, Allocation_MinMax minmax) const;
+   unsigned int GetCycleLatency(OpGraph::vertex_descriptor operation, Allocation_MinMax minmax) const;
 
  public:
    /**
     * Constructor.
     * @param hls_manager is the HLS manager
     * @param HLS is the whole HLS data structure.
-    * @param speculation tells if speculation could be performed
-    * @param beh_graph is the graph on which asap and alap is computed.
+    * @param operations is the set of operations on which asap and alap is computed.
     * @param parameters is the set of input parameters
+    * @param ctrl_step_multiplier scales control steps to account for chaining
     */
-   ASLAP(const HLS_managerConstRef hls_manager, const hlsRef HLS, const bool speculation,
-         const CustomUnorderedSet<vertex>& operations, const ParameterConstRef parameters,
-         unsigned int _ctrl_step_multiplier);
-
-   /**
-    * Destructor.
-    */
-   ~ASLAP() = default;
+   ASLAP(const HLS_managerConstRef hls_manager, const hlsRef HLS,
+         const CustomUnorderedSet<OpGraph::vertex_descriptor>& operations, const ParameterConstRef parameters,
+         unsigned int ctrl_step_multiplier);
 
    /**
     * Possible type of ALAP method currently implemented.
@@ -223,21 +199,15 @@ class ASLAP
 
    /**
     * Function that computes the ASAP scheduling of the graph.
-    * @param ALL is the allocation manager.
     * @param partial_schedule is a partial schedule that has to be taken into account
     */
-   void compute_ASAP(const ScheduleConstRef partial_schedule = ScheduleConstRef());
+   void compute_ASAP(const Schedule* partial_schedule = nullptr);
 
    /**
     * Returns the ASAP vector of the vertices.
     * @return a map containing the ASAP values for each operation vertex
     */
-   const ScheduleConstRef CGetASAP() const
-   {
-      return ASAP;
-   }
-
-   ScheduleRef GetASAP()
+   const Schedule& CGetASAP() const
    {
       return ASAP;
    }
@@ -259,22 +229,14 @@ class ASLAP
     *                 to true
     * @param  est_upper_bound is an upper estimation of the control steps (used by ).
     */
-   void compute_ALAP(ALAP_method met, const ScheduleConstRef partial_schedule = ScheduleConstRef(),
-                     bool* feasible = nullptr, const ControlStep = ControlStep(0u));
+   void compute_ALAP(ALAP_method met, const Schedule* partial_schedule = nullptr, bool* feasible = nullptr,
+                     const unsigned int = 0u);
 
    /**
     * Returns the ALAP vector of the vertices.
     * @return a map containing the ALAP values for each operation vertex
     */
-   const ScheduleConstRef CGetALAP() const
-   {
-      return ALAP;
-   }
-
-   /**
-    * Return the ALAP (modifiable)
-    */
-   const ScheduleRef GetALAP()
+   const Schedule& CGetALAP() const
    {
       return ALAP;
    }
@@ -287,8 +249,7 @@ class ASLAP
     *                 to true
     * @param partial_schedule is a partial schedule that has to be taken into account
     */
-   void update_ALAP(const ControlStep maxc, bool* feasible = nullptr,
-                    const ScheduleConstRef partial_schedule = ScheduleConstRef());
+   void update_ALAP(const unsigned int maxc, bool* feasible = nullptr, const Schedule* partial_schedule = nullptr);
 
    /**
     * Friend definition of the << operator.
@@ -302,9 +263,10 @@ class ASLAP
    /**
     * Gets graph
     */
-   const OpGraphConstRef CGetOpGraph() const;
+   const OpGraph& CGetOpGraph() const
+   {
+      return beh_graph;
+   }
 };
-
-using ASLAPRef = refcount<ASLAP>;
 
 #endif

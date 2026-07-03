@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -39,71 +39,72 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Date$
- * Last modified by $Author$
  *
  */
-
-/// Autoheader includes
-#include "config_HAVE_PRAGMA_BUILT.hpp"
-#include "config_NPROFILE.hpp"
-
-#include <filesystem>
-
-///. includes
+#include "BackendWrapper.hpp"
 #include "BambuParameter.hpp"
-
-/// behavior includes
+#include "CompilerWrapper.hpp"
+#include "SimulationInformation.hpp"
 #include "application_manager.hpp"
+#include "c_backend_information.hpp"
+#include "c_backend_step_factory.hpp"
 #include "call_graph_manager.hpp"
-
-/// design_flows includes
+#include "cpu_time.hpp"
 #include "design_flow.hpp"
 #include "design_flow_factory.hpp"
 #include "design_flow_manager.hpp"
-
-/// design_flows/c_backend/ToC includes
-#include "c_backend_information.hpp"
-#include "c_backend_step_factory.hpp"
-
-/// frontend_flow includes
+#include "evaluation.hpp"
+#include "evaluation_mode.hpp"
 #include "frontend_flow_step.hpp"
 #include "frontend_flow_step_factory.hpp"
-
-/// HLS includes
-#include "evaluation.hpp"
+#include "functions.hpp"
 #include "hls_device.hpp"
 #include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
 #include "hls_step.hpp"
-
-#if HAVE_FROM_AADL_ASN_BUILT
-/// parser include
-#include "parser_flow_step_factory.hpp"
-#endif
-
-#if HAVE_PRAGMA_BUILT
-/// pragma includes
-#include "pragma_manager.hpp"
-#endif
-
-/// STD includes
-#include <cstdlib>
-#include <iosfwd>
-
-/// technology include
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
+#include "ir_node.hpp"
+#include "memory.hpp"
+#include "string_manipulation.hpp"
 #include "technology_flow_step_factory.hpp"
 
-/// tree include
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
+#include "config_NPROFILE.hpp"
 
-/// utility include
-#include "cpu_time.hpp"
+#include <cstdlib>
+#include <filesystem>
+#include <iosfwd>
+#include <string>
 
-/// wrapper/compiler includes
-#include "compiler_wrapper.hpp"
+namespace
+{
+   std::string get_settings_script_path()
+   {
+      try
+      {
+         const auto executable_path = std::filesystem::canonical("/proc/self/exe");
+         return (executable_path.parent_path().parent_path() / "settings.sh").string();
+      }
+      catch(...)
+      {
+         return "<install_dir>/settings.sh";
+      }
+   }
+
+   void check_runtime_environment()
+   {
+      const auto bambu_hls = std::getenv("BAMBU_HLS");
+      const auto backend_path = std::getenv("BAMBU_HLS_BACKEND_PATH");
+      if(bambu_hls != nullptr && *bambu_hls != '\0' && backend_path != nullptr && *backend_path != '\0')
+      {
+         return;
+      }
+
+      THROW_ERROR_USAGE("Environment not initialized: BAMBU_HLS and BAMBU_HLS_BACKEND_PATH must be set. "
+                        "Please source <install_dir>/settings.sh (for example " +
+                        get_settings_script_path() + ") before running bambu.");
+   }
+} // namespace
 
 /**
  * Main file used to perform high-level synthesis starting from a C specification.
@@ -134,20 +135,17 @@ int main(int argc, char* argv[])
          case PARAMETER_NOTPARSED:
          {
             exit_code = PARAMETER_NOTPARSED;
-            std::string cat_args;
-            for(int i = 0; i < argc; i++)
-            {
-               cat_args += std::string(argv[i]) + " ";
-            }
+            const auto cat_args = shell_escape_argv(argc, argv);
 
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, parameters->getOption<int>(OPT_output_level),
                            " ==  Bambu executed with: " + cat_args + "\n");
-            THROW_ERROR("Bad Parameters format");
+            THROW_ERROR_USAGE("Bad command-line parameter format. "
+                              "Please check the provided options and in case run --help.");
             break;
          }
          case EXIT_SUCCESS:
          {
-            if(not(parameters->getOption<bool>(OPT_no_clean)))
+            if(!parameters->getOption<bool>(OPT_no_clean) && parameters->isOption(OPT_output_temporary_directory))
             {
                std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
             }
@@ -165,44 +163,16 @@ int main(int argc, char* argv[])
       }
 
       auto output_level = parameters->getOption<int>(OPT_output_level);
+      check_runtime_environment();
       if(output_level >= OUTPUT_LEVEL_MINIMUM)
       {
          parameters->PrintFullHeader(std::cerr);
       }
 
-      // Include sysdir
-      if(parameters->getOption<bool>(OPT_gcc_include_sysdir))
-      {
-         const CompilerWrapperRef compiler_wrapper(new CompilerWrapper(
-             parameters, CompilerWrapper_CompilerTarget::CT_NO_COMPILER, CompilerWrapper_OptimizationSet::O0));
-         std::vector<std::string> system_includes;
-         compiler_wrapper->GetSystemIncludes(system_includes);
-         for(const auto& i : system_includes)
-         {
-            INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, i);
-         }
-         if(!parameters->getOption<bool>(OPT_no_clean))
-         {
-            std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
-         }
-         return EXIT_SUCCESS;
-      }
-
-      if(parameters->getOption<bool>(OPT_gcc_config))
-      {
-         const CompilerWrapperRef compiler_wrapper(new CompilerWrapper(
-             parameters, CompilerWrapper_CompilerTarget::CT_NO_COMPILER, CompilerWrapper_OptimizationSet::O0));
-         compiler_wrapper->GetCompilerConfig();
-         if(not(parameters->getOption<bool>(OPT_no_clean)))
-         {
-            std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
-         }
-         return EXIT_SUCCESS;
-      }
       if(!parameters->isOption(OPT_input_file))
       {
          PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "no input files\n");
-         if(not(parameters->getOption<bool>(OPT_no_clean)))
+         if(!parameters->getOption<bool>(OPT_no_clean))
          {
             std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
          }
@@ -223,30 +193,25 @@ int main(int argc, char* argv[])
       HLS_managerRef HLSMgr = HLS_managerRef(new HLS_manager(parameters, HLS_D));
       START_TIME(HLSMgr->HLS_execution_time);
       // create the data-structures (inside application_manager) where the problem specification is contained
-      const DesignFlowManagerRef design_flow_manager(new DesignFlowManager(parameters));
+      DesignFlowManager design_flow_manager(parameters);
       const DesignFlowStepFactoryConstRef frontend_flow_step_factory(
           new FrontendFlowStepFactory(HLSMgr, design_flow_manager, parameters));
-      design_flow_manager->RegisterFactory(frontend_flow_step_factory);
+      design_flow_manager.RegisterFactory(frontend_flow_step_factory);
       const DesignFlowStepFactoryConstRef hls_flow_step_factory(
           new HLSFlowStepFactory(design_flow_manager, HLSMgr, parameters));
-      design_flow_manager->RegisterFactory(hls_flow_step_factory);
+      design_flow_manager.RegisterFactory(hls_flow_step_factory);
       const DesignFlowStepFactoryConstRef c_backend_step_factory(
           new CBackendStepFactory(design_flow_manager, HLSMgr, parameters));
-      design_flow_manager->RegisterFactory(c_backend_step_factory);
+      design_flow_manager.RegisterFactory(c_backend_step_factory);
       const DesignFlowStepFactoryConstRef technology_flow_step_factory(
           new TechnologyFlowStepFactory(HLS_D->get_technology_manager(), HLS_D, design_flow_manager, parameters));
-      design_flow_manager->RegisterFactory(technology_flow_step_factory);
-#if HAVE_FROM_AADL_ASN_BUILT
-      const DesignFlowStepFactoryConstRef parser_flow_step_factory(
-          new ParserFlowStepFactory(design_flow_manager, HLSMgr, parameters));
-      design_flow_manager->RegisterFactory(parser_flow_step_factory);
-#endif
+      design_flow_manager.RegisterFactory(technology_flow_step_factory);
 
-      if(parameters->getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::DRY_RUN)
+      if(parameters->getOption<EvaluationMode::evaluation_mode>(OPT_evaluation_mode) == EvaluationMode::DRY_RUN)
       {
-         design_flow_manager->AddStep(GetPointer<const HLSFlowStepFactory>(hls_flow_step_factory)
-                                          ->CreateHLSFlowStep(HLSFlowStep_Type::EVALUATION, 0));
-         design_flow_manager->Exec();
+         design_flow_manager.AddStep(GetPointer<const HLSFlowStepFactory>(hls_flow_step_factory)
+                                         ->CreateHLSFlowStep(HLSFlowStep_Type::EVALUATION, 0));
+         design_flow_manager.Exec();
          return EXIT_SUCCESS;
       }
 
@@ -255,18 +220,17 @@ int main(int argc, char* argv[])
          const DesignFlowStepRef find_max_transformations =
              GetPointer<const FrontendFlowStepFactory>(frontend_flow_step_factory)
                  ->CreateApplicationFrontendFlowStep(FrontendFlowStepType::FIND_MAX_TRANSFORMATIONS);
-         design_flow_manager->AddStep(find_max_transformations);
-         design_flow_manager->Exec();
+         design_flow_manager.AddStep(find_max_transformations);
+         design_flow_manager.Exec();
          return EXIT_FAILURE;
       }
       if(parameters->isOption(OPT_test_multiple_non_deterministic_flows))
       {
-         const DesignFlowStepFactoryRef design_flow_factory(new DesignFlowFactory(design_flow_manager, parameters));
-         const DesignFlowStepRef non_deterministic_flows =
-             GetPointer<const DesignFlowFactory>(design_flow_factory)
-                 ->CreateDesignFlow(DesignFlow_Type::NON_DETERMINISTIC_FLOWS);
-         design_flow_manager->AddStep(non_deterministic_flows);
-         design_flow_manager->Exec();
+         DesignFlowFactory design_flow_factory(design_flow_manager, parameters);
+         const auto non_deterministic_flows =
+             design_flow_factory.CreateDesignFlow(DesignFlow_Type::NON_DETERMINISTIC_FLOWS);
+         design_flow_manager.AddStep(non_deterministic_flows);
+         design_flow_manager.Exec();
          return EXIT_SUCCESS;
       }
 
@@ -277,15 +241,13 @@ int main(int argc, char* argv[])
              GetPointer<const CBackendStepFactory>(c_backend_step_factory)
                  ->CreateCBackendStep(CBackendInformationConstRef(new CBackendInformation(
                      CBackendInformation::CB_SEQUENTIAL, parameters->getOption<std::string>(OPT_pretty_print))));
-         design_flow_manager->AddStep(c_backend);
+         design_flow_manager.AddStep(c_backend);
       }
 
-      std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> hls_flow_step(
-          parameters->getOption<HLSFlowStep_Type>(OPT_synthesis_flow), HLSFlowStepSpecializationConstRef());
-      design_flow_manager->AddSteps(
-          GetPointer<const HLSFlowStepFactory>(hls_flow_step_factory)->CreateHLSFlowSteps(hls_flow_step));
-      design_flow_manager->Exec();
-      if(not(parameters->getOption<bool>(OPT_no_clean)))
+      design_flow_manager.AddStep(GetPointer<const HLSFlowStepFactory>(hls_flow_step_factory)
+                                      ->CreateHLSFlowStep(parameters->getOption<HLSFlowStep_Type>(OPT_synthesis_flow)));
+      design_flow_manager.Exec();
+      if(!parameters->getOption<bool>(OPT_no_clean))
       {
          std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
       }
@@ -354,11 +316,16 @@ int main(int argc, char* argv[])
          }
          break;
       }
+      case USAGE_EC:
+      {
+         // Usage/specification errors are expected tool diagnostics, not internal bugs.
+         break;
+      }
       default:
       {
       }
    }
-   if(parameters && not(parameters->getOption<bool>(OPT_no_clean)))
+   if(parameters && !parameters->getOption<bool>(OPT_no_clean) && parameters->isOption(OPT_output_temporary_directory))
    {
       std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
    }

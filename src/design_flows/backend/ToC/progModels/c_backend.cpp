@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -36,9 +36,6 @@
  *
  * @author Luca Fossati <fossati@elet.polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "c_backend.hpp"
@@ -60,12 +57,12 @@
 #include "hls_function_step.hpp"
 #include "hls_manager.hpp"
 #include "indented_output_stream.hpp"
+#include "ir_manager.hpp"
 #include "string_manipulation.hpp"
-#include "tree_manager.hpp"
 #include "utility.hpp"
 
 CBackend::CBackend(const CBackendInformationConstRef _c_backend_information,
-                   const DesignFlowManagerConstRef _design_flow_manager, const application_managerConstRef _AppM,
+                   const DesignFlowManager& _design_flow_manager, const application_managerConstRef _AppM,
                    const ParameterConstRef _parameters)
     : DesignFlowStep(ComputeSignature(_c_backend_information), _design_flow_manager, _parameters),
       writer(CWriter::CreateCWriter(_c_backend_information, RefcountCast<const HLS_manager>(_AppM),
@@ -78,7 +75,7 @@ CBackend::CBackend(const CBackendInformationConstRef _c_backend_information,
 
 DesignFlowStepFactoryConstRef CBackend::CGetDesignFlowStepFactory() const
 {
-   return design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::C_BACKEND);
+   return design_flow_manager.CGetDesignFlowStepFactory(DesignFlowStep::C_BACKEND);
 }
 
 std::string CBackend::GetName() const
@@ -94,40 +91,31 @@ DesignFlowStep::signature_t CBackend::ComputeSignature(const CBackendInformation
 void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
                                     const DesignFlowStep::RelationshipType relationship_type)
 {
-   const auto DFMgr = design_flow_manager.lock();
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
          switch(c_backend_info->type)
          {
-            case(CBackendInformation::CB_SEQUENTIAL):
+            case(CBackendInformation::CB_BBP):
             case(CBackendInformation::CB_MDPI_WRAPPER):
+            case(CBackendInformation::CB_SEQUENTIAL):
             {
                CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
                    frontend_relationships;
                frontend_relationships.insert(std::make_pair(BAMBU_FRONTEND_FLOW, FrontendFlowStep::WHOLE_APPLICATION));
-               FrontendFlowStep::CreateSteps(DFMgr, frontend_relationships, AppM, relationships);
-               break;
-            }
-            case(CBackendInformation::CB_BBP):
-            {
-               CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
-                   frontend_relationships;
-               frontend_relationships.insert(
-                   std::make_pair(BASIC_BLOCKS_CFG_COMPUTATION, FrontendFlowStep::ALL_FUNCTIONS));
-               frontend_relationships.insert(
-                   std::make_pair(DEAD_CODE_ELIMINATION_IPA, FrontendFlowStep::WHOLE_APPLICATION));
-               frontend_relationships.insert(std::make_pair(LOOP_COMPUTATION, FrontendFlowStep::ALL_FUNCTIONS));
-               frontend_relationships.insert(std::make_pair(NI_SSA_LIVENESS, FrontendFlowStep::ALL_FUNCTIONS));
-               frontend_relationships.insert(
-                   std::make_pair(OPERATIONS_CFG_COMPUTATION, FrontendFlowStep::ALL_FUNCTIONS));
-               frontend_relationships.insert(std::make_pair(VAR_ANALYSIS, FrontendFlowStep::ALL_FUNCTIONS));
-               FrontendFlowStep::CreateSteps(DFMgr, frontend_relationships, AppM, relationships);
+               FrontendFlowStep::CreateSteps(design_flow_manager, frontend_relationships, AppM, relationships);
                break;
             }
 #if HAVE_HLS_BUILT
             case(CBackendInformation::CB_DISCREPANCY_ANALYSIS):
+            {
+               const auto hls_step_factory = GetPointer<const HLSFlowStepFactory>(
+                   design_flow_manager.CGetDesignFlowStepFactory(DesignFlowStep::HLS));
+               relationships.insert(hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::VCD_SIGNAL_SELECTION,
+                                                                        HLSFlowStepSpecializationConstRef()));
+               [[fallthrough]];
+            }
             case(CBackendInformation::CB_HLS):
             {
                // The first time this step is added, we add the dependence
@@ -139,23 +127,25 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
                // function will be ready. The dependencies from HLS steps are
                // added after the check on the call graph for this reason.
                const auto frontend_step_factory = GetPointer<const FrontendFlowStepFactory>(
-                   DFMgr->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
-               const auto call_graph_computation_step =
-                   DFMgr->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
+                   design_flow_manager.CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
+               const auto call_graph_computation_step = design_flow_manager.GetDesignFlowStep(
+                   ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
                const auto cg_design_flow_step =
                    call_graph_computation_step != DesignFlowGraph::null_vertex() ?
-                       DFMgr->CGetDesignFlowGraph()->CGetNodeInfo(call_graph_computation_step)->design_flow_step :
+                       design_flow_manager.CGetDesignFlowGraph()
+                           ->CGetNodeInfo(call_graph_computation_step)
+                           ->design_flow_step :
                        frontend_step_factory->CreateApplicationFrontendFlowStep(COMPLETE_CALL_GRAPH);
                relationships.insert(cg_design_flow_step);
 
                // Root function cannot be computed at the beginning so if the
                // call graph is not ready yet we exit. The relationships will
                // be computed again after the call graph computation.
-               const auto CGM = AppM->CGetCallGraphManager();
-               if(boost::num_vertices(*(CGM->CGetCallGraph())))
+               const auto& CGM = AppM->CGetCallGraphManager();
+               if(CGM.GetCallGraph().num_vertices())
                {
-                  const auto hls_step_factory =
-                      GetPointer<const HLSFlowStepFactory>(DFMgr->CGetDesignFlowStepFactory(DesignFlowStep::HLS));
+                  const auto hls_step_factory = GetPointer<const HLSFlowStepFactory>(
+                      design_flow_manager.CGetDesignFlowStepFactory(DesignFlowStep::HLS));
                   relationships.insert(hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::TEST_VECTOR_PARSER,
                                                                            HLSFlowStepSpecializationConstRef()));
                }
@@ -173,57 +163,51 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
       {
          switch(c_backend_info->type)
          {
-            case(CBackendInformation::CB_SEQUENTIAL):
-            case(CBackendInformation::CB_MDPI_WRAPPER):
             case(CBackendInformation::CB_BBP):
+            case(CBackendInformation::CB_MDPI_WRAPPER):
+            case(CBackendInformation::CB_SEQUENTIAL):
             {
-               CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
-                   frontend_relationships;
-               frontend_relationships.insert(
-                   std::make_pair(FrontendFlowStepType::MULTIPLE_ENTRY_IF_REDUCTION, FrontendFlowStep::ALL_FUNCTIONS));
-               FrontendFlowStep::CreateSteps(DFMgr, frontend_relationships, AppM, relationships);
-               if(c_backend_info->type != CBackendInformation::CB_BBP)
-               {
-                  // The first time this step is added, we add the dependence
-                  // from the complete call graph computation. Ideally we would
-                  // need also the dependence from the HLS steps,
-                  // but at this point we don't know the top function yet.
-                  // The trick is that the dependencies will be recomputed again
-                  // before this is executed. At that time the top
-                  // function will be ready. The dependencies from HLS steps are
-                  // added after the check on the call graph for this reason.
-                  const auto frontend_step_factory = GetPointer<const FrontendFlowStepFactory>(
-                      DFMgr->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
-                  const auto call_graph_computation_step =
-                      DFMgr->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
-                  const auto cg_design_flow_step =
-                      call_graph_computation_step != DesignFlowGraph::null_vertex() ?
-                          DFMgr->CGetDesignFlowGraph()->CGetNodeInfo(call_graph_computation_step)->design_flow_step :
-                          frontend_step_factory->CreateApplicationFrontendFlowStep(COMPLETE_CALL_GRAPH);
-                  relationships.insert(cg_design_flow_step);
+               // The first time this step is added, we add the dependence
+               // from the complete call graph computation. Ideally we would
+               // need also the dependence from the HLS steps,
+               // but at this point we don't know the top function yet.
+               // The trick is that the dependencies will be recomputed again
+               // before this is executed. At that time the top
+               // function will be ready. The dependencies from HLS steps are
+               // added after the check on the call graph for this reason.
+               const auto frontend_step_factory = GetPointer<const FrontendFlowStepFactory>(
+                   design_flow_manager.CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
+               const auto call_graph_computation_step = design_flow_manager.GetDesignFlowStep(
+                   ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
+               const auto cg_design_flow_step =
+                   call_graph_computation_step != DesignFlowGraph::null_vertex() ?
+                       design_flow_manager.CGetDesignFlowGraph()
+                           ->CGetNodeInfo(call_graph_computation_step)
+                           ->design_flow_step :
+                       frontend_step_factory->CreateApplicationFrontendFlowStep(COMPLETE_CALL_GRAPH);
+               relationships.insert(cg_design_flow_step);
 
-                  // Root function cannot be computed at the beginning so if the
-                  // call graph is not ready yet we exit. The relationships will
-                  // be computed again after the call graph computation.
-                  const auto CG = AppM->CGetCallGraphManager()->CGetCallGraph();
-                  if(boost::num_vertices(*CG))
+               // Root function cannot be computed at the beginning so if the
+               // call graph is not ready yet we exit. The relationships will
+               // be computed again after the call graph computation.
+               if(AppM->CGetCallGraphManager().GetCallGraph().num_vertices())
+               {
+                  const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
+                  for(const auto& top_symbol : top_symbols)
                   {
-                     const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
-                     for(const auto& top_symbol : top_symbols)
-                     {
-                        const auto top_fnode = AppM->get_tree_manager()->GetFunction(top_symbol);
-                        const auto hls_step_factory =
-                            GetPointer<const HLSFlowStepFactory>(DFMgr->CGetDesignFlowStepFactory(DesignFlowStep::HLS));
-                        const auto hls_top_function = DFMgr->GetDesignFlowStep(
-                            HLSFunctionStep::ComputeSignature(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW,
-                                                              HLSFlowStepSpecializationConstRef(), top_fnode->index));
-                        const auto hls_top_function_step =
-                            hls_top_function != DesignFlowGraph::null_vertex() ?
-                                DFMgr->CGetDesignFlowGraph()->CGetNodeInfo(hls_top_function)->design_flow_step :
-                                hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW,
-                                                                    top_fnode->index);
-                        relationships.insert(hls_top_function_step);
-                     }
+                     const auto top_fnode = AppM->get_ir_manager()->GetFunction(top_symbol);
+                     const auto hls_step_factory = GetPointer<const HLSFlowStepFactory>(
+                         design_flow_manager.CGetDesignFlowStepFactory(DesignFlowStep::HLS));
+                     const auto hls_top_function = design_flow_manager.GetDesignFlowStep(
+                         HLSFunctionStep::ComputeSignature(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW,
+                                                           HLSFlowStepSpecializationConstRef(), top_fnode->index));
+                     const auto hls_top_function_step = hls_top_function != DesignFlowGraph::null_vertex() ?
+                                                            design_flow_manager.CGetDesignFlowGraph()
+                                                                ->CGetNodeInfo(hls_top_function)
+                                                                ->design_flow_step :
+                                                            hls_step_factory->CreateHLSFlowStep(
+                                                                HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, top_fnode->index);
+                     relationships.insert(hls_top_function_step);
                   }
                }
                break;

@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<technology>
+  <library>
+    <name>STD_FU</name>
+    <cell>
+      <name>builtin_bambu_time_start_FU</name>
+      <operation operation_name="__builtin_bambu_time_start" execution_time="0.0000001"/>
+      <circuit>
+        <module_o id="builtin_bambu_time_start_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2014-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="builtin_bambu_time_start_FU"/>
+          <parameter name="PRORESFILE">&quot;&quot;bambu_profiling_simulation.txt&quot;&quot;</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="builtin_bambu_time_start_FU PRORESFILE" VERILOG_PROVIDED="reg done_port;
+// synthesis translate_off
+always @(posedge clock)
+  if(start_port == 1&apos;b1)
+  begin
+    automatic integer res_file;
+    res_file = $fopen(PRORESFILE,&quot;a&quot;);
+    $fwrite(res_file, &quot;%0d|&quot;, $time);
+    $fclose(res_file);
+    $display(&quot;__builtin_bambu_time_start %d&quot;, $time);
+  end
+// synthesis translate_on
+always @(posedge clock) done_port &lt;= start_port;"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>builtin_bambu_time_stop_FU</name>
+      <operation operation_name="__builtin_bambu_time_stop" execution_time="0.0000001"/>
+      <circuit>
+        <module_o id="builtin_bambu_time_stop_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2014-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="builtin_bambu_time_stop_FU"/>
+          <parameter name="PRORESFILE">&quot;&quot;bambu_profiling_simulation.txt&quot;&quot;</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="builtin_bambu_time_stop_FU PRORESFILE" VERILOG_PROVIDED="reg done_port;
+// synthesis translate_off
+always @(posedge clock)
+  if(start_port == 1&apos;b1)
+  begin
+    automatic integer res_file;
+    res_file = $fopen(PRORESFILE,&quot;a&quot;);
+    $fwrite(res_file, &quot;%0d,&quot;, $time);
+    $fclose(res_file);
+    $display(&quot;__builtin_bambu_time_stop %d&quot;, $time);
+  end
+// synthesis translate_on
+always @(posedge clock) done_port &lt;= start_port;"/>
+        </module_o>
+      </circuit>
+    </cell>
+  </library>
+</technology>

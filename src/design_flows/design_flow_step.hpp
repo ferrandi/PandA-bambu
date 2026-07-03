@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -35,28 +35,21 @@
  * @brief Base class for step of design flow
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
 #ifndef DESIGN_FLOW_STEP_HPP
 #define DESIGN_FLOW_STEP_HPP
 #include "custom_set.hpp"
-#include "graph.hpp"
 #include "refcount.hpp"
 
 #include <iosfwd>
 #include <string>
 
-#include "config_HAVE_UNORDERED.hpp"
-
-CONSTREF_FORWARD_DECL(DesignFlowManager);
+class DesignFlowManager;
 REF_FORWARD_DECL(DesignFlowStep);
 CONSTREF_FORWARD_DECL(DesignFlowStepFactory);
 CONSTREF_FORWARD_DECL(Parameter);
-class DesignFlowStepNecessitySorter;
 
 struct DesignFlowStepHash
 {
@@ -128,7 +121,7 @@ class DesignFlowStep
    bool composed;
 
    /// The design flow manager
-   const Wrefcount<const DesignFlowManager> design_flow_manager;
+   const DesignFlowManager& design_flow_manager;
 
    /// Set of input parameters
    const ParameterConstRef parameters;
@@ -144,16 +137,14 @@ class DesignFlowStep
  public:
    /**
     * Constructor
+    * @param signature is the signature of the design step
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   DesignFlowStep(const signature_t signature, const DesignFlowManagerConstRef design_flow_manager,
+   DesignFlowStep(const signature_t signature, const DesignFlowManager& design_flow_manager,
                   const ParameterConstRef parameters);
 
-   /**
-    * Destructor
-    */
-   virtual ~DesignFlowStep();
+   virtual ~DesignFlowStep() = default;
 
    /**
     * Execute the step
@@ -191,7 +182,7 @@ class DesignFlowStep
 
    /**
     * Compute the relationships of a step with other steps
-    * @param dependencies is where relationships will be stored
+    * @param relationship is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
    virtual void ComputeRelationships(DesignFlowStepSet& relationship,
@@ -201,7 +192,7 @@ class DesignFlowStep
     * Write the label for a dot graph
     * @param out is the stream where label has to be printed
     */
-   virtual void WriteDot(std::ostream& out) const;
+   virtual void writeDot(std::ostream& out) const;
 
    /**
     * Return the factory to create this type of steps
@@ -264,7 +255,5 @@ class DesignFlowStep
     */
    static unsigned long long GetSignatureContext(signature_t signature);
 };
-using DesignFlowStepRef = refcount<DesignFlowStep>;
-using DesignFlowStepConstRef = refcount<const DesignFlowStep>;
 
 #endif

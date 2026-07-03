@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -36,40 +36,38 @@
  *
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef CONN_BINDING_HPP
 #define CONN_BINDING_HPP
 
-/// Autoheader include
-#include "config_HAVE_UNORDERED.hpp"
-
-#include <iosfwd>
-#include <string>
-
-#include "refcount.hpp"
-REF_FORWARD_DECL(HLS_manager);
-REF_FORWARD_DECL(generic_obj);
-REF_FORWARD_DECL(connection_obj);
-CONSTREF_FORWARD_DECL(BehavioralHelper);
-REF_FORWARD_DECL(structural_manager);
-REF_FORWARD_DECL(structural_object);
-REF_FORWARD_DECL(technology_manager);
-REF_FORWARD_DECL(hls);
-REF_FORWARD_DECL(conn_binding);
-CONSTREF_FORWARD_DECL(OpGraph);
-class GenericObjUnsignedIntSorter;
-
+#include "HLS/fsm/FSMInfo.hpp"
 #include "custom_map.hpp"
 #include "generic_obj.hpp"
 #include "graph.hpp"
+#include "refcount.hpp"
+#include <iosfwd>
+#include <string>
 
-/// definition of the data transfer (tree_node, precision, from, to, data_transferred, current_op). Note that from/to
-/// can represent either chained vertices or STG states
-using data_transfer = std::tuple<unsigned int, unsigned int, vertex, vertex, vertex>;
+#include "config_HAVE_UNORDERED.hpp"
+
+class GenericObjUnsignedIntSorter;
+CONSTREF_FORWARD_DECL(BehavioralHelper);
+CONSTREF_FORWARD_DECL(OpGraph);
+CONSTREF_FORWARD_DECL(Parameter);
+REF_FORWARD_DECL(conn_binding);
+REF_FORWARD_DECL(connection_obj);
+REF_FORWARD_DECL(generic_obj);
+REF_FORWARD_DECL(HLS_manager);
+REF_FORWARD_DECL(hls);
+REF_FORWARD_DECL(structural_manager);
+REF_FORWARD_DECL(structural_object);
+REF_FORWARD_DECL(technology_manager);
+
+/// definition of the data transfer (ir_node, precision, from, to, data_transferred, current_op). Note that from/to
+/// can represent either chained vertices or FSM states
+using data_transfer =
+    std::tuple<unsigned int, unsigned int, FSMInfo::state_descriptor, FSMInfo::state_descriptor, gc_vertex_descriptor>;
 
 /**
  * @class conn_binding
@@ -93,7 +91,7 @@ class conn_binding
 #else
 
    /// Sorter for connection
-   struct ConnectionSorter : public std::binary_function<connection, connection, bool>
+   struct ConnectionSorter
    {
       /**
        * Compare position of two connections
@@ -108,7 +106,7 @@ class conn_binding
 #endif
 
    /// definition of the key to deal with constant parameters
-   using const_param = std::tuple<std::string, std::string>;
+   using const_param = std::tuple<std::string, std::string, bool>;
 
    /// definition of target of a connection
    struct ConnectionTarget : public std::tuple<generic_objRef, unsigned int, unsigned int>
@@ -153,7 +151,7 @@ class conn_binding
    const BehavioralHelperConstRef BH;
 
    /// map between a vertex and the corresponding activation signal
-   std::map<vertex, std::map<unsigned int, generic_objRef>> activation_ports;
+   std::map<gc_vertex_descriptor, std::map<unsigned int, generic_objRef>> activation_ports;
 
    /// map between input port variable and generic object
    std::map<unsigned int, generic_objRef> input_ports;
@@ -168,10 +166,13 @@ class conn_binding
    std::map<std::string, structural_objectRef> converters;
 
    /// map between command input port (operation vertex and command type) and generic object
-   std::map<std::pair<vertex, unsigned int>, generic_objRef> command_input_ports;
+   std::map<std::pair<gc_vertex_descriptor, unsigned int>, generic_objRef> command_input_ports;
 
    /// map between output port variable and generic object
-   std::map<vertex, generic_objRef> command_output_ports;
+   std::map<gc_vertex_descriptor, generic_objRef> command_output_ports;
+
+   /// map between a call operation and the datapath endpoint carrying its predicate value
+   std::map<gc_vertex_descriptor, generic_objRef> command_predicates;
 
    /// selector ports
 #if HAVE_UNORDERED
@@ -246,10 +247,7 @@ class conn_binding
     */
    conn_binding(const BehavioralHelperConstRef BH, const ParameterConstRef parameters);
 
-   /**
-    * Destructor.
-    */
-   virtual ~conn_binding();
+   virtual ~conn_binding() = default;
 
    /**
     * Bind variable to a port object
@@ -265,12 +263,23 @@ class conn_binding
     * @param mode is command mode (as defined into commandport_obj::command_type)
     * @param g is graph where vertex ver is stored
     */
-   generic_objRef bind_command_port(const vertex& ver, direction_type dir, unsigned int mode, const OpGraphConstRef g);
+   generic_objRef bind_command_port(gc_vertex_descriptor ver, direction_type dir, unsigned int mode, const OpGraph& g);
 
-   generic_objRef bind_selector_port(direction_type dir, unsigned int mode, const vertex& cond,
-                                     const OpGraphConstRef data);
+   generic_objRef bind_selector_port(direction_type dir, unsigned int mode, gc_vertex_descriptor cond,
+                                     const OpGraph& data);
 
    generic_objRef bind_selector_port(direction_type dir, unsigned int mode, const generic_objRef elem, unsigned int op);
+
+   void bind_command_predicate(gc_vertex_descriptor ver, const generic_objRef& predicate_port)
+   {
+      command_predicates[ver] = predicate_port;
+   }
+
+   generic_objRef get_command_predicate(gc_vertex_descriptor ver) const
+   {
+      const auto it = command_predicates.find(ver);
+      return it == command_predicates.end() ? generic_objRef() : it->second;
+   }
 
    /**
     * Returns reference to generic object associated to a given variable, for a specific port direction
@@ -334,7 +343,8 @@ class conn_binding
     */
    virtual void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM);
 
-   generic_objRef get_constant_obj(const std::string& value, const std::string& param, unsigned int precision);
+   generic_objRef get_constant_obj(const std::string& value, const std::string& param, unsigned int precision,
+                                   bool signedP);
 
    const std::map<const_param, generic_objRef>& get_constant_objs() const;
 

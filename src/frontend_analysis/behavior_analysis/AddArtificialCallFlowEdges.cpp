@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -37,37 +37,27 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-/// Header include
 #include "AddArtificialCallFlowEdges.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// behavior include
 #include "basic_block.hpp"
+#include "behavioral_helper.hpp"
+#include "dbgPrintHelper.hpp"
+#include "function_behavior.hpp"
+#include "hash_helper.hpp"
+#include "ir_basic_block.hpp"
 #include "op_graph.hpp"
-#include "operations_graph_constructor.hpp"
+#include "string_manipulation.hpp"
 
-/// boost include
 #include <boost/range/adaptor/reversed.hpp>
 
-/// tree include
-#include "behavioral_helper.hpp"
-#include "tree_basic_block.hpp"
-
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
-#include "hash_helper.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-
 AddArtificialCallFlowEdges::AddArtificialCallFlowEdges(const application_managerRef _AppM, unsigned int _function_id,
-                                                       const DesignFlowManagerConstRef _design_flow_manager,
+                                                       const DesignFlowManager& _design_flow_manager,
                                                        const ParameterConstRef _parameters)
     : FunctionFrontendFlowStep(_AppM, _function_id, ADD_ARTIFICIAL_CALL_FLOW_EDGES, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
-
-AddArtificialCallFlowEdges::~AddArtificialCallFlowEdges() = default;
 
 CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 AddArtificialCallFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -78,7 +68,7 @@ AddArtificialCallFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::R
       case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(OPERATIONS_CFG_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::make_pair(OP_REACHABILITY_COMPUTATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(OP_ORDER_COMPUTATION, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -97,24 +87,23 @@ AddArtificialCallFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::R
 DesignFlowStep_Status AddArtificialCallFlowEdges::InternalExec()
 {
    /// The control flow graph of basic blocks
-   const BBGraphConstRef bb_graph = function_behavior->CGetBBGraph(FunctionBehavior::BB);
+   const auto bb_graph = function_behavior->GetBBGraph(FunctionBehavior::BB);
 
    /// The control flow graph of operation
-   const OpGraphConstRef op_graph = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
+   const auto op_graph = function_behavior->GetOpGraph(FunctionBehavior::CFG);
 
    const auto BH = function_behavior->CGetBehavioralHelper();
    /// Adding operation to empty return
-   VertexIterator v, v_end;
-   for(boost::tie(v, v_end) = boost::vertices(*bb_graph); v != v_end; ++v)
+   for(const auto& v : bb_graph.vertices())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Analyzing BB" + STR(bb_graph->CGetBBNodeInfo(*v)->block->number));
-      const auto& statements_list = bb_graph->CGetBBNodeInfo(*v)->statements_list;
+                     "-->Analyzing BB" + STR(bb_graph.CGetNodeInfo(v).block->number));
+      const auto& statements_list = bb_graph.CGetNodeInfo(v).statements_list;
       for(const auto stmt : statements_list)
       {
-         const OpNodeInfoConstRef node_info = op_graph->CGetOpNodeInfo(stmt);
-         const unsigned int st_tn_id = node_info->GetNodeId();
-         if(not BH->CanBeMoved(st_tn_id))
+         const auto& node_info = op_graph.CGetNodeInfo(stmt);
+         const unsigned int st_tn_id = node_info.GetNodeId();
+         if(!BH->CanBeMoved(st_tn_id))
          {
             bool previous = true;
             for(const auto other_stmt : statements_list)
@@ -136,12 +125,13 @@ DesignFlowStep_Status AddArtificialCallFlowEdges::InternalExec()
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "<--Analyzed BB" + STR(bb_graph->CGetBBNodeInfo(*v)->block->number));
+                     "<--Analyzed BB" + STR(bb_graph.CGetNodeInfo(v).block->number));
    }
    if(parameters->getOption<bool>(OPT_print_dot))
    {
-      function_behavior->CGetOpGraph(FunctionBehavior::FLG)->WriteDot("OP_FL.dot");
-      function_behavior->CGetOpGraph(FunctionBehavior::FFLSAODG)->WriteDot("OP_FFLSAODG.dot");
+      const auto dot_path = function_behavior->GetDotPath();
+      function_behavior->GetOpGraph(FunctionBehavior::FLG).writeDot(dot_path / "OP_FL.dot");
+      function_behavior->GetOpGraph(FunctionBehavior::FFLSAODG).writeDot(dot_path / "OP_FFLSAODG.dot");
    }
    return DesignFlowStep_Status::SUCCESS;
 }

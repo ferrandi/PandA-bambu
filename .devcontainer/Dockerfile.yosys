@@ -1,6 +1,6 @@
-ARG VARIANT=focal-23.10
+ARG VARIANT=bullseye-24.08
 
-FROM bambuhls/dev-yosys:${VARIANT} as base
+FROM bambuhls/dev-yosys:${VARIANT} AS base
 
 ### From https://github.com/microsoft/vscode-dev-containers/blob/main/containers/ubuntu/.devcontainer/base.Dockerfile
 # Options for setup script
@@ -9,12 +9,12 @@ ARG UPGRADE_PACKAGES="false"
 ARG USERNAME=vscode
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
-ARG COMPILERS=gcc-4.9,clang-4
+ARG COMPILERS=clang-4
 # Install needed packages and setup non-root user. Use a separate RUN statement to add your own dependencies.
 COPY library-scripts/*.sh library-scripts/*.env /tmp/library-scripts/
 WORKDIR /
 RUN bash /tmp/library-scripts/common-debian.sh "${INSTALL_ZSH}" "${USERNAME}" "${USER_UID}" "${USER_GID}" "${UPGRADE_PACKAGES}" "true" "true" \
-    && bash /tmp/library-scripts/compiler-download.sh "/" "${COMPILERS}" \
-    && bash /tmp/library-scripts/compiler-setup.sh \
-    && apt-get install --no-install-recommends -y clang-format-11 python3-defusedxml python3-distutils \
+    && bash /tmp/library-scripts/compiler-download.sh "/opt/compilers" "${COMPILERS}" \
+    && echo "source /opt/compilers/settings.sh" >> /home/${USERNAME}/.bashrc \
+    && apt-get install --no-install-recommends -y clang-format-11 python3-psutil python3-distutils \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts

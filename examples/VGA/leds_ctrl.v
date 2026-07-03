@@ -1,7 +1,7 @@
-// This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2015-2024 Politecnico di Milano
+// This component is part of the PANDA/BAMBU IP LIBRARY
+// Copyright (C) 2015-2026 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
-// License: PANDA_LGPLv3
+// License: PANDA_MIT
 `timescale 1ns / 1ps
 module leds_ctrl(clock, reset, start_port, id, val, done_port, HEX0, HEX1, HEX2, HEX3, LEDR, LEDG);
   // IN

@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -35,9 +35,6 @@
  * @brief
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef RANGE_HPP
@@ -45,10 +42,6 @@
 
 #include "APInt.hpp"
 #include "bit_lattice.hpp"
-#include "refcount.hpp"
-
-REF_FORWARD_DECL(Range);
-CONSTREF_FORWARD_DECL(Range);
 
 enum RangeType
 {
@@ -78,11 +71,12 @@ class Range
  public:
    Range(RangeType type, bw_t bw);
    Range(RangeType rType, bw_t bw, const APInt& lb, const APInt& ub);
-   virtual ~Range() = default;
    Range(const Range& other) = default;
    Range(Range&&) = default;
+
    Range& operator=(const Range& other) = default;
    Range& operator=(Range&&) = default;
+
    bw_t getBitWidth() const;
    const APInt& getLower() const;
    const APInt& getUpper() const;
@@ -91,76 +85,76 @@ class Range
    APInt getUnsignedMax() const;
    APInt getUnsignedMin() const;
    APInt getSpan() const;
-   virtual std::deque<bit_lattice> getBitValues(bool isSigned) const;
-   virtual RangeRef getAnti() const;
+   std::deque<bit_lattice> getBitValues(bool isSigned) const;
+   Range getAnti() const;
 
-   virtual bool isUnknown() const;
-   virtual void setUnknown();
+   bool isUnknown() const;
+   void setUnknown();
    bool isRegular() const;
    bool isAnti() const;
-   virtual bool isEmpty() const;
+   bool isEmpty() const;
    bool operator==(const Range& other) const = delete;
    bool operator!=(const Range& other) const = delete;
-   bool isSameType(const RangeConstRef& other) const;
-   virtual bool isSameRange(const RangeConstRef& other) const;
-   virtual bool isFullSet() const;
-   virtual bool isSingleElement() const;
-   virtual bool isConstant() const;
-   virtual Range* clone() const;
-   virtual void print(std::ostream& OS) const;
+   bool isSameType(const Range& other) const;
+   bool isSameRange(const Range& other) const;
+   bool isFullSet() const;
+   bool isSingleElement() const;
+   bool isConstant() const;
+
+   void print(std::ostream& OS) const;
    std::string ToString() const;
 
    /* Arithmetic operations */
-   RangeRef add(const RangeConstRef& other) const;
-   RangeRef sat_add(const RangeConstRef& other) const;
-   RangeRef usat_add(const RangeConstRef& other) const;
-   RangeRef sub(const RangeConstRef& other) const;
-   RangeRef sat_sub(const RangeConstRef& other) const;
-   RangeRef usat_sub(const RangeConstRef& other) const;
-   RangeRef mul(const RangeConstRef& other) const;
-   RangeRef udiv(const RangeConstRef& other) const;
-   RangeRef sdiv(const RangeConstRef& other) const;
-   RangeRef urem(const RangeConstRef& other) const;
-   RangeRef srem(const RangeConstRef& other) const;
-   RangeRef shl(const RangeConstRef& other) const;
-   RangeRef shr(const RangeConstRef& other, bool sign) const;
-   virtual RangeRef abs() const;
-   virtual RangeRef negate() const;
+   Range add(const Range& other) const;
+   Range sat_add(const Range& other) const;
+   Range usat_add(const Range& other) const;
+   Range sub(const Range& other) const;
+   Range sat_sub(const Range& other) const;
+   Range usat_sub(const Range& other) const;
+   Range mul(const Range& other) const;
+   Range udiv(const Range& other) const;
+   Range sdiv(const Range& other) const;
+   Range urem(const Range& other) const;
+   Range srem(const Range& other) const;
+   Range shl(const Range& other) const;
+   Range shr(const Range& other, bool sign) const;
+   Range abs() const;
+   Range negate() const;
 
    /* Bitwise operations */
-   RangeRef Not() const;
-   RangeRef And(const RangeConstRef& other) const;
-   RangeRef Or(const RangeConstRef& other) const;
-   RangeRef Xor(const RangeConstRef& other) const;
+   Range Not() const;
+   Range And(const Range& other) const;
+   Range Or(const Range& other) const;
+   Range Xor(const Range& other) const;
 
    /* Comparators */
-   virtual RangeRef Eq(const RangeConstRef& other, bw_t bw) const;
-   virtual RangeRef Ne(const RangeConstRef& other, bw_t bw) const;
-   RangeRef Ugt(const RangeConstRef& other, bw_t bw) const;
-   RangeRef Uge(const RangeConstRef& other, bw_t bw) const;
-   RangeRef Ult(const RangeConstRef& other, bw_t bw) const;
-   RangeRef Ule(const RangeConstRef& other, bw_t bw) const;
-   RangeRef UMin(const RangeConstRef& other) const;
-   RangeRef UMax(const RangeConstRef& other) const;
-   RangeRef Sgt(const RangeConstRef& other, bw_t bw) const;
-   RangeRef Sge(const RangeConstRef& other, bw_t bw) const;
-   RangeRef Slt(const RangeConstRef& other, bw_t bw) const;
-   RangeRef Sle(const RangeConstRef& other, bw_t bw) const;
-   RangeRef SMin(const RangeConstRef& other) const;
-   RangeRef SMax(const RangeConstRef& other) const;
+   Range Eq(const Range& other, bw_t bw) const;
+   Range Ne(const Range& other, bw_t bw) const;
+   Range Ugt(const Range& other, bw_t bw) const;
+   Range Uge(const Range& other, bw_t bw) const;
+   Range Ult(const Range& other, bw_t bw) const;
+   Range Ule(const Range& other, bw_t bw) const;
+   Range UMin(const Range& other) const;
+   Range UMax(const Range& other) const;
+   Range Sgt(const Range& other, bw_t bw) const;
+   Range Sge(const Range& other, bw_t bw) const;
+   Range Slt(const Range& other, bw_t bw) const;
+   Range Sle(const Range& other, bw_t bw) const;
+   Range SMin(const Range& other) const;
+   Range SMax(const Range& other) const;
 
-   RangeRef sextOrTrunc(bw_t bitwidth) const;
-   RangeRef zextOrTrunc(bw_t bitwidth) const;
-   RangeRef truncate(bw_t bitwidth) const;
-   virtual RangeRef intersectWith(const RangeConstRef& other) const;
-   virtual RangeRef unionWith(const RangeConstRef& other) const;
+   Range sextOrTrunc(bw_t bitwidth) const;
+   Range zextOrTrunc(bw_t bitwidth) const;
+   Range truncate(bw_t bitwidth) const;
+   Range intersectWith(const Range& other) const;
+   Range unionWith(const Range& other) const;
 
    static const bw_t max_digits;
    static const APInt Min;
    static const APInt Max;
    static const APInt MinDelta;
    static bw_t neededBits(const APInt& a, const APInt& b, bool sign);
-   static RangeRef fromBitValues(const std::deque<bit_lattice>& bv, bw_t bitwidth, bool isSigned);
+   static Range fromBitValues(const std::deque<bit_lattice>& bv, bw_t bitwidth, bool isSigned);
 };
 
 std::ostream& operator<<(std::ostream& OS, const Range& R);

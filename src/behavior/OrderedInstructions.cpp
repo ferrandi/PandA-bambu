@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2023-2024 Politecnico di Milano
+ *              Copyright (C) 2023-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -35,20 +35,26 @@
  * @brief
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "OrderedInstructions.hpp"
 
-#include "Dominance.hpp"
 #include "basic_block.hpp"
 #include "exceptions.hpp"
-#include "tree_basic_block.hpp"
-#include "tree_node.hpp"
+#include "ir_basic_block.hpp"
+#include "ir_node.hpp"
 
-bool OrderedBasicBlock::instComesBefore(const tree_nodeConstRef& A, const tree_nodeConstRef& B)
+OrderedBasicBlock::OrderedBasicBlock(const blocRef& BasicB)
+    : LastInstFound(BasicB->CGetStmtList().end()), NextInstPos(0), BBInst(BasicB->CGetStmtList()), BB(BasicB)
+{
+   unsigned int phiPos = 0U;
+   for(const auto& gp : BasicB->CGetPhiList())
+   {
+      NumberedInsts.insert({gp->index, phiPos++});
+   }
+}
+
+bool OrderedBasicBlock::instComesBefore(const ir_nodeConstRef& A, const ir_nodeConstRef& B) const
 {
    unsigned int idx = 0;
    THROW_ASSERT(!(LastInstFound == BBInst.end() && NextInstPos != 0), "Instruction supposed to be in NumberedInsts");
@@ -78,29 +84,18 @@ bool OrderedBasicBlock::instComesBefore(const tree_nodeConstRef& A, const tree_n
    return idx != B->index;
 }
 
-OrderedBasicBlock::OrderedBasicBlock(const blocRef& BasicB)
-    : LastInstFound(BasicB->CGetStmtList().end()), NextInstPos(0), BBInst(BasicB->CGetStmtList()), BB(BasicB)
+bool OrderedBasicBlock::dominates(const ir_nodeConstRef& A, const ir_nodeConstRef& B) const
 {
-   unsigned int phiPos = 0U;
-   for(const auto& gp : BasicB->CGetPhiList())
-   {
-      NumberedInsts.insert({gp->index, phiPos++});
-   }
-}
-
-bool OrderedBasicBlock::dominates(const tree_nodeConstRef& A, const tree_nodeConstRef& B)
-{
-   THROW_ASSERT(GetPointerS<const gimple_node>(A)->bb_index == GetPointerS<const gimple_node>(B)->bb_index,
+   THROW_ASSERT(GetPointerS<const node_stmt>(A)->bb_index == GetPointerS<const node_stmt>(B)->bb_index,
                 "Instructions must be in the same basic block!");
-   THROW_ASSERT(GetPointerS<const gimple_node>(A)->bb_index == BB->number,
-                "Instructions must be in the tracked block!");
+   THROW_ASSERT(GetPointerS<const node_stmt>(A)->bb_index == BB->number, "Instructions must be in the tracked block!");
 
    // Phi statements always comes before non-phi statements
-   if(A->get_kind() == gimple_phi_K && B->get_kind() != gimple_phi_K)
+   if(A->get_kind() == phi_stmt_K && B->get_kind() != phi_stmt_K)
    {
       return true;
    }
-   else if(A->get_kind() != gimple_phi_K && B->get_kind() == gimple_phi_K)
+   else if(A->get_kind() != phi_stmt_K && B->get_kind() == phi_stmt_K)
    {
       return false;
    }
@@ -120,101 +115,115 @@ bool OrderedBasicBlock::dominates(const tree_nodeConstRef& A, const tree_nodeCon
    if(NAI != NumberedInsts.end())
    {
       return B->get_kind() !=
-             gimple_phi_K; // Not found phi nodes have been just added from this step in front of all other phis
+             phi_stmt_K; // Not found phi nodes have been just added from this step in front of all other phis
    }
    if(NBI != NumberedInsts.end())
    {
       return false;
    }
-   THROW_ASSERT(A->get_kind() != gimple_phi_K, "Non dato, not given, nicht gegeben, pas donné, no dado, non detur");
+   THROW_ASSERT(A->get_kind() != phi_stmt_K, "Non dato, not given, nicht gegeben, pas donné, no dado, non detur");
 
    return instComesBefore(A, B);
 }
 
-OrderedInstructions::OrderedInstructions(BBGraphConstRef _DT) : DT(_DT)
+struct DTVisitor : public boost::default_dfs_visitor
 {
+ public:
+   DTVisitor(CustomMap<unsigned int, DFSInfo>& infos) : _step(0), _infos(infos)
+   {
+   }
+
+   void discover_vertex(BBGraph::vertex_descriptor u, const BBGraph& g)
+   {
+      const auto& BB = g.CGetNodeInfo(u).block;
+      _infos[BB->number].DFSIn = _step++;
+   }
+
+   void finish_vertex(BBGraph::vertex_descriptor u, const BBGraph& g)
+   {
+      const auto& BB = g.CGetNodeInfo(u).block;
+      _infos[BB->number].DFSOut = _step++;
+   }
+
+ private:
+   unsigned int _step;
+   CustomMap<unsigned int, DFSInfo>& _infos;
+};
+
+static CustomMap<unsigned int, DFSInfo> compute_dominator_vector(const BBGraph& DT)
+{
+   CustomMap<unsigned int, DFSInfo> dominators;
+   DTVisitor dtv(dominators);
+   const auto entryVertex = DT.CGetGraphInfo().bb_index_map.at(bloc::ENTRY_BLOCK_ID);
+   std::vector<boost::default_color_type> color_vec(DT.num_vertices(), boost::white_color);
+   boost::depth_first_visit(
+       DT, entryVertex, dtv,
+       boost::make_iterator_property_map(color_vec.begin(), boost::get(boost::vertex_index, DT), boost::white_color));
+   return dominators;
+}
+
+static CustomMap<unsigned int, OrderedBasicBlock> compute_ordered_bbs(const BBGraph& DT)
+{
+   CustomMap<unsigned int, OrderedBasicBlock> OBBmap;
+   for(auto v : DT.vertices())
+   {
+      const auto& bb = DT.CGetNodeInfo(v).block;
+      OBBmap.emplace(bb->number, OrderedBasicBlock(bb));
+   }
+   return OBBmap;
+}
+
+OrderedInstructions::OrderedInstructions(const BBGraph& DT)
+    : OBBMap(compute_ordered_bbs(DT)), dominators(compute_dominator_vector(DT))
+{
+}
+
+DFSInfo OrderedInstructions::info(unsigned int BBI) const
+{
+   const auto it = dominators.find(BBI);
+   return it != dominators.end() ? it->second : DFSInfo();
 }
 
 bool OrderedInstructions::dominates(const unsigned int BBIA, const unsigned int BBIB) const
 {
-   const auto& BBmap = DT->CGetBBGraphInfo()->bb_index_map;
-
-   const auto BBAi_v = BBmap.find(BBIA);
-   const auto BBBi_v = BBmap.find(BBIB);
-
    if(BBIA == BBIB)
    {
       return true;
    }
 
-   if(BBAi_v->second == BBBi_v->second)
-   {
-      // Intermediate BB shadowing incoming BB
-      const auto& b_pred = DT->CGetBBNodeInfo(BBBi_v->second)->block->list_of_pred;
-      return std::find(b_pred.begin(), b_pred.end(), BBIA) != b_pred.end();
-   }
-   THROW_ASSERT(BBAi_v != BBmap.end(), "Unknown BB index (" + STR(BBIA) + ")");
-   THROW_ASSERT(BBBi_v != BBmap.end(), "Unknown BB index (" + STR(BBIB) + ")");
+   const auto a_it = dominators.find(BBIA);
+   const auto b_it = dominators.find(BBIB);
 
    // An unreachable block is dominated by anything.
-   if(!DT->IsReachable(BBmap.at(bloc::ENTRY_BLOCK_ID), BBBi_v->second))
+   if(b_it == dominators.end())
    {
       return true;
    }
 
    // And dominates nothing.
-   if(!DT->IsReachable(BBmap.at(bloc::ENTRY_BLOCK_ID), BBAi_v->second))
+   if(a_it == dominators.end())
    {
       return false;
    }
 
-   /// When block B is reachable from block A in the DT, A dominates B
-   /// This because the DT used is a tree composed by immediate dominators only
-   if(DT->IsReachable(BBAi_v->second, BBBi_v->second))
-   {
-      return true;
-   }
-
-   return false;
+   return a_it->second < b_it->second;
 }
 
-bool OrderedInstructions::dominates(const tree_nodeConstRef& InstA, const tree_nodeConstRef& InstB) const
+bool OrderedInstructions::dominates(const ir_nodeConstRef& InstA, const ir_nodeConstRef& InstB) const
 {
    THROW_ASSERT(InstA, "Instruction A cannot be null");
    THROW_ASSERT(InstB, "Instruction B cannot be null");
 
-   const auto BBIA = GetPointerS<const gimple_node>(InstA)->bb_index;
-   const auto BBIB = GetPointerS<const gimple_node>(InstB)->bb_index;
+   const auto BBIA = GetPointerS<const node_stmt>(InstA)->bb_index;
+   const auto BBIB = GetPointerS<const node_stmt>(InstB)->bb_index;
 
    // Use ordered basic block to do dominance check in case the 2 instructions
    // are in the same basic block.
    if(BBIA == BBIB)
    {
       auto OBB = OBBMap.find(BBIA);
-      if(OBB == OBBMap.end())
-      {
-         const auto BBmap = DT->CGetBBGraphInfo()->bb_index_map;
-         const auto BBvertex = BBmap.find(BBIA);
-         THROW_ASSERT(BBvertex != BBmap.end(), "Unknown BB index (" + STR(BBIA) + ")");
-
-         const auto BB = DT->CGetBBNodeInfo(BBvertex->second)->block;
-         THROW_ASSERT(BB->number == BBIA,
-                      "Intermediate BB not allowed here"); // Intermediate BB shadows its incoming BB, thus its index
-                                                           // is different from associated vertex
-         OBB = OBBMap.insert({BBIA, std::make_unique<OrderedBasicBlock>(BB)}).first;
-      }
-      return OBB->second->dominates(InstA, InstB);
+      THROW_ASSERT(OBB != OBBMap.end(), "BB" + std::to_string(BBIA) + " not found");
+      return OBB->second.dominates(InstA, InstB);
    }
-
    return dominates(BBIA, BBIB);
-}
-
-void OrderedInstructions::invalidateBlock(unsigned int BBI)
-{
-   OBBMap.erase(BBI);
-}
-
-const BBGraphConstRef& OrderedInstructions::getDT() const
-{
-   return DT;
 }

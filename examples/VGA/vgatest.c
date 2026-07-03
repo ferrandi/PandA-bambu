@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #define sgn(x) ((x<0)?-1:((x>0)?1:0))
 extern void plot(int color, int x, int y);
 extern void leds_ctrl(unsigned int id, unsigned int val); 

@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -36,9 +36,6 @@
  *
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "frontend_flow_step.hpp"
@@ -55,15 +52,14 @@
 #include "function_frontend_flow_step.hpp"
 #include "graph.hpp"
 #include "hash_helper.hpp"
+#include "ir_manager.hpp"
 #include "string_manipulation.hpp"
-#include "tree_manager.hpp"
 
 #include <iosfwd>
 
 FrontendFlowStep::FrontendFlowStep(DesignFlowStep::signature_t _signature, const application_managerRef _AppM,
                                    const FrontendFlowStepType _frontend_flow_step_type,
-                                   const DesignFlowManagerConstRef _design_flow_manager,
-                                   const ParameterConstRef _parameters)
+                                   const DesignFlowManager& _design_flow_manager, const ParameterConstRef _parameters)
     : DesignFlowStep(_signature, _design_flow_manager, _parameters),
       AppM(_AppM),
       frontend_flow_step_type(_frontend_flow_step_type),
@@ -72,33 +68,31 @@ FrontendFlowStep::FrontendFlowStep(DesignFlowStep::signature_t _signature, const
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-FrontendFlowStep::~FrontendFlowStep() = default;
-
 void FrontendFlowStep::CreateSteps(
-    const DesignFlowManagerConstRef design_flow_manager,
+    const DesignFlowManager& design_flow_manager,
     const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>& frontend_relationships,
     const application_managerConstRef application_manager, DesignFlowStepSet& relationships)
 {
-   const auto design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
+   const auto design_flow_graph = design_flow_manager.CGetDesignFlowGraph();
    const auto frontend_flow_step_factory = GetPointerS<const FrontendFlowStepFactory>(
-       design_flow_manager->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
+       design_flow_manager.CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
    for(const auto& [step_type, rel_type] : frontend_relationships)
    {
       switch(rel_type)
       {
          case(ALL_FUNCTIONS):
          {
-            const auto call_graph_computation_step = design_flow_manager->GetDesignFlowStep(
-                ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
+            const auto call_graph_computation_step =
+                design_flow_manager.GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
             const auto cg_design_flow_step =
                 call_graph_computation_step != DesignFlowGraph::null_vertex() ?
                     design_flow_graph->CGetNodeInfo(call_graph_computation_step)->design_flow_step :
                     frontend_flow_step_factory->CreateApplicationFrontendFlowStep(FUNCTION_ANALYSIS);
             relationships.insert(cg_design_flow_step);
-            const auto functions_with_body = application_manager->CGetCallGraphManager()->GetReachedBodyFunctions();
+            const auto functions_with_body = application_manager->CGetCallGraphManager().GetReachedBodyFunctions();
             for(const auto function_with_body_id : functions_with_body)
             {
-               const auto sdf_step = design_flow_manager->GetDesignFlowStep(
+               const auto sdf_step = design_flow_manager.GetDesignFlowStep(
                    FunctionFrontendFlowStep::ComputeSignature(step_type, function_with_body_id));
                const auto design_flow_step =
                    sdf_step != DesignFlowGraph::null_vertex() ?
@@ -111,7 +105,7 @@ void FrontendFlowStep::CreateSteps(
          case(WHOLE_APPLICATION):
          {
             const auto sdf_signature = ApplicationFrontendFlowStep::ComputeSignature(step_type);
-            const auto sdf_step = design_flow_manager->GetDesignFlowStep(sdf_signature);
+            const auto sdf_step = design_flow_manager.GetDesignFlowStep(sdf_signature);
             DesignFlowStepRef design_flow_step;
             if(sdf_step != DesignFlowGraph::null_vertex())
             {
@@ -143,7 +137,7 @@ void FrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relationships,
                                             const DesignFlowStep::RelationshipType relationship_type)
 {
    const auto frontend_relationships = ComputeFrontendRelationships(relationship_type);
-   CreateSteps(design_flow_manager.lock(), frontend_relationships, AppM, relationships);
+   CreateSteps(design_flow_manager, frontend_relationships, AppM, relationships);
 }
 
 std::string FrontendFlowStep::GetKindText() const
@@ -155,16 +149,10 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 {
    switch(frontend_flow_step_type)
    {
-      case(ADD_BB_ECFG_EDGES):
-         return "AddBbEcfgdges";
       case ADD_ARTIFICIAL_CALL_FLOW_EDGES:
          return "AddArtificialCallFlowEdges";
       case(ADD_OP_EXIT_FLOW_EDGES):
          return "AddOpExitFlowEdges";
-      case(ADD_OP_LOOP_FLOW_EDGES):
-         return "AddOpLoopFlowEdges";
-      case(ADD_OP_PHI_FLOW_EDGES):
-         return "AddOpPhiFlowEdges";
       case(BAMBU_FRONTEND_FLOW):
          return "BambuFrontendFlow";
       case(BASIC_BLOCKS_CFG_COMPUTATION):
@@ -179,8 +167,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case(BASIC_BLOCKS_PROFILING):
          return "BasicBlocksProfiling";
 #endif
-      case(BB_REACHABILITY_COMPUTATION):
-         return "BBReachabilityComputation";
       case(BIT_VALUE):
          return "BitValue";
       case(BIT_VALUE_OPT):
@@ -193,8 +179,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "BlockFix";
       case BUILD_VIRTUAL_PHI:
          return "BuildVirtualPhi";
-      case(CALL_EXPR_FIX):
-         return "CallExprFix";
+      case(CALL_NODE_FIX):
+         return "CallNodeFix";
       case CALL_GRAPH_BUILTIN_CALL:
          return "CallGraphBuiltinCall";
       case(CHECK_SYSTEM_TYPE):
@@ -203,23 +189,17 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "CompleteBBGraph";
       case(COMPLETE_CALL_GRAPH):
          return "CompleteCallGraph";
-      case COMPUTE_IMPLICIT_CALLS:
-         return "ComputeImplicitCalls";
       case COMMUTATIVE_EXPR_RESTRUCTURING:
          return "CommutativeExprRestructuring";
-      case COND_EXPR_RESTRUCTURING:
-         return "CondExprRestructuring";
+      case SELECT_TREE_BALANCING:
+         return "SelectTreeBalancing";
       case CSE_STEP:
          return "CSE";
-#if HAVE_TASTE
-      case CREATE_ADDRESS_TRANSLATION:
-         return "CreateAddressTranslation";
-#endif
-      case(CREATE_TREE_MANAGER):
-         return "CreateTreeManager";
+      case(CREATE_IR_MANAGER):
+         return "CreateIRManager";
       case DATAFLOW_CG_EXT:
          return "DataflowCGExt";
-      case(DEAD_CODE_ELIMINATION):
+      case(DCE_PASS):
          return "DeadCodeElimination";
       case(DEAD_CODE_ELIMINATION_IPA):
          return "DeadCodeEliminationIPA";
@@ -229,18 +209,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "DomPostDomComputation";
       case(FANOUT_OPT):
          return "FanoutOpt";
-      case(MULTIPLE_ENTRY_IF_REDUCTION): // modified here
-         return "MultipleEntryIfReduction";
-      case ESSA:
-         return "eSSA";
-      case(EXTRACT_GIMPLE_COND_OP):
-         return "ExtractGimpleCondOp";
-#if HAVE_FROM_PRAGMA_BUILT
-      case(EXTRACT_OMP_ATOMIC):
-         return "ExtractOmpAtomic";
-      case(EXTRACT_OMP_FOR):
-         return "ExtractOmpFor";
-#endif
+      case(EXTRACT_COND_OP):
+         return "ExtractCondOp";
       case(EXTRACT_PATTERNS):
          return "ExtractPatterns";
       case FIND_MAX_TRANSFORMATIONS:
@@ -255,10 +225,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "FunctionCallTypeCleanup";
       case FUNCTION_CALL_OPT:
          return "FunctionCallOpt";
-      case(HDL_FUNCTION_DECL_FIX):
-         return "HDLFunctionDeclFix";
-      case(HDL_VAR_DECL_FIX):
-         return "HDLVarDeclFix";
       case(HWCALL_INJECTION):
          return "HWCallInjection";
 #if HAVE_HOST_PROFILING_BUILT
@@ -271,26 +237,24 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "IrLowering";
       case(LOOP_COMPUTATION):
          return "LoopComputation";
-      case(LOOPS_ANALYSIS_BAMBU):
-         return "LoopsAnalysisBambu";
       case(LOOPS_COMPUTATION):
          return "LoopsComputation";
-      case(LUT_TRANSFORMATION):
-         return "LutTransformation";
       case MULTI_WAY_IF:
          return "MultiWayIf";
-      case(MULT_EXPR_FRACTURING):
+      case(MUL_DECOMPOSITION):
          return "MultExprFracturing";
       case NI_SSA_LIVENESS:
          return "NiSsaLiveness";
+      case OMP_CG_EXT:
+         return "OMPCGExt";
+      case OMP_LOWERING:
+         return "OMPLowering";
       case(OP_CONTROL_DEPENDENCE_COMPUTATION):
          return "OpControlDependenceComputation";
       case(OP_FEEDBACK_EDGES_IDENTIFICATION):
          return "OpFeedbackEdgesIdentification";
       case(OP_ORDER_COMPUTATION):
          return "OpOrderComputation";
-      case(OP_REACHABILITY_COMPUTATION):
-         return "OpReachabilityComputation";
       case(OPERATIONS_CFG_COMPUTATION):
          return "OperationsCfgComputation";
       case PARM2SSA:
@@ -299,35 +263,14 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "ParmDeclTakenAddressFix";
       case PHI_OPT:
          return "PhiOpt";
-#if HAVE_FROM_PRAGMA_BUILT
-      case(PRAGMA_ANALYSIS):
-         return "PragmaAnalysis";
-      case(PRAGMA_SUBSTITUTION):
-         return "PragmaSubstitution";
-#endif
       case PREDICATE_STATEMENTS:
          return "PredicateStatements";
       case RANGE_ANALYSIS:
          return "RangeAnalysis";
-      case(REBUILD_INITIALIZATION):
-         return "RebuildInitialization";
       case(REBUILD_INITIALIZATION2):
          return "RebuildInitialization2";
-      case REMOVE_CLOBBER_GA:
-         return "RemoveClobberGA";
-      case REMOVE_ENDING_IF:
-         return "RemoveEndingIf";
-#if HAVE_ILP_BUILT
       case SDC_CODE_MOTION:
          return "SdcCodeMotion";
-#endif
-      case SERIALIZE_MUTUAL_EXCLUSIONS:
-         return "SerializeMutualExclusions";
-
-      case SPLIT_RETURN:
-         return "SplitReturn";
-      case SHORT_CIRCUIT_TAF:
-         return "ShortCircuitTAF";
       case SIMPLE_CODE_MOTION:
          return "SimpleCodeMotion";
       case(SOFT_FLOAT_CG_EXT):
@@ -338,34 +281,22 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "ScalarSsaDataFlowAnalysis";
       case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP):
          return "SymbolicApplicationFrontendFlowStep";
-      case STRING_CST_FIX:
-         return "StringCstFix";
-      case(SWITCH_FIX):
-         return "SwitchFix";
-      case(TREE2FUN):
-         return "Tree2Fun";
-      case UN_COMPARISON_LOWERING:
-         return "UnComparisonLowering";
+      case(IR2FUN):
+         return "IR2Fun";
       case(UNROLLING_DEGREE):
          return "UnrollingDegree";
-#if HAVE_ILP_BUILT
       case UPDATE_SCHEDULE:
          return "UpdateSchedule";
-#endif
       case(USE_COUNTING):
          return "UseCounting";
       case(VAR_ANALYSIS):
          return "VarAnalysis";
       case(VAR_DECL_FIX):
          return "VarDeclFix";
-      case(VECTORIZE):
-         return "Vectorize";
       case(VERIFICATION_OPERATION):
          return "VerificationOperation";
       case(VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS):
          return "VirtualAggregateDataFlowAnalysis";
-      case VIRTUAL_PHI_NODES_SPLIT:
-         return "VirtualPhiNodesSplit";
       default:
          THROW_UNREACHABLE("Frontend flow step type does not exist");
    }
@@ -374,38 +305,38 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 
 DesignFlowStepFactoryConstRef FrontendFlowStep::CGetDesignFlowStepFactory() const
 {
-   return design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND);
+   return design_flow_manager.CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND);
 }
 
-void FrontendFlowStep::PrintTreeManager(const bool before) const
+void FrontendFlowStep::PrintIRManager(const bool before) const
 {
-   const tree_managerConstRef tree_manager = AppM->get_tree_manager();
+   const ir_managerConstRef ir_manager = AppM->get_ir_manager();
    const std::string prefix = before ? "before" : "after";
    const std::string file_name =
        parameters->getOption<std::string>(OPT_output_temporary_directory) + "/" + prefix + "_" + GetName();
    const std::string suffix = print_counter == 0 ? "" : "_" + STR(print_counter);
    const std::string raw_file_name = file_name + suffix + ".raw";
    std::ofstream raw_file(raw_file_name.c_str());
-   tree_manager->print(raw_file);
+   ir_manager->print(raw_file);
    raw_file.close();
-   const std::string gimple_file_name = file_name + ".gimple";
-   std::ofstream gimple_file(gimple_file_name.c_str());
-   tree_manager->PrintGimple(gimple_file, false);
-   gimple_file.close();
+   const std::string llvm_file_name = file_name + ".bllvm";
+   std::ofstream llvm_file(llvm_file_name.c_str());
+   ir_manager->PrintBambuLLVM(llvm_file);
+   llvm_file.close();
 }
 
 void FrontendFlowStep::PrintInitialIR() const
 {
-   if(!parameters->IsParameter("print-tree-manager") || parameters->GetParameter<unsigned int>("print-tree-manager"))
+   if(!parameters->IsParameter("print-ir-manager") || parameters->GetParameter<unsigned int>("print-ir-manager"))
    {
-      PrintTreeManager(true);
+      PrintIRManager(true);
    }
 }
 
 void FrontendFlowStep::PrintFinalIR() const
 {
-   if(!parameters->IsParameter("print-tree-manager") || parameters->GetParameter<unsigned int>("print-tree-manager"))
+   if(!parameters->IsParameter("print-ir-manager") || parameters->GetParameter<unsigned int>("print-ir-manager"))
    {
-      PrintTreeManager(false);
+      PrintIRManager(false);
    }
 }

@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -37,82 +37,657 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
-
 #include "fu_binding.hpp"
 
-#include "ModuleGeneratorManager.hpp"
-#include "exceptions.hpp"
-#include "fu_binding_cs.hpp"
-#include "funit_obj.hpp"
-
+#include "HDLGeneratorManager.hpp"
+#include "Parameter.hpp"
+#include "allocation_information.hpp"
+#include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
+#include "conn_binding.hpp"
+#include "constant_strings.hpp"
+#include "custom_set.hpp"
+#include "exceptions.hpp"
+#include "fileIO.hpp"
+#include "function_behavior.hpp"
+#include "functions.hpp"
+#include "funit_obj.hpp"
 #include "hls.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
+#include "ir_node.hpp"
+#include "language_writer.hpp"
+#include "library_manager.hpp"
+#include "math_function.hpp"
 #include "memory.hpp"
 #include "memory_allocation.hpp"
-#include "memory_cs.hpp"
 #include "memory_symbol.hpp"
-#include "omp_functions.hpp"
+#include "omp_fork_fu_binding.hpp"
 #include "reg_binding.hpp"
-
-#include "functions.hpp"
-
+#include "string_manipulation.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
-
-#include "constant_strings.hpp"
-
-#include "utility.hpp"
-
-#include "behavioral_helper.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
-
-#include "conn_binding.hpp"
-
-#include "library_manager.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
+#include "utility.hpp"
 
 #include <boost/algorithm/string/replace.hpp>
 
-#include "Parameter.hpp"
-
-/// design_flows/backend/ToHDL include
-#include "language_writer.hpp"
-
-/// HLS/module_allocation
-#include "allocation_information.hpp"
-
-/// STD include
-#include "custom_set.hpp"
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 #include <limits>
 #include <regex>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
-/// utility include
-#include "fileIO.hpp"
-#include "math_function.hpp"
-#include "string_manipulation.hpp"
-
 const unsigned int fu_binding::UNKNOWN = std::numeric_limits<unsigned int>::max();
+
+namespace
+{
+   struct dataflow_memory_port_info
+   {
+      unsigned int var;
+      std::string kind;
+      std::string index;
+   };
+
+   enum class dataflow_memory_role
+   {
+      none,
+      reader,
+      writer
+   };
+
+   unsigned int get_dataflow_module_function_id(const HLS_managerRef& HLSMgr, const structural_objectRef& module)
+   {
+      static const auto top_function_wrapper_prefix = std::string("PBI_");
+      const auto mod_id = GET_TYPE_NAME(module);
+      const auto msymbol = (mod_id.size() && starts_with(mod_id, top_function_wrapper_prefix)) ?
+                               mod_id.substr(top_function_wrapper_prefix.size()) :
+                               mod_id;
+      if(const auto function_decl = HLSMgr->get_ir_manager()->GetFunction(msymbol))
+      {
+         return function_decl->index;
+      }
+      return 0U;
+   }
+
+   bool parse_dataflow_memory_port(const structural_objectRef& port, dataflow_memory_port_info& info)
+   {
+      const std::regex dataflow_memory_port_re("^(?:p)?_DF_bambu_[0-9]+_([0-9]+)FO[0-9]+_(q|d|address|ce|we)([0-9]*)$");
+      std::smatch match;
+      const auto port_name = GetPointerS<const port_o>(port)->get_id();
+      if(!std::regex_match(port_name, match, dataflow_memory_port_re))
+      {
+         return false;
+      }
+      info.var = static_cast<unsigned int>(std::stoul(match[1].str()));
+      info.kind = match[2].str();
+      info.index = match[3].str();
+      return true;
+   }
+
+   dataflow_memory_role infer_dataflow_memory_role(const HLS_managerRef& HLSMgr, const unsigned int top_id,
+                                                   const structural_objectRef& module, const unsigned int var)
+   {
+      if(const auto ding_dong_candidate = HLSMgr->get_ding_dong_buffer_candidate(top_id, var))
+      {
+         const auto function_id = get_dataflow_module_function_id(HLSMgr, module);
+         if(function_id)
+         {
+            const auto is_writer = ding_dong_candidate->producer_function_ids.count(function_id);
+            const auto is_reader = ding_dong_candidate->consumer_function_ids.count(function_id);
+            THROW_ASSERT(!(is_writer && is_reader), "Dataflow module is both writer and reader for ding-dong buffer " +
+                                                        STR(var) + ": " + module->get_path());
+            if(is_writer)
+            {
+               return dataflow_memory_role::writer;
+            }
+            if(is_reader)
+            {
+               return dataflow_memory_role::reader;
+            }
+         }
+         return dataflow_memory_role::none;
+      }
+      const auto has_matching_kind = [&](const auto port_getter, const unsigned int port_count,
+                                         const std::initializer_list<const char*> kinds) {
+         for(unsigned int port_index = 0; port_index < port_count; ++port_index)
+         {
+            dataflow_memory_port_info port_info;
+            if(!parse_dataflow_memory_port(port_getter(port_index), port_info) || port_info.var != var)
+            {
+               continue;
+            }
+            if(std::find_if(kinds.begin(), kinds.end(), [&](const auto* kind) { return port_info.kind == kind; }) !=
+               kinds.end())
+            {
+               return true;
+            }
+         }
+         return false;
+      };
+      const auto module_obj = GetPointerS<const module_o>(module);
+      const auto has_reader_port =
+          has_matching_kind([&](const auto port_index) { return module_obj->get_in_port(port_index); },
+                            module_obj->get_in_port_size(), {"q"});
+      const auto has_writer_port =
+          has_matching_kind([&](const auto port_index) { return module_obj->get_out_port(port_index); },
+                            module_obj->get_out_port_size(), {"d", "we"});
+      THROW_ASSERT(!(has_reader_port && has_writer_port),
+                   "Ding-dong buffers currently support only one reader or one writer per dataflow module: " +
+                       module->get_path());
+      if(has_reader_port)
+      {
+         return dataflow_memory_role::reader;
+      }
+      if(has_writer_port)
+      {
+         return dataflow_memory_role::writer;
+      }
+      return dataflow_memory_role::none;
+   }
+
+   unsigned int get_dataflow_memory_local_port_index(const std::string& original_index)
+   {
+      return original_index.empty() ? 0U : static_cast<unsigned int>(std::stoul(original_index));
+   }
+
+   bool is_dataflow_memory_role_kind(const dataflow_memory_role role, const std::string& kind)
+   {
+      switch(role)
+      {
+         case dataflow_memory_role::reader:
+            return kind == "q" || kind == "address" || kind == "ce";
+         case dataflow_memory_role::writer:
+            return kind == "d" || kind == "address" || kind == "we";
+         case dataflow_memory_role::none:
+            return false;
+         default:
+            return false;
+      }
+   }
+
+   bool has_dataflow_memory_role_port(const structural_objectRef& module, const unsigned int var,
+                                      const dataflow_memory_role role)
+   {
+      const auto module_obj = GetPointer<module_o>(module);
+      if(!module_obj || role == dataflow_memory_role::none)
+      {
+         return false;
+      }
+      const auto inspect_port = [&](const structural_objectRef& port) {
+         dataflow_memory_port_info info;
+         return parse_dataflow_memory_port(port, info) && info.var == var &&
+                is_dataflow_memory_role_kind(role, info.kind);
+      };
+      for(unsigned int port_index = 0; port_index < module_obj->get_in_port_size(); ++port_index)
+      {
+         if(inspect_port(module_obj->get_in_port(port_index)))
+         {
+            return true;
+         }
+      }
+      for(unsigned int port_index = 0; port_index < module_obj->get_out_port_size(); ++port_index)
+      {
+         if(inspect_port(module_obj->get_out_port(port_index)))
+         {
+            return true;
+         }
+      }
+      return false;
+   }
+
+   unsigned int get_dataflow_module_channel_count(const HLS_managerRef& HLSMgr, const structural_objectRef& module)
+   {
+      const auto function_id = get_dataflow_module_function_id(HLSMgr, module);
+      if(function_id)
+      {
+         if(const auto FB = HLSMgr->CGetFunctionBehavior(function_id))
+         {
+            return std::max(1U, FB->GetChannelsNumber());
+         }
+      }
+      if(HLSMgr->get_parameter()->isOption(OPT_channels_number))
+      {
+         return std::max(1U, HLSMgr->get_parameter()->getOption<unsigned int>(OPT_channels_number));
+      }
+      return 1U;
+   }
+
+   unsigned int get_dataflow_memory_module_port_count(const HLS_managerRef& HLSMgr, const structural_objectRef& module,
+                                                      const unsigned int var, const dataflow_memory_role role)
+   {
+      if(!has_dataflow_memory_role_port(module, var, role))
+      {
+         return 0U;
+      }
+      return get_dataflow_module_channel_count(HLSMgr, module);
+   }
+
+   unsigned int get_dataflow_memory_role_port_count(const HLS_managerRef& HLSMgr, const unsigned int top_id,
+                                                    const structural_objectRef& circuit,
+                                                    const dataflow_memory_role role, const unsigned int var)
+   {
+      unsigned int port_count = 0U;
+      const auto circuit_obj = GetPointerS<const module_o>(circuit);
+      for(unsigned int module_index = 0; module_index < circuit_obj->get_internal_objects_size(); ++module_index)
+      {
+         const auto module = circuit_obj->get_internal_object(module_index);
+         if(infer_dataflow_memory_role(HLSMgr, top_id, module, var) != role)
+         {
+            continue;
+         }
+         port_count += get_dataflow_memory_module_port_count(HLSMgr, module, var, role);
+      }
+      return std::max(1U, port_count);
+   }
+
+   structural_objectRef get_indexed_storage_port(const structural_objectRef& storage, const std::string& port_name,
+                                                 so_kind requested_kind, const std::string& index)
+   {
+      const auto find_direct_storage_port = [&](const so_kind expected_kind) -> structural_objectRef {
+         const auto storage_module = GetPointer<module_o>(storage);
+         if(!storage_module)
+         {
+            return structural_objectRef();
+         }
+         const auto find_port = [&](const auto port_getter, const unsigned int port_count) -> structural_objectRef {
+            for(unsigned int port_index = 0; port_index < port_count; ++port_index)
+            {
+               const auto port = port_getter(port_index);
+               if(port->get_id() == port_name && port->get_kind() == expected_kind)
+               {
+                  return port;
+               }
+            }
+            return structural_objectRef();
+         };
+         if(const auto port = find_port([&](const auto port_index) { return storage_module->get_in_port(port_index); },
+                                        storage_module->get_in_port_size()))
+         {
+            return port;
+         }
+         if(const auto port = find_port([&](const auto port_index) { return storage_module->get_out_port(port_index); },
+                                        storage_module->get_out_port_size()))
+         {
+            return port;
+         }
+         return find_port([&](const auto port_index) { return storage_module->get_in_out_port(port_index); },
+                          storage_module->get_in_out_port_size());
+      };
+
+      if(!index.empty())
+      {
+         if(const auto vector_port = find_direct_storage_port(port_vector_o_K))
+         {
+            const auto port_index = static_cast<unsigned int>(std::stoul(index));
+            if(port_index >= GetPointerS<const port_o>(vector_port)->get_ports_size())
+            {
+               return structural_objectRef();
+            }
+            return GetPointerS<port_o>(vector_port)->get_port(port_index);
+         }
+         if(requested_kind == port_o_K && index == "0")
+         {
+            return find_direct_storage_port(port_o_K);
+         }
+         return structural_objectRef();
+      }
+      return find_direct_storage_port(requested_kind);
+   }
+
+   structural_objectRef get_storage_port(const structural_objectRef& storage,
+                                         const std::vector<std::string>& port_names, so_kind requested_kind,
+                                         const std::string& index)
+   {
+      for(const auto& port_name : port_names)
+      {
+         if(const auto port = get_indexed_storage_port(storage, port_name, requested_kind, index))
+         {
+            return port;
+         }
+      }
+      return structural_objectRef();
+   }
+
+   void connect_constant_to_port(const structural_managerRef& SM, const structural_objectRef& circuit,
+                                 const structural_objectRef& port, const std::string& constant_name,
+                                 const std::string& constant_value)
+   {
+      if(!port)
+      {
+         return;
+      }
+      if(port->get_kind() == port_vector_o_K)
+      {
+         const auto port_size = GetPointerS<const port_o>(port)->get_ports_size();
+         for(unsigned int port_index = 0; port_index < port_size; ++port_index)
+         {
+            const auto indexed_port = GetPointerS<port_o>(port)->get_port(port_index);
+            const auto indexed_constant = SM->add_constant(constant_name + "_" + STR(port_index), circuit,
+                                                           indexed_port->get_typeRef(), constant_value);
+            SM->add_connection(indexed_port, indexed_constant);
+         }
+         return;
+      }
+      const auto constant = SM->add_constant(constant_name, circuit, port->get_typeRef(), constant_value);
+      SM->add_connection(port, constant);
+   }
+
+   std::string get_dataflow_storage_port_index(const HLS_managerRef& HLSMgr, const unsigned int top_id,
+                                               const structural_objectRef& circuit, const structural_objectRef& module,
+                                               const unsigned int var, const std::string& original_index)
+   {
+      const auto ding_dong_candidate = HLSMgr->get_ding_dong_buffer_candidate(top_id, var);
+      if(!ding_dong_candidate)
+      {
+         return original_index;
+      }
+      const auto module_role = infer_dataflow_memory_role(HLSMgr, top_id, module, var);
+      if(module_role == dataflow_memory_role::none)
+      {
+         return original_index;
+      }
+      const auto local_port_index = get_dataflow_memory_local_port_index(original_index);
+      const auto local_port_count = get_dataflow_memory_module_port_count(HLSMgr, module, var, module_role);
+      if(local_port_index >= local_port_count)
+      {
+         THROW_ERROR("Local dataflow memory port index " + STR(local_port_index) + " exceeds " + STR(local_port_count) +
+                     " ports for " + module->get_path());
+      }
+      unsigned int global_port_index = local_port_index;
+      const auto circuit_obj = GetPointerS<const module_o>(circuit);
+      for(unsigned int module_index = 0; module_index < circuit_obj->get_internal_objects_size(); ++module_index)
+      {
+         const auto current_module = circuit_obj->get_internal_object(module_index);
+         if(current_module == module)
+         {
+            break;
+         }
+         if(infer_dataflow_memory_role(HLSMgr, top_id, current_module, var) != module_role)
+         {
+            continue;
+         }
+         global_port_index += get_dataflow_memory_module_port_count(HLSMgr, current_module, var, module_role);
+      }
+      return STR(global_port_index);
+   }
+
+   bool is_active_dataflow_storage_port(const HLS_managerRef& HLSMgr, const unsigned int top_id,
+                                        const structural_objectRef& module, const unsigned int var,
+                                        const std::string& original_index)
+   {
+      if(!HLSMgr->get_ding_dong_buffer_candidate(top_id, var))
+      {
+         return true;
+      }
+      const auto role = infer_dataflow_memory_role(HLSMgr, top_id, module, var);
+      if(role == dataflow_memory_role::none)
+      {
+         return true;
+      }
+      return get_dataflow_memory_local_port_index(original_index) <
+             get_dataflow_memory_module_port_count(HLSMgr, module, var, role);
+   }
+
+   unsigned long long get_dataflow_memory_port_bitsize(const structural_objectRef& circuit, const unsigned int var,
+                                                       const std::string& kind)
+   {
+      unsigned long long max_bitsize = 0;
+      unsigned long long max_interface_bitsize = 0;
+      const auto inspect_port = [&](const structural_objectRef& port) {
+         dataflow_memory_port_info port_info;
+         if(parse_dataflow_memory_port(port, port_info) && port_info.var == var && port_info.kind == kind)
+         {
+            const auto bitsize = STD_GET_SIZE(port->get_typeRef());
+            max_bitsize = std::max(max_bitsize, bitsize);
+            if(starts_with(GetPointerS<const port_o>(port)->get_id(), "p_"))
+            {
+               max_interface_bitsize = std::max(max_interface_bitsize, bitsize);
+            }
+         }
+      };
+      const auto circuit_obj = GetPointerS<const module_o>(circuit);
+      for(unsigned int module_index = 0; module_index < circuit_obj->get_internal_objects_size(); ++module_index)
+      {
+         const auto module = circuit_obj->get_internal_object(module_index);
+         const auto module_obj = GetPointer<module_o>(module);
+         if(!module_obj)
+         {
+            continue;
+         }
+         for(unsigned int port_index = 0; port_index < module_obj->get_in_port_size(); ++port_index)
+         {
+            inspect_port(module_obj->get_in_port(port_index));
+         }
+         for(unsigned int port_index = 0; port_index < module_obj->get_out_port_size(); ++port_index)
+         {
+            inspect_port(module_obj->get_out_port(port_index));
+         }
+      }
+      return max_interface_bitsize != 0 ? max_interface_bitsize : max_bitsize;
+   }
+
+   structural_objectRef find_direct_module_port(const structural_objectRef& module, const std::string& port_name)
+   {
+      const auto module_obj = GetPointerS<const module_o>(module);
+      for(unsigned int port_index = 0; port_index < module_obj->get_in_port_size(); ++port_index)
+      {
+         const auto port = module_obj->get_in_port(port_index);
+         if(port->get_id() == port_name)
+         {
+            return port;
+         }
+      }
+      for(unsigned int port_index = 0; port_index < module_obj->get_out_port_size(); ++port_index)
+      {
+         const auto port = module_obj->get_out_port(port_index);
+         if(port->get_id() == port_name)
+         {
+            return port;
+         }
+      }
+      for(unsigned int port_index = 0; port_index < module_obj->get_in_out_port_size(); ++port_index)
+      {
+         const auto port = module_obj->get_in_out_port(port_index);
+         if(port->get_id() == port_name)
+         {
+            return port;
+         }
+      }
+      return structural_objectRef();
+   }
+
+   void resize_named_port(const structural_objectRef& module, const std::string& port_name,
+                          const unsigned long long bitsize, const int debug_level)
+   {
+      if(bitsize == 0)
+      {
+         return;
+      }
+      if(const auto port = find_direct_module_port(module, port_name))
+      {
+         port_o::resize_std_port(bitsize, 0U, debug_level, port);
+      }
+   }
+
+   void connect_dataflow_memory_ports(const HLS_managerRef& HLSMgr, const unsigned int top_id,
+                                      const structural_managerRef& SM, const structural_objectRef& circuit,
+                                      const std::map<unsigned int, structural_objectRef>& storage_by_var,
+                                      unsigned int& unique_id)
+   {
+      for(unsigned int module_index = 0; module_index < GetPointerS<module_o>(circuit)->get_internal_objects_size();
+          ++module_index)
+      {
+         const auto module = GetPointerS<module_o>(circuit)->get_internal_object(module_index);
+         if(!GetPointer<module_o>(module))
+         {
+            continue;
+         }
+         const auto module_obj = GetPointerS<module_o>(module);
+         for(unsigned int port_index = 0; port_index < module_obj->get_in_port_size(); ++port_index)
+         {
+            const auto port = module_obj->get_in_port(port_index);
+            dataflow_memory_port_info port_info;
+            if(!parse_dataflow_memory_port(port, port_info) || port_info.kind != "q")
+            {
+               continue;
+            }
+            const auto storage_it = storage_by_var.find(port_info.var);
+            if(storage_it == storage_by_var.end())
+            {
+               continue;
+            }
+            if(!is_active_dataflow_storage_port(HLSMgr, top_id, module, port_info.var, port_info.index))
+            {
+               continue;
+            }
+            const auto storage_port_index =
+                get_dataflow_storage_port_index(HLSMgr, top_id, circuit, module, port_info.var, port_info.index);
+            const auto storage_port =
+                get_indexed_storage_port(storage_it->second, "out1", port->get_kind(), storage_port_index);
+            if(!storage_port)
+            {
+               continue;
+            }
+            fu_binding::add_smart_connection(storage_port, port, unique_id++, circuit, SM);
+         }
+         for(unsigned int port_index = 0; port_index < module_obj->get_out_port_size(); ++port_index)
+         {
+            const auto port = module_obj->get_out_port(port_index);
+            dataflow_memory_port_info port_info;
+            if(!parse_dataflow_memory_port(port, port_info))
+            {
+               continue;
+            }
+            const auto storage_it = storage_by_var.find(port_info.var);
+            if(storage_it == storage_by_var.end())
+            {
+               continue;
+            }
+            if(!is_active_dataflow_storage_port(HLSMgr, top_id, module, port_info.var, port_info.index))
+            {
+               continue;
+            }
+            const auto module_role = infer_dataflow_memory_role(HLSMgr, top_id, module, port_info.var);
+            const auto storage_port_index =
+                get_dataflow_storage_port_index(HLSMgr, top_id, circuit, module, port_info.var, port_info.index);
+            std::string selected_storage_port_name;
+            const auto storage_port = [&]() -> structural_objectRef {
+               if(port_info.kind == "address")
+               {
+                  if(module_role == dataflow_memory_role::reader)
+                  {
+                     selected_storage_port_name =
+                         get_storage_port(storage_it->second, {"in2r"}, port->get_kind(), port_info.index) ? "in2r" :
+                                                                                                             "in2";
+                     return get_storage_port(storage_it->second, {selected_storage_port_name}, port->get_kind(),
+                                             storage_port_index);
+                  }
+                  if(module_role == dataflow_memory_role::writer)
+                  {
+                     selected_storage_port_name =
+                         get_storage_port(storage_it->second, {"in2w"}, port->get_kind(), port_info.index) ? "in2w" :
+                                                                                                             "in2";
+                     return get_storage_port(storage_it->second, {selected_storage_port_name}, port->get_kind(),
+                                             storage_port_index);
+                  }
+                  if(get_storage_port(storage_it->second, {"in2r"}, port->get_kind(), port_info.index))
+                  {
+                     selected_storage_port_name = "in2r";
+                  }
+                  else if(get_storage_port(storage_it->second, {"in2w"}, port->get_kind(), port_info.index))
+                  {
+                     selected_storage_port_name = "in2w";
+                  }
+                  else
+                  {
+                     selected_storage_port_name = "in2";
+                  }
+                  return get_storage_port(storage_it->second, {selected_storage_port_name}, port->get_kind(),
+                                          storage_port_index);
+               }
+               if(port_info.kind == "ce")
+               {
+                  if(HLSMgr->get_ding_dong_buffer_candidate(top_id, port_info.var) &&
+                     module_role == dataflow_memory_role::writer)
+                  {
+                     return structural_objectRef();
+                  }
+                  selected_storage_port_name = "sel_LOAD";
+                  return get_storage_port(storage_it->second, {selected_storage_port_name}, port->get_kind(),
+                                          storage_port_index);
+               }
+               if(port_info.kind == "we")
+               {
+                  if(HLSMgr->get_ding_dong_buffer_candidate(top_id, port_info.var) &&
+                     module_role != dataflow_memory_role::writer)
+                  {
+                     return structural_objectRef();
+                  }
+                  selected_storage_port_name = "sel_STORE";
+                  return get_storage_port(storage_it->second, {selected_storage_port_name}, port->get_kind(),
+                                          storage_port_index);
+               }
+               if(port_info.kind == "d")
+               {
+                  if(HLSMgr->get_ding_dong_buffer_candidate(top_id, port_info.var) &&
+                     module_role != dataflow_memory_role::writer)
+                  {
+                     return structural_objectRef();
+                  }
+                  selected_storage_port_name = "in1";
+                  return get_storage_port(storage_it->second, {selected_storage_port_name}, port->get_kind(),
+                                          storage_port_index);
+               }
+               return structural_objectRef();
+            }();
+            if(!storage_port)
+            {
+               continue;
+            }
+            if(port->get_kind() == port_o_K && storage_port->get_kind() == port_o_K)
+            {
+               const auto* storage_module = GetPointerS<const module_o>(storage_it->second);
+               const auto storage_bitsize_parameter =
+                   starts_with(selected_storage_port_name, "in2") &&
+                           storage_module->ExistsParameter("BITSIZE_proxy_" + selected_storage_port_name) ?
+                       "BITSIZE_proxy_" + selected_storage_port_name :
+                       "BITSIZE_" + selected_storage_port_name;
+               const auto storage_bitsize = storage_module->ExistsParameter(storage_bitsize_parameter) ?
+                                                std::stoull(storage_module->GetParameter(storage_bitsize_parameter)) :
+                                                STD_GET_SIZE(storage_port->get_typeRef());
+               if(storage_bitsize > 1U && port->get_typeRef()->type == structural_type_descriptor::BOOL)
+               {
+                  port->get_typeRef()->type = structural_type_descriptor::VECTOR_BOOL;
+               }
+               if(storage_bitsize > 1U && storage_port->get_typeRef()->type == structural_type_descriptor::BOOL)
+               {
+                  storage_port->get_typeRef()->type = structural_type_descriptor::VECTOR_BOOL;
+               }
+               port->type_resize(storage_bitsize);
+               storage_port->type_resize(storage_bitsize);
+            }
+            fu_binding::add_smart_connection(port, storage_port, unique_id++, circuit, SM);
+         }
+      }
+   }
+
+} // namespace
 
 fu_binding::fu_binding(const HLS_managerConstRef _HLSMgr, const unsigned int _function_id,
                        const ParameterConstRef _parameters)
     : allocation_information(_HLSMgr->get_HLS(_function_id)->allocation_information),
-      TreeM(_HLSMgr->get_tree_manager()),
-      op_graph(_HLSMgr->CGetFunctionBehavior(_function_id)->CGetOpGraph(FunctionBehavior::DFG)),
+      IRM(_HLSMgr->get_ir_manager()),
+      op_graph(_HLSMgr->CGetFunctionBehavior(_function_id)->GetOpGraph(FunctionBehavior::DFG)),
       parameters(_parameters),
       debug_level(_parameters->get_class_debug_level(GET_CLASS(*this))),
       has_resource_sharing_p(true)
@@ -124,7 +699,7 @@ fu_binding::fu_binding(const fu_binding& original)
       operations(original.operations),
       op_binding(original.op_binding),
       allocation_information(original.allocation_information),
-      TreeM(original.TreeM),
+      IRM(original.IRM),
       op_graph(original.op_graph),
       parameters(original.parameters),
       debug_level(parameters->get_class_debug_level(GET_CLASS(*this))),
@@ -132,47 +707,18 @@ fu_binding::fu_binding(const fu_binding& original)
 {
 }
 
-fu_binding::~fu_binding() = default;
-
 fu_bindingRef fu_binding::create_fu_binding(const HLS_managerConstRef _HLSMgr, const unsigned int _function_id,
                                             const ParameterConstRef _parameters)
 {
-   if(_parameters->isOption(OPT_context_switch))
+   const auto fname = ir_helper::GetFunctionName(_HLSMgr->get_ir_manager()->GetIRNode(_function_id));
+   if(boost::algorithm::starts_with(fname, "__kmp_bambu_fork_call"))
    {
-      auto omp_functions = GetPointer<OmpFunctions>(_HLSMgr->Rfuns);
-      bool found = false;
-      if(omp_functions->kernel_functions.find(_function_id) != omp_functions->kernel_functions.end())
-      {
-         found = true;
-      }
-      if(omp_functions->hierarchical_functions.find(_function_id) != omp_functions->hierarchical_functions.end())
-      {
-         found = true;
-      }
-      if(omp_functions->parallelized_functions.find(_function_id) != omp_functions->parallelized_functions.end())
-      {
-         found = true;
-      }
-      if(omp_functions->atomic_functions.find(_function_id) != omp_functions->atomic_functions.end())
-      {
-         found = true;
-      }
-      if(found)
-      {
-         return fu_bindingRef(new fu_binding_cs(_HLSMgr, _function_id, _parameters));
-      }
-      else
-      {
-         return fu_bindingRef(new fu_binding(_HLSMgr, _function_id, _parameters));
-      }
+      return fu_bindingRef(new omp_fork_fu_binding(_HLSMgr, _function_id, _parameters));
    }
-   else
-   {
-      return fu_bindingRef(new fu_binding(_HLSMgr, _function_id, _parameters));
-   }
+   return fu_bindingRef(new fu_binding(_HLSMgr, _function_id, _parameters));
 }
 
-void fu_binding::bind(const vertex& v, unsigned int unit, unsigned int index)
+void fu_binding::bind(OpGraph::vertex_descriptor v, unsigned int unit, unsigned int index)
 {
    const auto key = std::make_pair(unit, index);
    if(!unique_table.count(key))
@@ -180,11 +726,11 @@ void fu_binding::bind(const vertex& v, unsigned int unit, unsigned int index)
       unique_table[key] =
           generic_objRef(new funit_obj(allocation_information->get_string_name(unit) + "_i" + STR(index), unit, index));
    }
-   const auto statement_index = op_graph->CGetOpNodeInfo(v)->GetNodeId();
+   const auto statement_index = op_graph.CGetNodeInfo(v).GetNodeId();
    op_binding[statement_index] = unique_table[key];
    if(!operations.count(key))
    {
-      operations.insert(std::make_pair(key, OpVertexSet(op_graph)));
+      operations.insert(std::make_pair(key, OpVertexSet(&op_graph.GetGraphsCollection())));
    }
    operations.at(key).insert(v);
    if(index != INFINITE_UINT)
@@ -197,21 +743,21 @@ OpVertexSet fu_binding::get_operations(unsigned int unit, unsigned int index) co
 {
    if(operations.find(std::make_pair(unit, index)) == operations.end())
    {
-      return OpVertexSet(op_graph);
+      return OpVertexSet(&op_graph.GetGraphsCollection());
    }
    return operations.find(std::make_pair(unit, index))->second;
 }
 
-const funit_obj& fu_binding::operator[](const vertex& v)
+const funit_obj& fu_binding::operator[](OpGraph::vertex_descriptor v)
 {
-   const auto statement_index = op_graph->CGetOpNodeInfo(v)->GetNodeId();
+   const auto statement_index = op_graph.CGetNodeInfo(v).GetNodeId();
    THROW_ASSERT(op_binding.count(statement_index), "vertex not preset");
    return *(GetPointer<funit_obj>(op_binding.at(statement_index)));
 }
 
-bool fu_binding::is_assigned(const vertex& v) const
+bool fu_binding::is_assigned(OpGraph::vertex_descriptor v) const
 {
-   const auto statement_index = op_graph->CGetOpNodeInfo(v)->GetNodeId();
+   const auto statement_index = op_graph.CGetNodeInfo(v).GetNodeId();
    return is_assigned(statement_index);
 }
 
@@ -223,7 +769,7 @@ bool fu_binding::is_assigned(const unsigned int statement_index) const
 std::list<unsigned int> fu_binding::get_allocation_list() const
 {
    std::list<unsigned int> allocation_list;
-   for(const auto alloc : allocation_map)
+   for(const auto& alloc : allocation_map)
    {
       if(alloc.second > 0)
       {
@@ -241,28 +787,33 @@ void fu_binding::update_allocation(unsigned int unit, unsigned int number)
    }
 }
 
-unsigned int fu_binding::get_assign(vertex const& v) const
+void fu_binding::reset_allocation(unsigned int unit)
 {
-   const auto statement_index = op_graph->CGetOpNodeInfo(v)->GetNodeId();
+   allocation_map[unit] = 0;
+}
+
+unsigned int fu_binding::get_assign(OpGraph::vertex_descriptor v) const
+{
+   const auto statement_index = op_graph.CGetNodeInfo(v).GetNodeId();
    return get_assign(statement_index);
 }
 
 unsigned int fu_binding::get_assign(const unsigned int statement_index) const
 {
    THROW_ASSERT(op_binding.find(statement_index) != op_binding.end(),
-                "Operation " + TreeM->GetTreeNode(statement_index)->ToString() + " not assigned");
+                "Operation " + IRM->GetIRNode(statement_index)->ToString() + " not assigned");
    THROW_ASSERT(GetPointer<funit_obj>(op_binding.find(statement_index)->second), "");
    return GetPointer<funit_obj>(op_binding.at(statement_index))->get_fu();
 }
 
-std::string fu_binding::get_fu_name(vertex const& v) const
+std::string fu_binding::get_fu_name(OpGraph::vertex_descriptor v) const
 {
    return allocation_information->get_string_name(get_assign(v));
 }
 
-unsigned int fu_binding::get_index(vertex const& v) const
+unsigned int fu_binding::get_index(OpGraph::vertex_descriptor v) const
 {
-   const auto statement_index = op_graph->CGetOpNodeInfo(v)->GetNodeId();
+   const auto statement_index = op_graph.CGetNodeInfo(v).GetNodeId();
    return GetPointer<funit_obj>(op_binding.at(statement_index))->get_index();
 }
 
@@ -271,33 +822,53 @@ structural_objectRef fu_binding::add_gate(const HLS_managerRef HLSMgr, const hls
                                           structural_objectRef clock_port, structural_objectRef reset_port) const
 {
    const auto FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
-   const auto data = FB->CGetOpGraph(FunctionBehavior::CFG);
+   const auto data = FB->GetOpGraph(FunctionBehavior::CFG);
    const auto& SM = HLS->datapath;
    const auto circuit = SM->get_circ();
-   structural_objectRef curr_gate(new component_o(debug_level, circuit));
+   structural_objectRef curr_gate(new module_o(debug_level, circuit));
+   const auto* fu_unit = GetPointer<functional_unit>(fu);
+   THROW_ASSERT(fu, "Expected a technology node while instantiating a gate for function " +
+                        ir_helper::GetFunctionName(IRM->GetIRNode(HLS->functionId)));
+   THROW_ASSERT(fu_unit, "Expected a functional_unit while instantiating a gate for function " +
+                             ir_helper::GetFunctionName(IRM->GetIRNode(HLS->functionId)) +
+                             ", got technology node kind " + fu->get_kind_text());
    /// creating structural_manager starting from technology_node
    structural_objectRef curr_lib_instance;
-   if(GetPointerS<functional_unit>(fu)->fu_template_name == "")
+   if(fu_unit->fu_template_name == "")
    {
-      curr_lib_instance = GetPointer<functional_unit>(fu)->CM->get_circ();
+      THROW_ASSERT(fu_unit->CM, "Missing structural manager for functional unit " + fu_unit->functional_unit_name +
+                                    " while instantiating a gate for function " +
+                                    ir_helper::GetFunctionName(IRM->GetIRNode(HLS->functionId)));
+      curr_lib_instance = fu_unit->CM->get_circ();
    }
    else
    {
-      const auto template_name = GetPointer<functional_unit>(fu)->fu_template_name;
+      const auto template_name = fu_unit->fu_template_name;
       const auto library_name = HLS->HLS_D->get_technology_manager()->get_library(template_name);
-      curr_lib_instance =
-          GetPointerS<functional_unit>(GetPointerS<functional_unit_template>(
-                                           HLS->HLS_D->get_technology_manager()->get_fu(template_name, library_name))
-                                           ->FU)
-              ->CM->get_circ();
+      THROW_ASSERT(!library_name.empty(), "Template " + template_name + " referenced by functional unit " +
+                                              fu_unit->functional_unit_name + " is not associated with any library");
+      const auto template_fu = HLS->HLS_D->get_technology_manager()->get_fu(template_name, library_name);
+      THROW_ASSERT(template_fu, "Template " + template_name + " referenced by functional unit " +
+                                    fu_unit->functional_unit_name + " is missing from library " + library_name);
+      const auto* fu_template = GetPointer<functional_unit_template>(template_fu);
+      THROW_ASSERT(fu_template, "Technology node " + template_name + " from library " + library_name +
+                                    " is not a functional_unit_template");
+      THROW_ASSERT(fu_template->FU, "Functional unit template " + template_name + " from library " + library_name +
+                                        " does not contain a backing functional unit");
+      const auto* backing_fu = GetPointer<functional_unit>(fu_template->FU);
+      THROW_ASSERT(backing_fu, "Backing node for template " + template_name + " from library " + library_name +
+                                   " is not a functional_unit");
+      THROW_ASSERT(backing_fu->CM, "Backing functional unit for template " + template_name + " from library " +
+                                       library_name + " does not provide a structural manager");
+      curr_lib_instance = backing_fu->CM->get_circ();
    }
-   THROW_ASSERT(curr_lib_instance, "structural description not provided: check the library given. Component: " +
-                                       GetPointerS<functional_unit>(fu)->functional_unit_name);
+   THROW_ASSERT(curr_lib_instance, "Structural description not provided: check the library given. Component: " +
+                                       fu_unit->functional_unit_name);
 
    curr_lib_instance->copy(curr_gate);
    if(ops.size() == 1)
    {
-      curr_gate->set_id("fu_" + GET_NAME(data, *(ops.begin())));
+      curr_gate->set_id("fu_" + data.CGetNodeInfo(*(ops.begin())).vertex_name);
    }
    else
    {
@@ -316,9 +887,19 @@ structural_objectRef fu_binding::add_gate(const HLS_managerRef HLSMgr, const hls
    {
       SM->add_connection(reset_port, port_rst);
    }
-   GetPointerS<module>(circuit)->add_internal_object(curr_gate);
+   GetPointerS<module_o>(circuit)->add_internal_object(curr_gate);
 
    return curr_gate;
+}
+
+void fu_binding::kill_s_memory_ports(structural_objectRef curr_gate)
+{
+   for(const auto p_name :
+       {"S_oe_ram", "S_we_ram", "S_addr_ram", "S_Wdata_ram", "S_data_ram_size", "Sout_Rdata_ram", "Sout_DataRdy"})
+   {
+      const auto port = curr_gate->find_member(p_name, port_o_K, curr_gate);
+      GetPointerS<port_o>(port)->set_is_memory(false);
+   }
 }
 
 void fu_binding::kill_proxy_memory_units(std::map<unsigned int, unsigned int>& memory_units,
@@ -370,10 +951,10 @@ void fu_binding::kill_proxy_function_units(std::map<unsigned int, std::string>& 
    }
    for(const auto& fun_name : killing_funs)
    {
-      auto inPortSize = static_cast<unsigned int>(GetPointer<module>(curr_gate)->get_in_port_size());
+      auto inPortSize = static_cast<unsigned int>(GetPointer<module_o>(curr_gate)->get_in_port_size());
       for(unsigned int currentPort = 0; currentPort < inPortSize; ++currentPort)
       {
-         structural_objectRef curr_port = GetPointer<module>(curr_gate)->get_in_port(currentPort);
+         structural_objectRef curr_port = GetPointer<module_o>(curr_gate)->get_in_port(currentPort);
          if(!GetPointer<port_o>(curr_port)->get_is_memory())
          {
             continue;
@@ -393,10 +974,10 @@ void fu_binding::kill_proxy_function_units(std::map<unsigned int, std::string>& 
             }
          }
       }
-      auto outPortSize = static_cast<unsigned int>(GetPointer<module>(curr_gate)->get_out_port_size());
+      auto outPortSize = static_cast<unsigned int>(GetPointer<module_o>(curr_gate)->get_out_port_size());
       for(unsigned int currentPort = 0; currentPort < outPortSize; ++currentPort)
       {
-         structural_objectRef curr_port = GetPointer<module>(curr_gate)->get_out_port(currentPort);
+         structural_objectRef curr_port = GetPointer<module_o>(curr_gate)->get_out_port(currentPort);
          if(!GetPointer<port_o>(curr_port)->get_is_memory())
          {
             continue;
@@ -495,10 +1076,10 @@ void fu_binding::manage_killing_function_proxies(
       const auto wrapped_fu_unit = fun_obj.at(wrapped_fu_unit_id);
       std::map<structural_objectRef, std::list<structural_objectRef>, jms_sorter> to_be_merged;
 
-      const auto inPortSize = GetPointer<module>(wrapped_fu_unit)->get_in_port_size();
+      const auto inPortSize = GetPointer<module_o>(wrapped_fu_unit)->get_in_port_size();
       for(auto currentPort = 0U; currentPort < inPortSize; ++currentPort)
       {
-         const auto curr_port = GetPointerS<module>(wrapped_fu_unit)->get_in_port(currentPort);
+         const auto curr_port = GetPointerS<module_o>(wrapped_fu_unit)->get_in_port(currentPort);
          const auto port_name = curr_port->get_id();
          if(starts_with(port_name, PROXY_PREFIX))
          {
@@ -512,10 +1093,10 @@ void fu_binding::manage_killing_function_proxies(
             }
          }
       }
-      const auto outPortSize = GetPointer<module>(wrapped_fu_unit)->get_out_port_size();
+      const auto outPortSize = GetPointer<module_o>(wrapped_fu_unit)->get_out_port_size();
       for(auto currentPort = 0U; currentPort < outPortSize; ++currentPort)
       {
-         const auto wrapped_port_proxy_out_i = GetPointerS<module>(wrapped_fu_unit)->get_out_port(currentPort);
+         const auto wrapped_port_proxy_out_i = GetPointerS<module_o>(wrapped_fu_unit)->get_out_port(currentPort);
          const auto port_name = wrapped_port_proxy_out_i->get_id();
          if(starts_with(port_name, PROXY_PREFIX))
          {
@@ -572,8 +1153,8 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    const auto FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
    const auto function_parameters = FB->CGetBehavioralHelper()->get_parameters();
    unsigned int sign_id = 0;
-   const auto start_port = GetPointer<module>(circuit)->find_member(START_PORT_NAME, port_o_K, circuit);
-   const auto done_port = GetPointer<module>(circuit)->find_member(DONE_PORT_NAME, port_o_K, circuit);
+   const auto start_port = GetPointer<module_o>(circuit)->find_member(START_PORT_NAME, port_o_K, circuit);
+   const auto done_port = GetPointer<module_o>(circuit)->find_member(DONE_PORT_NAME, port_o_K, circuit);
    structural_objectRef in_chain = start_port;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding parameter ports");
    for(const auto& function_parameter : function_parameters)
@@ -583,33 +1164,24 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Managing parameter copy: " + STR(function_parameter));
          const auto fu_lib_unit = TechM->get_fu(MEMCPY_STD, WORK_LIBRARY);
-         THROW_ASSERT(fu_lib_unit,
-                      "functional unit not available: check the library given. Component: " + std::string(MEMCPY_STD));
+         THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " MEMCPY_STD);
          const auto curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, "parameter_manager_" + STR(function_parameter),
-                                         OpVertexSet(op_graph), clock_port, reset_port);
-         const auto curr_gate_m = GetPointerS<module>(curr_gate);
+                                         OpVertexSet(&op_graph.GetGraphsCollection()), clock_port, reset_port);
+         const auto curr_gate_m = GetPointerS<module_o>(curr_gate);
          const auto port_obj = HLS->Rconn->get_port(function_parameter, conn_binding::IN);
          const auto in_par = port_obj->get_out_sign();
          const auto src = curr_gate_m->find_member("src", port_o_K, curr_gate);
          SM->add_connection(in_par, src);
          const auto dest = curr_gate_m->find_member("dest", port_o_K, curr_gate);
 
-         const auto const_obj = SM->add_module_from_technology_library(
-             "memcpy_dest_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name(),
-             CONSTANT_STD, LIBRARY_STD, circuit, TechM);
-         const_obj->SetParameter("value",
-                                 HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name());
-         const auto name = "out_const_memcpy_dest_" +
-                           HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name();
-         const auto dest_sign = SM->add_sign(name, circuit, dest->get_typeRef());
-         const auto out_port = const_obj->find_member("out1", port_o_K, const_obj);
-         // customize output port size
-         out_port->type_resize(STD_GET_SIZE(dest->get_typeRef()));
-         SM->add_connection(dest_sign, out_port);
-         SM->add_connection(dest, dest_sign);
+         auto const_obj = SM->add_constant(
+             "memcpy_dest_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name(), circuit,
+             dest->get_typeRef(), HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name());
+         SM->add_connection(dest, const_obj);
+
          const auto n = curr_gate_m->find_member("len", port_o_K, curr_gate);
          const auto n_obj = SM->add_constant("constant_len_" + STR(function_parameter), circuit, n->get_typeRef(),
-                                             STR(tree_helper::SizeAlloc(TreeM->GetTreeNode(function_parameter)) / 8));
+                                             STR(ir_helper::SizeAlloc(IRM->GetIRNode(function_parameter)) / 8));
          SM->add_connection(n, n_obj);
          THROW_ASSERT(in_chain, "missing in chain element");
          const auto start_obj = curr_gate_m->find_member(START_PORT_NAME, port_o_K, curr_gate);
@@ -618,16 +1190,16 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          {
             const auto delay_unit = [&]() {
                const auto reset_type = parameters->getOption<std::string>(OPT_reset_type);
-               return TechM->get_fu(reset_type == "sync" ? flipflop_SR : flipflop_AR, LIBRARY_STD);
+               return TechM->get_fu(reset_type == "sync" ? register_SR : register_AR, LIBRARY_STD);
             }();
             THROW_ASSERT(delay_unit, "");
             const auto delay_gate = add_gate(HLSMgr, HLS, delay_unit, "start_delayed_" + STR(function_parameter),
-                                             OpVertexSet(op_graph), clock_port, reset_port);
-            const auto sign =
-                SM->add_sign(START_PORT_NAME + STR("_") + STR(sign_id), circuit, start_obj->get_typeRef());
+                                             OpVertexSet(&op_graph.GetGraphsCollection()), clock_port, reset_port);
+            const auto in1 = GetPointerS<module_o>(delay_gate)->get_in_port(2);
+            const auto sign = SM->add_sign(START_PORT_NAME "_" + STR(sign_id), circuit, start_obj->get_typeRef());
             ++sign_id;
             SM->add_connection(sign, in_chain);
-            SM->add_connection(sign, GetPointer<module>(delay_gate)->get_in_port(2));
+            SM->add_connection(sign, in1);
          }
 
          if(in_chain == start_port)
@@ -636,7 +1208,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          }
          else
          {
-            const auto sign = SM->add_sign(START_PORT_NAME + STR("_") + STR(sign_id), circuit, in_chain->get_typeRef());
+            const auto sign = SM->add_sign(START_PORT_NAME "_" + STR(sign_id), circuit, in_chain->get_typeRef());
             ++sign_id;
             SM->add_connection(sign, in_chain);
             SM->add_connection(sign, start_obj);
@@ -653,84 +1225,67 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
          auto bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
          unsigned long long bus_tag_bitsize = 0;
-         if(HLS->Param->getOption<bool>(OPT_parse_pragma) && HLS->Param->isOption(OPT_context_switch))
-         {
-            bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
-         }
          const auto is_multiport = FB->GetChannelsType() == MemoryAllocation_ChannelsType::MEM_ACC_NN;
          const auto fu_lib_unit = TechM->get_fu(is_multiport ? MEMSTORE_STDN : MEMSTORE_STD, LIBRARY_STD_FU);
          THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " +
                                        STR(is_multiport ? MEMSTORE_STDN : MEMSTORE_STD));
          const auto max_n_ports = FB->GetChannelsNumber();
          const auto curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, "parameter_manager_" + STR(function_parameter),
-                                         OpVertexSet(op_graph), clock_port, reset_port);
+                                         OpVertexSet(&op_graph.GetGraphsCollection()), clock_port, reset_port);
          const auto port_obj = HLS->Rconn->get_port(function_parameter, conn_binding::IN);
          const auto in_par = port_obj->get_out_sign();
-         const auto data = GetPointer<module>(curr_gate)->find_member("data", port_o_K, curr_gate);
+         const auto data = GetPointer<module_o>(curr_gate)->find_member("data", port_o_K, curr_gate);
          data->type_resize(STD_GET_SIZE(in_par->get_typeRef()));
          SM->add_connection(in_par, data);
 
-         const auto size = GetPointer<module>(curr_gate)->find_member("size", port_o_K, curr_gate);
+         const auto size = GetPointer<module_o>(curr_gate)->find_member("size", port_o_K, curr_gate);
          size->type_resize(STD_GET_SIZE(in_par->get_typeRef()));
-         const auto size_const_obj = SM->add_module_from_technology_library(
-             "size_par_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name(),
-             CONSTANT_STD, LIBRARY_STD, circuit, TechM);
+
          const std::string parameter_value =
              (parameters->getOption<HDLWriter_Language>(OPT_writer_language) == HDLWriter_Language::VHDL) ?
                  std::string("\"") +
                      NumberToBinaryString(STD_GET_SIZE(in_par->get_typeRef()), STD_GET_SIZE(in_par->get_typeRef())) +
                      std::string("\"") :
                  STR(STD_GET_SIZE(in_par->get_typeRef()));
-         size_const_obj->SetParameter("value", parameter_value);
-         const auto size_name =
-             "out_const_size_par_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name();
-         const auto size_sign = SM->add_sign(size_name, circuit, size->get_typeRef());
-         const auto size_out_port = size_const_obj->find_member("out1", port_o_K, size_const_obj);
-         // customize output port size
-         size_out_port->type_resize(STD_GET_SIZE(in_par->get_typeRef()));
-         SM->add_connection(size_sign, size_out_port);
-         SM->add_connection(size, size_sign);
+         auto size_const_obj = SM->add_constant(
+             "size_par_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name(), circuit,
+             size->get_typeRef(), parameter_value);
+         SM->add_connection(size, size_const_obj);
 
-         const auto addr = GetPointer<module>(curr_gate)->find_member("addr", port_o_K, curr_gate);
+         const auto addr = GetPointer<module_o>(curr_gate)->find_member("addr", port_o_K, curr_gate);
          addr->type_resize(bus_addr_bitsize);
-         const auto const_obj = SM->add_module_from_technology_library(
-             "addr_par_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name(),
-             CONSTANT_STD, LIBRARY_STD, circuit, TechM);
-         const_obj->SetParameter("value",
-                                 HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name());
-         const auto name =
-             "out_const_addr_par_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name();
-         const auto addr_sign = SM->add_sign(name, circuit, addr->get_typeRef());
-         const auto out_port = const_obj->find_member("out1", port_o_K, const_obj);
-         // customize output port size
-         out_port->type_resize(bus_addr_bitsize);
-         SM->add_connection(addr_sign, out_port);
-         SM->add_connection(addr, addr_sign);
+
+         auto addr_const_obj = SM->add_constant(
+             "addr_par_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name(), circuit,
+             addr->get_typeRef(), parameter_value);
+
+         SM->add_connection(addr, addr_const_obj);
 
          THROW_ASSERT(in_chain, "missing in chain element");
          structural_objectRef start_obj =
-             GetPointer<module>(curr_gate)->find_member(START_PORT_NAME, port_o_K, curr_gate);
+             GetPointer<module_o>(curr_gate)->find_member(START_PORT_NAME, port_o_K, curr_gate);
          if(HLS->registered_inputs && in_chain == start_port)
          {
             technology_nodeRef delay_unit;
             auto reset_type = parameters->getOption<std::string>(OPT_reset_type);
             if(reset_type == "sync")
             {
-               delay_unit = TechM->get_fu(flipflop_SR, LIBRARY_STD);
+               delay_unit = TechM->get_fu(register_SR, LIBRARY_STD);
             }
             else
             {
-               delay_unit = TechM->get_fu(flipflop_AR, LIBRARY_STD);
+               delay_unit = TechM->get_fu(register_AR, LIBRARY_STD);
             }
-            structural_objectRef delay_gate =
-                add_gate(HLSMgr, HLS, delay_unit, "start_delayed_" + STR(function_parameter), OpVertexSet(op_graph),
-                         clock_port, reset_port);
-            structural_objectRef sign =
-                SM->add_sign(START_PORT_NAME + STR("_") + STR(sign_id), circuit, start_obj->get_typeRef());
+            const auto delay_gate = add_gate(HLSMgr, HLS, delay_unit, "start_delayed_" + STR(function_parameter),
+                                             OpVertexSet(&op_graph.GetGraphsCollection()), clock_port, reset_port);
+            const auto delay_gate_m = GetPointerS<module_o>(delay_gate);
+            const auto in1 = delay_gate_m->get_in_port(2);
+            const auto out1 = delay_gate_m->get_out_port(0);
+            const auto sign = SM->add_sign(START_PORT_NAME "_" + STR(sign_id), circuit, start_obj->get_typeRef());
             ++sign_id;
             SM->add_connection(sign, in_chain);
-            SM->add_connection(sign, GetPointer<module>(delay_gate)->get_in_port(2));
-            in_chain = GetPointer<module>(delay_gate)->get_out_port(0);
+            SM->add_connection(sign, in1);
+            in_chain = out1;
          }
 
          if(in_chain == start_port)
@@ -740,25 +1295,25 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          else
          {
             structural_objectRef sign =
-                SM->add_sign(START_PORT_NAME + STR("_") + STR(sign_id), circuit, in_chain->get_typeRef());
+                SM->add_sign(START_PORT_NAME "_" + STR(sign_id), circuit, in_chain->get_typeRef());
             ++sign_id;
             SM->add_connection(sign, in_chain);
             SM->add_connection(sign, start_obj);
          }
-         in_chain = GetPointer<module>(curr_gate)->find_member(DONE_PORT_NAME, port_o_K, curr_gate);
+         in_chain = GetPointer<module_o>(curr_gate)->find_member(DONE_PORT_NAME, port_o_K, curr_gate);
          /// component specialization
-         for(unsigned int i = 0; i < GetPointer<module>(curr_gate)->get_in_port_size(); i++)
+         for(unsigned int i = 0; i < GetPointer<module_o>(curr_gate)->get_in_port_size(); i++)
          {
-            structural_objectRef port = GetPointer<module>(curr_gate)->get_in_port(i);
+            structural_objectRef port = GetPointer<module_o>(curr_gate)->get_in_port(i);
             if(is_multiport && port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
             {
                GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
             }
             port_o::resize_if_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          }
-         for(unsigned int i = 0; i < GetPointer<module>(curr_gate)->get_out_port_size(); i++)
+         for(unsigned int i = 0; i < GetPointer<module_o>(curr_gate)->get_out_port_size(); i++)
          {
-            structural_objectRef port = GetPointer<module>(curr_gate)->get_out_port(i);
+            structural_objectRef port = GetPointer<module_o>(curr_gate)->get_out_port(i);
             if(is_multiport && port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
             {
                GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
@@ -779,48 +1334,24 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       THROW_ASSERT(!done_port, "done port not connected");
    }
 
-   if(HLS->control_flow_checker)
-   {
-      structural_objectRef controller_flow_circuit = HLS->control_flow_checker->get_circ();
-      structural_objectRef curr_gate = structural_objectRef(new component_o(debug_level, circuit));
-      controller_flow_circuit->copy(curr_gate);
-      curr_gate->set_id("ControlFlowChecker_i");
-      GetPointer<module>(circuit)->add_internal_object(curr_gate);
-      structural_objectRef controller_flow_clock = curr_gate->find_member(CLOCK_PORT_NAME, port_o_K, curr_gate);
-      SM->add_connection(controller_flow_clock, clock_port);
-      structural_objectRef controller_flow_reset = curr_gate->find_member(RESET_PORT_NAME, port_o_K, curr_gate);
-      SM->add_connection(controller_flow_reset, reset_port);
-      structural_objectRef controller_flow_start = curr_gate->find_member(START_PORT_NAME, port_o_K, curr_gate);
-      structural_objectRef start_CFC =
-          SM->add_port(START_PORT_NAME_CFC, port_o::IN, circuit,
-                       structural_type_descriptorRef(new structural_type_descriptor("bool", 0)));
-      SM->add_connection(start_CFC, controller_flow_start);
-      structural_objectRef controller_flow_done = curr_gate->find_member(DONE_PORT_NAME, port_o_K, curr_gate);
-      structural_objectRef done_CFC =
-          SM->add_port(DONE_PORT_NAME_CFC, port_o::IN, circuit,
-                       structural_type_descriptorRef(new structural_type_descriptor("bool", 0)));
-      SM->add_connection(done_CFC, controller_flow_done);
-      structural_objectRef controller_flow_present_state =
-          curr_gate->find_member(PRESENT_STATE_PORT_NAME, port_o_K, curr_gate);
-      structural_objectRef controller_present_state =
-          SM->add_port(PRESENT_STATE_PORT_NAME, port_o::IN, circuit, controller_flow_present_state->get_typeRef());
-      SM->add_connection(controller_present_state, controller_flow_present_state);
-      structural_objectRef controller_flow_next_state =
-          curr_gate->find_member(NEXT_STATE_PORT_NAME, port_o_K, curr_gate);
-      structural_objectRef controller_next_state =
-          SM->add_port(NEXT_STATE_PORT_NAME, port_o::IN, circuit, controller_flow_next_state->get_typeRef());
-      SM->add_connection(controller_next_state, controller_flow_next_state);
-      memory_modules.push_back(curr_gate);
-   }
-
+   const auto omp_info = FB->GetOMPInfo();
    const auto is_sparse_memory =
        parameters->isOption(OPT_sparse_memory) && parameters->getOption<bool>(OPT_sparse_memory);
+   const auto& ding_dong_candidates = HLSMgr->get_ding_dong_buffer_candidates(HLS->functionId);
    std::map<unsigned int, unsigned int> memory_units = allocation_information->get_memory_units();
    std::map<unsigned int, structural_objectRef> mem_obj;
+   std::map<unsigned int, structural_objectRef> storage_by_var;
    for(const auto& m : memory_units)
    {
       const auto fu_type_id = m.first;
       auto var = m.second;
+      if(ding_dong_candidates.count(var))
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "---Skipping standard memory instantiation for ding-dong candidate " +
+                            HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->PrintVariable(var));
+         continue;
+      }
       std::string name;
       const auto fun_unit_name = allocation_information->get_fu_name(fu_type_id).first;
       if(allocation_information->is_direct_access_memory_unit(fu_type_id))
@@ -841,7 +1372,8 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       }();
       const auto is_sds_memory = [&]() {
          const auto& memory_type = GetPointerS<const functional_unit>(fu_lib_unit)->memory_type;
-         return memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS || memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS_BUS ||
+         return memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS || memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS1 ||
+                memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS_BUS || memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS_BUS1 ||
                 memory_type == MEMORY_TYPE_ASYNCHRONOUS;
       }();
 
@@ -857,7 +1389,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       const auto n_iterations = std::max(1u, total_allocated);
       for(unsigned int num = 0; num < n_iterations; num += n_channels)
       {
-         OpVertexSet operations_set(op_graph);
+         OpVertexSet operations_set(&op_graph.GetGraphsCollection());
          for(unsigned int channel_index = 0; channel_index < n_channels && (num + channel_index < total_allocated);
              ++channel_index)
          {
@@ -869,13 +1401,15 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             }
          }
          has_resource_sharing_p = has_resource_sharing_p || (operations_set.size() > 1);
-         structural_objectRef curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, name + "_" + STR(num / n_channels),
-                                                   OpVertexSet(op_graph), clock_port, reset_port);
+         structural_objectRef curr_gate =
+             add_gate(HLSMgr, HLS, fu_lib_unit, name + "_" + STR(num / n_channels),
+                      OpVertexSet(&op_graph.GetGraphsCollection()), clock_port, reset_port);
          specialise_fu(HLSMgr, HLS, curr_gate, fu_type_id, operations_set, var);
          specialize_memory_unit(HLSMgr, HLS, curr_gate, var, base_address, rangesize, is_splitted_memory,
-                                is_sparse_memory, is_sds_memory);
+                                is_sparse_memory, is_sds_memory, omp_info);
          check_parametrization(curr_gate);
          mem_obj[fu_type_id] = curr_gate;
+         storage_by_var[var] = curr_gate;
          for(unsigned int channel_index = 0; (channel_index < n_channels) && ((num + channel_index) < total_allocated);
              ++channel_index)
          {
@@ -902,8 +1436,8 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       const auto fu_lib_unit = allocation_information->get_fu(wu->first);
       THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " +
                                     allocation_information->get_fu_name(wu->first).first);
-      const auto curr_gate =
-          add_gate(HLSMgr, HLS, fu_lib_unit, wu->second + "_instance", OpVertexSet(op_graph), clock_port, reset_port);
+      const auto curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, wu->second + "_instance",
+                                      OpVertexSet(&op_graph.GetGraphsCollection()), clock_port, reset_port);
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                     "Wrapped Unit: " + allocation_information->get_string_name(wu->first));
       const auto mapped_operations = get_operations(wu->first, 0);
@@ -948,17 +1482,18 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
 
       for(unsigned int num = 0; num < get_number(i); num++)
       {
+         if(allocation_information->is_memory_unit(i))
+         {
+            continue;
+         }
+
          const auto module_obj = get(i, num);
          THROW_ASSERT(module_obj,
                       "module missing: " + allocation_information->get_fu_name(i).first + " instance " + STR(num));
          const auto name = module_obj->get_string();
 
          structural_objectRef curr_gate;
-         if(allocation_information->is_memory_unit(i))
-         {
-            continue;
-         }
-         else if(wrapped_units.find(i) != wrapped_units.end())
+         if(wrapped_units.find(i) != wrapped_units.end())
          {
             curr_gate = fun_obj[i];
          }
@@ -983,21 +1518,23 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, name,
                                  allocation_information->is_direct_proxy_memory_unit(i) ||
                                          allocation_information->is_indirect_access_memory_unit(i) ?
-                                     OpVertexSet(op_graph) :
+                                     OpVertexSet(&op_graph.GetGraphsCollection()) :
                                      mapped_operations,
                                  clock_port, reset_port);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "Added " + allocation_information->get_fu_name(i).first + " to the circuit");
             has_resource_sharing_p = has_resource_sharing_p || (mapped_operations.size() > 1);
             std::string current_op;
             if(mapped_operations.size())
             {
-               current_op = tree_helper::NormalizeTypename(
-                   op_graph->CGetOpNodeInfo(*(mapped_operations.begin()))->GetOperation());
+               current_op =
+                   ir_helper::NormalizeTypename(op_graph.CGetNodeInfo(*(mapped_operations.begin())).GetOperation());
             }
             if(current_op == BUILTIN_WAIT_CALL)
             {
                has_resource_sharing_p = true;
                const auto site = *mapped_operations.begin();
-               const auto vertex_node_id = op_graph->CGetOpNodeInfo(site)->GetNodeId();
+               const auto vertex_node_id = op_graph.CGetNodeInfo(site).GetNodeId();
 
                const auto callSiteMemorySym = HLSMgr->Rmem->get_symbol(vertex_node_id, HLS->functionId);
                memory::add_memory_parameter(HLS->datapath, callSiteMemorySym->get_symbol_name(),
@@ -1053,10 +1590,10 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                std::string fun_name = "_" + STR(proxy_function_units.find(i)->second);
                proxy_function_units_to_be_renamed_back.push_back(
                    std::make_pair(curr_gate, proxy_function_units.find(i)->second));
-               auto inPortSize = static_cast<unsigned int>(GetPointer<module>(curr_gate)->get_in_port_size());
+               auto inPortSize = static_cast<unsigned int>(GetPointer<module_o>(curr_gate)->get_in_port_size());
                for(unsigned int currentPort = 0; currentPort < inPortSize; ++currentPort)
                {
-                  structural_objectRef curr_port = GetPointer<module>(curr_gate)->get_in_port(currentPort);
+                  structural_objectRef curr_port = GetPointer<module_o>(curr_gate)->get_in_port(currentPort);
                   if(!GetPointer<port_o>(curr_port)->get_is_memory())
                   {
                      continue;
@@ -1067,10 +1604,10 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                      GetPointer<port_o>(curr_port)->set_id(port_name + fun_name);
                   }
                }
-               auto outPortSize = static_cast<unsigned int>(GetPointer<module>(curr_gate)->get_out_port_size());
+               auto outPortSize = static_cast<unsigned int>(GetPointer<module_o>(curr_gate)->get_out_port_size());
                for(unsigned int currentPort = 0; currentPort < outPortSize; ++currentPort)
                {
-                  structural_objectRef curr_port = GetPointer<module>(curr_gate)->get_out_port(currentPort);
+                  structural_objectRef curr_port = GetPointer<module_o>(curr_gate)->get_out_port(currentPort);
                   if(!GetPointer<port_o>(curr_port)->get_is_memory())
                   {
                      continue;
@@ -1103,25 +1640,22 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, HLS->output_level,
                      "---Resources are not shared in function " +
-                         HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->get_function_name() +
+                         HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->GetFunctionName() +
                          ": function pipelining may come for free");
    }
 
-   const auto cg_man = HLSMgr->CGetCallGraphManager();
-   if(cg_man->GetRootFunctions().count(HLS->functionId) &&
-      (cg_man->ExistsAddressedFunction() ||
+   const auto& CGM = HLSMgr->CGetCallGraphManager();
+   if(CGM.GetRootFunctions().count(HLS->functionId) &&
+      (CGM.ExistsAddressedFunction() ||
        HLSMgr->unused_interfaces.find(HLS->functionId) != HLSMgr->unused_interfaces.end()))
    {
-      const auto addressed_functions = cg_man->GetAddressedFunctions();
-      const auto constBitZero =
-          SM->add_module_from_technology_library("constBitZero", CONSTANT_STD, LIBRARY_STD, circuit, TechM);
-      const auto signBitZero =
-          SM->add_sign("bitZero", circuit, circuit->find_member(CLOCK_PORT_NAME, port_o_K, circuit)->get_typeRef());
-      SM->add_connection(signBitZero, constBitZero->find_member("out1", port_o_K, constBitZero));
+      const auto addressed_functions = CGM.GetAddressedFunctions();
+      auto constBitZero_obj = SM->add_constant(
+          "constBitZero", circuit, circuit->find_member(CLOCK_PORT_NAME, port_o_K, circuit)->get_typeRef(), "0");
 
       for(const auto& f_id : addressed_functions)
       {
-         const auto FUName = functions::GetFUName(tree_helper::name_function(TreeM, f_id), HLSMgr);
+         const auto FUName = functions::GetFUName(ir_helper::GetFunctionName(IRM->GetIRNode(f_id)), HLSMgr);
          if(HLSMgr->Rfuns->is_a_proxied_function(FUName))
          {
             continue;
@@ -1155,7 +1689,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          const auto fu_start = FU->find_member(START_PORT_NAME, port_o_K, FU);
          if(fu_start)
          {
-            SM->add_connection(fu_start, signBitZero);
+            SM->add_connection(fu_start, constBitZero_obj);
          }
 
          for(const auto additional_parameter :
@@ -1165,23 +1699,9 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                 HLSMgr->CGetFunctionBehavior(f_id)->CGetBehavioralHelper()->PrintVariable(additional_parameter);
 
             const auto parameterPort = FU->find_member(parameterName, port_o_K, FU);
-            const auto constZeroParam = SM->add_module_from_technology_library(
-                "zeroParam_" + FUName + "_" + parameterName, CONSTANT_STD, LIBRARY_STD, circuit, TechM);
-            const auto constZeroOutPort = constZeroParam->find_member("out1", port_o_K, constZeroParam);
-            const auto parameter_value =
-                (parameters->getOption<HDLWriter_Language>(OPT_writer_language) == HDLWriter_Language::VHDL) ?
-                    std::string("\"") + NumberToBinaryString(0, STD_GET_SIZE(parameterPort->get_typeRef())) +
-                        std::string("\"") :
-                    "0";
-            constZeroParam->SetParameter("value", parameter_value);
-
-            constZeroOutPort->type_resize(STD_GET_SIZE(parameterPort->get_typeRef()));
-
-            const auto signBitZeroParam = SM->add_sign("signZeroParam_" + FUName + "_" + parameterName, SM->get_circ(),
-                                                       constZeroOutPort->get_typeRef());
-
-            SM->add_connection(parameterPort, signBitZeroParam);
-            SM->add_connection(constZeroOutPort, signBitZeroParam);
+            auto constZeroParam = SM->add_constant("zeroParam_" + FUName + "_" + parameterName, circuit,
+                                                   parameterPort->get_typeRef(), "0");
+            SM->add_connection(parameterPort, constZeroParam);
          }
          manage_module_ports(HLSMgr, HLS, SM, FU, 0);
          memory::propagate_memory_parameters(FU, HLS->datapath);
@@ -1197,18 +1717,18 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             technology_nodeRef fuObj = TechMan->get_fu(fu_name, UPlibrary);
             const auto structManager_obj = GetPointer<functional_unit>(fuObj)->CM;
             THROW_ASSERT(structManager_obj, "unexpected condition");
-            const auto has_to_be_generated = GetPointer<module>(structManager_obj->get_circ())->has_to_be_generated();
+            const auto has_to_be_generated = GetPointer<module_o>(structManager_obj->get_circ())->has_to_be_generated();
             if(has_to_be_generated)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Unit has to be specialized.");
-               const ModuleGeneratorManagerRef modGen(new ModuleGeneratorManager(HLSMgr, parameters));
+               const HDLGeneratorManagerRef modGen(new HDLGeneratorManager(HLSMgr, parameters));
                {
                   fu_name = fu_name + "_modgen";
                }
                const auto& specialized_fuName = fu_name;
 
                const auto check_lib = TechM->get_library(specialized_fuName);
-               modGen->create_generic_module(FUName, NULL_VERTEX, FB, UPlibrary, specialized_fuName);
+               modGen->create_generic_module(FUName, gc_null_vertex(), FB, UPlibrary, specialized_fuName);
             }
             const auto FU = SM->add_module_from_technology_library(fu_name + "_i0", fu_name, UPlibrary, circuit, TechM);
             if(std::find(memory_modules.begin(), memory_modules.end(), FU) == memory_modules.end())
@@ -1239,6 +1759,190 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    {
       manage_memory_ports_parallel_chained(HLSMgr, SM, memory_modules, circuit, HLS, unique_id);
    }
+
+   for(const auto& [var, ding_dong_info] : ding_dong_candidates)
+   {
+      const auto read_port_count =
+          get_dataflow_memory_role_port_count(HLSMgr, HLS->functionId, circuit, dataflow_memory_role::reader, var);
+      const auto write_port_count =
+          get_dataflow_memory_role_port_count(HLSMgr, HLS->functionId, circuit, dataflow_memory_role::writer, var);
+      const auto max_port_count = std::max(read_port_count, write_port_count);
+      const auto ding_dong_name = "ding_dong_array_" + STR(var);
+      const std::string ding_dong_type =
+          max_port_count > 1U ? "ARRAY_1D_STD_BRAM_NN_SDS_BASE" : "ARRAY_1D_STD_BRAM_SDS_BASE";
+      const auto ding_dong_library = TechM->get_library(ding_dong_type);
+      THROW_ASSERT(!ding_dong_library.empty(), std::string("Library miss component ") + ding_dong_type);
+      INDENT_DBG_MEX(
+          DEBUG_LEVEL_PEDANTIC, debug_level,
+          "---Adding ding-dong buffer " + ding_dong_name + " of type " + ding_dong_type + " from library " +
+              ding_dong_library + " bundles=[" +
+              [&]() {
+                 std::string s;
+                 for(const auto& b : ding_dong_info.bundle_names)
+                 {
+                    if(!s.empty())
+                    {
+                       s += ",";
+                    }
+                    s += b;
+                 }
+                 return s;
+              }() +
+              "]");
+      const auto ding_dong_buffer =
+          SM->add_module_from_technology_library(ding_dong_name, ding_dong_type, ding_dong_library, circuit, TechM);
+      const auto ding_dong_module = GetPointerS<module_o>(ding_dong_buffer);
+      if(ding_dong_type == "ARRAY_1D_STD_BRAM_NN_SDS_BASE" &&
+         ding_dong_buffer->ExistsParameter("DISABLE_STD_DP_BRAM_MAPPING"))
+      {
+         ding_dong_buffer->SetParameter("DISABLE_STD_DP_BRAM_MAPPING", "1");
+      }
+      const auto ding_dong_port_count = [&](const std::string& port_name) {
+         if(port_name == "in1" || port_name == "in2w" || port_name == "in3w" || port_name == "in4w" ||
+            port_name == "sel_STORE" || port_name == "proxy_in1" || port_name == "proxy_in2w" ||
+            port_name == "proxy_in3w" || port_name == "proxy_in4w" || port_name == "proxy_sel_STORE")
+         {
+            return write_port_count;
+         }
+         if(port_name == "out1" || port_name == "in2r" || port_name == "in3r" || port_name == "in4r" ||
+            port_name == "sel_LOAD" || port_name == "proxy_out1" || port_name == "proxy_in2r" ||
+            port_name == "proxy_in3r" || port_name == "proxy_in4r" || port_name == "proxy_sel_LOAD")
+         {
+            return read_port_count;
+         }
+         return max_port_count;
+      };
+      const auto set_port_count_parameter = [&](const std::string& port_name) {
+         const auto parameter_name = "PORTSIZE_" + port_name;
+         if(ding_dong_buffer->ExistsParameter(parameter_name))
+         {
+            ding_dong_buffer->SetParameter(parameter_name, STR(ding_dong_port_count(port_name)));
+         }
+      };
+      for(const auto& pname :
+          {"in1",        "in2r",       "in2w",       "in3r",       "in3w",           "in4r",           "in4w",
+           "out1",       "sel_LOAD",   "sel_STORE",  "proxy_in1",  "proxy_in2r",     "proxy_in2w",     "proxy_in3r",
+           "proxy_in3w", "proxy_in4r", "proxy_in4w", "proxy_out1", "proxy_sel_LOAD", "proxy_sel_STORE"})
+      {
+         set_port_count_parameter(pname);
+      }
+      const auto size_ding_dong_port_vectors = [&](const auto port_getter, const unsigned int port_count) {
+         for(unsigned int port_index = 0; port_index < port_count; ++port_index)
+         {
+            const auto port = port_getter(port_index);
+            if(port->get_kind() == port_vector_o_K && GetPointerS<const port_o>(port)->get_ports_size() == 0)
+            {
+               GetPointerS<port_o>(port)->add_n_ports(ding_dong_port_count(port->get_id()), port);
+            }
+         }
+      };
+      size_ding_dong_port_vectors([&](const auto port_index) { return ding_dong_module->get_in_port(port_index); },
+                                  ding_dong_module->get_in_port_size());
+      size_ding_dong_port_vectors([&](const auto port_index) { return ding_dong_module->get_out_port(port_index); },
+                                  ding_dong_module->get_out_port_size());
+      // Validate that the instantiated component has the expected port topology before wiring.
+      // Multi-channel components must expose vector ports for every data/address/control port;
+      // single-channel components use scalar ports for the same roles.
+      const auto validate_ding_dong_port = [&](const std::string& port_name, so_kind expected_kind,
+                                               unsigned int ASSERT_PARAMETER(expected_count)) {
+         const auto port = find_direct_module_port(ding_dong_buffer, port_name);
+         THROW_ASSERT(port && port->get_kind() == expected_kind,
+                      "Ding-dong buffer port " + ding_dong_buffer->get_path() + "/" + port_name +
+                          " has unexpected kind (expected " +
+                          (expected_kind == port_vector_o_K ? "port_vector_o_K" : "port_o_K") + ")");
+         if(expected_kind == port_vector_o_K)
+         {
+#if HAVE_ASSERTS
+            const auto actual_count = GetPointerS<const port_o>(port)->get_ports_size();
+#endif
+            THROW_ASSERT(actual_count == expected_count, "Ding-dong buffer port " + ding_dong_buffer->get_path() + "/" +
+                                                             port_name + " has " + STR(actual_count) + " entries but " +
+                                                             STR(expected_count) + " expected");
+         }
+      };
+      for(const auto& pname : {"in1", "in2r", "in2w", "in3r", "in3w", "in4r", "in4w", "out1", "sel_LOAD", "sel_STORE"})
+      {
+         validate_ding_dong_port(pname, max_port_count > 1U ? port_vector_o_K : port_o_K, ding_dong_port_count(pname));
+      }
+      const auto base_address = HLSMgr->Rmem->get_symbol(var, HLS->functionId)->get_symbol_name();
+      const auto type_node = ir_helper::CGetType(IRM->GetIRNode(var));
+      const auto ding_dong_element_bitsize = std::max(1ULL, ir_helper::AccessedMaximumBitsize(type_node, 1));
+      const auto ding_dong_num_elements =
+          ir_helper::IsArrayType(type_node) ? std::max(1ULL, ir_helper::GetArrayTotalSize(type_node)) : 1ULL;
+      const auto ding_dong_write_bitsize = std::max(1ULL, get_dataflow_memory_port_bitsize(circuit, var, "d"));
+      const auto ding_dong_read_bitsize =
+          std::max(ding_dong_element_bitsize, get_dataflow_memory_port_bitsize(circuit, var, "q"));
+      const auto ding_dong_address_bitsize =
+          std::max(std::max(1ULL, get_dataflow_memory_port_bitsize(circuit, var, "address")),
+                   std::max(1ULL, ceil_log2(std::max(2ULL, ding_dong_num_elements))));
+      const auto ding_dong_size_bitsize = std::max(1ULL, HLSMgr->Rmem->get_bus_size_bitsize());
+      HLSMgr->Rmem->set_sds_var(var, true, ding_dong_element_bitsize);
+      ding_dong_buffer->SetParameter("address_space_begin", STR(base_address));
+      // Dataflow array interfaces expose element indices in the SDS case. Keep the ding-dong address
+      // space in the same domain so the instantiated primitive does not widen the address ports back to the global
+      // byte-address bus width.
+      ding_dong_buffer->SetParameter("address_space_rangesize", STR(ding_dong_num_elements));
+      ding_dong_buffer->SetParameter("USE_SPARSE_MEMORY", is_sparse_memory ? "1" : "0");
+      // InterfaceInfer array ports export element indices, not byte addresses. Keep the SDS base primitive from
+      // stripping byte offsets a second time by forcing byte-granular addressing here.
+      ding_dong_buffer->SetParameter("ALIGNMENT", "8");
+      ding_dong_buffer->SetParameter("n_elements", STR(ding_dong_num_elements));
+      ding_dong_buffer->SetParameter("data_size", STR(ding_dong_element_bitsize));
+      ding_dong_buffer->SetParameter("PRIVATE_MEMORY", HLSMgr->Rmem->is_private_memory(var) ? "1" : "0");
+      ding_dong_buffer->SetParameter("READ_ONLY_MEMORY", HLSMgr->Rmem->is_read_only_variable(var) ? "1" : "0");
+      ding_dong_buffer->SetParameter("MEMORY_INIT_file", "\"\"\"\"");
+      if(omp_info)
+      {
+         ding_dong_buffer->SetParameter("CONTEXT_COUNT", STR(omp_info->context_count));
+         ding_dong_buffer->SetParameter("CONTEXT_PAGE_BITSIZE", STR(ceil_log2(omp_info->mem_page_size)));
+      }
+      resize_named_port(ding_dong_buffer, "in1", ding_dong_write_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "in2r", ding_dong_address_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "in2w", ding_dong_address_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "in3r", ding_dong_size_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "in3w", ding_dong_size_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "out1", ding_dong_read_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "proxy_in1", ding_dong_write_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "proxy_in2r", ding_dong_address_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "proxy_in2w", ding_dong_address_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "proxy_in3r", ding_dong_size_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "proxy_in3w", ding_dong_size_bitsize, debug_level);
+      resize_named_port(ding_dong_buffer, "proxy_out1", ding_dong_read_bitsize, debug_level);
+      memory::add_memory_parameter(HLS->datapath, base_address,
+                                   STR(HLSMgr->Rmem->get_base_address(var, HLS->functionId)));
+      check_parametrization(ding_dong_buffer);
+      memory::propagate_memory_parameters(ding_dong_buffer, HLS->datapath);
+      storage_by_var[var] = ding_dong_buffer;
+
+      if(const auto clk_port = ding_dong_buffer->find_member(CLOCK_PORT_NAME, port_o_K, ding_dong_buffer))
+      {
+         SM->add_connection(clk_port, clock_port);
+      }
+      if(const auto rst_port = ding_dong_buffer->find_member(RESET_PORT_NAME, port_o_K, ding_dong_buffer))
+      {
+         SM->add_connection(rst_port, reset_port);
+      }
+
+      const auto data_size = ding_dong_buffer->GetParameter("data_size");
+      connect_constant_to_port(SM, circuit, find_direct_module_port(ding_dong_buffer, "in3r"),
+                               "ding_dong_in3r_" + STR(var), data_size);
+      connect_constant_to_port(SM, circuit, find_direct_module_port(ding_dong_buffer, "in3w"),
+                               "ding_dong_in3w_" + STR(var), data_size);
+      connect_constant_to_port(SM, circuit, find_direct_module_port(ding_dong_buffer, "in4r"),
+                               "ding_dong_in4r_" + STR(var), "1");
+      connect_constant_to_port(SM, circuit, find_direct_module_port(ding_dong_buffer, "in4w"),
+                               "ding_dong_in4w_" + STR(var), "1");
+
+      for(const auto& zero_port_name :
+          {"S_oe_ram", "S_we_ram", "S_addr_ram", "S_Wdata_ram", "Sin_Rdata_ram", "S_data_ram_size", "Sin_DataRdy",
+           "proxy_in1", "proxy_in2r", "proxy_in2w", "proxy_in3r", "proxy_in3w", "proxy_in4r", "proxy_in4w",
+           "proxy_sel_LOAD", "proxy_sel_STORE"})
+      {
+         connect_constant_to_port(SM, circuit, find_direct_module_port(ding_dong_buffer, zero_port_name),
+                                  "ding_dong_" + std::string(zero_port_name) + "_" + STR(var), "0");
+      }
+   }
+   connect_dataflow_memory_ports(HLSMgr, HLS->functionId, SM, circuit, storage_by_var, unique_id);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Managed memory ports");
 
    /// rename back all the memory proxies ports
@@ -1267,10 +1971,10 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       const auto& curr_gate = pfutbrb.first;
       THROW_ASSERT(curr_gate, "missing structural object");
       const auto fun_name = "_" + STR(pfutbrb.second);
-      const auto inPortSize = GetPointerS<module>(curr_gate)->get_in_port_size();
+      const auto inPortSize = GetPointerS<module_o>(curr_gate)->get_in_port_size();
       for(auto currentPort = 0U; currentPort < inPortSize; ++currentPort)
       {
-         const auto curr_port = GetPointerS<module>(curr_gate)->get_in_port(currentPort);
+         const auto curr_port = GetPointerS<module_o>(curr_gate)->get_in_port(currentPort);
          const auto port_name = curr_port->get_id();
          if(starts_with(port_name, PROXY_PREFIX))
          {
@@ -1282,10 +1986,10 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             }
          }
       }
-      const auto outPortSize = GetPointerS<module>(curr_gate)->get_out_port_size();
+      const auto outPortSize = GetPointerS<module_o>(curr_gate)->get_out_port_size();
       for(auto currentPort = 0U; currentPort < outPortSize; ++currentPort)
       {
-         const auto curr_port = GetPointerS<module>(curr_gate)->get_out_port(currentPort);
+         const auto curr_port = GetPointerS<module_o>(curr_gate)->get_out_port(currentPort);
          const auto port_name = curr_port->get_id();
          if(starts_with(port_name, PROXY_PREFIX))
          {
@@ -1299,6 +2003,19 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       }
    }
    HLS->Rfu->manage_killing_function_proxies(fun_obj, reverse_function_units, fun_call_sites_rel, SM, HLS, unique_id);
+   const auto selector_port = circuit->find_member(SELECTOR_REGISTER_FILE, port_o_K, circuit);
+   if(selector_port)
+   {
+      for(auto i = 0U; i < GetPointerS<module_o>(circuit)->get_internal_objects_size(); i++)
+      {
+         const auto m = GetPointerS<module_o>(circuit)->get_internal_object(i);
+         const auto m_selector_port = m->find_member(SELECTOR_REGISTER_FILE, port_o_K, m);
+         if(m_selector_port)
+         {
+            SM->add_connection(selector_port, m_selector_port);
+         }
+      }
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added functional units to circuit");
 }
 
@@ -1309,7 +2026,7 @@ void fu_binding::check_parametrization(structural_objectRef
 )
 {
 #if HAVE_ASSERTS
-   const auto fu_module = GetPointer<module>(curr_gate);
+   const auto fu_module = GetPointer<module_o>(curr_gate);
    const auto np = fu_module->get_NP_functionality();
    if(np)
    {
@@ -1332,9 +2049,9 @@ bool fu_binding::manage_module_ports(const HLS_managerRef HLSMgr, const hlsRef H
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Routing module ports - " + circuit->get_path());
    /// creating extern IN port on datapath starting from extern ports on module
    bool added_memory_element = false;
-   for(unsigned int j = 0; j < GetPointer<module>(curr_gate)->get_in_port_size(); j++)
+   for(unsigned int j = 0; j < GetPointer<module_o>(curr_gate)->get_in_port_size(); j++)
    {
-      const auto port_in = GetPointer<module>(curr_gate)->get_in_port(j);
+      const auto port_in = GetPointer<module_o>(curr_gate)->get_in_port(j);
       manage_extern_global_port(HLSMgr, HLS, SM, port_in, port_o::IN, circuit, num);
       if(GetPointer<port_o>(port_in)->get_is_memory())
       {
@@ -1342,15 +2059,15 @@ bool fu_binding::manage_module_ports(const HLS_managerRef HLSMgr, const hlsRef H
       }
    }
    /// creating extern OUT port on datapath starting from extern ports on module
-   for(unsigned int j = 0; j < GetPointer<module>(curr_gate)->get_out_port_size(); j++)
+   for(unsigned int j = 0; j < GetPointer<module_o>(curr_gate)->get_out_port_size(); j++)
    {
-      structural_objectRef port_out = GetPointer<module>(curr_gate)->get_out_port(j);
+      structural_objectRef port_out = GetPointer<module_o>(curr_gate)->get_out_port(j);
       manage_extern_global_port(HLSMgr, HLS, SM, port_out, port_o::OUT, circuit, num);
    }
    /// creating extern IO port on datapath starting from extern ports on module
-   for(unsigned int j = 0; j < GetPointer<module>(curr_gate)->get_in_out_port_size(); j++)
+   for(unsigned int j = 0; j < GetPointer<module_o>(curr_gate)->get_in_out_port_size(); j++)
    {
-      structural_objectRef port_in_out = GetPointer<module>(curr_gate)->get_in_out_port(j);
+      structural_objectRef port_in_out = GetPointer<module_o>(curr_gate)->get_in_out_port(j);
       manage_extern_global_port(HLSMgr, HLS, SM, port_in_out, port_o::IO, circuit, num);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -1367,9 +2084,9 @@ void fu_binding::manage_memory_ports_chained(const structural_managerRef SM,
    unsigned int sign_id = 0;
    for(const auto& memory_module : memory_modules)
    {
-      for(unsigned int j = 0; j < GetPointer<module>(memory_module)->get_in_port_size(); j++)
+      for(unsigned int j = 0; j < GetPointer<module_o>(memory_module)->get_in_port_size(); j++)
       {
-         structural_objectRef port_i = GetPointer<module>(memory_module)->get_in_port(j);
+         structural_objectRef port_i = GetPointer<module_o>(memory_module)->get_in_port(j);
          if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) &&
             (!GetPointer<port_o>(port_i)->get_is_extern()))
          {
@@ -1414,9 +2131,9 @@ void fu_binding::manage_memory_ports_chained(const structural_managerRef SM,
             }
          }
       }
-      for(unsigned int j = 0; j < GetPointer<module>(memory_module)->get_out_port_size(); j++)
+      for(unsigned int j = 0; j < GetPointer<module_o>(memory_module)->get_out_port_size(); j++)
       {
-         structural_objectRef port_i = GetPointer<module>(memory_module)->get_out_port(j);
+         structural_objectRef port_i = GetPointer<module_o>(memory_module)->get_out_port(j);
          if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) &&
             (!GetPointer<port_o>(port_i)->get_is_extern()))
          {
@@ -1483,7 +2200,7 @@ void fu_binding::join_merge_split(
       {
          const auto bus_merger_mod = SM->add_module_from_technology_library(
              bus_merger_inst_name, bus_merger_res_name, bm_library, circuit, HLS->HLS_D->get_technology_manager());
-         const auto bm_in_port = GetPointerS<module>(bus_merger_mod)->get_in_port(0U);
+         const auto bm_in_port = GetPointerS<module_o>(bus_merger_mod)->get_in_port(0U);
          GetPointerS<port_o>(bm_in_port)->add_n_ports(static_cast<unsigned int>(merged_ports.size()), bm_in_port);
          if(is_vector_bus)
          {
@@ -1506,14 +2223,14 @@ void fu_binding::join_merge_split(
                const auto js_mod =
                    SM->add_module_from_technology_library(js_name + bus_merger_inst_name + STR(in_id), js_name,
                                                           js_library, circuit, HLS->HLS_D->get_technology_manager());
-               const auto js_in_port = GetPointerS<module>(js_mod)->get_in_port(0U);
+               const auto js_in_port = GetPointerS<module_o>(js_mod)->get_in_port(0U);
                GetPointerS<port_o>(js_in_port)
                    ->add_n_ports(static_cast<unsigned int>(GetPointerS<port_o>(merged_port)->get_ports_size()),
                                  js_in_port);
                port_o::resize_std_port(STD_GET_SIZE((merged_port)->get_typeRef()), 0U, DEBUG_LEVEL_NONE, js_in_port);
                SM->add_connection(sign_v_in, merged_port);
                SM->add_connection(sign_v_in, js_in_port);
-               const auto js_out_port = GetPointerS<module>(js_mod)->get_out_port(0U);
+               const auto js_out_port = GetPointerS<module_o>(js_mod)->get_out_port(0U);
                port_o::resize_std_port(GetPointerS<port_o>(bus_port)->get_ports_size() *
                                            STD_GET_SIZE(bus_port->get_typeRef()),
                                        0U, DEBUG_LEVEL_NONE, js_out_port);
@@ -1543,7 +2260,7 @@ void fu_binding::join_merge_split(
             }
             in_id += 1U;
          }
-         out_port = GetPointerS<module>(bus_merger_mod)->get_out_port(0);
+         out_port = GetPointerS<module_o>(bus_merger_mod)->get_out_port(0);
          if(is_vector_bus)
          {
             port_o::resize_std_port(GetPointerS<port_o>(bus_port)->get_ports_size() *
@@ -1572,13 +2289,13 @@ void fu_binding::join_merge_split(
                sign_out->type_resize(GetPointer<port_o>(bus_port)->get_ports_size() *
                                      STD_GET_SIZE(bus_port->get_typeRef()));
             }
-            const auto ss_in_port = GetPointerS<module>(ss_mod)->get_in_port(0U);
+            const auto ss_in_port = GetPointerS<module_o>(ss_mod)->get_in_port(0U);
             port_o::resize_std_port(GetPointer<port_o>(bus_port)->get_ports_size() *
                                         STD_GET_SIZE(bus_port->get_typeRef()),
                                     0U, DEBUG_LEVEL_NONE, ss_in_port);
             SM->add_connection(sign_out, out_port);
             SM->add_connection(sign_out, ss_in_port);
-            out_port = GetPointerS<module>(ss_mod)->get_out_port(0U);
+            out_port = GetPointerS<module_o>(ss_mod)->get_out_port(0U);
             GetPointerS<port_o>(out_port)->add_n_ports(
                 static_cast<unsigned int>(GetPointerS<port_o>(bus_port)->get_ports_size()), out_port);
             port_o::resize_std_port(STD_GET_SIZE(bus_port->get_typeRef()), 0U, DEBUG_LEVEL_NONE, out_port);
@@ -1655,9 +2372,9 @@ void fu_binding::manage_memory_ports_parallel_chained(const HLS_managerRef, cons
    };
    for(const auto& memory_module : memory_modules)
    {
-      for(unsigned int j = 0; j < GetPointer<module>(memory_module)->get_in_port_size(); ++j)
+      for(unsigned int j = 0; j < GetPointer<module_o>(memory_module)->get_in_port_size(); ++j)
       {
-         structural_objectRef port_i = GetPointer<module>(memory_module)->get_in_port(j);
+         structural_objectRef port_i = GetPointer<module_o>(memory_module)->get_in_port(j);
          if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) &&
             (!GetPointer<port_o>(port_i)->get_is_extern()))
          {
@@ -1698,9 +2415,9 @@ void fu_binding::manage_memory_ports_parallel_chained(const HLS_managerRef, cons
          }
       }
 
-      for(unsigned int j = 0; j < GetPointer<module>(memory_module)->get_out_port_size(); j++)
+      for(unsigned int j = 0; j < GetPointer<module_o>(memory_module)->get_out_port_size(); j++)
       {
-         structural_objectRef port_i = GetPointer<module>(memory_module)->get_out_port(j);
+         structural_objectRef port_i = GetPointer<module_o>(memory_module)->get_out_port(j);
          if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) &&
             (!GetPointer<port_o>(port_i)->get_is_extern()))
          {
@@ -1833,8 +2550,7 @@ void fu_binding::manage_extern_global_port(const HLS_managerRef HLSMgr, const hl
    else if(inPort->get_port_interface() != port_o::port_interface::PI_DEFAULT)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Manage interface port");
-      const auto fsymbol =
-          HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->GetMangledFunctionName();
+      const auto fsymbol = HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->GetFunctionName();
       const auto func_arch = HLSMgr->module_arch->GetArchitecture(fsymbol);
       const auto is_dataflow_top =
           func_arch && func_arch->attrs.find(FunctionArchitecture::func_dataflow_top) != func_arch->attrs.end() &&
@@ -1886,7 +2602,7 @@ void fu_binding::manage_extern_global_port(const HLS_managerRef HLSMgr, const hl
    }
 }
 
-tree_nodeRef getFunctionType(tree_nodeRef exp);
+ir_nodeRef getFunctionType(ir_nodeRef exp);
 void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj,
                                unsigned int fu, const OpVertexSet& mapped_operations, unsigned int ar)
 {
@@ -1895,10 +2611,11 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    auto bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
    auto bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
    const auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
-   const auto bus_tag_bitsize =
-       HLS->Param->isOption(OPT_context_switch) ? GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize() : 0;
-   auto* fu_module = GetPointer<module>(fu_obj);
+   const auto bus_tag_bitsize = 0;
+   auto* fu_module = GetPointer<module_o>(fu_obj);
    const auto fu_tech_obj = allocation_information->get_fu(fu);
+   const auto fun_unit = GetPointerS<functional_unit>(fu_tech_obj);
+   const auto& memory_ctrl_type = fun_unit->memory_ctrl_type;
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                   "-->Specializing " + fu_obj->get_path() + " of type " + GET_TYPE_NAME(fu_obj));
    std::map<unsigned int, unsigned long long> required_variables;
@@ -1910,11 +2627,11 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
 
    if(ar)
    {
-      bool has_misaligned_indirect_ref = false;
+      bool has_unaligned_mem_access = false;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Ar is true");
       {
-         const auto type_node = tree_helper::CGetType(TreeM->GetTreeNode(ar));
-         const auto elmt_bitsize = tree_helper::AccessedMaximumBitsize(type_node, 1);
+         const auto type_node = ir_helper::CGetType(IRM->GetIRNode(ar));
+         const auto elmt_bitsize = ir_helper::AccessedMaximumBitsize(type_node, 1);
 
          if(allocation_information->is_direct_access_memory_unit(fu))
          {
@@ -1937,31 +2654,31 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
          {
             THROW_ERROR("Unit currently not supported: " + allocation_information->get_fu_name(fu).first);
          }
-         const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::CFG);
+         const auto data = FB->GetOpGraph(FunctionBehavior::CFG);
          for(const auto& mapped_operation : mapped_operations)
          {
+            const auto& op_info = data.CGetNodeInfo(mapped_operation);
             PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                          "  on BRAM = " + data->CGetOpNodeInfo(mapped_operation)->GetOperation() + " " +
-                              GET_NAME(data, mapped_operation));
+                          "  on BRAM = " + op_info.GetOperation() + " " + op_info.vertex_name);
             const auto vars = HLSMgr->get_required_values(HLS->functionId, mapped_operation);
             const auto out_var = HLSMgr->get_produced_value(HLS->functionId, mapped_operation);
-            if(GET_TYPE(data, mapped_operation) & TYPE_STORE)
+            if(op_info.node_type & TYPE_STORE)
             {
-               THROW_ASSERT(std::get<0>(vars[0]), "Expected a tree node in case of a value to store");
+               THROW_ASSERT(std::get<0>(vars[0]), "Expected an IR node in case of a value to store");
                required_variables[0] =
-                   std::max(required_variables[0], tree_helper::SizeAlloc(TreeM->GetTreeNode(std::get<0>(vars[0]))));
-               if(tree_helper::is_a_misaligned_vector(TreeM, std::get<0>(vars[0])))
+                   std::max(required_variables[0], ir_helper::SizeAlloc(IRM->GetIRNode(std::get<0>(vars[0]))));
+               if(ir_helper::is_a_misaligned_vector(IRM, std::get<0>(vars[0])))
                {
-                  has_misaligned_indirect_ref = true;
+                  has_unaligned_mem_access = true;
                }
             }
-            else if(GET_TYPE(data, mapped_operation) & TYPE_LOAD)
+            else if(op_info.node_type & TYPE_LOAD)
             {
-               THROW_ASSERT(out_var, "Expected a tree node in case of a value to load");
-               produced_variables = std::max(produced_variables, tree_helper::SizeAlloc(TreeM->GetTreeNode(out_var)));
-               if(tree_helper::is_a_misaligned_vector(TreeM, out_var))
+               THROW_ASSERT(out_var, "Expected an IR node in case of a value to load");
+               produced_variables = std::max(produced_variables, ir_helper::SizeAlloc(IRM->GetIRNode(out_var)));
+               if(ir_helper::is_a_misaligned_vector(IRM, out_var))
                {
-                  has_misaligned_indirect_ref = true;
+                  has_unaligned_mem_access = true;
                }
             }
          }
@@ -1973,8 +2690,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
          {
             auto accessed_bitsize = std::max(required_variables[0], produced_variables);
             accessed_bitsize = ceil_pow2(accessed_bitsize);
-            bram_bitsize = has_misaligned_indirect_ref ? std::max(bram_bitsize, accessed_bitsize) :
-                                                         std::max(bram_bitsize, accessed_bitsize / 2);
+            bram_bitsize = has_unaligned_mem_access ? std::max(bram_bitsize, accessed_bitsize) :
+                                                      std::max(bram_bitsize, accessed_bitsize / 2);
             if(bram_bitsize > HLSMgr->Rmem->get_maxbram_bitsize())
             {
                THROW_ERROR("incorrect operation mapping on memory module");
@@ -1984,45 +2701,42 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       }
       if(fu_module->ExistsParameter("BUS_PIPELINED"))
       {
+         const auto omp_mem_arch = FB->GetOMPInfo() != nullptr;
          const auto has_extern_mem =
              ((HLSMgr->Rmem->get_memory_address() - HLSMgr->base_address) > 0 &&
               memory_allocation_policy != MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
              (HLSMgr->Rmem->has_unknown_addresses() && memory_allocation_policy != MemoryAllocation_Policy::ALL_BRAM &&
               memory_allocation_policy != MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
-         fu_module->SetParameter("BUS_PIPELINED", has_extern_mem ? "0" : "1");
+         fu_module->SetParameter("BUS_PIPELINED", (omp_mem_arch || !has_extern_mem) ? "1" : "0");
       }
    }
    else
    {
-      const auto data = FB->CGetOpGraph(FunctionBehavior::CFG);
+      const auto data = FB->GetOpGraph(FunctionBehavior::CFG);
 
       for(const auto& mapped_operation : mapped_operations)
       {
+         const auto& op_info = data.CGetNodeInfo(mapped_operation);
          const auto vars = HLSMgr->get_required_values(HLS->functionId, mapped_operation);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                         "---Considering operation " +
-                            HLSMgr->get_tree_manager()
-                                ->GetTreeNode(data->CGetOpNodeInfo(mapped_operation)->GetNodeId())
-                                ->ToString());
+                            HLSMgr->get_ir_manager()->GetIRNode(op_info.GetNodeId())->ToString());
          const auto out_var = HLSMgr->get_produced_value(HLS->functionId, mapped_operation);
-         const auto fun_unit = GetPointerS<functional_unit>(fu_tech_obj);
-         const auto& memory_ctrl_type = fun_unit->memory_ctrl_type;
 
          if(memory_ctrl_type != "")
          {
             unsigned long long mem_var_size_in = 1;
             unsigned long long mem_var_size_out = 1;
 
-            if(GET_TYPE(data, mapped_operation) & TYPE_STORE)
+            if(op_info.node_type & TYPE_STORE)
             {
-               THROW_ASSERT(std::get<0>(vars[0]), "Expected a tree node in case of a value to store");
-               mem_var_size_in =
-                   std::max(mem_var_size_in, tree_helper::SizeAlloc(TreeM->GetTreeNode(std::get<0>(vars[0]))));
+               THROW_ASSERT(std::get<0>(vars[0]), "Expected an IR node in case of a value to store");
+               mem_var_size_in = std::max(mem_var_size_in, ir_helper::SizeAlloc(IRM->GetIRNode(std::get<0>(vars[0]))));
             }
-            else if(GET_TYPE(data, mapped_operation) & TYPE_LOAD)
+            else if(op_info.node_type & TYPE_LOAD)
             {
-               THROW_ASSERT(out_var, "Expected a tree node in case of a value to load");
-               mem_var_size_out = std::max(mem_var_size_out, tree_helper::SizeAlloc(TreeM->GetTreeNode(out_var)));
+               THROW_ASSERT(out_var, "Expected an IR node in case of a value to load");
+               mem_var_size_out = std::max(mem_var_size_out, ir_helper::SizeAlloc(IRM->GetIRNode(out_var)));
             }
             /// specializing MEMORY_STD ports
             required_variables.insert(std::make_pair(0, 0));
@@ -2045,24 +2759,22 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                      PROXY_LIBRARY) // functions just synthesized shouldn't be customized
          {
             const auto np = fu_module->get_NP_functionality();
-            const auto is_flopoco = np && np->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED);
-            const auto op_name = data->CGetOpNodeInfo(mapped_operation)->GetOperation();
-            const auto is_float_expr = op_name.find(FLOAT_EXPR) != std::string::npos;
+            const auto op_name = op_info.GetOperation();
             for(auto i = 0U; i < vars.size(); ++i)
             {
-               const auto& tree_var = std::get<0>(vars[i]);
-               if(tree_var == 0)
+               const auto& ir_var = std::get<0>(vars[i]);
+               if(ir_var == 0)
                {
                   continue;
                }
                required_variables.insert(std::make_pair(i, 0));
-               const auto var_node = TreeM->GetTreeNode(tree_var);
-               if(tree_helper::IsVectorType(var_node))
+               const auto var_node = IRM->GetIRNode(ir_var);
+               if(ir_helper::IsVectorType(var_node))
                {
-                  const auto type = tree_helper::CGetType(var_node);
-                  const auto size = tree_helper::SizeAlloc(type);
-                  const auto element_type = tree_helper::CGetElements(type);
-                  const auto element_size = tree_helper::SizeAlloc(element_type);
+                  const auto type = ir_helper::CGetType(var_node);
+                  const auto size = ir_helper::SizeAlloc(type);
+                  const auto element_type = ir_helper::CGetElements(type);
+                  const auto element_size = ir_helper::SizeAlloc(element_type);
                   required_variables[i] = std::max(required_variables[i], element_size);
 
                   if(num_elements.find(i) == num_elements.end())
@@ -2077,18 +2789,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                }
                else
                {
-                  auto bitsize = tree_helper::Size(var_node);
-                  if(is_float_expr && is_flopoco)
-                  {
-                     if(bitsize < 32)
-                     {
-                        bitsize = 32;
-                     }
-                     else if(bitsize > 32 && bitsize < 64)
-                     {
-                        bitsize = 64;
-                     }
-                  }
+                  auto bitsize = ir_helper::Size(var_node);
                   required_variables[i] = std::max(required_variables[i], bitsize);
                }
             }
@@ -2099,52 +2800,56 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                auto it_end = param.end();
                for(auto it = param.begin(); it != it_end; ++it)
                {
-                  if(*it == "LSB_PARAMETER" && op_name == "pointer_plus_expr")
+                  if(*it == "LSB_PARAMETER" && op_name == "gep_node")
                   {
+                     auto op0 = IRM->GetIRNode(std::get<0>(vars[0]));
+                     auto op1 = IRM->GetIRNode(std::get<0>(vars[1]));
                      unsigned int curr_LSB = 0;
-                     auto op0_tree_var = std::get<0>(vars[0]);
-                     if(op0_tree_var)
+                     const auto var = ir_helper::GetBaseVariable(op0);
+                     if(var && FB->is_variable_mem(var->index) && HLSMgr->Rmem->is_sds_var(var->index))
                      {
-                        const auto var = tree_helper::GetBaseVariable(TreeM->GetTreeNode(op0_tree_var));
-                        if(var && FB->is_variable_mem(var->index) && HLSMgr->Rmem->is_sds_var(var->index))
+                        const auto type = ir_helper::CGetType(var);
+                        const auto value_bitsize = HLSMgr->Rmem->get_sds_var_size(var->index);
+                        if(value_bitsize <= 8)
                         {
-                           const auto type = tree_helper::CGetType(var);
-                           const auto value_bitsize = tree_helper::AccessedMaximumBitsize(type, 1);
-                           if(value_bitsize <= 8)
-                           {
-                              curr_LSB = 0;
-                           }
-                           else if(value_bitsize == 16)
-                           {
-                              curr_LSB = 1;
-                           }
-                           else if(value_bitsize == 32)
-                           {
-                              curr_LSB = 2;
-                           }
-                           else if(value_bitsize == 64)
-                           {
-                              curr_LSB = 3;
-                           }
-                           else if(value_bitsize == 128)
-                           {
-                              curr_LSB = 4;
-                           }
-                           else if(value_bitsize == 256)
-                           {
-                              curr_LSB = 5;
-                           }
-                           else
-                           {
-                              curr_LSB = 0;
-                           }
+                           curr_LSB = 0;
+                        }
+                        else if(value_bitsize == 16)
+                        {
+                           curr_LSB = 1;
+                        }
+                        else if(value_bitsize == 32)
+                        {
+                           curr_LSB = 2;
+                        }
+                        else if(value_bitsize == 64)
+                        {
+                           curr_LSB = 3;
+                        }
+                        else if(value_bitsize == 128)
+                        {
+                           curr_LSB = 4;
+                        }
+                        else if(value_bitsize == 256)
+                        {
+                           curr_LSB = 5;
+                        }
+                        else if(value_bitsize == 512)
+                        {
+                           curr_LSB = 6;
+                        }
+                        else if(value_bitsize == 1024)
+                        {
+                           curr_LSB = 7;
+                        }
+                        else
+                        {
+                           curr_LSB = 0;
                         }
                      }
-                     auto op0 = TreeM->GetTreeNode(op0_tree_var);
-                     auto op1 = TreeM->GetTreeNode(std::get<0>(vars[1]));
-                     if(op0->get_kind() == ssa_name_K)
+                     if(op0->get_kind() == ssa_node_K)
                      {
-                        auto ssa_var0 = GetPointer<ssa_name>(op0);
+                        auto ssa_var0 = GetPointer<ssa_node>(op0);
                         if(!ssa_var0->bit_values.empty())
                         {
                            auto tailZeros = 0u;
@@ -2168,9 +2873,9 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                      {
                         curr_LSB = 0;
                      }
-                     if(op1->get_kind() == ssa_name_K)
+                     if(op1->get_kind() == ssa_node_K)
                      {
-                        auto ssa_var1 = GetPointer<ssa_name>(op1);
+                        const auto* ssa_var1 = GetPointerS<const ssa_node>(op1);
                         if(!ssa_var1->bit_values.empty())
                         {
                            auto tailZeros = 0u;
@@ -2190,9 +2895,9 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                            curr_LSB = 0;
                         }
                      }
-                     else if(op1->get_kind() == integer_cst_K)
+                     else if(op1->get_kind() == constant_int_val_node_K)
                      {
-                        const auto offset_value = tree_helper::GetConstValue(op1);
+                        const auto offset_value = ir_helper::GetConstValue(op1);
                         if(offset_value)
                         {
                            auto tailZeros = 0u;
@@ -2228,51 +2933,51 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                         fu_module->SetParameter("LSB_PARAMETER", STR(curr_LSB));
                      }
                   }
-                  if(*it == "OFFSET_PARAMETER" && op_name == "bit_ior_concat_expr")
+                  if(*it == "OFFSET_PARAMETER" && op_name == "concat_bit_node")
                   {
-                     auto index = data->CGetOpNodeInfo(mapped_operation)->GetNodeId();
-                     const auto ga_node = TreeM->GetTreeNode(index);
-                     const auto ga = GetPointer<gimple_assign>(ga_node);
-                     const auto ce = GetPointer<bit_ior_concat_expr>(ga->op1);
-                     const auto offset_value = tree_helper::GetConstValue(ce->op2);
+                     auto index = op_info.GetNodeId();
+                     const auto ga_node = IRM->GetIRNode(index);
+                     const auto ga = GetPointer<assign_stmt>(ga_node);
+                     const auto ce = GetPointer<concat_bit_node>(ga->op1);
+                     const auto offset_value = ir_helper::GetConstValue(ce->op2);
                      fu_module->SetParameter("OFFSET_PARAMETER", STR(offset_value));
                   }
                   if(*it == "unlock_address" && op_name == BUILTIN_WAIT_CALL)
                   {
-                     auto index = data->CGetOpNodeInfo(mapped_operation)->GetNodeId();
+                     auto index = op_info.GetNodeId();
                      std::string parameterName = HLSMgr->Rmem->get_symbol(index, HLS->functionId)->get_symbol_name();
                      fu_module->SetParameter("unlock_address", parameterName);
                   }
                   if(*it == "MEMORY_INIT_file" && op_name == BUILTIN_WAIT_CALL)
                   {
-                     auto index = data->CGetOpNodeInfo(mapped_operation)->GetNodeId();
+                     auto index = op_info.GetNodeId();
                      const auto parameterAddressFileName = "function_addresses_" + STR(index) + ".mem";
-                     std::ofstream parameterAddressFile(parameterAddressFileName);
+                     const auto output_directory =
+                         HLSMgr->get_parameter()->getOption<std::filesystem::path>(OPT_output_directory);
+                     std::filesystem::create_directories(output_directory);
+                     std::ofstream parameterAddressFile(output_directory / parameterAddressFileName);
 
-                     const auto call = TreeM->GetTreeNode(index);
-                     const auto& calledFunction = GetPointerS<const gimple_call>(call)->args[0];
-                     const auto& hasreturn_node = GetPointerS<const gimple_call>(call)->args[1];
-                     const auto hasreturn_value =
-                         tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(hasreturn_node));
+                     const auto call = IRM->GetIRNode(index);
+                     const auto& calledFunction = GetPointerS<const call_stmt>(call)->args[0];
+                     const auto& hasreturn_node = GetPointerS<const call_stmt>(call)->args[1];
+                     const auto hasreturn_value = ir_helper::GetConstValue(hasreturn_node);
                      const auto addrExpr = calledFunction;
                      const auto functionType = getFunctionType(addrExpr);
                      const auto alignment = HLSMgr->Rmem->get_parameter_alignment();
                      unsigned long long int address = 0;
                      address = HLSMgr->Rmem->compute_next_base_address(address, index, alignment);
-                     auto paramList = GetPointerS<const function_type>(functionType)->prms;
-                     while(paramList)
+                     auto paramList = GetPointerS<const function_ty_node>(functionType)->list_of_args_type;
+                     for(const auto& p : paramList)
                      {
-                        const auto node = GetPointerS<const tree_list>(paramList);
-                        if(node->valu->get_kind() != void_type_K)
+                        if(p->get_kind() != void_ty_node_K)
                         {
                            const auto str_address = convert_to_binary(address, HLSMgr->get_address_bitsize());
                            parameterAddressFile << str_address << "\n";
-                           address = HLSMgr->Rmem->compute_next_base_address(address, node->valu->index, alignment);
+                           address = HLSMgr->Rmem->compute_next_base_address(address, p->index, alignment);
                         }
-                        paramList = node->chan;
                      }
-                     const auto return_type = GetPointerS<const function_type>(functionType)->retn;
-                     if(return_type && return_type->get_kind() != void_type_K && hasreturn_value)
+                     const auto return_type = GetPointerS<const function_ty_node>(functionType)->retn;
+                     if(return_type && return_type->get_kind() != void_ty_node_K && hasreturn_value)
                      {
                         const auto str_address = convert_to_binary(address, HLSMgr->get_address_bitsize());
                         parameterAddressFile << str_address << "\n";
@@ -2284,19 +2989,19 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
             }
             if(out_var)
             {
-               const auto out_node = TreeM->GetTreeNode(out_var);
-               if(tree_helper::IsVectorType(out_node))
+               const auto out_node = IRM->GetIRNode(out_var);
+               if(ir_helper::IsVectorType(out_node))
                {
-                  const auto type = tree_helper::CGetType(out_node);
-                  const auto size = tree_helper::SizeAlloc(type);
-                  const auto element_type = tree_helper::CGetElements(type);
-                  const auto element_size = tree_helper::SizeAlloc(element_type);
+                  const auto type = ir_helper::CGetType(out_node);
+                  const auto size = ir_helper::SizeAlloc(type);
+                  const auto element_type = ir_helper::CGetElements(type);
+                  const auto element_size = ir_helper::SizeAlloc(element_type);
                   n_out_elements = size / element_size;
                   produced_variables = element_size;
                }
                else
                {
-                  produced_variables = std::max(produced_variables, tree_helper::Size(out_node));
+                  produced_variables = std::max(produced_variables, ir_helper::Size(out_node));
                }
                /// check for precision parameter
                if(np)
@@ -2308,7 +3013,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                   {
                      if(*it == "PRECISION")
                      {
-                        auto sizetype = tree_helper::Size(tree_helper::CGetType(out_node));
+                        auto sizetype = ir_helper::Size(ir_helper::CGetType(out_node));
                         if(sizetype == 1)
                         {
                            sizetype = 8;
@@ -2318,6 +3023,17 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                   }
                }
             }
+         }
+      }
+
+      if(memory_ctrl_type != "" && fu_module->ExistsParameter("USE_BACK_PRESSURE"))
+      {
+         const bool is_openmp = parameters->isOption(OPT_openmp) && parameters->getOption<bool>(OPT_openmp);
+         if(is_openmp)
+         {
+            fu_module->SetParameter("USE_BACK_PRESSURE", STR(1));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "---Activated back_pressure in  " + fu_module->get_path());
          }
       }
    }
@@ -2404,7 +3120,6 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       }
    }
 
-   auto* fun_unit = GetPointer<functional_unit>(fu_tech_obj);
    if(fun_unit)
    {
       const functional_unit::operation_vec& Ops = fun_unit->get_operations();
@@ -2425,27 +3140,39 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
 void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj,
                                         unsigned int ar, const std::string& base_address,
                                         unsigned long long int rangesize, bool is_memory_splitted,
-                                        bool is_sparse_memory, bool is_sds)
+                                        bool is_sparse_memory, bool is_sds, OMPInfoRef omp_info)
 {
-   const auto fu_module = GetPointer<module>(fu_obj);
+   const auto fu_module = GetPointer<module_o>(fu_obj);
    /// base address specialization
    fu_module->SetParameter("address_space_begin", STR(base_address));
    fu_module->SetParameter("address_space_rangesize", STR(rangesize));
    fu_module->SetParameter("USE_SPARSE_MEMORY", is_sparse_memory ? "1" : "0");
+   unsigned int context_count = 1U;
+   if(omp_info)
+   {
+      context_count = omp_info->context_count;
+      fu_module->SetParameter("CONTEXT_COUNT", STR(context_count));
+      fu_module->SetParameter("CONTEXT_PAGE_BITSIZE", STR(ceil_log2(omp_info->mem_page_size)));
+   }
    memory::add_memory_parameter(HLS->datapath, base_address, STR(HLSMgr->Rmem->get_base_address(ar, HLS->functionId)));
 
    /// array ref initialization
-   THROW_ASSERT(ar, "expected a real tree node index");
-   const auto init_filename = "array_ref_" + STR(ar) + ".mem";
-   std::ofstream init_file_a(init_filename);
+   THROW_ASSERT(ar, "expected a real IR node index");
+   const auto init_filename = "array_" + STR(ar) + ".mem";
+   const auto output_directory = HLSMgr->get_parameter()->getOption<std::filesystem::path>(OPT_output_directory);
+   std::filesystem::create_directories(output_directory);
+   std::ofstream init_file_a(output_directory / init_filename);
    std::ofstream init_file_b;
    if(is_memory_splitted)
    {
-      init_file_b.open("0_" + init_filename);
+      init_file_b.open(output_directory / ("0_" + init_filename));
    }
    unsigned long long vec_size = 0, elts_size = 0;
    const auto bitsize_align = is_sds ? 0ULL : std::stoull(fu_module->GetParameter("BRAM_BITSIZE"));
-   fill_array_ref_memory(init_file_a, init_file_b, ar, vec_size, elts_size, HLSMgr->Rmem, TreeM, is_sds, bitsize_align);
+   for(unsigned int i = 0; i < context_count; i++)
+   {
+      fill_array_memory(init_file_a, init_file_b, ar, vec_size, elts_size, HLSMgr->Rmem, IRM, is_sds, bitsize_align);
+   }
    THROW_ASSERT(vec_size, "at least one element is expected");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---elts_size " + STR(elts_size));
    if(is_sds)
@@ -2469,60 +3196,56 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    fu_module->SetParameter("READ_ONLY_MEMORY", HLSMgr->Rmem->is_read_only_variable(ar) ? "1" : "0");
 }
 
-void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar,
-                                       unsigned long long& vec_size, unsigned long long& elts_size, const memoryRef mem,
-                                       tree_managerConstRef TM, bool is_sds, unsigned long long bitsize_align)
+void fu_binding::fill_array_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar,
+                                   unsigned long long& vec_size, unsigned long long& elts_size,
+                                   const std::unique_ptr<memory>& mem, ir_managerConstRef TM, bool is_sds,
+                                   unsigned long long bitsize_align)
 {
    init_file_b.put(0);
    const auto is_memory_splitted = init_file_b.good();
-   init_file_b.seekp(std::ios_base::beg);
+   init_file_b.seekp(std::ios_base::cur - 1);
 
-   const auto ar_node = TM->GetTreeNode(ar);
-   tree_nodeRef init_node;
-   const auto vd = GetPointer<const var_decl>(ar_node);
+   const auto ar_node = TM->GetIRNode(ar);
+   ir_nodeRef init_node;
+   const auto vd = GetPointer<const variable_val_node>(ar_node);
    if(vd && vd->init)
    {
       init_node = vd->init;
    }
-   else if(GetPointer<const string_cst>(ar_node))
-   {
-      init_node = ar_node;
-   }
-   const auto array_type_node = tree_helper::CGetType(ar_node);
+   const auto array_type_node = ir_helper::CGetType(ar_node);
    unsigned long long element_align = 0;
-   if(tree_helper::IsArrayEquivType(array_type_node))
+   if(is_sds)
+   {
+      elts_size = mem->get_sds_var_size(ar);
+      auto alloc_size = ir_helper::SizeAlloc(array_type_node);
+      vec_size = alloc_size / elts_size + (alloc_size % elts_size != 0 ? 1 : 0);
+   }
+   else if(ir_helper::IsArrayEquivType(array_type_node))
    {
       std::vector<unsigned long long> dims;
-      tree_helper::get_array_dim_and_bitsize(TM, array_type_node->index, dims, elts_size);
+      ir_helper::get_array_dim_and_bitsize(TM, array_type_node->index, dims, elts_size);
       THROW_ASSERT(dims.size(), "something wrong happened");
       vec_size = std::accumulate(dims.begin(), dims.end(), 1ULL,
                                  [](unsigned long long a, unsigned long long b) { return a * b; });
    }
-   else if(GetPointer<const integer_type>(array_type_node) || tree_helper::IsRealType(array_type_node) ||
-           tree_helper::IsEnumType(array_type_node) || tree_helper::IsPointerType(array_type_node) ||
-           tree_helper::IsStructType(array_type_node) || tree_helper::IsUnionType(array_type_node) ||
-           tree_helper::IsComplexType(array_type_node))
+   else if(GetPointer<const integer_ty_node>(array_type_node) || ir_helper::IsRealType(array_type_node) ||
+           ir_helper::IsPointerType(array_type_node) || ir_helper::IsStructType(array_type_node))
    {
-      elts_size = tree_helper::SizeAlloc(array_type_node);
+      elts_size = ir_helper::SizeAlloc(array_type_node);
       vec_size = 1;
    }
-   else if(tree_helper::IsBooleanType(array_type_node))
+   else if(ir_helper::IsVectorType(array_type_node))
    {
-      elts_size = 8;
-      vec_size = 1;
-   }
-   else if(tree_helper::IsVectorType(array_type_node))
-   {
-      elts_size = tree_helper::SizeAlloc(array_type_node);
-      const auto element_type = tree_helper::CGetElements(array_type_node);
-      element_align = tree_helper::SizeAlloc(element_type);
+      elts_size = ir_helper::SizeAlloc(array_type_node);
+      const auto element_type = ir_helper::CGetElements(array_type_node);
+      element_align = ir_helper::SizeAlloc(element_type);
       vec_size = 1;
    }
    else
    {
       THROW_ERROR("Type not supported: " + array_type_node->get_kind_text());
    }
-   THROW_ASSERT(elts_size && vec_size, "");
+   THROW_ASSERT(elts_size && vec_size, "elts_size=" + STR(elts_size) + " vec_size=" + STR(vec_size));
    if(is_sds)
    {
       bitsize_align = elts_size;
@@ -2533,31 +3256,44 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
    }
 
    const auto nbyte_on_memory = bitsize_align / 8;
-
    if(init_node &&
-      ((GetPointer<constructor>(init_node) && GetPointerS<constructor>(init_node)->list_of_idx_valu.size()) ||
-       (GetPointer<string_cst>(init_node) && GetPointerS<string_cst>(init_node)->strg.size()) ||
-       (!GetPointer<constructor>(init_node) && !GetPointer<string_cst>(init_node))))
+      ((GetPointer<constructor_node>(init_node) && GetPointerS<constructor_node>(init_node)->list_of_idx_valu.size()) ||
+       (!GetPointer<constructor_node>(init_node))))
    {
       std::vector<std::string> init_string;
       write_init(TM, ar_node, init_node, init_string, mem, element_align);
       if(is_sds && (element_align == 0 || elts_size == element_align))
       {
          THROW_ASSERT(!is_memory_splitted, "unexpected condition");
+         THROW_ASSERT(elts_size, "unexpected condition");
+         unsigned int row = 0;
+         std::string current_string;
          for(const auto& init_value : init_string)
          {
-            THROW_ASSERT(elts_size, "unexpected condition");
-            if(elts_size != init_value.size() && (init_value.size() % elts_size == 0))
+            ++row;
+            auto init_value_size = init_value.size();
+            if(elts_size != init_value_size && (init_value_size % elts_size == 0))
             {
-               const auto n_elmts = init_value.size() / elts_size;
+               const auto n_elmts = init_value_size / elts_size;
                for(auto index = 0u; index < n_elmts; ++index)
                {
-                  init_file_a << init_value.substr(init_value.size() - elts_size - index * elts_size, elts_size)
+                  init_file_a << init_value.substr(init_value_size - elts_size - index * elts_size, elts_size)
                               << std::endl;
+               }
+            }
+            else if(elts_size > init_value_size && (elts_size % init_value_size == 0))
+            {
+               const auto n_elmts = elts_size / init_value_size;
+               current_string = init_value + current_string;
+               if(row % n_elmts == 0)
+               {
+                  init_file_a << current_string << std::endl;
+                  current_string.clear();
                }
             }
             else
             {
+               THROW_ASSERT(elts_size == init_value_size, "unexpected condition");
                init_file_a << init_value << std::endl;
             }
          }
@@ -2634,9 +3370,9 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
                eightbit_string.push_back("00000000");
             }
          }
-         if((tree_helper::SizeAlloc(array_type_node) / 8U) > eightbit_string.size())
+         if((ir_helper::SizeAlloc(array_type_node) / 8U) > eightbit_string.size())
          {
-            size_t tail_bytes = (tree_helper::SizeAlloc(array_type_node) / 8U) - eightbit_string.size();
+            size_t tail_bytes = (ir_helper::SizeAlloc(array_type_node) / 8U) - eightbit_string.size();
             for(size_t l = 0; l < tail_bytes; ++l)
             {
                eightbit_string.push_back("00000000");
@@ -2766,27 +3502,28 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
    }
 }
 
-void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_node, tree_nodeRef _init_node,
-                            std::vector<std::string>& init_file, const memoryRef mem, unsigned long long element_align)
+void fu_binding::write_init(const ir_managerConstRef IRM, ir_nodeRef var_node, ir_nodeRef _init_node,
+                            std::vector<std::string>& init_file, const std::unique_ptr<memory>& mem,
+                            unsigned long long element_align)
 {
    std::string trimmed_value;
    const auto init_node = _init_node;
    switch(init_node->get_kind())
    {
-      case real_cst_K:
+      case constant_fp_val_node_K:
       {
-         auto precision = tree_helper::SizeAlloc(_init_node);
-         const auto rc = GetPointerS<const real_cst>(init_node);
+         auto precision = ir_helper::SizeAlloc(_init_node);
+         const auto rc = GetPointerS<const constant_fp_val_node>(init_node);
          std::string C_value = rc->valr;
          trimmed_value = convert_fp_to_string(C_value, precision);
          init_file.push_back(trimmed_value);
          break;
       }
-      case integer_cst_K:
+      case constant_int_val_node_K:
       {
-         const auto ull_value = tree_helper::GetConstValue(init_node);
+         const auto ull_value = ir_helper::GetConstValue(init_node);
          trimmed_value = "";
-         auto precision = tree_helper::SizeAlloc(_init_node);
+         auto precision = ir_helper::SizeAlloc(_init_node);
          if(element_align)
          {
             precision = std::min(precision, element_align);
@@ -2798,45 +3535,21 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          init_file.push_back(trimmed_value);
          break;
       }
-      case complex_cst_K:
+      case constructor_node_K:
       {
-         const auto precision = tree_helper::SizeAlloc(_init_node);
-         const auto cc = GetPointerS<const complex_cst>(init_node);
-         write_init(TreeM, var_node, cc->real, init_file, mem, precision / 2);
-         write_init(TreeM, var_node, cc->imag, init_file, mem, precision / 2);
-         break;
-      }
-      case constructor_K:
-      {
-         const auto co = GetPointerS<const constructor>(init_node);
+         const auto co = GetPointerS<const constructor_node>(init_node);
          bool designated_initializers_used = false;
          bool is_struct = false;
-         bool is_union = false;
-         unsigned long long union_size = 0;
-         std::vector<tree_nodeRef>* field_list = nullptr;
+         std::vector<ir_nodeRef>* field_list = nullptr;
          /// check if designated initializers are really used
-         if(co->list_of_idx_valu.size() && co->list_of_idx_valu.front().first->get_kind() == field_decl_K)
+         if(co->list_of_idx_valu.size() && co->list_of_idx_valu.front().first->get_kind() == field_val_node_K)
          {
             auto iv_it = co->list_of_idx_valu.begin();
             const auto iv_end = co->list_of_idx_valu.end();
-            const auto scpe = GetPointerS<field_decl>(iv_it->first)->scpe;
+            const auto parent = GetPointerS<field_val_node>(iv_it->first)->parent;
 
-            if(scpe->get_kind() == record_type_K)
-            {
-               field_list = &GetPointerS<record_type>(scpe)->list_of_flds;
-               // struct_or_union_align = GetPointer<record_type>(scpe)->algn;
-               is_struct = true;
-            }
-            else if(scpe->get_kind() == union_type_K)
-            {
-               field_list = &GetPointerS<union_type>(scpe)->list_of_flds;
-               is_union = true;
-               union_size = tree_helper::SizeAlloc(scpe);
-            }
-            else
-            {
-               THROW_ERROR("expected a record_type or a union_type");
-            }
+            field_list = &GetPointerS<struct_ty_node>(parent)->list_of_flds;
+            is_struct = true;
             auto fl_it = field_list->begin();
             const auto fl_end = field_list->end();
             for(; fl_it != fl_end && iv_it != iv_end; ++iv_it, ++fl_it)
@@ -2846,7 +3559,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                   break;
                }
             }
-            if(fl_it != fl_end && is_struct)
+            if(fl_it != fl_end)
             {
                designated_initializers_used = true;
             }
@@ -2862,14 +3575,14 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             const auto iv_end = co->list_of_idx_valu.end();
             for(; fli != flend; ++fli)
             {
-               if(!GetPointer<field_decl>(*fli))
+               if(!GetPointer<field_val_node>(*fli))
                {
                   continue;
                }
-               const auto is_bitfield = GetPointer<field_decl>(*fli)->is_bitfield();
+               const auto is_bitfield = GetPointer<field_val_node>(*fli)->bitfield;
                auto inext = fli;
                ++inext;
-               while(inext != flend && !GetPointer<field_decl>(*inext))
+               while(inext != flend && !GetPointer<field_val_node>(*inext))
                {
                   ++inext;
                }
@@ -2877,17 +3590,17 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                if(is_bitfield)
                {
                   // fix the element precision to pass to write_init
-                  element_align = tree_helper::SizeAlloc(*fli);
+                  element_align = ir_helper::SizeAlloc(*fli);
                }
 
                if(iv_it != iv_end && iv_it->first->index == (*fli)->index)
                {
-                  write_init(TreeM, iv_it->first, iv_it->second, init_file, mem, element_align);
+                  write_init(IRM, iv_it->first, iv_it->second, init_file, mem, element_align);
                   ++iv_it;
                }
                else
                {
-                  write_init(TreeM, *fli, *fli, init_file, mem, element_align);
+                  write_init(IRM, *fli, *fli, init_file, mem, element_align);
                }
 
                if(is_bitfield)
@@ -2902,19 +3615,17 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                   unsigned long long int nbits;
                   if(inext != flend)
                   {
-                     const auto idx_next_fd = GetPointerS<field_decl>(*inext);
-                     THROW_ASSERT(tree_helper::GetConstValue(idx_next_fd->bpos) >= 0, "");
-                     nbits = static_cast<unsigned long long int>(tree_helper::GetConstValue(idx_next_fd->bpos));
+                     const auto idx_next_fd = GetPointerS<field_val_node>(*inext);
+                     nbits = static_cast<unsigned long long int>(idx_next_fd->offset);
                   }
                   else
                   {
-                     nbits = tree_helper::SizeAlloc(co->type);
+                     nbits = ir_helper::SizeAlloc(co->type);
                   }
-                  const auto idx_curr_fd = GetPointer<field_decl>(*fli);
-                  const auto field_decl_size = tree_helper::SizeAlloc(*fli);
-                  THROW_ASSERT(nbits >= (tree_helper::GetConstValue(idx_curr_fd->bpos) + field_decl_size), "");
-                  nbits -= static_cast<unsigned long long int>(tree_helper::GetConstValue(idx_curr_fd->bpos)) +
-                           field_decl_size;
+                  const auto idx_curr_fd = GetPointer<field_val_node>(*fli);
+                  const auto field_decl_size = ir_helper::SizeAlloc(*fli);
+                  THROW_ASSERT(nbits >= (idx_curr_fd->offset + field_decl_size), "");
+                  nbits -= static_cast<unsigned long long int>(idx_curr_fd->offset) + field_decl_size;
                   if(nbits)
                   {
                      /// add padding
@@ -2929,23 +3640,25 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             const auto iv_end = co->list_of_idx_valu.end();
             for(; iv_it != iv_end; ++iv_it)
             {
-               if(is_struct && !GetPointer<field_decl>(iv_it->first))
+               THROW_ASSERT(!is_struct || GetPointer<field_val_node>(iv_it->first), "unexpected condition");
+               if(is_struct && GetPointer<field_val_node>(iv_it->first)->bitsizealloc == 0)
                {
+                  // skip null field decl
                   continue;
                }
-               const auto is_bitfield = is_struct && GetPointer<field_decl>(iv_it->first)->is_bitfield();
+               const auto is_bitfield = is_struct && GetPointer<field_val_node>(iv_it->first)->bitfield;
                auto iv_next = iv_it;
                ++iv_next;
-               while(iv_next != iv_end && is_struct && !GetPointer<field_decl>(iv_next->first))
+               while(iv_next != iv_end && is_struct && !GetPointer<field_val_node>(iv_next->first))
                {
                   ++iv_next;
                }
                if(is_struct && is_bitfield)
                {
                   // fix the element precision to pass to write_init
-                  element_align = tree_helper::SizeAlloc(iv_it->first);
+                  element_align = ir_helper::SizeAlloc(iv_it->first);
                }
-               write_init(TreeM, iv_it->first, iv_it->second, init_file, mem, element_align);
+               write_init(IRM, iv_it->first, iv_it->second, init_file, mem, element_align);
                if(is_struct && is_bitfield)
                {
                   // reset the element_align to the main value
@@ -2958,32 +3671,17 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                   unsigned long long int nbits;
                   if(iv_next != iv_end)
                   {
-                     const auto idx_next_fd = GetPointerS<field_decl>(iv_next->first);
-                     THROW_ASSERT(tree_helper::GetConstValue(idx_next_fd->bpos) >= 0, "");
-                     nbits = static_cast<unsigned long long int>(tree_helper::GetConstValue(idx_next_fd->bpos));
+                     const auto idx_next_fd = GetPointerS<field_val_node>(iv_next->first);
+                     nbits = static_cast<unsigned long long int>(idx_next_fd->offset);
                   }
                   else
                   {
-                     nbits = tree_helper::SizeAlloc(co->type);
+                     nbits = ir_helper::SizeAlloc(co->type);
                   }
-                  const auto field_decl_size = tree_helper::SizeAlloc(iv_it->first);
-                  const auto idx_curr_fd = GetPointerS<field_decl>(iv_it->first);
-                  THROW_ASSERT(nbits >= (tree_helper::GetConstValue(idx_curr_fd->bpos) + field_decl_size), "");
-                  nbits -= static_cast<unsigned long long int>(tree_helper::GetConstValue(idx_curr_fd->bpos)) +
-                           field_decl_size;
-                  if(nbits)
-                  {
-                     /// add padding
-                     init_file.push_back(std::string(nbits, '0'));
-                  }
-               }
-               else if(is_union)
-               {
-                  /// check if padding is needed
-                  THROW_ASSERT(co->list_of_idx_valu.size() == 1, "just one initializer is possible");
-                  const auto field_decl_size = tree_helper::SizeAlloc(iv_it->first);
-                  THROW_ASSERT(union_size >= field_decl_size, "");
-                  const auto nbits = union_size - field_decl_size;
+                  const auto field_decl_size = ir_helper::SizeAlloc(iv_it->first);
+                  const auto idx_curr_fd = GetPointerS<field_val_node>(iv_it->first);
+                  THROW_ASSERT(nbits >= (idx_curr_fd->offset + field_decl_size), "");
+                  nbits -= static_cast<unsigned long long int>(idx_curr_fd->offset) + field_decl_size;
                   if(nbits)
                   {
                      /// add padding
@@ -2992,12 +3690,12 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                }
             }
          }
-         const auto type_n = tree_helper::CGetType(var_node);
-         if(GetPointer<const array_type>(type_n))
+         const auto type_n = ir_helper::CGetType(var_node);
+         if(GetPointer<const array_ty_node>(type_n))
          {
             unsigned long long size_of_data;
             std::vector<unsigned long long> dims;
-            tree_helper::get_array_dim_and_bitsize(TreeM, type_n->index, dims, size_of_data);
+            ir_helper::get_array_dim_and_bitsize(IRM, type_n->index, dims, size_of_data);
             if(element_align)
             {
                size_of_data = std::min(size_of_data, element_align);
@@ -3014,87 +3712,18 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          }
          break;
       }
-      case string_cst_K:
+      case bitcast_node_K:
+      case nop_node_K:
       {
-         const auto sc = GetPointerS<const string_cst>(init_node);
-         const auto string_value = [&]() {
-            std::string tmp;
-            const char* c_str = sc->strg.c_str();
-            for(size_t index = 0; index < sc->strg.size(); ++index)
-            {
-               if(c_str[index] == '\\' && c_str[index + 1] == '0')
-               {
-                  tmp += '\0';
-                  ++index;
-               }
-               else
-               {
-                  tmp += c_str[index];
-               }
-            }
-            boost::replace_all(tmp, "\\a", "\a");
-            boost::replace_all(tmp, "\\b", "\b");
-            boost::replace_all(tmp, "\\t", "\t");
-            boost::replace_all(tmp, "\\n", "\n");
-            boost::replace_all(tmp, "\\v", "\v");
-            boost::replace_all(tmp, "\\f", "\f");
-            boost::replace_all(tmp, "\\r", "\r");
-            boost::replace_all(tmp, "\\'", "'");
-            boost::replace_all(tmp, "\\\"", "\"");
-            boost::replace_all(tmp, "\\\\", "\\");
-            return tmp;
-         }();
-         unsigned long long elmt_bitsize;
-         std::vector<unsigned long long> dims;
-
-         tree_helper::get_array_dim_and_bitsize(TreeM, sc->type->index, dims, elmt_bitsize);
-         if(elmt_bitsize != 8)
+         const auto ue = GetPointerS<unary_node>(init_node);
+         if(GetPointer<addr_node>(ue->op))
          {
-            THROW_ERROR("non-standard 8-bit char conversion not supported");
+            write_init(IRM, ue->op, ue->op, init_file, mem, element_align);
          }
-         for(const auto j : string_value)
+         else if(GetPointer<constant_int_val_node>(ue->op))
          {
-            auto ull_value = static_cast<unsigned long int>(j);
-            trimmed_value = "";
-            for(auto ind = 0U; ind < elmt_bitsize; ++ind)
-            {
-               trimmed_value = trimmed_value + (((1LLU << (elmt_bitsize - ind - 1)) & ull_value) ? '1' : '0');
-            }
-            init_file.push_back(trimmed_value);
-         }
-         // String terminator
-         init_file.push_back(std::string(elmt_bitsize, '0'));
-
-         const auto type_n = tree_helper::CGetType(var_node);
-         THROW_ASSERT(GetPointer<const array_type>(type_n), "expected an array_type");
-         dims.clear();
-         unsigned long long size_of_data;
-         tree_helper::get_array_dim_and_bitsize(TreeM, type_n->index, dims, size_of_data);
-         THROW_ASSERT(size_of_data == elmt_bitsize, "something wrong happened");
-         auto num_elements = std::accumulate(dims.begin(), dims.end(), 1ULL,
-                                             [](unsigned long long a, unsigned long long b) { return a * b; });
-         std::string value;
-         if(num_elements < (string_value.size() + 1))
-         {
-            THROW_ERROR("C description not supported: string with undefined size or not correctly initialized " +
-                        STR(string_value.size() + 1) + "-" + STR(num_elements));
-         }
-         num_elements -= string_value.size() + 1;
-         init_file.insert(init_file.end(), num_elements, std::string(size_of_data, '0'));
-         break;
-      }
-      case view_convert_expr_K:
-      case nop_expr_K:
-      {
-         const auto ue = GetPointerS<unary_expr>(init_node);
-         if(GetPointer<addr_expr>(ue->op))
-         {
-            write_init(TreeM, ue->op, ue->op, init_file, mem, element_align);
-         }
-         else if(GetPointer<integer_cst>(ue->op))
-         {
-            const auto precision = std::max(std::max(8ull, element_align), tree_helper::SizeAlloc(init_node));
-            write_init(TreeM, ue->op, ue->op, init_file, mem, precision);
+            const auto precision = std::max(std::max(8ull, element_align), ir_helper::SizeAlloc(init_node));
+            write_init(IRM, ue->op, ue->op, init_file, mem, precision);
          }
          else
          {
@@ -3102,203 +3731,92 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          }
          break;
       }
-      case addr_expr_K:
+      case addr_node_K:
       {
-         auto* ae = GetPointerS<addr_expr>(init_node);
-         tree_nodeRef addr_expr_op = ae->op;
-         auto addr_expr_op_idx = ae->op->index;
+         auto* ae = GetPointerS<addr_node>(init_node);
+         ir_nodeRef addr_node_op = ae->op;
+         auto addr_node_op_idx = ae->op->index;
          unsigned long long int ull_value = 0;
-         const auto precision = tree_helper::SizeAlloc(_init_node);
-         switch(addr_expr_op->get_kind())
+         const auto precision = ir_helper::SizeAlloc(_init_node);
+         switch(addr_node_op->get_kind())
          {
-            case ssa_name_K:
-            case var_decl_K:
-            case parm_decl_K:
-            case string_cst_K:
+            case ssa_node_K:
+            case variable_val_node_K:
+            case argument_val_node_K:
             {
-               THROW_ASSERT(mem->has_base_address(addr_expr_op_idx), "missing base address for: " + ae->ToString());
-               ull_value = mem->get_base_address(addr_expr_op_idx, 0);
+               THROW_ASSERT(mem->has_base_address(addr_node_op_idx), "missing base address for: " + ae->ToString());
+               ull_value = mem->get_base_address(addr_node_op_idx, 0);
                break;
             }
-            case array_ref_K:
+            case function_val_node_K:
             {
-               const auto ar = GetPointerS<array_ref>(addr_expr_op);
-               if(GetPointer<integer_cst>(ar->op1))
+               THROW_ASSERT(mem->has_base_address(addr_node_op_idx), "missing base address for: " + ae->ToString());
+               ull_value = mem->get_base_address(addr_node_op_idx, addr_node_op_idx);
+               break;
+            }
+            case CASE_UNARY_NODES:
+            {
+               if(addr_node_op->get_kind() == mem_access_node_K)
                {
-                  switch(ar->op0->get_kind())
+                  const auto mr = GetPointerS<mem_access_node>(addr_node_op);
+                  if(mr->op->get_kind() == variable_val_node_K)
                   {
-                     case ssa_name_K:
-                     case var_decl_K:
-                     case parm_decl_K:
-                     case string_cst_K:
-                     {
-                        const auto step = tree_helper::SizeAlloc(ae->op) / 8;
-                        THROW_ASSERT(tree_helper::GetConstValue(ar->op1) >= 0, "");
-                        ull_value = mem->get_base_address(ar->op0->index, 0) +
-                                    step * static_cast<unsigned long long>(tree_helper::GetConstValue(ar->op1));
-                        break;
-                     }
-                     case binfo_K:
-                     case block_K:
-                     case call_expr_K:
-                     case aggr_init_expr_K:
-                     case case_label_expr_K:
-                     case constructor_K:
-                     case identifier_node_K:
-                     case statement_list_K:
-                     case target_expr_K:
-                     case target_mem_ref_K:
-                     case target_mem_ref461_K:
-                     case tree_list_K:
-                     case tree_vec_K:
-                     case lut_expr_K:
-                     case CASE_BINARY_EXPRESSION:
-                     case CASE_CPP_NODES:
-                     case CASE_FAKE_NODES:
-                     case CASE_GIMPLE_NODES:
-                     case CASE_PRAGMA_NODES:
-                     case CASE_QUATERNARY_EXPRESSION:
-                     case CASE_TERNARY_EXPRESSION:
-                     case CASE_TYPE_NODES:
-                     case CASE_UNARY_EXPRESSION:
-                     case complex_cst_K:
-                     case integer_cst_K:
-                     case real_cst_K:
-                     case vector_cst_K:
-                     case void_cst_K:
-                     case const_decl_K:
-                     case field_decl_K:
-                     case function_decl_K:
-                     case label_decl_K:
-                     case namespace_decl_K:
-                     case result_decl_K:
-                     case translation_unit_decl_K:
-                     case error_mark_K:
-                     case using_decl_K:
-                     case type_decl_K:
-                     case template_decl_K:
-                     default:
-                        THROW_ERROR("addr_expr-array_ref[0] pattern not supported: " +
-                                    std::string(addr_expr_op->get_kind_text()) + " @" + STR(addr_expr_op_idx));
+                     ull_value = mem->get_base_address(mr->op->index, 0);
                   }
-               }
-               else
-               {
-                  THROW_ERROR("addr_expr-array_ref[0] pattern not supported: " +
-                              std::string(addr_expr_op->get_kind_text()) + " @" + STR(addr_expr_op_idx));
-               }
-               break;
-            }
-            case function_decl_K:
-            {
-               THROW_ASSERT(mem->has_base_address(addr_expr_op_idx), "missing base address for: " + ae->ToString());
-               ull_value = mem->get_base_address(addr_expr_op_idx, addr_expr_op_idx);
-               break;
-            }
-            case CASE_BINARY_EXPRESSION:
-            {
-               if(addr_expr_op->get_kind() == mem_ref_K)
-               {
-                  const auto mr = GetPointerS<mem_ref>(addr_expr_op);
-                  const auto op1 = mr->op1;
-                  if(op1->get_kind() == integer_cst_K)
+                  else if(mr->op->get_kind() == addr_node_K)
                   {
-                     THROW_ASSERT(tree_helper::GetConstValue(mr->op1) >= 0, "");
-                     const auto offset = static_cast<unsigned long long>(tree_helper::GetConstValue(mr->op1));
-                     if(mr->op0->get_kind() == var_decl_K)
+                     const auto base = GetPointerS<addr_node>(mr->op)->op;
+                     if(base->get_kind() == variable_val_node_K)
                      {
-                        ull_value = mem->get_base_address(mr->op0->index, 0) + offset;
-                     }
-                     else if(mr->op0->get_kind() == addr_expr_K)
-                     {
-                        const auto base = GetPointerS<addr_expr>(mr->op0)->op;
-                        if(base->get_kind() == var_decl_K)
-                        {
-                           ull_value = mem->get_base_address(base->index, 0) + offset;
-                        }
-                        else
-                        {
-                           THROW_ERROR("addr_expr pattern not supported: " +
-                                       std::string(addr_expr_op->get_kind_text()) + " @" + STR(addr_expr_op_idx));
-                        }
+                        ull_value = mem->get_base_address(base->index, 0);
                      }
                      else
                      {
-                        THROW_ERROR("addr_expr pattern not supported: " + std::string(addr_expr_op->get_kind_text()) +
-                                    " @" + STR(addr_expr_op_idx));
+                        THROW_ERROR("addr_node pattern not supported: " + std::string(addr_node_op->get_kind_text()) +
+                                    " @" + STR(addr_node_op_idx));
                      }
                   }
                   else
                   {
-                     THROW_ERROR("addr_expr pattern not supported: " + std::string(addr_expr_op->get_kind_text()) +
-                                 " @" + STR(addr_expr_op_idx));
+                     THROW_ERROR("addr_node pattern not supported: " + std::string(addr_node_op->get_kind_text()) +
+                                 " @" + STR(addr_node_op_idx));
                   }
                }
                else
                {
-                  THROW_ERROR("addr_expr pattern not supported: " + std::string(addr_expr_op->get_kind_text()) + " @" +
-                              STR(addr_expr_op_idx));
+                  THROW_ERROR("addr_node pattern not supported: " + std::string(addr_node_op->get_kind_text()) + " @" +
+                              STR(addr_node_op_idx));
                }
                break;
             }
-            case array_range_ref_K:
-            case binfo_K:
-            case bit_field_ref_K:
-            case block_K:
-            case call_expr_K:
-            case aggr_init_expr_K:
-            case case_label_expr_K:
-            case complex_cst_K:
-            case component_ref_K:
-            case cond_expr_K:
-            case const_decl_K:
-            case constructor_K:
-            case dot_prod_expr_K:
-            case ternary_plus_expr_K:
-            case ternary_pm_expr_K:
-            case ternary_mp_expr_K:
-            case ternary_mm_expr_K:
-            case fshl_expr_K:
-            case fshr_expr_K:
-            case insertvalue_expr_K:
-            case insertelement_expr_K:
-            case bit_ior_concat_expr_K:
-            case field_decl_K:
+            case CASE_BINARY_NODES:
+            case call_node_K:
+            case select_node_K:
+            case constructor_node_K:
+            case ternary_add_node_K:
+            case ternary_as_node_K:
+            case ternary_sa_node_K:
+            case ternary_ss_node_K:
+            case fshl_node_K:
+            case fshr_node_K:
+            case insertvalue_node_K:
+            case insertelement_node_K:
+            case concat_bit_node_K:
+            case field_val_node_K:
             case identifier_node_K:
-            case integer_cst_K:
-            case label_decl_K:
-            case namespace_decl_K:
-            case obj_type_ref_K:
-            case real_cst_K:
-            case result_decl_K:
-            case save_expr_K:
-            case statement_list_K:
-            case target_expr_K:
-            case target_mem_ref_K:
-            case target_mem_ref461_K:
-            case translation_unit_decl_K:
-            case template_decl_K:
-            case error_mark_K:
-            case using_decl_K:
-            case tree_list_K:
-            case tree_vec_K:
-            case type_decl_K:
-            case vec_cond_expr_K:
-            case vec_perm_expr_K:
-            case vector_cst_K:
-            case void_cst_K:
-            case vtable_ref_K:
-            case with_cleanup_expr_K:
-            case lut_expr_K:
-            case CASE_CPP_NODES:
+            case constant_int_val_node_K:
+            case constant_fp_val_node_K:
+            case statement_list_node_K:
+            case module_unit_node_K:
+            case shufflevector_node_K:
+            case constant_vector_val_node_K:
+            case lut_node_K:
             case CASE_FAKE_NODES:
-            case CASE_GIMPLE_NODES:
-            case CASE_PRAGMA_NODES:
+            case CASE_NODE_STMTS:
             case CASE_TYPE_NODES:
-            case CASE_UNARY_EXPRESSION:
             default:
-               THROW_ERROR("addr_expr pattern not supported: " + std::string(addr_expr_op->get_kind_text()) + " @" +
-                           STR(addr_expr_op_idx));
+               THROW_ERROR("addr_node pattern not supported: " + std::string(addr_node_op->get_kind_text()) + " @" +
+                           STR(addr_node_op_idx));
          }
          for(unsigned int ind = 0; ind < precision; ind++)
          {
@@ -3308,96 +3826,44 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
 
          break;
       }
-      case field_decl_K:
+      case field_val_node_K:
       {
-         const auto field_decl_size = tree_helper::SizeAlloc(_init_node);
+         const auto field_decl_size = ir_helper::SizeAlloc(_init_node);
          if(field_decl_size)
          {
             init_file.push_back(std::string(field_decl_size, '0'));
          }
          break;
       }
-      case vector_cst_K:
+      case constant_vector_val_node_K:
       {
-         const auto vc = GetPointerS<vector_cst>(init_node);
+         const auto vc = GetPointerS<constant_vector_val_node>(init_node);
          for(const auto& i : vc->list_of_valu) // vector elements
          {
-            write_init(TreeM, i, i, init_file, mem, element_align);
+            write_init(IRM, i, i, init_file, mem, element_align);
          }
          break;
       }
-      case void_cst_K:
-      case binfo_K:
-      case block_K:
-      case call_expr_K:
-      case aggr_init_expr_K:
-      case case_label_expr_K:
+      case mem_access_node_K:
+      case call_node_K:
       case identifier_node_K:
-      case paren_expr_K:
-      case ssa_name_K:
-      case statement_list_K:
-      case target_mem_ref_K:
-      case target_mem_ref461_K:
-      case tree_list_K:
-      case tree_vec_K:
-      case const_decl_K:
-      case function_decl_K:
-      case label_decl_K:
-      case namespace_decl_K:
-      case parm_decl_K:
-      case result_decl_K:
-      case translation_unit_decl_K:
-      case template_decl_K:
-      case error_mark_K:
-      case using_decl_K:
-      case type_decl_K:
-      case var_decl_K:
-      case abs_expr_K:
-      case alignof_expr_K:
-      case arrow_expr_K:
-      case bit_not_expr_K:
-      case buffer_ref_K:
-      case card_expr_K:
-      case cleanup_point_expr_K:
-      case conj_expr_K:
-      case convert_expr_K:
-      case exit_expr_K:
-      case fix_ceil_expr_K:
-      case fix_floor_expr_K:
-      case fix_round_expr_K:
-      case fix_trunc_expr_K:
-      case float_expr_K:
-      case imagpart_expr_K:
-      case indirect_ref_K:
-      case misaligned_indirect_ref_K:
-      case loop_expr_K:
-      case negate_expr_K:
-      case non_lvalue_expr_K:
-      case realpart_expr_K:
-      case reference_expr_K:
-      case reinterpret_cast_expr_K:
-      case sizeof_expr_K:
-      case static_cast_expr_K:
-      case throw_expr_K:
-      case target_expr_K:
-      case truth_not_expr_K:
-      case unsave_expr_K:
-      case va_arg_expr_K:
-      case reduc_max_expr_K:
-      case reduc_min_expr_K:
-      case reduc_plus_expr_K:
-      case vec_unpack_hi_expr_K:
-      case vec_unpack_lo_expr_K:
-      case vec_unpack_float_hi_expr_K:
-      case vec_unpack_float_lo_expr_K:
-      case lut_expr_K:
-      case CASE_BINARY_EXPRESSION:
-      case CASE_CPP_NODES:
+      case ssa_node_K:
+      case statement_list_node_K:
+      case function_val_node_K:
+      case argument_val_node_K:
+      case module_unit_node_K:
+      case variable_val_node_K:
+      case abs_node_K:
+      case not_node_K:
+      case fptoi_node_K:
+      case itofp_node_K:
+      case unaligned_mem_access_node_K:
+      case neg_node_K:
+      case lut_node_K:
+      case CASE_BINARY_NODES:
       case CASE_FAKE_NODES:
-      case CASE_GIMPLE_NODES:
-      case CASE_PRAGMA_NODES:
-      case CASE_QUATERNARY_EXPRESSION:
-      case CASE_TERNARY_EXPRESSION:
+      case CASE_NODE_STMTS:
+      case CASE_TERNARY_NODES:
       case CASE_TYPE_NODES:
       default:
          THROW_ERROR("elements not yet supported: " + init_node->get_kind_text() + init_node->ToString() +
@@ -3405,37 +3871,38 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
    }
 }
 
-tree_nodeRef getFunctionType(tree_nodeRef exp)
+ir_nodeRef getFunctionType(ir_nodeRef exp)
 {
-   THROW_ASSERT(GetPointer<addr_expr>(exp) || GetPointer<ssa_name>(exp), "Input must be a ssa_name or an addr_expr");
-   auto* sa = GetPointer<ssa_name>(exp);
+   THROW_ASSERT(GetPointer<addr_node>(exp) || GetPointer<ssa_node>(exp), "Input must be a ssa_node or an addr_node");
+   auto* sa = GetPointer<ssa_node>(exp);
    if(sa)
    {
       THROW_ASSERT(sa, "Function pointer not in SSA-form");
-      pointer_type* pt;
+      pointer_ty_node* pt;
       if(sa->var)
       {
          auto* var = GetPointer<decl_node>(sa->var);
          THROW_ASSERT(var, "Call expression does not point to a declaration node");
-         pt = GetPointer<pointer_type>(var->type);
+         pt = GetPointer<pointer_ty_node>(var->type);
       }
       else
       {
-         pt = GetPointer<pointer_type>(sa->type);
+         pt = GetPointer<pointer_ty_node>(sa->type);
       }
 
-      THROW_ASSERT(pt, "Declaration node has not information about pointer_type");
-      THROW_ASSERT(GetPointer<function_type>(pt->ptd), "Pointer type has not information about pointed function_type");
+      THROW_ASSERT(pt, "Declaration node has not information about pointer_ty_node");
+      THROW_ASSERT(GetPointer<function_ty_node>(pt->ptd),
+                   "Pointer type has not information about pointed function_ty_node");
 
       return pt->ptd;
    }
 
-   auto* AE = GetPointer<addr_expr>(exp);
-   auto* FD = GetPointer<function_decl>(AE->op);
+   auto* AE = GetPointer<addr_node>(exp);
+   auto* FD = GetPointer<function_val_node>(AE->op);
    return FD->type;
 }
 
-void fu_binding::set_ports_are_swapped(vertex v, bool condition)
+void fu_binding::set_ports_are_swapped(OpGraph::vertex_descriptor v, bool condition)
 {
    if(condition)
    {
@@ -3447,8 +3914,95 @@ void fu_binding::set_ports_are_swapped(vertex v, bool condition)
    }
 }
 
-generic_objRef fu_binding::get(const vertex v) const
+generic_objRef fu_binding::get(OpGraph::vertex_descriptor v) const
 {
-   const auto statement_index = op_graph->CGetOpNodeInfo(v)->GetNodeId();
+   const auto statement_index = op_graph.CGetNodeInfo(v).GetNodeId();
    return op_binding.at(statement_index);
+}
+
+structural_objectRef fu_binding::add_smart_signal(const structural_objectRef src_port, unsigned int _unique_id,
+                                                  const structural_objectRef& circuit, const structural_managerRef& SM)
+{
+   structural_objectRef sig;
+   if(src_port->get_kind() == port_o_K)
+   {
+      sig = SM->add_sign("sig_loc_" + src_port->get_id() + "_" + STR(_unique_id), circuit, src_port->get_typeRef());
+   }
+   else
+   {
+      sig = SM->add_sign_vector("sig_loc_vector_" + src_port->get_id() + "_" + STR(_unique_id),
+                                GetPointerS<port_o>(src_port)->get_ports_size(), circuit, src_port->get_typeRef());
+   }
+   return sig;
+}
+
+void fu_binding::add_smart_connection(const structural_objectRef src_port, const structural_objectRef dst_port,
+                                      unsigned int _unique_id, const structural_objectRef& circuit,
+                                      const structural_managerRef& SM)
+{
+   if(src_port->get_owner() != circuit && dst_port->get_owner() != circuit)
+   {
+      const auto raw_src_signal = GetPointerS<port_o>(src_port)->get_connected_signal();
+      const auto raw_dst_signal = GetPointerS<port_o>(dst_port)->get_connected_signal();
+      const auto src_signal = raw_src_signal && raw_src_signal->get_owner() == circuit ? raw_src_signal : nullptr;
+      const auto dst_signal = raw_dst_signal && raw_dst_signal->get_owner() == circuit ? raw_dst_signal : nullptr;
+      if(src_signal)
+      {
+         THROW_ASSERT(!dst_signal || dst_signal == src_signal,
+                      "The destination port " + dst_port->get_path() + " is already connected to another signal");
+         if(!dst_signal)
+         {
+            SM->add_connection(src_signal, dst_port);
+         }
+      }
+      else if(dst_signal)
+      {
+         THROW_ASSERT(!src_signal || src_signal == dst_signal,
+                      "The source port " + src_port->get_path() + " is already connected to another signal");
+         SM->add_connection(dst_signal, src_port);
+      }
+      else
+      {
+         structural_objectRef sig = add_smart_signal(src_port, _unique_id, circuit, SM);
+         SM->add_connection(sig, src_port);
+         SM->add_connection(sig, dst_port);
+      }
+   }
+   else
+   {
+      SM->add_connection(src_port, dst_port);
+   }
+}
+
+void fu_binding::add_smart_port(structural_objectRef& new_port, const structural_objectRef old_port, unsigned int size,
+                                const std::string pname, port_o::port_direction direction,
+                                const structural_objectRef& circuit, const structural_managerRef& SM)
+{
+   if(size == 1U)
+   {
+      new_port = SM->add_port(pname, direction, circuit, old_port->get_typeRef());
+   }
+   else
+   {
+      new_port = SM->add_port_vector(pname, direction, size, circuit, old_port->get_typeRef());
+   }
+   port_o::fix_port_properties(old_port, new_port);
+}
+
+bool fu_binding::try_find_port(const std::string& port_name, const structural_objectRef& id_module, so_kind port_type,
+                               structural_objectRef& port_obj)
+{
+   bool result = GetPointer<module_o>(id_module)->has_port(port_name);
+   if(result)
+   {
+      if(port_type == port_o_K)
+      {
+         port_obj = GetPointer<module_o>(id_module)->find_member(port_name, port_o_K, id_module);
+      }
+      else
+      {
+         port_obj = GetPointer<module_o>(id_module)->find_member(port_name, port_vector_o_K, id_module);
+      }
+   }
+   return result;
 }

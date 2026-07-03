@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -40,65 +40,80 @@
  */
 #ifndef ALLOCATION_SOLUTION_HPP
 #define ALLOCATION_SOLUTION_HPP
-
-/// Superclass include
-#include "hls_function_ir.hpp"
-
-#include "graph.hpp" // for vertex
+#include "graph.hpp"
 #include "hash_helper.hpp"
-#include "hls_manager.hpp" // for HLS_manager, HLS_manager::io_binding_type
-#include "op_graph.hpp"    // for OpGraphConstRef
-#include "refcount.hpp"    // for CONSTREF_FORWARD_DECL, REF_FORWARD_DECL
+#include "hls_manager.hpp"
+#include "op_graph.hpp"
+#include "refcount.hpp"
 #include "schedule.hpp"
-#include "strong_typedef.hpp" // for UINT_STRONG_TYPEDEF_FORWARD_DECL
 
-#include <cstddef> // for size_t
-#include <iosfwd>  // for ostream
-#include <string>  // for string
-#include <utility> // for pair
+#include <cstddef>
+#include <iosfwd>
+#include <string>
+#include <utility>
 
 CONSTREF_FORWARD_DECL(AllocationInformation);
 CONSTREF_FORWARD_DECL(BehavioralHelper);
-UINT_STRONG_TYPEDEF_FORWARD_DECL(ControlStep);
 CONSTREF_FORWARD_DECL(HLS_constraints);
-CONSTREF_FORWARD_DECL(HLS_manager);
 CONSTREF_FORWARD_DECL(HLS_device);
-CONSTREF_FORWARD_DECL(Parameter);
-CONSTREF_FORWARD_DECL(Schedule);
-enum class Allocation_MinMax;
+CONSTREF_FORWARD_DECL(HLS_manager);
 CONSTREF_FORWARD_DECL(hls);
 CONSTREF_FORWARD_DECL(memory);
+CONSTREF_FORWARD_DECL(Parameter);
+CONSTREF_FORWARD_DECL(Schedule);
+CONSTREF_FORWARD_DECL(ir_manager);
+enum class Allocation_MinMax;
 REF_FORWARD_DECL(node_kind_prec_info);
 REF_FORWARD_DECL(technology_node);
-CONSTREF_FORWARD_DECL(tree_manager);
-struct updatecopy_HLS_constraints_functor;
 struct operation;
+struct updatecopy_HLS_constraints_functor;
 
 /// artificial functional units
-#define GIMPLE_RETURN_STD "gimple_return_FU"
-#define GIMPLE_PHI_STD "gimple_phi_FU"
-#define GIMPLE_ASM_STD "gimple_asm_FU"
-#define GIMPLE_LABEL_STD "gimple_label_FU"
-#define GIMPLE_GOTO_STD "gimple_goto_FU"
-#define GIMPLE_NOP_STD "gimple_nop_FU"
-#define GIMPLE_PRAGMA_STD "gimple_pragma_FU"
-#define READ_COND_STD "read_cond_FU"
+#define RETURN_STMT_STD "return_stmt_FU"
+#define PHI_STMT_STD "phi_stmt_FU"
+#define NOP_STMT_STD "nop_stmt_FU"
 #define MULTI_READ_COND_STD "multi_read_cond_FU"
-#define SWITCH_COND_STD "switch_cond_FU"
 #define ENTRY_STD "entry_FU"
 #define EXIT_STD "exit_FU"
 #define NOP_STD "nop_FU"
 
 #define ALLOCATION_MUX_MARGIN 1.0
 
-class AllocationInformation : public HLSFunctionIR
+class AllocationInformation
 {
  private:
    friend class allocation;
    friend struct updatecopy_HLS_constraints_functor;
 
-   /// coefficient used to estimate connection delay
-   double connection_time_ratio;
+   /// The debug level
+   int debug_level;
+
+   /// The HLS manager
+   const HLS_managerRef hls_manager;
+
+   /// The set of input parameters
+   const ParameterConstRef parameters;
+
+   /// The IR manager
+   const ir_managerConstRef IRM;
+
+   /// The operation graph
+   OpGraph op_graph;
+
+   /// The behavioral helper
+   const BehavioralHelperConstRef behavioral_helper;
+
+   /// The hls of the function
+   const hlsRef hls;
+
+   /// HLS constraints
+   const HLS_constraintsConstRef HLS_C;
+
+   /// reference to the information representing the target for the synthesis
+   const HLS_deviceConstRef HLS_D;
+
+   /// The index of the function to which this IR is associated
+   const unsigned int function_index;
 
    /// coefficient used to estimate the controller delay
    double controller_delay_multiplier;
@@ -125,9 +140,6 @@ class AllocationInformation : public HLSFunctionIR
    /// The coefficient used for estimating fanout delay
    double fanout_coefficient;
 
-   /// The maximum size of fanout
-   size_t max_fanout_size{0};
-
    /// coefficient used to modify DSPs execution time
    double DSPs_margin;
 
@@ -137,25 +149,7 @@ class AllocationInformation : public HLSFunctionIR
    /// coefficient used to modify pipelining DSPs allocation
    double DSP_allocation_coefficient;
 
-   /// The operation graph
-   OpGraphConstRef op_graph;
-
-   /// HLS constraints
-   HLS_constraintsConstRef HLS_C;
-
-   /// reference to the information representing the target for the synthesis
-   HLS_deviceConstRef HLS_D;
-
-   /// The behavioral helper
-   BehavioralHelperConstRef behavioral_helper;
-
-   /// The memory
-   memoryConstRef Rmem;
-
    const unsigned int& address_bitsize;
-
-   /// The tree manager
-   tree_managerConstRef TreeM;
 
    /// minimum slack
    double minimumSlack;
@@ -200,13 +194,10 @@ class AllocationInformation : public HLSFunctionIR
    CustomUnorderedMap<unsigned int, CustomOrderedSet<unsigned int>> fus_to_node_id;
 
    /// Puts into relation operation with type and functional units.
-   /// A pair(node_id, operation_type-fu) means that the fu is used to implement the operation associated with the tree
-   /// node node_id of type operation_type If the operation_type of the operation is different from the current one, the
-   /// binding refers to an old version of the operation
+   /// A pair(node_id, operation_type-fu) means that the fu is used to implement the operation associated with the IR
+   /// node node_id of type operation_type. If the operation_type of the operation is different from the current one,
+   /// the binding refers to an old version of the operation
    CustomUnorderedMap<unsigned int, std::pair<std::string, unsigned int>> binding;
-
-   /// size of each memory unit in bytes
-   std::map<unsigned int, unsigned long long> memory_units_sizes;
 
    /// map between variables and associated memory_units
    std::map<unsigned int, unsigned int> vars_to_memory_units;
@@ -214,23 +205,11 @@ class AllocationInformation : public HLSFunctionIR
    /// store the pre-computed pipeline unit: given a functional unit it return the pipeline id compliant
    std::map<std::string, std::string> precomputed_pipeline_unit;
 
-   /// store all cond_expr units having a Boolean condition
-   CustomUnorderedSet<unsigned int> single_bool_test_cond_expr_units;
+   /// store all select_node units having a Boolean condition
+   CustomUnorderedSet<unsigned int> single_bool_test_select_node_units;
 
    /// in case of pointer plus expr between constants: no wire delay
-   CustomUnorderedSet<unsigned int> simple_pointer_plus_expr;
-
-   /// The roots used to compute a ssa
-   mutable CustomMap<unsigned int, CustomSet<unsigned int>> ssa_roots;
-
-   /// The bb_version-control root on which the roots of a ssa have been computed
-   mutable CustomMap<unsigned int, std::pair<unsigned int, AbsControlStep>> ssa_bb_versions;
-
-   /// The cond exprs driven by a ssa
-   mutable CustomMap<unsigned int, CustomSet<unsigned int>> ssa_cond_exprs;
-
-   /// The bb_version on which the cond exprs driven by a ssan have been computed
-   mutable CustomMap<unsigned int, unsigned int> cond_expr_bb_versions;
+   CustomUnorderedSet<unsigned int> simple_gep_node;
 
    /// The operations reachable with delay zero
    mutable CustomMap<unsigned int, CustomSet<unsigned int>> zero_distance_ops;
@@ -238,11 +217,8 @@ class AllocationInformation : public HLSFunctionIR
    /// The bb_version on which the reachable delay zero operations
    mutable CustomMap<unsigned int, unsigned int> zero_distance_ops_bb_version;
 
-   /// store mux timing for the current technology
-   CustomMap<unsigned long long, CustomUnorderedMapStable<unsigned int, double>> mux_timing_db;
-
-   /// store mux timing for the current technology
-   CustomMap<unsigned long long, CustomUnorderedMapStable<unsigned int, double>> mux_area_db;
+   /// Cached connection times between scheduled operations.
+   mutable CustomMap<std::pair<unsigned int, unsigned int>, double> connection_times;
 
    /// store DSP x sizes
    std::vector<unsigned int> DSP_x_db;
@@ -260,6 +236,12 @@ class AllocationInformation : public HLSFunctionIR
 
    /// return the stage time of the operation corrected by time_multiplier factor
    double time_m_stage_period(operation* op) const;
+
+   /// return the delay of a lut_node_FU scaled to the number of active inputs
+   double lut_time_unit(unsigned int in_bits) const;
+
+   /// return the area of a lut_node_FU scaled to the number of active inputs
+   double lut_area_unit(unsigned int in_bits) const;
 
    double get_execution_time_dsp_modified(const unsigned int fu_name, const technology_nodeRef& node_op) const;
 
@@ -284,14 +266,16 @@ class AllocationInformation : public HLSFunctionIR
     * @param node is the vertex of the graph.
     * @param g is the graph used to retrieve the required values of the vertex
     * @param info is where the information retrieved for the node get stored.
-    * @param constant_id is a tree node id (i.e., different from zero) when one of the operands is constant
+    * @param constant_id is an IR node id (i.e., different from zero) when one of the operands is constant
+    * @param is_constrained tells whether constrained binding information has to be considered
     */
-   void GetNodeTypePrec(const vertex node, const OpGraphConstRef g, node_kind_prec_infoRef info,
+   void GetNodeTypePrec(OpGraph::vertex_descriptor node, const OpGraph& g, node_kind_prec_infoRef info,
                         HLS_manager::io_binding_type& constant_id, bool is_constrained) const;
 
    /**
     * Returns the technology_node associated with the given operation
     * @param fu_name is the string representing the name of the unit
+    * @param hls_manager is the HLS manager used to retrieve the technology data
     */
    static technology_nodeRef get_fu(const std::string& fu_name, const HLS_managerConstRef hls_manager);
 
@@ -311,35 +295,11 @@ class AllocationInformation : public HLSFunctionIR
    bool CanBeMerged(const unsigned int first_operation, const unsigned int second_operation) const;
 
    /**
-    * Compute the roots to be considered for fan out computation
-    * @param ssa is the ssa to be considered as starting point of the root conditions
-    * @param cs is the control step where the operation using ssa must be scheduled
-    * @return the set of ssas which are used in comparison which generate the input ssa
-    */
-   CustomSet<unsigned int> ComputeRoots(const unsigned int ssa, const AbsControlStep cs) const;
-
-   /**
-    * Compute the cond_expr indirectly driven by a ssa
-    * @param ssa is the ssa to be considered
-    * @return the set of cond_expr indirectly driven by ssa
-    */
-   CustomSet<unsigned int> ComputeDrivenCondExpr(const unsigned int ssa) const;
-
-   /**
-    * Compute the values for the initialization of the multiplexer characteristics database
-    * @param allocation_information is a reference to an instance of this class
-    * @return the pair mux_timing_db, mux_area_db
-    */
-   static const std::pair<const CustomMap<unsigned long long, CustomUnorderedMapStable<unsigned int, double>>&,
-                          const CustomMap<unsigned long long, CustomUnorderedMapStable<unsigned int, double>>&>
-   InitializeMuxDB(const AllocationInformationConstRef allocation_information);
-
-   /**
     * Compute the values for the initialization of the DSP characteristics database
     * @param allocation_information is a reference to an instance of this class
     */
    static const std::tuple<const std::vector<unsigned int>&, const std::vector<unsigned int>&>
-   InitializeDSPDB(const AllocationInformationConstRef allocation_information);
+   InitializeDSPDB(const AllocationInformation* allocation_information);
 
    /**
     * Add the delay to reach a DSP register if necessary
@@ -358,10 +318,10 @@ class AllocationInformation : public HLSFunctionIR
  public:
    /**
     * Constructor
-    * @param HLS_mgr is the HLS manager
+    * @param _hls_manager is the HLS manager
     * NOTE: hls cannot be got from HLS_mgr since when allocation information constructor is called we are still in the
     * hls constructor
-    * @param function_id is the index of the function
+    * @param _function_index is the index of the function
     * @param parameters is the set of input parameters
     */
    AllocationInformation(const HLS_managerRef _hls_manager, const unsigned int _function_index,
@@ -370,12 +330,7 @@ class AllocationInformation : public HLSFunctionIR
    /**
     * Initialize all the data structure
     */
-   void Initialize() override;
-
-   /**
-    * Clear all the data structure
-    */
-   void Clear() override;
+   void Initialize();
 
    enum op_target
    {
@@ -383,19 +338,12 @@ class AllocationInformation : public HLSFunctionIR
       power_consumption,
       execution_time
    };
-   //@}
-
-   /**
-    * Destructor
-    */
-   ~AllocationInformation() override;
 
    /**
     * Returns the set of functional units that can be used to implement the operation associated with vertex v.
     * @param v is the vertex.
-    * @param g is the graph of the vertex v.
     */
-   const CustomOrderedSet<unsigned int>& can_implement_set(const vertex v) const;
+   const CustomOrderedSet<unsigned int>& can_implement_set(OpGraph::vertex_descriptor v) const;
    const CustomOrderedSet<unsigned int>& can_implement_set(const unsigned int v) const;
 
    /**
@@ -430,7 +378,7 @@ class AllocationInformation : public HLSFunctionIR
     * @param g is the graph of the vertex v.
     * @return the execution time for (fu_name, v, g)
     */
-   double get_execution_time(const unsigned int fu_name, const vertex v, const OpGraphConstRef g) const;
+   double get_execution_time(const unsigned int fu_name, OpGraph::vertex_descriptor v, const OpGraph& g) const;
    double get_execution_time(const unsigned int fu_name, const unsigned int v) const;
 
    /**
@@ -439,16 +387,15 @@ class AllocationInformation : public HLSFunctionIR
     * @param clock_period is the clock period of the system.
     * @return the number of control steps required.
     */
-   ControlStep op_et_to_cycles(double et, double clock_period) const;
+   unsigned int op_et_to_cycles(double et, double clock_period) const;
 
    /**
     * Computes the maximum number of resources implementing
     * the operation associated with the vertex v.
     * @param v is the vertex for which the test is performed.
-    * @param g is the graph of the vertex v.
     * @return the maximum number of resources implementing the operation associated with the vertex.
     */
-   unsigned int max_number_of_resources(const vertex v) const;
+   unsigned int max_number_of_resources(OpGraph::vertex_descriptor v) const;
 
    /**
     * return the maximum number of operations that insists on the same type of functional unit
@@ -476,7 +423,7 @@ class AllocationInformation : public HLSFunctionIR
     * @param CF is the functor used to retrive information
     * @return the max or min value.
     */
-   double get_attribute_of_fu_per_op(const vertex v, const OpGraphConstRef g,
+   double get_attribute_of_fu_per_op(OpGraph::vertex_descriptor v, const OpGraph& g,
                                      const Allocation_MinMax allocation_min_max, op_target target,
                                      unsigned int& fu_name, bool& flag,
                                      const updatecopy_HLS_constraints_functor* CF = nullptr) const;
@@ -495,17 +442,16 @@ class AllocationInformation : public HLSFunctionIR
     *        needed value is the execution time.
     * @return the max or min value.
     */
-   double get_attribute_of_fu_per_op(const vertex v, const OpGraphConstRef g,
+   double get_attribute_of_fu_per_op(OpGraph::vertex_descriptor v, const OpGraph& g,
                                      const Allocation_MinMax allocation_min_max, op_target target) const;
 
    /**
     * Computes the minum number of resources implementing
     * the operation associated with the vertex v.
     * @param v is the vertex for which the test is performed.
-    * @param g is the graph of the vertex v.
     * @return the minum number of resources implementing the operation associated with the vertex.
     */
-   unsigned int min_number_of_resources(const vertex v) const;
+   unsigned int min_number_of_resources(OpGraph::vertex_descriptor v) const;
 
    /**
     * @return the setup/hold time given the current technology
@@ -514,7 +460,7 @@ class AllocationInformation : public HLSFunctionIR
 
    /**
     * return true in case fu type is a resource unit performing an indirect access to memory
-    * @param fu_type is functional unit id
+    * @param fu is functional unit id
     * @return true in case the functional unit access memories through the bus
     */
    bool is_indirect_access_memory_unit(unsigned int fu) const;
@@ -559,7 +505,7 @@ class AllocationInformation : public HLSFunctionIR
     * @param v is the vertex for which the test is performed.
     * @return the initiation_time for (fu_name, v, g).
     */
-   ControlStep get_initiation_time(const unsigned int fu_name, const vertex v) const;
+   unsigned int get_initiation_time(const unsigned int fu_name, OpGraph::vertex_descriptor v) const;
 
    /**
     * Returns the initiation time for a given operation and a given functional unit.
@@ -567,7 +513,7 @@ class AllocationInformation : public HLSFunctionIR
     * @param statement_index is the operation
     * @return the initiation_time for (fu_name, v, g).
     */
-   ControlStep get_initiation_time(const unsigned int fu_name, const unsigned int statement_index) const;
+   unsigned int get_initiation_time(const unsigned int fu_name, const unsigned int statement_index) const;
 
    /**
     * Checks if the given operation has a bounded execution time or not
@@ -576,7 +522,7 @@ class AllocationInformation : public HLSFunctionIR
     * @param fu_type is the identifier of the function unit
     * @return true if the operation op has a bounded execution time when executed by the unit fu_type
     */
-   bool is_operation_bounded(const OpGraphConstRef g, const vertex& op, unsigned int fu_type) const;
+   bool is_operation_bounded(const OpGraph& g, OpGraph::vertex_descriptor op, unsigned int fu_type) const;
 
    /**
     * Checks if the given operation has a bounded execution time or not
@@ -600,7 +546,7 @@ class AllocationInformation : public HLSFunctionIR
     * @param fu_type is the identifier of the function unit
     * @return true if the operation op has its primary input registered or not
     */
-   bool is_operation_PI_registered(const OpGraphConstRef g, const vertex& op, unsigned int fu_type) const;
+   bool is_operation_PI_registered(const OpGraph& g, OpGraph::vertex_descriptor op, unsigned int fu_type) const;
 
    /**
     * Checks if the given operation has its primary input registered or not
@@ -637,13 +583,6 @@ class AllocationInformation : public HLSFunctionIR
     * @return true in case the functiona unit has direct access through a proxy module
     */
    bool is_direct_proxy_memory_unit(unsigned int fu_type) const;
-
-   /**
-    * Checks if the functional unit implements a READ_COND operation.
-    * @param fu_name is the id of the functional unit.
-    * @return true when the functional unit can implement a READ_COND operation, false otherwise.
-    */
-   bool is_read_cond(const unsigned int fu_name) const;
 
    /**
     * Checks if the functional unit implements an ASSIGN operation.
@@ -726,13 +665,14 @@ class AllocationInformation : public HLSFunctionIR
     * @param g is the graph of the vertex v.
     * @return the stage period for (fu_name, v, g)
     */
-   double get_stage_period(const unsigned int fu_name, const vertex v, const OpGraphConstRef g) const;
+   double get_stage_period(const unsigned int fu_name, OpGraph::vertex_descriptor v, const OpGraph& g) const;
    double get_stage_period(const unsigned int fu_name, const unsigned int v) const;
 
    /**
     * return a time to be subtracted to the execution time/stage period
     * @param fu is the functional unit
     * @param operation_name is the operation name
+    * @param n_ins is the number of inputs considered for the operation
     * @return a correction time
     */
    double get_correction_time(unsigned int fu, const std::string& operation_name, unsigned int n_ins) const;
@@ -765,11 +705,10 @@ class AllocationInformation : public HLSFunctionIR
     * @brief Return the number of cycles for given vertex and a given functional unit
     * @param fu_name is the id of the functional unit.
     * @param v is the vertex for which the test is performed.
-    * @param g is the graph of the vertex v.
     * @return the number of cycles
     */
    unsigned int get_cycles(const unsigned int fu_name, const unsigned int v) const;
-   unsigned int get_cycles(const unsigned int fu_name, const vertex v, const OpGraphConstRef g) const;
+   unsigned int get_cycles(const unsigned int fu_name, OpGraph::vertex_descriptor v, const OpGraph& g) const;
 
    /**
     * In case the vertex is bounded to a particular functional unit, it returns true and the functional unit.
@@ -777,7 +716,7 @@ class AllocationInformation : public HLSFunctionIR
     * @param fu_name is the eventually bounded functional unit.
     */
    bool is_vertex_bounded_with(const unsigned int v, unsigned int& fu_name) const;
-   bool is_vertex_bounded_with(const vertex v, unsigned int& fu_name) const;
+   bool is_vertex_bounded_with(OpGraph::vertex_descriptor v, unsigned int& fu_name) const;
 
    /**
     * Checks if the functional unit is uniquely bounded to a vertex
@@ -840,7 +779,7 @@ class AllocationInformation : public HLSFunctionIR
 
    /**
     *
-    * @return an estimation of the delay of a call_expr
+    * @return an estimation of the delay of a call_node
     */
    double estimate_call_delay() const;
 
@@ -855,7 +794,6 @@ class AllocationInformation : public HLSFunctionIR
     * Checks library type and sets if it's ordered, complete or simple
     */
    void check_library();
-   //@}
 
    /**
     * return true in case the functional unit is a direct_access memory unit with a single clock latency for LOAD
@@ -869,7 +807,6 @@ class AllocationInformation : public HLSFunctionIR
     * Prints the actual allocation.
     */
    void print_allocated_resources() const;
-   //@}
 #endif
 
    static std::string extract_bambu_provided_name(unsigned long long prec_in, unsigned long long prec_out,
@@ -887,35 +824,34 @@ class AllocationInformation : public HLSFunctionIR
 
    /**
     * Checks if the operation associated with a vertex can be implemented by a given functional unit.
-    * @param fu_name is the id of the functional unit.
+    * @param fu_id is the id of the functional unit.
     * @param v is the vertex for which the test is performed.
     * @return true when the functional unit can implement the operation associated with the vertex, false otherwise.
-    * @return the minimum slack of the component estimated by scheduling
     */
-   bool can_implement(const unsigned int fu_id, const vertex v) const;
+   bool can_implement(const unsigned int fu_id, OpGraph::vertex_descriptor v) const;
 
    /**
     * Return the execution time of (a stage of) an operation
     * @param operation is the operation
     * @param functional_unit is the functional unit
     * @param stage is the stage to be considered for pipelined operation
-    * @param ignore_connection specifies if connection delays have to be ignored
     */
    std::pair<double, double> GetTimeLatency(const unsigned int operation, const unsigned int functional_unit,
                                             const unsigned int stage = 0) const;
-   std::pair<double, double> GetTimeLatency(const vertex operation, const unsigned int functional_unit,
+   std::pair<double, double> GetTimeLatency(OpGraph::vertex_descriptor operation, const unsigned int functional_unit,
                                             const unsigned int stage = 0) const;
 
    /**
     * Return the connection time for a couple of operations or the phi overhead for a single operation
     * @param first_operation is the first operation
     * @param second_operation is the second operation; if it is null, the phi contribution is returned
-    * @param cs is the control step in which second operation would be scheduled
+    * @param readP when false, the computed value is stored in the internal cache
     * @return the connection time
     */
    double GetConnectionTime(const unsigned int first_operation, const unsigned int second_operation,
-                            const AbsControlStep cs) const;
-   double GetConnectionTime(const vertex first_operation, const vertex second_operation, const AbsControlStep cs) const;
+                            bool readP = true) const;
+   double GetConnectionTime(OpGraph::vertex_descriptor first_operation, OpGraph::vertex_descriptor second_operation,
+                            bool readP = true) const;
 
    /**
     * Return true if the variable execution time depends on the scheduling
@@ -942,19 +878,12 @@ class AllocationInformation : public HLSFunctionIR
    }
 
    /**
-    * Return the execution time of a cond expr corresponding to the gimple_phi
-    * @param operation_index is the index of the gimple_phi
-    * @return the execution time
-    */
-   double GetCondExprTimeLatency(const unsigned int operation_index) const;
-
-   /**
     * Return the latency of an operation in cycle
-    * @param operation is the operation
+    * @param operationID is the operation
     * @return the number of cycles required to execute the operation
     */
    unsigned int GetCycleLatency(const unsigned int operationID) const;
-   unsigned int GetCycleLatency(const vertex operationID) const;
+   unsigned int GetCycleLatency(OpGraph::vertex_descriptor operationID) const;
 
    /**
     * Return the functional unit type used to execute an operation
@@ -962,7 +891,7 @@ class AllocationInformation : public HLSFunctionIR
     * @return the id of the functional unit type
     */
    unsigned int GetFuType(const unsigned int operation) const;
-   unsigned int GetFuType(const vertex operation) const;
+   unsigned int GetFuType(OpGraph::vertex_descriptor operation) const;
 
    unsigned int get_n_complex_operations() const;
 
@@ -1011,20 +940,20 @@ class AllocationInformation : public HLSFunctionIR
    double GetClockPeriodMargin() const;
 
    /**
-    * return true in case the functional unit implement a cond_expr operation and the condition is a Boolean one
+    * return true in case the functional unit implement a select_node operation and the condition is a Boolean one
     * @param fu_name is the functional unit
     * @return true in case the functional unit is a mux
     */
-   bool is_single_bool_test_cond_expr_units(const unsigned int fu_name) const;
+   bool is_single_bool_test_select_node_units(const unsigned int fu_name) const;
 
    /**
     * return true in case the functional unit implement a pointer_plus operation and the operands are constants
     * @param fu_name is the functional unit
     * @return true in case the functional unit does a sum of two constants
     */
-   bool is_simple_pointer_plus_expr(const unsigned int fu_name) const;
+   bool is_simple_gep_node(const unsigned int fu_name) const;
 
-   bool can_be_asynchronous_ram(tree_managerConstRef TM, unsigned int var, unsigned int threshold,
+   bool can_be_asynchronous_ram(ir_managerConstRef TM, unsigned int var, unsigned int threshold,
                                 bool is_read_only_variable, unsigned int channel_number);
 
    /**
@@ -1041,7 +970,7 @@ class AllocationInformation : public HLSFunctionIR
     * @param second_statement is the second vertex
     * @return true if they can be chained
     */
-   bool CanBeChained(const vertex first_statement, const vertex second_statement) const;
+   bool CanBeChained(OpGraph::vertex_descriptor first_statement, OpGraph::vertex_descriptor second_statement) const;
 
    /**
     * @brief getConnectionOffset
@@ -1071,20 +1000,15 @@ struct updatecopy_HLS_constraints_functor
    /**
     * Function used to update the copy of the technology constraints
     * @param name is the id of the resource
-    * @param the number of delta resources
+    * @param delta is the number of delta resources
     */
    void update(const unsigned int name, int delta);
 
    /**
     * Constructor
-    * @param ALL is the reference to allocation class where technology constraints are stored
+    * @param allocation_information is the reference to allocation class where technology constraints are stored
     */
    explicit updatecopy_HLS_constraints_functor(const AllocationInformationRef allocation_information);
-
-   /**
-    * Destructor
-    */
-   ~updatecopy_HLS_constraints_functor() = default;
 
  private:
    /// copy of the technology constraints
@@ -1121,18 +1045,18 @@ struct node_kind_prec_info
    /// number of output elements in case the output is a a vector, 0 otherwise (real_value)
    unsigned long long real_output_nelem;
 
-   /// true when the functional unit is a cond_expr and has the first operand of type bool
-   bool is_single_bool_test_cond_expr;
+   /// true when the functional unit is a select_node and has the first operand of type bool
+   bool is_single_bool_test_select_node;
 
    /// true when the functional unit is a pointer plus expr with two constant operands
-   bool is_simple_pointer_plus_expr;
+   bool is_simple_gep_node;
 
    node_kind_prec_info()
        : output_prec(0),
          base128_output_nelem(0),
          real_output_nelem(0),
-         is_single_bool_test_cond_expr(false),
-         is_simple_pointer_plus_expr(false)
+         is_single_bool_test_select_node(false),
+         is_simple_gep_node(false)
    {
    }
    void print(std::ostream& os) const;

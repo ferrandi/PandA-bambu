@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -65,11 +65,23 @@ void add_escape(std::string& ioString, const std::string& to_be_escaped);
  */
 void remove_escaped(std::string& ioString);
 
+/**
+ * Return a shell-safe representation of one argument using single-quote style escaping.
+ */
+std::string shell_escape_argument(const std::string& argument);
+
+/**
+ * Join argv elements into a shell-safe command line.
+ */
+std::string shell_escape_argv(int argc, char* const argv[]);
+
 std::string cxa_demangle(const std::string& input);
 
-std::string cxa_rename_mangled(const std::string& signature, const std::string& new_fname);
+std::string cxa_rename_mangled(const std::string& symbol, const std::string& new_symbol);
 
-std::string cxa_prefix_mangled(const std::string& signature, const std::string& prefix);
+std::string cxa_prefix_mangled(const std::string& symbol, const std::string& prefix);
+
+std::string cxa_suffix_mangled(const std::string& symbol, const std::string& suffix);
 
 std::string capitalize(const std::string& str);
 
@@ -180,4 +192,9 @@ std::string ConvertInBinary(const std::string& C_value, unsigned long long preci
 std::string FixedPointReinterpret(const std::string& FP_vector, const std::string& fp_typename);
 
 unsigned long long ac_type_bitwidth(const std::string& intType, bool& is_signed, bool& is_fixed);
+
+void replace_all_with_restart(const std::string& val, std::string& mangled, const std::string& old_string,
+                              const std::string& new_string);
+bool is_unsigned_long_long(const std::string& str);
+
 #endif

@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -36,9 +36,6 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "add_library.hpp"
@@ -52,16 +49,14 @@
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "fu_binding.hpp"
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
 #include "library_manager.hpp"
 #include "memory.hpp"
-#include "omp_functions.hpp"
 #include "reg_binding.hpp"
-#include "state_transition_graph.hpp"
-#include "state_transition_graph_manager.hpp"
 #include "string_manipulation.hpp"
 #include "structural_manager.hpp"
 #include "technology_manager.hpp"
@@ -85,15 +80,13 @@ HLSFlowStepSpecialization::context_t AddLibrarySpecialization::GetSignatureConte
 }
 
 add_library::add_library(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned _funId,
-                         const DesignFlowManagerConstRef _design_flow_manager,
+                         const DesignFlowManager& _design_flow_manager,
                          const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
     : HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::ADD_LIBRARY,
                       _hls_flow_step_specialization)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
-
-add_library::~add_library() = default;
 
 HLS_step::HLSRelationships
 add_library::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -105,75 +98,51 @@ add_library::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rela
    HLSRelationships ret;
    switch(relationship_type)
    {
-      case DEPENDENCE_RELATIONSHIP:
+      case(DEPENDENCE_RELATIONSHIP):
       {
          if(add_library_specialization->interfaced)
          {
             ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_interface_type),
                                        HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::BUS_INTERFACE_GENERATION, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::SAME_FUNCTION));
          }
          else
          {
             ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_function_allocation_algorithm),
                                        HLSFlowStepSpecializationConstRef(),
                                        HLSFlowStep_Relationship::SAME_FUNCTION)); // add dependence to omp_function
-            if(HLSMgr->Rfuns)
+
+            const auto is_context_handler = [&]() {
+               const auto FB = HLSMgr->CGetFunctionBehavior(funId);
+               const auto omp_info = FB->GetOMPInfo();
+               return FB->IsOMPCore() && omp_info && omp_info->context_count > 1U;
+            }();
+            if(is_context_handler)
             {
-               bool found = false;
-               if(parameters->isOption(OPT_context_switch))
-               {
-                  auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
-                  THROW_ASSERT(omp_functions, "OMP_functions must not be null");
-                  if(omp_functions->omp_for_wrappers.find(funId) != omp_functions->omp_for_wrappers.end())
-                  {
-                     const HLSFlowStep_Type top_entity_type = HLSFlowStep_Type::TOP_ENTITY_CS_PARALLEL_CREATION;
-                     ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(),
-                                                HLSFlowStep_Relationship::SAME_FUNCTION));
-                     found = true;
-                  }
-                  else
-                  {
-                     if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
-                     {
-                        found = true;
-                     }
-                     if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end())
-                     {
-                        found = true;
-                     }
-                     if(omp_functions->parallelized_functions.find(funId) !=
-                        omp_functions->parallelized_functions.end())
-                     {
-                        found = true;
-                     }
-                     if(found) // use new top_entity
-                     {
-                        const HLSFlowStep_Type top_entity_type = HLSFlowStep_Type::TOP_ENTITY_CS_CREATION;
-                        ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(),
-                                                   HLSFlowStep_Relationship::SAME_FUNCTION));
-                     }
-                  }
-               }
-               if(!found) // use standard
-               {
-                  const auto cg_man = HLSMgr->CGetCallGraphManager();
-                  const HLSFlowStep_Type top_entity_type =
-                      HLSMgr->hasToBeInterfaced(funId) && (cg_man->ExistsAddressedFunction() ||
-                                                           parameters->getOption<bool>(OPT_memory_mapped_top)) ?
-                          HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION :
-                          HLSFlowStep_Type::TOP_ENTITY_CREATION;
-                  ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(),
-                                             HLSFlowStep_Relationship::SAME_FUNCTION));
-               }
+               const HLSFlowStep_Type top_entity_type = HLSFlowStep_Type::TOP_ENTITY_OMP_CS_CREATION;
+               ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(),
+                                          HLSFlowStep_Relationship::SAME_FUNCTION));
+            }
+            else
+            {
+               const auto& CGM = HLSMgr->CGetCallGraphManager();
+               const HLSFlowStep_Type top_entity_type =
+                   HLSMgr->hasToBeInterfaced(funId) &&
+                           (CGM.ExistsAddressedFunction() || parameters->getOption<bool>(OPT_memory_mapped_top)) ?
+                       HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION :
+                       HLSFlowStep_Type::TOP_ENTITY_CREATION;
+               ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(),
+                                          HLSFlowStep_Relationship::SAME_FUNCTION));
             }
          }
          break;
       }
-      case INVALIDATION_RELATIONSHIP:
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case PRECEDENCE_RELATIONSHIP:
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -214,9 +183,9 @@ DesignFlowStep_Status add_library::InternalExec()
    const auto fu = GetPointerS<functional_unit>(TechM->get_fu(module_name, WORK_LIBRARY));
    fu->set_clock_period(clock_period_value);
    fu->set_clock_period_resource_fraction(cprf);
-   auto module_parameters = (HLS->top->get_circ() && GetPointer<module>(HLS->top->get_circ()) &&
-                             GetPointerS<module>(HLS->top->get_circ())->get_NP_functionality()) ?
-                                GetPointerS<module>(HLS->top->get_circ())
+   auto module_parameters = (HLS->top->get_circ() && GetPointer<module_o>(HLS->top->get_circ()) &&
+                             GetPointerS<module_o>(HLS->top->get_circ())->get_NP_functionality()) ?
+                                GetPointerS<module_o>(HLS->top->get_circ())
                                     ->get_NP_functionality()
                                     ->get_NP_functionality(NP_functionality::LIBRARY) :
                                 "";
@@ -227,34 +196,52 @@ DesignFlowStep_Status add_library::InternalExec()
    fu->CM->add_NP_functionality(HLS->top->get_circ(), NP_functionality::LIBRARY, module_name + module_parameters);
    if(!add_library_specialization->interfaced)
    {
-      const auto function_name = BH->get_function_name();
+      const auto function_name = BH->GetFunctionName();
       TechM->add_operation(WORK_LIBRARY, module_name, function_name);
       const auto op = GetPointerS<operation>(fu->get_operation(function_name));
       op->primary_inputs_registered = HLS->registered_inputs;
-      op->bounded = HLS->STG && HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->bounded;
+      const auto is_function_pipelined = FB->is_function_pipelined();
+      const auto tsymbol = BH->GetFunctionName();
+      const auto tarch = HLSMgr->module_arch->GetArchitecture(tsymbol);
+      const auto is_dataflow_module =
+          tarch && tarch->attrs.find(FunctionArchitecture::func_dataflow_module) != tarch->attrs.end() &&
+          tarch->attrs.find(FunctionArchitecture::func_dataflow_module)->second == "1";
+      auto fsm_info = HLS->fsm_info;
+      if(is_function_pipelined)
+      {
+         op->bounded = !fsm_info->hasDummyState;
+         if(is_dataflow_module && op->bounded && FB->get_initiation_time() > 1)
+         {
+            op->bounded = false;
+         }
+      }
+      else
+      {
+         op->bounded = !is_dataflow_module && fsm_info->bounded;
+      }
       const auto call_delay =
           HLS->allocation_information ? HLS->allocation_information->estimate_call_delay() : clock_period_value;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Estimated call delay " + STR(call_delay));
-      op->time_m = time_info::factory(parameters);
+      op->time_m = std::make_shared<time_info>();
       if(op->bounded)
       {
-         const auto min_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles;
-         const auto max_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->max_cycles;
+         THROW_ASSERT(fsm_info, "FSM not created");
+         const auto minCycles = fsm_info->minCycles;
+         const auto maxCycles = fsm_info->maxCycles;
          const auto exec_time = [&]() {
-            if(min_cycles > 1)
+            if(minCycles > 1)
             {
-               return clk * (min_cycles - 1) + call_delay;
+               return clk * (minCycles - 1) + call_delay;
             }
             return call_delay;
          }();
-         op->time_m->set_execution_time(exec_time, min_cycles);
-         if(max_cycles > 1)
+         op->time_m->set_execution_time(exec_time, minCycles);
+         if(maxCycles > 1)
          {
-            if(FB->is_simple_pipeline())
+            if(is_function_pipelined)
             {
                op->time_m->set_stage_period(call_delay);
-               const ControlStep jj(1);
-               op->time_m->set_initiation_time(jj);
+               op->time_m->set_initiation_time(FB->get_initiation_time());
             }
             else
             {
@@ -265,7 +252,7 @@ DesignFlowStep_Status add_library::InternalExec()
          {
             op->time_m->set_stage_period(0.0);
          }
-         if(min_cycles <= 1 &&
+         if(minCycles <= 1 &&
             (HLSMgr->Rmem->get_allocated_space() + HLSMgr->Rmem->get_allocated_parameters_memory()) == 0)
          {
             fu->logical_type = functional_unit::COMBINATIONAL;
@@ -283,8 +270,8 @@ DesignFlowStep_Status add_library::InternalExec()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Added " + module_name + " to WORK_LIBRARY");
    }
-   fu->area_m = area_info::factory(parameters);
-   fu->area_m->set_area_value(2000); /// fake number to avoid sharing of functions
+   fu->area_m = std::make_shared<area_info>();
+   fu->area_m->resources[area_info::AREA] = 2000; /// fake number to avoid sharing of functions
 
    return DesignFlowStep_Status::SUCCESS;
 }

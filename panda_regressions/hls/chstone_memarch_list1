@@ -1,2 +1,2 @@
-blowfish/bf.c --benchmark-name=bf-xc7z020-VVD  --device-name=xc7z020-1clg484-VVD
+blowfish/bf.c --benchmark-name=bf-xc7z020  --device-name=xc7z020-1clg484
 

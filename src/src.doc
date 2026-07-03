@@ -8,26 +8,26 @@
  *
  *             ***********************************************
  *                              PandA Project 
- *                     URL: http://panda.dei.polimi.it
+ *                     URL: https://github.com/ferrandi/PandA-bambu
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2024 Politecnico di Milano
+ *              Copyright (c) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
 */
 /*!
@@ -44,27 +44,26 @@
 
 
   \section src_subprojects Libraries sub-projects 
-  Creation and dumping of intermediate representation:
-  - Subproject \ref src_parser_page "Parsers:" provides all the available parsers, adopted to acquire the data that the tools use as input to their algorithms.
-  - Subproject \ref src_graph_page "Graph:" contains the definition of the graph-based descriptions.
-  - Subproject \ref src_polixml_page "POLIXML:" contains the definition of a simple and easy-to-use XML library.
+  Creation and management of internal intermediate representations:
+  - Parser components provide the front-end readers used to acquire the inputs consumed by the analysis and synthesis flows.
+  - Graph components define the graph-based program and design descriptions used throughout the framework.
+  - POLIXML components provide the lightweight XML infrastructure used by configuration and exchange formats.
   - Subproject \ref src_behavior_page "Behavior:" contains functions to manage and to represent graphs with different granularity. In particular we can represent CFG/DFG/CDG/DDG/SDG for operations and CFG/DFG/Dom/PostDom for basic blocks.
-  - Subproject \ref src_tree_page provides "Tree:" functions to manage and to represent the tree computed by the GCC compilation.
-  - Subproject \ref src_frontend_page "Frontend:" contains the algorithms adopted to build the entire intermediate representation (both tree and graph-based).
-  - Subproject \ref src_backend_page "Parsers:" it provides backend functions to C, SystemC, VHDL, and Verilog descriptions.
+  - IR components provide the data structures used to represent the PandA internal intermediate representation.
+  - Frontend analysis components build and transform the PandA internal intermediate representation.
+  - Backend components emit C, SystemC, VHDL, and Verilog descriptions.
 
   Resource library and circuit representation management:
-  - Subproject \ref src_technology_manager_page "Technology:" provides functions to manage and to represent technology information.
+  - Technology components manage libraries, device data, and technology-specific information.
   - Subproject \ref src_circuit_page "Circuit:" describes a generic data structure representing a circuit.
-  - Subproject \ref src_wrapper_page "Wrappers:" it provides classes to wrap commercial synthesis tools.
+  - Wrapper components provide adapters around external compilation and synthesis tools.
 
   Bambu tool:
   - Subproject \ref src_HLS_page provides algorithms for high-level synthesis.
 
   Development aids: 
-  - Subproject \ref src_algorithms_page contains a set of useful algorithms that can be used to aid problem solution into development.
-  - Subproject \ref src_ilp_page provides utilities used to solve ILP formulations. 
-  - Subproject \ref src_utility_page contains some useful macros and functions.
+  - Utility algorithms provide reusable building blocks for analyses, transformations, and internal services.
+  - Utility components contain common helpers, macros, and support infrastructure.
 
 
 */

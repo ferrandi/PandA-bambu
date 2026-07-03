@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -35,9 +35,6 @@
  * @brief Not parsed functionality manager.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef NP_FUNCTIONALITY_HPP
@@ -50,19 +47,10 @@
 
 REF_FORWARD_DECL(NP_functionality);
 
-/**
- * @name Forward decl of xml Element.
- */
 class xml_element;
-//@}
 
-/**
- * @name LIBRARY parameters positions.
- */
-//@{
 #define START_LIBRARY_PARAMETER 1
 #define LIBRARY_NAME 0
-//@}
 
 /// LIBRARY Declaration extension. It has probably mean only for the systemC backend.
 #define LIBRARY_DECL_SUFFIX_EXT "_DECL"
@@ -104,13 +92,13 @@ class NP_functionality
       GRAPH,
       FSM,
       FSM_CS,
+      FSM_STAGES,
       SC_PROVIDED,
       VHDL_PROVIDED,
       VERILOG_PROVIDED,
       SYSTEM_VERILOG_PROVIDED,
       VERILOG_GENERATOR,
       VHDL_GENERATOR,
-      FLOPOCO_PROVIDED,
       BAMBU_PROVIDED,
       IP_COMPONENT,
       IP_INCLUDE,
@@ -132,14 +120,9 @@ class NP_functionality
    NP_functionaly_type to_NP_functionaly_type(const std::string& val);
 
  public:
-   /// Constructor.
    NP_functionality() = default;
 
-   /// Constructor.
    explicit NP_functionality(const NP_functionalityRef& obj);
-
-   /// Destructor.
-   ~NP_functionality() = default;
 
    /**
     * Add a non SystemC based description.
@@ -172,7 +155,7 @@ class NP_functionality
 
    /**
     * Load a NP_functionality starting from an xml file.
-    * @param node is a node of the xml tree.
+    * @param Enode is a node of the xml tree.
     */
    void xload(const xml_element* Enode);
 

@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2024 Politecnico di Milano
+ *              Copyright (C) 2018-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -39,18 +39,15 @@
  */
 #ifndef COMMUTATIVE_EXPR_RESTRUCTURING_HPP
 #define COMMUTATIVE_EXPR_RESTRUCTURING_HPP
-
-/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
-/// utility include
 #include "refcount.hpp"
 
 REF_FORWARD_DECL(AllocationInformation);
 REF_FORWARD_DECL(Schedule);
-REF_FORWARD_DECL(tree_manager);
-CONSTREF_FORWARD_DECL(tree_node);
-REF_FORWARD_DECL(tree_node);
+REF_FORWARD_DECL(ir_manager);
+CONSTREF_FORWARD_DECL(ir_node);
+REF_FORWARD_DECL(ir_node);
 
 class commutative_expr_restructuring : public FunctionFrontendFlowStep
 {
@@ -61,66 +58,39 @@ class commutative_expr_restructuring : public FunctionFrontendFlowStep
    /// The allocation information
    AllocationInformationRef allocation_information;
 
-   /// The tree manager
-   tree_managerRef TM;
+   /// The IR manager
+   ir_managerRef TM;
 
    /**
-    * Return true if tree node is a gimple_assign with a mult_expr/plus_expr in the right part
-    * @param tn is the tree reindex to be considered
+    * Return true if IR node is a assign_stmt with a mul_node/add_node in the right part
+    * @param tn is the IR reindex to be considered
     */
-   bool IsCommExprGimple(const tree_nodeConstRef tn) const;
+   bool IsCommExpr(const ir_nodeConstRef tn) const;
 
    /**
-    * Given a gimple_assign with a commutative operation it checks:
-    * - if operand is a ssa_name
+    * Given a assign_stmt with a commutative operation it checks:
+    * - if operand is a ssa_node
     * - if operand is defined in the same basic block
-    * - if operand is defined in a gimple_assign whose operand is another commutative operation
+    * - if operand is defined in a assign_stmt whose operand is another commutative operation
     * - if operand is on the relative critical path (i.e., it delays execution of tn
-    * @param tn is the starting gimple_assign
+    * @param tn is the starting assign_stmt
     * @param first is true if first operand has to be considered, false if second operand has to be considered
     * @param is_third_node if has to consider or not the number of uses
-    * @return the chained gimple_assignment if all conditions hold
+    * @return the chained assign_stmtment if all conditions hold
     */
-   tree_nodeRef IsCommExprChain(const tree_nodeConstRef tn, const bool first, bool is_third_node) const;
+   ir_nodeRef IsCommExprChain(const ir_nodeConstRef tn, const bool first, bool is_third_node) const;
 
-   /**
-    * Return the set of analyses in relationship with this design step
-    * @param relationship_type is the type of relationship to be considered
-    */
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
-   /**
-    * Constructor.
-    * @param AppM is the application manager
-    * @param function_id is the node id of the function analyzed.
-    * @param design_flow_manager is the design flow manager
-    * @param parameters is the set of input parameters
-    */
    commutative_expr_restructuring(const application_managerRef AppM, unsigned int function_id,
-                                  const DesignFlowManagerConstRef design_flow_manager,
-                                  const ParameterConstRef parameters);
+                                  const DesignFlowManager& design_flow_manager, const ParameterConstRef parameters);
 
-   /**
-    *  Destructor
-    */
-   ~commutative_expr_restructuring() override;
-
-   /**
-    * Performs the loops analysis
-    */
    DesignFlowStep_Status InternalExec() override;
 
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
    void Initialize() override;
 
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
    bool HasToBeExecuted() const override;
 };
 #endif

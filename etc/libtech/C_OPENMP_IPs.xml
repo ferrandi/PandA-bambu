@@ -1,0 +1,414 @@
+<?xml version="1.0"?>
+<technology>
+  <library>
+    <name>STD_FU</name>
+    <cell>
+      <name>KMP_BAMBU_CRITICAL_FU</name>
+      <operation operation_name="__kmp_bambu_critical" bounded="0"/>
+      <circuit>
+        <module_o id="KMP_BAMBU_CRITICAL_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="KMP_BAMBU_CRITICAL_FU"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="loc" dir="IN" >
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="kmp_lock_acquired" dir="OUT" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="kmp_lock_acquired_ack" dir="IN" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="KMP_BAMBU_CRITICAL_FU loc" VERILOG_PROVIDED="
+assign done_port = kmp_lock_acquired_ack;
+assign kmp_lock_acquired = start_port;"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>KMP_BAMBU_END_CRITICAL_FU</name>
+      <operation operation_name="__kmp_bambu_end_critical" bounded="1" execution_time="0.0000001"/>
+      <circuit>
+        <module_o id="KMP_BAMBU_END_CRITICAL_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="KMP_BAMBU_END_CRITICAL_FU"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="kmp_lock_release" dir="OUT" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="loc" dir="IN" >
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="KMP_BAMBU_END_CRITICAL_FU loc" VERILOG_PROVIDED="assign kmp_lock_release = start_port;
+assign done_port = start_port;"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>KMP_BAMBU_TID_FROM_GTID_FU</name>
+      <operation operation_name="__kmp_bambu_tid_from_gtid" bounded="1" execution_time="0.0000001"/>
+      <circuit>
+        <module_o id="KMP_BAMBU_TID_FROM_GTID_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="KMP_BAMBU_TID_FROM_GTID_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="KMP_BAMBU_TID_FROM_GTID_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>KMP_BAMBU_BARRIER_REACHED_FU</name>
+      <operation operation_name="__kmp_bambu_barrier_reached" bounded="1" cycles="1" execution_time="0.0000001"/>
+      <circuit>
+        <module_o id="KMP_BAMBU_BARRIER_REACHED_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="KMP_BAMBU_BARRIER_REACHED_FU"/>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="kmp_bambu_barrier_reached_tid" dir="OUT" is_global="1" is_extern="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="kmp_bambu_barrier_reached_we" dir="OUT" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="KMP_BAMBU_BARRIER_REACHED_FU in1" VERILOG_PROVIDED="
+          assign kmp_bambu_barrier_reached_tid = in1;
+          assign kmp_bambu_barrier_reached_we = start_port;
+          assign done_port = start_port;"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>KMP_BAMBU_WAIT_ALL_THREADS_FU</name>
+      <operation operation_name="__kmp_bambu_wait_all_threads" bounded="0"/>
+      <circuit>
+        <module_o id="KMP_BAMBU_WAIT_ALL_THREADS_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi, Giovanni Gozzi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="KMP_BAMBU_WAIT_ALL_THREADS_FU"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="kmp_bambu_wait_all_threads_ld" dir="OUT" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="kmp_bambu_wait_all_threads_rd" dir="IN" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="KMP_BAMBU_WAIT_ALL_THREADS_FU" VERILOG_PROVIDED="
+reg started 1INIT_ZERO_VALUE;
+reg started_next 1INIT_ZERO_VALUE;
+reg done_port_reg 1INIT_ZERO_VALUE;
+
+always @(*) 
+begin
+  started_next = (started | start_port) &amp; !kmp_bambu_wait_all_threads_rd;
+end
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if (1RESET_VALUE)
+  begin
+    started &lt;= 0;
+  end
+  else
+  begin
+    started &lt;= started_next;
+  end
+end
+always @(*)
+begin
+  done_port_reg = (start_port &amp; kmp_bambu_wait_all_threads_rd) | (started &amp; kmp_bambu_wait_all_threads_rd);  
+end  
+
+assign kmp_bambu_wait_all_threads_ld = start_port;
+assign done_port = done_port_reg;"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>KMP_BAMBU_CS_WAIT_ALL_THREADS_FU</name>
+      <operation operation_name="__kmp_bambu_cs_wait_all_threads" bounded="0"/>
+      <circuit>
+        <module_o id="KMP_BAMBU_CS_WAIT_ALL_THREADS_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi, Giovanni Gozzi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="KMP_BAMBU_CS_WAIT_ALL_THREADS_FU"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="kmp_bambu_wait_all_threads_ld" dir="OUT" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="kmp_bambu_wait_all_threads_rd" dir="IN" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="selector_register_file" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="KMP_BAMBU_CS_WAIT_ALL_THREADS_FU selector_register_file" VERILOG_PROVIDED="
+reg [(1&lt;&lt;BITSIZE_selector_register_file)-1:0] started;
+reg [(1&lt;&lt;BITSIZE_selector_register_file)-1:0] started_next;
+reg [(1&lt;&lt;BITSIZE_selector_register_file)-1:0] done_port_reg;
+reg [(1&lt;&lt;BITSIZE_selector_register_file)-1:0] done_port_reg_old;
+integer i;
+always @(*) 
+begin
+  started_next = started;
+  started_next[selector_register_file] = (started[selector_register_file] | start_port) &amp; !kmp_bambu_wait_all_threads_rd;
+end
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if (1RESET_VALUE)
+  begin
+    started &lt;=0;
+    done_port_reg_old &lt;=0;
+  end
+  else
+  begin
+    started &lt;= started_next;
+    done_port_reg_old &lt;= done_port_reg;
+  end
+end
+
+always @(*)
+begin
+  done_port_reg = done_port_reg_old;
+  done_port_reg[selector_register_file] = (start_port &amp; kmp_bambu_wait_all_threads_rd) | (started[selector_register_file] &amp; kmp_bambu_wait_all_threads_rd);    
+end
+
+assign kmp_bambu_wait_all_threads_ld = start_port;
+assign done_port = done_port_reg[selector_register_file];"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>KMP_BAMBU_SET_TH_LOCAL_REDUCE_DATA_FU</name>
+      <operation operation_name="__kmp_bambu_set_th_local_reduce_data" cycles="2" initiation_time="1" stage_period="0.1"/>
+      <circuit>
+        <module_o id="KMP_BAMBU_SET_TH_LOCAL_REDUCE_DATA_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi, Giovanni Gozzi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="KMP_BAMBU_SET_TH_LOCAL_REDUCE_DATA_FU"/>
+          <parameter name="CONTEXT_BIT_START">0</parameter>
+          <parameter name="CONTEXT_BIT_END">0</parameter>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="selector_register_file" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="kmp_bambu_set_th_local_reduce_data_ack" dir="IN" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="kmp_bambu_set_th_local_reduce_data_tid" dir="OUT" is_global="1" is_extern="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="kmp_bambu_set_th_local_reduce_data_val" dir="OUT" is_global="1" is_extern="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="kmp_bambu_set_th_local_reduce_data_we" dir="OUT" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="KMP_BAMBU_SET_TH_LOCAL_REDUCE_DATA_FU in1 in2 selector_register_file kmp_bambu_set_th_local_reduce_data_val CONTEXT_BIT_START CONTEXT_BIT_END" VERILOG_PROVIDED="
+assign done_port = kmp_bambu_set_th_local_reduce_data_ack;
+assign kmp_bambu_set_th_local_reduce_data_tid =  in1;
+assign kmp_bambu_set_th_local_reduce_data_we = start_port;
+
+generate
+  if(CONTEXT_BIT_START == 0)
+  begin
+    assign kmp_bambu_set_th_local_reduce_data_val = in2;
+  end
+  else
+  begin
+    assign kmp_bambu_set_th_local_reduce_data_val = {in2[BITSIZE_in2-1: CONTEXT_BIT_START], selector_register_file , in2[CONTEXT_BIT_END-1:0]};
+  end
+endgenerate"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>KMP_BAMBU_GET_TH_LOCAL_REDUCE_DATA_FU</name>
+      <operation operation_name="__kmp_bambu_get_th_local_reduce_data" cycles="2" initiation_time="1" stage_period="2.5110000000000001"/>
+      <circuit>
+        <module_o id="KMP_BAMBU_GET_TH_LOCAL_REDUCE_DATA_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi, Giovanni Gozzi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="KMP_BAMBU_GET_TH_LOCAL_REDUCE_DATA_FU"/>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="kmp_bambu_get_th_local_reduce_data_ack" dir="IN" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="kmp_bambu_get_th_local_reduce_data_val" dir="IN" is_global="1" is_extern="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="kmp_bambu_get_th_local_reduce_data_tid" dir="OUT" is_global="1" is_extern="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="kmp_bambu_get_th_local_reduce_data_ld" dir="OUT" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="KMP_BAMBU_GET_TH_LOCAL_REDUCE_DATA_FU in1 out1" VERILOG_PROVIDED="
+assign done_port = kmp_bambu_get_th_local_reduce_data_ack;
+assign kmp_bambu_get_th_local_reduce_data_tid =  in1;
+assign out1 = kmp_bambu_get_th_local_reduce_data_val;
+assign kmp_bambu_get_th_local_reduce_data_ld = start_port;"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>KMP_BAMBU_GTID_GET_SPECIFIC_FU</name>
+      <operation operation_name="__kmp_bambu_gtid_get_specific" bounded="1" execution_time="0.0000001"/>
+      <circuit>
+        <module_o id="KMP_BAMBU_GTID_GET_SPECIFIC_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="KMP_BAMBU_GTID_GET_SPECIFIC_FU"/>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="kmp_bambu_gtid_get_specific_gtid" dir="IN" is_global="1" is_extern="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <NP_functionality LIBRARY="KMP_BAMBU_GTID_GET_SPECIFIC_FU out1" VERILOG_PROVIDED="assign out1 = kmp_bambu_gtid_get_specific_gtid;"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>KMP_BAMBU_CS_GET_GTID_FU</name>
+      <operation operation_name="__kmp_bambu_cs_get_gtid" bounded="1" execution_time="0.0000001"/>
+      <circuit>
+        <module_o id="KMP_BAMBU_CS_GET_GTID_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="KMP_BAMBU_CS_GET_GTID_FU"/>
+          <port_o id="selector_register_file" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="selector_register_file out1" VERILOG_GENERATOR="KMPBambuCSGetGTIDHDLGenerator"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>KMP_BAMBU_CS_GET_TID_FU</name>
+      <operation operation_name="__kmp_bambu_cs_get_tid" bounded="1" execution_time="0.0000001"/>
+      <circuit>
+        <module_o id="KMP_BAMBU_CS_GET_TID_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="KMP_BAMBU_CS_GET_TID_FU"/>
+          <port_o id="selector_register_file" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="selector_register_file out1" VERILOG_GENERATOR="KMPBambuCSGetTIDHDLGenerator"/>
+        </module_o>
+      </circuit>
+    </cell>
+  </library>
+</technology>

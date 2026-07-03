@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<technology>
+   <library>
+      <name>STD_DATAFLOW</name>
+      <cell>
+         <name>dataflow_fifo</name>
+         <circuit>
+            <module_o id="dataflow_fifo">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2014-2026 Politecnico di Milano</copyright>
+               <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+               <license>PANDA_MIT</license>
+               <structural_type_descriptor id_type="dataflow_fifo"/>
+               <parameter name="FIFO_DEPTH">1</parameter>
+               <port_o id="clock" dir="IN" is_clock="1">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <port_o id="reset" dir="IN">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <port_o id="write" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
+               <port_o id="read" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
+               <port_o id="din" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
+               <port_o id="empty_n" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
+               <port_o id="full_n" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
+               <port_o id="dout" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="dataflow_fifo FIFO_DEPTH din dout" VERILOG_PROVIDED="
+`ifndef _SIM_HAVE_CLOG2
+  function integer log2;
+     input integer value;
+     integer temp_value;
+    begin
+      temp_value = value-1;
+      for (log2=0; temp_value&gt;0; log2=log2+1)
+        temp_value = temp_value&gt;&gt;1;
+    end
+  endfunction
+`endif
+`ifdef _SIM_HAVE_CLOG2
+  localparam QUEUESIZE_LOG = $clog2(FIFO_DEPTH);
+`else
+  localparam QUEUESIZE_LOG = log2(FIFO_DEPTH);
+`endif
+      
+reg [QUEUESIZE_LOG:0] read_idx, write_idx;
+wire wrap;
+assign wrap = write_idx[QUEUESIZE_LOG] ^ read_idx[QUEUESIZE_LOG];
+assign empty_n = (write_idx == read_idx) ? 1&apos;b0 : 1&apos;b1;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if (1RESET_VALUE)
+  begin
+    read_idx &lt;= 0;
+    write_idx &lt;= 0;
+  end
+  else
+  begin
+    if (write == 1&apos;b1)
+    begin
+      write_idx &lt;= write_idx + 1&apos;b1;
+    end
+    if (read == 1&apos;b1)
+    begin
+      read_idx &lt;= read_idx + 1&apos;b1;
+    end
+  end
+end
+
+generate
+  if(FIFO_DEPTH &lt; 2)
+  begin : scope_lessthan2
+    reg [BITSIZE_din-1:0] circ_fifo;
+    assign dout = circ_fifo;
+    assign full_n = wrap ? 1&apos;b0 : 1&apos;b1;
+    always @(posedge clock)
+    begin
+      if (write == 1&apos;b1)
+      begin
+        circ_fifo &lt;= din;
+      end
+    end
+  end
+  else
+  begin : scope_else
+    reg [BITSIZE_din-1:0] circ_fifo [0:((1&lt;&lt;QUEUESIZE_LOG)-1)];
+    assign full_n = (wrap &amp;&amp; (write_idx[QUEUESIZE_LOG-1:0] == read_idx[QUEUESIZE_LOG-1:0])) ? 1&apos;b0 : 1&apos;b1;
+    assign dout = circ_fifo[read_idx[QUEUESIZE_LOG-1:0]];
+    always @(posedge clock)
+    begin
+      if (write == 1&apos;b1)
+      begin
+        circ_fifo[write_idx[QUEUESIZE_LOG-1:0]] &lt;= din;
+      end
+    end
+  end
+endgenerate
+// Add assertion here
+// psl default clock = (posedge clock);
+// psl ERROR_write_full: assert never {write &amp;&amp; !full_n};
+// psl ERROR_read_empty: assert never {read &amp;&amp; !empty_n};
+"/>
+            </module_o>
+         </circuit>
+      </cell>
+   </library>
+</technology>

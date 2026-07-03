@@ -11,22 +11,22 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (C) 2004-2024 Politecnico di Milano
+ *            Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  * This file is part of the PandA framework.
  *
- * The PandA framework is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 #include "HWCallInjection.hpp"
@@ -34,36 +34,29 @@
 #include "Parameter.hpp"
 #include "application_manager.hpp"
 #include "behavioral_helper.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
+#include "ir_basic_block.hpp"
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
+#include "ir_manipulation.hpp"
+#include "ir_node.hpp"
 #include "op_graph.hpp"
-#include "tree_basic_block.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_manipulation.hpp"
-#include "tree_node.hpp"
-
-/// parser/compiler include
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "string_manipulation.hpp"
 #include "token_interface.hpp"
 
-/// STD include
 #include <string>
-
-/// STL includes
-#include "custom_set.hpp"
 #include <utility>
 #include <vector>
 
-unsigned int HWCallInjection::builtinWaitCallDeclIdx = 0;
+ir_nodeRef HWCallInjection::builtinWaitCallDecl = nullptr;
 
 HWCallInjection::HWCallInjection(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int funId,
-                                 const DesignFlowManagerConstRef DFM)
+                                 const DesignFlowManager& DFM)
     : FunctionFrontendFlowStep(_AppM, funId, HWCALL_INJECTION, DFM, Param)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
-
-HWCallInjection::~HWCallInjection() = default;
 
 CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 HWCallInjection::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const
@@ -93,31 +86,30 @@ HWCallInjection::ComputeFrontendRelationships(const DesignFlowStep::Relationship
 
 bool HWCallInjection::HasToBeExecuted() const
 {
-   return bb_version == 0;
+   return bb_version == 0 && FunctionFrontendFlowStep::HasToBeExecuted();
 }
 
 DesignFlowStep_Status HWCallInjection::InternalExec()
 {
-   const auto TM = AppM->get_tree_manager();
-   const auto fd = GetPointer<const function_decl>(TM->GetTreeNode(function_id));
-   THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   const auto sl = GetPointerS<statement_list>(fd->body);
-   THROW_ASSERT(sl, "Body is not a statement_list");
+   const auto TM = AppM->get_ir_manager();
+   const auto fd = GetPointerS<const function_val_node>(TM->GetIRNode(function_id));
+   THROW_ASSERT(fd->body, "Node is not a function or it hasn't a body");
+   const auto sl = GetPointerS<statement_list_node>(fd->body);
 
-   const auto isHardwareCall = [&](const tree_nodeRef& expr) -> bool {
-      tree_nodeRef FD;
-      if(expr->get_kind() == gimple_call_K)
+   const auto isHardwareCall = [&](const ir_nodeRef& expr) -> bool {
+      ir_nodeRef FD;
+      if(expr->get_kind() == call_stmt_K)
       {
-         const auto GC = GetPointerS<gimple_call>(expr);
-         FD = GetPointer<const addr_expr>(GC->fn) ? GetPointerS<const addr_expr>(GC->fn)->op : GC->fn;
+         const auto gc = GetPointerS<call_stmt>(expr);
+         FD = GetPointer<const addr_node>(gc->fn) ? GetPointerS<const addr_node>(gc->fn)->op : gc->fn;
       }
-      else if(expr->get_kind() == gimple_assign_K)
+      else if(expr->get_kind() == assign_stmt_K)
       {
-         const auto GA = GetPointerS<const gimple_assign>(expr);
-         if(GA->op1->get_kind() == call_expr_K || GA->op1->get_kind() == aggr_init_expr_K)
+         const auto ga = GetPointerS<const assign_stmt>(expr);
+         if(ga->op1->get_kind() == call_node_K)
          {
-            const auto CE = GetPointerS<const call_expr>(GA->op1);
-            FD = GetPointer<const addr_expr>(CE->fn) ? GetPointerS<const addr_expr>(CE->fn)->op : CE->fn;
+            const auto CE = GetPointerS<const call_node>(ga->op1);
+            FD = GetPointer<const addr_node>(CE->fn) ? GetPointerS<const addr_node>(CE->fn)->op : CE->fn;
          }
       }
 
@@ -125,12 +117,7 @@ DesignFlowStep_Status HWCallInjection::InternalExec()
       bool result = false;
       if(FD)
       {
-         if(FD->get_kind() == function_decl_K)
-         {
-            const auto FDPtr = GetPointerS<const function_decl>(FD);
-            result = FDPtr->hwcall_flag;
-         }
-         else if(FD->get_kind() == ssa_name_K)
+         if(FD->get_kind() == ssa_node_K)
          {
             // This is the case for function pointers call.
             result = true;
@@ -160,108 +147,94 @@ DesignFlowStep_Status HWCallInjection::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef& stmt)
+void HWCallInjection::buildBuiltinCall(const blocRef& block, const ir_nodeRef& stmt)
 {
    const auto stmt_kind = stmt->get_kind();
-   const auto TM = AppM->get_tree_manager();
-   const auto IRman = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
+   const auto TM = AppM->get_ir_manager();
+   ir_manipulation ir_man(TM, parameters, AppM);
 
-   if(!builtinWaitCallDeclIdx)
+   if(!builtinWaitCallDecl)
    {
-      const auto vararg_list_idx = TM->new_tree_node_id();
-      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> attr_map;
-      attr_map[TOK(TOK_VALU)] = STR(IRman->GetSignedIntegerType()->index);
-      TM->create_tree_node(vararg_list_idx, tree_list_K, attr_map);
-      attr_map.clear();
+      ir_manager::IRSchema attr_map;
 
-      const auto ftype_idx = TM->new_tree_node_id();
-      attr_map[TOK(TOK_RETN)] = STR(IRman->GetVoidType()->index);
+      attr_map[TOK(TOK_RETN)] = STR(ir_man.GetVoidType()->index);
       attr_map[TOK(TOK_VARARGS)] = STR(1);
-      attr_map[TOK(TOK_PRMS)] = STR(vararg_list_idx);
-      const auto funTypeSize = TM->CreateUniqueIntegerCst(8, IRman->GetSignedIntegerType());
-      attr_map[TOK(TOK_SIZE)] = STR(funTypeSize->index);
+      attr_map[TOK(TOK_ARG)] = STR(ir_man.GetSignedIntegerType()->index);
+      attr_map[TOK(TOK_BITSIZEALLOC)] = STR(8);
       attr_map[TOK(TOK_ALIGNED)] = STR(8);
-      TM->create_tree_node(ftype_idx, function_type_K, attr_map);
+      auto ftype_node = TM->create_ir_node(function_ty_node_K, attr_map);
       attr_map.clear();
 
-      builtinWaitCallDeclIdx = TM->new_tree_node_id();
-      attr_map[TOK(TOK_TYPE)] = STR(ftype_idx);
-      const auto builtinIdString = IRman->create_identifier_node(BUILTIN_WAIT_CALL);
+      attr_map[TOK(TOK_TYPE)] = STR(ftype_node->index);
+      const auto builtinIdString = ir_man.create_identifier_node(BUILTIN_WAIT_CALL);
       attr_map[TOK(TOK_NAME)] = STR(builtinIdString->index);
-      attr_map[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-      TM->create_tree_node(builtinWaitCallDeclIdx, function_decl_K, attr_map);
-      attr_map.clear();
+      attr_map[TOK(TOK_IR_LOCINFO)] = BUILTIN_LOCINFO;
+      builtinWaitCallDecl = TM->create_ir_node(function_val_node_K, attr_map);
    }
 
-   const auto gn = GetPointerS<gimple_node>(stmt);
-   const auto srcp_str = gn->include_name + ":" + STR(gn->line_number) + ":" + STR(gn->column_number);
+   const auto gn = GetPointerS<node_stmt>(stmt);
+   const auto loc_info_str = gn->include_name + ":" + STR(gn->line_number) + ":" + STR(gn->column_number);
 
-   const auto builtin_stmt_idx = TM->new_tree_node_id();
-   {
-      const auto addr_expr_idx = TM->new_tree_node_id();
-      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> attr_map;
-      const auto functionDecl = GetPointerS<const function_decl>(TM->GetTreeNode(builtinWaitCallDeclIdx));
-      attr_map[TOK(TOK_TYPE)] = STR(IRman->GetPointerType(functionDecl->type, 8)->index);
-      attr_map[TOK(TOK_OP)] = STR(builtinWaitCallDeclIdx);
-      attr_map[TOK(TOK_SRCP)] = srcp_str;
-      TM->create_tree_node(addr_expr_idx, addr_expr_K, attr_map);
+   const auto builtin_stmt = [&]() {
+      ir_manager::IRSchema attr_map;
+      const auto functionDecl = GetPointerS<const function_val_node>(builtinWaitCallDecl);
+      attr_map[TOK(TOK_TYPE)] = STR(ir_man.GetPointerType(functionDecl->type, 8)->index);
+      attr_map[TOK(TOK_OP)] = STR(builtinWaitCallDecl->index);
+      attr_map[TOK(TOK_IR_LOCINFO)] = loc_info_str;
+      auto ae_node = TM->create_ir_node(addr_node_K, attr_map);
       attr_map.clear();
 
-      attr_map[TOK(TOK_FN)] = STR(addr_expr_idx);
-      if(stmt_kind == gimple_call_K)
+      attr_map[TOK(TOK_FN)] = STR(ae_node->index);
+      if(stmt_kind == call_stmt_K)
       {
-         const auto GC = GetPointerS<const gimple_call>(stmt);
-         attr_map[TOK(TOK_SCPE)] = STR(GC->scpe->index);
+         const auto gc = GetPointerS<const call_stmt>(stmt);
+         attr_map[TOK(TOK_PARENT)] = STR(gc->parent->index);
       }
-      else if(stmt_kind == gimple_assign_K)
+      else if(stmt_kind == assign_stmt_K)
       {
-         const auto GA = GetPointerS<const gimple_assign>(stmt);
-         attr_map[TOK(TOK_SCPE)] = STR(GA->scpe->index);
+         const auto ga = GetPointerS<const assign_stmt>(stmt);
+         attr_map[TOK(TOK_PARENT)] = STR(ga->parent->index);
       }
-      attr_map[TOK(TOK_SRCP)] = srcp_str;
-      TM->create_tree_node(builtin_stmt_idx, gimple_call_K, attr_map);
-   }
+      attr_map[TOK(TOK_IR_LOCINFO)] = loc_info_str;
+      return TM->create_ir_node(call_stmt_K, attr_map);
+   }();
 
-   const auto builtin_stmt = TM->GetTreeNode(builtin_stmt_idx);
-   const auto builtin_call = GetPointerS<gimple_call>(builtin_stmt);
-   tree_nodeRef retVar = nullptr;
-   if(stmt_kind == gimple_call_K)
+   const auto builtin_call = GetPointerS<call_stmt>(builtin_stmt);
+   ir_nodeRef retVar = nullptr;
+   if(stmt_kind == call_stmt_K)
    {
-      const auto GC = GetPointerS<gimple_call>(stmt);
-      builtin_call->AddArg(GC->fn);
+      const auto gc = GetPointerS<call_stmt>(stmt);
+      builtin_call->AddArg(gc->fn);
 
-      const auto has_return = TM->CreateUniqueIntegerCst(0, IRman->GetSignedIntegerType());
+      const auto has_return = TM->CreateUniqueIntegerCst(0, ir_man.GetSignedIntegerType());
       builtin_call->AddArg(has_return);
 
-      for(const auto& arg : GC->args)
+      for(const auto& arg : gc->args)
       {
          builtin_call->AddArg(arg);
       }
 
-      builtin_call->memuse = GC->memuse;
-      builtin_call->memdef = GC->memdef;
-      builtin_call->vdef = GC->vdef;
-      builtin_call->vuses = GC->vuses;
-      builtin_call->vovers = GC->vovers;
+      builtin_call->memuse = gc->memuse;
+      builtin_call->memdef = gc->memdef;
+      builtin_call->vdef = gc->vdef;
+      builtin_call->vuses = gc->vuses;
+      builtin_call->vovers = gc->vovers;
 
-      builtin_call->pragmas = GC->pragmas;
-      builtin_call->use_set = GC->use_set;
-      builtin_call->clobbered_set = GC->clobbered_set;
-      builtin_call->scpe = GC->scpe;
-      builtin_call->bb_index = GC->bb_index;
-      builtin_call->include_name = GC->include_name;
-      builtin_call->line_number = GC->line_number;
-      builtin_call->column_number = GC->column_number;
+      builtin_call->parent = gc->parent;
+      builtin_call->bb_index = gc->bb_index;
+      builtin_call->include_name = gc->include_name;
+      builtin_call->line_number = gc->line_number;
+      builtin_call->column_number = gc->column_number;
    }
-   else if(stmt_kind == gimple_assign_K)
+   else if(stmt_kind == assign_stmt_K)
    {
-      const auto GA = GetPointerS<gimple_assign>(stmt);
-      if(GA->op1->get_kind() == call_expr_K || GA->op1->get_kind() == aggr_init_expr_K)
+      const auto ga = GetPointerS<assign_stmt>(stmt);
+      if(ga->op1->get_kind() == call_node_K)
       {
-         const auto CE = GetPointerS<const call_expr>(GA->op1);
+         const auto CE = GetPointerS<const call_node>(ga->op1);
          builtin_call->AddArg(CE->fn);
 
-         const auto has_return = TM->CreateUniqueIntegerCst(1, IRman->GetSignedIntegerType());
+         const auto has_return = TM->CreateUniqueIntegerCst(1, ir_man.GetSignedIntegerType());
          builtin_call->AddArg(has_return);
 
          for(const auto& arg : CE->args)
@@ -269,78 +242,66 @@ void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef&
             builtin_call->AddArg(arg);
          }
 
-         if(const auto ssaRet = GetPointer<const ssa_name>(GA->op0))
+         if(const auto ssaRet = GetPointer<const ssa_node>(ga->op0))
          {
-            tree_nodeRef ret_var_type, ret_var_size;
+            ir_nodeRef ret_var_type;
+            unsigned ret_var_size;
             unsigned int ret_var_algn;
             if(ssaRet->type)
             {
                ret_var_type = ssaRet->type;
-               ret_var_size = GetPointerS<const type_node>(ssaRet->type)->size;
+               ret_var_size = GetPointerS<const type_node>(ssaRet->type)->bitsizealloc;
                ret_var_algn = GetPointerS<const type_node>(ssaRet->type)->algn;
             }
             else
             {
-               const auto vd = GetPointerS<const var_decl>(ssaRet->var);
+               const auto vd = GetPointerS<const variable_val_node>(ssaRet->var);
                ret_var_type = vd->type;
-               ret_var_size = GetPointerS<const type_node>(vd->type)->size;
+               ret_var_size = GetPointerS<const type_node>(vd->type)->bitsizealloc;
                ret_var_algn = GetPointerS<const type_node>(vd->type)->algn;
             }
-            retVar = IRman->create_var_decl(
-                IRman->create_identifier_node("__return_value"), ret_var_type, GA->scpe, ret_var_size, nullptr, nullptr,
-                STR(GA->include_name + ":" + STR(GA->line_number) + ":" + STR(GA->column_number)), ret_var_algn, 1,
+            retVar = ir_man.create_var_decl(
+                ir_man.create_identifier_node("__return_value"), ret_var_type, ga->parent, ret_var_size, nullptr,
+                STR(ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number)), ret_var_algn, 1,
                 true);
 
-            GA->op1 = retVar;
+            ga->op1 = retVar;
          }
 
          if(!retVar)
          {
-            retVar = GA->op0;
+            retVar = ga->op0;
          }
 
-         const auto addrExprReturnValue = TM->new_tree_node_id();
-         {
-            std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> addrExprReturnValueMap;
-            const auto typeRetVar = tree_helper::CGetType(retVar);
-            addrExprReturnValueMap[TOK(TOK_TYPE)] = STR(IRman->GetPointerType(typeRetVar)->index);
-            addrExprReturnValueMap[TOK(TOK_OP)] = STR(retVar->index);
-            addrExprReturnValueMap[TOK(TOK_SRCP)] = srcp_str;
-            TM->create_tree_node(addrExprReturnValue, addr_expr_K, addrExprReturnValueMap);
-         }
-         builtin_call->AddArg(TM->GetTreeNode(addrExprReturnValue));
+         const auto addrExprReturnValue = ir_man.create_unary_operation(
+             ir_man.GetPointerType(ir_helper::CGetType(retVar)), retVar, loc_info_str, addr_node_K);
 
-         builtin_call->memdef = GA->memdef;
-         builtin_call->memuse = GA->memuse;
-         builtin_call->vdef = GA->vdef;
-         builtin_call->vuses = GA->vuses;
-         builtin_call->vovers = GA->vovers;
+         builtin_call->AddArg(addrExprReturnValue);
 
-         builtin_call->pragmas = GA->pragmas;
-         builtin_call->use_set = GA->use_set;
-         builtin_call->clobbered_set = GA->clobbered_set;
-         builtin_call->scpe = GA->scpe;
-         builtin_call->bb_index = GA->bb_index;
-         builtin_call->include_name = GA->include_name;
-         builtin_call->line_number = GA->line_number;
-         builtin_call->column_number = GA->column_number;
+         builtin_call->memdef = ga->memdef;
+         builtin_call->memuse = ga->memuse;
+         builtin_call->vdef = ga->vdef;
+         builtin_call->vuses = ga->vuses;
+         builtin_call->vovers = ga->vovers;
 
-         GA->memdef = nullptr;
-         GA->memuse = builtin_call->memdef;
-         GA->vdef = nullptr;
-         GA->vuses.clear();
-         GA->vovers.clear();
+         builtin_call->parent = ga->parent;
+         builtin_call->bb_index = ga->bb_index;
+         builtin_call->include_name = ga->include_name;
+         builtin_call->line_number = ga->line_number;
+         builtin_call->column_number = ga->column_number;
+
+         ga->memdef = nullptr;
+         ga->memuse = builtin_call->memdef;
+         ga->vdef = nullptr;
+         ga->vuses.clear();
+         ga->vovers.clear();
          THROW_ASSERT(builtin_call->vdef, "Unexpected condition");
-         GA->AddVuse(builtin_call->vdef);
-
-         GA->pragmas.clear();
-         GA->use_set = PointToSolutionRef(new PointToSolution());
-         GA->clobbered_set = PointToSolutionRef(new PointToSolution());
+         ga->AddVuse(builtin_call->vdef);
       }
    }
    else
    {
-      THROW_UNREACHABLE("Error not a gimple call or assign statement!");
+      THROW_UNREACHABLE("Error not a call_stmt or assign_stmt!");
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,

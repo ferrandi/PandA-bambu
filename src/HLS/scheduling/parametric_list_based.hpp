@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -38,9 +38,6 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -51,6 +48,7 @@
 #include <set>
 #include <vector>
 
+#include "SchedulingStep.hpp"
 #include "Vertex.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
@@ -58,40 +56,30 @@
 #include "op_graph.hpp"
 #include "refcount.hpp"
 #include "rehashed_heap.hpp"
-#include "scheduling.hpp"
 
-/**
- * @name forward declarations
- */
-//@{
-REF_FORWARD_DECL(hls);
-CONSTREF_FORWARD_DECL(OpGraph);
-CONSTREF_FORWARD_DECL(Schedule);
-REF_FORWARD_DECL(Schedule);
-class graph;
 class resource_ordering_functor;
+class Schedule;
 REF_FORWARD_DECL(fu_binding);
-class OpVertexSet;
-//@}
+REF_FORWARD_DECL(hls);
 
 #if HAVE_UNORDERED
 using PriorityQueues = std::vector<rehashed_heap<int>>;
 #else
 /// Sorter for connection
-struct PrioritySorter : public std::binary_function<vertex, vertex, bool>
+struct PrioritySorter
 {
    /// The priority
    refcount<priority_data<int>> priority;
 
    /// The operation graph
-   const OpGraphConstRef op_graph;
+   const OpGraph& op_graph;
 
    /**
     * Constructor
     * @param priority is the priority associated with each vertex
     * @param op_graph is the operation graph
     */
-   PrioritySorter(const refcount<priority_data<int>> priority, const OpGraphConstRef op_graph);
+   PrioritySorter(const refcount<priority_data<int>> priority, const OpGraph& op_graph);
 
    /**
     * Compare position of two vertices
@@ -99,10 +87,10 @@ struct PrioritySorter : public std::binary_function<vertex, vertex, bool>
     * @param y is the second vertex
     * @return true if index of x is less than y
     */
-   bool operator()(const vertex x, const vertex y) const;
+   bool operator()(OpGraph::vertex_descriptor x, OpGraph::vertex_descriptor y) const;
 };
 
-using PriorityQueues = std::vector<std::set<vertex, PrioritySorter>>;
+using PriorityQueues = std::vector<std::set<OpGraph::vertex_descriptor, PrioritySorter>>;
 #endif
 
 enum class ParametricListBased_Metric
@@ -135,26 +123,32 @@ class ParametricListBasedSpecialization : public HLSFlowStepSpecialization
 /**
  * Class managing list based scheduling algorithms.
  */
-class parametric_list_based : public Scheduling
+class parametric_list_based : public SchedulingStep
 {
  private:
    static const double EPSILON;
 
-   void compute_exec_stage_time(const unsigned int fu_type, double& stage_period, const ControlStep cs,
-                                const OpGraphConstRef op_graph, vertex v, double& op_execution_time,
+   void compute_exec_stage_time(const unsigned int fu_type, double& stage_period, const unsigned int cs,
+                                const OpGraph& op_graph, OpGraph::vertex_descriptor v, double& op_execution_time,
                                 double& phi_extra_time, double current_starting_time, double setup_hold_time);
+
+   unsigned computeLatestStep(unsigned cs_vertex, const OpGraph& opDFG, OpGraph::vertex_descriptor first_vertex,
+                              const OpVertexSet& Operations, Schedule& schedule, unsigned int level,
+                              std::list<OpGraph::vertex_descriptor>& phi_list, double connectionOffset,
+                              const CustomUnorderedSet<OpGraph::vertex_descriptor>& feedback_last_vertices,
+                              bool& moved_feedback_last_vertex);
 
    /// The used metric
    const ParametricListBased_Metric parametric_list_based_metric;
 
    /// The dependence graph
-   OpGraphConstRef flow_graph;
+   OpGraph flow_graph;
 
    /// The dependence graph with feedbacks
-   OpGraphConstRef flow_graph_with_feedbacks;
+   OpGraph flow_graph_with_feedbacks;
 
    /// The starting time given the scheduling (used for chaining)
-   vertex2float starting_time;
+   vertex2float<> starting_time;
 
    /// The ending time given the scheduling (used for chaining)
    OpVertexMap<double> ending_time;
@@ -163,7 +157,7 @@ class parametric_list_based : public Scheduling
    double clock_cycle;
 
    /// memoization table used for connection estimation
-   CustomUnorderedMapUnstable<std::pair<vertex, unsigned int>, bool> is_complex;
+   CustomUnorderedMapUnstable<std::pair<OpGraph::vertex_descriptor, unsigned int>, bool> is_complex;
 
    /// reachable proxy from a given function
    std::map<std::string, std::set<std::string>> reachable_proxy_functions;
@@ -171,22 +165,29 @@ class parametric_list_based : public Scheduling
    /**
     * Given the control step in which an operation is scheduled, compute the exact starting and ending time of an
     * operation
+    * @param operations is the set of operations considered for chaining
     * @param v is the vertex of the operation
     * @param fu_type is the functional unit type
     * @param cs is the control step
     * @param current_starting_time is where starting_time will be stored
     * @param current_ending_time is where ending_time will be stored
     * @param stage_period is the minimum period of the pipelined unit fu_type
+    * @param cannot_be_chained is set when chaining is forbidden
+    * @param res_binding contains the binding information in use
+    * @param schedule is the scheduling state used for chaining lookups
+    * @param phi_extra_time captures extra latency introduced by phi nodes
+    * @param setup_hold_time is the timing budget reserved for setup/hold constraints
     */
-   void compute_starting_ending_time_asap(
-       const CustomUnorderedSet<vertex>& operations, const vertex v, const unsigned int fu_type, const ControlStep cs,
-       double& current_starting_time, double& current_ending_time, double& stage_period, bool& cannot_be_chained,
-       fu_bindingRef res_binding, const ScheduleConstRef schedule, double& phi_extra_time, double setup_hold_time,
-       CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map);
+   void compute_starting_ending_time_asap(const CustomUnorderedSet<OpGraph::vertex_descriptor>& operations,
+                                          OpGraph::vertex_descriptor v, const unsigned int fu_type,
+                                          const unsigned int cs, double& current_starting_time,
+                                          double& current_ending_time, double& stage_period, bool& cannot_be_chained,
+                                          fu_bindingRef res_binding, const Schedule& schedule, double& phi_extra_time,
+                                          double setup_hold_time);
 
    /**
     * Update the resource map
-    * @param used_resources_fu is the resource map.
+    * @param used_resources records how many units of each type are consumed
     * @param fu_type is the functional unit type on which operation is scheduled
     * @return true if the assignment is feasible
     */
@@ -194,48 +195,51 @@ class parametric_list_based : public Scheduling
 
    /**
     * Adds the vertex v to the priority queues
-    * @param priority_trees are the priority_queues
+    * @param priority_queue stores ready operations ordered by priority
     * @param ready_resources is the set of resources which have at least one ready operation
     * @param v is the vertex.
     */
    void add_to_priority_queues(PriorityQueues& priority_queue,
                                std::set<unsigned int, resource_ordering_functor>& ready_resources,
-                               const vertex v) const;
+                               OpGraph::vertex_descriptor v) const;
 
    /**
     * @brief store_in_chaining_with_load checks if a store is chained with a load operation or vice versa
+    * @param operations is the set of operations considered for chaining
     * @param current_vertex_cstep control step of vertex v
     * @param v vertex considered
     * @return true in case vertex v is a store or a load operation and it is chained with a load or store operation
     */
-   bool store_in_chaining_with_load_in(const CustomUnorderedSet<vertex>& operations, unsigned int current_vertex_cstep,
-                                       vertex v);
-   bool store_in_chaining_with_load_out(const CustomUnorderedSet<vertex>& operations, unsigned int current_vertex_cstep,
-                                        vertex v);
+   bool store_in_chaining_with_load_in(const CustomUnorderedSet<OpGraph::vertex_descriptor>& operations,
+                                       unsigned int current_vertex_cstep, OpGraph::vertex_descriptor v);
+   bool store_in_chaining_with_load_out(const CustomUnorderedSet<OpGraph::vertex_descriptor>& operations,
+                                        unsigned int current_vertex_cstep, OpGraph::vertex_descriptor v);
 
-   bool check_non_direct_operation_chaining(const CustomUnorderedSet<vertex>& operations, vertex current_v,
-                                            unsigned int v_fu_type, const ControlStep cs,
-                                            const ScheduleConstRef schedule, fu_bindingRef res_binding) const;
+   bool check_non_direct_operation_chaining(const CustomUnorderedSet<OpGraph::vertex_descriptor>& operations,
+                                            OpGraph::vertex_descriptor current_v, unsigned int v_fu_type,
+                                            const unsigned int cs, const Schedule& schedule,
+                                            fu_bindingRef res_binding) const;
 
-   bool check_direct_operation_chaining(const CustomUnorderedSet<vertex>& operations, vertex current_v,
-                                        const ControlStep cs, const ScheduleConstRef schedule,
-                                        fu_bindingRef res_binding) const;
+   bool check_direct_operation_chaining(const CustomUnorderedSet<OpGraph::vertex_descriptor>& operations,
+                                        OpGraph::vertex_descriptor current_v, const unsigned int cs,
+                                        const Schedule& schedule, fu_bindingRef res_binding) const;
 
-   bool check_LOAD_chaining(const CustomUnorderedSet<vertex>& operations, vertex current_v, const ControlStep cs,
-                            const ScheduleConstRef schedule) const;
+   bool check_LOAD_chaining(const CustomUnorderedSet<OpGraph::vertex_descriptor>& operations,
+                            OpGraph::vertex_descriptor current_v, const unsigned int cs,
+                            const Schedule& schedule) const;
 
    void CheckSchedulabilityConditions(
-       const CustomUnorderedSet<vertex>& operations, const vertex& current_vertex, ControlStep current_cycle,
-       double& current_starting_time, double& current_ending_time, double& current_stage_period,
-       CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map,
-       double current_cycle_starting_time, double current_cycle_ending_time, double setup_hold_time,
-       double& phi_extra_time, double scheduling_mux_margins, bool unbounded, bool unbounded_Functions,
-       bool LoadStoreOp, const std::set<std::string>& proxy_functions_used, bool cstep_has_RET_conflict,
-       unsigned int fu_type, const vertex2obj<ControlStep>& current_ASAP, const fu_bindingRef res_binding,
-       const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0,
-       bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2, bool& cannotBeChained3,
-       bool& MultiCond0, bool& MultiCond1, bool& LoadStoreFunctionConflict, bool& FunctionStoreconflict,
-       bool& proxyFunCond, bool unbounded_RW, bool seeMulticycle);
+       const CustomUnorderedSet<OpGraph::vertex_descriptor>& operations, OpGraph::vertex_descriptor& current_vertex,
+       unsigned int current_cycle, double& current_starting_time, double& current_ending_time,
+       double& current_stage_period, double current_cycle_starting_time, double current_cycle_ending_time,
+       double setup_hold_time, double& phi_extra_time, double scheduling_mux_margins, bool unbounded,
+       bool unbounded_chaining, bool unbounded_Functions, bool LoadStoreOp,
+       const std::set<std::string>& proxy_functions_used, bool cstep_has_RET_conflict, unsigned int fu_type,
+       const vertex2obj<unsigned int>& current_ASAP, const fu_bindingRef res_binding, Schedule& schedule,
+       bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0, bool& chainingRetCond,
+       bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2, bool& cannotBeChained3, bool& MultiCond0,
+       bool& MultiCond1, bool& LoadStoreFunctionConflict, bool& FunctionLoadStoreConflict, bool& proxyFunCond,
+       bool unbounded_RW, bool seeMulticycle, bool is_current_vertex_bounded);
 
    HLSRelationships ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
@@ -244,38 +248,26 @@ class parametric_list_based : public Scheduling
     */
    void compute_function_topological_order();
 
+   bool compute_minmaxII(std::list<OpGraph::vertex_descriptor>& bb_operations, const OpVertexSet& Operations,
+                         const unsigned int& ctrl_steps, unsigned int bb_index, unsigned& minII, unsigned& maxII,
+                         std::vector<std::pair<OpGraph::vertex_descriptor, OpGraph::vertex_descriptor>>& toBeScheduled);
+
  public:
-   /**
-    * This is the constructor of the list_based.
-    * @param parameters is the set of input parameters
-    * @param HLSmgr is the HLS manager
-    * @param function_id is the function index of the function
-    * @param design_flow_manager is the hls design flow
-    * @param hls_flow_step_specialization specifies how specialize this step
-    */
    parametric_list_based(const ParameterConstRef parameters, const HLS_managerRef HLSMgr, unsigned int _funId,
-                         const DesignFlowManagerConstRef design_flow_manager,
+                         const DesignFlowManager& design_flow_manager,
                          const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
 
-   /**
-    * Destructor.
-    */
-   ~parametric_list_based() override;
-
-   /**
-    * Execute the step
-    * @return the exit status of this step
-    */
    DesignFlowStep_Status InternalExec() override;
 
    /**
     * Function that computes the List-Based scheduling of the graph.
+    * @return true in case a solution exists.
     */
-   void exec(const OpVertexSet& operations, ControlStep current_cycle);
+   template <bool LPBB_predicate>
+   bool exec(const OpVertexSet& operations, unsigned int current_cycle, unsigned II,
+             const std::vector<std::pair<OpGraph::vertex_descriptor, OpGraph::vertex_descriptor>>& toBeScheduled,
+             unsigned max_iteration_latency, CustomUnorderedMap<OpGraph::vertex_descriptor, unsigned>& tabu_table);
 
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
    void Initialize() override;
 };
 #endif

@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -45,59 +45,37 @@
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
 #include "hls_manager.hpp"
+#include "ir_basic_block.hpp"
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
+#include "ir_manipulation.hpp"
+#include "ir_node.hpp"
 #include "op_graph.hpp"
 #include "string_manipulation.hpp"
-#include "tree_basic_block.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_manipulation.hpp"
-#include "tree_node.hpp"
 
 FixStructsPassedByValue::FixStructsPassedByValue(const ParameterConstRef params, const application_managerRef AM,
-                                                 unsigned int fun_id, const DesignFlowManagerConstRef dfm)
+                                                 unsigned int fun_id, const DesignFlowManager& dfm)
     : FunctionFrontendFlowStep(AM, fun_id, FIX_STRUCTS_PASSED_BY_VALUE, dfm, params)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-FixStructsPassedByValue::~FixStructsPassedByValue() = default;
-
-static bool cannot_have_struct_parameters(const function_decl* const fd, const function_type* const ft)
+static bool cannot_have_struct_parameters(const ir_nodeRef& fnode, const function_ty_node* const ft)
 {
-   auto p_type_head = ft->prms;
-   if(p_type_head && GetPointer<const void_type>(p_type_head))
+   const auto fd = GetPointerS<const function_val_node>(fnode);
+   auto p_type_head = ft->list_of_args_type;
+   if(p_type_head.empty() || (p_type_head.size() == 1 && p_type_head.front()->get_kind() == void_ty_node_K))
    {
-      // if the function_type takes void argument there's nothing to do
-      THROW_ASSERT(fd->list_of_args.empty(), "function " + tree_helper::GetMangledFunctionName(fd) +
-                                                 " has void parameter type but has a parm_decl " +
+      // if the function_ty_node takes void argument there's nothing to do
+      THROW_ASSERT(fd->list_of_args.empty(), "function " + ir_helper::GetFunctionName(fnode) +
+                                                 " has void parameter type but has a argument_val_node " +
                                                  STR(fd->list_of_args.front()));
       return true;
    }
-   if(p_type_head && fd->list_of_args.empty())
+   if(fd->list_of_args.empty())
    {
-      while(p_type_head)
-      {
-         const auto* p = GetPointerS<const tree_list>(p_type_head);
-         p_type_head = p->chan;
-         /*
-          * from what I figured out from gcc, if the function_decl has no
-          * no parm_decl this means that there is no explicit declaration
-          * of that function in the source code. in principle it should
-          * not even compile, but this is not true for certain builtin
-          * functions like exit() or others. in these cases, even if the
-          * function is not declared and just used, gcc compiles and maps
-          * it to its own builtins and infers its own function_type that
-          * can have types for parameters (p_type_head is not null).
-          * anyways in all these cases it should never happen that these
-          * kinds of functions take structs passed by values as arguments.
-          * hence we can safely 'continue' without worries.
-          * if the assertion fails some of these assumptions are wrong
-          */
-         THROW_ASSERT(!tree_helper::IsStructType(p->valu) && !tree_helper::IsUnionType(p->valu),
-                      "function " + tree_helper::GetMangledFunctionName(fd) +
-                          " has no parm_decl but in its function_type it takes a struct type " + STR(p->valu));
-      }
-      return true;
+      THROW_ERROR("unexpected pattern");
+      return false;
    }
    return false;
 }
@@ -111,9 +89,7 @@ FixStructsPassedByValue::ComputeFrontendRelationships(const DesignFlowStep::Rela
       case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
-         relationships.insert(std::make_pair(STRING_CST_FIX, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, CALLING_FUNCTIONS));
-         relationships.insert(std::make_pair(REBUILD_INITIALIZATION, CALLING_FUNCTIONS));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
@@ -135,69 +111,70 @@ FixStructsPassedByValue::ComputeFrontendRelationships(const DesignFlowStep::Rela
 DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
 {
    bool changed = false;
-   const auto TM = AppM->get_tree_manager();
-   const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
-   const auto tn = TM->GetTreeNode(function_id);
-   const auto fd = GetPointer<function_decl>(tn);
-   THROW_ASSERT(fd && fd->body, "Node " + STR(tn) + "is not a function_decl or has no body");
-   const auto sl = GetPointer<const statement_list>(fd->body);
-   THROW_ASSERT(sl, "Body is not a statement_list");
-   const auto fname = function_behavior->GetBehavioralHelper()->GetMangledFunctionName();
-   const auto ftype = GetPointer<const function_type>(tree_helper::CGetType(tn));
+   const auto TM = AppM->get_ir_manager();
+   const auto ir_man = ir_manipulationRef(new ir_manipulation(TM, parameters, AppM));
+   const auto tn = TM->GetIRNode(function_id);
+   const auto fd = GetPointer<function_val_node>(tn);
+   THROW_ASSERT(fd && fd->body, "Node " + STR(tn) + "is not a function_val_node or has no body");
+   const auto sl = GetPointer<const statement_list_node>(fd->body);
+   THROW_ASSERT(sl, "Body is not a statement_list_node");
+   const auto fname = function_behavior->GetBehavioralHelper()->GetFunctionName();
+   auto ftype = GetPointer<function_ty_node>(fd->type);
    THROW_ASSERT(!ftype->varargs_flag, "function " + fname + " is varargs");
    const auto HLSMgr = GetPointer<HLS_manager>(AppM);
    const auto func_arch = HLSMgr ? HLSMgr->module_arch->GetArchitecture(fname) : nullptr;
    // fix declaration
-   if(!cannot_have_struct_parameters(fd, ftype))
+   if(!cannot_have_struct_parameters(tn, ftype))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fixing declaration of function " + fname);
       unsigned int param_n = 0;
       auto p_decl_it = fd->list_of_args.begin();
-      auto p_type_head = ftype->prms;
-      const auto has_param_types = static_cast<bool>(p_type_head);
+      auto p_type_head = ftype->list_of_args_type.begin();
+      auto p_type_last = ftype->list_of_args_type.end();
+      const auto has_param_types = p_type_head != p_type_last;
       for(; p_decl_it != fd->list_of_args.cend(); p_decl_it++, param_n++)
       {
          const auto p_decl = *p_decl_it;
-         const auto p_type = tree_helper::CGetType(p_decl);
+         const auto p_type = ir_helper::CGetType(p_decl);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "-->Analyzing parameter " + STR(p_decl) + " with type " + STR(p_type));
-         THROW_ASSERT(has_param_types == static_cast<bool>(p_type_head),
+         THROW_ASSERT(has_param_types == (p_type_head != p_type_last),
                       "function " + fname + " has " + STR(fd->list_of_args.size()) + " parameters, but argument " +
                           STR(param_n) + " (" + STR(p_decl) +
-                          ") has not a corresponding underlying type in function_type");
+                          ") has not a corresponding underlying type in function_ty_node");
 
-         if(tree_helper::IsUnionType(p_type) || tree_helper::IsStructType(p_type))
+         if(ir_helper::IsStructType(p_type))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "function " + fname + " has a struct parameter: " + STR(p_decl) + " with type " +
                                STR(p_type));
             // initialize some general stuff useful later
-            const auto pd = GetPointerS<const parm_decl>(p_decl);
-            const auto srcp = pd->include_name + ":" + STR(pd->line_number) + ":" + STR(pd->column_number);
+            const auto pd = GetPointerS<const argument_val_node>(p_decl);
+            const auto loc_info = pd->include_name + ":" + STR(pd->line_number) + ":" + STR(pd->column_number);
             const auto original_param_name = pd->name ? GetPointerS<const identifier_node>(pd->name)->strg : "";
 
-            auto ptd_type_size = tree_helper::SizeAlloc(p_type);
+            auto ptd_type_size = ir_helper::SizeAlloc(p_type);
             if(ptd_type_size % 8)
             {
                ptd_type_size += 8;
             }
             ptd_type_size /= 8;
 
-            // create new var_decl
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating new local var_decl");
+            // create new variable_val_node
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating new local variable_val_node");
             const auto local_var_name = "bambu_artificial_local_param_copy_" + original_param_name;
-            const auto local_var_identifier = tree_man->create_identifier_node(local_var_name);
+            const auto local_var_identifier = ir_man->create_identifier_node(local_var_name);
             const auto new_local_var_decl =
-                tree_man->create_var_decl(local_var_identifier, p_type, pd->scpe, pd->size, tree_nodeRef(),
-                                          tree_nodeRef(), srcp, GetPointerS<const type_node>(p_type)->algn, pd->used,
-                                          false); // artificial flag (should be true???)
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Created new local var_decl");
+                ir_man->create_var_decl(local_var_identifier, p_type, pd->parent, pd->bitsizealloc, ir_nodeRef(),
+                                        loc_info, GetPointerS<const type_node>(p_type)->algn,
+                                        false); // artificial flag (should be true???)
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Created new local variable_val_node");
 
-            // substitute var_decl to parm_decl in all the statements of the function
+            // substitute variable_val_node to argument_val_node in all the statements of the function
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "-->Substituting var_decl " + STR(p_decl) + " to parm_decl " + STR(new_local_var_decl) +
-                                  " in all statements");
+                              "-->Substituting variable_val_node " + STR(p_decl) + " to argument_val_node " +
+                                  STR(new_local_var_decl) + " in all statements");
                for(const auto& block : sl->list_of_bloc)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
@@ -205,39 +182,40 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "-->Examining statement " + stmt->ToString());
-                     TM->ReplaceTreeNode(stmt, p_decl, new_local_var_decl);
+                     TM->ReplaceIRNode(stmt, p_decl, new_local_var_decl);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "<--Examined statement " + stmt->ToString());
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined BB" + STR(block.first));
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "<--Substituted var_decl " + STR(p_decl) + " to parm_decl " + STR(new_local_var_decl) +
-                                  " in all statements");
+                              "<--Substituted variable_val_node " + STR(p_decl) + " to argument_val_node " +
+                                  STR(new_local_var_decl) + " in all statements");
             }
 
             // create pointer type for the new pointer-to-struct parameter
-            const auto ptr_type = tree_man->GetPointerType(p_type);
+            const auto ptr_type = ir_man->GetPointerType(p_type);
 
-            // substitute parameter type in function_type if necessary
+            // substitute parameter type in function_ty_node if necessary
             if(has_param_types)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "-->Substituting type of parameter " + STR(p_decl));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Changing type from " + STR(p_type) + " to " + STR(ptr_type));
-               GetPointerS<tree_list>(p_type_head)->valu = ptr_type;
+               *p_type_head = ptr_type;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "<--Substituted type of parameter " + STR(p_decl));
             }
 
-            // create and substitute new pointer-to-struct parm_decl in function_decl
+            // create and substitute new pointer-to-struct argument_val_node in function_val_node
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Substituting parm_decl of " + STR(p_decl));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "-->Substituting argument_val_node of " + STR(p_decl));
                const auto ptr_p_name = "bambu_artificial_ptr_param_" + original_param_name;
-               const auto ptr_p_identifier = tree_man->create_identifier_node(ptr_p_name);
-               const auto ptr_p_decl = tree_man->create_parm_decl(ptr_p_identifier, ptr_type, pd->scpe, ptr_type,
-                                                                  tree_nodeRef(), tree_nodeRef(), srcp, 1, false, true);
+               const auto ptr_p_identifier = ir_man->create_identifier_node(ptr_p_name);
+               const auto ptr_p_decl =
+                   ir_man->create_parm_decl(ptr_p_identifier, ptr_type, pd->parent, ir_nodeRef(), loc_info, true);
                if(func_arch)
                {
                   const auto parm_it = func_arch->parms.find(original_param_name);
@@ -252,10 +230,10 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                   }
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Changing parm_decl from " + STR(p_decl) + " to " + STR(ptr_p_decl));
+                              "---Changing argument_val_node from " + STR(p_decl) + " to " + STR(ptr_p_decl));
                *p_decl_it = ptr_p_decl;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "<--Substituted parm_decl of " + STR(p_decl) + " with " + STR(*p_decl_it));
+                              "<--Substituted argument_val_node of " + STR(p_decl) + " with " + STR(*p_decl_it));
             }
 
             /*
@@ -281,18 +259,17 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
             // create the call to memcpy
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating new call to memcpy");
             const auto memcpy_function = TM->GetFunction(MEMCPY);
-            THROW_ASSERT(AppM->get_tree_manager()->get_implementation_node(memcpy_function->index) != 0,
-                         "inconsistent behavioral helper");
-            const auto formal_type_node = tree_helper::GetFormalIth(memcpy_function, 2);
-            const std::vector<tree_nodeRef> args = {
+            THROW_ASSERT(ir_helper::IsFunctionImplemented(memcpy_function), "inconsistent behavioral helper");
+            const auto formal_type_node = ir_helper::GetFormalIth(memcpy_function, 2);
+            const std::vector<ir_nodeRef> args = {
                 // & new_local_var_decl
-                tree_man->CreateAddrExpr(new_local_var_decl, srcp),
-                // src is the new pointer-to-struct parm_decl
-                tree_man->create_ssa_name(*p_decl_it, ptr_type, tree_nodeRef(), tree_nodeRef()),
-                // sizeof(var_decl)
+                ir_man->CreateAddrExpr(new_local_var_decl, loc_info),
+                // src is the new pointer-to-struct argument_val_node
+                ir_man->create_ssa_name(*p_decl_it, ptr_type, ir_nodeRef(), ir_nodeRef()),
+                // sizeof(variable_val_node)
                 TM->CreateUniqueIntegerCst(static_cast<long long>(ptd_type_size), formal_type_node)};
-            const auto gimple_call_memcpy = tree_man->create_gimple_call(memcpy_function, args, function_id, srcp);
-            auto gn = GetPointer<gimple_node>(gimple_call_memcpy);
+            const auto call_stmt_memcpy = ir_man->create_call_stmt(memcpy_function, args, function_id, loc_info);
+            auto gn = GetPointer<node_stmt>(call_stmt_memcpy);
             /*
              * the call is artificial. this is necessary because this memcpy
              * should not be moved around by code motion or other steps. this
@@ -306,15 +283,15 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
              */
             gn->artificial = true;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "<--Created new call to memcpy: " + STR(gimple_call_memcpy));
+                           "<--Created new call to memcpy: " + STR(call_stmt_memcpy));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Updating basic block");
-            first_block->PushFront(gimple_call_memcpy, AppM);
+            first_block->PushFront(call_stmt_memcpy, AppM);
             changed = true;
          }
 
          if(has_param_types)
          {
-            p_type_head = GetPointer<const tree_list>(p_type_head)->chan;
+            ++p_type_head;
          }
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -330,66 +307,63 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
          for(const auto& stmt : block.second->CGetStmtList())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + stmt->ToString());
-            const auto gn = GetPointer<const gimple_node>(stmt);
-            const auto srcp_default = gn->include_name + ":" + STR(gn->line_number) + ":" + STR(gn->column_number);
+            const auto gn = GetPointer<const node_stmt>(stmt);
+            const auto loc_info_default = gn->include_name + ":" + STR(gn->line_number) + ":" + STR(gn->column_number);
             const auto stmt_kind = stmt->get_kind();
-            if(stmt_kind == gimple_assign_K or stmt_kind == gimple_call_K)
+            if(stmt_kind == assign_stmt_K or stmt_kind == call_stmt_K)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Is a " + tree_node::GetString(stmt_kind));
-               tree_nodeConstRef called_node;
-               std::vector<tree_nodeRef>* arguments;
-               unsigned int call_tree_node_id = 0;
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Is a " + ir_node::GetString(stmt_kind));
+               ir_nodeConstRef called_node;
+               std::vector<ir_nodeRef>* arguments;
+               unsigned int call_ir_node_id = 0;
 
-               if(stmt_kind == gimple_assign_K)
+               if(stmt_kind == assign_stmt_K)
                {
-                  const auto ga = GetPointer<const gimple_assign>(stmt);
-                  if(ga->op1->get_kind() != call_expr_K && ga->op1->get_kind() != aggr_init_expr_K)
+                  const auto ga = GetPointer<const assign_stmt>(stmt);
+                  if(ga->op1->get_kind() != call_node_K)
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--RHS is not a call_expr");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--RHS is not a call_node");
                      continue;
                   }
 
-                  auto ce = GetPointer<call_expr>(ga->op1);
+                  auto ce = GetPointer<call_node>(ga->op1);
                   called_node = ce->fn;
                   arguments = &ce->args;
-                  call_tree_node_id = ce->index;
+                  call_ir_node_id = ce->index;
                }
-               else // stmt->get_kind() == gimple_call_K
+               else // stmt->get_kind() == call_stmt_K
                {
-                  auto gc = GetPointer<gimple_call>(stmt);
+                  auto gc = GetPointer<call_stmt>(stmt);
                   called_node = gc->fn;
                   arguments = &gc->args;
-                  call_tree_node_id = gc->index;
+                  call_ir_node_id = gc->index;
                }
                if(!called_node)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not a gimple_call nor a call_expr");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not a call_stmt nor a call_node");
                   continue;
                }
-               if(called_node->get_kind() == ssa_name_K)
+               if(called_node->get_kind() == ssa_node_K)
                {
                   const auto called_ssa_name = STR(called_node);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "-->Indirect function call through ssa " + called_ssa_name);
-                  const auto f_ptr = GetPointer<const pointer_type>(tree_helper::CGetType(called_node));
+                  const auto f_ptr = GetPointer<const pointer_ty_node>(ir_helper::CGetType(called_node));
                   THROW_ASSERT(f_ptr, "");
-                  const auto ft = GetPointer<const function_type>(f_ptr->ptd);
+                  const auto ft = GetPointer<const function_ty_node>(f_ptr->ptd);
                   THROW_ASSERT(ft, "");
                   unsigned int param_n = 0;
-                  auto p_type_head = ft->prms;
-                  while(p_type_head)
+                  for(const auto& p : ft->list_of_args_type)
                   {
-                     const auto* const p = GetPointer<const tree_list>(p_type_head);
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "-->Analyzing parameter type" + STR(p->valu));
-                     if(tree_helper::IsUnionType(p->valu) || tree_helper::IsStructType(p->valu))
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing parameter type" + STR(p));
+                     if(ir_helper::IsStructType(p))
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "function ssa " + called_ssa_name +
-                                           " has a struct parameter with type: " + STR(p->valu));
+                                           " has a struct parameter with type: " + STR(p));
                         if(ft->varargs_flag)
                         {
-                           THROW_ERROR("op: " + STR(stmt) + " id: " + STR(call_tree_node_id) +
+                           THROW_ERROR("op: " + STR(stmt) + " id: " + STR(call_ir_node_id) +
                                        " calls function pointer " + called_ssa_name +
                                        ": varargs function taking structs argument not supported");
                         }
@@ -397,41 +371,36 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "---Actual argument " + STR(actual_argument_node) + " is " +
                                            actual_argument_node->get_kind_text());
-                        THROW_ASSERT(tree_helper::IsUnionType(actual_argument_node) ||
-                                         tree_helper::IsStructType(actual_argument_node),
-                                     "op: " + STR(stmt) + " id: " + STR(call_tree_node_id) + " passes argument " +
+                        THROW_ASSERT(ir_helper::IsStructType(actual_argument_node),
+                                     "op: " + STR(stmt) + " id: " + STR(call_ir_node_id) + " passes argument " +
                                          STR(actual_argument_node) + " to a call to function " + called_ssa_name +
-                                         " which has a struct/union parameter with type: " + STR(p->valu) + " but " +
+                                         " which has a struct/union parameter with type: " + STR(p) + " but " +
                                          STR(actual_argument_node) + " is a " +
-                                         STR(tree_helper::CGetType(actual_argument_node)));
+                                         STR(ir_helper::CGetType(actual_argument_node)));
                         auto new_ga_node =
-                            tree_man->CreateGimpleAssignAddrExpr(actual_argument_node, function_id, srcp_default);
+                            ir_man->CreateAssignStmtAddrExpr(actual_argument_node, function_id, loc_info_default);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "---Changing parameter: creating pointer " + STR(new_ga_node));
                         block.second->PushBefore(new_ga_node, stmt, AppM);
-                        const auto new_ga = GetPointer<const gimple_assign>(new_ga_node);
+                        const auto new_ga = GetPointer<const assign_stmt>(new_ga_node);
                         arguments->at(param_n) = new_ga->op0;
                         changed = true;
                      }
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "<--Analyzed parameter type" + STR(p->valu));
-                     p_type_head = p->chan;
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed parameter type" + STR(p));
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "<--Analyzed indirect call to ssa " + called_ssa_name);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + stmt->ToString());
                   continue;
                }
-               THROW_ASSERT(called_node->get_kind() == addr_expr_K,
+               THROW_ASSERT(called_node->get_kind() == addr_node_K,
                             "called_node = " + STR(called_node) + " is a " + called_node->get_kind_text());
-               const auto ae = GetPointer<const addr_expr>(called_node);
-               const auto called_fu_decl_node = ae->op;
-               THROW_ASSERT(called_fu_decl_node->get_kind() == function_decl_K,
-                            "node  " + STR(called_fu_decl_node) + " is not function_decl but " +
+               const auto called_fu_decl_node = GetPointerS<const addr_node>(called_node)->op;
+               THROW_ASSERT(called_fu_decl_node->get_kind() == function_val_node_K,
+                            "node  " + STR(called_fu_decl_node) + " is not function_val_node but " +
                                 called_fu_decl_node->get_kind_text());
-               const auto called_fd = GetPointer<const function_decl>(called_fu_decl_node);
-               const auto called_fname = tree_helper::GetMangledFunctionName(called_fd);
-               const auto called_ftype = GetPointer<const function_type>(tree_helper::CGetType(called_fu_decl_node));
+               const auto called_fname = ir_helper::GetFunctionName(called_fu_decl_node);
+               const auto called_ftype = GetPointer<const function_ty_node>(ir_helper::CGetType(called_fu_decl_node));
                /*
                 * if there is a call to a function without body we don't turn
                 * structs parameters into pointers, because we would also need
@@ -444,58 +413,59 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                                  "<--Function " + called_fname + " is varargs but has no body");
                   continue;
                }
-               if(cannot_have_struct_parameters(called_fd, called_ftype))
+               if(cannot_have_struct_parameters(called_fu_decl_node, called_ftype))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Cannot have struct parameters");
                   continue;
                }
-               auto p_type_head = called_ftype->prms;
-               const auto has_param_types = static_cast<bool>(p_type_head);
+               auto p_type_head = called_ftype->list_of_args_type.begin();
+               auto p_type_last = ftype->list_of_args_type.end();
+               const auto has_param_types = p_type_head != p_type_last;
                unsigned int param_n = 0;
+               const auto called_fd = GetPointer<const function_val_node>(called_fu_decl_node);
                auto p_decl_it = called_fd->list_of_args.begin();
                for(; p_decl_it != called_fd->list_of_args.cend(); p_decl_it++, param_n++)
                {
                   const auto& p_decl = *p_decl_it;
-                  const auto p_type = tree_helper::CGetType(p_decl);
+                  const auto p_type = ir_helper::CGetType(p_decl);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "-->Analyzing parameter " + STR(p_decl) + " with type " + STR(p_type));
 
-                  THROW_ASSERT(static_cast<bool>(has_param_types) == static_cast<bool>(p_type_head),
+                  THROW_ASSERT(static_cast<bool>(has_param_types) == (p_type_head != p_type_last),
                                "function " + called_fname + " has " + STR(called_fd->list_of_args.size()) +
                                    " parameters, but argument " + STR(param_n) + " (" + STR(p_decl) +
-                                   ") has not a corresponding underlying type in function_type");
+                                   ") has not a corresponding underlying type in function_ty_node");
                   if(has_param_types)
                   {
-                     p_type_head = GetPointer<const tree_list>(p_type_head)->chan;
+                     ++p_type_head;
                   }
 
-                  if(tree_helper::IsUnionType(p_type) || tree_helper::IsStructType(p_type))
+                  if(ir_helper::IsStructType(p_type))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "function " + called_fname + " has a struct parameter: " + STR(p_decl) +
                                         " with type " + STR(p_type));
                      if(called_ftype->varargs_flag)
                      {
-                        THROW_ERROR("op: " + STR(stmt) + " id: " + STR(call_tree_node_id) + " calls function " +
+                        THROW_ERROR("op: " + STR(stmt) + " id: " + STR(call_ir_node_id) + " calls function " +
                                     called_fname + ": varargs function taking structs argument not supported");
                      }
                      const auto& actual_argument_node = arguments->at(param_n);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "---Actual argument " + STR(actual_argument_node) + " is " +
                                         actual_argument_node->get_kind_text());
-                     THROW_ASSERT(tree_helper::IsUnionType(actual_argument_node) ||
-                                      tree_helper::IsStructType(actual_argument_node),
-                                  "op: " + STR(stmt) + " id: " + STR(call_tree_node_id) + " passes argument " +
+                     THROW_ASSERT(ir_helper::IsStructType(actual_argument_node),
+                                  "op: " + STR(stmt) + " id: " + STR(call_ir_node_id) + " passes argument " +
                                       STR(actual_argument_node) + " to a call to function " + called_fname +
                                       " which has a struct/union parameter: " + STR(p_decl) + " but " +
                                       STR(actual_argument_node) + " is a " +
-                                      STR(tree_helper::CGetType(actual_argument_node)));
+                                      STR(ir_helper::CGetType(actual_argument_node)));
                      const auto new_ga_node =
-                         tree_man->CreateGimpleAssignAddrExpr(actual_argument_node, function_id, srcp_default);
+                         ir_man->CreateAssignStmtAddrExpr(actual_argument_node, function_id, loc_info_default);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "---Changing parameter: creating pointer " + STR(new_ga_node));
                      block.second->PushBefore(new_ga_node, stmt, AppM);
-                     const auto* new_ga = GetPointer<const gimple_assign>(new_ga_node);
+                     const auto* new_ga = GetPointer<const assign_stmt>(new_ga_node);
                      arguments->at(param_n) = new_ga->op0;
                      changed = true;
                   }

@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -36,27 +36,16 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef BASIC_BLOCKS_GRAPH_CONSTRUCTOR_HPP
 #define BASIC_BLOCKS_GRAPH_CONSTRUCTOR_HPP
 
+#include "basic_block.hpp"
 #include "custom_map.hpp"
-#include "graph.hpp"
 #include "refcount.hpp"
 
-/**
- * @name Forward declarations
- */
-//@{
-REF_FORWARD_DECL(BasicBlocksGraphConstructor);
-REF_FORWARD_DECL(BBGraph);
-REF_FORWARD_DECL(BBGraphsCollection);
 REF_FORWARD_DECL(bloc);
-//@}
 
 /**
  * class providing methods to manage a basic blocks graph.
@@ -65,44 +54,48 @@ class BasicBlocksGraphConstructor
 {
  private:
    /// reference to the bulk basic blocks graph
-   const BBGraphsCollectionRef bg;
-
-   /// Reference to graph with all the edges
-   const BBGraphRef bb_graph;
+   BBGraphsCollection& bg;
 
    /// Map between basic block node index and vertices
-   CustomUnorderedMap<unsigned int, vertex>& bb_index_map;
+   CustomUnorderedMap<unsigned int, BBGraph::vertex_descriptor>& bb_index_map;
 
  public:
+   /**
+    * Constructor.
+    * @param _bg is the reference to the bulk operations graph.
+    */
+   explicit BasicBlocksGraphConstructor(BBGraphsCollection& _bg);
+
    /**
     * Add a new vertex to the basic blocks graphs
     * @param info is the bloc associated with basic block node
     * @return the vertex just added
     */
-   vertex add_vertex(const blocRef info);
+   BBGraph::vertex_descriptor add_vertex(const blocRef info);
 
    /**
     * Add an edge selector
     * @param source is the source vertex
-    * @param target is the target vertexes
+    * @param target is the target vertex
     * @param selector is the type of the edge
     */
-   EdgeDescriptor AddEdge(const vertex source, const vertex target, const int selector);
+   BBGraph::edge_descriptor AddEdge(BBGraph::vertex_descriptor source, BBGraph::vertex_descriptor target,
+                                    const int selector);
 
    /**
     * Remove an edge selector
     * @param source is the source vertex
-    * @param target is the target vertexes
+    * @param target is the target vertex
     * @param selector is the type of the edge
     */
-   void RemoveEdge(const vertex source, const vertex target, const int selector);
+   void RemoveEdge(BBGraph::vertex_descriptor source, BBGraph::vertex_descriptor target, const int selector);
 
    /**
     * Remove an edge selector
     * @param edge is the edge to be removed
-    * @param sel is the selector
+    * @param selector is the selector
     */
-   void RemoveEdge(const EdgeDescriptor edge, const int selector);
+   void RemoveEdge(const BBGraph::edge_descriptor& edge, const int selector);
 
    /**
     * Remove all vertices and edges
@@ -116,19 +109,20 @@ class BasicBlocksGraphConstructor
     * @param type is the type of the label
     * @param label is the label to be added
     */
-   void add_bb_edge_info(const vertex source, const vertex target, int type, const unsigned int label);
+   void add_bb_edge_info(BBGraph::vertex_descriptor source, BBGraph::vertex_descriptor target, int type,
+                         const unsigned int label);
 
    /**
     * add edge between source and exit
     * @param source is the vertex to connect with exit
     */
-   EdgeDescriptor connect_to_exit(const vertex source);
+   BBGraph::edge_descriptor connect_to_exit(BBGraph::vertex_descriptor source);
 
    /**
     * add edge between entry and target
     * @param target is the vertex to which connect entry
     */
-   EdgeDescriptor connect_to_entry(const vertex target);
+   BBGraph::edge_descriptor connect_to_entry(BBGraph::vertex_descriptor target);
 
    /**
     * return true in case the vertex has been already created
@@ -141,25 +135,14 @@ class BasicBlocksGraphConstructor
     * if vertex does not exist throw error
     * @param block_index is the function identifier
     */
-   vertex Cget_vertex(unsigned int block_index) const;
+   BBGraph::vertex_descriptor Cget_vertex(unsigned int block_index) const;
 
    /**
     * Add an operation to its basic block
     * @param op is the name of the operation vertex
     * @param index is the index of the basic blocks
     */
-   void add_operation_to_bb(vertex op, unsigned int index);
-
-   /**
-    * Constructor.
-    * @param _og is the reference to the bulk operations graph.
-    */
-   explicit BasicBlocksGraphConstructor(BBGraphsCollectionRef _bg);
-
-   /**
-    * Destructor.
-    */
-   ~BasicBlocksGraphConstructor();
+   void add_operation_to_bb(BBGraph::vertex_descriptor op, unsigned int index);
 };
 
 #endif

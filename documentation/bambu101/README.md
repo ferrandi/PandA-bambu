@@ -18,4 +18,4 @@ Learn only what you need and take the best from the tool.
 <br />
 
 # Conference Tutorials
- - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ferrandi/PandA-bambu/blob/dev%2Fpanda/documentation/bambu101/bambu_conference_tutorial_2026.ipynb)
+ - Notebook [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ferrandi/PandA-bambu/blob/dev%2Fpanda/documentation/bambu101/tutorial_isca_2025.ipynb)

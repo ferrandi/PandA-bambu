@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2016-2024 Politecnico di Milano
+ *              Copyright (C) 2016-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -50,15 +50,13 @@
 #include <filesystem>
 
 FindMaxTransformations::FindMaxTransformations(const application_managerRef _AppM,
-                                               const DesignFlowManagerConstRef _design_flow_manager,
+                                               const DesignFlowManager& _design_flow_manager,
                                                const ParameterConstRef _parameters)
     : ApplicationFrontendFlowStep(_AppM, FrontendFlowStepType::FIND_MAX_TRANSFORMATIONS, _design_flow_manager,
                                   _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
-
-FindMaxTransformations::~FindMaxTransformations() = default;
 
 CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 FindMaxTransformations::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType) const
@@ -70,25 +68,26 @@ const std::string FindMaxTransformations::ComputeArgString(const size_t max_tran
 {
    const auto argv = parameters->CGetArgv();
    std::string arg_string;
+   bool first_argument = true;
    for(const auto& arg : argv)
    {
       /// Executable
-      if(arg_string == "")
+      if(first_argument)
       {
          THROW_ASSERT(arg.size() and arg[0] == '/', "Relative path executable not supported " + arg);
-         arg_string += arg;
+         arg_string += shell_escape_argument(arg);
+         first_argument = false;
       }
       else
       {
-         arg_string += " ";
          if(arg.find("--max-transformations") == std::string::npos and
             arg.find("--find-max-transformations") == std::string::npos)
          {
-            arg_string += arg;
+            arg_string += " " + shell_escape_argument(arg);
          }
       }
    }
-   arg_string += " --max-transformations=" + STR(max_transformations);
+   arg_string += " " + shell_escape_argument("--max-transformations=" + STR(max_transformations));
    return arg_string;
 }
 
@@ -104,19 +103,15 @@ bool FindMaxTransformations::ExecuteBambu(const size_t max_transformations) cons
       std::filesystem::remove_all(new_directory);
    }
    std::filesystem::create_directory(new_directory);
-   const auto ret = PandaSystem(parameters, "cd " + new_directory.string() + "; " + arg_string, false,
-                                new_directory / "bambu_execution_output");
-   std::filesystem::remove_all(new_directory);
-   if(IsError(ret))
+   if(IsError(PandaSystem(parameters, "cd " + shell_escape_argument(new_directory.string()) + "; " + arg_string, false,
+                          new_directory / "bambu_execution_output")))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Failure");
       return false;
    }
-   else
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Success");
-      return true;
-   }
+   std::filesystem::remove_all(new_directory);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Success");
+   return true;
 }
 
 DesignFlowStep_Status FindMaxTransformations::Exec()

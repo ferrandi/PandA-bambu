@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -39,47 +39,39 @@
  */
 #include "data_dependence_computation.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// behavior include
 #include "application_manager.hpp"
 #include "basic_block.hpp"
-#include "function_behavior.hpp"
-#include "op_graph.hpp"
-#include "operations_graph_constructor.hpp"
-
-/// tree include
 #include "behavioral_helper.hpp"
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
-#include "string_manipulation.hpp" // for GET_CLASS
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
-
 #include "custom_map.hpp"
 #include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
+#include "function_behavior.hpp"
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
+#include "ir_node.hpp"
+#include "op_graph.hpp"
+#include "string_manipulation.hpp"
+
+#include <utility>
 
 DataDependenceComputation::DataDependenceComputation(const application_managerRef _AppM, unsigned int _function_id,
                                                      const FrontendFlowStepType _frontend_flow_step_type,
-                                                     const DesignFlowManagerConstRef _design_flow_manager,
+                                                     const DesignFlowManager& _design_flow_manager,
                                                      const ParameterConstRef _parameters)
     : FunctionFrontendFlowStep(_AppM, _function_id, _frontend_flow_step_type, _design_flow_manager, _parameters)
 {
 }
 
-DataDependenceComputation::~DataDependenceComputation() = default;
-
 DesignFlowStep_Status DataDependenceComputation::InternalExec()
 {
    if(frontend_flow_step_type == SCALAR_SSA_DATA_FLOW_ANALYSIS)
    {
-      return Computedependencies<unsigned int>(DFG_SCA_SELECTOR, FB_DFG_SCA_SELECTOR, ADG_SCA_SELECTOR,
-                                               FB_ADG_SCA_SELECTOR);
+      return Computedependencies(DFG_SCA_SELECTOR, FB_DFG_SCA_SELECTOR, ADG_SCA_SELECTOR, FB_ADG_SCA_SELECTOR);
    }
    else if(frontend_flow_step_type == VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS)
    {
-      auto res = Computedependencies<unsigned int>(DFG_AGG_SELECTOR, FB_DFG_AGG_SELECTOR, ADG_AGG_SELECTOR,
-                                                   FB_ADG_AGG_SELECTOR);
+      auto res = Computedependencies(DFG_AGG_SELECTOR, FB_DFG_AGG_SELECTOR, ADG_AGG_SELECTOR, FB_ADG_AGG_SELECTOR);
       do_dependence_reduction();
       return res;
    }
@@ -90,17 +82,16 @@ DesignFlowStep_Status DataDependenceComputation::InternalExec()
    return DesignFlowStep_Status::ABORTED;
 }
 
-static void ordered_dfs(unsigned u, const OpGraphConstRef avg, CustomUnorderedMap<vertex, unsigned>& pos,
-                        std::vector<vertex>& rev_pos, std::vector<bool>& vis,
+static void ordered_dfs(unsigned u, const OpGraph& avg, CustomUnorderedMap<OpGraph::vertex_descriptor, unsigned>& pos,
+                        std::vector<OpGraph::vertex_descriptor>& rev_pos, std::vector<bool>& vis,
                         CustomUnorderedSet<std::pair<unsigned, unsigned>>& keep)
 {
    vis[u] = true;
    CustomOrderedSet<unsigned> to;
-   OutEdgeIterator ei, ei_end;
    auto statement = rev_pos.at(u);
-   for(boost::tie(ei, ei_end) = boost::out_edges(statement, *avg); ei != ei_end; ei++)
+   for(const auto& ei : avg.out_edges(statement))
    {
-      auto vi = boost::target(*ei, *avg);
+      auto vi = avg.target(ei);
       if(pos.find(vi) != pos.end())
       {
          to.insert(pos.find(vi)->second);
@@ -118,33 +109,31 @@ static void ordered_dfs(unsigned u, const OpGraphConstRef avg, CustomUnorderedMa
 
 void DataDependenceComputation::do_dependence_reduction()
 {
-   const BBGraphRef bb_fcfg = function_behavior->GetBBGraph(FunctionBehavior::BB);
-   const OpGraphConstRef avg = function_behavior->CGetOpGraph(FunctionBehavior::AGG_VIRTUALG);
+   const auto bb_fcfg = function_behavior->GetBBGraph(FunctionBehavior::BB);
+   const auto avg = function_behavior->GetOpGraph(FunctionBehavior::AGG_VIRTUALG);
    if(parameters->getOption<bool>(OPT_print_dot))
    {
-      std::string file_name;
-      file_name = "AGG_VIRTUALG.dot";
-      function_behavior->CGetOpGraph(FunctionBehavior::AGG_VIRTUALG)->WriteDot(file_name, 1);
+      function_behavior->GetOpGraph(FunctionBehavior::AGG_VIRTUALG)
+          .writeDot(function_behavior->GetDotPath() / "AGG_VIRTUALG.dot", 1);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---do_dependence_reduction");
-   VertexIterator basic_block, basic_block_end;
-   for(boost::tie(basic_block, basic_block_end) = boost::vertices(*bb_fcfg); basic_block != basic_block_end;
-       basic_block++)
+   for(const auto basic_block : bb_fcfg.vertices())
    {
-      const auto bb_node_info = bb_fcfg->CGetBBNodeInfo(*basic_block);
-      CustomUnorderedMap<vertex, unsigned> pos;
-      std::vector<vertex> rev_pos;
+      const auto& bb_node_info = bb_fcfg.CGetNodeInfo(basic_block);
+      CustomUnorderedMap<BBGraph::vertex_descriptor, unsigned> pos;
+      std::vector<BBGraph::vertex_descriptor> rev_pos;
       unsigned posIndex = 0;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(bb_node_info->get_bb_index()));
-      for(const auto statement : bb_node_info->statements_list)
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(bb_node_info.get_bb_index()));
+      for(const auto statement : bb_node_info.statements_list)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing operation " + GET_NAME(avg, statement));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Analyzing operation " + avg.CGetNodeInfo(statement).vertex_name);
          pos[statement] = posIndex;
          ++posIndex;
          rev_pos.push_back(statement);
       }
       std::vector<bool> vis(posIndex, false);
-      const auto n_stmts = bb_node_info->statements_list.size();
+      const auto n_stmts = bb_node_info.statements_list.size();
       CustomUnorderedSet<std::pair<unsigned, unsigned>> keep;
       for(posIndex = 0; posIndex < n_stmts; ++posIndex)
       {
@@ -160,20 +149,18 @@ void DataDependenceComputation::do_dependence_reduction()
             }
          }
       }
-      for(const auto statement : bb_node_info->statements_list)
+      for(const auto statement : bb_node_info.statements_list)
       {
-         vertex vi;
-         OutEdgeIterator ei, ei_end;
-         std::list<EdgeDescriptor> to_be_removed;
-         for(boost::tie(ei, ei_end) = boost::out_edges(statement, *avg); ei != ei_end; ei++)
+         std::list<OpGraph::edge_descriptor> to_be_removed;
+         for(const auto ei : avg.out_edges(statement))
          {
-            vi = boost::target(*ei, *avg);
+            auto vi = avg.target(ei);
             if(pos.find(vi) != pos.end())
             {
                auto key = std::make_pair(pos.at(statement), pos.at(vi));
                if(keep.find(key) == keep.end())
                {
-                  to_be_removed.push_back(*ei);
+                  to_be_removed.push_back(ei);
                }
             }
          }
@@ -183,216 +170,289 @@ void DataDependenceComputation::do_dependence_reduction()
             function_behavior->ogc->RemoveSelector(e0, ADG_AGG_SELECTOR);
          }
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed " + STR(bb_node_info->get_bb_index()));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed " + STR(bb_node_info.get_bb_index()));
    }
    function_behavior->ogc->CompressEdges();
    if(parameters->getOption<bool>(OPT_print_dot))
    {
-      std::string file_name;
-      file_name = "AGG_VIRTUALG-post.dot";
-      function_behavior->CGetOpGraph(FunctionBehavior::AGG_VIRTUALG)->WriteDot(file_name, 1);
-      file_name = "OP_FFLSAODG2.dot";
-      function_behavior->CGetOpGraph(FunctionBehavior::FFLSAODG)->WriteDot(file_name, 1);
+      const auto dot_path = function_behavior->GetDotPath();
+      function_behavior->GetOpGraph(FunctionBehavior::AGG_VIRTUALG).writeDot(dot_path / "AGG_VIRTUALG-post.dot", 1);
+      function_behavior->GetOpGraph(FunctionBehavior::FFLSAODG).writeDot(dot_path / "OP_FFLSAODG2.dot", 1);
    }
 }
 
-template <typename type>
 DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int dfg_selector, const int fb_dfg_selector,
                                                                      const int adg_selector, const int fb_adg_selector)
 {
-   const auto TM = AppM->get_tree_manager();
-   const OpGraphConstRef cfg = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
-   const BehavioralHelperConstRef behavioral_helper = function_behavior->CGetBehavioralHelper();
+   const auto TM = AppM->get_ir_manager();
+   const auto cfg = function_behavior->GetOpGraph(FunctionBehavior::CFG);
+   const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
 #ifndef NDEBUG
-   const std::string function_name = behavioral_helper->get_function_name();
+   const std::string function_name = behavioral_helper->GetFunctionName();
 #endif
    // Maps between a variable and its definitions
-   std::map<type, CustomOrderedSet<vertex>> defs, overs;
-   VertexIterator vi, vi_end;
+   std::map<unsigned int, CustomOrderedSet<OpGraph::vertex_descriptor>> defs, overs;
+   using ReachabilityKey = std::pair<OpGraph::vertex_descriptor, OpGraph::vertex_descriptor>;
+   CustomUnorderedMapUnstable<ReachabilityKey, bool> reachability_cache;
+   const auto check_reachability_cached = [&](const OpGraph::vertex_descriptor from,
+                                              const OpGraph::vertex_descriptor to) -> bool {
+      const ReachabilityKey key(from, to);
+      const auto cached = reachability_cache.find(key);
+      if(cached != reachability_cache.end())
+      {
+         return cached->second;
+      }
+      const bool result = function_behavior->CheckReachability(from, to);
+      reachability_cache.emplace(key, result);
+      return result;
+   };
+   CustomUnorderedMapUnstable<ReachabilityKey, bool> feedback_reachability_cache;
+   const auto check_feedback_reachability_cached = [&](const OpGraph::vertex_descriptor from,
+                                                       const OpGraph::vertex_descriptor to) -> bool {
+      const ReachabilityKey key(from, to);
+      const auto cached = feedback_reachability_cache.find(key);
+      if(cached != feedback_reachability_cache.end())
+      {
+         return cached->second;
+      }
+      const bool result = function_behavior->CheckFeedbackReachability(from, to);
+      feedback_reachability_cache.emplace(key, result);
+      return result;
+   };
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing definitions");
-   for(boost::tie(vi, vi_end) = boost::vertices(*cfg); vi != vi_end; vi++)
+   for(const auto& v : cfg.vertices())
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Definitions in " + GET_NAME(cfg, *vi));
-      const auto& local_defs = GetVariables<type>(*vi, FunctionBehavior_VariableAccessType::DEFINITION);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Definitions in " + cfg.CGetNodeInfo(v).vertex_name);
+      const auto& local_defs = getVariables(v, VariableAccessType::DEFINITION);
       for(auto local_def : local_defs)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + TM->GetTreeNode(local_def)->ToString());
-         defs[local_def].insert(*vi);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + TM->GetIRNode(local_def)->ToString());
+         defs[local_def].insert(v);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed definitions");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing overwritings");
-   for(boost::tie(vi, vi_end) = boost::vertices(*cfg); vi != vi_end; vi++)
+   for(const auto& v : cfg.vertices())
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Overwritings in " + GET_NAME(cfg, *vi));
-      const auto& local_overs = GetVariables<type>(*vi, FunctionBehavior_VariableAccessType::OVER);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Overwritings in " + cfg.CGetNodeInfo(v).vertex_name);
+      const auto& local_overs = getVariables(v, VariableAccessType::OVER);
       for(auto local_over : local_overs)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + TM->GetTreeNode(local_over)->ToString());
-         overs[local_over].insert(*vi);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + TM->GetIRNode(local_over)->ToString());
+         overs[local_over].insert(v);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed overwritings");
+
+   // Build cited-variable-to-virtual-overwriting-vertices map for cross-chain
+   // anti-dependency detection. After function inlining, independent VSSA
+   // chains may exist for the same physical memory variable. Since virtual SSA
+   // nodes carry no var field, we match operations through cited_variables
+   // (the physical variables each operation accesses).
+   std::map<unsigned int, CustomOrderedSet<OpGraph::vertex_descriptor>> cited_var_to_virtual_over_vertices;
+   for(const auto& v : cfg.vertices())
+   {
+      const auto& v_virtual_overs = cfg.CGetNodeInfo(v).getVariables(VariableType::VIRTUAL, VariableAccessType::OVER);
+      if(!v_virtual_overs.empty())
+      {
+         for(const auto cited_var : cfg.CGetNodeInfo(v).cited_variables)
+         {
+            cited_var_to_virtual_over_vertices[cited_var].insert(v);
+         }
+      }
+   }
+
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing dependencies");
-   for(boost::tie(vi, vi_end) = boost::vertices(*cfg); vi != vi_end; vi++)
+   for(const auto& v : cfg.vertices())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Computing anti and data dependencies of vertex " + GET_NAME(cfg, *vi));
-      for(auto local_use : GetVariables<type>(*vi, FunctionBehavior_VariableAccessType::USE))
+                     "-->Computing anti and data dependencies of vertex " + cfg.CGetNodeInfo(v).vertex_name);
+      for(auto local_use : getVariables(v, VariableAccessType::USE))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Considering use of " + TM->GetTreeNode(local_use)->ToString());
+                        "-->Considering use of " + TM->GetIRNode(local_use)->ToString());
+         auto local_use_node = TM->GetIRNode(local_use);
          if(defs.find(local_use) != defs.end())
          {
+            // TODO: iteration of vertex set may cause non-determinism
             for(const auto this_def : defs.find(local_use)->second)
             {
-               const bool forward_dependence = function_behavior->CheckReachability(this_def, *vi);
-               const bool feedback_dependence = function_behavior->CheckReachability(*vi, this_def);
+               const bool forward_dependence = check_reachability_cached(this_def, v);
+               const bool feedback_dependence = check_reachability_cached(v, this_def);
                THROW_ASSERT(!(forward_dependence and feedback_dependence),
-                            "Dependence between operation " + GET_NAME(cfg, this_def) + " and " + GET_NAME(cfg, *vi) +
-                                " is in both the direction");
+                            "Dependence between operation " + cfg.CGetNodeInfo(this_def).vertex_name + " and " +
+                                cfg.CGetNodeInfo(v).vertex_name + " is in both the direction");
                if(forward_dependence)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Adding data dependence " + GET_NAME(cfg, this_def) + "-->" + GET_NAME(cfg, *vi));
-                  function_behavior->ogc->AddEdge(this_def, *vi, dfg_selector);
-                  function_behavior->ogc->add_edge_info(this_def, *vi, DFG_SELECTOR, local_use);
-                  if(function_behavior->CheckFeedbackReachability(*vi, this_def))
+                                 "---Adding data dependence " + cfg.CGetNodeInfo(this_def).vertex_name + "-->" +
+                                     cfg.CGetNodeInfo(v).vertex_name);
+                  function_behavior->ogc->AddEdge(this_def, v, dfg_selector);
+                  function_behavior->ogc->add_edge_info(this_def, v, DFG_SELECTOR, local_use);
+                  if(ir_helper::IsVirtual(local_use_node) && check_feedback_reachability_cached(v, this_def))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---Adding fb_adg_selector dependence " + GET_NAME(cfg, *vi) + "-->" +
-                                        GET_NAME(cfg, this_def));
-                     function_behavior->ogc->AddEdge(*vi, this_def, fb_adg_selector);
+                                    "---Adding fb_adg_selector dependence " + cfg.CGetNodeInfo(v).vertex_name + "-->" +
+                                        cfg.CGetNodeInfo(this_def).vertex_name);
+                     function_behavior->ogc->AddEdge(v, this_def, fb_adg_selector);
                      /// NOTE: label associated with forward selector also on feedback edge
-                     function_behavior->ogc->add_edge_info(*vi, this_def, ADG_SELECTOR, local_use);
+                     function_behavior->ogc->add_edge_info(v, this_def, ADG_SELECTOR, local_use);
                   }
                }
 
                if(feedback_dependence)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Checking for feedback data dependence " + GET_NAME(cfg, this_def) + "-->" +
-                                     GET_NAME(cfg, *vi));
-                  if(*vi != this_def)
+                                 "---Checking for feedback data dependence " + cfg.CGetNodeInfo(this_def).vertex_name +
+                                     "-->" + cfg.CGetNodeInfo(v).vertex_name);
+                  if(v != this_def && ir_helper::IsVirtual(local_use_node))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---Adding adg_selector dependence " + GET_NAME(cfg, *vi) + "-->" +
-                                        GET_NAME(cfg, this_def));
-                     function_behavior->ogc->AddEdge(*vi, this_def, adg_selector);
-                     function_behavior->ogc->add_edge_info(*vi, this_def, ADG_SELECTOR, local_use);
+                                    "---Adding adg_selector dependence " + cfg.CGetNodeInfo(v).vertex_name + "-->" +
+                                        cfg.CGetNodeInfo(this_def).vertex_name);
+                     function_behavior->ogc->AddEdge(v, this_def, adg_selector);
+                     function_behavior->ogc->add_edge_info(v, this_def, ADG_SELECTOR, local_use);
                   }
-                  if(function_behavior->CheckFeedbackReachability(this_def, *vi))
+                  if(check_feedback_reachability_cached(this_def, v))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---Adding fb_dfg_selector dependence " + GET_NAME(cfg, this_def) + "-->" +
-                                        GET_NAME(cfg, *vi));
-                     function_behavior->ogc->AddEdge(this_def, *vi, fb_dfg_selector);
+                                    "---Adding fb_dfg_selector dependence " + cfg.CGetNodeInfo(this_def).vertex_name +
+                                        "-->" + cfg.CGetNodeInfo(v).vertex_name);
+                     function_behavior->ogc->AddEdge(this_def, v, fb_dfg_selector);
                      /// NOTE: label associated with forward selector also on feedback edgeADG_SELECTOR
                      /// (ADG_SCA_SELECTADG_SELECTOR (ADG_SCA_SELECTOR | ADG_AGG_SELECTOR) FeedOR | ADG_AGG_SELECTOR)
                      /// Feed
-                     function_behavior->ogc->add_edge_info(this_def, *vi, DFG_SELECTOR, local_use);
+                     function_behavior->ogc->add_edge_info(this_def, v, DFG_SELECTOR, local_use);
                   }
                }
 
-               if(*vi == this_def)
+               if(v == this_def)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Adding2 fb_dfg_selector dependence " + GET_NAME(cfg, *vi) + "-->" +
-                                     GET_NAME(cfg, *vi));
-                  function_behavior->ogc->AddEdge(*vi, *vi, fb_dfg_selector);
-                  function_behavior->ogc->add_edge_info(*vi, *vi, DFG_SELECTOR, local_use);
+                                 "---Adding2 fb_dfg_selector dependence " + cfg.CGetNodeInfo(v).vertex_name + "-->" +
+                                     cfg.CGetNodeInfo(v).vertex_name);
+                  function_behavior->ogc->AddEdge(v, v, fb_dfg_selector);
+                  function_behavior->ogc->add_edge_info(v, v, DFG_SELECTOR, local_use);
                }
             }
          }
-         if(overs.find(local_use) != overs.end())
+         if(ir_helper::IsVirtual(local_use_node))
          {
-            for(const auto this_over : overs.find(local_use)->second)
+            // Standard VSSA-based anti-dependency: USE -> OVER of the same VSSA
+            if(overs.count(local_use))
             {
-               const bool dependence = function_behavior->CheckReachability(*vi, this_over);
-               if(dependence)
+               for(const auto this_over : overs.at(local_use))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Adding adg_selector dependence " + GET_NAME(cfg, *vi) + "-->" +
-                                     GET_NAME(cfg, this_over));
-                  function_behavior->ogc->AddEdge(*vi, this_over, adg_selector);
-                  function_behavior->ogc->add_edge_info(*vi, this_over, ADG_SELECTOR, local_use);
+                  const bool dependence = check_reachability_cached(v, this_over);
+                  if(dependence)
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Adding adg_selector dependence " + cfg.CGetNodeInfo(v).vertex_name + "-->" +
+                                        cfg.CGetNodeInfo(this_over).vertex_name);
+                     function_behavior->ogc->AddEdge(v, this_over, adg_selector);
+                     function_behavior->ogc->add_edge_info(v, this_over, ADG_SELECTOR, local_use);
+                  }
+               }
+            }
+            // Cross-chain anti-dependency: after function inlining, independent
+            // VSSA chains for the same physical memory may exist. Match operations
+            // through cited_variables (the physical variables each operation accesses).
+            for(const auto cited_var : cfg.CGetNodeInfo(v).cited_variables)
+            {
+               const auto cvit = cited_var_to_virtual_over_vertices.find(cited_var);
+               if(cvit != cited_var_to_virtual_over_vertices.end())
+               {
+                  for(const auto this_over : cvit->second)
+                  {
+                     if(this_over == v)
+                     {
+                        continue;
+                     }
+                     const bool dependence = check_reachability_cached(v, this_over);
+                     if(dependence)
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---Adding cross-chain adg_selector dependence " +
+                                           cfg.CGetNodeInfo(v).vertex_name + "-->" +
+                                           cfg.CGetNodeInfo(this_over).vertex_name);
+                        function_behavior->ogc->AddEdge(v, this_over, adg_selector);
+                        function_behavior->ogc->add_edge_info(v, this_over, ADG_SELECTOR, local_use);
+                     }
+                  }
                }
             }
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "<--Computed anti and data dependencies of vertex " + GET_NAME(cfg, *vi));
+                     "<--Computed anti and data dependencies of vertex " + cfg.CGetNodeInfo(v).vertex_name);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Computing output dependencies of vertex " + GET_NAME(cfg, *vi));
-      for(auto local_def : GetVariables<type>(*vi, FunctionBehavior_VariableAccessType::OVER))
+                     "-->Computing output dependencies of vertex " + cfg.CGetNodeInfo(v).vertex_name);
+      for(auto local_over : getVariables(v, VariableAccessType::OVER))
       {
-         if(defs.find(local_def) != defs.end())
+         if(defs.find(local_over) != defs.end())
          {
-            for(const auto this_def : defs.find(local_def)->second)
+            // TODO: iteration of vertex set may cause non-determinism
+            for(const auto this_def : defs.find(local_over)->second)
             {
-               const bool forward_dependence = function_behavior->CheckReachability(this_def, *vi);
+               const bool forward_dependence = check_reachability_cached(this_def, v);
                if(forward_dependence)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Adding output dependence " + GET_NAME(cfg, this_def) + "-->" + GET_NAME(cfg, *vi));
-                  function_behavior->ogc->AddEdge(this_def, *vi, ODG_AGG_SELECTOR);
-                  function_behavior->ogc->add_edge_info(this_def, *vi, ODG_SELECTOR, local_def);
-                  if(function_behavior->CheckFeedbackReachability(*vi, this_def))
+                                 "---Adding output dependence " + cfg.CGetNodeInfo(this_def).vertex_name + "-->" +
+                                     cfg.CGetNodeInfo(v).vertex_name);
+                  function_behavior->ogc->AddEdge(this_def, v, ODG_AGG_SELECTOR);
+                  function_behavior->ogc->add_edge_info(this_def, v, ODG_SELECTOR, local_over);
+                  if(check_feedback_reachability_cached(v, this_def))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---Adding FB_ODG_AGG_SELECTOR dependence " + GET_NAME(cfg, *vi) + "-->" +
-                                        GET_NAME(cfg, this_def));
-                     function_behavior->ogc->AddEdge(*vi, this_def, FB_ODG_AGG_SELECTOR);
+                                    "---Adding FB_ODG_AGG_SELECTOR dependence " + cfg.CGetNodeInfo(v).vertex_name +
+                                        "-->" + cfg.CGetNodeInfo(this_def).vertex_name);
+                     function_behavior->ogc->AddEdge(v, this_def, FB_ODG_AGG_SELECTOR);
                      /// NOTE: label associated with forward selector also on feedback edge
-                     function_behavior->ogc->add_edge_info(*vi, this_def, ODG_SELECTOR, local_def);
+                     function_behavior->ogc->add_edge_info(v, this_def, ODG_SELECTOR, local_over);
                   }
+               }
+            }
+         }
+         auto local_over_node = TM->GetIRNode(local_over);
+         if(overs.find(local_over) != overs.end() && ir_helper::IsVirtual(local_over_node))
+         {
+            for(const auto this_over : overs.find(local_over)->second)
+            {
+               if(v != this_over && check_feedback_reachability_cached(v, this_over))
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Adding FB_ODG_AGG_SELECTOR dependence " + cfg.CGetNodeInfo(v).vertex_name + "-->" +
+                                     cfg.CGetNodeInfo(this_over).vertex_name);
+                  function_behavior->ogc->AddEdge(v, this_over, FB_ODG_AGG_SELECTOR);
                }
             }
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "<--Computed output dependencies of vertex " + GET_NAME(cfg, *vi));
+                     "<--Computed output dependencies of vertex " + cfg.CGetNodeInfo(v).vertex_name);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed dependencies");
    if(parameters->getOption<bool>(OPT_print_dot))
    {
-      std::string file_name;
-      file_name = "OP_DFG.dot";
-      function_behavior->CGetOpGraph(FunctionBehavior::DFG)->WriteDot(file_name, 1);
-      file_name = "OP_FDFG.dot";
-      function_behavior->CGetOpGraph(FunctionBehavior::FDFG)->WriteDot(file_name, 1);
-      file_name = "OP_ADG.dot";
-      function_behavior->CGetOpGraph(FunctionBehavior::ADG)->WriteDot(file_name, 1);
-      file_name = "OP_FADG.dot";
-      function_behavior->CGetOpGraph(FunctionBehavior::FADG)->WriteDot(file_name, 1);
-      file_name = "OP_ODG.dot";
-      function_behavior->CGetOpGraph(FunctionBehavior::ODG)->WriteDot(file_name, 1);
-      file_name = "OP_FODG.dot";
-      function_behavior->CGetOpGraph(FunctionBehavior::FODG)->WriteDot(file_name, 1);
-      file_name = "OP_SAODG1.dot";
-      function_behavior->CGetOpGraph(FunctionBehavior::SAODG)->WriteDot(file_name, 1);
+      const auto dot_path = function_behavior->GetDotPath();
+      function_behavior->GetOpGraph(FunctionBehavior::DFG).writeDot(dot_path / "OP_DFG.dot", 1);
+      function_behavior->GetOpGraph(FunctionBehavior::FDFG).writeDot(dot_path / "OP_FDFG.dot", 1);
+      function_behavior->GetOpGraph(FunctionBehavior::ADG).writeDot(dot_path / "OP_ADG.dot", 1);
+      function_behavior->GetOpGraph(FunctionBehavior::FADG).writeDot(dot_path / "OP_FADG.dot", 1);
+      function_behavior->GetOpGraph(FunctionBehavior::ODG).writeDot(dot_path / "OP_ODG.dot", 1);
+      function_behavior->GetOpGraph(FunctionBehavior::FODG).writeDot(dot_path / "OP_FODG.dot", 1);
+      function_behavior->GetOpGraph(FunctionBehavior::SAODG).writeDot(dot_path / "OP_SAODG1.dot", 1);
    }
 #ifndef NDEBUG
    try
    {
-      const OpGraphConstRef dfg = function_behavior->CGetOpGraph(FunctionBehavior::DFG);
-      std::deque<vertex> vertices;
-      boost::topological_sort(*dfg, std::front_inserter(vertices));
-   }
-   catch(const char* msg)
-   {
-      THROW_UNREACHABLE("dfg graph of function " + function_name + " is not acyclic");
-   }
-   catch(const std::string& msg)
-   {
-      THROW_UNREACHABLE("dfg graph of function " + function_name + " is not acyclic");
-   }
-   catch(const std::exception& ex)
-   {
-      THROW_UNREACHABLE("dfg graph of function " + function_name + " is not acyclic");
+      const auto dfg = function_behavior->GetOpGraph(FunctionBehavior::DFG);
+      std::list<OpGraph::vertex_descriptor> vertices;
+      dfg.TopologicalSort(vertices);
    }
    catch(...)
    {
@@ -402,25 +462,23 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
    return DesignFlowStep_Status::SUCCESS;
 }
 
-template <>
-CustomSet<unsigned int>
-DataDependenceComputation::GetVariables(const vertex statement,
-                                        const FunctionBehavior_VariableAccessType variable_access_type) const
+CustomSet<unsigned int> DataDependenceComputation::getVariables(gc_vertex_descriptor statement,
+                                                                const VariableAccessType variable_access_type) const
 {
-   FunctionBehavior_VariableType variable_type = FunctionBehavior_VariableType::UNKNOWN;
+   VariableType variable_type = VariableType::UNKNOWN;
    if(frontend_flow_step_type == VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS)
    {
-      variable_type = FunctionBehavior_VariableType::VIRTUAL;
+      variable_type = VariableType::VIRTUAL;
    }
    else if(frontend_flow_step_type == SCALAR_SSA_DATA_FLOW_ANALYSIS)
    {
-      variable_type = FunctionBehavior_VariableType::SCALAR;
+      variable_type = VariableType::SCALAR;
    }
    else
    {
       THROW_UNREACHABLE("Unexpected data flow analysis type");
    }
-   return function_behavior->CGetOpGraph(FunctionBehavior::CFG)
-       ->CGetOpNodeInfo(statement)
-       ->GetVariables(variable_type, variable_access_type);
+   return function_behavior->GetOpGraph(FunctionBehavior::CFG)
+       .CGetNodeInfo(statement)
+       .getVariables(variable_type, variable_access_type);
 }

@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright(C) 2018-2024 Politecnico di Milano
+ *              Copyright(C) 2018-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *  (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -70,9 +70,6 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-#include "config_HAVE_LIBBDD.hpp"
-
-#if HAVE_LIBBDD
 
 #define DEBUG_AA 0
 #define NO_FIELD_SENSITIVE 1
@@ -90,7 +87,6 @@
 #include <llvm/IR/ModuleSlotTracker.h>
 #include <llvm/Support/Casting.h>
 
-#include <boost/range/irange.hpp>
 #include <queue>
 #include <utility>
 
@@ -1818,6 +1814,10 @@ const llvm::Type* Andersen_AA::trace_alloc_type(const llvm::Instruction* I)
 {
    assert(I);
    // The largest type seen so far
+   if(I->getType()->getNumContainedTypes() == 0)
+   {
+      return max_struct;
+   }
    const llvm::Type* MT = I->getType()->getContainedType(0);
    auto msz = 0ul;     // the size of MT (0 for non-struct)
    bool found = false; // if any casts were found
@@ -1885,7 +1885,12 @@ size_t Andersen_AA::get_max_offset(const llvm::Value* V)
       llvm::errs() << "\n";
    }
    const llvm::Type* T = V->getType();
-   assert(llvm::isa<llvm::PointerType>(T) && T->getContainedType(0) == min_struct);
+   assert(llvm::isa<llvm::PointerType>(T));
+   if(T->getNumContainedTypes() == 0)
+   {
+      return 1;
+   }
+   assert(T->getContainedType(0) == min_struct);
    // If V is a CE or bitcast, the actual pointer type is its operand.
    if(auto E = llvm::dyn_cast<const llvm::ConstantExpr>(V))
    {
@@ -2084,7 +2089,7 @@ bool Andersen_AA::trace_int(const llvm::Value* V, llvm::DenseSet<const llvm::Val
          llvm::errs() << "CE";
       }
       opcode = CE->getOpcode();
-      for(auto i : boost::irange(0u, CE->getNumOperands()))
+      for(auto i = 0u; i < CE->getNumOperands(); ++i)
       {
          ops.push_back(CE->getOperand(i));
       }
@@ -2096,7 +2101,7 @@ bool Andersen_AA::trace_int(const llvm::Value* V, llvm::DenseSet<const llvm::Val
          llvm::errs() << "insn";
       }
       opcode = I->getOpcode();
-      for(auto i : boost::irange(0u, I->getNumOperands()))
+      for(auto i = 0u; i < I->getNumOperands(); ++i)
       {
          ops.push_back(I->getOperand(i));
       }
@@ -2540,42 +2545,51 @@ void Andersen_AA::id_global(const llvm::GlobalVariable* G)
    u32 vnG = next_node++;
    val_node[G] = vnG;
 
-   // The type this global points to
-   const llvm::Type* T = G->getType()->getContainedType(0);
-   bool is_array = false;
-   // An array is considered a single variable of its type.
-   while(auto AT = llvm::dyn_cast<const llvm::ArrayType>(T))
-   {
-      T = AT->getElementType();
-      is_array = true;
-   }
    // The first node of the global object (a struct may have more)
    u32 onG = next_node;
    obj_node[G] = onG;
 
-   if(auto ST = llvm::dyn_cast<const llvm::StructType>(T))
+   if(G->getType()->getNumContainedTypes() > 0)
    {
-      const std::vector<u32>& sz = get_struct_sz(ST);
-      auto nf = sz.size();
-      // Make nodes for all the fields, with the same obj_sz (array => weak).
-      for(size_t i = 0; i < nf; ++i)
+      // The type this global points to
+      const llvm::Type* T = G->getType()->getContainedType(0);
+      bool is_array = false;
+      // An array is considered a single variable of its type.
+      while(auto AT = llvm::dyn_cast<const llvm::ArrayType>(T))
       {
-         nodes.push_back(new Node(G, sz[i], is_array));
+         T = AT->getElementType();
+         is_array = true;
       }
-      next_node += nf;
-      // A struct may be used in constant GEP expr.
-      id_gep_ce(G);
+
+      if(auto ST = llvm::dyn_cast<const llvm::StructType>(T))
+      {
+         const std::vector<u32>& sz = get_struct_sz(ST);
+         auto nf = sz.size();
+         // Make nodes for all the fields, with the same obj_sz (array => weak).
+         for(size_t i = 0; i < nf; ++i)
+         {
+            nodes.push_back(new Node(G, sz[i], is_array));
+         }
+         next_node += nf;
+         // A struct may be used in constant GEP expr.
+         id_gep_ce(G);
+      }
+      else
+      {
+         // Make 1 obj node, with obj size 1.
+         nodes.push_back(new Node(G, 1, is_array));
+         ++next_node;
+         // An array may be used in constant GEP expr.
+         if(is_array)
+         {
+            id_gep_ce(G);
+         }
+      }
    }
    else
    {
-      // Make 1 obj node, with obj size 1.
-      nodes.push_back(new Node(G, 1, is_array));
+      nodes.push_back(new Node(G, 1, false));
       ++next_node;
-      // An array may be used in constant GEP expr.
-      if(is_array)
-      {
-         id_gep_ce(G);
-      }
    }
 
    add_cons(addr_of_cons, vnG, onG);
@@ -3389,7 +3403,6 @@ u32 Andersen_AA::proc_global_init(u32 onG, const llvm::Constant* C, bool first)
             assert(!"unexpected constant expr type");
       }
    }
-
    if(!C)
    {
       add_cons(addr_of_cons, onG, i2p);
@@ -3466,7 +3479,7 @@ u32 Andersen_AA::proc_global_init(u32 onG, const llvm::Constant* C, bool first)
       // Recursively copy each field of the original struct into the next available
       //  field of the expanded struct. Note that the fields of a constant struct
       //  are accessed by getOperand().
-      for(auto i : boost::irange(0u, CS->getNumOperands()))
+      for(auto i = 0u; i < CS->getNumOperands(); ++i)
       {
          off += proc_global_init(onG + off, CS->getOperand(i), false);
       }
@@ -3476,14 +3489,14 @@ u32 Andersen_AA::proc_global_init(u32 onG, const llvm::Constant* C, bool first)
       // Copy each array element into the same node.
       // The offset returned (the field count of 1 el.)
       //  will be the same every time.
-      for(auto i : boost::irange(0u, CA->getNumOperands()))
+      for(auto i = 0u; i < CA->getNumOperands(); ++i)
       {
          off = proc_global_init(onG, CA->getOperand(i), false);
       }
    }
    else if(auto CA = llvm::dyn_cast<const llvm::ConstantDataSequential>(C))
    {
-      for(auto i : boost::irange(0u, CA->getNumElements()))
+      for(auto i = 0u; i < CA->getNumElements(); ++i)
       {
          off = proc_global_init(onG, CA->getElementAsConstant(i), false);
       }
@@ -3574,7 +3587,7 @@ void Andersen_AA::id_call_insn(const CallInstOrInvokeInst* I)
       llvm::errs() << "\n";
    }
 
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
    auto callee = I->getCalledOperand();
 #else
    auto callee = I->getCalledValue();
@@ -3922,6 +3935,41 @@ void Andersen_AA::id_bitcast_insn(const llvm::Instruction* I)
    }
 }
 
+void Andersen_AA::id_freeze_insn(const llvm::Instruction*
+#if PANDA_LLVM_CLANG_MAJOR > 9
+                                     I
+#endif
+)
+{
+#if PANDA_LLVM_CLANG_MAJOR > 9
+   assert(I);
+   auto FI = llvm::cast<const llvm::FreezeInst>(I);
+   u32 vnI = get_val_node(FI);
+
+   if(DEBUG_AA)
+   {
+      llvm::errs() << "  id_freeze_insn  ";
+   }
+   if(DEBUG_AA)
+   {
+      print_val(FI);
+   }
+   if(DEBUG_AA)
+   {
+      llvm::errs() << "\n";
+   }
+
+   llvm::Value* op = FI->getOperand(0);
+   // Bitcast can only convert ptr->ptr or num->num.
+   assert(llvm::isa<llvm::PointerType>(op->getType()));
+   u32 vnS = get_val_node_cptr(op);
+   if(vnS)
+   { // src may be a null ptr
+      add_cons(copy_cons, vnI, vnS);
+   }
+#endif
+}
+
 //------------------------------------------------------------------------------
 void Andersen_AA::id_phi_insn(const llvm::Instruction* I)
 {
@@ -3942,7 +3990,7 @@ void Andersen_AA::id_phi_insn(const llvm::Instruction* I)
       llvm::errs() << "\n";
    }
 
-   for(auto i : boost::irange(0u, PN->getNumIncomingValues()))
+   for(auto i = 0u; i < PN->getNumIncomingValues(); ++i)
    {
       auto incoming = PN->getIncomingValue(i);
       u32 vnS = get_val_node_cptr(incoming);
@@ -4141,9 +4189,11 @@ void Andersen_AA::id_call_obj(u32 vnI, const llvm::Function* F)
          }
          else
          { // ret -> X; X may be a struct
-            const llvm::Type* T = I->getType()->getContainedType(0);
-            if(auto ST = llvm::dyn_cast<const llvm::StructType>(T))
+            if(I->getType()->getNumContainedTypes() > 0 &&
+               llvm::dyn_cast<const llvm::StructType>(I->getType()->getContainedType(0)))
             {
+               const llvm::Type* T = I->getType()->getContainedType(0);
+               auto ST = llvm::dyn_cast<const llvm::StructType>(T);
                const std::vector<u32>& sz = get_struct_sz(ST);
                auto nf = sz.size();
                for(size_t i = 0; i < nf; ++i)
@@ -4326,7 +4376,7 @@ void Andersen_AA::id_ind_call(const CallInstOrInvokeInst* I)
    {
       llvm::errs() << "    id_ind_call:  ";
    }
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
    auto C = I->getCalledOperand();
 #else
    auto C = I->getCalledValue();
@@ -4636,29 +4686,38 @@ void Andersen_AA::id_ext_call(const CallInstOrInvokeInst* I, const llvm::Functio
          {
             break;
          }
-         auto T = dest->getType()->getContainedType(0);
-         assert(llvm::isa<llvm::PointerType>(T) && "arg is not a double pointer");
-         T = T->getContainedType(0);
-         while(auto AT = llvm::dyn_cast<const llvm::ArrayType>(T))
-         {
-            T = AT->getElementType();
-         }
-
          // make X/0 etc.
          u32 on = next_node;
          obj_node[dest] = on;
-         if(auto ST = llvm::dyn_cast<const llvm::StructType>(T))
+
+         if(dest->getType()->getNumContainedTypes() > 0)
          {
-            const std::vector<u32>& sz = get_struct_sz(ST);
-            auto nf = sz.size();
-            for(size_t i = 0; i < nf; ++i)
+            auto T = dest->getType()->getContainedType(0);
+            assert(llvm::isa<llvm::PointerType>(T) && "arg is not a double pointer");
+            T = T->getContainedType(0);
+            while(auto AT = llvm::dyn_cast<const llvm::ArrayType>(T))
             {
-               // FIXME: X/0 shouldn't really have a value because it's not
-               //  pointed to by any program variable, but for now we require
-               //  all obj_nodes to have one.
-               nodes.push_back(new Node(dest, sz[i], true));
+               T = AT->getElementType();
             }
-            next_node += nf;
+
+            if(auto ST = llvm::dyn_cast<const llvm::StructType>(T))
+            {
+               const std::vector<u32>& sz = get_struct_sz(ST);
+               auto nf = sz.size();
+               for(size_t i = 0; i < nf; ++i)
+               {
+                  // FIXME: X/0 shouldn't really have a value because it's not
+                  //  pointed to by any program variable, but for now we require
+                  //  all obj_nodes to have one.
+                  nodes.push_back(new Node(dest, sz[i], true));
+               }
+               next_node += nf;
+            }
+            else
+            {
+               nodes.push_back(new Node(dest, 1, true));
+               ++next_node;
+            }
          }
          else
          {
@@ -4801,8 +4860,22 @@ void Andersen_AA::processBlock(const llvm::BasicBlock* BB, std::set<const llvm::
                id_extract_insn(I);
             }
             break;
+#if PANDA_LLVM_CLANG_MAJOR > 9
+         case llvm::Instruction::Freeze:
+         {
+            if(is_ptr)
+            {
+               /// not a bit cast but it should be equivalent
+               id_freeze_insn(I);
+            }
+            break;
+         }
+#endif
             // No other ops should affect pointer values.
          default:
+            if(is_ptr)
+               I->print(llvm::errs(), true);
+            ;
             assert(!is_ptr && "unknown insn has a pointer return type");
       }
    }
@@ -4874,7 +4947,7 @@ void Andersen_AA::obj_cons_id(const llvm::Module& M, const llvm::Type* MS)
    }
    // Insert special nodes w/o values.
    next_node = first_var_node;
-   for(auto i : boost::irange(0u, first_var_node))
+   for(auto i = 0u; i < first_var_node; ++i)
    {
       nodes.push_back(new Node);
    }
@@ -5060,7 +5133,7 @@ void Andersen_AA::clump_addr_taken()
    auto* move_to = static_cast<u32*>(malloc(onsz * 4));
 
    // The special nodes must stay at the front.
-   for(auto i : boost::irange(0u, first_var_node))
+   for(auto i = 0u; i < first_var_node; ++i)
    {
       nodes[i] = old_nodes[i];
       move_to[i] = i;
@@ -6424,7 +6497,7 @@ void Andersen_AA::pts_init()
    // For each offset (i), off_nodes[i] holds the nodes with obj_sz == (i+1),
    //  i.e. those for which (i) is the max allowed offset.
    std::vector<std::set<u32>> off_nodes(max_sz);
-   for(auto i : boost::irange(0u, npts))
+   for(auto i = 0u; i < npts; ++i)
    {
       u32 sz = nodes[i]->obj_sz;
       if(sz < 2)
@@ -6527,7 +6600,7 @@ void Andersen_AA::pts_init()
       // Save the current offset mask.
       off_mask[off] = om;
    }
-   for(auto i : boost::irange(0u, npts))
+   for(auto i = 0u; i < npts; ++i)
    {
       const Node* N = nodes[i];
       if(auto F = llvm::dyn_cast_or_null<const llvm::Function>(N->get_val()))
@@ -6600,7 +6673,7 @@ void Andersen_AA::solve_init()
    {
       llvm::errs() << "***** Initial worklist:";
    }
-   for(auto i : boost::irange(0u, nn))
+   for(auto i = 0u; i < nn; ++i)
    {
       Node* N = nodes[i];
       if(!N->is_rep())
@@ -7352,7 +7425,7 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const CallInstOrInvokeInst
          // The function pointer may point to realloc at one time
          //  and to a function with fewer args at another time;
          //  we should skip the realloc if the current call has fewer args.
-#if __clang_major__ < 14
+#if PANDA_LLVM_CLANG_MAJOR < 14
          if(I->getNumArgOperands() < 1)
 #else
          if(I->arg_size() < 1)
@@ -7414,7 +7487,7 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const CallInstOrInvokeInst
             default:
                i_arg = 0;
          }
-#if __clang_major__ < 14
+#if PANDA_LLVM_CLANG_MAJOR < 14
          if(I->getNumArgOperands() <= i_arg)
 #else
          if(I->arg_size() <= i_arg)
@@ -8293,6 +8366,7 @@ class DFG
          default:
             assert(0 && "unknown constraint type");
       }
+      return -1L;
    }
 
    // call this once all {Tp,Ld,St}Nodes have been inserted; it will
@@ -8949,7 +9023,7 @@ void Staged_Flow_Sensitive_AA::make_off_graph()
    llvm::DenseMap<std::pair<u32, u32>, u32> gep2pe;
    OCG.assign(nodes.size(), OffNodeSFS());
    // address-taken variables are indirect
-   for(auto i : boost::irange(1u, last_obj_node + 1))
+   for(auto i = 1u; i <= last_obj_node; ++i)
    {
       OCG[i].idr = true;
    }
@@ -9704,7 +9778,7 @@ static const llvm::Function* calledFunction(const llvm::CallInst* ci)
    {
       return F;
    }
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
    auto v = ci->getCalledOperand();
 #else
    auto v = ci->getCalledValue();
@@ -9953,7 +10027,7 @@ void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock* 
          else
          { // indirect call
             auto ci = llvm::cast<const llvm::CallInst>(I);
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
             auto calledValue = ci->getCalledOperand();
 #else
             auto calledValue = ci->getCalledValue();
@@ -10132,7 +10206,7 @@ void Staged_Flow_Sensitive_AA::icfg_inter_edges(llvm::Module& M)
       assert(call_succ.count(n));
       u32 succ = call_succ[n];
 
-#if __clang_major__ >= 11
+#if PANDA_LLVM_CLANG_MAJOR >= 11
       auto calledValue = ci->getCalledOperand();
 #else
       auto calledValue = ci->getCalledValue();
@@ -10372,7 +10446,7 @@ void Staged_Flow_Sensitive_AA::sfs_prep()
    top.assign(nodes.size() + num_tmp, PtsSet()); // top-level var -> ptsto set
 
    strong.assign(last_obj_node + 1, false); // object -> strong?
-   for(auto i : boost::irange(0u, last_obj_node + 1))
+   for(auto i = 0u; i <= last_obj_node; ++i)
    {
       strong[i] = !nodes[i]->weak;
    }
@@ -11575,5 +11649,3 @@ void Staged_Flow_Sensitive_AA::computePointToSet(llvm::Module& M)
    }
    llvm::errs() << "SFS analysis completed\n";
 }
-
-#endif

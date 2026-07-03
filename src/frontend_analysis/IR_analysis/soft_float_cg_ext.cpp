@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -54,17 +54,17 @@
 #include "design_flow_manager.hpp"
 #include "design_flow_step.hpp"
 #include "exceptions.hpp"
-#include "ext_tree_node.hpp"
 #include "function_behavior.hpp"
-#include "math.h"
+#include "ir_basic_block.hpp"
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
+#include "ir_manipulation.hpp"
+#include "ir_node.hpp"
+#include "ir_node_dup.hpp"
+#include "math_function.hpp"
 #include "op_graph.hpp"
+#include "range_analysis_helper.hpp"
 #include "string_manipulation.hpp"
-#include "tree_basic_block.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_manipulation.hpp"
-#include "tree_node.hpp"
-#include "tree_node_dup.hpp"
 #include "utility.hpp"
 #include "var_pp_functor.hpp"
 
@@ -77,37 +77,52 @@
 #include <set>
 #include <string>
 
+#define TF_MATH_PREFIX "tf_"
+
 CustomMap<CallGraph::vertex_descriptor, FunctionVersionRef> soft_float_cg_ext::funcFF;
-CustomMap<unsigned int, std::array<tree_nodeRef, 8>> soft_float_cg_ext::versioning_args;
+CustomMap<std::string, std::array<ir_nodeRef, 8>> soft_float_cg_ext::spec_parms_map;
 bool soft_float_cg_ext::inline_math = false;
 bool soft_float_cg_ext::inline_conversion = false;
-tree_nodeRef soft_float_cg_ext::float32_type;
-tree_nodeRef soft_float_cg_ext::float32_ptr_type;
-tree_nodeRef soft_float_cg_ext::float64_type;
-tree_nodeRef soft_float_cg_ext::float64_ptr_type;
+ir_nodeRef soft_float_cg_ext::float32_type;
+ir_nodeRef soft_float_cg_ext::float32_ptr_type;
+ir_nodeRef soft_float_cg_ext::float64_type;
+ir_nodeRef soft_float_cg_ext::float64_ptr_type;
 
 static const FloatFormatRef float32FF(new FloatFormat(8, 23, -127));
 static const FloatFormatRef float64FF(new FloatFormat(11, 52, -1023));
+static std::set<std::string> spec_libm_funcs = {};
+static const std::set<std::string> spec_libm_funcs_inlined = {"copysign", "fabs"};
 
-static const std::set<std::string> supported_libm_calls = {
-    "copysign", "fabs",       "finite", "fpclassify", "huge_val", "inf",  "infinity", "isfinite",
-    "isinf",    "isinf_sign", "isnan",  "isnormal",   "nan",      "nans", "signbit"};
-static const std::set<std::string> supported_libm_calls_inlined = {"copysign", "fabs"};
+/**
+ * @brief List of TrueFloat specializable functions
+ */
+static const std::set<std::string> truefloat_funcs = {
+    "__float_add",        "__float_sub",       "__float_mul",       "__float_divSRT4",
+    "__float_divSRT4U",   "__float_divG",      "__float_eq",        "__float_le",
+    "__float_lt",         "__float_ge",        "__float_gt",        "__float_is_signaling_nan",
+    "__float_ltgt_quiet", "__isunordered",     "__int_to_float",    "__int64_to_float",
+    "__int32_to_float",   "__int16_to_float",  "__int8_to_float",   "__uint_to_float",
+    "__uint64_to_float",  "__uint32_to_float", "__uint16_to_float", "__uint8_to_float",
+    "__float_to_int",     "__float_to_int64",  "__float_to_int32",  "__float_to_uint",
+    "__float_to_uint64",  "__float_to_uint32"};
 
 /**
  * @brief List of low level implementation libm functions. Composite functions are not present since fp format can be
  * safely propagated there.
- *
  */
-static const std::set<std::string> libm_func = {
-    "acos",     "acosh",  "asin",     "asinh",    "atan",      "atanh",      "atan2",      "cbrt",     "ceil",
-    "copysign", "cos",    "cosh",     "erf",      "erfc",      "exp",        "exp2",       "expm1",    "fabs",
-    "fdim",     "finite", "floor",    "fma",      "fmod",      "fpclassify", "frexp",      "huge_val", "hypot",
-    "ilogb",    "inf",    "infinity", "isfinite", "isinf",     "isinf_sign", "isnan",      "isnormal", "ldexp",
-    "lgamma",   "llrint", "llround",  "log",      "log10",     "log1p",      "log2",       "logb",     "lrint",
-    "lround",   "modf",   "nan",      "nans",     "nearbyint", "nextafter",  "nexttoward", "pow",      "remainder",
-    "remquo",   "rint",   "round",    "scalb",    "scalbln",   "scalbn",     "sin",        "signbit",  "sinh",
-    "sincos",   "sqrt",   "tan",      "tanh",     "tgamma",    "trunc"};
+static const std::set<std::string> libm_funcs = {
+    "acos",           "acosh",       "asin",       "asinh",   "atan",        "atanh",         "atan2",
+    "cbrt",           "ceil",        "copysign",   "cos",     "cosh",        "drem",          "erf",
+    "erfc",           "exp",         "exp2",       "expm1",   "fabs",        "fdim",          "finite",
+    "floor",          "fmax",        "fmin",       "fma",     "fmod",        "fpclassify",    "frexp",
+    "huge_val",       "hypot",       "ilogb",      "inf",     "infinity",    "isfinite",      "isgreater",
+    "isgreaterequal", "isinf",       "isinf_sign", "isless",  "islessequal", "islessgreater", "isnan",
+    "isnormal",       "isunordered", "j0",         "j1",      "jn",          "ldexp",         "lgamma_r",
+    "llrint",         "llround",     "log",        "log10",   "log1p",       "log2",          "logb",
+    "lrint",          "lround",      "modf",       "nan",     "nans",        "nearbyint",     "nextafter",
+    "nexttoward",     "pow",         "remainder",  "remquo",  "rint",        "round",         "scalb",
+    "scalbln",        "scalbn",      "sin",        "signbit", "significand", "sinh",          "sincos",
+    "sqrt",           "tan",         "tanh",       "tgamma",  "trunc"};
 
 static std::string strip_fname(std::string fname, bool* single_prec = nullptr)
 {
@@ -115,11 +130,7 @@ static std::string strip_fname(std::string fname, bool* single_prec = nullptr)
    {
       *single_prec = false;
    }
-   if(fname.find("__internal_") == 0)
-   {
-      fname = fname.substr(sizeof("__internal_") - 1);
-   }
-   else if(fname.find("__builtin_") == 0)
+   if(fname.find("__builtin_") == 0)
    {
       fname = fname.substr(sizeof("__builtin_") - 1);
    }
@@ -127,24 +138,28 @@ static std::string strip_fname(std::string fname, bool* single_prec = nullptr)
    {
       fname = fname.substr(sizeof("__") - 1);
    }
-   if(fname.back() == 'f' && libm_func.count(fname.substr(0, fname.size() - 1)))
+   if(fname.back() == 'f')
    {
-      fname = fname.substr(0, fname.size() - 1);
-      if(single_prec)
+      const auto fname_nof = fname.substr(0, fname.size() - 1);
+      if(libm_funcs.count(fname_nof))
       {
-         *single_prec = true;
+         fname = fname_nof;
+         if(single_prec)
+         {
+            *single_prec = true;
+         }
       }
    }
    return fname;
 }
 
 soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const application_managerRef _AppM,
-                                     unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+                                     unsigned int _function_id, const DesignFlowManager& _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, SOFT_FLOAT_CG_EXT, _design_flow_manager, _parameters),
-      TreeM(_AppM->get_tree_manager()),
-      tree_man(new tree_manipulation(TreeM, parameters, _AppM)),
-      fd(GetPointer<function_decl>(TreeM->GetTreeNode(function_id))),
-      isTopFunction(AppM->CGetCallGraphManager()->GetRootFunctions().count(function_id)),
+      IRM(_AppM->get_ir_manager()),
+      ir_man(new ir_manipulation(IRM, parameters, _AppM)),
+      fd(GetPointer<function_val_node>(IRM->GetIRNode(function_id))),
+      isTopFunction(AppM->CGetCallGraphManager().GetRootFunctions().count(function_id)),
       bindingCompleted(fd->list_of_args.size() == 0),
       paramBinding(fd->list_of_args.size(), nullptr)
 {
@@ -152,10 +167,10 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
 
    if(!float32_type)
    {
-      float32_type = tree_man->GetCustomIntegerType(32, true);
-      float32_ptr_type = tree_man->GetPointerType(float32_type, 32);
-      float64_type = tree_man->GetCustomIntegerType(64, true);
-      float64_ptr_type = tree_man->GetPointerType(float64_type, 64);
+      float32_type = ir_man->GetCustomIntegerType(32, true);
+      float32_ptr_type = ir_man->GetPointerType(float32_type, 32);
+      float64_type = ir_man->GetCustomIntegerType(64, true);
+      float64_ptr_type = ir_man->GetPointerType(float64_type, 64);
       if(parameters->isOption(OPT_fp_subnormal) && parameters->getOption<bool>(OPT_fp_subnormal))
       {
          float32FF->has_subnorm = true;
@@ -197,16 +212,31 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
             float32FF->exception_mode = FloatFormat::FPException_Overflow;
             float64FF->exception_mode = FloatFormat::FPException_Overflow;
          }
+         else if(exc_mode == "nonan")
+         {
+            float32FF->exception_mode = FloatFormat::FPException_NoNan;
+            float64FF->exception_mode = FloatFormat::FPException_NoNan;
+         }
          else
          {
             THROW_UNREACHABLE("Floating-point exception mode not supported: " + STR(exc_mode));
+         }
+      }
+      for(const auto& fname : libm_funcs)
+      {
+         const auto TM = AppM->get_ir_manager();
+         const auto spec_fname = TF_MATH_PREFIX + fname;
+         const auto spec_fnode = TM->GetFunction(spec_fname);
+         if(spec_fnode)
+         {
+            spec_libm_funcs.insert(fname);
          }
       }
    }
 
    if(funcFF.empty() && !parameters->getOption<std::string>(OPT_fp_format).empty())
    {
-      const auto CGM = AppM->CGetCallGraphManager();
+      const auto& CGM = AppM->CGetCallGraphManager();
       auto opts = string_to_container<std::vector<std::string>>(parameters->getOption<std::string>(OPT_fp_format), ",");
       const auto inline_math_it = std::find(opts.begin(), opts.end(), "inline-math");
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Soft-float fp format specialization required:");
@@ -239,7 +269,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
                }
                format[0] = top_symbols.front();
             }
-            const auto f_node = TreeM->GetFunction(format[0]);
+            const auto f_node = IRM->GetFunction(format[0]);
             return f_node ? f_node->index : 0;
          }();
 
@@ -247,7 +277,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
          {
             THROW_ERROR("Function " + format[0] + " does not exists. (Maybe it has been inlined)");
          }
-         const auto function_v = CGM->GetVertex(f_index);
+         const auto function_v = CGM.GetVertex(f_index);
          if(funcFF.count(function_v))
          {
             THROW_ERROR("Function " + format[0] + " already specialized.");
@@ -266,17 +296,17 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Soft-float fp format propagation enabled:");
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->");
-         for(const auto& root_func : CGM->GetRootFunctions())
+         for(const auto& root_func : CGM.GetRootFunctions())
          {
             std::list<CallGraph::vertex_descriptor> func_sort;
             CustomUnorderedSet<CallGraph::vertex_descriptor> reached_v;
-            const auto reached_from_top = CGM->GetReachedFunctionsFrom(root_func);
+            const auto reached_from_top = CGM.GetReachedFunctionsFrom(root_func);
             for(const auto func_id : reached_from_top)
             {
-               reached_v.insert(CGM->GetVertex(func_id));
+               reached_v.insert(CGM.GetVertex(func_id));
             }
-            const auto TopCG = CGM->CGetCallSubGraph(reached_v);
-            TopCG->TopologicalSort(func_sort);
+            const auto& TopCG = CGM.CGetCallSubGraph(reached_v);
+            TopCG.TopologicalSort(func_sort);
 
             for(const auto func : func_sort)
             {
@@ -325,24 +355,22 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
                   current_v->internal = *current_v->userRequired == *callers_ff;
                }
 
-               const auto func_id = AppM->CGetCallGraphManager()->get_function(func);
+               const auto func_id = AppM->CGetCallGraphManager().get_function(func);
                INDENT_OUT_MEX(
                    OUTPUT_LEVEL_VERBOSE, output_level,
                    "Analysing function " +
-                       tree_helper::print_type(TreeM, func_id, false, true, false, 0U,
-                                               var_pp_functorConstRef(new std_var_pp_functor(
-                                                   AppM->CGetFunctionBehavior(func_id)->CGetBehavioralHelper()))));
+                       ir_helper::PrintType(IRM->GetIRNode(func_id), true, false, ir_nodeRef(),
+                                            std::make_unique<std_var_pp_functor>(
+                                                AppM->CGetFunctionBehavior(func_id)->CGetBehavioralHelper())));
                INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---FP format " + current_v->ToString());
 
                // Propagate current fp format to the called functions
-               CallGraph::out_edge_iterator ei, ei_end;
-               for(boost::tie(ei, ei_end) = boost::out_edges(func, *TopCG); ei != ei_end; ++ei)
+               for(const auto& ei : TopCG.out_edges(func))
                {
-                  const auto called = boost::target(*ei, *TopCG);
-                  const auto fname = tree_helper::print_function_name(
-                      TreeM, GetPointerS<const function_decl>(TreeM->GetTreeNode(CGM->get_function(called))));
+                  const auto called = TopCG.target(ei);
+                  const auto fname = ir_helper::GetFunctionName(IRM->GetIRNode(CGM.get_function(called)));
                   const auto called_fname = strip_fname(fname);
-                  if(static_cast<bool>(libm_func.count(called_fname)))
+                  if(static_cast<bool>(libm_funcs.count(called_fname)))
                   {
                      // Do not propagate format to libm functions, specialization will be handled successively
                      continue;
@@ -369,8 +397,8 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
       }
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
    }
-   THROW_ASSERT(AppM->CGetCallGraphManager()->IsVertex(function_id), "");
-   const auto function_v = AppM->CGetCallGraphManager()->GetVertex(function_id);
+   THROW_ASSERT(AppM->CGetCallGraphManager().IsVertex(function_id), "");
+   const auto function_v = AppM->CGetCallGraphManager().GetVertex(function_id);
    if(static_cast<bool>(funcFF.count(function_v)))
    {
       _version = funcFF.at(function_v);
@@ -385,15 +413,13 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
       THROW_ASSERT(insertion.second, "");
    }
    int_type = !_version->ieee_format() ?
-                  tree_man->GetCustomIntegerType(
+                  ir_man->GetCustomIntegerType(
                       static_cast<unsigned int>(static_cast<uint8_t>(_version->userRequired->sign == bit_lattice::U) +
                                                 _version->userRequired->exp_bits + _version->userRequired->frac_bits),
                       true) :
                   nullptr;
-   int_ptr_type = int_type ? tree_man->GetPointerType(int_type, GetPointer<integer_type>(int_type)->algn) : nullptr;
+   int_ptr_type = int_type ? ir_man->GetPointerType(int_type, GetPointer<integer_ty_node>(int_type)->algn) : nullptr;
 }
-
-soft_float_cg_ext::~soft_float_cg_ext() = default;
 
 CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 soft_float_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -404,12 +430,14 @@ soft_float_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
       case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION));
-         relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
+         if(parameters->isOption(OPT_openmp) && parameters->getOption<bool>(OPT_openmp))
+         {
+            relationships.insert(std::make_pair(OMP_CG_EXT, ALL_FUNCTIONS));
+         }
          relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, CALLED_FUNCTIONS));
-         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
-         relationships.insert(std::make_pair(TREE2FUN, SAME_FUNCTION));
+         relationships.insert(std::make_pair(IR2FUN, SAME_FUNCTION));
+         relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
@@ -440,22 +468,18 @@ bool soft_float_cg_ext::HasToBeExecuted() const
 
 DesignFlowStep_Status soft_float_cg_ext::InternalExec()
 {
-   THROW_ASSERT(parameters->isOption(OPT_soft_float) && parameters->getOption<bool>(OPT_soft_float),
-                "Floating-point lowering should not be executed");
-
    static const auto ff_already_propagated =
        parameters->isOption(OPT_fp_format_propagate) && parameters->getOption<bool>(OPT_fp_format_propagate);
    // Check if current function needs IO fp format interface (avoid check if fp format propagation has already been
    // computed)
    if(!ff_already_propagated && !_version->ieee_format())
    {
-      const auto CG = AppM->CGetCallGraphManager()->CGetCallGraph();
-      InEdgeIterator ie, ie_end;
-      for(boost::tie(ie, ie_end) = boost::in_edges(_version->function_vertex, *CG); ie != ie_end; ie++)
+      const auto& CG = AppM->CGetCallGraphManager().GetCallGraph();
+      for(const auto& ie : CG.in_edges(_version->function_vertex))
       {
-         if(static_cast<bool>(funcFF.count(ie->m_source)))
+         if(static_cast<bool>(funcFF.count(CG.source(ie))))
          {
-            const auto& funcV = funcFF.at(ie->m_source);
+            const auto& funcV = funcFF.at(CG.source(ie));
             if(funcV->ieee_format() || *(funcV->userRequired) != *(_version->userRequired))
             {
                // If a caller of current function uses a different float format, current function is not internal to the
@@ -477,9 +501,9 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                 "A standard floating-point format function should be internal.");
 
 #ifndef NDEBUG
-   const auto fn_name = tree_helper::print_type(
-       TreeM, function_id, false, true, false, 0U,
-       var_pp_functorConstRef(new std_var_pp_functor(function_behavior->CGetBehavioralHelper())));
+   const auto fn_name =
+       ir_helper::PrintType(IRM->GetIRNode(function_id), true, false, ir_nodeRef(),
+                            std::make_unique<std_var_pp_functor>(function_behavior->CGetBehavioralHelper()));
 #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Function " + fn_name + " implementing " + _version->ToString() + " floating-point format");
@@ -487,7 +511,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                   "---IO interface is " + STR((_version->ieee_format() || _version->internal) ? "not " : "") +
                       "necessary");
 
-   const auto sl = GetPointerS<statement_list>(fd->body);
+   const auto sl = GetPointerS<statement_list_node>(fd->body);
    bool modified = false;
 
    for(const auto& block : sl->list_of_bloc)
@@ -511,35 +535,34 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
    if(hwParam.size())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "Adding view-convert expressions to support hardware implemented FU call arguments");
+                     "Adding bitcast expressions to support hardware implemented FU call arguments");
       for(const auto& ssa_uses : hwParam)
       {
          const auto ssa = ssa_uses.first;
-         const auto ssa_node = TreeM->GetTreeNode(ssa->index);
+         const auto ssa_ref = IRM->GetIRNode(ssa->index);
          const auto out_int = outputInterface.find(ssa);
-         std::vector<tree_nodeRef>* out_ssa =
-             out_int != outputInterface.end() ? &std::get<1>(out_int->second) : nullptr;
+         std::vector<ir_nodeRef>* out_ssa = out_int != outputInterface.end() ? &std::get<1>(out_int->second) : nullptr;
          for(const auto& call_stmt_idx : ssa_uses.second)
          {
-            const auto call_stmt = TreeM->GetTreeNode(call_stmt_idx);
-            const auto call_node = GetPointerS<const gimple_node>(call_stmt);
+            const auto call_stmt = IRM->GetIRNode(call_stmt_idx);
+            const auto call_node = GetPointerS<const node_stmt>(call_stmt);
             const auto& call_bb = sl->list_of_bloc.at(call_node->bb_index);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---View-convert for " + ssa->ToString() + " in BB" + STR(call_bb->number) + " " +
+                           "---Bitcast for " + ssa->ToString() + " in BB" + STR(call_bb->number) + " " +
                                call_node->ToString());
-            // At this time ssa->type is still real_type, thus we can exploit that (it will be modified after)
-            const auto arg_vc =
-                tree_man->create_unary_operation(ssa->type, ssa_node, BUILTIN_SRCP, view_convert_expr_K);
-            const auto vc_stmt = tree_man->CreateGimpleAssign(ssa->type, tree_nodeRef(), tree_nodeRef(), arg_vc,
-                                                              function_id, BUILTIN_SRCP);
-            const auto vc_ssa = GetPointerS<gimple_assign>(vc_stmt)->op0;
-            call_bb->PushBefore(vc_stmt, call_stmt, AppM);
-            TreeM->ReplaceTreeNode(call_stmt, ssa_node, vc_ssa);
+            // At this time ssa->type is still real_ty_node, thus we can exploit that (it will be modified after)
+            const auto arg_bitcast =
+                ir_man->create_unary_operation(ssa->type, ssa_ref, BUILTIN_LOCINFO, bitcast_node_K);
+            const auto bitcast_stmt = ir_man->CreateAssignStmt(ssa->type, ir_nodeRef(), ir_nodeRef(), arg_bitcast,
+                                                               function_id, BUILTIN_LOCINFO);
+            const auto bitcast_ssa = GetPointerS<assign_stmt>(bitcast_stmt)->op0;
+            call_bb->PushBefore(bitcast_stmt, call_stmt, AppM);
+            IRM->ReplaceIRNode(call_stmt, ssa_ref, bitcast_ssa);
             if(out_ssa)
             {
                std::replace_if(
-                   out_ssa->begin(), out_ssa->end(), [&](const tree_nodeRef& t) { return t->index == call_stmt_idx; },
-                   vc_stmt);
+                   out_ssa->begin(), out_ssa->end(), [&](const ir_nodeRef& t) { return t->index == call_stmt_idx; },
+                   bitcast_stmt);
             }
          }
       }
@@ -551,28 +574,28 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
    if(hwReturn.size())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "Adding view-convert expressions to support hardware implemented FU call return values");
+                     "Adding bitcast expressions to support hardware implemented FU call return values");
       for(const auto& ssa : hwReturn)
       {
-         const auto call_stmt = ssa->CGetDefStmt();
-         const auto def_node = GetPointerS<const gimple_node>(call_stmt);
+         const auto call_stmt = ssa->GetDefStmt();
+         const auto def_node = GetPointerS<const node_stmt>(call_stmt);
          const auto call_bb = sl->list_of_bloc.at(def_node->bb_index);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->View-convert for " + ssa->ToString() + " in BB" + STR(call_bb->number) + " " +
+                        "-->Bitcast for " + ssa->ToString() + " in BB" + STR(call_bb->number) + " " +
                             def_node->ToString());
-         const auto ssa_node = TreeM->GetTreeNode(ssa->index);
+         const auto ssa_ref = IRM->GetIRNode(ssa->index);
          // Hardware calls are for sure dealing with standard IEEE formats only
-         const auto int_ret_type = tree_helper::Size(ssa->type) == 32 ? float32_type : float64_type;
-         const auto ret_vc =
-             tree_man->create_unary_operation(int_ret_type, ssa_node, BUILTIN_SRCP, view_convert_expr_K);
-         const auto vc_stmt = tree_man->CreateGimpleAssign(int_ret_type, tree_nodeRef(), tree_nodeRef(), ret_vc,
-                                                           function_id, BUILTIN_SRCP);
-         const auto vc_ssa = GetPointerS<const gimple_assign>(vc_stmt)->op0;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Added statement " + vc_stmt->ToString());
+         const auto int_ret_type = ir_helper::Size(ssa->type) == 32 ? float32_type : float64_type;
+         const auto ret_bitcast =
+             ir_man->create_unary_operation(int_ret_type, ssa_ref, BUILTIN_LOCINFO, bitcast_node_K);
+         const auto bitcast_stmt = ir_man->CreateAssignStmt(int_ret_type, ir_nodeRef(), ir_nodeRef(), ret_bitcast,
+                                                            function_id, BUILTIN_LOCINFO);
+         const auto bitcast_ssa = GetPointerS<const assign_stmt>(bitcast_stmt)->op0;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Added statement " + bitcast_stmt->ToString());
          const auto if_info = inputInterface.find(ssa);
          if(if_info != inputInterface.end())
          {
-            const auto new_ssa = GetPointer<ssa_name>(vc_ssa);
+            const auto new_ssa = GetPointer<ssa_node>(bitcast_ssa);
             THROW_ASSERT(std::get<0>(if_info->second), "");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Input interface " + std::get<0>(if_info->second)->ToString() + " moved");
@@ -584,20 +607,20 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Replace use - before: " + stmt_use.first->ToString());
-            TreeM->ReplaceTreeNode(stmt_use.first, ssa_node, vc_ssa);
+            IRM->ReplaceIRNode(stmt_use.first, ssa_ref, bitcast_ssa);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---               after: " + stmt_use.first->ToString());
          }
-         call_bb->PushAfter(vc_stmt, call_stmt, AppM);
+         call_bb->PushAfter(bitcast_stmt, call_stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-         viewConvert.erase(ssa);
+         bitcastCandidates.erase(ssa);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
       modified = true;
       hwReturn.clear();
    }
 
-   // Design top function signatures must not be modified, thus a view-convert operation for real_type parameters and
+   // Design top function signatures must not be modified, thus a bitcast operation for real_ty_node parameters and
    // return value must be added inside the function body
    if(isTopFunction &&
       (!parameters->isOption(OPT_fp_format_interface) || !parameters->getOption<bool>(OPT_fp_format_interface)))
@@ -613,30 +636,31 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
       {
          if(parm)
          {
-            THROW_ASSERT(parm->get_kind() == ssa_name_K,
+            THROW_ASSERT(parm->get_kind() == ssa_node_K,
                          "Unexpected parameter node type (" + parm->get_kind_text() + ")");
-            const auto parmSSA = GetPointerS<ssa_name>(parm);
+            const auto parmSSA = GetPointerS<ssa_node>(parm);
             if(lowering_needed(parmSSA))
             {
                const auto parm_type = int_type_for(parmSSA->type, false);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "Lowering top function parameter type of " + parmSSA->ToString() + ": " +
                                   parmSSA->type->ToString() + " -> " + parm_type->ToString());
-               tree_nodeRef vc_stmt;
-               if(parm_type->get_kind() == pointer_type_K)
+               ir_nodeRef bitcast_stmt;
+               if(parm_type->get_kind() == pointer_ty_node_K)
                {
-                  vc_stmt = tree_man->CreateNopExpr(parm, parm_type, tree_nodeRef(), tree_nodeRef(), function_id);
+                  bitcast_stmt = ir_man->CreateNopExpr(parm, parm_type, ir_nodeRef(), ir_nodeRef(), function_id);
                }
                else
                {
-                  const auto vc = tree_man->create_unary_operation(parm_type, parm, BUILTIN_SRCP, view_convert_expr_K);
-                  vc_stmt = tree_man->CreateGimpleAssign(parm_type, tree_nodeRef(), tree_nodeRef(), vc, function_id,
-                                                         BUILTIN_SRCP);
+                  const auto bitcast_expr =
+                      ir_man->create_unary_operation(parm_type, parm, BUILTIN_LOCINFO, bitcast_node_K);
+                  bitcast_stmt = ir_man->CreateAssignStmt(parm_type, ir_nodeRef(), ir_nodeRef(), bitcast_expr,
+                                                          function_id, BUILTIN_LOCINFO);
                   if(!_version->ieee_format())
                   {
-                     const auto ssa_ff = tree_helper::Size(parmSSA->type) == 32 ? float32FF : float64FF;
+                     const auto ssa_ff = ir_helper::Size(parmSSA->type) == 32 ? float32FF : float64FF;
                      const auto ientry =
-                         inputInterface.insert({GetPointerS<ssa_name>(GetPointerS<gimple_assign>(vc_stmt)->op0),
+                         inputInterface.insert({GetPointerS<ssa_node>(GetPointerS<assign_stmt>(bitcast_stmt)->op0),
                                                 {ssa_ff, std::vector<unsigned int>()}});
                      THROW_ASSERT(ientry.second, "");
                      const auto oentry = outputInterface.find(parmSSA);
@@ -655,15 +679,16 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                   }
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Lowering statement added to BB" + STR(first_bb->number) + ": " + vc_stmt->ToString());
-               const auto lowered_parm = GetPointerS<gimple_assign>(vc_stmt)->op0;
+                              "---Lowering statement added to BB" + STR(first_bb->number) + ": " +
+                                  bitcast_stmt->ToString());
+               const auto lowered_parm = GetPointerS<assign_stmt>(bitcast_stmt)->op0;
                const auto parm_uses = parmSSA->CGetUseStmts();
                for(const auto& stmt_uses : parm_uses)
                {
-                  TreeM->ReplaceTreeNode(stmt_uses.first, parm, lowered_parm);
+                  IRM->ReplaceIRNode(stmt_uses.first, parm, lowered_parm);
                }
-               first_bb->PushFront(vc_stmt, AppM);
-               viewConvert.erase(parmSSA);
+               first_bb->PushFront(bitcast_stmt, AppM);
+               bitcastCandidates.erase(parmSSA);
                modified = true;
             }
          }
@@ -671,32 +696,33 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
       paramBinding.clear();
       for(const auto& ret_stmt : topReturn)
       {
-         const auto gr = GetPointerS<gimple_return>(ret_stmt);
-         const auto ret_ssa = GetPointerS<ssa_name>(gr->op);
+         const auto gr = GetPointerS<return_stmt>(ret_stmt);
+         const auto ret_ssa = GetPointerS<ssa_node>(gr->op);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "Return value type restore added for variable " + ret_ssa->ToString());
          const auto bb = sl->list_of_bloc.at(gr->bb_index);
-         tree_nodeRef vc_stmt;
-         if(ret_ssa->type->get_kind() == pointer_type_K)
+         ir_nodeRef bitcast_stmt;
+         if(ret_ssa->type->get_kind() == pointer_ty_node_K)
          {
-            vc_stmt = tree_man->CreateNopExpr(gr->op, ret_ssa->type, tree_nodeRef(), tree_nodeRef(), function_id);
+            bitcast_stmt = ir_man->CreateNopExpr(gr->op, ret_ssa->type, ir_nodeRef(), ir_nodeRef(), function_id);
          }
          else
          {
-            const auto vc = tree_man->create_unary_operation(ret_ssa->type, gr->op, BUILTIN_SRCP, view_convert_expr_K);
-            vc_stmt = tree_man->CreateGimpleAssign(ret_ssa->type, tree_nodeRef(), tree_nodeRef(), vc, function_id,
-                                                   BUILTIN_SRCP);
+            const auto bitcast_expr =
+                ir_man->create_unary_operation(ret_ssa->type, gr->op, BUILTIN_LOCINFO, bitcast_node_K);
+            bitcast_stmt = ir_man->CreateAssignStmt(ret_ssa->type, ir_nodeRef(), ir_nodeRef(), bitcast_expr,
+                                                    function_id, BUILTIN_LOCINFO);
             if(!_version->ieee_format())
             {
-               const auto ssa_ff = tree_helper::Size(ret_ssa->type) == 32 ? float32FF : float64FF;
-               outputInterface.insert({ret_ssa, {ssa_ff, std::vector<tree_nodeRef>({vc_stmt})}});
+               const auto ssa_ff = ir_helper::Size(ret_ssa->type) == 32 ? float32FF : float64FF;
+               outputInterface.insert({ret_ssa, {ssa_ff, std::vector<ir_nodeRef>({bitcast_stmt})}});
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Output interface required for current variable use");
             }
          }
-         const auto lowered_ret = GetPointerS<gimple_assign>(vc_stmt)->op0;
-         bb->PushBefore(vc_stmt, ret_stmt, AppM);
-         TreeM->ReplaceTreeNode(ret_stmt, gr->op, lowered_ret);
+         const auto lowered_ret = GetPointerS<assign_stmt>(bitcast_stmt)->op0;
+         bb->PushBefore(bitcast_stmt, ret_stmt, AppM);
+         IRM->ReplaceIRNode(ret_stmt, gr->op, lowered_ret);
       }
       modified |= topReturn.size();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -717,12 +743,12 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          {
             const auto& param = paramBinding.at(idx);
             const auto& arg = fd->list_of_args.at(idx);
-            const auto pd = GetPointerS<const parm_decl>(arg);
+            const auto pd = GetPointerS<const argument_val_node>(arg);
             if(param)
             {
-               THROW_ASSERT(param->get_kind() == ssa_name_K,
+               THROW_ASSERT(param->get_kind() == ssa_node_K,
                             "Unexpected parameter node type (" + param->get_kind_text() + ")");
-               const auto parmSSA = GetPointerS<ssa_name>(param);
+               const auto parmSSA = GetPointerS<ssa_node>(param);
 
                if(pd->type->index != parmSSA->type->index)
                {
@@ -732,7 +758,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                   parmSSA->type = pd->type;
 
                   // Remove ssa variable associated to function parameter to avoid multiple type replacement
-                  viewConvert.erase(parmSSA);
+                  bitcastCandidates.erase(parmSSA);
                }
             }
             else
@@ -746,43 +772,43 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
       }
    }
 
-   if(viewConvert.size())
+   if(bitcastCandidates.size())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "Lowering type for " + STR(viewConvert.size()) + " ssa variables");
+                     "Lowering type for " + STR(bitcastCandidates.size()) + " ssa variables");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-      for(const auto& ssa_var : viewConvert)
+      for(const auto& ssa_var : bitcastCandidates)
       {
          ssa_lowering(ssa_var.first, ssa_var.second);
       }
       modified = true;
-      viewConvert.clear();
+      bitcastCandidates.clear();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }
 
-   if(nopConvert.size())
+   if(nopConvertibleBitcasts.size())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "Lowering " + STR(nopConvert.size()) + " view-convert expressions to nop expressions");
+                     "Lowering " + STR(nopConvertibleBitcasts.size()) + " bitcast expressions to nop expressions");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-      for(const auto& vcStmt : nopConvert)
+      for(const auto& bitcast_stmt : nopConvertibleBitcasts)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Before lowering - " + vcStmt->ToString());
-         const auto ga = GetPointerS<gimple_assign>(vcStmt);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Before lowering - " + bitcast_stmt->ToString());
+         const auto ga = GetPointerS<assign_stmt>(bitcast_stmt);
          THROW_ASSERT(ga, "");
-         const auto vc = GetPointerS<view_convert_expr>(ga->op1);
-         THROW_ASSERT(vc, "");
-         THROW_ASSERT(tree_helper::CGetType(vc->op)->get_kind() == integer_type_K,
-                      "At this point " + vc->op->ToString() + " should be of integer type.");
-         const auto resType = tree_helper::CGetType(ga->op0);
-         THROW_ASSERT(resType->get_kind() == integer_type_K,
+         const auto bitcast_expr = GetPointerS<bitcast_node>(ga->op1);
+         THROW_ASSERT(bitcast_expr, "");
+         THROW_ASSERT(ir_helper::CGetType(bitcast_expr->op)->get_kind() == integer_ty_node_K,
+                      "At this point " + bitcast_expr->op->ToString() + " should be of integer type.");
+         const auto resType = ir_helper::CGetType(ga->op0);
+         THROW_ASSERT(resType->get_kind() == integer_ty_node_K,
                       "Destination variable should of integer type (" + resType->get_kind_text() + ")");
-         const auto nop = tree_man->create_unary_operation(resType, vc->op, BUILTIN_SRCP, nop_expr_K);
-         TreeM->ReplaceTreeNode(vcStmt, ga->op1, nop);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---After lowering - " + vcStmt->ToString());
+         const auto nop = ir_man->create_unary_operation(resType, bitcast_expr->op, BUILTIN_LOCINFO, nop_node_K);
+         IRM->ReplaceIRNode(bitcast_stmt, ga->op1, nop);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---After lowering - " + bitcast_stmt->ToString());
       }
       modified = true;
-      nopConvert.clear();
+      nopConvertibleBitcasts.clear();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }
 
@@ -794,14 +820,14 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
       for(auto& [SSA, if_info] : inputInterface)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Input interface for " + SSA->ToString());
-         const auto ssa = TreeM->GetTreeNode(SSA->index);
+         const auto ssa = IRM->GetIRNode(SSA->index);
          auto& [fformat, exclude] = if_info;
          const auto oentry = outputInterface.find(SSA);
          if(oentry != outputInterface.end())
          {
             const auto& oentry_list = std::get<1>(oentry->second);
             std::transform(oentry_list.begin(), oentry_list.end(), std::back_inserter(exclude),
-                           [&](const tree_nodeRef& tn) {
+                           [&](const ir_nodeRef& tn) {
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                              "---Skipping replacement for statement " + tn->ToString());
                               return tn->index;
@@ -818,10 +844,10 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
             continue;
          }
 
-         auto defStmt = SSA->CGetDefStmt();
-         const auto def = GetPointerS<gimple_node>(defStmt);
+         auto defStmt = SSA->GetDefStmt();
+         const auto def = GetPointerS<node_stmt>(defStmt);
          blocRef bb;
-         if(def->get_kind() == gimple_assign_K)
+         if(def->get_kind() == assign_stmt_K)
          {
             THROW_ASSERT(sl->list_of_bloc.count(def->bb_index),
                          "BB " + STR(def->bb_index) + " not present in current function.");
@@ -829,7 +855,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "Input interface will be inserted in BB" + STR(bb->number));
          }
-         else if(def->get_kind() == gimple_phi_K)
+         else if(def->get_kind() == phi_stmt_K)
          {
             THROW_ASSERT(sl->list_of_bloc.count(def->bb_index),
                          "BB " + STR(def->bb_index) + " not present in current function.");
@@ -850,7 +876,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          }
 
          const auto convertedSSA = generate_interface(bb, defStmt, ssa, fformat, _version->userRequired);
-         const auto convertedSSA_type = tree_helper::CGetType(convertedSSA);
+         const auto convertedSSA_type = ir_helper::CGetType(convertedSSA);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "-->Interface from " + fformat->ToString() + " to " + _version->userRequired->ToString() +
                             " generated output " + convertedSSA->ToString());
@@ -864,15 +890,15 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                               "---Skipping replacement for statement " + useStmt->ToString());
                continue;
             }
-            TreeM->ReplaceTreeNode(useStmt, ssa, convertedSSA);
-            const auto* ga = GetPointer<const gimple_assign>(useStmt);
+            IRM->ReplaceIRNode(useStmt, ssa, convertedSSA);
+            const auto* ga = GetPointer<const assign_stmt>(useStmt);
             if(ga)
             {
                // Unary and binary expression have already been lowered to function calls
-               auto* te = GetPointer<ternary_expr>(ga->op1);
+               auto* te = GetPointer<ternary_node>(ga->op1);
                if(te)
                {
-                  te->type = TreeM->GetTreeNode(convertedSSA_type->index);
+                  te->type = IRM->GetIRNode(convertedSSA_type->index);
                }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced in statement " + useStmt->ToString());
@@ -891,15 +917,15 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
       for(const auto& [SSA, if_info] : outputInterface)
       {
-         const auto ssa = TreeM->GetTreeNode(SSA->index);
+         const auto ssa = IRM->GetIRNode(SSA->index);
          const auto& [fformat, useStmts] = if_info;
 
-         auto defStmt = SSA->CGetDefStmt();
-         const auto gn = GetPointerS<gimple_node>(defStmt);
+         auto defStmt = SSA->GetDefStmt();
+         const auto gn = GetPointerS<node_stmt>(defStmt);
          THROW_ASSERT(sl->list_of_bloc.count(gn->bb_index),
                       "BB" + STR(gn->bb_index) + " not present in current function.");
          auto bb = sl->list_of_bloc.at(gn->bb_index);
-         if(gn->get_kind() == gimple_nop_K)
+         if(gn->get_kind() == nop_stmt_K)
          {
             THROW_ASSERT(bb->number == BB_ENTRY, "Parameter definition should be associated to entry block");
             THROW_ASSERT(bb->list_of_succ.size() == 1, "Multiple successors after entry basic block.");
@@ -916,7 +942,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                         "Interface generated output " + convertedSSA->ToString());
          for(const auto& stmt : useStmts)
          {
-            TreeM->ReplaceTreeNode(stmt, ssa, convertedSSA);
+            IRM->ReplaceIRNode(stmt, ssa, convertedSSA);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced in statement " + stmt->ToString());
             modified = true;
          }
@@ -934,24 +960,24 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
    return DesignFlowStep_Status::UNCHANGED;
 }
 
-bool soft_float_cg_ext::lowering_needed(const ssa_name* ssa)
+bool soft_float_cg_ext::lowering_needed(const ssa_node* ssa)
 {
-   if(tree_helper::IsPointerType(ssa->type))
+   if(ir_helper::IsPointerType(ssa->type))
    {
-      return tree_helper::IsRealType(tree_helper::CGetPointedType(ssa->type));
+      return ir_helper::IsRealType(ir_helper::CGetPointedType(ssa->type));
    }
-   return tree_helper::IsRealType(ssa->type);
+   return ir_helper::IsRealType(ssa->type);
 }
 
-tree_nodeRef soft_float_cg_ext::int_type_for(const tree_nodeRef& type, bool use_internal) const
+ir_nodeRef soft_float_cg_ext::int_type_for(const ir_nodeRef& type, bool use_internal) const
 {
-   if(tree_helper::IsPointerType(type))
+   if(ir_helper::IsPointerType(type))
    {
-      return tree_helper::Size(tree_helper::CGetPointedType(type)) == 32 ? float32_ptr_type : float64_ptr_type;
+      return ir_helper::Size(ir_helper::CGetPointedType(type)) == 32 ? float32_ptr_type : float64_ptr_type;
    }
    if(!use_internal || _version->ieee_format())
    {
-      return tree_helper::Size(type) == 32 ? float32_type : float64_type;
+      return ir_helper::Size(type) == 32 ? float32_type : float64_type;
    }
    else
    {
@@ -960,120 +986,90 @@ tree_nodeRef soft_float_cg_ext::int_type_for(const tree_nodeRef& type, bool use_
    }
 }
 
-bool soft_float_cg_ext::signature_lowering(function_decl* f_decl) const
+bool soft_float_cg_ext::signature_lowering(function_val_node* f_decl) const
 {
 #ifndef NDEBUG
-   const auto f_name = tree_helper::print_type(TreeM, f_decl->index, false, true, false, 0U,
-                                               var_pp_functorConstRef(new std_var_pp_functor(
-                                                   AppM->CGetFunctionBehavior(f_decl->index)->CGetBehavioralHelper())));
+   const auto f_name = ir_helper::PrintType(
+       IRM->GetIRNode(f_decl->index), true, false, ir_nodeRef(),
+       std::make_unique<std_var_pp_functor>(AppM->CGetFunctionBehavior(f_decl->index)->CGetBehavioralHelper()));
 #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing function signature " + f_name);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    bool changed_parm = false, changed_type = false;
-   const auto decl_type = f_decl->type;
-   const auto is_ptr_type = decl_type->get_kind() == pointer_type_K;
-   // Tree node decoupling is necessary when directly modifying a type node
+   THROW_ASSERT(ir_helper::IsFunctionType(f_decl->type) || ir_helper::IsFunctionPointerType(f_decl->type),
+                "unexpected pattern");
+   const auto is_orig_ftype_ptr = ir_helper::IsPointerType(f_decl->type);
+   const auto orig_ftype = is_orig_ftype_ptr ? GetPointerS<const pointer_ty_node>(f_decl->type)->ptd : f_decl->type;
+   // IR node decoupling is necessary when directly modifying a type node
    CustomUnorderedMapStable<unsigned int, unsigned int> remapping;
-   const auto dup_ft = tree_node_dup(remapping, AppM)
-                           .create_tree_node(is_ptr_type ? GetPointerS<pointer_type>(decl_type)->ptd : decl_type,
-                                             tree_node_dup_mode::RENAME);
-   const auto f_type = TreeM->GetTreeNode(dup_ft);
+   const auto dup_ft = ir_node_dup(remapping, AppM).create_ir_node(orig_ftype, ir_node_dup_mode::FUNCTION);
+   const auto f_type = IRM->GetIRNode(dup_ft);
 
-   tree_list* prms = nullptr;
-   if(tree_helper::IsFunctionType(f_type))
+   auto* ft = GetPointerS<function_ty_node>(f_type);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing return type " + ft->retn->ToString());
+   if(ir_helper::IsRealType(ft->retn))
    {
-      const auto ft = GetPointerS<function_type>(f_type);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing return type " + ft->retn->ToString());
-      if(tree_helper::IsRealType(ft->retn))
-      {
-         const auto int_ret = int_type_for(ft->retn, _version->internal);
-         const auto ret_type = GetPointerS<const type_node>(int_ret);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Return type lowered to " + ret_type->ToString() + " " + STR(tree_helper::Size(int_ret)));
-         ft->retn = int_ret;
-         ft->algn = ret_type->algn;
-         ft->qual = ret_type->qual;
-         ft->size = ret_type->size;
-         changed_type = true;
-      }
-      prms = ft->prms ? GetPointerS<tree_list>(ft->prms) : nullptr;
+      const auto int_ret = int_type_for(ft->retn, _version->internal);
+      const auto ret_type = GetPointerS<const type_node>(int_ret);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---Return type lowered to " + ret_type->ToString() + " " + STR(ir_helper::Size(int_ret)));
+      ft->retn = int_ret;
+      ft->algn = ret_type->algn;
+      ft->bitsizealloc = ret_type->bitsizealloc;
+      changed_type = true;
    }
-
+   auto args_type_it = ft->list_of_args_type.begin();
+   THROW_ASSERT(args_type_it != ft->list_of_args_type.end() || f_decl->list_of_args.empty(), "unexpected pattern");
    for(const auto& arg : f_decl->list_of_args)
    {
-      const auto pd = GetPointerS<parm_decl>(arg);
+      const auto pd = GetPointerS<argument_val_node>(arg);
       const auto& parm_type = pd->type;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "Analysing parameter " + pd->ToString() + " of type " + STR(parm_type));
-      if((tree_helper::IsPointerType(parm_type) && tree_helper::IsRealType(tree_helper::CGetPointedType(parm_type))) ||
-         tree_helper::IsRealType(parm_type))
+      if((ir_helper::IsPointerType(parm_type) && ir_helper::IsRealType(ir_helper::CGetPointedType(parm_type))) ||
+         ir_helper::IsRealType(parm_type))
       {
          const auto int_parm_type = int_type_for(parm_type, _version->internal);
          const auto parm_int_type = GetPointerS<const type_node>(int_parm_type);
          pd->algn = parm_int_type->algn;
-         pd->argt = int_parm_type;
-         pd->packed_flag = parm_int_type->packed_flag;
          pd->type = int_parm_type;
-         if(prms)
-         {
-            prms->valu = int_parm_type;
-            changed_type = true;
-         }
+         *args_type_it = int_parm_type;
+         changed_type = true;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Parameter type lowered to " + STR(int_parm_type) + " " +
-                            STR(tree_helper::Size(int_parm_type)));
+                            STR(ir_helper::Size(int_parm_type)));
          changed_parm = true;
       }
-      prms = prms ? (prms->chan ? GetPointerS<tree_list>(prms->chan) : nullptr) : nullptr;
+      ++args_type_it;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    if(changed_type)
    {
       // Replace function type reference when modifications have been applied
-      f_decl->type = is_ptr_type ? tree_man->GetPointerType(f_type) : f_type;
+      f_decl->type = is_orig_ftype_ptr ? ir_man->GetPointerType(f_type) : f_type;
    }
    return changed_parm || changed_type;
 }
 
-void soft_float_cg_ext::ssa_lowering(ssa_name* ssa, bool internal_type) const
+void soft_float_cg_ext::ssa_lowering(ssa_node* ssa, bool internal_type) const
 {
    THROW_ASSERT(lowering_needed(ssa), "Unexpected ssa type - " + ssa->ToString() + " " + STR(ssa->type));
    const auto vc_type = int_type_for(ssa->type, internal_type);
    THROW_ASSERT(vc_type, "");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Lowering " + ssa->ToString() + " type to " + STR(vc_type));
 
-   const auto defStmt = ssa->CGetDefStmt();
-   const auto def = GetPointer<gimple_assign>(defStmt);
+   const auto defStmt = ssa->GetDefStmt();
+   const auto def = GetPointer<assign_stmt>(defStmt);
    if(def)
    {
-      const auto ue = GetPointer<unary_expr>(def->op1);
+      const auto ue = GetPointer<unary_node>(def->op1);
       if(ue)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Definition statement before - " + def->ToString());
-         if(ue->get_kind() == view_convert_expr_K)
+         if(ue->get_kind() == bitcast_node_K)
          {
-            const auto nop = tree_man->create_unary_operation(vc_type, ue->op, BUILTIN_SRCP, nop_expr_K);
-            TreeM->ReplaceTreeNode(defStmt, def->op1, nop);
-         }
-         else if(ue->get_kind() == imagpart_expr_K || ue->get_kind() == realpart_expr_K)
-         {
-            const auto ssa_node = TreeM->GetTreeNode(ssa->index);
-            const auto def_bb = GetPointerS<statement_list>(fd->body)->list_of_bloc.at(def->bb_index);
-            const auto vc = tree_man->create_unary_operation(vc_type, ssa_node, BUILTIN_SRCP, view_convert_expr_K);
-            const auto vc_stmt =
-                tree_man->CreateGimpleAssign(vc_type, tree_nodeRef(), tree_nodeRef(), vc, function_id, BUILTIN_SRCP);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Inserting view-convert operation after complex part expression - " +
-                               vc_stmt->ToString());
-            const auto lowered_ssa = GetPointerS<gimple_assign>(vc_stmt)->op0;
-
-            const auto ssa_uses = ssa->CGetUseStmts();
-            for(const auto& stmt_uses : ssa_uses)
-            {
-               TreeM->ReplaceTreeNode(stmt_uses.first, ssa_node, lowered_ssa);
-            }
-            def_bb->PushAfter(vc_stmt, defStmt, AppM);
-            return;
+            const auto nop = ir_man->create_unary_operation(vc_type, ue->op, BUILTIN_LOCINFO, nop_node_K);
+            IRM->ReplaceIRNode(defStmt, def->op1, nop);
          }
          else
          {
@@ -1088,9 +1084,9 @@ void soft_float_cg_ext::ssa_lowering(ssa_name* ssa, bool internal_type) const
    }
 
    ssa->type = vc_type;
-   if(ssa->var && ssa->var->get_kind() != parm_decl_K)
+   if(ssa->var && ssa->var->get_kind() != argument_val_node_K)
    {
-      const auto vd = GetPointer<var_decl>(ssa->var);
+      const auto vd = GetPointer<variable_val_node>(ssa->var);
       THROW_ASSERT(vd, "SSA name associated variable is espected to be a variable declaration " +
                            ssa->var->get_kind_text() + " " + ssa->var->ToString());
       if(vd->type->index != ssa->type->index)
@@ -1099,7 +1095,6 @@ void soft_float_cg_ext::ssa_lowering(ssa_name* ssa, bool internal_type) const
                         "---Variable declaration before - " + vd->ToString() + " " + vd->type->ToString());
          const auto var_int_type = GetPointerS<type_node>(vc_type);
          vd->algn = var_int_type->algn;
-         vd->packed_flag = var_int_type->packed_flag;
          vd->type = vc_type;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Variable declaration after - " + vd->ToString() + " " + vd->type->ToString());
@@ -1113,11 +1108,11 @@ void soft_float_cg_ext::ssa_lowering(ssa_name* ssa, bool internal_type) const
 
    for(const auto& use_count : ssa->CGetUseStmts())
    {
-      const auto* ga = GetPointer<const gimple_assign>(use_count.first);
+      const auto* ga = GetPointer<const assign_stmt>(use_count.first);
       if(ga)
       {
          // Unary and binary expression have already been lowered to function calls
-         auto* te = GetPointer<ternary_expr>(ga->op1);
+         auto* te = GetPointer<ternary_node>(ga->op1);
          if(te)
          {
             te->type = vc_type;
@@ -1126,7 +1121,7 @@ void soft_float_cg_ext::ssa_lowering(ssa_name* ssa, bool internal_type) const
    }
 }
 
-tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inFF, const FloatFormatRef& outFF) const
+ir_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inFF, const FloatFormatRef& outFF) const
 {
    uint64_t Sign, Exp, Frac;
 
@@ -1299,68 +1294,68 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inF
       out_val |= FSign;
    }
 
-   return TreeM->CreateUniqueIntegerCst(
+   return IRM->CreateUniqueIntegerCst(
        static_cast<int64_t>(out_val),
-       tree_man->GetCustomIntegerType(static_cast<unsigned int>(static_cast<uint8_t>(outFF->sign == bit_lattice::U) +
-                                                                outFF->exp_bits + outFF->frac_bits),
-                                      true));
+       ir_man->GetCustomIntegerType(static_cast<unsigned int>(static_cast<uint8_t>(outFF->sign == bit_lattice::U) +
+                                                              outFF->exp_bits + outFF->frac_bits),
+                                    true));
 }
 
 #define FLOAT_CAST_FU_NAME "__float_cast"
 
-tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeRef stmt, const tree_nodeRef& ssa,
-                                                   const FloatFormatRef inFF, const FloatFormatRef outFF) const
+ir_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, ir_nodeRef stmt, const ir_nodeRef& ssa,
+                                                 const FloatFormatRef inFF, const FloatFormatRef outFF) const
 {
-   static const auto default_bool_type = tree_man->GetBooleanType();
-   static const auto default_int_type = tree_man->GetSignedIntegerType();
+   static const auto default_bool_type = ir_man->GetBooleanType();
+   static const auto default_int_type = ir_man->GetSignedIntegerType();
 
 #if HAVE_ASSERTS
-   const auto t_kind = tree_helper::CGetType(ssa)->get_kind();
+   const auto t_kind = ir_helper::CGetType(ssa)->get_kind();
 #endif
-   THROW_ASSERT(t_kind == integer_type_K,
-                "Cast rename should be applied on integer variables only. " + tree_node::GetString(t_kind));
+   THROW_ASSERT(t_kind == integer_ty_node_K,
+                "Cast rename should be applied on integer variables only. " + ir_node::GetString(t_kind));
    THROW_ASSERT(inFF, "Interface input float format must be defined.");
    THROW_ASSERT(outFF, "Interface output float format must be defined.");
 
-   const auto float_cast = TreeM->GetFunction(FLOAT_CAST_FU_NAME);
+   const auto float_cast = IRM->GetFunction(FLOAT_CAST_FU_NAME);
    THROW_ASSERT(float_cast, "The library miss this function " FLOAT_CAST_FU_NAME);
    const auto spec_suffix = inFF->ToString() + "_to_" + outFF->ToString();
-   auto spec_function = TreeM->GetFunction(FLOAT_CAST_FU_NAME + spec_suffix);
+   auto spec_function = IRM->GetFunction(FLOAT_CAST_FU_NAME + spec_suffix);
    if(!spec_function)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "---Generating specialized version of " FLOAT_CAST_FU_NAME " (" + STR(float_cast->index) +
                          ") with fp format " + spec_suffix);
-      spec_function = tree_man->CloneFunction(float_cast, spec_suffix);
+      spec_function = ir_man->CloneFunction(float_cast, spec_suffix);
       THROW_ASSERT(spec_function, "Error cloning function " FLOAT_CAST_FU_NAME " (" + STR(float_cast->index) + ").");
    }
-   const std::vector<tree_nodeRef> args = {
+   const std::vector<ir_nodeRef> args = {
        ssa,
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->exp_bits), default_int_type),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->frac_bits), default_int_type),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->exp_bias), default_int_type),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->rounding_mode), default_int_type),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->exception_mode), default_int_type),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->has_one), default_bool_type),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->has_subnorm), default_bool_type),
-       TreeM->CreateUniqueIntegerCst(
+       IRM->CreateUniqueIntegerCst(static_cast<long long>(inFF->exp_bits), default_int_type),
+       IRM->CreateUniqueIntegerCst(static_cast<long long>(inFF->frac_bits), default_int_type),
+       IRM->CreateUniqueIntegerCst(static_cast<long long>(inFF->exp_bias), default_int_type),
+       IRM->CreateUniqueIntegerCst(static_cast<long long>(inFF->rounding_mode), default_int_type),
+       IRM->CreateUniqueIntegerCst(static_cast<long long>(inFF->exception_mode), default_int_type),
+       IRM->CreateUniqueIntegerCst(static_cast<long long>(inFF->has_one), default_bool_type),
+       IRM->CreateUniqueIntegerCst(static_cast<long long>(inFF->has_subnorm), default_bool_type),
+       IRM->CreateUniqueIntegerCst(
            static_cast<long long>(inFF->sign == bit_lattice::U ? -1 : (inFF->sign == bit_lattice::ONE ? 1 : 0)),
            default_int_type),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->exp_bits), default_int_type),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->frac_bits), default_int_type),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->exp_bias), default_int_type),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->rounding_mode), default_int_type),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->exception_mode), default_int_type),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->has_one), default_bool_type),
-       TreeM->CreateUniqueIntegerCst(static_cast<long long>(outFF->has_subnorm), default_bool_type),
-       TreeM->CreateUniqueIntegerCst(
+       IRM->CreateUniqueIntegerCst(static_cast<long long>(outFF->exp_bits), default_int_type),
+       IRM->CreateUniqueIntegerCst(static_cast<long long>(outFF->frac_bits), default_int_type),
+       IRM->CreateUniqueIntegerCst(static_cast<long long>(outFF->exp_bias), default_int_type),
+       IRM->CreateUniqueIntegerCst(static_cast<long long>(outFF->rounding_mode), default_int_type),
+       IRM->CreateUniqueIntegerCst(static_cast<long long>(outFF->exception_mode), default_int_type),
+       IRM->CreateUniqueIntegerCst(static_cast<long long>(outFF->has_one), default_bool_type),
+       IRM->CreateUniqueIntegerCst(static_cast<long long>(outFF->has_subnorm), default_bool_type),
+       IRM->CreateUniqueIntegerCst(
            static_cast<long long>(outFF->sign == bit_lattice::U ? -1 : (outFF->sign == bit_lattice::ONE ? 1 : 0)),
            default_int_type),
    };
-   const auto float_cast_call = tree_man->CreateCallExpr(spec_function, args, BUILTIN_SRCP);
-   const auto ret_type = tree_helper::GetFunctionReturnType(spec_function);
-   const auto cast_stmt = tree_man->CreateGimpleAssign(ret_type, tree_nodeConstRef(), tree_nodeConstRef(),
-                                                       float_cast_call, function_id, BUILTIN_SRCP);
+   const auto float_cast_call = ir_man->CreateCallExpr(spec_function, args, BUILTIN_LOCINFO);
+   const auto ret_type = ir_helper::GetFunctionReturnType(spec_function);
+   const auto cast_stmt = ir_man->CreateAssignStmt(ret_type, ir_nodeConstRef(), ir_nodeConstRef(), float_cast_call,
+                                                   function_id, BUILTIN_LOCINFO);
    if(stmt == nullptr)
    {
       bb->PushFront(cast_stmt, AppM);
@@ -1369,16 +1364,15 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    {
       bb->PushAfter(cast_stmt, stmt, AppM);
    }
-   auto out_var = GetPointer<const gimple_assign>(cast_stmt)->op0;
+   auto out_var = GetPointer<const assign_stmt>(cast_stmt)->op0;
    const auto out_type =
-       tree_man->GetCustomIntegerType(static_cast<unsigned int>(static_cast<uint8_t>(outFF->sign == bit_lattice::U) +
-                                                                outFF->exp_bits + outFF->frac_bits),
-                                      true);
-   if(!tree_helper::IsSameType(ret_type, out_type))
+       ir_man->GetCustomIntegerType(static_cast<unsigned int>(static_cast<uint8_t>(outFF->sign == bit_lattice::U) +
+                                                              outFF->exp_bits + outFF->frac_bits),
+                                    true);
+   if(!ir_helper::IsSameType(ret_type, out_type))
    {
-      const auto nop_stmt =
-          tree_man->CreateNopExpr(out_var, out_type, tree_nodeConstRef(), tree_nodeConstRef(), function_id);
-      out_var = GetPointer<const gimple_assign>(nop_stmt)->op0;
+      const auto nop_stmt = ir_man->CreateNopExpr(out_var, out_type, ir_nodeConstRef(), ir_nodeConstRef(), function_id);
+      out_var = GetPointer<const assign_stmt>(nop_stmt)->op0;
       bb->PushAfter(nop_stmt, cast_stmt, AppM);
    }
    if(inline_conversion)
@@ -1387,7 +1381,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    }
 
    // Update functions float format map
-   const auto called_func_vertex = AppM->CGetCallGraphManager()->GetVertex(spec_function->index);
+   const auto called_func_vertex = AppM->CGetCallGraphManager().GetVertex(spec_function->index);
    const auto calledFF = FunctionVersionRef(new FunctionVersion(called_func_vertex, inFF));
 #if HAVE_ASSERTS
    const auto res =
@@ -1399,14 +1393,14 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    return out_var;
 }
 
-tree_nodeRef soft_float_cg_ext::floatNegate(const tree_nodeRef& op, const FloatFormatRef& ff) const
+ir_nodeRef soft_float_cg_ext::floatNegate(const ir_nodeRef& op, const FloatFormatRef& ff) const
 {
    if(ff->sign == bit_lattice::U)
    {
-      const auto int_ff_type = tree_man->GetCustomIntegerType(1U + ff->exp_bits + ff->frac_bits, true);
-      return tree_man->create_binary_operation(
-          int_ff_type, op, TreeM->CreateUniqueIntegerCst(1LL << (ff->exp_bits + ff->frac_bits), int_ff_type),
-          BUILTIN_SRCP, bit_xor_expr_K);
+      const auto int_ff_type = ir_man->GetCustomIntegerType(1U + ff->exp_bits + ff->frac_bits, true);
+      return ir_man->create_binary_operation(
+          int_ff_type, op, IRM->CreateUniqueIntegerCst(1LL << (ff->exp_bits + ff->frac_bits), int_ff_type),
+          BUILTIN_LOCINFO, xor_node_K);
    }
    else
    {
@@ -1415,75 +1409,78 @@ tree_nodeRef soft_float_cg_ext::floatNegate(const tree_nodeRef& op, const FloatF
    }
 }
 
-tree_nodeRef soft_float_cg_ext::floatAbs(const tree_nodeRef& op, const FloatFormatRef& ff) const
+ir_nodeRef soft_float_cg_ext::floatAbs(const ir_nodeRef& op, const FloatFormatRef& ff) const
 {
    if(ff->sign == bit_lattice::U)
    {
-      const auto int_ff_type = tree_man->GetCustomIntegerType(1U + ff->exp_bits + ff->frac_bits, true);
-      return tree_man->create_binary_operation(
-          int_ff_type, op, TreeM->CreateUniqueIntegerCst((1LL << (ff->exp_bits + ff->frac_bits)) - 1, int_ff_type),
-          BUILTIN_SRCP, bit_and_expr_K);
+      const auto int_ff_type = ir_man->GetCustomIntegerType(1U + ff->exp_bits + ff->frac_bits, true);
+      return ir_man->create_binary_operation(
+          int_ff_type, op, IRM->CreateUniqueIntegerCst((1LL << (ff->exp_bits + ff->frac_bits)) - 1, int_ff_type),
+          BUILTIN_LOCINFO, and_node_K);
    }
-   else if(ff->sign == bit_lattice::ONE)
+   if(ff->sign == bit_lattice::ONE)
    {
       // Fixed positive sign representation is always positive already
       return op;
    }
-   else
-   {
-      THROW_ERROR("Negate operation on fixed negative sign type will flatten all values.");
-      return nullptr;
-   }
+   THROW_ERROR("Negate operation on fixed negative sign type will flatten all values.");
+   return nullptr;
 }
 
-void soft_float_cg_ext::replaceWithCall(const FloatFormatRef& specFF, const std::string& fu_name,
-                                        std::vector<tree_nodeRef> args, const tree_nodeRef& current_statement,
-                                        const tree_nodeRef& current_tree_node, const std::string& current_srcp)
+ir_nodeRef soft_float_cg_ext::replaceWithCall(const FloatFormatRef& specFF, const std::string& fu_name,
+                                              std::vector<ir_nodeRef> args, const ir_nodeRef& current_statement,
+                                              const ir_nodeRef& curr_tn, const std::string& current_locinfo)
 {
    THROW_ASSERT(specFF, "FP format specialization missing");
 
-   auto called_function = TreeM->GetFunction(fu_name);
-   THROW_ASSERT(called_function, "The library miss this function " + fu_name);
+   auto called_function = IRM->GetFunction(fu_name);
+   if(!called_function)
+   {
+      THROW_ERROR("undefined symbol: " + fu_name);
+   }
    const auto spec_suffix = specFF->ToString();
-   auto spec_function = TreeM->GetFunction(fu_name + spec_suffix);
+   auto spec_function = IRM->GetFunction(fu_name + spec_suffix);
    if(!spec_function)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "---Generating specialized version of " + fu_name + " (" + STR(called_function->index) +
                          ") with fp format " + spec_suffix);
-      spec_function = tree_man->CloneFunction(called_function, spec_suffix);
+      spec_function = ir_man->CloneFunction(called_function, spec_suffix);
       THROW_ASSERT(spec_function, "Error cloning function " + fu_name + " (" + STR(called_function->index) + ").");
+      THROW_ASSERT(ir_helper::IsFunctionImplemented(spec_function), "Cloned function " + fu_name + " has no body");
+   }
+   auto& spec_parms = spec_parms_map[spec_suffix];
+   if(!spec_parms[0])
+   {
+      const auto default_bool_type = ir_man->GetBooleanType();
+      const auto default_int_type = ir_man->GetSignedIntegerType();
 
-      auto& version_args = versioning_args[spec_function->index];
-      static const auto default_bool_type = tree_man->GetBooleanType();
-      static const auto default_int_type = tree_man->GetSignedIntegerType();
-
-      version_args[0] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->exp_bits), default_int_type);
-      version_args[1] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->frac_bits), default_int_type);
-      version_args[2] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->exp_bias), default_int_type);
-      version_args[3] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->rounding_mode), default_int_type);
-      version_args[4] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->exception_mode), default_int_type);
-      version_args[5] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->has_one), default_bool_type);
-      version_args[6] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->has_subnorm), default_bool_type);
-      version_args[7] = TreeM->CreateUniqueIntegerCst(
+      spec_parms[0] = IRM->CreateUniqueIntegerCst(static_cast<long long>(specFF->exp_bits), default_int_type);
+      spec_parms[1] = IRM->CreateUniqueIntegerCst(static_cast<long long>(specFF->frac_bits), default_int_type);
+      spec_parms[2] = IRM->CreateUniqueIntegerCst(static_cast<long long>(specFF->exp_bias), default_int_type);
+      spec_parms[3] = IRM->CreateUniqueIntegerCst(static_cast<long long>(specFF->rounding_mode), default_int_type);
+      spec_parms[4] = IRM->CreateUniqueIntegerCst(static_cast<long long>(specFF->exception_mode), default_int_type);
+      spec_parms[5] = IRM->CreateUniqueIntegerCst(static_cast<long long>(specFF->has_one), default_bool_type);
+      spec_parms[6] = IRM->CreateUniqueIntegerCst(static_cast<long long>(specFF->has_subnorm), default_bool_type);
+      spec_parms[7] = IRM->CreateUniqueIntegerCst(
           static_cast<long long>(specFF->sign == bit_lattice::U ? -1 : (specFF->sign == bit_lattice::ONE ? 1 : 0)),
           default_int_type);
    }
-   THROW_ASSERT(static_cast<bool>(versioning_args.count(spec_function->index)),
-                "Static arguments for specialization parameters of " + fu_name + spec_suffix + " (" +
-                    STR(spec_function->index) + ") where not specified.");
-   std::copy(versioning_args.at(spec_function->index).begin(), versioning_args.at(spec_function->index).end(),
-             std::back_inserter(args));
+   std::copy(spec_parms.begin(), spec_parms.end(), std::back_inserter(args));
    called_function = spec_function;
-   TreeM->ReplaceTreeNode(current_statement, current_tree_node,
-                          tree_man->CreateCallExpr(called_function, args, current_srcp));
+   const auto stmt = GetPointer<node_stmt>(current_statement);
+   if(stmt && !stmt->predicate)
+   {
+      stmt->predicate = IRM->CreateUniqueIntegerCst(1, ir_man->GetBooleanType());
+   }
+   IRM->ReplaceIRNode(current_statement, curr_tn, ir_man->CreateCallExpr(called_function, args, current_locinfo));
    CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index,
                                            current_statement->index, FunctionEdgeInfo::CallType::direct_call,
                                            DEBUG_LEVEL_NONE);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added call point for " + STR(called_function->index));
 
    // Update functions float format map
-   const auto called_func_vertex = AppM->CGetCallGraphManager()->GetVertex(called_function->index);
+   const auto called_func_vertex = AppM->CGetCallGraphManager().GetVertex(called_function->index);
    const auto calledFF = FunctionVersionRef(new FunctionVersion(called_func_vertex, specFF));
 #if HAVE_ASSERTS
    const auto res =
@@ -1492,34 +1489,34 @@ void soft_float_cg_ext::replaceWithCall(const FloatFormatRef& specFF, const std:
    THROW_ASSERT(res.second || res.first->second->compare(*calledFF, true) == 0,
                 "Same function registered with different formats: " + res.first->second->ToString() + " and " +
                     calledFF->ToString() + " (" + fu_name + ")");
+   return called_function;
 }
 
-bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement, const tree_nodeRef& current_tree_node,
+bool soft_float_cg_ext::RecursiveExaminate(const ir_nodeRef& current_statement, const ir_nodeRef& curr_tn,
                                            int type_interface)
 {
    THROW_ASSERT((type_interface & 3) == INTERFACE_TYPE_NONE || (type_interface & 3) == INTERFACE_TYPE_INPUT ||
                     (type_interface & 3) == INTERFACE_TYPE_OUTPUT,
                 "Required interface type must be unique (" + STR(type_interface) + ")");
-   const auto curr_tn = current_tree_node;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Update recursively (ti=" + STR(type_interface) + ") (" + STR(current_tree_node->index) + " " +
-                      curr_tn->get_kind_text() + ") " + STR(current_tree_node));
-   const auto current_srcp = [curr_tn]() -> std::string {
-      const auto srcp_tn = GetPointer<const srcp>(curr_tn);
-      if(srcp_tn)
+                  "-->Update recursively (ti=" + STR(type_interface) + ") (" + STR(curr_tn->index) + " " +
+                      curr_tn->get_kind_text() + ") " + STR(curr_tn));
+   const auto current_locinfo = [curr_tn]() -> std::string {
+      const auto loc_info_tn = GetPointer<const IR_LocInfo>(curr_tn);
+      if(loc_info_tn)
       {
-         return srcp_tn->include_name + ":" + STR(srcp_tn->line_number) + ":" + STR(srcp_tn->column_number);
+         return loc_info_tn->include_name + ":" + STR(loc_info_tn->line_number) + ":" + STR(loc_info_tn->column_number);
       }
       return "";
    }();
    bool modified = false;
-   const auto is_internal_call = [&](const tree_nodeRef& fn) -> bool {
-      static const auto mcpy_node = TreeM->GetFunction(MEMCPY);
-      static const auto mset_node = TreeM->GetFunction(MEMSET);
-      const auto fn_fd = GetPointerS<function_decl>(fn);
+   const auto is_internal_call = [&](const ir_nodeRef& fn) -> bool {
+      static const auto mcpy_node = IRM->GetFunction(MEMCPY);
+      static const auto mset_node = IRM->GetFunction(MEMSET);
+      const auto fn_fd = GetPointerS<function_val_node>(fn);
       if(!fn_fd->body)
       {
-         if(!_version->ieee_format() && tree_helper::print_function_name(TreeM, fn_fd) == BUILTIN_WAIT_CALL)
+         if(!_version->ieee_format() && ir_helper::GetFunctionName(fn) == BUILTIN_WAIT_CALL)
          {
             THROW_UNREACHABLE("Function pointers not supported from user defined floating point format functions");
             // TODO: maybe it could be possible to only warn the user here to be careful about the pointed function
@@ -1527,7 +1524,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
          }
          return _version->ieee_format();
       }
-      const auto fn_v = AppM->CGetCallGraphManager()->GetVertex(fn->index);
+      const auto fn_v = AppM->CGetCallGraphManager().GetVertex(fn->index);
       const auto ff_it = funcFF.find(fn_v);
       if(ff_it != funcFF.end())
       {
@@ -1540,17 +1537,17 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
       THROW_UNREACHABLE("");
       return false;
    };
-   const auto ExaminateFunctionCall = [&](tree_nodeRef fn) -> int {
-      const auto ae = GetPointer<addr_expr>(fn);
+   const auto ExaminateFunctionCall = [&](ir_nodeRef fn) -> int {
+      const auto ae = GetPointer<addr_node>(fn);
       if(ae)
       {
          fn = ae->op;
-         const auto called_fd = GetPointerS<const function_decl>(fn);
-         ae->type = called_fd->type->get_kind() == pointer_type_K ? called_fd->type :
-                                                                    tree_man->GetPointerType(called_fd->type);
+         const auto called_fd = GetPointerS<const function_val_node>(fn);
+         ae->type = called_fd->type->get_kind() == pointer_ty_node_K ? called_fd->type :
+                                                                       ir_man->GetPointerType(called_fd->type);
          modified = true;
       }
-      if(tree_helper::print_function_name(TreeM, GetPointerS<const function_decl>(fn)) == BUILTIN_WAIT_CALL)
+      if(ir_helper::GetFunctionName(fn) == BUILTIN_WAIT_CALL)
       {
          if(_version->ieee_format())
          {
@@ -1562,9 +1559,9 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
       }
 
       int type_i = is_internal_call(fn) ? INTERFACE_TYPE_NONE : INTERFACE_TYPE_OUTPUT;
-      // Hardware implemented functions need arguments to still be real_type, thus it is necessary to add a view_convert
+      // Hardware implemented functions need arguments to still be real_ty_node, thus it is necessary to add a bitcast
       // operation before
-      if(AppM->get_tree_manager()->get_implementation_node(fn->index) == 0)
+      if(!ir_helper::IsFunctionImplemented(fn))
       {
          type_i |= INTERFACE_TYPE_REAL;
       }
@@ -1572,10 +1569,9 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
    };
    switch(curr_tn->get_kind())
    {
-      case call_expr_K:
-      case aggr_init_expr_K:
+      case call_node_K:
       {
-         const auto ce = GetPointerS<const call_expr>(curr_tn);
+         const auto ce = GetPointerS<const call_node>(curr_tn);
          type_interface = ExaminateFunctionCall(ce->fn);
          for(const auto& arg : ce->args)
          {
@@ -1583,9 +1579,9 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
          }
          break;
       }
-      case gimple_call_K:
+      case call_stmt_K:
       {
-         const auto ce = GetPointerS<const gimple_call>(curr_tn);
+         const auto ce = GetPointerS<const call_stmt>(curr_tn);
          type_interface = ExaminateFunctionCall(ce->fn);
          for(const auto& arg : ce->args)
          {
@@ -1593,9 +1589,9 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
          }
          break;
       }
-      case gimple_phi_K:
+      case phi_stmt_K:
       {
-         const auto gp = GetPointerS<const gimple_phi>(curr_tn);
+         const auto gp = GetPointerS<const phi_stmt>(curr_tn);
          RecursiveExaminate(current_statement, gp->res, type_interface);
          for(const auto& de : gp->CGetDefEdgesList())
          {
@@ -1603,28 +1599,44 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
          }
          break;
       }
-      case gimple_assign_K:
+      case assign_stmt_K:
       {
-         const auto ga = GetPointerS<const gimple_assign>(curr_tn);
+         const auto ga = GetPointerS<const assign_stmt>(curr_tn);
          const auto rhs_type = ga->op1->get_kind();
-         if(rhs_type == call_expr_K || rhs_type == aggr_init_expr_K)
+         if(rhs_type == call_node_K)
          {
-            const auto ce = GetPointerS<const call_expr>(ga->op1);
-            const auto fn = GetPointer<const addr_expr>(ce->fn) ? GetPointerS<const addr_expr>(ce->fn)->op : ce->fn;
-            const auto fname = tree_helper::print_function_name(TreeM, GetPointerS<const function_decl>(fn));
+            const auto ce = GetPointerS<const call_node>(ga->op1);
+            const auto fn = GetPointer<const addr_node>(ce->fn) ? GetPointerS<const addr_node>(ce->fn)->op : ce->fn;
+            const auto fname = ir_helper::GetFunctionName(fn);
             bool is_f32 = false;
-            const auto tf_fname = strip_fname(fname, &is_f32);
-            if(supported_libm_calls.count(tf_fname))
+            const auto fname_id = strip_fname(fname, &is_f32);
+            if(truefloat_funcs.count(fname))
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Replacing TrueFloat API call with specialized version");
+               THROW_ASSERT(ce->args.size() >= 8, "unexpected condition");
+               AppM->GetCallGraphManager().RemoveCallPoint(function_id, fn->index, current_statement->index);
+               const auto specFF = FloatFormat::FromArgs(ce->args);
+               const auto tf_name = fname == "__float_divSRT4" && function_behavior->is_function_pipelined() ?
+                                        "__float_divSRT4U" :
+                                        fname;
+               replaceWithCall(specFF, tf_name, std::vector<ir_nodeRef>(ce->args.begin(), ce->args.end() - 8),
+                               current_statement, ga->op1, current_locinfo);
+               RecursiveExaminate(current_statement, ga->op0, INTERFACE_TYPE_NONE);
+               modified = true;
+            }
+            else if(spec_libm_funcs.count(fname_id))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Replacing libm call with templatized version");
                // libm function calls may be replaced with their templatized version if available, avoiding conversion
-               AppM->GetCallGraphManager()->RemoveCallPoint(function_id, fn->index, current_statement->index);
-               is_f32 |= !ce->args.empty() && tree_helper::Size(ce->args.front()) == 32;
+               AppM->GetCallGraphManager().RemoveCallPoint(function_id, fn->index, current_statement->index);
+               is_f32 |= !ce->args.empty() && ir_helper::Size(ce->args.front()) == 32;
                const auto specFF = _version->ieee_format() ? (is_f32 ? float32FF : float64FF) : _version->userRequired;
-               replaceWithCall(specFF, "__" + tf_fname, ce->args, current_statement, ga->op1, current_srcp);
+               replaceWithCall(specFF, TF_MATH_PREFIX + fname_id, ce->args, current_statement, ga->op1,
+                               current_locinfo);
                RecursiveExaminate(current_statement, ga->op0, INTERFACE_TYPE_NONE);
-               if(supported_libm_calls_inlined.count(tf_fname))
+               if(spec_libm_funcs_inlined.count(fname_id))
                {
                   FunctionCallOpt::RequestCallOpt(current_statement, function_id, FunctionOptType::INLINE);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call inlining required");
@@ -1637,9 +1649,9 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   // Return values associated to non-internal calls need to be cast renamed to local float format
                   int ti = is_internal_call(fn) ? type_interface : INTERFACE_TYPE_INPUT;
 
-                  // Hardware implemented functions need the return value to still be real_type, thus it is necessary to
-                  // add a view_convert operation after
-                  if(fname != BUILTIN_WAIT_CALL && AppM->get_tree_manager()->get_implementation_node(fn->index) == 0)
+                  // Hardware implemented functions need the return value to still be real_ty_node, thus it is necessary
+                  // to add a bitcast operation after
+                  if(fname != BUILTIN_WAIT_CALL && !ir_helper::IsFunctionImplemented(fn))
                   {
                      ti |= INTERFACE_TYPE_REAL;
                   }
@@ -1648,7 +1660,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                RecursiveExaminate(current_statement, ga->op0, type_i);
             }
          }
-         else if(tree_helper::IsLoad(current_statement, function_behavior->get_function_mem()))
+         else if(ir_helper::IsLoad(current_statement, function_behavior->get_function_mem()))
          {
             // Values loaded from memory need to be cast renamed to local float format
             RecursiveExaminate(current_statement, ga->op0, INTERFACE_TYPE_INPUT);
@@ -1657,7 +1669,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
          {
             RecursiveExaminate(current_statement, ga->op0, type_interface);
          }
-         if(tree_helper::IsStore(current_statement, function_behavior->get_function_mem()))
+         if(ir_helper::IsStore(current_statement, function_behavior->get_function_mem()))
          {
             // Values stored to memory need to be cast renamed before the store statement
             RecursiveExaminate(current_statement, ga->op1, INTERFACE_TYPE_OUTPUT);
@@ -1666,33 +1678,29 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
          {
             RecursiveExaminate(current_statement, ga->op1, type_interface);
          }
-         if(ga->predicate)
-         {
-            RecursiveExaminate(current_statement, ga->predicate, type_interface);
-         }
          break;
       }
-      case gimple_nop_K:
+      case nop_stmt_K:
       {
          break;
       }
-      case var_decl_K:
-      case parm_decl_K:
+      case variable_val_node_K:
+      case argument_val_node_K:
       {
          break;
       }
-      case ssa_name_K:
+      case ssa_node_K:
       {
-         const auto SSA = GetPointerS<ssa_name>(curr_tn);
+         const auto SSA = GetPointerS<ssa_node>(curr_tn);
          if(lowering_needed(SSA))
          {
             // Real variables must all be converted to unsigned integers after softfloat lowering operations
-            viewConvert.insert({SSA, type_interface == INTERFACE_TYPE_NONE});
+            bitcastCandidates.insert({SSA, type_interface == INTERFACE_TYPE_NONE});
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Lowering required for current variable");
 
             if(type_interface & INTERFACE_TYPE_REAL)
             {
-               if(SSA->CGetDefStmt()->index == current_statement->index)
+               if(SSA->GetDefStmt()->index == current_statement->index)
                {
                   hwReturn.push_back(SSA);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Internal input interface required");
@@ -1709,14 +1717,15 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
          if(!bindingCompleted)
          {
             const auto& args = fd->list_of_args;
-            // If ssa_name references a parm_decl and is defined by a gimple_nop, it represents the formal function
-            // parameter inside the function body
-            if(SSA->var != nullptr && SSA->var->get_kind() == parm_decl_K &&
-               SSA->CGetDefStmt()->get_kind() == gimple_nop_K)
+            // If ssa_node references a argument_val_node and is defined by a nop_stmt, it represents the formal
+            // function parameter inside the function body
+            if(SSA->var != nullptr && SSA->var->get_kind() == argument_val_node_K &&
+               SSA->GetDefStmt()->get_kind() == nop_stmt_K)
             {
                auto argIt = std::find_if(args.begin(), args.end(),
-                                         [&](const tree_nodeRef& arg) { return arg->index == SSA->var->index; });
-               THROW_ASSERT(argIt != args.end(), "parm_decl associated with ssa_name not found in function parameters");
+                                         [&](const ir_nodeRef& arg) { return arg->index == SSA->var->index; });
+               THROW_ASSERT(argIt != args.end(),
+                            "argument_val_node associated with ssa_node not found in function parameters");
                const auto arg_pos = static_cast<size_t>(argIt - args.begin());
                THROW_ASSERT(arg_pos < args.size(), "Computed parameter position outside actual parameters number");
                paramBinding[arg_pos] = curr_tn;
@@ -1726,9 +1735,9 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
             }
          }
 
-         if(!_version->ieee_format() && tree_helper::IsRealType(SSA->type))
+         if(!_version->ieee_format() && ir_helper::IsRealType(SSA->type))
          {
-            const auto ssa_ff = tree_helper::Size(SSA->type) == 32 ? float32FF : float64FF;
+            const auto ssa_ff = ir_helper::Size(SSA->type) == 32 ? float32FF : float64FF;
             if((!_version->internal &&
                 std::find(paramBinding.begin(), paramBinding.end(), curr_tn) != paramBinding.end()) ||
                type_interface & INTERFACE_TYPE_INPUT)
@@ -1774,7 +1783,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   const auto oif = outputInterface.find(SSA);
                   if(oif == outputInterface.end())
                   {
-                     outputInterface.insert({SSA, {ssa_ff, std::vector<tree_nodeRef>({current_statement})}});
+                     outputInterface.insert({SSA, {ssa_ff, std::vector<ir_nodeRef>({current_statement})}});
                   }
                   else
                   {
@@ -1788,61 +1797,31 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
 
          break;
       }
-      case tree_list_K:
+      case CASE_UNARY_NODES:
       {
-         auto current = current_tree_node;
-         while(current)
-         {
-            RecursiveExaminate(current_statement, GetPointerS<const tree_list>(current)->valu, type_interface);
-            current = GetPointerS<const tree_list>(current)->chan;
-         }
-         break;
-      }
-      case CASE_UNARY_EXPRESSION:
-      {
-         const auto ue = GetPointerS<const unary_expr>(curr_tn);
+         const auto* ue = GetPointerS<const unary_node>(curr_tn);
          const auto& expr_type = ue->type;
-         const auto op_expr_type = tree_helper::CGetType(ue->op);
+         const auto op_expr_type = ir_helper::CGetType(ue->op);
          // Propagate recursion with INTERFACE_TYPE_NONE to avoid cast rename of internal variables (input parameters
          // and constant will be converted anyway)
          RecursiveExaminate(current_statement, ue->op, INTERFACE_TYPE_NONE);
-         if(tree_helper::IsRealType(expr_type))
+         if(ir_helper::IsRealType(expr_type))
          {
             switch(curr_tn->get_kind())
             {
-               case float_expr_K:
+               case itofp_node_K:
                {
-                  auto bitsize_in = tree_helper::Size(op_expr_type);
-                  if(bitsize_in < 32)
+                  const auto bitsize_in = std::max(32ULL, ceil_pow2(ir_helper::Size(op_expr_type)));
+                  const auto bitsize_out = std::max(32ULL, ceil_pow2(ir_helper::Size(expr_type)));
+                  const auto outFF = bitsize_out == 64 ? float64FF : float32FF;
+                  if(!ir_helper::IsRealType(op_expr_type))
                   {
-                     bitsize_in = 32;
-                  }
-                  else if(bitsize_in > 32 && bitsize_in < 64)
-                  {
-                     bitsize_in = 64;
-                  }
-                  auto bitsize_out = tree_helper::Size(expr_type);
-                  FloatFormatRef outFF;
-                  if(bitsize_out <= 32)
-                  {
-                     bitsize_out = 32;
-                     outFF = float32FF;
-                  }
-                  else if(bitsize_out > 32 && bitsize_out <= 64)
-                  {
-                     bitsize_out = 64;
-                     outFF = float64FF;
-                  }
-                  const auto bitsize_str_in = STR(bitsize_in);
-                  const auto bitsize_str_out = bitsize_out == 96 ? "x80" : STR(bitsize_out);
-                  if(!tree_helper::IsRealType(op_expr_type))
-                  {
-                     const auto is_unsigned = tree_helper::IsUnsignedIntegerType(op_expr_type);
-                     const auto fu_name = "__" + std::string(is_unsigned ? "u" : "") + "int" + bitsize_str_in +
-                                          "_to_float" + bitsize_str_out;
+                     const auto is_unsigned = ir_helper::IsUnsignedIntegerType(op_expr_type);
+                     const auto fu_name =
+                         "__" + std::string(is_unsigned ? "u" : "") + "int" + std::to_string(bitsize_in) + "_to_float";
                      THROW_ASSERT(!_version->ieee_format() || outFF, "");
                      replaceWithCall(_version->ieee_format() ? outFF : _version->userRequired, fu_name, {ue->op},
-                                     current_statement, current_tree_node, current_srcp);
+                                     current_statement, curr_tn, current_locinfo);
                      if(inline_conversion)
                      {
                         FunctionCallOpt::RequestCallOpt(current_statement, function_id, FunctionOptType::INLINE);
@@ -1852,63 +1831,63 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   }
                   break;
                }
-               case view_convert_expr_K:
+               case bitcast_node_K:
                {
-                  // BEAWARE: this view_convert is from integer to real type, thus it will be a def statement of a real
-                  // type ssa_name
-                  //          def statements of real type ssa_name variables will be correctly replaced in the next
+                  // BEWARE: this bitcast is from integer to real type, thus it will be a def statement of a real
+                  // type ssa_node
+                  //          def statements of real type ssa_node variables will be correctly replaced in the next
                   //          phase of this step
                   break;
                }
-               case abs_expr_K:
+               case abs_node_K:
                {
-                  const auto float_size = tree_helper::Size(op_expr_type);
+                  const auto float_size = ir_helper::Size(op_expr_type);
                   THROW_ASSERT(float_size == 32 || float_size == 64,
                                "Unhandled floating point format (size = " + STR(float_size) + ")");
                   const auto ff =
                       _version->ieee_format() ? (float_size == 32 ? float32FF : float64FF) : _version->userRequired;
                   THROW_ASSERT(ff, "Float format should be defined here");
                   const auto float_negate = floatAbs(ue->op, ff);
-                  TreeM->ReplaceTreeNode(current_statement, current_tree_node, float_negate);
+                  IRM->ReplaceIRNode(current_statement, curr_tn, float_negate);
                   modified = true;
                   break;
                }
-               case negate_expr_K:
+               case neg_node_K:
                {
-                  const auto float_size = tree_helper::Size(op_expr_type);
+                  const auto float_size = ir_helper::Size(op_expr_type);
                   THROW_ASSERT(float_size == 32 || float_size == 64,
                                "Unhandled floating point format (size = " + STR(float_size) + ")");
                   const auto ff =
                       _version->ieee_format() ? (float_size == 32 ? float32FF : float64FF) : _version->userRequired;
                   THROW_ASSERT(ff, "Float format should be defined here");
                   const auto float_negate = floatNegate(ue->op, ff);
-                  TreeM->ReplaceTreeNode(current_statement, current_tree_node, float_negate);
+                  IRM->ReplaceIRNode(current_statement, curr_tn, float_negate);
                   modified = true;
                   break;
                }
-               case nop_expr_K:
+               case nop_node_K:
                {
                   if(_version->ieee_format())
                   {
-                     auto bitsize_in = tree_helper::Size(op_expr_type);
-                     auto bitsize_out = tree_helper::Size(expr_type);
+                     auto bitsize_in = ir_helper::Size(op_expr_type);
+                     auto bitsize_out = ir_helper::Size(expr_type);
                      THROW_ASSERT(bitsize_in == 32 || bitsize_in == 64,
                                   "Unhandled input floating point format (size = " + STR(bitsize_in) + ")");
                      THROW_ASSERT(bitsize_out == 32 || bitsize_out == 64,
                                   "Unhandled output floating point format (size = " + STR(bitsize_out) + ")");
-                     if(tree_helper::IsRealType(op_expr_type))
+                     if(ir_helper::IsRealType(op_expr_type))
                      {
                         const auto fu_name = "__float" + STR(bitsize_in) + "_to_float" + STR(bitsize_out) + "_ieee";
                         const auto inFF = bitsize_in == 32 ? float32FF : float64FF;
-                        const auto called_function = TreeM->GetFunction(fu_name);
+                        const auto called_function = IRM->GetFunction(fu_name);
                         THROW_ASSERT(called_function, "The library miss this function " + fu_name);
-                        std::vector<tree_nodeRef> args = {
+                        std::vector<ir_nodeRef> args = {
                             ue->op,
-                            TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->exception_mode),
-                                                          tree_man->GetSignedIntegerType()),
-                            TreeM->CreateUniqueIntegerCst(inFF->has_subnorm, tree_man->GetBooleanType())};
-                        TreeM->ReplaceTreeNode(current_statement, current_tree_node,
-                                               tree_man->CreateCallExpr(called_function, args, current_srcp));
+                            IRM->CreateUniqueIntegerCst(static_cast<long long>(inFF->exception_mode),
+                                                        ir_man->GetSignedIntegerType()),
+                            IRM->CreateUniqueIntegerCst(inFF->has_subnorm, ir_man->GetBooleanType())};
+                        IRM->ReplaceIRNode(current_statement, curr_tn,
+                                           ir_man->CreateCallExpr(called_function, args, current_locinfo));
                         CallGraphManager::addCallPointAndExpand(
                             already_visited, AppM, function_id, called_function->index, current_statement->index,
                             FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
@@ -1923,8 +1902,8 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                      else
                      {
                         const auto vc_expr =
-                            tree_man->create_unary_operation(expr_type, ue->op, current_srcp, view_convert_expr_K);
-                        TreeM->ReplaceTreeNode(current_statement, current_tree_node, vc_expr);
+                            ir_man->create_unary_operation(expr_type, ue->op, current_locinfo, bitcast_node_K);
+                        IRM->ReplaceIRNode(current_statement, curr_tn, vc_expr);
                      }
                      modified = true;
                   }
@@ -1935,68 +1914,28 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   }
                   break;
                }
-               case indirect_ref_K:
-               case imagpart_expr_K:
-               case realpart_expr_K:
-               case paren_expr_K:
+               case mem_access_node_K:
+               {
+                  const auto mr = GetPointerS<mem_access_node>(curr_tn);
+                  mr->type = ir_helper::Size(mr->type) == 32 ? float32_type : float64_type;
                   break;
-               case addr_expr_K:
-               case alignof_expr_K:
-               case arrow_expr_K:
-               case bit_not_expr_K:
-               case buffer_ref_K:
-               case card_expr_K:
-               case cleanup_point_expr_K:
-               case conj_expr_K:
-               case convert_expr_K:
-               case exit_expr_K:
-               case fix_ceil_expr_K:
-               case fix_floor_expr_K:
-               case fix_round_expr_K:
-               case fix_trunc_expr_K:
-               case misaligned_indirect_ref_K:
-               case loop_expr_K:
-               case non_lvalue_expr_K:
-               case reference_expr_K:
-               case reinterpret_cast_expr_K:
-               case sizeof_expr_K:
-               case static_cast_expr_K:
-               case throw_expr_K:
-               case truth_not_expr_K:
-               case unsave_expr_K:
-               case va_arg_expr_K:
-               case reduc_max_expr_K:
-               case reduc_min_expr_K:
-               case reduc_plus_expr_K:
-               case vec_unpack_hi_expr_K:
-               case vec_unpack_lo_expr_K:
-               case vec_unpack_float_hi_expr_K:
-               case vec_unpack_float_lo_expr_K:
-               case binfo_K:
-               case block_K:
-               case call_expr_K:
-               case aggr_init_expr_K:
-               case case_label_expr_K:
-               case constructor_K:
+               }
+               case addr_node_K:
+               case not_node_K:
+               case fptoi_node_K:
+               case unaligned_mem_access_node_K:
+               case call_node_K:
+               case constructor_node_K:
                case identifier_node_K:
-               case ssa_name_K:
-               case statement_list_K:
-               case target_expr_K:
-               case target_mem_ref_K:
-               case target_mem_ref461_K:
-               case tree_list_K:
-               case tree_vec_K:
-               case error_mark_K:
-               case lut_expr_K:
-               case CASE_BINARY_EXPRESSION:
-               case CASE_CPP_NODES:
+               case ssa_node_K:
+               case statement_list_node_K:
+               case lut_node_K:
+               case CASE_BINARY_NODES:
                case CASE_CST_NODES:
                case CASE_DECL_NODES:
                case CASE_FAKE_NODES:
-               case CASE_GIMPLE_NODES:
-               case CASE_PRAGMA_NODES:
-               case CASE_QUATERNARY_EXPRESSION:
-               case CASE_TERNARY_EXPRESSION:
+               case CASE_NODE_STMTS:
+               case CASE_TERNARY_NODES:
                case CASE_TYPE_NODES:
                {
                   THROW_ERROR("not yet supported soft float function: " + curr_tn->get_kind_text());
@@ -2008,15 +1947,15 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                }
             }
          }
-         if(tree_helper::IsRealType(op_expr_type))
+         if(ir_helper::IsRealType(op_expr_type))
          {
             switch(curr_tn->get_kind())
             {
-               case fix_trunc_expr_K:
+               case fptoi_node_K:
                {
-                  const auto bitsize_in = tree_helper::Size(op_expr_type);
+                  const auto bitsize_in = ir_helper::Size(op_expr_type);
                   const auto inFF = bitsize_in == 32 ? float32FF : (bitsize_in == 64 ? float64FF : nullptr);
-                  auto bitsize_out = tree_helper::Size(expr_type);
+                  auto bitsize_out = ir_helper::Size(expr_type);
                   if(bitsize_out < 32)
                   {
                      bitsize_out = 32;
@@ -2025,13 +1964,11 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   {
                      bitsize_out = 64;
                   }
-                  const auto is_unsigned = tree_helper::IsUnsignedIntegerType(expr_type);
-                  const auto bitsize_str_in = bitsize_in == 96 ? "x80" : STR(bitsize_in);
-                  const auto bitsize_str_out = bitsize_out == 96 ? "x80" : STR(bitsize_out);
-                  const auto fu_name = "__float" + bitsize_str_in + "_to_" + (is_unsigned ? "u" : "") + "int" +
-                                       bitsize_str_out + "_round_to_zero";
+                  const auto is_unsigned = ir_helper::IsUnsignedIntegerType(expr_type);
+                  const auto fu_name =
+                      std::string(is_unsigned ? "__float_to_uint" : "__float_to_int") + STR(bitsize_out);
                   replaceWithCall(_version->ieee_format() ? inFF : _version->userRequired, fu_name, {ue->op},
-                                  current_statement, current_tree_node, current_srcp);
+                                  current_statement, curr_tn, current_locinfo);
                   if(inline_conversion)
                   {
                      FunctionCallOpt::RequestCallOpt(current_statement, function_id, FunctionOptType::INLINE);
@@ -2040,78 +1977,34 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   modified = true;
                   break;
                }
-               case view_convert_expr_K:
+               case bitcast_node_K:
                {
-                  // This view_convert is from real to integer type variable, thus needs to be stored in the type
+                  // This bitcast is from real to integer type variable, thus needs to be stored in the type
                   // conversion set of statements to be converted later if necessary
-                  nopConvert.push_back(current_statement);
+                  nopConvertibleBitcasts.push_back(current_statement);
                   break;
                }
-               case binfo_K:
-               case block_K:
-               case call_expr_K:
-               case aggr_init_expr_K:
-               case case_label_expr_K:
-               case constructor_K:
+               case mem_access_node_K:
+               case call_node_K:
+               case constructor_node_K:
                case identifier_node_K:
-               case ssa_name_K:
-               case statement_list_K:
-               case target_expr_K:
-               case target_mem_ref_K:
-               case target_mem_ref461_K:
-               case tree_list_K:
-               case tree_vec_K:
-               case lut_expr_K:
-               case CASE_BINARY_EXPRESSION:
-               case CASE_CPP_NODES:
+               case ssa_node_K:
+               case statement_list_node_K:
+               case lut_node_K:
+               case CASE_BINARY_NODES:
                case CASE_CST_NODES:
                case CASE_DECL_NODES:
                case CASE_FAKE_NODES:
-               case CASE_GIMPLE_NODES:
-               case CASE_PRAGMA_NODES:
-               case CASE_QUATERNARY_EXPRESSION:
-               case CASE_TERNARY_EXPRESSION:
+               case CASE_NODE_STMTS:
+               case CASE_TERNARY_NODES:
                case CASE_TYPE_NODES:
-               case abs_expr_K:
-               case addr_expr_K:
-               case alignof_expr_K:
-               case arrow_expr_K:
-               case bit_not_expr_K:
-               case buffer_ref_K:
-               case card_expr_K:
-               case cleanup_point_expr_K:
-               case conj_expr_K:
-               case convert_expr_K:
-               case exit_expr_K:
-               case fix_ceil_expr_K:
-               case fix_floor_expr_K:
-               case fix_round_expr_K:
-               case float_expr_K:
-               case imagpart_expr_K:
-               case indirect_ref_K:
-               case misaligned_indirect_ref_K:
-               case loop_expr_K:
-               case negate_expr_K:
-               case non_lvalue_expr_K:
-               case nop_expr_K:
-               case paren_expr_K:
-               case realpart_expr_K:
-               case reference_expr_K:
-               case reinterpret_cast_expr_K:
-               case sizeof_expr_K:
-               case static_cast_expr_K:
-               case throw_expr_K:
-               case truth_not_expr_K:
-               case unsave_expr_K:
-               case va_arg_expr_K:
-               case reduc_max_expr_K:
-               case reduc_min_expr_K:
-               case reduc_plus_expr_K:
-               case vec_unpack_hi_expr_K:
-               case vec_unpack_lo_expr_K:
-               case vec_unpack_float_hi_expr_K:
-               case vec_unpack_float_lo_expr_K:
-               case error_mark_K:
+               case abs_node_K:
+               case addr_node_K:
+               case not_node_K:
+               case itofp_node_K:
+               case unaligned_mem_access_node_K:
+               case neg_node_K:
+               case nop_node_K:
                   break;
                default:
                {
@@ -2119,212 +2012,127 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                }
             }
          }
+         else if(curr_tn->get_kind() == mem_access_node_K && ir_helper::IsPointerType(op_expr_type) &&
+                 ir_helper::IsRealType(ir_helper::CGetPointedType(op_expr_type)))
+         {
+            const auto mr = GetPointerS<mem_access_node>(curr_tn);
+            mr->type = int_type_for(mr->type, true);
+         }
          break;
       }
-      case CASE_BINARY_EXPRESSION:
+      case CASE_BINARY_NODES:
       {
-         const auto be = GetPointerS<binary_expr>(curr_tn);
+         const auto be = GetPointerS<binary_node>(curr_tn);
          // Get operand type before recursive examination because floating point operands may be converted to unsigned
          // integer during during recursion
-         const auto expr_type = tree_helper::CGetType(be->op0);
+         const auto expr_type = ir_helper::CGetType(be->op0);
          // Propagate recursion with INTERFACE_TYPE_NONE to avoid cast rename of internal variables (input parameters
          // and constant will be converted anyway)
-         RecursiveExaminate(current_statement, be->op0,
-                            (tree_helper::IsRealType(expr_type) &&
-                             (curr_tn->get_kind() == unordered_expr_K || curr_tn->get_kind() == ordered_expr_K ||
-                              curr_tn->get_kind() == complex_expr_K)) ?
-                                INTERFACE_TYPE_REAL :
-                                INTERFACE_TYPE_NONE);
-         RecursiveExaminate(current_statement, be->op1,
-                            (tree_helper::IsRealType(expr_type) &&
-                             (curr_tn->get_kind() == unordered_expr_K || curr_tn->get_kind() == ordered_expr_K ||
-                              curr_tn->get_kind() == complex_expr_K)) ?
-                                INTERFACE_TYPE_REAL :
-                                INTERFACE_TYPE_NONE);
-         if(tree_helper::IsRealType(expr_type))
+         RecursiveExaminate(current_statement, be->op0, INTERFACE_TYPE_NONE);
+         RecursiveExaminate(current_statement, be->op1, INTERFACE_TYPE_NONE);
+         if(ir_helper::IsRealType(expr_type))
          {
             bool add_call = true;
-            std::string fu_suffix;
+            std::string fu_name;
             switch(curr_tn->get_kind())
             {
-               case mult_expr_K:
+               case mul_node_K:
                {
-                  fu_suffix = "mul";
+                  fu_name = "__float_mul";
                   break;
                }
-               case plus_expr_K:
+               case add_node_K:
                {
-                  fu_suffix = "add";
+                  fu_name = "__float_add";
                   break;
                }
-               case minus_expr_K:
+               case sub_node_K:
                {
-                  fu_suffix = "sub";
+                  fu_name = "__float_sub";
                   break;
                }
-               case rdiv_expr_K:
+               case fdiv_node_K:
                {
-                  fu_suffix = "div";
-                  const auto bitsize = tree_helper::Size(expr_type);
+                  fu_name = "__float_div";
+                  const auto bitsize = ir_helper::Size(expr_type);
                   if(bitsize == 32 || bitsize == 64)
                   {
-                     THROW_ASSERT(parameters->isOption(OPT_hls_fpdiv), "a default is expected");
-                     if(parameters->getOption<std::string>(OPT_hls_fpdiv) == "SRT4")
+                     const auto fpdiv_mode = parameters->getOption<std::string>(OPT_hls_fpdiv);
+                     if(fpdiv_mode != "SF")
                      {
-                        fu_suffix = fu_suffix + "SRT4";
+                        fu_name += fpdiv_mode;
                      }
-                     else if(parameters->getOption<std::string>(OPT_hls_fpdiv) == "G")
+                     if(fpdiv_mode == "SRT4" && function_behavior->is_function_pipelined())
                      {
-                        fu_suffix = fu_suffix + "G";
-                     }
-                     else if(parameters->getOption<std::string>(OPT_hls_fpdiv) == "SF")
-                     {
-                        // do nothing
-                     }
-                     else
-                     {
-                        THROW_ERROR("FP-Division algorithm not supported:" +
-                                    parameters->getOption<std::string>(OPT_hls_fpdiv));
+                        fu_name += "U";
                      }
                   }
                   break;
                }
-               case gt_expr_K:
+               case gt_node_K:
                {
-                  fu_suffix = "gt";
+                  fu_name = "__float_gt";
                   break;
                }
-               case ge_expr_K:
+               case ge_node_K:
                {
-                  fu_suffix = "ge";
+                  fu_name = "__float_ge";
                   break;
                }
-               case lt_expr_K:
+               case lt_node_K:
                {
-                  fu_suffix = "lt";
+                  fu_name = "__float_lt";
                   break;
                }
-               case le_expr_K:
+               case le_node_K:
                {
-                  fu_suffix = "le";
+                  fu_name = "__float_le";
                   break;
                }
-               case eq_expr_K:
+               case eq_node_K:
                {
-                  fu_suffix = "eq";
+                  fu_name = "__float_eq";
                   break;
                }
-               case ne_expr_K:
-               case ltgt_expr_K:
+               case ne_node_K:
                {
-                  fu_suffix = "ltgt_quiet";
+                  fu_name = "__float_ltgt_quiet";
                   break;
                }
-               case uneq_expr_K:
-               case unge_expr_K:
-               case ungt_expr_K:
-               case unle_expr_K:
-               case unlt_expr_K:
-               {
-                  THROW_ERROR("Unsupported tree node " + curr_tn->get_kind_text());
-                  break;
-               }
-               case assert_expr_K:
-               case bit_and_expr_K:
-               case bit_ior_expr_K:
-               case bit_xor_expr_K:
-               case catch_expr_K:
-               case ceil_div_expr_K:
-               case ceil_mod_expr_K:
-               case complex_expr_K:
-               case compound_expr_K:
-               case eh_filter_expr_K:
-               case exact_div_expr_K:
-               case fdesc_expr_K:
-               case floor_div_expr_K:
-               case floor_mod_expr_K:
-               case goto_subroutine_K:
-               case in_expr_K:
-               case init_expr_K:
-               case lrotate_expr_K:
-               case lshift_expr_K:
-               case lut_expr_K:
-               case max_expr_K:
-               case mem_ref_K:
-               case min_expr_K:
-               case modify_expr_K:
-               case mult_highpart_expr_K:
-               case ordered_expr_K:
-               case pointer_plus_expr_K:
-               case postdecrement_expr_K:
-               case postincrement_expr_K:
-               case predecrement_expr_K:
-               case preincrement_expr_K:
-               case range_expr_K:
-               case round_div_expr_K:
-               case round_mod_expr_K:
-               case rrotate_expr_K:
-               case rshift_expr_K:
-               case set_le_expr_K:
-               case trunc_div_expr_K:
-               case trunc_mod_expr_K:
-               case truth_and_expr_K:
-               case truth_andif_expr_K:
-               case truth_or_expr_K:
-               case truth_orif_expr_K:
-               case truth_xor_expr_K:
-               case try_catch_expr_K:
-               case try_finally_K:
-               case unordered_expr_K:
-               case widen_sum_expr_K:
-               case widen_mult_expr_K:
-               case with_size_expr_K:
-               case vec_lshift_expr_K:
-               case vec_rshift_expr_K:
-               case widen_mult_hi_expr_K:
-               case widen_mult_lo_expr_K:
-               case vec_pack_trunc_expr_K:
-               case vec_pack_sat_expr_K:
-               case vec_pack_fix_trunc_expr_K:
-               case vec_extracteven_expr_K:
-               case vec_extractodd_expr_K:
-               case vec_interleavehigh_expr_K:
-               case vec_interleavelow_expr_K:
-               case extract_bit_expr_K:
-               case sat_plus_expr_K:
-               case sat_minus_expr_K:
-               case extractvalue_expr_K:
-               case extractelement_expr_K:
+               case and_node_K:
+               case or_node_K:
+               case xor_node_K:
+               case shl_node_K:
+               case lut_node_K:
+               case max_node_K:
+               case min_node_K:
+               case gep_node_K:
+               case shr_node_K:
+               case idiv_node_K:
+               case irem_node_K:
+               case widen_mul_node_K:
+               case extract_bit_node_K:
+               case add_sat_node_K:
+               case sub_sat_node_K:
+               case extractvalue_node_K:
+               case extractelement_node_K:
                {
                   add_call = false;
                   break;
                }
-               case binfo_K:
-               case block_K:
-               case call_expr_K:
-               case aggr_init_expr_K:
-               case case_label_expr_K:
-               case constructor_K:
+               case call_node_K:
+               case constructor_node_K:
                case identifier_node_K:
-               case ssa_name_K:
-               case statement_list_K:
-               case target_expr_K:
-               case target_mem_ref_K:
-               case target_mem_ref461_K:
-               case tree_list_K:
-               case tree_vec_K:
-               case error_mark_K:
-               case frem_expr_K:
-               case CASE_CPP_NODES:
+               case ssa_node_K:
+               case statement_list_node_K:
+               case frem_node_K:
                case CASE_CST_NODES:
                case CASE_DECL_NODES:
                case CASE_FAKE_NODES:
-               case CASE_GIMPLE_NODES:
-               case CASE_PRAGMA_NODES:
-               case CASE_QUATERNARY_EXPRESSION:
-               case CASE_TERNARY_EXPRESSION:
+               case CASE_NODE_STMTS:
+               case CASE_TERNARY_NODES:
                case CASE_TYPE_NODES:
-               case CASE_UNARY_EXPRESSION:
+               case CASE_UNARY_NODES:
                {
                   break;
                }
@@ -2335,11 +2143,10 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
             }
             if(add_call)
             {
-               const auto bitsize = tree_helper::Size(expr_type);
+               const auto bitsize = ir_helper::Size(expr_type);
                const auto opFF = bitsize == 32 ? float32FF : (bitsize == 64 ? float64FF : nullptr);
-               const auto fu_name = "__float_" + fu_suffix;
                replaceWithCall(_version->ieee_format() ? opFF : _version->userRequired, fu_name, {be->op0, be->op1},
-                               current_statement, current_tree_node, current_srcp);
+                               current_statement, curr_tn, current_locinfo);
                if(inline_math)
                {
                   FunctionCallOpt::RequestCallOpt(current_statement, function_id, FunctionOptType::INLINE);
@@ -2348,30 +2155,11 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                modified = true;
             }
          }
-         else if(tree_helper::IsRealType(be->type))
+         else if(ir_helper::IsPointerType(curr_tn) && ir_helper::IsRealType(ir_helper::CGetPointedType(be->type)))
          {
-            if(curr_tn->get_kind() == mem_ref_K)
+            if(curr_tn->get_kind() == gep_node_K)
             {
-               const auto mr = GetPointerS<mem_ref>(curr_tn);
-               mr->type = tree_helper::Size(mr->type) == 32 ? float32_type : float64_type;
-            }
-            else
-            {
-               THROW_UNREACHABLE("Real type expression not handled: " + curr_tn->get_kind_text() + " " +
-                                 curr_tn->ToString());
-            }
-         }
-         else if(tree_helper::IsPointerType(current_tree_node) &&
-                 tree_helper::IsRealType(tree_helper::CGetPointedType(be->type)))
-         {
-            if(curr_tn->get_kind() == mem_ref_K)
-            {
-               const auto mr = GetPointerS<mem_ref>(curr_tn);
-               mr->type = int_type_for(mr->type, true);
-            }
-            else if(curr_tn->get_kind() == pointer_plus_expr_K)
-            {
-               const auto pp = GetPointerS<pointer_plus_expr>(curr_tn);
+               const auto pp = GetPointerS<gep_node>(curr_tn);
                pp->type = int_type_for(pp->type, true);
             }
             else
@@ -2382,9 +2170,9 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
          }
          break;
       }
-      case CASE_TERNARY_EXPRESSION:
+      case CASE_TERNARY_NODES:
       {
-         const auto te = GetPointerS<ternary_expr>(curr_tn);
+         const auto te = GetPointerS<ternary_node>(curr_tn);
          RecursiveExaminate(current_statement, te->op0, type_interface);
          if(te->op1)
          {
@@ -2396,27 +2184,9 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
          }
          break;
       }
-      case CASE_QUATERNARY_EXPRESSION:
+      case lut_node_K:
       {
-         const auto qe = GetPointerS<quaternary_expr>(curr_tn);
-         RecursiveExaminate(current_statement, qe->op0, type_interface);
-         if(qe->op1)
-         {
-            RecursiveExaminate(current_statement, qe->op1, type_interface);
-         }
-         if(qe->op2)
-         {
-            RecursiveExaminate(current_statement, qe->op2, type_interface);
-         }
-         if(qe->op3)
-         {
-            RecursiveExaminate(current_statement, qe->op3, type_interface);
-         }
-         break;
-      }
-      case lut_expr_K:
-      {
-         const auto le = GetPointerS<lut_expr>(curr_tn);
+         const auto le = GetPointerS<lut_node>(curr_tn);
          RecursiveExaminate(current_statement, le->op0, type_interface);
          RecursiveExaminate(current_statement, le->op1, type_interface);
          if(le->op2)
@@ -2449,30 +2219,18 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
          }
          break;
       }
-      case constructor_K:
+      case constructor_node_K:
       {
-         const auto co = GetPointerS<constructor>(curr_tn);
+         const auto co = GetPointerS<constructor_node>(curr_tn);
          for(const auto& idx_valu : co->list_of_idx_valu)
          {
             RecursiveExaminate(current_statement, idx_valu.second, type_interface);
          }
          break;
       }
-      case gimple_cond_K:
+      case multi_way_if_stmt_K:
       {
-         const auto gc = GetPointerS<gimple_cond>(curr_tn);
-         RecursiveExaminate(current_statement, gc->op0, type_interface);
-         break;
-      }
-      case gimple_switch_K:
-      {
-         const auto se = GetPointerS<gimple_switch>(curr_tn);
-         RecursiveExaminate(current_statement, se->op0, type_interface);
-         break;
-      }
-      case gimple_multi_way_if_K:
-      {
-         const auto gmwi = GetPointerS<gimple_multi_way_if>(curr_tn);
+         const auto gmwi = GetPointerS<multi_way_if_stmt>(curr_tn);
          for(const auto& cond : gmwi->list_of_cond)
          {
             if(cond.first)
@@ -2482,12 +2240,12 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
          }
          break;
       }
-      case gimple_return_K:
+      case return_stmt_K:
       {
-         const auto re = GetPointerS<gimple_return>(curr_tn);
+         const auto re = GetPointerS<return_stmt>(curr_tn);
          if(re->op)
          {
-            if(isTopFunction && re->op->get_kind() == ssa_name_K && lowering_needed(GetPointerS<ssa_name>(re->op)))
+            if(isTopFunction && re->op->get_kind() == ssa_node_K && lowering_needed(GetPointerS<ssa_node>(re->op)))
             {
                topReturn.push_back(current_statement);
             }
@@ -2496,73 +2254,24 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
          }
          break;
       }
-      case gimple_for_K:
-      {
-         const auto gf = GetPointerS<const gimple_for>(curr_tn);
-         RecursiveExaminate(current_statement, gf->op0, type_interface);
-         RecursiveExaminate(current_statement, gf->op1, type_interface);
-         RecursiveExaminate(current_statement, gf->op2, type_interface);
-         break;
-      }
-      case gimple_while_K:
-      {
-         const auto gw = GetPointerS<gimple_while>(curr_tn);
-         RecursiveExaminate(current_statement, gw->op0, type_interface);
-         break;
-      }
       case CASE_TYPE_NODES:
-      case type_decl_K:
       {
          break;
       }
-      case target_mem_ref_K:
-      {
-         const auto tmr = GetPointerS<target_mem_ref>(curr_tn);
-         if(tmr->symbol)
-         {
-            RecursiveExaminate(current_statement, tmr->symbol, type_interface);
-         }
-         if(tmr->base)
-         {
-            RecursiveExaminate(current_statement, tmr->base, type_interface);
-         }
-         if(tmr->idx)
-         {
-            RecursiveExaminate(current_statement, tmr->idx, type_interface);
-         }
-         break;
-      }
-      case target_mem_ref461_K:
-      {
-         const auto tmr = GetPointerS<target_mem_ref461>(curr_tn);
-         if(tmr->base)
-         {
-            RecursiveExaminate(current_statement, tmr->base, type_interface);
-         }
-         if(tmr->idx)
-         {
-            RecursiveExaminate(current_statement, tmr->idx, type_interface);
-         }
-         if(tmr->idx2)
-         {
-            RecursiveExaminate(current_statement, tmr->idx2, type_interface);
-         }
-         break;
-      }
-      case real_cst_K:
+      case constant_fp_val_node_K:
       {
          if(~type_interface & INTERFACE_TYPE_REAL)
          {
-            const auto cst = GetPointerS<real_cst>(curr_tn);
-            const auto bw = tree_helper::Size(current_tree_node);
+            const auto cst = GetPointerS<constant_fp_val_node>(curr_tn);
+            const auto bw = ir_helper::Size(curr_tn);
             const auto fp_str =
                 (cst->valx.front() == '-' && cst->valr.front() != cst->valx.front()) ? ("-" + cst->valr) : cst->valr;
             const auto cst_val = convert_fp_to_bits(fp_str, bw);
-            tree_nodeRef int_cst;
+            ir_nodeRef int_cst;
             if(type_interface == INTERFACE_TYPE_OUTPUT || _version->ieee_format())
             {
-               int_cst = TreeM->CreateUniqueIntegerCst(static_cast<long long>(cst_val),
-                                                       tree_man->GetCustomIntegerType(bw, true));
+               int_cst =
+                   IRM->CreateUniqueIntegerCst(static_cast<long long>(cst_val), ir_man->GetCustomIntegerType(bw, true));
             }
             else
             {
@@ -2572,62 +2281,38 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
 
             // Perform static constant value cast and replace real type constant with converted unsigned integer type
             // constant
-            TreeM->ReplaceTreeNode(current_statement, current_tree_node, int_cst);
+            IRM->ReplaceIRNode(current_statement, curr_tn, int_cst);
             modified = true;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Real type constant " + curr_tn->ToString() + " converted to " + int_cst->ToString());
          }
          break;
       }
-      case integer_cst_K:
+      case constant_int_val_node_K:
       //    {
-      //       const auto cst_val = tree_helper::GetConstValue(curr_tn);
-      //       if(tree_helper::IsPointerType(curr_tn))
+      //       const auto cst_val = ir_helper::GetConstValue(curr_tn);
+      //       if(ir_helper::IsPointerType(curr_tn))
       //       {
-      //          const auto ptd_type = tree_helper::CGetPointedType(curr_tn);
-      //          if(tree_helper::IsRealType(ptd_type))
+      //          const auto ptd_type = ir_helper::CGetPointedType(curr_tn);
+      //          if(ir_helper::IsRealType(ptd_type))
       //          {
-      //             const auto int_ptr_cst = TreeM->CreateUniqueIntegerCst(cst_val, tree_helper::Size(ptd_type) == 32
-      //             ? float32_ptr_type : float64_ptr_type); TreeM->ReplaceTreeNode(current_statement,
-      //             current_tree_node, int_ptr_cst); INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Real
+      //             const auto int_ptr_cst = IRM->CreateUniqueIntegerCst(cst_val, ir_helper::Size(ptd_type) == 32
+      //             ? float32_ptr_type : float64_ptr_type); IRM->ReplaceIRNode(current_statement,
+      //             curr_tn, int_ptr_cst); INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Real
       //             pointer type constant " + curr_tn->ToString() + " converted to " +
       //             int_ptr_cst->ToString());
       //          }
       //       }
       //       break;
       //    }
-      case CASE_PRAGMA_NODES:
-      case case_label_expr_K:
-      case complex_cst_K:
-      case field_decl_K:
-      case function_decl_K:
-      case gimple_asm_K:
-      case gimple_goto_K:
-      case gimple_label_K:
-      case gimple_pragma_K:
-      case label_decl_K:
-      case result_decl_K:
-      case string_cst_K:
-      case tree_vec_K:
-      case vector_cst_K:
-      case void_cst_K:
+      case field_val_node_K:
+      case function_val_node_K:
+      case constant_vector_val_node_K:
          break;
-      case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
-      case binfo_K:
-      case block_K:
-      case const_decl_K:
-      case error_mark_K:
-      case gimple_bind_K:
-      case gimple_predict_K:
-      case gimple_resx_K:
       case identifier_node_K:
-      case namespace_decl_K:
-      case statement_list_K:
-      case target_expr_K:
-      case template_decl_K:
-      case translation_unit_decl_K:
-      case using_decl_K:
+      case statement_list_node_K:
+      case module_unit_node_K:
       {
          THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + std::string(curr_tn->get_kind_text()));
          break;
@@ -2638,7 +2323,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "<--Updated recursively (" + STR(current_tree_node->index) + ") " + STR(current_tree_node));
+                  "<--Updated recursively (" + STR(curr_tn->index) + ") " + STR(curr_tn));
    return modified;
 }
 
@@ -2704,6 +2389,9 @@ std::string FloatFormat::ToString() const
          break;
       case FPException_Overflow:
          ss << "o";
+         break;
+      case FPException_NoNan:
+         ss << "n";
          break;
       default:
          break;
@@ -2775,6 +2463,9 @@ FloatFormatRef FloatFormat::FromString(std::string ff_str)
          case 'o':
             ff->exception_mode = FPException_Overflow;
             break;
+         case 'n':
+            ff->exception_mode = FPException_NoNan;
+            break;
          default:
             break;
       }
@@ -2804,6 +2495,53 @@ FloatFormatRef FloatFormat::FromString(std::string ff_str)
    return nullptr;
 }
 
+FloatFormatRef FloatFormat::FromArgs(const std::vector<ir_nodeRef>& args)
+{
+   if(args.size() < 8)
+   {
+      THROW_ERROR("Expected at least 8 TrueFloat specialization arguments.");
+   }
+   auto spec_it = std::next(args.begin(), static_cast<ptrdiff_t>(args.size() - 8u));
+   const auto get_next_constant = [&](bool is_signed = true) -> int {
+      auto tn = range_analysis::castTraverse(*spec_it++);
+      if(!ir_helper::IsConstant(tn))
+      {
+         const auto tn_def = GetPointerS<const ssa_node>(tn)->GetDefStmt();
+         if(tn_def->get_kind() == assign_stmt_K)
+         {
+            tn = GetPointerS<const assign_stmt>(tn_def)->op1;
+            if(ir_helper::IsConstant(tn))
+            {
+               return static_cast<int>(ir_helper::GetConstValue(tn, is_signed));
+            }
+         }
+         THROW_ERROR("TrueFloat specialization parameter is not constant: " + tn->ToString());
+      }
+      return static_cast<int>(ir_helper::GetConstValue(tn, is_signed));
+   };
+   const auto e = get_next_constant(false);
+   const auto m = get_next_constant(false);
+   const auto b = get_next_constant();
+   FloatFormatRef ff(new FloatFormat(static_cast<uint8_t>(e), static_cast<uint8_t>(m), static_cast<int32_t>(b)));
+   ff->rounding_mode = static_cast<enum FPRounding>(get_next_constant(false));
+   ff->exception_mode = static_cast<enum FPException>(get_next_constant(false));
+   ff->has_one = get_next_constant(false) != 0;
+   ff->has_subnorm = get_next_constant(false) != 0;
+   switch(get_next_constant())
+   {
+      case 0:
+         ff->sign = bit_lattice::ZERO;
+         break;
+      case 1:
+         ff->sign = bit_lattice::ONE;
+         break;
+      default:
+         ff->sign = bit_lattice::U;
+         break;
+   }
+   return ff;
+}
+
 FunctionVersion::FunctionVersion() : function_vertex(nullptr), userRequired(nullptr), internal(true)
 {
 }
@@ -2819,8 +2557,6 @@ FunctionVersion::FunctionVersion(const FunctionVersion& other)
       internal(other.internal)
 {
 }
-
-FunctionVersion::~FunctionVersion() = default;
 
 int FunctionVersion::compare(const FunctionVersion& other, bool format_only) const
 {

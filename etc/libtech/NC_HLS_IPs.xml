@@ -1,0 +1,507 @@
+<?xml version="1.0"?>
+<technology>
+  <library>
+    <name>STD_FU</name>
+    <cell>
+      <name>concat_bit_node_FU</name>
+      <operation operation_name="concat_bit_node" supported_types="INT:*"/>
+      <circuit>
+        <module_o id="concat_bit_node_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="concat_bit_node_FU"/>
+          <parameter name="OFFSET_PARAMETER">1</parameter>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="concat_bit_node_FU in1 in2 in3 out1 OFFSET_PARAMETER" VERILOG_PROVIDED="
+parameter nbit_out = BITSIZE_out1 &gt; OFFSET_PARAMETER ? BITSIZE_out1 : 1+OFFSET_PARAMETER;
+wire signed [nbit_out-1:0] tmp_in1;
+wire signed [OFFSET_PARAMETER-1:0] tmp_in2;
+generate
+  if(BITSIZE_in1 &gt;= nbit_out)
+    assign tmp_in1=in1[nbit_out-1:0];
+  else
+    assign tmp_in1={{(nbit_out-BITSIZE_in1){in1[BITSIZE_in1-1]}},in1};
+endgenerate
+generate
+  if(BITSIZE_in2 &gt;= OFFSET_PARAMETER)
+    assign tmp_in2=in2[OFFSET_PARAMETER-1:0];
+  else
+    assign tmp_in2={{(OFFSET_PARAMETER-BITSIZE_in2){in2[BITSIZE_in2-1]}},in2};
+endgenerate
+assign out1 = {tmp_in1[nbit_out-1:OFFSET_PARAMETER] , tmp_in2};" VHDL_PROVIDED="function integer_ternary_operator(cond : boolean; op1 : integer; op2 : integer) return integer is
+  begin
+    if cond then
+      return op1;
+    else
+      return op2;
+    end if;
+end integer_ternary_operator;
+  constant nbit_out : integer := integer_ternary_operator(BITSIZE_out1 &gt; OFFSET_PARAMETER, BITSIZE_out1, 1+OFFSET_PARAMETER);
+  signal tmp_in1 : signed(nbit_out-1 downto 0);
+  signal tmp_in2 : signed(nbit_out-1 downto 0);
+  begin
+    tmp_in1 &lt;= resize_signed(in1, nbit_out);
+    tmp_in2 &lt;= resize_signed(in2, nbit_out);
+    out1 &lt;= resize(tmp_in1(nbit_out-1 downto OFFSET_PARAMETER) &amp; tmp_in2(OFFSET_PARAMETER-1 downto 0), BITSIZE_out1);
+    "/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>ui_concat_bit_node_FU</name>
+      <operation operation_name="concat_bit_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
+      <circuit>
+        <module_o id="ui_concat_bit_node_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="ui_concat_bit_node_FU"/>
+          <parameter name="OFFSET_PARAMETER">1</parameter>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_concat_bit_node_FU in1 in2 in3 out1 OFFSET_PARAMETER" VERILOG_PROVIDED="localparam nbit_out = BITSIZE_out1 &gt; OFFSET_PARAMETER ? BITSIZE_out1 : 1+OFFSET_PARAMETER;
+wire [nbit_out-1:0] tmp_in1;
+wire [OFFSET_PARAMETER-1:0] tmp_in2;
+generate
+  if(BITSIZE_in1 &gt;= nbit_out)
+    assign tmp_in1=in1[nbit_out-1:0];
+  else
+    assign tmp_in1={{(nbit_out-BITSIZE_in1){1&apos;b0}},in1};
+endgenerate
+generate
+  if(BITSIZE_in2 &gt;= OFFSET_PARAMETER)
+    assign tmp_in2=in2[OFFSET_PARAMETER-1:0];
+  else
+    assign tmp_in2={{(OFFSET_PARAMETER-BITSIZE_in2){1&apos;b0}},in2};
+endgenerate
+assign out1 = {tmp_in1[nbit_out-1:OFFSET_PARAMETER] , tmp_in2};" VHDL_PROVIDED="function integer_ternary_operator(cond : boolean; op1 : integer; op2 : integer) return integer is
+  begin
+    if cond then
+      return op1;
+    else
+      return op2;
+    end if;
+end integer_ternary_operator;
+  constant nbit_out : integer := integer_ternary_operator(BITSIZE_out1 &gt; OFFSET_PARAMETER, BITSIZE_out1, 1+OFFSET_PARAMETER);
+  signal tmp_in1 : unsigned(nbit_out-1 downto 0);
+  signal tmp_in2 : unsigned(nbit_out-1 downto 0);
+  begin
+    tmp_in1 &lt;= resize(in1, nbit_out);
+    tmp_in2 &lt;= resize(in2, nbit_out);
+    out1 &lt;= resize(tmp_in1(nbit_out-1 downto OFFSET_PARAMETER) &amp; tmp_in2(OFFSET_PARAMETER-1 downto 0), BITSIZE_out1);
+    "/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>builtin_trap_FU</name>
+      <operation operation_name="trap" bounded="0"/>
+      <operation operation_name="__builtin_trap" bounded="0"/>
+      <circuit>
+        <module_o id="builtin_trap_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2014-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="builtin_trap_FU"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="sel_trap" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="sel___builtin_trap" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="builtin_trap_FU" VERILOG_PROVIDED="
+reg done_port 1INIT_ZERO_VALUE;
+// synthesis translate_off
+integer res_file;
+always @(negedge clock)
+  if(start_port == 1&apos;b1)
+  begin
+    res_file = $fopen(&quot;bambu_time_simulation.txt&quot;,&quot;w&quot;);
+    $display(&quot;__builtin_trap called&quot;);
+    $fwrite(res_file, &quot;0\t&quot;);
+    $fwrite(res_file, &quot;%d\t&quot;, $time);
+    $fwrite(res_file, &quot;ns\n&quot;);
+    $fclose(res_file);
+    $finish;
+  end
+// synthesis translate_on
+always @(posedge clock) done_port &lt;= start_port;"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>builtin_unreachable_FU</name>
+      <operation operation_name="__unreachable" bounded="0" cycles="1"/>
+      <operation operation_name="__builtin_unreachable" bounded="0" cycles="1"/>
+      <circuit>
+        <module_o id="builtin_unreachable_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="builtin_unreachable_FU"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="sel___unreachable" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="sel___builtin_unreachable" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="builtin_unreachable_FU" VERILOG_PROVIDED="
+reg done_port 1INIT_ZERO_VALUE;
+// synthesis translate_off
+integer res_file;
+always @(negedge clock)
+  if(start_port == 1&apos;b1)
+  begin
+    res_file = $fopen(&quot;bambu_time_simulation.txt&quot;,&quot;w&quot;);
+    $display(&quot;__builtin_unreachable called&quot;);
+    $fwrite(res_file, &quot;0\t&quot;);
+    $fwrite(res_file, &quot;%d\t&quot;, $time);
+    $fwrite(res_file, &quot;ns\n&quot;);
+    $fclose(res_file);
+    $finish;
+  end
+// synthesis translate_on
+always @(posedge clock) done_port &lt;= start_port;" VHDL_PROVIDED="begin
+-- synthesis translate_off
+process(clock)
+  file res_file : text;
+begin
+    if (clock&apos;event and clock = &apos;0&apos;) then
+      if(start_port = &apos;1&apos;) then
+        file_open(res_file, &quot;bambu_time_simulation.txt&quot;, WRITE_MODE);
+        report(&quot;__builtin_unreachable called&quot;);
+        write(res_file, &quot;0&quot; &amp; HT &amp; time&apos;image(now) &amp; LF);
+        file_close(res_file);
+        finish(1);
+      end if;
+    end if;
+  end process;
+-- synthesis translate_on
+process(clock)
+begin
+  if(clock&apos;event and clock = &apos;1&apos;) then
+    done_port &lt;= start_port;
+  end if;
+end process;
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>builtin_exit_FU</name>
+      <operation operation_name="exit" bounded="0" cycles="1"/>
+      <operation operation_name="__builtin_exit" bounded="0" cycles="1"/>
+      <circuit>
+        <module_o id="builtin_exit_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="builtin_exit_FU"/>
+          <parameter name="RESFILE">&quot;&quot;bambu_time_simulation.txt&quot;&quot;</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="status" dir="IN">
+            <structural_type_descriptor type="INT" size="32"/>
+          </port_o>
+          <port_o id="sel_exit" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="sel___builtin_exit" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="builtin_exit_FU RESFILE" VERILOG_PROVIDED="
+`ifdef VERILATOR
+timeunit 1ps;
+timeprecision 1ps;
+`endif
+reg done_port 1INIT_ZERO_VALUE;
+// synthesis translate_off
+import &quot;DPI-C&quot; function void m_builtin_exit (input int status);
+always @(posedge clock)
+  if(start_port == 1&apos;b1)
+  begin
+    automatic integer res_file;
+    res_file = $fopen(RESFILE,&quot;a&quot;);
+    $fwrite(res_file, &quot;%0d\n&quot;, $time);
+    $fwrite(res_file, &quot;%0d\n&quot;, status);
+    $fclose(res_file);
+    $display(&quot;Sim: Exit called: %0d&quot;, status);
+    m_builtin_exit(status);
+    $finish;
+  end
+// synthesis translate_on
+always @(posedge clock) done_port &lt;= start_port;"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>builtin_abort_FU</name>
+      <operation operation_name="abort" bounded="0" cycles="1"/>
+      <operation operation_name="__builtin_abort" bounded="0" cycles="1"/>
+      <circuit>
+        <module_o id="builtin_abort_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="builtin_abort_FU"/>
+          <parameter name="RESFILE">&quot;&quot;bambu_time_simulation.txt&quot;&quot;</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="sel_abort" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="sel___builtin_abort" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="builtin_abort_FU RESFILE" VERILOG_PROVIDED="
+`ifdef VERILATOR
+timeunit 1ps;
+timeprecision 1ps;
+`endif
+reg done_port 1INIT_ZERO_VALUE;
+// synthesis translate_off
+import &quot;DPI-C&quot; function void m_builtin_exit (input int status);
+always @(negedge clock)
+  if(start_port == 1&apos;b1)
+  begin
+    automatic integer res_file;
+    res_file = $fopen(RESFILE,&quot;a&quot;);
+    $fwrite(res_file, &quot;A\n&quot;);
+    $fclose(res_file);
+    $display(&quot;ERROR: Sim: Abort called&quot;);
+    m_builtin_exit(1);
+    $finish;
+  end
+// synthesis translate_on
+always @(posedge clock) done_port &lt;= start_port;"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>builtin_dwarf_cfa_FU</name>
+      <operation operation_name="dwarf_cfa" bounded="0"/>
+      <operation operation_name="__builtin_dwarf_cfa" bounded="0"/>
+      <circuit>
+        <module_o id="builtin_dwarf_cfa_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="builtin_dwarf_cfa_FU"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="sel_dwarf_cfa" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="sel___builtin_dwarf_cfa" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="builtin_dwarf_cfa_FU out1" VERILOG_PROVIDED="
+reg done_port 1INIT_ZERO_VALUE;
+// synthesis translate_off
+always @(negedge clock)
+  if(start_port == 1&apos;b1)
+  begin
+    $display(&quot;__builtin_dwarf_cfa called&quot;);
+  end
+// synthesis translate_on
+always @(posedge clock) done_port &lt;= start_port; assign out1 = 0;"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>llvm_bitreverse_i8_FU</name>
+      <operation operation_name="__llvm_bitreverse_i8" execution_time="0.0000001"/>
+      <circuit>
+        <module_o id="llvm_bitreverse_i8_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="llvm_bitreverse_i8_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <NP_functionality LIBRARY="llvm_bitreverse_i8_FU out1" VERILOG_PROVIDED="
+reg [7:0] x;
+integer i;
+always @(*)
+begin
+  for (i=0; i &lt; 8; i=i+1)
+  begin
+     x[i] = in1[7-i];
+  end
+end
+assign out1 = x;
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>llvm_bitreverse_i16_FU</name>
+      <operation operation_name="__llvm_bitreverse_i16" execution_time="0.0000001"/>
+      <circuit>
+        <module_o id="llvm_bitreverse_i16_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="llvm_bitreverse_i16_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="16"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="16"/>
+          </port_o>
+          <NP_functionality LIBRARY="llvm_bitreverse_i16_FU out1" VERILOG_PROVIDED="
+reg [15:0] x;
+integer i;
+always @(*)
+begin
+  for (i=0; i &lt; 16; i=i+1)
+  begin
+     x[i] = in1[15-i];
+  end
+end
+assign out1 = x;
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>llvm_bitreverse_i32_FU</name>
+      <operation operation_name="__llvm_bitreverse_i32" execution_time="0.0000001"/>
+      <circuit>
+        <module_o id="llvm_bitreverse_i32_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="llvm_bitreverse_i32_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <NP_functionality LIBRARY="llvm_bitreverse_i32_FU out1" VERILOG_PROVIDED="
+reg [31:0] x;
+integer i;
+always @(*)
+begin
+  for (i=0; i &lt; 32; i=i+1)
+  begin
+     x[i] = in1[31-i];
+  end
+end
+assign out1 = x;
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>llvm_bitreverse_i64_FU</name>
+      <operation operation_name="__llvm_bitreverse_i64" execution_time="0.0000001"/>
+      <circuit>
+        <module_o id="llvm_bitreverse_i64_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="llvm_bitreverse_i64_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="64"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="64"/>
+          </port_o>
+          <NP_functionality LIBRARY="llvm_bitreverse_i64_FU out1" VERILOG_PROVIDED="
+reg [63:0] x;
+integer i;
+always @(*)
+begin
+  for (i=0; i &lt; 64; i=i+1)
+  begin
+     x[i] = in1[63-i];
+  end
+end
+assign out1 = x;
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+  </library>
+</technology>

@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -38,7 +38,7 @@
  * @ingroup HLS
  *
  * Since all the HLS packages use this module to retrieve technology information
- * (see \ref src_HLS_allocation_page for details), it is also used to
+ * (see \ref src_HLS_module_allocation for details), it is also used to
  * introduce a simple functional unit allocator (see \ref src_HLS_binding_constraints_page for details).
  * It returns a list of functional units compatible with the graph under analysis. Each functional unit
  * is represented by an id of unsigned int type. Given this id, all the HLS packages can retrieve:
@@ -48,31 +48,22 @@
  * the instantiation of the allocation object.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef ALLOCATION_HPP
 #define ALLOCATION_HPP
+#include "hls_function_step.hpp"
 
-#include "design_flow_step.hpp"  // for DesignFlowManagerConstRef, Design...
-#include "hls_function_step.hpp" // for HLSFunctionStep
-#include "hls_manager.hpp"       // for HLS_manager, HLS_manager::io_bind...
-#include "hls_step.hpp"          // for HLSFlowStep_Type, HLSFlowStep_Typ...
-#include "refcount.hpp"          // for REF_FORWARD_DECL, CONSTREF_FORWAR...
-#include <string>                // for string
+#include "design_flow_step.hpp"
+#include "hls_manager.hpp"
+#include "hls_step.hpp"
+#include "refcount.hpp"
 
-/**
- * @name forward declarations
- */
-//@{
+#include <string>
+
 REF_FORWARD_DECL(AllocationInformation);
 REF_FORWARD_DECL(HLS_constraints);
 REF_FORWARD_DECL(HLS_device);
-CONSTREF_FORWARD_DECL(OpGraph);
-REF_FORWARD_DECL(allocation);
-REF_FORWARD_DECL(graph);
 REF_FORWARD_DECL(library_manager);
 REF_FORWARD_DECL(node_kind_prec_info);
 REF_FORWARD_DECL(structural_manager);
@@ -80,12 +71,7 @@ REF_FORWARD_DECL(technology_node);
 REF_FORWARD_DECL(technology_manager);
 struct functional_unit;
 struct operation;
-//@}
 
-/**
- * @name Min or max
- */
-//@{
 enum class Allocation_MinMax
 {
    MIN,
@@ -122,7 +108,7 @@ class allocation : public HLSFunctionStep
     * Returns the technology_node associated with the given operation
     * @param fu_name is the string representing the name of the unit
     */
-   technology_nodeRef get_fu(const std::string& fu_name);
+   technology_nodeRef get_fu(const std::string& fu_name) const;
 
    /**
     * In case the current functional unit has pipelined operations
@@ -182,74 +168,49 @@ class allocation : public HLSFunctionStep
 
    void add_tech_constraint(technology_nodeRef cur_fu, unsigned int tech_constrain_value, unsigned int pos,
                             bool proxy_constrained);
-   void add_resource_to_fu_list(std::string channels_type, const OpGraphConstRef g, technology_nodeRef current_fu,
-                                CustomOrderedSet<vertex> vertex_analysed, node_kind_prec_infoRef node_info,
-                                unsigned int current_id, CustomOrderedSet<vertex>::const_iterator vert,
-                                const std::vector<std::string>& libraries, bool isMemory,
-                                std::string bambu_provided_resource, operation* curr_op, std::string specialized_fuName,
-                                bool predicate_2, std::string current_op, HLS_manager::io_binding_type constant_id,
-                                bool varargs_fu, unsigned int l, std::string memory_ctrl_type,
-                                std::map<std::string, technology_nodeRef> new_fu, unsigned int tech_constrain_value);
    bool check_templated_units(double clock_period, node_kind_prec_infoRef node_info, const library_managerRef library,
                               technology_nodeRef current_fu, operation* curr_op);
    bool check_for_memory_compliancy(bool Has_extern_allocated_data, technology_nodeRef current_fu,
-                                    const std::string& memory_ctrl_type, const std::string& channels_type);
-   bool check_type_and_precision(operation* curr_op, node_kind_prec_infoRef node_info);
+                                    const std::string& memory_ctrl_type, const std::string& channels_type,
+                                    const bool bus_has_variable_latency);
+   bool check_type_and_precision(operation* curr_op, bool no_constant_characterization,
+                                 node_kind_prec_infoRef node_info);
    bool check_proxies(const library_managerRef library, const std::string& fu_name_);
-   bool check_generated_bambu_flopoco(bool skip_softfloat_resources, structural_managerRef structManager_obj,
-                                      std::string& bambu_provided_resource, bool skip_flopoco_resources,
-                                      technology_nodeRef current_fu);
+   bool check_generated_bambu(structural_managerRef structManager_obj, std::string& bambu_provided_resource,
+                              technology_nodeRef current_fu);
    bool is_ram_not_timing_compliant(const HLS_constraintsRef HLS_C, unsigned int var, technology_nodeRef current_fu);
    std::string get_synch_ram_latency(const std::string& ram_template, const std::string& latency_postfix,
                                      const HLS_constraintsRef HLS_C, unsigned int var);
+
+   /**
+    * @brief Check if given functional unit has no_constant_characterizaiton flag set
+    *
+    * @param library Component library of fu_node
+    * @param fu_node Functional unit technology node
+    * @return true If fu_node has a template functional unit with no_constant_characterizaiton flag set
+    * @return false If fu_node has a template functional unit with no_constant_characterizaiton flag not set or does not
+    * have a template
+    */
+   bool is_no_constant_characterization(const library_managerRef& library, const technology_nodeRef& fu_node) const;
 
    /**
     * Integrate technology libraries with special functional units
     */
    virtual void IntegrateTechnologyLibraries();
 
-   /**
-    * Return the set of analyses in relationship with this design step
-    * @param relationship_type is the type of relationship to be considered
-    */
    HLSRelationships ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    void ComputeRelationships(DesignFlowStepSet& relationship,
                              const DesignFlowStep::RelationshipType relationship_type) override;
 
  public:
-   /**
-    * @name Constructors and destructors.
-    */
-   //@{
-   /**
-    * Constructor.
-    * @param design_flow_manager is the design flow manager
-    */
    allocation(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
-              const DesignFlowManagerConstRef design_flow_manager,
-              const HLSFlowStep_Type = HLSFlowStep_Type::ALLOCATION);
+              const DesignFlowManager& design_flow_manager, const HLSFlowStep_Type = HLSFlowStep_Type::ALLOCATION);
 
-   /**
-    * Destructor.
-    */
-   ~allocation() override;
-   //@}
-
-   /**
-    * Execute the step
-    * @return the exit status of this step
-    */
    DesignFlowStep_Status InternalExec() override;
 
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
    void Initialize() override;
 
-   /**
-    * Dump the initial intermediate representation
-    */
    void PrintInitialIR() const override;
 };
 #endif

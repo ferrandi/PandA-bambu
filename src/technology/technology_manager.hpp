@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -44,7 +44,6 @@
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "refcount.hpp"
-#include "strong_typedef.hpp"
 
 #include <ostream>
 #include <string>
@@ -69,44 +68,24 @@
 /// standard library for dataflow interface modules
 #define LIBRARY_STD_DATAFLOW std::string("STD_DATAFLOW")
 
-/**
- * @name Forward declarations.
- */
-//@{
-/// RefCount type definition of the Parameter class structure
 CONSTREF_FORWARD_DECL(Parameter);
-/// RefCount type definition of the technology_manager class structure
 CONSTREF_FORWARD_DECL(technology_manager);
-/// RefCount type definition of the library_manager class structure for representing libraries
 REF_FORWARD_DECL(library_manager);
 using fileIO_istreamRef = refcount<std::istream>;
-/// RefCount type definition of the structural_manager class structure
 REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(technology_manager);
 REF_FORWARD_DECL(technology_node);
 REF_FORWARD_DECL(simple_indent);
-/// forward decl of xml Element
 class xml_element;
 class allocation;
 class mixed_hls;
 struct TimeStamp;
-UINT_STRONG_TYPEDEF_FORWARD_DECL(ControlStep);
 class functional_unit;
 
-//@}
-
-/**
- * This class manages the technology library structures.
- */
 class technology_manager
 {
  public:
-   /**
-    * @name Library output formats
-    */
-   //@{
    const static unsigned int XML;
-   //@}
 
    /// definition of the type for identifying the libraries
    using library_map_type = CustomUnorderedMap<std::string, library_managerRef>;
@@ -137,16 +116,7 @@ class technology_manager
    const functional_unit* CGetSetupHoldFU() const;
 
  public:
-   /**
-    * @name Constructors and Destructors.
-    */
-   //@{
-   /// Constructor.
    explicit technology_manager(const ParameterConstRef Param);
-
-   /// Destructor.
-   ~technology_manager();
-   //@}
 
  private:
    /// friend definition for class allocation
@@ -154,12 +124,9 @@ class technology_manager
 
  public:
    /**
-    * @name Factory functions. Used to build and fill the technology data structures
-    */
-   //@{
-   /**
     * Add the given functional_unit to the specified library.
     * @param curr is the added element
+    * @param Library is the target library name
     */
    void add(const technology_nodeRef curr, const std::string& Library);
 
@@ -167,9 +134,11 @@ class technology_manager
    /**
     * Build a resource based on the given characteristics and structural representation.
     * @param is_builtin specifies if the resource is builtin or not
+    * @return technology_nodeRef added resource node
     */
-   void add_resource(const std::string& Library, const std::string& fu_name,
-                     const structural_managerRef CM = structural_managerRef(), const bool is_builtin = false);
+   technology_nodeRef add_resource(const std::string& Library, const std::string& fu_name,
+                                   const structural_managerRef CM = structural_managerRef(),
+                                   const bool is_builtin = false);
 #endif
 
    /**
@@ -177,13 +146,6 @@ class technology_manager
     */
    technology_nodeRef add_operation(const std::string& Library, const std::string& fu_name,
                                     const std::string& operation_name);
-
-   //@}
-
-   /**
-    * @name Query functions. Used to extract some information from the technology data structure.
-    */
-   //@{
 
    /**
     * Return the list of the libraries
@@ -250,30 +212,20 @@ class technology_manager
     * Return the initiation time for a given operation type and a given component.
     * @param fu_name is the name of the component.
     * @param op_name is the name of the operation.
-    * @param res is true when there is the pair (fu_name, op_name), false otherwise.
     * @param Library is library name where the unit is stored
     * @return the initiation_time for (fu_name, op_name).
     */
-   ControlStep get_initiation_time(const std::string& fu_name, const std::string& op_name,
-                                   const std::string& Library) const;
+   unsigned int get_initiation_time(const std::string& fu_name, const std::string& op_name,
+                                    const std::string& Library) const;
 
    /**
     * Return the execution time for a given operation type and a given component.
     * @param fu_name is the name of the component.
     * @param op_name is the name of the operation.
-    * @param res is true when there is the pair (fu_name, op_name), false otherwise.
     * @param Library is library name where the unit is stored
     * @return the execution time for (fu_name, op_name)
     */
    double get_execution_time(const std::string& fu_name, const std::string& op_name, const std::string& Library) const;
-
-   /**
-    * Return the area for a given component.
-    * @param fu_name is the name of the component.
-    * @param Library is library name where the unit is stored
-    * @return the area for the library component
-    */
-   double get_area(const std::string& fu_name, const std::string& Library) const;
 
    /**
     * Return true if a component is builtin
@@ -282,12 +234,6 @@ class technology_manager
     */
    bool IsBuiltin(const std::string& component_name) const;
 
-   //@}
-
-   /**
-    * @name XML functions.
-    */
-   //@{
    /**
     * Load a technology manager from an xml file.
     * @param node is a node of the xml tree.
@@ -297,13 +243,9 @@ class technology_manager
    /**
     * add library elements operation node to an xml tree.
     * @param rootnode is the root node at which the xml representation of the operation is attached.
+    * @param libraries is the subset of libraries to serialize
     */
    void xwrite(xml_element* rootnode, const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
-
-   /**
-    * @name Print functions.
-    */
-   //@{
 
    /**
     * Function that prints the class technology_manager.
@@ -328,7 +270,6 @@ class technology_manager
       }
       return os;
    }
-   //@}
 
    /**
     * Return the setup hold time

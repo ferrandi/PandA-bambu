@@ -8,11 +8,11 @@
  *
  *             ***********************************************
  *                              PandA Project 
- *                     URL: http://panda.dei.polimi.it
+ *                     URL: https://github.com/ferrandi/PandA-bambu
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2024 Politecnico di Milano
+ *              Copyright (c) 2004-2026 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -34,17 +34,19 @@
 
 \page dev_guide_documentation Write documentation for PandA project
 
-Documentation is a very important part (probably the most important) in an open-source project managed by more than one person: it is the only mean the other developers can used to know something about your work.
-It is important to write a clear documentation about what your classes, structures and methods do, but it is also useful to write some tutorials and generic guidelines about how to use the functionalities you implemented.
+Documentation is an essential part of the PandA project.
+It explains what the code does, which assumptions a component relies on, and how users or contributors are expected to interact with the implemented functionality.
 
-The documentation of the PandA project is based on Doxygen, an open source documentation creator; you can find lots of details on it on the internet.
-In particular a good tutorial is present at the following link: http://www.stack.nl/~dimitri/doxygen/manual.html
+The documentation of the PandA project is based on Doxygen.
+The repository ships a versioned \c documentation/Doxyfile, which is the authoritative starting point for generated project documentation.
 
 \section doc_code_how_to Documenting your Code
-Both the external documentation of classes and methods and their internal one are important: the former one is mainly used by the user of your code (people who need to call the routines you implemented), while the latter one is important to developers who need to modify your code.
+Both public-facing documentation and implementation-oriented comments are useful:
+- public API documentation explains what a class, method, or data structure means and how it should be used;
+- local comments should be reserved for non-obvious implementation details, invariants, or algorithmic choices.
 
-Let's start with the external documentation. It is created by using special code comments and it is used to clearly specify the purpose of the classes, methods and attributes in your code.
-Though Doxygen acceps many different documentation styles, in the PandA project we decided to use only two:
+For Doxygen comments in code, keep the style simple and consistent.
+The project primarily uses:
 -# Documentation of classes and methods must be indicated using Javadoc style
 \verbatim
 /**
@@ -55,26 +57,25 @@ Though Doxygen acceps many different documentation styles, in the PandA project 
 \verbatim
 ///......your documentation....
 \endverbatim
-All these tags must be put before the element they refer to (i.e. before the declaration of the attribute, class, method they refer to).
+Place these comments immediately before the declaration they describe.
 
-All the documentation you write should be clear and meaningful:
-- \b Classes should contain documentation explaining what they represent (object oriented programming says that every class should be the abstract representation of a real world object) and what are their functionalities (for example look at the already documented classes in the PandA project).
-- \b Attributes should contain documentation listing what that attribute represents and, briefly, how that attribute is used in the code.
-- \b Methods are, probably, the most important part in a project (they contain the functionalities of the code), so their documentation must be very carefully written: the role of each parameter must be carefully described, paying also attention to describing special situation which may happen when special values are used (for example: "if parameter \c a is equal to 0 an exception is thrown"....).
-The method's return value must be also described. Moreover you should write a general explanation of the functionality implemented, possibily breafly describing the adopted algorithm.
+Documentation should be specific and useful:
+- \b Classes should explain the role of the abstraction and the responsibility it owns.
+- \b Attributes should explain what state they represent when that meaning is not obvious from the name alone.
+- \b Methods should document parameters, return values, preconditions, postconditions, and externally visible side effects when relevant.
+- Prefer documenting invariants, ownership rules, and error conditions over repeating what is already obvious from the signature.
 
-Regarding the documentation inside the code there isn't much to say: you can write it using the normal C comment style
+Regarding inline comments inside the implementation, ordinary source comments are enough:
 \verbatim
 //......comment.......
 \endverbatim
-where you specify in it what your code does. This documentation may be useful to you to better organinze your ideas when you write the code, but it may also help other people undesrtanding \b how you implemented a functionality (\b what the functionality is should be indicated using the external method documentation as explained above).
+Use them sparingly and only when they add information that the code structure itself does not already communicate.
 
 \section ext_docs_how_to Writing External Documentation Pages
-In addition to the code documentation it may be useful to have standalone documentation pages (such as this one).
-They are usually placed one per folder and they contain the explanation of the overall functionality implemented by the files in the folder (usually this page contains also some examples on how to use the classes in the folder).
-There is not much to say about this part, except that it may be very important and useful expecially for the pepole who know nothing about your work.
+Standalone documentation pages are useful for workflows, subsystem overviews, and contributor guidance that do not fit well in API comments.
+Keep these pages close to the code or assets they describe, and prefer concise pages with stable guidance over long step-by-step procedures that are likely to go stale.
 
-Actually there is a detail which you may find important when writing these pages: conditional documentation creation. This feature is used because PandA is a modular project, you may avoid compiling the whole of it: in case a subproject is not compiled, conditional compilation can be used to eliminate the documentation regarding that subproject. In order to use conditional compilation, simply enclose the documentation inside \c if clauses:
+PandA also uses conditional Doxygen sections for documentation that should only appear when a given project area is enabled. Use the existing section conventions already present in the tree when you need this behavior, for example:
 \verbatim
 \if BAMBU
 .....documentation about the BAMBU project.....
@@ -82,9 +83,11 @@ Actually there is a detail which you may find important when writing these pages
 \endverbatim
 
 \section doc_compilation_how_to Compiling the Documentation
-In order to compile the documentation, simply run
-\verbatim
-$ make documentation
-\endverbatim
-inside the folder where you configured PandA (i.e. the folder in which you were when the \c configure command was executed).
+The repository provides a versioned Doxygen configuration in \c documentation/Doxyfile.
+Use the documentation command exposed by your configured build tree when available, or invoke Doxygen directly with that file if you are working on the documentation setup itself.
+
+When updating these pages:
+- prefer references to checked-in files over references to external websites;
+- avoid hard-coding version matrices or host-specific package lists unless they are actively maintained;
+- remove or rewrite pages whose main content is no longer aligned with the current repository layout or build flow.
 */

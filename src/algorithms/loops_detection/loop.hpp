@@ -12,397 +12,350 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *                Copyright (C) 2025-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
  * @file loop.hpp
- * @brief interface of a loop
+ * @brief Loop data structure.
  *
- * A loop is a strongly connected component in a CFG. We use Tarjan algorithm
- * to build a loop forest (see loops.h).
- * Loop represents a single loop. A loop is composed by a set of nodes and arcs
- * which belong to the CFG. Some of the nodes in a loop are special and have
- * been given a name. Some nodes outside the loop are also somehow related to
- * loops and have a special name.
- * Here we introduce the naming conventions we will be using.
- *
- *               -----------------------
- *               |      PreHeader      |
- *               -----------------------
- *                          |
- *          |-------------->|
- *          |               V
- *          |    -----------------------
- *          |    |       Header        |
- *          |    -----------------------
- *          |               |
- *          |               |
- *          |               V
- *          |    -----------------------
- *          |    |    Any CFG allowed  |
- *          |    -----------------------
- *          |               |
- *          |               |
- *          |               V
- *          |    -----------------------
- *          |    |        Exit         |
- *          |    -----------------------
- *          |               |
- *          ----------------|
- *                          V
- *               -----------------------
- *               |     Landing pad     |
- *               -----------------------
- *
- * This example shows an example of a loop, but it is not the most general case.
- * The example has the following properties:
- *
- * 1) it is bottom tested (the exit condition is evaluated at the end of the loop,
- *    which means the loop is do-while)
- * 2) it is reducible (single entry point)
- * 3) has a single pre header (for reducible loops it is always possible to change the
- *    CFG to meet this condition)
- * 4) has a single exit
- * 5) has a single landing pad
- * 6) has a single back edge (for a definition of back edge see for example Tarjan)
- *
- * In general a loop can be much more complicated, having multiple entries (in C this can
- * be achieved using gotos), mutiple exits, landing pads and back edges.
- *
- * In our Loop representation a loop has a header (and only one!) if and only if the loop is
- * reducible. If the loop is not reducible then there's no header info. Exits are kept in a
- * list and landing pads as well. An interesting case is when we have N landing pads and N-1 landing
- * pads have a single successor being the Nth landing pad. This case is generate by break statements
- * in C/C++. For this reason a Loop has a special property to signal this case.
- *
- * @author Marco Garatti <m.garatti@gmail.com>
- * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
 
 #ifndef LOOP_HPP
 #define LOOP_HPP
 
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-#include "graph.hpp"
-#include "panda_types.hpp"
+#include "basic_block.hpp"
+#include "ir_basic_block.hpp"
 #include "refcount.hpp"
-
 #include <cstddef>
-#include <list>
+#include <cstdio>
+#include <limits>
+#include <set>
+#include <string>
 #include <utility>
+#include <vector>
 
+template <typename Graph>
+struct DefaultLoopTraits
+{
+   using GraphType = Graph;
+   using Vertex = typename GraphType::vertex_descriptor;
+
+   static unsigned loopId(const GraphType&, Vertex v)
+   {
+      return static_cast<unsigned>(v);
+   }
+
+   static std::string nodeLabel(const GraphType&, Vertex v)
+   {
+      return std::string("V") + std::to_string(static_cast<unsigned>(v));
+   }
+};
+
+struct BBGraphTraits
+{
+   using GraphType = BBGraph;
+   using Vertex = BBGraph::vertex_descriptor;
+
+   static unsigned loopId(const GraphType& graph, Vertex v)
+   {
+      return graph.CGetNodeInfo(v).block->number;
+   }
+
+   static std::string nodeLabel(const GraphType& graph, Vertex v)
+   {
+      return std::string("BB") + std::to_string(loopId(graph, v));
+   }
+};
+
+template <typename GraphTraits>
 /**
- * @name Constants identifying the type of the loops
+ * @brief Graph-agnostic representation of a loop.
+ *
+ * The loop is identified by a single entry header that dominates every block in
+ * the strongly connected region, while `blocks` collects those basic blocks and
+ * `backEdges` captures the latch-to-header edges. Parent/child relationships
+ * model the loop forest so callers can walk from outer to inner loops.
+ *
+ * When a loop does not satisfy the single-header property (irreducible control
+ * flow), the default constructor records a synthetic identifier and leaves the
+ * header null. This allows users to distinguish reducible from irreducible loops.
  */
-//@{
-/// loop with single exit
-#define SINGLE_EXIT_LOOP 1
-
-/// unknown loop
-#define UNKNOWN_LOOP 2
-
-/// while or for loop
-#define WHILE_LOOP 4
-
-/// for loop
-#define FOR_LOOP 8
-
-/// parallelizable for loop
-#define DOALL_LOOP 16
-
-/// do while loop
-#define DO_WHILE_LOOP 32
-
-/// countable loop
-#define COUNTABLE_LOOP 64
-
-/// pipelinable loop
-#define PIPELINABLE_LOOP 128
-
-//@}
-
-REF_FORWARD_DECL(BBGraph);
-CONSTREF_FORWARD_DECL(Loop);
-REF_FORWARD_DECL(Loop);
-REF_FORWARD_DECL(Loops);
-CONSTREF_FORWARD_DECL(OpGraph);
-class OpVertexSet;
-REF_FORWARD_DECL(tree_node);
-
-class Loop
+class LoopTemplate
 {
  private:
-   /// Friend definition of loop
-   friend class Loops;
+   using Graph = typename GraphTraits::GraphType;
+   using Self = LoopTemplate<GraphTraits>;
+   using Vertex = typename GraphTraits::Vertex;
+   using LoopRef = refcount<Self>;
+   using LoopConstRef = refcount<const Self>;
 
-   /// compute landing pad exits
-   void ComputeLandingPadExits();
-
-   /// The basic block control flow graph
-   const BBGraphRef g;
-
-   /// tells if there aren't loop nested in this
-   bool is_innermost_loop;
+   template <typename, typename, typename>
+   friend class LoopsTemplate;
 
    /// Parent loop
-   refcount<Loop> parent_loop;
+   LoopRef parentLoop;
 
-   /// Child loops
-   CustomOrderedSet<LoopConstRef> children;
+   /// sub loops
+   std::vector<LoopConstRef> subLoops;
 
    /// Blocks which belong to this loop
-   CustomUnorderedSet<vertex> blocks;
-
-   /// exit blocks for this loop
-   std::list<vertex> exits;
-
-   /// landing_pads for this loop
-   CustomUnorderedSet<vertex> landing_pads;
-
-   ///???
-   vertex primary_landing_pad_block;
+   std::set<Vertex> blocks;
 
    /// the header of the loop
-   vertex header_block;
-
-   /// in case the loop is irreducible the loop has multiple entries while for reducible loops the entry is just one
-   CustomOrderedSet<vertex> alternative_entries;
+   Vertex headerBlock;
 
    /// the id of the loop
-   unsigned int loop_id;
-
-   /// Map storing the association between an exit basic block and the corresponding landing pads
-   std::map<vertex, CustomUnorderedSet<vertex>> exit_landing_association;
+   unsigned int loopId;
 
    /// used to label irreducible loops
-   static unsigned int curr_unused_irreducible_id;
+   static unsigned int currUnusedIrreducibleId;
 
-   /// set of vertex pairs describing a spanning tree back edge for the loop
-   CustomOrderedSet<std::pair<vertex, vertex>> sp_back_edges;
+   /// set of vertex pairs describing back edge for the loop
+   std::set<std::pair<Vertex, Vertex>> backEdges;
 
- public:
    /// Nesting depth of this loop
    unsigned int depth;
 
-   /// loop type
-   int loop_type;
-
-   /// loop memory footprint
-   long long footprint_size;
-
-   /// loop instruction footprint
-   long long instruction_size;
-
-   /// body start basic block (at the moment defined only for SIMPLE_LOOP & WHILE_LOOP)
-   vertex body_start;
-
-   /// the main induction variable of countable loop;
-   unsigned int main_iv;
-
-   /// value of the initialization of the induction variable
-   tree_nodeRef init;
-
-   /// The index of the gimple tree node containing the initialization of the induction variable; right operand can be
-   /// different from initialization_tree_node_id because of assignments chain
-   unsigned int init_gimple_id;
-
-   /// The node id containing the increment statement
-   unsigned int inc_id;
-
-   /// Increment of induction variable
-   integer_cst_t increment;
-
-   /// Increment of induction variable
-   tree_nodeRef increment_tn;
-
-   /// Initial value of induction variable
-   /// defined when loop_type is COUNTABLE_LOOP
-   integer_cst_t lower_bound;
-
-   /// Final value of induction variable
-   /// defined when loop_type is COUNTABLE_LOOP
-   integer_cst_t upper_bound;
-
-   /// Final value of induction variable
-   tree_nodeRef upper_bound_tn;
-
-   /// flag for induction variable close interval
-   /// defined when loop_type is COUNTABLE_LOOP
-   bool close_interval;
+ public:
+   using LoopRefType = LoopRef;
+   using LoopConstRefType = LoopConstRef;
 
    /**
     * Constructor for empty loop (used for irreducible)
-    * @param g is the basic block control flow grah
     */
-   explicit Loop(const BBGraphRef g);
+   explicit LoopTemplate()
+       : parentLoop(),
+         subLoops(),
+         blocks(),
+         headerBlock(GraphTraits::GraphType::null_vertex()),
+         loopId(currUnusedIrreducibleId--),
+         backEdges(),
+         depth(0)
+   {
+   }
 
    /**
     * Constructor for reducible loop
-    * @param g is the basic block control flow graph
-    * @param header is the header basic block
+    * @param g is the control flow graph
+    * @param _headerBlock is the header vertex
     */
-   Loop(const BBGraphRef _bb_graph, vertex _header_block);
+   LoopTemplate(const Graph& g, Vertex _headerBlock)
+       : parentLoop(),
+         subLoops(),
+         blocks(),
+         headerBlock(_headerBlock),
+         loopId(GraphTraits::loopId(g, _headerBlock)),
+         backEdges(),
+         depth(0)
+   {
+      addBasicBlock(_headerBlock);
+   }
 
    /**
     * returns the loop id
     * @return the loop id
     */
-   unsigned int GetId() const;
+   unsigned int getLoopId() const
+   {
+      return loopId;
+   }
 
    /**
     * tells if the loop is innermost
     * @return true if the loop is innermost
     */
-   bool is_innermost() const;
+   bool isInnermost() const
+   {
+      return subLoops.empty();
+   }
 
    /**
     * tells if the loop is reducible
     * @return true if the loop is reducible
     */
-   bool IsReducible() const;
+   bool isReducible() const
+   {
+      return headerBlock != GraphTraits::GraphType::null_vertex();
+   }
+
+   /**
+    * tells if the loop is pipelinable
+    * @return true if the loop is pipelinable
+    */
+   bool isPipelinable()
+   {
+      return isInnermost() && numBlocks() == 1;
+   }
 
    /**
     * returns loop header
     * @return returns loop header
     */
-   vertex GetHeader() const;
-
-   /// return the alternative entries of a loop
-   CustomOrderedSet<vertex> get_entries() const
+   Vertex getHeader() const
    {
-      return alternative_entries;
-   }
-
-   /// add an entry of the loop
-   void add_entry(vertex v)
-   {
-      alternative_entries.insert(v);
+      return headerBlock;
    }
 
    /**
     * returns the parent loop
     * @return the parent loop if this loop is nested, NULL otherwise
     */
-   const LoopRef Parent() const;
+   LoopRef getParent() const
+   {
+      return parentLoop;
+   }
 
    /**
-    * adds a block to this loop
-    * @param block is the basic block to be added
+    * Returns nesting depth in the loop forest.
     */
-   void add_block(vertex block);
+   unsigned int getLoopDepth() const
+   {
+      return depth;
+   }
 
    /**
-    * returns the number of basic blocks belonging to this loop
-    * @return the number of basic blocks
+    * adds a basic block to this loop.
+    * @param block is the vertex to be added
     */
-   size_t num_blocks() const;
+   void addBasicBlock(Vertex block)
+   {
+      blocks.insert(block);
+   }
 
    /**
-    * returns the blocks
-    * @return the blocks
+    * Tells whether the block belongs to this loop (directly or through a child loop).
     */
-   const CustomUnorderedSet<vertex>& get_blocks() const;
+   bool contains(Vertex block) const
+   {
+      if(blocks.find(block) != blocks.end())
+      {
+         return true;
+      }
 
-   // Info on the exit blocks
-   size_t num_exits() const;
-   std::list<vertex>::const_iterator exit_block_iter_begin() const;
-   std::list<vertex>::const_iterator exit_block_iter_end() const;
-
-   // Info on the landing pads
-   size_t num_landing_pads() const;
+      for(const auto& child : subLoops)
+      {
+         if(child->contains(block))
+         {
+            return true;
+         }
+      }
+      return false;
+   }
 
    /**
-    * Return the landing pads of the loops
-    * @param the basic block landing pads of the loop
+    * Tells whether the given loop is nested inside this loop (including itself).
     */
-   const CustomUnorderedSet<vertex> GetLandingPadBlocks() const;
+   bool contains(const Self* loop) const
+   {
+      if(this == loop)
+      {
+         return true;
+      }
 
-   // Return the primary landing pad if it exists, NULL otherwise
-   // The primary landing pad is the one that is the unique successor
-   // of all the other LPs
-   vertex primary_landing_pad() const;
+      for(const auto& child : subLoops)
+      {
+         if(child.get() == loop || child->contains(loop))
+         {
+            return true;
+         }
+      }
+      return false;
+   }
+
+   /**
+    * returns the number of vertices belonging to this loop
+    * @return the number of vertices
+    */
+   size_t numBlocks() const
+   {
+      return blocks.size();
+   }
+
+   /**
+    * returns the vertices
+    * @return the vertices
+    */
+   const std::set<Vertex>& getBlocks() const
+   {
+      return blocks;
+   }
 
    /**
     * Sets parent for this loop
-    * @param parent is the parent loop
     */
-   void SetParent(LoopRef parent);
+   void setParentLoop(LoopRef parent)
+   {
+      parentLoop = LoopRef(parent.get(), null_deleter());
+   }
 
    /**
     * Adds a child loop
-    * @param child is the child loop
     */
-   void AddChild(LoopRef child);
-
-   /**
-    * Returns the children of this loop in the loop forest
-    */
-   const CustomOrderedSet<LoopConstRef>& GetChildren() const;
-
-   /**
-    * Returns the basic blocks which belong to this loop and to loop nested in this loop
-    * @param ret is the returned set of basic block of this loop and of its children
-    */
-   void get_recursively_bb(CustomUnorderedSet<vertex>& ret) const;
-
-   /**
-    * Returns the operation which belongs to this loop or to a nested loop
-    * @param op_graph is the operation graph
-    * @return the contained operations
-    */
-   OpVertexSet GetRecursivelyOps(const OpGraphConstRef op_graph) const;
-
-   /**
-    * Returns the map exit_landing_association
-    * @return the map exit_landing_association
-    */
-   const std::map<vertex, CustomUnorderedSet<vertex>>& get_exit_landing_association() const;
-
-   /// add a spanning tree back edge
-   void add_sp_back_edge(vertex vs, vertex vd)
+   void addChildLoop(LoopRef child)
    {
-      std::pair<vertex, vertex> vpair(vs, vd);
-      sp_back_edges.insert(vpair);
+      for(auto l : subLoops)
+      {
+         if(l->getLoopId() == child->getLoopId())
+         {
+            return;
+         }
+      }
+      subLoops.push_back(child);
    }
 
-   /// check if a pair of vertex is a spanning tree back edge for the loop
-   bool is_sp_back_edge(vertex vs, vertex vd) const
+   /**
+    * Returns the sub loops of this loop in the loop forest
+    */
+   const std::vector<LoopConstRef>& getSubLoops() const
    {
-      std::pair<vertex, vertex> vpair(vs, vd);
-      return sp_back_edges.find(vpair) != sp_back_edges.end();
+      return subLoops;
    }
 
-   /// return the list of spanning tree back edges
-   CustomOrderedSet<std::pair<vertex, vertex>> get_sp_back_edges() const
+   /**
+    * Returns the vertices which belong to this loop and to loop nested in this loop
+    */
+   void collectBlocksRecursively(std::set<Vertex>& ret) const
    {
-      return sp_back_edges;
+      ret.insert(blocks.begin(), blocks.end());
+      for(const auto& child : subLoops)
+      {
+         child->collectBlocksRecursively(ret);
+      }
    }
 
-   /// Definition of friend class add_loop_nop
-   friend class add_loop_nop;
+   /// return the list of tree back edges
+   const std::set<std::pair<Vertex, Vertex>>& getBackEdges() const
+   {
+      return backEdges;
+   }
 };
-/// refcount definition of the class
+
+template <typename Graph, typename GraphTraits = DefaultLoopTraits<Graph>>
+using LoopT = LoopTemplate<GraphTraits>;
+
+using Loop = LoopTemplate<BBGraphTraits>;
 using LoopRef = refcount<Loop>;
+using LoopConstRef = refcount<const Loop>;
+
+template <typename GraphTraits>
+unsigned int LoopTemplate<GraphTraits>::currUnusedIrreducibleId = std::numeric_limits<unsigned int>::max();
 
 #endif // LOOP_HPP

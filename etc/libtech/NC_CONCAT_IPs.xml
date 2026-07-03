@@ -1,0 +1,628 @@
+<?xml version="1.0"?>
+<technology>
+  <library>
+    <name>STD</name>
+    <cell>
+      <name>concat_1_FU</name>
+      <operation operation_name="VECT_CONCATENATION_1" supported_types="INT:*" execution_time="0.0000001"/>
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+      <circuit>
+        <module_o id="concat_1_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="concat_1_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="concat_1_FU in1 out1" VERILOG_PROVIDED="
+wire signed [BITSIZE_out1-1:0] tmp_in1;
+assign tmp_in1 = in1;
+assign out1 = tmp_in1;" VHDL_PROVIDED="
+begin
+  out1 &lt;= std_logic_vector(resize(in1, BITSIZE_out1));
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>ui_concat_1_FU</name>
+      <operation operation_name="VECT_CONCATENATION_1" supported_types="UINT:*|VECTOR_BOOL:*|REAL:*" execution_time="0.0000001"/>
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+      <circuit>
+        <module_o id="ui_concat_1_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="ui_concat_1_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_concat_1_FU in1 out1" VERILOG_PROVIDED="
+wire [BITSIZE_out1-1:0] tmp_in1;
+assign tmp_in1 = in1;
+assign out1 = tmp_in1;" VHDL_PROVIDED="
+begin
+  out1 &lt;= std_logic_vector(resize(in1, BITSIZE_out1));"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>concat_2_FU</name>
+      <operation operation_name="VECT_CONCATENATION_2" supported_types="INT:*" execution_time="0.0000001"/>
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+      <circuit>
+        <module_o id="concat_2_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="concat_2_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="concat_2_FU in1 in2 out1" VERILOG_PROVIDED="
+wire signed [BITSIZE_out1-1:0] tmp_in1;
+wire signed [BITSIZE_out1-1:0] tmp_in2;
+assign tmp_in1 = in1;
+assign tmp_in2 = in2;
+assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="
+begin
+  out1 &lt;= std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>ui_concat_2_FU</name>
+      <operation operation_name="VECT_CONCATENATION_2" supported_types="UINT:*|VECTOR_BOOL:*|REAL:*" execution_time="0.0000001"/>
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+      <circuit>
+        <module_o id="ui_concat_2_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="ui_concat_2_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_concat_2_FU in1 in2 out1" VERILOG_PROVIDED="
+wire [BITSIZE_out1-1:0] tmp_in1;
+wire [BITSIZE_out1-1:0] tmp_in2;
+assign tmp_in1 = in1;
+assign tmp_in2 = in2;
+assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="
+begin
+  out1 &lt;= std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>concat_3_FU</name>
+      <operation operation_name="VECT_CONCATENATION_3" supported_types="INT:*" execution_time="0.0000001"/>
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+      <circuit>
+        <module_o id="concat_3_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="concat_3_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="concat_3_FU in1 in2 in3 out1" VERILOG_PROVIDED="
+wire signed [BITSIZE_out1-1:0] tmp_in1;
+wire signed [BITSIZE_out1-1:0] tmp_in2;
+wire signed [BITSIZE_out1-1:0] tmp_in3;
+assign tmp_in1 = in1;
+assign tmp_in2 = in2;
+assign tmp_in3 = in3;
+assign out1 = {tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="
+begin
+  out1 &lt;= std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>ui_concat_3_FU</name>
+      <operation operation_name="VECT_CONCATENATION_3" supported_types="UINT:*|VECTOR_BOOL:*|REAL:*" execution_time="0.0000001"/>
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+      <circuit>
+        <module_o id="ui_concat_3_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="ui_concat_3_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_concat_3_FU in1 in2 in3 out1" VERILOG_PROVIDED="
+wire [BITSIZE_out1-1:0] tmp_in1;
+wire [BITSIZE_out1-1:0] tmp_in2;
+wire [BITSIZE_out1-1:0] tmp_in3;
+assign tmp_in1 = in1;
+assign tmp_in2 = in2;
+assign tmp_in3 = in3;
+assign out1 = {tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="
+begin
+  out1 &lt;= std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>concat_4_FU</name>
+      <operation operation_name="VECT_CONCATENATION_4" supported_types="INT:*" execution_time="0.0000001"/>
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+      <circuit>
+        <module_o id="concat_4_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="concat_4_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in4" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="concat_4_FU in1 in2 in3 in4 out1" VERILOG_PROVIDED="
+wire signed [BITSIZE_out1-1:0] tmp_in1;
+wire signed [BITSIZE_out1-1:0] tmp_in2;
+wire signed [BITSIZE_out1-1:0] tmp_in3;
+wire signed [BITSIZE_out1-1:0] tmp_in4;
+assign tmp_in1 = in1;
+assign tmp_in2 = in2;
+assign tmp_in3 = in3;
+assign tmp_in4 = in4;
+assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="
+begin
+  out1 &lt;= std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp;
+             std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>ui_concat_4_FU</name>
+      <operation operation_name="VECT_CONCATENATION_4" supported_types="UINT:*|VECTOR_BOOL:*|REAL:*" execution_time="0.0000001"/>
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+      <circuit>
+        <module_o id="ui_concat_4_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="ui_concat_4_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in4" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_concat_4_FU in1 in2 in3 in4 out1" VERILOG_PROVIDED="
+wire [BITSIZE_out1-1:0] tmp_in1;
+wire [BITSIZE_out1-1:0] tmp_in2;
+wire [BITSIZE_out1-1:0] tmp_in3;
+wire [BITSIZE_out1-1:0] tmp_in4;
+assign tmp_in1 = in1;
+assign tmp_in2 = in2;
+assign tmp_in3 = in3;
+assign tmp_in4 = in4;
+assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="
+begin
+  out1 &lt;= std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; 
+             std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>concat_8_FU</name>
+      <operation operation_name="VECT_CONCATENATION_8" supported_types="INT:*" execution_time="0.0000001"/>
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+      <circuit>
+        <module_o id="concat_8_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="concat_8_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in4" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in5" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in6" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in7" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in8" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="concat_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED="
+wire signed [BITSIZE_out1-1:0] tmp_in1;
+wire signed [BITSIZE_out1-1:0] tmp_in2;
+wire signed [BITSIZE_out1-1:0] tmp_in3;
+wire signed [BITSIZE_out1-1:0] tmp_in4;
+wire signed [BITSIZE_out1-1:0] tmp_in5;
+wire signed [BITSIZE_out1-1:0] tmp_in6;
+wire signed [BITSIZE_out1-1:0] tmp_in7;
+wire signed [BITSIZE_out1-1:0] tmp_in8;
+assign tmp_in1 = in1;
+assign tmp_in2 = in2;
+assign tmp_in3 = in3;
+assign tmp_in4 = in4;
+assign tmp_in5 = in5;
+assign tmp_in6 = in6;
+assign tmp_in7 = in7;
+assign tmp_in8 = in8;
+assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="
+begin
+  out1 &lt;= std_logic_vector(resize(in8, BITSIZE_out1)) &amp; std_logic_vector(resize(in7, BITSIZE_out1)) &amp;
+             std_logic_vector(resize(in6, BITSIZE_out1)) &amp; std_logic_vector(resize(in5, BITSIZE_out1)) &amp;
+             std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp;
+             std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>ui_concat_8_FU</name>
+      <operation operation_name="VECT_CONCATENATION_8" supported_types="UINT:*|VECTOR_BOOL:*|REAL:*" execution_time="0.0000001"/>
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+      <circuit>
+        <module_o id="ui_concat_8_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="ui_concat_8_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in4" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in5" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in6" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in7" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in8" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_concat_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED="
+wire [BITSIZE_out1-1:0] tmp_in1;
+wire [BITSIZE_out1-1:0] tmp_in2;
+wire [BITSIZE_out1-1:0] tmp_in3;
+wire [BITSIZE_out1-1:0] tmp_in4;
+wire [BITSIZE_out1-1:0] tmp_in5;
+wire [BITSIZE_out1-1:0] tmp_in6;
+wire [BITSIZE_out1-1:0] tmp_in7;
+wire [BITSIZE_out1-1:0] tmp_in8;
+assign tmp_in1 = in1;
+assign tmp_in2 = in2;
+assign tmp_in3 = in3;
+assign tmp_in4 = in4;
+assign tmp_in5 = in5;
+assign tmp_in6 = in6;
+assign tmp_in7 = in7;
+assign tmp_in8 = in8;
+assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="
+begin
+  out1 &lt;= std_logic_vector(resize(in8, BITSIZE_out1)) &amp; std_logic_vector(resize(in7, BITSIZE_out1)) &amp; 
+             std_logic_vector(resize(in6, BITSIZE_out1)) &amp; std_logic_vector(resize(in5, BITSIZE_out1)) &amp;
+             std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; 
+             std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>concat_16_FU</name>
+      <operation operation_name="VECT_CONCATENATION_16" supported_types="INT:*" execution_time="0.0000001"/>
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+      <circuit>
+        <module_o id="concat_16_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="concat_16_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in4" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in5" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in6" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in7" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in8" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in9" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in10" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in11" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in12" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in13" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in14" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in15" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="in16" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="concat_16_FU in1 in2 in3 in4 in5 in6 in7 in8 in9 in10 in11 in12 in13 in14 in15 in16 out1" VERILOG_PROVIDED="
+wire signed [BITSIZE_out1-1:0] tmp_in1;
+wire signed [BITSIZE_out1-1:0] tmp_in2;
+wire signed [BITSIZE_out1-1:0] tmp_in3;
+wire signed [BITSIZE_out1-1:0] tmp_in4;
+wire signed [BITSIZE_out1-1:0] tmp_in5;
+wire signed [BITSIZE_out1-1:0] tmp_in6;
+wire signed [BITSIZE_out1-1:0] tmp_in7;
+wire signed [BITSIZE_out1-1:0] tmp_in8;
+wire signed [BITSIZE_out1-1:0] tmp_in9;
+wire signed [BITSIZE_out1-1:0] tmp_in10;
+wire signed [BITSIZE_out1-1:0] tmp_in11;
+wire signed [BITSIZE_out1-1:0] tmp_in12;
+wire signed [BITSIZE_out1-1:0] tmp_in13;
+wire signed [BITSIZE_out1-1:0] tmp_in14;
+wire signed [BITSIZE_out1-1:0] tmp_in15;
+wire signed [BITSIZE_out1-1:0] tmp_in16;
+assign tmp_in1 = in1;
+assign tmp_in2 = in2;
+assign tmp_in3 = in3;
+assign tmp_in4 = in4;
+assign tmp_in5 = in5;
+assign tmp_in6 = in6;
+assign tmp_in7 = in7;
+assign tmp_in8 = in8;
+assign tmp_in9 = in9;
+assign tmp_in10 = in10;
+assign tmp_in11 = in11;
+assign tmp_in12 = in12;
+assign tmp_in13 = in13;
+assign tmp_in14 = in14;
+assign tmp_in15 = in15;
+assign tmp_in16 = in16;
+assign out1 = {tmp_in16, tmp_in15, tmp_in14, tmp_in13, tmp_in12, tmp_in11, tmp_in10, tmp_in9, tmp_in8, 
+               tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="
+begin
+  out1 &lt;= std_logic_vector(resize(in16, BITSIZE_out1)) &amp; std_logic_vector(resize(in15, BITSIZE_out1)) &amp;
+             std_logic_vector(resize(in14, BITSIZE_out1)) &amp; std_logic_vector(resize(in13, BITSIZE_out1)) &amp;
+             std_logic_vector(resize(in12, BITSIZE_out1)) &amp; std_logic_vector(resize(in11, BITSIZE_out1)) &amp;
+             std_logic_vector(resize(in10, BITSIZE_out1)) &amp; std_logic_vector(resize(in9, BITSIZE_out1)) 
+             std_logic_vector(resize(in8, BITSIZE_out1)) &amp; std_logic_vector(resize(in7, BITSIZE_out1)) &amp;
+             std_logic_vector(resize(in6, BITSIZE_out1)) &amp; std_logic_vector(resize(in5, BITSIZE_out1)) &amp;
+             std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp;
+             std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>ui_concat_16_FU</name>
+      <operation operation_name="VECT_CONCATENATION_16" supported_types="UINT:*|VECTOR_BOOL:*|REAL:*" execution_time="0.0000001"/>
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+      <circuit>
+        <module_o id="ui_concat_16_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_MIT</license>
+          <structural_type_descriptor id_type="ui_concat_16_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in4" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in5" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in6" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in7" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in8" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in9" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in10" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in11" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in12" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in13" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in14" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in15" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="in16" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_concat_16_FU in1 in2 in3 in4 in5 in6 in7 in8 in9 in10 in11 in12 in13 in14 in15 in16 out1" VERILOG_PROVIDED="
+wire [BITSIZE_out1-1:0] tmp_in1;
+wire [BITSIZE_out1-1:0] tmp_in2;
+wire [BITSIZE_out1-1:0] tmp_in3;
+wire [BITSIZE_out1-1:0] tmp_in4;
+wire [BITSIZE_out1-1:0] tmp_in5;
+wire [BITSIZE_out1-1:0] tmp_in6;
+wire [BITSIZE_out1-1:0] tmp_in7;
+wire [BITSIZE_out1-1:0] tmp_in8;
+wire [BITSIZE_out1-1:0] tmp_in9;
+wire [BITSIZE_out1-1:0] tmp_in10;
+wire [BITSIZE_out1-1:0] tmp_in11;
+wire [BITSIZE_out1-1:0] tmp_in12;
+wire [BITSIZE_out1-1:0] tmp_in13;
+wire [BITSIZE_out1-1:0] tmp_in14;
+wire [BITSIZE_out1-1:0] tmp_in15;
+wire [BITSIZE_out1-1:0] tmp_in16;
+assign tmp_in1 = in1;
+assign tmp_in2 = in2;
+assign tmp_in3 = in3;
+assign tmp_in4 = in4;
+assign tmp_in5 = in5;
+assign tmp_in6 = in6;
+assign tmp_in7 = in7;
+assign tmp_in8 = in8;
+assign tmp_in9 = in9;
+assign tmp_in10 = in10;
+assign tmp_in11 = in11;
+assign tmp_in12 = in12;
+assign tmp_in13 = in13;
+assign tmp_in14 = in14;
+assign tmp_in15 = in15;
+assign tmp_in16 = in16;
+assign out1 = {tmp_in16, tmp_in15, tmp_in14, tmp_in13, tmp_in12, tmp_in11, tmp_in10, tmp_in9, tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="
+begin
+  out1 &lt;= std_logic_vector(resize(in16, BITSIZE_out1)) &amp; std_logic_vector(resize(in15, BITSIZE_out1)) &amp;
+             std_logic_vector(resize(in14, BITSIZE_out1)) &amp; std_logic_vector(resize(in13, BITSIZE_out1)) &amp;
+             std_logic_vector(resize(in12, BITSIZE_out1)) &amp; std_logic_vector(resize(in11, BITSIZE_out1)) &amp;
+             std_logic_vector(resize(in10, BITSIZE_out1)) &amp; std_logic_vector(resize(in9, BITSIZE_out1)) 
+             std_logic_vector(resize(in8, BITSIZE_out1)) &amp; std_logic_vector(resize(in7, BITSIZE_out1)) &amp;
+             std_logic_vector(resize(in6, BITSIZE_out1)) &amp; std_logic_vector(resize(in5, BITSIZE_out1)) &amp;
+             std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp;
+             std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+  </library>
+</technology>

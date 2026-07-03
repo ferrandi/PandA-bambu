@@ -12,50 +12,42 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2024 Politecnico di Milano
+ *              Copyright (C) 2015-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
-
 #ifndef VCD_UTILITY_HPP
 #define VCD_UTILITY_HPP
-
-// Superclass include
 #include "hls_function_step.hpp"
 
-// include from parser/vcd/
-#include "DiscrepancyOpInfo.hpp"
+#include "custom_set.hpp"
+#include "refcount.hpp"
 #include "vcd_parser.hpp"
 
-// STL include
-#include "custom_map.hpp"
-#include "custom_set.hpp"
 #include <list>
 #include <string>
-
-#include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(FunctionBehavior);
 CONSTREF_FORWARD_DECL(HLS_manager);
 REF_FORWARD_DECL(Discrepancy);
-REF_FORWARD_DECL(tree_manager);
+REF_FORWARD_DECL(ir_manager);
 
 struct vcd_trace_head;
 
@@ -63,7 +55,6 @@ struct DiscrepancyLog
 {
    unsigned long long op_start_time;
    unsigned long long op_end_time;
-   enum discrepancy_type_mask type;
    unsigned int op_id;
    unsigned int ssa_id;
    unsigned int fun_id;
@@ -80,30 +71,23 @@ struct DiscrepancyLog
    std::string::size_type first_c_bit;
    std::string::size_type c_size;
    /**
-    * valid only if type is DISCR_ADDR. it is an index used in the memory
-    * allocation step. it is used to retrieve the base address in HW of the
-    * memory module where an object is mapped.
+    * Valid only when the discrepancy is on an address. It is an index used in the memory
+    * allocation step to retrieve the base address in HW of the memory module where an object is mapped.
     */
    unsigned int base_index;
 
    DiscrepancyLog(const HLS_managerConstRef HLSMgr, const vcd_trace_head& t, const uint64_t c_context,
                   std::string _c_val, const unsigned int el_idx, const std::string::size_type _first_c_bit,
                   const std::string::size_type _c_size, const unsigned int _b);
-
-   ~DiscrepancyLog();
 };
 
 class vcd_utility : public HLS_step
 {
  public:
-   /**
-    * Constructor
-    */
    vcd_utility(const ParameterConstRef parameters, const HLS_managerRef HLSMgr,
-               const DesignFlowManagerConstRef design_flow_manager);
+               const DesignFlowManager& design_flow_manager);
 
    /* Destructor */
-   ~vcd_utility() override = default;
 
    /**
     * Execute the step
@@ -113,8 +97,13 @@ class vcd_utility : public HLS_step
 
    bool HasToBeExecuted() const override;
 
+   static bool IsOneHotFSM(unsigned int function_id, const HLS_managerRef HLSMgr);
+
  protected:
-   const tree_managerRef TM;
+   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
+
+   const ir_managerRef TM;
 
    const DiscrepancyRef Discr;
 
@@ -133,6 +122,8 @@ class vcd_utility : public HLS_step
 
    unsigned long long GetClockPeriod(const vcd_parser::vcd_trace_t& vcd_trace) const;
 
+   void GenerateDiscrepancyTrace() const;
+
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
@@ -147,15 +138,14 @@ class vcd_utility : public HLS_step
 
    bool detect_binary_double_mismatch(const std::string& c_val, const std::string& resized_vcd_val) const;
 
-   bool detect_address_mismatch(const DiscrepancyOpInfo& op_info, const uint64_t c_context, const std::string& c_val,
+   bool detect_address_mismatch(const unsigned int op_id, const uint64_t c_context, const std::string& c_val,
                                 const std::string& vcd_val, unsigned int& base_index);
 
-   bool detect_fixed_address_mismatch(const DiscrepancyOpInfo& op_info, const uint64_t c_context,
-                                      const std::string& c_val, const std::string& vcd_val,
-                                      const unsigned int base_index) const;
+   bool detect_fixed_address_mismatch(const unsigned int op_id, const uint64_t c_context, const std::string& c_val,
+                                      const std::string& vcd_val, const unsigned int base_index) const;
 
    bool detect_mismatch_element(const vcd_trace_head& t, const uint64_t c_context, const std::string& c_val,
-                                const unsigned int el_idx);
+                                const unsigned int el_idx, const unsigned int vec_base_bitsize);
 
    bool detect_mismatch_simple(const vcd_trace_head& t, const uint64_t c_context, const std::string& c_val,
                                const unsigned int el_idx, const std::string::size_type first_c_bit,

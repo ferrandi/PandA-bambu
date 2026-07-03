@@ -1,0 +1,27 @@
+name: "Docker container runner"
+description: "Execute command line in docker container"
+inputs:
+  command:
+    description: "Full command line to evaluate"
+    required: true
+  working-directory:
+    description: "Working directory for the command line execution"
+    required: false
+    default: .
+  jobs:
+    description: "Parallel jobs count"
+    required: false
+    default: "1"
+  threads:
+    description: "Parallel threads count"
+    required: false
+    default: "1"
+runs:
+  using: "docker"
+  image: "Dockerfile"
+  env:
+    J: ${{inputs.jobs}}
+    OMP_NUM_THREADS: ${{inputs.threads}}
+  args:
+    - ${{inputs.working-directory}}
+    - ${{inputs.command}}

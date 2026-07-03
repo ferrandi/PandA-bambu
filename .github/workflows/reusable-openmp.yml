@@ -1,0 +1,106 @@
+name: Reusable OpenMP examples synthesis
+
+on:
+  workflow_call:
+    inputs:
+      package-name:
+        description: "Bambu AppImage package name"
+        required: true
+        type: string
+      test-compiler:
+        description: "Compiler used during tests"
+        required: true
+        type: string
+    secrets:
+      CI_STORAGE_URL:
+        required: true
+      CI_STORAGE_USER:
+        required: true
+      CI_STORAGE_TOKEN:
+        required: true
+
+env:
+  package-name: ${{inputs.package-name}}
+  test-compiler: ${{inputs.test-compiler}}
+  report-dir: test-reports
+  storage-url: ${{secrets.CI_STORAGE_URL}}
+  storage-user: ${{secrets.CI_STORAGE_USER}}
+  storage-token: ${{secrets.CI_STORAGE_TOKEN}}
+  host_jobs: $J
+  dist-dir: panda_dist
+
+jobs:
+  openmp-base-tests:
+    runs-on: [self-hosted, long, xilinx]
+    timeout-minutes: 600
+    env:
+      basename: openmp-base
+      args: --latex-format=etc/scripts/latex_table_format/latex_format_bambu_results_xilinx.xml -c=--evaluation -t360m
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - basename: functional
+            script: ./examples/OpenMP/functional/openmp_functional.sh
+            batch: "xc7vx690t-3ffg1930_10.0"
+          - basename: arbiter
+            script: ./examples/OpenMP/functional/openmp_arbiter.sh
+            batch: "xc7vx690t-3ffg1930_10.0"
+          - basename: banked 
+            script: ./examples/OpenMP/banked-memory/openmp_banked.sh
+            batch: "xc7vx690t-3ffg1930_10.0"
+          - basename: banked_cache
+            script: ./examples/OpenMP/banked-memory/openmp_banked_cache.sh
+            batch: "xc7vx690t-3ffg1930_10.0"
+          - basename: banked_allocation
+            script: ./examples/OpenMP/banked-memory/openmp_banked_allocation.sh
+            batch: "xc7vx690t-3ffg1930_10.0"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          submodules: 'true'
+      - name: Download PandA distribution
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{env.package-name}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Generate out name
+        id: get
+        shell: bash
+        run: |
+          COMPILER="$(echo '${{env.test-compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
+          OUTNAME="${COMPILER}_${{matrix.basename}}_${{env.basename}}"
+          echo "outname=$OUTNAME" >> $GITHUB_OUTPUT
+      - name: Launch test batch
+        id: batch
+        shell: bash
+        run: |
+          source ${{env.dist-dir}}/settings.sh
+          mkdir ${{env.report-dir}}
+          out_dir="$PWD/${{env.report-dir}}"
+          test_dir="test_out"
+          echo "test-reports-dir=$out_dir" >> $GITHUB_OUTPUT
+          IFS=',' read -r -a configurations <<< "${{matrix.batch}}"
+          for configuration in "${configurations[@]}"
+          do
+            unset device
+            unset period
+            unset args
+            rm -rf $test_dir
+            IFS='_ ' read device period args <<< "$configuration"
+            echo "::group::Run for ${device} at ${period} ${args[@]/#/'with additional args '}"
+            IFS=' ' read -r -a args <<< "$args"
+            config_name="${device}_${period}$(sed -e 's/\([-]\+\)/_/g' <<< $args)"
+            config_out="$out_dir/$config_name"
+            ${{matrix.script}} -o $test_dir --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{env.test-compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
+            echo "::endgroup::"
+          done
+      - name: Upload test reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{steps.get.outputs.outname}}
+          path: ${{steps.batch.outputs.test-reports-dir}}

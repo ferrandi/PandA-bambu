@@ -8,26 +8,26 @@
  *
  *             ***********************************************
  *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
+ *                     URL: https://github.com/ferrandi/PandA-bambu
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
 */
 /*!
@@ -41,49 +41,17 @@
 
   \section HLS_overview High-Level Synthesis overview
 
-  In the '70, Electronics Magazine asked Intel co-founder Gordon Moore to 
-  write an article summarizing the state of the electronics industry. When 
-  writing the article, Moore noted that the number of devices (which then 
-  included transistors and resistors) inside chips was doubling every year, 
-  largely because engineers could shrink the size of transistors. That meant 
-  that the performance and capabilities of semiconductors were growing exponentially 
-  and would continue to. In 1975, Moore amended the law to state that the number 
-  of transistors doubled about every 24 months.
+  High-level synthesis (HLS) is the design activity that translates a behavioral specification into a hardware implementation at
+  register-transfer level (RTL). The purpose of HLS is to automate the construction of datapaths, controllers, storage structures,
+  and interconnect starting from a program-like description while still exposing meaningful optimization trade-offs to the designer.
 
-  Very-large-scale integration (VLSI) is the process of creating integrated 
-  circuits (IC) by combining thousands of transistor-based circuits into a single 
-  chip. VLSI began in the 1970s when complex semiconductor and communication 
-  technologies were being developed.
-  Modern ICs are enormously complicated. A large chip may well have 
-  more transistors than people on Earth within few years: VLSI technology provides densities of 
-  multiple-million gates of logic per chip. Furthermore, the rules for what can and cannot be 
-  manufactured are also extremely complex. An integrated circuit process as of 
-  2006 may well have more than 600 rules.
+  HLS sits between the software-oriented view of an algorithm and the lower-level hardware implementation steps that follow RTL generation.
+  A practical HLS flow must therefore combine compiler-style analyses, architectural decisions, and technology-aware cost models.
 
-Chip of such complexity are very difficult, if not impossible, to design using the 
-traditional <I>capture-and-simulate</I> design methodology. Instead, time 
-to market is usually equally, if not more important than area or speed. 
-So the industry has started looking at the product development cycle comprehensively 
-to reduce the design time and to gain a competitive edge in the time-to-market 
-race. 
+  This is the role of the HLS infrastructure in PandA Bambu: starting from the PandA internal representation of the input program,
+  the flow analyzes dependencies and memory behavior, schedules operations, allocates and binds resources, and finally emits the structural RTL representation consumed by back-end tools.
 
-As the complexity of chips increases, so will the need for design automation 
-on higher level of abstraction, where functionality is easier to understand and 
-trade-off is more influential. There are several advantages to automating part 
-or all of the design process and moving automation to higher levels. First, 
-automation assures a much shorter design cycle. Then, it allows for more exploration 
-at different design styles since different designs can be generated and evaluated 
-quickly. Finally, design automation tools may out-perform average human designers 
-in meeting most design constraints and requirements.
-
-<b>Computer-aided tools</B> provide an effective mean for designing microelectronic circuits
-that are economically viable products. Synthesis techniques speed up the design cycle
-and reduce the human effort. Optimization techniques enhance the design quality. At
-present, synthesis and optimization techniques are used for most digital circuit designs.
-Nevertheless their power is not yet exploited in full and most of the work is still made 
-by hand. 
-
-\subsection sec_synthesis The synthesis process
+  \subsection sec_synthesis The synthesis process
 
 <I><B>Synthesis</B></I> is the generation of a circuit model, starting
 from a less detailed one. Models can be classified in terms of levels of abstraction
@@ -122,7 +90,9 @@ spectrum, in case of prewired circuits, physical design is performed in a virtua
 fashion, because chips are fully manufactured in advance. 
 The major tasks in physical design are placement and wiring, called also routing. Cell generation is essential in the particular case of macro-cell design, where cells are synthesized and not extracted from a library.
 
-Logic-level and physic synthesis steps have already been consistently automatized; for instance, logic synthesis has been well performed by Altera and Xilinx in their synthesis tools for FPGA design. The main problem up to now is that these tools require a RTL design described through an hardware description language to be synthesized. So a further step into design automation is to develop tools able to bridge the gap between behavioral specification and RTL design. This kind of tools have to be able to produce RTL design in a quite short time, with respect to design constraints. Besides, they have to be able to explore larger and larger design space region to find better and better solutions with respect to design goals. This is why <I>high-level synthesis</I> has been a very hot research topic over past two decades. 
+Logic-level and physical synthesis are already heavily automated by downstream toolchains, but they expect RTL as input.
+HLS bridges that gap by generating RTL from a behavioral specification while still accounting for timing, area, power, memory organization,
+resource sharing, and implementation constraints.
 
 
   \section HLS_problem Problem description
@@ -146,34 +116,33 @@ during each control step. The output can be then synthesized using related tools
 The goal is to reduce one or more design targets. Objectives can be to minimize 
 total area occupied, latency or power consumption.
 
-<I>Behavioral description</I> specifies behaviour in terms of operations, 
-assignment statements, and control constructs in a common high-level language 
-(e.g. C language). In the Bambu tool, it is represented by the class behavioral_manager.
+<I>Behavioral description</I> specifies behaviour in terms of operations,
+assignment statements, and control constructs in a common high-level language.
+Within Bambu, this information is represented through the internal IR and the analysis data structures built on top of it.
 
-In the <I>resource library</I>, there may be several alternatives 
-among which the synthesizer must select the one that best matches the design 
-constraints and maximizes the optimization objective. In the Bambu tool, it is represented by the class 
-technology_manager.
+In the <I>resource library</I>, there may be several alternatives
+among which the synthesizer must select the one that best matches the design
+constraints and maximizes the optimization objective.
 
-The <I>constraints</I> can be on the maximum number of available units of each resources, 
-on total area or on the latency of the specification execution. In the Bambu tool, it is represented by the class HLS_constraints.
+The <I>constraints</I> can be on the maximum number of available units of each resource,
+on total area, throughput, clock period, or on the latency of the specification execution.
 
 There are two main tasks in high-level synthesis: operations scheduling and resources 
 allocation. <I>Scheduling</i> provides the control steps in which 
-operations start their execution (see \ref src_HLS_scheduling_general). <I>Resource allocation</I> (see \ref src_HLS_allocation_page and \ref src_HLS_binding_page)
+operations start their execution (see \ref src_HLS_scheduling_general). <I>Resource allocation</I> (see \ref src_HLS_module_allocation and \ref src_HLS_binding_page)
 is concerned with assigning operations and values to hardware components and 
 interconnect them using connection elements. Solving these problems efficiently is 
 a non-trivial matter because of their NP-complete nature. Furthermore, the objectives are usually in contrast and the 
 best high-level synthesis design flow cannot be known a priori since it depends heavily 
 on nature of the problem: on some examples, executing scheduling before allocation can leads to better results, on other examples, it can leads to worse ones.
 
-The remaining task is the creation of the structural representation of the datapath and the controller units (see \ref src_HLS_datapath_page and \ref src_HLS_controller_fsm).
+The remaining task is the creation of the structural representation of the datapath and the controller units, including the finite-state-machine controller described in \ref src_HLS_fsm.
 
 
-\section HLS_bambu Datastructure in the Bambu tool
+  \section HLS_bambu Data structures in the Bambu tool
 
 
-   "Scheduling assigns operations in the behavioral description to 
+   "Scheduling assigns operations in the behavioral description to
    control steps. Within each control step, a separate functional unit is 
    required to execute each operation assigned to that step.
     
@@ -199,17 +168,35 @@ The remaining task is the creation of the structural representation of the datap
    Interconnection binding maps every data transfer in the behavior into a 
    set of interconnection units for data routing"[1].
 
+  In Bambu these concepts are reflected in a set of shared HLS data structures that are progressively populated by the synthesis flow.
+  The central container is the \c hls structure declared in \c src/HLS/hls.hpp. It stores the current synthesis state for one function,
+  including the target device and constraints (\c HLS_D and \c HLS_C), the scheduling and binding results (\c Rsch, \c Rfu, \c Rreg, \c Rconn),
+  the FSM metadata (\c fsm_info), and the structural RTL descriptions (\c datapath, \c controller, and \c top).
+  The following sections summarize the main phases and the state produced by each of them.
+
+  \subsection src_HLS_hls_structure Current hls structure overview
+  The \c hls struct is the canonical entry point for the current flow. Key members include:
+  - \c functionId, which identifies the function being implemented so diagnostics can trace synthesized artifacts back to the original behavioral input.
+  - \c module_binding_algorithm, \c chaining_algorithm, and \c liveVariableAlgorithm, each typed as \c HLSFlowStep_Type and recording the variant chosen for module binding, chaining, and live-variable analysis.
+  - \c operations, the \c OpVertexSet that holds the subset of specification operations targeted by this synthesis run.
+  - \c HLS_D and \c HLS_C, referencing \c HLS_device and \c HLS_constraints, respectively, so device pins and constraints remain tied to the flow state.
+  - \c allocation_information (\c AllocationInformationRef), \c Rsch (\c Schedule), \c Rfu (\c fu_binding), \c Rreg / \c RregGroup (\c reg_binding), \c Rconn (\c conn_binding), and \c chaining_information (\c ChainingInformation), which materialize the progressively populated scheduling, binding, and chaining results.
+  - \c Rliv (\c liveVariablesRef), \c storage_value_information (\c StorageValueInformation), and \c call_sites_number, which track live-variable sets, storage metadata, and the number of call sites considered for the current function.
+  - \c registered_inputs and \c registered_done_port, which flag whether the synthesized top module exposes registered handshake inputs or a registered done signal.
+  - \c datapath, \c controller, and \c top, each a \c structural_manager describing the synthesized structural RTL for datapath, controller, and top-level composition.
+  - \c Param (\c ParameterConstRef), \c debug_level, \c output_level, and \c HLS_execution_time, which control verbosity and record how long the HLS flow took to complete.
+
   \section src_HLS_phases Phases 
   - Subproject \ref src_HLS_scheduling_general provides scheduling algorithms.
-  - Subproject \ref src_HLS_allocation_page provides facilities for functional unit allocation
+  - Module allocation provides facilities for functional unit allocation.
   - Subproject \ref src_HLS_binding_constraints_page provides facilities for operation binding on functional units
   - Subproject \ref src_HLS_binding_page provides synthesis algorithms about register allocation, module binding optimization and interconnetion allocation.
-  - Subproject \ref src_HLS_datapath_page creates structural representation about datapath
-  - Subproject \ref src_HLS_controller_fsm creates structural representation about controller
-  - Subproject \ref src_HLS_hls_flow_page contains implemented high-level synthesis flow
+  - Datapath construction creates the structural representation of the datapath.
+  - Subproject \ref src_HLS_fsm creates structural representation about controller
+  - The HLS flow coordinates the end-to-end high-level synthesis pipeline.
 
   \section src_HLS_additional Additional subprojects 
-  - Subproject \ref src_HLS_estimation provides some metrics for result estimation
+  - Estimation components provide metrics and reports for synthesized results.
 
   \section src_HLS_data_structure Data structures
   This section describes the data structures used in High Level Synthesis algorithm.
@@ -220,243 +207,89 @@ The remaining task is the creation of the structural representation of the datap
   - Interconnection Binding;
   - Datapath and Controller generation. \n
 
-  For each of this stages a set of variables are defined in class hls. For scheduling 
-  problem the variable to be used are:
-  - sch;
-  - fu. \n
+  For each of these stages, the \c hls structure exposes dedicated fields. For scheduling
+  and functional-unit assignment, the main objects are:
+  - \c Rsch, an instance of class \c Schedule declared in \c src/HLS/scheduling/schedule.hpp;
+  - \c Rfu, an instance of class \c fu_binding declared in \c src/HLS/binding/module/fu_binding.hpp. \n
 
-  For register binding the variables are:
-  - bind;
-  - bind_const. \n
+  For storage and register binding, the main object is:
+  - \c Rreg, an instance of class \c reg_binding declared in \c src/HLS/binding/register/reg_binding.hpp. \n
 
-  For interconnection binding and datapath (controller) creation the variables are:
-  - Datapath;
-  - Fsm. \n
+  For interconnection binding and controller/datapath construction, the main objects are:
+  - \c Rconn, an instance of class \c conn_binding declared in \c src/HLS/binding/interconnection/conn_binding.hpp;
+  - \c fsm_info, an instance of class \c FSMInfo declared in \c src/HLS/fsm/FSMInfo.hpp;
+  - \c datapath, \c controller, and \c top, which are structural descriptions built as \c structural_manager instances. \n
 
-  These structures will described more in detail in the next sections.
+  These structures are described in more detail in the next sections.
   \subsection src_HLS_data_structure_scheduling Scheduling data structures
-  The hls struct contains some variables that are used to represent
-  an intermediate layer for all scheduling algorithm. These variables are sch and fu.
-  \subsubsection sch
-  It is used to map operations on control steps; this variable is built during the 
-  execution of the scheduling algorithm. They type of this variable is <I>sdt::map\<vertex, unsigned int\></I>:
-  each vertex has associated the control step in which the operation (represented by the vertex itself)
-  is executed.
-  \subsubsection fu
-  This variable stores, for all scheduled operations, where they are executed. This structure is
-  composed of two element: one (the first), named "assign", stores the type of the functional unit
-  that has to perform the specific operation; the other, named "index", stores the instance of
-  functional unit (identified by assign) that has to perform the operation.
+  Scheduling state is no longer described as a pair of ad-hoc variables such as \c sch and \c fu.
+  In the current codebase it is encapsulated by dedicated classes stored inside the \c hls structure.
+
+  \subsubsection src_HLS_schedule Schedule
+  The \c Rsch field stores a \c Schedule object.
+  As documented in \c src/HLS/scheduling/schedule.hpp, this object records:
+  - the control step in which each operation starts and ends;
+  - absolute control steps represented through \c AbsControlStep;
+  - absolute start and end times for scheduled operations;
+  - connection timing information;
+  - loop pipelining metadata such as initiation interval information.
+
+  This is the authoritative scheduling state used by downstream phases such as FSM construction, chaining, and resource reporting.
+
+  \subsubsection src_HLS_fu_binding Current functional-unit assignment
+  The \c Rfu field stores a \c fu_binding object.
+  It records, for each scheduled operation, both the selected functional-unit kind and the specific instance used to execute that operation.
+  Together, \c Rsch and \c Rfu define the executable timing/resource view consumed by later HLS phases.
+
   \subsection src_HLS_data_structure_binding Register binding data structures
-  There are four structures used by the register binding problem: bind, bind_const,
-  used_reg and used_const. These structures must be used by all register binding algorithms as an
-  intermediate layer.
-  \subsubsection bind
-  This variable maps all values in the system specification to a register. This variable is used by 
-  all register binding algorithms. The type of this variable is <I>std::map \< std::pair<vertex , unsigned int\> , int \></I>: 
-  the first field represents the value to
-  be stored, and it is a pair operation variable; the second is an integer number which represents the specific 
-  instance of the register used to store the value.
-  \subsubsection bind_const
-  This variable maps the constants, specified in the system, on the storage units. This variable must 
-  be used to create a working datapath. Because the binding of the constants is not required in register binding
-  algorithm, is not required that this variable has to be used from binding algorithms. The structure of this 
-  variable is equal to the structure of variable bind.
-  \subsubsection used_reg
-  This variable stores the number of register used.
-  \subsubsection used_const
-  This variable stores the number of constants used.
+  Register binding is represented by class \c reg_binding rather than by legacy variables such as \c bind, \c bind_const, \c used_reg, and \c used_const.
+
+  \subsubsection src_HLS_reg_binding Register binding
+  The \c Rreg field stores a \c reg_binding object declared in \c src/HLS/binding/register/reg_binding.hpp.
+  This object maps storage values to register objects, tracks the number of used registers, stores reverse mappings from storage values to register indices,
+  records register bitwidths, and keeps auxiliary information needed for context switches and write-enable handling.
+
+  When present, \c RregGroup stores an additional grouping view over register resources.
+  These objects are the stable data structures to inspect when reasoning about storage allocation in the current code.
+
   \subsection src_HLS_data_structure_datapath Interconnection binding data structures
-  \subsubsection datapath
-  Data structure storing the structural description of the datapath, in term of:
-  - component (even with gerarchic structure);
-  - channel (even with gerarchic structure);
-  - signal;
-  - input, output and generic port;
-  - interface.
-  This representation has to be created after the application of an interconnection binding algorithm, to complete
-  the datapath description, after the scheduling (with fu binding) and register binding phases.
+  \subsubsection src_HLS_conn_binding Interconnection binding
+  The \c Rconn field stores a \c conn_binding object declared in \c src/HLS/binding/interconnection/conn_binding.hpp.
+  This object manages the connection-level view of the datapath, including:
+  - source-to-target connection descriptions;
+  - activation and selector ports;
+  - constant values and converters;
+  - the mapping between connection endpoints and their structural implementation.
+
+  \subsubsection src_HLS_datapath_struct Datapath structure
+  The \c datapath field stores the structural description of the datapath as a \c structural_manager.
+  This representation contains components, channels, signals, ports, and interfaces after scheduling, storage binding, and interconnection binding have been resolved.
+
   \subsection src_HLS_data_structure_fsm Controller creation
-  \subsubsection FSM
-  The <B>FSM</B> variable stores a pointer to the circuit implementing the architecture of the controller.
-  This field must be filled after the datapath creation. There are some support variables, which will be introduced 
-  in the next sections, which contain informations usefull for the controller creation.
+  \subsubsection src_HLS_fsm_info FSM metadata
+  The \c fsm_info field stores an instance of \c FSMInfo declared in \c src/HLS/fsm/FSMInfo.hpp.
+  This object holds the metadata used to build and inspect the controller, including:
+  - state descriptors and transition metadata;
+  - operations starting, executing, or ending in each state;
+  - basic-block to state relationships;
+  - loop-pipelining metadata attached to states and transitions.
+
+  \subsubsection src_HLS_controller_struct Controller structure
+  The \c controller field stores the structural description of the synthesized controller as a \c structural_manager.
+  The \c top field stores the final top-level structural composition that couples controller and datapath.
+
   \subsection src_HLS_data_structure_other Other data structure
-  This section introduces some usefull variables, which must be used to couple the controller with the datapath.
-  \subsubsection input_enable_port
-  This variable is managed by datapath (interconnection binding) and fsm creation algorithms; its type is
-  <I>std::map\< vertex , std::set\< int \> \></I>: each vertex (i.e. operation) has associated a set of integers, which
-  are index in the "in_port_map" variable, described below. The datapath creation part fills this data structure 
-  with the reference to the input ports that have to be set to true to perform the memorization of a value in a register
-  when each operation (as I've just said operations and vertex are used here as synonims) is executed.
-  The FSM creation algorithm must visit this structure and, according with the result of the scheduling phase,
-  it nust set the approriate port in the "in_port_map" field associated with the integer contained in input_enable_port
-  \subsubsection input_address_port
-  This variable is managed by datapath (interconnection binding) and fsm creation algorithms; its type is
-  <I>std::map\< vertex , std::set\< std::pari\<int, int\> \> \></I>: each vertex (i.e. operation) 
-  has a pair associated: the first element is an index in the "in_port_map" variable, described below, the second element
-  the value which must be asserted on the associated port (the association is contained in the "in_port_map" variable), in
-  order to perform the selection of mux input (or the enable of tristate).
-  The datapath creation part fills this data structure 
-  with the reference to the input ports that have to be set to true to perform the memorization of a value in a register
-  when each operation (as I've just said operations and vertex are used here as synonims) is executed.
-  The FSM creation algorithm has to visit this structure and, according with the result of the scheduling phase, 
-  sets the value to the appropriated ports.
-  This variable is composed of two fields. The first represents the operations, the second is a pair formed by
-  an index in the "in_port_map" variable which points to the address port which must be set when the specified operation is performed,
-  and the 32 bit integer value which must be issued on that port. 
-  This variable considers also tristate enables, because this enables has to be setted at the beginning of a control step, while the
-  register enables have to be setted at the end of the control step.
-  A convention is introduced about the value to set. If the value is greater or equal to zero, this value
-  represents a mux address, otherwise, if the value is equal to "-1", it represents a tristate enable.
-  \subsubsection output_port
-  This variable, whose type is again <I>std::map \< vertex , int \></I> stores the association between the conditional output ports
-  of the datapath and and index in the "out_port_map", which in turn has associated the id of the input port
-  in the controller. With conditional output ports I mean the ports which carry the result of conditional operations (if, while...)
-  so just conditional vertex should have an entry in this field.
-  \subsubsection in_port_map
-  This variable is filled during the controller creation step: it is again a map and it associates an index in the "input_address_port"
-  or "input_enable_port" variables with the index of the desired port in the fsm circuit.
-  \subsubsection out_port_map
-  This variable is filled during the controller creation step: it is again a map and it associates an index in the "output_port"
-  variable with the index of the desired port in the fsm circuit.
-  \subsubsection bind_write_port
-  This variable has to be managed by the datapath creation algorithms. The algorithm, during datapath creation, maps the vertex that write an output on the relative output port.
-  \subsubsection convertion_map
-  This variable maps all the input and output data port of the system with the relative variable. During datapath creation this variable is filled, as shown in the next example.
-  \subsection src_HLS_data_strucutre_example Example
-  This section provides a simple example of the hls flow.
-  Lets start with the specification of the problem; suppose to have the following specification:\n
-\n
-   +1 : a = i1 + c1 ;\n
-   -1 : b = i2 - c1 ;\n
-   +2 : o1 = a + b ;\n
-\n
-  The most relevant graphs that will be created are:
-  - FSDG;
-  \dot
-   digraph FSDG
-   {
-    0[color=blue,shape=Msquare,label="entry"];
-    1[color=blue,shape=Msquare,label="exit"];
-    2[label="+1"];
-    3[label="-1"];
-    4[label="+2"];
-    0 -> 2 [label="i1 c1"];
-    0 -> 3 [label="i2 c1"];
-    2 -> 4 [label="a"];
-    3 -> 4 [label="b"];
-   }
-  \enddot
-  - BB;
-  \dot
-   digraph BB
-   {
-    0[color=blue,shape=Msquare,label="BB0 - entry"];
-    1[color=blue,shape=Msquare,label="BB1 - exit"];
-    2[shape=box,label="BB2 - +1, -1, +2"];
-    0 -> 1;
-    0 -> 2;
-    2 -> 1;
-   }
-  \enddot
-  \subsubsection Scheduling
-  Suppose to have 1 plus and 1 minus functional unit. During the scheduling phase these information are written:
-  - variable sch \n
-   +1 => control step 0;\n
-   -1 => control step 0;\n
-   +2 => control step 1;\n
-  - variable fu_binding \n
-   +1 => <plus,0>;\n
-   -1 => <minus,0>;\n
-   +2 => <plus,0>;\n
-   \subsubsection Binding
-   The data which is produced in this step is:
-   - variable bind \n
-   < +1 , a > => register 0;\n
-   < -1 , b > => register 1;\n
-   - variable used_regis\n
-   used_regis = 2;\n
-   - variable bind_const \n
-   < Entry , c1 > => constant storage 0;\n
-   - variable used_const\n
-   used_const = 1;\n
-   - variable bind_write_port \n
-   < +2 , o1 > => WRITE_PORT 0;
-   \subsubsection Datapath
-   Now the datapath of the circuit can be created. First of all we must perform the connection binding: this operation
-   is executed with several operation and can use several data structure that are not presented here.
-   In this section will only show the datapath, and the intermediate structure used to support the controller creation.
-   A simplified view of the datapath is
-   \dot
-    digraph circuit
-    {
-     subgraph datapath
-     {
-      label = "Datapath";
-      0[label="Reg0",shape=record];
-      1[label="Reg1",shape=record];
-      2[label="Const0",shape=record];
-      3[label="READ_PORT0",shape=record];
-      4[label="READ_PORT1",shape=record];
-      5[label="Mux0",shape=record];
-      6[label="Mux1",shape=record];
-      7[label="plus0",shape=record];
-      8[label="minus0",shape=record];
-      9[label="WRITE_PORT0",shape=record];
-     }
-     0 -> 5;
-     1 -> 6;
-     2 -> 6;
-     2 -> 8;
-     3 -> 5;
-     4 -> 8;
-     7 -> 0;
-     8 -> 1;
-     7 -> 9;
-     5 -> 7;
-     6 -> 7;
-     {rank=same; 0 1 2 3 4}
-     {rank=same; 5 6}
-     {rank=same; 7 8}
-    }
-   \enddot
-   The support data structure are:
-   - input_address_port (Mux*_ra represent the integer reference to datapath port, i.e. the index in the in_port_map field) \n
-   +1 => < Mux0_ra , 0 > , < Mux1_ra , 0 > ;\n
-   -1 => ;\n
-   +2 => < Mux0_ra , 1 > , < Mux1_ra , 1 > ;\n
-   - input_enable_port (Reg*_re represent the integer reference to datapath port) \n
-   +1 => < Reg0_re > ; \n
-   -1 => < Reg1_re > ; \n
-   +2 => ; \n
-   - output_port \n
-   For this example is empty: there are no conditional (if, while, switch...) vertex.\n
-   - convertion_map\n
-   READ_PORT0 => i1;\n
-   READ_PORT1 => i2;\n
-   WRITE_PORT0 => o1;\n
-   
-\subsubsection Controller
-	Previously described data structures are used for the generation of the controller, too. In particular, the SDG is analysed to build a finite state machine in which all data and control constraints are respected. There are two types of FSM output, which correspond to the two types of datapath input: enabling signals (1 bit), and addresses (currently 32 bit). \n
-HLS data structures input_address_port and input_enable_port are used in FSM generation to produce the right output at the right control step. \n
-Continuing the example above:\n
-- input_address_port \n
-+1 => < Mux0_ra , 0 > , < Mux1_ra , 0 > means that the ports indexed by Mux0_ra and Mux1_ra must be set to 0 at the FSM state associated by the schedule to operation +1; \n
-Operation -1 has no entry because there is no need to set any address when executing it;\n
-+2 => < Mux0_ra , 1 > , < Mux1_ra , 1 > means that the ports indexed by Mux0_ra and Mux1_ra must be set to 1 at the FSM state associated by the schedule to operation +2; \n
-- input_enable_port \n
-+1 => < Reg0_re > means that the port indexed by Reg0_re must be set HIGH at the FSM state associated by the schedule to operation +1; \n
--1 => < Reg1_re > means that the port indexed by Reg1_re must be set HIGH at the FSM state associated by the schedule to operation -1; \n
-+2 has no entry beacuse no enabling signal must be set HIGH for the execution of operation +2;\n
-Notice that output unspecified in the input_enable_port data structure must be set LOW in all the other FSM state, while unspecified addresses can be set to any other value, either left unchanged or set to some conventional value for further optimization possibly performed by synthesis tools.\n
-- in_port_map is filled by the FSM generator algorithm to associate a circuit port with the indexes specified in the "input_address_port" or "input_enable_port" variables. \n
-In the example above (Mux*_ra and Reg*_re represent the integer reference to datapath input port (and also the index in the in_port_map structure), while FSMMux*_ra and FSMReg*_re represet the integer reference to associated output port in the FSM circuit): \n
-< Reg0_re, FSMReg0_re >\n
-< Reg1_re, FSMReg1_re >\n
-< Mux0_ra, FSMMux0_ra >\n
-- out_port_map \n
-For this example is empty: there are no conditional (if, while, switch...) vertex.\n
+  This section historically described a set of global maps used to couple controller and datapath generation.
+  In the current codebase these details are distributed across the binding classes, \c FSMInfo, and the structural managers rather than being exposed as a single stable public API.
+
+  For practical inspection and debugging, the most relevant entry points today are:
+  - \c hls::print(), \c hls::PrintScheduling(), \c hls::print_register_binding(), and \c hls::print_connection_binding() in \c src/HLS/hls.hpp;
+  - the scheduling state stored in \c Schedule;
+  - the storage and interconnection state stored in \c reg_binding and \c conn_binding;
+  - the controller-state metadata stored in \c FSMInfo.
+
+  When updating or extending the HLS flow, these classes should be treated as the source of truth for the current synthesis state.
+  Documentation that assumes the existence of fixed maps such as \c input_enable_port, \c input_address_port, \c in_port_map, or \c out_port_map should be considered legacy unless it is explicitly reintroduced and documented in the code.
 
    \section References
   

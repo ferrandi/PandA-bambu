@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -36,94 +36,54 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef VAR_COMPUTATION_HPP
 #define VAR_COMPUTATION_HPP
-
 #include "function_frontend_flow_step.hpp"
 
+#include "graph.hpp"
 #include "refcount.hpp"
 
-/**
- * @name forward declarations
- */
-//@{
-REF_FORWARD_DECL(BehavioralHelper);
-class gimple_node;
-enum class FunctionBehavior_VariableAccessType;
-REF_FORWARD_DECL(operations_graph_constructor);
-CONSTREF_FORWARD_DECL(OpGraph);
-REF_FORWARD_DECL(tree_manager);
-CONSTREF_FORWARD_DECL(tree_node);
-//@}
+class node_stmt;
+class operations_graph_constructor;
+CONSTREF_FORWARD_DECL(ir_node);
+enum class VariableAccessType;
 
 /**
  *
  */
 class VarComputation : public FunctionFrontendFlowStep
 {
- private:
-   /// The operation graph constructor
-   const operations_graph_constructorRef ogc;
-
-   /// The control flow graph of the function
-   const OpGraphConstRef cfg;
-
-   /// The behavioral helper associated with the function
-   const BehavioralHelperRef behavioral_helper;
-
    /**
-    * Recursively analyze a tree_node
-    * @param op_vertex is the vertex to which the statement where tree_node is inclued belongs
-    * @param tree_node is the tree node to be examined
+    * Recursively analyze an ir_node
+    * @param op_vertex is the vertex to which the statement where ir_node is inclued belongs
+    * @param ir_node is the IR node to be examined
     * @param access_type is the type of the access
+    * @param ogc is the operations graph constructor used to record dependencies
     */
-   void RecursivelyAnalyze(const vertex op_vertex, const tree_nodeConstRef& tree_node,
-                           const FunctionBehavior_VariableAccessType access_type) const;
+   void RecursivelyAnalyze(gc_vertex_descriptor op_vertex, const ir_nodeConstRef& ir_node,
+                           const VariableAccessType access_type,
+                           const std::unique_ptr<operations_graph_constructor>& ogc) const;
 
    /**
-    * Analyze virtual operands associated with a gimple node
-    * @param op_vertex is the vertex to which gimple node belongs
+    * Analyze virtual operands associated with a node statement
+    * @param op_vertex is the vertex to which node statement belongs
     * @param vops is the set of virtual operands to be considered
+    * @param ogc is the operations graph constructor used to record dependencies
     */
-   void AnalyzeVops(const vertex op_vertex, const gimple_node* vops) const;
+   void AnalyzeVops(gc_vertex_descriptor op_vertex, const node_stmt* vops,
+                    const std::unique_ptr<operations_graph_constructor>& ogc) const;
 
-   /**
-    * Return the set of analyses in relationship with this design step
-    * @param relationship_type is the type of relationship to be considered
-    */
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
-   /**
-    * Constructor.
-    * @param Param is the set of the parameters
-    * @param AppM is the reference to the application manager
-    * @param function_id is the index of the function
-    * @param design_flow_manager is the design flow manager
-    */
    VarComputation(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int function_id,
-                  const DesignFlowManagerConstRef design_flow_manager);
+                  const DesignFlowManager& design_flow_manager);
 
-   /**
-    * Destructor
-    */
-   ~VarComputation() override;
-
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
    void Initialize() override;
 
-   /**
-    * Computes the set of read and written variables.
-    * @return the exit status of this step
-    */
    DesignFlowStep_Status InternalExec() override;
 };
 

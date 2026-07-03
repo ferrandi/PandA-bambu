@@ -8,26 +8,26 @@
  *
  *             ***********************************************
  *                              PandA Project 
- *                     URL: http://panda.dei.polimi.it
+ *                     URL: https://github.com/ferrandi/PandA-bambu
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
 */
 /*!
@@ -52,13 +52,8 @@ The simplest constructive approach is the as soon as possible (ASAP) scheduling.
 
 \section scheduling_algorithm Implemented algorithms for scheduling
 
-  There are different algorithms implemented to solve the scheduling problem:
-  - \ref src_HLS_scheduling_list_based_page solve scheduling using list based algorithm.
-  - \ref src_HLS_scheduling_ilp_scheduling_page solve scheduling exploting an ILP formulation of the scheduling problem.
-  - \ref src_HLS_scheduling_ilp_scheduling_new_page solve scheduling exploting a new ILP formulation of the scheduling problem.
-  - \ref src_HLS_scheduling_silp_scheduling_page solve scheduling exploting a SILP formulation of the scheduling problem.
-  - \ref src_HLS_scheduling_force_directed_page solve scheduling using a new formulation of force directed algorithm
-  - \ref src_HLS_path_based_page solve scheduling using a path based approach.
+  There is an algorithms implemented to solve the scheduling problem:
+  - list-based scheduling solves the scheduling problem using ready operations and available resources.
 
 An operation can be potentially executed if all its inputs have been already computed. Then the operation is selected to be executed if there is a free resource that is able to execute the type of the operation. If the operation has a partial binding (see \ref src_HLS_binding_constraints_page) to a specific functional unit instance, the algorithm will have simply to check if the specific instance which the operation is bounded is free (not a generic one). If it is free, the operation can be assigned to its functional unit instance and scheduled in the current control step; if the resource is busy, the operation will be kept in the list and the next one is tested. When a partial binding has not been specified before for some operations, the algorithm performs the usual methodology to associate them to free resources.
 

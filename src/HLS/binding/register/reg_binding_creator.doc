@@ -8,26 +8,26 @@
  *
  *             ***********************************************
  *                              PandA Project 
- *                     URL: http://panda.dei.polimi.it
+ *                     URL: https://github.com/ferrandi/PandA-bambu
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
 */
 /*!
@@ -49,7 +49,7 @@ scheduling and binding.
 
 \section compatibility_graph Compatibility graph definition
 
-The main task to provide good solutions to the <b>register allocation</b> problem is the procedure used to recognize the overlapping of the life time intervals. Since a register is needed for the values alive between two control steps, the analysis can be easily performed on state transition graph (see \ref src_HLS_controller_stg). In fact, a vertex in this graph represent all operations executed in a control step. The value that will be further needed will be alive across the edges outcoming from this vertex. Besides, an edge represents the changing from a control step to the next one, so the values alive between two control steps are the values alive on this edge. The dataflow analysis, presented by Appel, allows to compute, for each edge, which are the variables alive. These variables will be the vertices of a <i>conflict graph</i>, that is a graph so defined:
+The main task to provide good solutions to the <b>register allocation</b> problem is the procedure used to recognize the overlapping of the life time intervals. Since a register is needed for the values alive between two control steps, the analysis can be easily performed on state transition graph (see \ref src_HLS_fsm). In fact, a vertex in this graph represent all operations executed in a control step. The value that will be further needed will be alive across the edges outcoming from this vertex. Besides, an edge represents the changing from a control step to the next one, so the values alive between two control steps are the values alive on this edge. The dataflow analysis, presented by Appel, allows to compute, for each edge, which are the variables alive. These variables will be the vertices of a <i>conflict graph</i>, that is a graph so defined:
 - the vertices are the variables that have to be stored into a register (since that are alive between two control steps)
 - an edge connects two variables if they are alive in the same moment, that is they are alive on the same edge.
 
@@ -57,8 +57,9 @@ The resulting conflict graph is minimal with respect to number of conflicting va
 
 
 
-  \section intro Introduction
-  Into data flow graph, each edge represents a data value. If the value crosses a cycle step boundaries, it has to be stored into a register.\n
+  \section reg_binding_intro Introduction
+  Into data flow graph, each edge represents a data value. If the value crosses a cycle step boundaries, it has to be stored into a register.
+
   For example, in the data flow graph below, the edges from \e n1 to \e n3, from \e n2 to \e n4 and from \e n3 to \e n4, cross the low boundary of control step 1 and control step 2. Each of this edge represents a storage value and so, it has to be assigned to a register. 
   \dot  
   digraph DFG_op {
@@ -89,29 +90,47 @@ The resulting conflict graph is minimal with respect to number of conflicting va
   \section definition Principles of register allocation
 
   The register allocation problem is defined as finding a solution to the register allocation function \f$ \psi :  V_s \rightarrow \Pi( M_s ) \f$, that identifies the storage module (like registers and register files) holding a value from the set \f$ V_s \f$ of values that have to be stored. A storage module has to be assigned to each storage value. If the register allocation problem is considered in isolation, the goal is to minimize the number of storage modules. 
-  Every storage value is labeled with the variable it belongs to using a function \f$ var: V_s \to LV \f$ where \f$LV\f$ is the set of variables from the language.\n
-  The function \f$ \omega : V_s \to C \f$ determines for each storage value the cycle step in which it is written.\n
-  The function \f$ \rho : V_s \to \Pi(C) \f$ determines the set of cycle steps in which the storage value is read. The function \f$ P: V_s \to C \f$, determines the last cycle step in which the storage value \f$ v \in V_s\f$ is read. Thus, \f$ P(v) = max(\rho(v)) \f$.\n
+  Every storage value is labeled with the variable it belongs to using a function \f$ var: V_s \to LV \f$ where \f$LV\f$ is the set of variables from the language.
+
+  The function \f$ \omega : V_s \to C \f$ determines for each storage value the cycle step in which it is written.
+
+  The function \f$ \rho : V_s \to \Pi(C) \f$ determines the set of cycle steps in which the storage value is read. The function \f$ P: V_s \to C \f$, determines the last cycle step in which the storage value \f$ v \in V_s\f$ is read. Thus, \f$ P(v) = max(\rho(v)) \f$.
+
   A storage value \e v that is written in state \f$ \omega(v) \f$ and read for the last time in the state \f$ P(v) \f$ is called \e life in the interval \f$ lt(v) = [\omega(v), P(v)] \f$. The interval will be called \e lifetime (\e interval) of a storage value \e v.
   The requirement to keep storage values from one variable together is modeled by a set of lifetimes assigned to each variable \f$ u \in LV \f$. The function \f$ LT(u) \f$ describes this set of lifetimes: \f$ LT(u) = \{lt(v_s)|var(v_s) = u, u \in LV\} \f$
 
   \subsection compGraph The compatibility and conflict graphs
 
   Usually, from an examination of the control/data flow graph, it can be derived a \e conflict \e graph \f$ G_s(V_s,W) \f$ (also called \e interference \e graph), where nodes \f$ V_s \f$ are the storage value to be stored, and edges W are pairs of values that cannot be assigned to the same storage module because they are alive at the same time. This means that the storage values that are adjacent in \f$ G_s(V_s,W) \f$ cannot be stored in the same register because their interval life overlap.
-  Concluding, two vertices are joined by an edge if they are in conflict. The complement of a conflict graph will be called \e compatibility \e graph.\n\n
-  Edges \f$\bar{W}\f$ of the \e compatibility \e graph \f$ \bar{G}_s(V_s,\bar{W}) \f$ (e.g., the complement of the conflict graph \f$ G_s(V_s,W) \f$ described above) are defined as follow:\n\n
-  \f$ \bar{W}=\lbrace (v_{i},v_{j}) \mid \ll \omega(v_{i}),P(v_{i}) \gg \parallel \ll \omega(v_{j}),P(v_{j}) \gg = false\rbrace \f$\n\n
-  and \f$V_s\f$ is the set of the storage values; \f$\omega(v)\f$ and \f$P(v)\f$ are the write and last read cycle steps and the operator \f$||\f$ returns true if two intervals overlap and return false otherwise:\n\n
-  \f$\ll x_1, y_1 \gg || \ll x_2, y_2 \gg =\f$ \f$ \\false,\ if\ y_1<x_2\vee y_2<x_1\\true,\ otherwise\f$ \n\n
+  Concluding, two vertices are joined by an edge if they are in conflict. The complement of a conflict graph will be called \e compatibility \e graph.
+
+
+  Edges \f$\bar{W}\f$ of the \e compatibility \e graph \f$ \bar{G}_s(V_s,\bar{W}) \f$ (e.g., the complement of the conflict graph \f$ G_s(V_s,W) \f$ described above) are defined as follow:
+
+
+  \f$ \bar{W}=\lbrace (v_{i},v_{j}) \mid \ll \omega(v_{i}),P(v_{i}) \gg \parallel \ll \omega(v_{j}),P(v_{j}) \gg = false\rbrace \f$
+
+
+  and \f$V_s\f$ is the set of the storage values; \f$\omega(v)\f$ and \f$P(v)\f$ are the write and last read cycle steps and the operator \f$||\f$ returns true if two intervals overlap and return false otherwise:
+
+
+  \f$\ll x_1, y_1 \gg || \ll x_2, y_2 \gg =\f$ \f$ \\false,\ if\ y_1<x_2\vee y_2<x_1\\true,\ otherwise\f$ 
+
+
   This means that storage values that are adjacent in \f$G_s(V_s,W)\f$ can be stored in the same register without overwriting each others values. 
 
 
   \section traditional Traditional approach to register allocation problem
  
-  A clique covering algorithm, applied to compatibility graph, groups the values in such a way that all values that belong to the same clique can be stored in the same register. \n
-  A heuristic algorithm for clique covering of compatibility graph is the Tseng's algorithm. The clique covering is done using a heuristic that first combines those nodes having the most neighbors in common. To break a tie also the number of excluded edges from the combination is calculated. One edge is selected from this set \f$W''\f$. A new vertex \f$v_a\f$ represents the union of the cliques of \f$v_1\f$ and \f$v_2\f$. All excluded edges are removed from the graph and \f$v_a\f$ is connected to the remaining edges of \f$v_1\f$. Finally, \f$v_1\f$ and \f$v_2\f$ are removed from the graph.\n
-  Solving the general clique problem will attempt to minimize the number of registers needed to store all the variables. Method registerAlg::clique_cover() implements the Tseng's clique cover algorithm.\n\n
-  However, there are special cases in which more efficient algorithms may be used, as explained into \ref algorithms.\n
+  A clique covering algorithm, applied to compatibility graph, groups the values in such a way that all values that belong to the same clique can be stored in the same register. 
+
+  A heuristic algorithm for clique covering of compatibility graph is the Tseng's algorithm. The clique covering is done using a heuristic that first combines those nodes having the most neighbors in common. To break a tie also the number of excluded edges from the combination is calculated. One edge is selected from this set \f$W''\f$. A new vertex \f$v_a\f$ represents the union of the cliques of \f$v_1\f$ and \f$v_2\f$. All excluded edges are removed from the graph and \f$v_a\f$ is connected to the remaining edges of \f$v_1\f$. Finally, \f$v_1\f$ and \f$v_2\f$ are removed from the graph.
+
+  Solving the general clique problem will attempt to minimize the number of registers needed to store all the variables. Method registerAlg::clique_cover() implements the Tseng's clique cover algorithm.
+
+
+  However, there are special cases in which more efficient algorithms may be used, as explained in the Algorithms overview section.
+
   It's known that finding a clique covering in a graph \f$G\f$ is the dual problem of finding a coloring in the complement graph \f$\overline{G}\f$,so method registerAlg::coloring() provides a way to solve register allocation problem by conflict graph coloring as these graph are one the complement of each other by definition and they are both provided from compatibilityGraph objects.
 
 
@@ -124,38 +143,60 @@ The resulting conflict graph is minimal with respect to number of conflicting va
 
   \subsection data Dataflow Analysis
   
-  Dataflow analysis, based on Appel\'s approach, has been quite modified to obtain better result in a multi-flow problem, such as a usual DFG is.\n
-  First step is usual dataflow analysis, where live variables are computed for each vertex, to get information about liveness. Liveness information (\e live-in and \e live-out) can be calculated from \e use and \e def as the following dataflow equations shows: \n\n
-  \f$ in[n] = use[n] \bigcup (out[n] - def[n]) \f$ \n
-  \f$ out[n] =  \bigcup_{s \in succ[n]} in[s] \f$ \n\n
+  Dataflow analysis, based on Appel\'s approach, has been quite modified to obtain better result in a multi-flow problem, such as a usual DFG is.
+
+  First step is usual dataflow analysis, where live variables are computed for each vertex, to get information about liveness. Liveness information (\e live-in and \e live-out) can be calculated from \e use and \e def as the following dataflow equations shows: 
+
+
+  \f$ in[n] = use[n] \bigcup (out[n] - def[n]) \f$ 
+
+  \f$ out[n] =  \bigcup_{s \in succ[n]} in[s] \f$ 
+
+
   These dataflow equations for liveness analysis mean that:
   - If a variable is <I>use[n]</I>, than it is \e live-in \e at node <I>n</I>. That is, if a statement uses a variable, the variable is live on entry to the statement.
   - If a variable is \f$ live-in \f$ at node \f$ n \f$, than it is \f$ live-out \f$ at all nodes in \f$ pred[n] \f$.
-  - If a variable is \f$ live-out \f$ at node \f$ n \f$, an not in \f$ def[n] \f$, than the variable is also \f$ live-in \f$ at \f$ n \f$. That is, if someone needs the value of \f$ a \f$ at the end of statement \f$ n \f$, and \f$ n \f$ does not provide that value, then \f$ a \f$\'s value is needed even on entry to \e n.\n
+  - If a variable is \f$ live-out \f$ at node \f$ n \f$, an not in \f$ def[n] \f$, than the variable is also \f$ live-in \f$ at \f$ n \f$. That is, if someone needs the value of \f$ a \f$ at the end of statement \f$ n \f$, and \f$ n \f$ does not provide that value, then \f$ a \f$\'s value is needed even on entry to \e n.
+
   
-  A solution to these equations can be found by iteration. \f$ in[n] \f$ and \f$ out[n] \f$ are initialized to the empty set {}, then the equations are repeatedly treated as assignment until a fixed point is reached.\n
-  The convergence of this algorithm can be significantly speeded by ordering the nodes properly; this can be done easily by postorder ordering. \n\n
-  After that, unuseful informations have to be cleaned. They are because the graph is a multiflow one and so vars can flow through wrong paths (they would not reach their defs). So the second step is a forward analysis, where each var definition is propagated up to the end of interval life, so when the variable is \f$ live-in\f$ and not \f$ live-out\f$ at the operation vertex or when there is a new definition of the same variable in the vertex. Merging nodes having to be take carefully: they also merge variable definitions. \n
+  A solution to these equations can be found by iteration. \f$ in[n] \f$ and \f$ out[n] \f$ are initialized to the empty set {}, then the equations are repeatedly treated as assignment until a fixed point is reached.
+
+  The convergence of this algorithm can be significantly speeded by ordering the nodes properly; this can be done easily by postorder ordering. 
+
+
+  After that, unuseful informations have to be cleaned. They are because the graph is a multiflow one and so vars can flow through wrong paths (they would not reach their defs). So the second step is a forward analysis, where each var definition is propagated up to the end of interval life, so when the variable is \f$ live-in\f$ and not \f$ live-out\f$ at the operation vertex or when there is a new definition of the same variable in the vertex. Merging nodes having to be take carefully: they also merge variable definitions. 
+
   Now, if a variable is live into a node and it has not any defs, it means it is a variable in a wrong path and so it can be eliminated from the computation. This forward analysis is computed until fixed point has been reached and it ensures a right and meanful computation of liveness analysis.
 
 
   \subsection cgcreation Conflict graph creation
   
-  After dataflow analysis, conflic graph can be created. In graph creation, each edge into the control flow graph is taken into account. If source vertex and target one are scheduled into different control step, it means that a register is needed for each variable living out from the source vertex to keep value alive until target one will use them. So a conflict edge can be set between each pair of variable in a such situation: they cannot use the same register module. However, it is a conservative approach. Now, some improvements implemented into the proposed solution have been explained.\n
-  This algorithm is able to detect \f$ alias \f$ variables. In fact, theorically, each vertex can execute only one operation and so store only one result. Multi-definitions are allowed only by using statements like as: \n\n
-  \f$ a = b = c + d \f$ \n\n
-  In this way, variable \e a and variable \e b are different ones but they contain the same value, so they can share the same register. In proposed solution, they can be detected because definitions have been forwarded. So, during the analysis of an edge, if two variables are both alive and definition vertex is the same, they can be considered \e alias and then there is not conflict between them. \n\n
-  There is no conflict also when the defining vertices are in mutual exclusion. In fact, at run-time, if a variable is defined by a vertex, the other one will not be defined, so register could be shared between them. \n
-  Constants and read input variables doesn't need any register. \nAny pair of variables living togheter and without any of above properties are in conflict. So an edge between them must be added into the conflict graph.
+  After dataflow analysis, conflic graph can be created. In graph creation, each edge into the control flow graph is taken into account. If source vertex and target one are scheduled into different control step, it means that a register is needed for each variable living out from the source vertex to keep value alive until target one will use them. So a conflict edge can be set between each pair of variable in a such situation: they cannot use the same register module. However, it is a conservative approach. Now, some improvements implemented into the proposed solution have been explained.
+
+  This algorithm is able to detect \f$ alias \f$ variables. In fact, theorically, each vertex can execute only one operation and so store only one result. Multi-definitions are allowed only by using statements like as: 
+
+
+  \f$ a = b = c + d \f$ 
+
+
+  In this way, variable \e a and variable \e b are different ones but they contain the same value, so they can share the same register. In proposed solution, they can be detected because definitions have been forwarded. So, during the analysis of an edge, if two variables are both alive and definition vertex is the same, they can be considered \e alias and then there is not conflict between them. 
+
+
+  There is no conflict also when the defining vertices are in mutual exclusion. In fact, at run-time, if a variable is defined by a vertex, the other one will not be defined, so register could be shared between them. 
+
+  Constants and read input variables doesn't need any register. 
+Any pair of variables living togheter and without any of above properties are in conflict. So an edge between them must be added into the conflict graph.
 
 
   \subsection bestalg Choose of the Best Algorithm
 
-  As shown in Figure \ ref{fig:flowchart}, there are four main register allocation algorithms. The best one is chosen on the basis of a precise analysis of the topology of the resulting conflict graph. In fact there are special cases in which efficient algorithms may be used.\n
+  As shown in Figure \ ref{fig:flowchart}, there are four main register allocation algorithms. The best one is chosen on the basis of a precise analysis of the topology of the resulting conflict graph. In fact there are special cases in which efficient algorithms may be used.
+
   Before describing precisely each algorithm, some definition can be useful:
   - <I>INTERVAL GRAPH</I>: an undirected graph G is called an interval graph if its vertices can be put into one-to-one correspondence with a set of intervals of a linearly orders set (like the real line) such that two vertices are connected by an edge of G iff their corresponding intervals have nonempty intersection. An interval graph satisfies the triangulated graph property;
   - <I>CHORDAL GRAPH</I>: an undirected graph G is called a triangulated graph (or chordal graph) if every cycle of length strictly greater than three possesses a chord;
-  - <I>CYCLIC GRAPH</I>: an undirected graph G is called a cyclic graph if it contains a cycle.\n
+  - <I>CYCLIC GRAPH</I>: an undirected graph G is called a cyclic graph if it contains a cycle.
+
 
   Next subsections specify what are those efficient algorithms named before and what are the special cases in which they may be used.
 
@@ -163,9 +204,13 @@ The resulting conflict graph is minimal with respect to number of conflicting va
 
   \subsection lea Left Edge Algorithm 
   
-  The lifetimes of all values are represented by intervals. The register allocation problem can be viewed as the problem of assigning the intervals to registers along a horizontal line, such that no two intervals in the same register overlap. These intervals can be seen as wires which have to be assigned to tracks (the registers), which will make this problem analogous to the channel routing problem without vertical constraints. A left edge algorithm can be used to solve this problem.\n
-  \n
-  Left edge algorithm \f$G_s (V_s , W)\f$ \n\n
+  The lifetimes of all values are represented by intervals. The register allocation problem can be viewed as the problem of assigning the intervals to registers along a horizontal line, such that no two intervals in the same register overlap. These intervals can be seen as wires which have to be assigned to tracks (the registers), which will make this problem analogous to the channel routing problem without vertical constraints. A left edge algorithm can be used to solve this problem.
+
+  
+
+  Left edge algorithm \f$G_s (V_s , W)\f$ 
+
+
   \f$\\.sort\_values(v\in V_s,\omega (v)); \ \ \ M_s=\emptyset; \\
   .\mathbf{foreach} \ v \in \ V_s \ \mathbf{do} \\
   .\ \ \ \mathbf{foreach}\ r \in \ M_s\ \mathbf{do} \\
@@ -179,18 +224,23 @@ The resulting conflict graph is minimal with respect to number of conflicting va
   .\ \ \ \ \ \ \ \psi(v)=r;\\
   .\ \ \ \ \ \ \ P(r)=P(v);\\
   .\ \ \ \mathbf{endif} \\
-  .\mathbf{endfor} \f$\n
+  .\mathbf{endfor} \f$
 
-  Since the list of registers is pre-sorted the check if a new value overlaps with the values in the registers can simply be done by comparing the write time of the value with the last cycle step in which the register is occupied. This cycle step is called the last read step of a register: P(r).\n Sorting is the most complex step in this algorithm and the left-edge algorithm can be performed with complexity \f$O(nlogn)\f$ where n is the number of values to be stored. 
+
+  Since the list of registers is pre-sorted the check if a new value overlaps with the values in the registers can simply be done by comparing the write time of the value with the last cycle step in which the register is occupied. This cycle step is called the last read step of a register: P(r).
+ Sorting is the most complex step in this algorithm and the left-edge algorithm can be performed with complexity \f$O(nlogn)\f$ where n is the number of values to be stored. 
   Method registerAlg::left_edge() implements previously described algorithm.
  
 
   \subsection cgca Chordal Graph Coloring Algorithm
 
   The left edge algorithm will only guarantee optimality if the life times of all variables can be ordered in a linear fashion. If the data flow graph contains conditionals this may not be the case. When variables are alive across the beginning or ends of conditionals these situations can arise. The lifetimes cannot be represented along a single line but form a tree-like structure. The confict register allocation graph is not an interval graph anymore.
-  It can be proved that a graph G is an interval graph, if and only if it does not contain a subgraph which is a so called asteroidal triple. See [1] pag. 16-17.\n Despite the fact that the asteroidal triples cause the conflict graph to be non-interval graph, they are still triangular (chordal) graphs. Algorithms exist to efficiently color these graphs. Similar to a left-edge algorithm an ordering in which to color the vertices has to be build first. 
-  A lexicographic breath first search provides such an ordering. The algorithm returns a sequence of vertices \f$ \sigma \f$ which can be used in coloring the graph. Vertices will be picked in order of their maximal labels. Each time a vertex is picked the labels of all its neighbor vertices are updated. The sequence are compared lexicographically. The node sequence returned in \f$\sigma\f$ will be a so-called perfect vertex elimination scheme.\n
-  \n
+  It can be proved that a graph G is an interval graph, if and only if it does not contain a subgraph which is a so called asteroidal triple. See [1] pag. 16-17.
+ Despite the fact that the asteroidal triples cause the conflict graph to be non-interval graph, they are still triangular (chordal) graphs. Algorithms exist to efficiently color these graphs. Similar to a left-edge algorithm an ordering in which to color the vertices has to be build first. 
+  A lexicographic breath first search provides such an ordering. The algorithm returns a sequence of vertices \f$ \sigma \f$ which can be used in coloring the graph. Vertices will be picked in order of their maximal labels. Each time a vertex is picked the labels of all its neighbor vertices are updated. The sequence are compared lexicographically. The node sequence returned in \f$\sigma\f$ will be a so-called perfect vertex elimination scheme.
+
+  
+
   \f$\\Lexicographic\ BFS\ G(V,E) \\ \\
       .\mathbf{foreach}\ v \in V\ \mathbf{do} \\
       .\ \ \ \ label(v)=\emptyset ;\\
@@ -203,15 +253,18 @@ The resulting conflict graph is minimal with respect to number of conflicting va
       .\ \ \ \ \mathbf{endforeach}\\
       .\mathbf{endfor}\f$
   
-  \n
-  Once such an ordering is obtained a simple modification to the left edge algorithm can be made. All values have to added to the registers in the order prescribed by \f$\sigma\f$. The test if a value can be added to a register becomes more complicated than a simple left edge algorithm as one cannot simply test for overlap between the read cycle step of the last value with the new value to be assigned. All values previously assigned to the register have to be checked for overlap. The following algorithm produces the minimal number of registers in case of conflict register allocation graph is a triangular graph. The complexity is O(V+W).\n
+  
+
+  Once such an ordering is obtained a simple modification to the left edge algorithm can be made. All values have to added to the registers in the order prescribed by \f$\sigma\f$. The test if a value can be added to a register becomes more complicated than a simple left edge algorithm as one cannot simply test for overlap between the read cycle step of the last value with the new value to be assigned. All values previously assigned to the register have to be checked for overlap. The following algorithm produces the minimal number of registers in case of conflict register allocation graph is a triangular graph. The complexity is O(V+W).
+
   
   \f$\\ Chordal\ graph\ coloring\ G(V_s,W)\\ \\
       .M_s = \emptyset\\
       .\mathbf{for}\ k=|V_s|\ to\ 1\ \mathbf{do}\\
       .\ \ \ \ v=\sigma(k);\\
       .\ \ \ \ \mathbf{foreach}\ r \in M_s\ \mathbf{do}\\
-      .\ \ \ \ \ \ \ \ \mathbf{if} \not \exists v_s \in r\ \textrm{such that } lt(v_s)||lt(v)=true\ \mathbf{then} \\  
+      .\ \ \ \ \ \ \ \ \mathbf{if} 
+ot \exists v_s \in r\ \textrm{such that } lt(v_s)||lt(v)=true\ \mathbf{then} \\  
       .\ \ \ \ \ \ \ \ \ \ \ \ \psi(v)=r;\\
       .\ \ \ \ \ \ \ \ \mathbf{endif}\\
       .\ \ \ \ \mathbf{endfor}\\
@@ -221,7 +274,8 @@ The resulting conflict graph is minimal with respect to number of conflicting va
       .\ \ \ \ \mathbf{endif}\\
       .\mathbf{endfor} \f$
   
-  \n  
+  
+  
   Method registerAlg::chordalColoring() implements the previus chordal graph coloring preceded by the lexicographic breath first search to get the \f$\sigma\f$ node order. 
   
 
@@ -242,4 +296,3 @@ The resulting conflict graph is minimal with respect to number of conflicting va
   
   
 */
-

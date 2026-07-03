@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=eu.bambuhls.panda
+Exec=commander
+Icon=eu.bambuhls.panda
+Type=Application
+Terminal=true
+Categories=Development;Building

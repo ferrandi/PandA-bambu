@@ -8,35 +8,35 @@
  *
  *             ***********************************************
  *                              PandA Project 
- *                     URL: http://panda.dei.polimi.it
+ *                     URL: https://github.com/ferrandi/PandA-bambu
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
 */
 /*!
-  \page src_HLS_controller_stg Finite State Machine
+  \page src_HLS_fsm Finite State Machine
 
-\section stg_definition State Transition Graph definition
+\section fsm_definition State Transition Graph definition
 
 After the scheduling phase (see \ref src_HLS_scheduling_general), the operations have been assigned to control steps where they will be executed and then, inside each control steps, they are associated to functional units that will execute them. To perform further analysis can be useful reconstruct a flow similar to Control Flow Graph (CFG). In fact, the CFG represents, for each moment, which is the operation that is executed, the previous one and the next one. In the high-level synthesis problem, it is necessary to know, for each control step, which are the operations executed together and then which are previous and next ones. For instance, this information is needed by the register allocation task, that needs to know which values are alive between two control steps to store them in the storage elements.
-This feature is provided by the Finite State Machine (FSM), created on Gajski's FSMD and it is well represented by the <b>State Transition Graph</b> (STG). This model describes the evolution of the system based on control flow. The STG is defined as a graph where:
+This feature is provided by the Finite State Machine (FSM), created on Gajski's FSMD and it is well represented by the <b>Finite State Machine</b> (FSM) data structure. This model describes the evolution of the system based on control flow. The FSM is defined as a graph where:
 - the vertices represent a set of operations all executed together in the same time, under certain control conditions
 - the edges are the transitions from the control steps to the following ones and they are eventually labeled with control conditions that have to be occurred to perform the transition.
 

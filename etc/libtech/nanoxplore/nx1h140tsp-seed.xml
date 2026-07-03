@@ -1,0 +1,292 @@
+<?xml version="1.0"?>
+<target>
+  <device>
+    <vendor value="NanoXplore"/>
+    <family value="NG-LARGE"/>
+    <model value="nx1h140TSP"/>
+    <package value="LG625V"/>
+    <speed_grade value="std"/>
+    <BRAM_bitsize_min value="8"/>
+    <BRAM_bitsize_max value="4096"/>
+    <DSPs_x_sizes value="18"/>
+    <DSPs_y_sizes value="24"/>
+    <DSPs_rx_sizes value="16"/>
+    <DSPs_ry_sizes value="16"/>
+    <max_lut_size value="4"/>
+    <RelativeConnectionOffset value="3"/>
+    <OutputDSPConnectionRatio value="7"/>
+    <OutputCarryConnectionRatio value="7"/>
+    <use_soft_64_mul value="1"/>
+    <disable_extract_ternary_patterns value="1"/>
+  </device>
+   <backend>
+      <flow id="synthesis" env="nanoxplore"/>
+      <flow id="characterization" env="nanoxplore"/>
+   </backend>
+  <technology>
+      <library>
+      <name>STD_COMMON</name>
+      <cell>
+        <name>STD_DP_BRAM</name>
+        <circuit>
+          <module_o id="STD_DP_BRAM">
+            <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+            <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
+            <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+            <license>PANDA_MIT</license>
+            <specialized>NanoXplore</specialized>
+            <structural_type_descriptor id_type="STD_DP_BRAM"/>
+            <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
+            <parameter name="n_elements">32</parameter>
+            <parameter name="READ_ONLY_MEMORY">0</parameter>
+            <parameter name="HIGH_LATENCY">0</parameter>
+            <port_o id="clock" dir="IN" is_clock="1">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_vector_o id="write_enable" dir="IN">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_vector_o>
+            <port_vector_o id="data_in" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            </port_vector_o>
+            <port_vector_o id="address_in" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            </port_vector_o>
+            <port_vector_o id="data_out" dir="OUT">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            </port_vector_o>
+            <NP_functionality LIBRARY="STD_DP_BRAM write_enable data_in address_in data_out MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY"
+              VERILOG_PROVIDED="
+wire [2*BITSIZE_address_in-1:0] address_in_mem;
+reg [2*BITSIZE_address_in-1:0] address_in1;
+
+wire [1:0] write_enable_mem;
+reg [1:0] write_enable1;
+
+reg [2*BITSIZE_data_out-1:0] data_out_mem;
+reg [2*BITSIZE_data_out-1:0] data_out1;
+
+wire [2*BITSIZE_data_in-1:0] data_in_mem;
+reg [2*BITSIZE_data_in-1:0] data_in1;
+
+reg [BITSIZE_data_out-1:0] memory [0:n_elements-1] /* synthesis syn_ramstyle = &quot;no_rw_check&quot; */;
+
+initial
+begin
+  if (MEMORY_INIT_file != &quot;&quot;)
+    $readmemb(MEMORY_INIT_file, memory, 0, n_elements-1);
+end
+
+assign data_out = HIGH_LATENCY==0 ? data_out_mem : data_out1;
+always @(posedge clock)
+  data_out1 &lt;= data_out_mem;
+
+generate
+  if(HIGH_LATENCY==2)
+  begin
+    always @ (posedge clock)
+    begin
+       address_in1 &lt;= address_in;
+       write_enable1 &lt;= write_enable;
+       data_in1 &lt;= data_in;
+    end
+    assign address_in_mem = address_in1;
+    assign write_enable_mem = write_enable1;
+    assign data_in_mem = data_in1;
+  end
+  else
+  begin
+    assign address_in_mem = address_in;
+    assign write_enable_mem = write_enable;
+    assign data_in_mem = data_in;
+  end
+endgenerate
+
+
+always @(posedge clock)
+begin
+  if(READ_ONLY_MEMORY==0)
+  begin
+    if(write_enable_mem[0])
+      memory[address_in_mem[BITSIZE_address_in*0+:BITSIZE_address_in]] &lt;= data_in_mem[BITSIZE_data_in*0+:BITSIZE_data_in];
+  end
+  data_out_mem[BITSIZE_data_out*0+:BITSIZE_data_out] &lt;= memory[address_in_mem[BITSIZE_address_in*0+:BITSIZE_address_in]];
+  if(READ_ONLY_MEMORY==0)
+  begin
+    if(write_enable_mem[1])
+      memory[address_in_mem[BITSIZE_address_in*1+:BITSIZE_address_in]] &lt;= data_in_mem[BITSIZE_data_in*1+:BITSIZE_data_in];
+  end
+  data_out_mem[BITSIZE_data_out*1+:BITSIZE_data_out] &lt;= memory[address_in_mem[BITSIZE_address_in*1+:BITSIZE_address_in]];
+end
+"
+              VHDL_PROVIDED="
+  signal address_in_mem : std_logic_vector(2*BITSIZE_address_in-1 downto 0);
+  signal address_in1 : std_logic_vector(2*BITSIZE_address_in-1 downto 0);
+
+
+  signal write_enable_mem : std_logic_vector(1 downto 0);
+  signal write_enable1 : std_logic_vector(1 downto 0);
+
+  signal data_out_mem : std_logic_vector(2*BITSIZE_data_out-1 downto 0);
+  signal data_out1 : std_logic_vector(2*BITSIZE_data_out-1 downto 0);
+
+  signal data_in_mem : std_logic_vector(2*BITSIZE_data_in-1 downto 0);
+  signal data_in1 : std_logic_vector(2*BITSIZE_data_in-1 downto 0);
+
+  type mem_type is array (n_elements-1 downto 0) of std_logic_vector(BITSIZE_data_out-1 downto 0);
+
+  impure function InitMemFromFile (MemFileName : in string) return mem_type is
+    FILE memfile : text open READ_MODE is MemFileName;
+    variable MemFileLine : line;
+    variable mem : mem_type;
+    begin
+       for i in 0 to n_elements-1 loop
+        readline(memfile, MemFileLine);
+        read(MemFileLine, mem(i));
+      end loop;
+      return mem;
+  end function;
+
+  shared variable mem : mem_type := InitMemFromFile(MEMORY_INIT_file);
+
+begin
+
+  DelayProcess : process(clock)
+  begin
+    if (clock&apos;event and clock=&apos;1&apos;) then
+       if(HIGH_LATENCY=2) then
+         address_in1 &lt;= address_in;
+         write_enable1 &lt;= write_enable;
+         data_in1 &lt;= data_in;
+       end if;
+    end if;
+  end process;
+
+  address_in_mem &lt;= address_in1 when (HIGH_LATENCY=2) else address_in;
+  write_enable_mem &lt;= write_enable1 when (HIGH_LATENCY=2) else write_enable;
+  data_in_mem &lt;= data_in1 when (HIGH_LATENCY=2) else data_in;
+
+  data_out &lt;= data_out_mem when (HIGH_LATENCY=0) else data_out1;
+
+  L1_registering : process(clock)
+  begin
+    if (clock&apos;event and clock=&apos;1&apos;) then
+      data_out1 &lt;= data_out_mem;
+    end if;
+  end process;
+
+  L1_single_proc : process(clock)
+  begin
+    if (clock&apos;event and clock=&apos;1&apos;) then
+        if(READ_ONLY_MEMORY=0) then
+          if(write_enable_mem(0)=&apos;1&apos;) then
+-- synthesis translate_off
+            if (to_integer(unsigned(address_in_mem((0+1)*BITSIZE_address_in-1 downto 0*BITSIZE_address_in))) &lt; n_elements) then
+-- synthesis translate_on
+              mem(to_integer(unsigned(address_in_mem((0+1)*BITSIZE_address_in-1 downto 0*BITSIZE_address_in)))) := data_in_mem((0+1)*BITSIZE_data_in-1 downto 0*BITSIZE_data_in);
+-- synthesis translate_off
+            end if;
+-- synthesis translate_on
+          end if;
+        end if;
+-- synthesis translate_off
+        if (to_integer(unsigned(address_in_mem((0+1)*BITSIZE_address_in-1 downto 0*BITSIZE_address_in))) &lt; n_elements) then
+-- synthesis translate_on
+          data_out_mem((0+1)*BITSIZE_data_out-1 downto 0*BITSIZE_data_out) &lt;= mem(to_integer(unsigned(address_in_mem((0+1)*BITSIZE_address_in-1 downto 0*BITSIZE_address_in))));
+-- synthesis translate_off
+        else
+          data_out_mem((0+1)*BITSIZE_data_out-1 downto 0*BITSIZE_data_out) &lt;= (others =&gt; &apos;X&apos;);
+        end if;
+-- synthesis translate_on
+    end if;
+  end process;
+  L2_single_proc : process(clock)
+  begin
+    if (clock&apos;event and clock=&apos;1&apos;) then
+        if(READ_ONLY_MEMORY=0) then
+          if(write_enable_mem(1)=&apos;1&apos;) then
+-- synthesis translate_off
+            if (to_integer(unsigned(address_in_mem((1+1)*BITSIZE_address_in-1 downto 1*BITSIZE_address_in))) &lt; n_elements) then
+-- synthesis translate_on
+              mem(to_integer(unsigned(address_in_mem((1+1)*BITSIZE_address_in-1 downto 1*BITSIZE_address_in)))) := data_in_mem((1+1)*BITSIZE_data_in-1 downto 1*BITSIZE_data_in);
+-- synthesis translate_off
+            end if;
+-- synthesis translate_on
+          end if;
+        end if;
+-- synthesis translate_off
+        if (to_integer(unsigned(address_in_mem((1+1)*BITSIZE_address_in-1 downto 1*BITSIZE_address_in))) &lt; n_elements) then
+-- synthesis translate_on
+          data_out_mem((1+1)*BITSIZE_data_out-1 downto 1*BITSIZE_data_out) &lt;= mem(to_integer(unsigned(address_in_mem((1+1)*BITSIZE_address_in-1 downto 1*BITSIZE_address_in))));
+-- synthesis translate_off
+        else
+          data_out_mem((1+1)*BITSIZE_data_out-1 downto 1*BITSIZE_data_out) &lt;= (others =&gt; &apos;X&apos;);
+        end if;
+-- synthesis translate_on
+    end if;
+  end process;
+"/>
+          </module_o>
+        </circuit>
+      </cell>
+      <cell>
+        <name>TRUE_DUAL_PORT_BYTE_ENABLING_RAM</name>
+        <circuit>
+          <module_o id="TRUE_DUAL_PORT_BYTE_ENABLING_RAM">
+            <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+            <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
+            <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+            <license>PANDA_MIT</license>
+            <specialized>NanoXplore</specialized>
+            <structural_type_descriptor id_type="TRUE_DUAL_PORT_BYTE_ENABLING_RAM"/>
+            <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
+            <parameter name="BRAM_BITSIZE">32</parameter>
+            <parameter name="n_byte_on_databus">4</parameter>
+            <parameter name="n_elements">4</parameter>
+            <parameter name="READ_ONLY_MEMORY">0</parameter>
+            <parameter name="HIGH_LATENCY">0</parameter>
+            <port_o id="clock" dir="IN" is_clock="1">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="bram_write0" dir="IN">
+              <structural_type_descriptor type="BOOL"/>
+            </port_o>
+            <port_o id="bram_write1" dir="IN">
+              <structural_type_descriptor type="BOOL"/>
+            </port_o>
+            <port_o id="memory_addr_a" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            </port_o>
+            <port_o id="memory_addr_b" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            </port_o>
+            <port_o id="din_value_aggregated_a" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            </port_o>
+            <port_o id="din_value_aggregated_b" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            </port_o>
+            <port_o id="be_a" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            </port_o>
+            <port_o id="be_b" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            </port_o>
+            <port_o id="dout_a" dir="OUT">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            </port_o>
+            <port_o id="dout_b" dir="OUT">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            </port_o>
+            <NP_functionality LIBRARY="TRUE_DUAL_PORT_BYTE_ENABLING_RAM dout_a dout_b memory_addr_a memory_addr_b din_value_aggregated_a din_value_aggregated_b be_a be_b MEMORY_INIT_file BRAM_BITSIZE n_byte_on_databus n_elements READ_ONLY_MEMORY HIGH_LATENCY" IP_COMPONENT="TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE" VERILOG_PROVIDED="
+TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE #(.BITSIZE_memory_addr_a(BITSIZE_memory_addr_a), .BITSIZE_memory_addr_b(BITSIZE_memory_addr_b), .BITSIZE_din_value_aggregated_a(BITSIZE_din_value_aggregated_a), .BITSIZE_din_value_aggregated_b(BITSIZE_din_value_aggregated_b), .BITSIZE_be_a(BITSIZE_be_a), .BITSIZE_be_b(BITSIZE_be_b), .BITSIZE_dout_a(BITSIZE_dout_a), 
+.BITSIZE_dout_b(BITSIZE_dout_b), .MEMORY_INIT_file(MEMORY_INIT_file), .BRAM_BITSIZE(BRAM_BITSIZE), .n_byte_on_databus(n_byte_on_databus), .n_elements(n_elements), .READ_ONLY_MEMORY(READ_ONLY_MEMORY), .HIGH_LATENCY(HIGH_LATENCY)) TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE_instance (.clock(clock), .bram_write0(bram_write0), .bram_write1(bram_write1), .memory_addr_a(memory_addr_a), .memory_addr_b(memory_addr_b), .din_value_aggregated_a(din_value_aggregated_a), .din_value_aggregated_b(din_value_aggregated_b), .be_a(be_a), .be_b(be_b), .dout_a(dout_a), .dout_b(dout_b));
+" VHDL_PROVIDED="begin
+  TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE_instance : TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE generic map (BITSIZE_memory_addr_a=&gt;BITSIZE_memory_addr_a, BITSIZE_memory_addr_b=&gt;BITSIZE_memory_addr_b, BITSIZE_din_value_aggregated_a=&gt;BITSIZE_din_value_aggregated_a, BITSIZE_din_value_aggregated_b=&gt;BITSIZE_din_value_aggregated_b, BITSIZE_be_a=&gt;BITSIZE_be_a, BITSIZE_be_b=&gt;BITSIZE_be_b, BITSIZE_dout_a=&gt;BITSIZE_dout_a, BITSIZE_dout_b=&gt;BITSIZE_dout_b, MEMORY_INIT_file=&gt;MEMORY_INIT_file, BRAM_BITSIZE=&gt;BRAM_BITSIZE, n_byte_on_databus=&gt;n_byte_on_databus, n_elements=&gt;n_elements, READ_ONLY_MEMORY=&gt;READ_ONLY_MEMORY, HIGH_LATENCY=&gt;HIGH_LATENCY) port map (clock=&gt;clock, bram_write0=&gt;bram_write0, bram_write1=&gt;bram_write1, memory_addr_a=&gt;memory_addr_a, memory_addr_b=&gt;memory_addr_b, din_value_aggregated_a=&gt;din_value_aggregated_a, din_value_aggregated_b=&gt;din_value_aggregated_b, be_a=&gt;be_a, be_b=&gt;be_b, dout_a=&gt;dout_a, dout_b=&gt;dout_b);
+"/>
+          </module_o>
+        </circuit>
+      </cell>
+    </library>
+</technology>
+</target>

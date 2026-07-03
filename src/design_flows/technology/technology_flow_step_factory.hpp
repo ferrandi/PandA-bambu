@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2024 Politecnico di Milano
+ *              Copyright (C) 2015-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -41,10 +41,8 @@
 #ifndef TECHNOLOGY_FLOW_STEP_FACTORY_HPP
 #define TECHNOLOGY_FLOW_STEP_FACTORY_HPP
 
-/// Superclass include
 #include "design_flow_step_factory.hpp"
 
-/// utility include
 #include "refcount.hpp"
 
 enum class TechnologyFlowStep_Type;
@@ -71,13 +69,11 @@ class TechnologyFlowStepFactory : public DesignFlowStepFactory
     * @param parameters is the set of input parameters
     */
    TechnologyFlowStepFactory(const technology_managerRef TM, const generic_deviceRef target,
-                             const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
-
-   ~TechnologyFlowStepFactory() override;
+                             const DesignFlowManager& design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Create a scheduling design flow step
-    * @param technology_design_flow_step_type is the type of step to be created
+    * @param technology_flow_step_type is the type of step to be created
     */
    DesignFlowStepRef CreateTechnologyFlowStep(const TechnologyFlowStep_Type technology_flow_step_type) const;
 };

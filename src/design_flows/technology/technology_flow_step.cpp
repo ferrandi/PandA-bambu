@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -45,7 +45,7 @@
 #include "technology_flow_step_factory.hpp"
 
 TechnologyFlowStep::TechnologyFlowStep(const technology_managerRef _TM, const generic_deviceRef _target,
-                                       const DesignFlowManagerConstRef _design_flow_manager,
+                                       const DesignFlowManager& _design_flow_manager,
                                        const TechnologyFlowStep_Type _technology_flow_step_type,
                                        const ParameterConstRef _parameters)
     : DesignFlowStep(ComputeSignature(_technology_flow_step_type), _design_flow_manager, _parameters),
@@ -65,8 +65,6 @@ static std::string EnumToName(const TechnologyFlowStep_Type technology_flow_step
 {
    switch(technology_flow_step_type)
    {
-      case TechnologyFlowStep_Type::FIX_CHARACTERIZATION:
-         return "FixCharacterization";
 #if HAVE_CIRCUIT_BUILT
       case TechnologyFlowStep_Type::LOAD_BUILTIN_TECHNOLOGY:
          return "LoadBuiltinTechnology";
@@ -95,13 +93,12 @@ std::string TechnologyFlowStep::GetName() const
 void TechnologyFlowStep::ComputeRelationships(DesignFlowStepSet& steps,
                                               const DesignFlowStep::RelationshipType relationship_type)
 {
-   const auto DFM = design_flow_manager.lock();
-   const auto design_flow_graph = DFM->CGetDesignFlowGraph();
+   const auto design_flow_graph = design_flow_manager.CGetDesignFlowGraph();
    const auto step_factory = GetPointer<const TechnologyFlowStepFactory>(CGetDesignFlowStepFactory());
    const auto step_types = ComputeTechnologyRelationships(relationship_type);
    for(const auto& step_type : step_types)
    {
-      auto technology_flow_step = DFM->GetDesignFlowStep(ComputeSignature(step_type));
+      auto technology_flow_step = design_flow_manager.GetDesignFlowStep(ComputeSignature(step_type));
       const auto design_flow_step = technology_flow_step != DesignFlowGraph::null_vertex() ?
                                         design_flow_graph->CGetNodeInfo(technology_flow_step)->design_flow_step :
                                         step_factory->CreateTechnologyFlowStep(step_type);
@@ -111,7 +108,7 @@ void TechnologyFlowStep::ComputeRelationships(DesignFlowStepSet& steps,
 
 DesignFlowStepFactoryConstRef TechnologyFlowStep::CGetDesignFlowStepFactory() const
 {
-   return design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::TECHNOLOGY);
+   return design_flow_manager.CGetDesignFlowStepFactory(DesignFlowStep::TECHNOLOGY);
 }
 
 bool TechnologyFlowStep::HasToBeExecuted() const

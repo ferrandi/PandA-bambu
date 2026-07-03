@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -41,9 +41,6 @@
  * - New Methods to Color the Vertices of a Graph, Daniel Brelaz, CACM 22, 251--256, 1979.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef DSATUR2_COLORING_HPP
@@ -66,7 +63,7 @@
 #include <boost/serialization/array_wrapper.hpp>
 #endif
 #include <algorithm>
-#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_sparse.hpp>
 #include <cassert>
 #include <vector>
 
@@ -124,7 +121,7 @@ namespace boost
       using Vertex = typename GraphTraits::vertex_descriptor;
       const size_type num_node;
       std::vector<bool> valid;
-      typename boost::numeric::ublas::matrix<bool> ColorAdj;
+      typename boost::numeric::ublas::mapped_matrix<bool> ColorAdj;
       std::vector<size_type> ColorCount;
       std::vector<size_type> DegreeCount;
       const VertexListGraph& G;
@@ -148,11 +145,10 @@ namespace boost
          for(i = 0; i < num_node; i++)
          {
             Vertex v = boost::vertex(i, G);
-            DegreeCount[i] = out_degree(v, _G);
+            DegreeCount[i] = static_cast<size_type>(out_degree(v, _G));
             heap_container[iheap] = i;
             iheap++;
          }
-         boost::numeric::ublas::noalias(ColorAdj) = boost::numeric::ublas::zero_matrix<bool>(_num_node, _num_node);
       }
       ~dsatur2_coloring_helper()
       {
@@ -160,6 +156,7 @@ namespace boost
       }
       // no copy constructor
       dsatur2_coloring_helper(const dsatur2_coloring_helper& inst) = delete;
+      dsatur2_coloring_helper& operator=(const dsatur2_coloring_helper&) = delete;
 
       void AssignColor(size_type node, size_type color)
       {
@@ -168,7 +165,7 @@ namespace boost
          typename GraphTraits::adjacency_iterator v, vend;
          for(boost::tie(v, vend) = adjacent_vertices(boost::vertex(node, G), G); v != vend; ++v)
          {
-            node1 = get(vertex_index, G, *v);
+            node1 = static_cast<size_type>(get(vertex_index, G, *v));
             if(!ColorAdj(node1, color))
             {
                ColorCount[node1]++;
@@ -220,7 +217,7 @@ namespace boost
    {
       using size_type = typename property_traits<ColorMap>::value_type;
 
-      const size_type num_node = num_vertices(G);
+      const auto num_node = static_cast<size_type>(num_vertices(G));
       if(num_node == 0)
       {
          return 0;

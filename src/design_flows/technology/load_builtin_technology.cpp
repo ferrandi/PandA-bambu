@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -47,14 +47,12 @@
 #include "technology_node.hpp"
 
 LoadBuiltinTechnology::LoadBuiltinTechnology(const technology_managerRef _TM, const generic_deviceRef _target,
-                                             const DesignFlowManagerConstRef _design_flow_manager,
+                                             const DesignFlowManager& _design_flow_manager,
                                              const ParameterConstRef _parameters)
     : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_BUILTIN_TECHNOLOGY,
                          _parameters)
 {
 }
-
-LoadBuiltinTechnology::~LoadBuiltinTechnology() = default;
 
 CustomUnorderedSet<TechnologyFlowStep_Type>
 LoadBuiltinTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType) const
@@ -68,6 +66,7 @@ DesignFlowStep_Status LoadBuiltinTechnology::Exec()
    structural_objectRef top;
    structural_managerRef CM;
    structural_type_descriptorRef b_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+   structural_type_descriptorRef bvec_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 1));
    structural_type_descriptorRef module_type;
    std::string NP_parameters;
    std::string Library;
@@ -177,16 +176,18 @@ DesignFlowStep_Status LoadBuiltinTechnology::Exec()
    CM->add_NP_functionality(top, NP_functionality::LIBRARY, NP_parameters);
    TM->add_resource(Library, fu_name, CM, true);
 
-   // BUFF
+   // ASSIGN
    CM = structural_managerRef(new structural_manager(parameters));
-   fu_name = BUFF_GATE_STD;
+   fu_name = ASSIGN_GATE_STD;
    module_type = structural_type_descriptorRef(new structural_type_descriptor(fu_name));
    CM->set_top_info(fu_name, module_type);
    top = CM->get_circ();
-   CM->add_port("in1", port_o::IN, top, b_type);
-   CM->add_port("out1", port_o::OUT, top, b_type);
+   CM->add_port("in1", port_o::IN, top, bvec_type);
+   CM->add_port("out1", port_o::OUT, top, bvec_type);
    NP_parameters = fu_name;
    CM->add_NP_functionality(top, NP_functionality::LIBRARY, NP_parameters);
+   CM->add_NP_functionality(top, NP_functionality::EQUATION, "out1=in1");
    TM->add_resource(Library, fu_name, CM, true);
+
    return DesignFlowStep_Status::SUCCESS;
 }

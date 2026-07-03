@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -63,14 +63,12 @@ HostProfiling_Method operator&(const HostProfiling_Method first, const HostProfi
    return static_cast<HostProfiling_Method>(static_cast<int>(first) | static_cast<int>(second));
 }
 
-HostProfiling::HostProfiling(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager,
+HostProfiling::HostProfiling(const application_managerRef _AppM, const DesignFlowManager& _design_flow_manager,
                              const ParameterConstRef _parameters)
     : ApplicationFrontendFlowStep(_AppM, HOST_PROFILING, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
-
-HostProfiling::~HostProfiling() = default;
 
 CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 HostProfiling::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -125,14 +123,13 @@ void HostProfiling::normalize(
       // number of function execution
       const FunctionBehaviorRef FB = AppM->GetFunctionBehavior(f);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Function: " + FB->CGetBehavioralHelper()->get_function_name());
+                     "-->Function: " + FB->CGetBehavioralHelper()->GetFunctionName());
 
       // Normalizing loop number of iteration and frequency
-      const std::list<LoopConstRef>& loops = FB->CGetLoops()->GetList();
-      std::list<LoopConstRef>::const_iterator loop, loop_end = loops.end();
-      for(loop = loops.begin(); loop != loop_end; ++loop)
+      const auto& loops = FB->getConstLoops()->getList();
+      for(const auto& loop : loops)
       {
-         unsigned int loop_id = (*loop)->GetId();
+         unsigned int loop_id = loop->getLoopId();
          /// FIXME: zero loop
          if(loop_id == 0)
          {
@@ -156,7 +153,7 @@ void HostProfiling::normalize(
             if(loop_instances.find(f) == loop_instances.end())
             {
                THROW_ERROR_CODE(PROFILING_EC,
-                                "Function " + FB->CGetBehavioralHelper()->get_function_name() + " exited abnormally");
+                                "Function " + FB->CGetBehavioralHelper()->GetFunctionName() + " exited abnormally");
             }
             THROW_ASSERT(loop_instances.at(f).find(loop_id) != loop_instances.at(f).end(),
                          "Loop " + std::to_string(f) + " is no executed");
@@ -167,8 +164,8 @@ void HostProfiling::normalize(
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "-->Avg. Number Executions: " + std::to_string(avg_number));
-         FB->profiling_information->avg_iterations[(*loop)->GetId()] = avg_number;
-         FB->profiling_information->abs_iterations[(*loop)->GetId()] =
+         FB->profiling_information->avg_iterations[loop->getLoopId()] = avg_number;
+         FB->profiling_information->abs_iterations[loop->getLoopId()] =
              static_cast<unsigned long long int>(llroundl(abs_execution));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Factor: " + std::to_string(abs_execution));
          for(auto& k : path_profiling.at(loop_id))
@@ -184,7 +181,7 @@ void HostProfiling::normalize(
       }
       if(parameters->getOption<bool>(OPT_print_dot))
       {
-         FB->CGetLoops()->WriteDot("LF.dot", FB->CGetProfilingInformation());
+         FB->getConstLoops()->writeDot(FB->GetDotPath() / "LF.dot", FB->CGetProfilingInformation());
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }

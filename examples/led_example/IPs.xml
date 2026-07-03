@@ -6,11 +6,11 @@
       <name>leds_ctrl</name>
       <operation operation_name="leds_ctrl" bounded="1" cycles="1" execution_time="1.2"/>
       <circuit>
-        <component_o id="leds_ctrl">
-          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2024 Politecnico di Milano</copyright>  
+        <module_o id="leds_ctrl">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
-          <license>PANDA_LGPLv3</license>
+          <license>PANDA_MIT</license>
           <structural_type_descriptor id_type="leds_ctrl"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -28,18 +28,18 @@
             <structural_type_descriptor type="UINT" size="16" />
           </port_o>
           <NP_functionality LIBRARY="leds_ctrl " VERILOG_FILE_PROVIDED="leds_ctrl.v"/>
-        </component_o>
+        </module_o>
       </circuit>
     </cell>
     <cell>
       <name>sw_ctrl</name>
       <operation operation_name="sw_ctrl" bounded="1" cycles="2" initiation_time="1" stage_period="1.2"/>
       <circuit>
-        <component_o id="sw_ctrl">
-          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2024 Politecnico di Milano</copyright>  
+        <module_o id="sw_ctrl">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
-          <license>PANDA_LGPLv3</license>
+          <license>PANDA_MIT</license>
           <structural_type_descriptor id_type="sw_ctrl"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -57,18 +57,18 @@
             <structural_type_descriptor type="UINT" size="16" />
           </port_o>
           <NP_functionality LIBRARY="sw_ctrl " VERILOG_FILE_PROVIDED="sw_ctrl.v"/>
-        </component_o>
+        </module_o>
       </circuit>
     </cell>
     <cell>
       <name>btn_ctrl</name>
       <operation operation_name="btn_ctrl"  bounded="1" cycles="2" initiation_time="1" stage_period="1.2"/>
       <circuit>
-        <component_o id="btn_ctrl">
-          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2024 Politecnico di Milano</copyright>  
+        <module_o id="btn_ctrl">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
-          <license>PANDA_LGPLv3</license>
+          <license>PANDA_MIT</license>
           <structural_type_descriptor id_type="btn_ctrl"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -86,18 +86,18 @@
             <structural_type_descriptor type="UINT" size="4" />
           </port_o>
           <NP_functionality LIBRARY="btn_ctrl " VERILOG_FILE_PROVIDED="btn_ctrl.v"/>
-        </component_o>
+        </module_o>
       </circuit>
     </cell>
     <cell>
       <name>sevensegments_ctrl</name>
       <operation operation_name="sevensegments_ctrl" bounded="1" cycles="1" execution_time="1.2"/>
       <circuit>
-        <component_o id="sevensegments_ctrl">
-          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2024 Politecnico di Milano</copyright>  
+        <module_o id="sevensegments_ctrl">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
-          <license>PANDA_LGPLv3</license>
+          <license>PANDA_MIT</license>
           <structural_type_descriptor id_type="sevensegments_ctrl"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -121,7 +121,7 @@
             <structural_type_descriptor type="UINT" size="8" />
           </port_o>
           <NP_functionality LIBRARY="sevensegments_ctrl " VERILOG_FILE_PROVIDED="sevensegments_ctrl.v"/>
-        </component_o>
+        </module_o>
       </circuit>
     </cell>
   </library>

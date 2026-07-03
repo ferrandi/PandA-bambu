@@ -12,27 +12,27 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
  * @file virtual_aggregate_data_flow_analysis.hpp
- * @brief Analysis step performing aggregate variable computation on the basis of gcc virtual operands
+ * @brief Analysis step performing aggregate variable computation on the basis of IR virtual operands
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
@@ -40,7 +40,6 @@
 #ifndef VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS_HPP
 #define VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS_HPP
 
-/// Superclass include
 #include "data_dependence_computation.hpp"
 
 #include "refcount.hpp"
@@ -60,17 +59,11 @@ class VirtualAggregateDataFlowAnalysis : public DataDependenceComputation
     * Constructor
     * @param AppM is the application manager
     * @param design_flow_manager is the design flow manager
-    * @param function_index is the index of the function
+    * @param _function_index is the index of the function
     * @param parameters is the set of the parameters
     */
-   VirtualAggregateDataFlowAnalysis(const application_managerRef AppM,
-                                    const DesignFlowManagerConstRef design_flow_manager,
+   VirtualAggregateDataFlowAnalysis(const application_managerRef AppM, const DesignFlowManager& design_flow_manager,
                                     const unsigned int _function_index, const ParameterConstRef parameters);
-
-   /**
-    *  Destructor
-    */
-   ~VirtualAggregateDataFlowAnalysis() override;
 
    /**
     * Initialize the step (i.e., like a constructor, but executed just before exec

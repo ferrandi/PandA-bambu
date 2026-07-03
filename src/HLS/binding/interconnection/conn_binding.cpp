@@ -12,22 +12,22 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
@@ -37,43 +37,38 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
 #include "conn_binding.hpp"
 
 #include "Parameter.hpp"
-#include "adder_conn_obj.hpp"
 #include "allocation.hpp"
 #include "allocation_information.hpp"
 #include "behavioral_helper.hpp"
 #include "commandport_obj.hpp"
 #include "conn_binding_creator.hpp"
-#include "conn_binding_cs.hpp"
 #include "connection_obj.hpp"
 #include "conv_conn_obj.hpp"
 #include "dataport_obj.hpp"
 #include "dbgPrintHelper.hpp"
 #include "fu_binding.hpp"
+#include "function_behavior.hpp"
 #include "funit_obj.hpp"
 #include "generic_obj.hpp"
 #include "hls.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
+#include "ir_node.hpp"
 #include "multi_unbounded_obj.hpp"
 #include "mux_conn.hpp"
 #include "mux_obj.hpp"
-#include "omp_functions.hpp"
-#include "state_transition_graph_manager.hpp"
 #include "string_manipulation.hpp"
 #include "structural_manager.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
 
 #include "custom_set.hpp"
 #include <algorithm>
@@ -83,6 +78,25 @@
 #include <vector>
 
 #define CONN_COLUMN_SIZE 40
+
+namespace
+{
+   ir_nodeConstRef getCallPredicate(const ir_nodeConstRef& node)
+   {
+      if(const auto* gc = GetPointer<const call_stmt>(node))
+      {
+         return gc->predicate;
+      }
+      if(const auto* ga = GetPointer<const assign_stmt>(node))
+      {
+         if(ga->op1->get_kind() == call_node_K)
+         {
+            return ga->predicate;
+         }
+      }
+      return {};
+   }
+} // namespace
 
 unsigned conn_binding::unique_id = 0;
 
@@ -94,42 +108,12 @@ conn_binding::conn_binding(const BehavioralHelperConstRef _BH, const ParameterCo
 {
 }
 
-conn_bindingRef conn_binding::create_conn_binding(const HLS_managerRef _HLSMgr, const hlsRef _HLS,
+conn_bindingRef conn_binding::create_conn_binding(const HLS_managerRef, const hlsRef,
                                                   const BehavioralHelperConstRef _BH,
                                                   const ParameterConstRef _parameters)
 {
-   if(_parameters->isOption(OPT_context_switch))
-   {
-      auto omp_functions = GetPointer<OmpFunctions>(_HLSMgr->Rfuns);
-      bool found = false;
-      if(omp_functions->kernel_functions.find(_HLS->functionId) != omp_functions->kernel_functions.end())
-      {
-         found = true;
-      }
-      if(omp_functions->parallelized_functions.find(_HLS->functionId) != omp_functions->parallelized_functions.end())
-      {
-         found = true;
-      }
-      if(omp_functions->atomic_functions.find(_HLS->functionId) != omp_functions->atomic_functions.end())
-      {
-         found = true;
-      }
-      if(found)
-      {
-         return conn_bindingRef(new conn_binding_cs(_BH, _parameters));
-      }
-      else
-      {
-         return conn_bindingRef(new conn_binding(_BH, _parameters));
-      }
-   }
-   else
-   {
-      return conn_bindingRef(new conn_binding(_BH, _parameters));
-   }
+   return conn_bindingRef(new conn_binding(_BH, _parameters));
 }
-
-conn_binding::~conn_binding() = default;
 
 generic_objRef conn_binding::get_port(unsigned int var, conn_binding::direction_type dir)
 {
@@ -176,7 +160,8 @@ generic_objRef conn_binding::bind_port(unsigned int var, conn_binding::direction
       {
          if(input_ports.count(var) == 0)
          {
-            input_ports[var] = generic_objRef(new dataport_obj("IN_PORT_" + BH->PrintVariable(var), 0));
+            input_ports[var] =
+                generic_objRef(new dataport_obj("IN_PORT_" + BH->PrintVariable(var), 0, BH->is_int(var)));
          }
          return input_ports[var];
       }
@@ -184,7 +169,8 @@ generic_objRef conn_binding::bind_port(unsigned int var, conn_binding::direction
       {
          if(output_ports.count(var) == 0)
          {
-            output_ports[var] = generic_objRef(new dataport_obj("OUT_PORT_" + BH->PrintVariable(var), 0));
+            output_ports[var] =
+                generic_objRef(new dataport_obj("OUT_PORT_" + BH->PrintVariable(var), 0, BH->is_int(var)));
          }
          return output_ports[var];
       }
@@ -194,8 +180,8 @@ generic_objRef conn_binding::bind_port(unsigned int var, conn_binding::direction
    return generic_objRef();
 }
 
-generic_objRef conn_binding::bind_command_port(const vertex& ver, conn_binding::direction_type dir, unsigned int mode,
-                                               const OpGraphConstRef g)
+generic_objRef conn_binding::bind_command_port(gc_vertex_descriptor ver, conn_binding::direction_type dir,
+                                               unsigned int mode, const OpGraph& g)
 {
    switch(dir)
    {
@@ -204,7 +190,7 @@ generic_objRef conn_binding::bind_command_port(const vertex& ver, conn_binding::
          if(command_input_ports.count(std::make_pair(ver, mode)) == 0)
          {
             command_input_ports[std::make_pair(ver, mode)] = generic_objRef(new commandport_obj(
-                ver, mode, "IN_" + commandport_obj::get_mode_string(mode) + "_" + GET_NAME(g, ver)));
+                ver, mode, "IN_" + commandport_obj::get_mode_string(mode) + "_" + g.CGetNodeInfo(ver).vertex_name));
          }
          return command_input_ports[std::make_pair(ver, mode)];
       }
@@ -213,7 +199,7 @@ generic_objRef conn_binding::bind_command_port(const vertex& ver, conn_binding::
          if(command_output_ports.count(ver) == 0)
          {
             command_output_ports[ver] = generic_objRef(new commandport_obj(
-                ver, mode, "OUT_" + commandport_obj::get_mode_string(mode) + "_" + GET_NAME(g, ver)));
+                ver, mode, "OUT_" + commandport_obj::get_mode_string(mode) + "_" + g.CGetNodeInfo(ver).vertex_name));
          }
          return command_output_ports[ver];
       }
@@ -236,16 +222,18 @@ generic_objRef conn_binding::bind_selector_port(conn_binding::direction_type dir
    return selectors[dir][std::make_pair(elem, op)];
 }
 
-generic_objRef conn_binding::bind_selector_port(conn_binding::direction_type dir, unsigned int mode, const vertex& cond,
-                                                const OpGraphConstRef data)
+generic_objRef conn_binding::bind_selector_port(conn_binding::direction_type dir, unsigned int mode,
+                                                gc_vertex_descriptor cond, const OpGraph& data)
 {
    if(activation_ports.find(cond) != activation_ports.end() and
       activation_ports[cond].find(dir) != activation_ports[cond].end())
    {
       return activation_ports[cond][dir];
    }
-   generic_objRef port = generic_objRef(new commandport_obj(
-       cond, mode, (dir == IN ? "IN_" : "OUT_") + commandport_obj::get_mode_string(mode) + "_" + GET_NAME(data, cond)));
+   generic_objRef port =
+       generic_objRef(new commandport_obj(cond, mode,
+                                          (dir == IN ? "IN_" : "OUT_") + commandport_obj::get_mode_string(mode) + "_" +
+                                              data.CGetNodeInfo(cond).vertex_name));
    activation_ports[cond][dir] = port;
    return selectors[dir][std::make_pair(port, 0)] = port;
 }
@@ -275,7 +263,7 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
    add_sparse_logic_dp(HLS, SM, HLSMgr);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
 
-#ifndef NDEBUG
+#if HAVE_ASSERTS
    const auto connection_type = HLS->Param->getOption<HLSFlowStep_Type>(OPT_datapath_interconnection_algorithm);
    /// up to now, circuit is general about interconnections. Now, proper interconnection architecture will be executed
    THROW_ASSERT(connection_type == HLSFlowStep_Type::MUX_INTERCONNECTION_BINDING, "Unexpected interconnection binding");
@@ -286,16 +274,16 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
 
    const auto circuit = SM->get_circ();
    std::map<unsigned long long, structural_objectRef> null_values;
-   for(unsigned int i = 0; i < GetPointer<module>(circuit)->get_internal_objects_size(); i++)
+   for(unsigned int i = 0; i < GetPointer<module_o>(circuit)->get_internal_objects_size(); i++)
    {
-      auto curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
-      if(!GetPointer<module>(curr_gate) || GetPointer<module>(curr_gate)->get_id() == "scheduler_kernel")
+      auto curr_gate = GetPointer<module_o>(circuit)->get_internal_object(i);
+      if(!GetPointer<module_o>(curr_gate) || GetPointer<module_o>(curr_gate)->get_id() == "scheduler_kernel")
       {
          continue;
       }
-      for(unsigned int j = 0; j < GetPointer<module>(curr_gate)->get_in_port_size(); j++)
+      for(unsigned int j = 0; j < GetPointer<module_o>(curr_gate)->get_in_port_size(); j++)
       {
-         structural_objectRef port_i = GetPointer<module>(curr_gate)->get_in_port(j);
+         structural_objectRef port_i = GetPointer<module_o>(curr_gate)->get_in_port(j);
          if((port_i->get_kind() == port_o_K || port_i->get_kind() == port_vector_o_K) &&
             GetPointer<port_o>(port_i)->find_bounded_object())
          {
@@ -335,9 +323,9 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
             SM->add_connection(port_i, null_values[bw]);
          }
       }
-      for(unsigned int j = 0; j < GetPointer<module>(curr_gate)->get_out_port_size(); j++)
+      for(unsigned int j = 0; j < GetPointer<module_o>(curr_gate)->get_out_port_size(); j++)
       {
-         const auto port_out = GetPointer<module>(curr_gate)->get_out_port(j);
+         const auto port_out = GetPointer<module_o>(curr_gate)->get_out_port(j);
          if((port_out->get_kind() == port_o_K || port_out->get_kind() == port_vector_o_K) &&
             GetPointer<port_o>(port_out)->find_bounded_object())
          {
@@ -362,8 +350,15 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
                }
             }
          }
+         else if(port_out->get_kind() == port_o_K)
+         {
+            const auto name = "null_out_signal_" + port_out->get_owner()->get_id() + "_" + port_out->get_id();
+            const auto sign = SM->add_sign(name, circuit, port_out->get_typeRef());
+            SM->add_connection(port_out, sign);
+         }
       }
    }
+   command_predicates.clear();
 }
 
 void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef SM)
@@ -388,9 +383,9 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
       THROW_ASSERT(src, "No source signal to " + tgt->get_string());
       structural_objectRef port_src, port_tgt;
       THROW_ASSERT(src_module, "No object associated to " + src->get_string());
-      if(src_module->get_kind() == component_o_K)
+      if(src_module->get_kind() == module_o_K)
       {
-         auto* src_obj = GetPointer<module>(src_module);
+         auto* src_obj = GetPointer<module_o>(src_module);
          for(unsigned int ind = 0; ind < src_obj->get_out_port_size(); ind++)
          {
             auto curr_port = src_obj->get_out_port(ind);
@@ -424,9 +419,9 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
       }
 
       THROW_ASSERT(tgt_module, "No object associated to " + tgt->get_string());
-      if(tgt_module->get_kind() == component_o_K)
+      if(tgt_module->get_kind() == module_o_K)
       {
-         auto* tgt_obj = GetPointer<module>(tgt_module);
+         auto* tgt_obj = GetPointer<module_o>(tgt_module);
          unsigned int num = 0;
 
          for(unsigned int ind = 0; ind < tgt_obj->get_in_port_size(); ind++)
@@ -484,16 +479,28 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
       {
          case connection_obj::DIRECT_CONN:
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Creating DIRECTED CONNECTION");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Creating DIRECT CONNECTION");
             THROW_ASSERT(sign, "");
             THROW_ASSERT(port_tgt, tgt_module->get_path());
             auto bits_src = GET_TYPE_SIZE(sign);
             auto bits_tgt = GET_TYPE_SIZE(port_tgt);
+            auto transferred_vars = i->second->get_variables();
+            bool isInt = false;
+            for(auto tr : transferred_vars)
+            {
+               auto irVar = std::get<0>(tr);
+               if(irVar && irVar != INFINITE_UINT && BH->is_int(irVar))
+               {
+                  isInt = true;
+               }
+               /// same var but on different transitions, so we may stop at the first iteration
+               break;
+            }
             auto conn_type = structural_type_descriptor::VECTOR_BOOL;
 
             if(bits_src != bits_tgt)
             {
-               if(port_tgt->get_typeRef()->type == structural_type_descriptor::INT)
+               if(port_tgt->get_typeRef()->type == structural_type_descriptor::INT || isInt)
                {
                   conn_type = structural_type_descriptor::INT;
                }
@@ -532,7 +539,7 @@ void conn_binding::specialise_mux(const generic_objRef mux, unsigned int bits_tg
    data_size = std::max(data_size, bits_tgt);
 
    structural_objectRef mux_obj = mux->get_structural_obj();
-   const module* mux_module = GetPointer<module>(mux_obj);
+   const module_o* mux_module = GetPointer<module_o>(mux_obj);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "---Specializing " + mux_obj->get_path() + ": " + STR(data_size));
@@ -548,8 +555,18 @@ void conn_binding::mux_allocation(const hlsRef HLS, const structural_managerRef 
    THROW_ASSERT(src, "mux_allocation - No source object");
    THROW_ASSERT(tgt, "mux_allocation - No target object");
    unsigned long long bits_tgt = 0;
+   auto transferred_vars = conn->get_variables();
+   bool isInt = false;
+   for(auto tr : transferred_vars)
+   {
+      auto irVar = std::get<0>(tr);
+      if(irVar && irVar != INFINITE_UINT && BH->is_int(irVar))
+      {
+         isInt = true;
+      }
+   }
    structural_type_descriptor::s_type conn_type;
-   if(tgt->get_typeRef()->type == structural_type_descriptor::INT)
+   if(tgt->get_typeRef()->type == structural_type_descriptor::INT || isInt)
    {
       bits_tgt = GET_TYPE_SIZE(tgt);
       conn_type = structural_type_descriptor::INT;
@@ -580,32 +597,32 @@ void conn_binding::mux_allocation(const hlsRef HLS, const structural_managerRef 
    const structural_objectRef circuit = SM->get_circ();
    for(const auto& i : mux_tree)
    {
-      structural_objectRef mux = i.first->get_structural_obj();
-      auto in_mux = i.second == T_COND ? 1u : 2u;
+      auto mux_obj0 = i.first;
+      auto mux = mux_obj0->get_structural_obj();
+      auto in_mux = i.second;
 
       if(mux)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---MUX exists");
-         auto* mux_object = GetPointer<module>(mux);
+         auto* mux_object = GetPointer<module_o>(mux);
 
          /// adding input connection
          auto mux_input = mux_object->get_in_port(in_mux);
          THROW_ASSERT(mux_input, "classic_datapath::mux_allocation - In port does not exist");
          add_datapath_connection(HLS->HLS_D->get_technology_manager(), SM, src, mux_input, conn_type);
-
          return;
       }
       else
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---MUX must be allocated");
-         std::string name = i.first->get_string();
-         mux = SM->add_module_from_technology_library(name, MUX_GATE_STD,
-                                                      HLS->HLS_D->get_technology_manager()->get_library(MUX_GATE_STD),
+         std::string name = mux_obj0->get_string();
+         mux = SM->add_module_from_technology_library(name, MUX2_GATE_STD,
+                                                      HLS->HLS_D->get_technology_manager()->get_library(MUX2_GATE_STD),
                                                       circuit, HLS->HLS_D->get_technology_manager());
-         i.first->set_structural_obj(mux);
+         mux_obj0->set_structural_obj(mux);
 
          /// mux selector in datapath interface
-         generic_objRef selector = GetPointer<mux_obj>(i.first)->GetSelector();
+         generic_objRef selector = GetPointer<mux_obj>(mux_obj0)->GetSelector();
          structural_objectRef sel_obj = selector->get_structural_obj();
          THROW_ASSERT(sel_obj, "Selector obj not created");
          /// selector in mux object
@@ -615,9 +632,9 @@ void conn_binding::mux_allocation(const hlsRef HLS, const structural_managerRef 
 
          /// specializing allocated mux
          HLS_manager::check_bitwidth(bits_tgt);
-         specialise_mux(i.first, static_cast<unsigned>(bits_tgt));
+         specialise_mux(mux_obj0, static_cast<unsigned>(bits_tgt));
 
-         auto* mux_object = GetPointer<module>(mux);
+         auto* mux_object = GetPointer<module_o>(mux);
 
          /// adding input connection
          auto mux_input = mux_object->get_in_port(in_mux);
@@ -631,7 +648,7 @@ void conn_binding::mux_allocation(const hlsRef HLS, const structural_managerRef 
          THROW_ASSERT(out_type->size, "size greater than zero expected");
          std::string sig_name = "out_" + name;
          structural_objectRef sign = SM->add_sign(sig_name, circuit, out_type);
-         i.first->set_out_sign(sign);
+         mux_obj0->set_out_sign(sign);
          SM->add_connection(sign, port_out_mux);
          src = sign;
       }
@@ -725,12 +742,12 @@ void conn_binding::add_datapath_connection(const technology_managerRef TM, const
       }
 
       /// fixing input stuff
-      structural_objectRef in1 = GetPointer<module>(c_obj)->get_in_port(offset);
+      structural_objectRef in1 = GetPointer<module_o>(c_obj)->get_in_port(offset);
       in1->type_resize(bits_src);
       SM->add_connection(src, in1);
 
       /// fixing output stuff
-      structural_objectRef out0 = GetPointer<module>(c_obj)->get_out_port(0);
+      structural_objectRef out0 = GetPointer<module_o>(c_obj)->get_out_port(0);
       out0->type_resize(bits_tgt);
       THROW_ASSERT(out0->get_typeRef()->size, "size greater than one expected");
 
@@ -743,15 +760,15 @@ void conn_binding::add_datapath_connection(const technology_managerRef TM, const
 }
 
 generic_objRef conn_binding::get_constant_obj(const std::string& value, const std::string& param,
-                                              unsigned int precision)
+                                              unsigned int precision, bool signedP)
 {
    THROW_ASSERT(value != "", "value expected");
-   if(constant_values.find(const_param(value, param)) == constant_values.end())
+   if(constant_values.find(const_param(value, param, signedP)) == constant_values.end())
    {
-      constant_values[const_param(value, param)] =
-          generic_objRef(new dataport_obj("CONSTANT_" + value, param, precision));
+      constant_values[const_param(value, param, signedP)] =
+          generic_objRef(new dataport_obj("CONSTANT_" + value + (signedP ? "s" : ""), param, precision, signedP));
    }
-   return constant_values[const_param(value, param)];
+   return constant_values[const_param(value, param, signedP)];
 }
 
 const std::map<conn_binding::const_param, generic_objRef>& conn_binding::get_constant_objs() const
@@ -770,76 +787,62 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
    {
       switch(component->get_type())
       {
-         case generic_obj::ADDER_CONN_OBJ:
-         {
-            resource_name = GetPointer<adder_conn_obj>(component)->is_align_adder() ? UI_ALIGN_ADDER_STD : UI_ADDER_STD;
-            resource_instance_name = resource_name + "_adder_" + STR(resource_index);
-            bitsize = GetPointer<adder_conn_obj>(component)->get_bitsize();
-            break;
-         }
          case generic_obj::UU_CONV_CONN_OBJ:
          {
             resource_name = UUDATA_CONVERTER_STD;
-            resource_instance_name = resource_name + "_uu_conv_" + STR(resource_index);
+            resource_instance_name = resource_name + "_uu_conv_sp_" + STR(resource_index);
             bitsize = GetPointer<uu_conv_conn_obj>(component)->get_bitsize();
             break;
          }
          case generic_obj::UI_CONV_CONN_OBJ:
          {
             resource_name = UIDATA_CONVERTER_STD;
-            resource_instance_name = resource_name + "_ui_conv_" + STR(resource_index);
+            resource_instance_name = resource_name + "_ui_conv_sp_" + STR(resource_index);
             bitsize = GetPointer<ui_conv_conn_obj>(component)->get_bitsize();
             break;
          }
          case generic_obj::IU_CONV_CONN_OBJ:
          {
             resource_name = IUDATA_CONVERTER_STD;
-            resource_instance_name = resource_name + "_iu_conv_" + STR(resource_index);
+            resource_instance_name = resource_name + "_iu_conv_sp_" + STR(resource_index);
             bitsize = GetPointer<iu_conv_conn_obj>(component)->get_bitsize();
             break;
          }
          case generic_obj::II_CONV_CONN_OBJ:
          {
             resource_name = IIDATA_CONVERTER_STD;
-            resource_instance_name = resource_name + "_ii_conv_" + STR(resource_index);
+            resource_instance_name = resource_name + "_ii_conv_sp_" + STR(resource_index);
             bitsize = GetPointer<ii_conv_conn_obj>(component)->get_bitsize();
             break;
          }
          case generic_obj::FF_CONV_CONN_OBJ:
          {
             bitsize = GetPointer<ff_conv_conn_obj>(component)->get_bitsize_out();
-            if(HLS->Param->isOption(OPT_soft_float) && HLS->Param->getOption<bool>(OPT_soft_float))
-            {
-               technology_nodeRef current_fu;
-               resource_name = AllocationInformation::extract_bambu_provided_name(
-                   GetPointer<ff_conv_conn_obj>(component)->get_bitsize_in(),
-                   GetPointer<ff_conv_conn_obj>(component)->get_bitsize_out(), HLSMgr, current_fu);
-            }
-            else
-            {
-               resource_name = FFDATA_CONVERTER_STD;
-            }
-            resource_instance_name = resource_name + "_ff_conv_" + STR(resource_index);
+            technology_nodeRef current_fu;
+            resource_name = AllocationInformation::extract_bambu_provided_name(
+                GetPointer<ff_conv_conn_obj>(component)->get_bitsize_in(),
+                GetPointer<ff_conv_conn_obj>(component)->get_bitsize_out(), HLSMgr, current_fu);
+            resource_instance_name = resource_name + "_ff_conv_sp_" + STR(resource_index);
             break;
          }
          case generic_obj::I_ASSIGN_CONN_OBJ:
          {
             resource_name = ASSIGN_SIGNED_STD;
-            resource_instance_name = resource_name + "_i_assign_" + STR(resource_index);
+            resource_instance_name = resource_name + "_i_assign_sp_" + STR(resource_index);
             bitsize = GetPointer<i_assign_conn_obj>(component)->get_bitsize();
             break;
          }
          case generic_obj::U_ASSIGN_CONN_OBJ:
          {
             resource_name = ASSIGN_UNSIGNED_STD;
-            resource_instance_name = resource_name + "_u_assign_" + STR(resource_index);
+            resource_instance_name = resource_name + "_u_assign_sp_" + STR(resource_index);
             bitsize = GetPointer<u_assign_conn_obj>(component)->get_bitsize();
             break;
          }
          case generic_obj::F_ASSIGN_CONN_OBJ:
          {
             resource_name = ASSIGN_REAL_STD;
-            resource_instance_name = resource_name + "_f_assign_" + STR(resource_index);
+            resource_instance_name = resource_name + "_f_assign_sp_" + STR(resource_index);
             bitsize = GetPointer<f_assign_conn_obj>(component)->get_bitsize();
             break;
          }
@@ -853,24 +856,18 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
           resource_instance_name, resource_name, HLS->HLS_D->get_technology_manager()->get_library(resource_name),
           circuit, HLS->HLS_D->get_technology_manager());
       component->set_structural_obj(sparse_component);
-      auto* sparse_module = GetPointer<module>(sparse_component);
+      auto* sparse_module = GetPointer<module_o>(sparse_component);
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "---Specializing " + sparse_component->get_path() + ": " + STR(bitsize));
       /// specializing sparse module ports
       unsigned int shift_index = 0;
-      if(component->get_type() == generic_obj::ADDER_CONN_OBJ &&
-         GetPointer<adder_conn_obj>(component)->is_align_adder())
-      {
-         sparse_module->SetParameter(VALUE_PARAMETER, STR(GetPointer<adder_conn_obj>(component)->get_trimmed_bits()));
-      }
-      else if(GetPointer<port_o>(sparse_module->get_in_port(shift_index)) &&
-              GetPointer<port_o>(sparse_module->get_in_port(shift_index))->get_is_clock())
+      if(GetPointer<port_o>(sparse_module->get_in_port(shift_index)) &&
+         GetPointer<port_o>(sparse_module->get_in_port(shift_index))->get_is_clock())
       {
          ++shift_index;
       }
-      if(!HLS->Param->isOption(OPT_soft_float) || !HLS->Param->getOption<bool>(OPT_soft_float) ||
-         component->get_type() != generic_obj::FF_CONV_CONN_OBJ)
+      if(component->get_type() != generic_obj::FF_CONV_CONN_OBJ)
       {
          if(component->get_type() == generic_obj::FF_CONV_CONN_OBJ)
          {
@@ -894,8 +891,7 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
       {
          sparse_module->get_in_port(shift_index + 1)->type_resize(bitsize);
       }
-      if(!HLS->Param->isOption(OPT_soft_float) || !HLS->Param->getOption<bool>(OPT_soft_float) ||
-         component->get_type() != generic_obj::FF_CONV_CONN_OBJ)
+      if(component->get_type() != generic_obj::FF_CONV_CONN_OBJ)
       {
          sparse_module->get_out_port(0)->type_resize(bitsize);
       }
@@ -947,37 +943,106 @@ unsigned long long conn_binding::determine_bit_level_mux() const
 void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding command ports");
-   structural_objectRef circuit = SM->get_circ();
+   auto circuit = SM->get_circ();
+   const auto TM = HLS->HLS_D->get_technology_manager();
 
-   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
-   const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::DFG);
+   const auto FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
+   const auto data = FB->GetOpGraph(FunctionBehavior::DFG);
 
    /// define the type for boolean command signals
-   structural_type_descriptorRef boolean_port_type =
-       structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+   structural_type_descriptorRef boolean_port_type(new structural_type_descriptor("bool", 0));
+   std::map<gc_vertex_descriptor, structural_objectRef> skip_done_signals;
+   std::map<gc_vertex_descriptor, structural_objectRef> effective_done_signals;
+   std::map<structural_objectRef, structural_objectRef> sig;
+
+   const auto add_bool_signal = [&](const std::string& base_name) {
+      return SM->add_sign(base_name + "_" + STR(unique_id++), circuit, boolean_port_type);
+   };
+
+   const auto get_raw_done_signal = [&](const gc_vertex_descriptor op) -> structural_objectRef {
+      auto fu_unit = HLS->Rfu->get(op);
+      auto fu_obj = fu_unit->get_structural_obj();
+      auto done = fu_obj->find_member(DONE_PORT_NAME, port_o_K, fu_obj);
+      if(!done)
+      {
+         return {};
+      }
+      std::string sign_owner_id = done->get_owner()->get_id();
+      if(done->get_kind() == port_vector_o_K)
+      {
+         THROW_ASSERT(GetPointer<port_o>(done)->get_ports_size() != 0,
+                      "port not correctly initialized" + done->get_path());
+         THROW_ASSERT(GetPointer<funit_obj>(fu_unit), "unexpected port configuration");
+         done = GetPointer<port_o>(done)->get_port(GetPointer<funit_obj>(fu_unit)->get_index() %
+                                                   GetPointer<port_o>(done)->get_ports_size());
+         THROW_ASSERT(done, "Missing done_port from function call " + fu_unit->get_string());
+         sign_owner_id = sign_owner_id + "_P" + done->get_id();
+      }
+      if(sig.find(done) == sig.end())
+      {
+         sig[done] = SM->add_sign("s_done_" + sign_owner_id, SM->get_circ(), boolean_port_type);
+         SM->add_connection(sig[done], done);
+      }
+      return sig[done];
+   };
+
+   const auto get_effective_done_signal = [&](const gc_vertex_descriptor op) -> structural_objectRef {
+      const auto done_it = effective_done_signals.find(op);
+      if(done_it != effective_done_signals.end())
+      {
+         return done_it->second;
+      }
+
+      const auto raw_done = get_raw_done_signal(op);
+      if(!raw_done)
+      {
+         return {};
+      }
+
+      const auto skip_it = skip_done_signals.find(op);
+      if(skip_it == skip_done_signals.end())
+      {
+         effective_done_signals[op] = raw_done;
+         return raw_done;
+      }
+
+      const auto op_name = data.CGetNodeInfo(op).vertex_name;
+      const auto or_gate =
+          SM->add_module_from_technology_library("predicated_done_or_" + op_name + "_" + STR(unique_id), OR_GATE_STD,
+                                                 TM->get_library(OR_GATE_STD), circuit, TM);
+      const auto done_signal = add_bool_signal("s_predicated_done_" + op_name);
+      SM->add_connection(done_signal, or_gate->find_member("out1", port_o_K, or_gate));
+      const auto inputs = or_gate->find_member("in", port_vector_o_K, or_gate);
+      auto* done_or_inputs = GetPointer<port_o>(inputs);
+      done_or_inputs->add_n_ports(2U, inputs);
+      SM->add_connection(done_or_inputs->get_port(0), raw_done);
+      SM->add_connection(done_or_inputs->get_port(1), skip_it->second);
+      effective_done_signals[op] = done_signal;
+      return done_signal;
+   };
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding starting ports");
-   const OpVertexSet& operations = HLS->operations;
+   const auto& operations = HLS->operations;
    for(auto j : operations)
    {
-      technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(j));
-      technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(
-          tree_helper::NormalizeTypename(data->CGetOpNodeInfo(j)->GetOperation()));
+      auto tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(j));
+      auto op_tn = GetPointer<functional_unit>(tn)->get_operation(
+          ir_helper::NormalizeTypename(data.CGetNodeInfo(j).GetOperation()));
       THROW_ASSERT(GetPointer<operation>(op_tn)->time_m,
-                   "Time model not available for operation: " + GET_NAME(data, j));
+                   "Time model not available for operation: " + data.CGetNodeInfo(j).vertex_name);
       /// check for start port
-      structural_managerRef CM = GetPointer<functional_unit>(tn)->CM;
+      auto CM = GetPointer<functional_unit>(tn)->CM;
       if(!CM)
       {
          continue;
       }
       structural_objectRef top = CM->get_circ();
       THROW_ASSERT(top, "expected");
-      auto* fu_module = GetPointer<module>(top);
+      auto* fu_module = GetPointer<module_o>(top);
       THROW_ASSERT(fu_module, "expected");
       structural_objectRef start_port_i = fu_module->find_member(START_PORT_NAME, port_o_K, top);
-      if(((GET_TYPE(data, j) & TYPE_EXTERNAL) && start_port_i) || !GetPointer<operation>(op_tn)->is_bounded() ||
-         start_port_i)
+      if(((data.CGetNodeInfo(j).node_type & TYPE_EXTERNAL) && start_port_i) ||
+         !GetPointer<operation>(op_tn)->is_bounded() || start_port_i)
       {
          bind_selector_port(conn_binding::IN, commandport_obj::UNBOUNDED, j, data);
          bind_selector_port(conn_binding::OUT, commandport_obj::UNBOUNDED, j, data);
@@ -987,7 +1052,8 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding inputs");
    std::map<structural_objectRef, std::list<structural_objectRef>> calls;
-   std::map<structural_objectRef, std::list<vertex>> start_to_vertex;
+   std::map<structural_objectRef, std::list<gc_vertex_descriptor>> start_to_vertex;
+   std::map<gc_vertex_descriptor, structural_objectRef> vertex_to_selector;
    if(selectors.find(conn_binding::IN) != selectors.end())
    {
       auto connection_binding_sets = selectors.find(conn_binding::IN)->second;
@@ -1004,17 +1070,15 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
             case generic_obj::FUNCTIONAL_UNIT:
             {
                auto type_fu = GetPointer<funit_obj>(elem)->get_fu();
-               std::vector<technology_nodeRef> tmp_ops_node =
+               auto tmp_ops_node =
                    GetPointer<functional_unit>(HLS->allocation_information->get_fu(type_fu))->get_operations();
                THROW_ASSERT(GetPointer<commandport_obj>(j->second), "Not valid command port");
-               structural_objectRef sel_obj =
-                   SM->add_port("fuselector_" + elem->get_string() + "_" + tmp_ops_node[oper]->get_name(), port_o::IN,
-                                circuit, boolean_port_type);
+               auto sel_obj = SM->add_port("fuselector_" + elem->get_string() + "_" + tmp_ops_node[oper]->get_name(),
+                                           port_o::IN, circuit, boolean_port_type);
                (j->second)->set_structural_obj(sel_obj);
-               structural_objectRef fu_mod = elem->get_structural_obj();
+               auto fu_mod = elem->get_structural_obj();
                THROW_ASSERT(fu_mod, "not correct module");
-               structural_objectRef port_selector =
-                   fu_mod->find_member("sel_" + tmp_ops_node[oper]->get_name(), port_o_K, fu_mod);
+               auto port_selector = fu_mod->find_member("sel_" + tmp_ops_node[oper]->get_name(), port_o_K, fu_mod);
                /// no port selector means that functional units can implement different operations without using a
                /// selector (i.e., it has several alias operation)
                if(port_selector)
@@ -1033,27 +1097,25 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
             }
             case generic_obj::REGISTER:
             {
-               structural_objectRef reg_mod = elem->get_structural_obj();
+               auto reg_mod = elem->get_structural_obj();
 
                THROW_ASSERT(GetPointer<commandport_obj>(j->second), "Not valid command port");
-               structural_objectRef sel_obj =
-                   SM->add_port("wrenable_" + reg_mod->get_id(), port_o::IN, circuit, boolean_port_type);
+               auto sel_obj = SM->add_port("wrenable_" + reg_mod->get_id(), port_o::IN, circuit, boolean_port_type);
                (j->second)->set_structural_obj(sel_obj);
 
-               structural_objectRef port_wenable = reg_mod->find_member(WENABLE_PORT_NAME, port_o_K, reg_mod);
+               auto port_wenable = reg_mod->find_member(WENABLE_PORT_NAME, port_o_K, reg_mod);
                SM->add_connection(port_wenable, sel_obj);
                break;
             }
             case generic_obj::MULTI_UNBOUNDED_OBJ:
             {
-               structural_objectRef mu_mod = elem->get_structural_obj();
+               auto mu_mod = elem->get_structural_obj();
 
                THROW_ASSERT(GetPointer<commandport_obj>(j->second), "Not valid command port");
-               structural_objectRef sel_obj =
-                   SM->add_port("muenable_" + mu_mod->get_id(), port_o::IN, circuit, boolean_port_type);
+               auto sel_obj = SM->add_port("muenable_" + mu_mod->get_id(), port_o::IN, circuit, boolean_port_type);
                (j->second)->set_structural_obj(sel_obj);
 
-               structural_objectRef port_enable = mu_mod->find_member("enable", port_o_K, mu_mod);
+               auto port_enable = mu_mod->find_member("enable", port_o_K, mu_mod);
                SM->add_connection(port_enable, sel_obj);
                break;
             }
@@ -1063,18 +1125,69 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
                THROW_ASSERT(GetPointer<commandport_obj>(j->second), "Not valid command port");
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                               "---Adding selector_" + elem->get_string() + " " + STR(elem->get_type()));
-               structural_objectRef sel_obj =
-                   SM->add_port("selector_" + elem->get_string(), port_o::IN, circuit, boolean_port_type);
+               auto sel_obj = SM->add_port("selector_" + elem->get_string(), port_o::IN, circuit, boolean_port_type);
                (j->second)->set_structural_obj(sel_obj);
 
                if(GetPointer<commandport_obj>(j->second)->get_command_type() == commandport_obj::UNBOUNDED)
                {
-                  vertex op = GetPointer<commandport_obj>(j->second)->get_vertex();
-                  generic_objRef fu_unit = HLS->Rfu->get(op);
-                  structural_objectRef fu_obj = fu_unit->get_structural_obj();
-                  structural_objectRef start = fu_obj->find_member(START_PORT_NAME, port_o_K, fu_obj);
+                  auto op = GetPointer<commandport_obj>(j->second)->get_vertex();
+                  const auto op_name = data.CGetNodeInfo(op).vertex_name;
+                  vertex_to_selector[op] = sel_obj;
+                  const auto predicate_port = get_command_predicate(op);
+                  structural_objectRef start_signal = sel_obj;
+                  const auto op_node = HLSMgr->get_ir_manager()->GetIRNode(data.CGetNodeInfo(op).GetNodeId());
+                  const auto call_predicate = getCallPredicate(op_node);
+                  THROW_ASSERT(!(call_predicate && call_predicate->get_kind() == constant_int_val_node_K &&
+                                 ir_helper::GetConstValue(call_predicate) == 0),
+                               "DCE did not remove a call with constant-false predicate: " + STR(op_node));
+                  if(predicate_port)
+                  {
+                     const auto predicate_gate = SM->add_module_from_technology_library(
+                         "predicate_buf_" + op_name + "_" + STR(unique_id), ASSIGN_GATE_STD, LIBRARY_STD, circuit, TM);
+                     const auto predicate_in = predicate_gate->find_member("in1", port_o_K, predicate_gate);
+                     const auto predicate_out = predicate_gate->find_member("out1", port_o_K, predicate_gate);
+                     predicate_in->type_resize(1U);
+                     predicate_out->type_resize(1U);
+                     const auto predicate_signal = add_bool_signal("s_predicate_" + op_name);
+                     predicate_port->set_structural_obj(predicate_in);
+                     predicate_port->set_out_sign(predicate_signal);
+                     SM->add_connection(predicate_signal, predicate_out);
+
+                     const auto start_and = SM->add_module_from_technology_library(
+                         "predicated_start_and_" + op_name + "_" + STR(unique_id), AND_GATE_STD,
+                         TM->get_library(AND_GATE_STD), circuit, TM);
+                     const auto start_inputs = start_and->find_member("in", port_o_K, start_and);
+                     auto* start_ports = GetPointer<port_o>(start_inputs);
+                     start_ports->add_n_ports(2U, start_inputs);
+                     start_signal = add_bool_signal("s_start_eff_" + op_name);
+                     SM->add_connection(start_signal, start_and->find_member("out1", port_o_K, start_and));
+                     SM->add_connection(start_ports->get_port(0), sel_obj);
+                     SM->add_connection(start_ports->get_port(1), predicate_signal);
+
+                     const auto predicate_not = SM->add_module_from_technology_library(
+                         "predicate_not_" + op_name + "_" + STR(unique_id), NOT_GATE_STD, LIBRARY_STD, circuit, TM);
+                     const auto not_input = predicate_not->find_member("in1", port_o_K, predicate_not);
+                     const auto not_signal = add_bool_signal("s_not_predicate_" + op_name);
+                     SM->add_connection(not_input, predicate_signal);
+                     SM->add_connection(not_signal, predicate_not->find_member("out1", port_o_K, predicate_not));
+
+                     const auto skip_and = SM->add_module_from_technology_library(
+                         "skip_done_and_" + op_name + "_" + STR(unique_id), AND_GATE_STD, TM->get_library(AND_GATE_STD),
+                         circuit, TM);
+                     const auto skip_inputs = skip_and->find_member("in", port_o_K, skip_and);
+                     auto* skip_ports = GetPointer<port_o>(skip_inputs);
+                     skip_ports->add_n_ports(2U, skip_inputs);
+                     const auto skip_signal = add_bool_signal("s_skip_done_" + op_name);
+                     SM->add_connection(skip_signal, skip_and->find_member("out1", port_o_K, skip_and));
+                     SM->add_connection(skip_ports->get_port(0), sel_obj);
+                     SM->add_connection(skip_ports->get_port(1), not_signal);
+                     skip_done_signals[op] = skip_signal;
+                  }
+                  auto fu_unit = HLS->Rfu->get(op);
+                  auto fu_obj = fu_unit->get_structural_obj();
+                  auto start = fu_obj->find_member(START_PORT_NAME, port_o_K, fu_obj);
                   THROW_ASSERT(start, fu_obj->get_path());
-                  calls[start].push_back(sel_obj);
+                  calls[start].push_back(start_signal);
                   start_to_vertex[start].push_back(op);
                }
                break;
@@ -1091,8 +1204,8 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
    for(auto& call : calls)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding connections of " + call.first->get_path());
-      const auto isMultipleModule = GetPointer<module>(call.first->get_owner()) &&
-                                    GetPointer<module>(call.first->get_owner())->get_multi_unit_multiplicity();
+      const auto isMultipleModule = GetPointer<module_o>(call.first->get_owner()) &&
+                                    GetPointer<module_o>(call.first->get_owner())->get_multi_unit_multiplicity();
       if(call.second.size() == 1 && !isMultipleModule)
       {
          SM->add_connection(call.first, call.second.front());
@@ -1110,7 +1223,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
                const auto tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(v));
                const auto index = HLS->Rfu->get_index(v);
 #if HAVE_ASSERTS
-               const auto multiplicity = GetPointer<module>(call.first->get_owner())->get_multi_unit_multiplicity();
+               const auto multiplicity = GetPointer<module_o>(call.first->get_owner())->get_multi_unit_multiplicity();
 #endif
                THROW_ASSERT(multiplicity == GetPointer<port_o>(call.first)->get_ports_size(), "unexpected condition");
                THROW_ASSERT(index < multiplicity,
@@ -1129,16 +1242,15 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
                }
                else
                {
-                  const auto TM = HLS->HLS_D->get_technology_manager();
                   const auto library = TM->get_library(OR_GATE_STD);
                   const auto or_gate = SM->add_module_from_technology_library(
                       "or_" + pp_pair.first->get_owner()->get_id() + STR(unique_id), OR_GATE_STD, library,
                       SM->get_circ(), TM);
-                  const auto sig = SM->add_sign("s_" + pp_pair.first->get_owner()->get_id() + STR(unique_id),
-                                                SM->get_circ(), boolean_port_type);
+                  const auto start_or_signal = SM->add_sign(
+                      "s_" + pp_pair.first->get_owner()->get_id() + STR(unique_id), SM->get_circ(), boolean_port_type);
                   ++unique_id;
-                  SM->add_connection(sig, or_gate->find_member("out1", port_o_K, or_gate));
-                  SM->add_connection(sig, pp_pair.first);
+                  SM->add_connection(start_or_signal, or_gate->find_member("out1", port_o_K, or_gate));
+                  SM->add_connection(start_or_signal, pp_pair.first);
                   const auto in = or_gate->find_member("in", port_vector_o_K, or_gate);
                   auto port = GetPointer<port_o>(in);
                   port->add_n_ports(static_cast<unsigned int>(pp_pair.second.size()), in);
@@ -1152,15 +1264,14 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
          }
          else
          {
-            const auto TM = HLS->HLS_D->get_technology_manager();
             const auto library = TM->get_library(OR_GATE_STD);
             const auto or_gate = SM->add_module_from_technology_library(
                 "or_" + call.first->get_owner()->get_id() + STR(unique_id), OR_GATE_STD, library, SM->get_circ(), TM);
-            const auto sig = SM->add_sign("s_" + call.first->get_owner()->get_id() + STR(unique_id), SM->get_circ(),
-                                          boolean_port_type);
+            const auto start_or_signal = SM->add_sign("s_" + call.first->get_owner()->get_id() + STR(unique_id),
+                                                      SM->get_circ(), boolean_port_type);
             ++unique_id;
-            SM->add_connection(sig, or_gate->find_member("out1", port_o_K, or_gate));
-            SM->add_connection(sig, call.first);
+            SM->add_connection(start_or_signal, or_gate->find_member("out1", port_o_K, or_gate));
+            SM->add_connection(start_or_signal, call.first);
             const auto in = or_gate->find_member("in", port_vector_o_K, or_gate);
             auto port = GetPointer<port_o>(in);
             port->add_n_ports(static_cast<unsigned int>(call.second.size()), in);
@@ -1174,42 +1285,47 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added connections of " + call.first->get_path());
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added calls connections");
-   std::map<structural_objectRef, structural_objectRef> sig;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding multi-unbounded controllers connections");
-   for(const auto& state2mu : HLS->STG->get_mu_ctrls())
+   for(const auto& state2mu : HLS->fsm_info->getMuCtrls())
    {
       auto mu = state2mu.second;
-      structural_objectRef mu_mod = mu->get_structural_obj();
+      auto mu_mod = mu->get_structural_obj();
       auto mut = GetPointer<multi_unbounded_obj>(mu);
       const auto& ops = mut->get_ops();
-      structural_objectRef inOps = mu_mod->find_member("ops", port_vector_o_K, mu_mod);
-      auto* port = GetPointer<port_o>(inOps);
-      auto j = 0u;
+      std::vector<std::pair<gc_vertex_descriptor, structural_objectRef>> ordered_ops;
+      ordered_ops.reserve(ops.size());
       for(const auto& op : ops)
       {
-         generic_objRef fu_unit = HLS->Rfu->get(op);
-         structural_objectRef fu_obj = fu_unit->get_structural_obj();
-         structural_objectRef done = fu_obj->find_member(DONE_PORT_NAME, port_o_K, fu_obj);
-         std::string sign_owner_id = done->get_owner()->get_id();
-         if(done->get_kind() == port_vector_o_K)
-         {
-            THROW_ASSERT(GetPointer<port_o>(done)->get_ports_size() != 0,
-                         "port not correctly initialized" + done->get_path());
-            THROW_ASSERT(GetPointer<funit_obj>(fu_unit), "unexpected port configuration");
-            done = GetPointer<port_o>(done)->get_port(GetPointer<funit_obj>(fu_unit)->get_index() %
-                                                      GetPointer<port_o>(done)->get_ports_size());
-            sign_owner_id = sign_owner_id + "_P" + done->get_id();
-            THROW_ASSERT(done, "Missing done_port from function call " + fu_unit->get_string());
-         }
-         if(sig.find(done) == sig.end())
-         {
-            sig[done] = SM->add_sign("s_done_" + sign_owner_id, SM->get_circ(), boolean_port_type);
-            SM->add_connection(done, sig[done]);
-         }
+         const auto done_signal = get_effective_done_signal(op);
+         THROW_ASSERT(done_signal, "Missing done_port from function call " + HLS->Rfu->get(op)->get_string());
+         ordered_ops.emplace_back(op, done_signal);
+      }
+      std::sort(ordered_ops.begin(), ordered_ops.end(),
+                [](const auto& lhs, const auto& rhs) { return lhs.second->get_id() < rhs.second->get_id(); });
+      auto inOps = mu_mod->find_member("ops", port_vector_o_K, mu_mod);
+      auto* port = GetPointer<port_o>(inOps);
+      auto j = 0u;
+      for(const auto& [op, done_signal] : ordered_ops)
+      {
          THROW_ASSERT(port->get_port(j), "port->get_port(j) not found");
          const auto& port_obj = port->get_port(j);
-         SM->add_connection(port_obj, sig[done]);
+         SM->add_connection(port_obj, done_signal);
          ++j;
+      }
+      auto Starts = mu_mod->find_member("starts", port_vector_o_K, mu_mod);
+      if(Starts)
+      {
+         j = 0u;
+         auto* sport = GetPointer<port_o>(Starts);
+         for(const auto& [op, _] : ordered_ops)
+         {
+            THROW_ASSERT(vertex_to_selector.find(op) != vertex_to_selector.end(), "unexpected condition");
+            auto inSelector = vertex_to_selector.at(op);
+            THROW_ASSERT(sport->get_port(j), "sport->get_port(j) not found");
+            const auto& sport_obj = sport->get_port(j);
+            SM->add_connection(sport_obj, inSelector);
+            ++j;
+         }
       }
       HLS->Rconn->bind_selector_port(conn_binding::OUT, commandport_obj::MULTI_UNBOUNDED, mu, 0);
    }
@@ -1223,68 +1339,39 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
       for(auto j = connection_binding_sets.begin(); j != connection_binding_sets.end(); ++j)
       {
          THROW_ASSERT(GetPointer<commandport_obj>(j->second), "Not valid command port");
-         if(GetPointer<commandport_obj>(j->second)->get_command_type() == commandport_obj::SWITCH)
+         if(GetPointer<commandport_obj>(j->second)->get_command_type() == commandport_obj::MULTIIF)
          {
-            vertex op = GetPointer<commandport_obj>(j->second)->get_vertex();
-            auto var_written = HLSMgr->get_produced_value(HLS->functionId, op);
-            structural_type_descriptorRef switch_port_type =
-                structural_type_descriptorRef(new structural_type_descriptor(var_written, BH));
-            structural_objectRef sel_obj = SM->add_port(GetPointer<commandport_obj>(j->second)->get_string(),
-                                                        port_o::OUT, circuit, switch_port_type);
-            (j->second)->set_structural_obj(sel_obj);
-         }
-         else if(GetPointer<commandport_obj>(j->second)->get_command_type() == commandport_obj::MULTIIF)
-         {
-            vertex op = GetPointer<commandport_obj>(j->second)->get_vertex();
+            auto op = GetPointer<commandport_obj>(j->second)->get_vertex();
             std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(HLS->functionId, op);
             auto vect_size = static_cast<unsigned int>(var_read.size());
-            structural_type_descriptorRef multiif_port_type =
-                structural_type_descriptorRef(new structural_type_descriptor("bool", vect_size));
-            structural_objectRef sel_obj = SM->add_port(GetPointer<commandport_obj>(j->second)->get_string(),
-                                                        port_o::OUT, circuit, multiif_port_type);
+            structural_type_descriptorRef multiif_port_type(new structural_type_descriptor("bool", vect_size));
+            auto sel_obj = SM->add_port(GetPointer<commandport_obj>(j->second)->get_string(), port_o::OUT, circuit,
+                                        multiif_port_type);
             (j->second)->set_structural_obj(sel_obj);
          }
          else if(GetPointer<commandport_obj>(j->second)->get_command_type() == commandport_obj::MULTI_UNBOUNDED)
          {
-            structural_objectRef mu_mod = j->second->get_structural_obj();
+            auto mu_mod = j->second->get_structural_obj();
             auto mu_obj = j->first.first;
-            structural_objectRef alldone_command_port = SM->add_port(
-                GetPointer<commandport_obj>(j->second)->get_string(), port_o::OUT, circuit, boolean_port_type);
+            auto alldone_command_port = SM->add_port(GetPointer<commandport_obj>(j->second)->get_string(), port_o::OUT,
+                                                     circuit, boolean_port_type);
             THROW_ASSERT(GetPointer<multi_unbounded_obj>(mu_obj), "unexpected condition");
             SM->add_connection(GetPointer<multi_unbounded_obj>(mu_obj)->get_out_sign(), alldone_command_port);
             (j->second)->set_structural_obj(alldone_command_port);
          }
          else
          {
-            structural_objectRef sel_obj = SM->add_port(GetPointer<commandport_obj>(j->second)->get_string(),
-                                                        port_o::OUT, circuit, boolean_port_type);
+            auto sel_obj = SM->add_port(GetPointer<commandport_obj>(j->second)->get_string(), port_o::OUT, circuit,
+                                        boolean_port_type);
             (j->second)->set_structural_obj(sel_obj);
 
             if(GetPointer<commandport_obj>(j->second)->get_command_type() == commandport_obj::UNBOUNDED)
             {
-               vertex op = GetPointer<commandport_obj>(j->second)->get_vertex();
-               generic_objRef fu_unit = HLS->Rfu->get(op);
-               structural_objectRef fu_obj = fu_unit->get_structural_obj();
-               structural_objectRef done = fu_obj->find_member(DONE_PORT_NAME, port_o_K, fu_obj);
-               if(done)
+               auto op = GetPointer<commandport_obj>(j->second)->get_vertex();
+               const auto done_signal = get_effective_done_signal(op);
+               if(done_signal)
                {
-                  std::string sign_owner_id = done->get_owner()->get_id();
-                  if(done->get_kind() == port_vector_o_K)
-                  {
-                     THROW_ASSERT(GetPointer<port_o>(done)->get_ports_size() != 0,
-                                  "port not correctly initialized" + done->get_path());
-                     THROW_ASSERT(GetPointer<funit_obj>(fu_unit), "unexpected port configuration");
-                     done = GetPointer<port_o>(done)->get_port(GetPointer<funit_obj>(fu_unit)->get_index() %
-                                                               GetPointer<port_o>(done)->get_ports_size());
-                     THROW_ASSERT(done, "Missing done_port from function call " + fu_unit->get_string());
-                     sign_owner_id = sign_owner_id + "_P" + done->get_id();
-                  }
-                  if(sig.find(done) == sig.end())
-                  {
-                     sig[done] = SM->add_sign("s_done_" + sign_owner_id, SM->get_circ(), boolean_port_type);
-                     SM->add_connection(done, sig[done]);
-                  }
-                  SM->add_connection(sig[done], sel_obj);
+                  SM->add_connection(done_signal, sel_obj);
                }
             }
          }
@@ -1301,10 +1388,12 @@ void conn_binding::cleanInternals()
    command_output_ports.clear();
    conn_variables.clear();
 }
+
 conn_binding::ConnectionTarget::ConnectionTarget(generic_objRef tgt, unsigned int tgt_port, unsigned int tgt_port_index)
     : std::tuple<generic_objRef, unsigned int, unsigned int>(std::make_tuple(tgt, tgt_port, tgt_port_index))
 {
 }
+
 #if !HAVE_UNORDERED
 bool conn_binding::ConnectionTarget::operator<(const ConnectionTarget& other) const
 {

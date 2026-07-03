@@ -50,6 +50,7 @@
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instruction.h"
+#include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/User.h"
 #include "llvm/IR/Value.h"
@@ -357,6 +358,7 @@ namespace llvm
             else
             {
                llvm::errs() << "latency not defined for " << op << " " << bits << "\n";
+               llvm_unreachable("");
                return 0.0;
             }
          };
@@ -368,11 +370,11 @@ namespace llvm
             case Instruction::Add:
             case Instruction::Sub:
             {
-               return getCost(bits, "plus_expr");
+               return getCost(bits, "add_node");
             }
             case Instruction::Mul:
             {
-               return getCost(bits, "mult_expr");
+               return getCost(bits, "mul_node");
             }
             case Instruction::PHI:
             case Instruction::Ret:
@@ -383,25 +385,25 @@ namespace llvm
             case Instruction::FAdd:
             case Instruction::FSub:
             {
-               return getCost(bits, "Fplus_expr");
+               return getCost(bits, "Faddsub_node");
             }
             case Instruction::FMul:
             {
-               return getCost(bits, "Fmult_expr");
+               return getCost(bits, "Fmul_node");
             }
             case Instruction::UDiv:
             case Instruction::SDiv:
             {
-               return getCost(bits, "trunc_div_expr");
+               return getCost(bits, "idiv_node");
             }
             case Instruction::FDiv:
             {
-               return getCost(bits, "Frdiv_expr");
+               return getCost(bits, "Ffdiv_node");
             }
             case Instruction::URem:
             case Instruction::SRem:
             {
-               return getCost(bits, "trunc_mod_expr");
+               return getCost(bits, "irem_node");
             }
             case Instruction::FRem:
             {
@@ -410,26 +412,26 @@ namespace llvm
             }
             case Instruction::Shl:
             {
-               return getCost(bits, "lshift_expr");
+               return getCost(bits, "shl_node");
             }
             case Instruction::LShr:
             case Instruction::AShr:
             {
-               return getCost(bits, "rshift_expr");
+               return getCost(bits, "shr_node");
             }
             case Instruction::And:
             {
-               return getCost(bits, "bit_and_expr");
+               return getCost(bits, "and_node");
             }
             case Instruction::Or:
             {
-               return getCost(bits, "bit_ior_expr");
+               return getCost(bits, "or_node");
             }
             case Instruction::Xor:
             {
-               return getCost(bits, "bit_xor_expr");
+               return getCost(bits, "xor_node");
             }
-#if __clang_major__ >= 10
+#if PANDA_LLVM_CLANG_MAJOR >= 10
             case Instruction::FNeg:
             {
                return 0;
@@ -437,7 +439,7 @@ namespace llvm
 #endif
             case Instruction::Select:
             {
-               return getCost(bits, "cond_expr");
+               return getCost(bits, "select_node");
             }
             case Instruction::ICmp:
             {
@@ -446,15 +448,15 @@ namespace llvm
             case Instruction::FCmp:
             {
                // simplified
-               return getCost(bits, "Fplus_expr");
+               return getCost(bits, "Fadd_node");
             }
             case Instruction::Store:
             {
-               return getCost(32, "store_expr");
+               return getCost(32, "store_node");
             }
             case Instruction::Load:
             {
-               return getCost(32, "load_expr");
+               return getCost(32, "load_node");
             }
             case Instruction::ZExt:
             case Instruction::SExt:
@@ -474,7 +476,7 @@ namespace llvm
             case Instruction::UIToFP:
             case Instruction::FPTrunc:
             {
-               return getCost(32, "nop_expr");
+               return getCost(32, "nop_node");
             }
 
             case Instruction::BitCast:
@@ -685,7 +687,7 @@ namespace llvm
       {
          __buildMap(costTable, Node::InstructionLatencyTable);
          bool changed = false;
-         for(auto& fun : M.getFunctionList())
+         for(auto& fun : M.functions())
          {
             if(!fun.isIntrinsic() && !fun.isDeclaration())
             {
@@ -700,7 +702,7 @@ namespace llvm
                      SmallVector<Loop*, 4> Worklist;
                      for(Loop* CurLoop : llvm::depth_first(L))
                      {
-#if __clang_major__ >= 12
+#if PANDA_LLVM_CLANG_MAJOR >= 12
                         if(CurLoop->isInnermost())
 #else
                         if(CurLoop->empty())
@@ -1156,10 +1158,13 @@ namespace llvm
          }
 
          // Take over the original instruction IR flags.
-         auto* NewInst = dyn_cast<Instruction>(V);
-         if(Value* OrgDef = N->getDefinedValue())
+         auto* NewInst = dyn_cast_or_null<Instruction>(V);
+         if(auto* NewInst = dyn_cast_or_null<Instruction>(V))
          {
-            NewInst->copyIRFlags(OrgDef, true);
+            if(Value* OrgDef = N->getDefinedValue())
+            {
+               NewInst->copyIRFlags(OrgDef, true);
+            }
          }
 
          return V;

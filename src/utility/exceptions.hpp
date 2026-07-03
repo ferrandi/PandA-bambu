@@ -12,47 +12,42 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2004-2026 Politecnico di Milano
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  *   This file is part of the PandA framework.
  *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
+ *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
  */
 /**
  * @file exceptions.hpp
  * @brief exceptions managed by PandA
  *
- * This structure is used to manage the exception raised by the Panda toolset.
+ * This structure is used to manage the exception raised by the PandA toolset.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef EXCEPTIONS_HPP
 #define EXCEPTIONS_HPP
+#include <iostream>
+#include <string>
 
-/// Autoheader include
 #include "config_HAVE_ASSERTS.hpp"
 #include "config_HAVE_PRINT_STACK.hpp"
 
-/// STD include
-#include <iostream>
-#include <string>
 #if HAVE_PRINT_STACK
 #include <cxxabi.h>
 #include <execinfo.h>
@@ -73,6 +68,7 @@ extern bool error_on_warning;
  * @param  pp is the name of the calling function
  * @param  file is the file where throw_error is called
  * @param  line is the line where throw_error is called
+ * @param  code is the process exit code associated with the error
  */
 template <class T>
 inline T& throw_error(const T& t, const std::string& expression,
@@ -139,6 +135,7 @@ inline void throw_warning(const std::string& expression,
  * @param  pp is the name of the calling function
  * @param  file is the file where throw_error is called
  * @param  line is the line where throw_error is called
+ * @param  code is the process exit code associated with the error
  */
 template <class T>
 inline T& throw_error(const T& t, const char* expression, const char* pp, const char* file, int line,
@@ -147,6 +144,17 @@ inline T& throw_error(const T& t, const char* expression, const char* pp, const 
    return throw_error(t, std::string(expression), pp, file, line, code);
 }
 #if HAVE_PRINT_STACK
+/**
+ * Return true if the return value corresponds to a failure (not to an error)
+ * @param return_value is a return value of a system
+ * @return true if return value corresponds to a failure
+ */
+inline bool is_failure(int error_value)
+{
+   int status = WEXITSTATUS(error_value);
+   return status == EXIT_FAILURE;
+}
+
 #define PRINT_STACK                                                                                                 \
    do                                                                                                               \
    {                                                                                                                \
@@ -270,6 +278,10 @@ inline T& throw_error(const T& t, const char* expression, const char* pp, const 
       throw_error(0, (str_expr), __PRETTY_FUNCTION__, __FILE__, __LINE__, code); \
    } while(0)
 
+/// helper function used to throw an error due to invalid/missing user specification
+#define THROW_ERROR_USAGE(str_expr) \
+   THROW_ERROR_CODE(USAGE_EC, std::string(str_expr) + " Please check input options/files and run --help if needed.")
+
 /// helper function used to check an assert and if needed to throw an error in a standard way
 #if HAVE_ASSERTS
 #define THROW_ASSERT(cond, str_expr)                              \
@@ -331,28 +343,15 @@ enum throw_error_code
    PROFILING_EC,                  /**< error during profiling */
    COMPILING_EC,                  /**< error during compilation */
    VLA_EC,                        /**< Not supported variable length array */
-   POINTER_PLUS_EC,               /**< pointer_plus_expr not removed */
+   POINTER_PLUS_EC,               /**< gep_node not removed */
    VARARGS_EC,                    /**< varargs with cross-compiler */
    BITFIELD_EC,                   /**< bitfield not supported */
    C_EC,                          /**< C pattern not supported */
 
    /// Not trapped by panda torture script
    GRMON_EC, /**< GRMON serious error (e.g.: locked usb device)*/
-   BOARD_EC  /**< Corrupted bitstream */
+   BOARD_EC, /**< Corrupted bitstream */
+   USAGE_EC  /**< User/specification error: explain to user, no bug report needed */
 };
-
-/**
- * Return true if the return_value corresponds to an error
- * @param return_value is a return value of a system
- * @return true if return value corresponds to an error
- */
-bool IsError(const int error_value);
-
-/**
- * Return true if the return value corresponds to a failure (not to an error)
- * @param return_value is a return value of a system
- * @return true if return value corresponds to a failure
- */
-bool is_failure(const int error_value);
 
 #endif
