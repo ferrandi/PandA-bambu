@@ -997,7 +997,8 @@ void VHDL_writer::write_io_signal_post_fix(const structural_objectRef& port, con
    {
       if(sig->get_owner()->get_kind() == signal_vector_o_K)
       {
-         signal_string = HDL_manager::convert_to_identifier(sig->get_owner()->get_id()) + may_slice_string(port);
+         const auto signal_slice = may_slice_string(sig);
+         signal_string = HDL_manager::convert_to_identifier(sig->get_owner()->get_id()) + signal_slice;
       }
       else
       {
@@ -2341,8 +2342,12 @@ void VHDL_writer::WriteBuiltin_ASSIGN_GATE_STD(const structural_objectConstRef c
       {
          indented_output_stream->Append(HDL_manager::convert_to_identifier(in_object_bounded->get_id()));
          if(object_bounded->get_typeRef()->type == structural_type_descriptor::BOOL &&
-            in_object_bounded->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL &&
-            in_object_bounded->get_typeRef()->size == 1)
+            ((in_object_bounded->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL &&
+              in_object_bounded->get_typeRef()->size == 1) ||
+             (in_object_bounded->get_typeRef()->type == structural_type_descriptor::UINT &&
+              in_object_bounded->get_typeRef()->size == 1) ||
+             (in_object_bounded->get_typeRef()->type == structural_type_descriptor::INT &&
+              in_object_bounded->get_typeRef()->size == 1)))
          {
             indented_output_stream->Append("(0)");
          }
