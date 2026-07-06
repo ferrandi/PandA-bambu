@@ -35,7 +35,7 @@ jobs:
     timeout-minutes: 600
     env:
       basename: openmp-complex
-      args: --latex-format=etc/scripts/latex_table_format/latex_format_bambu_results_xilinx.xml -c=--evaluation -t360m
+      args: -c=--evaluation -t360m
     strategy:
       fail-fast: false
       matrix:
@@ -92,7 +92,8 @@ jobs:
             IFS=' ' read -r -a args <<< "$args"
             config_name="${device}_${period}$(sed -e 's/\([-]\+\)/_/g' <<< $args)"
             config_out="$out_dir/$config_name"
-            ${{matrix.script}} -o $test_dir --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{env.test-compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
+            mkdir -p "$config_out"
+            ${{matrix.script}} -o $test_dir --returnfail --junitdir="$config_out" --summary="$config_out/perf.xml" -c=--compiler=${{env.test-compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
             echo "::endgroup::"
           done
       - name: Upload test reports
