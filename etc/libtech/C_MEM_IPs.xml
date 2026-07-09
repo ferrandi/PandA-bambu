@@ -8556,7 +8556,7 @@ generate
     ARRAY_1D_STD_BRAM_SDS_BASE #(
       .BITSIZE_in1(BITSIZE_in1),
       .BITSIZE_in2r(BITSIZE_in2r),
-      .BITSIZE_in2w(ZE_in2w),
+      .BITSIZE_in2w(BITSIZE_in2w),
       .BITSIZE_in3r(BITSIZE_in3r),
       .BITSIZE_in3w(BITSIZE_in3w),
       .BITSIZE_out1(BITSIZE_out1),
@@ -8846,7 +8846,7 @@ generate
     ARRAY_1D_STD_BRAM_SDS_BASE #(
       .BITSIZE_in1(BITSIZE_in1),
       .BITSIZE_in2r(BITSIZE_in2r),
-      .BITSIZE_in2w(ZE_in2w),
+      .BITSIZE_in2w(BITSIZE_in2w),
       .BITSIZE_in3r(BITSIZE_in3r),
       .BITSIZE_in3w(BITSIZE_in3w),
       .BITSIZE_out1(BITSIZE_out1),
@@ -9136,7 +9136,7 @@ generate
     ARRAY_1D_STD_BRAM_SDS_BASE #(
       .BITSIZE_in1(BITSIZE_in1),
       .BITSIZE_in2r(BITSIZE_in2r),
-      .BITSIZE_in2w(ZE_in2w),
+      .BITSIZE_in2w(BITSIZE_in2w),
       .BITSIZE_in3r(BITSIZE_in3r),
       .BITSIZE_in3w(BITSIZE_in3w),
       .BITSIZE_out1(BITSIZE_out1),

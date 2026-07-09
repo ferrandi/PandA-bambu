@@ -596,8 +596,9 @@ namespace llvm
 
    static bool fix_omp_outline_parameters(llvm::Function* function,
                                           std::map<Function*, std::set<uint64_t>>& argToPromote,
-                                          std::set<uint64_t>& deadArgToPromote)
+                                          std::set<uint64_t>& deadArgToPromote, llvm::Function*& updatedFunction)
    {
+      updatedFunction = function;
       bool hasDirectCall = false;
       for(Use& U : function->uses())
       {
@@ -1048,6 +1049,8 @@ namespace llvm
          argToPromote[NF] = argToPromote.at(function);
          argToPromote.erase(function);
       }
+      updatedFunction = NF;
+      function->eraseFromParent();
       return true;
    }
 
@@ -1767,11 +1770,16 @@ namespace llvm
             auto res_remove_openmp_lifetime = remove_openmp_lifetime(*F);
             changed = res_remove_openmp_lifetime || changed;
          }
+         std::set<Function*> updatedOutlinedList;
          for(auto F : ompOutlinedList)
          {
-            auto res_fix_omp_outline_parameters = fix_omp_outline_parameters(F, argToPromote, deadArgToPromote);
+            Function* updatedF = F;
+            auto res_fix_omp_outline_parameters =
+                fix_omp_outline_parameters(F, argToPromote, deadArgToPromote, updatedF);
             changed = res_fix_omp_outline_parameters || changed;
+            updatedOutlinedList.insert(updatedF);
          }
+         ompOutlinedList = std::move(updatedOutlinedList);
 
          auto res_manage_fork_call = manage_fork_call(M, false, argToPromote, deadArgToPromote, ompOutlinedList);
          changed = res_manage_fork_call || changed;
