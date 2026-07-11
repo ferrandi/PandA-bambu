@@ -747,7 +747,7 @@ generate
       .n_elements(n_elements * CONTEXT_COUNT),
       .data_size(data_size),
       .address_space_begin(0),
-      .address_space_rangesize((1 &lt;&lt; DATA_BITSIZE) * CONTEXT_COUNT),
+      .address_space_rangesize(DATA_SIZE * CONTEXT_COUNT),
       .BUS_PIPELINED(BUS_PIPELINED),
       .BRAM_BITSIZE(BRAM_BITSIZE),
       .PRIVATE_MEMORY(PRIVATE_MEMORY),
