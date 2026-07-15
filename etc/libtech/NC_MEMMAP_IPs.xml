@@ -9,7 +9,7 @@
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2012-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="memory_mapped_register_FU"/>
           <parameter name="ALLOCATED_ADDRESS">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -73,7 +73,7 @@ end
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="memory_mapped_registerN_FU"/>
           <parameter name="ALLOCATED_ADDRESS">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -160,7 +160,7 @@ end"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2012-2026 Politecnico di Milano</copyright>
           <authors>Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="notify_caller_minimal_FU"/>
           <parameter name="EMULATE_BRAM">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -291,7 +291,7 @@ end"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="notify_caller_minimalN_FU"/>
           <parameter name="EMULATE_BRAM">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -423,7 +423,7 @@ end"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2012-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="return_value_mm_register_FU"/>
           <parameter name="ALLOCATED_ADDRESS">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -506,7 +506,7 @@ end
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="return_value_mm_registerN_FU"/>
           <parameter name="ALLOCATED_ADDRESS">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -611,7 +611,7 @@ end"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2012-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="status_register_FU"/>
           <parameter name="ALLOCATED_ADDRESS">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -736,7 +736,7 @@ end
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="status_registerN_FU"/>
           <parameter name="ALLOCATED_ADDRESS">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -890,7 +890,7 @@ end"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2012-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;, Pietro Fezzardi &lt;pietrofezzardi@gmail.com&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="status_register_no_notified_FU"/>
           <parameter name="ALLOCATED_ADDRESS">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -979,7 +979,7 @@ end
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="status_register_no_notifiedN_FU"/>
           <parameter name="ALLOCATED_ADDRESS">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -1078,7 +1078,7 @@ end"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2012-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="DEMUX_GATE"/>
           <port_o id="sel" dir="IN">
             <structural_type_descriptor type="BOOL"/>
@@ -1103,5 +1103,5 @@ always @ (sel or in1)
         </module_o>
       </circuit>
     </cell>
-   </library>
+  </library>
 </technology>

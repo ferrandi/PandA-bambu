@@ -9,7 +9,7 @@
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IOB_front_end"/>
           <parameter name="FE_ADDR_W"> 32 </parameter>
           <parameter name="FE_BYTE_W"> 2 </parameter>
@@ -183,7 +183,7 @@ assign data_valid_reg = valid_reg;"/>
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IOB_read_channel_axi"/>
           <parameter name="FE_ADDR_W"> 32 </parameter>
           <parameter name="FE_DATA_W"> 32 </parameter>
@@ -508,7 +508,7 @@ endgenerate"/>
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IOB_write_channel_axi"/>
           <parameter name="FE_ADDR_W"> 32 </parameter>
           <parameter name="FE_DATA_W"> 32 </parameter>
@@ -965,7 +965,7 @@ end
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IOB_back_end_axi"/>
           <parameter name="FE_ADDR_W"> 32 </parameter>
           <parameter name="FE_DATA_W"> 32 </parameter>
@@ -1254,7 +1254,7 @@ write_fsm (.valid (write_valid &amp;&amp; resetted),
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IOB_ram_2p"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -1322,7 +1322,7 @@ end"/>
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IOB_ram_2p_asym"/>
           <parameter name="W_DATA_W"> 0 </parameter>
           <parameter name="R_DATA_W"> 0 </parameter>
@@ -1503,7 +1503,7 @@ assign ext_mem_r_en = r_en;
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IOB_fifo_sync"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -1703,7 +1703,7 @@ iob_ram_2p_asym0 (.clock(clock),
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IOB_ram_sp"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -1761,7 +1761,7 @@ iob_ram_2p_asym0 (.clock(clock),
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IOB_ram_sp_no_addr"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -1804,7 +1804,7 @@ iob_ram_2p_asym0 (.clock(clock),
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IOB_gen_sp_ram"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -1858,7 +1858,7 @@ assign we1 = {BITSIZE_we{en}} &amp; we;
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IOB_gen_sp_ram_no_addr"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -1900,7 +1900,7 @@ endgenerate"/>
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IOB_onehot_to_bin"/>
           <port_o id="onehot" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -1937,7 +1937,7 @@ end"/>
           <description>Simple register file, part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IOB_regfile_sp"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -1991,7 +1991,7 @@ end
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IOB_regfile_sp_no_addr"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -2037,7 +2037,7 @@ end"/>
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IOB_replacement_policy"/>
           <parameter name="REP_POLICY"> 2 </parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2264,7 +2264,7 @@ endgenerate
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IOB_cache_memory"/>
           <parameter name="FE_ADDR_W"> 32 </parameter>
           <parameter name="N_WAYS"> 2 </parameter>
@@ -3224,7 +3224,7 @@ endgenerate
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IOB_cache_control"/>
           <parameter name="CTRL_CNT"> 1 </parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -3400,7 +3400,7 @@ endgenerate
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IOB_cache_axi"/>
           <parameter name="FE_ADDR_W"> 32 </parameter>
           <parameter name="BE_ADDR_W"> 32 </parameter>

@@ -9,7 +9,7 @@
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2012-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="address_range_checker_FU"/>
           <port_o id="address" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -40,7 +40,7 @@ always @ (address or base or max_address)
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2012-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="address_filter_FU"/>
           <parameter name="MAX_ADDRESS">0</parameter>
           <port_o id="in1" dir="IN">
@@ -86,7 +86,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2012-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="sel_converter_FU"/>
           <port_o id="sel" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -205,7 +205,7 @@ endgenerate
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2012-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="dataramsize_converter_FU"/>
           <port_o id="dataRamSize" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
@@ -279,7 +279,7 @@ endgenerate
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2012-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="register_waddress_FU"/>
           <parameter name="ALLOCATED_ADDRESS">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -325,7 +325,7 @@ always @(posedge clock 1RESET_EDGE)
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2012-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="wishbone_start_controller_FU"/>
           <parameter name="START_REGISTER_ADDRESS">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -432,7 +432,7 @@ end
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2012-2026 Politecnico di Milano</copyright>
           <authors>Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="notify_caller_FU"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -532,7 +532,7 @@ always @ (*)
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2012-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="not_internal_component"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -567,7 +567,7 @@ always @(posedge clock)
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2012-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="builtin_wait_call_FU"/>
           <parameter name="unlock_address">0</parameter>
           <parameter name="MEMORY_INIT_file">&quot;&quot;parameter_address.mem&quot;&quot;</parameter>
@@ -662,7 +662,7 @@ always @(posedge clock)
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2012-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="builtin_wait_callN_FU"/>
           <parameter name="unlock_address">0</parameter>
           <parameter name="MEMORY_INIT_file">&quot;&quot;parameter_address.mem&quot;&quot;</parameter>
@@ -755,7 +755,7 @@ always @(posedge clock)
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2012-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="intercon_arbiter"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -813,7 +813,7 @@ always @(posedge clock)
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2012-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="wb4Intercon"/>
           <parameter name="MASTERS">1</parameter>
           <parameter name="SLAVES">1</parameter>

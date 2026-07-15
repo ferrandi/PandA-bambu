@@ -190,11 +190,6 @@ ${CMAKE_COMMAND} -E touch \"${REVISION_STAMP}\""
 add_custom_target(panda_revision_headers DEPENDS "${REVISION_STAMP}")
 add_dependencies(panda_core panda_revision_headers)
 
-# License install (mirrors Automake install-data-hook_license)
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE_INSTALL"
-        DESTINATION "${PANDA_LICENSING_INSTALLDIR_REL}"
-        RENAME LICENSE)
-
 # Parsers and lexers (Bison/Flex)
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)

@@ -9,7 +9,7 @@
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="MUX2_GATE"/>
           <port_o id="sel" dir="IN">
             <structural_type_descriptor type="BOOL"/>

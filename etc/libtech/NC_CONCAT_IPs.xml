@@ -11,7 +11,7 @@
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="concat_1_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
@@ -38,7 +38,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_concat_1_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
@@ -64,7 +64,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="concat_2_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
@@ -96,7 +96,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_concat_2_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
@@ -127,7 +127,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="concat_3_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
@@ -164,7 +164,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_concat_3_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
@@ -200,7 +200,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="concat_4_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
@@ -243,7 +243,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_concat_4_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
@@ -285,7 +285,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="concat_8_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
@@ -350,7 +350,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_concat_8_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
@@ -414,7 +414,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="concat_16_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
@@ -524,7 +524,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_concat_16_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
