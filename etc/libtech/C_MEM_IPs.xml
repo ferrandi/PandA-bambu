@@ -8396,7 +8396,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BUS_BASE generic map (B
       <name>ARRAY_1D_STD_BRAM_SDS_CS</name>
       <operation operation_name="LOAD" initiation_time="1" cycles="2"/>
       <operation operation_name="STORE"/>
-      <memory_type>SYNCHRONOUS_SDS_BUS</memory_type>
+      <memory_type>SYNCHRONOUS_SDS</memory_type>
       <channels_type>MEM_ACC_11</channels_type>
       <bram_load_latency>2</bram_load_latency>
       <circuit>
@@ -8686,8 +8686,8 @@ endgenerate"/>
       <name>ARRAY_1D_STD_BRAM_SDS_CS_3</name>
       <operation operation_name="LOAD" initiation_time="1" cycles="3"/>
       <operation operation_name="STORE"/>
-      <memory_type>SYNCHRONOUS_SDS_BUS</memory_type>
-      <channels_type>MEM_ACC_NN</channels_type>
+      <memory_type>SYNCHRONOUS_SDS</memory_type>
+      <channels_type>MEM_ACC_11</channels_type>
       <bram_load_latency>3</bram_load_latency>
       <circuit>
         <module_o id="ARRAY_1D_STD_BRAM_SDS_CS_3">
@@ -8976,8 +8976,8 @@ endgenerate"/>
       <name>ARRAY_1D_STD_BRAM_SDS_CS_4</name>
       <operation operation_name="LOAD" initiation_time="1" cycles="4"/>
       <operation operation_name="STORE" initiation_time="1" cycles="2"/>
-      <memory_type>SYNCHRONOUS_SDS_BUS</memory_type>
-      <channels_type>MEM_ACC_NN</channels_type>
+      <memory_type>SYNCHRONOUS_SDS</memory_type>
+      <channels_type>MEM_ACC_11</channels_type>
       <bram_load_latency>4</bram_load_latency>
       <circuit>
         <module_o id="ARRAY_1D_STD_BRAM_SDS_CS_4">

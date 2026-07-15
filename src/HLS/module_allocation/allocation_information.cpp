@@ -802,8 +802,7 @@ bool AllocationInformation::is_dual_port_memory(unsigned int fu_type) const
    const auto& memory_type = GetPointerS<functional_unit>(current_fu)->memory_type;
    const auto& memory_ctrl_type = GetPointerS<functional_unit>(current_fu)->memory_ctrl_type;
    return memory_type == MEMORY_TYPE_ASYNCHRONOUS || memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS ||
-          memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS1 || memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS_BUS ||
-          memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS_BUS1 || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY ||
+          memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS1 || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY ||
           memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN || memory_ctrl_type == MEMORY_CTRL_TYPE_SPROXY ||
           memory_ctrl_type == MEMORY_CTRL_TYPE_SPROXYN;
 }
