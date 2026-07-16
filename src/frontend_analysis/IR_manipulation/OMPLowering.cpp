@@ -161,6 +161,7 @@ DesignFlowStep_Status OMPLowering::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analizing call_stmt_K " + called_fname);
             const auto replace_call = [&](const ir_nodeRef& version_fnode, const std::vector<ir_nodeRef>& args) {
                const auto version_call = ir_man->create_call_stmt(version_fnode, args, function_id, BUILTIN_LOCINFO);
+               GetPointerS<call_stmt>(version_call)->predicate = gc->predicate;
                BB->Replace(stmt, version_call, true, AppM);
                const auto fu_name = functions::GetFUName(version_fnode->index, HLSMgr);
                HLSMgr->global_resource_constraints[std::make_pair(fu_name, LIBRARY_STD_FU)] = std::make_pair(1U, 1U);
@@ -238,6 +239,7 @@ DesignFlowStep_Status OMPLowering::InternalExec()
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Replacing " + STR(stmt));
                   const auto version_call =
                       ir_man->create_call_stmt(version_fnode, gc->args, function_id, BUILTIN_LOCINFO);
+                  GetPointerS<call_stmt>(version_call)->predicate = gc->predicate;
                   BB->Replace(stmt, version_call, true, AppM);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Replaced " + STR(version_call));
                   modified = true;

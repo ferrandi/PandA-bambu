@@ -1526,6 +1526,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       const auto dbg_lvl = Rmem == HLSMgr->Rmem ? debug_level : DEBUG_LEVEL_NONE;
 #endif
       const auto out_lvl = Rmem == HLSMgr->Rmem ? output_level : OUTPUT_LEVEL_NONE;
+      const auto align_omp_memory = f_id && HLSMgr->isOmpLambdaFunction(f_id);
       THROW_ASSERT(memory_allocation_map.count(top_id), "Invalid top function id.");
       const auto func_mem_map = memory_allocation_map.at(top_id).find(f_id);
       if(func_mem_map != memory_allocation_map.at(top_id).end())
@@ -1576,7 +1577,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
                                     "---Internal variable: " + cur_BH->PrintVariable(var_id) + " - " + STR(var_id) +
                                         " - " + var_id_string + " in function " + cur_BH->GetFunctionName());
-                     Rmem->add_internal_variable(*wiu_it, var_id, cur_BH->PrintVariable(var_id));
+                     Rmem->add_internal_variable(*wiu_it, var_id, cur_BH->PrintVariable(var_id),
+                                                 align_omp_memory && !HLSMgr->Rmem->is_sds_var(var_id));
                   }
                   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl, "-->");
                }
@@ -1587,7 +1589,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
                                  "-->Internal variable: " + cur_BH->PrintVariable(var_id) + " - " + STR(var_id) +
                                      " - " + var_id_string + " in function " + cur_BH->GetFunctionName());
-                  Rmem->add_internal_variable(f_id, var_id, cur_BH->PrintVariable(var_id));
+                  Rmem->add_internal_variable(f_id, var_id, cur_BH->PrintVariable(var_id),
+                                              align_omp_memory && !HLSMgr->Rmem->is_sds_var(var_id));
                }
                else
                {
@@ -1596,7 +1599,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
                                  "-->Internal variable: " + cur_BH->PrintVariable(var_id) + " - " + STR(var_id) +
                                      " - " + var_id_string + " in function " + cur_BH->GetFunctionName());
-                  Rmem->add_internal_variable(f_id, var_id, cur_BH->PrintVariable(var_id));
+                  Rmem->add_internal_variable(f_id, var_id, cur_BH->PrintVariable(var_id),
+                                              align_omp_memory && !HLSMgr->Rmem->is_sds_var(var_id));
                   /// add proxies
                   if(!no_private_mem && !no_local_mem)
                   {

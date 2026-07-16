@@ -256,7 +256,8 @@ class memory
    /**
     * Allocates a variable to the set of variables allocated internally to the given function
     */
-   void add_internal_variable(unsigned int funID_scope, unsigned int var, const std::string& var_name);
+   void add_internal_variable(unsigned int funID_scope, unsigned int var, const std::string& var_name,
+                              bool align_base_to_size = false);
 
    /**
     * allocate a proxy for the variable for the specified function

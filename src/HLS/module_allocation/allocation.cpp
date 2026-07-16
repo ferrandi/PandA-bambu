@@ -2587,16 +2587,18 @@ void allocation::IntegrateTechnologyLibraries()
    const auto clock_period = HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period();
    const auto omp_info = FB->GetOMPInfo();
    std::string latency_postfix = "";
+   std::string postfix_CS = "";
    if(omp_info)
    {
       THROW_ASSERT(channels_type == MemoryAllocation_ChannelsType::MEM_ACC_11,
                    "Multiple contexts with multiple memory channels not supported");
-      latency_postfix += "_CS";
+      postfix_CS += "_CS";
    }
    if(parameters->getOption<std::string>(OPT_bram_high_latency).size())
    {
       latency_postfix += parameters->getOption<std::string>(OPT_bram_high_latency);
    }
+   const bool allow_async_sds_memories = !omp_info && parameters->getOption<bool>(OPT_use_asynchronous_memories);
    const auto use_single_port_sds = HLSMgr->UseSinglePortSdsMemory();
    const auto private_sds_fu_name = std::string(use_single_port_sds ? ARRAY_1D_STD_BRAM_SDS1 : ARRAY_1D_STD_BRAM_SDS);
    const auto public_sds_bus_fu_name =
@@ -2624,11 +2626,11 @@ void allocation::IntegrateTechnologyLibraries()
             if((HLSMgr->Rmem->has_all_pointers_resolved() && HLSMgr->Rmem->does_need_addr(var)) ||
                (!HLSMgr->Rmem->has_all_pointers_resolved() && !HLSMgr->Rmem->is_private_memory(var)))
             {
-               current_fu = get_fu(public_sds_bus_fu_name + latency_postfix);
+               current_fu = get_fu(public_sds_bus_fu_name + postfix_CS +latency_postfix);
             }
             else
             {
-               if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
+               if(allow_async_sds_memories &&
                   (allocation_information->can_be_asynchronous_ram(
                       TM, var, parameters->getOption<unsigned int>(OPT_distram_threshold),
                       HLSMgr->Rmem->is_read_only_variable(var), 1)))
@@ -2638,7 +2640,7 @@ void allocation::IntegrateTechnologyLibraries()
                   if(is_asynchronous_ram_not_timing_compliant)
                   {
                      current_fu =
-                         get_fu(private_sds_fu_name + allocation_information->get_latency_string(get_synch_ram_latency(
+                         get_fu(private_sds_fu_name + postfix_CS + allocation_information->get_latency_string(get_synch_ram_latency(
                                                           private_sds_fu_name, latency_postfix, HLS_C, var)));
                   }
                   else
@@ -2649,14 +2651,14 @@ void allocation::IntegrateTechnologyLibraries()
                else
                {
                   current_fu =
-                      get_fu(private_sds_fu_name + allocation_information->get_latency_string(get_synch_ram_latency(
+                      get_fu(private_sds_fu_name + postfix_CS + allocation_information->get_latency_string(get_synch_ram_latency(
                                                        private_sds_fu_name, latency_postfix, HLS_C, var)));
                }
             }
          }
          else
          {
-            current_fu = get_fu(ARRAY_1D_STD_BRAM + latency_postfix);
+            current_fu = get_fu(ARRAY_1D_STD_BRAM + postfix_CS + latency_postfix);
          }
       }
       else if(channels_type == MemoryAllocation_ChannelsType::MEM_ACC_N1)
@@ -2670,7 +2672,7 @@ void allocation::IntegrateTechnologyLibraries()
             }
             else
             {
-               if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
+               if(allow_async_sds_memories &&
                   allocation_information->can_be_asynchronous_ram(
                       TM, var, parameters->getOption<unsigned int>(OPT_distram_threshold),
                       HLSMgr->Rmem->is_read_only_variable(var), channels_number))
@@ -2713,7 +2715,7 @@ void allocation::IntegrateTechnologyLibraries()
             }
             else
             {
-               if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
+               if(allow_async_sds_memories &&
                   allocation_information->can_be_asynchronous_ram(
                       TM, var, parameters->getOption<unsigned int>(OPT_distram_threshold),
                       HLSMgr->Rmem->is_read_only_variable(var), channels_number))
@@ -2806,7 +2808,7 @@ void allocation::IntegrateTechnologyLibraries()
                }
                else
                {
-                  if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
+                  if(allow_async_sds_memories &&
                      allocation_information->can_be_asynchronous_ram(
                          TM, proxy_var_id, parameters->getOption<unsigned int>(OPT_distram_threshold),
                          HLSMgr->Rmem->is_read_only_variable(proxy_var_id), 1))
@@ -2851,7 +2853,7 @@ void allocation::IntegrateTechnologyLibraries()
                else
                {
                   bool is_nn = channels_type == MemoryAllocation_ChannelsType::MEM_ACC_NN;
-                  if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
+                  if(allow_async_sds_memories &&
                      allocation_information->can_be_asynchronous_ram(
                          TM, proxy_var_id, parameters->getOption<unsigned int>(OPT_distram_threshold),
                          HLSMgr->Rmem->is_read_only_variable(proxy_var_id), channels_number))

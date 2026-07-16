@@ -351,6 +351,15 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
             {
                w = static_cast<int>(std::ceil((max_delay) / clock_period)) - 1;
             }
+            if(operation_to_varindex.count(laststmt) == 0)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Skipping last statement constraint for " + op_info.vertex_name + "-" +
+                                  laststmt_info.vertex_name +
+                                  " because the last statement is outside the SDC "
+                                  "variable map");
+               continue;
+            }
             auto laststmt_index = operation_to_varindex.at(laststmt);
             solver.add_constraint(op_varindex, laststmt_index, -w);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -522,13 +531,33 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
          for(auto op_varindex : indirect_rw_ext_operations)
          {
             visited.insert(op_varindex);
+            if(vals.count(op_varindex) == 0)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Skipping indirect RW/external refinement for op " + STR(op_varindex) +
+                                  " because it has no SDC solution");
+               continue;
+            }
             auto sched_step = vals.at(op_varindex);
+            if(reverse_vals.count(sched_step) == 0)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Skipping indirect RW/external refinement for op " + STR(op_varindex) +
+                                  " because step " + STR(sched_step) + " has no reverse bucket");
+               continue;
+            }
             for(auto op : reverse_vals.at(sched_step))
             {
                if(visited.find(op) == visited.end() &&
                   (indirect_rw_ext_operations.find(op) != indirect_rw_ext_operations.end()))
                {
-                  restart_sdc_solver = true;
+                  if(rel_position_map.count(op_varindex) == 0 || rel_position_map.count(op) == 0)
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Skipping RW/RW precedence refinement because one operation has no relative "
+                                    "position");
+                     continue;
+                  }
                   auto swap_cond = rel_position_map.at(op_varindex) < rel_position_map.at(op);
                   if(swap_cond)
                   {
@@ -538,13 +567,20 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
                   {
                      solver.add_constraint(op, op_varindex, -1);
                   }
+                  restart_sdc_solver = true;
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---added a precedence constraint between an RW operation and another RW operation " +
                                      STR(swap_cond ? op_varindex : op) + "-" + STR(swap_cond ? op : op_varindex));
                }
                else if(op != op_varindex && (indirect_ld_st_operations.find(op) != indirect_ld_st_operations.end()))
                {
-                  restart_sdc_solver = true;
+                  if(rel_position_map.count(op_varindex) == 0 || rel_position_map.count(op) == 0)
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Skipping RW/load-store precedence refinement because one operation has no "
+                                    "relative position");
+                     continue;
+                  }
                   auto swap_cond = rel_position_map.at(op_varindex) < rel_position_map.at(op);
                   if(swap_cond)
                   {
@@ -554,6 +590,7 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
                   {
                      solver.add_constraint(op, op_varindex, -1);
                   }
+                  restart_sdc_solver = true;
                   INDENT_DBG_MEX(
                       DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                       "---added a precedence constraint between an RW operation and an indirect load/store operation " +
@@ -567,12 +604,34 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
          for(auto operation : unbounded_operations)
          {
             auto op_varindex = operation_to_varindex.at(operation);
+            if(vals.count(op_varindex) == 0)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Skipping unbounded refinement for " +
+                                  filtered_op_graph.CGetNodeInfo(operation).vertex_name +
+                                  " because it has no SDC solution");
+               continue;
+            }
             auto sched_step = vals.at(op_varindex);
+            if(reverse_vals.count(sched_step) == 0)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Skipping unbounded refinement for " +
+                                  filtered_op_graph.CGetNodeInfo(operation).vertex_name + " because step " +
+                                  STR(sched_step) + " has no reverse bucket");
+               continue;
+            }
             for(auto op : reverse_vals.at(sched_step))
             {
                if(op != op_varindex && (op_multicycles.find(op) != op_multicycles.end()))
                {
-                  restart_sdc_solver = true;
+                  if(rel_position_map.count(op_varindex) == 0 || rel_position_map.count(op) == 0)
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Skipping unbounded/multi-cycle precedence refinement because one operation "
+                                    "has no relative position");
+                     continue;
+                  }
                   auto swap_cond = rel_position_map.at(op_varindex) < rel_position_map.at(op);
                   if(swap_cond)
                   {
@@ -582,6 +641,7 @@ void SDCScheduling2::sdc_schedule(std::map<OpGraph::vertex_descriptor, int>& val
                   {
                      solver.add_constraint(op, op_varindex, -1);
                   }
+                  restart_sdc_solver = true;
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---added a precedence constraint between an unbounded operation and a multi-cycle "
                                  "operation " +

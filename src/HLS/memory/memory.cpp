@@ -152,7 +152,8 @@ unsigned long long int memory::compute_next_base_address(unsigned long long int 
    return align(address + size, alignment);
 }
 
-void memory::add_internal_variable(unsigned int funID_scope, unsigned int var, const std::string& var_name)
+void memory::add_internal_variable(unsigned int funID_scope, unsigned int var, const std::string& var_name,
+                                   bool align_base_to_size)
 {
    memory_symbolRef m_sym;
    if(in_vars.find(var) != in_vars.end())
@@ -173,7 +174,10 @@ void memory::add_internal_variable(unsigned int funID_scope, unsigned int var, c
    }
    else
    {
-      next_base_address = align(next_base_address, ir_helper::get_var_alignment(IRM, var));
+      const auto type_alignment = static_cast<unsigned long long>(ir_helper::get_var_alignment(IRM, var));
+      const auto object_size = compute_n_bytes(ir_helper::SizeAlloc(IRM->GetIRNode(var)));
+      const auto size_alignment = align_base_to_size && object_size ? ceil_pow2(object_size) : 1ULL;
+      next_base_address = align(next_base_address, std::max(type_alignment, size_alignment));
       m_sym = memory_symbolRef(new memory_symbol(var, var_name, next_base_address, funID_scope));
    }
    add_internal_symbol(funID_scope, var, m_sym);
