@@ -86,7 +86,7 @@ jobs:
     needs: [setup]
     runs-on: [self-hosted, long, xilinx]
     env:
-      args: -c=--simulator=XSIM -c=-wH
+      args: -c=--simulator=MODELSIM -c=-wH
     strategy:
       fail-fast: false
       matrix: ${{fromJson(needs.setup.outputs.grs-matrix)}}
@@ -135,7 +135,7 @@ jobs:
       matrix: ${{fromJson(needs.setup.outputs.libm-matrix)}}
     env:
       script: generic_libm-tests.sh
-      args: -c=--simulator=XSIM -c=-wH
+      args: -c=--simulator=MODELSIM -c=-wH
       basename: libm-vhdl
     steps:
       - name: Checkout repository

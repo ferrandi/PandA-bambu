@@ -3802,6 +3802,12 @@ void Andersen_AA::id_gep_insn(const llvm::User* gep)
       //  the result may be considered null.
       return;
    }
+   if(llvm::isa<llvm::UndefValue>(S))
+   {
+      // Keep this consistent with get_val_node_cptr(), which does not create
+      // constraints for undef pointers.
+      return;
+   }
    u32 vnS = get_val_node_cptr(S);
    assert(vnS && "non-null GEP operand has no node");
    u32 off = compute_gep_off(GO);

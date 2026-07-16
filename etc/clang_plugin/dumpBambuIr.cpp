@@ -2244,7 +2244,7 @@ namespace llvm
             {
                auto& ics_obj = index2integer_cst_signed[op];
                ics_obj.ic = op;
-               ics_obj.type = AddSignedTag(type_operand);
+               ics_obj.type = assignCodeType(reinterpret_cast<const llvm::Type*>(AddSignedTag(type_operand)));
                ics = assignCode(&ics_obj, IRC(CONSTANT_INT_VAL_NODE_SIGNED));
             }
             else
@@ -3277,7 +3277,7 @@ namespace llvm
              assignCode(identifierTable.find(fdName)->c_str(), IRC(IDENTIFIER_NODE));
          assert(CheckSignedTag(reinterpret_cast<const llvm::Type*>(t)) == 0);
          index2field_val_node[std::make_pair(parent, pos)].type = assignCodeType(scty->getElementType(pos));
-         index2field_val_node[std::make_pair(parent, pos)].parent = assignCodeAuto(parent);
+         index2field_val_node[std::make_pair(parent, pos)].parent = assignCodeType(scty);
          index2field_val_node[std::make_pair(parent, pos)].size = IR_TYPE_BITSIZEALLOC(t);
          index2field_val_node[std::make_pair(parent, pos)].algn = IR_TYPE_ALIGN(t);
          auto offset =
