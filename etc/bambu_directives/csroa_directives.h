@@ -26,14 +26,9 @@ extern "C"
 {
 #endif
 
-   void __bambu_csroa_partition__(void*, int, int, int);
+   void __bambu_csroa_partition__(const void*, int, int, int);
 
 #ifdef __cplusplus
-}
-
-inline void __bambu_csroa_partition__(const void* array, int partition_type, int factor, int dim)
-{
-   __bambu_csroa_partition__(const_cast<void*>(array), partition_type, factor, dim);
 }
 #endif
 
