@@ -178,6 +178,7 @@ std::string HDL_manager::write_components(const std::string& filename, HDLWriter
             THROW_ERROR("unexpected condition");
          }
       }
+      THROW_ASSERT(!is_library || GetPointerS<module_o>(obj)->get_license() == PANDA_MIT_tag, "inconsistent licensing");
       write_module(writer, obj, is_library);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written components");

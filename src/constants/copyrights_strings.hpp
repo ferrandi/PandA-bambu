@@ -39,6 +39,7 @@
    "WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF "    \
    "MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE."
 
+#define PANDA_MIT_tag "MIT"
 #define MIT_LICENSE_SHORT_MACRO                                                                 \
    static const char* MIT_LICENSE_SHORT[] = {                                                   \
        "************************************************************************\n",            \
