@@ -173,7 +173,7 @@ add_library(panda_config_headers INTERFACE)
 target_include_directories(panda_config_headers INTERFACE "${CMAKE_CURRENT_BINARY_DIR}/config_headers")
 
 # Install-equivalent of Automake install-data-local snippets (licenses/readmes)
-install(FILES 
+install(FILES
          "${CMAKE_CURRENT_SOURCE_DIR}/LICENSES/Apache-2.0.txt"
          "${CMAKE_CURRENT_SOURCE_DIR}/LICENSES/LLVM-exception.txt"
          "${CMAKE_CURRENT_SOURCE_DIR}/LICENSES/MIT.txt"

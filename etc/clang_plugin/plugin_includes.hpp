@@ -6,7 +6,7 @@
  *     _/      _/    _/ _/    _/ _/   _/ _/    _/
  *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *  ***********************************************            
+ *  ***********************************************
  *                   PandA Project
  *   URL: https://github.com/ferrandi/PandA-bambu
  *            Politecnico di Milano - DEIB
@@ -28,6 +28,7 @@
 #ifndef PLUGIN_INCLUDES_HPP
 #define PLUGIN_INCLUDES_HPP
 
+#include "panda_clang_compat.hpp"
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/DenseMapInfo.h"
@@ -37,7 +38,6 @@
 #include "llvm/IR/GlobalObject.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/Support/raw_ostream.h"
-#include "panda_clang_compat.hpp"
 
 #if PANDA_LLVM_CLANG_MAJOR > 4
 #include "llvm/Analysis/MemorySSA.h"

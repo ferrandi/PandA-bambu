@@ -11,7 +11,7 @@ read -r -d '' copyright_notice << EOM
  *     _/      _/    _/ _/    _/ _/   _/ _/    _/
  *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *  ***********************************************            
+ *  ***********************************************
  *                   PandA Project
  *   URL: https://github.com/ferrandi/PandA-bambu
  *            Politecnico di Milano - DEIB

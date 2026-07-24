@@ -6,7 +6,7 @@
  *     _/      _/    _/ _/    _/ _/   _/ _/    _/
  *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *  ***********************************************            
+ *  ***********************************************
  *                   PandA Project
  *   URL: https://github.com/ferrandi/PandA-bambu
  *            Politecnico di Milano - DEIB
@@ -42,7 +42,7 @@
 #define MIT_LICENSE_SHORT_MACRO                                                                 \
    static const char* MIT_LICENSE_SHORT[] = {                                                   \
        "************************************************************************\n",            \
-       "The following text holds for all the components tagged with MIT.\n",      \
+       "The following text holds for all the components tagged with MIT.\n",                    \
        "They are all part of the PandA/Bambu IP LIBRARY.\n",                                    \
        "Copyright (C) 2004-2026 Politecnico di Milano\n",                                       \
        "\n",                                                                                    \

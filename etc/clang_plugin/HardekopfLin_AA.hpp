@@ -6,7 +6,7 @@
  *     _/      _/    _/ _/    _/ _/   _/ _/    _/
  *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *  ***********************************************            
+ *  ***********************************************
  *                   PandA Project
  *   URL: https://github.com/ferrandi/PandA-bambu
  *            Politecnico di Milano - DEIB
@@ -38,11 +38,11 @@
 
 #include "bdd.h"
 #include "fdd.h"
+#include "panda_clang_compat.hpp"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/DenseSet.h"
 #include "llvm/ADT/SparseBitVector.h"
 #include "llvm/ADT/StringMap.h"
-#include "panda_clang_compat.hpp"
 
 namespace llvm
 {

@@ -6,7 +6,7 @@
  *     _/      _/    _/ _/    _/ _/   _/ _/    _/
  *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *  ***********************************************            
+ *  ***********************************************
  *                   PandA Project
  *   URL: https://github.com/ferrandi/PandA-bambu
  *            Politecnico di Milano - DEIB
@@ -20,7 +20,7 @@
  */
 /*!
   \page tools_overview PandA Tools and Libraries
- 
+
   \section src_intro Introduction
   The PandA project contains the the set of tools and libraries reported below.
 
@@ -31,7 +31,7 @@
     - \ref eucalyptus_overview allows the characterization of resources in the technology library
 
 
-  \section src_subprojects Libraries sub-projects 
+  \section src_subprojects Libraries sub-projects
   Creation and management of internal intermediate representations:
   - Parser components provide the front-end readers used to acquire the inputs consumed by the analysis and synthesis flows.
   - Graph components define the graph-based program and design descriptions used throughout the framework.
@@ -49,7 +49,7 @@
   Bambu tool:
   - Subproject \ref src_HLS_page provides algorithms for high-level synthesis.
 
-  Development aids: 
+  Development aids:
   - Utility algorithms provide reusable building blocks for analyses, transformations, and internal services.
   - Utility components contain common helpers, macros, and support infrastructure.
 

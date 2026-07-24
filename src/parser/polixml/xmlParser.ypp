@@ -6,7 +6,7 @@
  *     _/      _/    _/ _/    _/ _/   _/ _/    _/
  *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *  ***********************************************            
+ *  ***********************************************
  *                   PandA Project
  *   URL: https://github.com/ferrandi/PandA-bambu
  *            Politecnico di Milano - DEIB
@@ -123,7 +123,7 @@ struct XmlBisonParserData
 * Global Data Structures
 */
 
-/** 
+/**
 * Function Prototypes
 */
 extern int yylex(YYSTYPE *lvalp, const XmlFlexLexerRef lexer);

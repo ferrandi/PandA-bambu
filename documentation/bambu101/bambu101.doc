@@ -6,7 +6,7 @@
  *     _/      _/    _/ _/    _/ _/   _/ _/    _/
  *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *  ***********************************************            
+ *  ***********************************************
  *                   PandA Project
  *   URL: https://github.com/ferrandi/PandA-bambu
  *            Politecnico di Milano - DEIB
@@ -23,7 +23,7 @@
 
   \section PandA Bambu HLS
 
-  Bambu HLS is the High-Level Synthesis (HLS) tool of the PandA Framework that automates the design process that takes an abstract behavioral description of a digital system, 
+  Bambu HLS is the High-Level Synthesis (HLS) tool of the PandA Framework that automates the design process that takes an abstract behavioral description of a digital system,
   usually C/C++ (but not only), and generates a Register-Transfer Level (RTL) description that realizes the given behavior.
   RTL generation only represents the core of the HLS flow, while Bambu HLS also offers a wide set of optimizations and customization capabilites to the user.
   Finally, there is also the possibility to perform RTL simulation and verification of the generated design against the input description.

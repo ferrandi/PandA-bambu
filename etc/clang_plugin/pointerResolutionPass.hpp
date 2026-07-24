@@ -6,7 +6,7 @@
  *     _/      _/    _/ _/    _/ _/   _/ _/    _/
  *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *  ***********************************************            
+ *  ***********************************************
  *                   PandA Project
  *   URL: https://github.com/ferrandi/PandA-bambu
  *            Politecnico di Milano - DEIB
@@ -25,8 +25,8 @@
 #ifndef BAMBU_POINTER_RESOLUTION_PASS_HPP
 #define BAMBU_POINTER_RESOLUTION_PASS_HPP
 
-#include "llvm/IR/PassManager.h"
 #include "panda_clang_compat.hpp"
+#include "llvm/IR/PassManager.h"
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Pass.h>
 #include <string>
