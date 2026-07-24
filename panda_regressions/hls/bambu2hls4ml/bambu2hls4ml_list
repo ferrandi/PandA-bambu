@@ -1,0 +1,4 @@
+dense_latency_16x16.cpp --top-fname=dense_latency_16x16
+const_array_partition.cpp --top-fname=const_array_partition
+softmax_constexpr.cpp --top-fname=softmax_constexpr
+io_stream_m64.cpp --top-fname=io_stream_m64 -m64

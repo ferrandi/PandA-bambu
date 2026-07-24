@@ -180,6 +180,58 @@ jobs:
         shell: bash
         run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
 
+  bambu2hls4ml:
+    needs: [build]
+    runs-on: [self-hosted]
+    env:
+      script: ./panda_regressions/hls/bambu2hls4ml.sh
+      args: -c=--parallel-backend=2
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
+        with:
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "false"
+      - name: Launch Bambu hls4ml regression
+        shell: bash
+        run: |
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
+          ${{env.script}} ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: bambu2hls4ml
+          new-results: ${{env.report-dir}}/perf.xml
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        shell: bash
+        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+      - name: Upload test reports
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: bambu2hls4ml
+          path: ${{env.report-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
+
   interface-test:
     needs: [build]
     if: ${{!cancelled() && needs.build.result == 'success' }}
@@ -1339,6 +1391,7 @@ jobs:
       - gcc_regression_simple-vhdl
       - gcc_regression_simple-pretty_print
       - interface-test
+      - bambu2hls4ml
       - libm-tests
       - discrepancy-test
       - OpenMP-support
@@ -1365,6 +1418,9 @@ jobs:
         run: exit 1
       - name: Check 'Interface Test' status
         if: ${{ needs['interface-test'].result != 'success' }}
+        run: exit 1
+      - name: Check 'Bambu hls4ml regression' status
+        if: ${{ needs['bambu2hls4ml'].result != 'success' }}
         run: exit 1
       - name: Check 'LibM Tests' status
         if: ${{ needs['libm-tests'].result != 'success' }}
