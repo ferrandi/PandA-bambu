@@ -8,14 +8,14 @@
       <circuit>
         <module_o id="plot">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
-          <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>  
-          <authors>Edoardo Giacomello &lt;edoardo.giacomello@mail.polimi.it&gt;, Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
-          <license>PANDA_MIT</license>
+          <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
+          <authors>Edoardo Giacomello &lt;edoardo.giacomello@mail.polimi.it&gt;, Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>MIT</license>
           <structural_type_descriptor id_type="plot"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-	  <port_o id="reset" dir="IN">
+          <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
@@ -37,28 +37,28 @@
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="VGA_R" dir="OUT" is_global="1" is_extern="1">
-            <structural_type_descriptor type="UINT" size="10" />
+            <structural_type_descriptor type="UINT" size="10"/>
           </port_o>
           <port_o id="VGA_G" dir="OUT" is_global="1" is_extern="1">
-            <structural_type_descriptor type="UINT" size="10" />
+            <structural_type_descriptor type="UINT" size="10"/>
           </port_o>
           <port_o id="VGA_B" dir="OUT" is_global="1" is_extern="1">
-            <structural_type_descriptor type="UINT" size="10" />
+            <structural_type_descriptor type="UINT" size="10"/>
           </port_o>
-        <port_o id="VGA_HS" dir="OUT" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+          <port_o id="VGA_HS" dir="OUT" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-        <port_o id="VGA_VS" dir="OUT" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+          <port_o id="VGA_VS" dir="OUT" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-  	<port_o id="VGA_BLANK" dir="OUT" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+          <port_o id="VGA_BLANK" dir="OUT" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-  	<port_o id="VGA_SYNC" dir="OUT" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+          <port_o id="VGA_SYNC" dir="OUT" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-      <port_o id="VGA_CLK" dir="OUT" is_clock="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+          <port_o id="VGA_CLK" dir="OUT" is_clock="1" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="plot " VERILOG_FILE_PROVIDED="plot.v"/>
         </module_o>
@@ -70,14 +70,14 @@
       <circuit>
         <module_o id="leds_ctrl">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
-          <license>PANDA_MIT</license>
+          <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>MIT</license>
           <structural_type_descriptor id_type="leds_ctrl"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-	  <port_o id="reset" dir="IN">
+          <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
@@ -93,22 +93,22 @@
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="HEX0" dir="OUT" is_global="1" is_extern="1">
-            <structural_type_descriptor type="UINT" size="7" />
+            <structural_type_descriptor type="UINT" size="7"/>
           </port_o>
           <port_o id="HEX1" dir="OUT" is_global="1" is_extern="1">
-            <structural_type_descriptor type="UINT" size="7" />
+            <structural_type_descriptor type="UINT" size="7"/>
           </port_o>
           <port_o id="HEX2" dir="OUT" is_global="1" is_extern="1">
-            <structural_type_descriptor type="UINT" size="7" />
+            <structural_type_descriptor type="UINT" size="7"/>
           </port_o>
           <port_o id="HEX3" dir="OUT" is_global="1" is_extern="1">
-            <structural_type_descriptor type="UINT" size="7" />
+            <structural_type_descriptor type="UINT" size="7"/>
           </port_o>
           <port_o id="LEDR" dir="OUT" is_global="1" is_extern="1">
-            <structural_type_descriptor type="UINT" size="10" />
+            <structural_type_descriptor type="UINT" size="10"/>
           </port_o>
           <port_o id="LEDG" dir="OUT" is_global="1" is_extern="1">
-            <structural_type_descriptor type="UINT" size="8" />
+            <structural_type_descriptor type="UINT" size="8"/>
           </port_o>
           <NP_functionality LIBRARY="leds_ctrl " VERILOG_FILE_PROVIDED="leds_ctrl.v"/>
         </module_o>

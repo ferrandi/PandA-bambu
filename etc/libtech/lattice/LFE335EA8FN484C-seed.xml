@@ -36,7 +36,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>LATTICE-LatticeECP3</specialized>
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM"/>
             <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
@@ -180,7 +180,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>LATTICE-LatticeECP3</specialized>
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_3"/>
             <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
@@ -324,7 +324,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>LATTICE-LatticeECP3</specialized>
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_4"/>
             <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
@@ -467,7 +467,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>LATTICE-LatticeECP3</specialized>
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_N1"/>
             <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -632,7 +632,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>LATTICE-LatticeECP3</specialized>
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_N1_3"/>
             <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -797,7 +797,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>LATTICE-LatticeECP3</specialized>
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_N1_4"/>
             <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -962,7 +962,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>LATTICE-LatticeECP3</specialized>
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_NN"/>
             <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -1136,7 +1136,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>LATTICE-LatticeECP3</specialized>
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_NN_3"/>
             <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -1310,7 +1310,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>LATTICE-LatticeECP3</specialized>
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_NN_4"/>
             <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -1481,7 +1481,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>LATTICE-LatticeECP3</specialized>
             <structural_type_descriptor id_type="mul_node_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
@@ -1565,7 +1565,7 @@ pmi_dsp_mult #(
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>LATTICE-LatticeECP3</specialized>
             <structural_type_descriptor id_type="ui_mul_node_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
@@ -1654,7 +1654,7 @@ pmi_dsp_mult #(
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>LATTICE-LatticeECP3</specialized>
             <structural_type_descriptor id_type="STD_BRAM"/>
             <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
@@ -1737,7 +1737,7 @@ pmi_dsp_mult #(
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>LATTICE-LatticeECP3</specialized>
             <structural_type_descriptor id_type="STD_BRAM_3"/>
             <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
@@ -1820,7 +1820,7 @@ pmi_dsp_mult #(
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>LATTICE-LatticeECP3</specialized>
             <structural_type_descriptor id_type="STD_BRAM_4"/>
             <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
@@ -1902,7 +1902,7 @@ pmi_dsp_mult #(
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>LATTICE-LatticeECP3</specialized>
             <structural_type_descriptor id_type="STD_BRAMN"/>
             <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -1999,7 +1999,7 @@ pmi_dsp_mult #(
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>LATTICE-LatticeECP3</specialized>
             <structural_type_descriptor id_type="STD_BRAMN_3"/>
             <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -2096,7 +2096,7 @@ pmi_dsp_mult #(
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>LATTICE-LatticeECP3</specialized>
             <structural_type_descriptor id_type="STD_BRAMN_4"/>
             <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_b.mem&quot;&quot;</parameter>

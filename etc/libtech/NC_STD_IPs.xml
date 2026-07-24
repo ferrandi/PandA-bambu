@@ -9,7 +9,7 @@
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="bus_merger"/>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -52,7 +52,7 @@ end process;
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="and_gate"/>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -87,7 +87,7 @@ assign out1 = merge(in1);"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="join_signal"/>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -121,7 +121,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="register_AR"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -165,7 +165,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="register_AR_NORETIME"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -215,7 +215,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="register_AR_NORETIME_INT"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -265,7 +265,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="register_AR_NORETIME_UINT"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -315,7 +315,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="register_AR_NORETIME_REAL"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -365,7 +365,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="register_SARSE"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -414,7 +414,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="register_SE"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -460,7 +460,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="register_SR"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -506,7 +506,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="register_SRSE"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -555,7 +555,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="register_STD"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -597,7 +597,7 @@ end process;
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="register_SHIFT"/>
           <parameter name="CONTROLLER_LENGTH">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -666,7 +666,7 @@ end generate nonzero_case;
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="split_signal"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -689,7 +689,7 @@ end generate nonzero_case;
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="MUX_N_to_1"/>
           <port_o id="selector" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -759,7 +759,7 @@ assign out1 = inputarray[selector];"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="multi_read_cond_FU"/>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -781,7 +781,7 @@ assign out1 = inputarray[selector];"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2012-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
           </port_o>
@@ -861,7 +861,7 @@ end
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
           </port_o>

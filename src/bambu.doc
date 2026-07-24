@@ -1,44 +1,32 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project 
- *                     URL: https://github.com/ferrandi/PandA-bambu
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2026 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
+ *
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
- *   This file is part of the PandA framework.
- *
- *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
-*/
+ */
 /*!
   \page bambu_overview Bambu HLS
 
 
-  <B>Bambu HLS</B> is a semi-automatic framework to assist the designer during <i>high-level synthesis</I>. 
-  It translates the behavioral description written in C/C++ language to a structural description that can be represented with different hardware description languages (e.g. Verilog). 
+  <B>Bambu HLS</B> is a semi-automatic framework to assist the designer during <i>high-level synthesis</I>.
+  It translates the behavioral description written in C/C++ language to a structural description that can be represented with different hardware description languages (e.g. Verilog).
   It support most of the C/C++ constructs and is directly interfacing with commercial tools for the synthesis to take technology aspects into account.
 
-  It receives as input the C/C++ description of the specification to be implemented and an XML configuration file, as shown below. 
+  It receives as input the C/C++ description of the specification to be implemented and an XML configuration file, as shown below.
   As output, it produces the HDL description of the corresponding hardware implementation and the scripts for the synthesis with the desired synthesis flow.
   At the moment, it is possible to support most of the C constructs, such as:
   - function calls and sharing of the corresponding modules;
@@ -54,32 +42,32 @@
   This project-specific representation is the basis for compiler analyses, target-independent optimizations, and the HLS-specific steps controlled through command-line options or configuration files.
   The call graph of the input application is then derived starting from this internal representation (step <B>1</B> in the figure).
 
-  The resulting call graph is then analyzed to perform specific analysis, such as the memory allocation (step <B>2</B> in the figure). 
-  In details, this compile-time analysis determines the data (e.g., scalar variables, arrays, structs) to be allocated in memories. 
-  Then, this information is combined with the decisions provided by the designer about the physical allocation of the data, such as, for example, the constraints on the 
-  space available for internal allocation or the physical addresses of the variables which the designer decides to allocate in the external memories. 
+  The resulting call graph is then analyzed to perform specific analysis, such as the memory allocation (step <B>2</B> in the figure).
+  In details, this compile-time analysis determines the data (e.g., scalar variables, arrays, structs) to be allocated in memories.
+  Then, this information is combined with the decisions provided by the designer about the physical allocation of the data, such as, for example, the constraints on the
+  space available for internal allocation or the physical addresses of the variables which the designer decides to allocate in the external memories.
 
   \image html hls_flow.png "Details of the HLS flow." width=4cm
   \image latex hls_flow.png "Details of the HLS flow." width=4cm
 
-  At this point, <i>bambu</i> generates all the modules necessary to implement the specification, producing the classic datapath, the controller modules (based on the FSM paradigm) 
-  and the memory interface for each of them (step <B>3</B> in the figure). 
-  The HLS part is built in a modular way and it can be easily extended with different algorithms for each of the synthesis steps. 
-  We implemented different algorithms for scheduling and resource binding, as well as optimizations for reducing the number of multiplexers. 
-  The user can decide which algorithms have to be used by command-line options or by configuring an XML file. 
-  As a result, complex applications (e.g., the CHStone benchmarks -- JPEG, ADPCM, GSM) can be thus generated taking the technology effects into account. 
-  In fact, considering the part step <B>C</B> in the figure, we adopt specific wrappers to synthesis tools to characterize the resource library. 
-  Then, for each module/function, it is possible to generate different area/time trade-off by performing a multi-objective design space exploration, taking into account the 
+  At this point, <i>bambu</i> generates all the modules necessary to implement the specification, producing the classic datapath, the controller modules (based on the FSM paradigm)
+  and the memory interface for each of them (step <B>3</B> in the figure).
+  The HLS part is built in a modular way and it can be easily extended with different algorithms for each of the synthesis steps.
+  We implemented different algorithms for scheduling and resource binding, as well as optimizations for reducing the number of multiplexers.
+  The user can decide which algorithms have to be used by command-line options or by configuring an XML file.
+  As a result, complex applications (e.g., the CHStone benchmarks -- JPEG, ADPCM, GSM) can be thus generated taking the technology effects into account.
+  In fact, considering the part step <B>C</B> in the figure, we adopt specific wrappers to synthesis tools to characterize the resource library.
+  Then, for each module/function, it is possible to generate different area/time trade-off by performing a multi-objective design space exploration, taking into account the
   interconnection effects and the target device. It is thus possible to adopt the proper implementation for each of the different functions contained in the specification.
 
-  A novel architecture is then generate (step <B>4</B> in the figure) to build the modules and to deal with the different memory interfaces (one for each of them), avoiding to use 
-  three-states for its implementation. 
-  In particular, <i>bambu</i> implements the decisions resulting from the memory allocation as follows: internal variables are allocated on heterogeneous and distributed memories, 
-  which addresses are determined at compile time. On the other hand, for the variables allocated on external memories, the methodology is able to follow the decisions suggested by 
+  A novel architecture is then generate (step <B>4</B> in the figure) to build the modules and to deal with the different memory interfaces (one for each of them), avoiding to use
+  three-states for its implementation.
+  In particular, <i>bambu</i> implements the decisions resulting from the memory allocation as follows: internal variables are allocated on heterogeneous and distributed memories,
+  which addresses are determined at compile time. On the other hand, for the variables allocated on external memories, the methodology is able to follow the decisions suggested by
   the designer by providing the proper addresses to the memory interface and access the data. This architecture is thus able to dynamically resolve the addresses.
 
-  We also integrate a toolflow (step <B>5</B> in the figure) with different wrappers to commercial synthesis tools (e.g., Altera Quartus, Xilinx ISE, Synopsys Design Compiler), 
-  based on a common XML configuration schema, to generate the scripts for targeting the related devices. 
+  We also integrate a toolflow (step <B>5</B> in the figure) with different wrappers to commercial synthesis tools (e.g., Altera Quartus, Xilinx ISE, Synopsys Design Compiler),
+  based on a common XML configuration schema, to generate the scripts for targeting the related devices.
 
   Finally, <i>bambu</i> offers the possibility to generate testbenches (step <B>6</B> in the figure) starting from the initial C specification and a dataset represented in XML file.
   Then, after generating the HDL description and the resulting testbench, it compares the produced results with the corresponding software counterpart to verify the execution.

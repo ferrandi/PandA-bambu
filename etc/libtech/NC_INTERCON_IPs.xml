@@ -9,7 +9,7 @@
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="PROFILING_MODULE_PRE_NOC"/>
           <parameter name="CHANNEL_NUMBER">0</parameter>
           <parameter name="DATA_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
@@ -63,7 +63,7 @@ end"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="PROFILING_MODULE_POST_NOC"/>
           <parameter name="BANK_NUMBER">0</parameter>
           <parameter name="NODE_ID_SIZE">0</parameter>
@@ -119,7 +119,7 @@ end"/>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <keep_hierarchy>1</keep_hierarchy>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="middle_node"/>
           <parameter name="BITSIZE_ADDR">4</parameter>
           <parameter name="BITSIZE_DATA">32</parameter>
@@ -255,7 +255,7 @@ endgenerate"/>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <keep_hierarchy>1</keep_hierarchy>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="swap_node3"/>
           <parameter name="BITSIZE_ADDR">4</parameter>
           <parameter name="BITSIZE_DATA">32</parameter>
@@ -345,7 +345,7 @@ endgenerate"/>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <keep_hierarchy>1</keep_hierarchy>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="io_node6"/>
           <parameter name="BITSIZE_ADDR">4</parameter>
           <parameter name="BITSIZE_DATA">32</parameter>
@@ -615,7 +615,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="minimal_noc"/>
           <parameter name="REGISTERED">1</parameter>
           <parameter name="N_NODES_COL">8</parameter>
@@ -779,7 +779,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="noc_mapping_unit"/>
           <parameter name="SELECTOR_START">0</parameter>
           <parameter name="SELECTOR_END">0</parameter>
@@ -822,7 +822,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="noc_addr_adapter"/>
           <parameter name="BUNDLE_START">0</parameter>
           <parameter name="BUNDLE_END">0</parameter>
@@ -855,7 +855,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="noc_banked_memory_accelerator_interface"/>
           <parameter name="NODE_ID">0</parameter>
           <parameter name="NODE_ID_SIZE">0</parameter>
@@ -921,7 +921,7 @@ assign M_tag_out = (noc_from_memory_o_valid == 1) ? noc_from_memory_o[BITSIZE_M_
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="noc_banked_memory_memory_interface"/>
           <parameter name="NODE_ID_SIZE">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -1072,7 +1072,7 @@ assign noc_to_memory_o_bp = Mout_back_pressure_out;"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="Noc_banked_memory_connection_interface"/>
           <parameter name="NODE_ID_SIZE">0</parameter>
           <parameter name="BASE_ADDR">0</parameter>
@@ -1286,7 +1286,7 @@ assign Mout_back_pressure = noc_to_memory_i_bp;"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="Banked_memory_connection_interface"/>
           <parameter name="SELECTOR_SIZE">0</parameter>
           <parameter name="ARBITER_TYPE">0</parameter>
@@ -1346,7 +1346,7 @@ assign Mout_back_pressure = noc_to_memory_i_bp;"/>
           <port_vector_o id="M_DataRdy" dir="IN" is_memory="1" is_slave="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <port_vector_o id="M_Rdata_ram" dir="IN" is_memory="1" is_slave="1"  is_data_bus="1">
+          <port_vector_o id="M_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <port_vector_o id="M_tag" dir="IN" is_memory="1" is_slave="1">
@@ -1440,7 +1440,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="Simple_arbiter_connection_interface"/>
           <parameter name="SELECTOR_SIZE">0</parameter>
           <parameter name="ARBITER_TYPE">0</parameter>
@@ -1663,7 +1663,7 @@ DEMUX_1_to_N #(.BITSIZE_in1(BITSIZE_M_Rdata_ram),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="Single_source_connection_interface"/>
           <parameter name="INNER_TAG">0</parameter>
           <parameter name="SUBMASK_START">0</parameter>
@@ -1813,7 +1813,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="Grouped_channel_connection_interface"/>
           <parameter name="ARBITER_TYPE">0</parameter>
           <parameter name="INNER_TAG">0</parameter>
@@ -2040,7 +2040,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="pipelined_channel_controller"/>
           <parameter name="INNER_TAG">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2120,7 +2120,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="sequential_channel_controller"/>
           <parameter name="INNER_TAG">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2227,7 +2227,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="Arbiter_connection_interface"/>
           <parameter name="SELECTOR_SIZE">0</parameter>
           <parameter name="ARBITER_TYPE">0</parameter>
@@ -2503,7 +2503,7 @@ assign M_tag_out = M_tag_out_temp;"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="MUX_N_to_1_enabled"/>
           <port_o id="selector" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -2537,7 +2537,7 @@ assign M_tag_out = M_tag_out_temp;"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="DEMUX_1_to_N"/>
           <port_o id="selector" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -2566,7 +2566,7 @@ assign M_tag_out = M_tag_out_temp;"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="DEMUX_1_to_N_enabled"/>
           <port_o id="selector" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -2598,7 +2598,7 @@ assign M_tag_out = M_tag_out_temp;"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="priority_arbiter_core"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -2690,7 +2690,7 @@ endgenerate
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="round_robin_arbiter_core"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -2841,7 +2841,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2015-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="left_priority_arbiter_core"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -2905,7 +2905,7 @@ assign out1 = valid ? ~selector : 0;"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="SIMPLEJOIN2_FU"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>

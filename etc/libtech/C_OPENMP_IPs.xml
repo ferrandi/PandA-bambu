@@ -10,7 +10,7 @@
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="KMP_BAMBU_CRITICAL_FU"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -21,7 +21,7 @@
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="loc" dir="IN" >
+          <port_o id="loc" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="done_port" dir="OUT">
@@ -47,7 +47,7 @@ assign kmp_lock_acquired = start_port;"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="KMP_BAMBU_END_CRITICAL_FU"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -64,7 +64,7 @@ assign kmp_lock_acquired = start_port;"/>
           <port_o id="kmp_lock_release" dir="OUT" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="loc" dir="IN" >
+          <port_o id="loc" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="KMP_BAMBU_END_CRITICAL_FU loc" VERILOG_PROVIDED="assign kmp_lock_release = start_port;
@@ -80,7 +80,7 @@ assign done_port = start_port;"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="KMP_BAMBU_TID_FROM_GTID_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -100,7 +100,7 @@ assign done_port = start_port;"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="KMP_BAMBU_BARRIER_REACHED_FU"/>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -132,7 +132,7 @@ assign done_port = start_port;"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi, Giovanni Gozzi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="KMP_BAMBU_WAIT_ALL_THREADS_FU"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -191,7 +191,7 @@ assign done_port = done_port_reg;"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi, Giovanni Gozzi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="KMP_BAMBU_CS_WAIT_ALL_THREADS_FU"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -259,7 +259,7 @@ assign done_port = done_port_reg[selector_register_file];"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi, Giovanni Gozzi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="KMP_BAMBU_SET_TH_LOCAL_REDUCE_DATA_FU"/>
           <parameter name="CONTEXT_BIT_START">0</parameter>
           <parameter name="CONTEXT_BIT_END">0</parameter>
@@ -316,7 +316,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi, Giovanni Gozzi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="KMP_BAMBU_GET_TH_LOCAL_REDUCE_DATA_FU"/>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -358,7 +358,7 @@ assign kmp_bambu_get_th_local_reduce_data_ld = start_port;"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="KMP_BAMBU_GTID_GET_SPECIFIC_FU"/>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -378,7 +378,7 @@ assign kmp_bambu_get_th_local_reduce_data_ld = start_port;"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="KMP_BAMBU_CS_GET_GTID_FU"/>
           <port_o id="selector_register_file" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -398,7 +398,7 @@ assign kmp_bambu_get_th_local_reduce_data_ld = start_port;"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2022-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="KMP_BAMBU_CS_GET_TID_FU"/>
           <port_o id="selector_register_file" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>

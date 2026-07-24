@@ -9,7 +9,7 @@
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchBankAdapter"/>
           <parameter name="BANK_ID_SIZE">0</parameter>
           <parameter name="EXTERNAL_BANK_ID_LAST_BIT">0</parameter>
@@ -78,7 +78,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchBankAdapterAXI"/>
           <parameter name="BANK_ID_SIZE">0</parameter>
           <parameter name="EXTERNAL_BANK_ID_LAST_BIT">0</parameter>
@@ -148,7 +148,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="if_utils"/>
           <parameter name="ID">0</parameter>
           <parameter name="BITSIZE_data">32</parameter>
@@ -259,7 +259,7 @@ endfunction"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchDUT"/>
           <NP_functionality VERILOG_GENERATOR="TestbenchDUTHDLGenerator"/>
         </module_o>
@@ -272,7 +272,7 @@ endfunction"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchFSM"/>
           <parameter name="RESFILE">&quot;&quot;bambu_time_simulation.txt&quot;&quot;</parameter>
           <parameter name="RESET_ACTIVE">0</parameter>
@@ -518,7 +518,7 @@ end"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchMEMMinimal"/>
           <parameter name="index">0</parameter>
           <parameter name="MEM_DELAY_READ">2</parameter>
@@ -818,7 +818,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchMEMAXI"/>
           <parameter name="index">0</parameter>
           <parameter name="QUEUE_SIZE">4</parameter>
@@ -1276,7 +1276,7 @@ end"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchMEMWishboneB4"/>
           <parameter name="index">0</parameter>
           <parameter name="MEM_DELAY_READ">2</parameter>
@@ -1422,7 +1422,7 @@ end
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IF_PORT_IN"/>
           <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -1462,7 +1462,7 @@ end
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchArgMapMinimal"/>
           <parameter name="index">0</parameter>
           <parameter name="tgt_addr">1024</parameter>
@@ -1583,7 +1583,7 @@ end"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchReturnMapMinimal"/>
           <parameter name="index">0</parameter>
           <parameter name="tgt_addr">1024</parameter>
@@ -1696,7 +1696,7 @@ end"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchStartMapMinimal"/>
           <parameter name="tgt_addr">1024</parameter>
           <parameter name="PIPELINED">1</parameter>
@@ -1802,7 +1802,7 @@ end"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchArgMapWishboneB4"/>
           <parameter name="index">0</parameter>
           <parameter name="tgt_addr">1024</parameter>
@@ -1932,7 +1932,7 @@ end"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchReturnMapWishboneB4"/>
           <parameter name="index">0</parameter>
           <parameter name="tgt_addr">1024</parameter>
@@ -2046,7 +2046,7 @@ end"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchStartMapWishboneB4"/>
           <parameter name="tgt_addr">1024</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2159,7 +2159,7 @@ end"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IF_PORT_OUT"/>
           <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2195,7 +2195,7 @@ end"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchArrayImpl"/>
           <parameter name="index">0</parameter>
           <parameter name="WRITE_DELAY">1</parameter>
@@ -2365,7 +2365,7 @@ endgenerate
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchArray"/>
           <parameter name="index">0</parameter>
           <parameter name="WRITE_DELAY">1</parameter>
@@ -2387,7 +2387,7 @@ endgenerate
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchAcknowledge"/>
           <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2410,7 +2410,7 @@ endgenerate
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchValid"/>
           <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2433,7 +2433,7 @@ endgenerate
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchOvalid"/>
           <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2456,7 +2456,7 @@ endgenerate
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchHandshake"/>
           <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2479,7 +2479,7 @@ endgenerate
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchAxis"/>
           <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2502,7 +2502,7 @@ endgenerate
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchFifoRead"/>
           <parameter name="index">0</parameter>
           <parameter name="CHECK_ACK">0</parameter>
@@ -2604,7 +2604,7 @@ endgenerate
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchFifoWrite"/>
           <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2679,7 +2679,7 @@ end
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchFifo"/>
           <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2702,7 +2702,7 @@ end
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchNone"/>
           <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2725,7 +2725,7 @@ end
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TestbenchAXIM"/>
           <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">

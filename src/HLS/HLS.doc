@@ -1,35 +1,23 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: https://github.com/ferrandi/PandA-bambu
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2026 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
+ *
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
- *   This file is part of the PandA framework.
- *
- *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
-*/
+ */
 /*!
 
   \page src_HLS_page High-Level Synthesis
@@ -59,7 +47,7 @@ and views. We consider here three main abstractions, namely: <i>architectural</I
 <I>geometrical</I>. The levels can he visualized as follows. At the <i>architectural level</I> a circuit
 performs a set of operations, such as data computation or transfer. At the <I>logic level</I>,
 a digital circuit evaluates a set of logic functions. At the <I>geometrical level</I>, a circuit
-is a set of geometrical entities. 
+is a set of geometrical entities.
 
 
 The architectural-level synthesis consists of generating a structural view of an architectural-level model. This corresponds to determining an assignment of the circuit
@@ -87,7 +75,7 @@ custom design, physical design is handcrafted by using layout editors. This mean
 that the designer renounces the use of automated synthesis tools in the search for
 optimizing the circuit geometries by fine hand-tuning. On the opposite end of the
 spectrum, in case of prewired circuits, physical design is performed in a virtual
-fashion, because chips are fully manufactured in advance. 
+fashion, because chips are fully manufactured in advance.
 The major tasks in physical design are placement and wiring, called also routing. Cell generation is essential in the particular case of macro-cell design, where cells are synthesized and not extracted from a library.
 
 Logic-level and physical synthesis are already heavily automated by downstream toolchains, but they expect RTL as input.
@@ -97,23 +85,23 @@ resource sharing, and implementation constraints.
 
   \section HLS_problem Problem description
 
-<i>High-Level Synthesis</I> (HLS) is defined as a translation process from 
-behavioural description into register-transfer-level (RTL) structural description. It can be considered the 
+<i>High-Level Synthesis</I> (HLS) is defined as a translation process from
+behavioural description into register-transfer-level (RTL) structural description. It can be considered the
 automation of first step of the design flow, the architectural-level synthesis.
 
 
-The inputs to a typical HLS tool include a <I>behavioral description</I>, 
-a <I>resource library</I> describing available hardware resources and a set 
+The inputs to a typical HLS tool include a <I>behavioral description</I>,
+a <I>resource library</I> describing available hardware resources and a set
 of <I>design constraints</I>.
 
-The output from a high-level synthesizer consists of two parts: a datapath 
-structure at the register-transfer level (RTL) and a specification of the finite 
-state machine to control the datapath. At the RTL level, a datapath is composed 
-of functional units, storage and interconnection elements. The finite state 
-machine specifies every set of microoperations for the datapath to be performed 
+The output from a high-level synthesizer consists of two parts: a datapath
+structure at the register-transfer level (RTL) and a specification of the finite
+state machine to control the datapath. At the RTL level, a datapath is composed
+of functional units, storage and interconnection elements. The finite state
+machine specifies every set of microoperations for the datapath to be performed
 during each control step. The output can be then synthesized using related tools.
 
-The goal is to reduce one or more design targets. Objectives can be to minimize 
+The goal is to reduce one or more design targets. Objectives can be to minimize
 total area occupied, latency or power consumption.
 
 <I>Behavioral description</I> specifies behaviour in terms of operations,
@@ -127,13 +115,13 @@ constraints and maximizes the optimization objective.
 The <I>constraints</I> can be on the maximum number of available units of each resource,
 on total area, throughput, clock period, or on the latency of the specification execution.
 
-There are two main tasks in high-level synthesis: operations scheduling and resources 
-allocation. <I>Scheduling</i> provides the control steps in which 
+There are two main tasks in high-level synthesis: operations scheduling and resources
+allocation. <I>Scheduling</i> provides the control steps in which
 operations start their execution (see \ref src_HLS_scheduling_general). <I>Resource allocation</I> (see \ref src_HLS_module_allocation and \ref src_HLS_binding_page)
-is concerned with assigning operations and values to hardware components and 
-interconnect them using connection elements. Solving these problems efficiently is 
-a non-trivial matter because of their NP-complete nature. Furthermore, the objectives are usually in contrast and the 
-best high-level synthesis design flow cannot be known a priori since it depends heavily 
+is concerned with assigning operations and values to hardware components and
+interconnect them using connection elements. Solving these problems efficiently is
+a non-trivial matter because of their NP-complete nature. Furthermore, the objectives are usually in contrast and the
+best high-level synthesis design flow cannot be known a priori since it depends heavily
 on nature of the problem: on some examples, executing scheduling before allocation can leads to better results, on other examples, it can leads to worse ones.
 
 The remaining task is the creation of the structural representation of the datapath and the controller units, including the finite-state-machine controller described in \ref src_HLS_fsm.
@@ -143,29 +131,29 @@ The remaining task is the creation of the structural representation of the datap
 
 
    "Scheduling assigns operations in the behavioral description to
-   control steps. Within each control step, a separate functional unit is 
+   control steps. Within each control step, a separate functional unit is
    required to execute each operation assigned to that step.
-    
-   After scheduling, the datapath is constructed in two steps: 
-   unit allocation and unit binding; some researchers call unit allocation and 
-   unit binding collectively as datapath allocation. 
-   Unit allocation determines the number and types of RT components to be used 
-   in the design. Since a real RT component library may contain multiple types 
-   of functional units, each with different characteristics (e.g., 
-   functionality, size, delay and power dissipation), unit allocation needs to 
-   determine the number and types of different functional and storage units 
-   present in the component library. Unit binding maps the operations, variables, 
-   and data transfers from the scheduled CDFG to the functional, storage and 
-   interconnection units, respectively, while ensuring that the design 
-   behavior operates correctly on the selected set of components. 
-   Unit binding consists of three interdependent tasks: storage binding, functional-unit 
+
+   After scheduling, the datapath is constructed in two steps:
+   unit allocation and unit binding; some researchers call unit allocation and
+   unit binding collectively as datapath allocation.
+   Unit allocation determines the number and types of RT components to be used
+   in the design. Since a real RT component library may contain multiple types
+   of functional units, each with different characteristics (e.g.,
+   functionality, size, delay and power dissipation), unit allocation needs to
+   determine the number and types of different functional and storage units
+   present in the component library. Unit binding maps the operations, variables,
+   and data transfers from the scheduled CDFG to the functional, storage and
+   interconnection units, respectively, while ensuring that the design
+   behavior operates correctly on the selected set of components.
+   Unit binding consists of three interdependent tasks: storage binding, functional-unit
    binding, and interconnection binding.
-   Storage binding maps data carriers (e.g., constants, variables and data 
-   structures like arrays) in the behavioral description onto storage 
-   elements (e.g., ROMs, registers and memory units) in the datapath. 
-   Functional-unit binding involves the mapping of operations in the 
-   behavioral description to the set of selected functional units. 
-   Interconnection binding maps every data transfer in the behavior into a 
+   Storage binding maps data carriers (e.g., constants, variables and data
+   structures like arrays) in the behavioral description onto storage
+   elements (e.g., ROMs, registers and memory units) in the datapath.
+   Functional-unit binding involves the mapping of operations in the
+   behavioral description to the set of selected functional units.
+   Interconnection binding maps every data transfer in the behavior into a
    set of interconnection units for data routing"[1].
 
   In Bambu these concepts are reflected in a set of shared HLS data structures that are progressively populated by the synthesis flow.
@@ -186,7 +174,7 @@ The remaining task is the creation of the structural representation of the datap
   - \c datapath, \c controller, and \c top, each a \c structural_manager describing the synthesized structural RTL for datapath, controller, and top-level composition.
   - \c Param (\c ParameterConstRef), \c debug_level, \c output_level, and \c HLS_execution_time, which control verbosity and record how long the HLS flow took to complete.
 
-  \section src_HLS_phases Phases 
+  \section src_HLS_phases Phases
   - Subproject \ref src_HLS_scheduling_general provides scheduling algorithms.
   - Module allocation provides facilities for functional unit allocation.
   - Subproject \ref src_HLS_binding_constraints_page provides facilities for operation binding on functional units
@@ -195,7 +183,7 @@ The remaining task is the creation of the structural representation of the datap
   - Subproject \ref src_HLS_fsm creates structural representation about controller
   - The HLS flow coordinates the end-to-end high-level synthesis pipeline.
 
-  \section src_HLS_additional Additional subprojects 
+  \section src_HLS_additional Additional subprojects
   - Estimation components provide metrics and reports for synthesized results.
 
   \section src_HLS_data_structure Data structures
@@ -292,7 +280,7 @@ The remaining task is the creation of the structural representation of the datap
   Documentation that assumes the existence of fixed maps such as \c input_enable_port, \c input_address_port, \c in_port_map, or \c out_port_map should be considered legacy unless it is explicitly reintroduced and documented in the code.
 
    \section References
-  
+
    [1] Recent Development in High Level Synthesisy
    Youn-Long Lin Department of Computer Science Tsing Hua University Hsin-Chu, Taiwan 30043, R. O. C.
 */

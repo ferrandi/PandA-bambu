@@ -1,35 +1,23 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project 
- *                     URL: https://github.com/ferrandi/PandA-bambu
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2026 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
+ *
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
- *   This file is part of the PandA framework.
- *
- *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
-*/
+ */
 /*!
   \page src_circuit_page Circuit Representation
 
@@ -126,7 +114,7 @@
 
   \subsubsection s_o_portvector Port Vector
 
-  This class describes a vector of ports associated with a component. A port_vector can be in relation with: 
+  This class describes a vector of ports associated with a component. A port_vector can be in relation with:
    - another standard port (e.g., primary input/output connections);
    - a signal (e.g., standard internal connections).
 
@@ -198,7 +186,7 @@
   // where num is number of ports that you need
   in_port->add_n_ports(num,port_obj);
 \endcode
-  So parameters has been specialized (it can specialized only once for each instance, e.g. in this case you cannot specialize obj anymore). 
+  So parameters has been specialized (it can specialized only once for each instance, e.g. in this case you cannot specialize obj anymore).
   Now let consider a systemC implementation of this component in order to understand what we have done. It will be something similar to:
 \code
 #define AND_GATE_DECL(size_in_)\
@@ -228,7 +216,7 @@ AND_GATE_DECL(1);                     //it's default value
 #endif
 
 \endcode
-  So when backend will create a component where parameters will be set to <B>num = 3</B>, the macro 
+  So when backend will create a component where parameters will be set to <B>num = 3</B>, the macro
 \code
   AND_GATE_DECL(3);
 \endcode
@@ -253,7 +241,7 @@ public:
     out1.write(value);
   }
 }
-\endcode  
+\endcode
  that is the implementation of a 3-input AND_GATE.
  So we have seen how to implement a parametric port vector and how to use it.
  It can be done something similar also for port size. You have to declare the port in the usual way, but the name has to be listed into NP_functionality string:
@@ -304,8 +292,8 @@ public:
   circuit_type = structural_type_descriptorRef(new structural_type_descriptor("MainCircType"));
   structManager->set_top_info("MainCircuit",circuit_type);
   //Now I read the reference to the object which represents the main circuit
-  structural_objectRef circuit = structManager->get_circ(); 
-  //I create a custom component 
+  structural_objectRef circuit = structManager->get_circ();
+  //I create a custom component
   structural_type_descriptorRef customGate1;
   customGate1 = structural_type_descriptorRef(new structural_type_descriptor("CustomGate1"));
   structural_objectRef customComp = structManager->create("Internal1", component_c_K, circuit, customGate1);
@@ -351,7 +339,7 @@ public:
   circuit_type = structural_type_descriptorRef(new structural_type_descriptor("MainCircType"));
   structManager->set_top_info("MainCircuit",circuit_type);
   //Now I read the reference to the object which represents the main circuit
-  structural_objectRef circuit = structManager->get_circ(); 
+  structural_objectRef circuit = structManager->get_circ();
 
 
   //I add the primary inputs/outputs to the top level component
@@ -416,7 +404,7 @@ public:
   \section circuit_exploration_how_to Brief tutorial on the exploration of a generic structural representation
 
   Now that you know how to create a structural representation, you could be interested into explore it or to retrieve information about one that has already been created (e.g.: through the IR-to-structural-manager frontend).
-  As explained above, structural objects allow a hierarcally organization. 
+  As explained above, structural objects allow a hierarcally organization.
   Description of methods can be retrived into structural_manager class documentation, so the better way to understand how to explore the circuit is to give an example.
   Now we want to explore and print component name of the circuit just created. So we have the structural_manager structManager resulting from adding and connecting components.
   First of all we have to get the structural_object associated to main circuit:
