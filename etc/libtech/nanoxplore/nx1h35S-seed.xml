@@ -19,12 +19,12 @@
     <use_soft_64_mul value="1"/>
     <disable_extract_ternary_patterns value="1"/>
   </device>
-   <backend>
-      <flow id="synthesis" env="nanoxplore"/>
-      <flow id="characterization" env="nanoxplore"/>
-   </backend>
+  <backend>
+    <flow id="synthesis" env="nanoxplore"/>
+    <flow id="characterization" env="nanoxplore"/>
+  </backend>
   <technology>
-      <library>
+    <library>
       <name>STD_COMMON</name>
       <cell>
         <name>STD_DP_BRAM</name>
@@ -33,7 +33,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>NanoXplore</specialized>
             <structural_type_descriptor id_type="STD_DP_BRAM"/>
             <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
@@ -236,7 +236,7 @@ begin
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>NanoXplore</specialized>
             <structural_type_descriptor id_type="TRUE_DUAL_PORT_BYTE_ENABLING_RAM"/>
             <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
@@ -288,5 +288,5 @@ TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE #(.BITSIZE_memory_addr_a(BITSIZE_memory_add
         </circuit>
       </cell>
     </library>
-</technology>
+  </technology>
 </target>

@@ -1,7 +1,7 @@
 // This component is part of the PANDA/BAMBU IP LIBRARY
 // Copyright (C) 2016-2026 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
-// License: PANDA_MIT
+// License: MIT
 `timescale 1ns / 1ps
 module vga_address_translator(x, y, mem_address);
   parameter horizontal_display_width = 640, BITSIZE_memory_address=32;
@@ -32,7 +32,7 @@ endmodule
 // This component is part of the PANDA/BAMBU IP LIBRARY
 // Copyright (C) 2016-2026 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
-// License: PANDA_MIT
+// License: MIT
 module generic_vga_controller(reset, clk_in, pixel_colour, memory_address, VGA_R, VGA_G, VGA_B, VGA_HS, VGA_VS, VGA_BLANK, VGA_SYNC, VGA_CLK);
 parameter horizontal_sync_pulse_width =96, //horizontal sync pulse width in pixels
     horizontal_back_porch_width = 48,      //horizontal back porch width in pixels
@@ -170,7 +170,7 @@ endmodule
 // This component is part of the PANDA/BAMBU IP LIBRARY
 // Copyright (C) 2015-2026 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
-// License: PANDA_MIT
+// License: MIT
 module frequency_divider_byX(reset, clk_in, clk_div_by_X);
 parameter DIVIDE_BY=2;
   input reset;
@@ -334,7 +334,7 @@ endmodule
 // This component is part of the PANDA/BAMBU IP LIBRARY
 // Copyright (C) 2015-2026 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
-// License: PANDA_MIT
+// License: MIT
 module VideoMemory(clk_w,clk_r,we_w,addr_w,addr_r,data_w,data_r);
   parameter BITSIZE_addr=1, BITSIZE_data=1, BITSIZE_nwords=1;
   input clk_w;
@@ -369,7 +369,7 @@ endmodule
 // This component is part of the PANDA/BAMBU IP LIBRARY
 // Copyright (C) 2016-2026 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
-// License: PANDA_MIT
+// License: MIT
 `timescale 1ns / 1ps
 module plot(clock, reset, start_port, color, x, y, sel_plot, done_port, VGA_R, VGA_G, VGA_B, VGA_HS, VGA_VS);
 parameter horizontal_sync_pulse_width =96, //horizontal sync pulse width in pixels

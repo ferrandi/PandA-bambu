@@ -3,30 +3,30 @@
    <library>
       <name>STD</name>
       <cell>
-      <name>register_file</name>
-      <circuit>
-        <module_o id="register_file">
-          <parameter name="n_elements">1</parameter>
+         <name>register_file</name>
+         <circuit>
+            <module_o id="register_file">
+               <parameter name="n_elements">1</parameter>
           <structural_type_descriptor id_type="register_file"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2017-2026 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
           <port_o id="wenable" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
           <port_o id="selector_register_file" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o> in1 <NP_functionality LIBRARY="register_file in1 selector_register_file out1 n_elements " VERILOG_PROVIDED="
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o> in1 <NP_functionality LIBRARY="register_file in1 selector_register_file out1 n_elements " VERILOG_PROVIDED="
 reg [BITSIZE_in1-1:0] ram [0:n_elements-1] /* synthesis syn_ramstyle = &quot;no_rw_check&quot; */;
 wire [BITSIZE_selector_register_file-1:0] memory_addr_a;
 integer i;
@@ -59,7 +59,7 @@ generate
     assign memory_addr_a = selector_register_file;
   end
 endgenerate"/>
-          </module_o>
+            </module_o>
          </circuit>
       </cell>
       <cell>
@@ -69,7 +69,7 @@ endgenerate"/>
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="barrier_manager_internal_adder_2"/>
                <port_o id="r" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -96,7 +96,7 @@ assign reg_out = (br &amp;&amp; ~r) | (~br &amp;&amp; r);"/>
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="barrier_manager_internal_adder_4"/>
                <port_o id="r" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
@@ -124,7 +124,7 @@ assign reg_out[1] = ((br &amp;&amp; r[0] &amp;&amp; ~r[1]) || (br &amp;&amp; r[1
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="barrier_manager_internal_adder_8"/>
                <port_o id="r" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
@@ -153,7 +153,7 @@ assign reg_out[2] = ((br &amp;&amp; r[0] &amp;&amp; r[1] &amp;&amp; ~r[2]) || (b
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="barrier_manager_internal_adder_16"/>
                <port_o id="r" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
@@ -183,7 +183,7 @@ assign reg_out[3] = ((br &amp;&amp; r[0] &amp;&amp; r[1] &amp;&amp; r[2] &amp;&a
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="barrier_manager_internal_adder"/>
                <port_o id="r" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -210,7 +210,7 @@ assign reg_out = r + br;"/>
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="kmp_bambu_barrier_register"/>
                <parameter name="CONTEXT_NUMBER">0</parameter>
                <parameter name="TID_BITSIZE">0</parameter>
@@ -355,7 +355,7 @@ assign kmp_bambu_wait_all_threads_rd = &amp;barrier_done;"/>
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="kmp_bambu_fork_call_critical_manager"/>
                <parameter name="USE_CS">0</parameter>
                <parameter name="ACCELERATOR_NUMBER">0</parameter>
@@ -510,7 +510,7 @@ endgenerate"/>
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="multiple_priority_encoder_1_1"/>
                <port_o id="i" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -535,7 +535,7 @@ assign empty = ~i;
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="multiple_priority_encoder_2_1"/>
                <port_o id="i" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
@@ -552,7 +552,7 @@ assign empty = ~i[0] &amp;&amp; ~i[1];
 "/>
             </module_o>
          </circuit>
-      </cell>    
+      </cell>
       <cell>
          <name>multiple_priority_encoder_4_2</name>
          <circuit>
@@ -560,7 +560,7 @@ assign empty = ~i[0] &amp;&amp; ~i[1];
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="multiple_priority_encoder_4_2"/>
                <port_o id="i" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
@@ -586,7 +586,7 @@ assign empty = ~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3];
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="multiple_priority_encoder_8_3"/>
                <port_o id="i" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
@@ -613,7 +613,7 @@ assign empty = ~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&am
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="multiple_priority_encoder_16_4"/>
                <port_o id="i" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="16"/>
@@ -660,7 +660,7 @@ assign empty = ~|i;"/>
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="multiple_priority_encoder_32_5"/>
                <port_o id="i" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
@@ -688,7 +688,7 @@ assign empty = ~|i;"/>
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="multiple_priority_encoder_64_6"/>
                <port_o id="i" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="64"/>
@@ -717,7 +717,7 @@ assign empty = ~|i;"/>
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="cs_manager_internal_map"/>
                <port_o id="d" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -748,7 +748,7 @@ assign valid = d || l || wa;"/>
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="kmp_bambu_cs_manager"/>
                <parameter name="THREAD_NUMBER">0</parameter>
                <parameter name="THREAD_NUMBER_SIZE">0</parameter>
@@ -981,7 +981,7 @@ assign  kmp_bambu_wait_all_threads_rd =  kmp_bambu_wait_all_threads_rd_out_reg;"
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="kmp_bambu_omp_done_cs"/>
                <parameter name="THREAD_NUMBER">0</parameter>
                <port_o id="clock" dir="IN" is_clock="1">
@@ -1037,7 +1037,7 @@ assign done_port = &amp;done_reg;"/>
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="kmp_bambu_omp_start_cs"/>
                <parameter name="THREAD_NUMBER">0</parameter>
                <port_o id="clock" dir="IN" is_clock="1">
@@ -1112,7 +1112,7 @@ assign start_port_out = start_reg[selector_register_file]  &amp;&amp; started_ne
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="kmp_bambu_reduce_manager"/>
                <parameter name="THREAD_NUMBER">1</parameter>
                <port_o id="clock" dir="IN" is_clock="1">
@@ -1221,7 +1221,7 @@ assign kmp_bambu_get_th_local_reduce_data_val = kmp_bambu_get_th_local_reduce_da
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="kmp_bambu_memory_filter_out"/>
                <parameter name="INNER_TAG">0</parameter>
                <parameter name="ROOT_SPACE_ALIGNMENT">0</parameter>
@@ -1323,44 +1323,44 @@ endgenerate"/>
          </circuit>
       </cell>
       <cell>
-        <name>kmp_bambu_memory_filter_in</name>
-        <circuit>
+         <name>kmp_bambu_memory_filter_in</name>
+         <circuit>
             <module_o id="kmp_bambu_memory_filter_in">
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="kmp_bambu_memory_filter_in"/>
                <parameter name="INNER_TAG">0</parameter>
                <port_o id="M_DataRdy_memory" dir="IN">
-               <structural_type_descriptor type="BOOL" size="1"/>
+                  <structural_type_descriptor type="BOOL" size="1"/>
                </port_o>
                <port_o id="M_Rdata_ram_memory" dir="IN">
-               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
                </port_o>
                <port_o id="M_tag_memory" dir="IN">
-               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
                </port_o>
                <port_o id="M_DataRdy_local" dir="IN">
-               <structural_type_descriptor type="BOOL" size="1"/>
+                  <structural_type_descriptor type="BOOL" size="1"/>
                </port_o>
                <port_o id="M_Rdata_ram_local" dir="IN">
-               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
                </port_o>
                <port_o id="M_tag_local" dir="IN">
-               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
                </port_o>
                <port_o id="M_DataRdy" dir="OUT">
-               <structural_type_descriptor type="BOOL" size="1"/>
+                  <structural_type_descriptor type="BOOL" size="1"/>
                </port_o>
                <port_o id="M_Rdata_ram" dir="OUT">
-               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
                </port_o>
                <port_o id="M_tag" dir="OUT">
-               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
                </port_o>
                <port_o id="M_back_pressure_local" dir="OUT">
-               <structural_type_descriptor type="BOOL" size="1"/>
+                  <structural_type_descriptor type="BOOL" size="1"/>
                </port_o>
                <NP_functionality LIBRARY="kmp_bambu_memory_filter_in INNER_TAG M_Rdata_ram_memory M_tag_memory M_Rdata_ram_local M_tag_local M_Rdata_ram M_tag" VERILOG_PROVIDED="
 assign M_DataRdy = M_DataRdy_memory || M_DataRdy_local;
@@ -1386,7 +1386,7 @@ endgenerate"/>
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>PANDA_MIT</license>
+               <license>MIT</license>
                <structural_type_descriptor id_type="kmp_bambu_general_memory_interface"/>
                <parameter name="USE_FILTER">0</parameter>
                <parameter name="ROOT_SPACE_ALIGNMENT">0</parameter>
@@ -1658,39 +1658,39 @@ generate
 endgenerate"/>
             </module_o>
          </circuit>
-      </cell>      
-    <cell>
-      <name>simple_fifo</name>
-      <circuit>
-        <module_o id="simple_fifo">
-          <structural_type_descriptor id_type="simple_fifo"/>
-          <parameter name="ADDR_WIDTH">1</parameter>
-          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
-          <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="reset" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="empty" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="data_in" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="data_out" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="rd_en" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="wr_en" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <NP_functionality LIBRARY="simple_fifo data_in data_out ADDR_WIDTH" IP_COMPONENT="STD_SDP_BRAMFW" VERILOG_PROVIDED="
+      </cell>
+      <cell>
+         <name>simple_fifo</name>
+         <circuit>
+            <module_o id="simple_fifo">
+               <structural_type_descriptor id_type="simple_fifo"/>
+               <parameter name="ADDR_WIDTH">1</parameter>
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <port_o id="clock" dir="IN" is_clock="1">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <port_o id="reset" dir="IN">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <port_o id="data_in" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
+               <port_o id="data_out" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
+               <port_o id="rd_en" dir="IN">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <port_o id="wr_en" dir="IN">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="simple_fifo data_in data_out ADDR_WIDTH" IP_COMPONENT="STD_SDP_BRAMFW" VERILOG_PROVIDED="
 parameter RAM_DEPTH = (1 &lt;&lt; ADDR_WIDTH);
 
 reg [ADDR_WIDTH-1:0] wr_pointer;
@@ -1782,8 +1782,8 @@ STD_SDP_BRAMFW #(
   .address_inw(wr_pointer_next),
   .data_in(data_in),
   .data_out(data_out));"/>
-        </module_o>
-      </circuit>
-    </cell>
+            </module_o>
+         </circuit>
+      </cell>
    </library>
 </technology>

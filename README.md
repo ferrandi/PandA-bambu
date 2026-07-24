@@ -1,7 +1,7 @@
 # PandA Bambu HLS Framework
 ![](style/img/panda.png.in)
 
-[![License: Apache 2.0 + BAMBU Exceptions](https://img.shields.io/badge/License-Apache%202.0%20%2B%20BAMBU%20Exceptions-blue.svg)](LICENSE)
+[![License: Apache 2.0 WITH LLVM-exception](https://img.shields.io/badge/License-Apache%202.0%20WITH%20LLVM--Exception-blue.svg)](LICENSE)
 
 ----
 
@@ -13,8 +13,7 @@ synthesis of hardware accelerators, on parallelism extraction for embedded syste
 on hardware/software partitioning and mapping, on metrics for performance estimation 
 of embedded software applications and on dynamic reconfigurable devices.
 
-PandA is free software released under the Apache License v2.0 with BAMBU Exceptions and being 
-developed at Politecnico di Milano (Italy).
+PandA is free software released under the Apache License v2.0 with LLVM Exceptions and is being developed at Politecnico di Milano (Italy).
 
 The source files currently distributed mainly cover the high-level synthesis 
 of C/C++ based descriptions. In particular, the tool Bambu provides a research environment to experiment with new ideas across HLS, high-level verification and debugging, FPGA/ASIC design, design flow space exploration, and parallel hardware accelerator design.

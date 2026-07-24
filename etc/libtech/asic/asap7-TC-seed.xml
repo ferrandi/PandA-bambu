@@ -31,37 +31,37 @@
     <flow id="characterization" env="openroad/flowC"/>
   </backend>
   <technology>
-      <library>
+    <library>
       <name>STD_COMMON</name>
-    <cell>
-      <name>STD_SP_BRAM</name>
-      <circuit>
-        <module_o id="STD_SP_BRAM">
-          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
-          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="STD_SP_BRAM"/>
-          <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
-          <parameter name="n_elements">32</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
-          <parameter name="HIGH_LATENCY">0</parameter>
-          <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="write_enable" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="data_in" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="address" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="data_out" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <NP_functionality LIBRARY="STD_SP_BRAM data_in address data_out MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY" IP_COMPONENT="FAKERAM7_SP_SLICE" VERILOG_PROVIDED="
+      <cell>
+        <name>STD_SP_BRAM</name>
+        <circuit>
+          <module_o id="STD_SP_BRAM">
+            <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+            <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+            <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+            <license>MIT</license>
+            <structural_type_descriptor id_type="STD_SP_BRAM"/>
+            <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
+            <parameter name="n_elements">32</parameter>
+            <parameter name="READ_ONLY_MEMORY">0</parameter>
+            <parameter name="HIGH_LATENCY">0</parameter>
+            <port_o id="clock" dir="IN" is_clock="1">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="write_enable" dir="IN">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="data_in" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            </port_o>
+            <port_o id="address" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            </port_o>
+            <port_o id="data_out" dir="OUT">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            </port_o>
+            <NP_functionality LIBRARY="STD_SP_BRAM data_in address data_out MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY" IP_COMPONENT="FAKERAM7_SP_SLICE" VERILOG_PROVIDED="
   localparam integer MEM_W  = BITSIZE_data_out;
   localparam integer ADDR_W = BITSIZE_address;
 
@@ -187,40 +187,40 @@
       $display(&quot;%m WARNING: MEMORY_INIT_file is intentionally ignored in this wrapper.&quot;);
   end
 
-" />
-        </module_o>
-      </circuit>
-    </cell>
-    <cell>
-      <name>FAKERAM7_SP_SLICE</name>
-      <circuit>
-        <module_o id="FAKERAM7_SP_SLICE">
-          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
-          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="FAKERAM7_SP_SLICE"/>
-          <parameter name="DEPTH">256</parameter>
-          <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="ce" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="we" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="addr" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="wd" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="rd" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <NP_functionality LIBRARY="FAKERAM7_SP_SLICE addr wd rd DEPTH" 
-          IP_COMPONENT="fakeram7_64x25,fakeram7_64x28,fakeram7_256x32,fakeram7_128x64,fakeram7_64x256,fakeram7_256x256" VERILOG_PROVIDED="
+"/>
+          </module_o>
+        </circuit>
+      </cell>
+      <cell>
+        <name>FAKERAM7_SP_SLICE</name>
+        <circuit>
+          <module_o id="FAKERAM7_SP_SLICE">
+            <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+            <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+            <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+            <license>MIT</license>
+            <structural_type_descriptor id_type="FAKERAM7_SP_SLICE"/>
+            <parameter name="DEPTH">256</parameter>
+            <port_o id="clock" dir="IN" is_clock="1">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="ce" dir="IN">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="we" dir="IN">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="addr" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            </port_o>
+            <port_o id="wd" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            </port_o>
+            <port_o id="rd" dir="OUT">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            </port_o>
+            <NP_functionality LIBRARY="FAKERAM7_SP_SLICE addr wd rd DEPTH"
+              IP_COMPONENT="fakeram7_64x25,fakeram7_64x28,fakeram7_256x32,fakeram7_128x64,fakeram7_64x256,fakeram7_256x256" VERILOG_PROVIDED="
   function integer ceil_div;
     input integer a;
     input integer b;
@@ -393,38 +393,38 @@
 
   assign rd = rd_mux[REQ_W-1:0];
 
-" />
-        </module_o>
-      </circuit>
-    </cell>
-    <cell>
-      <name>fakeram7_64x25</name>
-      <circuit>
-        <module_o id="fakeram7_64x25">
-          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
-          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="fakeram7_64x25"/>
-          <port_o id="clk" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="ce_in" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="we_in" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="addr_in" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="6"/>
-          </port_o>
-          <port_o id="wd_in" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="25"/>
-          </port_o>
-          <port_o id="rd_out" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="25"/>
-          </port_o>
-          <NP_functionality LIBRARY="fakeram7_64x25" VERILOG_PROVIDED="
+"/>
+          </module_o>
+        </circuit>
+      </cell>
+      <cell>
+        <name>fakeram7_64x25</name>
+        <circuit>
+          <module_o id="fakeram7_64x25">
+            <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+            <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+            <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+            <license>MIT</license>
+            <structural_type_descriptor id_type="fakeram7_64x25"/>
+            <port_o id="clk" dir="IN" is_clock="1">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="ce_in" dir="IN">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="we_in" dir="IN">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="addr_in" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="6"/>
+            </port_o>
+            <port_o id="wd_in" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="25"/>
+            </port_o>
+            <port_o id="rd_out" dir="OUT">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="25"/>
+            </port_o>
+            <NP_functionality LIBRARY="fakeram7_64x25" VERILOG_PROVIDED="
 `ifdef __BAMBU_SIM__
    localparam BITS = 25;
    localparam WORD_DEPTH = 64;
@@ -487,38 +487,38 @@
    endspecify
 
 `endif
-" />
-        </module_o>
-      </circuit>
-    </cell>
-    <cell>
-      <name>fakeram7_64x28</name>
-      <circuit>
-        <module_o id="fakeram7_64x28">
-          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
-          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="fakeram7_64x28"/>
-          <port_o id="clk" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="ce_in" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="we_in" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="addr_in" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="6"/>
-          </port_o>
-          <port_o id="wd_in" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="28"/>
-          </port_o>
-          <port_o id="rd_out" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="28"/>
-          </port_o>
-          <NP_functionality LIBRARY="fakeram7_64x28" VERILOG_PROVIDED="
+"/>
+          </module_o>
+        </circuit>
+      </cell>
+      <cell>
+        <name>fakeram7_64x28</name>
+        <circuit>
+          <module_o id="fakeram7_64x28">
+            <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+            <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+            <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+            <license>MIT</license>
+            <structural_type_descriptor id_type="fakeram7_64x28"/>
+            <port_o id="clk" dir="IN" is_clock="1">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="ce_in" dir="IN">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="we_in" dir="IN">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="addr_in" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="6"/>
+            </port_o>
+            <port_o id="wd_in" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="28"/>
+            </port_o>
+            <port_o id="rd_out" dir="OUT">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="28"/>
+            </port_o>
+            <NP_functionality LIBRARY="fakeram7_64x28" VERILOG_PROVIDED="
 `ifdef __BAMBU_SIM__
    localparam BITS = 28;
    localparam WORD_DEPTH = 64;
@@ -581,38 +581,38 @@
    endspecify
 
 `endif
-" />
-        </module_o>
-      </circuit>
-    </cell>
-    <cell>
-      <name>fakeram7_256x32</name>
-      <circuit>
-        <module_o id="fakeram7_256x32">
-          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
-          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="fakeram7_256x32"/>
-          <port_o id="clk" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="ce_in" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="we_in" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="addr_in" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-          </port_o>
-          <port_o id="wd_in" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
-          </port_o>
-          <port_o id="rd_out" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
-          </port_o>
-          <NP_functionality LIBRARY="fakeram7_256x32" VERILOG_PROVIDED="
+"/>
+          </module_o>
+        </circuit>
+      </cell>
+      <cell>
+        <name>fakeram7_256x32</name>
+        <circuit>
+          <module_o id="fakeram7_256x32">
+            <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+            <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+            <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+            <license>MIT</license>
+            <structural_type_descriptor id_type="fakeram7_256x32"/>
+            <port_o id="clk" dir="IN" is_clock="1">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="ce_in" dir="IN">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="we_in" dir="IN">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="addr_in" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+            </port_o>
+            <port_o id="wd_in" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+            </port_o>
+            <port_o id="rd_out" dir="OUT">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+            </port_o>
+            <NP_functionality LIBRARY="fakeram7_256x32" VERILOG_PROVIDED="
 `ifdef __BAMBU_SIM__
    localparam BITS = 32;
    localparam WORD_DEPTH = 256;
@@ -675,38 +675,38 @@
    endspecify
 
 `endif
-" />
-        </module_o>
-      </circuit>
-    </cell>
-    <cell>
-      <name>fakeram7_128x64</name>
-      <circuit>
-        <module_o id="fakeram7_128x64">
-          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
-          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="fakeram7_128x64"/>
-          <port_o id="clk" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="ce_in" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="we_in" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="addr_in" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="7"/>
-          </port_o>
-          <port_o id="wd_in" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="64"/>
-          </port_o>
-          <port_o id="rd_out" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="64"/>
-          </port_o>
-          <NP_functionality LIBRARY="fakeram7_128x64" VERILOG_PROVIDED="
+"/>
+          </module_o>
+        </circuit>
+      </cell>
+      <cell>
+        <name>fakeram7_128x64</name>
+        <circuit>
+          <module_o id="fakeram7_128x64">
+            <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+            <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+            <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+            <license>MIT</license>
+            <structural_type_descriptor id_type="fakeram7_128x64"/>
+            <port_o id="clk" dir="IN" is_clock="1">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="ce_in" dir="IN">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="we_in" dir="IN">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="addr_in" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="7"/>
+            </port_o>
+            <port_o id="wd_in" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="64"/>
+            </port_o>
+            <port_o id="rd_out" dir="OUT">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="64"/>
+            </port_o>
+            <NP_functionality LIBRARY="fakeram7_128x64" VERILOG_PROVIDED="
 `ifdef __BAMBU_SIM__
    localparam BITS = 64;
    localparam WORD_DEPTH = 128;
@@ -769,38 +769,38 @@
    endspecify
 
 `endif
-" />
-        </module_o>
-      </circuit>
-    </cell>
-    <cell>
-      <name>fakeram7_64x256</name>
-      <circuit>
-        <module_o id="fakeram7_64x256">
-          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
-          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="fakeram7_64x256"/>
-          <port_o id="clk" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="ce_in" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="we_in" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="addr_in" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="6"/>
-          </port_o>
-          <port_o id="wd_in" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="256"/>
-          </port_o>
-          <port_o id="rd_out" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="256"/>
-          </port_o>
-          <NP_functionality LIBRARY="fakeram7_64x256" VERILOG_PROVIDED="
+"/>
+          </module_o>
+        </circuit>
+      </cell>
+      <cell>
+        <name>fakeram7_64x256</name>
+        <circuit>
+          <module_o id="fakeram7_64x256">
+            <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+            <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+            <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+            <license>MIT</license>
+            <structural_type_descriptor id_type="fakeram7_64x256"/>
+            <port_o id="clk" dir="IN" is_clock="1">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="ce_in" dir="IN">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="we_in" dir="IN">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="addr_in" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="6"/>
+            </port_o>
+            <port_o id="wd_in" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="256"/>
+            </port_o>
+            <port_o id="rd_out" dir="OUT">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="256"/>
+            </port_o>
+            <NP_functionality LIBRARY="fakeram7_64x256" VERILOG_PROVIDED="
 `ifdef __BAMBU_SIM__
    localparam BITS = 256;
    localparam WORD_DEPTH = 64;
@@ -863,38 +863,38 @@
    endspecify
 
 `endif
-" />
-        </module_o>
-      </circuit>
-    </cell>
-    <cell>
-      <name>fakeram7_256x256</name>
-      <circuit>
-        <module_o id="fakeram7_256x256">
-          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
-          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="fakeram7_256x256"/>
-          <port_o id="clk" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="ce_in" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="we_in" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="addr_in" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-          </port_o>
-          <port_o id="wd_in" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="256"/>
-          </port_o>
-          <port_o id="rd_out" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="256"/>
-          </port_o>
-          <NP_functionality LIBRARY="fakeram7_256x256" VERILOG_PROVIDED="
+"/>
+          </module_o>
+        </circuit>
+      </cell>
+      <cell>
+        <name>fakeram7_256x256</name>
+        <circuit>
+          <module_o id="fakeram7_256x256">
+            <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+            <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+            <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+            <license>MIT</license>
+            <structural_type_descriptor id_type="fakeram7_256x256"/>
+            <port_o id="clk" dir="IN" is_clock="1">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="ce_in" dir="IN">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="we_in" dir="IN">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="addr_in" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+            </port_o>
+            <port_o id="wd_in" dir="IN">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="256"/>
+            </port_o>
+            <port_o id="rd_out" dir="OUT">
+              <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="256"/>
+            </port_o>
+            <NP_functionality LIBRARY="fakeram7_256x256" VERILOG_PROVIDED="
 `ifdef __BAMBU_SIM__
    localparam BITS = 256;
    localparam WORD_DEPTH = 256;
@@ -957,10 +957,10 @@
    endspecify
 
 `endif
-" />
-        </module_o>
-      </circuit>
-    </cell>
+"/>
+          </module_o>
+        </circuit>
+      </cell>
     </library>
-</technology>
+  </technology>
 </target>

@@ -9,7 +9,7 @@
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="MinimalIOBAdapter"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -164,7 +164,7 @@ assign Mout_back_pressure = M_back_pressure | ((Mout_oe_ram || Mout_we_ram) &amp
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <parameter name="BURST_TYPE">0</parameter>
           <structural_type_descriptor id_type="MinimalAXI4Adapter"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -744,7 +744,7 @@ end
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="MinimalAXI4AdapterSingleBeat"/>
           <parameter name="BURST_TYPE">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">

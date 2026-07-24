@@ -173,6 +173,11 @@ add_library(panda_config_headers INTERFACE)
 target_include_directories(panda_config_headers INTERFACE "${CMAKE_CURRENT_BINARY_DIR}/config_headers")
 
 # Install-equivalent of Automake install-data-local snippets (licenses/readmes)
+install(FILES
+         "${CMAKE_CURRENT_SOURCE_DIR}/LICENSES/Apache-2.0.txt"
+         "${CMAKE_CURRENT_SOURCE_DIR}/LICENSES/LLVM-exception.txt"
+         "${CMAKE_CURRENT_SOURCE_DIR}/LICENSES/MIT.txt"
+        DESTINATION "${PANDA_LICENSING_INSTALLDIR_REL}")
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/etc/libopenmp/LICENSE_INSTALL"
         DESTINATION "${PANDA_DATA_INSTALLDIR_REL}/libopenmp"
         RENAME LICENSE)
@@ -190,9 +195,6 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/etc/bambu_directives/csroa_directives
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/etc/clang_plugin/LICENSE_INSTALL"
         DESTINATION "${PANDA_LICENSING_INSTALLDIR_REL}/clang_plugins"
         RENAME LICENSE)
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/etc/clang_plugin/LICENSE-2.0e"
-        DESTINATION "${PANDA_LICENSING_INSTALLDIR_REL}/clang_plugins"
-        RENAME LICENSE-2.0e)
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/etc/libbambu/LICENSE_INSTALL"
         DESTINATION "${PANDA_LICENSING_INSTALLDIR_REL}/libbambu"
         RENAME LICENSE)
@@ -217,9 +219,6 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/etc/libbambu/libm/newlib/newlib_math.
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/etc/libbambu/libm/newlib/LICENSE_INSTALL"
         DESTINATION "${PANDA_LICENSING_INSTALLDIR_REL}/libm/newlib"
         RENAME LICENSE)
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE"
-        DESTINATION "${PANDA_LICENSING_INSTALLDIR_REL}"
-        RENAME LICENSE-2.0BAMBU-E)
 
 # Top-level environment settings (mirrors Automake install-data-hook_settings)
 install(PROGRAMS "${CMAKE_CURRENT_SOURCE_DIR}/etc/scripts/settings.sh"

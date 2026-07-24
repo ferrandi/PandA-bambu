@@ -4,124 +4,124 @@
     <name>STD_FU</name>
     <cell>
       <name>ASSIGN_SINGLE_UNSIGNED_FU</name>
-      <operation operation_name="ASSIGN_SINGLE" supported_types="UINT:1" />
+      <operation operation_name="ASSIGN_SINGLE" supported_types="UINT:1"/>
       <circuit>
         <module_o id="ASSIGN_SINGLE_UNSIGNED_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ASSIGN_SINGLE_UNSIGNED_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ASSIGN_SINGLE_UNSIGNED_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ASSIGN_SINGLE_UNSIGNED_FU" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
-  out1 &lt;= in1;" />
+  out1 &lt;= in1;"/>
         </module_o>
       </circuit>
     </cell>
     <cell>
       <name>ASSIGN_REAL_FU</name>
-      <operation operation_name="ASSIGN" supported_types="REAL:*" />
+      <operation operation_name="ASSIGN" supported_types="REAL:*"/>
       <circuit>
         <module_o id="ASSIGN_REAL_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ASSIGN_REAL_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ASSIGN_REAL_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="REAL" size="1" />
+            <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="REAL" size="1" />
+            <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ASSIGN_REAL_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
-  out1 &lt;= in1;" />
+  out1 &lt;= in1;"/>
         </module_o>
       </circuit>
     </cell>
     <cell>
       <name>ASSIGN_UNSIGNED_FU</name>
-      <operation operation_name="ASSIGN" supported_types="UINT:*" />
+      <operation operation_name="ASSIGN" supported_types="UINT:*"/>
       <circuit>
         <module_o id="ASSIGN_UNSIGNED_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ASSIGN_UNSIGNED_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ASSIGN_UNSIGNED_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ASSIGN_UNSIGNED_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
-  out1 &lt;= resize(in1, BITSIZE_out1);" />
+  out1 &lt;= resize(in1, BITSIZE_out1);"/>
         </module_o>
       </circuit>
     </cell>
     <cell>
       <name>ASSIGN_VECTOR_BOOL_FU</name>
-      <operation operation_name="ASSIGN" supported_types="VECTOR_BOOL:*" />
+      <operation operation_name="ASSIGN" supported_types="VECTOR_BOOL:*"/>
       <circuit>
         <module_o id="ASSIGN_VECTOR_BOOL_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ASSIGN_VECTOR_BOOL_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ASSIGN_VECTOR_BOOL_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ASSIGN_VECTOR_BOOL_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
-  out1 &lt;= in1;" />
+  out1 &lt;= in1;"/>
         </module_o>
       </circuit>
     </cell>
     <cell>
       <name>ASSIGN_SIGNED_FU</name>
-      <operation operation_name="ASSIGN" supported_types="INT:*" />
+      <operation operation_name="ASSIGN" supported_types="INT:*"/>
       <circuit>
         <module_o id="ASSIGN_SIGNED_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ASSIGN_SIGNED_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ASSIGN_SIGNED_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ASSIGN_SIGNED_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
-  out1 &lt;= resize_signed(in1,BITSIZE_out1);" />
+  out1 &lt;= resize_signed(in1,BITSIZE_out1);"/>
         </module_o>
       </circuit>
     </cell>
     <cell>
       <name>ASSIGN_VEC_SIGNED_FU</name>
-      <operation operation_name="ASSIGN" supported_types="VECTOR_INT:*" />
+      <operation operation_name="ASSIGN" supported_types="VECTOR_INT:*"/>
       <circuit>
         <module_o id="ASSIGN_VEC_SIGNED_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ASSIGN_VEC_SIGNED_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ASSIGN_VEC_SIGNED_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ASSIGN_VEC_SIGNED_FU in1 out1" VERILOG_PROVIDED="generate
 genvar o1;
@@ -135,25 +135,25 @@ begin
    for index in 0 to NUM_ELEM_out1-1 loop
        out1((index+1)*BITSIZE_out1-1 downto index*BITSIZE_out1) &lt;= std_logic_vector(resize_signed(signed(in1((index+1)*BITSIZE_in1-1 downto index*BITSIZE_in1)), BITSIZE_out1));
    end loop;
-end process;" />
+end process;"/>
         </module_o>
       </circuit>
     </cell>
     <cell>
       <name>ASSIGN_VEC_UNSIGNED_FU</name>
-      <operation operation_name="ASSIGN" supported_types="VECTOR_UINT:*" />
+      <operation operation_name="ASSIGN" supported_types="VECTOR_UINT:*"/>
       <circuit>
         <module_o id="ASSIGN_VEC_UNSIGNED_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ASSIGN_VEC_UNSIGNED_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ASSIGN_VEC_UNSIGNED_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ASSIGN_VEC_UNSIGNED_FU in1 out1" VERILOG_PROVIDED="generate
 genvar o1;
@@ -167,91 +167,91 @@ begin
    for index in 0 to NUM_ELEM_out1-1 loop
        out1((index+1)*BITSIZE_out1-1 downto index*BITSIZE_out1) &lt;= std_logic_vector(resize(unsigned(in1((index+1)*BITSIZE_in1-1 downto index*BITSIZE_in1)), BITSIZE_out1));
    end loop;
-end process;" />
+end process;"/>
         </module_o>
       </circuit>
     </cell>
     <template>
       <name>select_node_FU</name>
-      <operation operation_name="select_node" supported_types="INT:*" />
+      <operation operation_name="select_node" supported_types="INT:*"/>
       <circuit>
         <module_o id="select_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="select_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="select_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in3" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="select_node_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 != 0 ? in2 : in3;" VHDL_PROVIDED="constant zeroes : std_logic_vector(in1&apos;range) := (others =&gt; &apos;0&apos;);
 begin
   out1 &lt;= resize_signed(in2, BITSIZE_out1) when (in1 /= zeroes) else resize_signed(in3, BITSIZE_out1);
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_select_node_FU</name>
-      <operation operation_name="select_node" supported_types="UINT:*|VECTOR_BOOL:*" />
+      <operation operation_name="select_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
       <circuit>
         <module_o id="ui_select_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_select_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_select_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in3" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_select_node_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 != 0 ? in2 : in3;" VHDL_PROVIDED="constant zeroes : std_logic_vector(in1&apos;range) := (others =&gt; &apos;0&apos;);
 begin
   out1 &lt;= resize(in2, BITSIZE_out1) when (in1 /= zeroes) else resize(in3, BITSIZE_out1);
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>irem_node_FU</name>
       <characterizing_constant_value>21845</characterizing_constant_value>
-      <operation operation_name="irem_node" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2,3,7|16:0,1,2,3,5,7,16|32:0,1,3,7,15,31|64:0,1,3,7,15,31,63" />
+      <operation operation_name="irem_node" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2,3,7|16:0,1,2,3,5,7,16|32:0,1,3,7,15,31|64:0,1,3,7,15,31,63"/>
       <circuit>
         <module_o id="irem_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="irem_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="irem_node_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="irem_node_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="localparam required_iterations = BITSIZE_in1 &gt; PIPE_PARAMETER ? BITSIZE_in1 : PIPE_PARAMETER;
 parameter STEPS = ((required_iterations)/(PIPE_PARAMETER+1)) + (((required_iterations)%(PIPE_PARAMETER+1)) ? 1 : 0);
@@ -521,33 +521,33 @@ assign xdenom = in2 &gt;= $signed({BITSIZE_in2{1&apos;b0}}) ? in2 : -in2;
 
   xnum &lt;= std_logic_vector(in1) when (in1 &gt;= 0) else std_logic_vector(-in1);
   xdenom &lt;= std_logic_vector(in2) when (in2 &gt;= 0) else std_logic_vector(-in2);
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_irem_node_FU</name>
       <characterizing_constant_value>21845</characterizing_constant_value>
-      <operation operation_name="irem_node" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2,3,7|16:0,1,2,3,5,7,16|32:0,1,3,7,15,31|64:0,1,3,7,15,31,63" />
+      <operation operation_name="irem_node" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2,3,7|16:0,1,2,3,5,7,16|32:0,1,3,7,15,31|64:0,1,3,7,15,31,63"/>
       <circuit>
         <module_o id="ui_irem_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_irem_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_irem_node_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_irem_node_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="localparam required_iterations = BITSIZE_in1 &gt; PIPE_PARAMETER ? BITSIZE_in1 : PIPE_PARAMETER;
 parameter STEPS = ((required_iterations)/(PIPE_PARAMETER+1)) + (((required_iterations)%(PIPE_PARAMETER+1)) ? 1 : 0);
@@ -669,226 +669,226 @@ generate
 endgenerate
 
 assign xnum = in1;
-assign xdenom = in2;" />
+assign xdenom = in2;"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ge_node_FU</name>
-      <operation operation_name="ge_node" supported_types="INT:*" />
+      <operation operation_name="ge_node" supported_types="INT:*"/>
       <circuit>
         <module_o id="ge_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ge_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ge_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ge_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &gt;= in2;" VHDL_PROVIDED="begin
-out1(0) &lt;= &apos;1&apos; when (signed(in1) &gt;= signed(in2)) else &apos;0&apos;;" />
+out1(0) &lt;= &apos;1&apos; when (signed(in1) &gt;= signed(in2)) else &apos;0&apos;;"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_ge_node_FU</name>
-      <operation operation_name="ge_node" supported_types="UINT:*|VECTOR_BOOL:*" />
+      <operation operation_name="ge_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
       <circuit>
         <module_o id="ui_ge_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_ge_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_ge_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_ge_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &gt;= in2;" VHDL_PROVIDED="begin
-out1(0) &lt;= &apos;1&apos; when (unsigned(in1) &gt;= unsigned(in2)) else &apos;0&apos;;" />
+out1(0) &lt;= &apos;1&apos; when (unsigned(in1) &gt;= unsigned(in2)) else &apos;0&apos;;"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>max_node_FU</name>
-      <operation operation_name="max_node" supported_types="INT:*" commutative="1" />
+      <operation operation_name="max_node" supported_types="INT:*" commutative="1"/>
       <circuit>
         <module_o id="max_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="max_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="max_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="max_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &gt; in2 ? in1 : in2;" VHDL_PROVIDED="begin
   out1 &lt;= resize_signed(in1, BITSIZE_out1) when (in1 &gt;= in2) else resize_signed(in2, BITSIZE_out1);
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_max_node_FU</name>
-      <operation operation_name="max_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1" />
+      <operation operation_name="max_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1"/>
       <circuit>
         <module_o id="ui_max_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_max_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_max_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_max_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &gt; in2 ? in1 : in2;" VHDL_PROVIDED="begin
   out1 &lt;= resize(in1, BITSIZE_out1) when (in1 &gt;= in2) else resize(in2, BITSIZE_out1);
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>min_node_FU</name>
-      <operation operation_name="min_node" supported_types="INT:*" commutative="1" />
+      <operation operation_name="min_node" supported_types="INT:*" commutative="1"/>
       <circuit>
         <module_o id="min_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="min_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="min_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="min_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &lt; in2 ? in1 : in2;" VHDL_PROVIDED="begin
   out1 &lt;= resize_signed(in1, BITSIZE_out1) when (in1 &lt;= in2) else resize_signed(in2, BITSIZE_out1);
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_min_node_FU</name>
-      <operation operation_name="min_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1" />
+      <operation operation_name="min_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1"/>
       <circuit>
         <module_o id="ui_min_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_min_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_min_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_min_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &lt; in2 ? in1 : in2;" VHDL_PROVIDED="begin
   out1 &lt;= resize(in1, BITSIZE_out1) when (in1 &lt; in2) else resize(in2, BITSIZE_out1);
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>xor_node_FU</name>
-      <operation operation_name="xor_node" supported_types="INT:*" commutative="1" />
+      <operation operation_name="xor_node" supported_types="INT:*" commutative="1"/>
       <circuit>
         <module_o id="xor_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="xor_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="xor_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="xor_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 ^ in2;" VHDL_PROVIDED="begin
-out1 &lt;= resize_signed(in1, BITSIZE_out1) xor resize_signed(in2, BITSIZE_out1);" />
+out1 &lt;= resize_signed(in1, BITSIZE_out1) xor resize_signed(in2, BITSIZE_out1);"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_xor_node_FU</name>
-      <operation operation_name="xor_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1" />
+      <operation operation_name="xor_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1"/>
       <circuit>
         <module_o id="ui_xor_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_xor_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_xor_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_xor_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 ^ in2;" VHDL_PROVIDED="begin
-out1 &lt;= resize(in1, BITSIZE_out1) xor resize(in2, BITSIZE_out1);" />
+out1 &lt;= resize(in1, BITSIZE_out1) xor resize(in2, BITSIZE_out1);"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>shl_node_FU</name>
       <characterizing_constant_value>1</characterizing_constant_value>
-      <operation operation_name="shl_node" supported_types="INT:*" />
+      <operation operation_name="shl_node" supported_types="INT:*"/>
       <circuit>
         <module_o id="shl_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="shl_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="shl_node_FU"/>
           <parameter name="PRECISION">1</parameter>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="shl_node_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="`ifndef _SIM_HAVE_CLOG2
   function integer log2;
@@ -917,30 +917,30 @@ endgenerate"
   begin
     out1 &lt;= shift_left(resize_signed(in1, BITSIZE_out1), to_integer(unsigned(in2) rem PRECISION));
   end process;
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_shl_node_FU</name>
       <characterizing_constant_value>1</characterizing_constant_value>
-      <operation operation_name="shl_node" supported_types="UINT:*|VECTOR_BOOL:*" />
+      <operation operation_name="shl_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
       <circuit>
         <module_o id="ui_shl_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_shl_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_shl_node_FU"/>
           <parameter name="PRECISION">1</parameter>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_shl_node_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="`ifndef _SIM_HAVE_CLOG2
   function integer log2;
@@ -969,28 +969,28 @@ endgenerate"
   begin
     out1 &lt;= shift_left(resize(in1, BITSIZE_out1), to_integer(unsigned(in2) rem PRECISION));
   end process;
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>lt_node_FU</name>
-      <operation operation_name="lt_node" supported_types="INT:*" />
+      <operation operation_name="lt_node" supported_types="INT:*"/>
       <circuit>
         <module_o id="lt_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="lt_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="lt_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="lt_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &lt; in2;
 " VHDL_PROVIDED="begin
@@ -1003,57 +1003,57 @@ endgenerate"
       out1(0) &lt;= &apos;0&apos;;
     end if;
 end process
-;" />
+;"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_lt_node_FU</name>
-      <operation operation_name="lt_node" supported_types="UINT:*|VECTOR_BOOL:*" />
+      <operation operation_name="lt_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
       <circuit>
         <module_o id="ui_lt_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_lt_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_lt_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_lt_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &lt; in2;" VHDL_PROVIDED="begin
-out1 &lt;= std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1)) when (unsigned(in1) &lt; unsigned(in2)) else (others =&gt; &apos;0&apos;);" />
+out1 &lt;= std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1)) when (unsigned(in1) &lt; unsigned(in2)) else (others =&gt; &apos;0&apos;);"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_fshl_node_FU</name>
       <characterizing_constant_value>1</characterizing_constant_value>
-      <operation operation_name="fshl_node" supported_types="UINT:*|VECTOR_BOOL:*" />
+      <operation operation_name="fshl_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
       <circuit>
         <module_o id="ui_fshl_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2021-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_fshl_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_fshl_node_FU"/>
           <parameter name="PRECISION">1</parameter>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in3" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_fshl_node_FU in1 in2 in3 out1 PRECISION" VERILOG_PROVIDED="`ifndef _SIM_HAVE_CLOG2
   function integer log2;
@@ -1074,33 +1074,33 @@ out1 &lt;= std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1)) 
 parameter marg_bitsize = arg_bitsize &lt; BITSIZE_in3 ? arg_bitsize : BITSIZE_in3;
 assign out1 = (in1 &lt;&lt; (in3[marg_bitsize-1:0]))|(in2 &gt;&gt; (PRECISION-(in3[marg_bitsize-1:0])));" VHDL_PROVIDED="begin
   out1 &lt;= resize(shift_left(resize(in1, BITSIZE_out1), to_integer(unsigned(in3) rem PRECISION)), BITSIZE_out1) or resize(shift_right(in2, PRECISION - to_integer(unsigned(in3) rem PRECISION)), BITSIZE_out1);
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_fshr_node_FU</name>
       <characterizing_constant_value>1</characterizing_constant_value>
-      <operation operation_name="fshr_node" supported_types="UINT:*|VECTOR_BOOL:*" />
+      <operation operation_name="fshr_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
       <circuit>
         <module_o id="ui_fshr_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2021-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_fshr_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_fshr_node_FU"/>
           <parameter name="PRECISION">1</parameter>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in3" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_fshr_node_FU in1 in2 in3 out1 PRECISION" VERILOG_PROVIDED="`ifndef _SIM_HAVE_CLOG2
   function integer log2;
@@ -1121,33 +1121,33 @@ assign out1 = (in1 &lt;&lt; (in3[marg_bitsize-1:0]))|(in2 &gt;&gt; (PRECISION-(i
 parameter marg_bitsize = arg_bitsize &lt; BITSIZE_in3 ? arg_bitsize : BITSIZE_in3;
 assign out1 = (in1 &lt;&lt; (PRECISION-(in3[marg_bitsize-1:0])))|(in2 &gt;&gt; (in3[marg_bitsize-1:0]));" VHDL_PROVIDED="begin
   out1 &lt;= resize(shift_left(resize(in1, BITSIZE_out1), PRECISION - to_integer(unsigned(in3) rem PRECISION)), BITSIZE_out1) or resize(shift_right(in2, to_integer(unsigned(in3) rem PRECISION)), BITSIZE_out1);
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>widen_mul_node_FU</name>
       <no_constant_characterization></no_constant_characterization>
-      <operation operation_name="widen_mul_node" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,7|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1" />
+      <operation operation_name="widen_mul_node" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,7|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>
       <circuit>
         <module_o id="widen_mul_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="widen_mul_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="widen_mul_node_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT" is_doubled="1">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="widen_mul_node_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="mul_node_FU" VERILOG_PROVIDED="mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1), .clock(clock), .in1(in1), .in2(in2));" VHDL_PROVIDED="begin
   m1 : mul_node_FU generic map(BITSIZE_in1 =&gt; BITSIZE_in1, BITSIZE_in2 =&gt; BITSIZE_in2, BITSIZE_out1 =&gt; BITSIZE_out1, PIPE_PARAMETER =&gt; PIPE_PARAMETER) port map (out1 =&gt; out1, clock =&gt; clock, in1 =&gt; in1, in2 =&gt; in2);"
@@ -1158,26 +1158,26 @@ assign out1 = (in1 &lt;&lt; (PRECISION-(in3[marg_bitsize-1:0])))|(in2 &gt;&gt; (
     <template>
       <name>mul_node_FU</name>
       <no_constant_characterization></no_constant_characterization>
-      <operation operation_name="mul_node" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,7|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1" />
+      <operation operation_name="mul_node" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,7|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>
       <circuit>
         <module_o id="mul_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="mul_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="mul_node_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="mul_node_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="
 generate
@@ -1254,55 +1254,55 @@ begin
     <template>
       <name>ui_widen_mul_node_FU</name>
       <no_constant_characterization></no_constant_characterization>
-      <operation operation_name="widen_mul_node" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,7|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1" />
+      <operation operation_name="widen_mul_node" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,7|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>
       <circuit>
         <module_o id="ui_widen_mul_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_widen_mul_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_widen_mul_node_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT" is_doubled="1">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_widen_mul_node_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mul_node_FU" VERILOG_PROVIDED="ui_mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1), .clock(clock), .in1(in1), .in2(in2));" VHDL_PROVIDED="begin
-  m1 : ui_mul_node_FU generic map(BITSIZE_in1 =&gt; BITSIZE_in1, BITSIZE_in2 =&gt; BITSIZE_in2, BITSIZE_out1 =&gt; BITSIZE_out1, PIPE_PARAMETER =&gt; PIPE_PARAMETER) port map (out1 =&gt; out1, clock =&gt; clock, in1 =&gt; in1, in2 =&gt; in2);" />
+  m1 : ui_mul_node_FU generic map(BITSIZE_in1 =&gt; BITSIZE_in1, BITSIZE_in2 =&gt; BITSIZE_in2, BITSIZE_out1 =&gt; BITSIZE_out1, PIPE_PARAMETER =&gt; PIPE_PARAMETER) port map (out1 =&gt; out1, clock =&gt; clock, in1 =&gt; in1, in2 =&gt; in2);"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_mul_node_FU</name>
       <no_constant_characterization></no_constant_characterization>
-      <operation operation_name="mul_node" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,7|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1" />
+      <operation operation_name="mul_node" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,7|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>
       <circuit>
         <module_o id="ui_mul_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_mul_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_mul_node_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_mul_node_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="
 generate
@@ -1371,71 +1371,71 @@ begin
       end if;
     end process;
   end generate cond2;
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>neg_node_FU</name>
-      <operation operation_name="neg_node" supported_types="INT:*" />
+      <operation operation_name="neg_node" supported_types="INT:*"/>
       <circuit>
         <module_o id="neg_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="neg_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="neg_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="neg_node_FU in1 out1" VERILOG_PROVIDED="assign out1 = -in1;" VHDL_PROVIDED="begin
   out1 &lt;= -resize_signed(in1, BITSIZE_out1);
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <cell>
       <name>lut_node_FU</name>
-      <operation operation_name="lut_node" />
+      <operation operation_name="lut_node"/>
       <circuit>
         <module_o id="lut_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="lut_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="lut_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in3" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in4" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in5" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in6" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in7" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in8" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in9" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="lut_node_FU in1 out1" VERILOG_PROVIDED="reg[7:0] cleaned_in0;
 wire [7:0] in0;
@@ -1476,119 +1476,119 @@ begin
   begin
     shifted_s &lt;= shift_right(unsigned(in1), to_integer(unsigned(in0)));
   end process;
-" />
+"/>
         </module_o>
       </circuit>
     </cell>
     <cell>
       <name>extract_bit_node_FU</name>
-      <operation operation_name="extract_bit_node" supported_types="INT:*" />
+      <operation operation_name="extract_bit_node" supported_types="INT:*"/>
       <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
       <circuit>
         <module_o id="extract_bit_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="extract_bit_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="extract_bit_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="extract_bit_node_FU in1 in2" VERILOG_PROVIDED="assign out1 = (in1 &gt;&gt;&gt; in2)&amp;1;" VHDL_PROVIDED="begin
   process(in1, in2)
   begin
     out1 &lt;= shift_right(in1, to_integer(unsigned(in2)))(0);
   end process;
-" />
+"/>
         </module_o>
       </circuit>
     </cell>
     <cell>
       <name>ui_extract_bit_node_FU</name>
-      <operation operation_name="extract_bit_node" supported_types="UINT:*|VECTOR_BOOL:*" />
+      <operation operation_name="extract_bit_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
       <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
       <circuit>
         <module_o id="ui_extract_bit_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_extract_bit_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_extract_bit_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_extract_bit_node_FU in1 in2" VERILOG_PROVIDED="assign out1 = (in1 &gt;&gt; in2)&amp;1;" VHDL_PROVIDED="begin
   process(in1, in2)
   begin
     out1 &lt;= shift_right(unsigned(in1), to_integer(unsigned(in2)))(0);
   end process;
-" />
+"/>
         </module_o>
       </circuit>
     </cell>
     <cell>
       <name>extractvalue_node_FU</name>
-      <operation operation_name="extractvalue_node" />
+      <operation operation_name="extractvalue_node"/>
       <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
       <circuit>
         <module_o id="extractvalue_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="extractvalue_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="extractvalue_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="extractvalue_node_FU in1 in2" VERILOG_PROVIDED="assign out1 = (in1 &gt;&gt; in2);" VHDL_PROVIDED="begin
   process(in1, in2)
   begin
     out1 &lt;= resize(shift_right(in1, to_integer(unsigned(in2))), BITSIZE_out1);
   end process;
-" />
+"/>
         </module_o>
       </circuit>
     </cell>
     <cell>
       <name>insertvalue_node_FU</name>
-      <operation operation_name="insertvalue_node" />
+      <operation operation_name="insertvalue_node"/>
       <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
       <circuit>
         <module_o id="insertvalue_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="insertvalue_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="insertvalue_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="in3" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="insertvalue_node_FU in1 in2 in3" VERILOG_PROVIDED="reg [BITSIZE_in1-1:0] temp;
           always@(*) begin
@@ -1602,102 +1602,102 @@ begin
       temp := in1;
       temp (BITSIZE_in1 - 1 + to_integer(unsigned(in3)) downto to_integer(unsigned(in3))) := in2;
     end process;
-  " />
+  "/>
         </module_o>
       </circuit>
     </cell>
     <template>
       <name>ui_neg_node_FU</name>
-      <operation operation_name="neg_node" supported_types="UINT:*|VECTOR_BOOL:*" />
+      <operation operation_name="neg_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
       <circuit>
         <module_o id="ui_neg_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_neg_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_neg_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_neg_node_FU in1 out1" VERILOG_PROVIDED="assign out1 = -in1;" VHDL_PROVIDED="begin
   out1 &lt;= unsigned(-signed(resize(in1, BITSIZE_out1)));
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>eq_node_FU</name>
-      <operation operation_name="eq_node" supported_types="INT:*" commutative="1" />
+      <operation operation_name="eq_node" supported_types="INT:*" commutative="1"/>
       <circuit>
         <module_o id="eq_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="eq_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="eq_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="eq_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 == in2;" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1)) when (in1 = in2) else (others =&gt; &apos;0&apos;);
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_eq_node_FU</name>
-      <operation operation_name="eq_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1" />
+      <operation operation_name="eq_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1"/>
       <circuit>
         <module_o id="ui_eq_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_eq_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_eq_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_eq_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 == in2;" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1)) when (in1 = in2) else (others =&gt; &apos;0&apos;);
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>shr_node_FU</name>
       <characterizing_constant_value>62</characterizing_constant_value>
-      <operation operation_name="shr_node" supported_types="INT:*" />
+      <operation operation_name="shr_node" supported_types="INT:*"/>
       <circuit>
         <module_o id="shr_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="shr_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="shr_node_FU"/>
           <parameter name="PRECISION">1</parameter>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="shr_node_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="`ifndef _SIM_HAVE_CLOG2
   function integer log2;
@@ -1726,30 +1726,30 @@ endgenerate"
   begin
     out1 &lt;= resize_signed(shift_right(in1, to_integer(unsigned(in2) rem PRECISION)), BITSIZE_out1);
   end process;
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_shr_node_FU</name>
       <characterizing_constant_value>1</characterizing_constant_value>
-      <operation operation_name="shr_node" supported_types="UINT:*|VECTOR_BOOL:*" />
+      <operation operation_name="shr_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
       <circuit>
         <module_o id="ui_shr_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_shr_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_shr_node_FU"/>
           <parameter name="PRECISION">1</parameter>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_shr_node_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED="`ifndef _SIM_HAVE_CLOG2
   function integer log2;
@@ -1778,33 +1778,33 @@ endgenerate
   begin
     out1 &lt;= resize(shift_right(in1, to_integer(unsigned(in2) rem PRECISION)), BITSIZE_out1);
   end process;
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>idiv_node_FU</name>
       <characterizing_constant_value>21845</characterizing_constant_value>
-      <operation operation_name="idiv_node" supported_types="INT:*" pipe_parameters="1:0|8:2,3,4,7,8|16:7,15,16|32:15,16,31,32|64:63,64" />
+      <operation operation_name="idiv_node" supported_types="INT:*" pipe_parameters="1:0|8:2,3,4,7,8|16:7,15,16|32:15,16,31,32|64:63,64"/>
       <circuit>
         <module_o id="idiv_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="idiv_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="idiv_node_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="idiv_node_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="localparam required_iterations = BITSIZE_in1 &gt; PIPE_PARAMETER ? BITSIZE_in1 : PIPE_PARAMETER;
 parameter STEPS = ((required_iterations)/(PIPE_PARAMETER+1)) + (((required_iterations)%(PIPE_PARAMETER+1)) ? 1 : 0);
@@ -1928,33 +1928,33 @@ generate
 endgenerate
 
 assign xnum = in1 &gt;= $signed({BITSIZE_in1{1&apos;b0}}) ? in1 : -in1;
-assign xdenom = in2 &gt;= $signed({BITSIZE_in2{1&apos;b0}}) ? in2 : -in2;" />
+assign xdenom = in2 &gt;= $signed({BITSIZE_in2{1&apos;b0}}) ? in2 : -in2;"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_idiv_node_FU</name>
       <characterizing_constant_value>21845</characterizing_constant_value>
-      <operation operation_name="idiv_node" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2,3,7|16:0,1,2,3,5,7,15|32:0,1,3,7,15,31|64:0,1,3,7,15,31,63" />
+      <operation operation_name="idiv_node" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2,3,7|16:0,1,2,3,5,7,15|32:0,1,3,7,15,31|64:0,1,3,7,15,31,63"/>
       <circuit>
         <module_o id="ui_idiv_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_idiv_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_idiv_node_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_idiv_node_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="localparam required_iterations = BITSIZE_in1 &gt; PIPE_PARAMETER ? BITSIZE_in1 : PIPE_PARAMETER;
 parameter STEPS = ((required_iterations)/(PIPE_PARAMETER+1)) + (((required_iterations)%(PIPE_PARAMETER+1)) ? 1 : 0);
@@ -2075,146 +2075,146 @@ generate
 endgenerate
 
 assign xnum = in1;
-assign xdenom = in2;" />
+assign xdenom = in2;"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>le_node_FU</name>
-      <operation operation_name="le_node" supported_types="INT:*" />
+      <operation operation_name="le_node" supported_types="INT:*"/>
       <circuit>
         <module_o id="le_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="le_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="le_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="le_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &lt;= in2;" VHDL_PROVIDED="begin
-	out1(0) &lt;= &apos;1&apos; when (signed(in1) &lt;= signed(in2)) else &apos;0&apos;;" />
+	out1(0) &lt;= &apos;1&apos; when (signed(in1) &lt;= signed(in2)) else &apos;0&apos;;"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_le_node_FU</name>
-      <operation operation_name="le_node" supported_types="UINT:*|VECTOR_BOOL:*" />
+      <operation operation_name="le_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
       <circuit>
         <module_o id="ui_le_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_le_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_le_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_le_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &lt;= in2;" VHDL_PROVIDED="begin
-	out1(0) &lt;= &apos;1&apos; when (unsigned(in1) &lt;= unsigned(in2)) else &apos;0&apos;;" />
+	out1(0) &lt;= &apos;1&apos; when (unsigned(in1) &lt;= unsigned(in2)) else &apos;0&apos;;"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>and_node_FU</name>
-      <operation operation_name="and_node" supported_types="INT:*" commutative="1" />
+      <operation operation_name="and_node" supported_types="INT:*" commutative="1"/>
       <circuit>
         <module_o id="and_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="and_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="and_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="and_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &amp; in2;" VHDL_PROVIDED="begin
-out1 &lt;= resize_signed(in1, BITSIZE_out1) and resize_signed(in2, BITSIZE_out1);" />
+out1 &lt;= resize_signed(in1, BITSIZE_out1) and resize_signed(in2, BITSIZE_out1);"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_and_node_FU</name>
-      <operation operation_name="and_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1" />
+      <operation operation_name="and_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1"/>
       <circuit>
         <module_o id="ui_and_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_and_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_and_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_and_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &amp; in2;" VHDL_PROVIDED="begin
-out1 &lt;= resize(in1, BITSIZE_out1) and resize(in2, BITSIZE_out1);" />
+out1 &lt;= resize(in1, BITSIZE_out1) and resize(in2, BITSIZE_out1);"/>
         </module_o>
       </circuit>
     </template>
     <cell>
       <name>addr_node_FU</name>
-      <operation operation_name="addr_node" />
+      <operation operation_name="addr_node"/>
       <circuit>
         <module_o id="addr_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="addr_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="addr_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="addr_node_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
  out1 &lt;= std_logic_vector(resize(unsigned(in1), BITSIZE_out1));
-" />
+"/>
         </module_o>
       </circuit>
     </cell>
     <template>
       <name>add_node_FU</name>
-      <operation operation_name="add_node" supported_types="INT:*" commutative="1" />
+      <operation operation_name="add_node" supported_types="INT:*" commutative="1"/>
       <circuit>
         <module_o id="add_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="add_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="add_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="add_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 + in2;" VHDL_PROVIDED="  signal resized_in1 : signed (BITSIZE_out1-1 downto 0);
   signal resized_in2 : signed (BITSIZE_out1-1 downto 0);
@@ -2233,28 +2233,28 @@ out1 &lt;= resize(in1, BITSIZE_out1) and resize(in2, BITSIZE_out1);" />
       end if;
       out1 &lt;= resized_in1 + resized_in2;
     end process;
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_add_node_FU</name>
-      <operation operation_name="add_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1" />
+      <operation operation_name="add_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1"/>
       <circuit>
         <module_o id="ui_add_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_add_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_add_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_add_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 + in2;" VHDL_PROVIDED="  signal resized_in1 : unsigned(BITSIZE_out1-1 downto 0);
   signal resized_in2 : unsigned(BITSIZE_out1-1 downto 0);
@@ -2273,28 +2273,28 @@ out1 &lt;= resize(in1, BITSIZE_out1) and resize(in2, BITSIZE_out1);" />
       end if;
       out1 &lt;= resized_in1 + resized_in2;
     end process;
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>add_sat_node_FU</name>
-      <operation operation_name="add_sat_node" supported_types="INT:*" commutative="1" />
+      <operation operation_name="add_sat_node" supported_types="INT:*" commutative="1"/>
       <circuit>
         <module_o id="add_sat_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="add_sat_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="add_sat_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="add_sat_node_FU in1 in2 out1"
             VERILOG_PROVIDED="
@@ -2308,298 +2308,298 @@ assign mask_max = {1&apos;b0, {BITSIZE_out1-1{1&apos;b1}}};
 assign cond1 = (!in1[BITSIZE_in1-1])&amp;(!in2[BITSIZE_in2-1])&amp;add_tmp[BITSIZE_out1-1];
 assign cond2 = in1[BITSIZE_in1-1]&amp;in2[BITSIZE_in2-1]&amp;(!add_tmp[BITSIZE_out1-1]);
 assign out1 = cond2 ? mask_min : (cond1 ? mask_max : add_tmp);
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_add_sat_node_FU</name>
-      <operation operation_name="add_sat_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1" />
+      <operation operation_name="add_sat_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1"/>
       <circuit>
         <module_o id="ui_add_sat_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_add_sat_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_add_sat_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_add_sat_node_FU in1 in2 out1"
             VERILOG_PROVIDED="
 wire signed [BITSIZE_out1:0] add_tmp;
 assign add_tmp = in1 + in2;
 assign out1 = add_tmp[BITSIZE_out1] ? {BITSIZE_out1{1&apos;b1}} : add_tmp[BITSIZE_out1-1:0];
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ternary_add_node_FU</name>
-      <operation operation_name="ternary_add_node" supported_types="INT:*" commutative="1" />
+      <operation operation_name="ternary_add_node" supported_types="INT:*" commutative="1"/>
       <circuit>
         <module_o id="ternary_add_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ternary_add_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ternary_add_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in3" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ternary_add_node_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 + in2 + in3;" VHDL_PROVIDED="begin
-out1 &lt;= resize_signed(in1, BITSIZE_out1) + resize_signed(in2, BITSIZE_out1) + resize_signed(in3, BITSIZE_out1);" />
+out1 &lt;= resize_signed(in1, BITSIZE_out1) + resize_signed(in2, BITSIZE_out1) + resize_signed(in3, BITSIZE_out1);"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_ternary_add_node_FU</name>
-      <operation operation_name="ternary_add_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1" />
+      <operation operation_name="ternary_add_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1"/>
       <circuit>
         <module_o id="ui_ternary_add_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_ternary_add_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_ternary_add_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in3" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_ternary_add_node_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 + in2 + in3;" VHDL_PROVIDED="begin
-out1 &lt;= resize(in1, BITSIZE_out1) + resize(in2, BITSIZE_out1) + resize(in3, BITSIZE_out1);" />
+out1 &lt;= resize(in1, BITSIZE_out1) + resize(in2, BITSIZE_out1) + resize(in3, BITSIZE_out1);"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ternary_as_node_FU</name>
-      <operation operation_name="ternary_as_node" supported_types="INT:*" />
+      <operation operation_name="ternary_as_node" supported_types="INT:*"/>
       <circuit>
         <module_o id="ternary_as_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ternary_as_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ternary_as_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in3" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ternary_as_node_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 + in2 - in3;" VHDL_PROVIDED="begin
-out1 &lt;= resize_signed(in1, BITSIZE_out1) + resize_signed(in2, BITSIZE_out1) - resize_signed(in3, BITSIZE_out1);" />
+out1 &lt;= resize_signed(in1, BITSIZE_out1) + resize_signed(in2, BITSIZE_out1) - resize_signed(in3, BITSIZE_out1);"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_ternary_as_node_FU</name>
-      <operation operation_name="ternary_as_node" supported_types="UINT:*|VECTOR_BOOL:*" />
+      <operation operation_name="ternary_as_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
       <circuit>
         <module_o id="ui_ternary_as_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_ternary_as_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_ternary_as_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in3" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_ternary_as_node_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 + in2 - in3;" VHDL_PROVIDED="begin
-out1 &lt;= resize(in1, BITSIZE_out1) + resize(in2, BITSIZE_out1) - resize(in3, BITSIZE_out1);" />
+out1 &lt;= resize(in1, BITSIZE_out1) + resize(in2, BITSIZE_out1) - resize(in3, BITSIZE_out1);"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ternary_sa_node_FU</name>
-      <operation operation_name="ternary_sa_node" supported_types="INT:*" />
+      <operation operation_name="ternary_sa_node" supported_types="INT:*"/>
       <circuit>
         <module_o id="ternary_sa_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ternary_sa_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ternary_sa_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in3" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ternary_sa_node_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 - in2 + in3;" VHDL_PROVIDED="begin
-out1 &lt;= resize_signed(in1, BITSIZE_out1) - resize_signed(in2, BITSIZE_out1) + resize_signed(in3, BITSIZE_out1);" />
+out1 &lt;= resize_signed(in1, BITSIZE_out1) - resize_signed(in2, BITSIZE_out1) + resize_signed(in3, BITSIZE_out1);"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_ternary_sa_node_FU</name>
-      <operation operation_name="ternary_sa_node" supported_types="UINT:*|VECTOR_BOOL:*" />
+      <operation operation_name="ternary_sa_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
       <circuit>
         <module_o id="ui_ternary_sa_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_ternary_sa_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_ternary_sa_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in3" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_ternary_sa_node_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 - in2 + in3;" VHDL_PROVIDED="begin
-out1 &lt;= resize(in1, BITSIZE_out1) - resize(in2, BITSIZE_out1) + resize(in3, BITSIZE_out1);" />
+out1 &lt;= resize(in1, BITSIZE_out1) - resize(in2, BITSIZE_out1) + resize(in3, BITSIZE_out1);"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ternary_ss_node_FU</name>
-      <operation operation_name="ternary_ss_node" supported_types="INT:*" />
+      <operation operation_name="ternary_ss_node" supported_types="INT:*"/>
       <circuit>
         <module_o id="ternary_ss_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ternary_ss_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ternary_ss_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in3" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ternary_ss_node_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 - in2 - in3;" VHDL_PROVIDED="begin
-out1 &lt;= resize_signed(in1, BITSIZE_out1) - resize_signed(in2, BITSIZE_out1) - resize_signed(in3, BITSIZE_out1);" />
+out1 &lt;= resize_signed(in1, BITSIZE_out1) - resize_signed(in2, BITSIZE_out1) - resize_signed(in3, BITSIZE_out1);"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_ternary_ss_node_FU</name>
-      <operation operation_name="ternary_ss_node" supported_types="UINT:*|VECTOR_BOOL:*" />
+      <operation operation_name="ternary_ss_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
       <circuit>
         <module_o id="ui_ternary_ss_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_ternary_ss_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_ternary_ss_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in3" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_ternary_ss_node_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 - in2 - in3;" VHDL_PROVIDED="begin
-out1 &lt;= resize(in1, BITSIZE_out1) - resize(in2, BITSIZE_out1) - resize(in3, BITSIZE_out1);" />
+out1 &lt;= resize(in1, BITSIZE_out1) - resize(in2, BITSIZE_out1) - resize(in3, BITSIZE_out1);"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ternary_alu_node_FU</name>
-      <operation operation_name="ternary_add_node" supported_types="INT:*" />
-      <operation operation_name="ternary_as_node" supported_types="INT:*" />
-      <operation operation_name="ternary_sa_node" supported_types="INT:*" />
-      <operation operation_name="ternary_ss_node" supported_types="INT:*" />
-      <operation operation_name="add_node" supported_types="INT:*" />
-      <operation operation_name="sub_node" supported_types="INT:*" />
+      <operation operation_name="ternary_add_node" supported_types="INT:*"/>
+      <operation operation_name="ternary_as_node" supported_types="INT:*"/>
+      <operation operation_name="ternary_sa_node" supported_types="INT:*"/>
+      <operation operation_name="ternary_ss_node" supported_types="INT:*"/>
+      <operation operation_name="add_node" supported_types="INT:*"/>
+      <operation operation_name="sub_node" supported_types="INT:*"/>
       <circuit>
         <module_o id="ternary_alu_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ternary_alu_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ternary_alu_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in3" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="sel_ternary_add_node" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="sel_ternary_as_node" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="sel_ternary_sa_node" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="sel_ternary_ss_node" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="sel_add_node" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="sel_sub_node" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ternary_alu_node_FU in1 in2 in3 out1" VERILOG_PROVIDED="wire [1:0] in1_tail;
 wire [1:0] in2_tail;
@@ -2747,54 +2747,54 @@ for (index_s=0; index_s&lt;BITSIZE_out1+2; index_s=index_s+1)
   end
 endgenerate
 assign out1 = (c_vector+s_vector)&gt;&gt;2;
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_ternary_alu_node_FU</name>
-      <operation operation_name="ternary_add_node" supported_types="UINT:*|VECTOR_BOOL:*" />
-      <operation operation_name="ternary_as_node" supported_types="UINT:*|VECTOR_BOOL:*" />
-      <operation operation_name="ternary_sa_node" supported_types="UINT:*|VECTOR_BOOL:*" />
-      <operation operation_name="ternary_ss_node" supported_types="UINT:*|VECTOR_BOOL:*" />
-      <operation operation_name="add_node" supported_types="UINT:*|VECTOR_BOOL:*" />
-      <operation operation_name="sub_node" supported_types="UINT:*|VECTOR_BOOL:*" />
+      <operation operation_name="ternary_add_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
+      <operation operation_name="ternary_as_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
+      <operation operation_name="ternary_sa_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
+      <operation operation_name="ternary_ss_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
+      <operation operation_name="add_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
+      <operation operation_name="sub_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
       <circuit>
         <module_o id="ui_ternary_alu_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_ternary_alu_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_ternary_alu_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in3" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="sel_ternary_add_node" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="sel_ternary_as_node" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="sel_ternary_sa_node" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="sel_ternary_ss_node" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="sel_add_node" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="sel_sub_node" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_ternary_alu_node_FU in1 in2 in3 out1" VERILOG_PROVIDED="wire [1:0] in1_tail;
 wire [1:0] in2_tail;
@@ -2935,142 +2935,142 @@ for (index_s=0; index_s&lt;BITSIZE_out1+2; index_s=index_s+1)
     assign s_vector[index_s] = cs_vector[2*index_s];
   end
 endgenerate
-assign out1 = (c_vector+s_vector)&gt;&gt;2;" />
+assign out1 = (c_vector+s_vector)&gt;&gt;2;"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>gep_node_FU</name>
-      <operation operation_name="pointer_add_node" supported_types="INT:*" commutative="1" />
+      <operation operation_name="pointer_add_node" supported_types="INT:*" commutative="1"/>
       <circuit>
         <module_o id="gep_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="gep_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="gep_node_FU"/>
           <parameter name="LSB_PARAMETER">-1</parameter>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="gep_node_FU in1 in2 out1 LSB_PARAMETER" VERILOG_PROVIDED="generate if (BITSIZE_out1 &gt; LSB_PARAMETER) assign out1[BITSIZE_out1-1:LSB_PARAMETER] = (in1[BITSIZE_in1-1:LSB_PARAMETER] + in2[BITSIZE_in2-1:LSB_PARAMETER]); else assign out1 = 0; endgenerate
-generate if (LSB_PARAMETER != 0 &amp;&amp; BITSIZE_out1 &gt; LSB_PARAMETER) assign out1[LSB_PARAMETER-1:0] = 0; endgenerate" />
+generate if (LSB_PARAMETER != 0 &amp;&amp; BITSIZE_out1 &gt; LSB_PARAMETER) assign out1[LSB_PARAMETER-1:0] = 0; endgenerate"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_gep_node_FU</name>
-      <operation operation_name="pointer_add_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1" />
+      <operation operation_name="pointer_add_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1"/>
       <circuit>
         <module_o id="ui_gep_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_gep_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_gep_node_FU"/>
           <parameter name="LSB_PARAMETER">-1</parameter>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_gep_node_FU in1 in2 out1 LSB_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_out1-1:0] in1_tmp;
 wire [BITSIZE_out1-1:0] in2_tmp;
 assign in1_tmp = in1;
 assign in2_tmp = in2;generate if (BITSIZE_out1 &gt; LSB_PARAMETER) assign out1[BITSIZE_out1-1:LSB_PARAMETER] = (in1_tmp[BITSIZE_out1-1:LSB_PARAMETER] + in2_tmp[BITSIZE_out1-1:LSB_PARAMETER]); else assign out1 = 0; endgenerate
 generate if (LSB_PARAMETER != 0 &amp;&amp; BITSIZE_out1 &gt; LSB_PARAMETER) assign out1[LSB_PARAMETER-1:0] = 0; endgenerate" VHDL_PROVIDED="begin
-  out1 &lt;= resize(in1, BITSIZE_out1) + resize(in2, BITSIZE_out1);" />
+  out1 &lt;= resize(in1, BITSIZE_out1) + resize(in2, BITSIZE_out1);"/>
         </module_o>
       </circuit>
     </template>
     <cell>
       <name>bitcast_node_FU</name>
-      <operation operation_name="bitcast_node" supported_types="INT:*" execution_time="0.0000001" />
+      <operation operation_name="bitcast_node" supported_types="INT:*" execution_time="0.0000001"/>
       <circuit>
         <module_o id="bitcast_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="bitcast_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="bitcast_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="bitcast_node_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
-out1 &lt;= std_logic_vector(resize(signed(in1), BITSIZE_out1));" />
+out1 &lt;= std_logic_vector(resize(signed(in1), BITSIZE_out1));"/>
         </module_o>
       </circuit>
     </cell>
     <cell>
       <name>ui_bitcast_node_FU</name>
-      <operation operation_name="bitcast_node" supported_types="UINT:*|VECTOR_BOOL:*" execution_time="0.0000001" />
+      <operation operation_name="bitcast_node" supported_types="UINT:*|VECTOR_BOOL:*" execution_time="0.0000001"/>
       <circuit>
         <module_o id="ui_bitcast_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_bitcast_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_bitcast_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_bitcast_node_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
-out1 &lt;= std_logic_vector(resize(unsigned(in1), BITSIZE_out1));" />
+out1 &lt;= std_logic_vector(resize(unsigned(in1), BITSIZE_out1));"/>
         </module_o>
       </circuit>
     </cell>
     <cell>
       <name>fp_bitcast_node_FU</name>
-      <operation operation_name="bitcast_node" supported_types="REAL:*" execution_time="0.0000001" />
+      <operation operation_name="bitcast_node" supported_types="REAL:*" execution_time="0.0000001"/>
       <circuit>
         <module_o id="fp_bitcast_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="fp_bitcast_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="fp_bitcast_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="REAL" size="1" />
+            <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="fp_bitcast_node_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
-out1 &lt;= std_logic_vector(resize(unsigned(in1), BITSIZE_out1));" />
+out1 &lt;= std_logic_vector(resize(unsigned(in1), BITSIZE_out1));"/>
         </module_o>
       </circuit>
     </cell>
     <cell>
       <name>UUdata_converter_FU</name>
-      <operation operation_name="nop_node" />
+      <operation operation_name="nop_node"/>
       <circuit>
         <module_o id="UUdata_converter_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="UUdata_converter_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="UUdata_converter_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="UUdata_converter_FU in1 out1" VERILOG_PROVIDED="generate
 if (BITSIZE_out1 &lt;= BITSIZE_in1)
@@ -3082,25 +3082,25 @@ begin
   assign out1 = {{(BITSIZE_out1-BITSIZE_in1){1&apos;b0}},in1};
 end
 endgenerate" VHDL_PROVIDED="begin
-out1 &lt;= std_logic_vector(resize(unsigned(in1), BITSIZE_out1));" />
+out1 &lt;= std_logic_vector(resize(unsigned(in1), BITSIZE_out1));"/>
         </module_o>
       </circuit>
     </cell>
     <cell>
       <name>IUdata_converter_FU</name>
-      <operation operation_name="nop_node" />
+      <operation operation_name="nop_node"/>
       <circuit>
         <module_o id="IUdata_converter_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="IUdata_converter_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="IUdata_converter_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="IUdata_converter_FU in1 out1" VERILOG_PROVIDED="generate
 if (BITSIZE_out1 &lt;= BITSIZE_in1)
@@ -3119,25 +3119,25 @@ endgenerate" VHDL_PROVIDED="begin
     else
       out1 &lt;= unsigned(resize(in1, BITSIZE_out1));
     end if;
-  end process;" />
+  end process;"/>
         </module_o>
       </circuit>
     </cell>
     <cell>
       <name>UIdata_converter_FU</name>
-      <operation operation_name="nop_node" />
+      <operation operation_name="nop_node"/>
       <circuit>
         <module_o id="UIdata_converter_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="UIdata_converter_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="UIdata_converter_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="UIdata_converter_FU in1 out1" VERILOG_PROVIDED="generate
 if (BITSIZE_out1 &lt;= BITSIZE_in1)
@@ -3156,25 +3156,25 @@ endgenerate" VHDL_PROVIDED="begin
     else
       out1 &lt;= signed(in1 (BITSIZE_out1-1 downto 0));
     end if;
-  end process;" />
+  end process;"/>
         </module_o>
       </circuit>
     </cell>
     <cell>
       <name>IIdata_converter_FU</name>
-      <operation operation_name="nop_node" />
+      <operation operation_name="nop_node"/>
       <circuit>
         <module_o id="IIdata_converter_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="IIdata_converter_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="IIdata_converter_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="IIdata_converter_FU in1 out1" VERILOG_PROVIDED="generate
 if (BITSIZE_out1 &lt;= BITSIZE_in1)
@@ -3193,188 +3193,188 @@ endgenerate" VHDL_PROVIDED="begin
     else
       out1 &lt;= in1 (BITSIZE_out1-1 downto 0);
     end if;
-  end process;" />
+  end process;"/>
         </module_o>
       </circuit>
     </cell>
     <template>
       <name>gt_node_FU</name>
-      <operation operation_name="gt_node" supported_types="INT:*" />
+      <operation operation_name="gt_node" supported_types="INT:*"/>
       <circuit>
         <module_o id="gt_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="gt_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="gt_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="gt_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &gt; in2;" VHDL_PROVIDED="begin
-out1 &lt;= std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1))  when (signed(in1) &gt; signed(in2)) else (others =&gt; &apos;0&apos;);" />
+out1 &lt;= std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1))  when (signed(in1) &gt; signed(in2)) else (others =&gt; &apos;0&apos;);"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_gt_node_FU</name>
-      <operation operation_name="gt_node" supported_types="UINT:*|VECTOR_BOOL:*" />
+      <operation operation_name="gt_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
       <circuit>
         <module_o id="ui_gt_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_gt_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_gt_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_gt_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &gt; in2;" VHDL_PROVIDED="begin
-out1 &lt;= std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1)) when (unsigned(in1) &gt; unsigned(in2)) else (others =&gt; &apos;0&apos;);" />
+out1 &lt;= std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1)) when (unsigned(in1) &gt; unsigned(in2)) else (others =&gt; &apos;0&apos;);"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>builtin_abs_FU</name>
-      <operation operation_name="abs_node" supported_types="INT:*" />
+      <operation operation_name="abs_node" supported_types="INT:*"/>
       <circuit>
         <module_o id="builtin_abs_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="builtin_abs_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="builtin_abs_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="builtin_abs_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1[BITSIZE_in1-1] ? -in1 : in1;" VHDL_PROVIDED="begin
   out1 &lt;= -resize_signed(in1, BITSIZE_out1) when (in1(BITSIZE_in1-1) = &apos;1&apos;) else resize_signed(in1, BITSIZE_out1);
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>not_node_FU</name>
-      <operation operation_name="not_node" supported_types="INT:*" />
+      <operation operation_name="not_node" supported_types="INT:*"/>
       <circuit>
         <module_o id="not_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="not_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="not_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="not_node_FU in1 out1" VERILOG_PROVIDED="assign out1 = ~in1;" VHDL_PROVIDED="begin
-out1 &lt;= not resize_signed(in1, BITSIZE_out1);" />
+out1 &lt;= not resize_signed(in1, BITSIZE_out1);"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_not_node_FU</name>
-      <operation operation_name="not_node" supported_types="UINT:*|VECTOR_BOOL:*" />
+      <operation operation_name="not_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
       <circuit>
         <module_o id="ui_not_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_not_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_not_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_not_node_FU in1 out1" VERILOG_PROVIDED="assign out1 = ~in1;" VHDL_PROVIDED="begin
-out1 &lt;= not resize(in1, BITSIZE_out1);" />
+out1 &lt;= not resize(in1, BITSIZE_out1);"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>sub_node_FU</name>
-      <operation operation_name="sub_node" supported_types="INT:*" />
+      <operation operation_name="sub_node" supported_types="INT:*"/>
       <circuit>
         <module_o id="sub_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="sub_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="sub_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="sub_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 - in2;" VHDL_PROVIDED="begin
-out1 &lt;= resize_signed(in1, BITSIZE_out1) - resize_signed(in2, BITSIZE_out1);" />
+out1 &lt;= resize_signed(in1, BITSIZE_out1) - resize_signed(in2, BITSIZE_out1);"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_sub_node_FU</name>
-      <operation operation_name="sub_node" supported_types="UINT:*|VECTOR_BOOL:*" />
+      <operation operation_name="sub_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
       <circuit>
         <module_o id="ui_sub_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_sub_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_sub_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_sub_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 - in2;" VHDL_PROVIDED="begin
-out1 &lt;= resize(in1, BITSIZE_out1) - resize(in2, BITSIZE_out1);" />
+out1 &lt;= resize(in1, BITSIZE_out1) - resize(in2, BITSIZE_out1);"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>sub_sat_node_FU</name>
-      <operation operation_name="sub_sat_node" supported_types="INT:*" />
+      <operation operation_name="sub_sat_node" supported_types="INT:*"/>
       <circuit>
         <module_o id="sub_sat_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="sub_sat_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="sub_sat_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="sub_sat_node_FU in1 in2 out1"
             VERILOG_PROVIDED="
@@ -3388,228 +3388,228 @@ assign mask_max = {1&apos;b0, {BITSIZE_out1-1{1&apos;b1}}};
 assign cond1 = (!in1[BITSIZE_in1-1])&amp;in2[BITSIZE_in2-1]&amp;sub_tmp[BITSIZE_out1-1];
 assign cond2 = in1[BITSIZE_in1-1]&amp;(!in2[BITSIZE_in2-1])&amp;(!sub_tmp[BITSIZE_out1-1]);
 assign out1 = cond2 ? mask_min : (cond1 ? mask_max : sub_tmp);
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_sub_sat_node_FU</name>
-      <operation operation_name="sub_sat_node" supported_types="UINT:*|VECTOR_BOOL:*" />
+      <operation operation_name="sub_sat_node" supported_types="UINT:*|VECTOR_BOOL:*"/>
       <circuit>
         <module_o id="ui_sub_sat_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_sub_sat_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_sub_sat_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_sub_sat_node_FU in1 in2 out1"
             VERILOG_PROVIDED="
 wire signed [BITSIZE_out1:0] sub_tmp;
 assign sub_tmp = in1 - in2;
 assign out1 = sub_tmp[BITSIZE_out1] ? {BITSIZE_out1{1&apos;b0}} : sub_tmp[BITSIZE_out1-1:0];
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ne_node_FU</name>
-      <operation operation_name="ne_node" supported_types="INT:*" commutative="1" />
+      <operation operation_name="ne_node" supported_types="INT:*" commutative="1"/>
       <circuit>
         <module_o id="ne_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ne_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ne_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ne_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 != in2;" VHDL_PROVIDED="signal xs1 : unsigned(in1&apos;range) := (others =&gt; &apos;X&apos;);
 signal xs2 : unsigned(in2&apos;range) := (others =&gt; &apos;X&apos;);
 begin
   out1 &lt;= (others => &apos;X&apos;) when (not((in1 &gt;= in2) or (in1 &lt;= in2))) else std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1)) when (in1 /= in2) else (others =&gt; &apos;0&apos;);
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_ne_node_FU</name>
-      <operation operation_name="ne_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1" />
+      <operation operation_name="ne_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1"/>
       <circuit>
         <module_o id="ui_ne_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_ne_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_ne_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_ne_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 != in2;" VHDL_PROVIDED="signal xs1 : unsigned(in1&apos;range) := (others =&gt; &apos;X&apos;);
 signal xs2 : unsigned(in2&apos;range) := (others =&gt; &apos;X&apos;);
 begin
   out1 &lt;= (others => &apos;X&apos;) when (not((in1 &gt;= in2) or (in1 &lt;= in2))) else std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1)) when (in1 /= in2) else (others =&gt; &apos;0&apos;);
-" />
+"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>or_node_FU</name>
-      <operation operation_name="or_node" supported_types="INT:*" commutative="1" />
+      <operation operation_name="or_node" supported_types="INT:*" commutative="1"/>
       <circuit>
         <module_o id="or_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="or_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="or_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="or_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 | in2;" VHDL_PROVIDED="begin
-out1 &lt;= resize_signed(in1, BITSIZE_out1) or resize_signed(in2, BITSIZE_out1);" />
+out1 &lt;= resize_signed(in1, BITSIZE_out1) or resize_signed(in2, BITSIZE_out1);"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_or_node_FU</name>
-      <operation operation_name="or_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1" />
+      <operation operation_name="or_node" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1"/>
       <circuit>
         <module_o id="ui_or_node_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="ui_or_node_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_or_node_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1" />
+            <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="ui_or_node_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 | in2;" VHDL_PROVIDED="begin
-out1 &lt;= resize(in1, BITSIZE_out1) or resize(in2, BITSIZE_out1);" />
+out1 &lt;= resize(in1, BITSIZE_out1) or resize(in2, BITSIZE_out1);"/>
         </module_o>
       </circuit>
     </template>
     <cell>
       <name>PRINTFN_FU</name>
-      <operation operation_name="printf" execution_time="0.0000001" bounded="0" />
-      <operation operation_name="__builtin_printf" execution_time="0.0000001" bounded="0" />
+      <operation operation_name="printf" execution_time="0.0000001" bounded="0"/>
+      <operation operation_name="__builtin_printf" execution_time="0.0000001" bounded="0"/>
       <channels_type>MEM_ACC_NN</channels_type>
       <circuit>
         <module_o id="PRINTFN_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="PRINTFN_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="PRINTFN_FU"/>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="var_arg" dir="IN" is_var_args="1">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="sel_printf" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="sel___builtin_printf" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_vector_o id="Min_oe_ram" dir="IN" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <port_vector_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <port_vector_o id="Min_we_ram" dir="IN" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <port_vector_o id="Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <port_vector_o id="Min_addr_ram" dir="IN" is_memory="1" is_master="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <port_vector_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <port_vector_o id="M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_vector_o>
           <port_vector_o id="Min_Wdata_ram" dir="IN" is_memory="1" is_master="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_vector_o>
           <port_vector_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_vector_o>
           <port_vector_o id="Min_data_ram_size" dir="IN" is_memory="1" is_master="1" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <port_vector_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <port_vector_o id="M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="out1 Min_oe_ram Mout_oe_ram Min_we_ram Mout_we_ram Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_DataRdy" VERILOG_GENERATOR="PrintfNHDLGenerator" />
+          <NP_functionality LIBRARY="out1 Min_oe_ram Mout_oe_ram Min_we_ram Mout_we_ram Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_DataRdy" VERILOG_GENERATOR="PrintfNHDLGenerator"/>
         </module_o>
       </circuit>
     </cell>
     <cell>
       <name>PRINTF2_FU</name>
-      <operation operation_name="printf" execution_time="0.0000001" bounded="0" />
-      <operation operation_name="__builtin_printf" execution_time="0.0000001" bounded="0" />
+      <operation operation_name="printf" execution_time="0.0000001" bounded="0"/>
+      <operation operation_name="__builtin_printf" execution_time="0.0000001" bounded="0"/>
       <channels_type>MEM_ACC_11,MEM_ACC_N1</channels_type>
       <circuit>
         <module_o id="PRINTF2_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="PRINTF2_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="PRINTF2_FU"/>
           <parameter name="PORTSIZE_Mout_oe_ram">1</parameter>
           <parameter name="PORTSIZE_Mout_we_ram">1</parameter>
           <parameter name="PORTSIZE_Mout_addr_ram">1</parameter>
@@ -3617,166 +3617,166 @@ out1 &lt;= resize(in1, BITSIZE_out1) or resize(in2, BITSIZE_out1);" />
           <parameter name="PORTSIZE_Mout_data_ram_size">1</parameter>
           <parameter name="PORTSIZE_M_DataRdy">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="var_arg" dir="IN" is_var_args="1">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="sel_printf" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="sel___builtin_printf" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="Min_oe_ram" dir="IN" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Min_we_ram" dir="IN" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Min_addr_ram" dir="IN" is_memory="1" is_master="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_o>
           <port_o id="Min_Wdata_ram" dir="IN" is_memory="1" is_master="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_o>
           <port_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_o>
           <port_o id="Min_data_ram_size" dir="IN" is_memory="1" is_master="1" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size PORTSIZE_Mout_oe_ram PORTSIZE_Mout_we_ram PORTSIZE_Mout_addr_ram PORTSIZE_Mout_Wdata_ram PORTSIZE_Mout_data_ram_size PORTSIZE_M_DataRdy" VERILOG_GENERATOR="PrintfNHDLGenerator" />
+          <NP_functionality LIBRARY="out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size PORTSIZE_Mout_oe_ram PORTSIZE_Mout_we_ram PORTSIZE_Mout_addr_ram PORTSIZE_Mout_Wdata_ram PORTSIZE_Mout_data_ram_size PORTSIZE_M_DataRdy" VERILOG_GENERATOR="PrintfNHDLGenerator"/>
         </module_o>
       </circuit>
     </cell>
     <cell>
       <name>builtin_llabs_FU</name>
-      <operation operation_name="llabs" supported_types="INT:64" />
-      <operation operation_name="__builtin_llabs" supported_types="INT:64" />
+      <operation operation_name="llabs" supported_types="INT:64"/>
+      <operation operation_name="__builtin_llabs" supported_types="INT:64"/>
       <circuit>
         <module_o id="builtin_llabs_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="builtin_llabs_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="builtin_llabs_FU"/>
           <port_o id="start_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="sel_llabs" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="sel___builtin_llabs" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="builtin_llabs_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1[BITSIZE_in1-1] ? -in1 : in1;" />
+          <NP_functionality LIBRARY="builtin_llabs_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1[BITSIZE_in1-1] ? -in1 : in1;"/>
         </module_o>
       </circuit>
     </cell>
     <cell>
       <name>builtin_labs_FU</name>
-      <operation operation_name="labs" supported_types="INT:*" />
-      <operation operation_name="__builtin_labs" supported_types="INT:*" />
+      <operation operation_name="labs" supported_types="INT:*"/>
+      <operation operation_name="__builtin_labs" supported_types="INT:*"/>
       <circuit>
         <module_o id="builtin_labs_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="builtin_labs_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="builtin_labs_FU"/>
           <port_o id="start_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="sel_labs" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="sel___builtin_labs" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="INT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="builtin_labs_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1[BITSIZE_in1-1] ? -in1 : in1;" />
+          <NP_functionality LIBRARY="builtin_labs_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1[BITSIZE_in1-1] ? -in1 : in1;"/>
         </module_o>
       </circuit>
     </cell>
     <cell>
       <name>builtin_putchar_FU</name>
-      <operation operation_name="putchar" bounded="0" />
-      <operation operation_name="__builtin_putchar" bounded="0" />
+      <operation operation_name="putchar" bounded="0"/>
+      <operation operation_name="__builtin_putchar" bounded="0"/>
       <circuit>
         <module_o id="builtin_putchar_FU">
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
-          <structural_type_descriptor id_type="builtin_putchar_FU" />
+          <license>MIT</license>
+          <structural_type_descriptor id_type="builtin_putchar_FU"/>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="c" dir="IN">
-            <structural_type_descriptor type="UINT" size="32" />
+            <structural_type_descriptor type="UINT" size="32"/>
           </port_o>
           <port_o id="sel_putchar" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="sel___builtin_putchar" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="return_port" dir="OUT">
-            <structural_type_descriptor type="UINT" size="32" />
+            <structural_type_descriptor type="UINT" size="32"/>
           </port_o>
           <NP_functionality LIBRARY="builtin_putchar_FU" VERILOG_PROVIDED="reg done_port;
 // synthesis translate_off
@@ -3800,7 +3800,7 @@ begin
     return_port &lt;= resize(c,32);
   end if;
 end process;
-" />
+"/>
         </module_o>
       </circuit>
     </cell>

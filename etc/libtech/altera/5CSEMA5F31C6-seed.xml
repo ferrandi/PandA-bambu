@@ -14,10 +14,10 @@
     <DSPs_ry_sizes value="8,16,16"/>
     <max_lut_size value="6"/>
   </device>
-   <backend>
-      <flow id="synthesis" env="altera/flow"/>
-      <flow id="characterization" env="altera/flowC"/>
-   </backend>
+  <backend>
+    <flow id="synthesis" env="altera/flow"/>
+    <flow id="characterization" env="altera/flowC"/>
+  </backend>
   <technology>
     <library>
       <name>STD_FU</name>
@@ -34,7 +34,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>ALTERA-CYCLONEV</specialized>
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM"/>
             <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
@@ -177,7 +177,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>ALTERA-CYCLONEV</specialized>
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_3"/>
             <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
@@ -320,7 +320,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>ALTERA-CYCLONEV</specialized>
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_4"/>
             <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
@@ -462,7 +462,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>ALTERA-CYCLONEV</specialized>
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_N1"/>
             <parameter name="MEMORY_INIT_file_a">""array_b.data""</parameter>
@@ -626,7 +626,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>ALTERA-CYCLONEV</specialized>
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_N1_3"/>
             <parameter name="MEMORY_INIT_file_a">""array_b.data""</parameter>
@@ -790,7 +790,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>ALTERA-CYCLONEV</specialized>
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_N1_4"/>
             <parameter name="MEMORY_INIT_file_a">""array_b.data""</parameter>
@@ -954,7 +954,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>ALTERA-CYCLONEV</specialized>
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_NN"/>
             <parameter name="MEMORY_INIT_file_a">""array_b.data""</parameter>
@@ -1127,7 +1127,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>ALTERA-CYCLONEV</specialized>
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_NN_3"/>
             <parameter name="MEMORY_INIT_file_a">""array_b.data""</parameter>
@@ -1300,7 +1300,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>ALTERA-CYCLONEV</specialized>
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_NN_4"/>
             <parameter name="MEMORY_INIT_file_a">""array_b.data""</parameter>
@@ -1475,7 +1475,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>ALTERA-CYCLONEV</specialized>
             <structural_type_descriptor id_type="STD_BRAM"/>
             <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
@@ -1558,7 +1558,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>ALTERA-CYCLONEV</specialized>
             <structural_type_descriptor id_type="STD_BRAM_3"/>
             <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
@@ -1641,7 +1641,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>ALTERA-CYCLONEV</specialized>
             <structural_type_descriptor id_type="STD_BRAM_4"/>
             <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
@@ -1723,7 +1723,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>ALTERA-CYCLONEV</specialized>
             <structural_type_descriptor id_type="STD_BRAMN"/>
             <parameter name="MEMORY_INIT_file_a">""array_b.data""</parameter>
@@ -1820,7 +1820,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>ALTERA-CYCLONEV</specialized>
             <structural_type_descriptor id_type="STD_BRAMN_3"/>
             <parameter name="MEMORY_INIT_file_a">""array_b.data""</parameter>
@@ -1917,7 +1917,7 @@
             <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
             <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-            <license>PANDA_MIT</license>
+            <license>MIT</license>
             <specialized>ALTERA-CYCLONEV</specialized>
             <structural_type_descriptor id_type="STD_BRAMN_4"/>
             <parameter name="MEMORY_INIT_file_a">""array_b.data""</parameter>

@@ -13,7 +13,7 @@
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_BRAM"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="n_elements">1</parameter>
@@ -94,7 +94,7 @@
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_BRAM_3"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="n_elements">1</parameter>
@@ -175,7 +175,7 @@
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_BRAM_4"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="n_elements">1</parameter>
@@ -255,7 +255,7 @@
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_BRAMN"/>
           <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -351,7 +351,7 @@ STD_BRAMN_SP #(.BITSIZE_S_oe_ram(BITSIZE_S_oe_ram),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_BRAMN_3"/>
           <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -446,7 +446,7 @@ STD_BRAMN_SP #(.BITSIZE_S_oe_ram(BITSIZE_S_oe_ram),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_BRAMN_4"/>
           <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -543,7 +543,7 @@ STD_BRAMN_SP #(.BITSIZE_S_oe_ram(BITSIZE_S_oe_ram),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="PROXY_CTRL"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -622,7 +622,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="PROXY_CTRL_3"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -718,7 +718,7 @@ PROXY_CTRL #(.BITSIZE_in1(BITSIZE_in1),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="PROXY_CTRL_4"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -824,7 +824,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="PROXY_CTRLN"/>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -915,7 +915,7 @@ assign proxy_sel_STORE = int_sel_STORE;
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="PROXY_CTRLN_3"/>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -1048,7 +1048,7 @@ PROXY_CTRLN #(.BITSIZE_in1(BITSIZE_in1),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="PROXY_CTRLN_4"/>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -1182,7 +1182,7 @@ PROXY_CTRLN #(.BITSIZE_in1(BITSIZE_in1),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="SPROXY_CTRL"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -1292,7 +1292,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="SPROXY_CTRL_3"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -1439,7 +1439,7 @@ SPROXY_CTRL_i0 : SPROXY_CTRL generic map(
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="SPROXY_CTRL_4"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -1585,7 +1585,7 @@ SPROXY_CTRL_i0 : SPROXY_CTRL generic map(
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="SPROXY_CTRLN"/>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -1718,7 +1718,7 @@ assign proxy_sel_STORE = int_sel_STORE;"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="SPROXY_CTRLN_3"/>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -1922,7 +1922,7 @@ SPROXY_CTRLN #(
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="SPROXY_CTRLN_4"/>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -2125,7 +2125,7 @@ SPROXY_CTRLN #(
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="DPROXY_CTRL"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -2271,7 +2271,7 @@ SPROXY_CTRL_i0 : SPROXY_CTRL generic map(
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="DPROXY_CTRLN"/>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -2473,7 +2473,7 @@ SPROXY_CTRLN #(
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_BRAM_TP"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="n_elements">1</parameter>
@@ -2573,7 +2573,7 @@ SPROXY_CTRLN #(
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_BRAM_SP"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="n_elements">1</parameter>
@@ -2671,7 +2671,7 @@ SPROXY_CTRLN #(
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_BRAMN_TP"/>
           <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -2800,7 +2800,7 @@ SPROXY_CTRLN #(
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_BRAMN_SP"/>
           <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -2929,7 +2929,7 @@ SPROXY_CTRLN #(
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ADDRESS_DECODING_LOGIC"/>
           <parameter name="address_space_begin">0</parameter>
           <parameter name="address_space_rangesize">4</parameter>
@@ -3598,7 +3598,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ADDRESS_DECODING_LOGIC_NN"/>
           <parameter name="address_space_begin">0</parameter>
           <parameter name="address_space_rangesize">4</parameter>
@@ -4551,7 +4551,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="BRAM_MEMORY_TP"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
@@ -4734,7 +4734,7 @@ genvar i2_b;
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="BRAM_MEMORY_NN_TP"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
@@ -5143,7 +5143,7 @@ end process;
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="BRAM_MEMORY_SV"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
@@ -5466,7 +5466,7 @@ endgenerate
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="BRAM_MEMORY_SV_CORE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
@@ -6147,7 +6147,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="BRAM_MEMORY_NN_SV"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
@@ -6448,7 +6448,7 @@ endgenerate
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="BRAM_MEMORY_NN_SV_CORE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
@@ -7019,7 +7019,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_TP"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="n_elements">1</parameter>
@@ -7218,7 +7218,7 @@ ADDRESS_DECODING_LOGIC #(.BITSIZE_memory_addr_a(nbit_read_addr),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_N1_TP"/>
           <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -7390,7 +7390,7 @@ ADDRESS_DECODING_LOGIC #(.BITSIZE_memory_addr_a(nbit_read_addr),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_NN_TP"/>
           <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -7714,7 +7714,7 @@ ADDRESS_DECODING_LOGIC_NN_instance : ADDRESS_DECODING_LOGIC_NN generic map (BITS
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_SP"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="n_elements">1</parameter>
@@ -7941,7 +7941,7 @@ ADDRESS_DECODING_LOGIC_instance : ADDRESS_DECODING_LOGIC generic map (BITSIZE_me
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_N1_SP"/>
           <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -8195,7 +8195,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SP generic map
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_NN_SP"/>
           <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -8519,7 +8519,7 @@ ADDRESS_DECODING_LOGIC_NN_instance : ADDRESS_DECODING_LOGIC_NN generic map (BITS
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_SV"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="n_elements">1</parameter>
@@ -8718,7 +8718,7 @@ ADDRESS_DECODING_LOGIC #(.BITSIZE_memory_addr_a(nbit_read_addr),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_NN_SV"/>
           <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -9006,7 +9006,7 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_N1_SV"/>
           <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -9178,7 +9178,7 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_BRAM_SV"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="n_elements">1</parameter>
@@ -9281,7 +9281,7 @@ ARRAY_1D_STD_BRAM_SV #(
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_BRAMN_SV"/>
           <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -9414,7 +9414,7 @@ ARRAY_1D_STD_BRAM_NN_SV #(
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_SP_BRAM"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_elements">32</parameter>
@@ -9590,7 +9590,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_SDP_BRAM"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_elements">32</parameter>
@@ -9779,7 +9779,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_SDP_BRAM_BE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_elements">32</parameter>
@@ -9975,7 +9975,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_SDP_BRAMFW"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_elements">32</parameter>
@@ -10094,7 +10094,7 @@ endgenerate
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_SDP_BRAMFW_BE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_elements">32</parameter>
@@ -10223,7 +10223,7 @@ endgenerate
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_DP_BRAM"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_elements">32</parameter>
@@ -10451,7 +10451,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_SDP_BRAM_BYTE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_elements">32</parameter>
@@ -10556,7 +10556,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_SDP_BRAMFW_BYTE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_elements">32</parameter>
@@ -10675,7 +10675,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_NR_BRAM_BYTE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_elements">32</parameter>
@@ -10759,7 +10759,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_N21_BYTEMUX"/>
           <port_o id="ctrl" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -10791,7 +10791,7 @@ assign dout = din_array[ctrl];"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_NRNW_BRAM_BYTE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_elements">32</parameter>
@@ -10907,7 +10907,7 @@ STD_LIVE_VALUE_TABLE_SRAM #(.BITSIZE_write_enable(BITSIZE_write_enable),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_LIVE_VALUE_TABLE"/>
           <parameter name="n_elements">32</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
@@ -11002,7 +11002,7 @@ endgenerate
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_LIVE_VALUE_TABLE_SRAM"/>
           <parameter name="n_elements">32</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
@@ -11135,7 +11135,7 @@ endgenerate
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_NR_BRAM"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_elements">32</parameter>
@@ -11217,7 +11217,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_NR_BRAM_BE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_elements">32</parameter>
@@ -11299,7 +11299,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_NRNW_BRAM"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_elements">32</parameter>
@@ -11423,7 +11423,7 @@ STD_LIVE_VALUE_TABLE_instance (
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_NRNW_BRAM_XOR"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_elements">32</parameter>
@@ -11610,7 +11610,7 @@ end
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_NRNW_BRAM_XOR_BE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_elements">32</parameter>
@@ -11797,7 +11797,7 @@ end
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2023-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_NRNW_BRAM_GEN"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_elements">32</parameter>
@@ -11914,7 +11914,7 @@ endgenerate
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_NRNW_BRAM_SB"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_elements">32</parameter>
@@ -12002,7 +12002,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TRUE_DUAL_PORT"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_elements">32</parameter>
@@ -12281,7 +12281,7 @@ end process;
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <specialized>NanoXplore</specialized>
           <structural_type_descriptor id_type="TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
@@ -12405,7 +12405,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="BRAM_MEMORY_NOBYTE_ENABLE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
@@ -12489,7 +12489,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="BRAM_MEMORY_PMI"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
@@ -12845,7 +12845,7 @@ endgenerate
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="BRAM_MEMORY_CORE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
@@ -13023,7 +13023,7 @@ end generate;
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="BRAM_MEMORY_CORE_SMALL"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="n_byte_on_databus">4</parameter>
@@ -13248,7 +13248,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="TRUE_DUAL_PORT_BYTE_ENABLING_RAM"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
@@ -13594,7 +13594,7 @@ end process;
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="BRAM_MEMORY_NN_NOBYTE_ENABLE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
@@ -13676,7 +13676,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="BRAM_MEMORY_NN_CORE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
@@ -13850,7 +13850,7 @@ end generate;
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="BRAM_MEMORY_NN_PMI"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
@@ -14214,7 +14214,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_NOBYTE_ENABLE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="n_elements">1</parameter>
@@ -14413,7 +14413,7 @@ ADDRESS_DECODING_LOGIC #(.BITSIZE_memory_addr_a(nbit_read_addr),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_PMI"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="n_elements">1</parameter>
@@ -14612,7 +14612,7 @@ ADDRESS_DECODING_LOGIC #(.BITSIZE_memory_addr_a(nbit_read_addr),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_NN_NOBYTE_ENABLE"/>
           <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -14903,7 +14903,7 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_NN_PMI"/>
           <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -15191,7 +15191,7 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_N1_NOBYTE_ENABLE"/>
           <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -15360,7 +15360,7 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_N1_PMI"/>
           <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -15529,7 +15529,7 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_BRAM_NOBYTE_ENABLE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="n_elements">1</parameter>
@@ -15626,7 +15626,7 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_BRAMN_NOBYTE_ENABLE"/>
           <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -15754,7 +15754,7 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_BRAM_PMI"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="n_elements">1</parameter>
@@ -15851,7 +15851,7 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="STD_BRAMN_PMI"/>
           <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
@@ -15979,7 +15979,7 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1),
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_SDS_BASE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="n_elements">1</parameter>
@@ -16286,7 +16286,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_SDS_BASE1"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="n_elements">1</parameter>
@@ -16523,7 +16523,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_SDS_BUS_BASE1"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="n_elements">1</parameter>
@@ -16962,7 +16962,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_SDS_BUS_BASE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="n_elements">1</parameter>
@@ -17405,7 +17405,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_NN_SDS_BASE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="n_elements">1</parameter>
@@ -17673,7 +17673,7 @@ assign Sout_DataRdy = Sin_DataRdy;
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_NN_SDS_BUS_BASE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="n_elements">1</parameter>
@@ -18016,7 +18016,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="BMEMORY_CTRL"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -18125,7 +18125,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="BMEMORY_CTRL_3"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -18231,7 +18231,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="BMEMORY_CTRL_4"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -18337,7 +18337,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="BMEMORY_CTRLN"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -18514,7 +18514,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="BMEMORY_CTRLN_3"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -18647,7 +18647,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="BMEMORY_CTRLN_4"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -18775,7 +18775,7 @@ begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="builtin_memstore_FU"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -18908,7 +18908,7 @@ end"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="builtin_memstore_N_FU"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>

@@ -80,6 +80,11 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/mockturtle/mockturtle/LICENSE"
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/or-tools/LICENSE"
         DESTINATION "${PANDA_LICENSING_INSTALLDIR_REL}/or-tools"
         RENAME LICENSE)
+
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/gzstream/COPYING.LIB"
+        DESTINATION "${PANDA_LICENSING_INSTALLDIR_REL}/gzstream/"
+        RENAME LICENSE)
+
 # Aggregate target used by scan-build (works with Ninja/Make)
 add_custom_target(ext)
 add_dependencies(ext

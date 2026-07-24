@@ -10,7 +10,7 @@
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_select_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -42,7 +42,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_select_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -74,7 +74,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2021-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_single_select_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -106,7 +106,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2021-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_single_select_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -138,7 +138,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_min_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -167,7 +167,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_min_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -196,7 +196,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_max_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -225,7 +225,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_max_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -254,7 +254,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_add_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -283,7 +283,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_add_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -312,7 +312,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_neg_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -338,7 +338,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_neg_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -364,7 +364,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_sub_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -393,7 +393,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_sub_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -422,7 +422,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_mul_node_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -455,7 +455,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_mul_node_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -488,7 +488,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_widen_mult_hi_node_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -521,7 +521,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_widen_mult_hi_node_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -554,7 +554,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_widen_mult_lo_node_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -587,7 +587,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_widen_mult_lo_node_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -620,7 +620,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_shr_node_FU"/>
           <parameter name="PRECISION">32</parameter>
           <port_o id="in1" dir="IN">
@@ -665,7 +665,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_shr_node_FU"/>
           <parameter name="PRECISION">128</parameter>
           <port_o id="in1" dir="IN">
@@ -711,7 +711,7 @@ endgenerate
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_shl_node_FU"/>
           <parameter name="PRECISION">32</parameter>
           <port_o id="in1" dir="IN">
@@ -756,7 +756,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_shl_node_FU"/>
           <parameter name="PRECISION">128</parameter>
           <port_o id="in1" dir="IN">
@@ -801,7 +801,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_ne_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -830,7 +830,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_ne_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -859,7 +859,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_lt_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -888,7 +888,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_lt_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -917,7 +917,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_gt_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -946,7 +946,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_gt_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -975,7 +975,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_le_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -1004,7 +1004,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_le_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -1033,7 +1033,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_ge_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -1062,7 +1062,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_ge_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -1092,7 +1092,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="shufflevector_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -1125,7 +1125,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_shufflevector_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -1157,7 +1157,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_xor_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -1186,7 +1186,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_xor_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -1215,7 +1215,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_or_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -1244,7 +1244,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_or_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -1273,7 +1273,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_and_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -1302,7 +1302,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_and_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -1331,7 +1331,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_not_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -1357,7 +1357,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_not_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -1383,7 +1383,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_eq_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -1412,7 +1412,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_eq_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -1441,7 +1441,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec1_shr_node_FU"/>
           <parameter name="PRECISION">32</parameter>
           <port_o id="in1" dir="IN">
@@ -1471,7 +1471,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec1_shr_node_FU"/>
           <parameter name="PRECISION">32</parameter>
           <port_o id="in1" dir="IN">
@@ -1501,7 +1501,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec1_shl_node_FU"/>
           <parameter name="PRECISION">32</parameter>
           <port_o id="in1" dir="IN">
@@ -1531,7 +1531,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec1_shl_node_FU"/>
           <parameter name="PRECISION">32</parameter>
           <port_o id="in1" dir="IN">
@@ -1561,7 +1561,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_pack_trunc_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -1597,7 +1597,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_pack_trunc_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -1633,7 +1633,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_unpack_hi_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -1659,7 +1659,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_unpack_hi_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -1685,7 +1685,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_unpack_lo_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -1711,7 +1711,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_unpack_lo_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -1737,7 +1737,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_extracteven_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -1767,7 +1767,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_extracteven_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -1797,7 +1797,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_extractodd_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -1827,7 +1827,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_extractodd_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -1857,7 +1857,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_interleavehigh_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -1887,7 +1887,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_interleavehigh_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -1917,7 +1917,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="vec_interleavelow_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -1947,7 +1947,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_vec_interleavelow_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -1977,7 +1977,7 @@ endgenerate"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2021-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_insertelement_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -2021,7 +2021,7 @@ endgenerate"
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2021-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="insertelement_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -2072,7 +2072,7 @@ endgenerate"
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2021-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="ui_extractelement_node_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>

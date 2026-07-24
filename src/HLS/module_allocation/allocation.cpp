@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2026 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
+ *
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
- *
- *   This file is part of the PandA framework.
- *
- *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
  *
  */
 /**
@@ -2626,22 +2614,21 @@ void allocation::IntegrateTechnologyLibraries()
             if((HLSMgr->Rmem->has_all_pointers_resolved() && HLSMgr->Rmem->does_need_addr(var)) ||
                (!HLSMgr->Rmem->has_all_pointers_resolved() && !HLSMgr->Rmem->is_private_memory(var)))
             {
-               current_fu = get_fu(public_sds_bus_fu_name + postfix_CS +latency_postfix);
+               current_fu = get_fu(public_sds_bus_fu_name + postfix_CS + latency_postfix);
             }
             else
             {
-               if(allow_async_sds_memories &&
-                  (allocation_information->can_be_asynchronous_ram(
-                      TM, var, parameters->getOption<unsigned int>(OPT_distram_threshold),
-                      HLSMgr->Rmem->is_read_only_variable(var), 1)))
+               if(allow_async_sds_memories && (allocation_information->can_be_asynchronous_ram(
+                                                  TM, var, parameters->getOption<unsigned int>(OPT_distram_threshold),
+                                                  HLSMgr->Rmem->is_read_only_variable(var), 1)))
                {
                   current_fu = get_fu(ARRAY_1D_STD_DISTRAM_SDS);
                   bool is_asynchronous_ram_not_timing_compliant = is_ram_not_timing_compliant(HLS_C, var, current_fu);
                   if(is_asynchronous_ram_not_timing_compliant)
                   {
-                     current_fu =
-                         get_fu(private_sds_fu_name + postfix_CS + allocation_information->get_latency_string(get_synch_ram_latency(
-                                                          private_sds_fu_name, latency_postfix, HLS_C, var)));
+                     current_fu = get_fu(private_sds_fu_name + postfix_CS +
+                                         allocation_information->get_latency_string(
+                                             get_synch_ram_latency(private_sds_fu_name, latency_postfix, HLS_C, var)));
                   }
                   else
                   {
@@ -2650,9 +2637,9 @@ void allocation::IntegrateTechnologyLibraries()
                }
                else
                {
-                  current_fu =
-                      get_fu(private_sds_fu_name + postfix_CS + allocation_information->get_latency_string(get_synch_ram_latency(
-                                                       private_sds_fu_name, latency_postfix, HLS_C, var)));
+                  current_fu = get_fu(private_sds_fu_name + postfix_CS +
+                                      allocation_information->get_latency_string(
+                                          get_synch_ram_latency(private_sds_fu_name, latency_postfix, HLS_C, var)));
                }
             }
          }
@@ -2672,10 +2659,9 @@ void allocation::IntegrateTechnologyLibraries()
             }
             else
             {
-               if(allow_async_sds_memories &&
-                  allocation_information->can_be_asynchronous_ram(
-                      TM, var, parameters->getOption<unsigned int>(OPT_distram_threshold),
-                      HLSMgr->Rmem->is_read_only_variable(var), channels_number))
+               if(allow_async_sds_memories && allocation_information->can_be_asynchronous_ram(
+                                                  TM, var, parameters->getOption<unsigned int>(OPT_distram_threshold),
+                                                  HLSMgr->Rmem->is_read_only_variable(var), channels_number))
                {
                   current_fu = get_fu(ARRAY_1D_STD_DISTRAM_N1_SDS);
                   bool is_asynchronous_ram_not_timing_compliant = is_ram_not_timing_compliant(HLS_C, var, current_fu);
@@ -2715,10 +2701,9 @@ void allocation::IntegrateTechnologyLibraries()
             }
             else
             {
-               if(allow_async_sds_memories &&
-                  allocation_information->can_be_asynchronous_ram(
-                      TM, var, parameters->getOption<unsigned int>(OPT_distram_threshold),
-                      HLSMgr->Rmem->is_read_only_variable(var), channels_number))
+               if(allow_async_sds_memories && allocation_information->can_be_asynchronous_ram(
+                                                  TM, var, parameters->getOption<unsigned int>(OPT_distram_threshold),
+                                                  HLSMgr->Rmem->is_read_only_variable(var), channels_number))
                {
                   current_fu = get_fu(ARRAY_1D_STD_DISTRAM_NN_SDS);
                   bool is_asynchronous_ram_not_timing_compliant = is_ram_not_timing_compliant(HLS_C, var, current_fu);

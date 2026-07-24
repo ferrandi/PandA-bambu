@@ -1,45 +1,33 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: https://github.com/ferrandi/PandA-bambu
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2026 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
+ *
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
- *   This file is part of the PandA framework.
- *
- *   Licensed under the Apache License, Version 2.0, with BAMBU exceptions (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
-*/
+ */
 /*!
 
   \page src_HLS_constraints_page High-Level Synthesis constraints
 
   The distinction between constraints and objectives is straightforward: a <B>constraint</B>
-  is a design target that must be met in order for the design to be considered 
-  successful. For example, a chip may be required to run at a specific frequency in 
-  order to interface with other components in a system. In contrast, an <B>objective</B> is a 
-  design target where more (or less) is better. For example, yield is generally an 
-  objective, which is maximized to lower manufacturing cost. 
+  is a design target that must be met in order for the design to be considered
+  successful. For example, a chip may be required to run at a specific frequency in
+  order to interface with other components in a system. In contrast, an <B>objective</B> is a
+  design target where more (or less) is better. For example, yield is generally an
+  objective, which is maximized to lower manufacturing cost.
   Constraints in architectural synthesis can be classified into two major groups: <i>interface
   constraints</I> and <I>implementation constraints</I>.
 
@@ -48,24 +36,24 @@
   data transfers. The data format is often specified by the interface of the model. The
   timing separation of I/O operations can be specified by timing constraints that can
   ensure that a synchronous I/O operation follows/precedes another one by a defined
-  number of cycles in a given interval. Timing constraints can also specify data rates for pipelined systems. 
+  number of cycles in a given interval. Timing constraints can also specify data rates for pipelined systems.
 
-  Implementation constraints reflect the desire of the designer to achieve a structure with some properties. 
-  Examples are area constraints and performance constraints, e.g., cycle-time and/or latency bounds. 
+  Implementation constraints reflect the desire of the designer to achieve a structure with some properties.
+  Examples are area constraints and performance constraints, e.g., cycle-time and/or latency bounds.
 
-  A different kind of implementation constraint is a <i>resource binding constraint</I> (see 
+  A different kind of implementation constraint is a <i>resource binding constraint</I> (see
   \ref src_HLS_binding_constraints_page). In this case, a particular operation is required to be implemented
   by a given resource. These constraints are motivated by the designer's previous knowledge, or intuition,
   that one particular choice is the best and that other choices do not need investigation.
-  Architectural synthesis with resource binding constraints is often referred to as synthesis from 
-  partial structure. Design systems that support such a feature allow a designer to specify a circuit in a 
-  wide spectrum of ways, ranging from a full behavioral model to a structural one. This modeling capability 
+  Architectural synthesis with resource binding constraints is often referred to as synthesis from
+  partial structure. Design systems that support such a feature allow a designer to specify a circuit in a
+  wide spectrum of ways, ranging from a full behavioral model to a structural one. This modeling capability
   may be useful to leverage previously designed components.
 
   Design constraints are formulated as equalities or inequalities. For example, design constraints can be:
-  - \f$Area(x) \leq Area_{max}\f$; where \f$Area(x)\f$ is area occupied by the design solution 
+  - \f$Area(x) \leq Area_{max}\f$; where \f$Area(x)\f$ is area occupied by the design solution
     \f$x\f$ and \f$Area_{max}\f$ is the maximum allowed for total occupied area;
-  - \f$Time(x) \leq Time_{max}\f$; where \f$Time(x)\f$ is latency of the solution \f$x\f$ and 
+  - \f$Time(x) \leq Time_{max}\f$; where \f$Time(x)\f$ is latency of the solution \f$x\f$ and
     \f$Time_{max}\f$ is maximum latency allowed to consider the solution admissible.
 
   A solution that doesn't meet all design constraints is not considered feasible and will have to be discarded.

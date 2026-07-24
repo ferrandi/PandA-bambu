@@ -10,7 +10,7 @@
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2021-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="UBvector_converter_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -43,7 +43,7 @@ end process;
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2024-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IBvector_converter_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -76,7 +76,7 @@ end process;
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2021-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IIvector_converter_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
@@ -120,7 +120,7 @@ endgenerate" VHDL_PROVIDED="begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2021-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="UUvector_converter_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -164,7 +164,7 @@ endgenerate" VHDL_PROVIDED="begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2021-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="UIvector_converter_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
@@ -208,7 +208,7 @@ endgenerate" VHDL_PROVIDED="begin
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
           <copyright>Copyright (C) 2021-2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_MIT</license>
+          <license>MIT</license>
           <structural_type_descriptor id_type="IUvector_converter_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
