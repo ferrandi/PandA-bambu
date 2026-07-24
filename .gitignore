@@ -54,3 +54,7 @@ build_release/
 obj/
 panda_dist/
 install/
+
+# Python generated files
+__pycache__/
+*.py[cod]

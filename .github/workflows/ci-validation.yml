@@ -1,0 +1,59 @@
+name: CI configuration validation
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+      - ".github/actions/**"
+      - ".github/actionlint.yaml"
+      - ".github/scripts/validate_ci.py"
+      - ".github/scripts/test_validate_ci.py"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    env:
+      ACTIONLINT_VERSION: 1.7.12
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYYAML_VERSION: 6.0.2
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install actionlint
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          release_url="https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}"
+          curl --fail --location --silent --show-error \
+            --output "/tmp/${archive}" "${release_url}/${archive}"
+          curl --fail --location --silent --show-error \
+            --output /tmp/actionlint_checksums.txt \
+            "${release_url}/actionlint_${ACTIONLINT_VERSION}_checksums.txt"
+          (cd /tmp && sha256sum --check --ignore-missing actionlint_checksums.txt)
+          tar -xzf "/tmp/${archive}" -C /tmp actionlint
+          sudo install -m 0755 /tmp/actionlint /usr/local/bin/actionlint
+          actionlint -version
+
+      - name: Install validator dependency
+        shell: bash
+        run: |
+          python3 -m venv /tmp/ci-validator-venv
+          /tmp/ci-validator-venv/bin/pip install \
+            --disable-pip-version-check "PyYAML==${PYYAML_VERSION}"
+
+      - name: Validate GitHub Actions workflows
+        shell: bash
+        run: actionlint -shellcheck=
+
+      - name: Validate local CI contracts
+        shell: bash
+        run: /tmp/ci-validator-venv/bin/python .github/scripts/validate_ci.py
+
+      - name: Run validator self-tests
+        shell: bash
+        run: /tmp/ci-validator-venv/bin/python .github/scripts/test_validate_ci.py
