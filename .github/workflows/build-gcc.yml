@@ -21,10 +21,10 @@ on:
       patch:
         description: "Patch to be applied (if necessary)"
         required: false
-        default: ""
+        default: none
         type: choice
         options:
-          - ""
+          - none
           - gcc-4.5.patch
           - gcc-4.6.patch
           - gcc-4.7.patch
@@ -56,7 +56,7 @@ jobs:
           echo "Current host supports ${{env.host_jobs}} parallel jobs"
           echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
       - name: Set patch
-        if: ${{ inputs.patch != '' }}
+        if: ${{ inputs.patch != 'none' }}
         shell: bash
         run: |
           cp '.github/actions/build-gcc/${{inputs.patch}}' '${{github.workspace}}'

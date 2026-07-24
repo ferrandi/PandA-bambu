@@ -175,15 +175,24 @@ jobs:
 
   success:
     if: ${{ !cancelled() }}
-    needs: [grs, grs-vhdl, examples]
+    needs: [grs, grs-sdc, grs-vhdl, examples, openmp, openmp-complex]
     runs-on: [self-hosted]
     steps:
       - name: Check GCC Regression Simple status
         if: ${{ needs.grs.result != 'success' }}
         run: exit 1
+      - name: Check GCC Regression Simple SDC status
+        if: ${{ needs['grs-sdc'].result != 'success' }}
+        run: exit 1
       - name: Check GCC Regression Simple VHDL status
-        if: ${{ needs.grs-vhdl.result != 'success' }}
+        if: ${{ needs['grs-vhdl'].result != 'success' }}
         run: exit 1
       - name: Check Examples status
         if: ${{ needs.examples.result != 'success' }}
+        run: exit 1
+      - name: Check OpenMP status
+        if: ${{ needs.openmp.result != 'success' }}
+        run: exit 1
+      - name: Check OpenMP complex status
+        if: ${{ needs['openmp-complex'].result != 'success' }}
         run: exit 1

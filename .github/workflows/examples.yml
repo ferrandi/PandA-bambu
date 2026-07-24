@@ -34,6 +34,7 @@ jobs:
     secrets: inherit
 
   test-suite:
+    needs: [build]
     uses: ./.github/workflows/reusable-examples.yml
     with:
       package-name: ${{needs.build.outputs.package-name}}

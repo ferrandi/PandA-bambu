@@ -131,7 +131,7 @@ jobs:
           path: ${{env.upload-dir}}
 
   aggregate:
-    needs: [characterize]
+    needs: [build, characterize]
     runs-on: [self-hosted]
     steps:
       - name: Checkout repository

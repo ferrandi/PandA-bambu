@@ -1,0 +1,22 @@
+self-hosted-runner:
+  labels:
+    - altera
+    - intelFPGA
+    - lattice
+    - long
+    - mentor
+    - nanoxplore
+    - xilinx
+
+config-variables: null
+
+paths:
+  .github/workflows/full-clang.yml:
+    ignore:
+      - 'property "args" is not defined in object type \{outname: string; script: string\}'
+  .github/workflows/reusable-openmp-complex.yml:
+    ignore:
+      - 'property "args" is not defined in object type \{basename: string; batch: string; script: string\}'
+  .github/workflows/reusable-openmp.yml:
+    ignore:
+      - 'property "args" is not defined in object type \{basename: string; batch: string; script: string\}'

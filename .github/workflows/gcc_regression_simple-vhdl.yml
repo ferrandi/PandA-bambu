@@ -33,7 +33,7 @@ jobs:
   build:
     uses: ./.github/workflows/build-panda.yml
     with:
-      version: ${{inputs.package-name}}
+      package-name: ${{inputs.package-name}}
       compilers: ${{ inputs.compilers }}
       configure: ${{ inputs.configure }}
     secrets: inherit

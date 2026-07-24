@@ -91,12 +91,6 @@ jobs:
           command: ./docker_exec.sh -j${{env.host_jobs}}
           jobs: ${{steps.host.outputs.jobs}}
           threads: ${{steps.host.outputs.threads}}
-      - name: Upload CPPCheck HTML report
-        if: ${{ env.upload-artifacts == '1' }}
-        uses: actions/upload-artifact@v6
-        with:
-          name: CPPCheck-report
-          path: ${{env.cppcheck-dir}}
       - name: Check for errors
         id: error
         shell: bash
@@ -107,6 +101,12 @@ jobs:
         if: ${{ steps.error.outputs.count > 0 }}
         with:
           script: core.setFailed('CPPCheck detected ${{steps.error.outputs.count}} errors.')
+      - name: Upload CPPCheck HTML report
+        if: ${{ !cancelled() && (failure() || env.upload-artifacts == '1') }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: CPPCheck-report
+          path: ${{env.cppcheck-dir}}
 
   changes:
     permissions:
@@ -165,12 +165,12 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        if: ${{ steps.perf-check.outputs.compare-xml != '' }}
         shell: bash
-        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-xml }} ${{env.report-dir}}
       - name: Upload test reports
         id: upload-test-reports
-        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        if: ${{ !cancelled() && (failure() || env.upload-artifacts == '1') }}
         uses: actions/upload-artifact@v6
         with:
           name: bambu_specific_test${{matrix.id}}
@@ -222,12 +222,12 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        if: ${{ steps.perf-check.outputs.compare-xml != '' }}
         shell: bash
-        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-xml }} ${{env.report-dir}}
       - name: Upload test reports
         id: upload-test-reports
-        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        if: ${{ !cancelled() && (failure() || env.upload-artifacts == '1') }}
         uses: actions/upload-artifact@v6
         with:
           name: bambu_interface_test${{matrix.simulator}}
@@ -310,12 +310,12 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        if: ${{ steps.perf-check.outputs.compare-xml != '' }}
         shell: bash
-        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-xml }} ${{env.report-dir}}
       - name: Upload test reports
         id: upload-test-reports
-        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        if: ${{ !cancelled() && (failure() || env.upload-artifacts == '1') }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
@@ -366,12 +366,12 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        if: ${{ steps.perf-check.outputs.compare-xml != '' }}
         shell: bash
-        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-xml }} ${{env.report-dir}}
       - name: Upload test reports
         id: upload-test-reports
-        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        if: ${{ !cancelled() && (failure() || env.upload-artifacts == '1') }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
@@ -422,12 +422,12 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        if: ${{ steps.perf-check.outputs.compare-xml != '' }}
         shell: bash
-        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-xml }} ${{env.report-dir}}
       - name: Upload test reports
         id: upload-test-reports
-        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        if: ${{ !cancelled() && (failure() || env.upload-artifacts == '1') }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
@@ -470,7 +470,7 @@ jobs:
         run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
       - name: Upload test reports
         id: upload-test-reports
-        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        if: ${{ !cancelled() && (failure() || env.upload-artifacts == '1') }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
@@ -541,12 +541,12 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        if: ${{ steps.perf-check.outputs.compare-xml != '' }}
         shell: bash
-        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-xml }} ${{env.report-dir}}
       - name: Upload test reports
         id: upload-test-reports
-        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        if: ${{ !cancelled() && (failure() || env.upload-artifacts == '1') }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
@@ -628,12 +628,12 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        if: ${{ steps.perf-check.outputs.compare-xml != '' }}
         shell: bash
-        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-xml }} ${{env.report-dir}}
       - name: Upload test reports
         id: upload-test-reports
-        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        if: ${{ !cancelled() && (failure() || env.upload-artifacts == '1') }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
@@ -683,12 +683,12 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        if: ${{ steps.perf-check.outputs.compare-xml != '' }}
         shell: bash
-        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-xml }} ${{env.report-dir}}
       - name: Upload test reports
         id: upload-test-reports
-        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        if: ${{ !cancelled() && (failure() || env.upload-artifacts == '1') }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
@@ -752,12 +752,12 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        if: ${{ steps.perf-check.outputs.compare-xml != '' }}
         shell: bash
-        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-xml }} ${{env.report-dir}}
       - name: Upload test reports
         id: upload-test-reports
-        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        if: ${{ !cancelled() && (failure() || env.upload-artifacts == '1') }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
@@ -820,12 +820,12 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        if: ${{ steps.perf-check.outputs.compare-xml != '' }}
         shell: bash
-        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-xml }} ${{env.report-dir}}
       - name: Upload test reports
         id: upload-test-reports
-        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        if: ${{ !cancelled() && (failure() || env.upload-artifacts == '1') }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
@@ -886,7 +886,7 @@ jobs:
           echo "outname=$OUTNAME" >> $GITHUB_OUTPUT
       - name: Upload test reports
         id: upload-test-reports
-        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        if: ${{ !cancelled() && (failure() || env.upload-artifacts == '1') }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{steps.get.outputs.outname}}
@@ -944,12 +944,12 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        if: ${{ steps.perf-check.outputs.compare-xml != '' }}
         shell: bash
-        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-xml }} ${{env.report-dir}}
       - name: Upload test reports
         id: upload-test-reports
-        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        if: ${{ !cancelled() && (failure() || env.upload-artifacts == '1') }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
@@ -1002,12 +1002,12 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        if: ${{ steps.perf-check.outputs.compare-xml != '' }}
         shell: bash
-        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-xml }} ${{env.report-dir}}
       - name: Upload test reports
         id: upload-test-reports
-        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        if: ${{ !cancelled() && (failure() || env.upload-artifacts == '1') }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
@@ -1060,12 +1060,12 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        if: ${{ steps.perf-check.outputs.compare-xml != '' }}
         shell: bash
-        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-xml }} ${{env.report-dir}}
       - name: Upload test reports
         id: upload-test-reports
-        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        if: ${{ !cancelled() && (failure() || env.upload-artifacts == '1') }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
@@ -1118,12 +1118,12 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        if: ${{ steps.perf-check.outputs.compare-xml != '' }}
         shell: bash
-        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-xml }} ${{env.report-dir}}
       - name: Upload test reports
         id: upload-test-reports
-        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        if: ${{ !cancelled() && (failure() || env.upload-artifacts == '1') }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
@@ -1176,12 +1176,12 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        if: ${{ steps.perf-check.outputs.compare-xml != '' }}
         shell: bash
-        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-xml }} ${{env.report-dir}}
       - name: Upload test reports
         id: upload-test-reports
-        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        if: ${{ !cancelled() && (failure() || env.upload-artifacts == '1') }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
@@ -1233,12 +1233,12 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        if: ${{ steps.perf-check.outputs.compare-xml != '' }}
         shell: bash
-        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-xml }} ${{env.report-dir}}
       - name: Upload test reports
         id: upload-test-reports
-        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        if: ${{ !cancelled() && (failure() || env.upload-artifacts == '1') }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
@@ -1291,12 +1291,12 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        if: ${{ steps.perf-check.outputs.compare-xml != '' }}
         shell: bash
-        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+        run: mv ${{ steps.perf-check.outputs.compare-xml }} ${{env.report-dir}}
       - name: Upload test reports
         id: upload-test-reports
-        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        if: ${{ !cancelled() && (failure() || env.upload-artifacts == '1') }}
         uses: actions/upload-artifact@v6
         with:
           name: ${{env.outname}}
@@ -1335,6 +1335,8 @@ jobs:
   success:
     if: ${{ !cancelled() }}
     needs:
+      - cppcheck
+      - AXI4-verification
       - gcc_regression_simple
       - gcc_regression_simple-vhdl
       - gcc_regression_simple-pretty_print
@@ -1354,6 +1356,12 @@ jobs:
       - PandA-bench-openroad-2
     runs-on: [self-hosted]
     steps:
+      - name: Check 'CPPCheck' status
+        if: ${{ needs.cppcheck.result != 'success' && needs.cppcheck.result != 'skipped' }}
+        run: exit 1
+      - name: Check 'AXI4 verification' status
+        if: ${{ needs['axi4-verification'].result != 'success' }}
+        run: exit 1
       - name: Check 'GCC Regression Simple' status
         if: ${{ needs['gcc_regression_simple'].result != 'success' }}
         run: exit 1
@@ -1373,35 +1381,35 @@ jobs:
         if: ${{ needs['discrepancy-test'].result != 'success' }}
         run: exit 1
       - name: Check 'OpenMP-support' status
-        if: ${{ needs['OpenMP-support'].result != 'success' }}
+        if: ${{ needs['openmp-support'].result != 'success' }}
         run: exit 1
       - name: Check 'Make Checks' status
-        if: ${{ needs['Make-checks'].result != 'success' }}
+        if: ${{ needs['make-checks'].result != 'success' }}
         run: exit 1
       - name: Check 'CHStone memory architecture' status
         if: ${{ needs['memarch-tests'].result != 'success' }}
         run: exit 1
       - name: Check 'PandA benchmarks (altera)' status
-        if: ${{ needs['PandA-bench-altera'].result != 'success' }}
+        if: ${{ needs['panda-bench-altera'].result != 'success' }}
         run: exit 1
       - name: Check 'PandA benchmarks (hw)' status
-        if: ${{ needs['PandA-bench-hw'].result != 'success' }}
+        if: ${{ needs['panda-bench-hw'].result != 'success' }}
         run: exit 1
       - name: Check 'PandA benchmarks (lattice)' status
-        if: ${{ needs['PandA-bench-lattice'].result != 'success' }}
+        if: ${{ needs['panda-bench-lattice'].result != 'success' }}
         run: exit 1
       - name: Check 'PandA benchmarks (nanoxplore)' status
-        if: ${{ needs['PandA-bench-nanoxplore'].result != 'success' }}
+        if: ${{ needs['panda-bench-nanoxplore'].result != 'success' }}
         run: exit 1
       - name: Check 'PandA benchmarks (sim)' status
-        if: ${{ needs['PandA-bench-sim'].result != 'success' }}
+        if: ${{ needs['panda-bench-sim'].result != 'success' }}
         run: exit 1
       - name: Check 'PandA benchmarks (xilinx_vvd)' status
-        if: ${{ needs['PandA-bench-xilinx_vvd'].result != 'success' }}
+        if: ${{ needs['panda-bench-xilinx_vvd'].result != 'success' }}
         run: exit 1
       - name: Check 'PandA benchmarks for OpenROAD 1' status
-        if: ${{ needs['PandA-bench-openroad-1'].result != 'success' }}
+        if: ${{ needs['panda-bench-openroad-1'].result != 'success' }}
         run: exit 1
       - name: Check 'PandA benchmarks for OpenROAD 2' status
-        if: ${{ needs['PandA-bench-openroad-2'].result != 'success' }}
+        if: ${{ needs['panda-bench-openroad-2'].result != 'success' }}
         run: exit 1

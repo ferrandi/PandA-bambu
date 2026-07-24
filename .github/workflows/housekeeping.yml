@@ -21,6 +21,10 @@ env:
   retain_days: 3
   minimum_runs: 3
 
+permissions:
+  actions: write
+  contents: read
+
 jobs:
   del_runs:
     runs-on: [self-hosted]
@@ -29,7 +33,7 @@ jobs:
         id: setup
         shell: bash
         run: |
-          if [[ -z "${{ inputs.days }}" ]]; then
+          if [[ -z "${{ inputs.retain_days }}" ]]; then
             retain_days="${{env.retain_days}}"
             minimum_runs="${{env.minimum_runs}}"
           else
@@ -44,4 +48,4 @@ jobs:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
           retain_days: ${{ steps.setup.outputs.retain_days }}
-          keep_minimum_runs: ${{ steps.setup.otuputs.minimum_runs }}
+          keep_minimum_runs: ${{ steps.setup.outputs.minimum_runs }}
