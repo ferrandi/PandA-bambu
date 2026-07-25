@@ -18,6 +18,7 @@ from .hashing import (
     sha256_file,
     submodule_commits,
 )
+from .regressions import extend_bundle_with_regressions
 from .serialization import write_json
 
 
@@ -225,11 +226,11 @@ def _build_artifacts(
         f"panda-ci-results-{_raw(environment, 'WORKFLOW_RUN_ID')}-attempt-"
         f"{_raw(environment, 'RUN_ATTEMPT')}"
     )
-    diagnostic_artifact_name = (
-        f"open-build-diagnostics-{_raw(environment, 'WORKFLOW_RUN_ID')}"
-        if diagnostics_expected
-        else None
-    )
+    diagnostic_artifact_name = None
+    if diagnostics_expected:
+        diagnostic_artifact_name = _raw(
+            environment, "DIAGNOSTICS_ARTIFACT_NAME"
+        ) or f"open-build-diagnostics-{_raw(environment, 'WORKFLOW_RUN_ID')}"
     compilation_database = "compilation_db/build/compile_commands.json"
     distribution = _nullable_string(_raw(environment, "DIST_DIR")) or "panda_dist"
     distribution_available = bool(_nullable_string(_raw(environment, "DIST_DIR"))) and (
@@ -444,6 +445,11 @@ def _build_task(
 ) -> dict[str, Any]:
     build_outcome = _normalized_build_outcome(environment) or "failure"
     verify_outcome = _raw(environment, "VERIFY_OUTCOME").lower() or "skipped"
+    verification_canceled = (
+        build_outcome == "success"
+        and _nullable_bool(_raw(environment, "JOB_CANCELLED")) is True
+        and verify_outcome not in {"success", "failure"}
+    )
     action_status = _nullable_int(_raw(environment, "ACTION_EXIT_STATUS"))
     failure_stage_raw = _raw(environment, "FAILURE_STAGE").lower()
     stage_aliases = {
@@ -598,6 +604,23 @@ def _build_task(
             verify_status,
             verify_failure,
         )
+    elif verification_canceled:
+        verify_failure = _failure(
+            "canceled",
+            "workflow-canceled",
+            "installed-executable-validation",
+            "Installed-executable validation was canceled before completion.",
+            [],
+            retryable=True,
+        )
+        verify_record = _stage_record(
+            "installed-executable-validation",
+            "unknown",
+            verify_duration,
+            verify_status if verify_status not in (None, 0) else None,
+            verify_failure,
+            execution_state="canceled",
+        )
     else:
         verify_record = _stage_record(
             "installed-executable-validation", "skipped", None, None, None
@@ -612,6 +635,11 @@ def _build_task(
         task_outcome = "pass"
         task_exit_status = 0
         task_failure = None
+    elif verification_canceled:
+        task_state = "canceled"
+        task_outcome = "unknown"
+        task_exit_status = verify_record["exit_status"]
+        task_failure = verify_record["failure"]
     elif build_outcome in {"cancelled", "canceled"}:
         task_state = "canceled"
         task_outcome = "unknown"
@@ -725,7 +753,15 @@ def _build_task(
             )
         )
     workflow_start_epoch = _nullable_int(_raw(environment, "WORKFLOW_START_EPOCH"))
-    completion_epoch = _nullable_int(_raw(environment, "COMPLETION_EPOCH"))
+    completion_epoch = _nullable_int(
+        _raw(environment, "OPEN_BUILD_COMPLETION_EPOCH")
+        or _raw(environment, "COMPLETION_EPOCH")
+    )
+    workflow_total_method = (
+        "Workflow epoch delta through installed verification and cache save."
+        if _raw(environment, "OPEN_BUILD_COMPLETION_EPOCH")
+        else "Workflow epoch delta through cache save and result generation."
+    )
     workflow_total = (
         completion_epoch - workflow_start_epoch
         if workflow_start_epoch is not None
@@ -749,7 +785,7 @@ def _build_task(
                 "seconds",
                 "elapsed",
                 "workflow",
-                "Workflow epoch delta through cache save and result generation.",
+                workflow_total_method,
             ),
             _metric(
                 "memory.build.peak-cgroup-kib",
@@ -965,6 +1001,9 @@ def _generate_bundle_contents(
     output = output_directory.resolve()
     started_at = _timestamp_from_epoch(_raw(env, "WORKFLOW_START_EPOCH"))
     completed_at = _completion_timestamp(env)
+    open_build_completed_at = _timestamp_from_epoch(
+        _raw(env, "OPEN_BUILD_COMPLETION_EPOCH")
+    ) or completed_at
     build_outcome = _normalized_build_outcome(env)
     verify_outcome = _raw(env, "VERIFY_OUTCOME").lower()
     diagnostics_expected = build_outcome in {"failure", "timed_out"} or (
@@ -1008,7 +1047,7 @@ def _generate_bundle_contents(
         "schema_version": "1.0",
         "tasks": [{"task_id": "open-build", "task_type": "build"}],
     }
-    task = _build_task(env, started_at, completed_at)
+    task = _build_task(env, started_at, open_build_completed_at)
     artifacts = _build_artifacts(root, env, diagnostics_expected)
     verdict = _build_verdict(task)
 
@@ -1101,6 +1140,7 @@ def generate_bundle(
     output_directory: Path,
     environment: Mapping[str, str] | None = None,
     repository: Path | None = None,
+    regression_results: Path | None = None,
 ) -> dict[str, dict[str, Any]]:
     """Replace the destination with one freshly generated, validated bundle."""
 
@@ -1118,6 +1158,14 @@ def generate_bundle(
     )
     try:
         _generate_bundle_contents(temporary, env, root)
+        if regression_results is not None:
+            raw_results = (
+                regression_results
+                if regression_results.is_absolute()
+                else root / regression_results
+            )
+            extend_bundle_with_regressions(temporary, raw_results, env, root)
+            validate_bundle(temporary)
         if output.exists():
             if output.is_dir():
                 shutil.rmtree(output)

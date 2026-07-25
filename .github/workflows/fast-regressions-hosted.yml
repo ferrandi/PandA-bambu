@@ -1,0 +1,331 @@
+name: Fast regressions (GitHub-hosted)
+
+on:
+  pull_request:
+    paths:
+      - CMakeLists.txt
+      - cmake/**
+      - src/**
+      - ext/**
+      - etc/**
+      - examples/mm/**
+      - panda_regressions/hls/bambu_specific_test2.sh
+      - panda_regressions/hls/bambu_specific_test2/**
+      - panda_regressions/hls/bambu_specific_test5.sh
+      - panda_regressions/hls/bambu_specific_test5/**
+      - panda_regressions/hls/bambu_interface_test.sh
+      - panda_regressions/hls/bambu_interface_test/**
+      - .github/actions/build-panda/**
+      - .github/schemas/ci/**
+      - .github/scripts/ci_results/**
+      - .github/scripts/test_ci_results.py
+      - .github/workflows/fast-regressions-hosted.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fast-regressions:
+    name: Build once and run fast regressions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+
+    steps:
+      - name: Record workflow start
+        id: workflow-timing
+        shell: bash
+        run: echo "start-epoch=$(date +%s)" >> "${GITHUB_OUTPUT}"
+
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Restore compiler cache
+        id: ccache-restore
+        uses: actions/cache/restore@v5
+        continue-on-error: true
+        with:
+          path: .ccache
+          key: >-
+            panda-ccache-v1-${{ runner.os }}-${{ runner.arch }}-gcc13-clang16-release-noassert-werror-I386_CLANG16-${{ hashFiles('CMakeLists.txt', 'cmake/**/*.cmake', '.github/actions/build-panda/Dockerfile', '.github/actions/build-panda/action.yml', '.github/actions/build-panda/entrypoint.sh', 'etc/clang_plugin/CMakeLists.txt') }}-${{ github.sha }}
+          restore-keys: |
+            panda-ccache-v1-${{ runner.os }}-${{ runner.arch }}-gcc13-clang16-release-noassert-werror-I386_CLANG16-${{ hashFiles('CMakeLists.txt', 'cmake/**/*.cmake', '.github/actions/build-panda/Dockerfile', '.github/actions/build-panda/action.yml', '.github/actions/build-panda/entrypoint.sh', 'etc/clang_plugin/CMakeLists.txt') }}-
+
+      - name: Record Docker build action start
+        id: action-timing
+        shell: bash
+        run: echo "start-epoch=$(date +%s)" >> "${GITHUB_OUTPUT}"
+
+      - name: Build PandA-bambu once
+        id: build
+        timeout-minutes: 110
+        uses: ./.github/actions/build-panda
+        with:
+          jobs: "2"
+          synthesis-smoke: "true"
+          action-start-epoch: ${{ steps.action-timing.outputs.start-epoch }}
+          config-args: >-
+            -DPANDA_ENABLE_RELEASE=ON
+            -DPANDA_ENABLE_ASSERTS=OFF
+            -DPANDA_ENABLE_WERROR=ON
+            -DPANDA_LIBBAMBU_COMPILER=I386_CLANG16
+
+      - name: Verify installed executables
+        id: verify
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          validation_start_epoch="$(date +%s)"
+          bambu_exists=unknown
+          bambu_starts=unknown
+          bambu_cc_exists=unknown
+          bambu_cc_starts=unknown
+          eucalyptus_exists=unknown
+          eucalyptus_starts=unknown
+
+          record_validation_outputs() {
+            status=$?
+            trap - EXIT
+            {
+              echo "duration-seconds=$(( $(date +%s) - validation_start_epoch ))"
+              echo "exit-status=${status}"
+              echo "bambu-exists=${bambu_exists}"
+              echo "bambu-starts=${bambu_starts}"
+              echo "bambu-cc-exists=${bambu_cc_exists}"
+              echo "bambu-cc-starts=${bambu_cc_starts}"
+              echo "eucalyptus-exists=${eucalyptus_exists}"
+              echo "eucalyptus-starts=${eucalyptus_starts}"
+            } >> "${GITHUB_OUTPUT}"
+            exit "${status}"
+          }
+          trap record_validation_outputs EXIT
+
+          dist_dir="${{ steps.build.outputs.dist-dir }}"
+          if [[ -z "${dist_dir}" ]]; then
+            echo "::error::The build-panda action did not return a distribution directory."
+            exit 1
+          fi
+
+          bin_dir="${GITHUB_WORKSPACE}/${dist_dir}/bin"
+          for executable in bambu bambu-cc eucalyptus; do
+            variable_prefix="${executable//-/_}"
+            executable_path="${bin_dir}/${executable}"
+            if [[ ! -x "${executable_path}" ]]; then
+              printf -v "${variable_prefix}_exists" '%s' false
+              echo "::error file=${executable_path}::Expected installed executable is missing or not executable."
+              exit 1
+            fi
+
+            printf -v "${variable_prefix}_exists" '%s' true
+            file "${executable_path}"
+            if ! "${executable_path}" --version; then
+              printf -v "${variable_prefix}_starts" '%s' false
+              echo "::error file=${executable_path}::Installed executable could not start."
+              exit 1
+            fi
+            printf -v "${variable_prefix}_starts" '%s' true
+          done
+
+      - name: Save compiler cache
+        id: ccache-save
+        if: ${{ success() && steps.ccache-restore.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v5
+        continue-on-error: true
+        with:
+          path: .ccache
+          key: ${{ steps.ccache-restore.outputs.cache-primary-key }}
+
+      - name: Record fast-regression action start
+        id: regression-timing
+        shell: bash
+        run: echo "start-epoch=$(date +%s)" >> "${GITHUB_OUTPUT}"
+
+      - name: Run focused Bambu and Verilator regressions
+        id: regressions
+        timeout-minutes: 35
+        uses: ./.github/actions/build-panda
+        with:
+          mode: fast-regressions
+          jobs: "2"
+          action-start-epoch: ${{ steps.regression-timing.outputs.start-epoch }}
+
+      - name: Record fast-regression action completion
+        id: regression-completion
+        if: ${{ always() }}
+        shell: bash
+        run: echo "completion-epoch=$(date +%s)" >> "${GITHUB_OUTPUT}"
+
+      - name: Record cancellation state
+        id: cancellation-state
+        if: ${{ cancelled() }}
+        shell: bash
+        run: echo "cancelled=true" >> "${GITHUB_OUTPUT}"
+
+      - name: Generate structured CI results
+        id: structured-results
+        if: ${{ always() }}
+        shell: bash
+        env:
+          PANDA_CI_ACTION_EXIT_STATUS: ${{ steps.build.outputs.action-exit-status }}
+          PANDA_CI_ACTION_START_EPOCH: ${{ steps.action-timing.outputs.start-epoch }}
+          PANDA_CI_BAMBU_CC_EXISTS: ${{ steps.verify.outputs.bambu-cc-exists }}
+          PANDA_CI_BAMBU_CC_STARTS: ${{ steps.verify.outputs.bambu-cc-starts }}
+          PANDA_CI_BAMBU_EXISTS: ${{ steps.verify.outputs.bambu-exists }}
+          PANDA_CI_BAMBU_STARTS: ${{ steps.verify.outputs.bambu-starts }}
+          PANDA_CI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PANDA_CI_BUILD_OUTCOME: ${{ steps.build.outcome }}
+          PANDA_CI_BUILD_SECONDS: ${{ steps.build.outputs.build-seconds }}
+          PANDA_CI_BUILD_TIMEOUT_SECONDS: "6600"
+          PANDA_CI_CACHE_HIT: ${{ steps.ccache-restore.outputs.cache-hit }}
+          PANDA_CI_CACHE_MATCHED_KEY: ${{ steps.ccache-restore.outputs.cache-matched-key }}
+          PANDA_CI_CACHE_PRIMARY_KEY: ${{ steps.ccache-restore.outputs.cache-primary-key }}
+          PANDA_CI_CACHE_RESTORE_OUTCOME: ${{ steps.ccache-restore.outcome }}
+          PANDA_CI_CACHE_SAVE_OUTCOME: ${{ steps.ccache-save.outcome }}
+          PANDA_CI_CCACHE_CACHEABLE_CALLS: ${{ steps.build.outputs.ccache-cacheable-calls }}
+          PANDA_CI_CCACHE_HIT_RATE: ${{ steps.build.outputs.ccache-hit-rate }}
+          PANDA_CI_CCACHE_HITS: ${{ steps.build.outputs.ccache-hits }}
+          PANDA_CI_CCACHE_MISSES: ${{ steps.build.outputs.ccache-misses }}
+          PANDA_CI_CCACHE_SIZE_KIB: ${{ steps.build.outputs.ccache-size-kibibyte }}
+          PANDA_CI_CCACHE_VERSION: ${{ steps.build.outputs.ccache-version }}
+          PANDA_CI_CLANGXX_VERSION: ${{ steps.build.outputs.clangxx-version }}
+          PANDA_CI_CLANG_VERSION: ${{ steps.build.outputs.clang-version }}
+          PANDA_CI_CMAKE_VERSION: ${{ steps.build.outputs.cmake-version }}
+          PANDA_CI_COMMIT_SHA: ${{ github.sha }}
+          PANDA_CI_CONFIGURE_EXIT_STATUS: ${{ steps.build.outputs.configure-exit-status }}
+          PANDA_CI_CONFIGURE_SECONDS: ${{ steps.build.outputs.configure-seconds }}
+          PANDA_CI_CONTAINER_SETUP_SECONDS: ${{ steps.build.outputs.container-setup-seconds }}
+          PANDA_CI_COSIMULATION_EXIT_STATUS: ${{ steps.build.outputs.cosimulation-exit-status }}
+          PANDA_CI_COSIMULATION_SECONDS: ${{ steps.build.outputs.cosimulation-seconds }}
+          PANDA_CI_DIAGNOSTICS_ARTIFACT_NAME: fast-regressions-diagnostics-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          PANDA_CI_DIST_DIR: ${{ steps.build.outputs.dist-dir }}
+          PANDA_CI_EUCALYPTUS_EXISTS: ${{ steps.verify.outputs.eucalyptus-exists }}
+          PANDA_CI_EUCALYPTUS_STARTS: ${{ steps.verify.outputs.eucalyptus-starts }}
+          PANDA_CI_EVENT_TYPE: ${{ github.event_name }}
+          PANDA_CI_FAILURE_STAGE: ${{ steps.build.outputs.failure-stage }}
+          PANDA_CI_FRONTEND_RESOLUTION_EXIT_STATUS: ${{ steps.build.outputs.frontend-resolution-exit-status }}
+          PANDA_CI_FRONTEND_RESOLUTION_SECONDS: ${{ steps.build.outputs.frontend-resolution-seconds }}
+          PANDA_CI_GCC_VERSION: ${{ steps.build.outputs.gcc-version }}
+          PANDA_CI_GXX_VERSION: ${{ steps.build.outputs.gxx-version }}
+          PANDA_CI_INSTALLATION_EXIT_STATUS: ${{ steps.build.outputs.installation-exit-status }}
+          PANDA_CI_INSTALL_SECONDS: ${{ steps.build.outputs.install-seconds }}
+          PANDA_CI_JOB_CANCELLED: ${{ steps.cancellation-state.outputs.cancelled }}
+          PANDA_CI_KILL_DETECTED: ${{ steps.build.outputs.kill-detected }}
+          PANDA_CI_LLVM_VERSION: ${{ steps.build.outputs.llvm-version }}
+          PANDA_CI_MEMORY_AVAILABLE_AFTER_KIB: ${{ steps.build.outputs.memory-available-after-kib }}
+          PANDA_CI_MEMORY_AVAILABLE_BEFORE_KIB: ${{ steps.build.outputs.memory-available-before-kib }}
+          PANDA_CI_OOM_DETECTED: ${{ steps.build.outputs.oom-detected }}
+          PANDA_CI_OPEN_BUILD_COMPLETION_EPOCH: ${{ steps.regression-timing.outputs.start-epoch }}
+          PANDA_CI_PARALLELISM: "2"
+          PANDA_CI_PEAK_BUILD_CGROUP_KIB: ${{ steps.build.outputs.peak-build-cgroup-kib }}
+          PANDA_CI_PEAK_BUILD_RSS_KIB: ${{ steps.build.outputs.peak-build-rss-kib }}
+          PANDA_CI_PLUGIN_BUILD_EXIT_STATUS: ${{ steps.build.outputs.plugin-build-exit-status }}
+          PANDA_CI_PLUGIN_BUILD_SECONDS: ${{ steps.build.outputs.plugin-build-seconds }}
+          PANDA_CI_PROJECT_BUILD_EXIT_STATUS: ${{ steps.build.outputs.project-build-exit-status }}
+          PANDA_CI_PROJECT_BUILD_SECONDS: ${{ steps.build.outputs.project-build-seconds }}
+          PANDA_CI_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
+          PANDA_CI_REF: ${{ github.ref }}
+          PANDA_CI_REGRESSION_ACTION_EXIT_STATUS: ${{ steps.regressions.outputs.action-exit-status }}
+          PANDA_CI_REGRESSION_ACTION_COMPLETION_EPOCH: ${{ steps.regression-completion.outputs.completion-epoch }}
+          PANDA_CI_REGRESSION_ACTION_OUTCOME: ${{ steps.regressions.outcome }}
+          PANDA_CI_REGRESSION_ACTION_START_EPOCH: ${{ steps.regression-timing.outputs.start-epoch }}
+          PANDA_CI_REGRESSION_ARTIFACT_NAME: panda-ci-regression-evidence-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          PANDA_CI_REGRESSION_CONTAINER_SETUP_SECONDS: ${{ steps.regressions.outputs.container-setup-seconds }}
+          PANDA_CI_REGRESSION_EVIDENCE_DIR: ${{ steps.regressions.outputs.regression-evidence-dir }}
+          PANDA_CI_REGRESSION_FAILED_COUNT: ${{ steps.regressions.outputs.regression-failed-count }}
+          PANDA_CI_REGRESSION_FAILURE_STAGE: ${{ steps.regressions.outputs.failure-stage }}
+          PANDA_CI_REGRESSION_OUTCOME: ${{ steps.regressions.outputs.regression-suite-outcome }}
+          PANDA_CI_REGRESSION_PASSED_COUNT: ${{ steps.regressions.outputs.regression-passed-count }}
+          PANDA_CI_REGRESSION_RESULTS_DIR: ${{ steps.regressions.outputs.regression-results-dir }}
+          PANDA_CI_REGRESSION_SECONDS: ${{ steps.regressions.outputs.regression-suite-seconds }}
+          PANDA_CI_REGRESSION_TASK_COUNT: ${{ steps.regressions.outputs.regression-task-count }}
+          PANDA_CI_REGRESSION_TIMEOUT_SECONDS: "2100"
+          PANDA_CI_REPOSITORY: ${{ github.repository }}
+          PANDA_CI_REQUEST_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PANDA_CI_REQUESTED_FRONTEND: I386_CLANG16
+          PANDA_CI_RESULT_ARTIFACT_NAME: panda-ci-results-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          PANDA_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
+          PANDA_CI_RUNNER_ARCH: ${{ runner.arch }}
+          PANDA_CI_RUNNER_IMAGE: ubuntu-24.04
+          PANDA_CI_RUNNER_OS: ${{ runner.os }}
+          PANDA_CI_SELECTED_FRONTEND: ${{ steps.build.outputs.selected-frontend }}
+          PANDA_CI_VERILATOR_VERSION: ${{ steps.build.outputs.verilator-version }}
+          PANDA_CI_VERIFY_EXIT_STATUS: ${{ steps.verify.outputs.exit-status }}
+          PANDA_CI_VERIFY_OUTCOME: ${{ steps.verify.outcome }}
+          PANDA_CI_VERIFY_SECONDS: ${{ steps.verify.outputs.duration-seconds }}
+          PANDA_CI_WORKFLOW_FILE: .github/workflows/fast-regressions-hosted.yml
+          PANDA_CI_WORKFLOW_IMPLEMENTATION_COMMIT: ${{ github.workflow_sha }}
+          PANDA_CI_WORKFLOW_RUN_ID: ${{ github.run_id }}
+          PANDA_CI_WORKFLOW_START_EPOCH: ${{ steps.workflow-timing.outputs.start-epoch }}
+        run: |
+          set -euo pipefail
+          export PANDA_CI_COMPLETION_EPOCH="$(date +%s)"
+          export PYTHONPATH="${GITHUB_WORKSPACE}/.github/scripts"
+          regression_results="${{ steps.regressions.outputs.regression-results-dir }}"
+          if [[ -z "${regression_results}" ]]; then
+            regression_results=.ci-regression-results
+          fi
+          python3 -m ci_results generate \
+            --output .ci-results \
+            --regression-results "${regression_results}"
+
+      - name: Validate structured CI results
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          export PYTHONPATH="${GITHUB_WORKSPACE}/.github/scripts"
+          python3 -m ci_results validate .ci-results
+
+      - name: Render CI result summary
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          export PYTHONPATH="${GITHUB_WORKSPACE}/.github/scripts"
+          python3 -m ci_results summary .ci-results --append "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload structured CI results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: panda-ci-results-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: .ci-results
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload fast-regression evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: panda-ci-regression-evidence-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: ${{ steps.regressions.outputs.regression-evidence-dir || '.ci-regression-evidence' }}
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload failure diagnostics
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: fast-regressions-diagnostics-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: |
+            build/CMakeCache.txt
+            build/CMakeFiles/CMakeConfigureLog.yaml
+            build/CMakeFiles/CMakeOutput.log
+            build/CMakeFiles/CMakeError.log
+            build/config_headers/**
+            compilation_db/build/config_headers/**
+            compilation_db/build/compile_commands.json
+            synthesis-smoke/**
+            .ci-telemetry/jobs-2/**
+            .ci-regression-results/**
+            .ci-regression-evidence/**
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 3

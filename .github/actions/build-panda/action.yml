@@ -1,6 +1,10 @@
 name: "Panda build"
 description: "Configure, build, and generate Panda Bambu appimage"
 inputs:
+  mode:
+    description: "Action mode: build or fast-regressions"
+    required: false
+    default: "build"
   config-args:
     description: "Configure command line arguments"
     required: false
@@ -100,10 +104,27 @@ outputs:
     description: "Compiler cache hit percentage in this build"
   ccache-size-kibibyte:
     description: "Compiler cache size in KiB after the build"
+  regression-results-dir:
+    description: "Workspace-relative directory containing raw fast-regression results"
+  regression-evidence-dir:
+    description: "Workspace-relative directory containing fast-regression evidence"
+  regression-suite-seconds:
+    description: "Fast-regression suite duration in seconds"
+  regression-suite-exit-status:
+    description: "Fast-regression suite exit status, or not-run"
+  regression-suite-outcome:
+    description: "Fast-regression suite outcome: pass, fail, unknown, or not-run"
+  regression-task-count:
+    description: "Number of fast-regression tasks selected"
+  regression-passed-count:
+    description: "Number of passing fast-regression tasks"
+  regression-failed-count:
+    description: "Number of failing fast-regression tasks"
 runs:
   using: "docker"
   image: "Dockerfile"
   env:
+    ACTION_MODE: ${{inputs.mode}}
     J: ${{inputs.jobs}}
     CCACHE_DIR_INPUT: ${{inputs.ccache-dir}}
     SYNTHESIS_SMOKE: ${{inputs.synthesis-smoke}}

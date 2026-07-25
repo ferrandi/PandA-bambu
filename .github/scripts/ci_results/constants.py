@@ -1,9 +1,16 @@
-"""Stable identifiers used by the PandA CI protocol version 1.0."""
+"""Stable identifiers used by the PandA CI protocol major version 1."""
 
 from __future__ import annotations
 
 
-STAGE_IDS = (
+LEGACY_SCHEMA_VERSION = "1.0"
+MULTI_TASK_SCHEMA_VERSION = "1.1"
+SUPPORTED_SCHEMA_VERSIONS = (
+    LEGACY_SCHEMA_VERSION,
+    MULTI_TASK_SCHEMA_VERSION,
+)
+
+OPEN_BUILD_STAGE_IDS = (
     "container-setup",
     "configure",
     "frontend-resolution",
@@ -14,9 +21,11 @@ STAGE_IDS = (
     "xml-verilator-cosimulation",
 )
 
-DURATION_METRIC_IDS = tuple(f"duration.{stage_id}" for stage_id in STAGE_IDS)
+OPEN_BUILD_DURATION_METRIC_IDS = tuple(
+    f"duration.{stage_id}" for stage_id in OPEN_BUILD_STAGE_IDS
+)
 
-METRIC_IDS = DURATION_METRIC_IDS + (
+OPEN_BUILD_METRIC_IDS = OPEN_BUILD_DURATION_METRIC_IDS + (
     "duration.build-total",
     "duration.workflow-total",
     "memory.build.peak-cgroup-kib",
@@ -32,10 +41,10 @@ METRIC_IDS = DURATION_METRIC_IDS + (
     "ccache.final-size-kib",
 )
 
-METRIC_CONTRACTS = {
+OPEN_BUILD_METRIC_CONTRACTS = {
     **{
         f"duration.{stage_id}": ("seconds", "elapsed", stage_id)
-        for stage_id in STAGE_IDS
+        for stage_id in OPEN_BUILD_STAGE_IDS
     },
     "duration.build-total": ("seconds", "elapsed", "build"),
     "duration.workflow-total": ("seconds", "elapsed", "workflow"),
@@ -52,7 +61,7 @@ METRIC_CONTRACTS = {
     "ccache.final-size-kib": ("kibibytes", "final", "ccache"),
 }
 
-CHECK_IDS = (
+OPEN_BUILD_CHECK_IDS = (
     "installed-bambu-exists-and-starts",
     "installed-bambu-cc-exists-and-starts",
     "installed-eucalyptus-exists-and-starts",
@@ -60,7 +69,7 @@ CHECK_IDS = (
     "result-schema-validation",
 )
 
-ARTIFACT_IDS = (
+OPEN_BUILD_ARTIFACT_IDS = (
     "structured-result-bundle",
     "compilation-database",
     "installed-distribution",
@@ -70,7 +79,7 @@ ARTIFACT_IDS = (
     "memory-samples",
 )
 
-RULE_IDS = (
+LEGACY_RULE_IDS = (
     "ci-result-schema-valid",
     "open-build-success",
     "installed-executable-validation",
@@ -78,6 +87,64 @@ RULE_IDS = (
     "no-oom-or-kill",
     "fast-regressions-availability",
 )
+
+REGRESSION_STAGE_IDS = (
+    "input-validation",
+    "hls-synthesis",
+    "rtl-generation",
+    "simulator-preparation",
+    "rtl-simulation",
+    "result-verification",
+)
+
+REGRESSION_METRIC_IDS = tuple(
+    f"duration.{stage_id}" for stage_id in REGRESSION_STAGE_IDS
+) + ("duration.regression-total",)
+
+REGRESSION_METRIC_CONTRACTS = {
+    **{
+        f"duration.{stage_id}": ("seconds", "elapsed", stage_id)
+        for stage_id in REGRESSION_STAGE_IDS
+    },
+    "duration.regression-total": ("seconds", "elapsed", "regression"),
+}
+
+REGRESSION_CHECK_IDS = (
+    "rtl-artifacts-produced",
+    "simulation-completed",
+    "expected-output-matches",
+)
+
+REGRESSION_CHECK_TYPES = {
+    "rtl-artifacts-produced": "artifact-validation",
+    "simulation-completed": "simulation",
+    "expected-output-matches": "result-verification",
+}
+
+REGRESSION_ARTIFACT_SUFFIXES = (
+    "bambu-log",
+    "result-report",
+    "rtl-output",
+    "simulation-log",
+)
+
+HOSTED_REGRESSION_RULE_ID = "hosted-fast-regressions-success"
+MULTI_TASK_RULE_IDS = LEGACY_RULE_IDS + (HOSTED_REGRESSION_RULE_ID,)
+
+CORE_DOCUMENT_PATHS = (
+    "request.json",
+    "artifacts.json",
+    "verdict.json",
+)
+
+# Backward-compatible aliases used by the 1.0 producer and its tests.
+STAGE_IDS = OPEN_BUILD_STAGE_IDS
+DURATION_METRIC_IDS = OPEN_BUILD_DURATION_METRIC_IDS
+METRIC_IDS = OPEN_BUILD_METRIC_IDS
+METRIC_CONTRACTS = OPEN_BUILD_METRIC_CONTRACTS
+CHECK_IDS = OPEN_BUILD_CHECK_IDS
+ARTIFACT_IDS = OPEN_BUILD_ARTIFACT_IDS
+RULE_IDS = LEGACY_RULE_IDS
 
 DOCUMENT_PATHS = (
     "request.json",

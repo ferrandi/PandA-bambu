@@ -114,7 +114,10 @@
           "enum": [
             "executable-validation",
             "co-simulation",
-            "schema-validation"
+            "schema-validation",
+            "artifact-validation",
+            "simulation",
+            "result-verification"
           ],
           "type": "string"
         }
@@ -256,6 +259,330 @@
         "skipped",
         "unknown",
         "neutral"
+      ],
+      "type": "string"
+    },
+    "regression_input": {
+      "additionalProperties": false,
+      "properties": {
+        "example_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "source_path": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "test_vector_kind": {
+          "enum": [
+            "inline",
+            "xml"
+          ],
+          "type": "string"
+        },
+        "test_vector_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "test_vector_value": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "top_function": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "example_id",
+        "source_path",
+        "top_function",
+        "test_vector_kind",
+        "test_vector_value",
+        "test_vector_path"
+      ],
+      "type": "object"
+    },
+    "regression_invocation": {
+      "additionalProperties": false,
+      "properties": {
+        "arguments": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "executable": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "working_directory": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "executable",
+        "working_directory",
+        "arguments"
+      ],
+      "type": "object"
+    },
+    "regression_options": {
+      "additionalProperties": false,
+      "properties": {
+        "bambu_parameters": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "clock_period": {
+          "minimum": 0,
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "compiler": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "device": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "experimental_setup": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "expose_globals": {
+          "type": "boolean"
+        },
+        "inline_max_cost": {
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "interface": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "language_standard": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "optimization": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "parallel_backend": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "simulate": {
+          "type": "boolean"
+        },
+        "simulator": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "test_vectors": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "top_function": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "bambu_parameters",
+        "compiler",
+        "simulator",
+        "simulate",
+        "top_function",
+        "test_vectors",
+        "optimization",
+        "device",
+        "clock_period",
+        "interface",
+        "language_standard",
+        "parallel_backend",
+        "experimental_setup",
+        "expose_globals",
+        "inline_max_cost"
+      ],
+      "type": "object"
+    },
+    "regression_request_configuration": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "$ref": "#/$defs/id"
+        },
+        "frontend": {
+          "additionalProperties": false,
+          "properties": {
+            "requested": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "requested"
+          ],
+          "type": "object"
+        },
+        "input": {
+          "$ref": "#/$defs/regression_input"
+        },
+        "invocation": {
+          "$ref": "#/$defs/regression_invocation"
+        },
+        "options": {
+          "$ref": "#/$defs/regression_options"
+        }
+      },
+      "required": [
+        "category",
+        "input",
+        "frontend",
+        "invocation",
+        "options"
+      ],
+      "type": "object"
+    },
+    "regression_result_configuration": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "$ref": "#/$defs/id"
+        },
+        "frontend": {
+          "additionalProperties": false,
+          "properties": {
+            "requested": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "selected": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "requested",
+            "selected"
+          ],
+          "type": "object"
+        },
+        "input": {
+          "$ref": "#/$defs/regression_input"
+        },
+        "invocation": {
+          "$ref": "#/$defs/regression_invocation"
+        },
+        "options": {
+          "$ref": "#/$defs/regression_options"
+        }
+      },
+      "required": [
+        "category",
+        "input",
+        "frontend",
+        "invocation",
+        "options"
+      ],
+      "type": "object"
+    },
+    "regression_results": {
+      "additionalProperties": false,
+      "properties": {
+        "simulation": {
+          "additionalProperties": false,
+          "properties": {
+            "completed": {
+              "type": "boolean"
+            },
+            "execution_count": {
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "total_cycles": {
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "verified": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "completed",
+            "verified",
+            "execution_count",
+            "total_cycles"
+          ],
+          "type": "object"
+        },
+        "synthesis": {
+          "additionalProperties": false,
+          "properties": {
+            "completed": {
+              "type": "boolean"
+            },
+            "rtl_artifact_count": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "completed",
+            "rtl_artifact_count"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "synthesis",
+        "simulation"
+      ],
+      "type": "object"
+    },
+    "schema_version": {
+      "enum": [
+        "1.0",
+        "1.1"
       ],
       "type": "string"
     },

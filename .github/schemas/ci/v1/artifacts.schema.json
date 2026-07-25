@@ -15,8 +15,7 @@
       "type": "string"
     },
     "schema_version": {
-      "const": "1.0",
-      "type": "string"
+      "$ref": "common.schema.json#/$defs/schema_version"
     }
   },
   "required": [
