@@ -196,7 +196,7 @@ jobs:
           storage-url: ${{ env.storage-url }}
           username: ${{ env.storage-user }}
           password: ${{ env.storage-token }}
-          submodules: "false"
+          submodules: "true"
       - name: Launch Bambu hls4ml regression
         shell: bash
         run: |
