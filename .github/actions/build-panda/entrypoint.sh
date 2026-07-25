@@ -48,8 +48,8 @@ OOM_KILL_COUNT_BEFORE=""
 MEMORY_MONITOR_PID=""
 MEMORY_SAMPLES_FILE="${WORKSPACE_DIR}/.ci-telemetry/jobs-${J:-unknown}/memory-samples.tsv"
 BUILD_ERROR_LOG="${WORKSPACE_DIR}/.ci-telemetry/jobs-${J:-unknown}/build-stderr.log"
-PEAK_BUILD_RSS_KIB="0"
-PEAK_BUILD_CGROUP_KIB="0"
+PEAK_BUILD_RSS_KIB=""
+PEAK_BUILD_CGROUP_KIB=""
 BUILD_TELEMETRY_REPORTED=false
 BUILD_START_EPOCH=""
 BUILD_SECONDS_REPORTED=false
@@ -105,7 +105,7 @@ function start_build_telemetry {
    BUILD_START_EPOCH="$(date +%s)"
    set_output memory-available-before-kib "${MEMORY_AVAILABLE_BEFORE_KIB}"
    set_output build-exit-status running
-   set_output failure-stage build
+   set_output failure-stage "${CURRENT_STAGE}"
    monitor_build_memory &
    MEMORY_MONITOR_PID=$!
 }
@@ -231,11 +231,29 @@ else
    set_output container-setup-seconds 0
 fi
 set_output cosimulation-seconds 0
+set_output configure-exit-status not-run
+set_output frontend-resolution-seconds ""
+set_output frontend-resolution-exit-status not-run
+set_output plugin-build-seconds ""
+set_output plugin-build-exit-status not-run
+set_output project-build-seconds ""
+set_output project-build-exit-status not-run
+set_output installation-exit-status not-run
+set_output cosimulation-exit-status not-run
+set_output selected-frontend ""
+set_output clang-version ""
+set_output clangxx-version ""
+set_output llvm-version ""
+set_output cmake-version ""
+set_output gcc-version ""
+set_output gxx-version ""
+set_output ccache-version ""
+set_output verilator-version ""
 
-set_output peak-build-rss-kib 0
-set_output peak-build-cgroup-kib 0
-set_output memory-available-before-kib 0
-set_output memory-available-after-kib 0
+set_output peak-build-rss-kib ""
+set_output peak-build-cgroup-kib ""
+set_output memory-available-before-kib ""
+set_output memory-available-after-kib ""
 set_output build-exit-status not-run
 set_output action-exit-status running
 set_output failure-stage initialization
@@ -283,6 +301,14 @@ for required_path in \
    fi
    ls -l "${required_path}"
 done
+set_output clang-version "$(clang-16 --version 2>&1 | sed -n '1p')"
+set_output clangxx-version "$(clang++-16 --version 2>&1 | sed -n '1p')"
+set_output llvm-version "$(llvm-config-16 --version 2>&1 | sed -n '1p')"
+set_output cmake-version "$(cmake --version 2>&1 | sed -n '1p')"
+set_output gcc-version "$(gcc --version 2>&1 | sed -n '1p')"
+set_output gxx-version "$(g++ --version 2>&1 | sed -n '1p')"
+set_output ccache-version "$(ccache --version 2>&1 | sed -n '1p')"
+set_output verilator-version "$(verilator --version 2>&1 | sed -n '1p')"
 clang-16 --version
 clang++-16 --version
 clang-cpp-16 --version
@@ -294,6 +320,7 @@ verilator --version
 echo "::endgroup::"
 
 CURRENT_STAGE="configure"
+set_output failure-stage "${CURRENT_STAGE}"
 echo "::group::Configure PandA build (CMake)"
 mkdir -p "${BUILD_DIR}" "${DIST_DIR}"
 
@@ -349,29 +376,56 @@ else
 fi
 
 configure_start_epoch="$(date +%s)"
+set +e
 cmake -S "${WORKSPACE_DIR}" -B "${BUILD_DIR}" "${CMAKE_ARGS[@]}"
+configure_status=$?
+set -e
 configure_seconds="$(( $(date +%s) - configure_start_epoch ))"
 set_output configure-seconds "${configure_seconds}"
+set_output configure-exit-status "${configure_status}"
 echo "configure_seconds=${configure_seconds}"
 echo "::endgroup::"
+if test "${configure_status}" -ne 0; then
+   exit "${configure_status}"
+fi
 
 CURRENT_STAGE="frontend-resolution"
+set_output failure-stage "${CURRENT_STAGE}"
 echo "::group::Resolve selected Clang frontend"
+frontend_resolution_start_epoch="$(date +%s)"
 CONFIG_HEADERS_DIR="${BUILD_DIR}/config_headers"
+frontend_resolution_status=0
+set +e
 FRONTEND_COMPILER="$(sed -n 's/^#define LIBBAMBU_COMPILER "\(.*\)"/\1/p' "${CONFIG_HEADERS_DIR}/config_LIBBAMBU_COMPILER.hpp")"
+frontend_compiler_status=$?
 CLANG_PLUGIN_SUBDIR="$(sed -n 's/^#define LIBBAMBU_COMPILER_DIR "\(.*\)"/\1/p' "${CONFIG_HEADERS_DIR}/config_LIBBAMBU_COMPILER_DIR.hpp")"
-if test -z "${FRONTEND_COMPILER}" || test -z "${CLANG_PLUGIN_SUBDIR}"; then
+clang_plugin_subdir_status=$?
+set -e
+if test "${frontend_compiler_status}" -ne 0; then
+   frontend_resolution_status="${frontend_compiler_status}"
+elif test "${clang_plugin_subdir_status}" -ne 0; then
+   frontend_resolution_status="${clang_plugin_subdir_status}"
+elif test -z "${FRONTEND_COMPILER}" || test -z "${CLANG_PLUGIN_SUBDIR}"; then
+   frontend_resolution_status=1
+fi
+frontend_resolution_seconds="$(( $(date +%s) - frontend_resolution_start_epoch ))"
+set_output frontend-resolution-seconds "${frontend_resolution_seconds}"
+set_output frontend-resolution-exit-status "${frontend_resolution_status}"
+if test "${frontend_resolution_status}" -ne 0; then
    echo "::error::Unable to resolve the selected frontend compiler and plugin directory."
-   exit 1
+   exit "${frontend_resolution_status}"
 fi
 FRONTEND_VERSION="${FRONTEND_COMPILER#I386_CLANG}"
 CLANG_PLUGIN_DIR="${BUILD_DIR}/${CLANG_PLUGIN_SUBDIR}"
+set_output selected-frontend "${FRONTEND_COMPILER}"
 echo "Selected frontend: ${FRONTEND_COMPILER}"
 echo "Expected plugin directory: ${CLANG_PLUGIN_DIR}"
 echo "::endgroup::"
 
-CURRENT_STAGE="build"
+CURRENT_STAGE="plugin-build"
+set_output failure-stage "${CURRENT_STAGE}"
 start_build_telemetry
+plugin_build_start_epoch="$(date +%s)"
 
 PLUGIN_TARGETS=(
    "clang_plugin_${FRONTEND_VERSION}_ast"
@@ -386,6 +440,9 @@ BUILD_EXIT_STATUS=$?
 set -e
 set_output build-exit-status "${BUILD_EXIT_STATUS}"
 if test "${BUILD_EXIT_STATUS}" -ne 0; then
+   plugin_build_seconds="$(( $(date +%s) - plugin_build_start_epoch ))"
+   set_output plugin-build-seconds "${plugin_build_seconds}"
+   set_output plugin-build-exit-status "${BUILD_EXIT_STATUS}"
    finish_build_telemetry
    exit "${BUILD_EXIT_STATUS}"
 fi
@@ -396,23 +453,56 @@ for plugin in ASTAnalyzer.so customSROA.so expandMemOps.so dumpBambuIrSSA.so; do
    plugin_path="${CLANG_PLUGIN_DIR}/${plugin}"
    if test ! -f "${plugin_path}"; then
       echo "::error file=${plugin_path}::Required PandA Clang plugin is missing."
+      plugin_build_seconds="$(( $(date +%s) - plugin_build_start_epoch ))"
+      set_output plugin-build-seconds "${plugin_build_seconds}"
+      set_output plugin-build-exit-status 1
       exit 1
    fi
+   set +e
    file "${plugin_path}"
+   plugin_file_status=$?
+   set -e
+   if test "${plugin_file_status}" -ne 0; then
+      plugin_build_seconds="$(( $(date +%s) - plugin_build_start_epoch ))"
+      set_output plugin-build-seconds "${plugin_build_seconds}"
+      set_output plugin-build-exit-status "${plugin_file_status}"
+      exit "${plugin_file_status}"
+   fi
+   set +e
    ldd "${plugin_path}" | tee "${BUILD_DIR}/${plugin}.ldd.txt"
+   plugin_ldd_status=$?
+   set -e
+   if test "${plugin_ldd_status}" -ne 0; then
+      plugin_build_seconds="$(( $(date +%s) - plugin_build_start_epoch ))"
+      set_output plugin-build-seconds "${plugin_build_seconds}"
+      set_output plugin-build-exit-status "${plugin_ldd_status}"
+      exit "${plugin_ldd_status}"
+   fi
    if grep -q "not found" "${BUILD_DIR}/${plugin}.ldd.txt"; then
       echo "::error file=${plugin_path}::PandA Clang plugin has unresolved shared-library dependencies."
+      plugin_build_seconds="$(( $(date +%s) - plugin_build_start_epoch ))"
+      set_output plugin-build-seconds "${plugin_build_seconds}"
+      set_output plugin-build-exit-status 1
       exit 1
    fi
 done
 echo "::endgroup::"
+plugin_build_seconds="$(( $(date +%s) - plugin_build_start_epoch ))"
+set_output plugin-build-seconds "${plugin_build_seconds}"
+set_output plugin-build-exit-status 0
 
+CURRENT_STAGE="project-build"
+set_output failure-stage "${CURRENT_STAGE}"
+project_build_start_epoch="$(date +%s)"
 echo "::group::Build PandA project"
 set +e
 cmake --build "${BUILD_DIR}" --parallel "${J:-1}" 2> >(tee -a "${BUILD_ERROR_LOG}" >&2)
 BUILD_EXIT_STATUS=$?
 set -e
 set_output build-exit-status "${BUILD_EXIT_STATUS}"
+project_build_seconds="$(( $(date +%s) - project_build_start_epoch ))"
+set_output project-build-seconds "${project_build_seconds}"
+set_output project-build-exit-status "${BUILD_EXIT_STATUS}"
 finish_build_telemetry
 if test "${BUILD_EXIT_STATUS}" -ne 0; then
    exit "${BUILD_EXIT_STATUS}"
@@ -433,13 +523,21 @@ if test -e "${BUILD_DIR}/compile_commands.json"; then
    echo "::endgroup::"
 fi
 
-CURRENT_STAGE="install"
+CURRENT_STAGE="installation"
+set_output failure-stage "${CURRENT_STAGE}"
 echo "::group::Package PandA distribution"
 install_start_epoch="$(date +%s)"
+set +e
 cmake --install "${BUILD_DIR}" --strip
+installation_status=$?
+set -e
 install_seconds="$(( $(date +%s) - install_start_epoch ))"
 set_output install-seconds "${install_seconds}"
+set_output installation-exit-status "${installation_status}"
 echo "install_seconds=${install_seconds}"
+if test "${installation_status}" -ne 0; then
+   exit "${installation_status}"
+fi
 
 if ${APPIMAGE_ENABLED}; then
    if cmake --build "${BUILD_DIR}" --target appimage_bundle; then
@@ -455,11 +553,13 @@ if ${APPIMAGE_ENABLED}; then
    fi
 fi
 echo "::endgroup::"
+set_output dist-dir "${DIST_DIR#${WORKSPACE_DIR}/}"
 
 # TODO: The installed distribution currently embeds build-tree plugin paths.
 # Install the plugins into panda_dist and make plugin discovery relative to the
 # installation prefix before treating the distribution as relocatable.
 CURRENT_STAGE="cosimulation"
+set_output failure-stage "${CURRENT_STAGE}"
 if test "${SYNTHESIS_SMOKE:-false}" = "true"; then
    SYNTHESIS_OUTPUT_DIR="${WORKSPACE_DIR}/synthesis-smoke"
    mkdir -p "${SYNTHESIS_OUTPUT_DIR}"
@@ -490,6 +590,7 @@ if test "${SYNTHESIS_SMOKE:-false}" = "true"; then
    set -e
    smoke_elapsed_seconds=$((SECONDS - smoke_start_seconds))
    set_output cosimulation-seconds "${smoke_elapsed_seconds}"
+   set_output cosimulation-exit-status "${smoke_status}"
    printf 'Bambu XML Verilator co-simulation runtime: %s seconds\n' "${smoke_elapsed_seconds}" |
       tee "${SYNTHESIS_OUTPUT_DIR}/runtime.txt"
    echo "::endgroup::"
@@ -499,4 +600,5 @@ if test "${SYNTHESIS_SMOKE:-false}" = "true"; then
 fi
 
 CURRENT_STAGE="complete"
+set_output failure-stage none
 set_output dist-dir "${DIST_DIR#${WORKSPACE_DIR}/}"

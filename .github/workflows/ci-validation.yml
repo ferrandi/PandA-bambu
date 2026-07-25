@@ -6,6 +6,9 @@ on:
       - ".github/workflows/**"
       - ".github/actions/**"
       - ".github/actionlint.yaml"
+      - ".github/schemas/ci/**"
+      - ".github/scripts/ci_results/**"
+      - ".github/scripts/test_ci_results.py"
       - ".github/scripts/validate_ci.py"
       - ".github/scripts/test_validate_ci.py"
 
@@ -57,3 +60,9 @@ jobs:
       - name: Run validator self-tests
         shell: bash
         run: /tmp/ci-validator-venv/bin/python .github/scripts/test_validate_ci.py
+
+      - name: Run CI result protocol tests
+        shell: bash
+        run: >-
+          /tmp/ci-validator-venv/bin/python -m unittest discover
+          -s .github/scripts -p "test_ci_results.py"

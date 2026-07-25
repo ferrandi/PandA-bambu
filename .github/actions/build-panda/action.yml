@@ -30,12 +30,48 @@ outputs:
     description: "Seconds from host action start until the container entrypoint"
   configure-seconds:
     description: "CMake configuration duration in seconds"
+  configure-exit-status:
+    description: "CMake configuration exit status, or not-run"
+  frontend-resolution-seconds:
+    description: "Selected frontend resolution duration in seconds"
+  frontend-resolution-exit-status:
+    description: "Selected frontend resolution exit status, or not-run"
+  plugin-build-seconds:
+    description: "Selected PandA Clang plugin build and verification duration in seconds"
+  plugin-build-exit-status:
+    description: "Selected PandA Clang plugin build and verification exit status, or not-run"
+  project-build-seconds:
+    description: "PandA project build duration in seconds"
+  project-build-exit-status:
+    description: "PandA project build exit status, or not-run"
   build-seconds:
     description: "PandA compilation duration in seconds"
   install-seconds:
     description: "PandA installation duration in seconds"
+  installation-exit-status:
+    description: "PandA installation exit status, or not-run"
   cosimulation-seconds:
     description: "Bambu XML Verilator co-simulation duration in seconds"
+  cosimulation-exit-status:
+    description: "Bambu XML Verilator co-simulation exit status, or not-run"
+  selected-frontend:
+    description: "Frontend compiler selected by the PandA configuration"
+  clang-version:
+    description: "One-line clang version"
+  clangxx-version:
+    description: "One-line clang++ version"
+  llvm-version:
+    description: "One-line LLVM version"
+  cmake-version:
+    description: "One-line CMake version"
+  gcc-version:
+    description: "One-line GCC version"
+  gxx-version:
+    description: "One-line G++ version"
+  ccache-version:
+    description: "One-line ccache version"
+  verilator-version:
+    description: "One-line Verilator version"
   peak-build-rss-kib:
     description: "Sampled aggregate resident set size across concurrent PandA build processes in KiB"
   peak-build-cgroup-kib:

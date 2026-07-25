@@ -1,0 +1,167 @@
+{
+  "$id": "https://panda-re.github.io/schemas/ci/v1/request.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "base_sha": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/sha"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "build_parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "assertions_enabled": {
+          "type": "boolean"
+        },
+        "build_type": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "cache_mode": {
+          "enum": [
+            "disabled",
+            "persistent-read-write",
+            "persistent-read-only"
+          ],
+          "type": "string"
+        },
+        "cmake_arguments": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "configured_parallelism": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "release_enabled": {
+          "type": "boolean"
+        },
+        "selected_frontend": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "synthesis_smoke_enabled": {
+          "type": "boolean"
+        },
+        "warnings_as_errors": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "configured_parallelism",
+        "build_type",
+        "release_enabled",
+        "assertions_enabled",
+        "warnings_as_errors",
+        "selected_frontend",
+        "synthesis_smoke_enabled",
+        "cache_mode",
+        "cmake_arguments"
+      ],
+      "type": "object"
+    },
+    "commit_sha": {
+      "$ref": "common.schema.json#/$defs/sha"
+    },
+    "event_type": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "policy_profile": {
+      "const": "pull-request-default",
+      "type": "string"
+    },
+    "pull_request_number": {
+      "minimum": 1,
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "ref": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "repository": {
+      "pattern": "^[^/]+/[^/]+$",
+      "type": "string"
+    },
+    "request_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "requested_artifact_ids": {
+      "items": {
+        "$ref": "common.schema.json#/$defs/id"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "requested_task_ids": {
+      "items": {
+        "$ref": "common.schema.json#/$defs/id"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "schema": {
+      "const": "panda.ci.request",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "tasks": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "task_id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "task_type": {
+            "enum": [
+              "build"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "task_type"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema",
+    "schema_version",
+    "request_id",
+    "repository",
+    "commit_sha",
+    "base_sha",
+    "ref",
+    "pull_request_number",
+    "event_type",
+    "requested_task_ids",
+    "tasks",
+    "build_parameters",
+    "requested_artifact_ids",
+    "policy_profile"
+  ],
+  "title": "PandA CI request",
+  "type": "object"
+}
