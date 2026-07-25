@@ -9,6 +9,10 @@ inputs:
     description: "Parallel jobs"
     required: false
     default: "1"
+  synthesis-smoke:
+    description: "Run a small Bambu synthesis and Verilator simulation smoke test"
+    required: false
+    default: "false"
 outputs:
   dist-dir:
     description: "Distribution output directory"
@@ -19,5 +23,6 @@ runs:
   image: "Dockerfile"
   env:
     J: ${{inputs.jobs}}
+    SYNTHESIS_SMOKE: ${{inputs.synthesis-smoke}}
   args:
     - ${{inputs.config-args}}

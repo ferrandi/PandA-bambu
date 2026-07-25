@@ -1,9 +1,10 @@
 #include "libm.h"
 
-#if FLT_EVAL_METHOD==2
-#undef sqrt
-#define sqrt sqrtl
-#endif
+/*
+ * Upstream musl maps sqrt to sqrtl when double expressions are evaluated as
+ * long double.  PandA's reduced libm only provides float and double entry
+ * points, so keep this implementation within the supported API.
+ */
 
 /* acosh(x) = log(x + sqrt(x*x-1)) */
 double acosh(double x)

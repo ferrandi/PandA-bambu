@@ -70,9 +70,20 @@ function(_panda_collect_clang_flags ver out_cxx out_ld out_libdir out_defs)
       endif()
    endforeach()
    if(NOT _llvmconfig_exe)
-      message(STATUS "clang-${ver}: llvm-config not found alongside toolchain; skipping plugins")
+      # The detected compiler may be a ccache wrapper (for example,
+      # /usr/lib/ccache/clang-16), so its parent is not necessarily the LLVM
+      # installation prefix. Fall back to the matching distro tool on PATH.
+      unset(_llvmconfig_exe CACHE)
+      unset(_llvmconfig_exe)
+      find_program(_llvmconfig_exe
+         NAMES "llvm-config-${ver}" "llvm-config-${ver}.0" llvm-config
+         HINTS "/usr/lib/llvm-${ver}/bin")
+   endif()
+   if(NOT _llvmconfig_exe)
+      message(STATUS "clang-${ver}: matching llvm-config not found; skipping plugins")
       return()
    endif()
+   message(STATUS "clang-${ver}: plugin build uses llvm-config=${_llvmconfig_exe}")
 
    execute_process(COMMAND "${_llvmconfig_exe}" --cxxflags
       OUTPUT_VARIABLE _raw_flags

@@ -1,0 +1,87 @@
+name: Open build smoke
+
+on:
+  pull_request:
+    paths:
+      - CMakeLists.txt
+      - cmake/**
+      - src/**
+      - ext/**
+      - etc/**
+      - .github/actions/build-panda/**
+      - .github/workflows/open-build-smoke.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and verify open-source tools
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build PandA-bambu
+        id: build
+        uses: ./.github/actions/build-panda
+        with:
+          jobs: "2"
+          synthesis-smoke: "true"
+          config-args: >-
+            -DPANDA_ENABLE_RELEASE=ON
+            -DPANDA_ENABLE_ASSERTS=OFF
+            -DPANDA_ENABLE_WERROR=ON
+            -DPANDA_LIBBAMBU_COMPILER=I386_CLANG16
+
+      - name: Verify installed executables
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          dist_dir="${{ steps.build.outputs.dist-dir }}"
+          if [[ -z "${dist_dir}" ]]; then
+            echo "::error::The build-panda action did not return a distribution directory."
+            exit 1
+          fi
+
+          bin_dir="${GITHUB_WORKSPACE}/${dist_dir}/bin"
+          for executable in bambu bambu-cc eucalyptus; do
+            executable_path="${bin_dir}/${executable}"
+            if [[ ! -x "${executable_path}" ]]; then
+              echo "::error file=${executable_path}::Expected installed executable is missing or not executable."
+              exit 1
+            fi
+
+            file "${executable_path}"
+            if ! "${executable_path}" --version; then
+              echo "::error file=${executable_path}::Installed executable could not start."
+              exit 1
+            fi
+          done
+
+      - name: Upload build diagnostics
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: open-build-diagnostics-${{ github.run_id }}
+          path: |
+            build/CMakeCache.txt
+            build/CMakeFiles/CMakeConfigureLog.yaml
+            build/CMakeFiles/CMakeOutput.log
+            build/CMakeFiles/CMakeError.log
+            build/config_headers/**
+            compilation_db/build/config_headers/**
+            compilation_db/build/compile_commands.json
+            synthesis-smoke/**
+          if-no-files-found: warn
+          retention-days: 3
