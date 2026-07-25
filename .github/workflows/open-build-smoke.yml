@@ -26,10 +26,31 @@ jobs:
     timeout-minutes: 120
 
     steps:
+      - name: Record workflow start
+        id: workflow-timing
+        shell: bash
+        run: echo "start-epoch=$(date +%s)" >> "${GITHUB_OUTPUT}"
+
       - name: Check out source
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Restore compiler cache
+        id: ccache-restore
+        uses: actions/cache/restore@v5
+        continue-on-error: true
+        with:
+          path: .ccache
+          key: >-
+            panda-ccache-v1-${{ runner.os }}-${{ runner.arch }}-gcc13-clang16-release-noassert-werror-I386_CLANG16-${{ hashFiles('CMakeLists.txt', 'cmake/**/*.cmake', '.github/actions/build-panda/Dockerfile', '.github/actions/build-panda/action.yml', '.github/actions/build-panda/entrypoint.sh', 'etc/clang_plugin/CMakeLists.txt') }}-${{ github.sha }}
+          restore-keys: |
+            panda-ccache-v1-${{ runner.os }}-${{ runner.arch }}-gcc13-clang16-release-noassert-werror-I386_CLANG16-${{ hashFiles('CMakeLists.txt', 'cmake/**/*.cmake', '.github/actions/build-panda/Dockerfile', '.github/actions/build-panda/action.yml', '.github/actions/build-panda/entrypoint.sh', 'etc/clang_plugin/CMakeLists.txt') }}-
+
+      - name: Record Docker action start
+        id: action-timing
+        shell: bash
+        run: echo "start-epoch=$(date +%s)" >> "${GITHUB_OUTPUT}"
 
       - name: Build PandA-bambu
         id: build
@@ -37,6 +58,7 @@ jobs:
         with:
           jobs: "2"
           synthesis-smoke: "true"
+          action-start-epoch: ${{ steps.action-timing.outputs.start-epoch }}
           config-args: >-
             -DPANDA_ENABLE_RELEASE=ON
             -DPANDA_ENABLE_ASSERTS=OFF
@@ -68,6 +90,85 @@ jobs:
               exit 1
             fi
           done
+
+      - name: Save compiler cache
+        id: ccache-save
+        if: ${{ success() && steps.ccache-restore.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v5
+        continue-on-error: true
+        with:
+          path: .ccache
+          key: ${{ steps.ccache-restore.outputs.cache-primary-key }}
+
+      - name: Write build performance summary
+        if: ${{ always() }}
+        shell: bash
+        env:
+          WORKFLOW_START_EPOCH: ${{ steps.workflow-timing.outputs.start-epoch }}
+          CACHE_HIT: ${{ steps.ccache-restore.outputs.cache-hit }}
+          CACHE_MATCHED_KEY: ${{ steps.ccache-restore.outputs.cache-matched-key }}
+          CACHE_PRIMARY_KEY: ${{ steps.ccache-restore.outputs.cache-primary-key }}
+          CACHE_SAVE_OUTCOME: ${{ steps.ccache-save.outcome }}
+          CONTAINER_SETUP_SECONDS: ${{ steps.build.outputs.container-setup-seconds }}
+          CONFIGURE_SECONDS: ${{ steps.build.outputs.configure-seconds }}
+          BUILD_SECONDS: ${{ steps.build.outputs.build-seconds }}
+          INSTALL_SECONDS: ${{ steps.build.outputs.install-seconds }}
+          COSIMULATION_SECONDS: ${{ steps.build.outputs.cosimulation-seconds }}
+          CCACHE_CACHEABLE_CALLS: ${{ steps.build.outputs.ccache-cacheable-calls }}
+          CCACHE_HITS: ${{ steps.build.outputs.ccache-hits }}
+          CCACHE_MISSES: ${{ steps.build.outputs.ccache-misses }}
+          CCACHE_HIT_RATE: ${{ steps.build.outputs.ccache-hit-rate }}
+          CCACHE_SIZE_KIBIBYTE: ${{ steps.build.outputs.ccache-size-kibibyte }}
+        run: |
+          set -euo pipefail
+
+          total_workflow_seconds=0
+          if [[ "${WORKFLOW_START_EPOCH:-}" =~ ^[0-9]+$ ]]; then
+            total_workflow_seconds=$(( $(date +%s) - WORKFLOW_START_EPOCH ))
+          fi
+
+          cache_restore=miss
+          if [[ "${CACHE_HIT:-}" == "true" ]]; then
+            cache_restore=exact
+          elif [[ -n "${CACHE_MATCHED_KEY:-}" ]]; then
+            cache_restore=prefix
+          fi
+
+          {
+            echo "## Open build performance"
+            echo
+            echo "| Measurement | Value |"
+            echo "| --- | ---: |"
+            echo "| Container setup | ${CONTAINER_SETUP_SECONDS:-0} s |"
+            echo "| CMake configure | ${CONFIGURE_SECONDS:-0} s |"
+            echo "| PandA compilation | ${BUILD_SECONDS:-0} s |"
+            echo "| Installation | ${INSTALL_SECONDS:-0} s |"
+            echo "| XML/Verilator co-simulation | ${COSIMULATION_SECONDS:-0} s |"
+            echo "| Total workflow through cache save | ${total_workflow_seconds} s |"
+            echo "| Cacheable calls | ${CCACHE_CACHEABLE_CALLS:-0} |"
+            echo "| Cache hits | ${CCACHE_HITS:-0} |"
+            echo "| Cache misses | ${CCACHE_MISSES:-0} |"
+            echo "| Cache hit rate | ${CCACHE_HIT_RATE:-0.00}% |"
+            echo "| Cache size | ${CCACHE_SIZE_KIBIBYTE:-0} KiB |"
+            echo
+            echo "~~~text"
+            echo "container_setup_seconds=${CONTAINER_SETUP_SECONDS:-0}"
+            echo "configure_seconds=${CONFIGURE_SECONDS:-0}"
+            echo "build_seconds=${BUILD_SECONDS:-0}"
+            echo "install_seconds=${INSTALL_SECONDS:-0}"
+            echo "cosimulation_seconds=${COSIMULATION_SECONDS:-0}"
+            echo "total_workflow_seconds=${total_workflow_seconds}"
+            echo "ccache_cacheable_calls=${CCACHE_CACHEABLE_CALLS:-0}"
+            echo "ccache_hits=${CCACHE_HITS:-0}"
+            echo "ccache_misses=${CCACHE_MISSES:-0}"
+            echo "ccache_hit_rate=${CCACHE_HIT_RATE:-0.00}"
+            echo "ccache_size_kibibyte=${CCACHE_SIZE_KIBIBYTE:-0}"
+            echo "cache_restore=${cache_restore}"
+            echo "cache_primary_key=${CACHE_PRIMARY_KEY:-}"
+            echo "cache_matched_key=${CACHE_MATCHED_KEY:-}"
+            echo "cache_save_outcome=${CACHE_SAVE_OUTCOME:-skipped}"
+            echo "~~~"
+          } >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Upload build diagnostics
         if: ${{ failure() }}

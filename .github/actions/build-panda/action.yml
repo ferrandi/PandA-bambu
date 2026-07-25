@@ -13,16 +13,41 @@ inputs:
     description: "Run a small Bambu synthesis and Verilator simulation smoke test"
     required: false
     default: "false"
+  action-start-epoch:
+    description: "Host epoch immediately before the Docker action, used to measure container setup"
+    required: false
+    default: ""
 outputs:
   dist-dir:
     description: "Distribution output directory"
   compilation-db:
     description: "Stripped build directory with compile_commands.json and configuration headers"
+  container-setup-seconds:
+    description: "Seconds from host action start until the container entrypoint"
+  configure-seconds:
+    description: "CMake configuration duration in seconds"
+  build-seconds:
+    description: "PandA compilation duration in seconds"
+  install-seconds:
+    description: "PandA installation duration in seconds"
+  cosimulation-seconds:
+    description: "Bambu XML Verilator co-simulation duration in seconds"
+  ccache-cacheable-calls:
+    description: "Cacheable compiler calls in this build"
+  ccache-hits:
+    description: "Compiler cache hits in this build"
+  ccache-misses:
+    description: "Compiler cache misses in this build"
+  ccache-hit-rate:
+    description: "Compiler cache hit percentage in this build"
+  ccache-size-kibibyte:
+    description: "Compiler cache size in KiB after the build"
 runs:
   using: "docker"
   image: "Dockerfile"
   env:
     J: ${{inputs.jobs}}
     SYNTHESIS_SMOKE: ${{inputs.synthesis-smoke}}
+    ACTION_START_EPOCH: ${{inputs.action-start-epoch}}
   args:
     - ${{inputs.config-args}}

@@ -31,14 +31,61 @@ CCACHE_DIR="${WORKSPACE_DIR}/.ccache"
 APPIMAGE_NAME="bambu"
 APPIMAGE_ENABLED=false
 APPIMAGE_RUNTIME_FILE=""
+CONTAINER_START_EPOCH="$(date +%s)"
+CCACHE_REPORTED=false
+
+function set_output {
+   printf '%s=%s\n' "$1" "$2" >> "${GITHUB_OUTPUT}"
+}
+
+function ccache_stat {
+   ccache --print-stats | awk -v key="$1" '$1 == key { print $2 }'
+}
+
+function report_ccache {
+   if ${CCACHE_REPORTED} || ! command -v ccache >/dev/null 2>&1; then
+      return
+   fi
+   CCACHE_REPORTED=true
+   echo "::group::Final ccache statistics"
+   ccache --show-stats
+   local direct_hits preprocessed_hits hits misses cacheable size_kib hit_rate
+   direct_hits="$(ccache_stat direct_cache_hit)"
+   preprocessed_hits="$(ccache_stat preprocessed_cache_hit)"
+   misses="$(ccache_stat cache_miss)"
+   size_kib="$(ccache_stat cache_size_kibibyte)"
+   hits=$((direct_hits + preprocessed_hits))
+   cacheable=$((hits + misses))
+   hit_rate="$(awk -v hits="${hits}" -v total="${cacheable}" 'BEGIN { if (total == 0) print "0.00"; else printf "%.2f", 100 * hits / total }')"
+   set_output ccache-cacheable-calls "${cacheable}"
+   set_output ccache-hits "${hits}"
+   set_output ccache-misses "${misses}"
+   set_output ccache-hit-rate "${hit_rate}"
+   set_output ccache-size-kibibyte "${size_kib}"
+   echo "ccache_cacheable_calls=${cacheable}"
+   echo "ccache_hits=${hits}"
+   echo "ccache_misses=${misses}"
+   echo "ccache_hit_rate=${hit_rate}"
+   echo "ccache_size_kibibyte=${size_kib}"
+   echo "::endgroup::"
+}
+
 
 function cleanup {
    local status=$?
-   echo "::endgroup::"
    trap - EXIT
+   report_ccache || true
+   echo "::endgroup::"
    exit ${status}
 }
 trap cleanup EXIT
+
+if [[ "${ACTION_START_EPOCH:-}" =~ ^[0-9]+$ ]] && test "${CONTAINER_START_EPOCH}" -ge "${ACTION_START_EPOCH}"; then
+   set_output container-setup-seconds "$((CONTAINER_START_EPOCH - ACTION_START_EPOCH))"
+else
+   set_output container-setup-seconds 0
+fi
+set_output cosimulation-seconds 0
 
 echo "::group::Initialize workspace"
 if test -d "${COMPILERS_DIR}"; then
@@ -46,14 +93,25 @@ if test -d "${COMPILERS_DIR}"; then
    if test -e "${COMPILERS_DIR}/settings.sh"; then source "${COMPILERS_DIR}/settings.sh"; fi
 fi
 
-PATH="/usr/lib/ccache:$PATH"
 export PATH
 export CCACHE_DIR
+export CCACHE_BASEDIR="${WORKSPACE_DIR}"
+export CCACHE_NOHASHDIR=true
+export CCACHE_CONFIGPATH="${CCACHE_DIR}/ccache.conf"
+umask 0022
 mkdir -p "${CCACHE_DIR}"
-cat > ${CCACHE_DIR}/ccache.conf << EOF
-max_size = 5.0G
-cache_dir = ${CCACHE_DIR}
-EOF
+ccache --set-config="cache_dir=${CCACHE_DIR}"
+ccache --set-config=max_size=5G
+ccache --set-config=compression=true
+ccache --set-config=compiler_check=content
+ccache --set-config="base_dir=${WORKSPACE_DIR}"
+ccache --set-config=hash_dir=false
+ccache --set-config=absolute_paths_in_stderr=false
+ccache --set-config=umask=0022
+ccache --show-config
+echo "Initial persisted ccache statistics:"
+ccache --show-stats
+ccache --zero-stats
 echo "::endgroup::"
 
 echo "::group::Verify Clang/LLVM frontend development environment"
@@ -118,6 +176,8 @@ CMAKE_ARGS+=(
    "-DCMAKE_BUILD_TYPE=Release"
    "-DCMAKE_INSTALL_MESSAGE=LAZY"
    "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+   "-DCMAKE_C_COMPILER_LAUNCHER=ccache"
+   "-DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
    "-DPANDA_BUILD_BAMBU=ON"
    "-DPANDA_BUILD_CC=ON"
    "-DPANDA_BUILD_EUCALYPTUS=ON"
@@ -132,7 +192,11 @@ else
    CMAKE_ARGS+=("-DCMAKE_INSTALL_PREFIX=${DIST_DIR}")
 fi
 
+configure_start_epoch="$(date +%s)"
 cmake -S "${WORKSPACE_DIR}" -B "${BUILD_DIR}" "${CMAKE_ARGS[@]}"
+configure_seconds="$(( $(date +%s) - configure_start_epoch ))"
+set_output configure-seconds "${configure_seconds}"
+echo "configure_seconds=${configure_seconds}"
 echo "::endgroup::"
 
 echo "::group::Resolve selected Clang frontend"
@@ -149,6 +213,7 @@ echo "Selected frontend: ${FRONTEND_COMPILER}"
 echo "Expected plugin directory: ${CLANG_PLUGIN_DIR}"
 echo "::endgroup::"
 
+build_start_epoch="$(date +%s)"
 PLUGIN_TARGETS=(
    "clang_plugin_${FRONTEND_VERSION}_ast"
    "clang_plugin_${FRONTEND_VERSION}_customsroa"
@@ -178,6 +243,9 @@ echo "::endgroup::"
 echo "::group::Build PandA project"
 cmake --build "${BUILD_DIR}" --parallel "${J:-1}"
 echo "::endgroup::"
+build_seconds="$(( $(date +%s) - build_start_epoch ))"
+set_output build-seconds "${build_seconds}"
+echo "build_seconds=${build_seconds}"
 
 if test -e "${BUILD_DIR}/compile_commands.json"; then
    echo "::group::Export Compilation Database"
@@ -190,7 +258,11 @@ if test -e "${BUILD_DIR}/compile_commands.json"; then
 fi
 
 echo "::group::Package PandA distribution"
+install_start_epoch="$(date +%s)"
 cmake --install "${BUILD_DIR}" --strip
+install_seconds="$(( $(date +%s) - install_start_epoch ))"
+set_output install-seconds "${install_seconds}"
+echo "install_seconds=${install_seconds}"
 
 if ${APPIMAGE_ENABLED}; then
    if cmake --build "${BUILD_DIR}" --target appimage_bundle; then
@@ -239,6 +311,7 @@ if test "${SYNTHESIS_SMOKE:-false}" = "true"; then
    smoke_status=$?
    set -e
    smoke_elapsed_seconds=$((SECONDS - smoke_start_seconds))
+   set_output cosimulation-seconds "${smoke_elapsed_seconds}"
    printf 'Bambu XML Verilator co-simulation runtime: %s seconds\n' "${smoke_elapsed_seconds}" |
       tee "${SYNTHESIS_OUTPUT_DIR}/runtime.txt"
    echo "::endgroup::"
@@ -247,4 +320,4 @@ if test "${SYNTHESIS_SMOKE:-false}" = "true"; then
    fi
 fi
 
-echo "dist-dir=${DIST_DIR#${WORKSPACE_DIR}/}" >> ${GITHUB_OUTPUT}
+set_output dist-dir "${DIST_DIR#${WORKSPACE_DIR}/}"
