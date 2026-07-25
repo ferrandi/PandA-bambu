@@ -39,8 +39,11 @@
 #include "ir_manager.hpp"
 #include "ir_node.hpp"
 #include "op_graph.hpp"
+#include "operations_graph_constructor.hpp"
 #include "string_manipulation.hpp"
 
+#include <algorithm>
+#include <cstdint>
 #include <utility>
 
 DataDependenceComputation::DataDependenceComputation(const application_managerRef _AppM, unsigned int _function_id,
@@ -75,16 +78,19 @@ static void ordered_dfs(unsigned u, const OpGraph& avg, CustomUnorderedMap<OpGra
                         CustomUnorderedSet<std::pair<unsigned, unsigned>>& keep)
 {
    vis[u] = true;
-   CustomOrderedSet<unsigned> to;
+   std::vector<unsigned> to;
    auto statement = rev_pos.at(u);
+   to.reserve(avg.out_degree(statement));
    for(const auto& ei : avg.out_edges(statement))
    {
       auto vi = avg.target(ei);
       if(pos.find(vi) != pos.end())
       {
-         to.insert(pos.find(vi)->second);
+         to.push_back(pos.find(vi)->second);
       }
    }
+   std::sort(to.begin(), to.end());
+   to.erase(std::unique(to.begin(), to.end()), to.end());
    for(auto dest : to)
    {
       if(!vis[dest])
@@ -93,6 +99,78 @@ static void ordered_dfs(unsigned u, const OpGraph& avg, CustomUnorderedMap<OpGra
          ordered_dfs(dest, avg, pos, rev_pos, vis, keep);
       }
    }
+}
+
+static bool compute_reduced_edges(const OpGraph& avg,
+                                  const CustomUnorderedMap<OpGraph::vertex_descriptor, unsigned>& pos,
+                                  const std::vector<OpGraph::vertex_descriptor>& rev_pos,
+                                  CustomUnorderedSet<std::pair<unsigned, unsigned>>& keep)
+{
+   const auto n_stmts = rev_pos.size();
+   std::vector<std::vector<unsigned>> successors(n_stmts);
+   bool forward_ordered = true;
+   for(unsigned u = 0; u < n_stmts; ++u)
+   {
+      const auto statement = rev_pos.at(u);
+      auto& statement_successors = successors.at(u);
+      statement_successors.reserve(avg.out_degree(statement));
+      for(const auto& edge : avg.out_edges(statement))
+      {
+         const auto target = avg.target(edge);
+         const auto target_position = pos.find(target);
+         if(target_position != pos.end())
+         {
+            statement_successors.push_back(target_position->second);
+            forward_ordered &= target_position->second > u;
+         }
+      }
+      std::sort(statement_successors.begin(), statement_successors.end());
+      statement_successors.erase(std::unique(statement_successors.begin(), statement_successors.end()),
+                                 statement_successors.end());
+   }
+   if(!forward_ordered || !n_stmts)
+   {
+      return false;
+   }
+
+   const std::size_t words_per_row = (n_stmts + 63U) / 64U;
+   std::vector<std::size_t> row_offsets(n_stmts + 1U, 0U);
+   constexpr std::size_t max_reachability_words = (std::size_t{1} << 30U) / sizeof(std::uint64_t);
+   for(std::size_t u = 0; u < n_stmts; ++u)
+   {
+      const auto row_words = words_per_row - (u / 64U);
+      if(row_words > max_reachability_words || row_offsets.at(u) > max_reachability_words - row_words)
+      {
+         return false;
+      }
+      row_offsets.at(u + 1U) = row_offsets.at(u) + row_words;
+   }
+
+   std::vector<std::uint64_t> reachability(row_offsets.back(), 0U);
+   for(std::size_t u = n_stmts; u-- > 0U;)
+   {
+      const auto row_start_word = u / 64U;
+      auto* const row = reachability.data() + row_offsets.at(u);
+      for(const auto destination : successors.at(u))
+      {
+         const auto destination_word = static_cast<std::size_t>(destination) / 64U;
+         const auto destination_mask = std::uint64_t{1} << (destination % 64U);
+         if(row[destination_word - row_start_word] & destination_mask)
+         {
+            continue;
+         }
+         keep.insert(std::make_pair(static_cast<unsigned>(u), destination));
+         row[destination_word - row_start_word] |= destination_mask;
+
+         const auto destination_start_word = static_cast<std::size_t>(destination) / 64U;
+         const auto* const destination_row = reachability.data() + row_offsets.at(destination);
+         for(auto word = destination_start_word; word < words_per_row; ++word)
+         {
+            row[word - row_start_word] |= destination_row[word - destination_start_word];
+         }
+      }
+   }
+   return true;
 }
 
 void DataDependenceComputation::do_dependence_reduction()
@@ -120,19 +198,22 @@ void DataDependenceComputation::do_dependence_reduction()
          ++posIndex;
          rev_pos.push_back(statement);
       }
-      std::vector<bool> vis(posIndex, false);
       const auto n_stmts = bb_node_info.statements_list.size();
       CustomUnorderedSet<std::pair<unsigned, unsigned>> keep;
-      for(posIndex = 0; posIndex < n_stmts; ++posIndex)
+      if(!compute_reduced_edges(avg, pos, rev_pos, keep))
       {
-         if(!vis.at(posIndex))
+         std::vector<bool> vis(posIndex, false);
+         for(posIndex = 0; posIndex < n_stmts; ++posIndex)
          {
-            ordered_dfs(posIndex, avg, pos, rev_pos, vis, keep);
-            for(unsigned posIndex0 = posIndex + 1; posIndex0 < n_stmts; ++posIndex0)
+            if(!vis.at(posIndex))
             {
-               if(vis.at(posIndex0))
+               ordered_dfs(posIndex, avg, pos, rev_pos, vis, keep);
+               for(unsigned posIndex0 = posIndex + 1; posIndex0 < n_stmts; ++posIndex0)
                {
-                  vis[posIndex0] = false;
+                  if(vis.at(posIndex0))
+                  {
+                     vis[posIndex0] = false;
+                  }
                }
             }
          }
@@ -207,6 +288,13 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
       feedback_reachability_cache.emplace(key, result);
       return result;
    };
+   operations_graph_constructor::EdgeIndex edge_index;
+   function_behavior->ogc->InitializeEdgeIndex(edge_index);
+   const auto add_edge_with_info = [&](const OpGraph::vertex_descriptor source, const OpGraph::vertex_descriptor target,
+                                       const int selector, const int info_selector, const unsigned int variable) {
+      const auto edge = function_behavior->ogc->AddEdge(source, target, selector, edge_index);
+      function_behavior->ogc->add_edge_info(edge, info_selector, variable);
+   };
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing definitions");
    for(const auto& v : cfg.vertices())
    {
@@ -277,16 +365,14 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Adding data dependence " + cfg.CGetNodeInfo(this_def).vertex_name + "-->" +
                                      cfg.CGetNodeInfo(v).vertex_name);
-                  function_behavior->ogc->AddEdge(this_def, v, dfg_selector);
-                  function_behavior->ogc->add_edge_info(this_def, v, DFG_SELECTOR, local_use);
+                  add_edge_with_info(this_def, v, dfg_selector, DFG_SELECTOR, local_use);
                   if(ir_helper::IsVirtual(local_use_node) && check_feedback_reachability_cached(v, this_def))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "---Adding fb_adg_selector dependence " + cfg.CGetNodeInfo(v).vertex_name + "-->" +
                                         cfg.CGetNodeInfo(this_def).vertex_name);
-                     function_behavior->ogc->AddEdge(v, this_def, fb_adg_selector);
                      /// NOTE: label associated with forward selector also on feedback edge
-                     function_behavior->ogc->add_edge_info(v, this_def, ADG_SELECTOR, local_use);
+                     add_edge_with_info(v, this_def, fb_adg_selector, ADG_SELECTOR, local_use);
                   }
                }
 
@@ -300,19 +386,17 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "---Adding adg_selector dependence " + cfg.CGetNodeInfo(v).vertex_name + "-->" +
                                         cfg.CGetNodeInfo(this_def).vertex_name);
-                     function_behavior->ogc->AddEdge(v, this_def, adg_selector);
-                     function_behavior->ogc->add_edge_info(v, this_def, ADG_SELECTOR, local_use);
+                     add_edge_with_info(v, this_def, adg_selector, ADG_SELECTOR, local_use);
                   }
                   if(check_feedback_reachability_cached(this_def, v))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "---Adding fb_dfg_selector dependence " + cfg.CGetNodeInfo(this_def).vertex_name +
                                         "-->" + cfg.CGetNodeInfo(v).vertex_name);
-                     function_behavior->ogc->AddEdge(this_def, v, fb_dfg_selector);
                      /// NOTE: label associated with forward selector also on feedback edgeADG_SELECTOR
                      /// (ADG_SCA_SELECTADG_SELECTOR (ADG_SCA_SELECTOR | ADG_AGG_SELECTOR) FeedOR | ADG_AGG_SELECTOR)
                      /// Feed
-                     function_behavior->ogc->add_edge_info(this_def, v, DFG_SELECTOR, local_use);
+                     add_edge_with_info(this_def, v, fb_dfg_selector, DFG_SELECTOR, local_use);
                   }
                }
 
@@ -321,8 +405,7 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Adding2 fb_dfg_selector dependence " + cfg.CGetNodeInfo(v).vertex_name + "-->" +
                                      cfg.CGetNodeInfo(v).vertex_name);
-                  function_behavior->ogc->AddEdge(v, v, fb_dfg_selector);
-                  function_behavior->ogc->add_edge_info(v, v, DFG_SELECTOR, local_use);
+                  add_edge_with_info(v, v, fb_dfg_selector, DFG_SELECTOR, local_use);
                }
             }
          }
@@ -339,8 +422,7 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "---Adding adg_selector dependence " + cfg.CGetNodeInfo(v).vertex_name + "-->" +
                                         cfg.CGetNodeInfo(this_over).vertex_name);
-                     function_behavior->ogc->AddEdge(v, this_over, adg_selector);
-                     function_behavior->ogc->add_edge_info(v, this_over, ADG_SELECTOR, local_use);
+                     add_edge_with_info(v, this_over, adg_selector, ADG_SELECTOR, local_use);
                   }
                }
             }
@@ -365,8 +447,7 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
                                        "---Adding cross-chain adg_selector dependence " +
                                            cfg.CGetNodeInfo(v).vertex_name + "-->" +
                                            cfg.CGetNodeInfo(this_over).vertex_name);
-                        function_behavior->ogc->AddEdge(v, this_over, adg_selector);
-                        function_behavior->ogc->add_edge_info(v, this_over, ADG_SELECTOR, local_use);
+                        add_edge_with_info(v, this_over, adg_selector, ADG_SELECTOR, local_use);
                      }
                   }
                }
@@ -391,16 +472,14 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Adding output dependence " + cfg.CGetNodeInfo(this_def).vertex_name + "-->" +
                                      cfg.CGetNodeInfo(v).vertex_name);
-                  function_behavior->ogc->AddEdge(this_def, v, ODG_AGG_SELECTOR);
-                  function_behavior->ogc->add_edge_info(this_def, v, ODG_SELECTOR, local_over);
+                  add_edge_with_info(this_def, v, ODG_AGG_SELECTOR, ODG_SELECTOR, local_over);
                   if(check_feedback_reachability_cached(v, this_def))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "---Adding FB_ODG_AGG_SELECTOR dependence " + cfg.CGetNodeInfo(v).vertex_name +
                                         "-->" + cfg.CGetNodeInfo(this_def).vertex_name);
-                     function_behavior->ogc->AddEdge(v, this_def, FB_ODG_AGG_SELECTOR);
                      /// NOTE: label associated with forward selector also on feedback edge
-                     function_behavior->ogc->add_edge_info(v, this_def, ODG_SELECTOR, local_over);
+                     add_edge_with_info(v, this_def, FB_ODG_AGG_SELECTOR, ODG_SELECTOR, local_over);
                   }
                }
             }
@@ -415,7 +494,7 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Adding FB_ODG_AGG_SELECTOR dependence " + cfg.CGetNodeInfo(v).vertex_name + "-->" +
                                      cfg.CGetNodeInfo(this_over).vertex_name);
-                  function_behavior->ogc->AddEdge(v, this_over, FB_ODG_AGG_SELECTOR);
+                  function_behavior->ogc->AddEdge(v, this_over, FB_ODG_AGG_SELECTOR, edge_index);
                }
             }
          }
