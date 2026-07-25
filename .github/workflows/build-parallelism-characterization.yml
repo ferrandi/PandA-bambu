@@ -1,0 +1,262 @@
+name: Build parallelism characterization
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cold_jobs_2:
+    name: Cold open build — jobs=2
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    outputs:
+      result: ${{ steps.characterize.outputs.result }}
+      total_seconds: ${{ steps.characterize.outputs.total-seconds }}
+      container_setup_seconds: ${{ steps.characterize.outputs.container-setup-seconds }}
+      configure_seconds: ${{ steps.characterize.outputs.configure-seconds }}
+      build_seconds: ${{ steps.characterize.outputs.build-seconds }}
+      install_seconds: ${{ steps.characterize.outputs.install-seconds }}
+      cosimulation_seconds: ${{ steps.characterize.outputs.cosimulation-seconds }}
+      peak_build_rss_kib: ${{ steps.characterize.outputs.peak-build-rss-kib }}
+      peak_build_cgroup_kib: ${{ steps.characterize.outputs.peak-build-cgroup-kib }}
+      memory_available_before_kib: ${{ steps.characterize.outputs.memory-available-before-kib }}
+      memory_available_after_kib: ${{ steps.characterize.outputs.memory-available-after-kib }}
+      build_exit_status: ${{ steps.characterize.outputs.build-exit-status }}
+      action_exit_status: ${{ steps.characterize.outputs.action-exit-status }}
+      failure_stage: ${{ steps.characterize.outputs.failure-stage }}
+      oom_detected: ${{ steps.characterize.outputs.oom-detected }}
+      kill_detected: ${{ steps.characterize.outputs.kill-detected }}
+      ccache_cacheable_calls: ${{ steps.characterize.outputs.ccache-cacheable-calls }}
+      ccache_hits: ${{ steps.characterize.outputs.ccache-hits }}
+      ccache_misses: ${{ steps.characterize.outputs.ccache-misses }}
+      ccache_size_kibibyte: ${{ steps.characterize.outputs.ccache-size-kibibyte }}
+
+    steps:
+      - name: Record workflow start
+        id: workflow-timing
+        shell: bash
+        run: echo "start-epoch=$(date +%s)" >> "${GITHUB_OUTPUT}"
+
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Record Docker action start
+        id: action-timing
+        shell: bash
+        run: echo "start-epoch=$(date +%s)" >> "${GITHUB_OUTPUT}"
+
+      - name: Characterize cold jobs=2 build
+        id: characterize
+        uses: ./.github/actions/characterize-open-build
+        with:
+          jobs: "2"
+          workflow-start-epoch: ${{ steps.workflow-timing.outputs.start-epoch }}
+          action-start-epoch: ${{ steps.action-timing.outputs.start-epoch }}
+
+      - name: Upload jobs=2 failure diagnostics
+        if: ${{ always() && steps.characterize.outputs.result != 'pass' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: parallelism-jobs-2-diagnostics-${{ github.run_id }}
+          path: |
+            build/CMakeCache.txt
+            build/CMakeFiles/CMakeConfigureLog.yaml
+            build/CMakeFiles/CMakeOutput.log
+            build/CMakeFiles/CMakeError.log
+            build/config_headers/**
+            compilation_db/build/config_headers/**
+            compilation_db/build/compile_commands.json
+            synthesis-smoke/**
+            .ci-telemetry/jobs-2/**
+          if-no-files-found: warn
+          retention-days: 3
+
+      - name: Enforce jobs=2 result
+        if: ${{ always() }}
+        shell: bash
+        env:
+          RESULT: ${{ steps.characterize.outputs.result }}
+        run: |
+          if [[ "${RESULT:-unknown}" != "pass" ]]; then
+            echo "::error::Cold jobs=2 characterization failed."
+            exit 1
+          fi
+
+  cold_jobs_4:
+    name: Cold open build — jobs=4
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    outputs:
+      result: ${{ steps.characterize.outputs.result }}
+      total_seconds: ${{ steps.characterize.outputs.total-seconds }}
+      container_setup_seconds: ${{ steps.characterize.outputs.container-setup-seconds }}
+      configure_seconds: ${{ steps.characterize.outputs.configure-seconds }}
+      build_seconds: ${{ steps.characterize.outputs.build-seconds }}
+      install_seconds: ${{ steps.characterize.outputs.install-seconds }}
+      cosimulation_seconds: ${{ steps.characterize.outputs.cosimulation-seconds }}
+      peak_build_rss_kib: ${{ steps.characterize.outputs.peak-build-rss-kib }}
+      peak_build_cgroup_kib: ${{ steps.characterize.outputs.peak-build-cgroup-kib }}
+      memory_available_before_kib: ${{ steps.characterize.outputs.memory-available-before-kib }}
+      memory_available_after_kib: ${{ steps.characterize.outputs.memory-available-after-kib }}
+      build_exit_status: ${{ steps.characterize.outputs.build-exit-status }}
+      action_exit_status: ${{ steps.characterize.outputs.action-exit-status }}
+      failure_stage: ${{ steps.characterize.outputs.failure-stage }}
+      oom_detected: ${{ steps.characterize.outputs.oom-detected }}
+      kill_detected: ${{ steps.characterize.outputs.kill-detected }}
+      ccache_cacheable_calls: ${{ steps.characterize.outputs.ccache-cacheable-calls }}
+      ccache_hits: ${{ steps.characterize.outputs.ccache-hits }}
+      ccache_misses: ${{ steps.characterize.outputs.ccache-misses }}
+      ccache_size_kibibyte: ${{ steps.characterize.outputs.ccache-size-kibibyte }}
+
+    steps:
+      - name: Record workflow start
+        id: workflow-timing
+        shell: bash
+        run: echo "start-epoch=$(date +%s)" >> "${GITHUB_OUTPUT}"
+
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Record Docker action start
+        id: action-timing
+        shell: bash
+        run: echo "start-epoch=$(date +%s)" >> "${GITHUB_OUTPUT}"
+
+      - name: Characterize cold jobs=4 build
+        id: characterize
+        uses: ./.github/actions/characterize-open-build
+        with:
+          jobs: "4"
+          workflow-start-epoch: ${{ steps.workflow-timing.outputs.start-epoch }}
+          action-start-epoch: ${{ steps.action-timing.outputs.start-epoch }}
+
+      - name: Upload jobs=4 failure diagnostics
+        if: ${{ always() && steps.characterize.outputs.result != 'pass' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: parallelism-jobs-4-diagnostics-${{ github.run_id }}
+          path: |
+            build/CMakeCache.txt
+            build/CMakeFiles/CMakeConfigureLog.yaml
+            build/CMakeFiles/CMakeOutput.log
+            build/CMakeFiles/CMakeError.log
+            build/config_headers/**
+            compilation_db/build/config_headers/**
+            compilation_db/build/compile_commands.json
+            synthesis-smoke/**
+            .ci-telemetry/jobs-4/**
+          if-no-files-found: warn
+          retention-days: 3
+
+      - name: Enforce jobs=4 result
+        if: ${{ always() }}
+        shell: bash
+        env:
+          RESULT: ${{ steps.characterize.outputs.result }}
+        run: |
+          if [[ "${RESULT:-unknown}" != "pass" ]]; then
+            echo "::error::Cold jobs=4 characterization failed."
+            exit 1
+          fi
+
+  comparison:
+    name: Compare cold build parallelism
+    if: ${{ always() }}
+    needs:
+      - cold_jobs_2
+      - cold_jobs_4
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    env:
+      J2_RESULT: ${{ needs.cold_jobs_2.outputs.result }}
+      J2_TOTAL: ${{ needs.cold_jobs_2.outputs.total_seconds }}
+      J2_SETUP: ${{ needs.cold_jobs_2.outputs.container_setup_seconds }}
+      J2_CONFIGURE: ${{ needs.cold_jobs_2.outputs.configure_seconds }}
+      J2_BUILD: ${{ needs.cold_jobs_2.outputs.build_seconds }}
+      J2_INSTALL: ${{ needs.cold_jobs_2.outputs.install_seconds }}
+      J2_COSIM: ${{ needs.cold_jobs_2.outputs.cosimulation_seconds }}
+      J2_RSS: ${{ needs.cold_jobs_2.outputs.peak_build_rss_kib }}
+      J2_CGROUP: ${{ needs.cold_jobs_2.outputs.peak_build_cgroup_kib }}
+      J2_MEM_BEFORE: ${{ needs.cold_jobs_2.outputs.memory_available_before_kib }}
+      J2_MEM_AFTER: ${{ needs.cold_jobs_2.outputs.memory_available_after_kib }}
+      J2_BUILD_STATUS: ${{ needs.cold_jobs_2.outputs.build_exit_status }}
+      J2_ACTION_STATUS: ${{ needs.cold_jobs_2.outputs.action_exit_status }}
+      J2_FAILURE_STAGE: ${{ needs.cold_jobs_2.outputs.failure_stage }}
+      J2_OOM: ${{ needs.cold_jobs_2.outputs.oom_detected }}
+      J2_KILL: ${{ needs.cold_jobs_2.outputs.kill_detected }}
+      J2_CACHEABLE: ${{ needs.cold_jobs_2.outputs.ccache_cacheable_calls }}
+      J2_HITS: ${{ needs.cold_jobs_2.outputs.ccache_hits }}
+      J2_MISSES: ${{ needs.cold_jobs_2.outputs.ccache_misses }}
+      J2_CACHE_SIZE: ${{ needs.cold_jobs_2.outputs.ccache_size_kibibyte }}
+      J4_RESULT: ${{ needs.cold_jobs_4.outputs.result }}
+      J4_TOTAL: ${{ needs.cold_jobs_4.outputs.total_seconds }}
+      J4_SETUP: ${{ needs.cold_jobs_4.outputs.container_setup_seconds }}
+      J4_CONFIGURE: ${{ needs.cold_jobs_4.outputs.configure_seconds }}
+      J4_BUILD: ${{ needs.cold_jobs_4.outputs.build_seconds }}
+      J4_INSTALL: ${{ needs.cold_jobs_4.outputs.install_seconds }}
+      J4_COSIM: ${{ needs.cold_jobs_4.outputs.cosimulation_seconds }}
+      J4_RSS: ${{ needs.cold_jobs_4.outputs.peak_build_rss_kib }}
+      J4_CGROUP: ${{ needs.cold_jobs_4.outputs.peak_build_cgroup_kib }}
+      J4_MEM_BEFORE: ${{ needs.cold_jobs_4.outputs.memory_available_before_kib }}
+      J4_MEM_AFTER: ${{ needs.cold_jobs_4.outputs.memory_available_after_kib }}
+      J4_BUILD_STATUS: ${{ needs.cold_jobs_4.outputs.build_exit_status }}
+      J4_ACTION_STATUS: ${{ needs.cold_jobs_4.outputs.action_exit_status }}
+      J4_FAILURE_STAGE: ${{ needs.cold_jobs_4.outputs.failure_stage }}
+      J4_OOM: ${{ needs.cold_jobs_4.outputs.oom_detected }}
+      J4_KILL: ${{ needs.cold_jobs_4.outputs.kill_detected }}
+      J4_CACHEABLE: ${{ needs.cold_jobs_4.outputs.ccache_cacheable_calls }}
+      J4_HITS: ${{ needs.cold_jobs_4.outputs.ccache_hits }}
+      J4_MISSES: ${{ needs.cold_jobs_4.outputs.ccache_misses }}
+      J4_CACHE_SIZE: ${{ needs.cold_jobs_4.outputs.ccache_size_kibibyte }}
+    steps:
+      - name: Write parallelism comparison
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          speedup=n/a
+          if [[ "${J2_BUILD:-}" =~ ^[0-9]+$ && "${J4_BUILD:-}" =~ ^[0-9]+$ ]] && (( J4_BUILD > 0 )); then
+            speedup="$(awk -v baseline="${J2_BUILD}" -v candidate="${J4_BUILD}" "BEGIN { printf \"%.2fx\", baseline / candidate }")"
+          fi
+
+          recommendation="Retain jobs=2: both cold configurations must pass without an OOM or kill for comparison."
+          if [[ "${J2_RESULT:-}" == "pass" && "${J2_OOM:-unknown}" == "no" && "${J2_KILL:-unknown}" == "no" &&
+                "${J4_RESULT:-}" == "pass" && "${J4_OOM:-unknown}" == "no" && "${J4_KILL:-unknown}" == "no" ]]; then
+            if [[ "${J2_BUILD:-}" =~ ^[0-9]+$ && "${J4_BUILD:-}" =~ ^[0-9]+$ ]] &&
+               awk -v baseline="${J2_BUILD}" -v candidate="${J4_BUILD}" "BEGIN { exit !(candidate > 0 && baseline / candidate >= 1.10) }"; then
+              recommendation="jobs=4 is a candidate production default: stable cold build and at least 1.10x build speedup."
+            else
+              recommendation="Retain jobs=2: jobs=4 was stable but its cold-build improvement was marginal."
+            fi
+          fi
+
+          {
+            echo "## Cold-build parallelism comparison"
+            echo
+            echo "| Jobs | Build time | Total time | Peak aggregate RSS | Peak cgroup memory | Result | Speedup |"
+            echo "| ---: | ---: | ---: | ---: | ---: | --- | ---: |"
+            echo "| 2 | ${J2_BUILD:-0} s | ${J2_TOTAL:-0} s | ${J2_RSS:-0} KiB | ${J2_CGROUP:-0} KiB | ${J2_RESULT:-unknown} | 1.00x |"
+            echo "| 4 | ${J4_BUILD:-0} s | ${J4_TOTAL:-0} s | ${J4_RSS:-0} KiB | ${J4_CGROUP:-0} KiB | ${J4_RESULT:-unknown} | ${speedup} |"
+            echo
+            echo "### Detailed telemetry"
+            echo
+            echo "| Jobs | Setup | Configure | Install | Co-sim | MemAvailable before / after | Build / action exit | Failure stage | OOM / kill | ccache calls / hits / misses | Cache size |"
+            echo "| ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | ---: | ---: |"
+            echo "| 2 | ${J2_SETUP:-0} s | ${J2_CONFIGURE:-0} s | ${J2_INSTALL:-0} s | ${J2_COSIM:-0} s | ${J2_MEM_BEFORE:-0} / ${J2_MEM_AFTER:-0} KiB | ${J2_BUILD_STATUS:-unknown} / ${J2_ACTION_STATUS:-unknown} | ${J2_FAILURE_STAGE:-unknown} | ${J2_OOM:-unknown} / ${J2_KILL:-unknown} | ${J2_CACHEABLE:-0} / ${J2_HITS:-0} / ${J2_MISSES:-0} | ${J2_CACHE_SIZE:-0} KiB |"
+            echo "| 4 | ${J4_SETUP:-0} s | ${J4_CONFIGURE:-0} s | ${J4_INSTALL:-0} s | ${J4_COSIM:-0} s | ${J4_MEM_BEFORE:-0} / ${J4_MEM_AFTER:-0} KiB | ${J4_BUILD_STATUS:-unknown} / ${J4_ACTION_STATUS:-unknown} | ${J4_FAILURE_STAGE:-unknown} | ${J4_OOM:-unknown} / ${J4_KILL:-unknown} | ${J4_CACHEABLE:-0} / ${J4_HITS:-0} / ${J4_MISSES:-0} | ${J4_CACHE_SIZE:-0} KiB |"
+            echo
+            echo "**Recommendation:** ${recommendation}"
+            echo
+            echo "Peak aggregate RSS is sampled every 250 ms by summing process VmRSS values; shared pages may be counted more than once. Peak cgroup memory is sampled from memory.current and includes page cache and kernel charges."
+          } >> "${GITHUB_STEP_SUMMARY}"

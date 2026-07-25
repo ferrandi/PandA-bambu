@@ -9,6 +9,10 @@ inputs:
     description: "Parallel jobs"
     required: false
     default: "1"
+  ccache-dir:
+    description: "Workspace-relative compiler cache directory"
+    required: false
+    default: ".ccache"
   synthesis-smoke:
     description: "Run a small Bambu synthesis and Verilator simulation smoke test"
     required: false
@@ -32,6 +36,24 @@ outputs:
     description: "PandA installation duration in seconds"
   cosimulation-seconds:
     description: "Bambu XML Verilator co-simulation duration in seconds"
+  peak-build-rss-kib:
+    description: "Sampled aggregate resident set size across concurrent PandA build processes in KiB"
+  peak-build-cgroup-kib:
+    description: "Maximum sampled cgroup memory charge during the PandA build in KiB"
+  memory-available-before-kib:
+    description: "Available memory immediately before the PandA build in KiB"
+  memory-available-after-kib:
+    description: "Available memory immediately after the PandA build in KiB"
+  build-exit-status:
+    description: "Exit status of the last PandA build command, or not-run"
+  action-exit-status:
+    description: "Exit status of the complete build action"
+  failure-stage:
+    description: "Action stage that failed, or none"
+  oom-detected:
+    description: "Whether cgroup OOM counters increased during the PandA build"
+  kill-detected:
+    description: "Whether the action or build command exited from a signal"
   ccache-cacheable-calls:
     description: "Cacheable compiler calls in this build"
   ccache-hits:
@@ -47,6 +69,7 @@ runs:
   image: "Dockerfile"
   env:
     J: ${{inputs.jobs}}
+    CCACHE_DIR_INPUT: ${{inputs.ccache-dir}}
     SYNTHESIS_SMOKE: ${{inputs.synthesis-smoke}}
     ACTION_START_EPOCH: ${{inputs.action-start-epoch}}
   args:

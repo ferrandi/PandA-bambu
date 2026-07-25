@@ -27,15 +27,158 @@ WORKSPACE_DIR="$PWD"
 BUILD_DIR="${WORKSPACE_DIR}/build"
 DIST_DIR="${WORKSPACE_DIR}/panda_dist"
 COMPILERS_DIR="${WORKSPACE_DIR}/compilers"
-CCACHE_DIR="${WORKSPACE_DIR}/.ccache"
+CCACHE_RELATIVE_DIR="${CCACHE_DIR_INPUT:-.ccache}"
+if [[ "${CCACHE_RELATIVE_DIR}" = /* || "${CCACHE_RELATIVE_DIR}" =~ (^|/)\.\.(/|$) ]]; then
+   echo "::error::ccache-dir must be a workspace-relative path without parent traversal."
+   exit 2
+fi
+CCACHE_DIR="${WORKSPACE_DIR}/${CCACHE_RELATIVE_DIR}"
 APPIMAGE_NAME="bambu"
 APPIMAGE_ENABLED=false
 APPIMAGE_RUNTIME_FILE=""
 CONTAINER_START_EPOCH="$(date +%s)"
 CCACHE_REPORTED=false
+CURRENT_STAGE="initialization"
+BUILD_EXIT_STATUS="not-run"
+KILL_DETECTED="no"
+MEMORY_AVAILABLE_BEFORE_KIB=""
+MEMORY_AVAILABLE_AFTER_KIB=""
+OOM_COUNT_BEFORE=""
+OOM_KILL_COUNT_BEFORE=""
+MEMORY_MONITOR_PID=""
+MEMORY_SAMPLES_FILE="${WORKSPACE_DIR}/.ci-telemetry/jobs-${J:-unknown}/memory-samples.tsv"
+BUILD_ERROR_LOG="${WORKSPACE_DIR}/.ci-telemetry/jobs-${J:-unknown}/build-stderr.log"
+PEAK_BUILD_RSS_KIB="0"
+PEAK_BUILD_CGROUP_KIB="0"
+BUILD_TELEMETRY_REPORTED=false
+BUILD_START_EPOCH=""
+BUILD_SECONDS_REPORTED=false
 
 function set_output {
    printf '%s=%s\n' "$1" "$2" >> "${GITHUB_OUTPUT}"
+}
+
+
+function memory_available_kib {
+   awk "/^MemAvailable:/ { print \$2; exit }" /proc/meminfo
+}
+
+function cgroup_event {
+   local key="$1"
+   if test -r /sys/fs/cgroup/memory.events; then
+      awk -v key="${key}" "\$1 == key { print \$2; found=1 } END { if (!found) print 0 }" /sys/fs/cgroup/memory.events
+   else
+      printf "\n"
+   fi
+}
+
+function cgroup_memory_current_bytes {
+   if test -r /sys/fs/cgroup/memory.current; then
+      cat /sys/fs/cgroup/memory.current
+   elif test -r /sys/fs/cgroup/memory/memory.usage_in_bytes; then
+      cat /sys/fs/cgroup/memory/memory.usage_in_bytes
+   else
+      printf "0\n"
+   fi
+}
+
+function monitor_build_memory {
+   set +e
+   local rss_kib cgroup_bytes
+   while :; do
+      rss_kib="$(awk "\$1 == \"VmRSS:\" { sum += \$2 } END { printf \"%d\\n\", sum + 0 }" /proc/[0-9]*/status 2>/dev/null)"
+      [[ "${rss_kib}" =~ ^[0-9]+$ ]] || rss_kib=0
+      cgroup_bytes="$(cgroup_memory_current_bytes)"
+      [[ "${cgroup_bytes}" =~ ^[0-9]+$ ]] || cgroup_bytes=0
+      printf "%s\t%s\n" "${rss_kib}" "${cgroup_bytes}" >> "${MEMORY_SAMPLES_FILE}"
+      sleep 0.25
+   done
+}
+
+function start_build_telemetry {
+   mkdir -p "$(dirname "${MEMORY_SAMPLES_FILE}")"
+   : > "${MEMORY_SAMPLES_FILE}"
+   : > "${BUILD_ERROR_LOG}"
+   MEMORY_AVAILABLE_BEFORE_KIB="$(memory_available_kib)"
+   OOM_COUNT_BEFORE="$(cgroup_event oom)"
+   OOM_KILL_COUNT_BEFORE="$(cgroup_event oom_kill)"
+   BUILD_START_EPOCH="$(date +%s)"
+   set_output memory-available-before-kib "${MEMORY_AVAILABLE_BEFORE_KIB}"
+   set_output build-exit-status running
+   set_output failure-stage build
+   monitor_build_memory &
+   MEMORY_MONITOR_PID=$!
+}
+
+function stop_memory_monitor {
+   if [[ "${MEMORY_MONITOR_PID}" =~ ^[0-9]+$ ]]; then
+      kill "${MEMORY_MONITOR_PID}" 2>/dev/null || true
+      wait "${MEMORY_MONITOR_PID}" 2>/dev/null || true
+      MEMORY_MONITOR_PID=""
+   fi
+}
+
+function finish_build_telemetry {
+   if ${BUILD_TELEMETRY_REPORTED}; then
+      return
+   fi
+   stop_memory_monitor
+   BUILD_TELEMETRY_REPORTED=true
+   MEMORY_AVAILABLE_AFTER_KIB="$(memory_available_kib)"
+   if test -s "${MEMORY_SAMPLES_FILE}"; then
+      PEAK_BUILD_RSS_KIB="$(awk "\$1 > max { max=\$1 } END { print max + 0 }" "${MEMORY_SAMPLES_FILE}")"
+      PEAK_BUILD_CGROUP_KIB="$(awk "\$2 > max { max=\$2 } END { printf \"%.0f\\n\", max / 1024 }" "${MEMORY_SAMPLES_FILE}")"
+   fi
+   local oom_after oom_kill_after
+   oom_after="$(cgroup_event oom)"
+   oom_kill_after="$(cgroup_event oom_kill)"
+   OOM_DETECTED=unknown
+   if [[ "${OOM_COUNT_BEFORE}" =~ ^[0-9]+$ && "${OOM_KILL_COUNT_BEFORE}" =~ ^[0-9]+$ &&
+         "${oom_after}" =~ ^[0-9]+$ && "${oom_kill_after}" =~ ^[0-9]+$ ]]; then
+      OOM_DETECTED=no
+      if test "${oom_after}" -gt "${OOM_COUNT_BEFORE}" || test "${oom_kill_after}" -gt "${OOM_KILL_COUNT_BEFORE}"; then
+         OOM_DETECTED=yes
+      fi
+   fi
+   if grep -Eiq "out of memory|oom-kill|cannot allocate memory|killed signal terminated program" "${BUILD_ERROR_LOG}"; then
+      OOM_DETECTED=yes
+   fi
+   if [[ "${BUILD_EXIT_STATUS}" =~ ^[0-9]+$ ]] && test "${BUILD_EXIT_STATUS}" -gt 128; then
+      KILL_DETECTED=yes
+   elif grep -Eiq "fatal error: killed|killed signal terminated program|(^|[^[:alpha:]])killed([^[:alpha:]]|$)" "${BUILD_ERROR_LOG}"; then
+      KILL_DETECTED=yes
+   fi
+   set_output peak-build-rss-kib "${PEAK_BUILD_RSS_KIB}"
+   set_output peak-build-cgroup-kib "${PEAK_BUILD_CGROUP_KIB}"
+   set_output memory-available-after-kib "${MEMORY_AVAILABLE_AFTER_KIB}"
+   set_output oom-detected "${OOM_DETECTED}"
+   set_output kill-detected "${KILL_DETECTED}"
+}
+
+function report_runtime_telemetry {
+   local status="$1" failure_stage
+   if [[ "${BUILD_START_EPOCH}" =~ ^[0-9]+$ ]] && ! ${BUILD_SECONDS_REPORTED}; then
+      set_output build-seconds "$(( $(date +%s) - BUILD_START_EPOCH ))"
+   fi
+   if [[ "${BUILD_START_EPOCH}" =~ ^[0-9]+$ ]]; then
+      finish_build_telemetry
+   fi
+   if test "${status}" -eq 0; then
+      failure_stage=none
+   else
+      failure_stage="${CURRENT_STAGE}"
+   fi
+   set_output action-exit-status "${status}"
+   set_output failure-stage "${failure_stage}"
+   echo "peak_build_rss_kib=${PEAK_BUILD_RSS_KIB}"
+   echo "peak_build_cgroup_kib=${PEAK_BUILD_CGROUP_KIB}"
+   echo "memory_available_before_kib=${MEMORY_AVAILABLE_BEFORE_KIB:-0}"
+   echo "memory_available_after_kib=${MEMORY_AVAILABLE_AFTER_KIB:-0}"
+   echo "build_exit_status=${BUILD_EXIT_STATUS}"
+   echo "action_exit_status=${status}"
+   echo "failure_stage=${failure_stage}"
+   echo "oom_detected=${OOM_DETECTED:-unknown}"
+   echo "kill_detected=${KILL_DETECTED}"
 }
 
 function ccache_stat {
@@ -74,6 +217,8 @@ function report_ccache {
 function cleanup {
    local status=$?
    trap - EXIT
+   stop_memory_monitor || true
+   report_runtime_telemetry "${status}" || true
    report_ccache || true
    echo "::endgroup::"
    exit ${status}
@@ -86,6 +231,16 @@ else
    set_output container-setup-seconds 0
 fi
 set_output cosimulation-seconds 0
+
+set_output peak-build-rss-kib 0
+set_output peak-build-cgroup-kib 0
+set_output memory-available-before-kib 0
+set_output memory-available-after-kib 0
+set_output build-exit-status not-run
+set_output action-exit-status running
+set_output failure-stage initialization
+set_output oom-detected unknown
+set_output kill-detected unknown
 
 echo "::group::Initialize workspace"
 if test -d "${COMPILERS_DIR}"; then
@@ -138,6 +293,7 @@ opt-16 --version
 verilator --version
 echo "::endgroup::"
 
+CURRENT_STAGE="configure"
 echo "::group::Configure PandA build (CMake)"
 mkdir -p "${BUILD_DIR}" "${DIST_DIR}"
 
@@ -199,6 +355,7 @@ set_output configure-seconds "${configure_seconds}"
 echo "configure_seconds=${configure_seconds}"
 echo "::endgroup::"
 
+CURRENT_STAGE="frontend-resolution"
 echo "::group::Resolve selected Clang frontend"
 CONFIG_HEADERS_DIR="${BUILD_DIR}/config_headers"
 FRONTEND_COMPILER="$(sed -n 's/^#define LIBBAMBU_COMPILER "\(.*\)"/\1/p' "${CONFIG_HEADERS_DIR}/config_LIBBAMBU_COMPILER.hpp")"
@@ -213,7 +370,9 @@ echo "Selected frontend: ${FRONTEND_COMPILER}"
 echo "Expected plugin directory: ${CLANG_PLUGIN_DIR}"
 echo "::endgroup::"
 
-build_start_epoch="$(date +%s)"
+CURRENT_STAGE="build"
+start_build_telemetry
+
 PLUGIN_TARGETS=(
    "clang_plugin_${FRONTEND_VERSION}_ast"
    "clang_plugin_${FRONTEND_VERSION}_customsroa"
@@ -221,7 +380,15 @@ PLUGIN_TARGETS=(
    "clang_plugin_${FRONTEND_VERSION}_ssa"
 )
 echo "::group::Build selected PandA Clang plugins"
-cmake --build "${BUILD_DIR}" --target "${PLUGIN_TARGETS[@]}" --parallel "${J:-1}"
+set +e
+cmake --build "${BUILD_DIR}" --target "${PLUGIN_TARGETS[@]}" --parallel "${J:-1}" 2> >(tee -a "${BUILD_ERROR_LOG}" >&2)
+BUILD_EXIT_STATUS=$?
+set -e
+set_output build-exit-status "${BUILD_EXIT_STATUS}"
+if test "${BUILD_EXIT_STATUS}" -ne 0; then
+   finish_build_telemetry
+   exit "${BUILD_EXIT_STATUS}"
+fi
 echo "::endgroup::"
 
 echo "::group::Verify PandA Clang plugins in ${CLANG_PLUGIN_DIR}"
@@ -241,10 +408,19 @@ done
 echo "::endgroup::"
 
 echo "::group::Build PandA project"
-cmake --build "${BUILD_DIR}" --parallel "${J:-1}"
+set +e
+cmake --build "${BUILD_DIR}" --parallel "${J:-1}" 2> >(tee -a "${BUILD_ERROR_LOG}" >&2)
+BUILD_EXIT_STATUS=$?
+set -e
+set_output build-exit-status "${BUILD_EXIT_STATUS}"
+finish_build_telemetry
+if test "${BUILD_EXIT_STATUS}" -ne 0; then
+   exit "${BUILD_EXIT_STATUS}"
+fi
 echo "::endgroup::"
-build_seconds="$(( $(date +%s) - build_start_epoch ))"
+build_seconds="$(( $(date +%s) - BUILD_START_EPOCH ))"
 set_output build-seconds "${build_seconds}"
+BUILD_SECONDS_REPORTED=true
 echo "build_seconds=${build_seconds}"
 
 if test -e "${BUILD_DIR}/compile_commands.json"; then
@@ -257,6 +433,7 @@ if test -e "${BUILD_DIR}/compile_commands.json"; then
    echo "::endgroup::"
 fi
 
+CURRENT_STAGE="install"
 echo "::group::Package PandA distribution"
 install_start_epoch="$(date +%s)"
 cmake --install "${BUILD_DIR}" --strip
@@ -282,6 +459,7 @@ echo "::endgroup::"
 # TODO: The installed distribution currently embeds build-tree plugin paths.
 # Install the plugins into panda_dist and make plugin discovery relative to the
 # installation prefix before treating the distribution as relocatable.
+CURRENT_STAGE="cosimulation"
 if test "${SYNTHESIS_SMOKE:-false}" = "true"; then
    SYNTHESIS_OUTPUT_DIR="${WORKSPACE_DIR}/synthesis-smoke"
    mkdir -p "${SYNTHESIS_OUTPUT_DIR}"
@@ -320,4 +498,5 @@ if test "${SYNTHESIS_SMOKE:-false}" = "true"; then
    fi
 fi
 
+CURRENT_STAGE="complete"
 set_output dist-dir "${DIST_DIR#${WORKSPACE_DIR}/}"

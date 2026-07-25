@@ -1,0 +1,215 @@
+name: Characterize open build
+description: Run one cold open build with telemetry
+
+inputs:
+  jobs:
+    description: Parallel build job count
+    required: true
+  workflow-start-epoch:
+    description: Epoch recorded before checkout for total workflow timing
+    required: true
+  action-start-epoch:
+    description: Epoch recorded immediately before the Docker action
+    required: true
+
+outputs:
+  result:
+    description: Characterization result
+    value: ${{ steps.metrics.outputs.result }}
+  total-seconds:
+    description: Total workflow duration through metrics collection
+    value: ${{ steps.metrics.outputs.total-seconds }}
+  container-setup-seconds:
+    description: Docker action setup duration
+    value: ${{ steps.build.outputs.container-setup-seconds }}
+  configure-seconds:
+    description: CMake configure duration
+    value: ${{ steps.build.outputs.configure-seconds }}
+  build-seconds:
+    description: PandA build duration
+    value: ${{ steps.build.outputs.build-seconds }}
+  install-seconds:
+    description: PandA install duration
+    value: ${{ steps.build.outputs.install-seconds }}
+  cosimulation-seconds:
+    description: XML-driven Verilator co-simulation duration
+    value: ${{ steps.build.outputs.cosimulation-seconds }}
+  peak-build-rss-kib:
+    description: Sampled aggregate resident set peak during the build
+    value: ${{ steps.build.outputs.peak-build-rss-kib }}
+  peak-build-cgroup-kib:
+    description: Sampled cgroup memory charge peak during the build
+    value: ${{ steps.build.outputs.peak-build-cgroup-kib }}
+  memory-available-before-kib:
+    description: Host memory available before the build
+    value: ${{ steps.build.outputs.memory-available-before-kib }}
+  memory-available-after-kib:
+    description: Host memory available after the build
+    value: ${{ steps.build.outputs.memory-available-after-kib }}
+  build-exit-status:
+    description: PandA build command exit status
+    value: ${{ steps.metrics.outputs.build-exit-status }}
+  action-exit-status:
+    description: Complete Docker action exit status
+    value: ${{ steps.metrics.outputs.action-exit-status }}
+  failure-stage:
+    description: Failed stage or none
+    value: ${{ steps.metrics.outputs.failure-stage }}
+  oom-detected:
+    description: Whether an OOM was detected
+    value: ${{ steps.metrics.outputs.oom-detected }}
+  kill-detected:
+    description: Whether a signal-derived or compiler kill was detected
+    value: ${{ steps.metrics.outputs.kill-detected }}
+  ccache-cacheable-calls:
+    description: Cacheable compiler calls in this cold build
+    value: ${{ steps.build.outputs.ccache-cacheable-calls }}
+  ccache-hits:
+    description: Intra-build compiler cache hits
+    value: ${{ steps.build.outputs.ccache-hits }}
+  ccache-misses:
+    description: Compiler cache misses
+    value: ${{ steps.build.outputs.ccache-misses }}
+  ccache-size-kibibyte:
+    description: Final isolated compiler cache size
+    value: ${{ steps.build.outputs.ccache-size-kibibyte }}
+
+runs:
+  using: composite
+  steps:
+    - name: Build PandA-bambu
+      id: build
+      uses: ./.github/actions/build-panda
+      continue-on-error: true
+      with:
+        jobs: ${{ inputs.jobs }}
+        ccache-dir: .ccache-characterization-jobs-${{ inputs.jobs }}
+        synthesis-smoke: "true"
+        action-start-epoch: ${{ inputs.action-start-epoch }}
+        config-args: >-
+          -DPANDA_ENABLE_RELEASE=ON
+          -DPANDA_ENABLE_ASSERTS=OFF
+          -DPANDA_ENABLE_WERROR=ON
+          -DPANDA_LIBBAMBU_COMPILER=I386_CLANG16
+
+    - name: Verify installed executables
+      id: verify
+      if: ${{ always() }}
+      continue-on-error: true
+      shell: bash
+      env:
+        BUILD_OUTCOME: ${{ steps.build.outcome }}
+        DIST_DIR: ${{ steps.build.outputs.dist-dir }}
+      run: |
+        set -euo pipefail
+
+        if [[ "${BUILD_OUTCOME}" != "success" ]]; then
+          echo "Build action failed; executable verification is not runnable."
+          exit 0
+        fi
+        if [[ -z "${DIST_DIR}" ]]; then
+          echo "::error::The build-panda action did not return a distribution directory."
+          exit 1
+        fi
+
+        bin_dir="${GITHUB_WORKSPACE}/${DIST_DIR}/bin"
+        for executable in bambu bambu-cc eucalyptus; do
+          executable_path="${bin_dir}/${executable}"
+          if [[ ! -x "${executable_path}" ]]; then
+            echo "::error file=${executable_path}::Expected installed executable is missing or not executable."
+            exit 1
+          fi
+          file "${executable_path}"
+          if ! "${executable_path}" --version; then
+            echo "::error file=${executable_path}::Installed executable could not start."
+            exit 1
+          fi
+        done
+
+    - name: Collect characterization metrics
+      id: metrics
+      if: ${{ always() }}
+      shell: bash
+      env:
+        JOBS: ${{ inputs.jobs }}
+        WORKFLOW_START_EPOCH: ${{ inputs.workflow-start-epoch }}
+        BUILD_OUTCOME: ${{ steps.build.outcome }}
+        VERIFY_OUTCOME: ${{ steps.verify.outcome }}
+        BUILD_EXIT_STATUS: ${{ steps.build.outputs.build-exit-status }}
+        ACTION_EXIT_STATUS: ${{ steps.build.outputs.action-exit-status }}
+        ACTION_FAILURE_STAGE: ${{ steps.build.outputs.failure-stage }}
+        OOM_DETECTED: ${{ steps.build.outputs.oom-detected }}
+        KILL_DETECTED: ${{ steps.build.outputs.kill-detected }}
+        CONTAINER_SETUP_SECONDS: ${{ steps.build.outputs.container-setup-seconds }}
+        CONFIGURE_SECONDS: ${{ steps.build.outputs.configure-seconds }}
+        BUILD_SECONDS: ${{ steps.build.outputs.build-seconds }}
+        INSTALL_SECONDS: ${{ steps.build.outputs.install-seconds }}
+        COSIMULATION_SECONDS: ${{ steps.build.outputs.cosimulation-seconds }}
+        PEAK_BUILD_RSS_KIB: ${{ steps.build.outputs.peak-build-rss-kib }}
+        PEAK_BUILD_CGROUP_KIB: ${{ steps.build.outputs.peak-build-cgroup-kib }}
+        MEMORY_AVAILABLE_BEFORE_KIB: ${{ steps.build.outputs.memory-available-before-kib }}
+        MEMORY_AVAILABLE_AFTER_KIB: ${{ steps.build.outputs.memory-available-after-kib }}
+        CCACHE_CACHEABLE_CALLS: ${{ steps.build.outputs.ccache-cacheable-calls }}
+        CCACHE_HITS: ${{ steps.build.outputs.ccache-hits }}
+        CCACHE_MISSES: ${{ steps.build.outputs.ccache-misses }}
+        CCACHE_SIZE_KIBIBYTE: ${{ steps.build.outputs.ccache-size-kibibyte }}
+      run: |
+        set -euo pipefail
+
+        total_seconds=0
+        if [[ "${WORKFLOW_START_EPOCH:-}" =~ ^[0-9]+$ ]]; then
+          total_seconds=$(( $(date +%s) - WORKFLOW_START_EPOCH ))
+        fi
+
+        result=pass
+        failure_stage=none
+        if [[ "${BUILD_OUTCOME}" != "success" ]]; then
+          result=fail
+          failure_stage="${ACTION_FAILURE_STAGE:-container-terminated}"
+        elif [[ "${VERIFY_OUTCOME}" != "success" ]]; then
+          result=fail
+          failure_stage=installed-executable-validation
+        fi
+
+        build_exit_status="${BUILD_EXIT_STATUS:-unknown}"
+        action_exit_status="${ACTION_EXIT_STATUS:-unknown}"
+        oom_detected="${OOM_DETECTED:-unknown}"
+        kill_detected="${KILL_DETECTED:-unknown}"
+        if [[ "${result}" == "fail" && "${build_exit_status}" == "running" ]]; then
+          build_exit_status=unknown
+        fi
+        if [[ "${result}" == "fail" && "${action_exit_status}" == "running" ]]; then
+          action_exit_status=unknown
+        fi
+
+        {
+          echo "result=${result}"
+          echo "total-seconds=${total_seconds}"
+          echo "build-exit-status=${build_exit_status}"
+          echo "action-exit-status=${action_exit_status}"
+          echo "failure-stage=${failure_stage}"
+          echo "oom-detected=${oom_detected}"
+          echo "kill-detected=${kill_detected}"
+        } >> "${GITHUB_OUTPUT}"
+
+        {
+          echo "## Cold open build — jobs=${JOBS}"
+          echo
+          echo "| Measurement | Value |"
+          echo "| --- | ---: |"
+          echo "| Result | ${result} |"
+          echo "| Container setup | ${CONTAINER_SETUP_SECONDS:-0} s |"
+          echo "| Configure | ${CONFIGURE_SECONDS:-0} s |"
+          echo "| Build | ${BUILD_SECONDS:-0} s |"
+          echo "| Install | ${INSTALL_SECONDS:-0} s |"
+          echo "| Co-simulation | ${COSIMULATION_SECONDS:-0} s |"
+          echo "| Total | ${total_seconds} s |"
+          echo "| Peak aggregate RSS | ${PEAK_BUILD_RSS_KIB:-0} KiB |"
+          echo "| Peak cgroup memory | ${PEAK_BUILD_CGROUP_KIB:-0} KiB |"
+          echo "| MemAvailable before / after | ${MEMORY_AVAILABLE_BEFORE_KIB:-0} / ${MEMORY_AVAILABLE_AFTER_KIB:-0} KiB |"
+          echo "| Build / action exit status | ${build_exit_status} / ${action_exit_status} |"
+          echo "| Failure stage | ${failure_stage} |"
+          echo "| OOM / kill detected | ${oom_detected} / ${kill_detected} |"
+          echo "| ccache calls / hits / misses | ${CCACHE_CACHEABLE_CALLS:-0} / ${CCACHE_HITS:-0} / ${CCACHE_MISSES:-0} |"
+          echo "| Final ccache size | ${CCACHE_SIZE_KIBIBYTE:-0} KiB |"
+        } >> "${GITHUB_STEP_SUMMARY}"
