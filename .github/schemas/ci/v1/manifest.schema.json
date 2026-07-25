@@ -1,0 +1,277 @@
+{
+  "$id": "https://panda-re.github.io/schemas/ci/v1/manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "base_sha": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/sha"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "commit_sha": {
+      "$ref": "common.schema.json#/$defs/sha"
+    },
+    "completed_at": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "configured_parallelism": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "container": {
+      "additionalProperties": false,
+      "properties": {
+        "base_image": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "dockerfile_path": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "dockerfile_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "image_digest": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "dockerfile_path",
+        "dockerfile_sha256",
+        "base_image",
+        "image_digest"
+      ],
+      "type": "object"
+    },
+    "documents": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "document_id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "path": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "schema": {
+            "pattern": "^panda\\.ci\\.[a-z-]+$",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "document_id",
+          "path",
+          "schema",
+          "schema_version",
+          "sha256"
+        ],
+        "type": "object"
+      },
+      "minItems": 4,
+      "type": "array"
+    },
+    "event_type": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "execution_state": {
+      "$ref": "common.schema.json#/$defs/execution_state"
+    },
+    "pull_request_number": {
+      "minimum": 1,
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "ref": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "repository": {
+      "pattern": "^[^/]+/[^/]+$",
+      "type": "string"
+    },
+    "request_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "run_attempt": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "run_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "runner": {
+      "additionalProperties": false,
+      "properties": {
+        "architecture": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "image": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "os": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "os",
+        "architecture",
+        "image"
+      ],
+      "type": "object"
+    },
+    "schema": {
+      "const": "panda.ci.manifest",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "started_at": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "submodules": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "commit_sha": {
+            "$ref": "common.schema.json#/$defs/sha"
+          },
+          "path": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "commit_sha"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "tools": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "tool_id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "tool_id",
+          "version"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "workflow": {
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "file_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "implementation_commit": {
+          "$ref": "common.schema.json#/$defs/sha"
+        }
+      },
+      "required": [
+        "file",
+        "file_sha256",
+        "implementation_commit"
+      ],
+      "type": "object"
+    },
+    "workflow_run_id": {
+      "minimum": 1,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema",
+    "schema_version",
+    "run_id",
+    "request_id",
+    "workflow_run_id",
+    "run_attempt",
+    "execution_state",
+    "started_at",
+    "completed_at",
+    "repository",
+    "commit_sha",
+    "base_sha",
+    "ref",
+    "pull_request_number",
+    "event_type",
+    "submodules",
+    "workflow",
+    "container",
+    "runner",
+    "tools",
+    "configured_parallelism",
+    "documents"
+  ],
+  "title": "PandA CI manifest",
+  "type": "object"
+}

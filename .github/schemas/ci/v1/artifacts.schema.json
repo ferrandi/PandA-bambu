@@ -1,0 +1,29 @@
+{
+  "$id": "https://panda-re.github.io/schemas/ci/v1/artifacts.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifacts": {
+      "items": {
+        "$ref": "common.schema.json#/$defs/artifact"
+      },
+      "minItems": 7,
+      "type": "array"
+    },
+    "schema": {
+      "const": "panda.ci.artifact-index",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "schema_version",
+    "artifacts"
+  ],
+  "title": "PandA CI artifact index",
+  "type": "object"
+}

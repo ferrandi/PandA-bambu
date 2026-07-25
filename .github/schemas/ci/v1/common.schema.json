@@ -1,0 +1,274 @@
+{
+  "$defs": {
+    "artifact": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "$ref": "#/$defs/id"
+        },
+        "associated_stage": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "available": {
+          "type": "boolean"
+        },
+        "github_artifact_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "media_type": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "path": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "producer_task": {
+          "$ref": "#/$defs/id"
+        },
+        "retention_days": {
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "role": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "artifact_id",
+        "producer_task",
+        "role",
+        "path",
+        "media_type",
+        "available",
+        "size_bytes",
+        "sha256",
+        "retention_days",
+        "associated_stage",
+        "github_artifact_name"
+      ],
+      "type": "object"
+    },
+    "check": {
+      "additionalProperties": false,
+      "properties": {
+        "check_id": {
+          "$ref": "#/$defs/id"
+        },
+        "details": {
+          "additionalProperties": false,
+          "properties": {
+            "exists": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "starts": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "exists",
+            "starts"
+          ],
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "failure": {
+          "$ref": "#/$defs/nullable_failure"
+        },
+        "outcome": {
+          "$ref": "#/$defs/outcome"
+        },
+        "type": {
+          "enum": [
+            "executable-validation",
+            "co-simulation",
+            "schema-validation"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "check_id",
+        "type",
+        "outcome",
+        "failure",
+        "details"
+      ],
+      "type": "object"
+    },
+    "execution_state": {
+      "enum": [
+        "queued",
+        "running",
+        "completed",
+        "canceled",
+        "timed_out",
+        "infrastructure_error"
+      ],
+      "type": "string"
+    },
+    "failure": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "enum": [
+            "configuration",
+            "compilation",
+            "linkage",
+            "installation",
+            "execution",
+            "verification",
+            "resource",
+            "timeout",
+            "infrastructure",
+            "canceled",
+            "schema",
+            "policy"
+          ],
+          "type": "string"
+        },
+        "code": {
+          "$ref": "#/$defs/id"
+        },
+        "evidence": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "message": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "stage": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "category",
+        "code",
+        "stage",
+        "message",
+        "retryable",
+        "evidence"
+      ],
+      "type": "object"
+    },
+    "id": {
+      "pattern": "^[a-z0-9][a-z0-9.-]*$",
+      "type": "string"
+    },
+    "metric": {
+      "additionalProperties": false,
+      "properties": {
+        "aggregation": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "measurement_method": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "metric_id": {
+          "$ref": "#/$defs/id"
+        },
+        "scope": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "unit": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "value": {
+          "minimum": 0,
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "metric_id",
+        "value",
+        "unit",
+        "aggregation",
+        "scope",
+        "measurement_method"
+      ],
+      "type": "object"
+    },
+    "nullable_failure": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/failure"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "outcome": {
+      "enum": [
+        "pass",
+        "fail",
+        "skipped",
+        "unknown",
+        "neutral"
+      ],
+      "type": "string"
+    },
+    "sha": {
+      "pattern": "^[0-9a-f]{40}$",
+      "type": "string"
+    },
+    "timestamp": {
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+      "type": "string"
+    }
+  },
+  "$id": "https://panda-re.github.io/schemas/ci/v1/common.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PandA CI common definitions"
+}
