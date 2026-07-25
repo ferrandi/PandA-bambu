@@ -106,8 +106,14 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print(summary, end="")
         return 0
-    except (BundleValidationError, SchemaValidationError, SerializationError, OSError) as error:
-        print(str(error), file=sys.stderr)
+    except (
+        BundleValidationError,
+        SchemaValidationError,
+        SerializationError,
+        OSError,
+        ValueError,
+    ) as error:
+        print(f"{type(error).__name__}: {error}", file=sys.stderr)
         return 1
 
 

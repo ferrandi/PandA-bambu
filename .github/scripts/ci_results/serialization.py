@@ -97,6 +97,9 @@ def write_json(path: Path, value: Any) -> None:
             stream.write(data)
             stream.flush()
             os.fsync(stream.fileno())
+            if hasattr(os, "fchmod"):
+                # GitHub-hosted workflow steps may read these files under another UID.
+                os.fchmod(stream.fileno(), 0o644)
         os.replace(temporary_path, path)
     finally:
         temporary_path.unlink(missing_ok=True)

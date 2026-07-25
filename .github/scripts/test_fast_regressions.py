@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import copy
 import io
+import stat
 import sys
 import tempfile
 import unittest
@@ -340,6 +341,34 @@ class FastRegressionResultTests(unittest.TestCase):
             self.assertIsNone(metrics["duration.regression-total"]["value"])
             self.assertEqual(task["execution"]["state"], "infrastructure_error")
             self.assertIsNone(task["execution"]["exit_status"])
+
+    def test_producer_outputs_hosted_results_readable_to_validator_step(self) -> None:
+        repository = self.root / "hosted-data-shape-repository"
+        repository.mkdir()
+        results = repository / ".ci-regression-results"
+        evidence = repository / ".ci-regression-evidence"
+
+        def fake_run_regression(*args):
+            results_directory, spec = args[2], args[4]
+            task = regression_task(spec)
+            write_json(results_directory / "tasks" / f"{spec.task_id}.json", task)
+            return task
+
+        with patch("ci_results.regressions.run_regression", side_effect=fake_run_regression):
+            suite = run_regression_suite(
+                repository,
+                repository / "panda_dist/bin/bambu",
+                results,
+                evidence,
+            )
+
+        self.assertEqual(suite["outcome"], "pass")
+        produced = [results / "suite.json"] + [
+            results / "tasks" / f"{spec.task_id}.json" for spec in REGRESSION_SPECS
+        ]
+        for path in produced:
+            mode = stat.S_IMODE(path.stat().st_mode)
+            self.assertTrue(mode & stat.S_IROTH, f"{path} is not world-readable")
 
     def test_all_regressions_pass_and_summary_is_derived_from_bundle(self) -> None:
         documents = self.generate()

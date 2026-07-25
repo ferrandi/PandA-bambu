@@ -250,6 +250,7 @@ jobs:
           PANDA_CI_REQUEST_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           PANDA_CI_REQUESTED_FRONTEND: I386_CLANG16
           PANDA_CI_RESULT_ARTIFACT_NAME: panda-ci-results-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          PANDA_CI_CANDIDATE_BUNDLE_DIR: .ci-results-candidate
           PANDA_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
           PANDA_CI_RUNNER_ARCH: ${{ runner.arch }}
           PANDA_CI_RUNNER_IMAGE: ubuntu-24.04
@@ -271,9 +272,32 @@ jobs:
           if [[ -z "${regression_results}" ]]; then
             regression_results=.ci-regression-results
           fi
+          set +e
+          log_directory=.ci-results-generator
+          mkdir -p "${log_directory}"
+          stdout_log="${log_directory}/stdout.log"
+          stderr_log="${log_directory}/stderr.log"
           python3 -m ci_results generate \
             --output .ci-results \
-            --regression-results "${regression_results}"
+            --regression-results "${regression_results}" \
+            > "${stdout_log}" \
+            2> "${stderr_log}"
+          status=$?
+          set -e
+          emit_log() {
+            local path="$1"
+            local stream="$2"
+            if [[ -s "${path}" ]]; then
+              if [[ "${stream}" == "stderr" ]]; then
+                cat "${path}" >&2
+              else
+                cat "${path}"
+              fi
+            fi
+          }
+          emit_log "${stdout_log}" stdout
+          emit_log "${stderr_log}" stderr
+          exit "${status}"
 
       - name: Validate structured CI results
         if: ${{ always() }}
@@ -305,6 +329,36 @@ jobs:
         with:
           name: panda-ci-regression-evidence-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: ${{ steps.regressions.outputs.regression-evidence-dir || '.ci-regression-evidence' }}
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload fast-regression raw results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: panda-ci-regression-results-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: .ci-regression-results
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload CI result generator logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: panda-ci-results-generator-logs-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: .ci-results-generator
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload candidate bundle on validation failure
+        if: ${{ always() && steps.structured-results.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: panda-ci-results-candidate-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: .ci-results-candidate
           include-hidden-files: true
           if-no-files-found: warn
           retention-days: 7

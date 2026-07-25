@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
-from .bundle import validate_bundle
+from .bundle import BundleValidationError, validate_bundle
 from .constants import ARTIFACT_IDS, CHECK_IDS, METRIC_IDS, RULE_IDS, STAGE_IDS
 from .hashing import (
     docker_base_image,
@@ -19,7 +19,8 @@ from .hashing import (
     submodule_commits,
 )
 from .regressions import extend_bundle_with_regressions
-from .serialization import write_json
+from .schema import SchemaValidationError
+from .serialization import SerializationError, write_json
 
 
 CMAKE_ARGUMENTS = (
@@ -1146,6 +1147,13 @@ def generate_bundle(
 
     env = os.environ if environment is None else environment
     root = (repository or Path.cwd()).resolve()
+    candidate_dir_path = _raw(env, "CANDIDATE_BUNDLE_DIR")
+    candidate_path = Path(candidate_dir_path) if candidate_dir_path else None
+    candidate_directory = None
+    if candidate_path is not None:
+        candidate_directory = (
+            candidate_path if candidate_path.is_absolute() else root / candidate_path
+        )
     output = output_directory.absolute()
     if output.is_symlink():
         raise ValueError(f"refusing to replace symlinked bundle directory: {output}")
@@ -1173,5 +1181,24 @@ def generate_bundle(
                 output.unlink()
         os.replace(temporary, output)
         return validate_bundle(output)
+    except (
+        BundleValidationError,
+        SchemaValidationError,
+        SerializationError,
+        OSError,
+        ValueError,
+    ):
+        if candidate_directory is not None:
+            try:
+                if candidate_directory.exists():
+                    if candidate_directory.is_dir():
+                        shutil.rmtree(candidate_directory)
+                    else:
+                        candidate_directory.unlink()
+                candidate_directory.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copytree(temporary, candidate_directory)
+            except OSError:
+                pass
+        raise
     finally:
         shutil.rmtree(temporary, ignore_errors=True)
