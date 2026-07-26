@@ -2,18 +2,30 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
 from .constants import (
     ARTIFACT_IDS,
     CHECK_IDS,
-    DOCUMENT_PATHS,
+    CORE_DOCUMENT_PATHS,
+    HOSTED_REGRESSION_RULE_ID,
+    LEGACY_SCHEMA_VERSION,
     METRIC_CONTRACTS,
     METRIC_IDS,
+    MULTI_TASK_RULE_IDS,
+    MULTI_TASK_SCHEMA_VERSION,
+    REGRESSION_ARTIFACT_SUFFIXES,
+    REGRESSION_CHECK_IDS,
+    REGRESSION_CHECK_TYPES,
+    REGRESSION_METRIC_CONTRACTS,
+    REGRESSION_METRIC_IDS,
+    REGRESSION_STAGE_IDS,
     RULE_IDS,
     SCHEMA_FILES,
     STAGE_IDS,
+    SUPPORTED_SCHEMA_VERSIONS,
 )
 from .hashing import sha256_file
 from .schema import SchemaValidationError, SchemaValidator
@@ -80,14 +92,22 @@ def _supported_version(document: Any, path: str, errors: list[str]) -> bool:
     if major != "1":
         errors.append(f"{path}.schema_version: unsupported major schema version {version!r}")
         return False
+    if version not in SUPPORTED_SCHEMA_VERSIONS:
+        errors.append(f"{path}.schema_version: unsupported schema version {version!r}")
+        return False
     return True
 
 
 def _validate_evidence_reference(
     reference: Any,
-    stages: dict[str, dict[str, Any]],
-    metrics: dict[str, dict[str, Any]],
-    checks: dict[str, dict[str, Any]],
+    task_contexts: dict[
+        str,
+        tuple[
+            dict[str, dict[str, Any]],
+            dict[str, dict[str, Any]],
+            dict[str, dict[str, Any]],
+        ],
+    ],
     artifacts: dict[str, dict[str, Any]],
     errors: list[str],
     location: str,
@@ -98,11 +118,18 @@ def _validate_evidence_reference(
     document, fragment = reference.split("#", 1)
     if document == "request.json" and fragment == "policy-profile":
         return
-    if document == "tasks/open-build.json":
+    if document == "manifest.json" and fragment == "hosted-regression-suite":
+        return
+    task_context = task_contexts.get(document)
+    if task_context is not None:
         if fragment == "outcome":
             return
         kind, separator, identifier = fragment.partition("/")
-        targets = {"stage": stages, "metric": metrics, "check": checks}.get(kind)
+        targets = {
+            "stage": task_context[0],
+            "metric": task_context[1],
+            "check": task_context[2],
+        }.get(kind)
         if separator and targets is not None and identifier in targets:
             return
     if document == "artifacts.json":
@@ -116,12 +143,16 @@ def _failure_invariants(
     value: Any,
     outcome: Any,
     location: str,
-    evidence_context: tuple[
-        dict[str, dict[str, Any]],
-        dict[str, dict[str, Any]],
-        dict[str, dict[str, Any]],
-        dict[str, dict[str, Any]],
+    stages: dict[str, dict[str, Any]],
+    task_contexts: dict[
+        str,
+        tuple[
+            dict[str, dict[str, Any]],
+            dict[str, dict[str, Any]],
+            dict[str, dict[str, Any]],
+        ],
     ],
+    artifacts: dict[str, dict[str, Any]],
     errors: list[str],
 ) -> None:
     if outcome == "fail" and value is None:
@@ -130,12 +161,13 @@ def _failure_invariants(
         errors.append(f"{location}: {outcome} result must have null failure")
     if isinstance(value, dict):
         failure_stage = value.get("stage")
-        if failure_stage is not None and failure_stage not in evidence_context[0]:
+        if failure_stage is not None and failure_stage not in stages:
             errors.append(f"{location}: failure references unknown stage {failure_stage!r}")
         for index, reference in enumerate(value.get("evidence", [])):
             _validate_evidence_reference(
                 reference,
-                *evidence_context,
+                task_contexts,
+                artifacts,
                 errors,
                 f"{location}.failure.evidence[{index}]",
             )
@@ -152,10 +184,20 @@ def validate_bundle(
     repository = Path(__file__).resolve().parents[3]
     schemas = schema_directory or repository / ".github" / "schemas" / "ci" / "v1"
     errors: list[str] = []
-    required_paths = ("manifest.json",) + DOCUMENT_PATHS
+    required_core_paths = ("manifest.json",) + CORE_DOCUMENT_PATHS
     documents: dict[str, dict[str, Any]] = {}
 
-    for relative in required_paths:
+    task_paths = (
+        sorted(
+            path.relative_to(bundle).as_posix()
+            for path in (bundle / "tasks").glob("*.json")
+            if path.is_file() and not path.is_symlink()
+        )
+        if (bundle / "tasks").is_dir()
+        else []
+    )
+    paths_to_load = required_core_paths + tuple(task_paths)
+    for relative in paths_to_load:
         path = bundle / relative
         if not path.is_file():
             errors.append(f"{relative}: required document is missing")
@@ -172,7 +214,7 @@ def validate_bundle(
         else:
             errors.append(f"{relative}: top-level value must be an object")
 
-    allowed_files = set(required_paths)
+    allowed_files = set(paths_to_load)
     allowed_directories = {"tasks"}
     if bundle.is_dir():
         for path in bundle.rglob("*"):
@@ -198,45 +240,134 @@ def validate_bundle(
         except SchemaValidationError as error:
             errors.extend(f"{relative}: {line}" for line in str(error).splitlines())
 
-    if any(relative not in documents for relative in required_paths):
+    if any(relative not in documents for relative in required_core_paths):
         raise BundleValidationError(errors)
 
     manifest = documents["manifest.json"]
     request = documents["request.json"]
-    task = documents["tasks/open-build.json"]
     artifact_document = documents["artifacts.json"]
     verdict = documents["verdict.json"]
+    bundle_version = manifest.get("schema_version")
+    hosted_regression_suite = manifest.get("hosted_regression_suite")
+    if bundle_version == LEGACY_SCHEMA_VERSION and hosted_regression_suite is not None:
+        errors.append("schema version 1.0 must not contain hosted_regression_suite")
+    if bundle_version == MULTI_TASK_SCHEMA_VERSION and not isinstance(
+        hosted_regression_suite, dict
+    ):
+        errors.append("schema version 1.1 requires hosted_regression_suite telemetry")
+    for relative, document in documents.items():
+        if document.get("schema_version") != bundle_version:
+            errors.append(
+                f"{relative}.schema_version: every document must use bundle version "
+                f"{bundle_version!r}"
+            )
 
-    stage_list = task.get("stages", [])
-    metric_list = task.get("metrics", [])
-    check_list = task.get("checks", [])
+    task_documents: dict[str, dict[str, Any]] = {}
+    task_paths_by_id: dict[str, str] = {}
+    for relative in task_paths:
+        task_document = documents.get(relative)
+        if task_document is None:
+            continue
+        task_id = task_document.get("task_id")
+        if not isinstance(task_id, str):
+            continue
+        if task_id in {"artifacts", "request", "verdict"}:
+            errors.append(f"{relative}.task_id: task ID is reserved for a core document")
+        expected_path = f"tasks/{task_id}.json"
+        if relative != expected_path:
+            errors.append(
+                f"{relative}.task_id: task document path must be {expected_path!r}"
+            )
+        if task_id in task_documents:
+            errors.append(f"{relative}.task_id: duplicate task ID {task_id!r}")
+        task_documents[task_id] = task_document
+        task_paths_by_id[task_id] = relative
+
+    if "open-build" not in task_documents:
+        errors.append("tasks/open-build.json: required document is missing")
+    if bundle_version == LEGACY_SCHEMA_VERSION and set(task_documents) != {"open-build"}:
+        errors.append("schema version 1.0 supports only the open-build task")
+    if bundle_version == MULTI_TASK_SCHEMA_VERSION and not any(
+        task.get("task_type") == "regression" for task in task_documents.values()
+    ):
+        errors.append("schema version 1.1 requires at least one regression task")
+    if "open-build" not in task_documents:
+        raise BundleValidationError(errors)
+
+    task = task_documents["open-build"]
+
     artifact_list = artifact_document.get("artifacts", [])
     rule_list = verdict.get("rules", [])
-    stages = _unique_index(stage_list, "stage_id", "tasks/open-build.json.stages", errors)
-    metrics = _unique_index(metric_list, "metric_id", "tasks/open-build.json.metrics", errors)
-    checks = _unique_index(check_list, "check_id", "tasks/open-build.json.checks", errors)
     artifacts = _unique_index(
         artifact_list, "artifact_id", "artifacts.json.artifacts", errors
     )
     rules = _unique_index(rule_list, "rule_id", "verdict.json.rules", errors)
-    context = (stages, metrics, checks, artifacts)
+    task_contexts: dict[
+        str,
+        tuple[
+            dict[str, dict[str, Any]],
+            dict[str, dict[str, Any]],
+            dict[str, dict[str, Any]],
+        ],
+    ] = {}
+    for task_id, task_document in task_documents.items():
+        relative = task_paths_by_id[task_id]
+        stage_list_for_task = task_document.get("stages", [])
+        metric_list_for_task = task_document.get("metrics", [])
+        check_list_for_task = task_document.get("checks", [])
+        task_contexts[relative] = (
+            _unique_index(
+                stage_list_for_task, "stage_id", f"{relative}.stages", errors
+            ),
+            _unique_index(
+                metric_list_for_task, "metric_id", f"{relative}.metrics", errors
+            ),
+            _unique_index(
+                check_list_for_task, "check_id", f"{relative}.checks", errors
+            ),
+        )
 
+    stages, metrics, checks = task_contexts["tasks/open-build.json"]
+    stage_list = task.get("stages", [])
+    metric_list = task.get("metrics", [])
+    check_list = task.get("checks", [])
     _exact_ids([item.get("stage_id") for item in stage_list], STAGE_IDS, "stages", errors)
     _exact_ids([item.get("metric_id") for item in metric_list], METRIC_IDS, "metrics", errors)
     _exact_ids([item.get("check_id") for item in check_list], CHECK_IDS, "checks", errors)
+
+    artifact_ids = [item.get("artifact_id") for item in artifact_list]
+    if bundle_version == LEGACY_SCHEMA_VERSION:
+        _exact_ids(artifact_ids, ARTIFACT_IDS, "artifacts", errors)
+        expected_rule_ids = RULE_IDS
+    else:
+        expected_artifact_ids = list(ARTIFACT_IDS) + sorted(
+            artifact_id
+            for artifact_id in artifact_ids
+            if isinstance(artifact_id, str) and artifact_id not in ARTIFACT_IDS
+        )
+        if artifact_ids != expected_artifact_ids:
+            errors.append(
+                "artifacts: expected legacy artifact IDs followed by regression IDs "
+                "in lexicographic order"
+            )
+        expected_rule_ids = MULTI_TASK_RULE_IDS
     _exact_ids(
-        [item.get("artifact_id") for item in artifact_list], ARTIFACT_IDS, "artifacts", errors
+        [item.get("rule_id") for item in rule_list], expected_rule_ids, "rules", errors
     )
-    _exact_ids([item.get("rule_id") for item in rule_list], RULE_IDS, "rules", errors)
 
     document_refs = manifest.get("documents", [])
     ref_index = _unique_index(document_refs, "document_id", "manifest.json.documents", errors)
     expected_refs = {
         "artifacts": ("artifacts.json", "panda.ci.artifact-index"),
-        "open-build": ("tasks/open-build.json", "panda.ci.task-result"),
         "request": ("request.json", "panda.ci.request"),
         "verdict": ("verdict.json", "panda.ci.verdict"),
     }
+    expected_refs.update(
+        {
+            task_id: (task_paths_by_id[task_id], "panda.ci.task-result")
+            for task_id in task_documents
+        }
+    )
     if [item.get("document_id") for item in document_refs] != sorted(expected_refs):
         errors.append("manifest.json.documents: references must be sorted by document_id")
     if set(ref_index) != set(expected_refs):
@@ -264,17 +395,62 @@ def validate_bundle(
             errors.append(f"manifest/request identity mismatch for {field}")
     if manifest.get("request_id") != request.get("request_id"):
         errors.append("manifest/request request_id mismatch")
-    if request.get("requested_task_ids") != ["open-build"]:
-        errors.append("request.json.requested_task_ids must contain only open-build")
-    if request.get("requested_artifact_ids") != list(ARTIFACT_IDS):
-        errors.append(
-            "request.json.requested_artifact_ids must contain every v1 artifact in stable order"
-        )
+    expected_task_ids = sorted(task_documents)
+    if request.get("requested_task_ids") != expected_task_ids:
+        if bundle_version == LEGACY_SCHEMA_VERSION:
+            errors.append("request.json.requested_task_ids must contain only open-build")
+        else:
+            errors.append(
+                "request.json.requested_task_ids must match task documents in stable order"
+            )
+    if request.get("requested_artifact_ids") != artifact_ids:
+        if bundle_version == LEGACY_SCHEMA_VERSION:
+            errors.append(
+                "request.json.requested_artifact_ids must contain every v1 artifact in stable order"
+            )
+        else:
+            errors.append(
+                "request.json.requested_artifact_ids must match the artifact index in stable order"
+            )
     request_tasks = request.get("tasks", [])
-    if request_tasks != [{"task_id": "open-build", "task_type": "build"}]:
-        errors.append("request.json.tasks does not match the open-build task result")
+    request_task_index = _unique_index(
+        request_tasks, "task_id", "request.json.tasks", errors
+    )
+    request_task_ids = [
+        item.get("task_id") for item in request_tasks if isinstance(item, dict)
+    ]
+    if request_task_ids != expected_task_ids:
+        if bundle_version == LEGACY_SCHEMA_VERSION:
+            errors.append("request.json.tasks does not match the open-build task result")
+        else:
+            errors.append(
+                "request.json.tasks must match task documents in stable task ID order"
+            )
+    for task_id, task_document in task_documents.items():
+        requested_task = request_task_index.get(task_id, {})
+        if requested_task.get("task_type") != task_document.get("task_type"):
+            errors.append(f"request/task type mismatch for {task_id!r}")
+        if task_document.get("task_type") == "regression":
+            requested_configuration = requested_task.get("configuration")
+            observed_configuration = task_document.get("configuration")
+            if isinstance(observed_configuration, dict):
+                observed_frontend = observed_configuration.get("frontend", {})
+                comparable_configuration = {
+                    key: value
+                    for key, value in observed_configuration.items()
+                    if key != "frontend"
+                }
+                comparable_configuration["frontend"] = {
+                    "requested": observed_frontend.get("requested")
+                }
+                if requested_configuration != comparable_configuration:
+                    errors.append(
+                        f"request/task regression configuration mismatch for {task_id!r}"
+                    )
     if task.get("task_id") != "open-build" or task.get("task_type") != "build":
         errors.append("tasks/open-build.json: task identity mismatch")
+    if "results" in task:
+        errors.append("tasks/open-build.json: build task must not contain regression results")
     request_parameters = request.get("build_parameters", {})
     task_configuration = task.get("configuration", {})
     for field in (
@@ -306,6 +482,10 @@ def validate_bundle(
         for artifact_id in stage.get("artifact_ids", []):
             if artifact_id not in artifacts:
                 errors.append(f"stage {stage_id!r}: unknown artifact reference {artifact_id!r}")
+            elif artifacts[artifact_id].get("producer_task") != "open-build":
+                errors.append(
+                    f"stage {stage_id!r}: artifact {artifact_id!r} belongs to a different task"
+                )
         duration_metric = metrics.get(f"duration.{stage_id}")
         if duration_metric is not None and stage.get("duration_seconds") != duration_metric.get(
             "value"
@@ -337,32 +517,73 @@ def validate_bundle(
             errors.append(f"stage {stage_id!r}: unknown terminal stage requires failure evidence")
         if isinstance(stage.get("failure"), dict) and stage["failure"].get("stage") != stage_id:
             errors.append(f"stage {stage_id!r}: failure points to a different stage")
-        _failure_invariants(stage.get("failure"), outcome, f"stage {stage_id!r}", context, errors)
+        _failure_invariants(
+            stage.get("failure"),
+            outcome,
+            f"stage {stage_id!r}",
+            stages,
+            task_contexts,
+            artifacts,
+            errors,
+        )
 
     if task.get("artifacts") != list(ARTIFACT_IDS):
         errors.append("task artifacts must contain every v1 artifact in stable order")
-    for artifact_id in task.get("artifacts", []):
-        if artifact_id not in artifacts:
-            errors.append(f"task: unknown artifact reference {artifact_id!r}")
+    for task_id, task_document in task_documents.items():
+        task_artifact_ids = task_document.get("artifacts", [])
+        expected_task_artifacts = [
+            artifact_id
+            for artifact_id in artifact_ids
+            if isinstance(artifact_id, str)
+            and artifacts.get(artifact_id, {}).get("producer_task") == task_id
+        ]
+        if task_artifact_ids != expected_task_artifacts:
+            errors.append(
+                f"task {task_id!r}: artifacts must match artifacts produced by the task "
+                "in stable order"
+            )
+        for artifact_id in task_artifact_ids:
+            if artifact_id not in artifacts:
+                errors.append(
+                    f"task {task_id!r}: unknown artifact reference {artifact_id!r}"
+                )
     for artifact_id, artifact in artifacts.items():
         if not _safe_relative_path(artifact.get("path")):
             errors.append(f"artifact {artifact_id!r}: path is not safe and bundle-relative")
-        if artifact.get("producer_task") != "open-build":
+        producer_task = artifact.get("producer_task")
+        if producer_task not in task_documents:
+            errors.append(f"artifact {artifact_id!r}: producer_task does not resolve")
+            continue
+        if artifact_id in ARTIFACT_IDS and producer_task != "open-build":
             errors.append(f"artifact {artifact_id!r}: producer_task must be open-build")
         if artifact.get("available") is False and (
             artifact.get("size_bytes") is not None or artifact.get("sha256") is not None
         ):
             errors.append(f"artifact {artifact_id!r}: unavailable artifact must have null size/hash")
         associated_stage = artifact.get("associated_stage")
-        if associated_stage is not None and associated_stage not in stages:
+        producer_path = task_paths_by_id.get(producer_task)
+        producer_stages = task_contexts.get(producer_path, ({}, {}, {}))[0]
+        if associated_stage is not None and associated_stage not in producer_stages:
             errors.append(f"artifact {artifact_id!r}: unknown associated stage")
 
     for check_id, check in checks.items():
         _failure_invariants(
-            check.get("failure"), check.get("outcome"), f"check {check_id!r}", context, errors
+            check.get("failure"),
+            check.get("outcome"),
+            f"check {check_id!r}",
+            stages,
+            task_contexts,
+            artifacts,
+            errors,
         )
     _failure_invariants(
-        task.get("failure"), task.get("outcome"), "task open-build", context, errors
+        task.get("failure"),
+        task.get("outcome"),
+        "task open-build",
+        stages,
+        task_contexts,
+        artifacts,
+        errors,
     )
 
     executable_outcomes: list[str] = []
@@ -413,8 +634,30 @@ def validate_bundle(
 
     task_state = task.get("execution", {}).get("state")
     task_outcome = task.get("outcome")
-    if manifest.get("execution_state") != task_state:
-        errors.append("manifest execution_state does not match task execution state")
+    if bundle_version == LEGACY_SCHEMA_VERSION:
+        if manifest.get("execution_state") != task_state:
+            errors.append("manifest execution_state does not match task execution state")
+    else:
+        task_states = [
+            task_document.get("execution", {}).get("state")
+            for task_document in task_documents.values()
+        ]
+        if isinstance(hosted_regression_suite, dict):
+            task_states.append(hosted_regression_suite.get("execution_state"))
+        if any(state in {"queued", "running"} for state in task_states):
+            errors.append("final multi-task bundle cannot contain queued or running tasks")
+        if "timed_out" in task_states:
+            expected_manifest_state = "timed_out"
+        elif "canceled" in task_states:
+            expected_manifest_state = "canceled"
+        elif "infrastructure_error" in task_states:
+            expected_manifest_state = "infrastructure_error"
+        else:
+            expected_manifest_state = "completed"
+        if manifest.get("execution_state") != expected_manifest_state:
+            errors.append(
+                "manifest execution_state does not match the aggregate task execution state"
+            )
     if task_state == "completed" and task_outcome not in {"pass", "fail"}:
         errors.append("completed open-build task must have pass or fail outcome")
     if task_state in {"canceled", "timed_out", "infrastructure_error"}:
@@ -452,14 +695,672 @@ def validate_bundle(
                 f"{(unit, aggregation, scope)!r}, got {actual!r}"
             )
 
-    expected_severity = {rule_id: "blocking" for rule_id in RULE_IDS}
+    regression_tasks = {
+        task_id: task_document
+        for task_id, task_document in task_documents.items()
+        if task_document.get("task_type") == "regression"
+    }
+    for task_id, task_document in task_documents.items():
+        if task_id != "open-build" and task_document.get("task_type") != "regression":
+            errors.append(
+                f"task {task_id!r}: only open-build may use task type build"
+            )
+
+    stage_failure_contracts = {
+        "input-validation": {
+            ("configuration", "invalid-regression-input"),
+            ("configuration", "frontend-resolution-failed"),
+        },
+        "hls-synthesis": {
+            ("configuration", "frontend-resolution-failed"),
+            ("compilation", "hls-synthesis-failed"),
+        },
+        "rtl-generation": {
+            ("compilation", "rtl-generation-failed"),
+            ("verification", "rtl-generation-failed"),
+        },
+        "simulator-preparation": {("compilation", "simulator-build-failed")},
+        "rtl-simulation": {("execution", "rtl-simulation-failed")},
+        "result-verification": {("verification", "result-mismatch")},
+    }
+    artifact_stage_by_suffix = {
+        "bambu-log": "hls-synthesis",
+        "result-report": "result-verification",
+        "rtl-output": "rtl-generation",
+        "simulation-log": "rtl-simulation",
+    }
+
+    for task_id in sorted(regression_tasks):
+        regression_task = regression_tasks[task_id]
+        if "results" not in regression_task:
+            errors.append(f"task {task_id!r}: regression results are required")
+        relative = task_paths_by_id[task_id]
+        regression_stages, regression_metrics, regression_checks = task_contexts[relative]
+        regression_stage_list = regression_task.get("stages", [])
+        regression_metric_list = regression_task.get("metrics", [])
+        regression_check_list = regression_task.get("checks", [])
+        _exact_ids(
+            [item.get("stage_id") for item in regression_stage_list],
+            REGRESSION_STAGE_IDS,
+            f"task {task_id!r} stages",
+            errors,
+        )
+        _exact_ids(
+            [item.get("metric_id") for item in regression_metric_list],
+            REGRESSION_METRIC_IDS,
+            f"task {task_id!r} metrics",
+            errors,
+        )
+        _exact_ids(
+            [item.get("check_id") for item in regression_check_list],
+            REGRESSION_CHECK_IDS,
+            f"task {task_id!r} checks",
+            errors,
+        )
+
+        expected_regression_artifacts = [
+            f"{task_id}.{suffix}" for suffix in REGRESSION_ARTIFACT_SUFFIXES
+        ]
+        if regression_task.get("artifacts") != expected_regression_artifacts:
+            errors.append(
+                f"task {task_id!r}: expected stable regression artifacts "
+                f"{expected_regression_artifacts!r}"
+            )
+        for suffix, associated_stage in artifact_stage_by_suffix.items():
+            artifact_id = f"{task_id}.{suffix}"
+            artifact = artifacts.get(artifact_id)
+            if artifact is None:
+                errors.append(f"task {task_id!r}: missing artifact {artifact_id!r}")
+                continue
+            if artifact.get("producer_task") != task_id:
+                errors.append(
+                    f"artifact {artifact_id!r}: producer_task must be {task_id!r}"
+                )
+            if artifact.get("associated_stage") != associated_stage:
+                errors.append(
+                    f"artifact {artifact_id!r}: associated_stage must be "
+                    f"{associated_stage!r}"
+                )
+            if artifact.get("available") is True:
+                size = artifact.get("size_bytes")
+                digest = artifact.get("sha256")
+                retention = artifact.get("retention_days")
+                github_name = artifact.get("github_artifact_name")
+                if not isinstance(size, int) or isinstance(size, bool) or size < 0:
+                    errors.append(
+                        f"artifact {artifact_id!r}: available evidence requires size_bytes"
+                    )
+                if not isinstance(digest, str) or len(digest) != 64:
+                    errors.append(
+                        f"artifact {artifact_id!r}: available evidence requires SHA-256"
+                    )
+                if not isinstance(retention, int) or isinstance(retention, bool) or retention < 1:
+                    errors.append(
+                        f"artifact {artifact_id!r}: available evidence requires retention_days"
+                    )
+                if not isinstance(github_name, str) or not github_name:
+                    errors.append(
+                        f"artifact {artifact_id!r}: available evidence requires an artifact name"
+                    )
+            elif any(
+                artifact.get(field) is not None
+                for field in (
+                    "size_bytes",
+                    "sha256",
+                    "retention_days",
+                    "github_artifact_name",
+                )
+            ):
+                errors.append(
+                    f"artifact {artifact_id!r}: unavailable evidence metadata must be null"
+                )
+
+        terminal_stage_seen = False
+        expected_stage_artifacts = {
+            "input-validation": [],
+            "hls-synthesis": [f"{task_id}.bambu-log"],
+            "rtl-generation": [f"{task_id}.rtl-output"],
+            "simulator-preparation": [],
+            "rtl-simulation": [f"{task_id}.simulation-log"],
+            "result-verification": [f"{task_id}.result-report"],
+        }
+        for stage_id in REGRESSION_STAGE_IDS:
+            stage = regression_stages.get(stage_id, {})
+            outcome = stage.get("outcome")
+            if stage.get("metric_ids") != [f"duration.{stage_id}"]:
+                errors.append(
+                    f"task {task_id!r} stage {stage_id!r}: expected its duration metric"
+                )
+            if stage.get("artifact_ids") != expected_stage_artifacts[stage_id]:
+                errors.append(
+                    f"task {task_id!r} stage {stage_id!r}: expected stable artifact "
+                    "references"
+                )
+            for artifact_id in stage.get("artifact_ids", []):
+                artifact = artifacts.get(artifact_id)
+                if artifact is None:
+                    errors.append(
+                        f"task {task_id!r} stage {stage_id!r}: unknown artifact "
+                        f"reference {artifact_id!r}"
+                    )
+                elif artifact.get("producer_task") != task_id:
+                    errors.append(
+                        f"task {task_id!r} stage {stage_id!r}: artifact "
+                        f"{artifact_id!r} belongs to a different task"
+                    )
+            duration_metric = regression_metrics.get(f"duration.{stage_id}", {})
+            if stage.get("duration_seconds") != duration_metric.get("value"):
+                errors.append(
+                    f"task {task_id!r} stage {stage_id!r}: duration does not match "
+                    "its metric"
+                )
+            if terminal_stage_seen and outcome != "skipped":
+                errors.append(
+                    f"task {task_id!r} stage {stage_id!r}: downstream stage must be skipped"
+                )
+            if outcome in {"fail", "unknown", "skipped"}:
+                terminal_stage_seen = True
+            if outcome == "skipped":
+                if stage.get("execution_state") != "completed":
+                    errors.append(
+                        f"task {task_id!r} stage {stage_id!r}: skipped stage state "
+                        "must be completed"
+                    )
+                if stage.get("duration_seconds") is not None or stage.get("exit_status") is not None:
+                    errors.append(
+                        f"task {task_id!r} stage {stage_id!r}: skipped stage must use "
+                        "null duration/status"
+                    )
+            elif outcome == "pass":
+                if stage.get("execution_state") != "completed" or stage.get("exit_status") != 0:
+                    errors.append(
+                        f"task {task_id!r} stage {stage_id!r}: passing stage must be "
+                        "completed with exit status 0"
+                    )
+            elif outcome == "fail":
+                if stage.get("execution_state") not in {"completed", "infrastructure_error"}:
+                    errors.append(
+                        f"task {task_id!r} stage {stage_id!r}: failed stage has "
+                        "incompatible state"
+                    )
+                if stage.get("exit_status") == 0:
+                    errors.append(
+                        f"task {task_id!r} stage {stage_id!r}: failed stage cannot "
+                        "have exit status 0"
+                    )
+            elif outcome == "unknown":
+                if stage.get("execution_state") not in {
+                    "canceled",
+                    "timed_out",
+                    "infrastructure_error",
+                }:
+                    errors.append(
+                        f"task {task_id!r} stage {stage_id!r}: unknown outcome has "
+                        "incompatible state"
+                    )
+                if stage.get("failure") is None:
+                    errors.append(
+                        f"task {task_id!r} stage {stage_id!r}: unknown outcome "
+                        "requires failure evidence"
+                    )
+            else:
+                errors.append(
+                    f"task {task_id!r} stage {stage_id!r}: unsupported regression outcome"
+                )
+
+            failure = stage.get("failure")
+            if isinstance(failure, dict):
+                if failure.get("stage") != stage_id:
+                    errors.append(
+                        f"task {task_id!r} stage {stage_id!r}: failure points to a "
+                        "different stage"
+                    )
+                failure_pair = (failure.get("category"), failure.get("code"))
+                exceptional_pairs = {
+                    ("timeout", "regression-timeout"),
+                    ("infrastructure", "regression-infrastructure-failure"),
+                    ("canceled", "workflow-canceled"),
+                }
+                if failure_pair not in stage_failure_contracts[stage_id] | exceptional_pairs:
+                    errors.append(
+                        f"task {task_id!r} stage {stage_id!r}: unsupported failure "
+                        "classification"
+                    )
+                exceptional_states = {
+                    ("timeout", "regression-timeout"): "timed_out",
+                    (
+                        "infrastructure",
+                        "regression-infrastructure-failure",
+                    ): "infrastructure_error",
+                    ("canceled", "workflow-canceled"): "canceled",
+                }
+                expected_exceptional_state = exceptional_states.get(failure_pair)
+                if expected_exceptional_state is not None and (
+                    outcome != "unknown"
+                    or stage.get("execution_state") != expected_exceptional_state
+                ):
+                    errors.append(
+                        f"task {task_id!r} stage {stage_id!r}: exceptional failure "
+                        "requires unknown outcome and matching execution state"
+                    )
+            _failure_invariants(
+                failure,
+                outcome,
+                f"task {task_id!r} stage {stage_id!r}",
+                regression_stages,
+                task_contexts,
+                artifacts,
+                errors,
+            )
+
+        for metric_id, (unit, aggregation, scope) in REGRESSION_METRIC_CONTRACTS.items():
+            metric = regression_metrics.get(metric_id, {})
+            actual = (metric.get("unit"), metric.get("aggregation"), metric.get("scope"))
+            if actual != (unit, aggregation, scope):
+                errors.append(
+                    f"task {task_id!r} metric {metric_id!r}: expected "
+                    f"unit/aggregation/scope {(unit, aggregation, scope)!r}, got "
+                    f"{actual!r}"
+                )
+
+        check_stage_ids = dict(
+            zip(
+                REGRESSION_CHECK_IDS,
+                ("rtl-generation", "rtl-simulation", "result-verification"),
+            )
+        )
+        for check_id in REGRESSION_CHECK_IDS:
+            check = regression_checks.get(check_id, {})
+            stage = regression_stages.get(check_stage_ids[check_id], {})
+            if check.get("type") != REGRESSION_CHECK_TYPES[check_id]:
+                errors.append(f"task {task_id!r} check {check_id!r}: incorrect type")
+            if check.get("details") is not None:
+                errors.append(f"task {task_id!r} check {check_id!r}: details must be null")
+            if check.get("outcome") != stage.get("outcome"):
+                errors.append(
+                    f"task {task_id!r} check {check_id!r}: outcome does not match its stage"
+                )
+            if check.get("failure") != stage.get("failure"):
+                errors.append(
+                    f"task {task_id!r} check {check_id!r}: failure does not match its stage"
+                )
+            _failure_invariants(
+                check.get("failure"),
+                check.get("outcome"),
+                f"task {task_id!r} check {check_id!r}",
+                regression_stages,
+                task_contexts,
+                artifacts,
+                errors,
+            )
+
+        configuration = regression_task.get("configuration", {})
+        input_configuration = configuration.get("input", {})
+        frontend_configuration = configuration.get("frontend", {})
+        invocation = configuration.get("invocation", {})
+        options = configuration.get("options", {})
+        for path_field, path_value in (
+            ("source_path", input_configuration.get("source_path")),
+            ("working_directory", invocation.get("working_directory")),
+            ("executable", invocation.get("executable")),
+        ):
+            if not _safe_relative_path(path_value):
+                errors.append(
+                    f"task {task_id!r} configuration {path_field}: expected a safe "
+                    "repository-relative path"
+                )
+        test_vector_kind = input_configuration.get("test_vector_kind")
+        test_vector_path = input_configuration.get("test_vector_path")
+        test_vector_value = input_configuration.get("test_vector_value")
+        if test_vector_kind == "xml":
+            if not _safe_relative_path(test_vector_path):
+                errors.append(
+                    f"task {task_id!r}: XML test vectors require a safe test_vector_path"
+                )
+            if test_vector_path != test_vector_value:
+                errors.append(
+                    f"task {task_id!r}: XML test_vector_path/value must match"
+                )
+        elif test_vector_kind == "inline" and test_vector_path is not None:
+            errors.append(f"task {task_id!r}: inline test vectors require null path")
+        if options.get("compiler") != frontend_configuration.get("requested"):
+            errors.append(f"task {task_id!r}: compiler option/requested frontend mismatch")
+        if options.get("top_function") != input_configuration.get("top_function"):
+            errors.append(f"task {task_id!r}: top-function option/input mismatch")
+        if options.get("test_vectors") != test_vector_value:
+            errors.append(f"task {task_id!r}: test-vector option/input mismatch")
+        if options.get("simulate") is not True:
+            errors.append(f"task {task_id!r}: hosted regression must enable simulation")
+        arguments = invocation.get("arguments", [])
+        compiler_option = options.get("compiler")
+        simulator_option = options.get("simulator")
+        top_function = input_configuration.get("top_function")
+        required_arguments = [
+            input_configuration.get("source_path"),
+            f"--compiler={compiler_option}",
+            f"--simulator={simulator_option}",
+            f"--generate-tb={test_vector_value}",
+        ]
+        if options.get("simulate") is True:
+            required_arguments.append("--simulate")
+        if top_function is not None:
+            required_arguments.append(f"--top-fname={top_function}")
+        optimization = options.get("optimization")
+        if optimization is not None:
+            required_arguments.append(f"-{optimization}")
+        device = options.get("device")
+        if device is not None:
+            required_arguments.append(f"--device-name={device}")
+        clock_period = options.get("clock_period")
+        if isinstance(clock_period, (int, float)) and not isinstance(clock_period, bool):
+            required_arguments.append(f"--clock-period={clock_period:g}")
+        interface = options.get("interface")
+        if interface is not None:
+            required_arguments.append(f"--generate-interface={interface}")
+        language_standard = options.get("language_standard")
+        if language_standard is not None:
+            required_arguments.append(f"--std={language_standard}")
+        parallel_backend = options.get("parallel_backend")
+        required_arguments.append(f"--parallel-backend={parallel_backend}")
+        experimental_setup = options.get("experimental_setup")
+        if experimental_setup is not None:
+            required_arguments.append(f"--experimental-setup={experimental_setup}")
+        if options.get("expose_globals") is True:
+            required_arguments.append("--expose-globals")
+        inline_max_cost = options.get("inline_max_cost")
+        if inline_max_cost is not None:
+            required_arguments.append(f"--inline-max-cost={inline_max_cost}")
+        required_arguments.extend(
+            f"--bambu-parameter={value}" for value in options.get("bambu_parameters", [])
+        )
+        for argument in required_arguments:
+            if argument not in arguments:
+                errors.append(
+                    f"task {task_id!r}: normalized invocation is missing {argument!r}"
+                )
+
+        selected_frontend = frontend_configuration.get("selected")
+        if regression_stages.get("hls-synthesis", {}).get("outcome") == "pass":
+            if selected_frontend != frontend_configuration.get("requested"):
+                errors.append(
+                    f"task {task_id!r}: passing HLS requires the selected frontend to "
+                    "match the request"
+                )
+        elif regression_stages.get("hls-synthesis", {}).get("outcome") == "skipped":
+            if selected_frontend is not None:
+                errors.append(
+                    f"task {task_id!r}: skipped HLS requires null selected frontend"
+                )
+
+        results = regression_task.get("results", {})
+        synthesis_result = results.get("synthesis", {})
+        simulation_result = results.get("simulation", {})
+        rtl_passed = regression_stages.get("rtl-generation", {}).get("outcome") == "pass"
+        simulation_passed = regression_stages.get("rtl-simulation", {}).get("outcome") == "pass"
+        verification_passed = (
+            regression_stages.get("result-verification", {}).get("outcome") == "pass"
+        )
+        if synthesis_result.get("completed") is not rtl_passed:
+            errors.append(
+                f"task {task_id!r}: synthesis result contradicts RTL-generation stage"
+            )
+        rtl_artifact_count = synthesis_result.get("rtl_artifact_count")
+        if rtl_passed and (
+            not isinstance(rtl_artifact_count, int)
+            or isinstance(rtl_artifact_count, bool)
+            or rtl_artifact_count < 1
+        ):
+            errors.append(
+                f"task {task_id!r}: passing RTL generation requires an RTL artifact"
+            )
+        for stage_id, artifact_suffix in (
+            ("hls-synthesis", "bambu-log"),
+            ("rtl-generation", "rtl-output"),
+            ("rtl-simulation", "simulation-log"),
+            ("result-verification", "result-report"),
+        ):
+            if (
+                regression_stages.get(stage_id, {}).get("outcome") == "pass"
+                and artifacts.get(f"{task_id}.{artifact_suffix}", {}).get("available")
+                is not True
+            ):
+                errors.append(
+                    f"task {task_id!r}: passing {stage_id!r} requires its artifact"
+                )
+        if simulation_result.get("completed") is not simulation_passed:
+            errors.append(f"task {task_id!r}: simulation result contradicts simulation stage")
+        if simulation_result.get("verified") is not verification_passed:
+            errors.append(
+                f"task {task_id!r}: verification result contradicts verification stage"
+            )
+        if not simulation_passed and (
+            simulation_result.get("execution_count") is not None
+            or simulation_result.get("total_cycles") is not None
+        ):
+            errors.append(
+                f"task {task_id!r}: unavailable simulation observations must be null"
+            )
+        if simulation_passed:
+            execution_count = simulation_result.get("execution_count")
+            total_cycles = simulation_result.get("total_cycles")
+            if (
+                not isinstance(execution_count, int)
+                or isinstance(execution_count, bool)
+                or execution_count < 1
+            ):
+                errors.append(
+                    f"task {task_id!r}: passing simulation requires an execution count"
+                )
+            if (
+                not isinstance(total_cycles, int)
+                or isinstance(total_cycles, bool)
+                or total_cycles < 0
+            ):
+                errors.append(
+                    f"task {task_id!r}: passing simulation requires a cycle count"
+                )
+
+        regression_state = regression_task.get("execution", {}).get("state")
+        regression_outcome = regression_task.get("outcome")
+        if regression_state == "completed" and regression_outcome not in {
+            "pass",
+            "fail",
+            "skipped",
+        }:
+            errors.append(
+                f"task {task_id!r}: completed regression must pass, fail, or be skipped"
+            )
+        if regression_state in {"canceled", "timed_out", "infrastructure_error"}:
+            if regression_outcome != "unknown" or regression_task.get("failure") is None:
+                errors.append(
+                    f"task {task_id!r}: exceptional state requires unknown outcome and failure"
+                )
+        if regression_state in {"queued", "running"}:
+            errors.append(f"task {task_id!r}: final task cannot remain queued or running")
+        stage_outcomes = [
+            regression_stages.get(stage_id, {}).get("outcome")
+            for stage_id in REGRESSION_STAGE_IDS
+        ]
+        if regression_outcome == "pass" and any(
+            outcome != "pass" for outcome in stage_outcomes
+        ):
+            errors.append(
+                f"task {task_id!r}: passing regression requires every stage to pass"
+            )
+        if regression_outcome == "pass":
+            for metric_id in (
+                "duration.hls-synthesis",
+                "duration.rtl-simulation",
+                "duration.regression-total",
+            ):
+                if regression_metrics.get(metric_id, {}).get("value") is None:
+                    errors.append(
+                        f"task {task_id!r}: passing regression requires {metric_id!r}"
+                    )
+        if regression_outcome == "fail" and "fail" not in stage_outcomes:
+            errors.append(f"task {task_id!r}: failed regression requires a failed stage")
+        if regression_outcome == "skipped" and any(
+            outcome != "skipped" for outcome in stage_outcomes
+        ):
+            errors.append(
+                f"task {task_id!r}: skipped regression requires every stage to be skipped"
+            )
+        _failure_invariants(
+            regression_task.get("failure"),
+            regression_outcome,
+            f"task {task_id!r}",
+            regression_stages,
+            task_contexts,
+            artifacts,
+            errors,
+        )
+        regression_failure = regression_task.get("failure")
+        if isinstance(regression_failure, dict):
+            failure_stage = regression_stages.get(regression_failure.get("stage"), {})
+            if failure_stage.get("outcome") not in {"fail", "unknown"}:
+                errors.append(
+                    f"task {task_id!r}: failure does not point to its failed or "
+                    "interrupted stage"
+                )
+            if failure_stage.get("failure") != regression_failure:
+                errors.append(
+                    f"task {task_id!r}: task failure must match the failing stage"
+                )
+
+    if bundle_version == MULTI_TASK_SCHEMA_VERSION and isinstance(
+        hosted_regression_suite, dict
+    ):
+        suite_task_count = hosted_regression_suite.get("task_count")
+        suite_passed_count = hosted_regression_suite.get("passed_count")
+        suite_failed_count = hosted_regression_suite.get("failed_count")
+        expected_passed_count = sum(
+            task.get("outcome") == "pass" for task in regression_tasks.values()
+        )
+        if suite_task_count != len(regression_tasks):
+            errors.append("hosted_regression_suite.task_count does not match task documents")
+        if suite_passed_count != expected_passed_count:
+            errors.append("hosted_regression_suite.passed_count does not match task outcomes")
+        if suite_failed_count != len(regression_tasks) - expected_passed_count:
+            errors.append("hosted_regression_suite.failed_count does not match task outcomes")
+
+        suite_state = hosted_regression_suite.get("execution_state")
+        suite_outcome = hosted_regression_suite.get("outcome")
+        suite_action_outcome = hosted_regression_suite.get("action_outcome")
+        suite_action_exit_status = hosted_regression_suite.get("action_exit_status")
+        suite_exit_status = hosted_regression_suite.get("exit_status")
+        regression_outcomes = [
+            task.get("outcome") for task in regression_tasks.values()
+        ]
+        if suite_state == "completed" and suite_outcome == "pass":
+            if (
+                suite_action_outcome != "success"
+                or suite_action_exit_status != 0
+                or suite_exit_status != 0
+                or not regression_outcomes
+                or any(outcome != "pass" for outcome in regression_outcomes)
+            ):
+                errors.append(
+                    "passing hosted_regression_suite contradicts action or task outcomes"
+                )
+        elif suite_state == "completed" and suite_outcome == "fail":
+            if (
+                suite_action_outcome != "failure"
+                or not isinstance(suite_action_exit_status, int)
+                or isinstance(suite_action_exit_status, bool)
+                or suite_action_exit_status == 0
+                or not isinstance(suite_exit_status, int)
+                or isinstance(suite_exit_status, bool)
+                or suite_exit_status == 0
+                or all(outcome == "pass" for outcome in regression_outcomes)
+            ):
+                errors.append(
+                    "failed hosted_regression_suite contradicts action or task outcomes"
+                )
+        elif suite_state == "completed" and suite_outcome == "skipped":
+            if (
+                suite_action_outcome != "skipped"
+                or suite_action_exit_status is not None
+                or suite_exit_status is not None
+                or any(outcome != "skipped" for outcome in regression_outcomes)
+            ):
+                errors.append(
+                    "skipped hosted_regression_suite contradicts action or task outcomes"
+                )
+        elif suite_state in {"canceled", "timed_out", "infrastructure_error"}:
+            if suite_outcome != "unknown" or suite_exit_status == 0:
+                errors.append(
+                    "exceptional hosted_regression_suite requires unknown outcome and "
+                    "a null or nonzero exit status"
+                )
+            if not hosted_regression_suite.get("failure_stage"):
+                errors.append(
+                    "exceptional hosted_regression_suite requires a failure_stage"
+                )
+            if suite_state == "timed_out" and (
+                suite_action_outcome not in {"failure", "cancelled"}
+                or suite_action_exit_status == 0
+            ):
+                errors.append(
+                    "timed-out hosted_regression_suite contradicts action telemetry"
+                )
+        else:
+            errors.append("hosted_regression_suite has incompatible state and outcome")
+
+        duration = hosted_regression_suite.get("duration_seconds")
+        duration_method = hosted_regression_suite.get("duration_measurement_method")
+        if duration_method == "unavailable" and duration is not None:
+            errors.append("unavailable hosted regression duration must be null")
+        if duration_method in {"suite-monotonic-clock", "action-wall-clock"} and (
+            duration is None
+            or hosted_regression_suite.get("started_at") is None
+            or hosted_regression_suite.get("completed_at") is None
+        ):
+            errors.append(
+                "measured hosted regression duration requires value and timestamps"
+            )
+        if duration_method == "action-wall-clock" and duration is not None:
+            try:
+                start = datetime.fromisoformat(
+                    hosted_regression_suite["started_at"].replace("Z", "+00:00")
+                )
+                completion = datetime.fromisoformat(
+                    hosted_regression_suite["completed_at"].replace("Z", "+00:00")
+                )
+                expected_duration = (completion - start).total_seconds()
+            except (AttributeError, TypeError, ValueError):
+                expected_duration = None
+            if expected_duration is None or expected_duration != duration:
+                errors.append(
+                    "action-wall-clock duration does not match suite timestamps"
+                )
+        if duration_method in {"runner-wall-clock", "unavailable"} and (
+            hosted_regression_suite.get("started_at") is not None
+            or hosted_regression_suite.get("completed_at") is not None
+        ):
+            errors.append(
+                f"{duration_method} hosted regression duration must not use timestamps"
+            )
+        if duration_method == "runner-wall-clock" and duration is None:
+            errors.append("runner-wall-clock hosted regression duration requires a value")
+        if suite_outcome in {"pass", "skipped"} and hosted_regression_suite.get(
+            "failure_stage"
+        ) is not None:
+            errors.append(
+                "passing or skipped hosted_regression_suite must not name a failure stage"
+            )
+
+    expected_severity = {rule_id: "blocking" for rule_id in expected_rule_ids}
     expected_severity["fast-regressions-availability"] = "non-blocking"
     for rule_id, rule in rules.items():
         if rule.get("severity") != expected_severity.get(rule_id):
             errors.append(f"rule {rule_id!r}: incorrect severity")
         for index, reference in enumerate(rule.get("evidence", [])):
             _validate_evidence_reference(
-                reference, *context, errors, f"rule {rule_id!r}.evidence[{index}]"
+                reference,
+                task_contexts,
+                artifacts,
+                errors,
+                f"rule {rule_id!r}.evidence[{index}]",
             )
 
     executable_outcomes = [checks.get(check_id, {}).get("outcome") for check_id in CHECK_IDS[:3]]
@@ -484,6 +1385,37 @@ def validate_bundle(
         "no-oom-or-kill": resource_rule,
         "fast-regressions-availability": "neutral",
     }
+    if bundle_version == MULTI_TASK_SCHEMA_VERSION:
+        regression_outcomes = [
+            regression_tasks[task_id].get("outcome")
+            for task_id in sorted(regression_tasks)
+        ]
+        suite_passed = bool(
+            isinstance(hosted_regression_suite, dict)
+            and hosted_regression_suite.get("execution_state") == "completed"
+            and hosted_regression_suite.get("outcome") == "pass"
+            and hosted_regression_suite.get("action_outcome") == "success"
+            and hosted_regression_suite.get("action_exit_status") == 0
+            and hosted_regression_suite.get("exit_status") == 0
+        )
+        hosted_regression_outcome = (
+            "fail"
+            if "fail" in regression_outcomes
+            else "pass"
+            if regression_outcomes
+            and all(outcome == "pass" for outcome in regression_outcomes)
+            and suite_passed
+            else "neutral"
+        )
+        expected_rule_outcomes[HOSTED_REGRESSION_RULE_ID] = hosted_regression_outcome
+        expected_hosted_evidence = [
+            f"tasks/{task_id}.json#outcome" for task_id in sorted(regression_tasks)
+        ] + ["manifest.json#hosted-regression-suite"]
+        if rules.get(HOSTED_REGRESSION_RULE_ID, {}).get("evidence") != expected_hosted_evidence:
+            errors.append(
+                f"rule {HOSTED_REGRESSION_RULE_ID!r}: evidence must reference every "
+                "regression outcome in stable order"
+            )
     for rule_id, expected in expected_rule_outcomes.items():
         if rules.get(rule_id, {}).get("outcome") != expected:
             errors.append(f"rule {rule_id!r}: outcome does not match raw evidence")

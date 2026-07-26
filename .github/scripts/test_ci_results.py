@@ -372,6 +372,30 @@ class CIResultProtocolTests(unittest.TestCase):
         task = documents["tasks/open-build.json"]
         self.assertEqual(task["execution"]["state"], "canceled")
         self.assertEqual(documents["manifest.json"]["execution_state"], "canceled")
+
+    def test_cancellation_during_executable_verification_is_preserved(self) -> None:
+        environment = copy.deepcopy(self.environment)
+        environment.update(
+            {
+                "PANDA_CI_JOB_CANCELLED": "true",
+                "PANDA_CI_VERIFY_EXIT_STATUS": "",
+                "PANDA_CI_VERIFY_OUTCOME": "cancelled",
+                "PANDA_CI_VERIFY_SECONDS": "",
+            }
+        )
+        documents = self.generate(environment)
+        task = documents["tasks/open-build.json"]
+        stages = {stage["stage_id"]: stage for stage in task["stages"]}
+        self.assertEqual(task["execution"]["state"], "canceled")
+        self.assertEqual(task["outcome"], "unknown")
+        self.assertEqual(task["failure"]["stage"], "installed-executable-validation")
+        self.assertEqual(
+            stages["installed-executable-validation"]["execution_state"], "canceled"
+        )
+        self.assertEqual(
+            stages["installed-executable-validation"]["outcome"], "unknown"
+        )
+        self.assertEqual(documents["manifest.json"]["execution_state"], "canceled")
         diagnostics = documents["artifacts.json"]["artifacts"][1:]
         self.assertTrue(all(item["github_artifact_name"] is None for item in diagnostics))
 

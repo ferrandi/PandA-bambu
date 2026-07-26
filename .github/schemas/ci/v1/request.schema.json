@@ -119,28 +119,50 @@
       "type": "string"
     },
     "schema_version": {
-      "const": "1.0",
-      "type": "string"
+      "$ref": "common.schema.json#/$defs/schema_version"
     },
     "tasks": {
       "items": {
-        "additionalProperties": false,
-        "properties": {
-          "task_id": {
-            "$ref": "common.schema.json#/$defs/id"
-          },
-          "task_type": {
-            "enum": [
-              "build"
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "task_id": {
+                "$ref": "common.schema.json#/$defs/id"
+              },
+              "task_type": {
+                "const": "build",
+                "type": "string"
+              }
+            },
+            "required": [
+              "task_id",
+              "task_type"
             ],
-            "type": "string"
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "configuration": {
+                "$ref": "common.schema.json#/$defs/regression_request_configuration"
+              },
+              "task_id": {
+                "$ref": "common.schema.json#/$defs/id"
+              },
+              "task_type": {
+                "const": "regression",
+                "type": "string"
+              }
+            },
+            "required": [
+              "task_id",
+              "task_type",
+              "configuration"
+            ],
+            "type": "object"
           }
-        },
-        "required": [
-          "task_id",
-          "task_type"
-        ],
-        "type": "object"
+        ]
       },
       "minItems": 1,
       "type": "array"

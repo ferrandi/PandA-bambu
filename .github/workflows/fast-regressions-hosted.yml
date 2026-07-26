@@ -1,4 +1,4 @@
-name: Open build smoke
+name: Fast regressions (GitHub-hosted)
 
 on:
   pull_request:
@@ -8,11 +8,18 @@ on:
       - src/**
       - ext/**
       - etc/**
+      - examples/mm/**
+      - panda_regressions/hls/bambu_specific_test2.sh
+      - panda_regressions/hls/bambu_specific_test2/**
+      - panda_regressions/hls/bambu_specific_test5.sh
+      - panda_regressions/hls/bambu_specific_test5/**
+      - panda_regressions/hls/bambu_interface_test.sh
+      - panda_regressions/hls/bambu_interface_test/**
       - .github/actions/build-panda/**
       - .github/schemas/ci/**
       - .github/scripts/ci_results/**
       - .github/scripts/test_ci_results.py
-      - .github/workflows/open-build-smoke.yml
+      - .github/workflows/fast-regressions-hosted.yml
   workflow_dispatch:
 
 permissions:
@@ -23,10 +30,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build and verify open-source tools
+  fast-regressions:
+    name: Build once and run fast regressions
     runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    timeout-minutes: 180
 
     steps:
       - name: Record workflow start
@@ -50,12 +57,12 @@ jobs:
           restore-keys: |
             panda-ccache-v2-generic-x86-64-Ofast-${{ runner.os }}-${{ runner.arch }}-gcc13-clang16-release-noassert-werror-I386_CLANG16-${{ hashFiles('CMakeLists.txt', 'cmake/**/*.cmake', '.github/actions/build-panda/Dockerfile', '.github/actions/build-panda/action.yml', '.github/actions/build-panda/entrypoint.sh', 'etc/clang_plugin/CMakeLists.txt') }}-
 
-      - name: Record Docker action start
+      - name: Record Docker build action start
         id: action-timing
         shell: bash
         run: echo "start-epoch=$(date +%s)" >> "${GITHUB_OUTPUT}"
 
-      - name: Build PandA-bambu
+      - name: Build PandA-bambu once
         id: build
         timeout-minutes: 110
         uses: ./.github/actions/build-panda
@@ -136,13 +143,33 @@ jobs:
           path: .ccache
           key: ${{ steps.ccache-restore.outputs.cache-primary-key }}
 
+      - name: Record fast-regression action start
+        id: regression-timing
+        shell: bash
+        run: echo "start-epoch=$(date +%s)" >> "${GITHUB_OUTPUT}"
+
+      - name: Run focused Bambu and Verilator regressions
+        id: regressions
+        timeout-minutes: 35
+        uses: ./.github/actions/build-panda
+        with:
+          mode: fast-regressions
+          jobs: "2"
+          action-start-epoch: ${{ steps.regression-timing.outputs.start-epoch }}
+
+      - name: Record fast-regression action completion
+        id: regression-completion
+        if: ${{ always() }}
+        shell: bash
+        run: echo "completion-epoch=$(date +%s)" >> "${GITHUB_OUTPUT}"
+
       - name: Record cancellation state
         id: cancellation-state
         if: ${{ cancelled() }}
         shell: bash
         run: echo "cancelled=true" >> "${GITHUB_OUTPUT}"
 
-      - name: Generate structured CI results and summary
+      - name: Generate structured CI results
         id: structured-results
         if: ${{ always() }}
         shell: bash
@@ -177,6 +204,7 @@ jobs:
           PANDA_CI_CONTAINER_SETUP_SECONDS: ${{ steps.build.outputs.container-setup-seconds }}
           PANDA_CI_COSIMULATION_EXIT_STATUS: ${{ steps.build.outputs.cosimulation-exit-status }}
           PANDA_CI_COSIMULATION_SECONDS: ${{ steps.build.outputs.cosimulation-seconds }}
+          PANDA_CI_DIAGNOSTICS_ARTIFACT_NAME: fast-regressions-diagnostics-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           PANDA_CI_DIST_DIR: ${{ steps.build.outputs.dist-dir }}
           PANDA_CI_EUCALYPTUS_EXISTS: ${{ steps.verify.outputs.eucalyptus-exists }}
           PANDA_CI_EUCALYPTUS_STARTS: ${{ steps.verify.outputs.eucalyptus-starts }}
@@ -194,6 +222,7 @@ jobs:
           PANDA_CI_MEMORY_AVAILABLE_AFTER_KIB: ${{ steps.build.outputs.memory-available-after-kib }}
           PANDA_CI_MEMORY_AVAILABLE_BEFORE_KIB: ${{ steps.build.outputs.memory-available-before-kib }}
           PANDA_CI_OOM_DETECTED: ${{ steps.build.outputs.oom-detected }}
+          PANDA_CI_OPEN_BUILD_COMPLETION_EPOCH: ${{ steps.regression-timing.outputs.start-epoch }}
           PANDA_CI_PARALLELISM: "2"
           PANDA_CI_PEAK_BUILD_CGROUP_KIB: ${{ steps.build.outputs.peak-build-cgroup-kib }}
           PANDA_CI_PEAK_BUILD_RSS_KIB: ${{ steps.build.outputs.peak-build-rss-kib }}
@@ -203,10 +232,26 @@ jobs:
           PANDA_CI_PROJECT_BUILD_SECONDS: ${{ steps.build.outputs.project-build-seconds }}
           PANDA_CI_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
           PANDA_CI_REF: ${{ github.ref }}
+          PANDA_CI_REGRESSION_ACTION_EXIT_STATUS: ${{ steps.regressions.outputs.action-exit-status }}
+          PANDA_CI_REGRESSION_ACTION_COMPLETION_EPOCH: ${{ steps.regression-completion.outputs.completion-epoch }}
+          PANDA_CI_REGRESSION_ACTION_OUTCOME: ${{ steps.regressions.outcome }}
+          PANDA_CI_REGRESSION_ACTION_START_EPOCH: ${{ steps.regression-timing.outputs.start-epoch }}
+          PANDA_CI_REGRESSION_ARTIFACT_NAME: panda-ci-regression-evidence-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          PANDA_CI_REGRESSION_CONTAINER_SETUP_SECONDS: ${{ steps.regressions.outputs.container-setup-seconds }}
+          PANDA_CI_REGRESSION_EVIDENCE_DIR: ${{ steps.regressions.outputs.regression-evidence-dir }}
+          PANDA_CI_REGRESSION_FAILED_COUNT: ${{ steps.regressions.outputs.regression-failed-count }}
+          PANDA_CI_REGRESSION_FAILURE_STAGE: ${{ steps.regressions.outputs.failure-stage }}
+          PANDA_CI_REGRESSION_OUTCOME: ${{ steps.regressions.outputs.regression-suite-outcome }}
+          PANDA_CI_REGRESSION_PASSED_COUNT: ${{ steps.regressions.outputs.regression-passed-count }}
+          PANDA_CI_REGRESSION_RESULTS_DIR: ${{ steps.regressions.outputs.regression-results-dir }}
+          PANDA_CI_REGRESSION_SECONDS: ${{ steps.regressions.outputs.regression-suite-seconds }}
+          PANDA_CI_REGRESSION_TASK_COUNT: ${{ steps.regressions.outputs.regression-task-count }}
+          PANDA_CI_REGRESSION_TIMEOUT_SECONDS: "2100"
           PANDA_CI_REPOSITORY: ${{ github.repository }}
           PANDA_CI_REQUEST_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           PANDA_CI_REQUESTED_FRONTEND: I386_CLANG16
           PANDA_CI_RESULT_ARTIFACT_NAME: panda-ci-results-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          PANDA_CI_CANDIDATE_BUNDLE_DIR: .ci-results-candidate
           PANDA_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
           PANDA_CI_RUNNER_ARCH: ${{ runner.arch }}
           PANDA_CI_RUNNER_IMAGE: ubuntu-24.04
@@ -216,7 +261,7 @@ jobs:
           PANDA_CI_VERIFY_EXIT_STATUS: ${{ steps.verify.outputs.exit-status }}
           PANDA_CI_VERIFY_OUTCOME: ${{ steps.verify.outcome }}
           PANDA_CI_VERIFY_SECONDS: ${{ steps.verify.outputs.duration-seconds }}
-          PANDA_CI_WORKFLOW_FILE: .github/workflows/open-build-smoke.yml
+          PANDA_CI_WORKFLOW_FILE: .github/workflows/fast-regressions-hosted.yml
           PANDA_CI_WORKFLOW_IMPLEMENTATION_COMMIT: ${{ github.workflow_sha }}
           PANDA_CI_WORKFLOW_RUN_ID: ${{ github.run_id }}
           PANDA_CI_WORKFLOW_START_EPOCH: ${{ steps.workflow-timing.outputs.start-epoch }}
@@ -224,9 +269,36 @@ jobs:
           set -euo pipefail
           export PANDA_CI_COMPLETION_EPOCH="$(date +%s)"
           export PYTHONPATH="${GITHUB_WORKSPACE}/.github/scripts"
+          regression_results="${{ steps.regressions.outputs.regression-results-dir }}"
+          if [[ -z "${regression_results}" ]]; then
+            regression_results=.ci-regression-results
+          fi
+          set +e
+          log_directory=.ci-results-generator
+          mkdir -p "${log_directory}"
+          stdout_log="${log_directory}/stdout.log"
+          stderr_log="${log_directory}/stderr.log"
           python3 -m ci_results generate \
             --output .ci-results \
-            --summary "${GITHUB_STEP_SUMMARY}"
+            --regression-results "${regression_results}" \
+            > "${stdout_log}" \
+            2> "${stderr_log}"
+          status=$?
+          set -e
+          emit_log() {
+            local path="$1"
+            local stream="$2"
+            if [[ -s "${path}" ]]; then
+              if [[ "${stream}" == "stderr" ]]; then
+                cat "${path}" >&2
+              else
+                cat "${path}"
+              fi
+            fi
+          }
+          emit_log "${stdout_log}" stdout
+          emit_log "${stderr_log}" stderr
+          exit "${status}"
 
       - name: Validate structured CI results
         if: ${{ always() }}
@@ -234,6 +306,13 @@ jobs:
         run: |
           export PYTHONPATH="${GITHUB_WORKSPACE}/.github/scripts"
           python3 -m ci_results validate .ci-results
+
+      - name: Render CI result summary
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          export PYTHONPATH="${GITHUB_WORKSPACE}/.github/scripts"
+          python3 -m ci_results summary .ci-results --append "${GITHUB_STEP_SUMMARY}"
 
       - name: Upload structured CI results
         if: ${{ always() }}
@@ -245,11 +324,51 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Upload build diagnostics
+      - name: Upload fast-regression evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: panda-ci-regression-evidence-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: ${{ steps.regressions.outputs.regression-evidence-dir || '.ci-regression-evidence' }}
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload fast-regression raw results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: panda-ci-regression-results-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: .ci-regression-results
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload CI result generator logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: panda-ci-results-generator-logs-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: .ci-results-generator
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload candidate bundle on validation failure
+        if: ${{ always() && steps.structured-results.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: panda-ci-results-candidate-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: .ci-results-candidate
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload failure diagnostics
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
-          name: open-build-diagnostics-${{ github.run_id }}
+          name: fast-regressions-diagnostics-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: |
             build/CMakeCache.txt
             build/CMakeFiles/CMakeConfigureLog.yaml
@@ -260,5 +379,8 @@ jobs:
             compilation_db/build/compile_commands.json
             synthesis-smoke/**
             .ci-telemetry/jobs-2/**
+            .ci-regression-results/**
+            .ci-regression-evidence/**
+          include-hidden-files: true
           if-no-files-found: warn
           retention-days: 3

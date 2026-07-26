@@ -15,6 +15,10 @@ import yaml
 
 LOCAL_WORKFLOW_PREFIX = "./.github/workflows/"
 LOCAL_ACTION_PREFIX = "./.github/actions/"
+HOSTED_PERSISTENT_CACHE_WORKFLOWS = {
+    "open-build-smoke.yml",
+    "fast-regressions-hosted.yml",
+}
 STEP_OUTPUT_RE = re.compile(
     r"steps(?:\.([A-Za-z_][A-Za-z0-9_-]*)|\[['\"]([^'\"]+)['\"]\])"
     r"\.outputs(?:\.([A-Za-z_][A-Za-z0-9_-]*)|\[['\"]([^'\"]+)['\"]\])"
@@ -110,12 +114,51 @@ class RepositoryValidator:
             self.validate_needs(path, document)
             self.validate_workflow_calls(path, document)
             self.validate_local_action_outputs(path, document)
+            self.validate_hosted_ccache_safety(path, document)
 
         for path, document in tuple(self.documents.items()):
             if LOCAL_ACTION_PREFIX in f"./{path.relative_to(self.root)}":
                 self.validate_local_action_outputs(path, document)
 
         return sorted(set(self.diagnostics))
+
+    def validate_hosted_ccache_safety(
+        self, path: Path, document: dict[str, Any]
+    ) -> None:
+        if path.name not in HOSTED_PERSISTENT_CACHE_WORKFLOWS:
+            return
+
+        all_strings = list(_strings(document))
+        if not any("panda-ccache-" in value for value in all_strings):
+            return
+
+        native_flags = ("-march=native", "-mtune=native")
+        for native_flag in native_flags:
+            if any(native_flag in value for value in all_strings):
+                line = _line_for(path, [native_flag])
+                self.error(
+                    path,
+                    line,
+                    f"persistent GitHub-hosted ccache cannot use '{native_flag}': "
+                    "native-tuned cached objects are unsafe across hosted runners",
+                )
+
+        expected_profile = "-Ofast -march=x86-64 -mtune=generic"
+        expected_cache_identity = "panda-ccache-v2-generic-x86-64-Ofast-"
+        if not any(value == expected_profile for value in all_strings):
+            self.error(
+                path,
+                _line_for(path, ["optimized-flags:"]),
+                "persistent GitHub-hosted ccache must pass the portable CMake profile "
+                f"'{expected_profile}' through build-panda's optimized-flags input",
+            )
+        if not any(expected_cache_identity in value for value in all_strings):
+            self.error(
+                path,
+                _line_for(path, ["panda-ccache-"]),
+                "persistent GitHub-hosted ccache key must include the selected "
+                "generic-x86-64-Ofast CPU/optimization profile",
+            )
 
     def validate_needs(self, path: Path, document: dict[str, Any]) -> None:
         jobs = _mapping(document.get("jobs"))

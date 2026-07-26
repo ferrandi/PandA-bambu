@@ -158,5 +158,56 @@ jobs:
         self.assertIn("invalid YAML", diagnostics[0].message)
 
 
+    def test_rejects_native_tuning_with_persistent_hosted_ccache(self) -> None:
+        self.write(
+            ".github/workflows/open-build-smoke.yml",
+            """on: pull_request
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/cache/restore
+        with:
+          key: panda-ccache-v2-native
+      - uses: ./.github/actions/example
+        with:
+          optimized-flags: -Ofast -march=native -mtune=native
+""",
+        )
+        messages = self.messages()
+        self.assertTrue(
+            any(
+                "native-tuned cached objects are unsafe across hosted runners" in message
+                and "-march=native" in message
+                for message in messages
+            )
+        )
+        self.assertTrue(
+            any(
+                "native-tuned cached objects are unsafe across hosted runners" in message
+                and "-mtune=native" in message
+                for message in messages
+            )
+        )
+
+    def test_accepts_portable_profile_in_hosted_cache_identity(self) -> None:
+        self.write(
+            ".github/workflows/fast-regressions-hosted.yml",
+            """on: pull_request
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/cache/restore
+        with:
+          key: panda-ccache-v2-generic-x86-64-Ofast-Linux-X64
+      - uses: ./.github/actions/example
+        with:
+          optimized-flags: -Ofast -march=x86-64 -mtune=generic
+""",
+        )
+        self.assertEqual(self.messages(), [])
+
+
 if __name__ == "__main__":
     unittest.main()
