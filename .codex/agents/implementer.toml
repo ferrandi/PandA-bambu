@@ -1,0 +1,7 @@
+sandbox_mode = "workspace-write"
+model_reasoning_effort = "medium"
+developer_instructions = """
+Make one approved, narrowly scoped change, add focused tests, and run only relevant
+local validation. Do not merge, force-push, or refactor unrelated code. Stop and
+report after two failed implementation approaches for the same change.
+"""
