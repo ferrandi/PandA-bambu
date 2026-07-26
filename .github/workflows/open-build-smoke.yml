@@ -46,9 +46,9 @@ jobs:
         with:
           path: .ccache
           key: >-
-            panda-ccache-v1-${{ runner.os }}-${{ runner.arch }}-gcc13-clang16-release-noassert-werror-I386_CLANG16-${{ hashFiles('CMakeLists.txt', 'cmake/**/*.cmake', '.github/actions/build-panda/Dockerfile', '.github/actions/build-panda/action.yml', '.github/actions/build-panda/entrypoint.sh', 'etc/clang_plugin/CMakeLists.txt') }}-${{ github.sha }}
+            panda-ccache-v2-generic-x86-64-Ofast-${{ runner.os }}-${{ runner.arch }}-gcc13-clang16-release-noassert-werror-I386_CLANG16-${{ hashFiles('CMakeLists.txt', 'cmake/**/*.cmake', '.github/actions/build-panda/Dockerfile', '.github/actions/build-panda/action.yml', '.github/actions/build-panda/entrypoint.sh', 'etc/clang_plugin/CMakeLists.txt') }}-${{ github.sha }}
           restore-keys: |
-            panda-ccache-v1-${{ runner.os }}-${{ runner.arch }}-gcc13-clang16-release-noassert-werror-I386_CLANG16-${{ hashFiles('CMakeLists.txt', 'cmake/**/*.cmake', '.github/actions/build-panda/Dockerfile', '.github/actions/build-panda/action.yml', '.github/actions/build-panda/entrypoint.sh', 'etc/clang_plugin/CMakeLists.txt') }}-
+            panda-ccache-v2-generic-x86-64-Ofast-${{ runner.os }}-${{ runner.arch }}-gcc13-clang16-release-noassert-werror-I386_CLANG16-${{ hashFiles('CMakeLists.txt', 'cmake/**/*.cmake', '.github/actions/build-panda/Dockerfile', '.github/actions/build-panda/action.yml', '.github/actions/build-panda/entrypoint.sh', 'etc/clang_plugin/CMakeLists.txt') }}-
 
       - name: Record Docker action start
         id: action-timing
@@ -62,6 +62,7 @@ jobs:
         with:
           jobs: "2"
           synthesis-smoke: "true"
+          optimized-flags: "-Ofast -march=x86-64 -mtune=generic"
           action-start-epoch: ${{ steps.action-timing.outputs.start-epoch }}
           config-args: >-
             -DPANDA_ENABLE_RELEASE=ON

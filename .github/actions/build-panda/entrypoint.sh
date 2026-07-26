@@ -511,6 +511,10 @@ CMAKE_ARGS+=(
    "-DPANDA_BUILD_EUCALYPTUS=ON"
 )
 
+if test -n "${PANDA_OPTIMIZED_FLAGS_INPUT:-}"; then
+   CMAKE_ARGS+=("-DPANDA_OPTIMIZED_FLAGS=${PANDA_OPTIMIZED_FLAGS_INPUT}")
+fi
+
 if ${APPIMAGE_ENABLED}; then
    APPIMAGE_ROOT="${BUILD_DIR}/appimage-root"
    CMAKE_ARGS+=("-DPANDA_APPIMAGE_NAME=${APPIMAGE_NAME}" "-DPANDA_APPIMAGE_ROOT=${APPIMAGE_ROOT}")
@@ -533,6 +537,12 @@ echo "::endgroup::"
 if test "${configure_status}" -ne 0; then
    exit "${configure_status}"
 fi
+
+echo "::group::Selected CMake optimization profile"
+cmake -LA -N "${BUILD_DIR}" | grep '^PANDA_OPTIMIZED_FLAGS:STRING='
+echo "Resulting compiler flags (first compile command):"
+grep -m1 -o -- '-Ofast[^"]*' "${BUILD_DIR}/compile_commands.json" || true
+echo "::endgroup::"
 
 CURRENT_STAGE="frontend-resolution"
 set_output failure-stage "${CURRENT_STAGE}"

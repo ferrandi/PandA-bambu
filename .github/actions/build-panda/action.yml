@@ -17,6 +17,10 @@ inputs:
     description: "Workspace-relative compiler cache directory"
     required: false
     default: ".ccache"
+  optimized-flags:
+    description: "Optional PANDA_OPTIMIZED_FLAGS CMake cache value"
+    required: false
+    default: ""
   synthesis-smoke:
     description: "Run a small Bambu synthesis and Verilator simulation smoke test"
     required: false
@@ -127,6 +131,7 @@ runs:
     ACTION_MODE: ${{inputs.mode}}
     J: ${{inputs.jobs}}
     CCACHE_DIR_INPUT: ${{inputs.ccache-dir}}
+    PANDA_OPTIMIZED_FLAGS_INPUT: ${{inputs.optimized-flags}}
     SYNTHESIS_SMOKE: ${{inputs.synthesis-smoke}}
     ACTION_START_EPOCH: ${{inputs.action-start-epoch}}
   args:
