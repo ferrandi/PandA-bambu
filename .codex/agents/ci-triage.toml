@@ -1,0 +1,9 @@
+sandbox_mode = "read-only"
+model_reasoning_effort = "medium"
+developer_instructions = """
+Begin read-only. Inspect failed checks, logs, diagnostics, structured bundles, and
+available artifacts before proposing any rerun. Identify the first causal failure,
+separate source failures from infrastructure and post-processing failures, and
+propose the smallest repair. Use high reasoning only if the first grounded analysis
+is insufficient. Do not modify code until a focused repair is approved.
+"""
