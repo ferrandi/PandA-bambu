@@ -7,6 +7,11 @@ import sys
 from pathlib import Path
 
 from .bundle import BundleValidationError, validate_bundle
+from .comparison import (
+    ComparisonError,
+    compare_bundles,
+    render_comparison_file,
+)
 from .generate import generate_bundle
 from .regressions import run_regression_suite
 from .schema import SchemaValidationError
@@ -67,6 +72,18 @@ def main(argv: list[str] | None = None) -> int:
     summary_parser.add_argument("bundle", type=Path)
     summary_parser.add_argument("--append", type=Path)
 
+    compare_parser = subparsers.add_parser(
+        "compare", help="compare validated baseline and candidate bundles"
+    )
+    compare_parser.add_argument("--baseline", type=Path, required=True)
+    compare_parser.add_argument("--candidate", type=Path, required=True)
+    compare_parser.add_argument("--output", type=Path, required=True)
+
+    render_comparison_parser = subparsers.add_parser(
+        "render-comparison", help="render a validated comparison document"
+    )
+    render_comparison_parser.add_argument("--input", type=Path, required=True)
+
     args = parser.parse_args(argv)
     try:
         if args.command == "generate":
@@ -100,6 +117,15 @@ def main(argv: list[str] | None = None) -> int:
             validate_bundle(args.bundle)
             print(f"CI result bundle validation passed: {args.bundle}")
             return 0
+        if args.command == "compare":
+            comparison = compare_bundles(args.baseline, args.candidate, args.output)
+            print(
+                f"CI result comparison: {comparison['policy']['decision']} ({args.output})"
+            )
+            return 1 if comparison["policy"]["decision"] == "reject" else 0
+        if args.command == "render-comparison":
+            print(render_comparison_file(args.input), end="")
+            return 0
         summary = render_bundle_summary(args.bundle)
         if args.append:
             _append(args.append, summary)
@@ -108,6 +134,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     except (
         BundleValidationError,
+        ComparisonError,
         SchemaValidationError,
         SerializationError,
         OSError,
