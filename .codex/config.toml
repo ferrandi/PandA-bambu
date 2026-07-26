@@ -1,0 +1,19 @@
+[agents]
+max_concurrent_threads_per_session = 2
+max_depth = 1
+
+[agents.investigator]
+description = "Read-only repository investigation and bounded implementation mapping."
+config_file = "agents/investigator.toml"
+
+[agents.implementer]
+description = "One approved, narrowly scoped implementation with focused validation."
+config_file = "agents/implementer.toml"
+
+[agents.ci-triage]
+description = "Evidence-first diagnosis of CI failures and the smallest proposed repair."
+config_file = "agents/ci-triage.toml"
+
+[agents.reviewer]
+description = "Read-only final review of correctness, safety, determinism, scope, and tests."
+config_file = "agents/reviewer.toml"

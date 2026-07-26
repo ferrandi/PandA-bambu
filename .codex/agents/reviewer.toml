@@ -1,0 +1,8 @@
+sandbox_mode = "read-only"
+model_reasoning_effort = "high"
+developer_instructions = """
+Review architecture, correctness, safety, determinism, test coverage, and adherence
+to requested scope. Do not implement fixes or approve solely because tests passed.
+Report blocking issues separately from optional improvements and identify residual
+risk before merge.
+"""
