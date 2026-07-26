@@ -252,6 +252,11 @@ set_output gcc-version ""
 set_output gxx-version ""
 set_output ccache-version ""
 set_output verilator-version ""
+set_output effective-optimized-flags ""
+set_output effective-build-type ""
+set_output effective-assertions-enabled ""
+set_output effective-warnings-as-errors ""
+set_output cpu-target-profile ""
 
 set_output peak-build-rss-kib ""
 set_output peak-build-cgroup-kib ""
@@ -539,7 +544,28 @@ if test "${configure_status}" -ne 0; then
 fi
 
 echo "::group::Selected CMake optimization profile"
-cmake -LA -N "${BUILD_DIR}" | grep '^PANDA_OPTIMIZED_FLAGS:STRING='
+cmake_cache_value() {
+   cmake -LA -N "${BUILD_DIR}" | sed -n "s/^$1:[^=]*=//p"
+}
+effective_optimized_flags="$(cmake_cache_value PANDA_OPTIMIZED_FLAGS)"
+effective_build_type="$(cmake_cache_value CMAKE_BUILD_TYPE)"
+effective_assertions="$(cmake_cache_value PANDA_ENABLE_ASSERTS)"
+effective_werror="$(cmake_cache_value PANDA_ENABLE_WERROR)"
+case " ${effective_optimized_flags} " in
+   *" -march=native "*) cpu_target_profile="native" ;;
+   *" -march=x86-64 "*) cpu_target_profile="x86-64-portable" ;;
+   *) cpu_target_profile="unspecified" ;;
+esac
+set_output effective-optimized-flags "${effective_optimized_flags}"
+set_output effective-build-type "${effective_build_type}"
+set_output effective-assertions-enabled "${effective_assertions}"
+set_output effective-warnings-as-errors "${effective_werror}"
+set_output cpu-target-profile "${cpu_target_profile}"
+echo "PANDA_OPTIMIZED_FLAGS=${effective_optimized_flags}"
+echo "CMAKE_BUILD_TYPE=${effective_build_type}"
+echo "PANDA_ENABLE_ASSERTS=${effective_assertions}"
+echo "PANDA_ENABLE_WERROR=${effective_werror}"
+echo "CPU target profile=${cpu_target_profile}"
 echo "Resulting compiler flags (first compile command):"
 grep -m1 -o -- '-Ofast[^"]*' "${BUILD_DIR}/compile_commands.json" || true
 echo "::endgroup::"

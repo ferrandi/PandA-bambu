@@ -100,9 +100,7 @@ executed, submodule commits, workflow and
 Dockerfile hashes, base image identity, image digest when available, runner and
 tool versions, parallelism, and cryptographic references to every task and
 bundle document. A v1.0 manifest references the four non-manifest documents;
-a v1.1 manifest additionally enumerates every regression task. Consumers
-compare these fields before treating two runs as equivalent implementations or
-environments.
+a v1.1 manifest additionally enumerates every regression task. Consumers compare the named `effective_build_profile` before treating two runs as equivalent implementations or environments. The profile records the effective optimization flags and CPU target profile, CMake build type, selected frontend, assertions and warnings-as-errors settings, configured parallelism, Dockerfile path and SHA-256, workflow path and SHA-256, and compiler/tool versions. Values come from the configured build action and CMake cache, not later log parsing. Missing profile values remain `null`; comparison treats incomplete profile evidence as requiring manual review.
 
 A mutable Docker tag is not an image digest. When the Docker runtime does not
 expose a digest, `image_digest` is `null` while the Dockerfile SHA-256 and base

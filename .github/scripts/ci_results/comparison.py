@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import copy
 import hashlib
 from pathlib import Path
 from typing import Any
@@ -55,17 +54,6 @@ CONFIGURATION_PATHS = (
     "options.expose_globals",
     "options.inline_max_cost",
     "options.parallel_backend",
-)
-
-BUILD_CONFIGURATION_FIELDS = (
-    "configured_parallelism",
-    "build_type",
-    "release_enabled",
-    "assertions_enabled",
-    "warnings_as_errors",
-    "selected_frontend",
-    "synthesis_smoke_enabled",
-    "cache_mode",
 )
 
 
@@ -127,20 +115,21 @@ def _identity(documents: dict[str, dict[str, Any]], bundle: Path) -> dict[str, A
     }
 
 
-def _build_profile(documents: dict[str, dict[str, Any]]) -> dict[str, Any]:
-    manifest = documents["manifest.json"]
-    build_task = documents["tasks/open-build.json"]
-    configuration = build_task["configuration"]
-    return {
-        "configuration": {
-            field: copy.deepcopy(configuration.get(field))
-            for field in BUILD_CONFIGURATION_FIELDS
-        },
-        "container": copy.deepcopy(manifest.get("container")),
-        "runner": copy.deepcopy(manifest.get("runner")),
-        "tools": copy.deepcopy(manifest.get("tools")),
-        "workflow_file": _value_at(manifest, "workflow.file"),
-    }
+def _build_profile(documents: dict[str, dict[str, Any]]) -> dict[str, Any] | None:
+    profile = documents["manifest.json"].get("effective_build_profile")
+    if not isinstance(profile, dict):
+        return None
+
+    def complete(value: Any) -> bool:
+        if value is None:
+            return False
+        if isinstance(value, dict):
+            return bool(value) and all(complete(item) for item in value.values())
+        if isinstance(value, list):
+            return bool(value) and all(complete(item) for item in value)
+        return True
+
+    return profile if complete(profile) else None
 
 
 def _regression_tasks(
@@ -485,8 +474,12 @@ def compare_bundles(
     ).hexdigest()
     baseline_tasks = _regression_tasks(baseline_documents)
     candidate_tasks = _regression_tasks(candidate_documents)
-    build_profiles_equal = _build_profile(baseline_documents) == _build_profile(
-        candidate_documents
+    baseline_profile = _build_profile(baseline_documents)
+    candidate_profile = _build_profile(candidate_documents)
+    build_profiles_equal = (
+        baseline_profile is not None
+        and candidate_profile is not None
+        and baseline_profile == candidate_profile
     )
     task_records = [
         _task_record(

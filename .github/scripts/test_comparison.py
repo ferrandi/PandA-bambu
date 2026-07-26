@@ -44,7 +44,7 @@ class ComparisonTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temporary_directory.cleanup()
 
-    def _generate(self, output: Path, commit: str, failures=None) -> None:
+    def _generate(self, output: Path, commit: str, failures=None, environment_updates=None) -> None:
         raw = self.root / f"raw-{output.name}"
         evidence = self.root / f"evidence-{output.name}"
         failures = failures or {}
@@ -82,11 +82,17 @@ class ComparisonTests(unittest.TestCase):
             "PANDA_CI_REGRESSION_TASK_COUNT": str(len(REGRESSION_SPECS)),
             "PANDA_CI_REGRESSION_TIMEOUT_SECONDS": "2100",
         })
+        environment.update(environment_updates or {})
         generate_bundle(output, environment=environment, repository=REPOSITORY, regression_results=raw)
 
     def _rehash(self, bundle: Path, relative: str) -> None:
         manifest = load_json(bundle / "manifest.json")
         next(item for item in manifest["documents"] if item["path"] == relative)["sha256"] = sha256_file(bundle / relative)
+        write_json(bundle / "manifest.json", manifest)
+
+    def _mutate_manifest(self, bundle: Path, mutation) -> None:
+        manifest = load_json(bundle / "manifest.json")
+        mutation(manifest)
         write_json(bundle / "manifest.json", manifest)
 
     def _mutate_task(self, bundle: Path, mutation, task_id: str = TASK_ID) -> None:
@@ -174,11 +180,67 @@ class ComparisonTests(unittest.TestCase):
         self._mutate_task(self.candidate, change)
         self.assertEqual(self._compare()["policy"]["decision"], "manual-review")
 
-    def test_build_profile_change_is_not_comparable(self):
-        baseline_task = load_json(self.baseline / f"tasks/{TASK_ID}.json")
-        candidate_task = copy.deepcopy(baseline_task)
-        record = _task_record(TASK_ID, baseline_task, candidate_task, False)
-        self.assertEqual(record["comparability_reasons"][-1]["code"], "build-profile-differs")
+    def assert_profile_change_requires_review(self, mutation):
+        self._mutate_manifest(self.candidate, mutation)
+        result = self._compare()
+        self.assertEqual(result["policy"]["decision"], "manual-review")
+        self.assertEqual(self._task(result)["classification"], "not-comparable")
+
+    def test_generic_versus_native_flags_requires_review(self):
+        def change(manifest):
+            profile = manifest["effective_build_profile"]
+            profile["optimized_flags"] = "-Ofast -march=native -mtune=native"
+            profile["cpu_target_profile"] = "native"
+        self.assert_profile_change_requires_review(change)
+
+    def test_changed_workflow_hash_requires_review(self):
+        def change(manifest):
+            manifest["effective_build_profile"]["workflow_file_sha256"] = "d" * 64
+            manifest["workflow"]["file_sha256"] = "d" * 64
+        self.assert_profile_change_requires_review(change)
+
+    def test_changed_dockerfile_hash_requires_review(self):
+        def change(manifest):
+            manifest["effective_build_profile"]["dockerfile_sha256"] = "d" * 64
+            manifest["container"]["dockerfile_sha256"] = "d" * 64
+        self.assert_profile_change_requires_review(change)
+
+    def test_changed_compiler_version_requires_review(self):
+        def change(manifest):
+            for tools in (manifest["tools"], manifest["effective_build_profile"]["tool_versions"]):
+                next(item for item in tools if item["tool_id"] == "clang")["version"] = "clang version 17.0.0"
+        self.assert_profile_change_requires_review(change)
+
+    def test_missing_effective_profile_requires_review(self):
+        self.assert_profile_change_requires_review(
+            lambda manifest: manifest.pop("effective_build_profile")
+        )
+
+    def test_different_workflow_run_ids_remain_comparable(self):
+        self._generate(self.candidate, "b" * 40, environment_updates={"PANDA_CI_WORKFLOW_RUN_ID": "98765"})
+        self.assertEqual(self._compare()["policy"]["decision"], "accept")
+
+    def test_different_run_attempts_remain_comparable(self):
+        self._generate(self.candidate, "b" * 40, environment_updates={"PANDA_CI_RUN_ATTEMPT": "2"})
+        self.assertEqual(self._compare()["policy"]["decision"], "accept")
+
+    def test_different_timestamps_remain_comparable(self):
+        self._mutate_manifest(self.candidate, lambda manifest: manifest.update(completed_at="2023-11-14T22:16:00Z"))
+        self.assertEqual(self._compare()["policy"]["decision"], "accept")
+
+    def test_cache_hit_versus_miss_remains_comparable(self):
+        self._generate(self.candidate, "b" * 40, environment_updates={
+            "PANDA_CI_CACHE_HIT": "true",
+            "PANDA_CI_CACHE_MATCHED_KEY": "panda-cache-test",
+        })
+        self.assertEqual(self._compare()["policy"]["decision"], "accept")
+
+    def test_different_commit_shas_remain_comparable(self):
+        self.assertNotEqual(
+            load_json(self.baseline / "manifest.json")["commit_sha"],
+            load_json(self.candidate / "manifest.json")["commit_sha"],
+        )
+        self.assertEqual(self._compare()["policy"]["decision"], "accept")
 
     def test_synthesis_regression_is_rejected(self):
         self._generate(self.candidate, "b" * 40, {TASK_ID: "hls-synthesis"})
