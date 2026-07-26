@@ -1832,7 +1832,10 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
                THROW_ASSERT(extract_value->op0->index == stmt_op0->index, "Unexpected aggregate extraction source");
                const auto field_index = static_cast<size_t>(ir_helper::GetConstValue(extract_value->op1));
                const auto field_size = ir_helper::Size(use_ga->op0);
-               const auto [field_it, inserted] = field_sizes.emplace(field_index, field_size);
+#if HAVE_ASSERTS
+               const auto [field_it, inserted] =
+#endif
+                   field_sizes.emplace(field_index, field_size);
                THROW_ASSERT(inserted || field_it->second == field_size, "Inconsistent aggregate extraction type");
             }
             for(const auto& use_stmt_count : aggregate_uses)
@@ -2096,8 +2099,8 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
             {
                const auto fragment = gc->args.at(payload_idx);
                const auto fragment_type = ir_helper::CGetType(fragment);
-               const auto fragment_value = ir_man->create_unary_operation(
-                   packed_type, fragment, BUILTIN_LOCINFO, nop_node_K);
+               const auto fragment_value =
+                   ir_man->create_unary_operation(packed_type, fragment, BUILTIN_LOCINFO, nop_node_K);
                const auto fragment_ssa = ir_man->create_ssa_name(nullptr, packed_type, nullptr, nullptr);
                curr_bb->PushBefore(ir_man->create_assign_stmt(fragment_ssa, fragment_value, fd->index, BUILTIN_LOCINFO),
                                    stmt, AppM);
@@ -2105,8 +2108,8 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
                if(bit_offset)
                {
                   const auto shift = TM->CreateUniqueIntegerCst(bit_offset, packed_type);
-                  const auto shift_expr = ir_man->create_binary_operation(
-                      packed_type, fragment_ssa, shift, BUILTIN_LOCINFO, shl_node_K);
+                  const auto shift_expr =
+                      ir_man->create_binary_operation(packed_type, fragment_ssa, shift, BUILTIN_LOCINFO, shl_node_K);
                   const auto shift_ssa = ir_man->create_ssa_name(nullptr, packed_type, nullptr, nullptr);
                   curr_bb->PushBefore(ir_man->create_assign_stmt(shift_ssa, shift_expr, fd->index, BUILTIN_LOCINFO),
                                       stmt, AppM);
@@ -2118,8 +2121,8 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
                }
                else
                {
-                  const auto packed_expr = ir_man->create_binary_operation(
-                      packed_type, packed_value, shifted_fragment, BUILTIN_LOCINFO, or_node_K);
+                  const auto packed_expr = ir_man->create_binary_operation(packed_type, packed_value, shifted_fragment,
+                                                                           BUILTIN_LOCINFO, or_node_K);
                   const auto packed_ssa = ir_man->create_ssa_name(nullptr, packed_type, nullptr, nullptr);
                   curr_bb->PushBefore(ir_man->create_assign_stmt(packed_ssa, packed_expr, fd->index, BUILTIN_LOCINFO),
                                       stmt, AppM);
