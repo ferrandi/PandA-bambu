@@ -1,4 +1,12 @@
-"""Deterministic comparison of independently validated PandA CI bundles."""
+"""Deterministic comparison of independently validated PandA CI bundles.
+
+The serialized comparison document intentionally separates primitive observations
+from derived fields. Standalone validation can prove that classifications,
+transitions, metric deltas, summaries, and policy decisions are internally
+consistent with the serialized primitive observations. It cannot authenticate
+that those primitive observations came from the original bundles, nor that the
+primitive observations are correct if all of them are edited together.
+"""
 
 from __future__ import annotations
 
@@ -32,6 +40,35 @@ METRIC_SOURCES = (
     ("duration.rtl-simulation", "duration.rtl-simulation", "seconds"),
     ("duration.regression-total", "duration.regression-total", "seconds"),
 )
+
+METRIC_DEFINITIONS = {
+    metric_id: {"source_metric": source_metric, "unit": unit}
+    for metric_id, source_metric, unit in METRIC_SOURCES
+}
+CORRECTNESS_FIELDS = ("synthesis", "simulation", "verification", "overall")
+FAILURE_STAGE_FIELDS = ("synthesis", "simulation", "verification")
+MISSING_IN_BASELINE_REASON = {"code": "task-added-in-candidate", "field": "task_id"}
+MISSING_IN_CANDIDATE_REASON = {"code": "required-task-missing", "field": "task_id"}
+ALLOWED_COMPARABILITY_REASONS = {
+    "build-profile-differs",
+    "configuration-differs",
+    "required-task-missing",
+    "task-added-in-candidate",
+    "task-id-differs",
+    "task-type-differs",
+}
+ALLOWED_POLICY_REASONS = {
+    "baseline-build-incomplete",
+    "baseline-regression-not-passing",
+    "candidate-build-regression",
+    "candidate-simulation-regression",
+    "candidate-synthesis-regression",
+    "candidate-verification-failure",
+    "configuration-not-comparable",
+    "cycle-information-unavailable",
+    "new-candidate-regression",
+    "required-regression-missing",
+}
 
 CONFIGURATION_PATHS = (
     "category",
@@ -105,6 +142,19 @@ def _transition(baseline: Any, candidate: Any) -> str:
     return f"{left} → {right}"
 
 
+def _build_profile_identity(profile: dict[str, Any] | None) -> dict[str, Any] | None:
+    if profile is None:
+        return None
+    return {
+        "sha256": hashlib.sha256(canonical_bytes(profile)).hexdigest(),
+        "tool_ids": sorted(
+            item.get("tool_id")
+            for item in profile.get("tool_versions", [])
+            if isinstance(item, dict)
+        ),
+    }
+
+
 def _identity(documents: dict[str, dict[str, Any]], bundle: Path) -> dict[str, Any]:
     manifest = documents["manifest.json"]
     return {
@@ -159,24 +209,57 @@ def _regression_tasks(
     }
 
 
-def _configuration_reasons(
+def _comparability_checks(
+    task_id: str,
     baseline: dict[str, Any],
     candidate: dict[str, Any],
-    build_profiles_equal: bool,
+    baseline_profile: dict[str, Any] | None,
+    candidate_profile: dict[str, Any] | None,
 ) -> list[dict[str, Any]]:
-    reasons: list[dict[str, Any]] = []
-    if baseline.get("task_id") != candidate.get("task_id"):
-        reasons.append({"code": "task-id-differs", "field": "task_id"})
-    if baseline.get("task_type") != candidate.get("task_type"):
-        reasons.append({"code": "task-type-differs", "field": "task_type"})
+    checks = [
+        {
+            "baseline": baseline.get("task_id"),
+            "candidate": candidate.get("task_id"),
+            "field": "task_id",
+            "reason_code": "task-id-differs",
+        },
+        {
+            "baseline": baseline.get("task_type"),
+            "candidate": candidate.get("task_type"),
+            "field": "task_type",
+            "reason_code": "task-type-differs",
+        },
+    ]
     for path in CONFIGURATION_PATHS:
-        baseline_value = _value_at(baseline.get("configuration", {}), path)
-        candidate_value = _value_at(candidate.get("configuration", {}), path)
-        if baseline_value != candidate_value:
-            reasons.append({"code": "configuration-differs", "field": path})
-    if not build_profiles_equal:
-        reasons.append({"code": "build-profile-differs", "field": "build_profile"})
-    return reasons
+        checks.append(
+            {
+                "baseline": _value_at(baseline.get("configuration", {}), path),
+                "candidate": _value_at(candidate.get("configuration", {}), path),
+                "field": path,
+                "reason_code": "configuration-differs",
+            }
+        )
+    checks.append(
+        {
+            "baseline": _build_profile_identity(baseline_profile),
+            "candidate": _build_profile_identity(candidate_profile),
+            "field": "build_profile",
+            "reason_code": "build-profile-differs",
+        }
+    )
+    return checks
+
+
+def _reasons_from_checks(checks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    reasons = [
+        {"code": check["reason_code"], "field": check["field"]}
+        for check in checks
+        if check["baseline"] != check["candidate"]
+    ]
+    return sorted(
+        {canonical_bytes(reason): reason for reason in reasons}.values(),
+        key=lambda item: (item["code"], item["field"]),
+    )
 
 
 def _metric_comparison(
@@ -237,53 +320,40 @@ def _build_record(
     }
 
 
-def _task_record(
+def _primitive_task_record(
     task_id: str,
     baseline: dict[str, Any] | None,
     candidate: dict[str, Any] | None,
-    build_profiles_equal: bool,
+    baseline_profile: dict[str, Any] | None,
+    candidate_profile: dict[str, Any] | None,
 ) -> dict[str, Any]:
     if baseline is None:
         return {
-            "classification": "missing-in-baseline",
-            "comparability_reasons": [{"code": "task-added-in-candidate", "field": "task_id"}],
             "correctness": None,
             "evidence": [f"candidate:tasks/{task_id}.json"],
             "execution": None,
             "failure": None,
             "metrics": [],
+            "presence": {"baseline": False, "candidate": True},
             "task_id": task_id,
             "task_type": candidate["task_type"],
         }
     if candidate is None:
         return {
-            "classification": "missing-in-candidate",
-            "comparability_reasons": [{"code": "required-task-missing", "field": "task_id"}],
             "correctness": None,
             "evidence": [f"baseline:tasks/{task_id}.json"],
             "execution": None,
             "failure": None,
             "metrics": [],
+            "presence": {"baseline": True, "candidate": False},
             "task_id": task_id,
             "task_type": baseline["task_type"],
         }
 
-    comparability_reasons = _configuration_reasons(
-        baseline, candidate, build_profiles_equal
-    )
-    classification = "not-comparable" if comparability_reasons else "comparable"
     baseline_correctness = _correctness(baseline)
     candidate_correctness = _correctness(candidate)
     baseline_failure = _value_at(baseline, "failure.category")
     candidate_failure = _value_at(candidate, "failure.category")
-    introduced_failure = any(
-        baseline_correctness[field] == "pass" and candidate_correctness[field] == "fail"
-        for field in ("synthesis", "simulation", "verification")
-    )
-    fixed_failure = any(
-        baseline_correctness[field] == "fail" and candidate_correctness[field] == "pass"
-        for field in ("synthesis", "simulation", "verification")
-    )
     correctness = {
         field: {
             "baseline": baseline_correctness[field],
@@ -292,11 +362,12 @@ def _task_record(
                 baseline_correctness[field], candidate_correctness[field]
             ),
         }
-        for field in ("synthesis", "simulation", "verification", "overall")
+        for field in CORRECTNESS_FIELDS
     }
-    return {
-        "classification": classification,
-        "comparability_reasons": comparability_reasons,
+    primitive = {
+        "comparability_checks": _comparability_checks(
+            task_id, baseline, candidate, baseline_profile, candidate_profile
+        ),
         "correctness": correctness,
         "evidence": [
             f"baseline:tasks/{task_id}.json",
@@ -313,16 +384,149 @@ def _task_record(
         "failure": {
             "baseline_category": baseline_failure,
             "candidate_category": candidate_failure,
-            "fixed_failure": fixed_failure,
-            "introduced_failure": introduced_failure,
+            "fixed_failure": False,
+            "introduced_failure": False,
             "transition": _transition(baseline_failure, candidate_failure),
         },
-        "metrics": _metric_comparison(task_id, baseline, candidate)
-        if classification == "comparable"
-        else [],
+        "metrics": _metric_comparison(task_id, baseline, candidate),
+        "presence": {"baseline": True, "candidate": True},
         "task_id": task_id,
         "task_type": baseline["task_type"],
     }
+    return primitive
+
+
+def _introduced_failure(correctness: dict[str, Any]) -> bool:
+    return any(
+        correctness[field]["baseline"] == "pass"
+        and correctness[field]["candidate"] == "fail"
+        for field in FAILURE_STAGE_FIELDS
+    )
+
+
+def _fixed_failure(correctness: dict[str, Any]) -> bool:
+    return any(
+        correctness[field]["baseline"] == "fail"
+        and correctness[field]["candidate"] == "pass"
+        for field in FAILURE_STAGE_FIELDS
+    )
+
+
+def _canonical_metric(task_id: str, metric: dict[str, Any]) -> dict[str, Any]:
+    metric_id = metric["metric_id"]
+    baseline = metric["baseline_value"]
+    candidate = metric["candidate_value"]
+    absolute_delta = None
+    percentage_delta = None
+    if baseline is not None and candidate is not None:
+        absolute_delta = candidate - baseline
+        if baseline != 0:
+            percentage_delta = round((absolute_delta / baseline) * 100, 6)
+    return {
+        "absolute_delta": absolute_delta,
+        "baseline_value": baseline,
+        "candidate_value": candidate,
+        "evidence": [
+            f"baseline:tasks/{task_id}.json",
+            f"candidate:tasks/{task_id}.json",
+        ],
+        "metric_id": metric_id,
+        "percentage_delta": percentage_delta,
+        "unit": METRIC_DEFINITIONS[metric_id]["unit"],
+    }
+
+
+def normalize_task_record(serialized_task: dict[str, Any]) -> dict[str, Any]:
+    """Reconstruct derived task semantics from serialized primitive observations."""
+
+    task = dict(serialized_task)
+    task_id = task["task_id"]
+    presence = task["presence"]
+    baseline_present = presence["baseline"]
+    candidate_present = presence["candidate"]
+    if not baseline_present and candidate_present:
+        classification = "missing-in-baseline"
+        reasons = [MISSING_IN_BASELINE_REASON]
+    elif baseline_present and not candidate_present:
+        classification = "missing-in-candidate"
+        reasons = [MISSING_IN_CANDIDATE_REASON]
+    elif baseline_present and candidate_present:
+        reasons = _reasons_from_checks(task["comparability_checks"])
+        classification = "not-comparable" if reasons else "comparable"
+    else:
+        classification = "not-comparable"
+        reasons = []
+
+    evidence = (
+        [f"candidate:tasks/{task_id}.json"]
+        if classification == "missing-in-baseline"
+        else [f"baseline:tasks/{task_id}.json"]
+        if classification == "missing-in-candidate"
+        else [f"baseline:tasks/{task_id}.json", f"candidate:tasks/{task_id}.json"]
+    )
+    correctness = None
+    execution = None
+    failure = None
+    metrics: list[dict[str, Any]] = []
+    if baseline_present and candidate_present:
+        correctness = {
+            field: {
+                "baseline": task["correctness"][field]["baseline"],
+                "candidate": task["correctness"][field]["candidate"],
+                "transition": _transition(
+                    task["correctness"][field]["baseline"],
+                    task["correctness"][field]["candidate"],
+                ),
+            }
+            for field in CORRECTNESS_FIELDS
+        }
+        execution = {
+            "baseline": task["execution"]["baseline"],
+            "candidate": task["execution"]["candidate"],
+            "transition": _transition(
+                task["execution"]["baseline"], task["execution"]["candidate"]
+            ),
+        }
+        failure = {
+            "baseline_category": task["failure"]["baseline_category"],
+            "candidate_category": task["failure"]["candidate_category"],
+            "fixed_failure": _fixed_failure(correctness),
+            "introduced_failure": _introduced_failure(correctness),
+            "transition": _transition(
+                task["failure"]["baseline_category"],
+                task["failure"]["candidate_category"],
+            ),
+        }
+        if classification == "comparable":
+            metrics = [_canonical_metric(task_id, metric) for metric in task["metrics"]]
+
+    task.update(
+        {
+            "classification": classification,
+            "comparability_reasons": reasons,
+            "correctness": correctness,
+            "evidence": evidence,
+            "execution": execution,
+            "failure": failure,
+            "metrics": metrics,
+        }
+    )
+    return task
+
+
+def _task_record(
+    task_id: str,
+    baseline: dict[str, Any] | None,
+    candidate: dict[str, Any] | None,
+    build_profiles_equal: bool,
+) -> dict[str, Any]:
+    baseline_profile = {}
+    candidate_profile = {} if build_profiles_equal else {"different": True}
+    return normalize_task_record(
+        _primitive_task_record(
+            task_id, baseline, candidate, baseline_profile, candidate_profile
+        )
+    )
 
 
 def _policy_reasons(
@@ -512,17 +716,15 @@ def compare_bundles(
     candidate_tasks = _regression_tasks(candidate_documents)
     baseline_profile = _build_profile(baseline_documents)
     candidate_profile = _build_profile(candidate_documents)
-    build_profiles_equal = (
-        baseline_profile is not None
-        and candidate_profile is not None
-        and baseline_profile == candidate_profile
-    )
     task_records = [
-        _task_record(
-            task_id,
-            baseline_tasks.get(task_id),
-            candidate_tasks.get(task_id),
-            build_profiles_equal,
+        normalize_task_record(
+            _primitive_task_record(
+                task_id,
+                baseline_tasks.get(task_id),
+                candidate_tasks.get(task_id),
+                baseline_profile,
+                candidate_profile,
+            )
         )
         for task_id in sorted(set(baseline_tasks) | set(candidate_tasks))
     ]
@@ -558,7 +760,7 @@ def _expected_comparison_id(document: dict[str, Any]) -> str:
 
 
 def validate_comparison(path: Path) -> dict[str, Any]:
-    """Validate comparison schema, canonical bytes, deltas, counts, and policy."""
+    """Validate canonical bytes and reconstructed comparison semantics."""
 
     value = load_json(path)
     require_canonical(path, value)
@@ -581,10 +783,89 @@ def validate_comparison(path: Path) -> dict[str, Any]:
         "candidate:tasks/open-build.json#outcome",
     ]:
         errors.append("build evidence does not use canonical provenance")
-    expected_reasons = _policy_reasons(value["build"], value["tasks"])
+    normalized_tasks: list[dict[str, Any]] = []
+    expected_check_fields = ["task_id", "task_type", *CONFIGURATION_PATHS, "build_profile"]
+    for task in value["tasks"]:
+        task_id = task["task_id"]
+        presence = task["presence"]
+        paired = presence["baseline"] and presence["candidate"]
+        missing = presence["baseline"] != presence["candidate"]
+        if not paired and not missing:
+            errors.append(f"task {task_id!r}: invalid task presence")
+            continue
+        checks = task.get("comparability_checks", [])
+        if paired:
+            check_fields = [check["field"] for check in checks]
+            if check_fields != expected_check_fields:
+                errors.append(
+                    f"task {task_id!r}: comparability checks are not canonical"
+                )
+            for check in checks:
+                if check["reason_code"] not in ALLOWED_COMPARABILITY_REASONS:
+                    errors.append(
+                        f"task {task_id!r}: unknown comparability reason code"
+                    )
+        elif checks:
+            errors.append(f"task {task_id!r}: missing task must not contain checks")
+        reason_keys = [(item["code"], item["field"]) for item in task["comparability_reasons"]]
+        if any(code not in ALLOWED_COMPARABILITY_REASONS for code, _field in reason_keys):
+            errors.append(f"task {task_id!r}: unknown comparability reason")
+        if len(reason_keys) != len(set(reason_keys)):
+            errors.append(f"task {task_id!r}: duplicate comparability reason")
+        if reason_keys != sorted(reason_keys):
+            errors.append(f"task {task_id!r}: comparability reasons are not sorted")
+        metric_ids = [metric["metric_id"] for metric in task["metrics"]]
+        if len(metric_ids) != len(set(metric_ids)):
+            errors.append(f"task {task_id!r}: duplicate metric ID")
+        if any(metric_id not in METRIC_DEFINITIONS for metric_id in metric_ids):
+            errors.append(f"task {task_id!r}: unknown metric ID")
+        expected_metric_ids = [metric_id for metric_id, _source, _unit in METRIC_SOURCES]
+        if task["classification"] == "comparable" and metric_ids != expected_metric_ids:
+            errors.append(f"task {task_id!r}: metrics are not the canonical set")
+        if task["classification"] != "comparable" and task["metrics"]:
+            errors.append(
+                f"task {task_id!r}: non-comparable task must not contain metric deltas"
+            )
+        if errors:
+            continue
+        try:
+            normalized = normalize_task_record(task)
+        except (KeyError, TypeError, ValueError) as error:
+            errors.append(f"task {task_id!r}: cannot reconstruct task: {error}")
+            continue
+        normalized_tasks.append(normalized)
+        for field in (
+            "classification",
+            "comparability_reasons",
+            "correctness",
+            "evidence",
+            "execution",
+            "failure",
+        ):
+            if task[field] != normalized[field]:
+                errors.append(f"task {task_id!r}: {field} does not match reconstruction")
+        for metric, expected_metric in zip(task["metrics"], normalized["metrics"]):
+            if metric["absolute_delta"] != expected_metric["absolute_delta"]:
+                errors.append(
+                    f"task {task_id!r} metric {metric['metric_id']!r}: invalid absolute delta"
+                )
+            if metric["percentage_delta"] != expected_metric["percentage_delta"]:
+                errors.append(
+                    f"task {task_id!r} metric {metric['metric_id']!r}: invalid percentage delta"
+                )
+        if task["metrics"] != normalized["metrics"] and not any(
+            "invalid absolute delta" in error or "invalid percentage delta" in error
+            for error in errors
+        ):
+            errors.append(f"task {task_id!r}: metrics does not match reconstruction")
+    if errors:
+        raise ComparisonError("\n".join(errors))
+    expected_reasons = _policy_reasons(value["build"], normalized_tasks)
+    if any(reason["code"] not in ALLOWED_POLICY_REASONS for reason in value["policy"]["reasons"]):
+        errors.append("policy contains unsupported reason")
     if value["policy"]["reasons"] != expected_reasons:
         errors.append("policy reasons do not match reconstructed comparison evidence")
-    expected_summary = _summary(value["tasks"], expected_reasons)
+    expected_summary = _summary(normalized_tasks, expected_reasons)
     if value["summary"] != expected_summary:
         errors.append("summary does not match task and policy records")
     expected_decision = _decision(expected_reasons)
@@ -597,65 +878,6 @@ def validate_comparison(path: Path) -> dict[str, Any]:
     }[expected_decision]
     if value["overall_comparison_outcome"] != expected_outcome:
         errors.append("overall comparison outcome does not match policy decision")
-    for task in value["tasks"]:
-        classification = task["classification"]
-        expected_evidence = (
-            [f"candidate:tasks/{task['task_id']}.json"]
-            if classification == "missing-in-baseline"
-            else [f"baseline:tasks/{task['task_id']}.json"]
-            if classification == "missing-in-candidate"
-            else [
-                f"baseline:tasks/{task['task_id']}.json",
-                f"candidate:tasks/{task['task_id']}.json",
-            ]
-        )
-        if task["evidence"] != expected_evidence:
-            errors.append(
-                f"task {task['task_id']!r}: evidence does not use canonical provenance"
-            )
-        if classification.startswith("missing-"):
-            if any(
-                task[field] is not None
-                for field in ("correctness", "execution", "failure")
-            ):
-                errors.append(
-                    f"task {task['task_id']!r}: missing task must not contain paired observations"
-                )
-        elif any(
-            task[field] is None for field in ("correctness", "execution", "failure")
-        ):
-            errors.append(
-                f"task {task['task_id']!r}: paired task requires complete observations"
-            )
-        if task["correctness"] is not None:
-            for field, transition in task["correctness"].items():
-                if transition["transition"] != _transition(
-                    transition["baseline"], transition["candidate"]
-                ):
-                    errors.append(
-                        f"task {task['task_id']!r}: invalid {field} transition"
-                    )
-        if task["classification"] != "comparable" and task["metrics"]:
-            errors.append(
-                f"task {task['task_id']!r}: non-comparable task must not contain metric deltas"
-            )
-        for metric in task["metrics"]:
-            baseline = metric["baseline_value"]
-            candidate = metric["candidate_value"]
-            expected_absolute = None
-            expected_percentage = None
-            if baseline is not None and candidate is not None:
-                expected_absolute = candidate - baseline
-                if baseline != 0:
-                    expected_percentage = round((expected_absolute / baseline) * 100, 6)
-            if metric["absolute_delta"] != expected_absolute:
-                errors.append(
-                    f"task {task['task_id']!r} metric {metric['metric_id']!r}: invalid absolute delta"
-                )
-            if metric["percentage_delta"] != expected_percentage:
-                errors.append(
-                    f"task {task['task_id']!r} metric {metric['metric_id']!r}: invalid percentage delta"
-                )
     if errors:
         raise ComparisonError("\n".join(errors))
     return value

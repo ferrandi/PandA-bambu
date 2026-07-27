@@ -116,6 +116,32 @@ class ComparisonTests(unittest.TestCase):
     def _task(result, task_id: str = TASK_ID):
         return next(task for task in result["tasks"] if task["task_id"] == task_id)
 
+    def _assert_tamper_rejected(self, mutation, pattern: str | None = None) -> None:
+        value = load_json(self.output)
+        mutation(value)
+        write_json(self.output, value)
+        context = (
+            self.assertRaisesRegex(Exception, pattern)
+            if pattern
+            else self.assertRaises(Exception)
+        )
+        with context:
+            validate_comparison(self.output)
+
+    def _rejecting_comparison(self, stage: str = "hls-synthesis"):
+        self._generate(self.candidate, "b" * 40, {TASK_ID: stage})
+        return self._compare()
+
+    def _manual_review_comparison(self):
+        self._mutate_manifest(
+            self.candidate,
+            lambda manifest: manifest["effective_build_profile"].update(
+                optimized_flags="-Ofast -march=native -mtune=native",
+                cpu_target_profile="native",
+            ),
+        )
+        return self._compare()
+
     def test_equal_real_v11_tasks_are_accepted(self):
         result = self._compare()
         self.assertEqual(result["policy"]["decision"], "accept")
@@ -307,6 +333,49 @@ class ComparisonTests(unittest.TestCase):
         self._generate(self.candidate, "b" * 40, {TASK_ID: "result-verification"})
         self.assertIn("candidate-verification-failure", {r["code"] for r in self._compare()["policy"]["reasons"]})
 
+    def test_profile_mismatch_plus_synthesis_failure_is_reject(self):
+        self._generate(self.candidate, "b" * 40, {TASK_ID: "hls-synthesis"})
+        self._mutate_manifest(
+            self.candidate,
+            lambda manifest: manifest["effective_build_profile"].update(
+                optimized_flags="-Ofast -march=native -mtune=native",
+                cpu_target_profile="native",
+            ),
+        )
+        self.assertEqual(self._compare()["policy"]["decision"], "reject")
+
+    def test_profile_mismatch_plus_simulation_failure_is_reject(self):
+        self._generate(self.candidate, "b" * 40, {TASK_ID: "rtl-simulation"})
+        self._mutate_manifest(
+            self.candidate,
+            lambda manifest: manifest["effective_build_profile"].update(
+                optimized_flags="-Ofast -march=native -mtune=native",
+                cpu_target_profile="native",
+            ),
+        )
+        self.assertEqual(self._compare()["policy"]["decision"], "reject")
+
+    def test_profile_mismatch_plus_verification_failure_is_reject(self):
+        self._generate(self.candidate, "b" * 40, {TASK_ID: "result-verification"})
+        self._mutate_manifest(
+            self.candidate,
+            lambda manifest: manifest["effective_build_profile"].update(
+                optimized_flags="-Ofast -march=native -mtune=native",
+                cpu_target_profile="native",
+            ),
+        )
+        self.assertEqual(self._compare()["policy"]["decision"], "reject")
+
+    def test_missing_profile_plus_correctness_regression_is_reject(self):
+        self._generate(self.candidate, "b" * 40, {TASK_ID: "hls-synthesis"})
+        self._mutate_manifest(
+            self.candidate, lambda manifest: manifest.pop("effective_build_profile")
+        )
+        self.assertEqual(self._compare()["policy"]["decision"], "reject")
+
+    def test_profile_mismatch_without_correctness_regression_is_manual_review(self):
+        self.assertEqual(self._manual_review_comparison()["policy"]["decision"], "manual-review")
+
     def test_correctness_rejection_takes_precedence_when_not_comparable(self):
         self._generate(self.candidate, "b" * 40, {TASK_ID: "hls-synthesis"})
         self._mutate_task(
@@ -408,6 +477,149 @@ class ComparisonTests(unittest.TestCase):
         write_json(self.output, value)
         with self.assertRaisesRegex(ComparisonError, "policy reasons do not match"):
             validate_comparison(self.output)
+
+    def test_tamper_removed_reject_reason_fails(self):
+        self._rejecting_comparison()
+        self._assert_tamper_rejected(lambda value: value["policy"]["reasons"].pop())
+
+    def test_tamper_decision_reject_to_accept_fails(self):
+        self._rejecting_comparison()
+        self._assert_tamper_rejected(
+            lambda value: value["policy"].update(decision="accept")
+        )
+
+    def test_tamper_decision_reject_to_manual_review_fails(self):
+        self._rejecting_comparison()
+        self._assert_tamper_rejected(
+            lambda value: value["policy"].update(decision="manual-review")
+        )
+
+    def test_tamper_build_transition_fails(self):
+        self._compare()
+        self._assert_tamper_rejected(
+            lambda value: value["build"].update(transition="pass -> pass")
+        )
+
+    def test_tamper_correctness_transition_fails(self):
+        self._compare()
+        self._assert_tamper_rejected(
+            lambda value: self._task(value)["correctness"]["overall"].update(
+                transition="pass -> fail"
+            )
+        )
+
+    def test_tamper_execution_transition_fails(self):
+        self._compare()
+        self._assert_tamper_rejected(lambda value: self._task(value)["execution"].update(transition="queued -> done"))
+
+    def test_tamper_failure_transition_fails(self):
+        self._compare()
+        self._assert_tamper_rejected(lambda value: self._task(value)["failure"].update(transition="none -> hls-synthesis"))
+
+    def test_tamper_introduced_failure_fails(self):
+        self._rejecting_comparison()
+        self._assert_tamper_rejected(lambda value: self._task(value)["failure"].update(introduced_failure=False))
+
+    def test_tamper_fixed_failure_fails(self):
+        self._generate(self.baseline, "a" * 40, {TASK_ID: "hls-synthesis"})
+        self._compare()
+        self._assert_tamper_rejected(lambda value: self._task(value)["failure"].update(fixed_failure=False))
+
+    def test_tamper_summary_regression_counter_fails(self):
+        self._rejecting_comparison()
+        self._assert_tamper_rejected(lambda value: value["summary"].update(correctness_regressions=0))
+
+    def test_tamper_summary_improvement_counter_fails(self):
+        self._generate(self.baseline, "a" * 40, {TASK_ID: "hls-synthesis"})
+        self._compare()
+        self._assert_tamper_rejected(lambda value: value["summary"].update(correctness_improvements=0))
+
+    def test_tamper_task_classification_fails(self):
+        self._compare()
+        self._assert_tamper_rejected(lambda value: self._task(value).update(classification="not-comparable"))
+
+    def test_tamper_comparability_reason_fails(self):
+        self._manual_review_comparison()
+        self._assert_tamper_rejected(lambda value: self._task(value)["comparability_reasons"][0].update(field="wrong"))
+
+    def test_tamper_duplicate_comparability_reason_fails(self):
+        self._manual_review_comparison()
+        self._assert_tamper_rejected(
+            lambda value: self._task(value)["comparability_reasons"].append(
+                copy.deepcopy(self._task(value)["comparability_reasons"][0])
+            )
+        )
+
+    def test_tamper_unknown_comparability_reason_fails(self):
+        self._compare()
+        self._assert_tamper_rejected(
+            lambda value: self._task(value)["comparability_reasons"].append(
+                {"code": "unknown-reason", "field": "task_id"}
+            )
+        )
+
+    def test_tamper_primitive_comparability_check_without_derived_update_fails(self):
+        self._compare()
+        self._assert_tamper_rejected(
+            lambda value: self._task(value)["comparability_checks"][0].update(
+                candidate="different-task"
+            )
+        )
+
+    def test_tamper_metric_evidence_fails(self):
+        self._compare()
+        self._assert_tamper_rejected(lambda value: self._task(value)["metrics"][0]["evidence"].append("candidate:elsewhere.json"))
+
+    def test_tamper_metric_unit_fails(self):
+        self._compare()
+        self._assert_tamper_rejected(lambda value: self._task(value)["metrics"][0].update(unit="seconds"))
+
+    def test_tamper_unknown_metric_id_fails(self):
+        self._compare()
+        self._assert_tamper_rejected(lambda value: self._task(value)["metrics"][0].update(metric_id="unknown.metric"))
+
+    def test_tamper_duplicate_metric_id_fails(self):
+        self._compare()
+        self._assert_tamper_rejected(lambda value: self._task(value)["metrics"][1].update(metric_id="simulation.total-cycles"))
+
+    def test_tamper_missing_required_metric_fails(self):
+        self._compare()
+        self._assert_tamper_rejected(lambda value: self._task(value)["metrics"].pop())
+
+    def test_tamper_absolute_delta_fails(self):
+        self._compare()
+        self._assert_tamper_rejected(
+            lambda value: self._task(value)["metrics"][0].update(absolute_delta=7),
+            "invalid absolute delta",
+        )
+
+    def test_tamper_percentage_delta_fails(self):
+        self._compare()
+        self._assert_tamper_rejected(
+            lambda value: self._task(value)["metrics"][0].update(percentage_delta=7),
+            "invalid percentage delta",
+        )
+
+    def test_tamper_noncanonical_task_evidence_fails(self):
+        self._compare()
+        self._assert_tamper_rejected(
+            lambda value: self._task(value).update(
+                evidence=["candidate:tasks/regression-scalar.json"]
+            )
+        )
+
+    def test_tamper_unsupported_policy_reason_fails(self):
+        self._compare()
+        self._assert_tamper_rejected(
+            lambda value: value["policy"]["reasons"].append(
+                {
+                    "code": "unsupported-policy-reason",
+                    "decision": "manual-review",
+                    "evidence": ["candidate:tasks/regression-scalar.json"],
+                    "task_id": TASK_ID,
+                }
+            )
+        )
 
     def test_compare_cli_uses_distinct_nonzero_policy_exit_codes(self):
         self.assertEqual(

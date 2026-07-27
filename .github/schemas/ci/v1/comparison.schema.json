@@ -17,6 +17,16 @@
       "type": "object"
     },
     "nullable_number": {"type": ["number", "null"]},
+    "json_value": {
+      "anyOf": [
+        {"type": "array"},
+        {"type": "boolean"},
+        {"type": "null"},
+        {"type": "number"},
+        {"type": "object"},
+        {"type": "string"}
+      ]
+    },
     "transition": {
       "additionalProperties": false,
       "properties": {
@@ -72,10 +82,27 @@
       "additionalProperties": false,
       "properties": {
         "classification": {"enum": ["comparable", "not-comparable", "missing-in-baseline", "missing-in-candidate"], "type": "string"},
+        "comparability_checks": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "baseline": {"$ref": "#/$defs/json_value"},
+              "candidate": {"$ref": "#/$defs/json_value"},
+              "field": {"minLength": 1, "type": "string"},
+              "reason_code": {"enum": ["build-profile-differs", "configuration-differs", "task-id-differs", "task-type-differs"], "type": "string"}
+            },
+            "required": ["baseline", "candidate", "field", "reason_code"],
+            "type": "object"
+          },
+          "type": "array"
+        },
         "comparability_reasons": {
           "items": {
             "additionalProperties": false,
-            "properties": {"code": {"$ref": "common.schema.json#/$defs/id"}, "field": {"minLength": 1, "type": "string"}},
+            "properties": {
+              "code": {"enum": ["build-profile-differs", "configuration-differs", "required-task-missing", "task-added-in-candidate", "task-id-differs", "task-type-differs"], "type": "string"},
+              "field": {"minLength": 1, "type": "string"}
+            },
             "required": ["code", "field"], "type": "object"
           },
           "type": "array"
@@ -98,10 +125,19 @@
           }, {"type": "null"}]
         },
         "metrics": {"items": {"$ref": "#/$defs/metric"}, "type": "array"},
+        "presence": {
+          "additionalProperties": false,
+          "properties": {
+            "baseline": {"type": "boolean"},
+            "candidate": {"type": "boolean"}
+          },
+          "required": ["baseline", "candidate"],
+          "type": "object"
+        },
         "task_id": {"$ref": "common.schema.json#/$defs/id"},
         "task_type": {"const": "regression", "type": "string"}
       },
-      "required": ["classification", "comparability_reasons", "correctness", "evidence", "execution", "failure", "metrics", "task_id", "task_type"],
+      "required": ["classification", "comparability_checks", "comparability_reasons", "correctness", "evidence", "execution", "failure", "metrics", "presence", "task_id", "task_type"],
       "type": "object"
     },
     "policy_reason": {
