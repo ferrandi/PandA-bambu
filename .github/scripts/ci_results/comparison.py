@@ -95,6 +95,13 @@ CONFIGURATION_PATHS = (
     "options.inline_max_cost",
     "options.parallel_backend",
 )
+COMPARABILITY_CHECK_FIELDS = ("task_id", "task_type", *CONFIGURATION_PATHS, "build_profile")
+COMPARABILITY_REASON_CODES = {
+    "task_id": "task-id-differs",
+    "task_type": "task-type-differs",
+    **{path: "configuration-differs" for path in CONFIGURATION_PATHS},
+    "build_profile": "build-profile-differs",
+}
 
 
 class ComparisonError(ValueError):
@@ -112,6 +119,15 @@ def _value_at(value: Any, dotted_path: str) -> Any:
             return None
         current = current.get(part)
     return current
+
+
+def canonical_comparability_reason_code(field: str) -> str:
+    """Return the derived reason code for a canonical comparability field."""
+
+    try:
+        return COMPARABILITY_REASON_CODES[field]
+    except KeyError as error:
+        raise ComparisonError(f"unknown comparability field {field!r}") from error
 
 
 def _stage_outcome(task: dict[str, Any], stage_id: str) -> str:
@@ -221,13 +237,13 @@ def _comparability_checks(
             "baseline": baseline.get("task_id"),
             "candidate": candidate.get("task_id"),
             "field": "task_id",
-            "reason_code": "task-id-differs",
+            "reason_code": canonical_comparability_reason_code("task_id"),
         },
         {
             "baseline": baseline.get("task_type"),
             "candidate": candidate.get("task_type"),
             "field": "task_type",
-            "reason_code": "task-type-differs",
+            "reason_code": canonical_comparability_reason_code("task_type"),
         },
     ]
     for path in CONFIGURATION_PATHS:
@@ -236,7 +252,7 @@ def _comparability_checks(
                 "baseline": _value_at(baseline.get("configuration", {}), path),
                 "candidate": _value_at(candidate.get("configuration", {}), path),
                 "field": path,
-                "reason_code": "configuration-differs",
+                "reason_code": canonical_comparability_reason_code(path),
             }
         )
     checks.append(
@@ -244,7 +260,7 @@ def _comparability_checks(
             "baseline": _build_profile_identity(baseline_profile),
             "candidate": _build_profile_identity(candidate_profile),
             "field": "build_profile",
-            "reason_code": "build-profile-differs",
+            "reason_code": canonical_comparability_reason_code("build_profile"),
         }
     )
     return checks
@@ -252,7 +268,10 @@ def _comparability_checks(
 
 def _reasons_from_checks(checks: list[dict[str, Any]]) -> list[dict[str, Any]]:
     reasons = [
-        {"code": check["reason_code"], "field": check["field"]}
+        {
+            "code": canonical_comparability_reason_code(check["field"]),
+            "field": check["field"],
+        }
         for check in checks
         if check["baseline"] != check["candidate"]
     ]
@@ -784,7 +803,6 @@ def validate_comparison(path: Path) -> dict[str, Any]:
     ]:
         errors.append("build evidence does not use canonical provenance")
     normalized_tasks: list[dict[str, Any]] = []
-    expected_check_fields = ["task_id", "task_type", *CONFIGURATION_PATHS, "build_profile"]
     for task in value["tasks"]:
         task_id = task["task_id"]
         presence = task["presence"]
@@ -796,19 +814,27 @@ def validate_comparison(path: Path) -> dict[str, Any]:
         checks = task.get("comparability_checks", [])
         if paired:
             check_fields = [check["field"] for check in checks]
-            if check_fields != expected_check_fields:
+            if check_fields != list(COMPARABILITY_CHECK_FIELDS):
                 errors.append(
                     f"task {task_id!r}: comparability checks are not canonical"
                 )
             for check in checks:
-                if check["reason_code"] not in ALLOWED_COMPARABILITY_REASONS:
+                field = check["field"]
+                if field not in COMPARABILITY_REASON_CODES:
+                    errors.append(f"task {task_id!r}: unknown comparability field")
+                    continue
+                if check["reason_code"] != canonical_comparability_reason_code(field):
                     errors.append(
-                        f"task {task_id!r}: unknown comparability reason code"
+                        f"task {task_id!r}: comparability reason code is not canonical"
                     )
         elif checks:
             errors.append(f"task {task_id!r}: missing task must not contain checks")
         reason_keys = [(item["code"], item["field"]) for item in task["comparability_reasons"]]
-        if any(code not in ALLOWED_COMPARABILITY_REASONS for code, _field in reason_keys):
+        if any(
+            field not in COMPARABILITY_REASON_CODES
+            or code != canonical_comparability_reason_code(field)
+            for code, field in reason_keys
+        ):
             errors.append(f"task {task_id!r}: unknown comparability reason")
         if len(reason_keys) != len(set(reason_keys)):
             errors.append(f"task {task_id!r}: duplicate comparability reason")

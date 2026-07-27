@@ -96,6 +96,19 @@ class ComparisonTests(unittest.TestCase):
         mutation(manifest)
         write_json(bundle / "manifest.json", manifest)
 
+    def _mutate_open_build(self, bundle: Path, mutation) -> None:
+        relative = "tasks/open-build.json"
+        task = load_json(bundle / relative)
+        mutation(task)
+        write_json(bundle / relative, task)
+        self._rehash(bundle, relative)
+
+    def _mutate_request(self, bundle: Path, mutation) -> None:
+        request = load_json(bundle / "request.json")
+        mutation(request)
+        write_json(bundle / "request.json", request)
+        self._rehash(bundle, "request.json")
+
     def _mutate_task(self, bundle: Path, mutation, task_id: str = TASK_ID) -> None:
         relative = f"tasks/{task_id}.json"
         task = load_json(bundle / relative)
@@ -286,12 +299,86 @@ class ComparisonTests(unittest.TestCase):
             )
         )
 
+    def test_whitespace_only_optimized_flags_requires_review(self):
+        self.assert_profile_change_requires_review(
+            lambda manifest: manifest["effective_build_profile"].update(
+                optimized_flags=" \t\n"
+            )
+        )
+
+    def test_whitespace_only_cpu_target_profile_requires_review(self):
+        self.assert_profile_change_requires_review(
+            lambda manifest: manifest["effective_build_profile"].update(
+                cpu_target_profile=" \t\n"
+            )
+        )
+
+    def test_empty_profile_tool_list_requires_review(self):
+        def change(manifest):
+            manifest["tools"] = []
+            manifest["effective_build_profile"]["tool_versions"] = []
+
+        self.assert_profile_change_requires_review(change)
+
+    def test_duplicate_profile_tool_ids_requires_review(self):
+        def change(manifest):
+            tools = manifest["tools"]
+            duplicate = copy.deepcopy(tools[0])
+            manifest["tools"] = tools + [duplicate]
+            manifest["effective_build_profile"]["tool_versions"] = manifest["tools"]
+
+        self.assert_profile_change_requires_review(change)
+
     def test_incomplete_effective_profile_tool_set_requires_review(self):
         def change(manifest):
             manifest["tools"] = manifest["tools"][:-1]
             manifest["effective_build_profile"]["tool_versions"] = manifest["tools"]
 
         self.assert_profile_change_requires_review(change)
+
+    def test_false_assertions_remain_valid_profile_evidence(self):
+        for bundle in (self.baseline, self.candidate):
+            self._mutate_manifest(
+                bundle,
+                lambda manifest: manifest["effective_build_profile"].update(
+                    assertions_enabled=False
+                ),
+            )
+            self._mutate_request(
+                bundle,
+                lambda request: request["build_parameters"].update(
+                    assertions_enabled=False
+                ),
+            )
+            self._mutate_open_build(
+                bundle,
+                lambda task: task["configuration"].update(assertions_enabled=False),
+            )
+        result = self._compare()
+        self.assertEqual(result["policy"]["decision"], "accept")
+        self.assertEqual(self._task(result)["classification"], "comparable")
+
+    def test_false_warnings_as_errors_remain_valid_profile_evidence(self):
+        for bundle in (self.baseline, self.candidate):
+            self._mutate_manifest(
+                bundle,
+                lambda manifest: manifest["effective_build_profile"].update(
+                    warnings_as_errors=False
+                ),
+            )
+            self._mutate_request(
+                bundle,
+                lambda request: request["build_parameters"].update(
+                    warnings_as_errors=False
+                ),
+            )
+            self._mutate_open_build(
+                bundle,
+                lambda task: task["configuration"].update(warnings_as_errors=False),
+            )
+        result = self._compare()
+        self.assertEqual(result["policy"]["decision"], "accept")
+        self.assertEqual(self._task(result)["classification"], "comparable")
 
     def test_different_workflow_run_ids_remain_comparable(self):
         self._generate(self.candidate, "b" * 40, environment_updates={"PANDA_CI_WORKFLOW_RUN_ID": "98765"})
@@ -538,6 +625,128 @@ class ComparisonTests(unittest.TestCase):
         self._compare()
         self._assert_tamper_rejected(lambda value: self._task(value).update(classification="not-comparable"))
 
+    def test_tamper_failed_task_id_check_relabel_fails(self):
+        self._compare()
+
+        def relabel(value):
+            task = self._task(value)
+            check = task["comparability_checks"][0]
+            check["candidate"] = "different-task"
+            check["reason_code"] = "configuration-differs"
+            task["classification"] = "not-comparable"
+            task["comparability_reasons"] = [
+                {"code": "configuration-differs", "field": "task_id"}
+            ]
+            task["metrics"] = []
+            value["policy"] = {
+                "decision": "manual-review",
+                "reasons": [
+                    {
+                        "code": "configuration-not-comparable",
+                        "decision": "manual-review",
+                        "evidence": task["evidence"],
+                        "task_id": TASK_ID,
+                    }
+                ],
+            }
+            value["overall_comparison_outcome"] = "manual-review"
+            value["summary"]["comparable_tasks"] -= 1
+            value["summary"]["manual_review_items"] = 1
+
+        self._assert_tamper_rejected(relabel, "reason code is not canonical")
+
+    def test_tamper_failed_configuration_check_relabel_fails(self):
+        self._compare()
+
+        def relabel(value):
+            task = self._task(value)
+            check = next(
+                item
+                for item in task["comparability_checks"]
+                if item["field"] == "options.device"
+            )
+            check["candidate"] = "different-device"
+            check["reason_code"] = "task-type-differs"
+            task["classification"] = "not-comparable"
+            task["comparability_reasons"] = [
+                {"code": "task-type-differs", "field": "options.device"}
+            ]
+            task["metrics"] = []
+            value["policy"] = {
+                "decision": "manual-review",
+                "reasons": [
+                    {
+                        "code": "configuration-not-comparable",
+                        "decision": "manual-review",
+                        "evidence": task["evidence"],
+                        "task_id": TASK_ID,
+                    }
+                ],
+            }
+            value["overall_comparison_outcome"] = "manual-review"
+            value["summary"]["comparable_tasks"] -= 1
+            value["summary"]["manual_review_items"] = 1
+
+        self._assert_tamper_rejected(relabel, "reason code is not canonical")
+
+    def test_tamper_passed_equal_check_relabel_fails(self):
+        self._compare()
+        self._assert_tamper_rejected(
+            lambda value: self._task(value)["comparability_checks"][0].update(
+                reason_code="configuration-differs"
+            ),
+            "reason code is not canonical",
+        )
+
+    def test_tamper_unknown_comparability_check_field_fails(self):
+        self._compare()
+        self._assert_tamper_rejected(
+            lambda value: self._task(value)["comparability_checks"].append(
+                {
+                    "baseline": "a",
+                    "candidate": "b",
+                    "field": "unknown.field",
+                    "reason_code": "configuration-differs",
+                }
+            ),
+            "comparability checks are not canonical",
+        )
+
+    def test_tamper_duplicate_comparability_check_field_fails(self):
+        self._compare()
+        self._assert_tamper_rejected(
+            lambda value: self._task(value)["comparability_checks"].__setitem__(
+                1, copy.deepcopy(self._task(value)["comparability_checks"][0])
+            ),
+            "comparability checks are not canonical",
+        )
+
+    def test_tamper_reordered_comparability_check_fields_fails(self):
+        self._compare()
+
+        def reorder(value):
+            checks = self._task(value)["comparability_checks"]
+            checks[0], checks[1] = checks[1], checks[0]
+
+        self._assert_tamper_rejected(reorder, "comparability checks are not canonical")
+
+    def test_tamper_wrong_relabel_with_matching_reason_fails(self):
+        self._manual_review_comparison()
+
+        def relabel(value):
+            task = self._task(value)
+            check = next(
+                item
+                for item in task["comparability_checks"]
+                if item["field"] == "build_profile"
+            )
+            check["reason_code"] = "configuration-differs"
+            task["comparability_reasons"] = [
+                {"code": "configuration-differs", "field": "build_profile"}
+            ]
+
+        self._assert_tamper_rejected(relabel, "reason code is not canonical")
+
     def test_tamper_comparability_reason_fails(self):
         self._manual_review_comparison()
         self._assert_tamper_rejected(lambda value: self._task(value)["comparability_reasons"][0].update(field="wrong"))
@@ -669,6 +878,71 @@ class ComparisonTests(unittest.TestCase):
             ),
             1,
         )
+
+    def test_compare_main_malformed_baseline_returns_nonzero(self):
+        (self.baseline / "manifest.json").write_text("{}\n", encoding="utf-8")
+        result = main(
+            [
+                "compare",
+                "--baseline",
+                str(self.baseline),
+                "--candidate",
+                str(self.candidate),
+                "--output",
+                str(self.output),
+            ]
+        )
+        self.assertNotEqual(result, 0)
+        self.assertFalse(self.output.exists())
+
+    def test_compare_main_malformed_candidate_returns_nonzero(self):
+        (self.candidate / "manifest.json").write_text("{}\n", encoding="utf-8")
+        result = main(
+            [
+                "compare",
+                "--baseline",
+                str(self.baseline),
+                "--candidate",
+                str(self.candidate),
+                "--output",
+                str(self.output),
+            ]
+        )
+        self.assertNotEqual(result, 0)
+        self.assertFalse(self.output.exists())
+
+    def test_render_comparison_main_malformed_json_returns_nonzero(self):
+        self.output.write_text("{\n", encoding="utf-8")
+        self.assertNotEqual(
+            main(["render-comparison", "--input", str(self.output)]),
+            0,
+        )
+
+    def test_render_comparison_main_semantic_inconsistency_returns_nonzero(self):
+        self._compare()
+        value = load_json(self.output)
+        value["tasks"][0]["metrics"][0]["absolute_delta"] = 7
+        write_json(self.output, value)
+        self.assertNotEqual(
+            main(["render-comparison", "--input", str(self.output)]),
+            0,
+        )
+
+    def test_malformed_compare_main_does_not_create_accepted_output(self):
+        (self.candidate / "manifest.json").write_text("{}\n", encoding="utf-8")
+        result = main(
+            [
+                "compare",
+                "--baseline",
+                str(self.baseline),
+                "--candidate",
+                str(self.candidate),
+                "--output",
+                str(self.output),
+            ]
+        )
+        self.assertNotEqual(result, 0)
+        self.assertFalse(self.output.exists())
 
     def test_renderer_uses_only_comparison_document(self):
         result = self._compare()
