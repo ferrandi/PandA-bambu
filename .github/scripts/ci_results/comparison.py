@@ -22,6 +22,9 @@ from .serialization import (
 COMPARISON_SCHEMA = "panda.ci.comparison"
 COMPARISON_SCHEMA_VERSION = "1.0"
 COMPARISON_SCHEMA_FILE = "comparison.schema.json"
+REQUIRED_PROFILE_TOOLS = frozenset(
+    {"ccache", "clang", "clangxx", "cmake", "gcc", "gxx", "llvm", "verilator"}
+)
 
 METRIC_SOURCES = (
     ("simulation.total-cycles", None, "cycles"),
@@ -123,13 +126,27 @@ def _build_profile(documents: dict[str, dict[str, Any]]) -> dict[str, Any] | Non
     def complete(value: Any) -> bool:
         if value is None:
             return False
+        if isinstance(value, str):
+            return bool(value.strip())
         if isinstance(value, dict):
             return bool(value) and all(complete(item) for item in value.values())
         if isinstance(value, list):
             return bool(value) and all(complete(item) for item in value)
         return True
 
-    return profile if complete(profile) else None
+    tools = profile.get("tool_versions")
+    tool_ids = (
+        {item.get("tool_id") for item in tools if isinstance(item, dict)}
+        if isinstance(tools, list)
+        else set()
+    )
+    return (
+        profile
+        if complete(profile)
+        and len(tools) == len(REQUIRED_PROFILE_TOOLS)
+        and tool_ids == REQUIRED_PROFILE_TOOLS
+        else None
+    )
 
 
 def _regression_tasks(
@@ -200,6 +217,23 @@ def _correctness(task: dict[str, Any]) -> dict[str, Any]:
         "simulation": _stage_outcome(task, "rtl-simulation"),
         "synthesis": _stage_outcome(task, "hls-synthesis"),
         "verification": _stage_outcome(task, "result-verification"),
+    }
+
+
+def _build_record(
+    baseline_documents: dict[str, dict[str, Any]],
+    candidate_documents: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    baseline = baseline_documents["tasks/open-build.json"]["outcome"]
+    candidate = candidate_documents["tasks/open-build.json"]["outcome"]
+    return {
+        "baseline": baseline,
+        "candidate": candidate,
+        "evidence": [
+            "baseline:tasks/open-build.json#outcome",
+            "candidate:tasks/open-build.json#outcome",
+        ],
+        "transition": _transition(baseline, candidate),
     }
 
 
@@ -292,32 +326,26 @@ def _task_record(
 
 
 def _policy_reasons(
-    baseline_documents: dict[str, dict[str, Any]],
-    candidate_documents: dict[str, dict[str, Any]],
+    build: dict[str, Any],
     task_records: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     reasons: list[dict[str, Any]] = []
 
-    baseline_build = baseline_documents["tasks/open-build.json"]
-    candidate_build = candidate_documents["tasks/open-build.json"]
-    if baseline_build["outcome"] == "pass" and candidate_build["outcome"] != "pass":
+    if build["baseline"] == "pass" and build["candidate"] != "pass":
         reasons.append(
             {
                 "code": "candidate-build-regression",
                 "decision": "reject",
-                "evidence": [
-                    "baseline:tasks/open-build.json#outcome",
-                    "candidate:tasks/open-build.json#outcome",
-                ],
+                "evidence": build["evidence"],
                 "task_id": "open-build",
             }
         )
-    elif baseline_build["outcome"] != "pass":
+    elif build["baseline"] != "pass":
         reasons.append(
             {
                 "code": "baseline-build-incomplete",
                 "decision": "manual-review",
-                "evidence": ["baseline:tasks/open-build.json#outcome"],
+                "evidence": [build["evidence"][0]],
                 "task_id": "open-build",
             }
         )
@@ -354,10 +382,10 @@ def _policy_reasons(
                     "task_id": task_id,
                 }
             )
-            continue
 
         correctness = record["correctness"]
-        assert correctness is not None
+        if correctness is None:
+            continue
         baseline_overall = correctness["overall"]["baseline"]
         if baseline_overall != "pass":
             reasons.append(
@@ -394,9 +422,16 @@ def _policy_reasons(
                 }
             )
         cycles = next(
-            metric for metric in record["metrics"] if metric["metric_id"] == "simulation.total-cycles"
+            (
+                metric
+                for metric in record["metrics"]
+                if metric["metric_id"] == "simulation.total-cycles"
+            ),
+            None,
         )
-        if cycles["baseline_value"] is None or cycles["candidate_value"] is None:
+        if cycles is not None and (
+            cycles["baseline_value"] is None or cycles["candidate_value"] is None
+        ):
             reasons.append(
                 {
                     "code": "cycle-information-unavailable",
@@ -467,6 +502,7 @@ def compare_bundles(
 
     baseline_identity = _identity(baseline_documents, baseline_path)
     candidate_identity = _identity(candidate_documents, candidate_path)
+    build = _build_record(baseline_documents, candidate_documents)
     comparison_id = hashlib.sha256(
         canonical_bytes(
             {"baseline": baseline_identity, "candidate": candidate_identity}
@@ -490,12 +526,11 @@ def compare_bundles(
         )
         for task_id in sorted(set(baseline_tasks) | set(candidate_tasks))
     ]
-    reasons = _policy_reasons(
-        baseline_documents, candidate_documents, task_records
-    )
+    reasons = _policy_reasons(build, task_records)
     decision = _decision(reasons)
     document = {
         "baseline": baseline_identity,
+        "build": build,
         "candidate": candidate_identity,
         "comparison_id": comparison_id,
         "generated_at": candidate_documents["manifest.json"].get("completed_at"),
@@ -538,10 +573,21 @@ def validate_comparison(path: Path) -> dict[str, Any]:
     task_ids = [task["task_id"] for task in value["tasks"]]
     if task_ids != sorted(task_ids) or len(task_ids) != len(set(task_ids)):
         errors.append("tasks must be unique and sorted by task_id")
-    expected_summary = _summary(value["tasks"], value["policy"]["reasons"])
+    build = value["build"]
+    if build["transition"] != _transition(build["baseline"], build["candidate"]):
+        errors.append("build transition does not match build outcomes")
+    if build["evidence"] != [
+        "baseline:tasks/open-build.json#outcome",
+        "candidate:tasks/open-build.json#outcome",
+    ]:
+        errors.append("build evidence does not use canonical provenance")
+    expected_reasons = _policy_reasons(value["build"], value["tasks"])
+    if value["policy"]["reasons"] != expected_reasons:
+        errors.append("policy reasons do not match reconstructed comparison evidence")
+    expected_summary = _summary(value["tasks"], expected_reasons)
     if value["summary"] != expected_summary:
         errors.append("summary does not match task and policy records")
-    expected_decision = _decision(value["policy"]["reasons"])
+    expected_decision = _decision(expected_reasons)
     if value["policy"]["decision"] != expected_decision:
         errors.append("policy decision does not match policy reasons")
     expected_outcome = {
@@ -552,6 +598,43 @@ def validate_comparison(path: Path) -> dict[str, Any]:
     if value["overall_comparison_outcome"] != expected_outcome:
         errors.append("overall comparison outcome does not match policy decision")
     for task in value["tasks"]:
+        classification = task["classification"]
+        expected_evidence = (
+            [f"candidate:tasks/{task['task_id']}.json"]
+            if classification == "missing-in-baseline"
+            else [f"baseline:tasks/{task['task_id']}.json"]
+            if classification == "missing-in-candidate"
+            else [
+                f"baseline:tasks/{task['task_id']}.json",
+                f"candidate:tasks/{task['task_id']}.json",
+            ]
+        )
+        if task["evidence"] != expected_evidence:
+            errors.append(
+                f"task {task['task_id']!r}: evidence does not use canonical provenance"
+            )
+        if classification.startswith("missing-"):
+            if any(
+                task[field] is not None
+                for field in ("correctness", "execution", "failure")
+            ):
+                errors.append(
+                    f"task {task['task_id']!r}: missing task must not contain paired observations"
+                )
+        elif any(
+            task[field] is None for field in ("correctness", "execution", "failure")
+        ):
+            errors.append(
+                f"task {task['task_id']!r}: paired task requires complete observations"
+            )
+        if task["correctness"] is not None:
+            for field, transition in task["correctness"].items():
+                if transition["transition"] != _transition(
+                    transition["baseline"], transition["candidate"]
+                ):
+                    errors.append(
+                        f"task {task['task_id']!r}: invalid {field} transition"
+                    )
         if task["classification"] != "comparable" and task["metrics"]:
             errors.append(
                 f"task {task['task_id']!r}: non-comparable task must not contain metric deltas"

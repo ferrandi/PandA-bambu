@@ -295,6 +295,58 @@ def validate_bundle(
         raise BundleValidationError(errors)
 
     task = task_documents["open-build"]
+    effective_profile = manifest.get("effective_build_profile")
+    if isinstance(effective_profile, dict):
+        request_parameters = request.get("build_parameters", {})
+        task_configuration = task.get("configuration", {})
+        duplicate_fields = (
+            "assertions_enabled",
+            "build_type",
+            "configured_parallelism",
+            "warnings_as_errors",
+        )
+        for field in duplicate_fields:
+            value = effective_profile.get(field)
+            if value != request_parameters.get(field):
+                errors.append(
+                    f"effective build profile/request mismatch for {field}"
+                )
+            if value != task_configuration.get(field):
+                errors.append(
+                    f"effective build profile/open-build mismatch for {field}"
+                )
+        if effective_profile.get("selected_frontend") != task_configuration.get(
+            "selected_frontend"
+        ):
+            errors.append(
+                "effective build profile/open-build mismatch for selected_frontend"
+            )
+        if effective_profile.get("configured_parallelism") != manifest.get(
+            "configured_parallelism"
+        ):
+            errors.append(
+                "effective build profile/manifest mismatch for configured_parallelism"
+            )
+        container = manifest.get("container", {})
+        for profile_field, manifest_field in (
+            ("dockerfile_path", "dockerfile_path"),
+            ("dockerfile_sha256", "dockerfile_sha256"),
+        ):
+            if effective_profile.get(profile_field) != container.get(manifest_field):
+                errors.append(
+                    f"effective build profile/container mismatch for {profile_field}"
+                )
+        workflow = manifest.get("workflow", {})
+        for profile_field, manifest_field in (
+            ("workflow_file", "file"),
+            ("workflow_file_sha256", "file_sha256"),
+        ):
+            if effective_profile.get(profile_field) != workflow.get(manifest_field):
+                errors.append(
+                    f"effective build profile/workflow mismatch for {profile_field}"
+                )
+        if effective_profile.get("tool_versions") != manifest.get("tools"):
+            errors.append("effective build profile/manifest mismatch for tool_versions")
 
     artifact_list = artifact_document.get("artifacts", [])
     rule_list = verdict.get("rules", [])

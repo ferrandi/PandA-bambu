@@ -18,6 +18,8 @@ from .schema import SchemaValidationError
 from .serialization import SerializationError
 from .summary import render_bundle_summary
 
+COMPARISON_EXIT_CODES = {"accept": 0, "reject": 1, "manual-review": 2}
+
 
 def _append(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -122,7 +124,7 @@ def main(argv: list[str] | None = None) -> int:
             print(
                 f"CI result comparison: {comparison['policy']['decision']} ({args.output})"
             )
-            return 1 if comparison["policy"]["decision"] == "reject" else 0
+            return COMPARISON_EXIT_CODES[comparison["policy"]["decision"]]
         if args.command == "render-comparison":
             print(render_comparison_file(args.input), end="")
             return 0

@@ -38,6 +38,22 @@
       "required": ["synthesis", "simulation", "verification", "overall"],
       "type": "object"
     },
+    "build": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline": {"type": "string"},
+        "candidate": {"type": "string"},
+        "evidence": {
+          "items": {"minLength": 1, "type": "string"},
+          "minItems": 2,
+          "maxItems": 2,
+          "type": "array"
+        },
+        "transition": {"minLength": 1, "type": "string"}
+      },
+      "required": ["baseline", "candidate", "evidence", "transition"],
+      "type": "object"
+    },
     "metric": {
       "additionalProperties": false,
       "properties": {
@@ -103,6 +119,7 @@
   "additionalProperties": false,
   "properties": {
     "baseline": {"$ref": "#/$defs/identity"},
+    "build": {"$ref": "#/$defs/build"},
     "candidate": {"$ref": "#/$defs/identity"},
     "comparison_id": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
     "generated_at": {"$ref": "common.schema.json#/$defs/timestamp"},
@@ -131,7 +148,7 @@
     },
     "tasks": {"items": {"$ref": "#/$defs/task"}, "type": "array"}
   },
-  "required": ["schema", "schema_version", "comparison_id", "generated_at", "baseline", "candidate", "tasks", "summary", "policy", "overall_comparison_outcome"],
+  "required": ["schema", "schema_version", "comparison_id", "generated_at", "baseline", "build", "candidate", "tasks", "summary", "policy", "overall_comparison_outcome"],
   "title": "PandA CI baseline comparison",
   "type": "object"
 }

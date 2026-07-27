@@ -18,6 +18,7 @@ from ci_results.comparison import (
     render_comparison_file,
     validate_comparison,
 )
+from ci_results.__main__ import main
 from ci_results.generate import generate_bundle
 from ci_results.hashing import sha256_file
 from ci_results.regressions import REGRESSION_SPECS
@@ -211,10 +212,60 @@ class ComparisonTests(unittest.TestCase):
                 next(item for item in tools if item["tool_id"] == "clang")["version"] = "clang version 17.0.0"
         self.assert_profile_change_requires_review(change)
 
+    def test_rejects_cross_document_workflow_provenance_mismatch(self):
+        self._mutate_manifest(
+            self.candidate,
+            lambda manifest: manifest["effective_build_profile"].update(
+                workflow_file_sha256="d" * 64
+            ),
+        )
+        with self.assertRaisesRegex(
+            ComparisonInputError, "effective build profile/workflow mismatch"
+        ):
+            self._compare()
+
+    def test_rejects_cross_document_tool_provenance_mismatch(self):
+        self._mutate_manifest(
+            self.candidate,
+            lambda manifest: manifest["effective_build_profile"][
+                "tool_versions"
+            ][0].update(version="tampered tool version"),
+        )
+        with self.assertRaisesRegex(
+            ComparisonInputError, "effective build profile/manifest mismatch"
+        ):
+            self._compare()
+
+    def test_rejects_cross_document_open_build_provenance_mismatch(self):
+        self._mutate_manifest(
+            self.candidate,
+            lambda manifest: manifest["effective_build_profile"].update(
+                selected_frontend="I386_CLANG17"
+            ),
+        )
+        with self.assertRaisesRegex(
+            ComparisonInputError, "effective build profile/open-build mismatch"
+        ):
+            self._compare()
+
     def test_missing_effective_profile_requires_review(self):
         self.assert_profile_change_requires_review(
             lambda manifest: manifest.pop("effective_build_profile")
         )
+
+    def test_empty_effective_profile_value_requires_review(self):
+        self.assert_profile_change_requires_review(
+            lambda manifest: manifest["effective_build_profile"].update(
+                optimized_flags=""
+            )
+        )
+
+    def test_incomplete_effective_profile_tool_set_requires_review(self):
+        def change(manifest):
+            manifest["tools"] = manifest["tools"][:-1]
+            manifest["effective_build_profile"]["tool_versions"] = manifest["tools"]
+
+        self.assert_profile_change_requires_review(change)
 
     def test_different_workflow_run_ids_remain_comparable(self):
         self._generate(self.candidate, "b" * 40, environment_updates={"PANDA_CI_WORKFLOW_RUN_ID": "98765"})
@@ -256,6 +307,21 @@ class ComparisonTests(unittest.TestCase):
         self._generate(self.candidate, "b" * 40, {TASK_ID: "result-verification"})
         self.assertIn("candidate-verification-failure", {r["code"] for r in self._compare()["policy"]["reasons"]})
 
+    def test_correctness_rejection_takes_precedence_when_not_comparable(self):
+        self._generate(self.candidate, "b" * 40, {TASK_ID: "hls-synthesis"})
+        self._mutate_task(
+            self.candidate,
+            lambda task: task["configuration"]["invocation"]["arguments"].append(
+                "--different-configuration"
+            ),
+        )
+        result = self._compare()
+        codes = {reason["code"] for reason in result["policy"]["reasons"]}
+        self.assertEqual(self._task(result)["classification"], "not-comparable")
+        self.assertEqual(result["policy"]["decision"], "reject")
+        self.assertIn("configuration-not-comparable", codes)
+        self.assertIn("candidate-synthesis-regression", codes)
+
     def test_preexisting_baseline_failure_requires_manual_review(self):
         self._generate(self.baseline, "a" * 40, {TASK_ID: "hls-synthesis"})
         self._generate(self.candidate, "b" * 40, {TASK_ID: "hls-synthesis"})
@@ -272,15 +338,31 @@ class ComparisonTests(unittest.TestCase):
     def test_missing_candidate_policy_is_reject(self):
         task = load_json(self.baseline / f"tasks/{TASK_ID}.json")
         record = _task_record(TASK_ID, task, None, True)
-        docs = {"tasks/open-build.json": load_json(self.baseline / "tasks/open-build.json")}
-        reasons = _policy_reasons(docs, docs, [record])
+        build = {
+            "baseline": "pass",
+            "candidate": "pass",
+            "evidence": [
+                "baseline:tasks/open-build.json#outcome",
+                "candidate:tasks/open-build.json#outcome",
+            ],
+            "transition": "pass → pass",
+        }
+        reasons = _policy_reasons(build, [record])
         self.assertEqual(reasons[0]["code"], "required-regression-missing")
 
     def test_added_candidate_policy_is_manual_review(self):
         task = load_json(self.candidate / f"tasks/{TASK_ID}.json")
         record = _task_record(TASK_ID, None, task, True)
-        docs = {"tasks/open-build.json": load_json(self.baseline / "tasks/open-build.json")}
-        reasons = _policy_reasons(docs, docs, [record])
+        build = {
+            "baseline": "pass",
+            "candidate": "pass",
+            "evidence": [
+                "baseline:tasks/open-build.json#outcome",
+                "candidate:tasks/open-build.json#outcome",
+            ],
+            "transition": "pass → pass",
+        }
+        reasons = _policy_reasons(build, [record])
         self.assertEqual(reasons[0]["code"], "new-candidate-regression")
 
     def test_malformed_baseline_names_baseline(self):
@@ -306,6 +388,75 @@ class ComparisonTests(unittest.TestCase):
         write_json(self.output, value)
         with self.assertRaisesRegex(ComparisonError, "invalid absolute delta"):
             validate_comparison(self.output)
+
+    def test_standalone_validation_reconstructs_policy_and_rejects_tampering(self):
+        self._compare()
+        value = load_json(self.output)
+        value["policy"] = {
+            "decision": "manual-review",
+            "reasons": [
+                {
+                    "code": "fabricated-review",
+                    "decision": "manual-review",
+                    "evidence": ["candidate:tasks/regression-scalar.json"],
+                    "task_id": TASK_ID,
+                }
+            ],
+        }
+        value["overall_comparison_outcome"] = "manual-review"
+        value["summary"]["manual_review_items"] = 1
+        write_json(self.output, value)
+        with self.assertRaisesRegex(ComparisonError, "policy reasons do not match"):
+            validate_comparison(self.output)
+
+    def test_compare_cli_uses_distinct_nonzero_policy_exit_codes(self):
+        self.assertEqual(
+            main(
+                [
+                    "compare",
+                    "--baseline",
+                    str(self.baseline),
+                    "--candidate",
+                    str(self.candidate),
+                    "--output",
+                    str(self.output),
+                ]
+            ),
+            0,
+        )
+        self._mutate_manifest(
+            self.candidate,
+            lambda manifest: manifest.pop("effective_build_profile"),
+        )
+        self.assertEqual(
+            main(
+                [
+                    "compare",
+                    "--baseline",
+                    str(self.baseline),
+                    "--candidate",
+                    str(self.candidate),
+                    "--output",
+                    str(self.output),
+                ]
+            ),
+            2,
+        )
+        self._generate(self.candidate, "b" * 40, {TASK_ID: "hls-synthesis"})
+        self.assertEqual(
+            main(
+                [
+                    "compare",
+                    "--baseline",
+                    str(self.baseline),
+                    "--candidate",
+                    str(self.candidate),
+                    "--output",
+                    str(self.output),
+                ]
+            ),
+            1,
+        )
 
     def test_renderer_uses_only_comparison_document(self):
         result = self._compare()

@@ -9,6 +9,7 @@ on:
       - ".github/schemas/ci/**"
       - ".github/scripts/ci_results/**"
       - ".github/scripts/test_ci_results.py"
+      - ".github/scripts/test_comparison.py"
       - ".github/scripts/test_fast_regressions.py"
       - ".github/scripts/validate_ci.py"
       - ".github/scripts/test_validate_ci.py"
@@ -67,6 +68,12 @@ jobs:
         run: >-
           /tmp/ci-validator-venv/bin/python -m unittest discover
           -s .github/scripts -p "test_ci_results.py"
+
+      - name: Run comparison protocol tests
+        shell: bash
+        run: >-
+          /tmp/ci-validator-venv/bin/python -m unittest discover
+          -s .github/scripts -p "test_comparison.py"
 
       - name: Run fast-regression protocol tests
         shell: bash
