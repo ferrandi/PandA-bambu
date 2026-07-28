@@ -63,9 +63,9 @@ def _nullable_float(value: str) -> float | int | None:
 
 def _nullable_bool(value: str) -> bool | None:
     normalized = value.lower()
-    if normalized in {"true", "yes", "1"}:
+    if normalized in {"true", "yes", "1", "on"}:
         return True
-    if normalized in {"false", "no", "0"}:
+    if normalized in {"false", "no", "0", "off"}:
         return False
     return None
 
@@ -1090,6 +1090,24 @@ def _generate_bundle_contents(
         ("llvm", "LLVM_VERSION"),
         ("verilator", "VERILATOR_VERSION"),
     )
+    tools = [
+        {"tool_id": tool_id, "version": _nullable_string(_raw(env, variable))}
+        for tool_id, variable in tool_names
+    ]
+    effective_build_profile = {
+        "assertions_enabled": _nullable_bool(_raw(env, "EFFECTIVE_ASSERTIONS_ENABLED")),
+        "build_type": _nullable_string(_raw(env, "EFFECTIVE_BUILD_TYPE")),
+        "configured_parallelism": parallelism,
+        "cpu_target_profile": _nullable_string(_raw(env, "CPU_TARGET_PROFILE")),
+        "dockerfile_path": dockerfile_path,
+        "dockerfile_sha256": sha256_file(root / dockerfile_path),
+        "optimized_flags": _nullable_string(_raw(env, "EFFECTIVE_OPTIMIZED_FLAGS")),
+        "selected_frontend": _nullable_string(_raw(env, "SELECTED_FRONTEND")),
+        "tool_versions": tools,
+        "warnings_as_errors": _nullable_bool(_raw(env, "EFFECTIVE_WARNINGS_AS_ERRORS")),
+        "workflow_file": workflow_path,
+        "workflow_file_sha256": sha256_file(root / workflow_path),
+    }
     manifest = {
         "base_sha": base_sha,
         "commit_sha": commit_sha,
@@ -1103,6 +1121,7 @@ def _generate_bundle_contents(
         },
         "documents": document_references,
         "event_type": _raw(env, "EVENT_TYPE"),
+        "effective_build_profile": effective_build_profile,
         "execution_state": task["execution"]["state"]
         if task["execution"]["state"] in {"canceled", "timed_out", "infrastructure_error"}
         else "completed",
@@ -1122,10 +1141,7 @@ def _generate_bundle_contents(
         "schema_version": "1.0",
         "started_at": started_at,
         "submodules": submodule_commits(root),
-        "tools": [
-            {"tool_id": tool_id, "version": _nullable_string(_raw(env, variable))}
-            for tool_id, variable in tool_names
-        ],
+        "tools": tools,
         "workflow": {
             "file": workflow_path,
             "file_sha256": sha256_file(root / workflow_path),

@@ -97,6 +97,36 @@
       "minItems": 4,
       "type": "array"
     },
+    "effective_build_profile": {
+      "additionalProperties": false,
+      "properties": {
+        "assertions_enabled": {"type": ["boolean", "null"]},
+        "build_type": {"type": ["string", "null"]},
+        "configured_parallelism": {"minimum": 1, "type": "integer"},
+        "cpu_target_profile": {"type": ["string", "null"]},
+        "dockerfile_path": {"minLength": 1, "type": "string"},
+        "dockerfile_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+        "optimized_flags": {"type": ["string", "null"]},
+        "selected_frontend": {"type": ["string", "null"]},
+        "tool_versions": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "tool_id": {"$ref": "common.schema.json#/$defs/id"},
+              "version": {"type": ["string", "null"]}
+            },
+            "required": ["tool_id", "version"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "warnings_as_errors": {"type": ["boolean", "null"]},
+        "workflow_file": {"minLength": 1, "type": "string"},
+        "workflow_file_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+      },
+      "required": ["optimized_flags", "build_type", "selected_frontend", "assertions_enabled", "warnings_as_errors", "configured_parallelism", "cpu_target_profile", "dockerfile_path", "dockerfile_sha256", "workflow_file", "workflow_file_sha256", "tool_versions"],
+      "type": "object"
+    },
     "event_type": {
       "minLength": 1,
       "type": "string"

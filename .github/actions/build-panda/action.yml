@@ -64,6 +64,16 @@ outputs:
     description: "Bambu XML Verilator co-simulation exit status, or not-run"
   selected-frontend:
     description: "Frontend compiler selected by the PandA configuration"
+  effective-optimized-flags:
+    description: "Effective PANDA_OPTIMIZED_FLAGS value from the CMake cache"
+  effective-build-type:
+    description: "Effective CMAKE_BUILD_TYPE value from the CMake cache"
+  effective-assertions-enabled:
+    description: "Effective PANDA_ENABLE_ASSERTS value from the CMake cache"
+  effective-warnings-as-errors:
+    description: "Effective PANDA_ENABLE_WERROR value from the CMake cache"
+  cpu-target-profile:
+    description: "Canonical CPU target profile recorded from the effective flags"
   clang-version:
     description: "One-line clang version"
   clangxx-version:

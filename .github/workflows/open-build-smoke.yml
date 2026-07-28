@@ -180,6 +180,11 @@ jobs:
           PANDA_CI_DIST_DIR: ${{ steps.build.outputs.dist-dir }}
           PANDA_CI_EUCALYPTUS_EXISTS: ${{ steps.verify.outputs.eucalyptus-exists }}
           PANDA_CI_EUCALYPTUS_STARTS: ${{ steps.verify.outputs.eucalyptus-starts }}
+          PANDA_CI_EFFECTIVE_ASSERTIONS_ENABLED: ${{ steps.build.outputs.effective-assertions-enabled }}
+          PANDA_CI_EFFECTIVE_BUILD_TYPE: ${{ steps.build.outputs.effective-build-type }}
+          PANDA_CI_EFFECTIVE_OPTIMIZED_FLAGS: ${{ steps.build.outputs.effective-optimized-flags }}
+          PANDA_CI_EFFECTIVE_WARNINGS_AS_ERRORS: ${{ steps.build.outputs.effective-warnings-as-errors }}
+          PANDA_CI_CPU_TARGET_PROFILE: ${{ steps.build.outputs.cpu-target-profile }}
           PANDA_CI_EVENT_TYPE: ${{ github.event_name }}
           PANDA_CI_FAILURE_STAGE: ${{ steps.build.outputs.failure-stage }}
           PANDA_CI_FRONTEND_RESOLUTION_EXIT_STATUS: ${{ steps.build.outputs.frontend-resolution-exit-status }}

@@ -1,0 +1,190 @@
+{
+  "$id": "https://panda-re.github.io/schemas/ci/v1/comparison.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "identity": {
+      "additionalProperties": false,
+      "properties": {
+        "bundle_id": {"$ref": "common.schema.json#/$defs/id"},
+        "commit_sha": {"$ref": "common.schema.json#/$defs/sha"},
+        "manifest_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+        "protocol_version": {"const": "1.1", "type": "string"},
+        "request_id": {"$ref": "common.schema.json#/$defs/id"},
+        "run_attempt": {"minimum": 1, "type": "integer"},
+        "workflow_run_id": {"minimum": 1, "type": "integer"}
+      },
+      "required": ["bundle_id", "commit_sha", "manifest_sha256", "protocol_version", "request_id", "workflow_run_id", "run_attempt"],
+      "type": "object"
+    },
+    "nullable_number": {"type": ["number", "null"]},
+    "json_value": {
+      "anyOf": [
+        {"type": "array"},
+        {"type": "boolean"},
+        {"type": "null"},
+        {"type": "number"},
+        {"type": "object"},
+        {"type": "string"}
+      ]
+    },
+    "transition": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline": {"type": ["string", "null"]},
+        "candidate": {"type": ["string", "null"]},
+        "transition": {"minLength": 1, "type": "string"}
+      },
+      "required": ["baseline", "candidate", "transition"],
+      "type": "object"
+    },
+    "correctness": {
+      "additionalProperties": false,
+      "properties": {
+        "overall": {"$ref": "#/$defs/transition"},
+        "simulation": {"$ref": "#/$defs/transition"},
+        "synthesis": {"$ref": "#/$defs/transition"},
+        "verification": {"$ref": "#/$defs/transition"}
+      },
+      "required": ["synthesis", "simulation", "verification", "overall"],
+      "type": "object"
+    },
+    "build": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline": {"type": "string"},
+        "candidate": {"type": "string"},
+        "evidence": {
+          "items": {"minLength": 1, "type": "string"},
+          "minItems": 2,
+          "maxItems": 2,
+          "type": "array"
+        },
+        "transition": {"minLength": 1, "type": "string"}
+      },
+      "required": ["baseline", "candidate", "evidence", "transition"],
+      "type": "object"
+    },
+    "metric": {
+      "additionalProperties": false,
+      "properties": {
+        "absolute_delta": {"$ref": "#/$defs/nullable_number"},
+        "baseline_value": {"$ref": "#/$defs/nullable_number"},
+        "candidate_value": {"$ref": "#/$defs/nullable_number"},
+        "evidence": {"items": {"minLength": 1, "type": "string"}, "minItems": 2, "type": "array"},
+        "metric_id": {"$ref": "common.schema.json#/$defs/id"},
+        "percentage_delta": {"$ref": "#/$defs/nullable_number"},
+        "unit": {"enum": ["cycles", "seconds"], "type": "string"}
+      },
+      "required": ["absolute_delta", "baseline_value", "candidate_value", "evidence", "metric_id", "percentage_delta", "unit"],
+      "type": "object"
+    },
+    "task": {
+      "additionalProperties": false,
+      "properties": {
+        "classification": {"enum": ["comparable", "not-comparable", "missing-in-baseline", "missing-in-candidate"], "type": "string"},
+        "comparability_checks": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "baseline": {"$ref": "#/$defs/json_value"},
+              "candidate": {"$ref": "#/$defs/json_value"},
+              "field": {"minLength": 1, "type": "string"},
+              "reason_code": {"enum": ["build-profile-differs", "configuration-differs", "task-id-differs", "task-type-differs"], "type": "string"}
+            },
+            "required": ["baseline", "candidate", "field", "reason_code"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "comparability_reasons": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "code": {"enum": ["build-profile-differs", "configuration-differs", "required-task-missing", "task-added-in-candidate", "task-id-differs", "task-type-differs"], "type": "string"},
+              "field": {"minLength": 1, "type": "string"}
+            },
+            "required": ["code", "field"], "type": "object"
+          },
+          "type": "array"
+        },
+        "correctness": {"anyOf": [{"$ref": "#/$defs/correctness"}, {"type": "null"}]},
+        "evidence": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array"},
+        "execution": {"anyOf": [{"$ref": "#/$defs/transition"}, {"type": "null"}]},
+        "failure": {
+          "anyOf": [{
+            "additionalProperties": false,
+            "properties": {
+              "baseline_category": {"type": ["string", "null"]},
+              "candidate_category": {"type": ["string", "null"]},
+              "fixed_failure": {"type": "boolean"},
+              "introduced_failure": {"type": "boolean"},
+              "transition": {"minLength": 1, "type": "string"}
+            },
+            "required": ["baseline_category", "candidate_category", "fixed_failure", "introduced_failure", "transition"],
+            "type": "object"
+          }, {"type": "null"}]
+        },
+        "metrics": {"items": {"$ref": "#/$defs/metric"}, "type": "array"},
+        "presence": {
+          "additionalProperties": false,
+          "properties": {
+            "baseline": {"type": "boolean"},
+            "candidate": {"type": "boolean"}
+          },
+          "required": ["baseline", "candidate"],
+          "type": "object"
+        },
+        "task_id": {"$ref": "common.schema.json#/$defs/id"},
+        "task_type": {"const": "regression", "type": "string"}
+      },
+      "required": ["classification", "comparability_checks", "comparability_reasons", "correctness", "evidence", "execution", "failure", "metrics", "presence", "task_id", "task_type"],
+      "type": "object"
+    },
+    "policy_reason": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {"$ref": "common.schema.json#/$defs/id"},
+        "decision": {"enum": ["manual-review", "reject"], "type": "string"},
+        "evidence": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array"},
+        "task_id": {"$ref": "common.schema.json#/$defs/id"}
+      },
+      "required": ["code", "decision", "evidence", "task_id"],
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "baseline": {"$ref": "#/$defs/identity"},
+    "build": {"$ref": "#/$defs/build"},
+    "candidate": {"$ref": "#/$defs/identity"},
+    "comparison_id": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "generated_at": {"$ref": "common.schema.json#/$defs/timestamp"},
+    "overall_comparison_outcome": {"enum": ["pass", "manual-review", "regression"], "type": "string"},
+    "policy": {
+      "additionalProperties": false,
+      "properties": {
+        "decision": {"enum": ["accept", "manual-review", "reject"], "type": "string"},
+        "reasons": {"items": {"$ref": "#/$defs/policy_reason"}, "type": "array"}
+      },
+      "required": ["decision", "reasons"], "type": "object"
+    },
+    "schema": {"const": "panda.ci.comparison", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "summary": {
+      "additionalProperties": false,
+      "properties": {
+        "comparable_tasks": {"minimum": 0, "type": "integer"},
+        "correctness_improvements": {"minimum": 0, "type": "integer"},
+        "correctness_regressions": {"minimum": 0, "type": "integer"},
+        "manual_review_items": {"minimum": 0, "type": "integer"},
+        "missing_candidate_tasks": {"minimum": 0, "type": "integer"}
+      },
+      "required": ["comparable_tasks", "correctness_improvements", "correctness_regressions", "manual_review_items", "missing_candidate_tasks"],
+      "type": "object"
+    },
+    "tasks": {"items": {"$ref": "#/$defs/task"}, "type": "array"}
+  },
+  "required": ["schema", "schema_version", "comparison_id", "generated_at", "baseline", "build", "candidate", "tasks", "summary", "policy", "overall_comparison_outcome"],
+  "title": "PandA CI baseline comparison",
+  "type": "object"
+}
