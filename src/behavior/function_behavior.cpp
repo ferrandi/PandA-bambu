@@ -130,6 +130,9 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       dereference_unknown_address(false),
       unaligned_accesses(false),
       bb_version(1),
+      bb_reachability_cache_version(1),
+      bb_reachability_cache(),
+      bb_feedback_reachability_cache(),
       bitvalue_version(1),
       has_globals(false),
       has_undefined_function_receiveing_pointers(false),
@@ -557,19 +560,47 @@ CustomOrderedSet<unsigned int> FunctionBehavior::get_local_variables(const appli
 bool FunctionBehavior::CheckBBReachability(BBGraph::vertex_descriptor first_basic_block,
                                            BBGraph::vertex_descriptor second_basic_block) const
 {
+   if(bb_reachability_cache_version != bb_version)
+   {
+      bb_reachability_cache_version = bb_version;
+      bb_reachability_cache.clear();
+      bb_feedback_reachability_cache.clear();
+   }
    if(first_basic_block == second_basic_block)
    {
       return false;
    }
+   const auto key = std::make_pair(first_basic_block, second_basic_block);
+   const auto cached = bb_reachability_cache.find(key);
+   if(cached != bb_reachability_cache.end())
+   {
+      return cached->second;
+   }
    const auto fcfg = GetBBGraph(FunctionBehavior::BB);
-   return reachability::HasPath(fcfg, first_basic_block, second_basic_block);
+   const bool result = reachability::HasPath(fcfg, first_basic_block, second_basic_block);
+   bb_reachability_cache.emplace(key, result);
+   return result;
 }
 
 bool FunctionBehavior::CheckBBFeedbackReachability(BBGraph::vertex_descriptor first_basic_block,
                                                    BBGraph::vertex_descriptor second_basic_block) const
 {
+   if(bb_reachability_cache_version != bb_version)
+   {
+      bb_reachability_cache_version = bb_version;
+      bb_reachability_cache.clear();
+      bb_feedback_reachability_cache.clear();
+   }
+   const auto key = std::make_pair(first_basic_block, second_basic_block);
+   const auto cached = bb_feedback_reachability_cache.find(key);
+   if(cached != bb_feedback_reachability_cache.end())
+   {
+      return cached->second;
+   }
    const auto fcfg = GetBBGraph(FunctionBehavior::FBB);
-   return reachability::HasPath(fcfg, first_basic_block, second_basic_block);
+   const bool result = reachability::HasPath(fcfg, first_basic_block, second_basic_block);
+   bb_feedback_reachability_cache.emplace(key, result);
+   return result;
 }
 
 bool FunctionBehavior::CheckReachability(OpGraph::vertex_descriptor first_operation,
@@ -618,6 +649,9 @@ unsigned int FunctionBehavior::GetBBVersion() const
 unsigned int FunctionBehavior::UpdateBBVersion()
 {
    bb_version++;
+   bb_reachability_cache_version = bb_version;
+   bb_reachability_cache.clear();
+   bb_feedback_reachability_cache.clear();
    return bb_version;
 }
 

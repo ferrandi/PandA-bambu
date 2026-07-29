@@ -188,6 +188,17 @@ class FunctionBehavior
    /// The version of basic block intermediate representation
    unsigned int bb_version;
 
+   /// Version of the cached BB reachability information
+   mutable unsigned int bb_reachability_cache_version;
+
+   /// Cache for forward basic block reachability queries
+   mutable CustomUnorderedMapUnstable<std::pair<BBGraph::vertex_descriptor, BBGraph::vertex_descriptor>, bool>
+       bb_reachability_cache;
+
+   /// Cache for feedback basic block reachability queries
+   mutable CustomUnorderedMapUnstable<std::pair<BBGraph::vertex_descriptor, BBGraph::vertex_descriptor>, bool>
+       bb_feedback_reachability_cache;
+
    /// Version of the bitvalue information
    unsigned int bitvalue_version;
 

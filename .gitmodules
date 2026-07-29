@@ -21,8 +21,8 @@
 	path = examples/OpenMP/GAPBS/gapbs
 	url = https://github.com/ferrandi/gapbs.git
 	branch = dev/panda-hls
-[submodule "examples/cpp_examples/fir_filter/gcem"]
-	path = examples/cpp_examples/fir_filter/gcem
+[submodule "ext/gcem"]
+	path = ext/gcem
 	url = https://github.com/kthohr/gcem.git
 [submodule "ext/glaze"]
 	path = ext/glaze

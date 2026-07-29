@@ -866,8 +866,8 @@ DesignFlowStep_Status DCE::InternalExec()
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "");
          do_reachability = false;
-         CustomOrderedSet<unsigned> bb_to_remove;
-         CustomOrderedSet<unsigned> BB_reached;
+         OrderedSetStd<unsigned> bb_to_remove;
+         OrderedSetStd<unsigned> BB_reached;
          BB_reached.insert(bloc::ENTRY_BLOCK_ID);
          std::queue<unsigned> to_be_processed;
          to_be_processed.push(bloc::ENTRY_BLOCK_ID);
