@@ -26,7 +26,7 @@ extern "C"
 {
 #endif
 
-   void __bambu_csroa_partition__(void*, int, int, int);
+   void __bambu_csroa_partition__(const void*, int, int, int);
 
 #ifdef __cplusplus
 }

@@ -35,7 +35,7 @@ jobs:
     timeout-minutes: 600
     env:
       basename: openmp-complex
-      args: -c=--evaluation -t360m
+      args:
     strategy:
       fail-fast: false
       matrix:

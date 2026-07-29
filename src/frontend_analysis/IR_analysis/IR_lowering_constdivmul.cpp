@@ -3823,7 +3823,7 @@ void IR_lowering::lowerUnsignedTruncDivModByConstant(const std::pair<unsigned in
       div_costs_ready = true;
    }
    auto estimate_btcd_costs = [&](unsigned long long divisor, unsigned data_bits, unsigned k, unsigned r) -> BtcdCosts {
-      const auto lut_cost_model = select_current_lut_cost_model(2U * r, max_lut_size);
+      const auto lut_cost_model = select_current_lut_cost_model(std::max(k, 2U * r), max_lut_size);
       auto costs = estimateBtcdCosts(*this, AppM, divisor, data_bits, k, r, max_lut_size,
                                      div_costs_ready ? div_costs.add_delay : 1.0,
                                      div_costs_ready ? div_costs.add_area : 1.0, lut_cost_model);
@@ -4881,7 +4881,7 @@ void IR_lowering::lowerSignedTruncDivModByConstant(const std::pair<unsigned int,
 
    ConstDivOpCosts div_costs = estimateConstDivCosts(*this, AppM, static_cast<unsigned>(dataBitsize), remFlag);
    auto estimate_btcd_costs = [&](unsigned long long divisor, unsigned data_bits, unsigned k, unsigned r) -> BtcdCosts {
-      const auto lut_cost_model = select_current_lut_cost_model(2U * r, max_lut_size);
+      const auto lut_cost_model = select_current_lut_cost_model(std::max(k, 2U * r), max_lut_size);
       auto costs = estimateBtcdCosts(*this, AppM, divisor, data_bits, k, r, max_lut_size, div_costs.add_delay,
                                      div_costs.add_area, lut_cost_model);
       if(auto_lut_cost_model && lut_cost_model == "analytic" && !costs.valid)

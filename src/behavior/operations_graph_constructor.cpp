@@ -78,6 +78,31 @@ OpGraph::edge_descriptor operations_graph_constructor::AddEdge(OpGraph::vertex_d
    return og.AddEdge(source, dest, selector);
 }
 
+void operations_graph_constructor::InitializeEdgeIndex(EdgeIndex& edge_index) const
+{
+   edge_index.clear();
+   for(const auto& edge : boost::make_iterator_range(boost::edges(og)))
+   {
+      edge_index.emplace(std::make_pair(boost::source(edge, og), boost::target(edge, og)), edge);
+   }
+}
+
+OpGraph::edge_descriptor operations_graph_constructor::AddEdge(OpGraph::vertex_descriptor source,
+                                                               OpGraph::vertex_descriptor dest, int selector,
+                                                               EdgeIndex& edge_index)
+{
+   const auto key = std::make_pair(source, dest);
+   const auto cached = edge_index.find(key);
+   if(cached != edge_index.end())
+   {
+      return og.AddSelector(cached->second, selector);
+   }
+   const auto [edge, inserted] = boost::add_edge(source, dest, EdgeProperty<OpEdgeInfo>(selector), og);
+   THROW_ASSERT(inserted, "Trying to insert an already existing edge");
+   edge_index.emplace(key, edge);
+   return edge;
+}
+
 void operations_graph_constructor::RemoveEdge(OpGraph::vertex_descriptor source, OpGraph::vertex_descriptor dest,
                                               int selector)
 {
@@ -100,7 +125,13 @@ void operations_graph_constructor::add_edge_info(OpGraph::vertex_descriptor src,
    const auto [e, inserted] = boost::edge(src, tgt, og);
    THROW_ASSERT(inserted, "Edge from " + og.CGetNodeInfo(src).vertex_name + " to " + og.CGetNodeInfo(tgt).vertex_name +
                               " doesn't exists");
-   og.GetEdgeInfo(e).add_nodeID(NodeID, selector);
+   add_edge_info(e, selector, NodeID);
+}
+
+void operations_graph_constructor::add_edge_info(const OpGraph::edge_descriptor& edge, const int selector,
+                                                 unsigned int NodeID)
+{
+   og.GetEdgeInfo(edge).add_nodeID(NodeID, selector);
 }
 
 void operations_graph_constructor::AddOperation(const ir_managerRef TM, const std::string& src,

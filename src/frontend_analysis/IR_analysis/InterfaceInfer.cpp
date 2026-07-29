@@ -1223,6 +1223,7 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
                                                   interface_info& info)
 {
    const auto TM = AppM->get_ir_manager();
+   const auto ir_man = ir_manipulationRef(new ir_manipulation(TM, parameters, AppM));
    enum call_type
    {
       ct_forward,
@@ -1303,22 +1304,32 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
             }
             else if(called_fname.find("_write_bambu_internal") != std::string::npos)
             {
-               if(call_fd->list_of_args.size() == 2)
+               if(call_fd->list_of_args.size() >= 2)
                {
                   auto ret_type = call_fd->type;
                   if(ret_type->get_kind() == void_ty_node_K)
                   {
                      THROW_ERROR("unexpected condition");
                   }
-                  if(ir_helper::IsPointerType(call_fd->list_of_args.at(1)))
+                  const auto payload_index = call_fd->list_of_args.size() - 1;
+                  if(call_fd->list_of_args.size() > 2)
                   {
-                     auto second_arg = call_args.at(1);
+                     unsigned long long payload_bits = 0;
+                     for(size_t payload_idx = 1; payload_idx < call_fd->list_of_args.size(); ++payload_idx)
+                     {
+                        payload_bits += ir_helper::Size(call_fd->list_of_args.at(payload_idx));
+                     }
+                     ssa_var = ir_man->GetCustomIntegerType(payload_bits, false);
+                  }
+                  else if(ir_helper::IsPointerType(call_fd->list_of_args.at(payload_index)))
+                  {
+                     auto second_arg = call_args.at(payload_index);
                      ssa_var = ir_helper::GetBaseVariable(second_arg);
                      THROW_ASSERT(ssa_var != second_arg, "unexpected condition");
                   }
                   else
                   {
-                     ssa_var = call_fd->list_of_args.at(1);
+                     ssa_var = call_fd->list_of_args.at(payload_index);
                   }
                }
                else
@@ -1644,7 +1655,7 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
 
       const auto data_size = ir_helper::Size(interface_datatype);
       const auto sel_type = ir_man->GetBooleanType();
-      const auto ret_type = ir_man->GetCustomIntegerType(data_size + 1, true);
+      const auto ret_type = ir_man->GetCustomIntegerType(data_size + (valid_var ? 1 : 0), true);
       const auto out_ptr_type = ir_man->GetPointerType(interface_datatype);
       const auto interface_fname = ENCODE_FDNAME(
           arg_name, valid_var ? (is_peek_call ? "_PeekAsync" : "_ReadAsync") : (is_peek_call ? "_Peek" : "_Read"),
@@ -1805,101 +1816,164 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
       }
       else
       {
-         auto ga_mask = ir_man->CreateNopExpr(retval, interface_datatype, nullptr, nullptr, fd->index);
-         curr_bb->PushBefore(ga_mask, stmt, AppM);
-         // Mask and cast read data
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  MASK: " + ga_mask->ToString());
-         auto data_mask = GetPointerS<const assign_stmt>(ga_mask)->op0;
-         if(ir_helper::IsRealType(data_type))
+         if(ret_call && !valid_var && ir_helper::IsStructType(data_type))
          {
-            const auto bitcast_expr =
-                ir_man->create_unary_operation(data_type, data_mask, BUILTIN_LOCINFO, bitcast_node_K);
-            ga_mask = ir_man->CreateAssignStmt(data_type, nullptr, nullptr, bitcast_expr, fd->index, BUILTIN_LOCINFO);
-            curr_bb->PushBefore(ga_mask, stmt, AppM);
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- BITCAST: " + ga_mask->ToString());
-            data_mask = GetPointerS<const assign_stmt>(ga_mask)->op0;
-         }
-
-         ir_nodeRef last_stmt;
-         if(ret_call)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Do the optimization");
-            TM->ReplaceIRNode(ga_mask, data_mask, stmt_op0);
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---   FIX: " + ga_mask->ToString());
-            last_stmt = ga_mask;
+            THROW_ASSERT(ir_helper::Size(data_type) == data_size, "Aggregate payload size mismatch");
+            const auto aggregate_ssa = GetPointerS<const ssa_node>(stmt_op0);
+            const auto aggregate_uses = aggregate_ssa->CGetUseStmts();
+            std::map<size_t, unsigned long long> field_sizes;
+            for(const auto& use_stmt_count : aggregate_uses)
+            {
+               const auto use_ga = GetPointerS<const assign_stmt>(use_stmt_count.first);
+               THROW_ASSERT(use_ga->op1->get_kind() == extractvalue_node_K,
+                            "Aggregate channel read must be consumed through extractvalue operations: " +
+                                use_stmt_count.first->ToString());
+               const auto extract_value = GetPointerS<const extractvalue_node>(use_ga->op1);
+               THROW_ASSERT(extract_value->op0->index == stmt_op0->index, "Unexpected aggregate extraction source");
+               const auto field_index = static_cast<size_t>(ir_helper::GetConstValue(extract_value->op1));
+               const auto field_size = ir_helper::Size(use_ga->op0);
+#if HAVE_ASSERTS
+               const auto [field_it, inserted] =
+#endif
+                   field_sizes.emplace(field_index, field_size);
+               THROW_ASSERT(inserted || field_it->second == field_size, "Inconsistent aggregate extraction type");
+            }
+            for(const auto& use_stmt_count : aggregate_uses)
+            {
+               const auto use_stmt = use_stmt_count.first;
+               const auto use_ga = GetPointerS<const assign_stmt>(use_stmt);
+               const auto extract_value = GetPointerS<const extractvalue_node>(use_ga->op1);
+               const auto field_index = static_cast<size_t>(ir_helper::GetConstValue(extract_value->op1));
+               unsigned long long field_offset = 0;
+               for(const auto& [index, size] : field_sizes)
+               {
+                  if(index >= field_index)
+                  {
+                     break;
+                  }
+                  field_offset += size;
+               }
+               const auto use_bb = sl->list_of_bloc.at(GetPointerS<const node_stmt>(use_stmt)->bb_index);
+               ir_nodeRef field_value = retval;
+               if(field_offset)
+               {
+                  const auto shift_value = TM->CreateUniqueIntegerCst(field_offset, ret_type);
+                  const auto shift_expr =
+                      ir_man->create_binary_operation(ret_type, retval, shift_value, BUILTIN_LOCINFO, shr_node_K);
+                  const auto shift_stmt =
+                      ir_man->CreateAssignStmt(ret_type, nullptr, nullptr, shift_expr, fd->index, BUILTIN_LOCINFO);
+                  use_bb->PushBefore(shift_stmt, use_stmt, AppM);
+                  field_value = GetPointerS<const assign_stmt>(shift_stmt)->op0;
+               }
+               const auto field_type = ir_helper::CGetType(use_ga->op0);
+               const auto truncate_expr =
+                   ir_man->create_unary_operation(field_type, field_value, BUILTIN_LOCINFO, nop_node_K);
+               const auto replacement =
+                   ir_man->create_assign_stmt(use_ga->op0, truncate_expr, fd->index, BUILTIN_LOCINFO);
+               use_bb->Replace(use_stmt, replacement, true, AppM);
+            }
+            curr_bb->RemoveStmt(stmt, AppM);
          }
          else
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Not optimized");
-            const auto data_ptr_type = ir_helper::CGetType(data_ptr);
-            const auto data_ref =
-                ir_man->create_unary_operation(interface_datatype, data_ptr, BUILTIN_LOCINFO, mem_access_node_K);
-            const auto ga_store = ir_man->create_assign_stmt(data_ref, data_mask, fd->index, BUILTIN_LOCINFO);
-            if(valid_var)
+            auto ga_mask = ir_man->CreateNopExpr(retval, interface_datatype, nullptr, nullptr, fd->index);
+            curr_bb->PushBefore(ga_mask, stmt, AppM);
+            // Mask and cast read data
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  MASK: " + ga_mask->ToString());
+            auto data_mask = GetPointerS<const assign_stmt>(ga_mask)->op0;
+            if(ir_helper::IsRealType(data_type))
             {
-               const auto vdef = ir_man->create_ssa_name(ir_nodeRef(), ir_man->GetPointerType(ir_man->GetVoidType()),
-                                                         ir_nodeRef(), ir_nodeRef(), true);
-               GetPointerS<assign_stmt>(ga_store)->SetVdef(vdef);
-               for(const auto& vuse : GetPointerS<assign_stmt>(stmt)->vuses)
-               {
-                  if(GetPointerS<node_stmt>(ga_store)->AddVuse(vuse))
-                  {
-                     GetPointerS<ssa_node>(vuse)->AddUseStmt(ga_store);
-                  }
-               }
-               THROW_ASSERT(gn->vdef, "Expected virtual ssa definition on store operation: " + gn->ToString());
-               THROW_ASSERT(gn->vdef->get_kind() == ssa_node_K, "unexpected condition");
-               auto vdef_ssa = GetPointerS<ssa_node>(gn->vdef);
-               for(const auto& usingStmt : vdef_ssa->CGetUseStmts())
-               {
-                  if(GetPointerS<node_stmt>(usingStmt.first)->AddVuse(vdef))
-                  {
-                     GetPointerS<ssa_node>(vdef)->AddUseStmt(usingStmt.first);
-                  }
-               }
-               curr_bb->PushBefore(ga_store, stmt, AppM);
+               const auto bitcast_expr =
+                   ir_man->create_unary_operation(data_type, data_mask, BUILTIN_LOCINFO, bitcast_node_K);
+               ga_mask =
+                   ir_man->CreateAssignStmt(data_type, nullptr, nullptr, bitcast_expr, fd->index, BUILTIN_LOCINFO);
+               curr_bb->PushBefore(ga_mask, stmt, AppM);
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- BITCAST: " + ga_mask->ToString());
+               data_mask = GetPointerS<const assign_stmt>(ga_mask)->op0;
+            }
+
+            ir_nodeRef last_stmt;
+            if(ret_call)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Do the optimization");
+               TM->ReplaceIRNode(ga_mask, data_mask, stmt_op0);
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---   FIX: " + ga_mask->ToString());
+               last_stmt = ga_mask;
             }
             else
             {
-               curr_bb->Replace(stmt, ga_store, true, AppM);
-            }
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- STORE: " + ga_store->ToString());
-            last_stmt = ga_store;
-         }
-
-         if(valid_var)
-         {
-            // Mask and cast valid bit
-            const auto be_vshift = ir_man->create_binary_operation(
-                ret_type, retval, TM->CreateUniqueIntegerCst(data_size, ret_type), BUILTIN_LOCINFO, shr_node_K);
-            const auto ga_vshift =
-                ir_man->CreateAssignStmt(ret_type, nullptr, nullptr, be_vshift, fd->index, BUILTIN_LOCINFO);
-            curr_bb->PushBefore(ga_vshift, stmt, AppM);
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---VSHIFT: " + ga_vshift->ToString());
-            const auto v_shift = GetPointerS<const assign_stmt>(ga_vshift)->op0;
-            const auto valid_ptd_type = ir_man->GetBooleanType();
-            const auto valid_type = ir_man->GetPointerType(valid_ptd_type);
-            const auto ga_valid = ir_man->CreateNopExpr(v_shift, valid_ptd_type, nullptr, nullptr, fd->index);
-            curr_bb->PushBefore(ga_valid, stmt, AppM);
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- VALID: " + ga_valid->ToString());
-            const auto valid_ref = GetPointerS<const assign_stmt>(ga_valid)->op0;
-            const auto valid_memref =
-                ir_man->create_unary_operation(valid_ptd_type, valid_ptr, BUILTIN_LOCINFO, mem_access_node_K);
-            const auto ga_valid_store = ir_man->create_assign_stmt(valid_memref, valid_ref, fd->index, BUILTIN_LOCINFO);
-            curr_bb->Replace(stmt, ga_valid_store, true, AppM);
-            if(!ret_call)
-            {
-               auto ssaDef = GetPointerS<assign_stmt>(last_stmt)->vdef;
-               if(GetPointerS<node_stmt>(ga_valid_store)->AddVuse(ssaDef))
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Not optimized");
+               const auto data_ptr_type = ir_helper::CGetType(data_ptr);
+               const auto data_ref =
+                   ir_man->create_unary_operation(interface_datatype, data_ptr, BUILTIN_LOCINFO, mem_access_node_K);
+               const auto ga_store = ir_man->create_assign_stmt(data_ref, data_mask, fd->index, BUILTIN_LOCINFO);
+               if(valid_var)
                {
-                  GetPointerS<ssa_node>(ssaDef)->AddUseStmt(ga_valid_store);
+                  const auto vdef = ir_man->create_ssa_name(ir_nodeRef(), ir_man->GetPointerType(ir_man->GetVoidType()),
+                                                            ir_nodeRef(), ir_nodeRef(), true);
+                  GetPointerS<assign_stmt>(ga_store)->SetVdef(vdef);
+                  for(const auto& vuse : GetPointerS<assign_stmt>(stmt)->vuses)
+                  {
+                     if(GetPointerS<node_stmt>(ga_store)->AddVuse(vuse))
+                     {
+                        GetPointerS<ssa_node>(vuse)->AddUseStmt(ga_store);
+                     }
+                  }
+                  THROW_ASSERT(gn->vdef, "Expected virtual ssa definition on store operation: " + gn->ToString());
+                  THROW_ASSERT(gn->vdef->get_kind() == ssa_node_K, "unexpected condition");
+                  auto vdef_ssa = GetPointerS<ssa_node>(gn->vdef);
+                  for(const auto& usingStmt : vdef_ssa->CGetUseStmts())
+                  {
+                     if(GetPointerS<node_stmt>(usingStmt.first)->AddVuse(vdef))
+                     {
+                        GetPointerS<ssa_node>(vdef)->AddUseStmt(usingStmt.first);
+                     }
+                  }
+                  curr_bb->PushBefore(ga_store, stmt, AppM);
                }
+               else
+               {
+                  curr_bb->Replace(stmt, ga_store, true, AppM);
+               }
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- STORE: " + ga_store->ToString());
+               last_stmt = ga_store;
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- VALID STORE: " + ga_valid_store->ToString());
-         }
-         else if(ret_call)
-         {
-            curr_bb->RemoveStmt(stmt, AppM);
+
+            if(valid_var)
+            {
+               // Mask and cast valid bit
+               const auto be_vshift = ir_man->create_binary_operation(
+                   ret_type, retval, TM->CreateUniqueIntegerCst(data_size, ret_type), BUILTIN_LOCINFO, shr_node_K);
+               const auto ga_vshift =
+                   ir_man->CreateAssignStmt(ret_type, nullptr, nullptr, be_vshift, fd->index, BUILTIN_LOCINFO);
+               curr_bb->PushBefore(ga_vshift, stmt, AppM);
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---VSHIFT: " + ga_vshift->ToString());
+               const auto v_shift = GetPointerS<const assign_stmt>(ga_vshift)->op0;
+               const auto valid_ptd_type = ir_man->GetBooleanType();
+               const auto valid_type = ir_man->GetPointerType(valid_ptd_type);
+               const auto ga_valid = ir_man->CreateNopExpr(v_shift, valid_ptd_type, nullptr, nullptr, fd->index);
+               curr_bb->PushBefore(ga_valid, stmt, AppM);
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- VALID: " + ga_valid->ToString());
+               const auto valid_ref = GetPointerS<const assign_stmt>(ga_valid)->op0;
+               const auto valid_memref =
+                   ir_man->create_unary_operation(valid_ptd_type, valid_ptr, BUILTIN_LOCINFO, mem_access_node_K);
+               const auto ga_valid_store =
+                   ir_man->create_assign_stmt(valid_memref, valid_ref, fd->index, BUILTIN_LOCINFO);
+               curr_bb->Replace(stmt, ga_valid_store, true, AppM);
+               if(!ret_call)
+               {
+                  auto ssaDef = GetPointerS<assign_stmt>(last_stmt)->vdef;
+                  if(GetPointerS<node_stmt>(ga_valid_store)->AddVuse(ssaDef))
+                  {
+                     GetPointerS<ssa_node>(ssaDef)->AddUseStmt(ga_valid_store);
+                  }
+               }
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- VALID STORE: " + ga_valid_store->ToString());
+            }
+            else if(ret_call)
+            {
+               curr_bb->RemoveStmt(stmt, AppM);
+            }
          }
       }
    }
@@ -2014,8 +2088,50 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
       else
       {
          const auto gc = GetPointerS<const call_stmt>(stmt);
-         THROW_ASSERT(gc->args.size() == 2, "unexpected condition");
-         data_obj = gc->args.at(1);
+         THROW_ASSERT(gc->args.size() >= 2, "unexpected condition");
+         data_obj = gc->args.back();
+         if(gc->args.size() > 2)
+         {
+            const auto packed_type = ir_man->GetCustomIntegerType(ir_helper::Size(interface_datatype), false);
+            ir_nodeRef packed_value;
+            unsigned long long bit_offset = 0;
+            for(size_t payload_idx = 1; payload_idx < gc->args.size(); ++payload_idx)
+            {
+               const auto fragment = gc->args.at(payload_idx);
+               const auto fragment_type = ir_helper::CGetType(fragment);
+               const auto fragment_value =
+                   ir_man->create_unary_operation(packed_type, fragment, BUILTIN_LOCINFO, nop_node_K);
+               const auto fragment_ssa = ir_man->create_ssa_name(nullptr, packed_type, nullptr, nullptr);
+               curr_bb->PushBefore(ir_man->create_assign_stmt(fragment_ssa, fragment_value, fd->index, BUILTIN_LOCINFO),
+                                   stmt, AppM);
+               ir_nodeRef shifted_fragment = fragment_ssa;
+               if(bit_offset)
+               {
+                  const auto shift = TM->CreateUniqueIntegerCst(bit_offset, packed_type);
+                  const auto shift_expr =
+                      ir_man->create_binary_operation(packed_type, fragment_ssa, shift, BUILTIN_LOCINFO, shl_node_K);
+                  const auto shift_ssa = ir_man->create_ssa_name(nullptr, packed_type, nullptr, nullptr);
+                  curr_bb->PushBefore(ir_man->create_assign_stmt(shift_ssa, shift_expr, fd->index, BUILTIN_LOCINFO),
+                                      stmt, AppM);
+                  shifted_fragment = shift_ssa;
+               }
+               if(!packed_value)
+               {
+                  packed_value = shifted_fragment;
+               }
+               else
+               {
+                  const auto packed_expr = ir_man->create_binary_operation(packed_type, packed_value, shifted_fragment,
+                                                                           BUILTIN_LOCINFO, or_node_K);
+                  const auto packed_ssa = ir_man->create_ssa_name(nullptr, packed_type, nullptr, nullptr);
+                  curr_bb->PushBefore(ir_man->create_assign_stmt(packed_ssa, packed_expr, fd->index, BUILTIN_LOCINFO),
+                                      stmt, AppM);
+                  packed_value = packed_ssa;
+               }
+               bit_offset += ir_helper::Size(fragment_type);
+            }
+            data_obj = packed_value;
+         }
          if(ir_helper::IsPointerType(data_obj))
          {
             data_ptr = data_obj;

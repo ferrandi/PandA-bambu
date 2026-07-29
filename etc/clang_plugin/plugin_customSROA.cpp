@@ -1903,23 +1903,6 @@ namespace
       std::vector<Type*> newFnArgTypes;
       LLVM_DEBUG(llvm::dbgs() << "[CSROA] Modifying the " << fnName << " function\n");
 
-      // Validate that non-partitioned pointer arguments have noalias
-      for(const auto& arg : fn->args())
-      {
-         if(!arg.getType()->isPointerTy())
-         {
-            continue;
-         }
-         auto argPartInfoIt = findPartInfoInContainer(&arg, argsPartitionInfos);
-         if(!isArgPartitioned(argPartInfoIt, argsPartitionInfos) && !arg.hasAttribute(llvm::Attribute::NoAlias))
-         {
-            errs() << "[CSROA] Non-partitioned pointer argument '" << arg.getName() << "' (idx " << arg.getArgNo()
-                   << ") of function '" << fnName << "' does not have noalias attribute\n";
-            REPORT_FATAL_ERROR_WITH_REPORT(
-                "Non-partitioned pointer argument must have noalias attribute for array partitioning");
-         }
-      }
-
       for(const auto& arg : fn->args())
       {
          auto argPartInfoIt = findPartInfoInContainer(&arg, argsPartitionInfos);

@@ -34,6 +34,7 @@
 #include "refcount.hpp"
 
 #include <string>
+#include <utility>
 
 enum class VariableAccessType;
 enum class VariableType;
@@ -51,6 +52,9 @@ class operations_graph_constructor
    std::map<std::string, OpGraph::vertex_descriptor> index_map;
 
  public:
+   using EdgeIndex = CustomUnorderedMapUnstable<std::pair<OpGraph::vertex_descriptor, OpGraph::vertex_descriptor>,
+                                                OpGraph::edge_descriptor>;
+
    /**
     * Return the vertex index given the id of the vertex node.
     * @param source is the name of the vertex.
@@ -72,6 +76,22 @@ class operations_graph_constructor
     * @param selector is the type of the edge
     */
    OpGraph::edge_descriptor AddEdge(OpGraph::vertex_descriptor source, OpGraph::vertex_descriptor dest, int selector);
+
+   /**
+    * Build an index of the edges currently stored in the bulk graph.
+    * @param edge_index is the index to initialize.
+    */
+   void InitializeEdgeIndex(EdgeIndex& edge_index) const;
+
+   /**
+    * Add an edge using a caller-owned index to avoid repeated linear graph lookups.
+    * @param source is the source vertex.
+    * @param dest is the destination vertex.
+    * @param selector is the type of the edge.
+    * @param edge_index is the index used by the caller for a batch of insertions.
+    */
+   OpGraph::edge_descriptor AddEdge(OpGraph::vertex_descriptor source, OpGraph::vertex_descriptor dest, int selector,
+                                    EdgeIndex& edge_index);
 
    /**
     * remove a selector between two vertices
@@ -107,6 +127,14 @@ class operations_graph_constructor
     */
    void add_edge_info(OpGraph::vertex_descriptor src, OpGraph::vertex_descriptor tgt, const int selector,
                       unsigned int NodeID);
+
+   /**
+    * Add edge info when the edge descriptor is already available.
+    * @param edge is the edge to update.
+    * @param selector is the family of the edge.
+    * @param NodeID is the variable carried by the edge.
+    */
+   void add_edge_info(const OpGraph::edge_descriptor& edge, const int selector, unsigned int NodeID);
 
    /**
     * Add the operation associated with a vertex.

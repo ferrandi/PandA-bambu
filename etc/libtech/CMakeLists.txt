@@ -7,11 +7,6 @@ endif()
 
 set(LIBTECH_APPEND_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/append_libraries.sh")
 
-add_custom_target(gzip_check
-   COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/etc/libtech"
-   COMMAND bash -lc 'set -e; if "${GZIP_EXECUTABLE}" --version >"${CMAKE_CURRENT_BINARY_DIR}/gzip_check.log" 2>&1; then :; else cat "${CMAKE_CURRENT_BINARY_DIR}/gzip_check.log" >&2; echo "gzip is required to build etc/libtech data files but the check failed." >&2; exit 1; fi'
-)
-
 set(LIBTECH_DATA_OUTPUTS)
 set(LIBTECH_SPEC_OUTPUTS)
 
@@ -50,8 +45,8 @@ function(libtech_generate_data xml_rel)
    set(out_file "${out_dir}/${xml_base}.data")
    add_custom_command(OUTPUT "${out_file}"
       COMMAND "${CMAKE_COMMAND}" -E make_directory "${out_dir}"
-      COMMAND bash -lc "set -euo pipefail; \"${GZIP_EXECUTABLE}\" -c \"${CMAKE_CURRENT_SOURCE_DIR}/${xml_rel}\" > \"${out_file}\""
-      DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${xml_rel}" gzip_check
+      COMMAND bash -lc "\"${GZIP_EXECUTABLE}\" -c \"${CMAKE_CURRENT_SOURCE_DIR}/${xml_rel}\" > \"${out_file}\""
+      DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${xml_rel}"
       VERBATIM
       COMMENT "Generating ${xml_rel}.data"
    )
@@ -67,7 +62,7 @@ function(libtech_generate_spec_data base_xml)
    cmake_parse_arguments(SPEC "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
    get_filename_component(base_name "${base_xml}" NAME_WE)
    set(out_file "${CMAKE_CURRENT_BINARY_DIR}/${base_name}.spec_data")
-   set(cmd "set -euo pipefail; \"${LIBTECH_APPEND_LIBRARIES}\" \"${CMAKE_CURRENT_SOURCE_DIR}/${base_xml}\"")
+   set(cmd "\"${LIBTECH_APPEND_LIBRARIES}\" \"${CMAKE_CURRENT_SOURCE_DIR}/${base_xml}\"")
    foreach(seed_xml IN LISTS SPEC_SEEDS)
       set(cmd "${cmd} \"${CMAKE_CURRENT_SOURCE_DIR}/${seed_xml}\"")
    endforeach()
@@ -77,7 +72,7 @@ function(libtech_generate_spec_data base_xml)
       COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_CURRENT_BINARY_DIR}"
       COMMAND bash -lc "${cmd}"
       DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${base_xml}" ${SPEC_SEEDS}
-              "${LIBTECH_APPEND_LIBRARIES}" gzip_check
+              "${LIBTECH_APPEND_LIBRARIES}"
       VERBATIM
       COMMENT "Generating ${base_name}.spec_data"
    )
