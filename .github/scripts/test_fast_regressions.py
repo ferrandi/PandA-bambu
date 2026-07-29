@@ -28,6 +28,7 @@ from ci_results.regressions import (  # noqa: E402
     _classify_nonzero,
     _failure,
     _metrics,
+    _missing_rtl_authenticity_instances,
     _normalized_arguments,
     _stage_records,
     _task_configuration,
@@ -230,7 +231,7 @@ class FastRegressionResultTests(unittest.TestCase):
         write_json(self.bundle / "manifest.json", manifest)
 
     def test_selected_inputs_exist_and_use_established_vectors(self) -> None:
-        self.assertEqual(len(REGRESSION_SPECS), 5)
+        self.assertEqual(len(REGRESSION_SPECS), 6)
         for spec in REGRESSION_SPECS:
             self.assertTrue((REPOSITORY / spec.source_path).is_file(), spec.source_path)
             if spec.test_vector_kind == "xml":
@@ -242,6 +243,105 @@ class FastRegressionResultTests(unittest.TestCase):
             callgraph_task["configuration"]["options"]["bambu_parameters"],
             ["function-opt=0"],
         )
+        sparta_task = regression_task(REGRESSION_SPECS[5])
+        self.assertEqual(sparta_task["configuration"]["input"]["top_function"], "sparta_smoke")
+        self.assertEqual(
+            sparta_task["configuration"]["invocation"]["arguments"],
+            [
+                "examples/OpenMP/functional/src/sparta_smoke.cpp",
+                "-lm",
+                "-fopenmp",
+                "--context_switch=2",
+                "--channels-type=MEM_ACC_11",
+                "--memory-allocation-policy=GLSS",
+                "--simulate",
+                "--simulator=VERILATOR",
+                "--generate-tb=examples/OpenMP/functional/src/sparta_smoke.xml",
+                "--top-fname=sparta_smoke",
+                "--compiler=I386_CLANG16",
+                "--parallel-backend=2",
+                "--output-directory=.ci-regression-work/regression-sparta/output",
+                "--no-clean",
+            ],
+        )
+        vectors = (REPOSITORY / REGRESSION_SPECS[5].test_vector).read_text(encoding="utf-8")
+        source = (REPOSITORY / REGRESSION_SPECS[5].source_path).read_text(encoding="utf-8")
+        self.assertIn('values="{1,2,3,4,5,6,7,8}"', vectors)
+        self.assertIn("if(checksum != 100)", source)
+        self.assertIn("__builtin_trap();", source)
+
+    def test_sparta_authenticity_requires_context_switch_components(self) -> None:
+        rtl = self.root / "sparta.v"
+        rtl.write_text(
+            "kmp_bambu_cs_manager cs_manager (.clock(clock));\n"
+            "kmp_bambu_omp_start_cs omp_start_cs (.clock(clock));\n"
+            "kmp_bambu_omp_done_cs omp_done_cs (.clock(clock));\n",
+            encoding="utf-8",
+        )
+        instances = REGRESSION_SPECS[5].rtl_authenticity_instances
+        self.assertEqual(_missing_rtl_authenticity_instances([rtl], instances), ())
+        rtl.write_text(
+            "module kmp_bambu_cs_manager; endmodule\n"
+            "module kmp_bambu_omp_start_cs; endmodule\n"
+            "module kmp_bambu_omp_done_cs; endmodule\n",
+            encoding="utf-8",
+        )
+        self.assertEqual(
+            _missing_rtl_authenticity_instances([rtl], instances), instances
+        )
+
+    def test_success_without_sparta_authenticity_evidence_fails(self) -> None:
+        repository = self.root / "missing-sparta-evidence-repository"
+        spec = REGRESSION_SPECS[5]
+        source = repository / spec.source_path
+        vectors = repository / spec.test_vector
+        source.parent.mkdir(parents=True)
+        source.write_text("int sparta_smoke(int *v) { return v[0]; }\n", encoding="utf-8")
+        vectors.parent.mkdir(parents=True, exist_ok=True)
+        vectors.write_text("<function/>\n", encoding="utf-8")
+
+        output = repository / ".ci-regression-work" / spec.task_id / "output"
+        output.mkdir(parents=True)
+        (output / "ordinary.v").write_text(
+            "module ordinary_fsmd; endmodule\n", encoding="utf-8"
+        )
+        (output / "bambu_results.xml").write_text(
+            '<bambu_results><application><timing><simulation return_value="0">'
+            "<run>42</run></simulation></timing></application></bambu_results>\n",
+            encoding="utf-8",
+        )
+
+        bambu = repository / "panda_dist/bin/bambu"
+        bambu.parent.mkdir(parents=True)
+        bambu.write_text(
+            '#!/bin/sh\ndate +%s%N > "${PANDA_CI_VERILATOR_MARKER}"\n',
+            encoding="utf-8",
+        )
+        bambu.chmod(0o755)
+
+        task = run_regression(
+            repository,
+            bambu,
+            repository / ".ci-regression-results",
+            repository / ".ci-regression-evidence",
+            spec,
+            "I386_CLANG16",
+            2,
+            30,
+            "/bin/true",
+            repository / ".ci-regression-work/.tools/bin",
+        )
+
+        self.assertEqual(task["outcome"], "fail")
+        self.assertEqual(task["failure"]["code"], "rtl-generation-failed")
+        self.assertEqual(task["failure"]["stage"], "rtl-generation")
+        inventory = (
+            repository
+            / ".ci-regression-evidence"
+            / spec.task_id
+            / "rtl-files.txt"
+        ).read_text(encoding="utf-8")
+        self.assertIn("authenticity\tkmp_bambu_cs_manager\tcs_manager\tmissing", inventory)
 
     def test_verilator_timing_wrapper_preserves_tool_root_layout(self) -> None:
         tool_root = self.root / "tool-root"
@@ -377,7 +477,7 @@ class FastRegressionResultTests(unittest.TestCase):
             for path, task in documents.items()
             if path.startswith("tasks/") and task["task_type"] == "regression"
         ]
-        self.assertEqual(len(regression_paths), 5)
+        self.assertEqual(len(regression_paths), 6)
         self.assertTrue(all(documents[path]["outcome"] == "pass" for path in regression_paths))
         self.assertEqual(documents["verdict.json"]["overall_outcome"], "pass")
         self.assertEqual(
@@ -404,9 +504,9 @@ class FastRegressionResultTests(unittest.TestCase):
                 "failed_count": 0,
                 "failure_stage": None,
                 "outcome": "pass",
-                "passed_count": 5,
+                "passed_count": 6,
                 "started_at": "2023-11-14T22:14:20Z",
-                "task_count": 5,
+                "task_count": 6,
             },
         )
         summary = render_bundle_summary(self.bundle)

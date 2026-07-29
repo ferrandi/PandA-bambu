@@ -53,6 +53,7 @@ class RegressionSpec:
     language_standard: str | None = None
     bambu_parameters: tuple[str, ...] = ()
     extra_arguments: tuple[str, ...] = ()
+    rtl_authenticity_instances: tuple[tuple[str, str], ...] = ()
 
 
 REGRESSION_SPECS = (
@@ -120,6 +121,27 @@ REGRESSION_SPECS = (
         experimental_setup="BAMBU",
         bambu_parameters=("function-opt=0",),
         extra_arguments=("-lm",),
+    ),
+    RegressionSpec(
+        task_id="regression-sparta",
+        category="openmp-context-switch",
+        example_id="openmp-functional/sparta-smoke",
+        source_path="examples/OpenMP/functional/src/sparta_smoke.cpp",
+        top_function="sparta_smoke",
+        test_vector_kind="xml",
+        test_vector="examples/OpenMP/functional/src/sparta_smoke.xml",
+        extra_arguments=(
+            "-lm",
+            "-fopenmp",
+            "--context_switch=2",
+            "--channels-type=MEM_ACC_11",
+            "--memory-allocation-policy=GLSS",
+        ),
+        rtl_authenticity_instances=(
+            ("kmp_bambu_cs_manager", "cs_manager"),
+            ("kmp_bambu_omp_start_cs", "omp_start_cs"),
+            ("kmp_bambu_omp_done_cs", "omp_done_cs"),
+        ),
     ),
 )
 
@@ -408,6 +430,32 @@ def _find_outputs(output: Path) -> tuple[list[Path], Path | None, Path | None]:
     return rtl_files, reports[0] if reports else None, simulation_logs[0] if simulation_logs else None
 
 
+def _missing_rtl_authenticity_instances(
+    rtl_files: Iterable[Path], required_instances: Iterable[tuple[str, str]]
+) -> tuple[tuple[str, str], ...]:
+    """Return required context-switch module instances absent from generated RTL."""
+
+    required = tuple(required_instances)
+    pending = set(required)
+    for path in rtl_files:
+        if not pending:
+            break
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        observed = set()
+        for module, instance in pending:
+            pattern = (
+                rf"\b{re.escape(module)}\b(?:\s*#\s*\(.*?\))?"
+                rf"\s+\b{re.escape(instance)}\b\s*\("
+            )
+            if re.search(pattern, text, re.DOTALL):
+                observed.add((module, instance))
+        pending.difference_update(observed)
+    return tuple(item for item in required if item in pending)
+
+
 def _classify_nonzero(
     log_text: str,
     task_id: str,
@@ -533,12 +581,21 @@ def _write_evidence(
     report: Path | None,
     simulation_log: Path | None,
     report_message: str | None,
+    required_authenticity_instances: tuple[tuple[str, str], ...],
+    missing_authenticity_instances: tuple[tuple[str, str], ...],
 ) -> None:
     evidence.mkdir(parents=True, exist_ok=True)
     (evidence / "bambu.log").write_text(log_text, encoding="utf-8", newline="\n")
     inventory = "".join(
         f"{path.relative_to(output).as_posix()}\t{path.stat().st_size}\n" for path in rtl_files
     )
+    if required_authenticity_instances:
+        observed = set(required_authenticity_instances) - set(missing_authenticity_instances)
+        inventory += "".join(
+            f"authenticity\t{module}\t{instance}\t"
+            f"{'instantiated' if (module, instance) in observed else 'missing'}\n"
+            for module, instance in required_authenticity_instances
+        )
     (evidence / "rtl-files.txt").write_text(inventory, encoding="utf-8", newline="\n")
     if report is not None:
         shutil.copy2(report, evidence / "bambu_results.xml")
@@ -653,6 +710,9 @@ def run_regression(
     )
 
     rtl_files, report, simulation_log = _find_outputs(output)
+    missing_authenticity_instances = _missing_rtl_authenticity_instances(
+        rtl_files, spec.rtl_authenticity_instances
+    )
     verification_start_ns = time.monotonic_ns()
     verified, execution_count, total_cycles, report_message = _inspect_result_report(report)
     durations["result-verification"] = _seconds(time.monotonic_ns() - verification_start_ns)
@@ -669,7 +729,15 @@ def run_regression(
             durations["hls-synthesis"] = _seconds(process_end_ns - process_start_ns)
 
     _write_evidence(
-        evidence, log_text, output, rtl_files, report, simulation_log, report_message
+        evidence,
+        log_text,
+        output,
+        rtl_files,
+        report,
+        simulation_log,
+        report_message,
+        spec.rtl_authenticity_instances,
+        missing_authenticity_instances,
     )
 
     failure: dict[str, Any] | None = None
@@ -751,6 +819,24 @@ def run_regression(
             "rtl-generation-failed",
             "rtl-generation",
             f"{spec.task_id}: Bambu exited successfully but produced no RTL files.",
+            artifact_ids[2],
+        )
+    elif missing_authenticity_instances:
+        task_outcome = "fail"
+        task_exit_status = 1
+        failure = _failure(
+            "verification",
+            "rtl-generation-failed",
+            "rtl-generation",
+            (
+                f"{spec.task_id}: generated RTL does not prove the requested "
+                "OpenMP context-switch architecture; missing components: "
+                + ", ".join(
+                    f"{module} as {instance}"
+                    for module, instance in missing_authenticity_instances
+                )
+                + "."
+            ),
             artifact_ids[2],
         )
     elif report is None:
