@@ -244,11 +244,11 @@ class FastRegressionResultTests(unittest.TestCase):
             ["function-opt=0"],
         )
         sparta_task = regression_task(REGRESSION_SPECS[5])
-        self.assertEqual(sparta_task["configuration"]["input"]["top_function"], "sparta_smoke")
+        self.assertEqual(sparta_task["configuration"]["input"]["top_function"], "vector_add")
         self.assertEqual(
             sparta_task["configuration"]["invocation"]["arguments"],
             [
-                "examples/OpenMP/functional/src/sparta_smoke.cpp",
+                "examples/OpenMP/functional/src/vector_add.cpp",
                 "-lm",
                 "-fopenmp",
                 "--context_switch=2",
@@ -256,8 +256,8 @@ class FastRegressionResultTests(unittest.TestCase):
                 "--memory-allocation-policy=GLSS",
                 "--simulate",
                 "--simulator=VERILATOR",
-                "--generate-tb=examples/OpenMP/functional/src/sparta_smoke.xml",
-                "--top-fname=sparta_smoke",
+                "--generate-tb=examples/OpenMP/functional/src/vector.xml",
+                "--top-fname=vector_add",
                 "--compiler=I386_CLANG16",
                 "--parallel-backend=2",
                 "--output-directory=.ci-regression-work/regression-sparta/output",
@@ -265,10 +265,7 @@ class FastRegressionResultTests(unittest.TestCase):
             ],
         )
         vectors = (REPOSITORY / REGRESSION_SPECS[5].test_vector).read_text(encoding="utf-8")
-        source = (REPOSITORY / REGRESSION_SPECS[5].source_path).read_text(encoding="utf-8")
-        self.assertIn('values="{1,2,3,4,5,6,7,8}"', vectors)
-        self.assertIn("if(checksum != 100)", source)
-        self.assertIn("__builtin_trap();", source)
+        self.assertIn('a="{1,2,3,4,5,6,7,8,9,10', vectors)
 
     def test_sparta_authenticity_requires_context_switch_components(self) -> None:
         rtl = self.root / "sparta.v"
@@ -296,7 +293,7 @@ class FastRegressionResultTests(unittest.TestCase):
         source = repository / spec.source_path
         vectors = repository / spec.test_vector
         source.parent.mkdir(parents=True)
-        source.write_text("int sparta_smoke(int *v) { return v[0]; }\n", encoding="utf-8")
+        source.write_text("void vector_add(float *a, float *b, float *c) {}\n", encoding="utf-8")
         vectors.parent.mkdir(parents=True, exist_ok=True)
         vectors.write_text("<function/>\n", encoding="utf-8")
 

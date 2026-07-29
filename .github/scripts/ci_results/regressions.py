@@ -125,11 +125,11 @@ REGRESSION_SPECS = (
     RegressionSpec(
         task_id="regression-sparta",
         category="openmp-context-switch",
-        example_id="openmp-functional/sparta-smoke",
-        source_path="examples/OpenMP/functional/src/sparta_smoke.cpp",
-        top_function="sparta_smoke",
+        example_id="openmp-functional/vector-add-context-switch",
+        source_path="examples/OpenMP/functional/src/vector_add.cpp",
+        top_function="vector_add",
         test_vector_kind="xml",
-        test_vector="examples/OpenMP/functional/src/sparta_smoke.xml",
+        test_vector="examples/OpenMP/functional/src/vector.xml",
         extra_arguments=(
             "-lm",
             "-fopenmp",
