@@ -708,7 +708,7 @@ def run_regression(
         )
         if spec.task_id == "regression-graphsage":
             # Retain the actual installed-run MDPI compile and link commands.
-            environment["V"] = "1"
+            environment["PANDA_CI_RUNTIME_LINKAGE_EVIDENCE"] = "1"
         process_start_ns = time.time_ns()
         try:
             process = subprocess.Popen(
@@ -757,7 +757,7 @@ def run_regression(
     runtime_linkage_errors: list[str] = []
     if spec.task_id == "regression-graphsage" and not missing and launch_error is None:
         runtime_linkage_report, runtime_linkage_errors = inspect_runtime_linkage(
-            repository, output, log_text, compiler, spec.test_vector,
+            repository, bambu, output, log_text, compiler, spec.test_vector,
             (instance for instance in spec.rtl_authenticity_instances
              if instance not in missing_authenticity_instances),
         )

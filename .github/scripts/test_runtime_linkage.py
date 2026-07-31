@@ -20,6 +20,20 @@ class RuntimeLinkageTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory(prefix="runtime-linkage-")
         self.repository = Path(self.temporary.name)
         self.output = self.repository / "output"
+        self.bambu = self.repository / "panda_dist/bin/bambu"
+        self.bambu.parent.mkdir(parents=True)
+        self.bambu.write_text("fixture\n", encoding="utf-8")
+        bundled_openmp = (
+            self.repository / "panda_dist/share/panda/libopenmp/kmp_single_file.cpp"
+        )
+        bundled_openmp.parent.mkdir(parents=True)
+        bundled_openmp.write_text(
+            "".join(f'#include "{source}"\n' for source in (
+                "kmp_barrier.cpp", "kmp_csupport.cpp", "kmp_runtime.cpp",
+                "kmp_sched.cpp", "omp.cpp",
+            )),
+            encoding="utf-8",
+        )
         simulation = self.output / "HLS_output" / "simulation"
         behavior = self.output / "HLS_output" / "VERILATOR_beh"
         simulation.mkdir(parents=True)
@@ -62,6 +76,7 @@ class RuntimeLinkageTests(unittest.TestCase):
         ), patch("ci_results.runtime_linkage._run_tool", side_effect=tool):
             return inspect_runtime_linkage(
                 self.repository,
+                self.bambu,
                 self.output,
                 self.log,
                 "I386_CLANG16",
@@ -78,9 +93,9 @@ class RuntimeLinkageTests(unittest.TestCase):
         self.assertNotIn(str(self.repository), report)
 
     def test_missing_bundled_openmp_evidence_fails(self) -> None:
-        self.log = self.log.replace("/opt/panda/share/panda/libopenmp/kmp_single_file.cpp\n", "")
+        (self.repository / "panda_dist/share/panda/libopenmp/kmp_single_file.cpp").unlink()
         _, errors = self.inspect()
-        self.assertTrue(any("missing bundled OpenMP" in error for error in errors))
+        self.assertTrue(any("missing installed bundled OpenMP" in error for error in errors))
 
     def test_missing_mdpi_driver_or_simulator_library_fails(self) -> None:
         for name in ("libmdpi_driver.so", "libmdpi.so"):

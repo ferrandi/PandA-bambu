@@ -148,6 +148,7 @@ def _source_observations(output: Path, log_text: str) -> set[str]:
 
 def inspect_runtime_linkage(
     repository: Path,
+    bambu: Path,
     output: Path,
     log_text: str,
     selected_frontend: str,
@@ -163,8 +164,20 @@ def inspect_runtime_linkage(
             errors.append(f"required inspection tool unavailable: {tool}")
 
     observed_sources = _source_observations(output, log_text)
-    if OPENMP_SOURCE not in observed_sources:
-        errors.append(f"missing bundled OpenMP synthesis input: {OPENMP_SOURCE}")
+    bundled_openmp = bambu.resolve().parent.parent / "share/panda" / OPENMP_SOURCE
+    included_openmp_sources: set[str] = set()
+    if not bundled_openmp.is_file():
+        errors.append(f"missing installed bundled OpenMP source: {OPENMP_SOURCE}")
+    else:
+        observed_sources.add(OPENMP_SOURCE)
+        bundled_text = bundled_openmp.read_text(encoding="utf-8", errors="replace")
+        included_openmp_sources = {
+            source for source in OPENMP_INCLUDED_SOURCES
+            if f"#include \"{source}\"" in bundled_text
+        }
+        for source in OPENMP_INCLUDED_SOURCES:
+            if source not in included_openmp_sources:
+                errors.append(f"missing bundled OpenMP included source: {source}")
     for source in MDPI_SOURCES:
         expected = output.rglob(source)
         if source not in observed_sources and not next(expected, None):
@@ -206,7 +219,9 @@ def inspect_runtime_linkage(
                 errors.append(f"{relative}: {error}")
                 continue
             inspected.append(relative)
-            dependencies.extend(f"{relative}\t{name}" for name in needed)
+            dependencies.extend(
+                f"{relative}\t{_normalize(name, repository, output)}" for name in needed
+            )
             prohibited.update(bad)
             defined.update(readelf_defined)
             defined.update(nm_defined)
@@ -226,7 +241,9 @@ def inspect_runtime_linkage(
         "tool\tnm\t" + ("available" if tool_paths["nm"] else "missing"),
     ]
     lines.extend(f"openmp-source\t{source}" for source in sorted(observed_sources) if "openmp" in source)
-    lines.extend(f"openmp-included-source\t{source}" for source in OPENMP_INCLUDED_SOURCES)
+    lines.extend(
+        f"openmp-included-source\t{source}" for source in sorted(included_openmp_sources)
+    )
     lines.extend(f"mdpi-source\t{source}" for source in MDPI_SOURCES if source in observed_sources)
     lines.append(f"testbench-source\t{testbench_source}")
     lines.extend(

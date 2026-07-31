@@ -46,6 +46,16 @@ if [ -z "${TARGET}" ]; then
   fi
 fi
 
+MAKE_TARGETS=("${TARGET}")
+MAKE_VERBOSITY=0
+if [ "${PANDA_CI_RUNTIME_LINKAGE_EVIDENCE:-0}" = "1" ]; then
+  MAKE_VERBOSITY=1
+  if [ "${TARGET}" = "testbench" ]; then
+    # Retain the driver evidence without changing the selected executable.
+    MAKE_TARGETS+=(dyn_driver)
+  fi
+fi
+
 make -f "${BAMBU_HLS}/share/panda/libmdpi/Makefile.mk" \
   SIM_DIR="${SIM_DIR}" BEH_DIR="$(dirname $1)" \
   TOP_FNAME="$(bambu_results /application/testbench@symbol)" \
@@ -59,7 +69,8 @@ make -f "${BAMBU_HLS}/share/panda/libmdpi/Makefile.mk" \
   SRCS="$(bambu_results /application/sources/file)" \
   PP_SRC="" \
   TB_SRCS="$(bambu_results /application/testbench/file)" \
-  -j "$(bambu_results /application/backend@parallel)" "${TARGET}"
+  V="${MAKE_VERBOSITY}" \
+  -j "$(bambu_results /application/backend@parallel)" "${MAKE_TARGETS[@]}"
 
 
 #######################################################################
