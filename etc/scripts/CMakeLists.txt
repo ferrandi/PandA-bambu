@@ -7,6 +7,7 @@ install(PROGRAMS
    appimage_check_glibc.sh
    hawk.py
    mantis.py
+   parrot.py
    run_minimal_workflow_tests.sh
    spider.py
    "${CMAKE_SOURCE_DIR}/.devcontainer/library-scripts/compiler-download.sh"
