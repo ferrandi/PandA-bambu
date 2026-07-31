@@ -190,8 +190,11 @@ def inspect_runtime_linkage(
         if not any(path.is_file() for path in paths):
             errors.append(f"missing MDPI artifact: {name}")
 
+    command_text = log_text
+    for command_log in sorted(output.rglob("runtime-linkage-build.log")):
+        command_text += "\n" + command_log.read_text(encoding="utf-8", errors="replace")
     try:
-        commands = _command_inventory(log_text, repository, output, (testbench_source,))
+        commands = _command_inventory(command_text, repository, output, (testbench_source,))
     except ValueError as error:
         commands = []
         errors.append(str(error))

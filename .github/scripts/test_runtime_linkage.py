@@ -55,6 +55,10 @@ class RuntimeLinkageTests(unittest.TestCase):
                 f"clang++ -o {simulation}/testbench test.o",
             )
         )
+        (simulation / "runtime-linkage-build.log").write_text(
+            self.log, encoding="utf-8"
+        )
+        self.log = self.log.splitlines()[0]
 
     def tearDown(self) -> None:
         self.temporary.cleanup()

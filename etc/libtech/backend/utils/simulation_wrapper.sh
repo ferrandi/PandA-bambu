@@ -53,6 +53,7 @@ if [ "${PANDA_CI_RUNTIME_LINKAGE_EVIDENCE:-0}" = "1" ]; then
   if [ "${TARGET}" = "testbench" ]; then
     # Retain the driver evidence without changing the selected executable.
     MAKE_TARGETS+=(dyn_driver)
+    exec > >(tee "${SIM_DIR}/runtime-linkage-build.log") 2>&1
   fi
 fi
 
