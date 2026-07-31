@@ -158,7 +158,7 @@ class ComparisonTests(unittest.TestCase):
     def test_equal_real_v11_tasks_are_accepted(self):
         result = self._compare()
         self.assertEqual(result["policy"]["decision"], "accept")
-        self.assertEqual(result["summary"]["comparable_tasks"], 6)
+        self.assertEqual(result["summary"]["comparable_tasks"], 7)
 
     def test_output_has_versioned_schema_and_bundle_identities(self):
         result = self._compare()
