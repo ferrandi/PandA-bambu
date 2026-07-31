@@ -947,7 +947,7 @@ class ComparisonTests(unittest.TestCase):
     def test_renderer_uses_only_comparison_document(self):
         result = self._compare()
         text = render_comparison_file(self.output)
-        self.assertIn("Comparable tasks: 6", text)
+        self.assertIn("Comparable tasks: 7", text)
         self.assertIn(f"Policy decision: {result['policy']['decision']}", text)
 
 
