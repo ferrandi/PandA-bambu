@@ -851,7 +851,7 @@ namespace llvm
 #if PANDA_LLVM_CLANG_MAJOR < 16
       NF->getBasicBlockList().splice(NF->begin(), function->getBasicBlockList());
 #else
-      NF->splice(NF->begin(), NF);
+      NF->splice(NF->begin(), function);
 #endif
 
       // Replace the use of the promoted parameters in the function
