@@ -1,5 +1,5 @@
 # PandA Bambu HLS Framework
-![](style/img/panda.png.in)
+![](style/bambuhls.logo.png)
 
 [![License: Apache 2.0 WITH LLVM-exception](https://img.shields.io/badge/License-Apache%202.0%20WITH%20LLVM--Exception-blue.svg)](LICENSE)
 
