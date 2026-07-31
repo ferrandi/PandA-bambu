@@ -158,7 +158,7 @@ class ComparisonTests(unittest.TestCase):
     def test_equal_real_v11_tasks_are_accepted(self):
         result = self._compare()
         self.assertEqual(result["policy"]["decision"], "accept")
-        self.assertEqual(result["summary"]["comparable_tasks"], 5)
+        self.assertEqual(result["summary"]["comparable_tasks"], 6)
 
     def test_output_has_versioned_schema_and_bundle_identities(self):
         result = self._compare()
@@ -947,7 +947,7 @@ class ComparisonTests(unittest.TestCase):
     def test_renderer_uses_only_comparison_document(self):
         result = self._compare()
         text = render_comparison_file(self.output)
-        self.assertIn("Comparable tasks: 5", text)
+        self.assertIn("Comparable tasks: 6", text)
         self.assertIn(f"Policy decision: {result['policy']['decision']}", text)
 
 

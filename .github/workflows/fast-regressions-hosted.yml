@@ -10,6 +10,7 @@ on:
       - etc/**
       - examples/mm/**
       - panda_regressions/hls/bambu_specific_test2.sh
+      - examples/OpenMP/functional/**
       - panda_regressions/hls/bambu_specific_test2/**
       - panda_regressions/hls/bambu_specific_test5.sh
       - panda_regressions/hls/bambu_specific_test5/**
@@ -18,6 +19,8 @@ on:
       - .github/actions/build-panda/**
       - .github/schemas/ci/**
       - .github/scripts/ci_results/**
+      - .github/scripts/test_fast_regressions.py
+      - .github/scripts/test_comparison.py
       - .github/scripts/test_ci_results.py
       - .github/workflows/fast-regressions-hosted.yml
   workflow_dispatch:
