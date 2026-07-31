@@ -143,6 +143,26 @@ REGRESSION_SPECS = (
             ("kmp_bambu_omp_done_cs", "omp_done_cs"),
         ),
     ),
+    RegressionSpec(
+        task_id="regression-graphsage",
+        category="graph-neural-network-context-switch",
+        example_id="graphsage/mean-aggregation-context-switch",
+        source_path="examples/GraphSAGE/graphsage_mean.cpp",
+        top_function="graphsage_mean",
+        test_vector_kind="cxx",
+        test_vector="examples/GraphSAGE/graphsage_mean_test.cpp",
+        extra_arguments=(
+            "-fopenmp",
+            "--context_switch=2",
+            "--channels-type=MEM_ACC_11",
+            "--memory-allocation-policy=GLSS",
+        ),
+        rtl_authenticity_instances=(
+            ("kmp_bambu_cs_manager", "cs_manager"),
+            ("kmp_bambu_omp_start_cs", "omp_start_cs"),
+            ("kmp_bambu_omp_done_cs", "omp_done_cs"),
+        ),
+    ),
 )
 
 REGRESSION_TASK_IDS = tuple(spec.task_id for spec in REGRESSION_SPECS)
@@ -354,7 +374,7 @@ def _actual_arguments(
     for argument in normalized:
         if argument == spec.source_path:
             result.append(str(repository / argument))
-        elif argument == f"--generate-tb={spec.test_vector}" and spec.test_vector_kind == "xml":
+        elif argument == f"--generate-tb={spec.test_vector}" and spec.test_vector_kind in {"xml", "cxx"}:
             result.append(f"--generate-tb={repository / spec.test_vector}")
         elif argument.startswith("--output-directory="):
             relative = argument.split("=", 1)[1]
@@ -536,7 +556,7 @@ def _task_configuration(
         executable = bambu.relative_to(repository).as_posix()
     except ValueError:
         executable = str(bambu)
-    vector_path = spec.test_vector if spec.test_vector_kind == "xml" else None
+    vector_path = spec.test_vector if spec.test_vector_kind in {"xml", "cxx"} else None
     return {
         "category": spec.category,
         "frontend": {"requested": compiler, "selected": selected_frontend},
@@ -643,8 +663,9 @@ def run_regression(
     source = repository / spec.source_path
     if not source.is_file():
         missing.append(f"source: {source}")
-    if spec.test_vector_kind == "xml" and not (repository / spec.test_vector).is_file():
-        missing.append(f"XML test vectors: {repository / spec.test_vector}")
+    if spec.test_vector_kind in {"xml", "cxx"} and not (repository / spec.test_vector).is_file():
+        description = "XML test vectors" if spec.test_vector_kind == "xml" else "C++ testbench"
+        missing.append(f"{description}: {repository / spec.test_vector}")
     if real_verilator is None:
         missing.append("Verilator executable on PATH")
     durations["input-validation"] = _seconds(time.monotonic_ns() - input_start_ns)

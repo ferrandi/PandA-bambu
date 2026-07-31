@@ -23,6 +23,7 @@ from ci_results.generate import generate_bundle  # noqa: E402
 from ci_results.hashing import sha256_file  # noqa: E402
 from ci_results.regressions import (  # noqa: E402
     REGRESSION_SPECS,
+    _actual_arguments,
     _artifact_ids,
     _checks,
     _classify_nonzero,
@@ -231,10 +232,10 @@ class FastRegressionResultTests(unittest.TestCase):
         write_json(self.bundle / "manifest.json", manifest)
 
     def test_selected_inputs_exist_and_use_established_vectors(self) -> None:
-        self.assertEqual(len(REGRESSION_SPECS), 6)
+        self.assertEqual(len(REGRESSION_SPECS), 7)
         for spec in REGRESSION_SPECS:
             self.assertTrue((REPOSITORY / spec.source_path).is_file(), spec.source_path)
-            if spec.test_vector_kind == "xml":
+            if spec.test_vector_kind in {"xml", "cxx"}:
                 self.assertTrue((REPOSITORY / spec.test_vector).is_file(), spec.test_vector)
         loop_task = regression_task(REGRESSION_SPECS[2])
         callgraph_task = regression_task(REGRESSION_SPECS[4])
@@ -266,6 +267,77 @@ class FastRegressionResultTests(unittest.TestCase):
         )
         vectors = (REPOSITORY / REGRESSION_SPECS[5].test_vector).read_text(encoding="utf-8")
         self.assertIn('a="{1,2,3,4,5,6,7,8,9,10', vectors)
+
+        graphsage_spec = REGRESSION_SPECS[6]
+        graphsage_task = regression_task(graphsage_spec)
+        self.assertEqual(graphsage_task["configuration"]["input"]["test_vector_kind"], "cxx")
+        self.assertEqual(
+            graphsage_task["configuration"]["invocation"]["arguments"],
+            [
+                "examples/GraphSAGE/graphsage_mean.cpp",
+                "-fopenmp",
+                "--context_switch=2",
+                "--channels-type=MEM_ACC_11",
+                "--memory-allocation-policy=GLSS",
+                "--simulate",
+                "--simulator=VERILATOR",
+                "--generate-tb=examples/GraphSAGE/graphsage_mean_test.cpp",
+                "--top-fname=graphsage_mean",
+                "--compiler=I386_CLANG16",
+                "--parallel-backend=2",
+                "--output-directory=.ci-regression-work/regression-graphsage/output",
+                "--no-clean",
+            ],
+        )
+        actual = _actual_arguments(
+            REPOSITORY,
+            graphsage_spec,
+            graphsage_task["configuration"]["invocation"]["arguments"],
+        )
+        self.assertIn(f"--generate-tb={REPOSITORY / graphsage_spec.test_vector}", actual)
+        self.assertEqual(
+            graphsage_spec.rtl_authenticity_instances,
+            REGRESSION_SPECS[5].rtl_authenticity_instances,
+        )
+
+    def test_graphsage_mismatch_is_failed_verification(self) -> None:
+        failure = _classify_nonzero(
+            "irregular mismatch vertex=3 feature=1 expected=0 observed=7\n",
+            "regression-graphsage",
+            _artifact_ids("regression-graphsage"),
+            "Bambu simulation returned '1', not zero.",
+        )
+        self.assertEqual(failure["code"], "result-mismatch")
+        self.assertEqual(failure["stage"], "result-verification")
+
+    def test_missing_graphsage_cpp_testbench_is_invalid_input(self) -> None:
+        repository = self.root / "missing-graphsage-testbench"
+        spec = REGRESSION_SPECS[6]
+        source = repository / spec.source_path
+        source.parent.mkdir(parents=True)
+        source.write_text('extern "C" void graphsage_mean(const int*, const int*, const int*, int*) {}\n')
+        bambu = repository / "panda_dist/bin/bambu"
+        bambu.parent.mkdir(parents=True)
+        bambu.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        bambu.chmod(0o755)
+
+        task = run_regression(
+            repository,
+            bambu,
+            repository / ".ci-regression-results",
+            repository / ".ci-regression-evidence",
+            spec,
+            "I386_CLANG16",
+            2,
+            30,
+            "/bin/true",
+            repository / ".ci-regression-work/.tools/bin",
+        )
+
+        self.assertEqual(task["outcome"], "fail")
+        self.assertEqual(task["failure"]["code"], "invalid-regression-input")
+        self.assertEqual(task["failure"]["stage"], "input-validation")
+        self.assertIn("C++ testbench", task["failure"]["message"])
 
     def test_sparta_authenticity_requires_context_switch_components(self) -> None:
         rtl = self.root / "sparta.v"
@@ -474,7 +546,7 @@ class FastRegressionResultTests(unittest.TestCase):
             for path, task in documents.items()
             if path.startswith("tasks/") and task["task_type"] == "regression"
         ]
-        self.assertEqual(len(regression_paths), 6)
+        self.assertEqual(len(regression_paths), 7)
         self.assertTrue(all(documents[path]["outcome"] == "pass" for path in regression_paths))
         self.assertEqual(documents["verdict.json"]["overall_outcome"], "pass")
         self.assertEqual(
@@ -501,9 +573,9 @@ class FastRegressionResultTests(unittest.TestCase):
                 "failed_count": 0,
                 "failure_stage": None,
                 "outcome": "pass",
-                "passed_count": 6,
+                "passed_count": 7,
                 "started_at": "2023-11-14T22:14:20Z",
-                "task_count": 6,
+                "task_count": 7,
             },
         )
         summary = render_bundle_summary(self.bundle)

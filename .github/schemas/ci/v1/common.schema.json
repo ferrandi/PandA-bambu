@@ -275,6 +275,7 @@
         },
         "test_vector_kind": {
           "enum": [
+            "cxx",
             "inline",
             "xml"
           ],

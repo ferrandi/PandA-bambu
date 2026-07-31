@@ -1064,14 +1064,14 @@ def validate_bundle(
         test_vector_kind = input_configuration.get("test_vector_kind")
         test_vector_path = input_configuration.get("test_vector_path")
         test_vector_value = input_configuration.get("test_vector_value")
-        if test_vector_kind == "xml":
+        if test_vector_kind in {"xml", "cxx"}:
             if not _safe_relative_path(test_vector_path):
                 errors.append(
-                    f"task {task_id!r}: XML test vectors require a safe test_vector_path"
+                    f"task {task_id!r}: file test vectors require a safe test_vector_path"
                 )
             if test_vector_path != test_vector_value:
                 errors.append(
-                    f"task {task_id!r}: XML test_vector_path/value must match"
+                    f"task {task_id!r}: file test_vector_path/value must match"
                 )
         elif test_vector_kind == "inline" and test_vector_path is not None:
             errors.append(f"task {task_id!r}: inline test vectors require null path")
