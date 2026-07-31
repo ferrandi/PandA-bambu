@@ -199,6 +199,10 @@ class FastRegressionResultTests(unittest.TestCase):
             )
             (directory / "rtl-files.txt").write_text("top.v\t128\n", encoding="utf-8")
             (directory / "simulation.log").write_text("42\n", encoding="utf-8")
+            if spec.task_id == "regression-graphsage":
+                (directory / "runtime-linkage.txt").write_text(
+                    "runtime-linkage-report-v1\nverification\tpass\n", encoding="utf-8"
+                )
         write_json(
             self.raw / "suite.json",
             {

@@ -128,6 +128,9 @@ REGRESSION_ARTIFACT_SUFFIXES = (
     "simulation-log",
 )
 
+RUNTIME_LINKAGE_TASK_ID = "regression-graphsage"
+RUNTIME_LINKAGE_ARTIFACT_SUFFIX = "runtime-linkage"
+
 HOSTED_REGRESSION_RULE_ID = "hosted-fast-regressions-success"
 MULTI_TASK_RULE_IDS = LEGACY_RULE_IDS + (HOSTED_REGRESSION_RULE_ID,)
 
