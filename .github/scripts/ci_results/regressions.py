@@ -29,8 +29,11 @@ from .constants import (
     REGRESSION_METRIC_CONTRACTS,
     REGRESSION_METRIC_IDS,
     REGRESSION_STAGE_IDS,
+    RUNTIME_LINKAGE_ARTIFACT_SUFFIX,
+    RUNTIME_LINKAGE_TASK_ID,
 )
 from .hashing import sha256_file
+from .runtime_linkage import inspect_runtime_linkage
 from .serialization import SerializationError, load_json, require_canonical, write_json
 
 
@@ -184,7 +187,14 @@ def _normalized_exit_status(returncode: int | None) -> int | None:
 
 
 def _artifact_ids(task_id: str) -> tuple[str, ...]:
-    return tuple(f"{task_id}.{suffix}" for suffix in REGRESSION_ARTIFACT_SUFFIXES)
+    suffixes = REGRESSION_ARTIFACT_SUFFIXES + (
+        (RUNTIME_LINKAGE_ARTIFACT_SUFFIX,) if task_id == RUNTIME_LINKAGE_TASK_ID else ()
+    )
+    return tuple(sorted(f"{task_id}.{suffix}" for suffix in suffixes))
+
+
+def _artifact_by_suffix(artifact_ids: tuple[str, ...], suffix: str) -> str:
+    return next(item for item in artifact_ids if item.endswith(f".{suffix}"))
 
 
 def _failure(
@@ -216,11 +226,12 @@ def _stage_records(
 ) -> list[dict[str, Any]]:
     stage_artifacts = {
         "input-validation": [],
-        "hls-synthesis": [artifact_ids[0]],
-        "rtl-generation": [artifact_ids[2]],
-        "simulator-preparation": [],
-        "rtl-simulation": [artifact_ids[3]],
-        "result-verification": [artifact_ids[1]],
+        "hls-synthesis": [_artifact_by_suffix(artifact_ids, "bambu-log")],
+        "rtl-generation": [_artifact_by_suffix(artifact_ids, "rtl-output")],
+        "simulator-preparation": [_artifact_by_suffix(artifact_ids, "runtime-linkage")]
+        if any(item.endswith(".runtime-linkage") for item in artifact_ids) else [],
+        "rtl-simulation": [_artifact_by_suffix(artifact_ids, "simulation-log")],
+        "result-verification": [_artifact_by_suffix(artifact_ids, "result-report")],
     }
     failure_index = (
         REGRESSION_STAGE_IDS.index(failure["stage"])
@@ -493,7 +504,7 @@ def _classify_nonzero(
             "simulator-build-failed",
             "simulator-preparation",
             f"{task_id}: Verilator preparation failed.",
-            artifact_ids[3],
+            _artifact_by_suffix(artifact_ids, "simulation-log"),
         )
     if re.search(r"simulation.*(?:error|failed)|testbench.*(?:error|failed)", lower):
         return _failure(
@@ -501,7 +512,7 @@ def _classify_nonzero(
             "rtl-simulation-failed",
             "rtl-simulation",
             f"{task_id}: RTL simulation failed.",
-            artifact_ids[3],
+            _artifact_by_suffix(artifact_ids, "simulation-log"),
         )
     if re.search(r"(?:generate|generation).*(?:rtl|hdl).*(?:error|failed)", lower):
         return _failure(
@@ -509,7 +520,7 @@ def _classify_nonzero(
             "rtl-generation-failed",
             "rtl-generation",
             f"{task_id}: RTL generation failed.",
-            artifact_ids[0],
+            _artifact_by_suffix(artifact_ids, "bambu-log"),
         )
     if re.search(r"clang.*(?:error|failed)|frontend.*(?:error|failed)|unable to load plugin", lower):
         return _failure(
@@ -517,7 +528,7 @@ def _classify_nonzero(
             "frontend-resolution-failed",
             "hls-synthesis",
             f"{task_id}: the selected Clang frontend or PandA plugin failed.",
-            artifact_ids[0],
+            _artifact_by_suffix(artifact_ids, "bambu-log"),
         )
     report_is_mismatch = bool(
         report_message and report_message.startswith("Bambu simulation returned")
@@ -532,14 +543,14 @@ def _classify_nonzero(
             report_message
             if report_is_mismatch
             else f"{task_id}: simulated output did not match the established vectors.",
-            artifact_ids[1],
+            _artifact_by_suffix(artifact_ids, "result-report"),
         )
     return _failure(
         "compilation",
         "hls-synthesis-failed",
         "hls-synthesis",
         f"{task_id}: Bambu exited unsuccessfully during HLS synthesis.",
-        artifact_ids[0],
+        _artifact_by_suffix(artifact_ids, "bambu-log"),
     )
 
 
@@ -603,6 +614,7 @@ def _write_evidence(
     report_message: str | None,
     required_authenticity_instances: tuple[tuple[str, str], ...],
     missing_authenticity_instances: tuple[tuple[str, str], ...],
+    runtime_linkage_report: str | None = None,
 ) -> None:
     evidence.mkdir(parents=True, exist_ok=True)
     (evidence / "bambu.log").write_text(log_text, encoding="utf-8", newline="\n")
@@ -617,6 +629,10 @@ def _write_evidence(
             for module, instance in required_authenticity_instances
         )
     (evidence / "rtl-files.txt").write_text(inventory, encoding="utf-8", newline="\n")
+    if runtime_linkage_report is not None:
+        (evidence / "runtime-linkage.txt").write_text(
+            runtime_linkage_report, encoding="utf-8", newline="\n"
+        )
     if report is not None:
         shutil.copy2(report, evidence / "bambu_results.xml")
     if simulation_log is not None:
@@ -690,6 +706,9 @@ def run_regression(
                 "PATH": f"{wrapper_directory}{os.pathsep}{environment.get('PATH', '')}",
             }
         )
+        if spec.task_id == "regression-graphsage":
+            # Retain the actual installed-run MDPI compile and link commands.
+            environment["PANDA_CI_RUNTIME_LINKAGE_EVIDENCE"] = "1"
         process_start_ns = time.time_ns()
         try:
             process = subprocess.Popen(
@@ -734,6 +753,14 @@ def run_regression(
     missing_authenticity_instances = _missing_rtl_authenticity_instances(
         rtl_files, spec.rtl_authenticity_instances
     )
+    runtime_linkage_report: str | None = None
+    runtime_linkage_errors: list[str] = []
+    if spec.task_id == "regression-graphsage" and not missing and launch_error is None:
+        runtime_linkage_report, runtime_linkage_errors = inspect_runtime_linkage(
+            repository, bambu, output, log_text, compiler, spec.test_vector,
+            (instance for instance in spec.rtl_authenticity_instances
+             if instance not in missing_authenticity_instances),
+        )
     verification_start_ns = time.monotonic_ns()
     verified, execution_count, total_cycles, report_message = _inspect_result_report(report)
     durations["result-verification"] = _seconds(time.monotonic_ns() - verification_start_ns)
@@ -759,6 +786,7 @@ def run_regression(
         report_message,
         spec.rtl_authenticity_instances,
         missing_authenticity_instances,
+        runtime_linkage_report,
     )
 
     failure: dict[str, Any] | None = None
@@ -784,7 +812,7 @@ def run_regression(
             code,
             "input-validation",
             "; ".join(missing),
-            artifact_ids[0],
+            _artifact_by_suffix(artifact_ids, "bambu-log"),
         )
     elif launch_error is not None:
         task_state = "infrastructure_error"
@@ -795,7 +823,7 @@ def run_regression(
             "regression-infrastructure-failure",
             "hls-synthesis",
             f"Unable to launch Bambu: {launch_error}",
-            artifact_ids[0],
+            _artifact_by_suffix(artifact_ids, "bambu-log"),
             retryable=True,
         )
     elif timed_out:
@@ -807,7 +835,7 @@ def run_regression(
             "regression-timeout",
             "rtl-simulation" if marker_ns is not None else "hls-synthesis",
             f"{spec.task_id} exceeded its {timeout_seconds}-second timeout.",
-            artifact_ids[3] if marker_ns is not None else artifact_ids[0],
+            _artifact_by_suffix(artifact_ids, "simulation-log") if marker_ns is not None else _artifact_by_suffix(artifact_ids, "bambu-log"),
             retryable=True,
         )
     elif returncode != 0:
@@ -829,7 +857,7 @@ def run_regression(
                 "observe the required Verilator invocation; synthesis/simulation "
                 "timings cannot be reported reliably."
             ),
-            artifact_ids[0],
+            _artifact_by_suffix(artifact_ids, "bambu-log"),
             retryable=True,
         )
     elif not rtl_files:
@@ -840,7 +868,7 @@ def run_regression(
             "rtl-generation-failed",
             "rtl-generation",
             f"{spec.task_id}: Bambu exited successfully but produced no RTL files.",
-            artifact_ids[2],
+            _artifact_by_suffix(artifact_ids, "rtl-output"),
         )
     elif missing_authenticity_instances:
         task_outcome = "fail"
@@ -858,7 +886,16 @@ def run_regression(
                 )
                 + "."
             ),
-            artifact_ids[2],
+            _artifact_by_suffix(artifact_ids, "rtl-output"),
+        )
+    elif runtime_linkage_errors:
+        task_outcome = "fail"
+        task_exit_status = 1
+        failure = _failure(
+            "verification", "simulator-build-failed", "simulator-preparation",
+            f"{spec.task_id}: runtime linkage evidence failed: "
+            + "; ".join(runtime_linkage_errors),
+            _artifact_by_suffix(artifact_ids, "runtime-linkage"),
         )
     elif report is None:
         task_outcome = "fail"
@@ -868,7 +905,7 @@ def run_regression(
             "rtl-simulation-failed",
             "rtl-simulation",
             f"{spec.task_id}: Bambu exited successfully but produced no simulation report.",
-            artifact_ids[3],
+            _artifact_by_suffix(artifact_ids, "simulation-log"),
         )
     elif not verified:
         task_outcome = "fail"
@@ -878,7 +915,7 @@ def run_regression(
             "result-mismatch",
             "result-verification",
             report_message or f"{spec.task_id}: expected-output verification failed.",
-            artifact_ids[1],
+            _artifact_by_suffix(artifact_ids, "result-report"),
         )
 
     task_end_wall = time.time()
@@ -996,7 +1033,7 @@ def run_regression_suite(
                 "regression-infrastructure-failure",
                 "input-validation",
                 f"Unexpected regression runner error: {error}",
-                artifact_ids[0],
+                _artifact_by_suffix(artifact_ids, "bambu-log"),
                 retryable=True,
             )
             evidence_path = evidence / spec.task_id
@@ -1064,6 +1101,10 @@ def run_regression_suite(
         "task_ids": [task["task_id"] for task in tasks],
     }
     write_json(results / "suite.json", suite)
+    # The validator may run in a different container user.
+    for path in results.rglob("*"):
+        if path.is_file():
+            path.chmod(path.stat().st_mode | 0o444)
     return suite
 
 
@@ -1096,7 +1137,7 @@ def _unexecuted_task(
             "regression-infrastructure-failure",
             "input-validation",
             f"{spec.task_id}: no result was produced after the open build passed.",
-            artifact_ids[0],
+            _artifact_by_suffix(artifact_ids, "bambu-log"),
             retryable=True,
         )
         stages = _stage_records(
@@ -1112,11 +1153,14 @@ def _unexecuted_task(
     else:
         stage_artifacts = {
             "input-validation": [],
-            "hls-synthesis": [artifact_ids[0]],
-            "rtl-generation": [artifact_ids[2]],
-            "simulator-preparation": [],
-            "rtl-simulation": [artifact_ids[3]],
-            "result-verification": [artifact_ids[1]],
+            "hls-synthesis": [_artifact_by_suffix(artifact_ids, "bambu-log")],
+            "rtl-generation": [_artifact_by_suffix(artifact_ids, "rtl-output")],
+            "simulator-preparation": (
+                [_artifact_by_suffix(artifact_ids, "runtime-linkage")]
+                if spec.task_id == RUNTIME_LINKAGE_TASK_ID else []
+            ),
+            "rtl-simulation": [_artifact_by_suffix(artifact_ids, "simulation-log")],
+            "result-verification": [_artifact_by_suffix(artifact_ids, "result-report")],
         }
         stages = [
             {
@@ -1466,10 +1510,20 @@ def _regression_artifacts(
             "text/plain",
             "rtl-simulation",
         ),
+        "runtime-linkage": (
+            "runtime-linkage.txt",
+            "runtime-linkage-report",
+            "text/plain",
+            "simulator-preparation",
+        ),
     }
     artifacts: list[dict[str, Any]] = []
     for spec in REGRESSION_SPECS:
-        for suffix in REGRESSION_ARTIFACT_SUFFIXES:
+        suffixes = REGRESSION_ARTIFACT_SUFFIXES + (
+            (RUNTIME_LINKAGE_ARTIFACT_SUFFIX,)
+            if spec.task_id == RUNTIME_LINKAGE_TASK_ID else ()
+        )
+        for suffix in suffixes:
             filename, role, media_type, stage_id = details[suffix]
             path = evidence_directory / spec.task_id / filename
             available = path.is_file() and not path.is_symlink()

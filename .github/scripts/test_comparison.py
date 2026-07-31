@@ -55,6 +55,10 @@ class ComparisonTests(unittest.TestCase):
             task_evidence.mkdir(parents=True, exist_ok=True)
             for name in ("bambu.log", "bambu_results.xml", "rtl-files.txt", "simulation.log"):
                 (task_evidence / name).write_text("fixture\n", encoding="utf-8")
+            if spec.task_id == "regression-graphsage":
+                (task_evidence / "runtime-linkage.txt").write_text(
+                    "runtime-linkage-report-v1\nverification\tpass\n", encoding="utf-8"
+                )
         passed = len(REGRESSION_SPECS) - len(failures)
         write_json(raw / "suite.json", {
             "completed_at": "2023-11-14T22:14:50Z", "duration_seconds": 30,

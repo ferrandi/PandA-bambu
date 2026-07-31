@@ -22,6 +22,8 @@ from .constants import (
     REGRESSION_METRIC_CONTRACTS,
     REGRESSION_METRIC_IDS,
     REGRESSION_STAGE_IDS,
+    RUNTIME_LINKAGE_ARTIFACT_SUFFIX,
+    RUNTIME_LINKAGE_TASK_ID,
     RULE_IDS,
     SCHEMA_FILES,
     STAGE_IDS,
@@ -771,7 +773,10 @@ def validate_bundle(
             ("compilation", "rtl-generation-failed"),
             ("verification", "rtl-generation-failed"),
         },
-        "simulator-preparation": {("compilation", "simulator-build-failed")},
+        "simulator-preparation": {
+            ("compilation", "simulator-build-failed"),
+            ("verification", "simulator-build-failed"),
+        },
         "rtl-simulation": {("execution", "rtl-simulation-failed")},
         "result-verification": {("verification", "result-mismatch")},
     }
@@ -780,6 +785,7 @@ def validate_bundle(
         "result-report": "result-verification",
         "rtl-output": "rtl-generation",
         "simulation-log": "rtl-simulation",
+        "runtime-linkage": "simulator-preparation",
     }
 
     for task_id in sorted(regression_tasks):
@@ -810,15 +816,20 @@ def validate_bundle(
             errors,
         )
 
+        expected_suffixes = tuple(sorted(REGRESSION_ARTIFACT_SUFFIXES + (
+            (RUNTIME_LINKAGE_ARTIFACT_SUFFIX,)
+            if task_id == RUNTIME_LINKAGE_TASK_ID else ()
+        )))
         expected_regression_artifacts = [
-            f"{task_id}.{suffix}" for suffix in REGRESSION_ARTIFACT_SUFFIXES
+            f"{task_id}.{suffix}" for suffix in expected_suffixes
         ]
         if regression_task.get("artifacts") != expected_regression_artifacts:
             errors.append(
                 f"task {task_id!r}: expected stable regression artifacts "
                 f"{expected_regression_artifacts!r}"
             )
-        for suffix, associated_stage in artifact_stage_by_suffix.items():
+        for suffix in expected_suffixes:
+            associated_stage = artifact_stage_by_suffix[suffix]
             artifact_id = f"{task_id}.{suffix}"
             artifact = artifacts.get(artifact_id)
             if artifact is None:
@@ -872,7 +883,10 @@ def validate_bundle(
             "input-validation": [],
             "hls-synthesis": [f"{task_id}.bambu-log"],
             "rtl-generation": [f"{task_id}.rtl-output"],
-            "simulator-preparation": [],
+            "simulator-preparation": (
+                [f"{task_id}.{RUNTIME_LINKAGE_ARTIFACT_SUFFIX}"]
+                if task_id == RUNTIME_LINKAGE_TASK_ID else []
+            ),
             "rtl-simulation": [f"{task_id}.simulation-log"],
             "result-verification": [f"{task_id}.result-report"],
         }
@@ -1165,12 +1179,15 @@ def validate_bundle(
             errors.append(
                 f"task {task_id!r}: passing RTL generation requires an RTL artifact"
             )
-        for stage_id, artifact_suffix in (
+        required_stage_artifacts = [
             ("hls-synthesis", "bambu-log"),
             ("rtl-generation", "rtl-output"),
             ("rtl-simulation", "simulation-log"),
             ("result-verification", "result-report"),
-        ):
+        ]
+        if task_id == RUNTIME_LINKAGE_TASK_ID:
+            required_stage_artifacts.append(("simulator-preparation", "runtime-linkage"))
+        for stage_id, artifact_suffix in required_stage_artifacts:
             if (
                 regression_stages.get(stage_id, {}).get("outcome") == "pass"
                 and artifacts.get(f"{task_id}.{artifact_suffix}", {}).get("available")
