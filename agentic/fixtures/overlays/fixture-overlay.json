@@ -1,0 +1,48 @@
+{
+  "schema": "evolvehls.agentic.policy-overlay",
+  "schema_version": "1.0",
+  "profile_id": "fixture-profile",
+  "rules": [
+    {
+      "model_id": "fixture-model",
+      "eligible": true,
+      "rejection_reasons": [],
+      "execution_units": [
+        {
+          "client": "codex",
+          "provider": "fixture-provider",
+          "model": "fixture-model",
+          "protocol": "openai-responses",
+          "effort": "medium"
+        }
+      ],
+      "capabilities": {
+        "basic_text": {
+          "status": "supported",
+          "confidence": "observed",
+          "provenance": [
+            {
+              "source": "policy-overlay",
+              "confidence": "observed",
+              "observed_at": null,
+              "expires_at": null
+            }
+          ]
+        },
+        "tool_calling": {
+          "status": "supported",
+          "confidence": "observed",
+          "provenance": [
+            {
+              "source": "policy-overlay",
+              "confidence": "observed",
+              "observed_at": null,
+              "expires_at": null
+            }
+          ]
+        }
+      },
+      "metadata": {"cost": 1, "latency": 1, "quality": 1, "agentic_reliability": 1}
+    }
+  ]
+}

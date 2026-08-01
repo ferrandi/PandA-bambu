@@ -1,12 +1,12 @@
 from __future__ import annotations
-import json,sys,tempfile,unittest
+import copy,json,sys,tempfile,unittest
 from datetime import datetime,timedelta,timezone
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[3];sys.path.insert(0,str(ROOT/"tools"/"agentic"))
-import discovery,probe_cache,resolver
+import catalog,contracts,discovery,probe_cache,resolver
 class ContractTests(unittest.TestCase):
  def test_new_schemas_are_json(self):
-  for name in ("catalog","probe-record","execution-plan"):
+  for name in ("catalog","probe-record","execution-plan","role","task","result","policy-overlay","selection"):
    value=json.loads((ROOT/f"agentic/schemas/{name}.schema.json").read_text());self.assertEqual(value["$schema"],"https://json-schema.org/draft/2020-12/schema")
  def test_required_local_paths_are_ignored(self):
   text=(ROOT/".gitignore").read_text();self.assertIn("/.agentic-local/",text);self.assertIn("/agentic-state/",text)
@@ -49,6 +49,35 @@ class ResolverTests(unittest.TestCase):
   with self.assertRaises(ValueError):resolver.resolve(self.candidates(),"implementer","maximum-quality",set(),pins={"bad":1})
   values=self.candidates();values[0]["metadata"]["cost"]=float("nan")
   plan=resolver.resolve(values,"implementer","lowest-cost-valid",{"tool_calling"});self.assertEqual(plan["selected"]["model"],"b")
+class PortableTaskContractTests(unittest.TestCase):
+ def setUp(self):
+  self.fixture=ROOT/"agentic"/"fixtures"
+  self.role=contracts.load_contract(ROOT/"agentic"/"roles"/"implementer.yaml","role")
+  self.task=contracts.load_contract(self.fixture/"tasks"/"fixture-task.json","task")
+  self.result=contracts.load_contract(self.fixture/"results"/"fixture-result.json","result")
+  self.overlay=contracts.load_contract(self.fixture/"overlays"/"fixture-overlay.json","overlay")
+ def discovered(self):
+  return [{"model_id":"fixture-model","display_name":"Fixture","metadata":{},"capabilities":{},"eligible":False,"rejection_reasons":["awaiting local policy and capability evaluation"],"execution_units":[]}]
+ def test_fixtures_link_without_execution(self):
+  self.assertEqual(self.task["role"],self.role["role_id"]);self.assertEqual(self.result["task_id"],self.task["task_id"]);self.assertIsNone(self.result["validation"][0]["evidence"])
+ def test_overlay_query_and_selection_are_deterministic(self):
+  models=catalog.apply_overlay(self.discovered(),"fixture-profile",self.overlay)
+  source={"schema":"evolvehls.agentic.catalog","schema_version":"1.0","profile_id":"fixture-profile","snapshot_id":"snapshot","created_at":"2026-01-01T00:00:00+00:00","models":models}
+  queried=catalog.query(source,self.role);self.assertEqual(queried["candidates"][0]["mandatory_unavailable"],[]);self.assertEqual(queried["candidates"][0]["probe_needed"],[])
+  plan=catalog.select(source,self.role);self.assertEqual(plan["selected"]["model"],"fixture-model");self.assertIn("catalog snapshot: snapshot",plan["explanation"])
+  with tempfile.TemporaryDirectory() as directory:
+   first=catalog.persist_selection(plan,source,self.role,Path(directory),"2026-01-01T00:00:00+00:00");second=catalog.persist_selection(plan,source,self.role,Path(directory),"2026-01-01T00:00:00+00:00")
+   self.assertEqual(first,second);self.assertEqual(catalog.latest_selection(Path(directory))["selection_id"],json.loads(first.read_text())["selection_id"])
+ def test_overlay_fails_closed_for_unknown_or_invalid_model(self):
+  bad=copy.deepcopy(self.overlay);bad["rules"][0]["model_id"]="unknown"
+  with self.assertRaises(catalog.CatalogError):catalog.apply_overlay(self.discovered(),"fixture-profile",bad)
+  bad=copy.deepcopy(self.overlay);bad["rules"][0]["execution_units"][0]["model"]="other"
+  with self.assertRaises(catalog.CatalogError):catalog.apply_overlay(self.discovered(),"fixture-profile",bad)
+ def test_contracts_reject_extra_fields_and_mismatched_results(self):
+  bad=copy.deepcopy(self.task);bad["client"]="forbidden"
+  with self.assertRaises(contracts.ContractError):contracts.validate_task(bad)
+  bad=copy.deepcopy(self.result);bad["task_version"]=""
+  with self.assertRaises(contracts.ContractError):contracts.validate_result(bad)
 class CacheTests(unittest.TestCase):
  def test_success_cache_ttl(self):
   now=datetime(2026,1,1,tzinfo=timezone.utc)

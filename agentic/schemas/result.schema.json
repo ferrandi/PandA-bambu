@@ -1,0 +1,45 @@
+{
+  "$id": "https://panda-re.github.io/schemas/agentic/result.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Portable agent result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "task_id", "task_version", "outcome", "execution_plan", "artifacts", "validation", "diagnostics"],
+  "properties": {
+    "schema": {"const": "evolvehls.agentic.result"},
+    "schema_version": {"const": "1.0"},
+    "task_id": {"type": "string", "minLength": 1},
+    "task_version": {"type": "string", "minLength": 1},
+    "outcome": {"enum": ["succeeded", "failed", "blocked", "cancelled"]},
+    "execution_plan": {"type": "string", "minLength": 1},
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "digest"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "digest": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "validation": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "status", "evidence"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "status": {"enum": ["passed", "failed", "not-run"]},
+          "evidence": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}

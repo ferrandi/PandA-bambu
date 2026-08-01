@@ -1,0 +1,29 @@
+{
+  "$id": "https://panda-re.github.io/schemas/agentic/policy-overlay.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Local portable catalog policy overlay",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "profile_id", "rules"],
+  "properties": {
+    "schema": {"const": "evolvehls.agentic.policy-overlay"},
+    "schema_version": {"const": "1.0"},
+    "profile_id": {"type": "string", "minLength": 1},
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["model_id", "eligible", "rejection_reasons", "execution_units", "capabilities", "metadata"],
+        "properties": {
+          "model_id": {"type": "string", "minLength": 1},
+          "eligible": {"type": "boolean"},
+          "rejection_reasons": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "execution_units": {"type": "array"},
+          "capabilities": {"type": "object"},
+          "metadata": {"type": "object"}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "schema": "evolvehls.agentic.result",
+  "schema_version": "1.0",
+  "task_id": "fixture-contract-review",
+  "task_version": "1.0",
+  "outcome": "succeeded",
+  "execution_plan": "fixture-selection",
+  "artifacts": [{"path": "agentic/fixtures/results/fixture-result.json", "digest": "fixture-digest"}],
+  "validation": [{"name": "result-contract", "status": "passed", "evidence": null}],
+  "diagnostics": ["Fixture-only result; no task was launched."]
+}

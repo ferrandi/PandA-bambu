@@ -1,0 +1,11 @@
+{
+  "schema": "evolvehls.agentic.role",
+  "schema_version": "1.0",
+  "role_id": "implementer",
+  "version": "1.0",
+  "mandatory_capabilities": ["basic_text", "tool_calling"],
+  "preferred_capabilities": ["structured_output"],
+  "default_objective": "balanced-quality-cost",
+  "permitted_modes": ["development", "evaluation", "ablation"],
+  "minimum_confidence": "observed"
+}

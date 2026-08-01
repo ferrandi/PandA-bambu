@@ -1,0 +1,14 @@
+{
+  "schema": "evolvehls.agentic.task",
+  "schema_version": "1.0",
+  "task_id": "fixture-contract-review",
+  "version": "1.0",
+  "role": "implementer",
+  "objective": "balanced-quality-cost",
+  "inputs": ["documentation/evolvehls/agentic-roadmap.md"],
+  "constraints": ["Do not launch a task", "Do not access a network provider"],
+  "expected_outputs": ["A portable result fixture"],
+  "validation_requirements": ["Validate the result contract"],
+  "budgets": {"max_turns": 1},
+  "reproducibility": {"context_hash": "fixture-context", "base_revision": "fixture-revision"}
+}
