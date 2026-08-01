@@ -59,6 +59,11 @@ class ComparisonTests(unittest.TestCase):
                 (task_evidence / "runtime-linkage.txt").write_text(
                     "runtime-linkage-report-v1\nverification\tpass\n", encoding="utf-8"
                 )
+            if spec.task_id in {"regression-graphsage-serial", "regression-graphsage"}:
+                write_json(task_evidence / "output-comparison.json", {
+                    "schema": "panda.ci.graphsage-comparison", "schema_version": "1.0",
+                    "outcome": "pass", "mismatch_count": 0, "cases": [],
+                })
         passed = len(REGRESSION_SPECS) - len(failures)
         write_json(raw / "suite.json", {
             "completed_at": "2023-11-14T22:14:50Z", "duration_seconds": 30,
@@ -162,7 +167,7 @@ class ComparisonTests(unittest.TestCase):
     def test_equal_real_v11_tasks_are_accepted(self):
         result = self._compare()
         self.assertEqual(result["policy"]["decision"], "accept")
-        self.assertEqual(result["summary"]["comparable_tasks"], 7)
+        self.assertEqual(result["summary"]["comparable_tasks"], 8)
 
     def test_output_has_versioned_schema_and_bundle_identities(self):
         result = self._compare()
@@ -951,7 +956,7 @@ class ComparisonTests(unittest.TestCase):
     def test_renderer_uses_only_comparison_document(self):
         result = self._compare()
         text = render_comparison_file(self.output)
-        self.assertIn("Comparable tasks: 7", text)
+        self.assertIn("Comparable tasks: 8", text)
         self.assertIn(f"Policy decision: {result['policy']['decision']}", text)
 
 

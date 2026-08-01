@@ -130,6 +130,8 @@ REGRESSION_ARTIFACT_SUFFIXES = (
 
 RUNTIME_LINKAGE_TASK_ID = "regression-graphsage"
 RUNTIME_LINKAGE_ARTIFACT_SUFFIX = "runtime-linkage"
+GRAPHSAGE_COMPARISON_TASK_IDS = ("regression-graphsage-serial", "regression-graphsage")
+GRAPHSAGE_COMPARISON_ARTIFACT_SUFFIX = "output-comparison"
 
 HOSTED_REGRESSION_RULE_ID = "hosted-fast-regressions-success"
 MULTI_TASK_RULE_IDS = LEGACY_RULE_IDS + (HOSTED_REGRESSION_RULE_ID,)

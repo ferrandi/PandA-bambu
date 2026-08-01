@@ -22,6 +22,8 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Iterable, Mapping
 
 from .constants import (
+    GRAPHSAGE_COMPARISON_ARTIFACT_SUFFIX,
+    GRAPHSAGE_COMPARISON_TASK_IDS,
     MULTI_TASK_SCHEMA_VERSION,
     REGRESSION_ARTIFACT_SUFFIXES,
     REGRESSION_CHECK_IDS,
@@ -33,6 +35,7 @@ from .constants import (
     RUNTIME_LINKAGE_TASK_ID,
 )
 from .hashing import sha256_file
+from .graphsage import GraphSAGEEvidenceError, compare_inventories
 from .runtime_linkage import inspect_runtime_linkage
 from .serialization import SerializationError, load_json, require_canonical, write_json
 
@@ -147,6 +150,19 @@ REGRESSION_SPECS = (
         ),
     ),
     RegressionSpec(
+        task_id="regression-graphsage-serial",
+        category="graph-neural-network-serial",
+        example_id="graphsage/mean-aggregation-serial",
+        source_path="examples/GraphSAGE/graphsage_mean_serial.cpp",
+        top_function="graphsage_mean_serial",
+        test_vector_kind="cxx",
+        test_vector="examples/GraphSAGE/graphsage_mean_serial_test.cpp",
+        extra_arguments=(
+            "--channels-type=MEM_ACC_11",
+            "--memory-allocation-policy=GLSS",
+        ),
+    ),
+    RegressionSpec(
         task_id="regression-graphsage",
         category="graph-neural-network-context-switch",
         example_id="graphsage/mean-aggregation-context-switch",
@@ -189,6 +205,8 @@ def _normalized_exit_status(returncode: int | None) -> int | None:
 def _artifact_ids(task_id: str) -> tuple[str, ...]:
     suffixes = REGRESSION_ARTIFACT_SUFFIXES + (
         (RUNTIME_LINKAGE_ARTIFACT_SUFFIX,) if task_id == RUNTIME_LINKAGE_TASK_ID else ()
+    ) + (
+        (GRAPHSAGE_COMPARISON_ARTIFACT_SUFFIX,) if task_id in GRAPHSAGE_COMPARISON_TASK_IDS else ()
     )
     return tuple(sorted(f"{task_id}.{suffix}" for suffix in suffixes))
 
@@ -231,7 +249,9 @@ def _stage_records(
         "simulator-preparation": [_artifact_by_suffix(artifact_ids, "runtime-linkage")]
         if any(item.endswith(".runtime-linkage") for item in artifact_ids) else [],
         "rtl-simulation": [_artifact_by_suffix(artifact_ids, "simulation-log")],
-        "result-verification": [_artifact_by_suffix(artifact_ids, "result-report")],
+        "result-verification": [_artifact_by_suffix(artifact_ids, "result-report")] + (
+            [_artifact_by_suffix(artifact_ids, GRAPHSAGE_COMPARISON_ARTIFACT_SUFFIX)]
+            if any(item.endswith(".output-comparison") for item in artifact_ids) else []),
     }
     failure_index = (
         REGRESSION_STAGE_IDS.index(failure["stage"])
@@ -485,6 +505,21 @@ def _missing_rtl_authenticity_instances(
                 observed.add((module, instance))
         pending.difference_update(observed)
     return tuple(item for item in required if item in pending)
+
+SERIAL_PROHIBITED_RUNTIME = (
+    "kmp_bambu_cs_manager", "kmp_bambu_omp_start_cs", "kmp_bambu_omp_done_cs",
+    "__kmpc_", "GOMP_", "libgomp.so", "libomp.so", "libiomp5.so",
+)
+
+def _serial_runtime_violations(rtl_files: Iterable[Path], log_text: str) -> tuple[str, ...]:
+    text = log_text
+    for path in rtl_files:
+        try:
+            text += "\n" + path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            pass
+    return tuple(token for token in SERIAL_PROHIBITED_RUNTIME if token in text)
+
 
 
 def _classify_nonzero(
@@ -753,6 +788,8 @@ def run_regression(
     missing_authenticity_instances = _missing_rtl_authenticity_instances(
         rtl_files, spec.rtl_authenticity_instances
     )
+    serial_runtime_violations = (_serial_runtime_violations(rtl_files, log_text)
+                                 if spec.task_id == "regression-graphsage-serial" else ())
     runtime_linkage_report: str | None = None
     runtime_linkage_errors: list[str] = []
     if spec.task_id == "regression-graphsage" and not missing and launch_error is None:
@@ -886,6 +923,15 @@ def run_regression(
                 )
                 + "."
             ),
+            _artifact_by_suffix(artifact_ids, "rtl-output"),
+        )
+    elif serial_runtime_violations:
+        task_outcome = "fail"
+        task_exit_status = 1
+        failure = _failure(
+            "verification", "rtl-generation-failed", "rtl-generation",
+            f"{spec.task_id}: serial artifacts contain prohibited OpenMP/SPARTA runtime evidence: "
+            + ", ".join(serial_runtime_violations) + ".",
             _artifact_by_suffix(artifact_ids, "rtl-output"),
         )
     elif runtime_linkage_errors:
@@ -1087,6 +1133,40 @@ def run_regression_suite(
         if task["outcome"] != "pass":
             print(f"::error::{spec.task_id} finished with outcome {task['outcome']}")
         print("::endgroup::")
+
+    # Compare only independently retained inventories after both RTL processes exit.
+    graph_tasks = {task["task_id"]: task for task in tasks if task["task_id"] in
+                   {"regression-graphsage-serial", "regression-graphsage"}}
+    try:
+        comparison = compare_inventories(
+            (evidence / "regression-graphsage-serial" / "bambu.log").read_text(encoding="utf-8"),
+            (evidence / "regression-graphsage" / "bambu.log").read_text(encoding="utf-8"),
+        )
+    except (GraphSAGEEvidenceError, OSError) as error:
+        comparison = (error.report if isinstance(error, GraphSAGEEvidenceError) and error.report is not None
+                      else {"schema": "panda.ci.graphsage-comparison", "schema_version": "1.0",
+                            "outcome": "fail", "mismatch_count": None, "error": str(error), "cases": []})
+        for task_id, task in graph_tasks.items():
+            if task["outcome"] == "pass":
+                artifact_id = _artifact_by_suffix(
+                    tuple(task["artifacts"]), GRAPHSAGE_COMPARISON_ARTIFACT_SUFFIX
+                )
+                failure = _failure("verification", "result-mismatch", "result-verification",
+                                   f"{task_id}: cross-RTL GraphSAGE evidence failed: {error}", artifact_id)
+                task["outcome"], task["failure"] = "fail", failure
+                task["execution"]["exit_status"] = 1
+                task["results"]["simulation"]["verified"] = False
+                stage = next(item for item in task["stages"] if item["stage_id"] == "result-verification")
+                stage.update(outcome="fail", exit_status=1, failure=failure)
+                check = next(item for item in task["checks"] if item["check_id"] == "expected-output-matches")
+                check.update(outcome="fail", failure=failure)
+                write_json(results / "tasks" / f"{task_id}.json", task)
+    for task_id in GRAPHSAGE_COMPARISON_TASK_IDS:
+        write_json(evidence / task_id / "output-comparison.json", comparison)
+    if comparison["outcome"] == "pass":
+        print(f"GraphSAGE serial/SPARTA comparison passed: {comparison['element_comparison_count']} equalities")
+    else:
+        print(f"::error::GraphSAGE serial/SPARTA comparison failed: {comparison['error']}")
     passed = sum(task["outcome"] == "pass" for task in tasks)
     failed = len(tasks) - passed
     suite = {
@@ -1160,7 +1240,9 @@ def _unexecuted_task(
                 if spec.task_id == RUNTIME_LINKAGE_TASK_ID else []
             ),
             "rtl-simulation": [_artifact_by_suffix(artifact_ids, "simulation-log")],
-            "result-verification": [_artifact_by_suffix(artifact_ids, "result-report")],
+            "result-verification": [_artifact_by_suffix(artifact_ids, "result-report")] + (
+                [_artifact_by_suffix(artifact_ids, GRAPHSAGE_COMPARISON_ARTIFACT_SUFFIX)]
+                if any(item.endswith(".output-comparison") for item in artifact_ids) else []),
         }
         stages = [
             {
@@ -1516,12 +1598,21 @@ def _regression_artifacts(
             "text/plain",
             "simulator-preparation",
         ),
+        "output-comparison": (
+            "output-comparison.json",
+            "graphsage-output-comparison",
+            "application/json",
+            "result-verification",
+        ),
     }
     artifacts: list[dict[str, Any]] = []
     for spec in REGRESSION_SPECS:
         suffixes = REGRESSION_ARTIFACT_SUFFIXES + (
             (RUNTIME_LINKAGE_ARTIFACT_SUFFIX,)
             if spec.task_id == RUNTIME_LINKAGE_TASK_ID else ()
+        ) + (
+            (GRAPHSAGE_COMPARISON_ARTIFACT_SUFFIX,)
+            if spec.task_id in GRAPHSAGE_COMPARISON_TASK_IDS else ()
         )
         for suffix in suffixes:
             filename, role, media_type, stage_id = details[suffix]

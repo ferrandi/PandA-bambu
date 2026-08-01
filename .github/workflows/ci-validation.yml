@@ -11,6 +11,7 @@ on:
       - ".github/scripts/test_ci_results.py"
       - ".github/scripts/test_comparison.py"
       - ".github/scripts/test_fast_regressions.py"
+      - ".github/scripts/test_graphsage.py"
       - ".github/scripts/validate_ci.py"
       - ".github/scripts/test_validate_ci.py"
 
@@ -80,3 +81,9 @@ jobs:
         run: >-
           /tmp/ci-validator-venv/bin/python -m unittest discover
           -s .github/scripts -p "test_fast_regressions.py"
+
+      - name: Run GraphSAGE evidence tests
+        shell: bash
+        run: >-
+          /tmp/ci-validator-venv/bin/python -m unittest discover
+          -s .github/scripts -p "test_graphsage.py"

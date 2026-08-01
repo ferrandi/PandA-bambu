@@ -203,6 +203,11 @@ class FastRegressionResultTests(unittest.TestCase):
                 (directory / "runtime-linkage.txt").write_text(
                     "runtime-linkage-report-v1\nverification\tpass\n", encoding="utf-8"
                 )
+            if spec.task_id in {"regression-graphsage-serial", "regression-graphsage"}:
+                write_json(directory / "output-comparison.json", {
+                    "schema": "panda.ci.graphsage-comparison", "schema_version": "1.0",
+                    "outcome": "pass", "mismatch_count": 0, "cases": [],
+                })
         write_json(
             self.raw / "suite.json",
             {
@@ -236,7 +241,7 @@ class FastRegressionResultTests(unittest.TestCase):
         write_json(self.bundle / "manifest.json", manifest)
 
     def test_selected_inputs_exist_and_use_established_vectors(self) -> None:
-        self.assertEqual(len(REGRESSION_SPECS), 7)
+        self.assertEqual(len(REGRESSION_SPECS), 8)
         for spec in REGRESSION_SPECS:
             self.assertTrue((REPOSITORY / spec.source_path).is_file(), spec.source_path)
             if spec.test_vector_kind in {"xml", "cxx"}:
@@ -272,7 +277,7 @@ class FastRegressionResultTests(unittest.TestCase):
         vectors = (REPOSITORY / REGRESSION_SPECS[5].test_vector).read_text(encoding="utf-8")
         self.assertIn('a="{1,2,3,4,5,6,7,8,9,10', vectors)
 
-        graphsage_spec = REGRESSION_SPECS[6]
+        graphsage_spec = REGRESSION_SPECS[7]
         graphsage_task = regression_task(graphsage_spec)
         self.assertEqual(graphsage_task["configuration"]["input"]["test_vector_kind"], "cxx")
         self.assertEqual(
@@ -299,6 +304,8 @@ class FastRegressionResultTests(unittest.TestCase):
             graphsage_task["configuration"]["invocation"]["arguments"],
         )
         self.assertIn(f"--generate-tb={REPOSITORY / graphsage_spec.test_vector}", actual)
+        for task_id in ("regression-graphsage-serial", "regression-graphsage"):
+            self.assertIn(f"{task_id}.output-comparison", _artifact_ids(task_id))
         self.assertEqual(
             graphsage_spec.rtl_authenticity_instances,
             REGRESSION_SPECS[5].rtl_authenticity_instances,
@@ -316,7 +323,7 @@ class FastRegressionResultTests(unittest.TestCase):
 
     def test_missing_graphsage_cpp_testbench_is_invalid_input(self) -> None:
         repository = self.root / "missing-graphsage-testbench"
-        spec = REGRESSION_SPECS[6]
+        spec = REGRESSION_SPECS[7]
         source = repository / spec.source_path
         source.parent.mkdir(parents=True)
         source.write_text('extern "C" void graphsage_mean(const int*, const int*, const int*, int*) {}\n')
@@ -522,9 +529,22 @@ class FastRegressionResultTests(unittest.TestCase):
         evidence = repository / ".ci-regression-evidence"
 
         def fake_run_regression(*args):
-            results_directory, spec = args[2], args[4]
+            results_directory, evidence_directory, spec = args[2], args[3], args[4]
             task = regression_task(spec)
             write_json(results_directory / "tasks" / f"{spec.task_id}.json", task)
+            if spec.task_id in {"regression-graphsage-serial", "regression-graphsage"}:
+                directory = evidence_directory / spec.task_id
+                directory.mkdir(parents=True, exist_ok=True)
+                values = ",".join(str(value) for value in range(18))
+                cases = ("regular", "irregular-zero-degree", "negative-signed-division",
+                         "duplicate-self-mixed")
+                (directory / "bambu.log").write_text(
+                    "".join("GRAPHSAGE_CASE|id=" + case_id + "|rows=0,2,4,6,8,10,12|"
+                    "neighbors=0,1,1,2,2,3,3,4,4,5,5,0|features=" + values
+                    + "|golden=" + values + "|observed=" + values
+                    + "|count=18|mismatches=0|inputs_immutable=1\n" for case_id in cases),
+                    encoding="utf-8",
+                )
             return task
 
         with patch("ci_results.regressions.run_regression", side_effect=fake_run_regression):
@@ -550,7 +570,7 @@ class FastRegressionResultTests(unittest.TestCase):
             for path, task in documents.items()
             if path.startswith("tasks/") and task["task_type"] == "regression"
         ]
-        self.assertEqual(len(regression_paths), 7)
+        self.assertEqual(len(regression_paths), 8)
         self.assertTrue(all(documents[path]["outcome"] == "pass" for path in regression_paths))
         self.assertEqual(documents["verdict.json"]["overall_outcome"], "pass")
         self.assertEqual(
@@ -577,9 +597,9 @@ class FastRegressionResultTests(unittest.TestCase):
                 "failed_count": 0,
                 "failure_stage": None,
                 "outcome": "pass",
-                "passed_count": 7,
+                "passed_count": 8,
                 "started_at": "2023-11-14T22:14:20Z",
-                "task_count": 7,
+                "task_count": 8,
             },
         )
         summary = render_bundle_summary(self.bundle)

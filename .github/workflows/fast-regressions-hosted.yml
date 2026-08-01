@@ -9,6 +9,7 @@ on:
       - ext/**
       - etc/**
       - examples/mm/**
+      - examples/GraphSAGE/**
       - panda_regressions/hls/bambu_specific_test2.sh
       - examples/OpenMP/functional/**
       - panda_regressions/hls/bambu_specific_test2/**
@@ -21,6 +22,7 @@ on:
       - .github/scripts/ci_results/**
       - .github/scripts/test_fast_regressions.py
       - .github/scripts/test_comparison.py
+      - .github/scripts/test_graphsage.py
       - .github/scripts/test_ci_results.py
       - .github/workflows/fast-regressions-hosted.yml
   workflow_dispatch:
