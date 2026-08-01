@@ -53,6 +53,9 @@ def discover(endpoint:str,headers:Mapping[str,str],methods:list[Mapping[str,Any]
             except (UnicodeDecodeError,json.JSONDecodeError):items=None
         else:raise ProfileError("unknown discovery method")
         if items is not None:
+            model_ids=[item["id"] for item in items]
+            if len(model_ids)!=len(set(model_ids)):
+                raise ProfileError("discovery returned duplicate model identifiers")
             normalized=tuple({"model_id":item["id"],"display_name":item.get("name"),"metadata":{key:value for key,value in item.items() if key not in {"id","name"}},"capabilities":{},"eligible":False,"rejection_reasons":["awaiting local policy and capability evaluation"],"execution_units":[]} for item in items)
             return DiscoveryResult(kind,normalized,tuple(attempted),False,tuple(diagnostics))
         diagnostics.append(f"{kind}: malformed-response")

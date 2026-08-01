@@ -40,7 +40,8 @@ The reserved future command surface is:
 
 ```text
 agentctl catalog sync --profile work
-agentctl models select --role implementer --objective balanced-quality-cost
+agentctl models query --catalog <catalog-file> --role agentic/roles/implementer.yaml
+agentctl models select --catalog <catalog-file> --role agentic/roles/implementer.yaml
 agentctl models explain --latest
 agentctl run --task <task-file> --select-execution-plan
 ```
@@ -55,3 +56,30 @@ Tracked files contain only generic schemas, adapters, probes, policies, and fict
 - `.agentic-local/credentials/`
 
 Runtime discovery, probe, and selection records are ignored under `agentic-state/`. No organizational endpoint, credential, provider-specific model identifier, or model-name heuristic belongs in the generic core.
+
+## PAF-02 portable task contracts
+
+PAF-02 adds versioned, client-neutral role, task, result, policy-overlay, and
+selection contracts under `agentic/schemas/`. JSON Schemas define the portable
+structural contract. Python validators enforce both those structural checks and
+semantic invariants that JSON Schema cannot conveniently express, including
+uniqueness by `model_id` and cross-field relationships. Tracked roles and
+fixtures contain only fictional data. Task and result contracts are declarative
+records; they do not configure a client or launch work. Validation evidence
+remains missing or `null` when it was not collected.
+
+`agentctl catalog sync` accepts an explicitly supplied imported catalog and an
+optional local overlay, then writes a deterministic normalized snapshot.
+Overlays target exact discovered model identifiers, are fail-closed for unknown
+models or invalid execution units, and record policy-overlay provenance.
+Discovery alone cannot make a candidate eligible.
+
+`agentctl models query` reads a catalog and role without probing. It reports
+eligibility, unavailable mandatory capabilities, and capabilities that need
+stronger evidence. `agentctl models select` invokes the versioned deterministic
+resolver and persists a selection under ignored `agentic-state/selections/`.
+`agentctl models explain --latest` reads only a valid persisted selection.
+
+PAF-02 has no `agentctl run`, no credential collection, no generated client
+configuration, and no automatic capability probe. Those behaviors remain
+reserved for dependent PAF work.

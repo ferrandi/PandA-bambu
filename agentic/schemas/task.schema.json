@@ -1,0 +1,37 @@
+{
+  "$id": "https://panda-re.github.io/schemas/agentic/task.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Portable agent task",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "task_id", "version", "role", "objective", "inputs", "constraints", "expected_outputs", "validation_requirements", "budgets", "reproducibility"],
+  "properties": {
+    "schema": {"const": "evolvehls.agentic.task"},
+    "schema_version": {"const": "1.0"},
+    "task_id": {"type": "string", "minLength": 1},
+    "version": {"type": "string", "minLength": 1},
+    "role": {"type": "string", "minLength": 1},
+    "objective": {"type": "string", "minLength": 1},
+    "inputs": {"$ref": "#/$defs/strings"},
+    "constraints": {"$ref": "#/$defs/strings"},
+    "expected_outputs": {"$ref": "#/$defs/strings"},
+    "validation_requirements": {"$ref": "#/$defs/strings"},
+    "budgets": {"type": "object"},
+    "reproducibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["context_hash", "base_revision"],
+      "properties": {
+        "context_hash": {"type": "string", "minLength": 1},
+        "base_revision": {"type": "string", "minLength": 1}
+      }
+    }
+  },
+  "$defs": {
+    "strings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}
