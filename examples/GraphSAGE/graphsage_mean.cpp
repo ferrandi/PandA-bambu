@@ -1,6 +1,4 @@
-#define GRAPHSAGE_VERTEX_COUNT 6
-#define GRAPHSAGE_EDGE_COUNT 12
-#define GRAPHSAGE_FEATURE_DIMENSION 3
+#include "graphsage_constants.hpp"
 #define GRAPHSAGE_WORKER_COUNT 2
 
 extern "C" void __attribute__((noinline))

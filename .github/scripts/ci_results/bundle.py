@@ -7,6 +7,8 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
 from .constants import (
+    GRAPHSAGE_COMPARISON_ARTIFACT_SUFFIX,
+    GRAPHSAGE_COMPARISON_TASK_IDS,
     ARTIFACT_IDS,
     CHECK_IDS,
     CORE_DOCUMENT_PATHS,
@@ -786,6 +788,7 @@ def validate_bundle(
         "rtl-output": "rtl-generation",
         "simulation-log": "rtl-simulation",
         "runtime-linkage": "simulator-preparation",
+        "output-comparison": "result-verification",
     }
 
     for task_id in sorted(regression_tasks):
@@ -819,6 +822,9 @@ def validate_bundle(
         expected_suffixes = tuple(sorted(REGRESSION_ARTIFACT_SUFFIXES + (
             (RUNTIME_LINKAGE_ARTIFACT_SUFFIX,)
             if task_id == RUNTIME_LINKAGE_TASK_ID else ()
+        ) + (
+            (GRAPHSAGE_COMPARISON_ARTIFACT_SUFFIX,)
+            if task_id in GRAPHSAGE_COMPARISON_TASK_IDS else ()
         )))
         expected_regression_artifacts = [
             f"{task_id}.{suffix}" for suffix in expected_suffixes
@@ -888,7 +894,9 @@ def validate_bundle(
                 if task_id == RUNTIME_LINKAGE_TASK_ID else []
             ),
             "rtl-simulation": [f"{task_id}.simulation-log"],
-            "result-verification": [f"{task_id}.result-report"],
+            "result-verification": [f"{task_id}.result-report"] + (
+                [f"{task_id}.{GRAPHSAGE_COMPARISON_ARTIFACT_SUFFIX}"]
+                if task_id in GRAPHSAGE_COMPARISON_TASK_IDS else []),
         }
         for stage_id in REGRESSION_STAGE_IDS:
             stage = regression_stages.get(stage_id, {})

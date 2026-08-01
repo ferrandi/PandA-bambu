@@ -36,4 +36,5 @@ RUN dpkg-query -W bc clang-16 g++-multilib gawk gettext-base libclang-16-dev llv
     && verilator --version
 
 COPY entrypoint.sh /entrypoint.sh
+COPY normalize-output-permissions.sh /normalize-output-permissions.sh
 ENTRYPOINT [ "/entrypoint.sh" ]
