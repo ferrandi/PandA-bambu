@@ -1,0 +1,19 @@
+{
+  "$id": "https://panda-re.github.io/schemas/agentic/readiness-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Redacted execution-profile readiness report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "registry_id", "checked_at", "redacted", "adapters", "profiles", "resources", "diagnostics"],
+  "properties": {
+    "schema": {"const": "evolvehls.agentic.readiness-report"},
+    "schema_version": {"const": "1.0"},
+    "registry_id": {"type": "string", "minLength": 1},
+    "checked_at": {"type": "string", "format": "date-time"},
+    "redacted": {"const": true},
+    "adapters": {"type": "array"},
+    "profiles": {"type": "array"},
+    "resources": {"type": "array"},
+    "diagnostics": {"type": "array"}
+  }
+}

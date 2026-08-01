@@ -1,85 +1,41 @@
-# Turnkey provider setup design
+# Turnkey provider and execution-profile design
 
 The target user interface is:
 
-```bash
-python3 tools/agentic/agentctl.py provider add --adapter auto --profile work
+```text
+agentctl setup
+agentctl doctor
+agentctl profiles list
+agentctl routing explain
+agentctl run
 ```
 
-Only a gateway base URL and an API key entered through hidden input should be required. PAF-01 defines the contracts and generic interfaces needed by that command; it does not yet collect or persist credentials, generate client configuration, or launch work.
+PAF-03A implements only the bounded profile inspection and routing explanation portion. `setup`, detection, generated adapters, and `run` remain PAF-03B and later work.
 
-## Pipeline boundary
+## PAF-03A routing boundary
 
-The eventual controller performs these deterministic stages:
+Execution profiles are portable tracked declarations, not a runtime configuration. They reference a client adapter and a symbolic provider-profile, native-session, or local-runtime binding. Local binding values, endpoints, executable paths, credentials, and discovered runtime facts remain ignored under `.agentic-local/` and `agentic-state/`.
 
-1. auto-detect a generic or approved provider adapter;
-2. try ordered model discovery methods;
-3. ask for one authorized model ID only if listing is unavailable;
-4. normalize metadata into a local catalog;
-5. apply ignored local policy overlays;
-6. probe only eligible role candidates with unknown or untrusted evidence;
-7. resolve client + provider + model + protocol + effort + fallback chain;
-8. generate supported client configuration;
-9. emit a redacted readiness report.
+The routing decision is deterministic and versioned. It reuses PAF-01 protocols and PAF-02 capability confidence/role requirements. It selects among profiles only after filtering mandatory role capabilities, allowed access/funding/authentication classes, privacy, cost, resources, readiness, and adapter compatibility. It records every rejected alternative.
 
-Discovery and capability are separate. Listing a model never makes it eligible for autonomous work. Every capability carries status, provenance, and confidence: `declared`, `inferred`, `observed`, `historically-validated`, or `unknown`.
+A later preference tier requires an explicit fallback transition. Transitions across funding classes fail closed unless declared. Evaluation mode pins behavior and does not use a fallback. Independent review may require a different adapter and/or execution family from the prior implementer decision.
 
-Generic discovery may try `GET /v1/models`, `GET /v1/model/info`, an adapter-provided list surface, or an imported local catalog. Missing, rejected, and malformed surfaces fall through without assuming model-name patterns. The generic interface returns `requires_model_id` when manual authorized-model fallback is needed.
+## Native-session safety
 
-## Staged probing and cache
+Codex-like and Claude-Code-like native account clients own their externally owned account sessions. PAF-03A never authenticates, reads, copies, exports, stores, or alters these sessions or their tokens. Credential references are identifiers only; credential values are never valid contract fields.
 
-Setup lists all models, applies eligibility rules, probes likely role candidates, and defers other probes until a capability query needs them. Probe records cover basic text, streaming, tools, structured output, context-limit behavior, usage, and embeddings where applicable. Successful observations are cached under `agentic-state/probes/` with timestamps and a profile-controlled TTL. Cache records are redacted and local-only.
+## Contract responsibilities
 
-## Resolution and modes
+JSON Schema provides the versioned structural format. Python validators provide semantic checks: duplicate identifiers, unknown adapter/profile references, invalid access/funding/auth combinations, readiness cross-references, redaction, and fallback graph integrity. Tests exercise both responsibilities and fixture coverage.
 
-The resolver is deterministic and versioned; no LLM chooses a model. It filters mandatory capabilities and policies before ranking, explains the selected plan, records every rejected candidate and reason, preserves overrides, and never silently falls back. Implementation and independent review may select different clients.
-
-Development mode may refresh stale evidence and use approved, explained fallbacks. Evaluation pins catalog snapshot, execution plan, provider protocol, client version, effort, task version, context hash, base revision, and budgets; it neither refreshes nor falls back. Ablation varies only declared dimensions.
-
-The reserved future command surface is:
+## Bounded commands
 
 ```text
-agentctl catalog sync --profile work
-agentctl models query --catalog <catalog-file> --role agentic/roles/implementer.yaml
-agentctl models select --catalog <catalog-file> --role agentic/roles/implementer.yaml
-agentctl models explain --latest
-agentctl run --task <task-file> --select-execution-plan
+agentctl profiles validate
+agentctl profiles list
+agentctl profiles show
+agentctl routing explain
+agentctl readiness show
 ```
 
-## Configuration separation
-
-Tracked files contain only generic schemas, adapters, probes, policies, and fictional examples. User-local configuration is ignored under:
-
-- `.agentic-local/providers/`
-- `.agentic-local/catalogs/`
-- `.agentic-local/overlays/`
-- `.agentic-local/credentials/`
-
-Runtime discovery, probe, and selection records are ignored under `agentic-state/`. No organizational endpoint, credential, provider-specific model identifier, or model-name heuristic belongs in the generic core.
-
-## PAF-02 portable task contracts
-
-PAF-02 adds versioned, client-neutral role, task, result, policy-overlay, and
-selection contracts under `agentic/schemas/`. JSON Schemas define the portable
-structural contract. Python validators enforce both those structural checks and
-semantic invariants that JSON Schema cannot conveniently express, including
-uniqueness by `model_id` and cross-field relationships. Tracked roles and
-fixtures contain only fictional data. Task and result contracts are declarative
-records; they do not configure a client or launch work. Validation evidence
-remains missing or `null` when it was not collected.
-
-`agentctl catalog sync` accepts an explicitly supplied imported catalog and an
-optional local overlay, then writes a deterministic normalized snapshot.
-Overlays target exact discovered model identifiers, are fail-closed for unknown
-models or invalid execution units, and record policy-overlay provenance.
-Discovery alone cannot make a candidate eligible.
-
-`agentctl models query` reads a catalog and role without probing. It reports
-eligibility, unavailable mandatory capabilities, and capabilities that need
-stronger evidence. `agentctl models select` invokes the versioned deterministic
-resolver and persists a selection under ignored `agentic-state/selections/`.
-`agentctl models explain --latest` reads only a valid persisted selection.
-
-PAF-02 has no `agentctl run`, no credential collection, no generated client
-configuration, and no automatic capability probe. Those behaviors remain
-reserved for dependent PAF work.
+These commands only inspect supplied documents. They do not authenticate, collect secrets, create a native-client configuration, call a paid/remote model, probe automatically, launch a task, create a worktree, commit, push, or merge.

@@ -1,0 +1,23 @@
+{
+  "$id": "https://panda-re.github.io/schemas/agentic/routing-policy.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Portable execution routing policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "policy_id", "version", "allowed_access_classes", "allowed_funding_classes", "allowed_auth_modes", "allowed_data_classes", "max_cost_tier", "available_resources", "preferences", "fallbacks", "independent_review"],
+  "properties": {
+    "schema": {"const": "evolvehls.agentic.routing-policy"},
+    "schema_version": {"const": "1.0"},
+    "policy_id": {"type": "string", "minLength": 1},
+    "version": {"type": "string", "minLength": 1},
+    "allowed_access_classes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["api-gateway", "native-account-client", "local-server", "native-local-client"]}},
+    "allowed_funding_classes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["project", "organization", "subscription", "personal-api", "local"]}},
+    "allowed_auth_modes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["native-session", "environment-token", "token-helper", "none"]}},
+    "allowed_data_classes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["public", "internal", "restricted"]}},
+    "max_cost_tier": {"type": "integer", "minimum": 0, "maximum": 9},
+    "available_resources": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "preferences": {"type": "array", "minItems": 1},
+    "fallbacks": {"type": "array"},
+    "independent_review": {"type": "object"}
+  }
+}

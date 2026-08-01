@@ -1,0 +1,25 @@
+{
+  "$id": "https://panda-re.github.io/schemas/agentic/execution-profile.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Portable execution profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "schema_version", "adapter_id", "access_class", "funding_class", "auth_mode", "binding", "model", "protocol", "capabilities", "privacy", "cost", "resources", "availability", "priority"],
+  "properties": {
+    "profile_id": {"type": "string", "minLength": 1},
+    "schema_version": {"const": "1.0"},
+    "adapter_id": {"type": "string", "minLength": 1},
+    "access_class": {"enum": ["api-gateway", "native-account-client", "local-server", "native-local-client"]},
+    "funding_class": {"enum": ["project", "organization", "subscription", "personal-api", "local"]},
+    "auth_mode": {"enum": ["native-session", "environment-token", "token-helper", "none"]},
+    "binding": {"type": "object"},
+    "model": {"type": "object"},
+    "protocol": {"enum": ["openai-responses", "anthropic-messages", "openai-chat-completions"]},
+    "capabilities": {"type": "object"},
+    "privacy": {"type": "object"},
+    "cost": {"type": "object"},
+    "resources": {"type": "object"},
+    "availability": {"type": "object"},
+    "priority": {"type": "integer", "minimum": 0}
+  }
+}

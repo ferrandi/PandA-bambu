@@ -1,0 +1,20 @@
+{
+  "schema": "evolvehls.agentic.routing-policy",
+  "schema_version": "1.0",
+  "policy_id": "fixture-local-first",
+  "version": "1.0",
+  "allowed_access_classes": ["local-server", "native-local-client", "api-gateway", "native-account-client"],
+  "allowed_funding_classes": ["local", "project", "organization", "subscription"],
+  "allowed_auth_modes": ["none", "environment-token", "token-helper", "native-session"],
+  "allowed_data_classes": ["public", "internal", "restricted"],
+  "max_cost_tier": 3,
+  "available_resources": ["local-runtime"],
+  "preferences": [
+    {"preference_id": "local-first", "access_classes": ["local-server", "native-local-client"], "funding_classes": ["local"]},
+    {"preference_id": "project-fallback", "access_classes": ["api-gateway"], "funding_classes": ["project"]}
+  ],
+  "fallbacks": [
+    {"from": "local-first", "to": "project-fallback", "allow_funding_transition": true}
+  ],
+  "independent_review": {"required": false, "different_adapter": false, "different_execution_family": false}
+}
