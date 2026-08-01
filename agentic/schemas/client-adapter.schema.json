@@ -1,0 +1,56 @@
+{
+  "$id": "https://panda-re.github.io/schemas/agentic/client-adapter.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Portable client adapter descriptor",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "adapter_id",
+    "invocation_class",
+    "execution_family",
+    "access_classes",
+    "protocols"
+  ],
+  "properties": {
+    "schema": {"const": "evolvehls.agentic.client-adapter"},
+    "schema_version": {"const": "1.0"},
+    "adapter_id": {"$ref": "#/$defs/id"},
+    "invocation_class": {
+      "enum": ["native-account-cli", "http-api-client", "native-local-cli"]
+    },
+    "execution_family": {"$ref": "#/$defs/id"},
+    "access_classes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "api-gateway",
+          "native-account-client",
+          "local-server",
+          "native-local-client"
+        ]
+      }
+    },
+    "protocols": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "openai-responses",
+          "anthropic-messages",
+          "openai-chat-completions"
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9.-]*$"
+    }
+  }
+}

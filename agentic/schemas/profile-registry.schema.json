@@ -1,0 +1,16 @@
+{
+  "$id": "https://panda-re.github.io/schemas/agentic/profile-registry.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Portable execution profile registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "registry_id", "version", "adapters", "profiles"],
+  "properties": {
+    "schema": {"const": "evolvehls.agentic.profile-registry"},
+    "schema_version": {"const": "1.0"},
+    "registry_id": {"type": "string", "minLength": 1},
+    "version": {"type": "string", "minLength": 1},
+    "adapters": {"type": "array"},
+    "profiles": {"type": "array"}
+  }
+}

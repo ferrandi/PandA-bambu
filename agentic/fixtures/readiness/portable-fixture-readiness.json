@@ -1,0 +1,24 @@
+{
+  "schema": "evolvehls.agentic.readiness-report",
+  "schema_version": "1.0",
+  "registry_id": "portable-fixture-registry",
+  "checked_at": "2026-01-01T00:00:00+00:00",
+  "redacted": true,
+  "adapters": [
+    {"ref": "generic-http", "status": "ready"},
+    {"ref": "codex-like", "status": "ready"},
+    {"ref": "claude-like", "status": "ready"},
+    {"ref": "native-local", "status": "ready"}
+  ],
+  "profiles": [
+    {"ref": "local-server", "status": "ready"},
+    {"ref": "project-gateway", "status": "ready"},
+    {"ref": "organization-api", "status": "ready"},
+    {"ref": "codex-session", "status": "ready"},
+    {"ref": "claude-session", "status": "ready"},
+    {"ref": "personal-api", "status": "ready"},
+    {"ref": "native-local", "status": "ready"}
+  ],
+  "resources": ["local-runtime"],
+  "diagnostics": ["Fictional redacted fixture; no client was contacted."]
+}
