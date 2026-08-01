@@ -8,21 +8,82 @@
   "properties": {
     "schema": {"const": "evolvehls.agentic.policy-overlay"},
     "schema_version": {"const": "1.0"},
-    "profile_id": {"type": "string", "minLength": 1},
+    "profile_id": {"$ref": "#/$defs/id"},
     "rules": {
       "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["model_id", "eligible", "rejection_reasons", "execution_units", "capabilities", "metadata"],
-        "properties": {
-          "model_id": {"type": "string", "minLength": 1},
-          "eligible": {"type": "boolean"},
-          "rejection_reasons": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
-          "execution_units": {"type": "array"},
-          "capabilities": {"type": "object"},
-          "metadata": {"type": "object"}
+      "items": {"$ref": "#/$defs/rule"}
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1},
+    "confidence": {
+      "enum": ["declared", "inferred", "observed", "historically-validated", "unknown"]
+    },
+    "status": {
+      "enum": ["supported", "unsupported", "unknown", "probe-failed"]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "confidence", "observed_at", "expires_at"],
+      "properties": {
+        "source": {
+          "enum": ["model-list", "model-info", "policy-overlay", "benchmark-import", "live-probe", "framework-evaluation"]
+        },
+        "confidence": {"$ref": "#/$defs/confidence"},
+        "observed_at": {"type": ["string", "null"], "format": "date-time"},
+        "expires_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "confidence", "provenance"],
+      "properties": {
+        "status": {"$ref": "#/$defs/status"},
+        "confidence": {"$ref": "#/$defs/confidence"},
+        "provenance": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/provenance"}
         }
+      }
+    },
+    "execution_unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["client", "provider", "model", "protocol", "effort"],
+      "properties": {
+        "client": {"enum": ["codex", "claude-code", "cline"]},
+        "provider": {"$ref": "#/$defs/id"},
+        "model": {"$ref": "#/$defs/id"},
+        "protocol": {
+          "enum": ["openai-responses", "anthropic-messages", "openai-chat-completions"]
+        },
+        "effort": {"$ref": "#/$defs/id"}
+      }
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model_id", "eligible", "rejection_reasons", "execution_units", "capabilities", "metadata"],
+      "properties": {
+        "model_id": {"$ref": "#/$defs/id"},
+        "eligible": {"type": "boolean"},
+        "rejection_reasons": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"}
+        },
+        "execution_units": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/execution_unit"}
+        },
+        "capabilities": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/capability"}
+        },
+        "metadata": {"type": "object"}
       }
     }
   }

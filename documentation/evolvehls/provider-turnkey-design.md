@@ -60,10 +60,13 @@ Runtime discovery, probe, and selection records are ignored under `agentic-state
 ## PAF-02 portable task contracts
 
 PAF-02 adds versioned, client-neutral role, task, result, policy-overlay, and
-selection contracts under `agentic/schemas/`. Tracked roles and fixtures contain
-only fictional data. Task and result contracts are declarative records; they do
-not configure a client or launch work. Validation evidence remains missing or
-`null` when it was not collected.
+selection contracts under `agentic/schemas/`. JSON Schemas define the portable
+structural contract. Python validators enforce both those structural checks and
+semantic invariants that JSON Schema cannot conveniently express, including
+uniqueness by `model_id` and cross-field relationships. Tracked roles and
+fixtures contain only fictional data. Task and result contracts are declarative
+records; they do not configure a client or launch work. Validation evidence
+remains missing or `null` when it was not collected.
 
 `agentctl catalog sync` accepts an explicitly supplied imported catalog and an
 optional local overlay, then writes a deterministic normalized snapshot.

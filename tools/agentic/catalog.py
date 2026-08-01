@@ -6,6 +6,7 @@ import copy
 import hashlib
 import json
 import os
+import re
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -112,24 +113,33 @@ def persist_catalog(catalog: Mapping[str, Any], directory: Path) -> Path:
     required = {"schema", "schema_version", "profile_id", "snapshot_id", "created_at", "models"}
     if not isinstance(catalog, Mapping) or not required <= set(catalog):
         raise CatalogError("catalog does not match the portable catalog contract")
-    path = directory / f"{catalog['snapshot_id']}.json"
+    snapshot_id = catalog["snapshot_id"]
+    if not isinstance(snapshot_id, str) or re.fullmatch(r"[0-9a-f]{64}", snapshot_id) is None:
+        raise CatalogError("snapshot_id must be an internally generated SHA-256 hexadecimal digest")
+    path = directory / f"{snapshot_id}.json"
     _atomic_json(path, {key: catalog[key] for key in required})
     return path
+
+
+def _mandatory_capabilities(model: Mapping[str, Any], role: Mapping[str, Any]) -> tuple[list[str], list[str]]:
+    capabilities = model.get("capabilities", {})
+    missing, probe_needed = [], []
+    minimum = CONFIDENCE_ORDER[role["minimum_confidence"]]
+    for name in role["mandatory_capabilities"]:
+        evidence = capabilities.get(name) if isinstance(capabilities, Mapping) else None
+        if not isinstance(evidence, Mapping) or evidence.get("status") != "supported":
+            missing.append(name)
+        elif CONFIDENCE_ORDER.get(evidence.get("confidence"), -1) < minimum:
+            probe_needed.append(name)
+    return missing, probe_needed
 
 
 def query(catalog: Mapping[str, Any], role: Mapping[str, Any]) -> dict[str, Any]:
     contracts.validate_role(role)
     candidates = []
-    minimum = CONFIDENCE_ORDER[role["minimum_confidence"]]
     for model in catalog.get("models", []):
         capabilities = model.get("capabilities", {})
-        missing, probe_needed = [], []
-        for name in role["mandatory_capabilities"]:
-            evidence = capabilities.get(name)
-            if not isinstance(evidence, Mapping) or evidence.get("status") != "supported":
-                missing.append(name)
-            elif CONFIDENCE_ORDER.get(evidence.get("confidence"), -1) < minimum:
-                probe_needed.append(name)
+        missing, probe_needed = _mandatory_capabilities(model, role)
         candidates.append({
             "model_id": model.get("model_id"),
             "eligible": bool(model.get("eligible")),
@@ -145,7 +155,16 @@ def select(catalog: Mapping[str, Any], role: Mapping[str, Any], objective: str |
     contracts.validate_role(role)
     if mode not in role["permitted_modes"]:
         raise CatalogError("role does not permit requested resolver mode")
-    plan = resolver.resolve(list(catalog.get("models", [])), role["role_id"], objective or role["default_objective"], set(role["mandatory_capabilities"]), mode=mode, override=override, pins=pins)
+    candidates = []
+    for source in catalog.get("models", []):
+        candidate = copy.deepcopy(dict(source))
+        missing, probe_needed = _mandatory_capabilities(candidate, role)
+        reasons = list(candidate.get("rejection_reasons", []))
+        reasons.extend(f"mandatory capability unavailable: {name}" for name in missing)
+        reasons.extend(f"mandatory capability confidence below {role['minimum_confidence']}: {name}" for name in probe_needed)
+        candidate["rejection_reasons"] = list(dict.fromkeys(reasons))
+        candidates.append(candidate)
+    plan = resolver.resolve(candidates, role["role_id"], objective or role["default_objective"], set(role["mandatory_capabilities"]), mode=mode, override=override, pins=pins)
     plan["explanation"].extend([
         f"catalog snapshot: {catalog['snapshot_id']}",
         f"role version: {role['version']}",
@@ -181,7 +200,7 @@ def latest_selection(directory: Path) -> dict[str, Any]:
             value = contracts.load_contract(path, "selection")
         except contracts.ContractError:
             continue
-        values.append(value)
+        values.append((contracts.parse_timestamp(value["created_at"]), value))
     if not values:
         raise CatalogError("no valid persisted selection exists")
-    return sorted(values, key=lambda item: (item["created_at"], item["selection_id"]))[-1]
+    return sorted(values, key=lambda item: (item[0], item[1]["selection_id"]))[-1][1]

@@ -34,7 +34,13 @@
           "name": {"type": "string", "minLength": 1},
           "status": {"enum": ["passed", "failed", "not-run"]},
           "evidence": {"type": ["string", "null"]}
-        }
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"status": {"const": "passed"}}},
+            "then": {"properties": {"evidence": {"type": "string", "minLength": 1}}}
+          }
+        ]
       }
     },
     "diagnostics": {

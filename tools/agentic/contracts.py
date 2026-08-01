@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -87,7 +88,7 @@ def validate_result(value: Mapping[str, Any]) -> None:
     _require(value["outcome"] in {"succeeded", "failed", "blocked", "cancelled"}, "invalid result outcome")
     _id(value["execution_plan"], "execution_plan")
     _require(isinstance(value["artifacts"], list) and all(isinstance(item, dict) and set(item) == {"path", "digest"} and all(isinstance(item[key], str) and item[key] for key in ("path", "digest")) for item in value["artifacts"]), "invalid artifacts")
-    _require(isinstance(value["validation"], list) and all(isinstance(item, dict) and set(item) == {"name", "status", "evidence"} and isinstance(item["name"], str) and item["name"] and item["status"] in {"passed", "failed", "not-run"} and (item["evidence"] is None or isinstance(item["evidence"], str)) for item in value["validation"]), "invalid validation records")
+    _require(isinstance(value["validation"], list) and all(isinstance(item, dict) and set(item) == {"name", "status", "evidence"} and isinstance(item["name"], str) and item["name"] and item["status"] in {"passed", "failed", "not-run"} and (item["evidence"] is None or isinstance(item["evidence"], str)) and (item["status"] != "passed" or isinstance(item["evidence"], str) and item["evidence"]) for item in value["validation"]), "invalid validation records")
     _string_list(value["diagnostics"], "diagnostics")
 
 
@@ -114,12 +115,23 @@ def validate_overlay(value: Mapping[str, Any]) -> None:
         _require(isinstance(rule["metadata"], dict), "rule.metadata must be an object")
 
 
+def parse_timestamp(value: Any, field: str = "created_at") -> datetime:
+    _id(value, field)
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        raise ContractError(f"{field} must be an ISO 8601 timestamp") from None
+    _require(parsed.tzinfo is not None and parsed.utcoffset() is not None, f"{field} must include a timezone")
+    return parsed
+
+
 def validate_selection(value: Mapping[str, Any]) -> None:
     required = {"schema", "schema_version", "selection_id", "created_at", "catalog_snapshot", "role_id", "role_version", "execution_plan"}
     _require(set(value) == required, "selection fields do not match schema")
     _require(value["schema"] == "evolvehls.agentic.selection" and value["schema_version"] == "1.0", "unsupported selection schema")
-    for key in ("selection_id", "created_at", "catalog_snapshot", "role_id", "role_version"):
+    for key in ("selection_id", "catalog_snapshot", "role_id", "role_version"):
         _id(value[key], key)
+    parse_timestamp(value["created_at"])
     _require(isinstance(value["execution_plan"], dict), "execution_plan must be an object")
 
 
