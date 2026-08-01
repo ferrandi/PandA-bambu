@@ -558,7 +558,7 @@ class FastRegressionResultTests(unittest.TestCase):
             if spec.task_id in {"regression-graphsage-serial", "regression-graphsage"}:
                 directory = evidence_directory / spec.task_id / "mdpi-output-dumps"
                 directory.mkdir(parents=True, exist_ok=True)
-                for call in range(1, 5):
+                for call in range(4):
                     for parameter, length in enumerate((7, 12, 18, 18)):
                         values = range(parameter * 20, parameter * 20 + length)
                         payload = struct.pack(f"={length}i", *values)

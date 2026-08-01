@@ -42,7 +42,7 @@ def inventory_from_mdpi_dumps(directory: Path) -> str:
         f"P{parameter}.{kind}.{call}.dat"
         for parameter in range(4)
         for kind in ("gold", "sim")
-        for call in range(1, len(CASE_IDS) + 1)
+        for call in range(len(CASE_IDS))
     }
     actual_paths = {path.name: path for path in directory.glob("P*.dat") if path.is_file()}
     missing = sorted(expected_names - actual_paths.keys())
@@ -56,7 +56,7 @@ def inventory_from_mdpi_dumps(directory: Path) -> str:
         raise GraphSAGEEvidenceError("invalid MDPI dump inventory (" + "; ".join(details) + ")")
 
     lines = []
-    for call, case_id in enumerate(CASE_IDS, 1):
+    for call, case_id in enumerate(CASE_IDS):
         gold = [
             _read_dump(actual_paths[f"P{parameter}.gold.{call}.dat"], length)
             for parameter, length in enumerate(PARAMETER_LENGTHS)

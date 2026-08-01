@@ -33,7 +33,7 @@ def complete_inventory(observed: str | None = None, *, immutable: int = 1) -> st
 
 def write_mdpi_dumps(directory: Path) -> None:
     lengths = (7, 12, 18, 18)
-    for call in range(1, 5):
+    for call in range(4):
         for parameter, length in enumerate(lengths):
             values = list(range(call * 100 + parameter * 20, call * 100 + parameter * 20 + length))
             for kind in ("gold", "sim"):
@@ -46,13 +46,28 @@ class GraphSAGEEvidenceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             write_mdpi_dumps(directory)
-            observed = list(range(160, 178))
+            observed = list(range(60, 78))
             observed[0] = -91
-            (directory / "P3.sim.1.dat").write_bytes(struct.pack("=18i", *observed))
+            (directory / "P3.sim.0.dat").write_bytes(struct.pack("=18i", *observed))
             parsed = parse_inventory(inventory_from_mdpi_dumps(directory))
         self.assertEqual(parsed["regular"]["observed"], observed)
-        self.assertEqual(parsed["regular"]["golden"][0], 160)
+        self.assertEqual(parsed["regular"]["golden"][0], 60)
         self.assertEqual(parsed["regular"]["mismatches"], 1)
+
+    def test_mdpi_zero_based_calls_map_to_cases_in_order(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            write_mdpi_dumps(directory)
+            parsed = parse_inventory(inventory_from_mdpi_dumps(directory))
+        self.assertEqual(
+            {case_id: parsed[case_id]["golden"][0] for case_id in parsed},
+            {
+                "regular": 60,
+                "irregular-zero-degree": 160,
+                "negative-signed-division": 260,
+                "duplicate-self-mixed": 360,
+            },
+        )
 
     def test_mdpi_dump_inventory_fails_closed_on_missing_truncated_and_extra(self):
         for failure in ("missing", "truncated", "extra"):
@@ -60,11 +75,11 @@ class GraphSAGEEvidenceTests(unittest.TestCase):
                 directory = Path(temporary)
                 write_mdpi_dumps(directory)
                 if failure == "missing":
-                    (directory / "P3.sim.4.dat").unlink()
+                    (directory / "P3.sim.3.dat").unlink()
                 elif failure == "truncated":
-                    (directory / "P3.sim.4.dat").write_bytes(b"short")
+                    (directory / "P3.sim.3.dat").write_bytes(b"short")
                 else:
-                    (directory / "P3.sim.5.dat").write_bytes(struct.pack("=18i", *range(18)))
+                    (directory / "P3.sim.4.dat").write_bytes(struct.pack("=18i", *range(18)))
                 with self.assertRaises(GraphSAGEEvidenceError):
                     inventory_from_mdpi_dumps(directory)
 
@@ -72,9 +87,9 @@ class GraphSAGEEvidenceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             write_mdpi_dumps(directory)
-            mutated = list(range(100, 107))
+            mutated = list(range(7))
             mutated[2] = -1
-            (directory / "P0.sim.1.dat").write_bytes(struct.pack("=7i", *mutated))
+            (directory / "P0.sim.0.dat").write_bytes(struct.pack("=7i", *mutated))
             mutated_inventory = inventory_from_mdpi_dumps(directory)
             parsed = parse_inventory(mutated_inventory)
             pristine = Path(temporary) / "pristine"
