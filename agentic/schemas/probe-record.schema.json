@@ -1,0 +1,5 @@
+{
+  "$id":"https://panda-re.github.io/schemas/agentic/probe-record.schema.json","$schema":"https://json-schema.org/draft/2020-12/schema","title":"Redacted capability probe record","type":"object","additionalProperties":false,
+  "required":["schema","schema_version","profile_id","model_ref","protocol","capability","status","confidence","observed_at","expires_at","redacted"],
+  "properties":{"schema":{"const":"evolvehls.agentic.probe-record"},"schema_version":{"const":"1.0"},"profile_id":{"type":"string","minLength":1},"model_ref":{"type":"string","minLength":1},"protocol":{"enum":["openai-responses","anthropic-messages","openai-chat-completions","embeddings"]},"capability":{"enum":["basic_text","streaming","tool_calling","structured_output","context_limit","usage_reporting","embeddings"]},"status":{"enum":["supported","unsupported","unknown","probe-failed"]},"confidence":{"const":"observed"},"observed_at":{"type":"string","format":"date-time"},"expires_at":{"type":"string","format":"date-time"},"redacted":{"const":true}}
+}

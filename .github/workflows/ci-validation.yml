@@ -14,6 +14,8 @@ on:
       - ".github/scripts/test_graphsage.py"
       - ".github/scripts/validate_ci.py"
       - ".github/scripts/test_validate_ci.py"
+      - "agentic/**"
+      - "tools/agentic/**"
 
 permissions:
   contents: read
@@ -87,3 +89,9 @@ jobs:
         run: >-
           /tmp/ci-validator-venv/bin/python -m unittest discover
           -s .github/scripts -p "test_graphsage.py"
+
+      - name: Run portable agent provider tests
+        shell: bash
+        run: >-
+          /tmp/ci-validator-venv/bin/python -m unittest discover
+          -s tools/agentic/tests -p "test_*.py"

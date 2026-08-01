@@ -58,3 +58,8 @@ install/
 # Python generated files
 __pycache__/
 *.py[cod]
+
+# Local agent-provider diagnostics (may reflect local capability configuration)
+/agentic/probe-output/
+/.agentic-local/
+/agentic-state/
