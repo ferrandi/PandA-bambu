@@ -774,6 +774,7 @@ if test "${SYNTHESIS_SMOKE:-false}" = "true"; then
    set_output cosimulation-exit-status "${smoke_status}"
    printf 'Bambu XML Verilator co-simulation runtime: %s seconds\n' "${smoke_elapsed_seconds}" |
       tee "${SYNTHESIS_OUTPUT_DIR}/runtime.txt"
+   "${BASH_SOURCE[0]%/*}/normalize-output-permissions.sh" "${SYNTHESIS_OUTPUT_DIR}"
    echo "::endgroup::"
    if test "${smoke_status}" -ne 0; then
       exit "${smoke_status}"

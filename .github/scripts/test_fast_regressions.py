@@ -6,6 +6,8 @@ from __future__ import annotations
 import copy
 import io
 import stat
+import struct
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -137,6 +139,26 @@ def regression_task(spec, failing_stage: str | None = None) -> dict:
 
 
 class FastRegressionResultTests(unittest.TestCase):
+    def test_synthesis_smoke_outputs_are_normalized_for_artifact_upload(self) -> None:
+        helper = SCRIPTS_DIRECTORY.parent / "actions" / "build-panda" / "normalize-output-permissions.sh"
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "synthesis-smoke"
+            nested = output / "nested"
+            nested.mkdir(parents=True)
+            report = nested / "bambu_results.xml"
+            report.write_text("<application/>\n", encoding="utf-8")
+            output.chmod(0o700)
+            nested.chmod(0o700)
+            report.chmod(0o600)
+            subprocess.run([str(helper), str(output)], check=True)
+            self.assertTrue(stat.S_IMODE(output.stat().st_mode) & stat.S_IXOTH)
+            self.assertTrue(stat.S_IMODE(nested.stat().st_mode) & stat.S_IXOTH)
+            self.assertTrue(stat.S_IMODE(report.stat().st_mode) & stat.S_IROTH)
+        entrypoint = helper.with_name("entrypoint.sh").read_text(encoding="utf-8")
+        dockerfile = helper.with_name("Dockerfile").read_text(encoding="utf-8")
+        self.assertIn("normalize-output-permissions.sh", entrypoint)
+        self.assertIn("COPY normalize-output-permissions.sh", dockerfile)
+
     def setUp(self) -> None:
         self.temporary_directory = tempfile.TemporaryDirectory(
             prefix=".ci-regression-fixture-", dir=REPOSITORY
@@ -288,6 +310,7 @@ class FastRegressionResultTests(unittest.TestCase):
                 "--context_switch=2",
                 "--channels-type=MEM_ACC_11",
                 "--memory-allocation-policy=GLSS",
+                "--tb-extra-cc-options=-DBAMBU_SIM_DUMP_OUTPUT",
                 "--simulate",
                 "--simulator=VERILATOR",
                 "--generate-tb=examples/GraphSAGE/graphsage_mean_test.cpp",
@@ -533,18 +556,14 @@ class FastRegressionResultTests(unittest.TestCase):
             task = regression_task(spec)
             write_json(results_directory / "tasks" / f"{spec.task_id}.json", task)
             if spec.task_id in {"regression-graphsage-serial", "regression-graphsage"}:
-                directory = evidence_directory / spec.task_id
+                directory = evidence_directory / spec.task_id / "mdpi-output-dumps"
                 directory.mkdir(parents=True, exist_ok=True)
-                values = ",".join(str(value) for value in range(18))
-                cases = ("regular", "irregular-zero-degree", "negative-signed-division",
-                         "duplicate-self-mixed")
-                (directory / "bambu.log").write_text(
-                    "".join("GRAPHSAGE_CASE|id=" + case_id + "|rows=0,2,4,6,8,10,12|"
-                    "neighbors=0,1,1,2,2,3,3,4,4,5,5,0|features=" + values
-                    + "|golden=" + values + "|observed=" + values
-                    + "|count=18|mismatches=0|inputs_immutable=1\n" for case_id in cases),
-                    encoding="utf-8",
-                )
+                for call in range(1, 5):
+                    for parameter, length in enumerate((7, 12, 18, 18)):
+                        values = range(parameter * 20, parameter * 20 + length)
+                        payload = struct.pack(f"={length}i", *values)
+                        for kind in ("gold", "sim"):
+                            (directory / f"P{parameter}.{kind}.{call}.dat").write_bytes(payload)
             return task
 
         with patch("ci_results.regressions.run_regression", side_effect=fake_run_regression):

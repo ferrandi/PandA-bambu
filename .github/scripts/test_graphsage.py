@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Focused fixtures for deterministic serial/SPARTA GraphSAGE evidence."""
 import sys
+import struct
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -8,7 +10,8 @@ SCRIPTS = Path(__file__).resolve().parent
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from ci_results.graphsage import GraphSAGEEvidenceError, compare_inventories, parse_inventory
+from ci_results.graphsage import (GraphSAGEEvidenceError, compare_inventories,
+                                    inventory_from_mdpi_dumps, parse_inventory)
 from ci_results.regressions import REGRESSION_SPECS, _normalized_arguments, _serial_runtime_violations
 
 def inventory(observed: str | None = None, *, immutable: int = 1,
@@ -27,7 +30,61 @@ def complete_inventory(observed: str | None = None, *, immutable: int = 1) -> st
         "regular", "irregular-zero-degree", "negative-signed-division", "duplicate-self-mixed"
     ))
 
+def write_mdpi_dumps(directory: Path) -> None:
+    lengths = (7, 12, 18, 18)
+    for call in range(1, 5):
+        for parameter, length in enumerate(lengths):
+            values = list(range(call * 100 + parameter * 20, call * 100 + parameter * 20 + length))
+            for kind in ("gold", "sim"):
+                (directory / f"P{parameter}.{kind}.{call}.dat").write_bytes(
+                    struct.pack(f"={length}i", *values)
+                )
+
 class GraphSAGEEvidenceTests(unittest.TestCase):
+    def test_mdpi_dump_inventory_is_the_observed_evidence_source(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            write_mdpi_dumps(directory)
+            observed = list(range(160, 178))
+            observed[0] = -91
+            (directory / "P3.sim.1.dat").write_bytes(struct.pack("=18i", *observed))
+            parsed = parse_inventory(inventory_from_mdpi_dumps(directory))
+        self.assertEqual(parsed["regular"]["observed"], observed)
+        self.assertEqual(parsed["regular"]["golden"][0], 160)
+        self.assertEqual(parsed["regular"]["mismatches"], 1)
+
+    def test_mdpi_dump_inventory_fails_closed_on_missing_truncated_and_extra(self):
+        for failure in ("missing", "truncated", "extra"):
+            with self.subTest(failure=failure), tempfile.TemporaryDirectory() as temporary:
+                directory = Path(temporary)
+                write_mdpi_dumps(directory)
+                if failure == "missing":
+                    (directory / "P3.sim.4.dat").unlink()
+                elif failure == "truncated":
+                    (directory / "P3.sim.4.dat").write_bytes(b"short")
+                else:
+                    (directory / "P3.sim.5.dat").write_bytes(struct.pack("=18i", *range(18)))
+                with self.assertRaises(GraphSAGEEvidenceError):
+                    inventory_from_mdpi_dumps(directory)
+
+    def test_mdpi_dump_inventory_detects_input_mutation(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            write_mdpi_dumps(directory)
+            mutated = list(range(100, 107))
+            mutated[2] = -1
+            (directory / "P0.sim.1.dat").write_bytes(struct.pack("=7i", *mutated))
+            mutated_inventory = inventory_from_mdpi_dumps(directory)
+            parsed = parse_inventory(mutated_inventory)
+            pristine = Path(temporary) / "pristine"
+            pristine.mkdir()
+            write_mdpi_dumps(pristine)
+            with self.assertRaises(GraphSAGEEvidenceError) as caught:
+                compare_inventories(mutated_inventory, inventory_from_mdpi_dumps(pristine))
+        self.assertEqual(parsed["regular"]["inputs_immutable"], 0)
+        self.assertIsNotNone(caught.exception.report)
+        self.assertEqual(len(caught.exception.report["cases"]), 4)
+
     def test_golden_serial_sparta_equality(self):
         report = compare_inventories(complete_inventory(), complete_inventory())
         self.assertEqual(report["outcome"], "pass")
@@ -94,6 +151,9 @@ class GraphSAGEEvidenceTests(unittest.TestCase):
         self.assertFalse(any(item.startswith("--context_switch") for item in serial_args))
         self.assertIn("-fopenmp", sparta_args)
         self.assertIn("--context_switch=2", sparta_args)
+        dump_option = "--tb-extra-cc-options=-DBAMBU_SIM_DUMP_OUTPUT"
+        self.assertIn(dump_option, serial_args)
+        self.assertIn(dump_option, sparta_args)
         self.assertEqual(serial.rtl_authenticity_instances, ())
         self.assertEqual(len(sparta.rtl_authenticity_instances), 3)
 

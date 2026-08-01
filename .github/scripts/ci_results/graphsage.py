@@ -1,5 +1,7 @@
 """Strict deterministic GraphSAGE RTL inventory parsing and comparison."""
 from __future__ import annotations
+import struct
+from pathlib import Path
 from typing import Any
 
 CASE_PREFIX = "GRAPHSAGE_CASE|"
@@ -8,11 +10,76 @@ EXPECTED_CASE_IDS = {
     "regular", "irregular-zero-degree", "negative-signed-division", "duplicate-self-mixed",
 }
 EXPECTED_FIELDS = {"id", *VECTOR_LENGTHS, "count", "mismatches", "inputs_immutable"}
+CASE_IDS = (
+    "regular", "irregular-zero-degree", "negative-signed-division", "duplicate-self-mixed",
+)
+PARAMETER_LENGTHS = (7, 12, 18, 18)
 
 class GraphSAGEEvidenceError(ValueError):
     def __init__(self, message: str, *, report: dict[str, Any] | None = None):
         super().__init__(message)
         self.report = report
+
+def _read_dump(path: Path, length: int) -> list[int]:
+    try:
+        data = path.read_bytes()
+    except OSError as error:
+        raise GraphSAGEEvidenceError(f"unable to read MDPI dump {path.name}: {error}") from error
+    expected_size = length * 4
+    if len(data) != expected_size:
+        raise GraphSAGEEvidenceError(
+            f"{path.name}: expected {expected_size} bytes, found {len(data)}"
+        )
+    try:
+        return list(struct.unpack(f"={length}i", data))
+    except struct.error as error:
+        raise GraphSAGEEvidenceError(f"malformed MDPI dump {path.name}") from error
+
+def inventory_from_mdpi_dumps(directory: Path) -> str:
+    """Decode the complete native-int MDPI evidence from four RTL calls."""
+
+    expected_names = {
+        f"P{parameter}.{kind}.{call}.dat"
+        for parameter in range(4)
+        for kind in ("gold", "sim")
+        for call in range(1, len(CASE_IDS) + 1)
+    }
+    actual_paths = {path.name: path for path in directory.glob("P*.dat") if path.is_file()}
+    missing = sorted(expected_names - actual_paths.keys())
+    extra = sorted(actual_paths.keys() - expected_names)
+    if missing or extra:
+        details = []
+        if missing:
+            details.append("missing MDPI dumps: " + ", ".join(missing))
+        if extra:
+            details.append("unexpected MDPI dumps: " + ", ".join(extra))
+        raise GraphSAGEEvidenceError("invalid MDPI dump inventory (" + "; ".join(details) + ")")
+
+    lines = []
+    for call, case_id in enumerate(CASE_IDS, 1):
+        gold = [
+            _read_dump(actual_paths[f"P{parameter}.gold.{call}.dat"], length)
+            for parameter, length in enumerate(PARAMETER_LENGTHS)
+        ]
+        simulated = [
+            _read_dump(actual_paths[f"P{parameter}.sim.{call}.dat"], length)
+            for parameter, length in enumerate(PARAMETER_LENGTHS)
+        ]
+        immutable = int(all(gold[index] == simulated[index] for index in range(3)))
+        mismatches = sum(left != right for left, right in zip(gold[3], simulated[3]))
+        vectors = {
+            "rows": gold[0], "neighbors": gold[1], "features": gold[2],
+            "golden": gold[3], "observed": simulated[3],
+        }
+        fields = "".join(
+            f"|{key}=" + ",".join(str(value) for value in values)
+            for key, values in vectors.items()
+        )
+        lines.append(
+            f"{CASE_PREFIX}id={case_id}{fields}|count=18|mismatches={mismatches}"
+            f"|inputs_immutable={immutable}\n"
+        )
+    return "".join(lines)
 
 def _integers(value: str, key: str, length: int) -> list[int]:
     pieces = value.split(",") if value else []

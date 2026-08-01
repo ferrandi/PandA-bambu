@@ -35,7 +35,7 @@ from .constants import (
     RUNTIME_LINKAGE_TASK_ID,
 )
 from .hashing import sha256_file
-from .graphsage import GraphSAGEEvidenceError, compare_inventories
+from .graphsage import GraphSAGEEvidenceError, compare_inventories, inventory_from_mdpi_dumps
 from .runtime_linkage import inspect_runtime_linkage
 from .serialization import SerializationError, load_json, require_canonical, write_json
 
@@ -160,6 +160,7 @@ REGRESSION_SPECS = (
         extra_arguments=(
             "--channels-type=MEM_ACC_11",
             "--memory-allocation-policy=GLSS",
+            "--tb-extra-cc-options=-DBAMBU_SIM_DUMP_OUTPUT",
         ),
     ),
     RegressionSpec(
@@ -175,6 +176,7 @@ REGRESSION_SPECS = (
             "--context_switch=2",
             "--channels-type=MEM_ACC_11",
             "--memory-allocation-policy=GLSS",
+            "--tb-extra-cc-options=-DBAMBU_SIM_DUMP_OUTPUT",
         ),
         rtl_authenticity_instances=(
             ("kmp_bambu_cs_manager", "cs_manager"),
@@ -650,6 +652,7 @@ def _write_evidence(
     required_authenticity_instances: tuple[tuple[str, str], ...],
     missing_authenticity_instances: tuple[tuple[str, str], ...],
     runtime_linkage_report: str | None = None,
+    retain_mdpi_dumps: bool = False,
 ) -> None:
     evidence.mkdir(parents=True, exist_ok=True)
     (evidence / "bambu.log").write_text(log_text, encoding="utf-8", newline="\n")
@@ -668,6 +671,15 @@ def _write_evidence(
         (evidence / "runtime-linkage.txt").write_text(
             runtime_linkage_report, encoding="utf-8", newline="\n"
         )
+    if retain_mdpi_dumps:
+        dump_directory = evidence / "mdpi-output-dumps"
+        dump_directory.mkdir(parents=True, exist_ok=True)
+        for path in sorted(output.parent.rglob("P*.dat")):
+            if path.is_file():
+                destination = dump_directory / path.name
+                if destination.exists():
+                    destination = dump_directory / ("Pduplicate-" + path.name)
+                shutil.copy2(path, destination)
     if report is not None:
         shutil.copy2(report, evidence / "bambu_results.xml")
     if simulation_log is not None:
@@ -824,6 +836,7 @@ def run_regression(
         spec.rtl_authenticity_instances,
         missing_authenticity_instances,
         runtime_linkage_report,
+        spec.task_id in GRAPHSAGE_COMPARISON_TASK_IDS,
     )
 
     failure: dict[str, Any] | None = None
@@ -1139,8 +1152,12 @@ def run_regression_suite(
                    {"regression-graphsage-serial", "regression-graphsage"}}
     try:
         comparison = compare_inventories(
-            (evidence / "regression-graphsage-serial" / "bambu.log").read_text(encoding="utf-8"),
-            (evidence / "regression-graphsage" / "bambu.log").read_text(encoding="utf-8"),
+            inventory_from_mdpi_dumps(
+                evidence / "regression-graphsage-serial" / "mdpi-output-dumps"
+            ),
+            inventory_from_mdpi_dumps(
+                evidence / "regression-graphsage" / "mdpi-output-dumps"
+            ),
         )
     except (GraphSAGEEvidenceError, OSError) as error:
         comparison = (error.report if isinstance(error, GraphSAGEEvidenceError) and error.report is not None
