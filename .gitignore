@@ -61,3 +61,5 @@ __pycache__/
 
 # Local agent-provider diagnostics (may reflect local capability configuration)
 /agentic/probe-output/
+/.agentic-local/
+/agentic-state/

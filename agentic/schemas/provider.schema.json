@@ -1,6 +1,6 @@
 {
   "$id":"https://panda-re.github.io/schemas/agentic/provider.schema.json","$schema":"https://json-schema.org/draft/2020-12/schema","title":"EvolveHLS portable agent provider profile","type":"object","additionalProperties":false,
-  "required":["profile_id","schema_version","protocols","authentication","endpoint","models","capabilities","context","usage_reporting","retry","timeout"],
+  "required":["profile_id","schema_version","protocols","authentication","endpoint","discovery","models","capabilities","context","usage_reporting","retry","timeout"],
   "properties":{
     "profile_id":{"type":"string","pattern":"^[a-z0-9][a-z0-9.-]*$"},"schema_version":{"const":"1.0"},
     "protocols":{"type":"object","minProperties":1,"additionalProperties":false,"properties":{"openai-responses":{"$ref":"#/$defs/status"},"anthropic-messages":{"$ref":"#/$defs/status"},"openai-chat-completions":{"$ref":"#/$defs/status"}}},
@@ -10,7 +10,8 @@
       {"type":"object","additionalProperties":false,"required":["class"],"properties":{"class":{"const":"none"}}}
     ]},
     "endpoint":{"type":"object","additionalProperties":false,"required":["env"],"properties":{"env":{"$ref":"#/$defs/env"}}},
-    "models":{"type":"object","minProperties":1,"propertyNames":{"pattern":"^[a-z][a-z0-9-]*$"},"additionalProperties":{"type":"object","additionalProperties":false,"required":["source","confidential"],"properties":{"source":{"type":"object","additionalProperties":false,"required":["env"],"properties":{"env":{"$ref":"#/$defs/env"}}},"confidential":{"type":"boolean"}}}},
+    "discovery":{"type":"object","additionalProperties":false,"required":["adapter","methods","probe_ttl_seconds"],"properties":{"adapter":{"enum":["auto","generic-openai","generic-model-info","imported-catalog"]},"methods":{"type":"array","minItems":1,"items":{"oneOf":[{"type":"object","additionalProperties":false,"required":["kind","path"],"properties":{"kind":{"enum":["openai-models","model-info"]},"path":{"type":"string","pattern":"^/[^/].*$"}}},{"type":"object","additionalProperties":false,"required":["kind"],"properties":{"kind":{"const":"imported-catalog"}}}]}},"probe_ttl_seconds":{"type":"integer","minimum":60}}},
+    "models":{"type":"object","propertyNames":{"pattern":"^[a-z][a-z0-9-]*$"},"additionalProperties":{"type":"object","additionalProperties":false,"required":["source","confidential"],"properties":{"source":{"type":"object","additionalProperties":false,"required":["env"],"properties":{"env":{"$ref":"#/$defs/env"}}},"confidential":{"type":"boolean"}}}},
     "capabilities":{"type":"object","additionalProperties":false,"required":["streaming","tool_calling","structured_output"],"properties":{"streaming":{"$ref":"#/$defs/status"},"tool_calling":{"$ref":"#/$defs/status"},"structured_output":{"$ref":"#/$defs/status"}}},
     "context":{"type":"object","additionalProperties":false,"required":["window_tokens","input_modalities"],"properties":{"window_tokens":{"type":["integer","null"],"minimum":1},"input_modalities":{"type":"array","uniqueItems":true,"items":{"type":"string","minLength":1}}}},
     "usage_reporting":{"$ref":"#/$defs/status"},"retry":{"type":"object","additionalProperties":false,"required":["max_attempts","backoff_seconds"],"properties":{"max_attempts":{"type":"integer","minimum":1,"maximum":5},"backoff_seconds":{"type":"number","minimum":0}}},

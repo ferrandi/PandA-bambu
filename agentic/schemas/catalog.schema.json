@@ -1,0 +1,14 @@
+{
+  "$id":"https://panda-re.github.io/schemas/agentic/catalog.schema.json","$schema":"https://json-schema.org/draft/2020-12/schema","title":"Normalized local model catalog","type":"object","additionalProperties":false,
+  "required":["schema","schema_version","profile_id","snapshot_id","created_at","models"],"properties":{
+    "schema":{"const":"evolvehls.agentic.catalog"},"schema_version":{"const":"1.0"},"profile_id":{"$ref":"#/$defs/id"},"snapshot_id":{"$ref":"#/$defs/id"},"created_at":{"type":"string","format":"date-time"},
+    "models":{"type":"array","items":{"$ref":"#/$defs/model"}}
+  },
+  "$defs":{
+    "id":{"type":"string","minLength":1},"confidence":{"enum":["declared","inferred","observed","historically-validated","unknown"]},
+    "evidence":{"type":"object","additionalProperties":false,"required":["source","confidence","observed_at","expires_at"],"properties":{"source":{"enum":["model-list","model-info","policy-overlay","benchmark-import","live-probe","framework-evaluation"]},"confidence":{"$ref":"#/$defs/confidence"},"observed_at":{"type":["string","null"],"format":"date-time"},"expires_at":{"type":["string","null"],"format":"date-time"}}},
+    "capability":{"type":"object","additionalProperties":false,"required":["status","confidence","provenance"],"properties":{"status":{"enum":["supported","unsupported","unknown","probe-failed"]},"confidence":{"$ref":"#/$defs/confidence"},"provenance":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/evidence"}}}},
+    "unit":{"type":"object","additionalProperties":false,"required":["client","provider","model","protocol","effort"],"properties":{"client":{"enum":["codex","claude-code","cline"]},"provider":{"type":"string","minLength":1},"model":{"type":"string","minLength":1},"protocol":{"enum":["openai-responses","anthropic-messages","openai-chat-completions"]},"effort":{"type":"string","minLength":1}}},
+    "model":{"type":"object","additionalProperties":false,"required":["model_id","display_name","metadata","capabilities","execution_units","eligible","rejection_reasons"],"properties":{"model_id":{"type":"string","minLength":1},"display_name":{"type":["string","null"]},"metadata":{"type":"object"},"capabilities":{"type":"object","additionalProperties":{"$ref":"#/$defs/capability"}},"execution_units":{"type":"array","items":{"$ref":"#/$defs/unit"}},"eligible":{"type":"boolean"},"rejection_reasons":{"type":"array","items":{"type":"string","minLength":1}}}}
+  }
+}

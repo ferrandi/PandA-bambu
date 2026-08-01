@@ -14,7 +14,7 @@ def load_profile(path:Path):
     except (OSError,UnicodeDecodeError,json.JSONDecodeError) as error:raise ProfileError(f"cannot parse profile: {type(error).__name__}") from None
     validate_profile(value);return value
 def validate_profile(p:Any):
-    required={"profile_id","schema_version","protocols","authentication","endpoint","models","capabilities","context","usage_reporting","retry","timeout"}
+    required={"profile_id","schema_version","protocols","authentication","endpoint","discovery","models","capabilities","context","usage_reporting","retry","timeout"}
     require(isinstance(p,dict) and set(p)==required,"profile fields do not match schema")
     require(isinstance(p["profile_id"],str) and re.fullmatch(r"[a-z0-9][a-z0-9.-]*",p["profile_id"]) is not None,"invalid profile_id");require(p["schema_version"]=="1.0","unsupported schema version")
     protocols=p["protocols"];require(isinstance(protocols,dict) and protocols and set(protocols)<=PROTOCOLS and all(isinstance(v,str) and v in STATUSES for v in protocols.values()),"invalid protocols")
@@ -26,7 +26,11 @@ def validate_profile(p:Any):
         headers=auth["headers"];require(isinstance(headers,dict) and headers and set(headers)<=PROTOCOLS,"invalid authentication headers")
         for spec in headers.values():require(isinstance(spec,dict) and set(spec)=={"name","prefix"} and isinstance(spec["name"],str) and re.fullmatch(r"[A-Za-z0-9-]+",spec["name"]) and isinstance(spec["prefix"],str),"invalid authentication header")
     endpoint=p["endpoint"];require(isinstance(endpoint,dict) and set(endpoint)=={"env"} and isinstance(endpoint["env"],str) and ENV.fullmatch(endpoint["env"]) is not None,"invalid endpoint source")
-    models=p["models"];require(isinstance(models,dict) and models,"models must be non-empty")
+    discovery=p["discovery"];require(isinstance(discovery,dict) and set(discovery)=={"adapter","methods","probe_ttl_seconds"} and discovery["adapter"] in {"auto","generic-openai","generic-model-info","imported-catalog"} and isinstance(discovery["methods"],list) and discovery["methods"] and isinstance(discovery["probe_ttl_seconds"],int) and not isinstance(discovery["probe_ttl_seconds"],bool) and discovery["probe_ttl_seconds"]>=60,"invalid discovery policy")
+    for method in discovery["methods"]:
+        require(isinstance(method,dict) and method.get("kind") in {"openai-models","model-info","imported-catalog"} and set(method)<={"kind","path"},"invalid discovery method")
+        require(method["kind"]=="imported-catalog" and set(method)=={"kind"} or method["kind"]!="imported-catalog" and set(method)=={"kind","path"} and isinstance(method["path"],str) and re.fullmatch(r"/[^/].*",method["path"]) is not None and "://" not in method["path"],"invalid discovery method path")
+    models=p["models"];require(isinstance(models,dict),"models must be an object")
     for alias,spec in models.items():
         require(isinstance(alias,str) and re.fullmatch(r"[a-z][a-z0-9-]*",alias) is not None,"invalid model alias");require(isinstance(spec,dict) and set(spec)=={"source","confidential"} and isinstance(spec["confidential"],bool),"invalid model declaration")
         source=spec["source"];require(isinstance(source,dict) and set(source)=={"env"} and isinstance(source["env"],str) and ENV.fullmatch(source["env"]) is not None,"invalid model source")
@@ -36,9 +40,11 @@ def validate_profile(p:Any):
     require(isinstance(p["usage_reporting"],str) and p["usage_reporting"] in STATUSES,"invalid usage reporting")
     retry=p["retry"];require(isinstance(retry,dict) and set(retry)=={"max_attempts","backoff_seconds"} and isinstance(retry["max_attempts"],int) and not isinstance(retry["max_attempts"],bool) and 1<=retry["max_attempts"]<=5 and is_number(retry["backoff_seconds"]) and retry["backoff_seconds"]>=0,"invalid retry")
     timeout=p["timeout"];require(isinstance(timeout,dict) and set(timeout)=={"seconds"} and is_number(timeout["seconds"]) and 0<timeout["seconds"]<=300,"invalid timeout")
-def resolve_runtime(p:Mapping[str,Any],role:str,env:Mapping[str,str]|None=None,run=subprocess.run):
-    values=os.environ if env is None else env;endpoint=values.get(p["endpoint"]["env"]);require(bool(endpoint),f"required endpoint variable {p['endpoint']['env']} is unset");require(role in p["models"],f"unknown model role alias: {role}")
-    model_env=p["models"][role]["source"]["env"];model=values.get(model_env);require(bool(model),f"required model variable {model_env} is unset");auth=p["authentication"];token=None
+def resolve_runtime(p:Mapping[str,Any],role:str,env:Mapping[str,str]|None=None,run=subprocess.run,model_override:str|None=None):
+    values=os.environ if env is None else env;endpoint=values.get(p["endpoint"]["env"]);require(bool(endpoint),f"required endpoint variable {p['endpoint']['env']} is unset")
+    model=model_override
+    if model is None and role in p["models"]:model=values.get(p["models"][role]["source"]["env"])
+    require(isinstance(model,str) and bool(model),"an authorized discovered or fallback model is required");auth=p["authentication"];token=None
     if auth["class"]=="environment":token=values.get(auth["token_env"]);require(bool(token),f"required token variable {auth['token_env']} is unset")
     elif auth["class"]=="command":
         try:result=run(auth["token_helper"],capture_output=True,text=True,timeout=10,check=True,shell=False)

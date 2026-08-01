@@ -15,3 +15,21 @@ Each PR is narrow and excludes credentials, private endpoints/models, user confi
 | PAF-09 | SPARTA and GraphSAGE acceptance pilots | PAF-08 | `agent/portable-acceptance-pilots` | `test: add SPARTA GraphSAGE agent pilots` | Approved pilots preserve synthesis/simulation evidence | New accelerator implementation or synthesis changes |
 
 SPARTA is a Bambu mode. The eventual GraphSAGE pilot targets Bambu's SPARTA path; PAF-01 adds neither SPARTA nor GraphSAGE code.
+
+## Turnkey dependency assignments
+
+PAF-01 seeds generic discovery, normalized catalog, probe-cache, resolver, and mode
+contracts only. The complete user experience is delivered by dependent tasks:
+
+- PAF-02 implements catalog synchronization, policy overlays, capability queries,
+  role requirements, resolver explanations, and persisted selections.
+- PAF-03 implements hidden-input provider bootstrap, adapter auto-detection,
+  local credential references, and generated Codex, Claude Code, and Cline
+  configuration behind `agentctl provider add`.
+- PAF-05 implements `agentctl run`, isolated task launch, explicit fallback
+  approval, and readiness gating.
+- PAF-07 implements pinned evaluation and declared-dimension ablation over
+  catalog snapshots, plans, versions, revisions, context hashes, and budgets.
+
+Until those dependencies land, PAF-01 does not claim turnkey setup, generated
+client configuration, secure credential persistence, or task execution.

@@ -22,3 +22,29 @@ python3 tools/agentic/probe_gateway.py agentic/providers/work.example.yaml --pro
 ```
 
 A real probe must be intentionally configured through the declared environment variables. Local output belongs under ignored `agentic/probe-output/`.
+
+## Dynamic discovery and selection contracts
+
+Provider profiles declare an adapter preference, ordered generic discovery
+methods, and probe-cache TTL. Discovery may use generic model-list/model-info
+surfaces or an imported local catalog and gracefully requests one authorized
+model identifier when listing is unavailable. Discovery never relies on a
+provider-specific model-name pattern.
+
+Normalized catalogs keep discovery metadata separate from capability evidence.
+Capabilities record provenance and one of `declared`, `inferred`,
+`observed`, `historically-validated`, or `unknown` confidence.
+`resolver.py` provides a deterministic, versioned filter-and-rank boundary for
+the documented objectives. It explains its choice and rejections, preserves
+explicit overrides, emits no evaluation fallbacks, and never delegates model
+selection to an LLM.
+
+The CLI probe defaults to the minimal `basic_text` check. Additional
+`--capability` selections enable staged streaming, tool, or structured-output
+checks; context-limit and embeddings names are reserved until a safe applicable
+probe is selected. Successful observations can be stored through the redacted
+TTL cache under ignored `agentic-state/probes/`.
+
+See `provider-turnkey-design.md` for the target `agentctl` workflow,
+development/evaluation/ablation semantics, configuration separation, and the
+explicit PAF boundaries.
