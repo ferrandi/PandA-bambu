@@ -1,0 +1,94 @@
+{
+  "schema": "evolvehls.agentic.portable-profile-registry",
+  "schema_version": "1.0",
+  "registry_id": "portable-adapter-fixture",
+  "version": "1.0",
+  "adapters": [
+    {
+      "schema": "evolvehls.agentic.portable-client-adapter",
+      "schema_version": "1.0",
+      "adapter_id": "codex",
+      "adapter_version": "1.2.3",
+      "execution_family": "codex",
+      "execution_paths": [
+        {
+          "path_id": "configured-api",
+          "invocation_class": "configured-api-cli",
+          "access_classes": ["api-gateway"],
+          "funding_classes": ["project"],
+          "auth_modes": ["environment-token"],
+          "protocols": ["openai-responses"],
+          "capabilities": ["configured_api_execution", "custom_base_url", "model_selection", "timeout"]
+        },
+        {
+          "path_id": "native-account",
+          "invocation_class": "native-account-cli",
+          "access_classes": ["native-account-client"],
+          "funding_classes": ["subscription"],
+          "auth_modes": ["native-session"],
+          "protocols": ["openai-responses"],
+          "capabilities": ["native_account_execution", "model_selection", "timeout"]
+        }
+      ]
+    },
+    {
+      "schema": "evolvehls.agentic.portable-client-adapter",
+      "schema_version": "1.0",
+      "adapter_id": "direct-http",
+      "adapter_version": "builtin",
+      "execution_family": "direct-http",
+      "execution_paths": [
+        {
+          "path_id": "openai-compatible",
+          "invocation_class": "http-api-client",
+          "access_classes": ["api-gateway", "local-server"],
+          "funding_classes": ["project", "organization", "personal-api", "local"],
+          "auth_modes": ["environment-token", "token-helper", "none"],
+          "protocols": ["openai-responses", "openai-chat-completions"],
+          "capabilities": ["configured_api_execution", "custom_base_url", "timeout"]
+        }
+      ]
+    }
+  ],
+  "profiles": [
+    {
+      "profile_id": "codex-native-fixture",
+      "adapter_id": "codex",
+      "execution_path_id": "native-account",
+      "access_class": "native-account-client",
+      "funding_class": "subscription",
+      "auth_mode": "native-session",
+      "protocol": "openai-responses",
+      "provider_or_runtime_binding": "native-session-reference",
+      "model_binding": "native-selector",
+      "capabilities": {},
+      "priority": 1
+    },
+    {
+      "profile_id": "codex-api-fixture",
+      "adapter_id": "codex",
+      "execution_path_id": "configured-api",
+      "access_class": "api-gateway",
+      "funding_class": "project",
+      "auth_mode": "environment-token",
+      "protocol": "openai-responses",
+      "provider_or_runtime_binding": "project-provider-reference",
+      "model_binding": "project-model-selector",
+      "capabilities": {},
+      "priority": 2
+    },
+    {
+      "profile_id": "direct-local-fixture",
+      "adapter_id": "direct-http",
+      "execution_path_id": "openai-compatible",
+      "access_class": "local-server",
+      "funding_class": "local",
+      "auth_mode": "none",
+      "protocol": "openai-chat-completions",
+      "provider_or_runtime_binding": "local-runtime-reference",
+      "model_binding": "local-model-selector",
+      "capabilities": {},
+      "priority": 0
+    }
+  ]
+}
