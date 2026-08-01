@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent
+REPOSITORY = SCRIPTS.parents[1]
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
@@ -151,9 +152,12 @@ class GraphSAGEEvidenceTests(unittest.TestCase):
         self.assertFalse(any(item.startswith("--context_switch") for item in serial_args))
         self.assertIn("-fopenmp", sparta_args)
         self.assertIn("--context_switch=2", sparta_args)
-        dump_option = "--tb-extra-cc-options=-DBAMBU_SIM_DUMP_OUTPUT"
+        dump_option = "-DBAMBU_SIM_DUMP_OUTPUT"
         self.assertIn(dump_option, serial_args)
         self.assertIn(dump_option, sparta_args)
+        makefile = (REPOSITORY / "etc" / "libmdpi" / "Makefile.mk").read_text(encoding="utf-8")
+        self.assertIn("WRAPPER_CFLAGS :=", makefile)
+        self.assertIn(chr(36) + "(CFLAGS)", makefile)
         self.assertEqual(serial.rtl_authenticity_instances, ())
         self.assertEqual(len(sparta.rtl_authenticity_instances), 3)
 

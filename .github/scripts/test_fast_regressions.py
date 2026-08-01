@@ -310,7 +310,7 @@ class FastRegressionResultTests(unittest.TestCase):
                 "--context_switch=2",
                 "--channels-type=MEM_ACC_11",
                 "--memory-allocation-policy=GLSS",
-                "--tb-extra-cc-options=-DBAMBU_SIM_DUMP_OUTPUT",
+                "-DBAMBU_SIM_DUMP_OUTPUT",
                 "--simulate",
                 "--simulator=VERILATOR",
                 "--generate-tb=examples/GraphSAGE/graphsage_mean_test.cpp",

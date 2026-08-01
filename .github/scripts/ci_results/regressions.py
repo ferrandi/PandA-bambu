@@ -160,7 +160,7 @@ REGRESSION_SPECS = (
         extra_arguments=(
             "--channels-type=MEM_ACC_11",
             "--memory-allocation-policy=GLSS",
-            "--tb-extra-cc-options=-DBAMBU_SIM_DUMP_OUTPUT",
+            "-DBAMBU_SIM_DUMP_OUTPUT",
         ),
     ),
     RegressionSpec(
@@ -176,7 +176,7 @@ REGRESSION_SPECS = (
             "--context_switch=2",
             "--channels-type=MEM_ACC_11",
             "--memory-allocation-policy=GLSS",
-            "--tb-extra-cc-options=-DBAMBU_SIM_DUMP_OUTPUT",
+            "-DBAMBU_SIM_DUMP_OUTPUT",
         ),
         rtl_authenticity_instances=(
             ("kmp_bambu_cs_manager", "cs_manager"),
