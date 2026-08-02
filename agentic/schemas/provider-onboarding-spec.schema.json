@@ -2,13 +2,54 @@
   "$id": "https://panda-re.github.io/schemas/agentic/provider-onboarding-spec.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Declarative non-secret provider onboarding specification",
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["schema", "schema_version", "provider_id", "endpoint", "authentication", "model", "roles"],
-  "properties": {
-    "schema": {"const": "evolvehls.agentic.provider-onboarding-spec"},
-    "schema_version": {"const": "1.0"},
-    "provider_id": {"$ref": "#/$defs/id"},
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "schema_version", "provider_id", "endpoint", "authentication", "model", "roles"],
+      "properties": {
+        "schema": {"const": "evolvehls.agentic.provider-onboarding-spec"},
+        "schema_version": {"const": "1.0"},
+        "provider_id": {"$ref": "#/$defs/id"},
+        "endpoint": {"$ref": "#/$defs/endpoint"},
+        "authentication": {"$ref": "#/$defs/authentication"},
+        "model": {"type": "string", "minLength": 1, "maxLength": 512},
+        "roles": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "schema_version", "provider_id", "display_name", "endpoint", "authentication", "models", "role_assignments", "execution_protocol", "discovery_evidence"],
+      "properties": {
+        "schema": {"const": "evolvehls.agentic.provider-onboarding-spec"},
+        "schema_version": {"const": "1.1"},
+        "provider_id": {"$ref": "#/$defs/id"},
+        "display_name": {"type": "string", "minLength": 1, "maxLength": 512},
+        "endpoint": {"$ref": "#/$defs/endpoint"},
+        "authentication": {"$ref": "#/$defs/authentication"},
+        "models": {"type": "array", "minItems": 1, "maxItems": 256, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 512}},
+        "role_assignments": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["role_id", "model"],
+            "properties": {
+              "role_id": {"enum": ["planning", "implementation", "review"]},
+              "model": {"type": "string", "minLength": 1, "maxLength": 512}
+            }
+          }
+        },
+        "execution_protocol": {"enum": ["openai-chat-completions", "openai-responses", "anthropic-messages"]},
+        "discovery_evidence": {"type": "object"}
+      }
+    }
+  ],
+  "$defs": {
+    "id": {"type": "string", "maxLength": 190, "pattern": "^[a-z][a-z0-9.-]*$"},
     "endpoint": {
       "type": "object",
       "additionalProperties": false,
@@ -23,9 +64,6 @@
         {"type": "object", "additionalProperties": false, "required": ["mode"], "properties": {"mode": {"const": "none"}}},
         {"type": "object", "additionalProperties": false, "required": ["mode", "env_var"], "properties": {"mode": {"const": "environment-token"}, "env_var": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,127}$"}}}
       ]
-    },
-    "model": {"type": "string", "minLength": 1, "maxLength": 512},
-    "roles": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
-  },
-  "$defs": {"id": {"type": "string", "maxLength": 190, "pattern": "^[a-z][a-z0-9.-]*$"}}
+    }
+  }
 }

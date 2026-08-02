@@ -62,6 +62,7 @@ def resolve(
     readiness: Mapping[str, Any],
     mode: str = "development",
     prior: Mapping[str, Any] | None = None,
+    required_profile_id: str | None = None,
 ) -> dict[str, Any]:
     """Resolve a profile only from validated declarative inputs; never execute it."""
     if mode not in {"development", "evaluation", "ablation"}:
@@ -72,6 +73,8 @@ def resolve(
     for raw in sorted(registry["profiles"], key=lambda value: value["profile_id"]):
         profile = copy.deepcopy(raw)
         reasons = _capability_reasons(profile, role)
+        if required_profile_id is not None and profile["profile_id"] != required_profile_id:
+            reasons.append("profile does not match required profile constraint")
         adapter = adapters.get(profile["adapter_id"])
         if adapter is None:
             reasons.append("unknown client adapter")
@@ -136,6 +139,8 @@ def resolve(
         }
         valid.append((preference[0], profile["priority"], profile["profile_id"], adapter["adapter_id"], selected, preference[1]))
     if not valid:
+        if required_profile_id is not None:
+            raise RoutingError(f"required profile is unavailable or policy-ineligible: {required_profile_id}", rejected)
         raise RoutingError("no policy-compliant execution profile", rejected)
     valid.sort(key=lambda value: value[:4])
     chosen = valid[0]

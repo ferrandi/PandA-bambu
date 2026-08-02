@@ -39,9 +39,64 @@ agentctl provider remove provider-id
 the same material configuration. A changed endpoint, protocol, model, or
 environment-variable reference fails unless `--replace` is explicitly passed.
 
-`provider add` is deliberately deferred to PAF-04B and returns a classified
-not-implemented result. PAF-04B also owns guided setup, dynamic discovery,
-protocol detection, recommendations, and network readiness rechecks.
+## Guided PAF-04B onboarding and bounded discovery
+
+`agentctl provider add` is the interactive, non-secret onboarding path. It
+requires a TTY; scripts must use declarative `provider preview` and `provider
+apply`. The wizard collects a display name, deterministic provider ID, endpoint,
+authentication mode, only an environment-variable *name*, endpoint protocol,
+an explicitly user-confirmed canonical execution protocol, models, and role
+assignments for `planning`, `implementation`, and `review`.
+
+The wizard performs a PAF-04A `apply(..., dry_run=True)` preview before asking
+for final confirmation. It then invokes the same PAF-04A transactional apply
+path. Cancellation, EOF, and confirmation refusal leave no persistent state.
+No secret value is stored in configuration, overlays, receipts, evidence,
+identities, digests, or diagnostics.
+
+Manual onboarding is always available. It records `manual` discovery evidence
+and explicitly states that neither model listing nor model execution occurred.
+
+```bash
+agentctl provider add
+agentctl provider discover <provider-id>
+agentctl provider discover <provider-id> --allow-private-network
+```
+
+`provider discover` is explicitly network-authorized and inspect-only. It
+supports only OpenAI-compatible `GET` model-list paths; it does not send a
+prompt, completion, chat, response, embedding, POST body, or any other
+inference request. It does not alter configured models or role assignments.
+
+Model-list evidence proves only endpoint reachability, authentication acceptance
+for that list request, and model visibility. It does **not** establish execution
+readiness. Canonical execution readiness remains `unknown` until a future
+PAF-05 execution probe succeeds. A listing that omits an assigned model may be
+reported as unavailable by later lifecycle policy, but discovery never creates a
+second readiness document or silently changes assignments.
+
+PAF-04B normalizes OpenAI-compatible model-list responses with bounded model
+counts and fields, bounded response size and JSON depth, strict JSON decoding,
+and deterministic lexical ordering/truncation. Capabilities are not inferred
+from model names. The initial recommendation is deliberately conservative: when
+no endpoint-reported distinction exists it recommends the same deterministic
+model for all roles and explains why. A user-confirmed execution protocol is
+recorded with `declared` confidence; a list response never confirms an inference
+interface.
+
+The discovery transport is direct standard-library socket/SSL HTTP. It validates
+resolved addresses before connecting and connects to that validated address,
+retaining the original hostname for HTTPS SNI/certificate verification and
+`Host`. It does not inherit proxy settings. Supported schemes are HTTPS and
+loopback HTTP only. URL credentials, query strings, fragments, remote HTTP,
+link-local/metadata addresses, multicast, unspecified, reserved addresses,
+mixed allowed/prohibited DNS answers, cross-origin redirects, and HTTPS-to-HTTP
+redirects are rejected. Private HTTPS addresses require explicit
+`--allow-private-network` opt-in. Authorization is read from an environment
+variable only during the authorized request and is never persisted.
+
+PAF-04B also owns guided setup, dynamic discovery, protocol detection, and
+recommendations. PAF-05 owns actual model execution.
 
 Provider command failures use the following exit codes:
 
