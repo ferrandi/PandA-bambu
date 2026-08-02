@@ -1,0 +1,50 @@
+{
+  "schema": "evolvehls.agentic.client-runtime-map",
+  "schema_version": "1.0",
+  "runtime_map_id": "portable-fixture-runtime-map",
+  "version": "1.0",
+  "entries": [
+    {
+      "runtime_entry_id": "local-server-direct-http",
+      "profile_id": "local-server",
+      "adapter_id": "generic-http",
+      "client_template": "direct-http",
+      "execution_path": "openai-compatible"
+    },
+    {
+      "runtime_entry_id": "project-gateway-direct-http",
+      "profile_id": "project-gateway",
+      "adapter_id": "generic-http",
+      "client_template": "direct-http",
+      "execution_path": "openai-compatible"
+    },
+    {
+      "runtime_entry_id": "organization-api-direct-http",
+      "profile_id": "organization-api",
+      "adapter_id": "generic-http",
+      "client_template": "direct-http",
+      "execution_path": "openai-compatible"
+    },
+    {
+      "runtime_entry_id": "personal-api-direct-http",
+      "profile_id": "personal-api",
+      "adapter_id": "generic-http",
+      "client_template": "direct-http",
+      "execution_path": "openai-compatible"
+    },
+    {
+      "runtime_entry_id": "codex-session-native",
+      "profile_id": "codex-session",
+      "adapter_id": "codex-like",
+      "client_template": "codex",
+      "execution_path": "native-account"
+    },
+    {
+      "runtime_entry_id": "claude-session-native",
+      "profile_id": "claude-session",
+      "adapter_id": "claude-like",
+      "client_template": "claude-code",
+      "execution_path": "native-account"
+    }
+  ]
+}

@@ -7,10 +7,13 @@ import json
 import sys
 from pathlib import Path
 
+import adapters
 import catalog
 import contracts
+import portable_adapters
 import provider
 import routing
+import setup
 
 ROOT = Path(__file__).resolve().parents[2]
 LOCAL = ROOT / ".agentic-local"
@@ -82,9 +85,64 @@ def main(argv: list[str] | None = None) -> int:
     route_explain.add_argument("--role", required=True)
     route_explain.add_argument("--mode", default="development")
     route_explain.add_argument("--prior")
+
+    portable_setup = commands.add_parser("setup")
+    portable_setup.add_argument("--spec", required=True)
+    portable_setup.add_argument("--root", type=Path, default=ROOT)
+    portable_setup.add_argument("--dry-run", action="store_true")
+    portable_setup.add_argument("--replace", action="store_true")
+    portable_setup.add_argument("--json", action="store_true")
+    portable_doctor = commands.add_parser("doctor")
+    portable_doctor.add_argument("--json", action="store_true")
+    adapters_parser = commands.add_parser("adapters")
+    portable_adapters_sub = adapters_parser.add_subparsers(dest="portable_adapter_command", required=True)
+    for name in ("detect", "list", "show"):
+        item = portable_adapters_sub.add_parser(name)
+        item.add_argument("--json", action="store_true")
+        item.add_argument("--dry-run", action="store_true")
+        if name == "show":
+            item.add_argument("--adapter", required=True)
+    portable_config = commands.add_parser("config")
+    portable_config_sub = portable_config.add_subparsers(dest="portable_config_command", required=True)
+    for name in ("preview", "generate", "validate"):
+        item = portable_config_sub.add_parser(name)
+        item.add_argument("--spec", required=True)
+        item.add_argument("--root", type=Path, default=ROOT)
+        item.add_argument("--json", action="store_true")
+        item.add_argument("--dry-run", action="store_true")
+        if name == "generate":
+            item.add_argument("--replace", action="store_true")
     args = parser.parse_args(argv)
     try:
-        if args.command == "profiles":
+        if args.command == "setup":
+            spec = contracts.load_json(Path(args.spec))
+            _print(setup.apply(args.root, spec, dry_run=args.dry_run, replace=args.replace))
+        elif args.command == "doctor":
+            _print({"adapters": adapters.detect_all(), "task_execution": "not-implemented"})
+        elif args.command == "adapters":
+            if args.portable_adapter_command == "detect":
+                _print(adapters.detect_all())
+            elif args.portable_adapter_command == "list":
+                _print([adapters.adapter_descriptor(name) for name in sorted(adapters.TEMPLATES)])
+            else:
+                _print(adapters.adapter_descriptor(args.adapter))
+        elif args.command == "config":
+            spec = contracts.load_json(Path(args.spec))
+            if args.portable_config_command == "preview":
+                _print(setup.config_preview(args.root, spec))
+            elif args.portable_config_command == "generate":
+                _print(setup.config_generate(args.root, spec, dry_run=args.dry_run, replace=args.replace))
+            else:
+                setup.validate_spec(spec)
+                _print(
+                    {
+                        "registry_id": spec["registry"]["registry_id"],
+                        "registry_version": spec["registry"]["version"],
+                        "runtime_map_id": spec["runtime_map"]["runtime_map_id"],
+                        "valid": True,
+                    }
+                )
+        elif args.command == "profiles":
             registry = _document(args.registry, "registry")
             if args.profiles_command == "validate":
                 _print({"registry_id": registry["registry_id"], "valid": True})
@@ -127,7 +185,7 @@ def main(argv: list[str] | None = None) -> int:
         else:
             selection = catalog.latest_selection(Path(args.selection_dir)) if args.latest else _document(args.selection, "selection")
             _print(selection["execution_plan"]["explanation"])
-    except (catalog.CatalogError, contracts.ContractError, provider.ProfileError, routing.RoutingError, ValueError) as error:
+    except (catalog.CatalogError, contracts.ContractError, provider.ProfileError, routing.RoutingError, portable_adapters.PortableAdapterError, setup.SetupError, ValueError) as error:
         print(f"agentctl: {error}", file=sys.stderr)
         return 3
     return 0
