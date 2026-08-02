@@ -94,6 +94,36 @@ def _verify_parents(root: Path, path: Path) -> None:
             raise LocalStateError("refusing symbolic-link or non-directory parent")
 
 
+def prepare_directory(root: Path, directory: Path) -> Path:
+    """Create restrictive owned directories below *root* without following links."""
+    if not root.is_absolute() or not directory.is_absolute():
+        raise LocalStateError("local-state directory must be absolute")
+    if directory != root and root not in directory.parents:
+        raise LocalStateError("directory escapes approved root")
+    chain = [directory]
+    current = directory
+    while current != root:
+        current = current.parent
+        chain.append(current)
+    for item in reversed(chain):
+        try:
+            metadata = item.lstat()
+        except FileNotFoundError:
+            try:
+                item.mkdir(mode=0o700)
+                metadata = item.lstat()
+            except OSError:
+                raise LocalStateError("local-state directory creation failed") from None
+        if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISDIR(metadata.st_mode):
+            raise LocalStateError("refusing symbolic-link or non-directory parent")
+        if stat.S_IMODE(metadata.st_mode) & 0o077:
+            try:
+                os.chmod(item, 0o700, follow_symlinks=False)
+            except OSError:
+                raise LocalStateError("local-state directory mode failed") from None
+    return directory
+
+
 def canonical_json(value: Mapping[str, Any]) -> bytes:
     return (json.dumps(value, sort_keys=True, indent=2, ensure_ascii=True) + "\n").encode("utf-8")
 
