@@ -393,7 +393,9 @@ class ExecutionReceiptTests(unittest.TestCase):
             with self.assertRaises(execution.ExecutionContractError):
                 execution.validate_execution_receipt(value)
 
-    def test_prohibited_relative_path_characters_and_roots(self):
+    def test_prohibited_relative_path_schema_and_python_parity(self):
+        schema = contracts.load_schema("execution-receipt")
+        jsonschema.Draft202012Validator.check_schema(schema)
         for attempted in (
             "a\nb",
             "a b",
@@ -403,12 +405,15 @@ class ExecutionReceiptTests(unittest.TestCase):
             "a\tb",
             "é/x",
             "con*",
+            "a/",
         ):
             value = receipt()
             value["worktree_path"] = attempted
             with self.subTest(attempted=attempted):
                 with self.assertRaises(execution.ExecutionContractError):
                     execution.validate_execution_receipt(value)
+                with self.assertRaises(jsonschema.ValidationError):
+                    jsonschema.validate(value, schema)
         self.assertEqual(
             execution.PATH_ROOTS,
             {
