@@ -136,7 +136,7 @@ def _identity(prefix: str, *material: str) -> str:
         raise ProviderOnboardingError("validation", "derived identifier exceeds local-state bounds") from None
 
 
-def derive_ids(spec: Mapping[str, Any]) -> dict[str, str]:
+def derive_ids(spec: Mapping[str, Any], model: str | None = None) -> dict[str, str]:
     try:
         contracts.validate_provider_onboarding_spec(spec)
     except contracts.ContractError as error:
@@ -144,17 +144,20 @@ def derive_ids(spec: Mapping[str, Any]) -> dict[str, str]:
     provider_id = spec["provider_id"]
     endpoint = spec["endpoint"]["origin"]
     protocol = spec["endpoint"]["protocol"]
-    model = spec["model"]
+    selected_model = model if model is not None else spec.get("model")
+    if not isinstance(selected_model, str) or not selected_model:
+        raise ProviderOnboardingError("validation", "provider model is required")
     auth = spec["authentication"]
     auth_ref = auth.get("env_var", "none")
-    material = (provider_id, endpoint, protocol, model, auth["mode"], auth_ref)
-    readable = _slug(model)
+    material = (provider_id, endpoint, protocol, selected_model, auth["mode"], auth_ref)
+    readable = _slug(selected_model)
+    provider_material = (provider_id, endpoint, protocol, auth["mode"], auth_ref)
     return {
         "provider_id": provider_id,
         "profile_id": _identity(f"provider-{provider_id[:80]}-{readable}", *material),
         "runtime_entry_id": _identity(f"runtime-{provider_id[:80]}-{readable}", *material, "direct-http"),
-        "profile_overlay_id": _identity(f"provider-profile-overlay-{provider_id[:80]}", *material),
-        "runtime_overlay_id": _identity(f"provider-runtime-overlay-{provider_id[:80]}", *material),
+        "profile_overlay_id": _identity(f"provider-profile-overlay-{provider_id[:80]}", *provider_material),
+        "runtime_overlay_id": _identity(f"provider-runtime-overlay-{provider_id[:80]}", *provider_material),
     }
 
 
@@ -175,23 +178,56 @@ def configuration(spec: Mapping[str, Any], *, clock: Callable[[], datetime] | No
     normalized_origin = normalize_origin(spec["endpoint"]["origin"])
     if normalized_origin != spec["endpoint"]["origin"]:
         raise ProviderOnboardingError("validation", "endpoint origin must be normalized")
-    identities = derive_ids(spec)
-    execution_path = "anthropic-compatible" if spec["endpoint"]["protocol"] == "anthropic-compatible" else "openai-compatible"
-    result = {
-        "schema": CONFIG_SCHEMA,
-        "schema_version": "1.0",
-        "provider_id": spec["provider_id"],
-        "endpoint": dict(spec["endpoint"]),
-        "authentication": dict(spec["authentication"]),
-        "model": spec["model"],
-        "canonical": {
-            "profile_id": identities["profile_id"],
-            "adapter_id": "generic-http",
-            "runtime_entry_id": identities["runtime_entry_id"],
-            "execution_path": execution_path,
-        },
-        "configured_at": _now(clock),
-    }
+    if spec["schema_version"] == "1.0":
+        identities = derive_ids(spec)
+        execution_path = "anthropic-compatible" if spec["endpoint"]["protocol"] == "anthropic-compatible" else "openai-compatible"
+        result = {
+            "schema": CONFIG_SCHEMA,
+            "schema_version": "1.0",
+            "provider_id": spec["provider_id"],
+            "endpoint": dict(spec["endpoint"]),
+            "authentication": dict(spec["authentication"]),
+            "model": spec["model"],
+            "canonical": {
+                "profile_id": identities["profile_id"],
+                "adapter_id": "generic-http",
+                "runtime_entry_id": identities["runtime_entry_id"],
+                "execution_path": execution_path,
+            },
+            "configured_at": _now(clock),
+        }
+    else:
+        canonical_profiles = []
+        for model in sorted(spec["models"]):
+            identities = derive_ids(spec, model)
+            canonical_profiles.append({
+                "model": model,
+                "profile_id": identities["profile_id"],
+                "runtime_entry_id": identities["runtime_entry_id"],
+                "adapter_id": "generic-http",
+                "execution_path": "anthropic-compatible" if spec["execution_protocol"] == "anthropic-messages" else "openai-compatible",
+            })
+        profile_by_model = {item["model"]: item["profile_id"] for item in canonical_profiles}
+        result = {
+            "schema": CONFIG_SCHEMA,
+            "schema_version": "1.1",
+            "provider_id": spec["provider_id"],
+            "display_name": spec["display_name"],
+            "endpoint": dict(spec["endpoint"]),
+            "authentication": dict(spec["authentication"]),
+            "models": sorted(spec["models"]),
+            "role_assignments": sorted((dict(item) for item in spec["role_assignments"]), key=lambda item: item["role_id"]),
+            "execution_protocol": spec["execution_protocol"],
+            "discovery_evidence": dict(spec["discovery_evidence"]),
+            "canonical": {
+                "profiles": canonical_profiles,
+                "role_profiles": {
+                    item["role_id"]: profile_by_model[item["model"]]
+                    for item in spec["role_assignments"]
+                },
+            },
+            "configured_at": _now(clock),
+        }
     try:
         contracts.validate_provider_configuration(result)
     except contracts.ContractError as error:
@@ -205,34 +241,47 @@ def overlays(config: Mapping[str, Any], registry: Mapping[str, Any], runtime_map
     except contracts.ContractError as error:
         raise ProviderOnboardingError("validation", str(error)) from None
     config_digest = _digest(config)
-    identities = derive_ids({
-        "schema": SPEC_SCHEMA, "schema_version": "1.0", "provider_id": config["provider_id"],
-        "endpoint": config["endpoint"], "authentication": config["authentication"], "model": config["model"], "roles": [],
-    })
     local = urlsplit(config["endpoint"]["origin"]).scheme == "http"
-    protocol = "anthropic-messages" if config["endpoint"]["protocol"] == "anthropic-compatible" else "openai-chat-completions"
-    profile = {
-        "profile_id": config["canonical"]["profile_id"], "schema_version": "1.0", "adapter_id": "generic-http",
-        "access_class": "local-server" if local else "api-gateway",
-        "funding_class": "local" if local else "personal-api",
-        "auth_mode": config["authentication"]["mode"],
-        "binding": {"kind": "provider-profile", "ref": config["provider_id"]},
-        "model": {"kind": "pinned", "ref": config["model"]}, "protocol": protocol,
-        "capabilities": {"basic_text": {"status": "supported", "confidence": "declared", "provenance": ["provider-configuration"]}},
-        "privacy": {"data_classes": ["public"]}, "cost": {"tier": 0 if local else 1},
-        "resources": {"requires": []}, "availability": {"required": True}, "priority": 0,
-    }
-    profile_overlay = {
-        "schema": PROFILE_OVERLAY_SCHEMA, "schema_version": "1.0", "overlay_id": identities["profile_overlay_id"],
-        "provider_id": config["provider_id"], "registry_id": registry["registry_id"], "registry_version": registry["version"],
-        "configuration_digest": config_digest, "profile": profile,
-    }
-    runtime_overlay = {
-        "schema": RUNTIME_OVERLAY_SCHEMA, "schema_version": "1.0", "overlay_id": identities["runtime_overlay_id"],
-        "provider_id": config["provider_id"], "runtime_map_id": runtime_map["runtime_map_id"], "runtime_map_version": runtime_map["version"],
-        "configuration_digest": config_digest,
-        "entry": {"runtime_entry_id": config["canonical"]["runtime_entry_id"], "profile_id": config["canonical"]["profile_id"], "adapter_id": "generic-http", "client_template": "direct-http", "execution_path": config["canonical"]["execution_path"]},
-    }
+    protocol = (
+        config["execution_protocol"]
+        if config["schema_version"] == "1.1"
+        else "anthropic-messages" if config["endpoint"]["protocol"] == "anthropic-compatible" else "openai-chat-completions"
+    )
+    if config["schema_version"] == "1.0":
+        identities = derive_ids({
+            "schema": SPEC_SCHEMA, "schema_version": "1.0", "provider_id": config["provider_id"],
+            "endpoint": config["endpoint"], "authentication": config["authentication"], "model": config["model"], "roles": [],
+        })
+        profiles = [{
+            "profile_id": config["canonical"]["profile_id"], "schema_version": "1.0", "adapter_id": "generic-http",
+            "access_class": "local-server" if local else "api-gateway", "funding_class": "local" if local else "personal-api",
+            "auth_mode": config["authentication"]["mode"], "binding": {"kind": "provider-profile", "ref": config["provider_id"]},
+            "model": {"kind": "pinned", "ref": config["model"]}, "protocol": protocol,
+            "capabilities": {"basic_text": {"status": "supported", "confidence": "declared", "provenance": ["provider-configuration"]}},
+            "privacy": {"data_classes": ["public"]}, "cost": {"tier": 0 if local else 1},
+            "resources": {"requires": []}, "availability": {"required": True}, "priority": 0,
+        }]
+        entries = [{"runtime_entry_id": config["canonical"]["runtime_entry_id"], "profile_id": config["canonical"]["profile_id"], "adapter_id": "generic-http", "client_template": "direct-http", "execution_path": config["canonical"]["execution_path"]}]
+        profile_overlay = {"schema": PROFILE_OVERLAY_SCHEMA, "schema_version": "1.0", "overlay_id": identities["profile_overlay_id"], "provider_id": config["provider_id"], "registry_id": registry["registry_id"], "registry_version": registry["version"], "configuration_digest": config_digest, "profile": profiles[0]}
+        runtime_overlay = {"schema": RUNTIME_OVERLAY_SCHEMA, "schema_version": "1.0", "overlay_id": identities["runtime_overlay_id"], "provider_id": config["provider_id"], "runtime_map_id": runtime_map["runtime_map_id"], "runtime_map_version": runtime_map["version"], "configuration_digest": config_digest, "entry": entries[0]}
+    else:
+        identities = derive_ids({
+            "schema": SPEC_SCHEMA, "schema_version": "1.1", "provider_id": config["provider_id"], "display_name": config["display_name"],
+            "endpoint": config["endpoint"], "authentication": config["authentication"], "models": config["models"],
+            "role_assignments": config["role_assignments"], "execution_protocol": config["execution_protocol"], "discovery_evidence": config["discovery_evidence"],
+        }, config["models"][0])
+        profiles = [{
+            "profile_id": item["profile_id"], "schema_version": "1.0", "adapter_id": "generic-http",
+            "access_class": "local-server" if local else "api-gateway", "funding_class": "local" if local else "personal-api",
+            "auth_mode": config["authentication"]["mode"], "binding": {"kind": "provider-profile", "ref": config["provider_id"]},
+            "model": {"kind": "pinned", "ref": item["model"]}, "protocol": protocol,
+            "capabilities": {"basic_text": {"status": "supported", "confidence": "declared", "provenance": ["user-confirmed"]}},
+            "privacy": {"data_classes": ["public"]}, "cost": {"tier": 0 if local else 1},
+            "resources": {"requires": []}, "availability": {"required": True}, "priority": 0,
+        } for item in config["canonical"]["profiles"]]
+        entries = [{"runtime_entry_id": item["runtime_entry_id"], "profile_id": item["profile_id"], "adapter_id": "generic-http", "client_template": "direct-http", "execution_path": item["execution_path"]} for item in config["canonical"]["profiles"]]
+        profile_overlay = {"schema": PROFILE_OVERLAY_SCHEMA, "schema_version": "1.1", "overlay_id": identities["profile_overlay_id"], "provider_id": config["provider_id"], "registry_id": registry["registry_id"], "registry_version": registry["version"], "configuration_digest": config_digest, "profiles": profiles}
+        runtime_overlay = {"schema": RUNTIME_OVERLAY_SCHEMA, "schema_version": "1.1", "overlay_id": identities["runtime_overlay_id"], "provider_id": config["provider_id"], "runtime_map_id": runtime_map["runtime_map_id"], "runtime_map_version": runtime_map["version"], "configuration_digest": config_digest, "entries": entries}
     try:
         contracts.validate_provider_profile_overlay(profile_overlay, registry)
         contracts.validate_provider_runtime_overlay(runtime_overlay, registry, runtime_map)
@@ -295,13 +344,52 @@ def effective_documents(repository: Path) -> tuple[dict[str, Any], dict[str, Any
 
 
 def _receipt(config: Mapping[str, Any], profile: Mapping[str, Any], runtime: Mapping[str, Any], action: str) -> dict[str, Any]:
-    value = {
-        "schema": RECEIPT_SCHEMA, "schema_version": "1.0", "provider_id": config["provider_id"],
-        "configured_at": config["configured_at"], "configuration_digest": _digest(config),
-        "profile_overlay_id": profile["overlay_id"], "runtime_overlay_id": runtime["overlay_id"], "action": action,
-    }
+    if config["schema_version"] == "1.0":
+        value = {
+            "schema": RECEIPT_SCHEMA, "schema_version": "1.0", "provider_id": config["provider_id"],
+            "configured_at": config["configured_at"], "configuration_digest": _digest(config),
+            "profile_overlay_id": profile["overlay_id"], "runtime_overlay_id": runtime["overlay_id"], "action": action,
+        }
+    else:
+        value = {
+            "schema": RECEIPT_SCHEMA, "schema_version": "1.1", "provider_id": config["provider_id"],
+            "configured_at": config["configured_at"], "configuration_digest": _digest(config),
+            "discovery_evidence_digest": _digest(config["discovery_evidence"]),
+            "profile_overlay_id": profile["overlay_id"], "runtime_overlay_id": runtime["overlay_id"],
+            "role_profiles": dict(config["canonical"]["role_profiles"]), "model_count": len(config["models"]),
+            "action": action,
+        }
     contracts.validate_provider_onboarding_receipt(value)
     return value
+
+
+def refresh_spec(config: Mapping[str, Any], evidence: Mapping[str, Any]) -> dict[str, Any]:
+    """Compile refreshed sanitized evidence through the normal 1.1 apply path.
+
+    Discovery can report a missing configured model, but it never mutates
+    inventory or role assignments automatically.
+    """
+    try:
+        contracts.validate_provider_configuration(config)
+        contracts.validate_provider_discovery_evidence(evidence)
+    except contracts.ContractError as error:
+        raise ProviderOnboardingError("validation", str(error)) from None
+    if config["schema_version"] != "1.1":
+        raise ProviderOnboardingError("validation", "refresh requires a 1.1 guided provider configuration")
+    if evidence["provider_id"] != config["provider_id"] or evidence["endpoint_origin"] != config["endpoint"]["origin"]:
+        raise ProviderOnboardingError("validation", "refreshed evidence does not match provider configuration")
+    return {
+        "schema": SPEC_SCHEMA,
+        "schema_version": "1.1",
+        "provider_id": config["provider_id"],
+        "display_name": config["display_name"],
+        "endpoint": dict(config["endpoint"]),
+        "authentication": dict(config["authentication"]),
+        "models": list(config["models"]),
+        "role_assignments": [dict(item) for item in config["role_assignments"]],
+        "execution_protocol": config["execution_protocol"],
+        "discovery_evidence": dict(evidence),
+    }
 
 
 def _difference(old: Mapping[str, Any], new: Mapping[str, Any]) -> list[str]:
@@ -354,7 +442,12 @@ def list_providers(repository: Path) -> list[dict[str, Any]]:
     for path in sorted(directory.glob("*.json")):
         try:
             config = load_provider(repository, path.stem)
-            result.append({"provider_id": config["provider_id"], "endpoint_origin": config["endpoint"]["origin"], "protocol": config["endpoint"]["protocol"], "model": config["model"]})
+            result.append({
+                "provider_id": config["provider_id"],
+                "endpoint_origin": config["endpoint"]["origin"],
+                "protocol": config["endpoint"]["protocol"],
+                "models": config["models"] if config["schema_version"] == "1.1" else [config["model"]],
+            })
         except ProviderOnboardingError:
             result.append({"provider_id": path.stem, "status": "invalid"})
     return result
@@ -367,12 +460,16 @@ def remove(repository: Path, provider_id: str, *, force: bool = False, dry_run: 
         if error.category == "persistence":
             return {"provider_id": provider_id, "removed": False, "already_removed": True, "changed": []}
         raise
-    profile_id = config["canonical"]["profile_id"]
+    profile_ids = (
+        set(config["canonical"]["role_profiles"].values())
+        if config["schema_version"] == "1.1"
+        else {config["canonical"]["profile_id"]}
+    )
     references: list[str] = []
     readiness = _path(repository, local_state.STATE_DIR, "readiness")
     if readiness.exists():
         for path in readiness.glob("*.json"):
-            if not path.is_symlink() and profile_id in path.read_text(encoding="utf-8", errors="replace"):
+            if not path.is_symlink() and any(profile_id in path.read_text(encoding="utf-8", errors="replace") for profile_id in profile_ids):
                 references.append(str(path.relative_to(repository.resolve())))
     if references and not force:
         raise ProviderOnboardingError("reference", "active state references provider profile: " + ", ".join(sorted(references)))

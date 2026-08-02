@@ -227,7 +227,7 @@ class ProviderOnboardingTests(unittest.TestCase):
             self.assertTrue(provider_onboarding.remove(root, "fixture-gateway")["removed"])
             self.assertTrue(provider_onboarding.remove(root, "fixture-gateway")["already_removed"])
 
-    def test_cli_preview_failures_and_deferred_add(self):
+    def test_cli_preview_failures_and_non_tty_add(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             spec_path = self._write(root, "provider.json", self._json())
@@ -235,8 +235,9 @@ class ProviderOnboardingTests(unittest.TestCase):
             self.assertFalse((root / ".agentic-local").exists())
             stderr = io.StringIO()
             with redirect_stderr(stderr):
-                self.assertEqual(agentctl.main(["provider", "add", "--root", str(root)]), 13)
-            self.assertIn("deferred", stderr.getvalue())
+                self.assertEqual(agentctl.main(["provider", "add", "--root", str(root)]), 3)
+            self.assertIn("interactive TTY", stderr.getvalue())
+            self.assertFalse((root / ".agentic-local").exists())
 
 
 if __name__ == "__main__":

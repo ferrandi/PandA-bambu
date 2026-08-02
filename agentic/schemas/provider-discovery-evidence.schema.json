@@ -2,16 +2,67 @@
   "$id": "https://panda-re.github.io/schemas/agentic/provider-discovery-evidence.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Bounded provider discovery evidence",
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["schema", "schema_version", "provider_id", "checked_at", "method", "status", "diagnostics"],
-  "properties": {
-    "schema": {"const": "evolvehls.agentic.provider-discovery-evidence"},
-    "schema_version": {"const": "1.0"},
-    "provider_id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*$"},
-    "checked_at": {"type": "string", "format": "date-time"},
-    "method": {"enum": ["not-requested", "manual"]},
-    "status": {"enum": ["not-performed", "manual"]},
-    "diagnostics": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "schema_version", "provider_id", "checked_at", "method", "status", "diagnostics"],
+      "properties": {
+        "schema": {"const": "evolvehls.agentic.provider-discovery-evidence"},
+        "schema_version": {"const": "1.0"},
+        "provider_id": {"$ref": "#/$defs/id"},
+        "checked_at": {"type": "string", "format": "date-time"},
+        "method": {"enum": ["not-requested", "manual"]},
+        "status": {"enum": ["not-performed", "manual"]},
+        "diagnostics": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "schema_version", "provider_id", "endpoint_origin", "checked_at", "method", "request_path", "status", "listing_protocol", "authentication", "models", "truncated", "failure", "diagnostics"],
+      "properties": {
+        "schema": {"const": "evolvehls.agentic.provider-discovery-evidence"},
+        "schema_version": {"const": "1.1"},
+        "provider_id": {"$ref": "#/$defs/id"},
+        "endpoint_origin": {"type": "string", "minLength": 1, "maxLength": 512},
+        "checked_at": {"type": "string", "format": "date-time"},
+        "method": {"enum": ["manual", "openai-model-list"]},
+        "request_path": {"type": ["string", "null"], "pattern": "^/[^/].*$"},
+        "status": {"enum": ["manual", "succeeded", "failed", "unsupported"]},
+        "listing_protocol": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["value", "origin", "confidence"],
+          "properties": {
+            "value": {"enum": ["openai-compatible", "anthropic-compatible", "unknown"]},
+            "origin": {"enum": ["endpoint-reported", "protocol-derived", "static-inference", "user-confirmed", "unknown"]},
+            "confidence": {"enum": ["declared", "inferred", "observed", "historically-validated", "unknown"]}
+          }
+        },
+        "authentication": {"enum": ["not-requested", "not-required", "accepted", "missing", "rejected", "unknown"]},
+        "models": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["model_id", "origin", "confidence", "context_window"],
+            "properties": {
+              "model_id": {"type": "string", "minLength": 1, "maxLength": 512},
+              "origin": {"enum": ["endpoint-reported", "protocol-derived", "static-inference", "user-confirmed", "unknown"]},
+              "confidence": {"enum": ["declared", "inferred", "observed", "historically-validated", "unknown"]},
+              "context_window": {"type": ["integer", "null"], "minimum": 1}
+            }
+          }
+        },
+        "truncated": {"type": "boolean"},
+        "failure": {"type": ["string", "null"], "enum": [null, "authentication", "endpoint-policy", "network", "timeout", "redirect", "redirect-limit", "exchange-limit", "response-too-large", "malformed-response", "unsupported"]},
+        "diagnostics": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+      }
+    }
+  ],
+  "$defs": {
+    "id": {"type": "string", "maxLength": 190, "pattern": "^[a-z][a-z0-9.-]*$"}
   }
 }

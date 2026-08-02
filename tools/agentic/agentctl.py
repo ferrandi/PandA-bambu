@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -12,6 +13,8 @@ import catalog
 import contracts
 import portable_adapters
 import provider
+import provider_discovery
+import provider_guided
 import provider_onboarding
 import routing
 import setup
@@ -47,11 +50,48 @@ def _print(value: object) -> None:
 
 def _provider_command(args: argparse.Namespace) -> int:
     if args.provider_command == "add":
-        raise provider_onboarding.ProviderOnboardingError(
-            "not-implemented",
-            "provider add is deferred to PAF-04B; use provider apply --spec",
+        result = provider_guided.run(
+            args.root,
+            io=provider_guided.StdioWizardIO(),
+            replace=args.replace,
         )
-    if args.provider_command in {"apply", "preview"}:
+        _print({"status": result.status, "preview": result.preview, "applied": result.applied})
+    elif args.provider_command == "discover":
+        config = provider_onboarding.load_provider(args.root, args.provider_id)
+        if config["endpoint"]["protocol"] != "openai-compatible":
+            raise provider_onboarding.ProviderOnboardingError(
+                "validation",
+                "network model discovery currently supports OpenAI-compatible endpoints only",
+            )
+        evidence = provider_discovery.discover(
+            config["provider_id"],
+            config["endpoint"]["origin"],
+            authentication=config["authentication"],
+            env=os.environ,
+            allow_private=args.allow_private_network,
+        )
+        assigned_models = {item["model"] for item in config.get("role_assignments", [])}
+        visible_models = {item["model_id"] for item in evidence["models"]}
+        result = {
+            "evidence": evidence,
+            "missing_assigned_models": sorted(assigned_models - visible_models) if evidence["status"] == "succeeded" else [],
+            "persisted": False,
+        }
+        if args.apply:
+            io = provider_guided.StdioWizardIO()
+            if not io.isatty():
+                raise provider_onboarding.ProviderOnboardingError(
+                    "validation",
+                    "provider discover --apply requires an interactive TTY confirmation",
+                )
+            if io.read("Persist refreshed discovery evidence without changing assignments? [yes/no] ").strip().lower() != "yes":
+                result["status"] = "cancelled"
+            else:
+                spec = provider_onboarding.refresh_spec(config, evidence)
+                result["applied"] = provider_onboarding.apply(args.root, spec, replace=True)
+                result["persisted"] = True
+        _print(result)
+    elif args.provider_command in {"apply", "preview"}:
         spec = provider_onboarding.load_spec(Path(args.spec))
         _print(provider_onboarding.apply(args.root, spec, dry_run=args.provider_command == "preview", replace=args.replace))
     elif args.provider_command == "validate":
@@ -144,13 +184,19 @@ def main(argv: list[str] | None = None) -> int:
 
     providers = commands.add_parser("provider")
     provider_sub = providers.add_subparsers(dest="provider_command", required=True)
-    add = provider_sub.add_parser("add", help="deferred to PAF-04B")
+    add = provider_sub.add_parser("add", help="interactive non-secret provider onboarding")
     add.add_argument("--root", type=Path, default=ROOT)
+    add.add_argument("--replace", action="store_true")
     for name in ("apply", "preview"):
         item = provider_sub.add_parser(name)
         item.add_argument("--spec", required=True)
         item.add_argument("--root", type=Path, default=ROOT)
         item.add_argument("--replace", action="store_true")
+    discover = provider_sub.add_parser("discover", help="inspect OpenAI-compatible model listing; does not persist changes")
+    discover.add_argument("provider_id")
+    discover.add_argument("--root", type=Path, default=ROOT)
+    discover.add_argument("--allow-private-network", action="store_true")
+    discover.add_argument("--apply", action="store_true", help="persist refreshed evidence after interactive confirmation")
     validate = provider_sub.add_parser("validate")
     validate.add_argument("--root", type=Path, default=ROOT)
     show = provider_sub.add_parser("show")
@@ -232,9 +278,18 @@ def main(argv: list[str] | None = None) -> int:
         else:
             selection = catalog.latest_selection(Path(args.selection_dir)) if args.latest else _document(args.selection, "selection")
             _print(selection["execution_plan"]["explanation"])
+    except KeyboardInterrupt:
+        print("agentctl: cancelled; no changes made", file=sys.stderr)
+        return 130
+    except provider_guided.GuidedOnboardingError as error:
+        print(f"agentctl: {error}", file=sys.stderr)
+        return EXIT_CODES["validation"]
     except provider_onboarding.ProviderOnboardingError as error:
         print(f"agentctl: {error}", file=sys.stderr)
         return EXIT_CODES[error.category]
+    except RecursionError:
+        print("agentctl: malformed response", file=sys.stderr)
+        return EXIT_CODES["validation"]
     except (catalog.CatalogError, contracts.ContractError, provider.ProfileError, routing.RoutingError, portable_adapters.PortableAdapterError, setup.SetupError, ValueError) as error:
         print(f"agentctl: {error}", file=sys.stderr)
         return 3

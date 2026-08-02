@@ -48,6 +48,14 @@ def _sorted_documents(documents: Sequence[Mapping[str, Any]]) -> list[Mapping[st
     )
 
 
+def _overlay_items(overlay: Mapping[str, Any], field: str) -> list[Mapping[str, Any]]:
+    singular = "profile" if field == "profiles" else "entry"
+    values = overlay.get(field)
+    if values is None:
+        values = [overlay[singular]]
+    return [item for item in values if isinstance(item, Mapping)]
+
+
 def compose(
     registry: Mapping[str, Any],
     runtime_map: Mapping[str, Any],
@@ -84,15 +92,16 @@ def compose(
     profile_by_id = {item["profile_id"]: item for item in effective_registry["profiles"]}
     profile_source: dict[str, str] = {item["profile_id"]: "builtin" for item in effective_registry["profiles"]}
     for overlay in profiles:
-        profile = copy.deepcopy(dict(overlay["profile"]))
-        profile_id = profile["profile_id"]
-        existing = profile_by_id.get(profile_id)
-        if existing is not None:
-            if _same(existing, profile) and profile_source[profile_id] != "builtin":
-                continue
-            raise OverlayError(f"profile identifier collision: {profile_id}")
-        profile_by_id[profile_id] = profile
-        profile_source[profile_id] = overlay["overlay_id"]
+        for raw_profile in _overlay_items(overlay, "profiles"):
+            profile = copy.deepcopy(dict(raw_profile))
+            profile_id = profile["profile_id"]
+            existing = profile_by_id.get(profile_id)
+            if existing is not None:
+                if _same(existing, profile) and profile_source[profile_id] != "builtin":
+                    continue
+                raise OverlayError(f"profile identifier collision: {profile_id}")
+            profile_by_id[profile_id] = profile
+            profile_source[profile_id] = overlay["overlay_id"]
 
     effective_registry["profiles"] = [profile_by_id[key] for key in sorted(profile_by_id)]
     try:
@@ -111,24 +120,25 @@ def compose(
     pair_paths = {(item["profile_id"], item["execution_path"]): item for item in effective_runtime["entries"]}
     provider_profiles = {item["profile_id"] for item in effective_registry["profiles"] if profile_source.get(item["profile_id"]) != "builtin"}
     for overlay in runtimes:
-        entry = copy.deepcopy(dict(overlay["entry"]))
-        entry_id = entry["runtime_entry_id"]
-        existing = runtime_by_id.get(entry_id)
-        if existing is not None:
-            if _same(existing, entry) and runtime_source[entry_id] != "builtin":
-                continue
-            raise OverlayError(f"runtime entry identifier collision: {entry_id}")
-        key = (entry["profile_id"], entry["execution_path"])
-        collision = pair_paths.get(key)
-        if collision is not None and not _same(collision, entry):
-            raise OverlayError(
-                "runtime semantic collision for canonical profile and execution path: "
-                f"{entry['profile_id']} / {entry['execution_path']}"
-            )
-        _require(entry["profile_id"] in provider_profiles, "runtime overlay must reference a composed local provider profile")
-        runtime_by_id[entry_id] = entry
-        runtime_source[entry_id] = overlay["overlay_id"]
-        pair_paths[key] = entry
+        for raw_entry in _overlay_items(overlay, "entries"):
+            entry = copy.deepcopy(dict(raw_entry))
+            entry_id = entry["runtime_entry_id"]
+            existing = runtime_by_id.get(entry_id)
+            if existing is not None:
+                if _same(existing, entry) and runtime_source[entry_id] != "builtin":
+                    continue
+                raise OverlayError(f"runtime entry identifier collision: {entry_id}")
+            key = (entry["profile_id"], entry["execution_path"])
+            collision = pair_paths.get(key)
+            if collision is not None and not _same(collision, entry):
+                raise OverlayError(
+                    "runtime semantic collision for canonical profile and execution path: "
+                    f"{entry['profile_id']} / {entry['execution_path']}"
+                )
+            _require(entry["profile_id"] in provider_profiles, "runtime overlay must reference a composed local provider profile")
+            runtime_by_id[entry_id] = entry
+            runtime_source[entry_id] = overlay["overlay_id"]
+            pair_paths[key] = entry
 
     effective_runtime["entries"] = [runtime_by_id[key] for key in sorted(runtime_by_id)]
     try:

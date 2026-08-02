@@ -267,95 +267,238 @@ def _provider_endpoint(value: Any) -> None:
     _require(value["protocol"] in _PROTOCOL_CONFIGURATION, "unsupported provider protocol")
 
 
+def _provider_digest(value: Any, field: str) -> None:
+    _require(isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) is not None, f"invalid {field}")
+
+
+def _provider_models(value: Any) -> None:
+    _require(isinstance(value, list) and 1 <= len(value) <= 256, "invalid provider models")
+    _require(all(isinstance(item, str) and 0 < len(item) <= 512 for item in value), "invalid provider models")
+    _require(len(value) == len(set(value)), "provider models must not contain duplicates")
+
+
+def _provider_assignment(value: Any) -> None:
+    _require(isinstance(value, Mapping), "invalid provider role assignment")
+    _fields(value, {"role_id", "model"}, "provider role assignment")
+    _require(value["role_id"] in {"planning", "implementation", "review"}, "unsupported provider role")
+    _provider_string(value["model"], "role model")
+
+
+def _provider_execution_protocol(value: Any) -> None:
+    _require(value in {"openai-chat-completions", "openai-responses", "anthropic-messages"}, "unsupported provider execution protocol")
+
+
 def validate_provider_onboarding_spec(value: Mapping[str, Any]) -> None:
-    required = {"schema", "schema_version", "provider_id", "endpoint", "authentication", "model", "roles"}
-    _fields(value, required, "provider onboarding specification")
-    _require(value["schema"] == "evolvehls.agentic.provider-onboarding-spec" and value["schema_version"] == "1.0", "unsupported provider onboarding specification schema")
-    _provider_id(value["provider_id"], "provider_id")
-    _provider_endpoint(value["endpoint"])
-    _provider_authentication(value["authentication"])
-    _provider_string(value["model"], "model")
-    _list(value["roles"], "roles")
+    _require(isinstance(value, Mapping) and value.get("schema") == "evolvehls.agentic.provider-onboarding-spec", "unsupported provider onboarding specification schema")
+    if value.get("schema_version") == "1.0":
+        required = {"schema", "schema_version", "provider_id", "endpoint", "authentication", "model", "roles"}
+        _fields(value, required, "provider onboarding specification")
+        _provider_id(value["provider_id"], "provider_id")
+        _provider_endpoint(value["endpoint"])
+        _provider_authentication(value["authentication"])
+        _provider_string(value["model"], "model")
+        _list(value["roles"], "roles")
+    elif value.get("schema_version") == "1.1":
+        required = {"schema", "schema_version", "provider_id", "display_name", "endpoint", "authentication", "models", "role_assignments", "execution_protocol", "discovery_evidence"}
+        _fields(value, required, "provider onboarding specification")
+        _provider_id(value["provider_id"], "provider_id")
+        _provider_string(value["display_name"], "provider display_name")
+        _provider_endpoint(value["endpoint"])
+        _provider_authentication(value["authentication"])
+        _provider_models(value["models"])
+        _provider_execution_protocol(value["execution_protocol"])
+        allowed_execution_protocols = (
+            {"anthropic-messages"}
+            if value["endpoint"]["protocol"] == "anthropic-compatible"
+            else {"openai-chat-completions", "openai-responses"}
+        )
+        _require(value["execution_protocol"] in allowed_execution_protocols, "execution protocol is incompatible with provider endpoint protocol")
+        _require(isinstance(value["role_assignments"], list) and len(value["role_assignments"]) == 3, "invalid provider role assignments")
+        for item in value["role_assignments"]:
+            _provider_assignment(item)
+            _require(item["model"] in value["models"], "role assignment references unknown provider model")
+        _require({item["role_id"] for item in value["role_assignments"]} == {"planning", "implementation", "review"}, "provider role assignments must cover canonical roles")
+        validate_provider_discovery_evidence(value["discovery_evidence"])
+        _require(value["discovery_evidence"]["provider_id"] == value["provider_id"], "provider discovery evidence references another provider")
+    else:
+        raise ContractError("unsupported provider onboarding specification schema")
     _no_secret_fields(value)
 
 
 def validate_provider_discovery_evidence(value: Mapping[str, Any]) -> None:
-    required = {"schema", "schema_version", "provider_id", "checked_at", "method", "status", "diagnostics"}
-    _fields(value, required, "provider discovery evidence")
-    _require(value["schema"] == "evolvehls.agentic.provider-discovery-evidence" and value["schema_version"] == "1.0", "unsupported provider discovery evidence schema")
-    _provider_id(value["provider_id"], "provider_id")
-    parse_timestamp(value["checked_at"], "checked_at")
-    _require(value["method"] in {"not-requested", "manual"}, "unsupported discovery evidence method")
-    _require(value["status"] in {"not-performed", "manual"}, "invalid discovery evidence status")
-    _list(value["diagnostics"], "diagnostics")
-    _require((value["method"], value["status"]) in {("not-requested", "not-performed"), ("manual", "manual")}, "inconsistent discovery evidence")
+    _require(isinstance(value, Mapping) and value.get("schema") == "evolvehls.agentic.provider-discovery-evidence", "unsupported provider discovery evidence schema")
+    if value.get("schema_version") == "1.0":
+        required = {"schema", "schema_version", "provider_id", "checked_at", "method", "status", "diagnostics"}
+        _fields(value, required, "provider discovery evidence")
+        _provider_id(value["provider_id"], "provider_id")
+        parse_timestamp(value["checked_at"], "checked_at")
+        _require(value["method"] in {"not-requested", "manual"}, "unsupported discovery evidence method")
+        _require(value["status"] in {"not-performed", "manual"}, "invalid discovery evidence status")
+        _list(value["diagnostics"], "diagnostics")
+        _require((value["method"], value["status"]) in {("not-requested", "not-performed"), ("manual", "manual")}, "inconsistent discovery evidence")
+    elif value.get("schema_version") == "1.1":
+        required = {"schema", "schema_version", "provider_id", "endpoint_origin", "checked_at", "method", "request_path", "status", "listing_protocol", "authentication", "models", "truncated", "failure", "diagnostics"}
+        _fields(value, required, "provider discovery evidence")
+        _provider_id(value["provider_id"], "provider_id")
+        _provider_string(value["endpoint_origin"], "discovery endpoint origin")
+        parse_timestamp(value["checked_at"], "checked_at")
+        _require(value["method"] in {"manual", "openai-model-list"}, "unsupported discovery evidence method")
+        _require(value["request_path"] is None or isinstance(value["request_path"], str) and re.fullmatch(r"/[^/].*", value["request_path"]) is not None, "invalid discovery request path")
+        _require(value["status"] in {"manual", "succeeded", "failed", "unsupported"}, "invalid discovery evidence status")
+        _require(isinstance(value["listing_protocol"], Mapping), "invalid listing protocol evidence")
+        _fields(value["listing_protocol"], {"value", "origin", "confidence"}, "listing protocol evidence")
+        _require(value["listing_protocol"]["value"] in {"openai-compatible", "anthropic-compatible", "unknown"}, "invalid listing protocol")
+        _require(value["listing_protocol"]["origin"] in {"endpoint-reported", "protocol-derived", "static-inference", "user-confirmed", "unknown"}, "invalid listing protocol origin")
+        _require(value["listing_protocol"]["confidence"] in CONFIDENCES, "invalid listing protocol confidence")
+        _require(value["authentication"] in {"not-requested", "not-required", "accepted", "missing", "rejected", "unknown"}, "invalid discovery authentication observation")
+        _require(isinstance(value["models"], list) and len(value["models"]) <= 256, "invalid discovered models")
+        model_ids: set[str] = set()
+        for item in value["models"]:
+            _fields(item, {"model_id", "origin", "confidence", "context_window"}, "discovered provider model")
+            _provider_string(item["model_id"], "discovered model_id")
+            _require(item["model_id"] not in model_ids, "discovered model identifiers must not duplicate")
+            model_ids.add(item["model_id"])
+            _require(item["origin"] in {"endpoint-reported", "protocol-derived", "static-inference", "user-confirmed", "unknown"}, "invalid discovered model origin")
+            _require(item["confidence"] in CONFIDENCES, "invalid discovered model confidence")
+            _require(item["context_window"] is None or isinstance(item["context_window"], int) and not isinstance(item["context_window"], bool) and item["context_window"] > 0, "invalid discovered model context window")
+        _require(isinstance(value["truncated"], bool), "invalid discovery truncation")
+        _require(value["failure"] is None or isinstance(value["failure"], str) and value["failure"] in {"authentication", "endpoint-policy", "network", "timeout", "redirect", "redirect-limit", "exchange-limit", "response-too-large", "malformed-response", "unsupported"}, "invalid discovery failure")
+        _list(value["diagnostics"], "diagnostics")
+    else:
+        raise ContractError("unsupported provider discovery evidence schema")
     _no_secret_fields(value)
 
 
 def validate_provider_configuration(value: Mapping[str, Any]) -> None:
-    required = {"schema", "schema_version", "provider_id", "endpoint", "authentication", "model", "canonical", "configured_at"}
-    _fields(value, required, "provider configuration")
-    _require(value["schema"] == "evolvehls.agentic.provider-configuration" and value["schema_version"] == "1.0", "unsupported provider configuration schema")
-    _provider_id(value["provider_id"], "provider_id")
-    _provider_endpoint(value["endpoint"])
-    _provider_authentication(value["authentication"])
-    _provider_string(value["model"], "model")
-    _fields(value["canonical"], {"profile_id", "adapter_id", "runtime_entry_id", "execution_path"}, "provider canonical references")
-    for field in value["canonical"]:
-        _provider_id(value["canonical"][field], f"canonical.{field}")
-    _require(value["canonical"]["adapter_id"] == "generic-http", "provider configuration must reference the canonical generic-http adapter")
+    _require(isinstance(value, Mapping) and value.get("schema") == "evolvehls.agentic.provider-configuration", "unsupported provider configuration schema")
+    if value.get("schema_version") == "1.0":
+        required = {"schema", "schema_version", "provider_id", "endpoint", "authentication", "model", "canonical", "configured_at"}
+        _fields(value, required, "provider configuration")
+        _provider_id(value["provider_id"], "provider_id")
+        _provider_endpoint(value["endpoint"])
+        _provider_authentication(value["authentication"])
+        _provider_string(value["model"], "model")
+        _fields(value["canonical"], {"profile_id", "adapter_id", "runtime_entry_id", "execution_path"}, "provider canonical references")
+        for field in value["canonical"]:
+            _provider_id(value["canonical"][field], f"canonical.{field}")
+        _require(value["canonical"]["adapter_id"] == "generic-http", "provider configuration must reference the canonical generic-http adapter")
+    elif value.get("schema_version") == "1.1":
+        required = {"schema", "schema_version", "provider_id", "display_name", "endpoint", "authentication", "models", "role_assignments", "execution_protocol", "discovery_evidence", "canonical", "configured_at"}
+        _fields(value, required, "provider configuration")
+        onboarding = {key: value[key] for key in required - {"canonical", "configured_at"}}
+        onboarding["schema"] = "evolvehls.agentic.provider-onboarding-spec"
+        validate_provider_onboarding_spec(onboarding)
+        _require(isinstance(value["canonical"], Mapping), "invalid provider canonical references")
+        _fields(value["canonical"], {"profiles", "role_profiles"}, "provider canonical references")
+        _require(isinstance(value["canonical"]["profiles"], list) and value["canonical"]["profiles"], "invalid provider canonical profiles")
+        seen_profiles: set[str] = set()
+        for item in value["canonical"]["profiles"]:
+            _fields(item, {"model", "profile_id", "runtime_entry_id", "adapter_id", "execution_path"}, "provider canonical profile")
+            _provider_string(item["model"], "canonical model")
+            _require(item["model"] in value["models"], "canonical profile references unknown model")
+            for field in ("profile_id", "runtime_entry_id", "adapter_id", "execution_path"):
+                _provider_id(item[field], f"canonical.{field}")
+            _require(item["adapter_id"] == "generic-http", "provider configuration must reference the canonical generic-http adapter")
+            _require(item["profile_id"] not in seen_profiles, "provider canonical profile identifiers must not duplicate")
+            seen_profiles.add(item["profile_id"])
+        _require(isinstance(value["canonical"]["role_profiles"], Mapping) and set(value["canonical"]["role_profiles"]) == {"planning", "implementation", "review"}, "invalid provider role profile references")
+        _require(set(value["canonical"]["role_profiles"].values()) <= seen_profiles, "role profile reference is unknown")
+    else:
+        raise ContractError("unsupported provider configuration schema")
     parse_timestamp(value["configured_at"], "configured_at")
     _no_secret_fields(value)
 
 
 def validate_provider_onboarding_receipt(value: Mapping[str, Any]) -> None:
-    required = {"schema", "schema_version", "provider_id", "configured_at", "configuration_digest", "profile_overlay_id", "runtime_overlay_id", "action"}
-    _fields(value, required, "provider onboarding receipt")
-    _require(value["schema"] == "evolvehls.agentic.provider-onboarding-receipt" and value["schema_version"] == "1.0", "unsupported provider onboarding receipt schema")
-    _provider_id(value["provider_id"], "provider_id")
-    parse_timestamp(value["configured_at"], "configured_at")
-    _require(isinstance(value["configuration_digest"], str) and re.fullmatch(r"[0-9a-f]{64}", value["configuration_digest"]) is not None, "invalid configuration digest")
-    _provider_id(value["profile_overlay_id"], "profile_overlay_id")
-    _provider_id(value["runtime_overlay_id"], "runtime_overlay_id")
-    _require(value["action"] in {"applied", "replaced", "removed"}, "invalid provider receipt action")
+    _require(isinstance(value, Mapping) and value.get("schema") == "evolvehls.agentic.provider-onboarding-receipt", "unsupported provider onboarding receipt schema")
+    if value.get("schema_version") == "1.0":
+        required = {"schema", "schema_version", "provider_id", "configured_at", "configuration_digest", "profile_overlay_id", "runtime_overlay_id", "action"}
+        _fields(value, required, "provider onboarding receipt")
+        _provider_id(value["provider_id"], "provider_id")
+        parse_timestamp(value["configured_at"], "configured_at")
+        _provider_digest(value["configuration_digest"], "configuration digest")
+        _provider_id(value["profile_overlay_id"], "profile_overlay_id")
+        _provider_id(value["runtime_overlay_id"], "runtime_overlay_id")
+        _require(value["action"] in {"applied", "replaced", "removed"}, "invalid provider receipt action")
+    elif value.get("schema_version") == "1.1":
+        required = {"schema", "schema_version", "provider_id", "configured_at", "configuration_digest", "discovery_evidence_digest", "profile_overlay_id", "runtime_overlay_id", "role_profiles", "model_count", "action"}
+        _fields(value, required, "provider onboarding receipt")
+        _provider_id(value["provider_id"], "provider_id")
+        parse_timestamp(value["configured_at"], "configured_at")
+        _provider_digest(value["configuration_digest"], "configuration digest")
+        _provider_digest(value["discovery_evidence_digest"], "discovery evidence digest")
+        _provider_id(value["profile_overlay_id"], "profile_overlay_id")
+        _provider_id(value["runtime_overlay_id"], "runtime_overlay_id")
+        _require(isinstance(value["role_profiles"], Mapping) and set(value["role_profiles"]) == {"planning", "implementation", "review"}, "invalid receipt role profiles")
+        for profile_id in value["role_profiles"].values():
+            _provider_id(profile_id, "receipt role profile")
+        _require(isinstance(value["model_count"], int) and 1 <= value["model_count"] <= 256, "invalid receipt model count")
+        _require(value["action"] in {"applied", "replaced", "removed"}, "invalid provider receipt action")
+    else:
+        raise ContractError("unsupported provider onboarding receipt schema")
     _no_secret_fields(value)
 
 
 def validate_provider_profile_overlay(value: Mapping[str, Any], registry: Mapping[str, Any] | None = None) -> None:
-    required = {"schema", "schema_version", "overlay_id", "provider_id", "registry_id", "registry_version", "configuration_digest", "profile"}
-    _fields(value, required, "provider profile overlay")
-    _require(value["schema"] == "evolvehls.agentic.provider-profile-overlay" and value["schema_version"] == "1.0", "unsupported provider profile overlay schema")
+    _require(isinstance(value, Mapping) and value.get("schema") == "evolvehls.agentic.provider-profile-overlay", "unsupported provider profile overlay schema")
+    if value.get("schema_version") == "1.0":
+        required = {"schema", "schema_version", "overlay_id", "provider_id", "registry_id", "registry_version", "configuration_digest", "profile"}
+        _fields(value, required, "provider profile overlay")
+        profiles = [value["profile"]]
+    elif value.get("schema_version") == "1.1":
+        required = {"schema", "schema_version", "overlay_id", "provider_id", "registry_id", "registry_version", "configuration_digest", "profiles"}
+        _fields(value, required, "provider profile overlay")
+        profiles = value["profiles"]
+        _require(isinstance(profiles, list) and 1 <= len(profiles) <= 256, "invalid provider overlay profiles")
+    else:
+        raise ContractError("unsupported provider profile overlay schema")
     for field in ("overlay_id", "provider_id", "registry_id"):
         _provider_id(value[field], field)
     _provider_string(value["registry_version"], "registry_version")
-    _require(isinstance(value["configuration_digest"], str) and re.fullmatch(r"[0-9a-f]{64}", value["configuration_digest"]) is not None, "invalid configuration digest")
-    validate_profile(value["profile"])
-    _require(value["profile"]["adapter_id"] == "generic-http", "provider profile overlay must reference generic-http")
-    _require(value["profile"]["binding"] == {"kind": "provider-profile", "ref": value["provider_id"]}, "provider profile overlay binding must reference its provider")
+    _provider_digest(value["configuration_digest"], "configuration digest")
+    identifiers: set[str] = set()
+    for profile in profiles:
+        validate_profile(profile)
+        _require(profile["adapter_id"] == "generic-http", "provider profile overlay must reference generic-http")
+        _require(profile["binding"] == {"kind": "provider-profile", "ref": value["provider_id"]}, "provider profile overlay binding must reference its provider")
+        _require(profile["profile_id"] not in identifiers, "provider overlay profile identifiers must not duplicate")
+        identifiers.add(profile["profile_id"])
     if registry is not None:
         _require(value["registry_id"] == registry["registry_id"] and value["registry_version"] == registry["version"], "provider profile overlay targets a different canonical registry")
-        _require(value["profile"]["adapter_id"] in {item["adapter_id"] for item in registry["adapters"]}, "provider profile overlay references unknown canonical adapter")
+        _require(all(profile["adapter_id"] in {item["adapter_id"] for item in registry["adapters"]} for profile in profiles), "provider profile overlay references unknown canonical adapter")
     _no_secret_fields(value)
 
 
 def validate_provider_runtime_overlay(value: Mapping[str, Any], registry: Mapping[str, Any] | None = None, runtime_map: Mapping[str, Any] | None = None) -> None:
-    required = {"schema", "schema_version", "overlay_id", "provider_id", "runtime_map_id", "runtime_map_version", "configuration_digest", "entry"}
-    _fields(value, required, "provider runtime overlay")
-    _require(value["schema"] == "evolvehls.agentic.provider-runtime-overlay" and value["schema_version"] == "1.0", "unsupported provider runtime overlay schema")
+    _require(isinstance(value, Mapping) and value.get("schema") == "evolvehls.agentic.provider-runtime-overlay", "unsupported provider runtime overlay schema")
+    if value.get("schema_version") == "1.0":
+        required = {"schema", "schema_version", "overlay_id", "provider_id", "runtime_map_id", "runtime_map_version", "configuration_digest", "entry"}
+        _fields(value, required, "provider runtime overlay")
+        entries = [value["entry"]]
+    elif value.get("schema_version") == "1.1":
+        required = {"schema", "schema_version", "overlay_id", "provider_id", "runtime_map_id", "runtime_map_version", "configuration_digest", "entries"}
+        _fields(value, required, "provider runtime overlay")
+        entries = value["entries"]
+        _require(isinstance(entries, list) and 1 <= len(entries) <= 256, "invalid provider overlay runtime entries")
+    else:
+        raise ContractError("unsupported provider runtime overlay schema")
     for field in ("overlay_id", "provider_id", "runtime_map_id"):
         _provider_id(value[field], field)
     _provider_string(value["runtime_map_version"], "runtime_map_version")
-    _require(isinstance(value["configuration_digest"], str) and re.fullmatch(r"[0-9a-f]{64}", value["configuration_digest"]) is not None, "invalid configuration digest")
-    entry = value["entry"]
-    _fields(entry, {"runtime_entry_id", "profile_id", "adapter_id", "client_template", "execution_path"}, "provider runtime overlay entry")
-    for field in entry:
-        _provider_id(entry[field], f"entry.{field}")
-    _require(entry["adapter_id"] == "generic-http" and entry["client_template"] == "direct-http", "provider runtime overlay must reference canonical generic-http/direct-http semantics")
+    _provider_digest(value["configuration_digest"], "configuration digest")
+    identifiers: set[str] = set()
+    for entry in entries:
+        _fields(entry, {"runtime_entry_id", "profile_id", "adapter_id", "client_template", "execution_path"}, "provider runtime overlay entry")
+        for field in entry:
+            _provider_id(entry[field], f"entry.{field}")
+        _require(entry["adapter_id"] == "generic-http" and entry["client_template"] == "direct-http", "provider runtime overlay must reference canonical generic-http/direct-http semantics")
+        _require(entry["runtime_entry_id"] not in identifiers, "provider overlay runtime identifiers must not duplicate")
+        identifiers.add(entry["runtime_entry_id"])
     if runtime_map is not None:
         _require(value["runtime_map_id"] == runtime_map["runtime_map_id"] and value["runtime_map_version"] == runtime_map["version"], "provider runtime overlay targets a different canonical runtime map")
     if registry is not None:
         adapters = {item["adapter_id"] for item in registry["adapters"]}
-        _require(entry["adapter_id"] in adapters, "provider runtime overlay references unknown canonical adapter")
+        _require(all(entry["adapter_id"] in adapters for entry in entries), "provider runtime overlay references unknown canonical adapter")
     _no_secret_fields(value)
 
 
