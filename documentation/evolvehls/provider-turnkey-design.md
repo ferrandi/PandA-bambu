@@ -135,3 +135,50 @@ PAF-03B does not execute Codex, Claude Code, Cline, LiteLLM, direct HTTP, or
 any other client. It does not acquire credentials, inspect authentication
 sessions, alter client-global configuration, scrape native-login status, or
 perform result collection.
+
+## PAF-04A provider configuration and canonical overlays
+
+PAF-04A is declarative local provider configuration, not guided onboarding or
+dynamic discovery. Its supported commands are `provider preview`, `provider
+apply`, `provider show`, `provider list`, `provider validate`, and `provider
+remove`. It does not contact an endpoint and never sends a prompt, completion,
+chat, coding task, or inference request.
+
+The canonical integration is:
+
+```text
+built-in canonical registry/runtime map
+              +
+approved local provider profile/runtime overlays
+              ↓
+computed effective canonical view
+              ↓
+one canonical readiness document
+              ↓
+PAF-03A routing.resolve()
+              ↓
+PAF-03B invocation_descriptor()
+```
+
+A local overlay is not a standalone per-provider registry and cannot redefine a
+built-in adapter, profile, routing priority, readiness schema, or routing
+decision schema. A profile overlay references the existing canonical adapter
+semantics; a runtime overlay references the corresponding composed canonical
+`(profile_id, adapter_id)` pair. Composition is deterministic, validates with
+the existing canonical validators, rejects incompatible collisions, and retains
+provenance separately from exact canonical documents.
+
+Provider configuration has deterministic non-secret identities based on
+provider ID, endpoint origin, protocol, selected model, and authentication
+reference. Credentials remain external: only an environment-variable name may
+be stored. The ignored local state contains provider configuration, profile and
+runtime overlays, and receipts. Effective documents are computed rather than
+materialized, so removal only deletes local provider-owned state and cannot
+corrupt built-in documents.
+
+YAML and JSON specifications are supported for reproducible declarative input.
+YAML is optional: PAF-04B owns the guided interface, dynamic discovery,
+protocol autodetection, recommendations, and network readiness rechecks.
+PAF-05 owns actual task execution. PAF-04A creates neither a workspace nor an
+agent loop, and it does not alter global client settings or inspect native
+account, browser, keychain, or credential-store state.

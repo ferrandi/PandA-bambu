@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bounded portable-agent inspection CLI; it never launches tasks."""
+"""Bounded portable-agent inspection and provider-onboarding CLI; never launches tasks."""
 from __future__ import annotations
 
 import argparse
@@ -12,12 +12,21 @@ import catalog
 import contracts
 import portable_adapters
 import provider
+import provider_onboarding
 import routing
 import setup
 
 ROOT = Path(__file__).resolve().parents[2]
 LOCAL = ROOT / ".agentic-local"
 STATE = ROOT / "agentic-state"
+EXIT_CODES = {
+    "validation": 3,
+    "parse": 9,
+    "persistence": 10,
+    "collision": 11,
+    "reference": 12,
+    "not-implemented": 13,
+}
 
 
 def _document(path: str, kind: str) -> dict:
@@ -34,6 +43,27 @@ def _catalog(path: str) -> dict:
 
 def _print(value: object) -> None:
     print(json.dumps(value, sort_keys=True, indent=2))
+
+
+def _provider_command(args: argparse.Namespace) -> int:
+    if args.provider_command == "add":
+        raise provider_onboarding.ProviderOnboardingError(
+            "not-implemented",
+            "provider add is deferred to PAF-04B; use provider apply --spec",
+        )
+    if args.provider_command in {"apply", "preview"}:
+        spec = provider_onboarding.load_spec(Path(args.spec))
+        _print(provider_onboarding.apply(args.root, spec, dry_run=args.provider_command == "preview", replace=args.replace))
+    elif args.provider_command == "validate":
+        registry, runtime_map, provenance = provider_onboarding.effective_documents(args.root)
+        _print({"valid": True, "registry_id": registry["registry_id"], "runtime_map_id": runtime_map["runtime_map_id"], "provenance": provenance})
+    elif args.provider_command == "show":
+        _print(provider_onboarding.load_provider(args.root, args.provider_id))
+    elif args.provider_command == "list":
+        _print(provider_onboarding.list_providers(args.root))
+    else:
+        _print(provider_onboarding.remove(args.root, args.provider_id, force=args.force, dry_run=args.dry_run))
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -85,7 +115,6 @@ def main(argv: list[str] | None = None) -> int:
     route_explain.add_argument("--role", required=True)
     route_explain.add_argument("--mode", default="development")
     route_explain.add_argument("--prior")
-
     portable_setup = commands.add_parser("setup")
     portable_setup.add_argument("--spec", required=True)
     portable_setup.add_argument("--root", type=Path, default=ROOT)
@@ -112,8 +141,33 @@ def main(argv: list[str] | None = None) -> int:
         item.add_argument("--dry-run", action="store_true")
         if name == "generate":
             item.add_argument("--replace", action="store_true")
+
+    providers = commands.add_parser("provider")
+    provider_sub = providers.add_subparsers(dest="provider_command", required=True)
+    add = provider_sub.add_parser("add", help="deferred to PAF-04B")
+    add.add_argument("--root", type=Path, default=ROOT)
+    for name in ("apply", "preview"):
+        item = provider_sub.add_parser(name)
+        item.add_argument("--spec", required=True)
+        item.add_argument("--root", type=Path, default=ROOT)
+        item.add_argument("--replace", action="store_true")
+    validate = provider_sub.add_parser("validate")
+    validate.add_argument("--root", type=Path, default=ROOT)
+    show = provider_sub.add_parser("show")
+    show.add_argument("provider_id")
+    show.add_argument("--root", type=Path, default=ROOT)
+    provider_list = provider_sub.add_parser("list")
+    provider_list.add_argument("--root", type=Path, default=ROOT)
+    remove = provider_sub.add_parser("remove")
+    remove.add_argument("provider_id")
+    remove.add_argument("--root", type=Path, default=ROOT)
+    remove.add_argument("--force", action="store_true")
+    remove.add_argument("--dry-run", action="store_true")
+
     args = parser.parse_args(argv)
     try:
+        if args.command == "provider":
+            return _provider_command(args)
         if args.command == "setup":
             spec = contracts.load_json(Path(args.spec))
             _print(setup.apply(args.root, spec, dry_run=args.dry_run, replace=args.replace))
@@ -134,14 +188,7 @@ def main(argv: list[str] | None = None) -> int:
                 _print(setup.config_generate(args.root, spec, dry_run=args.dry_run, replace=args.replace))
             else:
                 setup.validate_spec(spec)
-                _print(
-                    {
-                        "registry_id": spec["registry"]["registry_id"],
-                        "registry_version": spec["registry"]["version"],
-                        "runtime_map_id": spec["runtime_map"]["runtime_map_id"],
-                        "valid": True,
-                    }
-                )
+                _print({"registry_id": spec["registry"]["registry_id"], "registry_version": spec["registry"]["version"], "runtime_map_id": spec["runtime_map"]["runtime_map_id"], "valid": True})
         elif args.command == "profiles":
             registry = _document(args.registry, "registry")
             if args.profiles_command == "validate":
@@ -185,6 +232,9 @@ def main(argv: list[str] | None = None) -> int:
         else:
             selection = catalog.latest_selection(Path(args.selection_dir)) if args.latest else _document(args.selection, "selection")
             _print(selection["execution_plan"]["explanation"])
+    except provider_onboarding.ProviderOnboardingError as error:
+        print(f"agentctl: {error}", file=sys.stderr)
+        return EXIT_CODES[error.category]
     except (catalog.CatalogError, contracts.ContractError, provider.ProfileError, routing.RoutingError, portable_adapters.PortableAdapterError, setup.SetupError, ValueError) as error:
         print(f"agentctl: {error}", file=sys.stderr)
         return 3

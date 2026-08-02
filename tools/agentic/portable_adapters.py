@@ -167,6 +167,7 @@ def invocation_descriptor(
     *,
     now: datetime | None = None,
     max_readiness_age: timedelta | None = None,
+    composition_provenance: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build a future PAF-05 descriptor directly from a PAF-03A decision."""
     try:
@@ -230,4 +231,5 @@ def invocation_descriptor(
         "result_collection": "PAF-05-defined",
         "capability_evidence": {"source": "static-version-capability-map"},
         "configuration_ownership": "framework-local-reference",
+        **({"composition_provenance": dict(composition_provenance)} if composition_provenance is not None else {}),
     }

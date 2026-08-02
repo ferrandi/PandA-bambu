@@ -1,0 +1,30 @@
+{
+  "$id": "https://panda-re.github.io/schemas/agentic/provider-runtime-overlay.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Local canonical provider runtime overlay",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "overlay_id", "provider_id", "runtime_map_id", "runtime_map_version", "configuration_digest", "entry"],
+  "properties": {
+    "schema": {"const": "evolvehls.agentic.provider-runtime-overlay"},
+    "schema_version": {"const": "1.0"},
+    "overlay_id": {"$ref": "#/$defs/id"},
+    "provider_id": {"$ref": "#/$defs/id"},
+    "runtime_map_id": {"$ref": "#/$defs/id"},
+    "runtime_map_version": {"type": "string", "minLength": 1},
+    "configuration_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runtime_entry_id", "profile_id", "adapter_id", "client_template", "execution_path"],
+      "properties": {
+        "runtime_entry_id": {"$ref": "#/$defs/id"},
+        "profile_id": {"$ref": "#/$defs/id"},
+        "adapter_id": {"const": "generic-http"},
+        "client_template": {"const": "direct-http"},
+        "execution_path": {"enum": ["openai-compatible", "anthropic-compatible"]}
+      }
+    }
+  },
+  "$defs": {"id": {"type": "string", "maxLength": 190, "pattern": "^[a-z][a-z0-9.-]*$"}}
+}
