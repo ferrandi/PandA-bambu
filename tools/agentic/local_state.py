@@ -2,6 +2,7 @@
 """Safe ignored-local-state paths and atomic transactional file writes."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import stat
@@ -80,6 +81,11 @@ def _verify_parents(root: Path, path: Path) -> None:
 
 def canonical_json(value: Mapping[str, Any]) -> bytes:
     return (json.dumps(value, sort_keys=True, indent=2, ensure_ascii=True) + "\n").encode("utf-8")
+
+
+def canonical_digest(document: Mapping[str, Any]) -> str:
+    """Return the SHA-256 identity of canonical document bytes."""
+    return hashlib.sha256(canonical_json(document)).hexdigest()
 
 
 @dataclass(frozen=True)
