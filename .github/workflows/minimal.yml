@@ -1,11 +1,6 @@
 name: Fast Regressions
 
 on:
-  pull_request:
-    branches-ignore:
-      - main
-    paths-ignore:
-      - "documentation/**"
   workflow_dispatch:
     inputs:
       upload-artifacts:
