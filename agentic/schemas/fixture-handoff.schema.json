@@ -1,0 +1,60 @@
+{
+  "$id": "https://panda-re.github.io/schemas/agentic/fixture-handoff.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "execution_id", "task", "role", "route", "base_commit", "operation", "output_path", "expected_content", "expected_digest"],
+  "properties": {
+    "schema": {"const": "evolvehls.agentic.fixture-handoff"},
+    "schema_version": {"const": "1.0"},
+    "execution_id": {"$ref": "#/$defs/id"},
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "version", "objective", "inputs", "constraints", "expected_outputs", "validation_requirements"],
+      "properties": {
+        "task_id": {"$ref": "#/$defs/id"},
+        "version": {"$ref": "#/$defs/version"},
+        "objective": {"type": "string", "minLength": 1, "maxLength": 512},
+        "inputs": {"$ref": "#/$defs/strings"},
+        "constraints": {"$ref": "#/$defs/strings"},
+        "expected_outputs": {"$ref": "#/$defs/strings"},
+        "validation_requirements": {"$ref": "#/$defs/strings"}
+      }
+    },
+    "role": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role_id", "version", "mandatory_capabilities"],
+      "properties": {
+        "role_id": {"$ref": "#/$defs/id"},
+        "version": {"$ref": "#/$defs/version"},
+        "mandatory_capabilities": {"$ref": "#/$defs/strings"}
+      }
+    },
+    "route": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile_id", "adapter_id", "runtime_map_id", "runtime_entry_id"],
+      "properties": {
+        "profile_id": {"$ref": "#/$defs/id"},
+        "adapter_id": {"$ref": "#/$defs/id"},
+        "runtime_map_id": {"$ref": "#/$defs/id"},
+        "runtime_entry_id": {"$ref": "#/$defs/id"}
+      }
+    },
+    "base_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "operation": {"const": "write-fixture-execution-record-v1"},
+    "output_path": {
+      "const": "agentic/fixtures/executions/fixture-local-output.txt",
+      "description": "Future fixture output namespace relative to the target detached worktree root; A1c performs no write."
+    },
+    "expected_content": {"type": "string", "minLength": 1, "maxLength": 4096},
+    "expected_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*$", "maxLength": 196},
+    "version": {"type": "string", "minLength": 1, "maxLength": 64},
+    "strings": {"type": "array", "maxItems": 32, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 512}}
+  }
+}

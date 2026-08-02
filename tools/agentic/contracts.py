@@ -16,6 +16,9 @@ AUTH = {"native-session", "environment-token", "token-helper", "none"}
 PROTOCOLS = {"openai-responses", "anthropic-messages", "openai-chat-completions"}
 CONFIDENCES = {"declared", "inferred", "observed", "historically-validated", "unknown"}
 STATUSES = {"supported", "unsupported", "unknown", "probe-failed"}
+RFC3339_TIMESTAMP = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$"
+)
 
 
 class ContractError(ValueError):
@@ -57,11 +60,14 @@ def load_schema(name: str) -> dict[str, Any]:
 
 
 def parse_timestamp(value: Any, field: str = "timestamp") -> datetime:
-    _id(value, field)
+    _require(
+        isinstance(value, str) and RFC3339_TIMESTAMP.fullmatch(value) is not None,
+        f"{field} must be an RFC 3339 timestamp",
+    )
     try:
         parsed = datetime.fromisoformat(value)
     except ValueError:
-        raise ContractError(f"{field} must be an ISO 8601 timestamp") from None
+        raise ContractError(f"{field} must be an RFC 3339 timestamp") from None
     _require(parsed.tzinfo is not None and parsed.utcoffset() is not None, f"{field} must include a timezone")
     return parsed
 

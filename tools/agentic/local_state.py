@@ -2,6 +2,7 @@
 """Safe ignored-local-state paths and atomic transactional file writes."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import stat
@@ -15,6 +16,21 @@ STATE_DIR = "agentic-state"
 SAFE_ID = __import__("re").compile(r"^[a-z][a-z0-9.-]*$")
 SAFE_JSON_NAME = __import__("re").compile(r"^[a-z][a-z0-9.-]*\.json$")
 DIGEST_ID = __import__("re").compile(r"^[0-9a-f]{64}$")
+DIGEST_DOMAINS = frozenset(
+    {
+        "evolvehls.agentic.task",
+        "evolvehls.agentic.role",
+        "evolvehls.agentic.invocation-descriptor",
+        "evolvehls.agentic.execution-request",
+        "evolvehls.agentic.execution-receipt",
+        "evolvehls.agentic.fixture-handoff",
+        "evolvehls.agentic.result",
+        "evolvehls.agentic.profile-registry",
+        "evolvehls.agentic.routing-policy",
+        "evolvehls.agentic.readiness-report",
+        "evolvehls.agentic.client-runtime-map",
+    }
+)
 MAX_FILENAME_LENGTH = 200
 _JSON_SUFFIX = ".json"
 _BACKUP_SUFFIX = ".bak"
@@ -80,6 +96,14 @@ def _verify_parents(root: Path, path: Path) -> None:
 
 def canonical_json(value: Mapping[str, Any]) -> bytes:
     return (json.dumps(value, sort_keys=True, indent=2, ensure_ascii=True) + "\n").encode("utf-8")
+
+
+def canonical_digest(document: Mapping[str, Any], *, domain: str) -> str:
+    """Return a domain-separated SHA-256 identity of canonical document bytes."""
+    if domain not in DIGEST_DOMAINS:
+        raise LocalStateError("invalid canonical digest domain")
+    preimage = domain.encode("utf-8") + b"\0" + canonical_json(document)
+    return hashlib.sha256(preimage).hexdigest()
 
 
 @dataclass(frozen=True)

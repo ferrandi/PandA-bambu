@@ -1,0 +1,11 @@
+{
+  "schema": "evolvehls.agentic.readiness-report",
+  "schema_version": "1.0",
+  "registry_id": "fixture-execution-registry",
+  "checked_at": "2026-01-01T00:00:00+00:00",
+  "redacted": true,
+  "adapters": [{"ref": "fixture-local-adapter", "status": "ready"}],
+  "profiles": [{"ref": "fixture-local-profile", "status": "ready"}],
+  "resources": [],
+  "diagnostics": ["Static fixture contract readiness only; no provider, credential, session, network, or model-quality readiness asserted."]
+}

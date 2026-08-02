@@ -28,16 +28,60 @@ def _id(value: object, field: str) -> str:
     return value
 
 
-def _template_path(entry: Mapping[str, Any]) -> Mapping[str, Any]:
+def _template_string_list(value: object, field: str) -> list[str]:
+    _require(
+        isinstance(value, list)
+        and all(isinstance(item, str) and item for item in value)
+        and len(value) == len(set(value)),
+        f"invalid template {field}",
+    )
+    return value
+
+
+def _template_path(
+    entry: Mapping[str, Any],
+    templates: Mapping[str, Mapping[str, Any]] | None = None,
+    adapter: Mapping[str, Any] | None = None,
+) -> Mapping[str, Any]:
+    available = templates if templates is not None else adapters.TEMPLATES
+    _require(isinstance(available, Mapping), "templates must be a mapping")
     template_name = entry["client_template"]
-    _require(template_name in adapters.TEMPLATES, "unknown client template")
-    template = adapters.TEMPLATES[template_name]
-    path = template["paths"].get(entry["execution_path"])
-    _require(path is not None, "unknown client execution path")
+    _require(template_name in available, "unknown client template")
+    template = available[template_name]
+    _require(isinstance(template, Mapping), "client template must be a mapping")
+    execution_family = template.get("execution_family")
+    _require(
+        isinstance(execution_family, str) and execution_family,
+        "invalid template execution_family",
+    )
+    paths = template.get("paths")
+    _require(isinstance(paths, Mapping), "template paths must be a mapping")
+    path = paths.get(entry["execution_path"])
+    _require(isinstance(path, Mapping), "unknown or invalid client execution path")
+    for field in ("access_classes", "funding_classes", "auth_modes", "protocols"):
+        _template_string_list(path.get(field), field)
+    _require(
+        isinstance(path.get("invocation_class"), str) and path["invocation_class"],
+        "invalid template invocation_class",
+    )
+    if adapter is not None:
+        _require(
+            execution_family == adapter["execution_family"],
+            "template execution family does not match canonical adapter",
+        )
+        _require(
+            path["invocation_class"] == adapter["invocation_class"],
+            "template invocation class does not match canonical adapter",
+        )
     return path
 
 
-def validate_runtime_map(value: Mapping[str, Any], registry: Mapping[str, Any]) -> None:
+def validate_runtime_map(
+    value: Mapping[str, Any],
+    registry: Mapping[str, Any],
+    *,
+    templates: Mapping[str, Mapping[str, Any]] | None = None,
+) -> None:
     """Validate a non-routing runtime supplement against canonical PAF-03A IDs."""
     try:
         contracts.validate_registry(registry)
@@ -75,7 +119,10 @@ def validate_runtime_map(value: Mapping[str, Any], registry: Mapping[str, Any]) 
         _require(profile is not None, "runtime entry references unknown canonical profile")
         _require(adapter_id in canonical_adapters, "runtime entry references unknown canonical adapter")
         _require(profile["adapter_id"] == adapter_id, "runtime entry adapter does not match canonical profile")
-        path = _template_path(entry)
+        adapter = canonical_adapters[adapter_id]
+        path = _template_path(
+            entry, templates, adapter if templates is not None else None
+        )
         _require(profile["access_class"] in path["access_classes"], "runtime path does not support canonical access class")
         _require(profile["funding_class"] in path["funding_classes"], "runtime path does not support canonical funding class")
         _require(profile["auth_mode"] in path["auth_modes"], "runtime path does not support canonical auth mode")
@@ -168,6 +215,7 @@ def invocation_descriptor(
     now: datetime | None = None,
     max_readiness_age: timedelta | None = None,
     composition_provenance: Mapping[str, Any] | None = None,
+    templates: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Build a future PAF-05 descriptor directly from a PAF-03A decision."""
     try:
@@ -176,7 +224,7 @@ def invocation_descriptor(
         contracts.validate_readiness(readiness_report, registry)
     except contracts.ContractError as error:
         raise PortableAdapterError(str(error)) from None
-    validate_runtime_map(runtime_map, registry)
+    validate_runtime_map(runtime_map, registry, templates=templates)
     _require(
         decision["registry_id"] == registry["registry_id"] and decision["registry_version"] == registry["version"],
         "routing decision does not match canonical registry",
@@ -206,7 +254,9 @@ def invocation_descriptor(
     ]
     _require(len(entries) == 1, "selected canonical profile has ambiguous or missing runtime metadata")
     entry = entries[0]
-    path = _template_path(entry)
+    path = _template_path(
+        entry, templates, adapter if templates is not None else None
+    )
     return {
         "descriptor_version": "1.0",
         "profile_id": profile["profile_id"],

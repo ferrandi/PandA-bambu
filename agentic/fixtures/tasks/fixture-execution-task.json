@@ -1,0 +1,17 @@
+{
+  "schema": "evolvehls.agentic.task",
+  "schema_version": "1.0",
+  "task_id": "fixture-execution",
+  "version": "1.0",
+  "role": "implementer",
+  "objective": "Produce one deterministic fixture-only portable execution artifact.",
+  "inputs": ["Tracked fixture task identity and exact base commit."],
+  "constraints": ["Fixture-only deterministic artifact construction; no provider, network, credential, commit, push, pull request, or merge."],
+  "expected_outputs": ["agentic/fixtures/executions/fixture-local-output.txt"],
+  "validation_requirements": ["Require exact deterministic fixture content and digest."],
+  "budgets": {"max_turns": 1},
+  "reproducibility": {
+    "context_hash": "fixture-execution-context-v1",
+    "base_revision": "5d26a318537e1838405d80b952009317c270b8b0"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "schema": "evolvehls.agentic.client-runtime-map",
+  "schema_version": "1.0",
+  "runtime_map_id": "fixture-execution-runtime-map",
+  "version": "1.0",
+  "entries": [
+    {
+      "runtime_entry_id": "fixture-local-runtime-entry",
+      "profile_id": "fixture-local-profile",
+      "adapter_id": "fixture-local-adapter",
+      "client_template": "fixture-local",
+      "execution_path": "fixture"
+    }
+  ]
+}
