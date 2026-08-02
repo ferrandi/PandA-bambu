@@ -2,6 +2,7 @@
 """Non-executing construction of the fixture-only PAF-05 execution request."""
 from __future__ import annotations
 
+import copy
 from collections.abc import Mapping
 from typing import Any
 
@@ -14,28 +15,30 @@ import routing
 FIXTURE_PROFILE_ID = "fixture-local-profile"
 FIXTURE_ADAPTER_ID = "fixture-local-adapter"
 
-FIXTURE_TEMPLATES: dict[str, dict[str, Any]] = {
-    "fixture-local": {
-        "command": None,
-        "execution_family": "fixture-local",
-        "paths": {
-            "fixture": {
-                "invocation_class": "native-local-cli",
-                "access_classes": ["native-local-client"],
-                "funding_classes": ["local"],
-                "auth_modes": ["none"],
-                "protocols": ["openai-chat-completions"],
-                "capabilities": [
-                    "working_directory",
-                    "noninteractive_mode",
-                    "timeout",
-                    "machine_readable_result",
-                ],
-            }
-        },
-        "versions": {"builtin": {"fixture"}},
+def fixture_templates() -> dict[str, dict[str, Any]]:
+    """Return fresh trusted fixture metadata; callers cannot mutate shared state."""
+    return {
+        "fixture-local": {
+            "command": None,
+            "execution_family": "fixture-local",
+            "paths": {
+                "fixture": {
+                    "invocation_class": "native-local-cli",
+                    "access_classes": ["native-local-client"],
+                    "funding_classes": ["local"],
+                    "auth_modes": ["none"],
+                    "protocols": ["openai-chat-completions"],
+                    "capabilities": [
+                        "working_directory",
+                        "noninteractive_mode",
+                        "timeout",
+                        "machine_readable_result",
+                    ],
+                }
+            },
+            "versions": {"builtin": {"fixture"}},
+        }
     }
-}
 
 
 class ExecutionRequestError(ValueError):
@@ -63,7 +66,14 @@ def build_fixture_execution_request(
     stderr_limit_bytes: int = 65536,
     total_output_limit_bytes: int = 131072,
 ) -> dict[str, Any]:
-    """Build one immutable fixture request; perform no persistence or execution."""
+    """Build one isolated fixture request; perform no persistence or execution."""
+    task = copy.deepcopy(task)
+    role = copy.deepcopy(role)
+    registry = copy.deepcopy(registry)
+    policy = copy.deepcopy(policy)
+    readiness = copy.deepcopy(readiness)
+    runtime_map = copy.deepcopy(runtime_map)
+    templates = fixture_templates()
     try:
         contracts.validate_task(task)
         contracts.validate_role(role)
@@ -73,7 +83,7 @@ def build_fixture_execution_request(
         portable_adapters.validate_runtime_map(
             runtime_map,
             registry,
-            templates=FIXTURE_TEMPLATES,
+            templates=templates,
         )
     except (contracts.ContractError, portable_adapters.PortableAdapterError) as error:
         raise ExecutionRequestError(str(error)) from None
@@ -115,7 +125,7 @@ def build_fixture_execution_request(
             decision,
             readiness,
             runtime_map,
-            templates=FIXTURE_TEMPLATES,
+            templates=templates,
         )
     except portable_adapters.PortableAdapterError as error:
         raise ExecutionRequestError(str(error)) from None
@@ -127,18 +137,24 @@ def build_fixture_execution_request(
         "created_at": created_at,
         "task_id": task["task_id"],
         "task_version": task["version"],
-        "task_digest": local_state.canonical_digest(task),
+        "task_digest": local_state.canonical_digest(
+            task, domain="evolvehls.agentic.task"
+        ),
         "role_id": role["role_id"],
         "role_version": role["version"],
-        "role_digest": local_state.canonical_digest(role),
+        "role_digest": local_state.canonical_digest(
+            role, domain="evolvehls.agentic.role"
+        ),
         "base_commit": base_commit,
         "profile_id": descriptor["profile_id"],
         "adapter_id": descriptor["adapter_id"],
         "runtime_map_id": descriptor["runtime_map_id"],
         "runtime_map_version": descriptor["runtime_map_version"],
         "runtime_entry_id": descriptor["runtime_entry_id"],
-        "invocation_descriptor_digest": local_state.canonical_digest(descriptor),
-        "routing_provenance": dict(descriptor["routing_provenance"]),
+        "invocation_descriptor_digest": local_state.canonical_digest(
+            descriptor, domain="evolvehls.agentic.invocation-descriptor"
+        ),
+        "routing_provenance": copy.deepcopy(descriptor["routing_provenance"]),
         "executor_id": "fixture-local",
         "executor_version": "1.0",
         "input_handoff": "fixture-json-file-v1",

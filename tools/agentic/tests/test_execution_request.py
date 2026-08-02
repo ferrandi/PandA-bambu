@@ -49,7 +49,7 @@ class FixtureExecutionRequestTests(unittest.TestCase):
         portable_adapters.validate_runtime_map(
             self.runtime_map,
             self.registry,
-            templates=execution_request.FIXTURE_TEMPLATES,
+            templates=execution_request.fixture_templates(),
         )
 
     def decision(self, mode="development"):
@@ -69,7 +69,7 @@ class FixtureExecutionRequestTests(unittest.TestCase):
             decision or self.decision(),
             self.readiness,
             self.runtime_map,
-            templates=execution_request.FIXTURE_TEMPLATES,
+            templates=execution_request.fixture_templates(),
         )
 
     def build(self, **kwargs):
@@ -98,7 +98,7 @@ class FixtureExecutionRequestTests(unittest.TestCase):
         portable_adapters.validate_runtime_map(
             self.runtime_map,
             self.registry,
-            templates=execution_request.FIXTURE_TEMPLATES,
+            templates=execution_request.fixture_templates(),
         )
         self.assertRegex(self.task["reproducibility"]["base_revision"], r"^[0-9a-f]{40}$")
         self.assertEqual(self.task["reproducibility"]["base_revision"], BASE)
@@ -151,12 +151,24 @@ class FixtureExecutionRequestTests(unittest.TestCase):
         second = self.build()
         self.assertEqual(first, second)
         execution_contracts.validate_execution_request(first)
-        self.assertEqual(first["task_digest"], local_state.canonical_digest(self.task))
-        self.assertEqual(first["role_digest"], local_state.canonical_digest(self.role))
+        self.assertEqual(
+            first["task_digest"],
+            local_state.canonical_digest(
+                self.task, domain="evolvehls.agentic.task"
+            ),
+        )
+        self.assertEqual(
+            first["role_digest"],
+            local_state.canonical_digest(
+                self.role, domain="evolvehls.agentic.role"
+            ),
+        )
         descriptor = self.descriptor()
         self.assertEqual(
             first["invocation_descriptor_digest"],
-            local_state.canonical_digest(descriptor),
+            local_state.canonical_digest(
+                descriptor, domain="evolvehls.agentic.invocation-descriptor"
+            ),
         )
         execution_contracts.validate_execution_request_context(
             first, self.task, self.role, self.decision(), descriptor, self.runtime_map
@@ -213,6 +225,158 @@ class FixtureExecutionRequestTests(unittest.TestCase):
                 execution_contracts.validate_execution_request_context(
                     values[0], self.task, self.role, values[1], values[2], values[3]
                 )
+
+    def test_injected_template_shape_and_canonical_agreement(self):
+        cases = ["not-a-mapping", {"fixture-local": None}]
+        value = execution_request.fixture_templates()
+        del value["fixture-local"]["paths"]
+        cases.append(value)
+        value = execution_request.fixture_templates()
+        value["fixture-local"]["paths"] = "not-a-mapping"
+        cases.append(value)
+        for field in (
+            "access_classes",
+            "funding_classes",
+            "auth_modes",
+            "protocols",
+            "invocation_class",
+        ):
+            value = execution_request.fixture_templates()
+            del value["fixture-local"]["paths"]["fixture"][field]
+            cases.append(value)
+        for field in (
+            "access_classes",
+            "funding_classes",
+            "auth_modes",
+            "protocols",
+        ):
+            value = execution_request.fixture_templates()
+            value["fixture-local"]["paths"]["fixture"][field] = "not-a-list"
+            cases.append(value)
+        value = execution_request.fixture_templates()
+        value["fixture-local"]["execution_family"] = "other-family"
+        cases.append(value)
+        value = execution_request.fixture_templates()
+        value["fixture-local"]["paths"]["fixture"]["invocation_class"] = (
+            "http-api-client"
+        )
+        cases.append(value)
+        for templates in cases:
+            with self.assertRaises(portable_adapters.PortableAdapterError):
+                portable_adapters.validate_runtime_map(
+                    self.runtime_map, self.registry, templates=templates
+                )
+
+    def test_template_factory_resists_external_mutation(self):
+        mutated = execution_request.fixture_templates()
+        mutated["fixture-local"]["paths"]["fixture"]["invocation_class"] = (
+            "http-api-client"
+        )
+        fresh = execution_request.fixture_templates()
+        self.assertEqual(
+            fresh["fixture-local"]["paths"]["fixture"]["invocation_class"],
+            "native-local-cli",
+        )
+        request = self.build()
+        descriptor = self.descriptor()
+        self.assertEqual(descriptor["invocation_class"], "native-local-cli")
+        self.assertEqual(
+            request["invocation_descriptor_digest"],
+            local_state.canonical_digest(
+                descriptor, domain="evolvehls.agentic.invocation-descriptor"
+            ),
+        )
+
+    def test_context_is_route_agnostic_and_builder_is_fixture_specific(self):
+        request = self.build()
+        decision = self.decision()
+        descriptor = self.descriptor(decision)
+        execution_contracts.validate_execution_request_context(
+            request, self.task, self.role, decision, descriptor, self.runtime_map
+        )
+
+        alternate_request = copy.deepcopy(request)
+        alternate_decision = copy.deepcopy(decision)
+        alternate_descriptor = copy.deepcopy(descriptor)
+        alternate_runtime_map = copy.deepcopy(self.runtime_map)
+        for value in (
+            alternate_request,
+            alternate_decision["selected"],
+            alternate_descriptor,
+            alternate_runtime_map["entries"][0],
+        ):
+            value["profile_id"] = "alternate-profile"
+            value["adapter_id"] = "alternate-adapter"
+        alternate_request["invocation_descriptor_digest"] = (
+            local_state.canonical_digest(
+                alternate_descriptor,
+                domain="evolvehls.agentic.invocation-descriptor",
+            )
+        )
+        execution_contracts.validate_execution_request_context(
+            alternate_request,
+            self.task,
+            self.role,
+            alternate_decision,
+            alternate_descriptor,
+            alternate_runtime_map,
+        )
+
+        changed_decision = copy.deepcopy(decision)
+        changed_decision["selected"]["profile_id"] = "other-profile"
+        with self.assertRaises(execution_contracts.ExecutionContractError):
+            execution_contracts.validate_execution_request_context(
+                request,
+                self.task,
+                self.role,
+                changed_decision,
+                descriptor,
+                self.runtime_map,
+            )
+        non_fixture_registry = copy.deepcopy(self.registry)
+        non_fixture_registry["registry_id"] = "other-registry"
+        with self.assertRaises(execution_request.ExecutionRequestError):
+            execution_request.build_fixture_execution_request(
+                self.task,
+                self.role,
+                non_fixture_registry,
+                self.policy,
+                self.readiness,
+                self.runtime_map,
+                execution_id="fixture-run",
+                base_commit=BASE,
+                created_at="2026-01-01T00:00:00+00:00",
+            )
+
+    def test_builder_defensively_copies_caller_inputs_and_output(self):
+        original_task = copy.deepcopy(self.task)
+        original_runtime_map = copy.deepcopy(self.runtime_map)
+        request = self.build()
+        request["routing_provenance"]["policy_id"] = "mutated-policy"
+        self.assertEqual(self.task, original_task)
+        self.assertEqual(self.runtime_map, original_runtime_map)
+        self.assertEqual(self.policy["policy_id"], "fixture-execution-policy")
+        with self.assertRaises(execution_contracts.ExecutionContractError):
+            execution_contracts.validate_execution_request_context(
+                request,
+                self.task,
+                self.role,
+                self.decision(),
+                self.descriptor(),
+                self.runtime_map,
+            )
+
+    def test_production_behavior_with_explicit_none_templates(self):
+        production = contracts.load_contract(
+            FIXTURES / "profiles" / "portable-fixture-registry.json", "registry"
+        )
+        runtime_map = contracts.load_json(
+            FIXTURES / "profiles" / "portable-adapter-registry.json"
+        )
+        portable_adapters.validate_runtime_map(runtime_map, production)
+        portable_adapters.validate_runtime_map(
+            runtime_map, production, templates=None
+        )
 
     def test_fixture_metadata_is_absent_from_production_defaults(self):
         self.assertNotIn("fixture-local", adapters.TEMPLATES)

@@ -17,10 +17,7 @@ import contracts  # noqa: E402
 import execution_contracts as execution  # noqa: E402
 import local_state  # noqa: E402
 
-try:
-    import jsonschema
-except ImportError:  # pragma: no cover
-    jsonschema = None
+import jsonschema
 
 D = "a" * 64
 COMMIT = "b" * 40
@@ -180,20 +177,37 @@ class CanonicalDigestTests(unittest.TestCase):
     def test_deterministic_order_nested_change_and_shape(self):
         first = {"b": [{"z": True, "a": None}], "a": 1}
         second = {"a": 1, "b": [{"a": None, "z": True}]}
-        digest = local_state.canonical_digest(first)
-        self.assertEqual(digest, local_state.canonical_digest(first))
-        self.assertEqual(digest, local_state.canonical_digest(second))
+        domain = "evolvehls.agentic.task"
+        digest = local_state.canonical_digest(first, domain=domain)
+        self.assertEqual(digest, local_state.canonical_digest(first, domain=domain))
+        self.assertEqual(digest, local_state.canonical_digest(second, domain=domain))
         self.assertRegex(digest, r"^[0-9a-f]{64}$")
         changed = copy.deepcopy(first)
         changed["a"] = 2
-        self.assertNotEqual(digest, local_state.canonical_digest(changed))
+        self.assertNotEqual(
+            digest, local_state.canonical_digest(changed, domain=domain)
+        )
+
+    def test_domains_separate_identical_documents(self):
+        value = {"same": "document"}
+        self.assertNotEqual(
+            local_state.canonical_digest(
+                value, domain="evolvehls.agentic.execution-request"
+            ),
+            local_state.canonical_digest(
+                value, domain="evolvehls.agentic.execution-receipt"
+            ),
+        )
+        with self.assertRaises(local_state.LocalStateError):
+            local_state.canonical_digest(value, domain="unregistered")
 
     def test_unsupported_value_fails_consistently(self):
         with self.assertRaises(TypeError):
-            local_state.canonical_digest({"bad": object()})
+            local_state.canonical_digest(
+                {"bad": object()}, domain="evolvehls.agentic.task"
+            )
 
 
-@unittest.skipIf(jsonschema is None, "jsonschema unavailable")
 class SchemaTests(unittest.TestCase):
     def test_new_schemas_are_strict_and_validate_examples(self):
         examples = {
@@ -209,6 +223,31 @@ class SchemaTests(unittest.TestCase):
             bad["command"] = "echo unsafe"
             with self.assertRaises(jsonschema.ValidationError):
                 jsonschema.validate(bad, schema)
+
+    def test_timestamp_schema_and_python_parity(self):
+        schema = contracts.load_schema("execution-request")
+        accepted = (
+            "2026-01-01T00:00:00Z",
+            "2026-01-01T00:00:00+00:00",
+            "2026-01-01T00:00:00.123456-05:30",
+        )
+        rejected = (
+            "20260101T000000Z",
+            "2026-01-01 00:00:00+00:00",
+            "2026-01-01T00:00:00",
+        )
+        for timestamp in accepted:
+            value = request()
+            value["created_at"] = timestamp
+            execution.validate_execution_request(value)
+            jsonschema.validate(value, schema)
+        for timestamp in rejected:
+            value = request()
+            value["created_at"] = timestamp
+            with self.assertRaises(execution.ExecutionContractError):
+                execution.validate_execution_request(value)
+            with self.assertRaises(jsonschema.ValidationError):
+                jsonschema.validate(value, schema)
 
 
 class ExecutionRequestTests(unittest.TestCase):
@@ -354,6 +393,34 @@ class ExecutionReceiptTests(unittest.TestCase):
             with self.assertRaises(execution.ExecutionContractError):
                 execution.validate_execution_receipt(value)
 
+    def test_prohibited_relative_path_characters_and_roots(self):
+        for attempted in (
+            "a\nb",
+            "a b",
+            "a:b",
+            "$HOME/x",
+            "-rf",
+            "a\tb",
+            "é/x",
+            "con*",
+        ):
+            value = receipt()
+            value["worktree_path"] = attempted
+            with self.subTest(attempted=attempted):
+                with self.assertRaises(execution.ExecutionContractError):
+                    execution.validate_execution_receipt(value)
+        self.assertEqual(
+            execution.PATH_ROOTS,
+            {
+                "approved_output_path": "target-worktree-root",
+                "worktree_path": "controller-local-state-root",
+                "result_path": "controller-local-state-root",
+                "stdout.evidence_path": "controller-local-state-root",
+                "stderr.evidence_path": "controller-local-state-root",
+                "changed_files[].path": "target-worktree-root",
+            },
+        )
+
 
 class FixtureHandoffTests(unittest.TestCase):
     def test_valid_handoff(self):
@@ -385,6 +452,9 @@ class FixtureHandoffTests(unittest.TestCase):
             cases.append(value)
         value = handoff()
         value["command"] = "unsafe"
+        cases.append(value)
+        value = handoff()
+        value["task"]["inputs"] = [{"unhashable": "mapping"}]
         cases.append(value)
         for value in cases:
             with self.assertRaises(execution.ExecutionContractError):

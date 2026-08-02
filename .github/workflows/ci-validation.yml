@@ -27,6 +27,7 @@ jobs:
       ACTIONLINT_VERSION: 1.7.12
       PYTHONDONTWRITEBYTECODE: "1"
       PYYAML_VERSION: 6.0.2
+      JSONSCHEMA_VERSION: 4.25.1
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -52,7 +53,9 @@ jobs:
         run: |
           python3 -m venv /tmp/ci-validator-venv
           /tmp/ci-validator-venv/bin/pip install \
-            --disable-pip-version-check "PyYAML==${PYYAML_VERSION}"
+            --disable-pip-version-check \
+            "PyYAML==${PYYAML_VERSION}" \
+            "jsonschema==${JSONSCHEMA_VERSION}"
 
       - name: Validate GitHub Actions workflows
         shell: bash

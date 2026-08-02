@@ -45,7 +45,10 @@
     },
     "base_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
     "operation": {"const": "write-fixture-execution-record-v1"},
-    "output_path": {"const": "agentic/fixtures/executions/fixture-local-output.txt"},
+    "output_path": {
+      "const": "agentic/fixtures/executions/fixture-local-output.txt",
+      "description": "Future fixture output namespace relative to the target detached worktree root; A1c performs no write."
+    },
     "expected_content": {"type": "string", "minLength": 1, "maxLength": 4096},
     "expected_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
   },

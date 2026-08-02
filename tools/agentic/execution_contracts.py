@@ -13,10 +13,19 @@ import redaction
 
 DIGEST_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+RELATIVE_PATH_PATTERN = re.compile(r"^[A-Za-z0-9._/-]+$")
 RESULT_IDENTITY_PATTERN = re.compile(
     r"^execution-request:([a-z][a-z0-9.-]*):sha256:([0-9a-f]{64})$"
 )
 OUTPUT_PATH = "agentic/fixtures/executions/fixture-local-output.txt"
+PATH_ROOTS = {
+    "approved_output_path": "target-worktree-root",
+    "worktree_path": "controller-local-state-root",
+    "result_path": "controller-local-state-root",
+    "stdout.evidence_path": "controller-local-state-root",
+    "stderr.evidence_path": "controller-local-state-root",
+    "changed_files[].path": "target-worktree-root",
+}
 EXIT_CLASSIFICATIONS = {
     "succeeded",
     "executor-failed",
@@ -85,10 +94,10 @@ def _string_list(value: Any, field: str, maximum: int = 32) -> None:
     _require(
         isinstance(value, list)
         and len(value) <= maximum
-        and len(value) == len(set(value))
         and all(isinstance(item, str) and 0 < len(item) <= 512 for item in value),
         f"invalid {field}",
     )
+    _require(len(value) == len(set(value)), f"invalid {field}")
 
 
 def _relative_path(value: Any, field: str, *, nullable: bool = False) -> None:
@@ -96,7 +105,9 @@ def _relative_path(value: Any, field: str, *, nullable: bool = False) -> None:
         return
     _require(isinstance(value, str) and 0 < len(value) <= 512, f"invalid {field}")
     _require(
-        not value.startswith(("/", "~"))
+        RELATIVE_PATH_PATTERN.fullmatch(value) is not None
+        and not any(ord(character) < 32 or ord(character) == 127 for character in value)
+        and not value.startswith(("/", "~", "-"))
         and "\\" not in value
         and all(part not in {"", ".", ".."} for part in value.split("/")),
         f"invalid {field}",
@@ -123,7 +134,7 @@ def _stream(value: Any, name: str) -> None:
 
 
 def validate_execution_request(value: Mapping[str, Any]) -> None:
-    """Validate the closed PAF-05A execution-request 1.0 contract."""
+    """Validate execution-request 1.0; approved_output_path is worktree-rooted."""
     expected = {
         "schema",
         "schema_version",
@@ -246,7 +257,7 @@ def validate_execution_request(value: Mapping[str, Any]) -> None:
 
 
 def validate_execution_receipt(value: Mapping[str, Any]) -> None:
-    """Validate the closed PAF-05A execution-receipt 1.0 contract."""
+    """Validate receipt paths under their roots declared in PATH_ROOTS."""
     expected = {
         "schema",
         "schema_version",
@@ -521,13 +532,15 @@ def validate_execution_request_context(
         task["role"] == role["role_id"]
         and request["task_id"] == task["task_id"]
         and request["task_version"] == task["version"]
-        and request["task_digest"] == local_state.canonical_digest(task),
+        and request["task_digest"]
+        == local_state.canonical_digest(task, domain="evolvehls.agentic.task"),
         "task execution-request context mismatch",
     )
     _require(
         request["role_id"] == role["role_id"]
         and request["role_version"] == role["version"]
-        and request["role_digest"] == local_state.canonical_digest(role),
+        and request["role_digest"]
+        == local_state.canonical_digest(role, domain="evolvehls.agentic.role"),
         "role execution-request context mismatch",
     )
     _require(
@@ -537,10 +550,10 @@ def validate_execution_request_context(
     _require(
         decision["task_id"] == task["task_id"]
         and decision["role_id"] == role["role_id"]
-        and decision["selected"]["profile_id"] == "fixture-local-profile"
-        and decision["selected"]["adapter_id"] == "fixture-local-adapter"
+        and decision["selected"]["profile_id"] == request["profile_id"]
+        and decision["selected"]["adapter_id"] == request["adapter_id"]
         and decision["fallback_authorized"] is False,
-        "fixture routing decision mismatch or fallback",
+        "routing decision execution-request context mismatch or fallback",
     )
 
     _require(
@@ -580,7 +593,9 @@ def validate_execution_request_context(
     )
     _require(
         request["invocation_descriptor_digest"]
-        == local_state.canonical_digest(descriptor),
+        == local_state.canonical_digest(
+            descriptor, domain="evolvehls.agentic.invocation-descriptor"
+        ),
         "invocation descriptor digest mismatch",
     )
     _require(
