@@ -1,0 +1,15 @@
+{
+  "schema": "evolvehls.agentic.routing-policy",
+  "schema_version": "1.0",
+  "policy_id": "fixture-execution-policy",
+  "version": "1.0",
+  "allowed_access_classes": ["native-local-client"],
+  "allowed_funding_classes": ["local"],
+  "allowed_auth_modes": ["none"],
+  "allowed_data_classes": ["public"],
+  "max_cost_tier": 0,
+  "available_resources": [],
+  "preferences": [{"preference_id": "fixture-only", "access_classes": ["native-local-client"], "funding_classes": ["local"]}],
+  "fallbacks": [],
+  "independent_review": {"required": false, "different_adapter": false, "different_execution_family": false}
+}

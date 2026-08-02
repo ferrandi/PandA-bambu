@@ -500,6 +500,95 @@ def validate_fixture_handoff(value: Mapping[str, Any]) -> None:
     _digest(value["expected_digest"], "expected_digest")
 
 
+def validate_execution_request_context(
+    request: Mapping[str, Any],
+    task: Mapping[str, Any],
+    role: Mapping[str, Any],
+    decision: Mapping[str, Any],
+    descriptor: Mapping[str, Any],
+    runtime_map: Mapping[str, Any],
+) -> None:
+    """Validate immutable request bindings without re-resolving the route."""
+    validate_execution_request(request)
+    try:
+        contracts.validate_task(task)
+        contracts.validate_role(role)
+        contracts.validate_decision(decision)
+    except contracts.ContractError as error:
+        raise ExecutionContractError(str(error)) from None
+
+    _require(
+        task["role"] == role["role_id"]
+        and request["task_id"] == task["task_id"]
+        and request["task_version"] == task["version"]
+        and request["task_digest"] == local_state.canonical_digest(task),
+        "task execution-request context mismatch",
+    )
+    _require(
+        request["role_id"] == role["role_id"]
+        and request["role_version"] == role["version"]
+        and request["role_digest"] == local_state.canonical_digest(role),
+        "role execution-request context mismatch",
+    )
+    _require(
+        request["base_commit"] == task["reproducibility"]["base_revision"],
+        "execution-request base revision mismatch",
+    )
+    _require(
+        decision["task_id"] == task["task_id"]
+        and decision["role_id"] == role["role_id"]
+        and decision["selected"]["profile_id"] == "fixture-local-profile"
+        and decision["selected"]["adapter_id"] == "fixture-local-adapter"
+        and decision["fallback_authorized"] is False,
+        "fixture routing decision mismatch or fallback",
+    )
+
+    _require(
+        runtime_map.get("runtime_map_id") == request["runtime_map_id"]
+        and runtime_map.get("version") == request["runtime_map_version"],
+        "runtime-map execution-request context mismatch",
+    )
+    entries = [
+        item
+        for item in runtime_map.get("entries", [])
+        if item.get("runtime_entry_id") == request["runtime_entry_id"]
+    ]
+    _require(len(entries) == 1, "runtime entry execution-request context mismatch")
+    entry = entries[0]
+    _require(
+        entry["profile_id"] == request["profile_id"]
+        and entry["adapter_id"] == request["adapter_id"],
+        "runtime entry route mismatch",
+    )
+
+    for field in (
+        "profile_id",
+        "adapter_id",
+        "runtime_map_id",
+        "runtime_map_version",
+        "runtime_entry_id",
+    ):
+        _require(
+            descriptor.get(field) == request[field],
+            f"descriptor {field} mismatch",
+        )
+    _require(
+        descriptor.get("protocol") == decision["selected"]["protocol"]
+        and descriptor.get("profile_id") == decision["selected"]["profile_id"]
+        and descriptor.get("adapter_id") == decision["selected"]["adapter_id"],
+        "descriptor canonical route mismatch",
+    )
+    _require(
+        request["invocation_descriptor_digest"]
+        == local_state.canonical_digest(descriptor),
+        "invocation descriptor digest mismatch",
+    )
+    _require(
+        request["routing_provenance"] == descriptor.get("routing_provenance"),
+        "routing provenance mismatch",
+    )
+
+
 def result_execution_identity(execution_id: str, request_digest: str) -> str:
     """Return the portable result 1.0 execution-plan identity."""
     _identifier(execution_id, "execution_id")

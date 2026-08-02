@@ -1,0 +1,47 @@
+{
+  "schema": "evolvehls.agentic.profile-registry",
+  "schema_version": "1.0",
+  "registry_id": "fixture-execution-registry",
+  "version": "1.0",
+  "adapters": [
+    {
+      "schema": "evolvehls.agentic.client-adapter",
+      "schema_version": "1.0",
+      "adapter_id": "fixture-local-adapter",
+      "invocation_class": "native-local-cli",
+      "execution_family": "fixture-local",
+      "access_classes": ["native-local-client"],
+      "protocols": ["openai-chat-completions"]
+    }
+  ],
+  "profiles": [
+    {
+      "profile_id": "fixture-local-profile",
+      "schema_version": "1.0",
+      "adapter_id": "fixture-local-adapter",
+      "access_class": "native-local-client",
+      "funding_class": "local",
+      "auth_mode": "none",
+      "binding": {"kind": "local-runtime", "ref": "fixture-local-runtime"},
+      "model": {"kind": "pinned", "ref": "fixture-local-model"},
+      "protocol": "openai-chat-completions",
+      "capabilities": {
+        "basic_text": {
+          "status": "supported",
+          "confidence": "observed",
+          "provenance": [{"source": "fixture-contract", "confidence": "observed", "observed_at": null, "expires_at": null}]
+        },
+        "tool_calling": {
+          "status": "supported",
+          "confidence": "observed",
+          "provenance": [{"source": "fixture-contract", "confidence": "observed", "observed_at": null, "expires_at": null}]
+        }
+      },
+      "privacy": {"data_classes": ["public"]},
+      "cost": {"tier": 0},
+      "resources": {"requires": []},
+      "availability": {"required": true},
+      "priority": 0
+    }
+  ]
+}
