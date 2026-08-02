@@ -43,11 +43,30 @@ environment-variable reference fails unless `--replace` is explicitly passed.
 not-implemented result. PAF-04B also owns guided setup, dynamic discovery,
 protocol detection, recommendations, and network readiness rechecks.
 
+Provider command failures use the following exit codes:
+
+| Exit code | Meaning |
+| --- | --- |
+| 3 | Validation or other classified general error |
+| 9 | Specification parse error or unavailable YAML dependency |
+| 10 | Persistence or transaction error |
+| 11 | Collision or replacement-required error |
+| 12 | Active-reference error |
+| 13 | Intentionally deferred or not-implemented behavior |
+
 ## Specification formats
 
-`--spec` accepts `.json`, `.yaml`, and `.yml`. YAML parsing uses a safe loader,
-rejects duplicate keys, and requires a top-level mapping. JSON and YAML
-normalize to the same internal document.
+`--spec` accepts `.json`, `.yaml`, and `.yml`. JSON works with the standard
+Python installation. YAML parsing uses a safe loader, rejects duplicate keys,
+and requires a top-level mapping; it requires PyYAML. The repository validation
+environment already installs the pinned supported version, and a normal
+development environment can install it with:
+
+```bash
+python3 -m pip install PyYAML==6.0.2
+```
+
+JSON and YAML normalize to the same internal document.
 
 ```yaml
 schema: evolvehls.agentic.provider-onboarding-spec
@@ -91,3 +110,13 @@ readiness references unless `--force` is explicitly provided.
 
 PAF-04A does not execute models or coding agents. Actual task execution remains
 PAF-05.
+
+## Deferred lifecycle and normalization follow-ups
+
+PAF-04A removal protects active canonical readiness references only. PAF-04B
+and PAF-05 should decide whether materialized invocation descriptors also need
+reference protection before provider removal.
+
+Endpoint normalization preserves explicitly written ports today. A future UX
+follow-up should decide whether HTTPS `:443` and HTTP `:80` normalize to their
+implicit-port forms.

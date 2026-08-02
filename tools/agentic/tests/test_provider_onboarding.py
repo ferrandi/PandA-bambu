@@ -107,6 +107,30 @@ class ProviderOnboardingTests(unittest.TestCase):
         with self.assertRaises(contracts.ContractError):
             contracts.validate_provider_discovery_evidence(evidence)
 
+    def test_capability_evidence_is_structurally_strict(self):
+        registry, runtime_map = provider_onboarding._builtin()
+        contracts.validate_registry(registry)
+        for profile in registry["profiles"]:
+            contracts.validate_profile(profile)
+        config = provider_onboarding.configuration(self.spec, clock=lambda: self.now)
+        profile_overlay, _ = provider_onboarding.overlays(config, registry, runtime_map)
+        contracts.validate_provider_profile_overlay(profile_overlay, registry)
+        for field in (
+            "apiKey",
+            "access_token",
+            "refresh_token",
+            "client_secret",
+            "private_key",
+            "headers",
+            "metadata",
+            "arbitrary",
+        ):
+            with self.subTest(field=field):
+                malformed = copy.deepcopy(profile_overlay)
+                malformed["profile"]["capabilities"]["basic_text"][field] = {"not": "allowed"}
+                with self.assertRaisesRegex(contracts.ContractError, "capability evidence fields"):
+                    contracts.validate_provider_profile_overlay(malformed, registry)
+
     def test_deterministic_ids_are_safe_and_material(self):
         first = provider_onboarding.derive_ids(self.spec)
         self.assertEqual(first, provider_onboarding.derive_ids(copy.deepcopy(self.spec)))

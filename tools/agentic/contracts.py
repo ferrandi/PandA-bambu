@@ -149,7 +149,15 @@ def validate_profile(value: Mapping[str, Any]) -> None:
     _fields(value["model"], {"kind", "ref"}, "model"); _require(value["model"]["kind"] in {"selector", "pinned"}, "invalid model kind"); _id(value["model"]["ref"], "model.ref")
     _require(isinstance(value["capabilities"], dict), "capabilities must be an object")
     for name, evidence in value["capabilities"].items():
-        _id(name, "capability name"); _require(isinstance(evidence, Mapping) and evidence.get("status") in STATUSES and evidence.get("confidence") in CONFIDENCES and isinstance(evidence.get("provenance"), list) and evidence["provenance"], "invalid capability evidence")
+        _id(name, "capability name")
+        _fields(evidence, {"status", "confidence", "provenance"}, "capability evidence")
+        _require(
+            evidence["status"] in STATUSES
+            and evidence["confidence"] in CONFIDENCES
+            and isinstance(evidence["provenance"], list)
+            and evidence["provenance"],
+            "invalid capability evidence",
+        )
     _fields(value["privacy"], {"data_classes"}, "privacy"); _list(value["privacy"]["data_classes"], "data_classes", {"public", "internal", "restricted"}, True)
     _fields(value["cost"], {"tier"}, "cost"); _require(isinstance(value["cost"]["tier"], int) and 0 <= value["cost"]["tier"] <= 9, "invalid cost tier")
     _fields(value["resources"], {"requires"}, "resources"); _list(value["resources"]["requires"], "resource requirements")
