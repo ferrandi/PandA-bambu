@@ -13,7 +13,13 @@ from typing import Any, Callable, Mapping
 LOCAL_DIR = ".agentic-local"
 STATE_DIR = "agentic-state"
 SAFE_ID = __import__("re").compile(r"^[a-z][a-z0-9.-]*$")
+SAFE_JSON_NAME = __import__("re").compile(r"^[a-z][a-z0-9.-]*\.json$")
 DIGEST_ID = __import__("re").compile(r"^[0-9a-f]{64}$")
+MAX_FILENAME_LENGTH = 200
+_JSON_SUFFIX = ".json"
+_BACKUP_SUFFIX = ".bak"
+MAX_IDENTIFIER_LENGTH = MAX_FILENAME_LENGTH - len(_JSON_SUFFIX) - len(_BACKUP_SUFFIX)
+MAX_JSON_NAME_LENGTH = MAX_FILENAME_LENGTH - len(_BACKUP_SUFFIX)
 
 
 class LocalStateError(ValueError):
@@ -21,7 +27,10 @@ class LocalStateError(ValueError):
 
 
 def validate_identifier(value: object, field: str, digest: bool = False) -> str:
-    if not isinstance(value, str) or not (DIGEST_ID if digest else SAFE_ID).fullmatch(value):
+    pattern = DIGEST_ID if digest else SAFE_ID
+    is_json_name = isinstance(value, str) and not digest and SAFE_JSON_NAME.fullmatch(value) is not None
+    maximum_length = MAX_JSON_NAME_LENGTH if is_json_name else MAX_IDENTIFIER_LENGTH
+    if not isinstance(value, str) or len(value) > maximum_length or not (pattern.fullmatch(value) or is_json_name):
         raise LocalStateError(f"invalid {field}")
     return value
 
@@ -141,7 +150,10 @@ def commit(
         for temporary, target, _ in staged:
             if target.exists():
                 backup_dir = safe_path(repository, LOCAL_DIR, "backups")
-                backup = backup_dir / f"{target.name}.bak"
+                backup_name = f"{target.name}{_BACKUP_SUFFIX}"
+                if len(backup_name) > MAX_FILENAME_LENGTH:
+                    raise LocalStateError("invalid backup filename")
+                backup = backup_dir / backup_name
                 _verify_parents(approved_root(repository, LOCAL_DIR), backup)
                 _verify_existing(backup)
                 if backup.exists():
@@ -150,6 +162,14 @@ def commit(
                 backups.append((backup, target))
             os.replace(temporary, target)
         return [target for _, target, _ in staged]
+    except OSError as error:
+        for temporary, _, _ in staged:
+            if temporary.exists():
+                temporary.unlink()
+        for backup, target in reversed(backups):
+            if backup.exists() and not target.exists():
+                os.replace(backup, target)
+        raise LocalStateError("local-state filesystem operation failed") from error
     except Exception:
         for temporary, _, _ in staged:
             if temporary.exists():

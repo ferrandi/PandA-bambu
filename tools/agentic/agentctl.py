@@ -94,8 +94,8 @@ def main(argv: list[str] | None = None) -> int:
     portable_setup.add_argument("--json", action="store_true")
     portable_doctor = commands.add_parser("doctor")
     portable_doctor.add_argument("--json", action="store_true")
-    portable_adapters = commands.add_parser("adapters")
-    portable_adapters_sub = portable_adapters.add_subparsers(dest="portable_adapter_command", required=True)
+    adapters_parser = commands.add_parser("adapters")
+    portable_adapters_sub = adapters_parser.add_subparsers(dest="portable_adapter_command", required=True)
     for name in ("detect", "list", "show"):
         item = portable_adapters_sub.add_parser(name)
         item.add_argument("--json", action="store_true")
@@ -134,7 +134,14 @@ def main(argv: list[str] | None = None) -> int:
                 _print(setup.config_generate(args.root, spec, dry_run=args.dry_run, replace=args.replace))
             else:
                 setup.validate_spec(spec)
-                _print({"registry_id": spec["registry"]["registry_id"], "valid": True})
+                _print(
+                    {
+                        "registry_id": spec["registry"]["registry_id"],
+                        "registry_version": spec["registry"]["version"],
+                        "runtime_map_id": spec["runtime_map"]["runtime_map_id"],
+                        "valid": True,
+                    }
+                )
         elif args.command == "profiles":
             registry = _document(args.registry, "registry")
             if args.profiles_command == "validate":

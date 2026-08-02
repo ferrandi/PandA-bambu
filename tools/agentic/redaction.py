@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import re
 from collections.abc import Mapping
+from urllib.parse import unquote
 from typing import Any
 
 REDACTED = "[REDACTED]"
@@ -66,6 +67,39 @@ _URL = re.compile(r"(?i)\bhttps?://[^\s'\"<>]+")
 _EMAIL = re.compile(r"(?i)\b[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\b")
 _SESSION = re.compile(r"(?i)\b(?:session|oauth|cookie)[=_:-][^\s,;]+")
 _ENV_VALUE = re.compile(r"(?m)\b[A-Z][A-Z0-9_]{2,}=(?:[^\s]+)")
+_SECRET_ASSIGNMENT = re.compile(
+    r"(?i)\b(?:api[_-]?key|token|secret|password|credential)\s*=\s*[^\s,;]+"
+)
+_ENCODED_INSPECTION_DEPTH = 2
+
+
+def _decoded_variants(value: str) -> tuple[str, ...]:
+    """Return a bounded decode chain for inspection without normalizing output."""
+    variants = [value]
+    decoded = value
+    for _ in range(_ENCODED_INSPECTION_DEPTH):
+        candidate = unquote(decoded)
+        if candidate == decoded:
+            break
+        variants.append(candidate)
+        decoded = candidate
+    return tuple(variants)
+
+
+def _contains_sensitive_text(value: str) -> bool:
+    return any(
+        pattern.search(value)
+        for pattern in (
+            _KEY_SHAPED,
+            _BEARER,
+            _HEADER,
+            _URL,
+            _EMAIL,
+            _SESSION,
+            _ENV_VALUE,
+            _SECRET_ASSIGNMENT,
+        )
+    )
 
 
 def digest(value: str) -> str:
@@ -75,6 +109,8 @@ def digest(value: str) -> str:
 
 def redact_text(value: str, secrets: tuple[str, ...] = ()) -> str:
     """Remove free-form credentials, endpoints, identities, and supplied values."""
+    if "%" in value and any(_contains_sensitive_text(item) for item in _decoded_variants(value)):
+        return REDACTED
     for secret in sorted((item for item in secrets if item), key=len, reverse=True):
         value = value.replace(secret, REDACTED)
     value = _HEADER.sub(REDACTED, value)
@@ -143,7 +179,4 @@ def safe_diagnostics(values: object) -> list[str]:
 def is_safe(value: Any) -> bool:
     """Reject values which still include recognisable sensitive free-form content."""
     rendered = str(value)
-    return not any(
-        pattern.search(rendered)
-        for pattern in (_KEY_SHAPED, _BEARER, _HEADER, _URL, _EMAIL, _SESSION, _ENV_VALUE)
-    )
+    return not any(_contains_sensitive_text(item) for item in _decoded_variants(rendered))

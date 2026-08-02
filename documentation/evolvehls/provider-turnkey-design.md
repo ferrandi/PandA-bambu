@@ -1,82 +1,86 @@
 # Turnkey provider and execution-profile design
 
-PAF-03B configures and validates execution units. **It does not launch coding
-tasks**, plan or implement repository changes, create worktrees, run coding-task
-validation, repair, commit, push, create PRs, or choose an automatic fallback.
+PAF-03B is a **foundation** for portable client detection, safe local
+configuration metadata, canonical PAF-03A routing integration, and future
+PAF-05 invocation descriptors. It does not launch coding tasks, plan or
+implement repository changes, create worktrees, run coding-task validation,
+repair, commit, push, create PRs, or choose an automatic fallback.
 
-## Client adapters and execution paths
+## Canonical PAF-03A contract boundary
 
-A client is not an authentication mode, provider, protocol, or funding class.
-A versioned adapter exposes one or more independently measurable paths:
+PAF-03A remains the sole authority for:
+
+- `evolvehls.agentic.client-adapter`;
+- `evolvehls.agentic.profile-registry`;
+- `evolvehls.agentic.readiness-report`;
+- `evolvehls.agentic.stage-routing-decision`;
+- canonical adapter and profile identifiers;
+- profile selection, ranking, fallback authorization, and readiness semantics.
+
+Execution profiles are portable tracked declarations, not runtime
+configuration. The canonical registry owns adapter identity, execution family,
+access/funding/authentication class, provider-or-runtime binding, model binding,
+protocol, capabilities, privacy, cost, resources, availability, and priority.
+
+The deterministic PAF-03A resolver selects a canonical profile after filtering
+role capabilities, policy, privacy, cost, resources, readiness, and adapter
+compatibility. PAF-03B never implements a second routing algorithm and never
+creates an alternate profile identifier space.
+
+## Client runtime supplements
+
+PAF-03B adds `evolvehls.agentic.client-runtime-map`, a versioned runtime
+supplement rather than a profile registry. Each entry has a runtime-entry ID and
+references one existing canonical `(profile_id, adapter_id)` pair. It maps that
+pair to an internal bounded client-template key and execution path.
+
+The runtime map may describe client-specific invocation mode, protocol
+compatibility, environment-variable references, non-secret local configuration
+metadata, and future PAF-05 handoff placeholders. It must not redefine
+canonical access/funding/authentication classes, priority, readiness, profile
+selection, bindings, models, or capabilities. Unknown, mismatched, or duplicate
+canonical references fail validation.
+
+The descriptor flow is:
 
 ```text
-Codex
-  native-account      native client session / subscription
-  configured-api      API or compatible gateway
-
-Claude Code
-  native-account      native client session / subscription
-  configured-api      API or compatible gateway
+PAF-01 discovery/evidence
+        ↓
+PAF-02 task and role selection
+        ↓
+PAF-03A registry, canonical readiness, routing.resolve() decision
+        ↓
+PAF-03B client-runtime-map entry
+        ↓
+PAF-03B future PAF-05 invocation descriptor
 ```
 
-A failed or unavailable path never disables a sibling path. Direct HTTP against
-the same provider is separately represented from Codex, Claude Code, or Cline
-using that provider.
+Descriptors preserve the selected canonical `profile_id`, `adapter_id`,
+runtime-map and runtime-entry IDs, execution path, canonical readiness
+observation, and the actual routing decision provenance tuple. PAF-03A does
+not define a routing-decision document ID, so no synthetic one is created.
 
-Supported adapter templates are:
+## Detection, readiness, and timestamps
 
-| Adapter | Execution paths |
-| --- | --- |
-| Claude Code | native account; configured Anthropic-compatible API/gateway |
-| Codex | native ChatGPT account; configured OpenAI-compatible API/gateway |
-| Cline | configured API; local compatible server; separate Plan/Act models when the detected configuration surface supports them |
-| Direct HTTP | OpenAI Responses/Chat Completions; Anthropic Messages |
-| Local compatible runtime | OpenAI-compatible or Anthropic-compatible local server |
-| Future native local client | extensible `native-local-cli` execution-path contract |
+Detection is bounded to executable presence, bounded `--version` output, and a
+conservative static version-capability map. It never reads native session
+storage, browser state, token caches, credential stores, OAuth databases,
+cookies, account identities, or global client configuration. Unsupported client
+versions fail closed.
 
-A LiteLLM gateway is not assumed to implement every protocol. A profile binds
-one protocol explicitly and the path validator rejects incompatible protocol,
-access, funding, and authentication combinations.
+Static version maps are template metadata, not per-installation capability
+proof. Native-account executable presence does not verify a native login; such
+paths remain `unknown` without canonical readiness evidence.
 
-## Funding and authentication
+PAF-03B translates its bounded observations into the one canonical
+`evolvehls.agentic.readiness-report` shape. Files under
+`agentic-state/readiness/<registry_id>.json` must always validate against that
+canonical contract. PAF-03B never persists a portable readiness document.
 
-The generic framework uses only `project`, `organization`, `subscription`,
-`personal-api`, and `local`. Client/provider names do not change these
-classifications.
-
-Native account paths use `native-session`. The native client owns login state.
-PAF never reads, exports, copies, decodes, writes, logs, or persists browser
-state, credential stores, cookies, OAuth material, session databases, token
-caches, account names, emails, organization IDs, or subscription details. It
-does not log users in or out. Executable presence does not prove a native login.
-
-Configured paths retain credential references only: environment variable names
-or argv token-helper references. Secret values are not stored in setup state,
-generated descriptors, reports, fixtures, command arguments, or diagnostics.
-Helpers are invoked only with `shell=False` and never during dry-run.
-
-## Detection and readiness
-
-Detection is bounded and deterministic:
-
-1. executable presence;
-2. bounded `--version` output;
-3. conservative version-capability map;
-4. documented bounded status surface when added to a template;
-5. explicitly approved non-secret project-local configuration;
-6. unknown/request-confirmation if safe evidence is unavailable.
-
-Readiness states are `available`, `authenticated-or-ready`,
-`configuration-required`, `unsupported-version`,
-`execution-path-unsupported`, `unavailable`, and `unknown`.
-
-All free-form readiness and diagnostic text passes through the centralized
-sanitizer. It removes credential-shaped strings, authorization/cookie/session
-material, URLs and query credentials, account identifiers, environment values,
-and raw provider/subprocess bodies. `redacted: true` is metadata only; it is not
-accepted as proof that content is safe. Useful reason classifications survive:
-authentication failure, configuration invalid, protocol unsupported, transport
-failure, timeout, client unavailable, version unsupported, and unknown.
+Every setup/config operation captures one actual timezone-aware UTC observation
+timestamp. Tests may inject a clock or timestamp; production paths never use a
+fixed observation time. A readiness age is evaluated only when an explicit
+maximum-age policy is supplied; PAF-03A itself does not prescribe a TTL.
 
 ## Setup and local ownership
 
@@ -84,30 +88,28 @@ The local ignored layout is:
 
 ```text
 .agentic-local/
-  adapters/ providers/ profiles/ bindings/ generated/ setup/ backups/
+  generated/
 agentic-state/
-  readiness/ catalogs/ probes/ setup/
+  readiness/
+  setup/
+  catalogs/
+  probes/
 ```
 
-Tracked files remain generic and fictional. The local trees contain real
-deployment references only. Framework-owned ignored state is distinct from
-generated repository-local client configuration and external user-owned global
-or native-client configuration. PAF never modifies unrelated global client,
-shell, browser, OAuth, or credential settings.
+`agentctl setup --spec <local-spec>` accepts canonical registry, runtime-map,
+and canonical routing-decision inputs without secret values. It writes a
+canonical readiness report, one selected-profile descriptor, and a receipt.
+Writes are confined to approved ignored roots; identifiers are validated before
+path construction; traversal, symlink, and non-regular targets are rejected;
+writes are restrictive and atomic; overwrite is refused unless explicitly
+authorized.
 
-`agentctl setup --spec <local-spec>` accepts a validated noninteractive
-specification containing references but no secret values. It is resumable and
-idempotent: unchanged repeated input creates no changes. `--dry-run` performs
-no writes, probes, token-helper calls, or network work.
+Probe authorization is explicit. The receipt distinguishes `not-requested` from
+`authorized-not-performed` and records `probes_performed: false`. This
+foundation does not create a second probe implementation or imply that a probe
+ran.
 
-Safe writes remain under the two approved ignored roots, validate identifiers
-before path construction, reject traversal/symlinks/non-regular targets, use
-restrictive permissions and atomic replacement, refuse overwrite by default,
-and create a backup only for explicit authorized replacement.
-
-## Commands
-
-PAF-03B exposes bounded setup/inspection operations:
+## Commands and PAF-05 boundary
 
 ```text
 agentctl setup --spec local-setup.json [--dry-run]
@@ -117,29 +119,19 @@ agentctl adapters list
 agentctl adapters show --adapter codex
 agentctl profiles list|show|validate
 agentctl readiness show
-agentctl config preview|generate|validate --spec local-setup.json
 agentctl routing explain
+agentctl config preview|generate|validate --spec local-setup.json
 ```
 
-Machine-readable JSON and deterministic ordering are provided by the CLI
-output. Errors use classified, redacted failures. Existing PAF-01 through
-PAF-03A catalog, profile, readiness, and routing inspection commands remain
-available.
+Errors are classified and redacted. Generated descriptors deliberately retain
+the following future PAF-05 placeholders:
 
-## Probes, discovery, and provenance
+- input handoff;
+- working-directory behavior;
+- result collection;
+- client-specific launch execution.
 
-PAF-01 discovery, normalized catalogs, protocol-specific synthetic probes, and
-ignored probe caches remain the provider capability source. Probes require
-explicit authorization, are bounded, redacted, disabled in dry-run, and never
-silently invoke fallback. When authorized catalog discovery is unavailable,
-setup requires a manually authorized model reference.
-
-Each generated PAF-05 descriptor records non-secret provenance: adapter and
-version, execution path, invocation class/family, access/funding/auth/protocol,
-provider/runtime reference, model reference, template/setup version, capability
-evidence, readiness, and configuration ownership. Confidential model IDs use a
-digest where required.
-
-The descriptor defines the handoff fields PAF-05 will consume—input handoff,
-working-directory behavior, result collection, structured-output, resume,
-timeout, and cancellation—but PAF-03B does not invoke them.
+PAF-03B does not execute Codex, Claude Code, Cline, LiteLLM, direct HTTP, or
+any other client. It does not acquire credentials, inspect authentication
+sessions, alter client-global configuration, scrape native-login status, or
+perform result collection.
