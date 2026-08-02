@@ -106,17 +106,21 @@ def prepare_directory(root: Path, directory: Path) -> Path:
         current = current.parent
         chain.append(current)
     for item in reversed(chain):
+        created = False
         try:
             metadata = item.lstat()
         except FileNotFoundError:
             try:
                 item.mkdir(mode=0o700)
                 metadata = item.lstat()
+                created = True
             except OSError:
                 raise LocalStateError("local-state directory creation failed") from None
         if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISDIR(metadata.st_mode):
             raise LocalStateError("refusing symbolic-link or non-directory parent")
-        if stat.S_IMODE(metadata.st_mode) & 0o077:
+        # Existing parents may be shared repository or temporary-directory
+        # ancestors; this helper owns only directories it creates.
+        if created and stat.S_IMODE(metadata.st_mode) & 0o077:
             try:
                 os.chmod(item, 0o700, follow_symlinks=False)
             except OSError:

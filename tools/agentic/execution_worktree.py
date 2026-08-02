@@ -26,6 +26,19 @@ class WorktreeError(RuntimeError):
     """Raised when a managed worktree cannot be safely created or verified."""
 
 
+class WorktreeCleanupError(WorktreeError):
+    """Creation failed and its worktree evidence could not be safely removed."""
+
+    def __init__(self, original: WorktreeError, cleanup: WorktreeError, target: Path):
+        super().__init__(
+            f"{original}; cleanup-failed:{cleanup}; retained-worktree:{target}; "
+            "operator-action: remove the retained worktree registration and state"
+        )
+        self.original = original
+        self.cleanup = cleanup
+        self.target = target
+
+
 @dataclass(frozen=True)
 class GitIdentity:
     executable: Path
@@ -136,11 +149,13 @@ def _environment(repository: Path) -> dict[str, str]:
     }
 
 
-def _git(identity: GitIdentity, repository: Path, args: list[str], *, cwd: Path | None = None,
-         mutate: bool = False) -> bytes:
+def _git_result(
+    identity: GitIdentity, repository: Path, args: list[str], *, cwd: Path | None = None
+) -> subprocess.CompletedProcess[bytes]:
+    """Run fixed Git argv with a scrubbed environment without interpreting status."""
     _verify_git(identity)
     try:
-        completed = subprocess.run(
+        return subprocess.run(
             [str(identity.executable), *args], cwd=str(cwd or repository),
             env=_environment(repository), stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False,
@@ -148,9 +163,35 @@ def _git(identity: GitIdentity, repository: Path, args: list[str], *, cwd: Path 
         )
     except OSError:
         raise WorktreeError("git-launch-failed") from None
+
+
+def _git(identity: GitIdentity, repository: Path, args: list[str], *, cwd: Path | None = None,
+         mutate: bool = False) -> bytes:
+    completed = _git_result(identity, repository, args, cwd=cwd)
     if completed.returncode:
         raise WorktreeError("git-command-failed")
     return completed.stdout
+
+
+def _symbolic_head(identity: GitIdentity, repository: Path, *, cwd: Path | None = None) -> bytes | None:
+    """Return HEAD's symbolic name, accepting only Git's documented detached status.
+
+    ``git symbolic-ref -q HEAD`` returns one only for a detached HEAD.  Every
+    other failure is diagnostic evidence and must never be reclassified as detached.
+    """
+    completed = _git_result(identity, repository, ["symbolic-ref", "-q", "HEAD"], cwd=cwd)
+    if completed.returncode == 1:
+        if completed.stdout or completed.stderr:
+            raise WorktreeError("symbolic-head-detached-output-invalid")
+        return None
+    if completed.returncode != 0:
+        raise WorktreeError("symbolic-head-failed")
+    if completed.stderr or not completed.stdout.endswith(b"\n"):
+        raise WorktreeError("symbolic-head-output-invalid")
+    value = completed.stdout[:-1]
+    if not value or b"\n" in value or b"\0" in value:
+        raise WorktreeError("symbolic-head-output-invalid")
+    return value
 
 
 def _top_level(identity: GitIdentity, repository: Path) -> Path:
@@ -163,24 +204,85 @@ def _top_level(identity: GitIdentity, repository: Path) -> Path:
     return top
 
 
-def _reject_unsafe_config(identity: GitIdentity, repository: Path) -> None:
-    data = _git(identity, repository, ["config", "--local", "--null", "--list"])
+def _config_entries(identity: GitIdentity, repository: Path, path: Path) -> list[tuple[bytes, bytes]]:
+    """Read one repository config file without following include directives.
+
+    Git parses config syntax here but no checkout, filter, hook, or configured
+    command is invoked.  ``--file`` deliberately does not enable ``--includes``.
+    """
+    try:
+        metadata = path.lstat()
+    except FileNotFoundError:
+        return []
+    except OSError:
+        raise WorktreeError("repository-config-unreadable") from None
+    if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISREG(metadata.st_mode):
+        raise WorktreeError("repository-config-invalid")
+    data = _git(identity, repository, ["config", "--file", str(path), "--null", "--list"])
+    entries: list[tuple[bytes, bytes]] = []
     for item in filter(None, data.split(b"\0")):
-        key, _, value = item.partition(b"\n")
-        lowered = key.lower()
-        filter_command = (
-            lowered.startswith(b"filter.")
-            and lowered.rsplit(b".", 1)[-1] in {b"clean", b"smudge", b"process"}
-        )
-        if filter_command and value.strip():
-            raise WorktreeError("unsafe-repository-config")
-        if lowered == b"core.fsmonitor" and value.strip().lower() not in {
-            b"false",
-            b"0",
-            b"no",
-            b"off",
-        }:
-            raise WorktreeError("unsafe-repository-config")
+        key, separator, value = item.partition(b"\n")
+        if not separator or not key:
+            raise WorktreeError("repository-config-output-invalid")
+        entries.append((key.lower(), value))
+    return entries
+
+
+def _repository_config_paths(
+    identity: GitIdentity, repository: Path, *, cwd: Path | None = None
+) -> tuple[Path, ...]:
+    common = _git(
+        identity, repository, ["rev-parse", "--git-common-dir"], cwd=cwd
+    ).rstrip(b"\n")
+    try:
+        common_path = Path(os.fsdecode(common))
+    except UnicodeError:
+        raise WorktreeError("repository-config-path-invalid") from None
+    if not common_path.is_absolute():
+        common_path = repository / common_path
+    common_config = common_path.resolve() / "config"
+    common_entries = _config_entries(identity, repository, common_config)
+    enabled = any(
+        key == b"extensions.worktreeconfig"
+        and value.strip().lower() in {b"true", b"1", b"yes", b"on"}
+        for key, value in common_entries
+    )
+    if not enabled:
+        return (common_config,)
+    worktree = _git(
+        identity, repository, ["rev-parse", "--git-path", "config.worktree"], cwd=cwd
+    ).rstrip(b"\n")
+    try:
+        worktree_path = Path(os.fsdecode(worktree))
+    except UnicodeError:
+        raise WorktreeError("repository-config-path-invalid") from None
+    if not worktree_path.is_absolute():
+        worktree_path = repository / worktree_path
+    return (common_config, worktree_path.resolve())
+
+
+def _reject_unsafe_config(
+    identity: GitIdentity, repository: Path, *, cwd: Path | None = None
+) -> None:
+    """Reject executable repository configuration before any checkout-capable Git use."""
+    for path in _repository_config_paths(identity, repository, cwd=cwd):
+        for key, value in _config_entries(identity, repository, path):
+            # Includes are rejected rather than resolved, so inspection cannot miss
+            # executable configuration hidden in an included repository-owned file.
+            if key == b"include.path" or (
+                key.startswith(b"includeif.") and key.endswith(b".path")
+            ):
+                raise WorktreeError("unsafe-repository-config")
+            filter_command = (
+                key.startswith(b"filter.")
+                and key.rsplit(b".", 1)[-1] in {b"clean", b"smudge", b"process"}
+            )
+            if filter_command and value.strip():
+                raise WorktreeError("unsafe-repository-config")
+            if key == b"core.fsmonitor" and value.strip().lower() not in {
+                b"false", b"0", b"no", b"off",
+            }:
+                raise WorktreeError("unsafe-repository-config")
 
 
 def _in_state_namespace(path: bytes) -> bool:
@@ -237,11 +339,7 @@ def _gitlink_state(identity: GitIdentity, repository: Path) -> bytes:
 
 def _snapshot(identity: GitIdentity, repository: Path) -> CallerSnapshot:
     head = _git(identity, repository, ["rev-parse", "HEAD"]).strip().decode("ascii")
-    symbolic = None
-    try:
-        symbolic = _git(identity, repository, ["symbolic-ref", "-q", "HEAD"]).strip()
-    except WorktreeError:
-        pass
+    symbolic = _symbolic_head(identity, repository)
     index_path = _git(identity, repository, ["rev-parse", "--git-path", "index"])
     try:
         index = Path(os.fsdecode(index_path.rstrip(b"\n")))
@@ -319,12 +417,12 @@ def create_worktree(repository: Path, execution_id: str, base_commit: str,
         local_state.prepare_directory(root, execution)
     except local_state.LocalStateError:
         raise WorktreeError("execution-path-invalid") from None
-    created = False
+    add_attempted = False
     try:
         snapshot = _snapshot(identity, repository)
         _verify_git(identity, target)
+        add_attempted = True
         _git(identity, repository, ["worktree", "add", "--detach", str(target), base_commit], mutate=True)
-        created = True
         _verify_git(identity, target)
         _git(identity, repository, ["worktree", "lock", "--reason", "retained managed execution worktree", str(target)], mutate=True)
         managed = ManagedWorktree(repository, target.resolve(), execution_id, base_commit, snapshot, identity)
@@ -337,14 +435,25 @@ def create_worktree(repository: Path, execution_id: str, base_commit: str,
         if tracked:
             raise WorktreeError("initial-checkout-not-clean")
         return managed
-    except WorktreeError:
-        if created:
+    except WorktreeError as original:
+        # Once add is attempted Git may have registered or populated the target even
+        # when it reports failure.  Retain evidence unless exact Git cleanup proves
+        # both removal and registration disappearance; never prune unrelated worktrees.
+        if add_attempted:
             try:
-                _git(identity, repository, ["worktree", "remove", "--force", str(target)], mutate=True)
-            except WorktreeError:
-                pass
+                records = _worktree_records(identity, repository)
+                if os.fsencode(target) in records:
+                    _git(identity, repository, ["worktree", "remove", "--force", str(target)], mutate=True)
+                    if os.fsencode(target) in _worktree_records(identity, repository):
+                        raise WorktreeError("worktree-cleanup-registration-retained")
+            except WorktreeError as cleanup:
+                raise WorktreeCleanupError(original, cleanup, target) from None
         if execution.exists() and execution.is_dir() and not execution.is_symlink():
-            shutil.rmtree(execution)
+            try:
+                shutil.rmtree(execution)
+            except OSError:
+                cleanup = WorktreeError("execution-state-cleanup-failed")
+                raise WorktreeCleanupError(original, cleanup, target) from None
         raise
 
 
@@ -370,6 +479,7 @@ def _worktree_records(
 
 def verify_worktree(managed: ManagedWorktree) -> None:
     _verify_git(managed.git, managed.path)
+    _reject_unsafe_config(managed.git, managed.repository, cwd=managed.path)
     expected = local_state.safe_path(
         managed.repository,
         local_state.STATE_DIR,
@@ -393,11 +503,7 @@ def verify_worktree(managed: ManagedWorktree) -> None:
         raise WorktreeError("worktree-top-level-changed")
     if _git(managed.git, managed.repository, ["-C", str(managed.path), "rev-parse", "HEAD"]).strip().decode() != managed.base_commit:
         raise WorktreeError("worktree-commit-changed")
-    try:
-        _git(managed.git, managed.repository, ["-C", str(managed.path), "symbolic-ref", "-q", "HEAD"])
-    except WorktreeError:
-        pass
-    else:
+    if _symbolic_head(managed.git, managed.repository, cwd=managed.path) is not None:
         raise WorktreeError("worktree-not-detached")
     linkage = managed.path / ".git"
     if not linkage.is_file() or b"gitdir:" not in linkage.read_bytes():
