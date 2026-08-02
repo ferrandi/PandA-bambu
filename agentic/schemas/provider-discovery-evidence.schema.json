@@ -1,0 +1,17 @@
+{
+  "$id": "https://panda-re.github.io/schemas/agentic/provider-discovery-evidence.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Bounded provider discovery evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "provider_id", "checked_at", "method", "status", "diagnostics"],
+  "properties": {
+    "schema": {"const": "evolvehls.agentic.provider-discovery-evidence"},
+    "schema_version": {"const": "1.0"},
+    "provider_id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*$"},
+    "checked_at": {"type": "string", "format": "date-time"},
+    "method": {"enum": ["not-requested", "manual"]},
+    "status": {"enum": ["not-performed", "manual"]},
+    "diagnostics": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+  }
+}

@@ -90,51 +90,71 @@ class PlannedWrite:
     mode: int = 0o600
 
 
+@dataclass(frozen=True)
+class PlannedDelete:
+    group: str
+    parts: tuple[str, ...]
+
+
 def preview(repository: Path, planned: list[PlannedWrite]) -> list[dict[str, object]]:
     result = []
     for item in sorted(planned, key=lambda entry: (entry.group, entry.parts)):
         target = safe_path(repository, item.group, *item.parts)
-        result.append(
-            {
-                "group": item.group,
-                "path": str(target.relative_to(repository.resolve())),
-                "bytes": len(item.content),
-                "replace_required": target.exists(),
-            }
-        )
+        result.append({"group": item.group, "path": str(target.relative_to(repository.resolve())), "bytes": len(item.content), "replace_required": target.exists()})
     return result
 
 
-def commit(
+def transaction(
     repository: Path,
-    planned: list[PlannedWrite],
+    writes: list[PlannedWrite],
+    deletes: list[PlannedDelete] = [],
     *,
     replace: bool = False,
     dry_run: bool = False,
     validator: Callable[[Path], None] | None = None,
+    fail_after: int | None = None,
 ) -> list[Path]:
-    """Validate and atomically apply a deterministic set of ignored-local writes."""
-    ordered = sorted(planned, key=lambda entry: (entry.group, entry.parts))
-    targets: list[tuple[PlannedWrite, Path]] = []
-    for item in ordered:
+    """Apply deterministic writes/deletes with complete content rollback.
+
+    Existing bytes are retained in restrictive temporary snapshots.  This avoids
+    treating a provider setup as successful unless every owned document changes
+    together. ``fail_after`` exists solely for injected failure tests.
+    """
+    write_targets: list[tuple[PlannedWrite, Path]] = []
+    delete_targets: list[Path] = []
+    targets: set[Path] = set()
+    for item in sorted(writes, key=lambda entry: (entry.group, entry.parts)):
         if item.mode & 0o077:
             raise LocalStateError("local-state mode must be restrictive")
         target = safe_path(repository, item.group, *item.parts)
-        root = approved_root(repository, item.group)
-        _verify_parents(root, target)
+        if not dry_run:
+            _verify_parents(approved_root(repository, item.group), target)
         _verify_existing(target)
-        if target.exists() and not replace:
-            if target.read_bytes() == item.content:
-                continue
+        if target in targets:
+            raise LocalStateError("duplicate transaction target")
+        targets.add(target)
+        if target.exists() and not replace and target.read_bytes() != item.content:
             raise LocalStateError("refusing overwrite without explicit authorization")
-        targets.append((item, target))
+        if not (target.exists() and target.read_bytes() == item.content):
+            write_targets.append((item, target))
+    for item in sorted(deletes, key=lambda entry: (entry.group, entry.parts)):
+        target = safe_path(repository, item.group, *item.parts)
+        if not dry_run:
+            _verify_parents(approved_root(repository, item.group), target)
+        _verify_existing(target)
+        if target in targets:
+            raise LocalStateError("duplicate transaction target")
+        targets.add(target)
+        if target.exists():
+            delete_targets.append(target)
     if dry_run:
-        return [target for _, target in targets]
+        return [target for _, target in write_targets] + delete_targets
 
-    staged: list[tuple[Path, Path, PlannedWrite]] = []
-    backups: list[tuple[Path, Path]] = []
+    staged: list[tuple[Path, Path]] = []
+    snapshots: dict[Path, bytes | None] = {}
+    changed: list[Path] = []
     try:
-        for item, target in targets:
+        for item, target in write_targets:
             handle = tempfile.NamedTemporaryFile(dir=target.parent, delete=False)
             temporary = Path(handle.name)
             try:
@@ -146,35 +166,52 @@ def commit(
                 handle.close()
             if validator is not None:
                 validator(temporary)
-            staged.append((temporary, target, item))
-        for temporary, target, _ in staged:
-            if target.exists():
-                backup_dir = safe_path(repository, LOCAL_DIR, "backups")
-                backup_name = f"{target.name}{_BACKUP_SUFFIX}"
-                if len(backup_name) > MAX_FILENAME_LENGTH:
-                    raise LocalStateError("invalid backup filename")
-                backup = backup_dir / backup_name
+            staged.append((temporary, target))
+        operations: list[tuple[str, Path, Path | None]] = [("write", target, temporary) for temporary, target in staged] + [("delete", target, None) for target in delete_targets]
+        for index, (kind, target, temporary) in enumerate(operations, 1):
+            snapshots.setdefault(target, target.read_bytes() if target.exists() else None)
+            if kind == "write":
+                os.replace(temporary, target)
+            else:
+                target.unlink()
+            changed.append(target)
+            if fail_after == index:
+                raise OSError("injected transaction failure")
+        for target, original in snapshots.items():
+            if original is not None:
+                backup = safe_path(repository, LOCAL_DIR, "backups", f"{target.name}{_BACKUP_SUFFIX}")
                 _verify_parents(approved_root(repository, LOCAL_DIR), backup)
-                _verify_existing(backup)
-                if backup.exists():
-                    backup.unlink()
-                os.replace(target, backup)
-                backups.append((backup, target))
-            os.replace(temporary, target)
-        return [target for _, target, _ in staged]
+                with tempfile.NamedTemporaryFile(dir=backup.parent, delete=False) as handle:
+                    os.fchmod(handle.fileno(), 0o600)
+                    handle.write(original)
+                    temporary = Path(handle.name)
+                os.replace(temporary, backup)
+        return changed
     except OSError as error:
-        for temporary, _, _ in staged:
+        for target, original in snapshots.items():
+            if original is None:
+                if target.exists():
+                    target.unlink()
+            else:
+                with tempfile.NamedTemporaryFile(dir=target.parent, delete=False) as handle:
+                    os.fchmod(handle.fileno(), 0o600)
+                    handle.write(original)
+                    temporary = Path(handle.name)
+                os.replace(temporary, target)
+        raise LocalStateError("local-state filesystem operation failed") from None
+    finally:
+        for temporary, _ in staged:
             if temporary.exists():
                 temporary.unlink()
-        for backup, target in reversed(backups):
-            if backup.exists() and not target.exists():
-                os.replace(backup, target)
-        raise LocalStateError("local-state filesystem operation failed") from error
-    except Exception:
-        for temporary, _, _ in staged:
-            if temporary.exists():
-                temporary.unlink()
-        for backup, target in reversed(backups):
-            if backup.exists() and not target.exists():
-                os.replace(backup, target)
-        raise
+
+
+def commit(
+    repository: Path,
+    planned: list[PlannedWrite],
+    *,
+    replace: bool = False,
+    dry_run: bool = False,
+    validator: Callable[[Path], None] | None = None,
+) -> list[Path]:
+    """Backward-compatible write-only transaction."""
+    return transaction(repository, planned, replace=replace, dry_run=dry_run, validator=validator)

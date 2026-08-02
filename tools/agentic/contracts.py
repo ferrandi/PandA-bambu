@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping
@@ -206,6 +207,150 @@ def validate_readiness(value: Mapping[str, Any], registry: Mapping[str, Any] | N
         _require(set(item["ref"] for item in value["profiles"]) <= {item["profile_id"] for item in registry["profiles"]}, "readiness references unknown profile")
 
 
+_PROVIDER_IDENTIFIER = re.compile(r"^[a-z][a-z0-9.-]*$")
+_ENVIRONMENT_REFERENCE = re.compile(r"^[A-Z][A-Z0-9_]{0,127}$")
+_PROTOCOL_CONFIGURATION = {
+    "openai-compatible": ("openai-chat-completions", "openai-compatible"),
+    "anthropic-compatible": ("anthropic-messages", "anthropic-compatible"),
+}
+_PROVIDER_SECRET_FIELDS = {
+    "api_key", "authorization", "credential", "password", "secret", "token",
+}
+
+
+def _provider_id(value: Any, field: str) -> None:
+    _require(
+        isinstance(value, str)
+        and len(value) <= 190
+        and _PROVIDER_IDENTIFIER.fullmatch(value) is not None,
+        f"invalid {field}",
+    )
+
+
+def _provider_string(value: Any, field: str, *, maximum: int = 512) -> None:
+    _require(isinstance(value, str) and value and len(value) <= maximum, f"invalid {field}")
+
+
+def _no_secret_fields(value: Any) -> None:
+    if isinstance(value, Mapping):
+        for key, item in value.items():
+            _require(str(key).lower().replace("-", "_") not in _PROVIDER_SECRET_FIELDS, "provider documents must not contain secret values")
+            _no_secret_fields(item)
+    elif isinstance(value, list):
+        for item in value:
+            _no_secret_fields(item)
+
+
+def _provider_authentication(value: Any) -> None:
+    _require(isinstance(value, Mapping), "invalid provider authentication")
+    mode = value.get("mode")
+    if mode == "none":
+        _fields(value, {"mode"}, "provider authentication")
+    elif mode == "environment-token":
+        _fields(value, {"mode", "env_var"}, "provider authentication")
+        _require(isinstance(value["env_var"], str) and _ENVIRONMENT_REFERENCE.fullmatch(value["env_var"]) is not None, "invalid environment-variable reference")
+    else:
+        raise ContractError("invalid provider authentication mode")
+
+
+def _provider_endpoint(value: Any) -> None:
+    _fields(value, {"origin", "protocol"}, "provider endpoint")
+    _provider_string(value["origin"], "endpoint origin")
+    _require(value["protocol"] in _PROTOCOL_CONFIGURATION, "unsupported provider protocol")
+
+
+def validate_provider_onboarding_spec(value: Mapping[str, Any]) -> None:
+    required = {"schema", "schema_version", "provider_id", "endpoint", "authentication", "model", "roles"}
+    _fields(value, required, "provider onboarding specification")
+    _require(value["schema"] == "evolvehls.agentic.provider-onboarding-spec" and value["schema_version"] == "1.0", "unsupported provider onboarding specification schema")
+    _provider_id(value["provider_id"], "provider_id")
+    _provider_endpoint(value["endpoint"])
+    _provider_authentication(value["authentication"])
+    _provider_string(value["model"], "model")
+    _list(value["roles"], "roles")
+    _no_secret_fields(value)
+
+
+def validate_provider_discovery_evidence(value: Mapping[str, Any]) -> None:
+    required = {"schema", "schema_version", "provider_id", "checked_at", "method", "status", "diagnostics"}
+    _fields(value, required, "provider discovery evidence")
+    _require(value["schema"] == "evolvehls.agentic.provider-discovery-evidence" and value["schema_version"] == "1.0", "unsupported provider discovery evidence schema")
+    _provider_id(value["provider_id"], "provider_id")
+    parse_timestamp(value["checked_at"], "checked_at")
+    _require(value["method"] in {"not-requested", "manual"}, "unsupported discovery evidence method")
+    _require(value["status"] in {"not-performed", "manual"}, "invalid discovery evidence status")
+    _list(value["diagnostics"], "diagnostics")
+    _require((value["method"], value["status"]) in {("not-requested", "not-performed"), ("manual", "manual")}, "inconsistent discovery evidence")
+    _no_secret_fields(value)
+
+
+def validate_provider_configuration(value: Mapping[str, Any]) -> None:
+    required = {"schema", "schema_version", "provider_id", "endpoint", "authentication", "model", "canonical", "configured_at"}
+    _fields(value, required, "provider configuration")
+    _require(value["schema"] == "evolvehls.agentic.provider-configuration" and value["schema_version"] == "1.0", "unsupported provider configuration schema")
+    _provider_id(value["provider_id"], "provider_id")
+    _provider_endpoint(value["endpoint"])
+    _provider_authentication(value["authentication"])
+    _provider_string(value["model"], "model")
+    _fields(value["canonical"], {"profile_id", "adapter_id", "runtime_entry_id", "execution_path"}, "provider canonical references")
+    for field in value["canonical"]:
+        _provider_id(value["canonical"][field], f"canonical.{field}")
+    _require(value["canonical"]["adapter_id"] == "generic-http", "provider configuration must reference the canonical generic-http adapter")
+    parse_timestamp(value["configured_at"], "configured_at")
+    _no_secret_fields(value)
+
+
+def validate_provider_onboarding_receipt(value: Mapping[str, Any]) -> None:
+    required = {"schema", "schema_version", "provider_id", "configured_at", "configuration_digest", "profile_overlay_id", "runtime_overlay_id", "action"}
+    _fields(value, required, "provider onboarding receipt")
+    _require(value["schema"] == "evolvehls.agentic.provider-onboarding-receipt" and value["schema_version"] == "1.0", "unsupported provider onboarding receipt schema")
+    _provider_id(value["provider_id"], "provider_id")
+    parse_timestamp(value["configured_at"], "configured_at")
+    _require(isinstance(value["configuration_digest"], str) and re.fullmatch(r"[0-9a-f]{64}", value["configuration_digest"]) is not None, "invalid configuration digest")
+    _provider_id(value["profile_overlay_id"], "profile_overlay_id")
+    _provider_id(value["runtime_overlay_id"], "runtime_overlay_id")
+    _require(value["action"] in {"applied", "replaced", "removed"}, "invalid provider receipt action")
+    _no_secret_fields(value)
+
+
+def validate_provider_profile_overlay(value: Mapping[str, Any], registry: Mapping[str, Any] | None = None) -> None:
+    required = {"schema", "schema_version", "overlay_id", "provider_id", "registry_id", "registry_version", "configuration_digest", "profile"}
+    _fields(value, required, "provider profile overlay")
+    _require(value["schema"] == "evolvehls.agentic.provider-profile-overlay" and value["schema_version"] == "1.0", "unsupported provider profile overlay schema")
+    for field in ("overlay_id", "provider_id", "registry_id"):
+        _provider_id(value[field], field)
+    _provider_string(value["registry_version"], "registry_version")
+    _require(isinstance(value["configuration_digest"], str) and re.fullmatch(r"[0-9a-f]{64}", value["configuration_digest"]) is not None, "invalid configuration digest")
+    validate_profile(value["profile"])
+    _require(value["profile"]["adapter_id"] == "generic-http", "provider profile overlay must reference generic-http")
+    _require(value["profile"]["binding"] == {"kind": "provider-profile", "ref": value["provider_id"]}, "provider profile overlay binding must reference its provider")
+    if registry is not None:
+        _require(value["registry_id"] == registry["registry_id"] and value["registry_version"] == registry["version"], "provider profile overlay targets a different canonical registry")
+        _require(value["profile"]["adapter_id"] in {item["adapter_id"] for item in registry["adapters"]}, "provider profile overlay references unknown canonical adapter")
+    _no_secret_fields(value)
+
+
+def validate_provider_runtime_overlay(value: Mapping[str, Any], registry: Mapping[str, Any] | None = None, runtime_map: Mapping[str, Any] | None = None) -> None:
+    required = {"schema", "schema_version", "overlay_id", "provider_id", "runtime_map_id", "runtime_map_version", "configuration_digest", "entry"}
+    _fields(value, required, "provider runtime overlay")
+    _require(value["schema"] == "evolvehls.agentic.provider-runtime-overlay" and value["schema_version"] == "1.0", "unsupported provider runtime overlay schema")
+    for field in ("overlay_id", "provider_id", "runtime_map_id"):
+        _provider_id(value[field], field)
+    _provider_string(value["runtime_map_version"], "runtime_map_version")
+    _require(isinstance(value["configuration_digest"], str) and re.fullmatch(r"[0-9a-f]{64}", value["configuration_digest"]) is not None, "invalid configuration digest")
+    entry = value["entry"]
+    _fields(entry, {"runtime_entry_id", "profile_id", "adapter_id", "client_template", "execution_path"}, "provider runtime overlay entry")
+    for field in entry:
+        _provider_id(entry[field], f"entry.{field}")
+    _require(entry["adapter_id"] == "generic-http" and entry["client_template"] == "direct-http", "provider runtime overlay must reference canonical generic-http/direct-http semantics")
+    if runtime_map is not None:
+        _require(value["runtime_map_id"] == runtime_map["runtime_map_id"] and value["runtime_map_version"] == runtime_map["version"], "provider runtime overlay targets a different canonical runtime map")
+    if registry is not None:
+        adapters = {item["adapter_id"] for item in registry["adapters"]}
+        _require(entry["adapter_id"] in adapters, "provider runtime overlay references unknown canonical adapter")
+    _no_secret_fields(value)
+
+
 def validate_decision(value: Mapping[str, Any]) -> None:
     required = {"schema", "schema_version", "resolver_version", "registry_id", "registry_version", "policy_id", "policy_version", "mode", "task_id", "role_id", "selected", "fallback_authorized", "explanation", "rejected"}
     _fields(value, required, "routing decision")
@@ -221,6 +366,10 @@ def load_contract(path: Path, kind: str) -> dict[str, Any]:
         "overlay": validate_overlay, "selection": validate_selection,
         "adapter": validate_adapter, "profile": validate_profile, "registry": validate_registry,
         "policy": validate_policy, "readiness": validate_readiness, "decision": validate_decision,
+        "provider-onboarding-spec": validate_provider_onboarding_spec,
+        "provider-discovery-evidence": validate_provider_discovery_evidence,
+        "provider-configuration": validate_provider_configuration,
+        "provider-onboarding-receipt": validate_provider_onboarding_receipt,
     }
     try: validators[kind](value)
     except KeyError: raise ContractError("unknown contract kind") from None

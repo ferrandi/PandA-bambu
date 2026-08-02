@@ -1,0 +1,19 @@
+{
+  "$id": "https://panda-re.github.io/schemas/agentic/provider-profile-overlay.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Local canonical provider profile overlay",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "overlay_id", "provider_id", "registry_id", "registry_version", "configuration_digest", "profile"],
+  "properties": {
+    "schema": {"const": "evolvehls.agentic.provider-profile-overlay"},
+    "schema_version": {"const": "1.0"},
+    "overlay_id": {"$ref": "#/$defs/id"},
+    "provider_id": {"$ref": "#/$defs/id"},
+    "registry_id": {"$ref": "#/$defs/id"},
+    "registry_version": {"type": "string", "minLength": 1},
+    "configuration_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "profile": {"type": "object"}
+  },
+  "$defs": {"id": {"type": "string", "maxLength": 190, "pattern": "^[a-z][a-z0-9.-]*$"}}
+}

@@ -1,0 +1,33 @@
+{
+  "$id": "https://panda-re.github.io/schemas/agentic/provider-configuration.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Non-secret provider configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "provider_id", "endpoint", "authentication", "model", "canonical", "configured_at"],
+  "properties": {
+    "schema": {"const": "evolvehls.agentic.provider-configuration"},
+    "schema_version": {"const": "1.0"},
+    "provider_id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*$"},
+    "endpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["origin", "protocol"],
+      "properties": {"origin": {"type": "string", "minLength": 1}, "protocol": {"enum": ["openai-compatible", "anthropic-compatible"]}}
+    },
+    "authentication": {"type": "object"},
+    "model": {"type": "string", "minLength": 1},
+    "canonical": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile_id", "adapter_id", "runtime_entry_id", "execution_path"],
+      "properties": {
+        "profile_id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*$"},
+        "adapter_id": {"const": "generic-http"},
+        "runtime_entry_id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*$"},
+        "execution_path": {"enum": ["openai-compatible", "anthropic-compatible"]}
+      }
+    },
+    "configured_at": {"type": "string", "format": "date-time"}
+  }
+}

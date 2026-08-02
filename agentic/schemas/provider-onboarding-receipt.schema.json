@@ -1,0 +1,18 @@
+{
+  "$id": "https://panda-re.github.io/schemas/agentic/provider-onboarding-receipt.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Provider onboarding receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "provider_id", "configured_at", "configuration_digest", "profile_overlay_id", "runtime_overlay_id", "action"],
+  "properties": {
+    "schema": {"const": "evolvehls.agentic.provider-onboarding-receipt"},
+    "schema_version": {"const": "1.0"},
+    "provider_id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*$"},
+    "configured_at": {"type": "string", "format": "date-time"},
+    "configuration_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "profile_overlay_id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*$"},
+    "runtime_overlay_id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*$"},
+    "action": {"enum": ["applied", "replaced", "removed"]}
+  }
+}
