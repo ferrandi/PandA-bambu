@@ -219,12 +219,18 @@ def _config_entries(identity: GitIdentity, repository: Path, path: Path) -> list
     if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISREG(metadata.st_mode):
         raise WorktreeError("repository-config-invalid")
     data = _git(identity, repository, ["config", "--file", str(path), "--null", "--list"])
+    if data and not data.endswith(b"\0"):
+        raise WorktreeError("repository-config-output-invalid")
     entries: list[tuple[bytes, bytes]] = []
-    for item in filter(None, data.split(b"\0")):
-        key, separator, value = item.partition(b"\n")
-        if not separator or not key:
+    for item in data[:-1].split(b"\0") if data else ():
+        if not item:
             raise WorktreeError("repository-config-output-invalid")
-        entries.append((key.lower(), value))
+        key, separator, value = item.partition(b"\n")
+        if not key:
+            raise WorktreeError("repository-config-output-invalid")
+        # Git emits a legal valueless setting as ``key\0`` rather than
+        # ``key\n\0``.  Preserve its implicit empty value for policy checks.
+        entries.append((key.lower(), value if separator else b""))
     return entries
 
 
@@ -441,11 +447,7 @@ def create_worktree(repository: Path, execution_id: str, base_commit: str,
         # both removal and registration disappearance; never prune unrelated worktrees.
         if add_attempted:
             try:
-                records = _worktree_records(identity, repository)
-                if os.fsencode(target) in records:
-                    _git(identity, repository, ["worktree", "remove", "--force", str(target)], mutate=True)
-                    if os.fsencode(target) in _worktree_records(identity, repository):
-                        raise WorktreeError("worktree-cleanup-registration-retained")
+                _remove_registered_target(identity, repository, target)
             except WorktreeError as cleanup:
                 raise WorktreeCleanupError(original, cleanup, target) from None
         if execution.exists() and execution.is_dir() and not execution.is_symlink():
@@ -475,6 +477,21 @@ def _worktree_records(
     if path is not None and current is not None:
         records[path] = current
     return records
+
+
+def _remove_registered_target(identity: GitIdentity, repository: Path, target: Path) -> None:
+    """Remove only a managed target, proving its Git registration disappeared."""
+    encoded_target = os.fsencode(target)
+    records = _worktree_records(identity, repository)
+    record = records.get(encoded_target)
+    if record is not None:
+        # Git refuses a single-force removal of a locked worktree.  Unlock only
+        # the exact registered managed target before removing that same target.
+        if b"locked" in record:
+            _git(identity, repository, ["worktree", "unlock", str(target)], mutate=True)
+        _git(identity, repository, ["worktree", "remove", "--force", str(target)], mutate=True)
+    if encoded_target in _worktree_records(identity, repository):
+        raise WorktreeError("worktree-cleanup-registration-retained")
 
 
 def verify_worktree(managed: ManagedWorktree) -> None:

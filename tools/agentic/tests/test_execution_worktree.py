@@ -141,33 +141,96 @@ class WorktreeTests(unittest.TestCase):
             with self.assertRaisesRegex(execution_worktree.WorktreeError, "symbolic-head-failed"):
                 execution_worktree.verify_worktree(managed)
 
-    def test_cleanup_failure_retains_forensics_and_rejects_execution_id_reuse(self):
+    def _dirty_status_after_lock(self, commands: list[list[str]], *, fail_remove: bool = False):
         original = execution_worktree._git
+        locked = False
 
-        def fail_lock_and_remove(identity, repository, args, **kwargs):
+        def controlled_git(identity, repository, args, **kwargs):
+            nonlocal locked
+            commands.append(args)
             if args[:2] == ["worktree", "lock"]:
-                raise execution_worktree.WorktreeError("injected-lock-failure")
-            if args[:3] == ["worktree", "remove", "--force"]:
+                locked = True
+            if (
+                locked
+                and args[0] == "-C"
+                and args[2:] == ["status", "--porcelain=v2", "-z", "--untracked-files=no"]
+            ):
+                return b"1 .M N... 100644 100644 100644 " + b"0" * 40 + b" " + b"0" * 40 + b" tracked\0"
+            if fail_remove and args[:3] == ["worktree", "remove", "--force"]:
                 raise execution_worktree.WorktreeError("injected-remove-failure")
             return original(identity, repository, args, **kwargs)
 
-        with mock.patch.object(execution_worktree, "_git", side_effect=fail_lock_and_remove):
+        return controlled_git
+
+    def test_post_lock_failure_unlocks_removes_and_reuses_execution_id(self):
+        unrelated = Path(self.tmp.name) / "unrelated"
+        subprocess.run(["git", "worktree", "add", "--detach", str(unrelated), self.base],
+                       cwd=self.repo, check=True, stdout=subprocess.DEVNULL)
+        commands: list[list[str]] = []
+        with mock.patch.object(
+            execution_worktree, "_git",
+            side_effect=self._dirty_status_after_lock(commands),
+        ):
+            with self.assertRaisesRegex(execution_worktree.WorktreeError, "initial-checkout-not-clean"):
+                execution_worktree.create_worktree(self.repo, "reusable", self.base)
+        target = self.repo / "agentic-state" / "executions" / "reusable" / "worktree"
+        records = execution_worktree._worktree_records(execution_worktree.resolve_git(), self.repo)
+        self.assertFalse(target.exists())
+        self.assertNotIn(os.fsencode(target), records)
+        self.assertFalse(target.parent.exists())
+        self.assertIn(os.fsencode(unrelated), records)
+        self.assertIn(["worktree", "unlock", str(target)], commands)
+        self.assertIn(["worktree", "remove", "--force", str(target)], commands)
+        self.assertFalse(any(args[:2] == ["worktree", "prune"] for args in commands))
+        managed = execution_worktree.create_worktree(self.repo, "reusable", self.base)
+        self.assertTrue(managed.path.exists())
+
+    def test_cleanup_failure_retains_post_lock_forensics_and_rejects_execution_id_reuse(self):
+        commands: list[list[str]] = []
+        with mock.patch.object(
+            execution_worktree, "_git",
+            side_effect=self._dirty_status_after_lock(commands, fail_remove=True),
+        ):
             with self.assertRaises(execution_worktree.WorktreeCleanupError) as caught:
                 execution_worktree.create_worktree(self.repo, "retained", self.base)
-        message = str(caught.exception)
         target = self.repo / "agentic-state" / "executions" / "retained" / "worktree"
-        self.assertIn("injected-lock-failure", message)
-        self.assertIn("injected-remove-failure", message)
-        self.assertIn("retained-worktree", message)
+        error = caught.exception
+        self.assertIn("initial-checkout-not-clean", str(error.original))
+        self.assertIn("injected-remove-failure", str(error.cleanup))
+        self.assertIn("retained-worktree:" + str(target), str(error))
+        self.assertIn("operator-action:", str(error))
         self.assertTrue(target.exists())
         self.assertIn(
             os.fsencode(target),
             execution_worktree._worktree_records(execution_worktree.resolve_git(), self.repo),
         )
+        self.assertIn(["worktree", "unlock", str(target)], commands)
         with self.assertRaisesRegex(execution_worktree.WorktreeError, "execution-id-already-used"):
             execution_worktree.create_worktree(self.repo, "retained", self.base)
         subprocess.run(["git", "worktree", "remove", "--force", str(target)],
                        cwd=self.repo, check=True)
+
+    def test_valueless_benign_configuration_is_accepted(self):
+        config = self.repo / ".git" / "config"
+        with config.open("a") as handle:
+            handle.write("\n[foo]\n\tbar\n")
+        managed = execution_worktree.create_worktree(self.repo, "valueless-benign", self.base)
+        self.assertTrue(managed.path.exists())
+
+    def test_valueless_unsafe_configuration_is_rejected(self):
+        identity = execution_worktree.resolve_git()
+        config = self.repo / ".git" / "config"
+        for key in (b"core.fsmonitor", b"include.path", b"includeif.gitdir:*/repo/.path"):
+            with self.subTest(key=key):
+                with mock.patch.object(
+                    execution_worktree, "_repository_config_paths", return_value=(config,)
+                ), mock.patch.object(
+                    execution_worktree, "_config_entries", return_value=[(key, b"")]
+                ):
+                    with self.assertRaisesRegex(
+                        execution_worktree.WorktreeError, "unsafe-repository-config"
+                    ):
+                        execution_worktree._reject_unsafe_config(identity, self.repo)
 
     def test_symlinked_state_root_rejected(self):
         outside = Path(self.tmp.name) / "outside"
@@ -195,6 +258,30 @@ class LocalStateDirectoryTests(unittest.TestCase):
             self.assertEqual(os.stat(sibling).st_mode & 0o777, 0o755)
             self.assertEqual(os.stat(file).st_mode & 0o777, 0o644)
             self.assertEqual(file.read_text(), "unchanged")
+
+
+class ConfigParserTests(unittest.TestCase):
+    def test_valueless_record_has_an_implicit_empty_value(self):
+        identity = execution_worktree.resolve_git()
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "config"
+            path.write_text("")
+            with mock.patch.object(execution_worktree, "_git", return_value=b"foo.bar\0"):
+                self.assertEqual(
+                    execution_worktree._config_entries(identity, Path(temporary), path),
+                    [(b"foo.bar", b"")],
+                )
+
+    def test_malformed_config_records_fail_closed(self):
+        identity = execution_worktree.resolve_git()
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "config"
+            path.write_text("")
+            for output in (b"\0", b"\nvalue\0", b"foo.bar"):
+                with self.subTest(output=output):
+                    with mock.patch.object(execution_worktree, "_git", return_value=output):
+                        with self.assertRaisesRegex(execution_worktree.WorktreeError, "repository-config-output-invalid"):
+                            execution_worktree._config_entries(identity, Path(temporary), path)
 
 
 class CallerStatusParserTests(unittest.TestCase):
