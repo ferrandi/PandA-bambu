@@ -196,7 +196,15 @@ def _symbolic_head(identity: GitIdentity, repository: Path, *, cwd: Path | None 
 
 def _top_level(identity: GitIdentity, repository: Path) -> Path:
     try:
-        top = Path(_git(identity, repository, ["rev-parse", "--show-toplevel"]).rstrip(b"\n").decode()).resolve()
+        top = Path(
+            _git(identity, repository, ["rev-parse", "--show-toplevel"])
+            .rstrip(b"\n")
+            .decode()
+        ).resolve()
+    except WorktreeError as error:
+        if str(error) == "git-command-failed":
+            raise WorktreeError("unsafe-repository-config") from None
+        raise
     except (UnicodeError, ValueError):
         raise WorktreeError("repository-invalid") from None
     if top != repository.resolve():
@@ -204,7 +212,9 @@ def _top_level(identity: GitIdentity, repository: Path) -> Path:
     return top
 
 
-def _config_entries(identity: GitIdentity, repository: Path, path: Path) -> list[tuple[bytes, bytes]]:
+def _config_entries(
+    identity: GitIdentity, repository: Path, path: Path
+) -> list[tuple[bytes, bytes | None]]:
     """Read one repository config file without following include directives.
 
     Git parses config syntax here but no checkout, filter, hook, or configured
@@ -218,10 +228,17 @@ def _config_entries(identity: GitIdentity, repository: Path, path: Path) -> list
         raise WorktreeError("repository-config-unreadable") from None
     if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISREG(metadata.st_mode):
         raise WorktreeError("repository-config-invalid")
-    data = _git(identity, repository, ["config", "--file", str(path), "--null", "--list"])
+    try:
+        data = _git(
+            identity, repository, ["config", "--file", str(path), "--null", "--list"]
+        )
+    except WorktreeError as error:
+        if str(error) == "git-command-failed":
+            raise WorktreeError("unsafe-repository-config") from None
+        raise
     if data and not data.endswith(b"\0"):
         raise WorktreeError("repository-config-output-invalid")
-    entries: list[tuple[bytes, bytes]] = []
+    entries: list[tuple[bytes, bytes | None]] = []
     for item in data[:-1].split(b"\0") if data else ():
         if not item:
             raise WorktreeError("repository-config-output-invalid")
@@ -229,17 +246,35 @@ def _config_entries(identity: GitIdentity, repository: Path, path: Path) -> list
         if not key:
             raise WorktreeError("repository-config-output-invalid")
         # Git emits a legal valueless setting as ``key\0`` rather than
-        # ``key\n\0``.  Preserve its implicit empty value for policy checks.
-        entries.append((key.lower(), value if separator else b""))
+        # ``key\n\0``.  Preserve that distinction: None is implicit true,
+        # while b"" is an explicit empty value.
+        entries.append((key.lower(), value if separator else None))
     return entries
+
+
+def _config_boolean(value: bytes | None) -> bool:
+    """Interpret one preserved Git configuration value as a boolean."""
+    if value is None:
+        return True
+    normalized = value.strip().lower()
+    if normalized in {b"true", b"1", b"yes", b"on"}:
+        return True
+    if normalized in {b"", b"false", b"0", b"no", b"off"}:
+        return False
+    raise WorktreeError("unsafe-repository-config")
 
 
 def _repository_config_paths(
     identity: GitIdentity, repository: Path, *, cwd: Path | None = None
 ) -> tuple[Path, ...]:
-    common = _git(
-        identity, repository, ["rev-parse", "--git-common-dir"], cwd=cwd
-    ).rstrip(b"\n")
+    try:
+        common = _git(
+            identity, repository, ["rev-parse", "--git-common-dir"], cwd=cwd
+        ).rstrip(b"\n")
+    except WorktreeError as error:
+        if str(error) == "git-command-failed":
+            raise WorktreeError("unsafe-repository-config") from None
+        raise
     try:
         common_path = Path(os.fsdecode(common))
     except UnicodeError:
@@ -248,10 +283,17 @@ def _repository_config_paths(
         common_path = repository / common_path
     common_config = common_path.resolve() / "config"
     common_entries = _config_entries(identity, repository, common_config)
-    enabled = any(
-        key == b"extensions.worktreeconfig"
-        and value.strip().lower() in {b"true", b"1", b"yes", b"on"}
+    worktree_config_values = [
+        value
         for key, value in common_entries
+        if key == b"extensions.worktreeconfig"
+    ]
+    if len(worktree_config_values) > 1:
+        raise WorktreeError("unsafe-repository-config")
+    enabled = (
+        _config_boolean(worktree_config_values[0])
+        if worktree_config_values
+        else False
     )
     if not enabled:
         return (common_config,)
@@ -283,11 +325,9 @@ def _reject_unsafe_config(
                 key.startswith(b"filter.")
                 and key.rsplit(b".", 1)[-1] in {b"clean", b"smudge", b"process"}
             )
-            if filter_command and value.strip():
+            if filter_command and (value is None or value.strip()):
                 raise WorktreeError("unsafe-repository-config")
-            if key == b"core.fsmonitor" and value.strip().lower() not in {
-                b"false", b"0", b"no", b"off",
-            }:
+            if key == b"core.fsmonitor" and _config_boolean(value):
                 raise WorktreeError("unsafe-repository-config")
 
 

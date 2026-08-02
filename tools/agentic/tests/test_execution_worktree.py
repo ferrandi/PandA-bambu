@@ -112,17 +112,41 @@ class WorktreeTests(unittest.TestCase):
     def test_include_if_path_with_filter_is_rejected_before_execution(self):
         self._assert_include_rejected_before_filter("includeIf.gitdir:*/repo/.path")
 
-    def test_worktree_specific_unsafe_configuration_rejected(self):
-        subprocess.run(["git", "config", "extensions.worktreeConfig", "true"],
-                       cwd=self.repo, check=True)
-        supported = subprocess.run(
-            ["git", "config", "--worktree", "filter.attack.smudge", "program"],
-            cwd=self.repo, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        ).returncode == 0
-        if not supported:
-            self.skipTest("installed Git does not support worktree config")
-        with self.assertRaisesRegex(execution_worktree.WorktreeError, "unsafe-repository-config"):
+    def test_valueless_worktree_configuration_rejected_before_filter_execution(self):
+        marker = Path(self.tmp.name) / "filter-executed"
+        (self.repo / ".gitattributes").write_text("tracked filter=attack\n")
+        subprocess.run(["git", "add", ".gitattributes"], cwd=self.repo, check=True)
+        subprocess.run(
+            ["git", "commit", "-m", "attributes"],
+            cwd=self.repo,
+            check=True,
+            stdout=subprocess.DEVNULL,
+        )
+        self.base = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=self.repo, text=True
+        ).strip()
+        common_config = self.repo / ".git" / "config"
+        with common_config.open("a") as handle:
+            handle.write("\n[extensions]\n\tworktreeConfig\n")
+        worktree_config = self.repo / ".git" / "config.worktree"
+        worktree_config.write_text(
+            '[filter "attack"]\n'
+            f"\tsmudge = sh -c 'touch {marker}'\n"
+        )
+
+        with self.assertRaisesRegex(
+            execution_worktree.WorktreeError, "unsafe-repository-config"
+        ):
             execution_worktree.create_worktree(self.repo, "worktree-config", self.base)
+
+        target = self.repo / "agentic-state" / "executions" / "worktree-config" / "worktree"
+        records = execution_worktree._worktree_records(
+            execution_worktree.resolve_git(), self.repo
+        )
+        self.assertFalse(marker.exists(), "untrusted smudge filter must never execute")
+        self.assertFalse(target.exists())
+        self.assertFalse(target.parent.exists())
+        self.assertNotIn(os.fsencode(target), records)
 
     def test_symbolic_ref_failure_is_not_detached_in_snapshot_or_verification(self):
         identity = execution_worktree.resolve_git()
@@ -210,6 +234,36 @@ class WorktreeTests(unittest.TestCase):
         subprocess.run(["git", "worktree", "remove", "--force", str(target)],
                        cwd=self.repo, check=True)
 
+    def test_worktree_config_boolean_matrix_uses_real_config(self):
+        identity = execution_worktree.resolve_git()
+        config = self.repo / ".git" / "config"
+        original = config.read_bytes()
+        worktree_config = self.repo / ".git" / "config.worktree"
+        worktree_config.write_text("[foo]\n\tbar = value\n")
+        expected_enabled = (None, "true", "yes", "on", "1", "TrUe")
+        for index, value in enumerate(expected_enabled):
+            with self.subTest(value=value):
+                suffix = "\tworktreeConfig\n" if value is None else f"\tworktreeConfig = {value}\n"
+                config.write_bytes(original + b"\n[extensions]\n" + suffix.encode())
+                self.assertEqual(
+                    execution_worktree._repository_config_paths(identity, self.repo),
+                    (config, worktree_config),
+                )
+        for value in ("", "false", "no", "off", "0", "FaLsE"):
+            with self.subTest(value=value):
+                config.write_bytes(
+                    original + f"\n[extensions]\n\tworktreeConfig = {value}\n".encode()
+                )
+                self.assertEqual(
+                    execution_worktree._repository_config_paths(identity, self.repo),
+                    (config,),
+                )
+        config.write_bytes(original + b"\n[extensions]\n\tworktreeConfig = maybe\n")
+        with self.assertRaisesRegex(
+            execution_worktree.WorktreeError, "unsafe-repository-config"
+        ):
+            execution_worktree._repository_config_paths(identity, self.repo)
+
     def test_valueless_benign_configuration_is_accepted(self):
         config = self.repo / ".git" / "config"
         with config.open("a") as handle:
@@ -218,19 +272,27 @@ class WorktreeTests(unittest.TestCase):
         self.assertTrue(managed.path.exists())
 
     def test_valueless_unsafe_configuration_is_rejected(self):
-        identity = execution_worktree.resolve_git()
         config = self.repo / ".git" / "config"
-        for key in (b"core.fsmonitor", b"include.path", b"includeif.gitdir:*/repo/.path"):
-            with self.subTest(key=key):
-                with mock.patch.object(
-                    execution_worktree, "_repository_config_paths", return_value=(config,)
-                ), mock.patch.object(
-                    execution_worktree, "_config_entries", return_value=[(key, b"")]
+        original = config.read_bytes()
+        for index, entry in enumerate(
+            (
+                "[core]\n\tfsmonitor\n",
+                "[include]\n\tpath\n",
+                '[includeIf "gitdir:*/repo/"]\n\tpath\n',
+                '[filter "attack"]\n\tclean\n',
+                '[filter "attack"]\n\tsmudge\n',
+                '[filter "attack"]\n\tprocess\n',
+            )
+        ):
+            with self.subTest(entry=entry):
+                config.write_bytes(original + b"\n" + entry.encode())
+                with self.assertRaisesRegex(
+                    execution_worktree.WorktreeError, "unsafe-repository-config"
                 ):
-                    with self.assertRaisesRegex(
-                        execution_worktree.WorktreeError, "unsafe-repository-config"
-                    ):
-                        execution_worktree._reject_unsafe_config(identity, self.repo)
+                    execution_worktree.create_worktree(
+                        self.repo, f"valueless-unsafe-{index}", self.base
+                    )
+                config.write_bytes(original)
 
     def test_symlinked_state_root_rejected(self):
         outside = Path(self.tmp.name) / "outside"
@@ -261,15 +323,29 @@ class LocalStateDirectoryTests(unittest.TestCase):
 
 
 class ConfigParserTests(unittest.TestCase):
-    def test_valueless_record_has_an_implicit_empty_value(self):
+    def test_config_boolean_matches_git_forms_and_fails_closed(self):
+        for value in (None, b"true", b"yes", b"on", b"1", b"TrUe"):
+            with self.subTest(value=value):
+                self.assertTrue(execution_worktree._config_boolean(value))
+        for value in (b"", b"false", b"no", b"off", b"0", b"FaLsE"):
+            with self.subTest(value=value):
+                self.assertFalse(execution_worktree._config_boolean(value))
+        with self.assertRaisesRegex(
+            execution_worktree.WorktreeError, "unsafe-repository-config"
+        ):
+            execution_worktree._config_boolean(b"maybe")
+
+    def test_valueless_record_is_distinct_from_explicit_empty_value(self):
         identity = execution_worktree.resolve_git()
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "config"
             path.write_text("")
-            with mock.patch.object(execution_worktree, "_git", return_value=b"foo.bar\0"):
+            with mock.patch.object(
+                execution_worktree, "_git", return_value=b"foo.bar\0foo.empty\n\0"
+            ):
                 self.assertEqual(
                     execution_worktree._config_entries(identity, Path(temporary), path),
-                    [(b"foo.bar", b"")],
+                    [(b"foo.bar", None), (b"foo.empty", b"")],
                 )
 
     def test_malformed_config_records_fail_closed(self):
