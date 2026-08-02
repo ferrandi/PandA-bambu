@@ -57,7 +57,7 @@
           }
         },
         "truncated": {"type": "boolean"},
-        "failure": {"type": ["string", "null"], "enum": [null, "authentication", "endpoint-policy", "network", "timeout", "redirect", "response-too-large", "malformed-response", "unsupported"]},
+        "failure": {"type": ["string", "null"], "enum": [null, "authentication", "endpoint-policy", "network", "timeout", "redirect", "redirect-limit", "exchange-limit", "response-too-large", "malformed-response", "unsupported"]},
         "diagnostics": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
       }
     }

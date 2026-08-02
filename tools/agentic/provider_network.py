@@ -13,8 +13,9 @@ from urllib.parse import urljoin, urlsplit, urlunsplit
 
 
 MAX_RESPONSE_BYTES = 512 * 1024
-MAX_EXCHANGES = 3
+# A request may perform its initial exchange and at most one accepted redirect.
 MAX_REDIRECTS = 1
+MAX_EXCHANGES = 1 + MAX_REDIRECTS
 MAX_ADDRESSES = 16
 CONNECT_TIMEOUT_SECONDS = 3
 READ_TIMEOUT_SECONDS = 5
@@ -32,6 +33,19 @@ class NetworkTransportError(ValueError):
     def __init__(self, classification: str):
         super().__init__(classification)
         self.classification = classification
+
+
+@dataclass
+class ExchangeBudget:
+    """Explicit request budget shared by all exchanges in one discovery operation."""
+
+    maximum: int
+    exchanges: int = 0
+
+    def consume(self) -> None:
+        if self.exchanges >= self.maximum:
+            raise NetworkTransportError("exchange-limit")
+        self.exchanges += 1
 
 
 @dataclass(frozen=True)
@@ -88,8 +102,15 @@ def normalize_endpoint(value: str) -> str:
     return urlunsplit((parsed.scheme, authority, parsed.path.rstrip("/"), "", ""))
 
 
-def _allowed_address(address: str, allow_private: bool) -> bool:
+def _address_value(address: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address:
     value = ipaddress.ip_address(address)
+    if isinstance(value, ipaddress.IPv6Address) and value.ipv4_mapped is not None:
+        return value.ipv4_mapped
+    return value
+
+
+def _allowed_address(address: str, allow_private: bool) -> bool:
+    value = _address_value(address)
     if value.is_loopback:
         return True
     if value.is_unspecified or value.is_multicast or value.is_link_local or value.is_reserved:
@@ -112,7 +133,7 @@ def validated_addresses(endpoint: str, resolver: Resolver, *, allow_private: boo
         raise NetworkPolicyError("resolver returned an invalid address") from error
     if not all(permitted):
         raise NetworkPolicyError("endpoint resolves to a prohibited address")
-    if parsed.scheme == "http" and not all(ipaddress.ip_address(address).is_loopback for address in addresses):
+    if parsed.scheme == "http" and not all(_address_value(address).is_loopback for address in addresses):
         raise NetworkPolicyError("remote HTTP endpoints are prohibited")
     return normalized, addresses
 
@@ -171,6 +192,17 @@ def _pinned_response(
     return DiscoveryResponse(response.status, headers, body, headers.get("location"))
 
 
+def _exchange(
+    request: DiscoveryRequest,
+    address: str,
+    budget: ExchangeBudget,
+    *,
+    context: ssl.SSLContext | None = None,
+) -> DiscoveryResponse:
+    budget.consume()
+    return _pinned_response(request, address, context=context)
+
+
 def discovery_get(
     endpoint: str,
     path: str,
@@ -179,27 +211,43 @@ def discovery_get(
     resolver: Resolver = system_resolver,
     allow_private: bool = False,
     context: ssl.SSLContext | None = None,
+    budget: ExchangeBudget | None = None,
 ) -> DiscoveryResponse:
-    """Perform a direct-socket, DNS-pinned, policy-checked GET request."""
+    """Perform one bounded direct-socket, DNS-pinned discovery GET operation.
+
+    The request consumes an exchange before every emitted HTTP request. At most
+    ``MAX_REDIRECTS`` same-origin redirects and ``MAX_EXCHANGES`` exchanges are
+    permitted; a supplied budget can additionally bound an entire higher-level
+    discovery operation spanning multiple candidate paths.
+    """
     if not path.startswith("/") or path.startswith("//") or "://" in path:
         raise NetworkPolicyError("invalid discovery request path")
     normalized, addresses = validated_addresses(endpoint, resolver, allow_private=allow_private)
     endpoint_parts = urlsplit(normalized)
-    request_origin = urlunsplit((endpoint_parts.scheme, endpoint_parts.netloc, "", "", ""))
-    request = DiscoveryRequest(request_origin + path, headers)
-    response = _pinned_response(request, addresses[0], context=context)
-    if response.status not in {301, 302, 307, 308}:
-        return response
-    if response.location is None:
-        raise NetworkTransportError("redirect")
-    target = urljoin(request.url, response.location)
-    normalized_target = normalize_endpoint(target)
-    target_parts = urlsplit(normalized_target)
-    target_origin = urlunsplit((target_parts.scheme, target_parts.netloc, "", "", ""))
-    if urlsplit(normalized).scheme == "https" and urlsplit(target_origin).scheme != "https":
-        raise NetworkPolicyError("HTTPS redirect downgrade is prohibited")
-    if not same_origin(normalized, target_origin):
-        raise NetworkPolicyError("cross-origin discovery redirect is prohibited")
-    redirected_path = target_parts.path or "/"
-    _, redirected_addresses = validated_addresses(target_origin, resolver, allow_private=allow_private)
-    return _pinned_response(DiscoveryRequest(target_origin + redirected_path, headers), redirected_addresses[0], context=context)
+    origin = urlunsplit((endpoint_parts.scheme, endpoint_parts.netloc, "", "", ""))
+    request = DiscoveryRequest(origin + path, headers)
+    address = addresses[0]
+    redirects = 0
+    request_budget = budget or ExchangeBudget(MAX_EXCHANGES)
+
+    while True:
+        response = _exchange(request, address, request_budget, context=context)
+        if response.status not in {301, 302, 307, 308}:
+            return response
+        if redirects >= MAX_REDIRECTS:
+            raise NetworkTransportError("redirect-limit")
+        if response.location is None:
+            raise NetworkTransportError("redirect")
+        target = urljoin(request.url, response.location)
+        normalized_target = normalize_endpoint(target)
+        target_parts = urlsplit(normalized_target)
+        target_origin = urlunsplit((target_parts.scheme, target_parts.netloc, "", "", ""))
+        if urlsplit(normalized).scheme == "https" and urlsplit(target_origin).scheme != "https":
+            raise NetworkPolicyError("HTTPS redirect downgrade is prohibited")
+        if not same_origin(normalized, target_origin):
+            raise NetworkPolicyError("cross-origin discovery redirect is prohibited")
+        redirected_path = target_parts.path or "/"
+        _, redirected_addresses = validated_addresses(target_origin, resolver, allow_private=allow_private)
+        redirects += 1
+        request = DiscoveryRequest(target_origin + redirected_path, headers)
+        address = redirected_addresses[0]

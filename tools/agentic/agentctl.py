@@ -287,6 +287,9 @@ def main(argv: list[str] | None = None) -> int:
     except provider_onboarding.ProviderOnboardingError as error:
         print(f"agentctl: {error}", file=sys.stderr)
         return EXIT_CODES[error.category]
+    except RecursionError:
+        print("agentctl: malformed response", file=sys.stderr)
+        return EXIT_CODES["validation"]
     except (catalog.CatalogError, contracts.ContractError, provider.ProfileError, routing.RoutingError, portable_adapters.PortableAdapterError, setup.SetupError, ValueError) as error:
         print(f"agentctl: {error}", file=sys.stderr)
         return 3

@@ -362,7 +362,7 @@ def validate_provider_discovery_evidence(value: Mapping[str, Any]) -> None:
             _require(item["confidence"] in CONFIDENCES, "invalid discovered model confidence")
             _require(item["context_window"] is None or isinstance(item["context_window"], int) and not isinstance(item["context_window"], bool) and item["context_window"] > 0, "invalid discovered model context window")
         _require(isinstance(value["truncated"], bool), "invalid discovery truncation")
-        _require(value["failure"] is None or isinstance(value["failure"], str) and value["failure"] in {"authentication", "endpoint-policy", "network", "timeout", "redirect", "response-too-large", "malformed-response", "unsupported"}, "invalid discovery failure")
+        _require(value["failure"] is None or isinstance(value["failure"], str) and value["failure"] in {"authentication", "endpoint-policy", "network", "timeout", "redirect", "redirect-limit", "exchange-limit", "response-too-large", "malformed-response", "unsupported"}, "invalid discovery failure")
         _list(value["diagnostics"], "diagnostics")
     else:
         raise ContractError("unsupported provider discovery evidence schema")

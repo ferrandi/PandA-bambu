@@ -13,6 +13,8 @@ import provider_onboarding
 
 MAX_MODELS = 256
 MAX_JSON_DEPTH = 16
+# The operation budget covers all candidate paths and their redirect exchanges.
+MAX_DISCOVERY_EXCHANGES = provider_network.MAX_EXCHANGES
 
 
 class DiscoveryError(ValueError):
@@ -31,10 +33,40 @@ def _depth(value: object, level: int = 0) -> int:
     return level
 
 
+def _scan_nesting(text: str) -> None:
+    """Iteratively reject malformed or excessively nested JSON before decoding."""
+    depth = 0
+    in_string = False
+    escaped = False
+    for character in text:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == '"':
+                in_string = False
+            continue
+        if character == '"':
+            in_string = True
+        elif character in "{[":
+            depth += 1
+            if depth > MAX_JSON_DEPTH:
+                raise DiscoveryError("malformed-response")
+        elif character in "}]":
+            depth -= 1
+            if depth < 0:
+                raise DiscoveryError("malformed-response")
+    if in_string or escaped or depth != 0:
+        raise DiscoveryError("malformed-response")
+
+
 def _document(body: bytes) -> object:
     try:
-        value = json.loads(body.decode("utf-8"), parse_constant=lambda _: (_ for _ in ()).throw(ValueError()))
-    except (UnicodeDecodeError, ValueError, json.JSONDecodeError) as error:
+        text = body.decode("utf-8")
+        _scan_nesting(text)
+        value = json.loads(text, parse_constant=lambda _: (_ for _ in ()).throw(ValueError()))
+    except (RecursionError, UnicodeDecodeError, ValueError, json.JSONDecodeError) as error:
         raise DiscoveryError("malformed-response") from error
     _depth(value)
     return value
@@ -87,7 +119,8 @@ def discover(
     """Discover only OpenAI-compatible model-list evidence.
 
     The environment value is read only to construct a transient Authorization
-    header and never enters the returned document.
+    header and never enters the returned document. One operation-wide exchange
+    budget spans all candidate paths and every transport redirect exchange.
     """
     now = (clock or (lambda: datetime.now(timezone.utc)))()
     if now.tzinfo is None or now.utcoffset() is None:
@@ -101,17 +134,28 @@ def discover(
         headers["Authorization"] = "Bearer " + token
         authentication_observation = "accepted"
     paths = candidate_paths(endpoint)
+    budget = provider_network.ExchangeBudget(MAX_DISCOVERY_EXCHANGES)
     last_failure = "unsupported"
     for path in paths:
         try:
-            response = fetch(path, headers) if fetch is not None else provider_network.discovery_get(
-                endpoint, path, headers=headers, allow_private=allow_private
-            )
+            if fetch is not None:
+                budget.consume()
+                response = fetch(path, headers)
+            else:
+                response = provider_network.discovery_get(
+                    endpoint,
+                    path,
+                    headers=headers,
+                    allow_private=allow_private,
+                    budget=budget,
+                )
         except provider_network.NetworkPolicyError:
             last_failure = "endpoint-policy"
             break
         except provider_network.NetworkTransportError as error:
             last_failure = error.classification
+            if error.classification == "exchange-limit":
+                break
             continue
         if response.status in {401, 403}:
             return _evidence(provider_id, endpoint, now, "failed", path, "rejected", [], False, "authentication")
