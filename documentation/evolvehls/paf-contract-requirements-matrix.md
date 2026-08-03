@@ -524,3 +524,11 @@ The three plans agree on ownership, binding-scoped discovery, budget boundaries,
 ## Completeness ledger
 
 The matrix declares exactly 69 IDs: CODE 001–014, ACCESS 001–014, BUDGET 001–011, DSE 001–018, and PROV 001–012. Each occurs exactly once in each of its family’s Tables A, B, C, and D. The scenarios collectively map every required supplied scenario, and every Table D row names both V and X fixture requirements, an invariant, and an implementation milestone.
+
+## Final post-PR #26 reconciliation addendum
+
+**Status update:** the 69 `PAF-UC-*` identifiers above remain the accepted PAF-05A3a.1 historical scenario corpus; they are neither renumbered nor total closure completeness. Atomic requirements, fixture plans, tests, milestones, and honest status are authoritative in [paf-requirements-traceability.md](paf-requirements-traceability.md). A schema alone never establishes `implemented-and-tested` status.
+
+Legacy `Task` is compatibility terminology; v2 distinguishes Objective, Requirement, Work Proposal and authorized Work Item. Routing/Adaptation terminology is decomposed into Execution Route, Transition Decision, Workflow Adaptation, Work Graph Mutation, Policy Decision and Human Decision. A Work Graph Snapshot is derived; only accepted mutations transition the graph. New ownership includes Charter/grants, evidence manifests, planning, Step/Operation descriptors, route/Cycle Policy, policy/configuration/storage/scheduler, security/reproducibility/federation, evolution, generic DSE and the SODA-EVOLVE extension.
+
+Cross-contract invariants are authority non-invention, planner-proposes-only, mandatory package finalization, retained completed evidence, route-axis independence, honest unknown identity/capability, non-authoritative stores/projections, ordinary governed evolution, and Toolchain Epoch partitioning. Generic PAF owns generic Study/Candidate/Experiment/Measurement/Fidelity/comparability only; Toolchain Epoch and hardware semantic equivalence belong to SODA-EVOLVE. Final allocations are PAF-05A3a.2a–2f, .3a–.3f, .4, .5a–.5e, .6 and .7, followed by PAF-05A3b through PAF-13—not historical PR numbering. The atomic traceability document contains the deterministic inclusive-range expansion that maps every retained legacy ID to its applicable `PAF-REQ-*` rows, fixtures, invariants, tests, milestones, and controlled status.
