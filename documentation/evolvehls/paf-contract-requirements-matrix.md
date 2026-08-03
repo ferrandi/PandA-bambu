@@ -33,9 +33,15 @@ Use-case IDs have the permanent form `PAF-UC-<FAMILY>-<NNN>`, where FAMILY is `C
 | Execution Receipt | What actually executed, consumed, changed, emitted, retained, or cleaned up |
 | Artifact | Immutable content/representation identity and governance metadata |
 | Provenance Event | Append-only transition or lineage event |
+| Interaction Trace | Exact messages, tool interactions, approvals, and compaction/context history |
+| Feedback Record | Human, review, CI, regression, and downstream feedback |
+| Evaluation Record | Normalized evaluation outcomes and quality signals |
 | Workspace Manifest | Repository topology, exact revisions, access, dependency edges, and workspace references |
 | Change Set | Coordinated changes and publication intent/outcomes across repositories |
 | Runtime Checkpoint | Portable resumable controller state |
+| Access Binding | Binding, environment, account, project, funding, data-boundary identity and restrictions |
+| Budget Policy | Thresholds, reserves, renewal/approval rules, and permitted exhaustion responses |
+| Routing/Adaptation Decision | Selected route or adaptation, alternatives, rationale, evidence, and cited authority |
 | Exploration contracts | Scientific search definition, immutable candidates, experiments, measurements, campaign state, recommendation |
 | Dataset/Learning/Policy contracts | Governed evidence selection, offline learning, evaluation, promotion, release, and rollback |
 
@@ -45,7 +51,7 @@ Authority is not duplicated: a Task can request but not authorize budget; a Work
 
 The explicit v1 compatibility fixtures are `task.schema.json`, `result.schema.json`, `execution-request.schema.json`, `fixture-handoff.schema.json`, and `execution-receipt.schema.json`. Task v1 combines intent with one role and weakly typed budgets; Result v1 uses path/digest pairs rather than general artifacts and provenance; the Execution Request, Handoff, and Receipt are tied to the fixture executor, fixed operation, and fixture-local boundary.
 
-The remaining current foundation is active, not obsolete: provider, catalog, selection, role, profile, readiness, discovery, onboarding, routing, adapter, and execution-plan schemas. The audit found **25** schema files (rather than the earlier planning-audit count of 24) and 12 tracked fixtures. Some current routing/catalog contracts use client-specific enums or identities and require later generalization.
+The remaining current foundation is active, not obsolete: provider, catalog, selection, role, profile, readiness, discovery, onboarding, routing, adapter, and execution-plan schemas. The inspected repository contains **25** schema files and 12 tracked fixtures. Some current routing/catalog contracts use client-specific enums or identities and require later generalization.
 
 Reusable validator patterns are exact-field validation, unsupported-version rejection, duplicate/reference checks, explicit routing/funding transitions, content digests and immutable execution bindings, and negative/adversarial tests. Gaps are a unified registry; centrally specified canonicalization; complete cross-contract digest resolution; authorization-monotonicity, budget, provenance-graph, DSE-comparability, and dataset-governance validators; and a matrix-driven conformance corpus.
 
@@ -64,13 +70,13 @@ The four tables in each family use the same ID. Tables A–D respectively provid
 | PAF-UC-CODE-004 | exact-head independent review | review exact change independently | controller, reviewer | Change Set, Review Result, Policy Decision | writer/controller | reviewer |
 | PAF-UC-CODE-005 | blocked review to remediation | correct structured findings | reviewer, planner, writer | Review Result, Plan, Workflow | reviewer/controller | remediation team |
 | PAF-UC-CODE-006 | bounded correction cycles | stop repeated correction safely | controller, reviewer, writer | Workflow, Policy Decision, Runtime Checkpoint | controller | team |
-| PAF-UC-CODE-007 | human-only merge | publish only with human approval | human, controller | Change Set, Policy Decision, Receipt | controller/human | publication boundary |
+| PAF-UC-CODE-007 | human-only merge | publish only with human approval | human, controller | Change Set, Policy Decision, Execution Receipt | controller/human | publication boundary |
 | PAF-UC-CODE-008 | cross-repository SODA-OPT/Bambu change | coordinate two repositories | controller, writers, reviewer | Workspace Manifest, Change Set, Workflow | controller | repositories/reviewer |
 | PAF-UC-CODE-009 | denied child spawn | prevent unauthorized delegation | parent, controller/policy | Spawn Request, Policy Decision, Workflow | parent | controller |
-| PAF-UC-CODE-010 | cancellation and cleanup | stop safely and preserve evidence | controller, executor | Workflow, Execution Request, Receipt | controller/executor | audit/resumer |
+| PAF-UC-CODE-010 | cancellation and cleanup | stop safely and preserve evidence | controller, executor | Workflow, Execution Request, Execution Receipt | controller/executor | audit/resumer |
 | PAF-UC-CODE-011 | controller restart and resume | continue deterministic work | controller, resumer | Runtime Checkpoint, Workflow | controller | resumer |
 | PAF-UC-CODE-012 | malformed/ambiguous review verdict | fail closed rather than approve | reviewer, controller | Review Result, Workflow | reviewer | controller |
-| PAF-UC-CODE-013 | CI/build/test failure | preserve failure and remediate | executor, reviewer, controller | Result, Receipt, Workflow | executor | controller/reviewer |
+| PAF-UC-CODE-013 | CI/build/test failure | preserve failure and remediate | executor, reviewer, controller | Result, Execution Receipt, Workflow | executor | controller/reviewer |
 | PAF-UC-CODE-014 | downstream regression feedback | append downstream evidence | downstream consumer, controller | Feedback Record, Result, Provenance Event | downstream | controller/audit |
 
 #### Table B — Identity, data, authority, and budget
@@ -112,7 +118,7 @@ The four tables in each family use the same ID. Tables A–D respectively provid
 #### Table D — Conformance and delivery
 | Use-case ID | Required valid fixture | Required invalid/adversarial fixture | Required semantic invariant | Intended milestone |
 |---|---|---|---|---|
-| PAF-UC-CODE-001 | V: plan/handoff | X: plan used as request | visibility closure | PR4/6 |
+| PAF-UC-CODE-001 | V: plan/handoff | X: plan used as request | visibility closure | PR1/3/4/6 |
 | PAF-UC-CODE-002 | V: two read-only children | X: child write attempt | authorization monotonicity | PR4 |
 | PAF-UC-CODE-003 | V: isolated writers | X: shared worktree | workspace isolation | PR4 |
 | PAF-UC-CODE-004 | V: matching independent review | X: stale/self review | exact-head review; reviewer independence | PR4/5 |
@@ -124,7 +130,7 @@ The four tables in each family use the same ID. Tables A–D respectively provid
 | PAF-UC-CODE-010 | V: cancelled cleanup | X: missing receipt | receipt truth boundary | PR4/6 |
 | PAF-UC-CODE-011 | V: restart snapshot | X: ambiguous next action | checkpoint consistency | PR5 |
 | PAF-UC-CODE-012 | V: valid verdict | X: ambiguous approval | fail-closed validation | PR4 |
-| PAF-UC-CODE-013 | V: failed CI receipt | X: failure marked pass | measurement integrity | PR6 |
+| PAF-UC-CODE-013 | V: failed CI receipt | X: failure marked pass | measurement integrity | PR3/6 |
 | PAF-UC-CODE-014 | V: linked regression | X: original mutation | lineage closure | PR8 |
 
 ### ACCESS — environments and bindings
@@ -144,8 +150,8 @@ The four tables in each family use the same ID. Tables A–D respectively provid
 | PAF-UC-ACCESS-010 | stale cache/model pin | fallback safely | discovery, policy, router | catalog, Policy Decision | router | executor |
 | PAF-UC-ACCESS-011 | binding capability evidence | prove capability | probe, discovery | capability evidence | discovery | router |
 | PAF-UC-ACCESS-012 | restricted-data denial | reject route | policy, router | Policy Decision, Access Binding | policy | router |
-| PAF-UC-ACCESS-013 | subscription-to-metered denial | prevent funding switch | policy, router | Policy Decision, routing decision | policy | router |
-| PAF-UC-ACCESS-014 | portable checkpoint elsewhere | resume elsewhere | controller, resumer | Checkpoint, Access Binding | controller | resumer |
+| PAF-UC-ACCESS-013 | subscription-to-metered denial | prevent funding switch | policy, router | Policy Decision, Routing/Adaptation Decision | policy | router |
+| PAF-UC-ACCESS-014 | portable checkpoint elsewhere | resume elsewhere | controller, resumer | Runtime Checkpoint, Access Binding | controller | resumer |
 
 #### Table B — Identity, data, authority, and budget
 | Use-case ID | Required identities and lineage | Required inputs | Required outputs | Permission and authorization boundary | Budget and reserve behavior |
@@ -206,17 +212,17 @@ The four tables in each family use the same ID. Tables A–D respectively provid
 #### Table A — Intent and contract ownership
 | Use-case ID | Scenario | User objective | Actors and agent roles | Authoritative contract(s) | Producer | Consumer |
 |---|---|---|---|---|---|---|
-| PAF-UC-BUDGET-001 | soft-threshold rerouting | reconsider safely | controller/router | Budget Policy, Routing Decision | controller | router |
-| PAF-UC-BUDGET-002 | hard-threshold stop | prohibit overspend | controller | Budget Policy, Checkpoint | controller | resumer |
+| PAF-UC-BUDGET-001 | soft-threshold rerouting | reconsider safely | controller/router | Budget Policy, Routing/Adaptation Decision | controller | router |
+| PAF-UC-BUDGET-002 | hard-threshold stop | prohibit overspend | controller | Budget Policy, Runtime Checkpoint | controller | resumer |
 | PAF-UC-BUDGET-003 | independent-review reserve | preserve review | policy, controller | Policy Decision, ledger | policy | controller |
 | PAF-UC-BUDGET-004 | final-validation reserve | preserve validation | policy, controller | Policy Decision, ledger | policy | controller |
 | PAF-UC-BUDGET-005 | unknown subscription quota | avoid false certainty | binding, router | binding status, ledger | binding | router |
-| PAF-UC-BUDGET-006 | rate limit/unavailability | adapt safely | binding, controller | status, Routing Decision | binding | controller |
-| PAF-UC-BUDGET-007 | reduced concurrency | reduce resource use | controller | Workflow, Routing Decision | controller | workers |
+| PAF-UC-BUDGET-006 | rate limit/unavailability | adapt safely | binding, controller | status, Routing/Adaptation Decision | binding | controller |
+| PAF-UC-BUDGET-007 | reduced concurrency | reduce resource use | controller | Workflow, Routing/Adaptation Decision | controller | workers |
 | PAF-UC-BUDGET-008 | reduced delegation | reduce child work | controller | Workflow, Policy Decision | controller | parent |
 | PAF-UC-BUDGET-009 | approved local fallback | use permitted local route | policy, router | Policy Decision, Access Binding | policy | router |
-| PAF-UC-BUDGET-010 | no permitted route | stop deterministically | controller | Routing Decision, Checkpoint | controller | audit/resumer |
-| PAF-UC-BUDGET-011 | approved boundary transition | make transition explicit | human/policy, router | Policy Decision, Routing Decision | human/policy | router |
+| PAF-UC-BUDGET-010 | no permitted route | stop deterministically | controller | Routing/Adaptation Decision, Runtime Checkpoint | controller | audit/resumer |
+| PAF-UC-BUDGET-011 | approved boundary transition | make transition explicit | human/policy, router | Policy Decision, Routing/Adaptation Decision | human/policy | router |
 
 #### Table B — Identity, data, authority, and budget
 | Use-case ID | Required identities and lineage | Required inputs | Required outputs | Permission and authorization boundary | Budget and reserve behavior |
@@ -268,21 +274,21 @@ The four tables in each family use the same ID. Tables A–D respectively provid
 #### Table A — Intent and contract ownership
 | Use-case ID | Scenario | User objective | Actors and agent roles | Authoritative contract(s) | Producer | Consumer |
 |---|---|---|---|---|---|---|
-| PAF-UC-DSE-001 | exhaustive search | enumerate space | campaign controller, evaluator | Study, Parameter Space, Campaign State | controller | evaluator |
-| PAF-UC-DSE-002 | sampled search | sample reproducibly | strategy, controller | Study, Strategy, Campaign State | strategy | evaluator |
+| PAF-UC-DSE-001 | exhaustive search | enumerate space | campaign controller, evaluator | Exploration Study, Parameter Space, Campaign State | controller | evaluator |
+| PAF-UC-DSE-002 | sampled search | sample reproducibly | strategy, controller | Exploration Study, Strategy, Campaign State | strategy | evaluator |
 | PAF-UC-DSE-003 | conditional parameter space | constrain legal points | study author, validator | Parameter Space, Candidate | author | generator |
 | PAF-UC-DSE-004 | immutable candidate/duplicate suppression | avoid duplicate work | generator, controller | Candidate, Experiment Request | generator | controller |
 | PAF-UC-DSE-005 | feasibility rejection | reject cheaply | filter, controller | Candidate, Measurement Set | filter | campaign |
 | PAF-UC-DSE-006 | functional failure | preserve functional evidence | evaluator | Experiment Request, Measurement Set | evaluator | campaign |
 | PAF-UC-DSE-007 | synthesis failure | preserve synthesis evidence | evaluator | Experiment Request, Measurement Set | evaluator | campaign |
-| PAF-UC-DSE-008 | mixed fidelity | retain non-equivalence | controller, evaluator | Study, Measurement Set | evaluator | campaign |
+| PAF-UC-DSE-008 | mixed fidelity | retain non-equivalence | controller, evaluator | Exploration Study, Measurement Set | evaluator | campaign |
 | PAF-UC-DSE-009 | parallel evaluation | evaluate safely in parallel | controller, evaluators | Workflow, Experiment Request | controller | evaluators |
 | PAF-UC-DSE-010 | repeated/noisy measurements | characterize uncertainty | evaluator | Measurement Set | evaluator | optimizer |
 | PAF-UC-DSE-011 | comparability break | exclude invalid comparison | validator, controller | Measurement Set, Decision Report | validator | optimizer |
 | PAF-UC-DSE-012 | optimizer/campaign restart | resume search | controller, resumer | Campaign State, Checkpoint | controller | resumer |
 | PAF-UC-DSE-013 | agent-proposed candidate | govern proposal | agent, policy, controller | Candidate, Policy Decision | agent | controller |
 | PAF-UC-DSE-014 | cross-repository candidate | coordinate compiler/architecture | controller, evaluators | Workspace Manifest, Candidate | controller | campaign |
-| PAF-UC-DSE-015 | budget-driven batch reduction | adapt batch size | controller | Campaign State, Routing Decision | controller | evaluator |
+| PAF-UC-DSE-015 | budget-driven batch reduction | adapt batch size | controller | Campaign State, Routing/Adaptation Decision | controller | evaluator |
 | PAF-UC-DSE-016 | fidelity escalation | spend on evidence | controller, policy | Experiment Request, Policy Decision | controller | evaluator |
 | PAF-UC-DSE-017 | FPGA/ASIC human gate | authorize expensive work | human, policy, controller | Policy Decision, Experiment Request | human/policy | evaluator |
 | PAF-UC-DSE-018 | Pareto recommendation | recommend with evidence | controller, reviewer | Result Set, Decision Report | controller | human |
@@ -454,6 +460,12 @@ Task v2, Result v2, generalized Handoff, generalized Execution Request, generali
 
 Canonical bytes use one versioned deterministic JSON canonicalization algorithm, centrally documented and tested byte-for-byte before dependent schemas merge. Digests are explicit, initially SHA-256, lowercase hexadecimal, and domain-separated by contract identity and schema version. A self-digest field is excluded from its own digest input. Object member order is canonical; array order remains significant unless a contract declares an unordered set and normalizes it before hashing. Immutable references include canonical identity and digest. Transformations/migrations create new digests and preserve source lineage. V1 digest algorithms remain unchanged for compatibility even where they differ. PR 1 chooses and publishes the precise algorithm and vectors.
 
+### Migration and deprecation principles
+
+A version or field is deprecated only after its replacement contract, validators, migration behavior, and compatibility fixtures exist. Deprecation is explicit in version and schema documentation; it is never inferred from age. Deprecated v1 and replacement v2 contracts coexist for a documented support window and until identified consumers have a migration path. During that window, new producers stop emitting the deprecated version while consumers continue validating it under the applicable version-specific rules.
+
+Retirement is an explicit governed change, never a silent reinterpretation. After retirement, active consumers reject the retired version fail-closed, while immutable historical evidence and pinned compatibility fixtures remain available for audit and reproduction. Each migration creates a derived artifact, preserves source lineage and digests, and never invents missing evidence.
+
 ### Fail-closed behavior
 
 Unknown fields and unsupported versions fail schema and semantic validation. Unknown enum values fail unless a contract explicitly defines safe `unknown`. Missing authorization, compatibility, capability, quota, or governance evidence never defaults to permission; consumers never discard a newer field silently. Version negotiation occurs outside contract interpretation.
@@ -485,12 +497,12 @@ The three plans agree on ownership, binding-scoped discovery, budget boundaries,
 **Acceptance:** planner/implementer, investigators, isolated writers, exact-head review, denied spawn, remediation, cross-repo, and human-merge fixtures; deterministic transition validation.
 
 ### PR 5 — Access binding, discovery, routing, budgets, checkpoints
-**Scope:** Access Binding/credential reference; endpoint/account/project/funding; catalog/discovered model; capability/status; Policy and Routing/Adaptation Decisions; budgets/ledgers; Checkpoint; transition policy.
+**Scope:** Access Binding/credential reference; endpoint/account/project/funding; catalog/discovered model; capability/status; Policy and Routing/Adaptation Decisions; budgets/ledgers; Runtime Checkpoint; transition policy.
 **Non-goals:** no live provider calls, credential storage, or execution-adapter changes.
 **Acceptance:** separate credential state; binding/environment-scoped discovery; stale-cache, restricted-data, transition-denial, reserve, no-route, and cross-environment checkpoint fixtures.
 
 ### PR 6 — Execution integration contracts
-**Scope:** generalized Execution Request, Handoff, Receipt, Interaction Trace, artifact visibility, and execution/provenance validation.
+**Scope:** generalized Execution Request, Handoff, Execution Receipt, Interaction Trace, artifact visibility, and execution/provenance validation.
 **Non-goals:** no PAF-05A3b executor, process launch, or routing behavior changes.
 **Acceptance:** one authorized attempt/request; exact visible context; receipt/request identity closure; cancellation/cleanup/consumption evidence; fixture-local v1 remains valid.
 
