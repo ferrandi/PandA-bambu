@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://paf.invalid/schemas/paf-bootstrap-task.schema.json",
+  "title": "PAF bootstrap generated task",
+  "type": "object",
+  "required": [
+    "schema_version", "campaign_id", "backlog_item_id", "task_id", "milestone",
+    "title", "branch", "base_branch", "commit_message", "pr_title", "depends_on",
+    "objective", "requirement_refs", "allowed_paths", "forbidden_scope",
+    "acceptance_criteria", "validation_commands", "review_assurance", "runtime_budget",
+    "human_gates", "task_markdown", "generated_base_sha", "backlog_item_digest",
+    "task_contract_digest", "generated_at", "generation_dir"
+  ],
+  "properties": {
+    "schema_version": {"const": 2},
+    "campaign_id": {"type": "string", "minLength": 1},
+    "backlog_item_id": {"type": "string", "pattern": "^BS-[0-9]{3}$"},
+    "task_id": {"type": "string", "pattern": "^BS-[0-9]{3}$"},
+    "milestone": {"type": "string", "minLength": 1},
+    "title": {"type": "string", "minLength": 1},
+    "branch": {"type": "string", "pattern": "^agent/[a-z0-9][a-z0-9._/-]*$"},
+    "base_branch": {"type": "string", "minLength": 1},
+    "commit_message": {"type": "string", "minLength": 1},
+    "pr_title": {"type": "string", "minLength": 1},
+    "depends_on": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "objective": {"type": "string", "minLength": 1},
+    "requirement_refs": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "allowed_paths": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "forbidden_scope": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "acceptance_criteria": {"type": "array", "minItems": 3, "items": {"type": "string", "minLength": 1}},
+    "validation_commands": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "review_assurance": {"enum": ["standard", "high"]},
+    "runtime_budget": {
+      "type": "object",
+      "required": ["maximum_cycles", "maximum_total_minutes", "review_max_tool_calls"],
+      "properties": {
+        "maximum_cycles": {"type": "integer", "minimum": 1, "maximum": 5},
+        "maximum_total_minutes": {"type": "integer", "minimum": 15, "maximum": 480},
+        "review_max_tool_calls": {"type": "integer", "minimum": 1, "maximum": 30}
+      },
+      "additionalProperties": false
+    },
+    "human_gates": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "task_markdown": {"type": "string", "minLength": 1},
+    "generated_base_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "backlog_item_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "task_contract_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "generation_dir": {"type": "string", "minLength": 1}
+  },
+  "additionalProperties": false
+}

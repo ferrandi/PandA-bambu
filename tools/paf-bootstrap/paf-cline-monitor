@@ -1,0 +1,204 @@
+#!/usr/bin/env python3
+"""Read-only monitoring for the temporary PAF Cline bootstrap."""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import subprocess
+import time
+from collections import Counter
+from pathlib import Path
+from typing import Any
+
+TAIL_BYTES = 2 * 1024 * 1024
+
+
+def latest_run(root: Path) -> Path:
+    link = root / "latest"
+    if link.exists(): return link.resolve()
+    candidates = [p for p in root.iterdir() if p.is_dir()]
+    if not candidates: raise SystemExit(f"No runs under {root}")
+    return max(candidates, key=lambda p: p.stat().st_mtime)
+
+
+def tail_lines(path: Path, max_bytes: int = TAIL_BYTES) -> list[str]:
+    if not path.exists(): return []
+    with path.open("rb") as stream:
+        size = path.stat().st_size; stream.seek(max(0, size - max_bytes))
+        data = stream.read()
+    if size > max_bytes: data = data.split(b"\n", 1)[-1]
+    return data.decode("utf-8", errors="replace").splitlines()
+
+
+def rows(path: Path) -> list[dict[str, Any]]:
+    result: list[dict[str, Any]] = []
+    for line in tail_lines(path):
+        try: value = json.loads(line)
+        except json.JSONDecodeError: continue
+        if isinstance(value, dict): result.append(value)
+    return result
+
+
+def stage_files(run: Path) -> list[Path]:
+    return sorted(run.glob("cycle-*.attempt-*.jsonl"), key=lambda p: p.stat().st_mtime)
+
+
+def newest_stage_file(run: Path) -> Path | None:
+    files = stage_files(run)
+    return files[-1] if files else None
+
+
+def stage_name(path: Path | None) -> str:
+    if path is None: return "controller"
+    match = re.search(r"cycle-(\d+)-([a-z]+)\.attempt-(\d+)\.jsonl", path.name)
+    return f"{match.group(2)}-{match.group(1)} attempt {match.group(3)}" if match else path.name
+
+
+def event_summary(row: dict[str, Any]) -> str:
+    event = row.get("event")
+    if not isinstance(event, dict): return str(row.get("type", "unknown"))
+    parts = [str(event.get("type", "unknown"))]
+    if event.get("iteration") is not None: parts.append(f"iteration={event['iteration']}")
+    tool = event.get("toolName") or event.get("tool_name") or event.get("name")
+    if tool: parts.append(f"tool={tool}")
+    inp = event.get("input")
+    if isinstance(inp, dict):
+        commands = inp.get("commands")
+        command = " | ".join(map(str, commands)) if isinstance(commands, list) else inp.get("command")
+        if isinstance(command, str): parts.append(f"command={command[:180]}")
+    return " ".join(parts)
+
+
+def metrics(data: list[dict[str, Any]]) -> tuple[int, int, list[tuple[str, int]]]:
+    iteration = tool_calls = 0; commands: Counter[str] = Counter()
+    for row in data:
+        event = row.get("event")
+        if not isinstance(event, dict): continue
+        if event.get("type") == "iteration_start":
+            try: iteration = max(iteration, int(event.get("iteration", 0)))
+            except (TypeError, ValueError): pass
+        if event.get("type") == "content_start" and event.get("contentType") == "tool":
+            tool_calls += 1; inp = event.get("input")
+            if isinstance(inp, dict):
+                values = inp.get("commands")
+                if isinstance(values, list): commands[" || ".join(map(str, values))] += 1
+                elif isinstance(inp.get("command"), str): commands[inp["command"]] += 1
+    return iteration, tool_calls, [(cmd, count) for cmd, count in commands.most_common() if count >= 2][:5]
+
+
+def process_table() -> dict[int, tuple[int, str, str]]:
+    result = subprocess.run(["ps", "-eo", "pid=,ppid=,stat=,args="], text=True,
+                            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
+    table: dict[int, tuple[int, str, str]] = {}
+    for line in result.stdout.splitlines():
+        parts = line.strip().split(None, 3)
+        if len(parts) != 4: continue
+        try: table[int(parts[0])] = (int(parts[1]), parts[2], parts[3])
+        except ValueError: pass
+    return table
+
+
+def scoped_processes() -> tuple[list[str], list[str]]:
+    table = process_table()
+    roots = {pid for pid, (_ppid, _state, cmd) in table.items() if "paf-cline-cycle" in cmd and "grep" not in cmd}
+    selected = set(roots); frontier = set(roots)
+    while frontier:
+        nxt = {pid for pid, (ppid, _state, _cmd) in table.items() if ppid in frontier and pid not in selected}
+        selected |= nxt; frontier = nxt
+    active, zombies = [], []
+    for pid in sorted(selected):
+        ppid, state, cmd = table[pid]; line = f"{pid} ppid={ppid} stat={state} {cmd}"
+        (zombies if "Z" in state else active).append(line)
+    return active[-12:], zombies[-12:]
+
+
+def controller_state(run: Path) -> tuple[list[str], str | None]:
+    lines = tail_lines(run / "controller.log", 128 * 1024)
+    recent = lines[-12:]
+    current = None
+    for line in reversed(lines):
+        match = re.search(r"Starting ([a-z]+-\d+)", line)
+        if match: current = match.group(1); break
+    return recent, current
+
+
+def status(run: Path) -> dict[str, Any]:
+    file = newest_stage_file(run); data = rows(file) if file else []
+    iteration, tools, repeats = metrics(data)
+    controller, current = controller_state(run)
+    summary = None
+    for candidate in (run / "run-summary.json",):
+        if candidate.exists():
+            try: summary = json.loads(candidate.read_text())
+            except json.JSONDecodeError: pass
+    idle = int(time.time() - file.stat().st_mtime) if file else None
+    active, zombies = scoped_processes()
+    warning = None
+    if summary and summary.get("status") in {"approved", "blocked", "failed", "interrupted"}:
+        warning = f"terminal: {summary.get('status')}"
+    elif idle is not None and idle >= 900: warning = "stalled: no native stage event for at least 15 minutes"
+    elif idle is not None and idle >= 600: warning = "warning: no native stage event for at least 10 minutes"
+    elif repeats and repeats[0][1] >= 3: warning = "warning: repeated tool command detected"
+    elif zombies: warning = "warning: descendant zombie process detected"
+    return {"run": str(run), "stage": current or stage_name(file), "file": str(file) if file else None,
+            "size": file.stat().st_size if file else None, "idle": idle, "iteration": iteration,
+            "tool_calls": tools, "last_event": event_summary(data[-1]) if data else "-",
+            "controller": controller, "active": active, "zombies": zombies,
+            "repeats": repeats, "health": warning or "active/unknown", "summary": summary}
+
+
+def print_status(value: dict[str, Any]) -> None:
+    print(f"Run: {value['run']}\nStage: {value['stage']}\nStage file: {value['file'] or '-'}")
+    print(f"Size: {value['size'] if value['size'] is not None else '-'} bytes  Idle: {value['idle'] if value['idle'] is not None else '-'}s")
+    print(f"Iteration: {value['iteration']}  Tool calls in retained tail: {value['tool_calls']}")
+    print(f"Last event: {value['last_event']}\nHealth: {value['health']}")
+    if value["summary"]: print(f"Summary: {json.dumps(value['summary'], sort_keys=True)}")
+    print("\nController:")
+    for line in value["controller"]: print("  " + line)
+    if value["active"]:
+        print("\nScoped processes:")
+        for line in value["active"]: print("  " + line)
+    if value["zombies"]:
+        print("\nScoped zombies:")
+        for line in value["zombies"]: print("  " + line)
+    if value["repeats"]:
+        print("\nRepeated commands:")
+        for command, count in value["repeats"]: print(f"  {count}x {command[:240]}")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(); parser.add_argument("--state-root", default="~/.local/state/paf-cline-cycles"); parser.add_argument("--run")
+    sub = parser.add_subparsers(dest="command", required=True); sub.add_parser("status")
+    watch = sub.add_parser("watch"); watch.add_argument("--interval", type=float, default=5.0)
+    events = sub.add_parser("events"); events.add_argument("--follow", action="store_true")
+    args = parser.parse_args(); root = Path(args.state_root).expanduser(); run = Path(args.run).expanduser().resolve() if args.run else latest_run(root)
+    if args.command == "status": print_status(status(run)); return 0
+    if args.command == "watch":
+        try:
+            while True:
+                print("\033[2J\033[H", end=""); print_status(status(run)); time.sleep(args.interval)
+        except KeyboardInterrupt: return 0
+    last_file: Path | None = None; offset = 0
+    try:
+        while True:
+            current = newest_stage_file(run)
+            if current is None:
+                if not args.follow: return 0
+                time.sleep(1); continue
+            if current != last_file:
+                print(f"--- {stage_name(current)}: {current} ---", flush=True); last_file = current; offset = 0 if not args.follow else current.stat().st_size
+            with current.open("r", encoding="utf-8", errors="replace") as stream:
+                stream.seek(offset)
+                for line in stream:
+                    try: row = json.loads(line)
+                    except json.JSONDecodeError: continue
+                    if isinstance(row, dict): print(event_summary(row), flush=True)
+                offset = stream.tell()
+            if not args.follow: return 0
+            time.sleep(0.5)
+    except KeyboardInterrupt: return 0
+
+
+if __name__ == "__main__": raise SystemExit(main())

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://paf.invalid/schemas/paf-bootstrap-campaign.schema.json",
+  "title": "PAF bootstrap campaign",
+  "type": "object",
+  "required": ["schema_version", "campaign_id", "repository", "base_branch", "documents", "generation_policy", "runtime_defaults", "backlog"],
+  "properties": {
+    "schema_version": {"const": 2},
+    "version": {"const": 3},
+    "campaign_id": {"type": "string", "minLength": 1},
+    "repository": {"type": "string", "minLength": 1},
+    "base_branch": {"type": "string", "minLength": 1},
+    "documents": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}},
+    "generation_policy": {"type": "object"},
+    "runtime_defaults": {"type": "object"},
+    "backlog": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "milestone", "title", "depends_on", "objective", "expected_paths"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^BS-[0-9]{3}$"},
+          "milestone": {"type": "string", "minLength": 1},
+          "title": {"type": "string", "minLength": 1},
+          "depends_on": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "objective": {"type": "string", "minLength": 1},
+          "expected_paths": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+          "status_hint": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": true
+}

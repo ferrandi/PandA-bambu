@@ -1,0 +1,344 @@
+#!/usr/bin/env python3
+"""Locked, sequential bootstrap campaign driver for building PAF with Cline."""
+from __future__ import annotations
+
+import argparse
+import contextlib
+import datetime as dt
+import fcntl
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any, Iterator
+
+
+def utc_now() -> str:
+    return dt.datetime.now(dt.timezone.utc).isoformat()
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise SystemExit(f"Missing JSON file: {path}") from exc
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"Invalid JSON in {path}: {exc}") from exc
+    if not isinstance(value, dict):
+        raise SystemExit(f"Expected JSON object in {path}")
+    return value
+
+
+def save_json(path: Path, value: dict[str, Any]) -> None:
+    value["updated_at"] = utc_now()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def capture(command: list[str], *, check: bool = True) -> str:
+    result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    if check and result.returncode:
+        raise SystemExit(f"Command failed ({result.returncode}): {' '.join(command)}\n{result.stderr.strip()}")
+    return result.stdout.strip()
+
+
+def git(repo: Path, *args: str, check: bool = True) -> str:
+    return capture(["git", "-C", str(repo), *args], check=check)
+
+
+def initial_state(config: dict[str, Any]) -> dict[str, Any]:
+    now = utc_now()
+    return {"schema_version": 2, "campaign_id": config["campaign_id"], "created_at": now,
+            "updated_at": now, "completed_backlog_items": [], "tasks": {},
+            "current_task_id": None, "operator_actions": []}
+
+
+def validate_config(config: dict[str, Any]) -> None:
+    for key in ("campaign_id", "base_branch", "repository", "backlog", "runtime_defaults"):
+        if key not in config: raise SystemExit(f"Campaign config is missing {key}")
+    ids: set[str] = set()
+    for item in config["backlog"]:
+        item_id = item.get("id")
+        if not isinstance(item_id, str) or item_id in ids: raise SystemExit(f"Invalid/duplicate backlog id: {item_id}")
+        ids.add(item_id)
+    for item in config["backlog"]:
+        missing = set(item.get("depends_on", [])) - ids
+        if missing: raise SystemExit(f"Backlog item {item['id']} has unknown dependencies: {sorted(missing)}")
+
+
+def active_task(state: dict[str, Any]) -> dict[str, Any] | None:
+    current = state.get("current_task_id")
+    tasks = state.get("tasks", {})
+    if isinstance(current, str) and isinstance(tasks, dict):
+        task = tasks.get(current)
+        if isinstance(task, dict) and task.get("status") not in {"merged", "superseded", "stale"}: return task
+    if isinstance(tasks, dict):
+        for task in tasks.values():
+            if isinstance(task, dict) and task.get("status") not in {"merged", "superseded", "stale"}: return task
+    return None
+
+
+def add_action(state: dict[str, Any], action: str, target: str, reason: str | None = None) -> None:
+    state.setdefault("operator_actions", []).append({"recorded_at": utc_now(), "action": action,
+                                                     "target": target, "reason": reason,
+                                                     "principal": os.environ.get("USER") or "unknown"})
+
+
+@contextlib.contextmanager
+def state_lock(root: Path) -> Iterator[None]:
+    root.mkdir(parents=True, exist_ok=True)
+    with (root / "campaign.lock").open("a+") as lock:
+        try:
+            fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise SystemExit(f"Another state-mutating campaign command is active: {root / 'campaign.lock'}") from exc
+        yield
+        fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
+
+
+def ensure_clean(repo: Path) -> None:
+    status = git(repo, "status", "--porcelain", "--untracked-files=all")
+    if status: raise SystemExit("Repository must be clean:\n" + status)
+
+
+def task_record(metadata: dict[str, Any], task_path: Path, metadata_path: Path) -> dict[str, Any]:
+    return {"task_id": metadata["task_id"], "backlog_item_id": metadata["backlog_item_id"],
+            "milestone": metadata["milestone"], "title": metadata["title"], "branch": metadata["branch"],
+            "base_branch": metadata["base_branch"], "task_path": str(task_path),
+            "metadata_path": str(metadata_path), "task_contract_digest": metadata["task_contract_digest"],
+            "generated_base_sha": metadata["generated_base_sha"], "status": "generated",
+            "generated_at": metadata.get("generated_at", utc_now()), "head_sha": None, "pr_number": None,
+            "cycle_state_dir": None, "cycle_result_path": None, "last_reason": None}
+
+
+def reconcile(repo: Path, config: dict[str, Any], state: dict[str, Any]) -> int:
+    git(repo, "fetch", "origin")
+    completed = set(state.get("completed_backlog_items", [])); count = 0
+    for task in state.get("tasks", {}).values():
+        if not isinstance(task, dict) or task.get("status") != "approved" or not task.get("head_sha"): continue
+        rc = subprocess.run(["git", "-C", str(repo), "merge-base", "--is-ancestor", task["head_sha"], f"origin/{config['base_branch']}"], check=False).returncode
+        if rc == 0:
+            task["status"] = "merged"; task["merged_at"] = utc_now(); completed.add(task["backlog_item_id"]); count += 1
+            if state.get("current_task_id") == task["task_id"]: state["current_task_id"] = None
+    state["completed_backlog_items"] = sorted(completed)
+    return count
+
+
+def write_validation_file(root: Path, task_id: str, commands: list[str]) -> Path:
+    path = root / "validation" / f"{task_id}.sh"; path.parent.mkdir(parents=True, exist_ok=True)
+    lines = ["#!/usr/bin/env bash", "set -Eeuo pipefail", ""] + commands
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8"); path.chmod(0o700)
+    return path
+
+
+def update_from_cycle_summary(task: dict[str, Any], summary: dict[str, Any]) -> None:
+    task["cycle_state_dir"] = summary.get("state_dir"); task["head_sha"] = summary.get("head_sha")
+    task["pr_number"] = summary.get("pr_number"); task["last_reason"] = summary.get("reason")
+    status = summary.get("status")
+    if status == "approved": task["status"] = "approved"; task["approved_at"] = utc_now()
+    elif status == "blocked": task["status"] = "blocked"
+    elif status == "interrupted": task["status"] = "review_interrupted" if task.get("head_sha") else "failed"
+    elif task.get("head_sha") and task.get("cycle_state_dir"):
+        state_dir = Path(task["cycle_state_dir"])
+        task["status"] = "review_interrupted" if list(state_dir.glob("cycle-*-head-sha.txt")) else "failed"
+    else: task["status"] = "failed"
+
+
+def command_status(config: dict[str, Any], state: dict[str, Any], state_path: Path) -> int:
+    print(f"Campaign: {config['campaign_id']}\nState: {state_path}")
+    print(f"Completed: {', '.join(state.get('completed_backlog_items', [])) or 'none'}")
+    current = active_task(state)
+    if current:
+        print(f"Current: {current['task_id']} [{current.get('status')}] branch={current.get('branch')} head={current.get('head_sha') or '-'} pr={current.get('pr_number') or '-'}")
+        if current.get("last_reason"): print(f"Reason: {current['last_reason']}")
+    else: print("Current: none")
+    completed = set(state.get("completed_backlog_items", []))
+    task_by_backlog = {t.get("backlog_item_id"): t for t in state.get("tasks", {}).values() if isinstance(t, dict)}
+    print("\nBacklog:")
+    for item in config["backlog"]:
+        if item["id"] in completed: status = "merged"
+        elif item["id"] in task_by_backlog: status = task_by_backlog[item["id"]].get("status", "unknown")
+        elif set(item.get("depends_on", [])).issubset(completed): status = "eligible"
+        else: status = "waiting"
+        print(f"  {item['id']} {status:18} {item['title']}")
+    return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--repo", default=os.environ.get("PAF_REPO", os.getcwd()))
+    parser.add_argument("--config", default="config/paf-bootstrap-campaign.json")
+    parser.add_argument("--state"); parser.add_argument("--tasks-dir"); parser.add_argument("--cycle")
+    parser.add_argument("--generator"); parser.add_argument("--monitor"); parser.add_argument("--preflight")
+    parser.add_argument("--review-resume")
+    sub = parser.add_subparsers(dest="command", required=True)
+    init = sub.add_parser("init"); init.add_argument("--force", action="store_true"); init.add_argument("--complete", action="append", default=[])
+    sub.add_parser("status")
+    watch = sub.add_parser("watch"); watch.add_argument("--interval", type=float, default=5.0)
+    nxt = sub.add_parser("next"); nxt.add_argument("--backlog-id")
+    auth = sub.add_parser("authorize"); auth.add_argument("--task-id")
+    run_cmd = sub.add_parser("run"); run_cmd.add_argument("--authorize", action="store_true")
+    sub.add_parser("retry")
+    resume = sub.add_parser("resume-review"); resume.add_argument("--from", dest="from_stage", choices=("opus", "sonnet"), default="sonnet")
+    sub.add_parser("reconcile")
+    supersede = sub.add_parser("supersede"); supersede.add_argument("task_id"); supersede.add_argument("--reason", required=True)
+    override = sub.add_parser("operator-override-complete"); override.add_argument("backlog_id"); override.add_argument("--reason", required=True)
+    advance = sub.add_parser("advance"); advance.add_argument("--run", action="store_true"); advance.add_argument("--authorize", action="store_true"); advance.add_argument("--backlog-id")
+    args = parser.parse_args()
+
+    repo = Path(args.repo).expanduser().resolve()
+    if git(repo, "rev-parse", "--is-inside-work-tree", check=False) != "true": raise SystemExit(f"Not a Git repository: {repo}")
+    config_path = Path(args.config); config_path = (repo / config_path).resolve() if not config_path.is_absolute() else config_path.resolve()
+    config = load_json(config_path); validate_config(config)
+    root = Path(args.state or f"~/.local/state/paf-bootstrap/{config['campaign_id']}").expanduser().resolve()
+    state_path = root / "campaign-state.json"
+    tasks_dir = Path(args.tasks_dir or f"~/.local/share/paf/tasks/{config['campaign_id']}").expanduser().resolve()
+    scripts = Path(__file__).resolve().parent
+    cycle = Path(args.cycle).expanduser().resolve() if args.cycle else scripts / "paf-cline-cycle"
+    generator = Path(args.generator).expanduser().resolve() if args.generator else scripts / "paf-cline-next-task"
+    monitor = Path(args.monitor).expanduser().resolve() if args.monitor else scripts / "paf-cline-monitor"
+    preflight = Path(args.preflight).expanduser().resolve() if args.preflight else scripts / "paf-cline-preflight"
+    review_resume = Path(args.review_resume).expanduser().resolve() if args.review_resume else scripts / "paf-cline-review-resume"
+
+    if args.command == "watch": return subprocess.run([str(monitor), "watch", "--interval", str(args.interval)], check=False).returncode
+    if args.command == "status":
+        if not state_path.exists(): raise SystemExit("Campaign is not initialized")
+        return command_status(config, load_json(state_path), state_path)
+
+    with state_lock(root):
+        if args.command == "init":
+            if state_path.exists() and not args.force: raise SystemExit(f"Campaign state already exists: {state_path}")
+            state = initial_state(config)
+            known = {i["id"] for i in config["backlog"]}
+            if any(item not in known for item in args.complete): raise SystemExit("Unknown completed backlog item")
+            state["completed_backlog_items"] = sorted(set(args.complete)); save_json(state_path, state)
+            print(f"Initialized {config['campaign_id']} at {state_path}"); return 0
+        if not state_path.exists(): raise SystemExit("Campaign is not initialized")
+        state = load_json(state_path)
+
+        if args.command == "next":
+            if active_task(state): raise SystemExit("A task is already active")
+            ensure_clean(repo)
+            command = [str(generator), "--repo", str(repo), "--campaign-config", str(config_path), "--campaign-state", str(state_path), "--output-dir", str(tasks_dir)]
+            if args.backlog_id: command += ["--backlog-id", args.backlog_id]
+            result = subprocess.run(command, text=True, stdout=subprocess.PIPE, check=False)
+            if result.stdout: print(result.stdout, end="")
+            if result.returncode: return result.returncode
+            generated = json.loads(result.stdout); metadata_path = Path(generated["metadata_path"]); task_path = Path(generated["task_path"])
+            metadata = load_json(metadata_path); record = task_record(metadata, task_path, metadata_path)
+            state.setdefault("tasks", {})[record["task_id"]] = record; state["current_task_id"] = record["task_id"]
+            save_json(state_path, state); print(f"Generated task: {task_path}\nAuthorize after review with: {Path(sys.argv[0]).name} authorize")
+            return 0
+
+        task = active_task(state)
+        if args.command == "authorize":
+            if not task or (args.task_id and args.task_id != task["task_id"]): raise SystemExit("No matching active task")
+            if task.get("status") != "generated": raise SystemExit(f"Task cannot be authorized from {task.get('status')}")
+            task["status"] = "authorized"; task["authorized_at"] = utc_now(); add_action(state, "authorize-task", task["task_id"], task.get("task_contract_digest")); save_json(state_path, state)
+            print(f"Authorized {task['task_id']}"); return 0
+
+        if args.command in {"run", "retry"}:
+            if not task: raise SystemExit("No active task")
+            if args.command == "run" and args.authorize and task.get("status") == "generated":
+                task["status"] = "authorized"; task["authorized_at"] = utc_now(); add_action(state, "authorize-task", task["task_id"], "--authorize")
+            if args.command == "retry" and task.get("status") not in {"blocked", "failed"}: raise SystemExit(f"Cannot retry from {task.get('status')}")
+            if task.get("status") not in {"authorized", "blocked", "failed"}: raise SystemExit(f"Task is not runnable from {task.get('status')}")
+            metadata = load_json(Path(task["metadata_path"])); runtime = config["runtime_defaults"]
+            if task.get("status") == "authorized":
+                ensure_clean(repo); git(repo, "fetch", "origin")
+                current_base = git(repo, "rev-parse", f"origin/{metadata['base_branch']}")
+                if current_base != metadata["generated_base_sha"]:
+                    task["status"] = "stale"; task["last_reason"] = f"base changed from {metadata['generated_base_sha']} to {current_base}"; save_json(state_path, state)
+                    raise SystemExit("Generated task is stale; supersede and regenerate")
+            else:
+                dirty = git(repo, "status", "--porcelain", "--untracked-files=all")
+                if dirty and git(repo, "branch", "--show-current") != metadata["branch"]:
+                    raise SystemExit("Preserved dirty changes are not on the exact task branch")
+            env = os.environ.copy()
+            if env.get("LITELLM_API_KEY") and not env.get("OPENAI_API_KEY"): env["OPENAI_API_KEY"] = env["LITELLM_API_KEY"]
+            pre = [str(preflight), "--repo", str(repo)]
+            if runtime.get("publish", True): pre.append("--publish")
+            if runtime.get("restart_cline_daemon_on_key_mismatch", True): pre.append("--restart-daemon-on-key-mismatch")
+            if subprocess.run(pre, env=env, check=False).returncode: raise SystemExit("Bootstrap preflight failed")
+            validation_file = write_validation_file(root, task["task_id"], metadata["validation_commands"])
+            result_path = root / "cycle-results" / f"{task['task_id']}.json"; result_path.parent.mkdir(parents=True, exist_ok=True)
+            env.update({
+                "PAF_REPO": str(repo), "PAF_PARENT_CAMPAIGN_ID": config["campaign_id"], "PAF_TASK_ID": task["task_id"],
+                "PAF_BRANCH": metadata["branch"], "PAF_BASE_BRANCH": metadata["base_branch"], "PAF_TASK_METADATA_FILE": str(Path(task["metadata_path"])),
+                "PAF_COMMIT_MESSAGE": metadata["commit_message"], "PAF_REMEDIATION_COMMIT_MESSAGE": metadata["commit_message"] + " (review corrections)",
+                "PAF_PR_TITLE": metadata["pr_title"], "PAF_MAX_CYCLES": str(metadata["runtime_budget"]["maximum_cycles"]),
+                "PAF_PHASE_TIMEOUT": str(runtime["phase_timeout_seconds"]), "PAF_INACTIVITY_TIMEOUT": str(runtime["inactivity_timeout_seconds"]),
+                "PAF_STAGE_MAX_ATTEMPTS": str(runtime["implementation_stage_max_attempts"]), "PAF_REVIEW_STAGE_MAX_ATTEMPTS": str(runtime["review_stage_max_attempts"]),
+                "PAF_RETRY_BACKOFF": str(runtime["retry_backoff_seconds"]), "PAF_REVIEW_MAX_TOOL_CALLS": str(metadata["runtime_budget"]["review_max_tool_calls"]),
+                "PAF_REVIEW_MAX_ITERATIONS": str(runtime["review_max_iterations"]), "PAF_REVIEW_DUPLICATE_COMMAND_LIMIT": str(runtime["review_duplicate_command_limit"]),
+                "PAF_REVIEW_ZOMBIE_GRACE_SECONDS": str(runtime["review_zombie_grace_seconds"]), "PAF_PUBLISH": "1" if runtime.get("publish", True) else "0",
+                "PAF_PRECOMMIT_VALIDATION_FILE": str(validation_file), "PAF_PRECOMMIT_VALIDATION_TIMEOUT": str(runtime["controller_validation_timeout_seconds"]),
+                "PAF_RESULT_FILE": str(result_path), "PAF_GITHUB_REPO": config["repository"],
+            })
+            local_exists = subprocess.run(["git", "-C", str(repo), "show-ref", "--verify", "--quiet", f"refs/heads/{metadata['branch']}"], check=False).returncode == 0
+            remote_exists = subprocess.run(["git", "-C", str(repo), "ls-remote", "--exit-code", "--heads", "origin", metadata["branch"]], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False).returncode == 0
+            if local_exists or remote_exists: env["PAF_CONTINUE_BRANCH"] = "1"
+            if git(repo, "status", "--porcelain", "--untracked-files=all"):
+                env["PAF_CONTINUE_BRANCH"] = "1"; env["PAF_ADOPT_DIRTY_WORKTREE"] = "1"
+            task["status"] = "running"; task["started_at"] = utc_now(); task["cycle_result_path"] = str(result_path); save_json(state_path, state)
+            result = subprocess.run([str(cycle), task["task_path"]], env=env, check=False)
+            if result_path.exists(): update_from_cycle_summary(task, load_json(result_path))
+            else: task["status"] = "failed"; task["last_reason"] = f"cycle exited {result.returncode} without summary"
+            save_json(state_path, state)
+            print(f"Task {task['task_id']} ended with {task['status']}: {task.get('last_reason') or ''}")
+            return 0 if task["status"] == "approved" else (result.returncode or 2)
+
+        if args.command == "resume-review":
+            if not task or task.get("status") not in {"review_interrupted", "failed", "blocked"} or not task.get("cycle_state_dir"):
+                raise SystemExit("No resumable exact-head review")
+            command = [str(review_resume), "--state-dir", task["cycle_state_dir"], "--repo", str(repo), "--from", args.from_stage]
+            result = subprocess.run(command, text=True, stdout=subprocess.PIPE, check=False)
+            if result.stdout: print(result.stdout, end="")
+            summaries = sorted(Path(task["cycle_state_dir"]).glob("review-resume-*-summary.json"), key=lambda p: p.stat().st_mtime)
+            if not summaries: task["status"] = "failed"; task["last_reason"] = "review resume produced no summary"
+            else:
+                summary = load_json(summaries[-1]); task["head_sha"] = summary.get("head_sha") or task.get("head_sha"); task["last_reason"] = summary.get("reason")
+                task["status"] = summary.get("status", "failed")
+            save_json(state_path, state); return result.returncode
+
+        if args.command == "reconcile":
+            count = reconcile(repo, config, state); save_json(state_path, state); print(f"Reconciled {count} merged task(s)"); return 0
+        if args.command == "supersede":
+            target = state.get("tasks", {}).get(args.task_id)
+            if not isinstance(target, dict): raise SystemExit(f"Unknown task: {args.task_id}")
+            target["status"] = "superseded"; target["last_reason"] = args.reason; target["superseded_at"] = utc_now(); add_action(state, "supersede-task", args.task_id, args.reason)
+            if state.get("current_task_id") == args.task_id: state["current_task_id"] = None
+            save_json(state_path, state); return 0
+        if args.command == "operator-override-complete":
+            known = {i["id"] for i in config["backlog"]}
+            if args.backlog_id not in known: raise SystemExit("Unknown backlog item")
+            state["completed_backlog_items"] = sorted(set(state.get("completed_backlog_items", [])) | {args.backlog_id})
+            add_action(state, "operator-override-complete", args.backlog_id, args.reason); save_json(state_path, state); return 0
+        if args.command == "advance":
+            reconcile(repo, config, state); save_json(state_path, state)
+            if active_task(state): raise SystemExit("Current task is still active")
+            ensure_clean(repo)
+            command = [str(generator), "--repo", str(repo), "--campaign-config", str(config_path), "--campaign-state", str(state_path), "--output-dir", str(tasks_dir)]
+            if args.backlog_id: command += ["--backlog-id", args.backlog_id]
+            result = subprocess.run(command, text=True, stdout=subprocess.PIPE, check=False)
+            if result.stdout: print(result.stdout, end="")
+            if result.returncode: return result.returncode
+            generated = json.loads(result.stdout); metadata_path = Path(generated["metadata_path"]); task_path = Path(generated["task_path"])
+            metadata = load_json(metadata_path); record = task_record(metadata, task_path, metadata_path)
+            state.setdefault("tasks", {})[record["task_id"]] = record; state["current_task_id"] = record["task_id"]
+            save_json(state_path, state)
+            print(f"Generated task: {task_path}")
+            if not args.run:
+                print(f"Authorize after review with: {Path(sys.argv[0]).name} authorize")
+                return 0
+            exec_args = [sys.executable, str(Path(__file__).resolve()), "--repo", str(repo), "--config", str(config_path), "--state", str(root), "--tasks-dir", str(tasks_dir), "run"]
+            if args.authorize: exec_args.append("--authorize")
+            os.execv(sys.executable, exec_args)
+    raise AssertionError(args.command)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

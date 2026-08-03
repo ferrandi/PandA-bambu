@@ -1,0 +1,448 @@
+#!/usr/bin/env python3
+"""Generate one bounded, base-bound PAF bootstrap task through Cline Sol."""
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import hashlib
+import json
+import os
+import re
+import selectors
+import signal
+import subprocess
+import sys
+import time
+from pathlib import Path, PurePosixPath
+from typing import Any
+
+STATUS_TAG = "TASK_GENERATION_STATUS"
+JSON_BEGIN = "<PAF_NEXT_TASK_JSON>"
+JSON_END = "</PAF_NEXT_TASK_JSON>"
+ACTIVE_STATUSES = {"generated", "authorized", "running", "approved", "blocked", "failed", "review_interrupted"}
+FORBIDDEN_COMMAND_TOKENS = (";", "&&", "||", "`", "$(", ">", "<", "\n", "\r", "\x00")
+FORBIDDEN_COMMAND_WORDS = (
+    "curl ", "wget ", "ssh ", "scp ", "sudo ", "docker ", "podman ",
+    "git push", "git commit", "git reset", "git clean", "gh ", "rm -rf",
+)
+ALLOWED_VALIDATION_PREFIXES = (
+    "git diff --check", "python3 ", "python ", "pytest ", "ctest", "ninja", "make",
+    "cmake ", "bash tools/", "./tools/", "bash scripts/", "./scripts/",
+)
+
+
+def utc_now() -> str:
+    return dt.datetime.now(dt.timezone.utc).isoformat()
+
+
+def canonical_bytes(value: Any) -> bytes:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def typed_digest(label: str, value: Any) -> str:
+    h = hashlib.sha256()
+    h.update(label.encode("utf-8"))
+    h.update(b"\x00")
+    h.update(canonical_bytes(value))
+    return "sha256:" + h.hexdigest()
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise SystemExit(f"Missing JSON file: {path}") from exc
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"Invalid JSON in {path}: {exc}") from exc
+    if not isinstance(value, dict):
+        raise SystemExit(f"Expected a JSON object in {path}")
+    return value
+
+
+def save_json_atomic(path: Path, value: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def git(repo: Path, *args: str, check: bool = True) -> str:
+    result = subprocess.run(
+        ["git", "-C", str(repo), *args], text=True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+    )
+    if check and result.returncode != 0:
+        raise SystemExit(f"git {' '.join(args)} failed ({result.returncode}): {result.stderr.strip()}")
+    return result.stdout.strip()
+
+
+def default_state(config: dict[str, Any]) -> dict[str, Any]:
+    now = utc_now()
+    return {
+        "schema_version": 2,
+        "campaign_id": config["campaign_id"],
+        "created_at": now,
+        "updated_at": now,
+        "completed_backlog_items": [],
+        "tasks": {},
+        "current_task_id": None,
+        "operator_actions": [],
+    }
+
+
+def active_tasks(state: dict[str, Any]) -> list[dict[str, Any]]:
+    values = state.get("tasks", {})
+    if not isinstance(values, dict):
+        raise SystemExit("campaign state field 'tasks' must be an object")
+    return [
+        task for task in values.values()
+        if isinstance(task, dict) and task.get("status") in ACTIVE_STATUSES
+    ]
+
+
+def select_eligible(config: dict[str, Any], state: dict[str, Any], requested: str | None) -> dict[str, Any]:
+    completed = set(state.get("completed_backlog_items", []))
+    backlog = config.get("backlog")
+    if not isinstance(backlog, list):
+        raise SystemExit("campaign config field 'backlog' must be an array")
+    by_id: dict[str, dict[str, Any]] = {}
+    for item in backlog:
+        if not isinstance(item, dict) or not isinstance(item.get("id"), str):
+            raise SystemExit("every backlog entry must be an object with a string id")
+        if item["id"] in by_id:
+            raise SystemExit(f"duplicate backlog id: {item['id']}")
+        by_id[item["id"]] = item
+    candidates = [by_id[requested]] if requested and requested in by_id else backlog
+    if requested and requested not in by_id:
+        raise SystemExit(f"unknown backlog item: {requested}")
+    for item in candidates:
+        if item["id"] in completed:
+            continue
+        deps = item.get("depends_on", [])
+        if not isinstance(deps, list) or not all(isinstance(dep, str) for dep in deps):
+            raise SystemExit(f"invalid depends_on for {item['id']}")
+        if set(deps).issubset(completed):
+            return item
+    if requested:
+        missing = sorted(set(by_id[requested].get("depends_on", [])) - completed)
+        raise SystemExit(f"backlog item {requested} is not eligible; incomplete dependencies: {missing}")
+    raise SystemExit("No dependency-eligible backlog item remains")
+
+
+def sanitize_json_line(raw: bytes) -> bytes:
+    stripped = raw.rstrip(b"\r\n")
+    if not stripped:
+        return b"\n"
+    try:
+        obj = json.loads(stripped.decode("utf-8", errors="replace"))
+    except json.JSONDecodeError:
+        return stripped + b"\n"
+    if isinstance(obj, dict):
+        obj.pop("accumulated", None)
+        event = obj.get("event")
+        if isinstance(event, dict):
+            event.pop("accumulated", None)
+    return json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode() + b"\n"
+
+
+def run_cline(command: list[str], env: dict[str, str], jsonl_path: Path, stderr_path: Path,
+              total_timeout: int, inactivity_timeout: int) -> int:
+    jsonl_path.parent.mkdir(parents=True, exist_ok=True)
+    started = time.monotonic()
+    last_activity = started
+    buffer = bytearray()
+    with stderr_path.open("ab", buffering=0) as err, jsonl_path.open("wb") as out:
+        proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=err, env=env,
+                                start_new_session=True, bufsize=0)
+        assert proc.stdout is not None
+        fd = proc.stdout.fileno()
+        os.set_blocking(fd, False)
+        selector = selectors.DefaultSelector()
+        selector.register(fd, selectors.EVENT_READ)
+        eof = False
+        forced_rc: int | None = None
+        while True:
+            now = time.monotonic()
+            if forced_rc is None and total_timeout > 0 and now - started > total_timeout:
+                forced_rc = 124
+                os.killpg(proc.pid, signal.SIGTERM)
+            if forced_rc is None and inactivity_timeout > 0 and now - last_activity > inactivity_timeout:
+                forced_rc = 125
+                os.killpg(proc.pid, signal.SIGTERM)
+            for _key, _mask in selector.select(timeout=1.0):
+                try:
+                    chunk = os.read(fd, 65536)
+                except BlockingIOError:
+                    chunk = b""
+                if chunk:
+                    last_activity = time.monotonic()
+                    buffer.extend(chunk)
+                    while b"\n" in buffer:
+                        line, _, remainder = buffer.partition(b"\n")
+                        buffer = bytearray(remainder)
+                        out.write(sanitize_json_line(line))
+                        out.flush()
+                else:
+                    eof = True
+                    try:
+                        selector.unregister(fd)
+                    except Exception:
+                        pass
+            rc = proc.poll()
+            if rc is not None:
+                if not eof:
+                    while True:
+                        try:
+                            chunk = os.read(fd, 65536)
+                        except BlockingIOError:
+                            time.sleep(0.05)
+                            continue
+                        if not chunk:
+                            break
+                        buffer.extend(chunk)
+                if buffer:
+                    out.write(sanitize_json_line(bytes(buffer)))
+                out.flush()
+                return forced_rc if forced_rc is not None else rc
+            if forced_rc is not None:
+                try:
+                    proc.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    os.killpg(proc.pid, signal.SIGKILL)
+
+
+def extract_final_text(path: Path) -> str:
+    final = ""
+    parts: list[str] = []
+    for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        try:
+            obj = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        if obj.get("type") == "run_result" and isinstance(obj.get("text"), str):
+            final = obj["text"].strip()
+        elif obj.get("type") == "say" and obj.get("partial") is not True:
+            text = obj.get("text")
+            if isinstance(text, str) and text.strip():
+                parts.append(text.strip())
+    return final or "\n\n".join(parts)
+
+
+def parse_generated(text: str) -> tuple[str, dict[str, Any] | None, str | None]:
+    statuses = re.findall(rf"(?m)^{STATUS_TAG}=(READY|BLOCKED)$", text)
+    if len(statuses) != 1:
+        raise SystemExit(f"Expected exactly one {STATUS_TAG} marker")
+    reason_match = re.search(r"(?m)^BLOCK_REASON=(.+)$", text)
+    reason = reason_match.group(1).strip() if reason_match else None
+    if statuses[0] == "BLOCKED":
+        return "BLOCKED", None, reason or "Task generator returned BLOCKED without a reason"
+    start, end = text.find(JSON_BEGIN), text.find(JSON_END)
+    if start < 0 or end < 0 or end <= start:
+        raise SystemExit("READY output is missing the PAF task JSON envelope")
+    try:
+        obj = json.loads(text[start + len(JSON_BEGIN):end].strip())
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"Generated task JSON is invalid: {exc}") from exc
+    if not isinstance(obj, dict):
+        raise SystemExit("Generated task JSON must be an object")
+    return "READY", obj, None
+
+
+def static_prefix(pattern: str) -> str:
+    normalized = pattern.replace("\\", "/").lstrip("./")
+    match = re.search(r"[*?[]", normalized)
+    prefix = normalized if match is None else normalized[:match.start()]
+    return prefix.rstrip("/")
+
+
+def validate_path_pattern(pattern: str) -> None:
+    if not pattern or pattern.startswith("/") or ".." in PurePosixPath(pattern).parts:
+        raise SystemExit(f"Unsafe allowed path pattern: {pattern!r}")
+    if pattern in {"*", "**", "./**"} or pattern.startswith(".git"):
+        raise SystemExit(f"Overbroad or protected allowed path pattern: {pattern!r}")
+
+
+def path_is_authorized(candidate: str, expected: list[str]) -> bool:
+    validate_path_pattern(candidate)
+    cp = static_prefix(candidate)
+    for auth in expected:
+        validate_path_pattern(auth)
+        ap = static_prefix(auth)
+        if cp == ap or cp.startswith(ap + "/"):
+            return True
+    return False
+
+
+def validate_validation_command(command: str) -> None:
+    if not command.strip() or any(token in command for token in FORBIDDEN_COMMAND_TOKENS):
+        raise SystemExit(f"Unsafe validation command syntax: {command!r}")
+    lower = command.lower().strip()
+    if any(word in lower for word in FORBIDDEN_COMMAND_WORDS):
+        raise SystemExit(f"Forbidden validation command: {command!r}")
+    if not any(lower == prefix.rstrip() or lower.startswith(prefix) for prefix in ALLOWED_VALIDATION_PREFIXES):
+        raise SystemExit(f"Unsupported validation command prefix: {command!r}")
+
+
+def validate_task(task: dict[str, Any], config: dict[str, Any], item: dict[str, Any]) -> None:
+    required = {
+        "schema_version", "campaign_id", "backlog_item_id", "task_id", "milestone",
+        "title", "branch", "base_branch", "commit_message", "pr_title", "depends_on",
+        "objective", "requirement_refs", "allowed_paths", "forbidden_scope",
+        "acceptance_criteria", "validation_commands", "review_assurance", "runtime_budget",
+        "human_gates", "task_markdown",
+    }
+    missing, extra = sorted(required - set(task)), sorted(set(task) - required)
+    if missing:
+        raise SystemExit(f"Generated task is missing fields: {missing}")
+    if extra:
+        raise SystemExit(f"Generated task contains unsupported fields: {extra}")
+    if task["schema_version"] != 2:
+        raise SystemExit("Generated task schema_version must be 2")
+    for key, expected in (
+        ("campaign_id", config["campaign_id"]), ("backlog_item_id", item["id"]),
+        ("task_id", item["id"]), ("milestone", item["milestone"]),
+        ("base_branch", config["base_branch"]),
+    ):
+        if task[key] != expected:
+            raise SystemExit(f"Generated field {key!r} must equal {expected!r}")
+    if task["depends_on"] != item.get("depends_on", []):
+        raise SystemExit("Generated depends_on must exactly preserve backlog dependencies")
+    if not re.fullmatch(r"agent/[a-z0-9][a-z0-9._/-]*", task["branch"]):
+        raise SystemExit("Generated branch must be a safe agent/* branch")
+    for field, minimum in {
+        "requirement_refs": 1, "allowed_paths": 1, "forbidden_scope": 1,
+        "acceptance_criteria": 3, "validation_commands": 1, "human_gates": 0,
+    }.items():
+        value = task[field]
+        if not isinstance(value, list) or len(value) < minimum or not all(isinstance(v, str) and v.strip() for v in value):
+            raise SystemExit(f"Generated field {field} is invalid")
+    for field in ("title", "commit_message", "pr_title", "objective", "task_markdown"):
+        if not isinstance(task[field], str) or not task[field].strip():
+            raise SystemExit(f"Generated field {field} must be a non-empty string")
+    if task["review_assurance"] not in {"standard", "high"}:
+        raise SystemExit("review_assurance must be standard or high")
+    budget = task["runtime_budget"]
+    if not isinstance(budget, dict) or set(budget) != {"maximum_cycles", "maximum_total_minutes", "review_max_tool_calls"}:
+        raise SystemExit("runtime_budget has invalid fields")
+    if not (1 <= int(budget["maximum_cycles"]) <= 5 and 15 <= int(budget["maximum_total_minutes"]) <= 480 and 1 <= int(budget["review_max_tool_calls"]) <= 30):
+        raise SystemExit("runtime_budget values are outside bootstrap limits")
+    expected_paths = item.get("expected_paths", [])
+    for allowed in task["allowed_paths"]:
+        if not path_is_authorized(allowed, expected_paths):
+            raise SystemExit(f"Generated allowed path is broader than backlog authorization: {allowed}")
+    for command in task["validation_commands"]:
+        validate_validation_command(command)
+    markdown = task["task_markdown"]
+    required_phrases = [
+        "IMPLEMENTATION_STATUS=COMPLETE", "IMPLEMENTATION_STATUS=BLOCKED", "BLOCK_REASON=",
+        "No automatic merge", "independent", "validation", "Allowed paths", "Non-goals",
+    ]
+    absent = [p for p in required_phrases if p.lower() not in markdown.lower()]
+    if absent:
+        raise SystemExit(f"Generated task markdown is missing required concepts: {absent}")
+
+
+def build_prompt(template: str, config: dict[str, Any], state: dict[str, Any], item: dict[str, Any], repo: Path, base_sha: str) -> str:
+    document_lines = "\n".join(f"- {name}: `{path}`" for name, path in config.get("documents", {}).items())
+    context = {
+        "campaign_id": config["campaign_id"], "base_branch": config["base_branch"],
+        "eligible_backlog_item": item, "completed_backlog_items": state.get("completed_backlog_items", []),
+        "exact_base_sha": base_sha, "current_head": git(repo, "rev-parse", "HEAD"),
+        "current_branch": git(repo, "branch", "--show-current"),
+        "working_tree_status": git(repo, "status", "--short"),
+        "recent_commits": git(repo, "log", "--oneline", "-8"),
+    }
+    return template + "\n\n# Authoritative document paths\n\n" + document_lines + "\n\n# Dynamic campaign context\n\n```json\n" + json.dumps(context, indent=2, sort_keys=True) + "\n```\n"
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--repo", default=os.environ.get("PAF_REPO", os.getcwd()))
+    parser.add_argument("--campaign-config", required=True)
+    parser.add_argument("--campaign-state", required=True)
+    parser.add_argument("--output-dir", required=True)
+    parser.add_argument("--backlog-id")
+    parser.add_argument("--sol-config", default=os.environ.get("PAF_SOL_CONFIG", "~/.cline-sol"))
+    parser.add_argument("--template")
+    parser.add_argument("--phase-timeout", type=int, default=int(os.environ.get("PAF_PHASE_TIMEOUT", "3600")))
+    parser.add_argument("--inactivity-timeout", type=int, default=int(os.environ.get("PAF_INACTIVITY_TIMEOUT", "900")))
+    parser.add_argument("--thinking", default="xhigh")
+    parser.add_argument("--list-eligible", action="store_true")
+    args = parser.parse_args()
+
+    repo = Path(args.repo).expanduser().resolve()
+    config_path = Path(args.campaign_config).expanduser().resolve()
+    state_path = Path(args.campaign_state).expanduser().resolve()
+    output_dir = Path(args.output_dir).expanduser().resolve()
+    config = load_json(config_path)
+    state = load_json(state_path) if state_path.exists() else default_state(config)
+    if active_tasks(state):
+        descriptions = [f"{t.get('task_id')}:{t.get('status')}" for t in active_tasks(state)]
+        raise SystemExit("Cannot generate another task while a prior task is active: " + ", ".join(descriptions))
+    item = select_eligible(config, state, args.backlog_id)
+    if args.list_eligible:
+        print(json.dumps(item, indent=2, sort_keys=True))
+        return 0
+    if git(repo, "status", "--porcelain", "--untracked-files=all"):
+        raise SystemExit("Repository must be clean before next-task generation")
+    git(repo, "fetch", "origin")
+    base_sha = git(repo, "rev-parse", f"origin/{config['base_branch']}")
+    if git(repo, "rev-parse", "HEAD") != base_sha or git(repo, "branch", "--show-current") != config["base_branch"]:
+        raise SystemExit(f"Generate tasks only from clean {config['base_branch']} at exact origin head {base_sha}")
+    template_path = Path(args.template).expanduser().resolve() if args.template else Path(__file__).resolve().parent / "templates" / "next-task-prompt.md"
+    if not template_path.is_file():
+        raise SystemExit(f"Missing next-task prompt template: {template_path}")
+    prompt = build_prompt(template_path.read_text(encoding="utf-8"), config, state, item, repo, base_sha)
+    timestamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    generation_dir = output_dir / "generation" / f"{item['id']}-{timestamp}"
+    generation_dir.mkdir(parents=True, exist_ok=False)
+    prompt_path, jsonl_path = generation_dir / "prompt.md", generation_dir / "sol.jsonl"
+    stderr_path, text_path = generation_dir / "sol.stderr.log", generation_dir / "sol.txt"
+    prompt_path.write_text(prompt, encoding="utf-8")
+    config_dir = Path(args.sol_config).expanduser().resolve()
+    if not config_dir.is_dir():
+        raise SystemExit(f"Missing Cline Sol configuration directory: {config_dir}")
+    if not os.environ.get("LITELLM_API_KEY") or not os.environ.get("OPENAI_API_KEY"):
+        raise SystemExit("LITELLM_API_KEY and OPENAI_API_KEY must both be set")
+    permissions = json.dumps({"deny": [
+        "sudo *", "rm -rf *", "docker *", "podman *", "ssh *", "scp *", "curl *", "wget *",
+        "git add *", "git commit *", "git push *", "git checkout *", "git switch *", "git worktree *",
+        "git reset *", "git clean *", "gh *"], "allowRedirects": False}, separators=(",", ":"))
+    env = os.environ.copy()
+    env["CLINE_COMMAND_PERMISSIONS"] = permissions
+    command = ["cline", "--json", "--auto-approve", "true", "--plan", "--timeout", str(args.phase_timeout),
+               "--thinking", args.thinking, "--config", str(config_dir), "--cwd", str(repo), prompt]
+    rc = run_cline(command, env, jsonl_path, stderr_path, args.phase_timeout, args.inactivity_timeout)
+    if rc != 0:
+        raise SystemExit(f"Cline next-task planning failed with exit code {rc}; see {generation_dir}")
+    text = extract_final_text(jsonl_path)
+    text_path.write_text(text + ("\n" if text and not text.endswith("\n") else ""), encoding="utf-8")
+    status, task, reason = parse_generated(text)
+    if status == "BLOCKED":
+        blocked = {"schema_version": 2, "recorded_at": utc_now(), "status": "blocked",
+                   "backlog_item_id": item["id"], "reason": reason, "generation_dir": str(generation_dir)}
+        save_json_atomic(generation_dir / "result.json", blocked)
+        print(json.dumps(blocked, indent=2, sort_keys=True))
+        return 2
+    assert task is not None
+    validate_task(task, config, item)
+    task["generated_base_sha"] = base_sha
+    task["backlog_item_digest"] = typed_digest("paf-bootstrap-backlog-item-v1", item)
+    task["generated_at"] = utc_now()
+    task["generation_dir"] = str(generation_dir)
+    digest_input = dict(task)
+    task["task_contract_digest"] = typed_digest("paf-bootstrap-task-contract-v2", digest_input)
+    task_path, metadata_path = output_dir / f"{item['id']}.md", output_dir / f"{item['id']}.json"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    task_path.write_text(task["task_markdown"].rstrip() + "\n", encoding="utf-8")
+    save_json_atomic(metadata_path, task)
+    result = {"schema_version": 2, "status": "ready", "backlog_item_id": item["id"],
+              "task_path": str(task_path), "metadata_path": str(metadata_path),
+              "task_contract_digest": task["task_contract_digest"], "generation_dir": str(generation_dir)}
+    save_json_atomic(generation_dir / "result.json", result)
+    print(json.dumps(result, indent=2, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

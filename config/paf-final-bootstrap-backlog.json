@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "campaign_id": "paf-bootstrap-self-hosting",
+  "base_branch": "dev/panda",
+  "items": [
+    [
+      "BS-000",
+      "R0",
+      "Merge final architecture/specification",
+      []
+    ],
+    [
+      "BS-010",
+      "R1",
+      "Wire identity and canonical form",
+      [
+        "BS-000"
+      ]
+    ],
+    [
+      "BS-020",
+      "R2",
+      "Core contract and event envelope",
+      [
+        "BS-010"
+      ]
+    ],
+    [
+      "BS-025",
+      "R2-R",
+      "Refinement Graph contracts",
+      [
+        "BS-020"
+      ]
+    ],
+    [
+      "BS-030",
+      "R3",
+      "Shadow runtime and Evidence Package",
+      [
+        "BS-020"
+      ]
+    ],
+    [
+      "BS-035",
+      "R3-E",
+      "Replay and EDA evaluation records",
+      [
+        "BS-030"
+      ]
+    ],
+    [
+      "BS-040",
+      "R4",
+      "Durable state and recovery",
+      [
+        "BS-030"
+      ]
+    ],
+    [
+      "BS-043",
+      "R4-B",
+      "DurableExecutionBackend SPI",
+      [
+        "BS-040"
+      ]
+    ],
+    [
+      "BS-045",
+      "R4-O",
+      "Durable observability projections",
+      [
+        "BS-040"
+      ]
+    ],
+    [
+      "BS-050",
+      "R5",
+      "Secure generic runtime",
+      [
+        "BS-043",
+        "BS-045"
+      ]
+    ],
+    [
+      "BS-051",
+      "R5",
+      "Cline adapter",
+      [
+        "BS-050"
+      ]
+    ],
+    [
+      "BS-055",
+      "R5-X1",
+      "OpenHands conformance spike",
+      [
+        "BS-051"
+      ]
+    ],
+    [
+      "BS-060",
+      "R6",
+      "Routes, specialized models and EDA profile",
+      [
+        "BS-051"
+      ]
+    ],
+    [
+      "BS-070",
+      "R7",
+      "Completion, retry, health and commit authorization",
+      [
+        "BS-060"
+      ]
+    ],
+    [
+      "BS-080",
+      "R8",
+      "MCP gateway",
+      [
+        "BS-070"
+      ]
+    ],
+    [
+      "BS-085",
+      "R8",
+      "A2A gateway",
+      [
+        "BS-080"
+      ]
+    ],
+    [
+      "BS-090",
+      "R9",
+      "Hierarchical planning and graph mutation",
+      [
+        "BS-025",
+        "BS-070"
+      ]
+    ],
+    [
+      "BS-095",
+      "R9-E",
+      "FIZZ Study/Experiment/DSE",
+      [
+        "BS-090"
+      ]
+    ],
+    [
+      "BS-100",
+      "R10",
+      "Claude Code and agent-loop adapters",
+      [
+        "BS-090"
+      ]
+    ],
+    [
+      "BS-110",
+      "R11",
+      "EvolveHLS self-hosted campaign",
+      [
+        "BS-085",
+        "BS-095",
+        "BS-100"
+      ]
+    ],
+    [
+      "BS-120",
+      "R12",
+      "FIZZ end-to-end campaign",
+      [
+        "BS-110"
+      ]
+    ],
+    [
+      "BS-130",
+      "R13",
+      "Bootstrap retirement",
+      [
+        "BS-120"
+      ]
+    ]
+  ]
+}

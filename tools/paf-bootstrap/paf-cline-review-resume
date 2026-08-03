@@ -1,0 +1,234 @@
+#!/usr/bin/env python3
+"""Resume Opus/Sonnet exact-head review without rerunning Sol or Terra."""
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import json
+import os
+import re
+import selectors
+import signal
+import subprocess
+import tempfile
+import time
+from collections import Counter
+from pathlib import Path
+from typing import Any
+
+
+def utc_now() -> str:
+    return dt.datetime.now(dt.timezone.utc).isoformat()
+
+
+def save_json(path: Path, value: dict[str, Any]) -> None:
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def git(repo: Path, *args: str) -> str:
+    result = subprocess.run(["git", "-C", str(repo), *args], text=True,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    if result.returncode:
+        raise SystemExit(f"git {' '.join(args)} failed: {result.stderr.strip()}")
+    return result.stdout.strip()
+
+
+def sanitize(raw: bytes) -> bytes:
+    line = raw.rstrip(b"\r\n")
+    try:
+        obj = json.loads(line.decode(errors="replace"))
+    except json.JSONDecodeError:
+        return line + b"\n"
+    if isinstance(obj, dict):
+        obj.pop("accumulated", None)
+        if isinstance(obj.get("event"), dict):
+            obj["event"].pop("accumulated", None)
+    return json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode() + b"\n"
+
+
+def run_cline(command: list[str], env: dict[str, str], output: Path, stderr: Path,
+              total_timeout: int, inactivity_timeout: int, max_tools: int,
+              max_iterations: int, duplicate_limit: int) -> tuple[int, str | None]:
+    started = last_activity = time.monotonic()
+    tool_calls = highest_iteration = 0
+    command_counts: Counter[str] = Counter()
+    buffer = bytearray()
+    violation: str | None = None
+    with output.open("wb") as out, stderr.open("ab", buffering=0) as err:
+        proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=err, env=env,
+                                start_new_session=True, bufsize=0)
+        assert proc.stdout is not None
+        fd = proc.stdout.fileno(); os.set_blocking(fd, False)
+        selector = selectors.DefaultSelector(); selector.register(fd, selectors.EVENT_READ)
+        forced: int | None = None
+        while True:
+            now = time.monotonic()
+            if forced is None and now - started > total_timeout:
+                forced, violation = 124, f"total timeout exceeded ({total_timeout}s)"
+            if forced is None and now - last_activity > inactivity_timeout:
+                forced, violation = 125, f"inactivity timeout exceeded ({inactivity_timeout}s)"
+            if forced is not None and proc.poll() is None:
+                try: os.killpg(proc.pid, signal.SIGTERM)
+                except ProcessLookupError: pass
+            for _key, _mask in selector.select(timeout=1.0):
+                try: chunk = os.read(fd, 65536)
+                except BlockingIOError: chunk = b""
+                if chunk:
+                    last_activity = time.monotonic(); buffer.extend(chunk)
+                    while b"\n" in buffer:
+                        line, _, rest = buffer.partition(b"\n"); buffer = bytearray(rest)
+                        try: obj = json.loads(line.decode(errors="replace"))
+                        except json.JSONDecodeError: obj = None
+                        if isinstance(obj, dict) and isinstance(obj.get("event"), dict):
+                            event = obj["event"]
+                            if event.get("type") == "iteration_start":
+                                try: highest_iteration = max(highest_iteration, int(event.get("iteration", 0)))
+                                except (TypeError, ValueError): pass
+                                if highest_iteration > max_iterations and forced is None:
+                                    forced, violation = 126, f"iteration budget exceeded ({highest_iteration}>{max_iterations})"
+                            if event.get("type") == "content_start" and event.get("contentType") == "tool":
+                                inp = event.get("input")
+                                if isinstance(inp, dict):
+                                    commands = inp.get("commands")
+                                    if isinstance(commands, list) and len(commands) > 1 and forced is None:
+                                        forced, violation = 126, f"batched shell commands are prohibited during review ({len(commands)} commands)"
+                                tool_calls += 1
+                                if tool_calls > max_tools and forced is None:
+                                    forced, violation = 126, f"tool budget exceeded ({tool_calls}>{max_tools})"
+                                signature = None
+                                if isinstance(inp, dict):
+                                    if isinstance(inp.get("commands"), list): signature = " || ".join(map(str, inp["commands"]))
+                                    elif isinstance(inp.get("command"), str): signature = inp["command"]
+                                if signature:
+                                    command_counts[signature] += 1
+                                    if command_counts[signature] > duplicate_limit and forced is None:
+                                        forced, violation = 126, "duplicate command limit exceeded"
+                        out.write(sanitize(line)); out.flush()
+                else:
+                    try: selector.unregister(fd)
+                    except Exception: pass
+            rc = proc.poll()
+            if rc is not None:
+                if buffer: out.write(sanitize(bytes(buffer)))
+                out.flush()
+                return (forced if forced is not None else rc), violation
+            if forced is not None:
+                try: proc.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    try: os.killpg(proc.pid, signal.SIGKILL)
+                    except ProcessLookupError: pass
+
+
+def final_text(path: Path) -> str:
+    result = ""
+    for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        try: obj = json.loads(raw)
+        except json.JSONDecodeError: continue
+        if obj.get("type") == "run_result" and isinstance(obj.get("text"), str):
+            result = obj["text"].strip()
+    return result
+
+
+def parse_status(text: str, key: str, allowed: set[str]) -> str:
+    matches = re.findall(rf"(?m)^{re.escape(key)}=({'|'.join(map(re.escape, sorted(allowed)))})$", text)
+    if len(matches) != 1:
+        raise SystemExit(f"Expected exactly one {key} marker")
+    return matches[0]
+
+
+def latest_cycle(state: Path) -> tuple[int, str]:
+    candidates: list[tuple[int, Path]] = []
+    for path in state.glob("cycle-*-head-sha.txt"):
+        match = re.fullmatch(r"cycle-(\d+)-head-sha\.txt", path.name)
+        if match: candidates.append((int(match.group(1)), path))
+    if not candidates:
+        raise SystemExit("No exact checkpoint head exists in the supplied state directory")
+    cycle, path = max(candidates)
+    return cycle, path.read_text().strip()
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--state-dir", required=True)
+    parser.add_argument("--repo", default=os.environ.get("PAF_REPO", os.getcwd()))
+    parser.add_argument("--from", dest="from_stage", choices=("opus", "sonnet"), default="sonnet")
+    parser.add_argument("--phase-timeout", type=int, default=3600)
+    parser.add_argument("--inactivity-timeout", type=int, default=900)
+    parser.add_argument("--max-tool-calls", type=int, default=15)
+    parser.add_argument("--max-iterations", type=int, default=30)
+    parser.add_argument("--duplicate-command-limit", type=int, default=2)
+    parser.add_argument("--opus-config", default="~/.cline-opus")
+    parser.add_argument("--sonnet-config", default="~/.cline-sonnet")
+    args = parser.parse_args()
+
+    if not os.environ.get("LITELLM_API_KEY") or not os.environ.get("OPENAI_API_KEY"):
+        raise SystemExit("LITELLM_API_KEY and OPENAI_API_KEY must both be set")
+    state, repo = Path(args.state_dir).expanduser().resolve(), Path(args.repo).expanduser().resolve()
+    task = state / "task.md"
+    if not task.is_file(): raise SystemExit(f"Missing {task}")
+    cycle, head = latest_cycle(state)
+    base = (state / "base-sha.txt").read_text().strip()
+    if git(repo, "cat-file", "-t", head) != "commit": raise SystemExit("Review head is not a commit")
+    resume_id = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    summary_path = state / f"review-resume-{resume_id}-summary.json"
+    root = Path(tempfile.mkdtemp(prefix="paf-review-resume.")); worktree = root / "worktree"
+    git(repo, "worktree", "add", "--detach", str(worktree), head)
+    try:
+        implementation = state / f"cycle-{cycle}-terra.txt"
+        validation = state / f"cycle-{cycle}-controller-validation.log"
+        validation_rc = state / f"cycle-{cycle}-controller-validation.rc"
+        common = task.read_text() + "\n\n# Implementation report\n\n" + implementation.read_text()
+        if validation.exists():
+            common += "\n\n# Controller-owned deterministic validation\n\nExit status: " + (validation_rc.read_text().strip() if validation_rc.exists() else "unknown")
+            common += "\n\n" + "\n".join(validation.read_text(errors="replace").splitlines()[-200:])
+        common += f"\n\n# Exact review coordinates\n\nBase: {base}\nHead: {head}\n"
+        env = os.environ.copy()
+        env.pop("GH_TOKEN", None); env.pop("GITHUB_TOKEN", None); env.pop("SSH_AUTH_SOCK", None)
+        permissions = json.dumps({"deny": ["sudo *", "rm -rf *", "docker *", "podman *", "ssh *", "scp *", "curl *", "wget *", "git add *", "git commit *", "git push *", "git checkout *", "git switch *", "git worktree *", "git reset *", "git clean *", "gh *"], "allowRedirects": True}, separators=(",", ":"))
+        env["CLINE_COMMAND_PERMISSIONS"] = permissions
+        opus_text = state / f"cycle-{cycle}-opus.txt"
+        if args.from_stage == "opus":
+            prompt = "Act as the independent verification planner. Produce a criterion-linked bounded plan with no more than 12 actions, one command per tool call, no duplicates, and no edits. Final line: REVIEW_PLAN_STATUS=READY or REVIEW_PLAN_STATUS=BLOCKED.\n\n" + common
+            out, err = state / f"review-resume-{resume_id}-opus.jsonl", state / f"review-resume-{resume_id}-opus.stderr.log"
+            command = ["cline", "--json", "--auto-approve", "true", "--plan", "--timeout", str(args.phase_timeout), "--thinking", "xhigh", "--config", str(Path(args.opus_config).expanduser()), "--cwd", str(worktree), prompt]
+            rc, violation = run_cline(command, env, out, err, args.phase_timeout, args.inactivity_timeout, 12, 24, args.duplicate_command_limit)
+            if rc:
+                save_json(summary_path, {"schema_version": 1, "status": "failed", "role": "opus", "reason": violation or f"exit {rc}", "head_sha": head, "state_dir": str(state)})
+                return 1
+            text = final_text(out); status = parse_status(text, "REVIEW_PLAN_STATUS", {"READY", "BLOCKED"})
+            opus_text = state / f"review-resume-{resume_id}-opus.txt"; opus_text.write_text(text + "\n")
+            if status == "BLOCKED":
+                save_json(summary_path, {"schema_version": 1, "status": "blocked", "role": "opus", "reason": "review planning blocked", "head_sha": head, "state_dir": str(state)})
+                return 2
+        if not opus_text.is_file(): raise SystemExit(f"Missing review plan: {opus_text}")
+        verify = common + "\n\n# Independent verification plan\n\n" + opus_text.read_text()
+        prompt = "Act as the independent verification executor. Review only the exact head and supplied criterion-linked plan. One command per tool call, no duplicates, no edits, no network, and stop within the enforced budgets. Final line: PAF_REVIEW_VERDICT=APPROVED or PAF_REVIEW_VERDICT=BLOCKED.\n\n" + verify
+        out, err = state / f"review-resume-{resume_id}-sonnet.jsonl", state / f"review-resume-{resume_id}-sonnet.stderr.log"
+        command = ["cline", "--json", "--auto-approve", "true", "--timeout", str(args.phase_timeout), "--thinking", "high", "--config", str(Path(args.sonnet_config).expanduser()), "--cwd", str(worktree), prompt]
+        rc, violation = run_cline(command, env, out, err, args.phase_timeout, args.inactivity_timeout, args.max_tool_calls, args.max_iterations, args.duplicate_command_limit)
+        if rc:
+            save_json(summary_path, {"schema_version": 1, "status": "failed", "role": "sonnet", "reason": violation or f"exit {rc}", "head_sha": head, "state_dir": str(state)})
+            return 1
+        text = final_text(out); verdict = parse_status(text, "PAF_REVIEW_VERDICT", {"APPROVED", "BLOCKED"})
+        report = state / f"review-resume-{resume_id}-sonnet.txt"; report.write_text(text + "\n")
+        dirty = git(worktree, "status", "--porcelain", "--untracked-files=all")
+        if dirty:
+            verdict = "BLOCKED"
+            report.write_text(text + f"\n\nFINDING_ID=PAF-REVIEWER-RESIDUE\nSEVERITY=blocking\nEVIDENCE={dirty}\nPAF_REVIEW_VERDICT=BLOCKED\n")
+        status = "approved" if verdict == "APPROVED" else "blocked"
+        save_json(summary_path, {"schema_version": 1, "recorded_at": utc_now(), "status": status, "role": "sonnet", "reason": None if status == "approved" else "review blocked", "head_sha": head, "state_dir": str(state), "report": str(report)})
+        print(summary_path)
+        return 0 if status == "approved" else 2
+    finally:
+        try:
+            if not git(worktree, "status", "--porcelain", "--untracked-files=all"):
+                git(repo, "worktree", "remove", str(worktree))
+                root.rmdir()
+        except Exception:
+            pass
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

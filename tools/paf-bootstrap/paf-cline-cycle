@@ -1,0 +1,1176 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+# Interim static controller for bounded PAF autonomous cycles.
+#
+# Flow:
+#   Sol plan -> Terra implement -> Opus verification plan ->
+#   Sonnet verification -> if blocked, Sol correction plan ->
+#   Terra correction -> repeat.
+#
+# The controller:
+#   - never merges;
+#   - owns commits, pushes, draft-PR publication, and reviewer worktrees;
+#   - retries only the failed Cline stage;
+#   - preserves every stage attempt;
+#   - distinguishes valid BLOCKED results from malformed output;
+#   - removes repeated Cline "accumulated" payloads before JSONL persistence;
+#   - enforces both total-stage and inactivity timeouts.
+
+REPO="${PAF_REPO:-$PWD}"
+TASK_FILE="${1:-}"
+BRANCH="${PAF_BRANCH:-agent/paf-05a3a1-contract-matrix}"
+BASE_BRANCH="${PAF_BASE_BRANCH:-dev/panda}"
+MAX_CYCLES="${PAF_MAX_CYCLES:-3}"
+
+PHASE_TIMEOUT="${PAF_PHASE_TIMEOUT:-3600}"
+INACTIVITY_TIMEOUT="${PAF_INACTIVITY_TIMEOUT:-900}"
+STAGE_MAX_ATTEMPTS="${PAF_STAGE_MAX_ATTEMPTS:-2}"
+RETRY_BACKOFF="${PAF_RETRY_BACKOFF:-5}"
+
+CONTINUE_BRANCH="${PAF_CONTINUE_BRANCH:-0}"
+ADOPT_DIRTY_WORKTREE="${PAF_ADOPT_DIRTY_WORKTREE:-0}"
+CHECKPOINT="${PAF_CHECKPOINT:-}"
+INITIAL_PLAN_FILE="${PAF_INITIAL_PLAN_FILE:-}"
+TASK_METADATA_FILE="${PAF_TASK_METADATA_FILE:-}"
+PUBLISH="${PAF_PUBLISH:-1}"
+
+PRECOMMIT_VALIDATION_CMD="${PAF_PRECOMMIT_VALIDATION_CMD:-}"
+PRECOMMIT_VALIDATION_FILE="${PAF_PRECOMMIT_VALIDATION_FILE:-}"
+PRECOMMIT_VALIDATION_TIMEOUT="${PAF_PRECOMMIT_VALIDATION_TIMEOUT:-3600}"
+
+REVIEW_STAGE_MAX_ATTEMPTS="${PAF_REVIEW_STAGE_MAX_ATTEMPTS:-1}"
+REVIEW_MAX_TOOL_CALLS="${PAF_REVIEW_MAX_TOOL_CALLS:-15}"
+REVIEW_MAX_ITERATIONS="${PAF_REVIEW_MAX_ITERATIONS:-30}"
+REVIEW_DUPLICATE_COMMAND_LIMIT="${PAF_REVIEW_DUPLICATE_COMMAND_LIMIT:-2}"
+REVIEW_ZOMBIE_GRACE_SECONDS="${PAF_REVIEW_ZOMBIE_GRACE_SECONDS:-120}"
+
+GITHUB_REPO="${PAF_GITHUB_REPO:-Antonyt80/PandA-bambu}"
+COMMIT_MESSAGE="${PAF_COMMIT_MESSAGE:-docs: apply PAF task changes}"
+REMEDIATION_COMMIT_MESSAGE="${PAF_REMEDIATION_COMMIT_MESSAGE:-docs: address PAF review findings}"
+PR_TITLE="${PAF_PR_TITLE:-docs: apply PAF task changes}"
+PR_BODY_FILE="${PAF_PR_BODY_FILE:-}"
+
+SOL_CONFIG="${PAF_SOL_CONFIG:-$HOME/.cline-sol}"
+TERRA_CONFIG="${PAF_TERRA_CONFIG:-$HOME/.cline-terra}"
+OPUS_CONFIG="${PAF_OPUS_CONFIG:-$HOME/.cline-opus}"
+SONNET_CONFIG="${PAF_SONNET_CONFIG:-$HOME/.cline-sonnet}"
+
+STATE_ROOT="${PAF_STATE_ROOT:-$HOME/.local/state/paf-cline-cycles}"
+RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-$$"
+STATE="$STATE_ROOT/$RUN_ID"
+mkdir -p "$STATE"
+
+GLOBAL_LOG="${PAF_GLOBAL_LOG:-$HOME/.local/state/paf-cycle.log}"
+RESULT_FILE="${PAF_RESULT_FILE:-$STATE/run-summary.json}"
+TASK_ID="${PAF_TASK_ID:-$(basename "$TASK_FILE" .md)}"
+CAMPAIGN_ID="${PAF_PARENT_CAMPAIGN_ID:-standalone}"
+mkdir -p "$(dirname "$GLOBAL_LOG")" "$(dirname "$RESULT_FILE")"
+ln -sfn "$STATE" "$STATE_ROOT/latest"
+
+REVIEW_WT=""
+REVIEW_ROOT=""
+STAGE_STATUS=""
+STAGE_BLOCK_REASON=""
+STAGE_LAST_RC=0
+
+log() {
+  local line
+  line="[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*"
+  printf '%s\n' "$line" | tee -a "$STATE/controller.log" "$GLOBAL_LOG"
+}
+
+write_summary() {
+  local status="$1"
+  local role="${2:-}"
+  local reason="${3:-}"
+  local head="${HEAD_SHA:-}"
+  local pr="${PR_NUMBER:-}"
+
+  if [[ -z "$head" ]] && git -C "${REPO:-.}" rev-parse HEAD >/dev/null 2>&1; then
+    head="$(git -C "$REPO" rev-parse HEAD)"
+  fi
+
+  python3 - "$RESULT_FILE" "$status" "$role" "$reason" "$STATE" \
+    "$CAMPAIGN_ID" "$TASK_ID" "$TASK_FILE" "$BRANCH" "$BASE_BRANCH" \
+    "$head" "$pr" "${GITHUB_REPO:-}" <<'PYSUMMARY'
+import datetime as dt
+import json
+import os
+import sys
+from pathlib import Path
+
+(
+    destination, status, role, reason, state_dir, campaign_id, task_id,
+    task_file, branch, base_branch, head, pr_number, github_repo
+) = sys.argv[1:]
+
+record = {
+    "schema_version": 1,
+    "recorded_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+    "status": status,
+    "role": role or None,
+    "reason": reason or None,
+    "state_dir": state_dir,
+    "campaign_id": campaign_id,
+    "task_id": task_id,
+    "task_file": task_file,
+    "branch": branch,
+    "base_branch": base_branch,
+    "head_sha": head or None,
+    "pr_number": int(pr_number) if pr_number.isdigit() else None,
+    "github_repo": github_repo or None,
+}
+
+path = Path(destination)
+path.parent.mkdir(parents=True, exist_ok=True)
+tmp = path.with_name(path.name + ".tmp")
+tmp.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+os.replace(tmp, path)
+PYSUMMARY
+}
+
+die() {
+  local reason="$*"
+  log "ERROR: $reason"
+  write_summary "failed" "controller" "$reason" || true
+  exit 1
+}
+
+stop_blocked() {
+  local role="$1"
+  local result_file="$2"
+  local reason="${3:-}"
+
+  [[ -n "$reason" ]] || reason="No BLOCK_REASON was supplied."
+  cp "$result_file" "$STATE/latest-blocked.txt"
+  printf '%s\n' "$reason" > "$STATE/latest-block-reason.txt"
+  log "$role returned a valid BLOCKED result: $reason"
+  write_summary "blocked" "$role" "$reason" || true
+  printf '\nPAF cycle blocked.\nRole: %s\nReason: %s\nState: %s\n' \
+    "$role" "$reason" "$STATE"
+  exit 2
+}
+
+on_signal() {
+  local signal_name="$1"
+  log "Controller interrupted by $signal_name; preserving repository and run state"
+  write_summary "interrupted" "controller" "signal $signal_name" || true
+  exit 130
+}
+trap 'on_signal INT' INT
+trap 'on_signal TERM' TERM
+trap 'on_signal HUP' HUP
+
+cleanup_review_worktree() {
+  if [[ -n "${REVIEW_WT:-}" && -d "${REVIEW_WT:-}" ]]; then
+    if git -C "$REPO" worktree list --porcelain 2>/dev/null |
+      grep -Fqx "worktree $REVIEW_WT"; then
+      if [[ -z "$(git -C "$REVIEW_WT" status --porcelain --untracked-files=all)" ]]; then
+        git -C "$REPO" worktree remove "$REVIEW_WT" >/dev/null 2>&1 || true
+      else
+        log "Reviewer worktree retained because it is dirty: $REVIEW_WT"
+      fi
+    fi
+  fi
+
+  if [[ -n "${REVIEW_ROOT:-}" && -d "${REVIEW_ROOT:-}" ]]; then
+    rmdir "$REVIEW_ROOT" >/dev/null 2>&1 || true
+  fi
+}
+trap cleanup_review_worktree EXIT
+
+extract_text() {
+  local src="$1"
+  local dst="$2"
+
+  python3 - "$src" "$dst" <<'PYJSON'
+import json
+import sys
+from pathlib import Path
+
+src, dst = map(Path, sys.argv[1:3])
+parts = []
+
+with src.open("r", encoding="utf-8", errors="replace") as stream:
+    for raw in stream:
+        try:
+            obj = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+
+        if obj.get("type") == "run_result":
+            text = obj.get("text")
+            if isinstance(text, str) and text.strip():
+                parts = [text.strip()]
+
+        elif obj.get("type") == "say" and obj.get("partial") is not True:
+            text = obj.get("text")
+            if isinstance(text, str) and text.strip():
+                parts.append(text.strip())
+
+dst.write_text(
+    "\n\n".join(parts) + ("\n" if parts else ""),
+    encoding="utf-8",
+)
+PYJSON
+
+  [[ -s "$dst" ]]
+}
+
+parse_status() {
+  local text_file="$1"
+  local status_key="$2"
+  local allowed_csv="$3"
+
+  local allowed_regex="${allowed_csv//,/|}"
+  local -a matches=()
+  mapfile -t matches < <(
+    grep -E "^${status_key}=(${allowed_regex})$" "$text_file" || true
+  )
+
+  if [[ "${#matches[@]}" -ne 1 ]]; then
+    return 1
+  fi
+
+  STAGE_STATUS="${matches[0]#*=}"
+  STAGE_BLOCK_REASON="$(
+    grep -m1 '^BLOCK_REASON=' "$text_file" 2>/dev/null |
+      cut -d= -f2- || true
+  )"
+  return 0
+}
+
+# Run one subprocess in a new process group, stream and sanitize its JSONL,
+# and terminate it on either total timeout or output inactivity.
+run_supervised() {
+  local role="$1"
+  local output_json="$2"
+  local max_tool_calls="$3"
+  local max_iterations="$4"
+  local duplicate_command_limit="$5"
+  local zombie_grace_seconds="$6"
+  shift 6
+
+  python3 - \
+    "$output_json" \
+    "$STATE/controller.log" \
+    "$PHASE_TIMEOUT" \
+    "$INACTIVITY_TIMEOUT" \
+    "$role" \
+    "$max_tool_calls" \
+    "$max_iterations" \
+    "$duplicate_command_limit" \
+    "$zombie_grace_seconds" \
+    "$@" <<'PYSUPERVISOR'
+import datetime as dt
+import json
+import os
+import select
+import signal
+import subprocess
+import sys
+import time
+from collections import Counter
+from pathlib import Path
+
+output_path = Path(sys.argv[1])
+controller_log = Path(sys.argv[2])
+total_timeout = int(sys.argv[3])
+inactivity_timeout = int(sys.argv[4])
+role = sys.argv[5]
+max_tool_calls = int(sys.argv[6])
+max_iterations = int(sys.argv[7])
+duplicate_command_limit = int(sys.argv[8])
+zombie_grace_seconds = int(sys.argv[9])
+command = sys.argv[10:]
+
+def stamp() -> str:
+    return dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+def supervisor_log(message: str) -> None:
+    with controller_log.open("a", encoding="utf-8") as log:
+        log.write(f"[{stamp()}] SUPERVISOR {role}: {message}\n")
+        log.flush()
+
+def parse_obj(raw_line: bytes):
+    stripped = raw_line.rstrip(b"\r\n")
+    if not stripped:
+        return None
+    try:
+        return json.loads(stripped.decode("utf-8", errors="replace"))
+    except json.JSONDecodeError:
+        return None
+
+def sanitize(raw_line: bytes) -> bytes:
+    stripped = raw_line.rstrip(b"\r\n")
+    if not stripped:
+        return b"\n"
+    obj = parse_obj(raw_line)
+    if obj is None:
+        return stripped + b"\n"
+    if isinstance(obj, dict):
+        obj.pop("accumulated", None)
+        event = obj.get("event")
+        if isinstance(event, dict):
+            event.pop("accumulated", None)
+    return json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode("utf-8") + b"\n"
+
+def command_signature(event: dict) -> str | None:
+    value = event.get("input")
+    if not isinstance(value, dict):
+        return None
+    commands = value.get("commands")
+    if isinstance(commands, list):
+        return " || ".join(str(item).strip() for item in commands)
+    command = value.get("command")
+    return command.strip() if isinstance(command, str) else None
+
+def descendants(root: int) -> dict[int, tuple[int, str]]:
+    table: dict[int, tuple[int, str]] = {}
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdigit():
+            continue
+        try:
+            fields = (entry / "stat").read_text().split()
+            table[int(fields[0])] = (int(fields[3]), fields[2])
+        except (OSError, ValueError, IndexError):
+            continue
+    selected: dict[int, tuple[int, str]] = {}
+    frontier = {root}
+    while frontier:
+        next_frontier: set[int] = set()
+        for pid, pair in table.items():
+            if pair[0] in frontier and pid not in selected:
+                selected[pid] = pair
+                next_frontier.add(pid)
+        frontier = next_frontier
+    return selected
+
+def terminate_group(proc: subprocess.Popen[bytes], reason: str) -> None:
+    supervisor_log(reason)
+    try:
+        os.killpg(proc.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        return
+    try:
+        proc.wait(timeout=10)
+        return
+    except subprocess.TimeoutExpired:
+        pass
+    supervisor_log("SIGTERM grace period expired; sending SIGKILL")
+    try:
+        os.killpg(proc.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+
+if not command:
+    supervisor_log("no command supplied")
+    raise SystemExit(126)
+
+output_path.parent.mkdir(parents=True, exist_ok=True)
+started = time.monotonic()
+last_activity = started
+timed_out_code = None
+buffer = bytearray()
+runtime_budget = {
+    "tool_calls": 0,
+    "highest_iteration": 0,
+}
+command_counts: Counter[str] = Counter()
+zombie_since: float | None = None
+try:
+    last_log_size = controller_log.stat().st_size
+except FileNotFoundError:
+    last_log_size = 0
+
+try:
+    with controller_log.open("ab", buffering=0) as err, output_path.open("wb") as out:
+        proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=err,
+                                start_new_session=True, bufsize=0)
+        assert proc.stdout is not None
+        fd = proc.stdout.fileno()
+        os.set_blocking(fd, False)
+        stdout_eof = False
+
+        def observe(line: bytes) -> str | None:
+            obj = parse_obj(line)
+            if not isinstance(obj, dict):
+                return None
+            event = obj.get("event")
+            if not isinstance(event, dict):
+                return None
+            if event.get("type") == "iteration_start":
+                try:
+                    runtime_budget["highest_iteration"] = max(runtime_budget["highest_iteration"], int(event.get("iteration", 0)))
+                except (TypeError, ValueError):
+                    pass
+                if max_iterations > 0 and runtime_budget["highest_iteration"] > max_iterations:
+                    return f"iteration budget exceeded ({runtime_budget['highest_iteration']}>{max_iterations})"
+            if event.get("type") == "content_start" and event.get("contentType") == "tool":
+                tool_input = event.get("input")
+                if max_tool_calls > 0 and isinstance(tool_input, dict):
+                    commands = tool_input.get("commands")
+                    if isinstance(commands, list) and len(commands) > 1:
+                        return f"batched shell commands are prohibited during review ({len(commands)} commands)"
+                runtime_budget["tool_calls"] += 1
+                if max_tool_calls > 0 and runtime_budget["tool_calls"] > max_tool_calls:
+                    return f"tool-call budget exceeded ({runtime_budget['tool_calls']}>{max_tool_calls})"
+                signature = command_signature(event)
+                if signature:
+                    command_counts[signature] += 1
+                    if duplicate_command_limit > 0 and command_counts[signature] > duplicate_command_limit:
+                        return f"duplicate command limit exceeded: {signature[:240]}"
+            return None
+
+        while True:
+            now = time.monotonic()
+            try:
+                current_log_size = controller_log.stat().st_size
+            except FileNotFoundError:
+                current_log_size = last_log_size
+            if current_log_size != last_log_size:
+                last_log_size = current_log_size
+                last_activity = now
+            if timed_out_code is None and total_timeout > 0 and now - started > total_timeout:
+                timed_out_code = 124
+                terminate_group(proc, f"total timeout exceeded ({total_timeout}s); terminating process group")
+            if timed_out_code is None and inactivity_timeout > 0 and now - last_activity > inactivity_timeout:
+                timed_out_code = 125
+                terminate_group(proc, f"no output activity for {inactivity_timeout}s; terminating process group")
+            if timed_out_code is None and zombie_grace_seconds > 0:
+                zombie_count = sum(1 for _pid, (_ppid, state) in descendants(proc.pid).items() if state == "Z")
+                if zombie_count:
+                    zombie_since = zombie_since or now
+                    if now - zombie_since > zombie_grace_seconds and now - last_activity > min(60, zombie_grace_seconds / 2):
+                        timed_out_code = 126
+                        terminate_group(proc, f"unreaped descendant zombie persisted for {zombie_grace_seconds}s")
+                else:
+                    zombie_since = None
+            if not stdout_eof:
+                readable, _, _ = select.select([fd], [], [], 1.0)
+                if readable:
+                    try:
+                        chunk = os.read(fd, 65536)
+                    except BlockingIOError:
+                        chunk = b""
+                    if chunk:
+                        last_activity = time.monotonic()
+                        buffer.extend(chunk)
+                        while True:
+                            newline = buffer.find(b"\n")
+                            if newline < 0:
+                                break
+                            line = bytes(buffer[:newline])
+                            del buffer[:newline + 1]
+                            violation = observe(line)
+                            out.write(sanitize(line)); out.flush()
+                            if violation and timed_out_code is None:
+                                timed_out_code = 126
+                                terminate_group(proc, f"runtime policy violation: {violation}")
+                    else:
+                        stdout_eof = True
+            else:
+                time.sleep(0.1)
+            rc = proc.poll()
+            if rc is not None:
+                while not stdout_eof:
+                    try:
+                        chunk = os.read(fd, 65536)
+                    except BlockingIOError:
+                        time.sleep(0.05); continue
+                    if not chunk:
+                        stdout_eof = True; break
+                    buffer.extend(chunk)
+                    while True:
+                        newline = buffer.find(b"\n")
+                        if newline < 0: break
+                        line = bytes(buffer[:newline]); del buffer[:newline + 1]
+                        out.write(sanitize(line))
+                if buffer:
+                    out.write(sanitize(bytes(buffer))); buffer.clear()
+                out.flush(); break
+        raise SystemExit(timed_out_code if timed_out_code is not None else proc.returncode)
+except FileNotFoundError as exc:
+    supervisor_log(f"unable to start command: {exc}")
+    raise SystemExit(127)
+except Exception as exc:
+    supervisor_log(f"supervisor failure: {type(exc).__name__}: {exc}")
+    raise
+PYSUPERVISOR
+}
+
+run_cline_once() {
+  local role="$1"
+  local config="$2"
+  local cwd="$3"
+  local thinking="$4"
+  local mode="$5"
+  local input_file="$6"
+  local prompt="$7"
+  local output_json="$8"
+  local permissions="$9"
+
+  local -a args=(
+    --json
+    --auto-approve true
+    --timeout "$PHASE_TIMEOUT"
+    --thinking "$thinking"
+    --config "$config"
+    --cwd "$cwd"
+  )
+  if [[ "$mode" == "plan" ]]; then
+    args+=(--plan)
+  fi
+
+  local input_text
+  input_text="$(cat "$input_file")"
+
+  local combined_prompt
+  combined_prompt="${prompt}"$'\n\n--- BEGIN SUPPLIED INPUT ---\n'"${input_text}"$'\n--- END SUPPLIED INPUT ---'
+
+  local max_tool_calls=0 max_iterations=0 duplicate_limit=0 zombie_grace=0
+  if [[ "$role" == opus-* || "$role" == sonnet-* ]]; then
+    max_tool_calls="$REVIEW_MAX_TOOL_CALLS"
+    max_iterations="$REVIEW_MAX_ITERATIONS"
+    duplicate_limit="$REVIEW_DUPLICATE_COMMAND_LIMIT"
+    zombie_grace="$REVIEW_ZOMBIE_GRACE_SECONDS"
+  fi
+
+  CLINE_COMMAND_PERMISSIONS="$permissions" \
+    run_supervised "$role" "$output_json" \
+      "$max_tool_calls" "$max_iterations" "$duplicate_limit" "$zombie_grace" \
+    env -u GH_TOKEN -u GITHUB_TOKEN -u SSH_AUTH_SOCK \
+      -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_SESSION_TOKEN \
+      -u AZURE_CLIENT_SECRET -u GOOGLE_APPLICATION_CREDENTIALS \
+      cline "${args[@]}" "$combined_prompt"
+}
+
+detect_nonretryable_provider_error() {
+  local json_file="$1"
+  python3 - "$json_file" <<'PYPROVIDER'
+import json, re, sys
+from pathlib import Path
+texts=[]
+path=Path(sys.argv[1])
+if path.exists():
+    for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        try: obj=json.loads(raw)
+        except json.JSONDecodeError: texts.append(raw); continue
+        stack=[obj]
+        while stack:
+            value=stack.pop()
+            if isinstance(value, dict): stack.extend(value.values())
+            elif isinstance(value, list): stack.extend(value)
+            elif isinstance(value, str): texts.append(value)
+joined="\n".join(texts)
+for pattern, reason in [
+    (r"budget has been exceeded|budget exceeded|insufficient credits", "provider budget exhausted"),
+    (r"openai api key is missing|api key is missing", "required API key is missing"),
+    (r"invalid api key|authentication failed|unauthorized|status.?401", "provider authentication failed"),
+    (r"quota exceeded|hard quota|billing quota", "provider quota exhausted"),
+]:
+    if re.search(pattern, joined, re.I):
+        print(reason); raise SystemExit(0)
+raise SystemExit(1)
+PYPROVIDER
+}
+
+# Run a Cline stage with fresh-invocation retries. A valid semantic BLOCKED
+# status is returned to the caller and is never treated as malformed output.
+run_status_stage() {
+  local role="$1"
+  local config="$2"
+  local cwd="$3"
+  local thinking="$4"
+  local mode="$5"
+  local input_file="$6"
+  local prompt="$7"
+  local canonical_json="$8"
+  local canonical_text="$9"
+  local permissions="${10}"
+  local status_key="${11}"
+  local allowed_csv="${12}"
+
+  local stem="${canonical_json%.jsonl}"
+  local attempt attempt_json attempt_text rc provider_reason
+  local attempt_limit="$STAGE_MAX_ATTEMPTS"
+  if [[ "$role" == opus-* || "$role" == sonnet-* ]]; then
+    attempt_limit="$REVIEW_STAGE_MAX_ATTEMPTS"
+  fi
+
+  STAGE_STATUS=""
+  STAGE_BLOCK_REASON=""
+  STAGE_LAST_RC=0
+
+  for ((attempt=1; attempt<=attempt_limit; attempt++)); do
+    attempt_json="${stem}.attempt-${attempt}.jsonl"
+    attempt_text="${stem}.attempt-${attempt}.txt"
+
+    log "Starting $role in $mode mode (attempt $attempt/$attempt_limit)"
+
+    set +e
+    run_cline_once \
+      "$role" "$config" "$cwd" "$thinking" "$mode" \
+      "$input_file" "$prompt" "$attempt_json" "$permissions"
+    rc=$?
+    set -e
+    STAGE_LAST_RC=$rc
+
+    if [[ $rc -eq 0 ]]; then
+      if extract_text "$attempt_json" "$attempt_text"; then
+        if parse_status "$attempt_text" "$status_key" "$allowed_csv"; then
+          cp "$attempt_json" "$canonical_json"
+          cp "$attempt_text" "$canonical_text"
+          log "Completed $role with ${status_key}=${STAGE_STATUS}"
+          return 0
+        fi
+
+        log "$role attempt $attempt returned malformed or ambiguous $status_key output"
+      else
+        log "$role attempt $attempt produced no parseable final text"
+      fi
+    else
+      case "$rc" in
+        124)
+          log "$role attempt $attempt exceeded the total stage timeout"
+          ;;
+        125)
+          log "$role attempt $attempt exceeded the inactivity timeout"
+          ;;
+        *)
+          log "$role attempt $attempt failed with exit code $rc"
+          ;;
+      esac
+    fi
+
+    provider_reason="$(detect_nonretryable_provider_error "$attempt_json" 2>/dev/null || true)"
+    if [[ -n "$provider_reason" ]]; then
+      printf 'BLOCK_REASON=%s
+' "$provider_reason" > "$attempt_text"
+      stop_blocked "$role" "$attempt_text" "$provider_reason"
+    fi
+    if [[ $attempt -lt $attempt_limit ]]; then
+      log "Retrying only $role with a fresh invocation after ${RETRY_BACKOFF}s"
+      sleep "$RETRY_BACKOFF"
+    fi
+  done
+
+  die "$role failed after $attempt_limit attempt(s). See ${stem}.attempt-*.jsonl and $STATE/controller.log"
+}
+
+require_tool() {
+  command -v "$1" >/dev/null 2>&1 || die "Required tool not found: $1"
+}
+
+validate_bool() {
+  local name="$1"
+  local value="$2"
+  [[ "$value" == "0" || "$value" == "1" ]] ||
+    die "$name must be 0 or 1"
+}
+
+require_tool git
+require_tool cline
+require_tool python3
+if [[ "$PUBLISH" == "1" ]]; then
+  require_tool gh
+fi
+
+[[ -n "$TASK_FILE" ]] || die "Usage: paf-cline-cycle /path/to/task.md"
+[[ -f "$TASK_FILE" ]] || die "Task file not found: $TASK_FILE"
+[[ "$MAX_CYCLES" =~ ^[1-9][0-9]*$ ]] || die "PAF_MAX_CYCLES must be a positive integer"
+[[ "$PHASE_TIMEOUT" =~ ^[1-9][0-9]*$ ]] || die "PAF_PHASE_TIMEOUT must be a positive integer"
+[[ "$INACTIVITY_TIMEOUT" =~ ^[1-9][0-9]*$ ]] || die "PAF_INACTIVITY_TIMEOUT must be a positive integer"
+[[ "$STAGE_MAX_ATTEMPTS" =~ ^[1-9][0-9]*$ ]] || die "PAF_STAGE_MAX_ATTEMPTS must be a positive integer"
+[[ "$RETRY_BACKOFF" =~ ^[0-9]+$ ]] || die "PAF_RETRY_BACKOFF must be a non-negative integer"
+[[ "$REVIEW_STAGE_MAX_ATTEMPTS" =~ ^[1-9][0-9]*$ ]] || die "PAF_REVIEW_STAGE_MAX_ATTEMPTS must be positive"
+[[ "$REVIEW_MAX_TOOL_CALLS" =~ ^[1-9][0-9]*$ ]] || die "PAF_REVIEW_MAX_TOOL_CALLS must be positive"
+[[ "$REVIEW_MAX_ITERATIONS" =~ ^[1-9][0-9]*$ ]] || die "PAF_REVIEW_MAX_ITERATIONS must be positive"
+[[ "$REVIEW_DUPLICATE_COMMAND_LIMIT" =~ ^[1-9][0-9]*$ ]] || die "PAF_REVIEW_DUPLICATE_COMMAND_LIMIT must be positive"
+[[ "$REVIEW_ZOMBIE_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]] || die "PAF_REVIEW_ZOMBIE_GRACE_SECONDS must be positive"
+[[ -n "${LITELLM_API_KEY:-}" ]] || die "LITELLM_API_KEY is missing"
+[[ -n "${OPENAI_API_KEY:-}" ]] || die "OPENAI_API_KEY is missing"
+[[ -z "$PRECOMMIT_VALIDATION_CMD" || -z "$PRECOMMIT_VALIDATION_FILE" ]] || die "Use only one of PAF_PRECOMMIT_VALIDATION_CMD or PAF_PRECOMMIT_VALIDATION_FILE"
+if [[ -n "$PRECOMMIT_VALIDATION_FILE" ]]; then [[ -f "$PRECOMMIT_VALIDATION_FILE" ]] || die "PAF_PRECOMMIT_VALIDATION_FILE not found: $PRECOMMIT_VALIDATION_FILE"; fi
+if [[ -n "$TASK_METADATA_FILE" ]]; then [[ -f "$TASK_METADATA_FILE" ]] || die "PAF_TASK_METADATA_FILE not found: $TASK_METADATA_FILE"; fi
+validate_bool PAF_CONTINUE_BRANCH "$CONTINUE_BRANCH"
+validate_bool PAF_ADOPT_DIRTY_WORKTREE "$ADOPT_DIRTY_WORKTREE"
+validate_bool PAF_PUBLISH "$PUBLISH"
+
+for cfg in "$SOL_CONFIG" "$TERRA_CONFIG" "$OPUS_CONFIG" "$SONNET_CONFIG"; do
+  [[ -d "$cfg" ]] || die "Missing Cline profile directory: $cfg"
+done
+
+if [[ -n "$INITIAL_PLAN_FILE" ]]; then
+  [[ -f "$INITIAL_PLAN_FILE" ]] || die "PAF_INITIAL_PLAN_FILE not found: $INITIAL_PLAN_FILE"
+  parse_status "$INITIAL_PLAN_FILE" PLAN_STATUS READY ||
+    die "PAF_INITIAL_PLAN_FILE must contain exactly one PLAN_STATUS=READY line"
+fi
+
+REPO="$(cd "$REPO" && pwd)"
+git -C "$REPO" rev-parse --is-inside-work-tree >/dev/null ||
+  die "Not a Git repository: $REPO"
+
+CURRENT_BRANCH="$(git -C "$REPO" branch --show-current)"
+INITIAL_DIRTY_STATUS="$(git -C "$REPO" status --porcelain --untracked-files=all)"
+ADOPTING_DIRTY_WORKTREE=0
+
+if [[ -n "$INITIAL_DIRTY_STATUS" ]]; then
+  if [[ "$CONTINUE_BRANCH" == "1" &&
+        "$ADOPT_DIRTY_WORKTREE" == "1" &&
+        -n "$CURRENT_BRANCH" &&
+        "$CURRENT_BRANCH" == "$BRANCH" ]]; then
+    ADOPTING_DIRTY_WORKTREE=1
+    log "Adopting preserved dirty worktree on existing branch $BRANCH"
+    printf '%s\n' "$INITIAL_DIRTY_STATUS" > "$STATE/adopted-worktree-status.txt"
+    git -C "$REPO" diff --binary > "$STATE/adopted-worktree.patch"
+    git -C "$REPO" diff --cached --binary > "$STATE/adopted-worktree-index.patch"
+    git -C "$REPO" ls-files --others --exclude-standard > "$STATE/adopted-worktree-untracked.txt"
+  else
+    die "Primary checkout is not clean. To adopt preserved task changes, rerun on the exact current branch with PAF_CONTINUE_BRANCH=1 and PAF_ADOPT_DIRTY_WORKTREE=1."
+  fi
+fi
+
+if [[ "$PUBLISH" == "1" ]]; then
+  gh auth status >/dev/null 2>&1 || die "GitHub CLI is not authenticated"
+fi
+
+log "Run state: $STATE"
+log "Repository: $REPO"
+log "Task: $TASK_FILE"
+log "Task ID: $TASK_ID"
+log "Campaign ID: $CAMPAIGN_ID"
+log "Base: origin/$BASE_BRANCH"
+log "Branch: $BRANCH"
+log "Maximum cycles: $MAX_CYCLES"
+log "Implementation-stage attempts: $STAGE_MAX_ATTEMPTS"
+log "Review-stage attempts: $REVIEW_STAGE_MAX_ATTEMPTS"
+log "Review budgets: tools=$REVIEW_MAX_TOOL_CALLS iterations=$REVIEW_MAX_ITERATIONS duplicate=$REVIEW_DUPLICATE_COMMAND_LIMIT"
+log "Total stage timeout: ${PHASE_TIMEOUT}s"
+log "Inactivity timeout: ${INACTIVITY_TIMEOUT}s"
+log "Continue existing branch: $CONTINUE_BRANCH"
+log "Adopt preserved dirty worktree: $ADOPT_DIRTY_WORKTREE"
+log "Publish: $PUBLISH"
+if [[ -n "$PRECOMMIT_VALIDATION_CMD" || -n "$PRECOMMIT_VALIDATION_FILE" ]]; then
+  log "Controller-owned pre-commit validation: configured (${PRECOMMIT_VALIDATION_TIMEOUT}s timeout)"
+else
+  log "Controller-owned pre-commit validation: not configured"
+fi
+if [[ -n "$TASK_METADATA_FILE" ]]; then log "Task metadata: $TASK_METADATA_FILE"; fi
+
+git -C "$REPO" fetch origin
+git -C "$REPO" rev-parse --verify "origin/$BASE_BRANCH" >/dev/null ||
+  die "Remote base branch not found: origin/$BASE_BRANCH"
+BASE_SHA="$(git -C "$REPO" rev-parse "origin/$BASE_BRANCH")"
+
+LOCAL_BRANCH_EXISTS=0
+REMOTE_BRANCH_EXISTS=0
+git -C "$REPO" show-ref --verify --quiet "refs/heads/$BRANCH" &&
+  LOCAL_BRANCH_EXISTS=1
+git -C "$REPO" ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1 &&
+  REMOTE_BRANCH_EXISTS=1
+
+if [[ "$LOCAL_BRANCH_EXISTS" == "1" ]]; then
+  [[ "$CONTINUE_BRANCH" == "1" ]] ||
+    die "Local branch already exists: $BRANCH. Set PAF_CONTINUE_BRANCH=1 to resume it."
+  if [[ "$(git -C "$REPO" branch --show-current)" != "$BRANCH" ]]; then
+    [[ "$ADOPTING_DIRTY_WORKTREE" == "0" ]] ||
+      die "Cannot switch branches while adopting a dirty worktree"
+    git -C "$REPO" switch "$BRANCH"
+  fi
+  log "Continuing existing local branch $BRANCH"
+elif [[ "$REMOTE_BRANCH_EXISTS" == "1" ]]; then
+  [[ "$CONTINUE_BRANCH" == "1" ]] ||
+    die "Remote branch already exists: $BRANCH. Set PAF_CONTINUE_BRANCH=1 to resume it."
+  git -C "$REPO" switch -c "$BRANCH" --track "origin/$BRANCH"
+  log "Continuing existing remote branch $BRANCH"
+else
+  git -C "$REPO" switch "$BASE_BRANCH"
+  git -C "$REPO" pull --ff-only origin "$BASE_BRANCH"
+  git -C "$REPO" switch -c "$BRANCH"
+  log "Created new branch $BRANCH"
+
+  if [[ -n "$CHECKPOINT" ]]; then
+    git -C "$REPO" cat-file -e "$CHECKPOINT^{commit}" 2>/dev/null ||
+      die "PAF_CHECKPOINT is not a commit: $CHECKPOINT"
+    git -C "$REPO" merge-base --is-ancestor "$BASE_SHA" "$CHECKPOINT" ||
+      die "PAF_CHECKPOINT is not a descendant of origin/$BASE_BRANCH"
+
+    mapfile -t CHECKPOINT_COMMITS < <(
+      git -C "$REPO" rev-list --reverse "$BASE_SHA..$CHECKPOINT"
+    )
+    [[ "${#CHECKPOINT_COMMITS[@]}" -gt 0 ]] ||
+      die "PAF_CHECKPOINT contains no commits beyond origin/$BASE_BRANCH"
+
+    log "Importing ${#CHECKPOINT_COMMITS[@]} checkpoint commit(s)"
+    git -C "$REPO" cherry-pick "${CHECKPOINT_COMMITS[@]}" ||
+      die "Checkpoint cherry-pick failed; repository has been preserved for inspection"
+  fi
+fi
+
+git -C "$REPO" merge-base --is-ancestor "$BASE_SHA" HEAD ||
+  die "Current branch does not descend from exact base $BASE_SHA"
+
+if [[ -n "$(git -C "$REPO" status --porcelain --untracked-files=all)" ]]; then
+  [[ "$ADOPTING_DIRTY_WORKTREE" == "1" ]] ||
+    die "Branch is dirty after setup; repository has been preserved for inspection"
+  log "Preserved task changes remain available for Terra completion and controller-owned commit"
+fi
+
+cp "$TASK_FILE" "$STATE/task.md"
+printf '%s\n' "$BASE_SHA" > "$STATE/base-sha.txt"
+printf '%s\n' "$(git -C "$REPO" rev-parse HEAD)" > "$STATE/start-head-sha.txt"
+
+validate_task_paths() {
+  [[ -n "$TASK_METADATA_FILE" ]] || return 0
+  local changed_file="$STATE/cycle-$cycle-changed-paths.txt"
+  {
+    git -C "$REPO" diff --name-only
+    git -C "$REPO" diff --cached --name-only
+    git -C "$REPO" ls-files --others --exclude-standard
+  } | sed '/^$/d' | sort -u > "$changed_file"
+  python3 - "$TASK_METADATA_FILE" "$changed_file" <<'PYPATHS'
+import fnmatch, json, sys
+from pathlib import Path
+metadata=json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+changed=[line.strip() for line in Path(sys.argv[2]).read_text().splitlines() if line.strip()]
+allowed=metadata.get("allowed_paths", [])
+violations=[path for path in changed if not any(fnmatch.fnmatchcase(path, pattern) for pattern in allowed)]
+if violations:
+    for path in violations: print(path)
+    raise SystemExit(1)
+PYPATHS
+}
+
+PLAN_PERMISSIONS='{"deny":["sudo *","rm -rf *","docker *","podman *","ssh *","scp *","curl *","wget *","git add *","git commit *","git push *","git checkout *","git switch *","git worktree *","gh *"],"allowRedirects":false}'
+ACT_PERMISSIONS='{"deny":["sudo *","rm -rf *","docker *","podman *","ssh *","scp *","curl *","wget *","git add *","git commit *","git push *","git checkout *","git switch *","git worktree *","git reset --hard*","git clean *","gh *"],"allowRedirects":true}'
+REVIEW_PERMISSIONS='{"deny":["sudo *","rm -rf *","docker *","podman *","ssh *","scp *","curl *","wget *","git add *","git commit *","git push *","git checkout *","git switch *","git worktree *","git reset *","git clean *","gh *"],"allowRedirects":true}'
+
+REVIEW_RESULT=""
+PR_NUMBER=""
+
+for ((cycle=1; cycle<=MAX_CYCLES; cycle++)); do
+  log "=== Cycle $cycle of $MAX_CYCLES ==="
+
+  PLAN_INPUT="$STATE/cycle-$cycle-plan-input.md"
+  if [[ $cycle -eq 1 && -n "$INITIAL_PLAN_FILE" ]]; then
+    cat "$STATE/task.md" > "$PLAN_INPUT"
+    cp "$INITIAL_PLAN_FILE" "$STATE/cycle-$cycle-sol.txt"
+    printf '{"type":"controller_supplied_plan","source":%s}\n' \
+      "$(python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "$INITIAL_PLAN_FILE")" \
+      > "$STATE/cycle-$cycle-sol.jsonl"
+    log "Using supplied initial plan: $INITIAL_PLAN_FILE"
+  elif [[ $cycle -eq 1 ]]; then
+    cat "$STATE/task.md" > "$PLAN_INPUT"
+    PLAN_PROMPT=$'Act as the independent planning agent for the supplied PAF task.\nUse available repository tools immediately and inspect the repository and authoritative planning documents before concluding.\nProduce a detailed, implementation-ready plan with affected files, invariants, implementation-owned validation, risks, non-goals, and completion checks.\nRespect the controller lifecycle: Terra edits and validates the working tree, then returns COMPLETE; only after that the controller creates the checkpoint commit and invokes exact-head independent review.\nDo not require Terra to commit, stage, produce an exact checkpoint or dev/panda...HEAD digest, obtain independent review, push, open a PR, or merge. Those are controller-owned downstream actions and cannot be implementation blockers.\nDo not edit files or execute the implementation.\nFor a blocked result, include BLOCK_REASON=<concise reason> before the terminal marker.\nA response without exactly one terminal marker is invalid.\nThe final non-empty line must be exactly PLAN_STATUS=READY or PLAN_STATUS=BLOCKED.'
+
+    run_status_stage \
+      "sol-$cycle" "$SOL_CONFIG" "$REPO" xhigh plan \
+      "$PLAN_INPUT" "$PLAN_PROMPT" \
+      "$STATE/cycle-$cycle-sol.jsonl" "$STATE/cycle-$cycle-sol.txt" \
+      "$PLAN_PERMISSIONS" PLAN_STATUS "READY,BLOCKED"
+
+    [[ "$STAGE_STATUS" == "READY" ]] ||
+      stop_blocked "sol-$cycle" "$STATE/cycle-$cycle-sol.txt" "$STAGE_BLOCK_REASON"
+  else
+    {
+      cat "$STATE/task.md"
+      printf '\n\n# Blocking verification result from the previous cycle\n\n'
+      cat "$REVIEW_RESULT"
+    } > "$PLAN_INPUT"
+
+    PLAN_PROMPT=$'Act as the remediation planning agent.\nUse available repository tools immediately and inspect the current branch and the supplied blocking review.\nProduce the smallest correction plan that addresses every supported finding without expanding scope.\nIdentify exact files, implementation-owned tests or validation, and residue checks.\nRespect the controller lifecycle: Terra edits and validates the working tree, then returns COMPLETE; only after that the controller creates the checkpoint commit and invokes exact-head independent review.\nDo not require Terra to commit, stage, produce an exact checkpoint or dev/panda...HEAD digest, obtain independent review, push, open a PR, or merge. Those are controller-owned downstream actions and cannot be implementation blockers.\nDo not edit files.\nFor a blocked result, include BLOCK_REASON=<concise reason> before the terminal marker.\nA response without exactly one terminal marker is invalid.\nThe final non-empty line must be exactly PLAN_STATUS=READY or PLAN_STATUS=BLOCKED.'
+
+    run_status_stage \
+      "sol-$cycle" "$SOL_CONFIG" "$REPO" xhigh plan \
+      "$PLAN_INPUT" "$PLAN_PROMPT" \
+      "$STATE/cycle-$cycle-sol.jsonl" "$STATE/cycle-$cycle-sol.txt" \
+      "$PLAN_PERMISSIONS" PLAN_STATUS "READY,BLOCKED"
+
+    [[ "$STAGE_STATUS" == "READY" ]] ||
+      stop_blocked "sol-$cycle" "$STATE/cycle-$cycle-sol.txt" "$STAGE_BLOCK_REASON"
+  fi
+
+  ACT_INPUT="$STATE/cycle-$cycle-act-input.md"
+  {
+    cat "$STATE/task.md"
+    printf '\n\n# Approved implementation or remediation plan\n\n'
+    cat "$STATE/cycle-$cycle-sol.txt"
+    if [[ $cycle -gt 1 ]]; then
+      printf '\n\n# Blocking verification result\n\n'
+      cat "$REVIEW_RESULT"
+    fi
+  } > "$ACT_INPUT"
+
+  PRE_TERRA_HEAD="$(git -C "$REPO" rev-parse HEAD)"
+  PRE_TERRA_BRANCH="$(git -C "$REPO" branch --show-current)"
+
+  ACT_PROMPT=$'Act as the implementation agent.\nImplement the supplied task strictly according to the plan.\nInspect existing architecture before changing anything and run implementation-owned validation available in this stage.\nIMPLEMENTATION_STATUS=COMPLETE means the working tree is ready for the controller to create the checkpoint commit and begin exact-head independent review; it does not mean that downstream review has already occurred.\nDo not treat the absence of a commit, exact checkpoint, dev/panda...HEAD digest, independent review, push, PR, or merge as an implementation blocker. The controller performs those actions only after you return COMPLETE.\nDo not commit, stage, push, open a PR, merge, switch branches, or use network services; the controller owns checkpointing, publication, and review orchestration.\nLeave the working tree containing only justified task changes.\nReport changed files, validation actually run, unresolved implementation issues, and deviations.\nFor a blocked result, include BLOCK_REASON=<concise reason> before the terminal marker.\nA response without exactly one terminal marker is invalid.\nThe final non-empty line must be exactly IMPLEMENTATION_STATUS=COMPLETE or IMPLEMENTATION_STATUS=BLOCKED.'
+
+  run_status_stage \
+    "terra-$cycle" "$TERRA_CONFIG" "$REPO" high act \
+    "$ACT_INPUT" "$ACT_PROMPT" \
+    "$STATE/cycle-$cycle-terra.jsonl" "$STATE/cycle-$cycle-terra.txt" \
+    "$ACT_PERMISSIONS" IMPLEMENTATION_STATUS "COMPLETE,BLOCKED"
+
+  [[ "$(git -C "$REPO" rev-parse HEAD)" == "$PRE_TERRA_HEAD" ]] ||
+    die "Terra changed HEAD despite controller ownership of commits"
+  [[ "$(git -C "$REPO" branch --show-current)" == "$PRE_TERRA_BRANCH" ]] ||
+    die "Terra changed branches despite controller ownership"
+
+  [[ "$STAGE_STATUS" == "COMPLETE" ]] ||
+    stop_blocked "terra-$cycle" "$STATE/cycle-$cycle-terra.txt" "$STAGE_BLOCK_REASON"
+
+  [[ -n "$(git -C "$REPO" status --porcelain --untracked-files=all)" ]] ||
+    die "Terra reported completion but produced no repository changes"
+
+  if ! validate_task_paths; then
+    stop_blocked "controller-scope-$cycle" "$STATE/cycle-$cycle-changed-paths.txt" "working tree contains paths outside the authorized task contract"
+  fi
+  git -C "$REPO" diff --check
+
+  if [[ -n "$PRECOMMIT_VALIDATION_CMD" || -n "$PRECOMMIT_VALIDATION_FILE" ]]; then
+    VALIDATION_LOG="$STATE/cycle-$cycle-controller-validation.log"
+    log "Running controller-owned pre-commit validation for cycle $cycle"
+    set +e
+    (
+      cd "$REPO"
+      if [[ -n "$PRECOMMIT_VALIDATION_FILE" ]]; then
+        timeout --signal=TERM --kill-after=30s "$PRECOMMIT_VALIDATION_TIMEOUT" \
+          bash -Eeuo pipefail "$PRECOMMIT_VALIDATION_FILE"
+      else
+        timeout --signal=TERM --kill-after=30s "$PRECOMMIT_VALIDATION_TIMEOUT" \
+          bash -lc "$PRECOMMIT_VALIDATION_CMD"
+      fi
+    ) >"$VALIDATION_LOG" 2>&1
+    VALIDATION_RC=$?
+    set -e
+    printf "%s\n" "$VALIDATION_RC" > "$STATE/cycle-$cycle-controller-validation.rc"
+    if [[ "$VALIDATION_RC" -ne 0 ]]; then
+      if [[ "$VALIDATION_RC" -eq 124 ]]; then
+        VALIDATION_REASON="Controller-owned pre-commit validation timed out after ${PRECOMMIT_VALIDATION_TIMEOUT}s"
+      else
+        VALIDATION_REASON="Controller-owned pre-commit validation failed with exit status $VALIDATION_RC"
+      fi
+      printf "%s\n" "$VALIDATION_REASON" >> "$VALIDATION_LOG"
+      stop_blocked "controller-validation-$cycle" "$VALIDATION_LOG" "$VALIDATION_REASON"
+    fi
+    log "Controller-owned pre-commit validation passed"
+  fi
+
+  git -C "$REPO" add -A
+  git -C "$REPO" diff --cached --check
+
+  if [[ $cycle -eq 1 ]]; then
+    THIS_COMMIT_MESSAGE="$COMMIT_MESSAGE"
+  else
+    THIS_COMMIT_MESSAGE="$REMEDIATION_COMMIT_MESSAGE"
+  fi
+
+  git -C "$REPO" commit -m "$THIS_COMMIT_MESSAGE"
+  HEAD_SHA="$(git -C "$REPO" rev-parse HEAD)"
+  printf '%s\n' "$HEAD_SHA" > "$STATE/cycle-$cycle-head-sha.txt"
+
+  if [[ "$PUBLISH" == "1" ]]; then
+    git -C "$REPO" push -u origin "$BRANCH"
+
+    if [[ -z "$PR_NUMBER" ]]; then
+      PR_NUMBER="$(gh pr list \
+        --repo "$GITHUB_REPO" \
+        --head "$BRANCH" \
+        --state open \
+        --json number \
+        --jq '.[0].number // empty')"
+
+      if [[ -z "$PR_NUMBER" ]]; then
+        if [[ -n "$PR_BODY_FILE" ]]; then
+          [[ -f "$PR_BODY_FILE" ]] || die "PAF_PR_BODY_FILE not found: $PR_BODY_FILE"
+          gh pr create \
+            --repo "$GITHUB_REPO" \
+            --draft \
+            --base "$BASE_BRANCH" \
+            --head "$BRANCH" \
+            --title "$PR_TITLE" \
+            --body-file "$PR_BODY_FILE"
+        else
+          gh pr create \
+            --repo "$GITHUB_REPO" \
+            --draft \
+            --base "$BASE_BRANCH" \
+            --head "$BRANCH" \
+            --title "$PR_TITLE" \
+            --body-file - <<EOF
+## Summary
+
+Implements the bounded PAF task supplied to the autonomous controller.
+
+## Task
+
+\`$(basename "$TASK_FILE")\`
+
+## Review boundary
+
+This PR remains draft until the autonomous independent verification cycle returns approval and a human reviews the exact approved head.
+EOF
+        fi
+
+        PR_NUMBER="$(gh pr list \
+          --repo "$GITHUB_REPO" \
+          --head "$BRANCH" \
+          --state open \
+          --json number \
+          --jq '.[0].number // empty')"
+      fi
+    fi
+
+    [[ -n "$PR_NUMBER" ]] || die "Unable to resolve or create the draft PR"
+    log "Draft PR: #$PR_NUMBER"
+    REVIEW_COORDINATE="Draft PR: #$PR_NUMBER"
+  else
+    PR_NUMBER=""
+    REVIEW_COORDINATE="Draft PR: not published (PAF_PUBLISH=0)"
+    log "Publication disabled; reviewing local exact head $HEAD_SHA"
+  fi
+
+  REVIEW_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/paf-review-${RUN_ID}-${cycle}.XXXXXX")"
+  REVIEW_WT="$REVIEW_ROOT/worktree"
+  git -C "$REPO" worktree add --detach "$REVIEW_WT" "$HEAD_SHA" >/dev/null
+  [[ "$(git -C "$REVIEW_WT" rev-parse HEAD)" == "$HEAD_SHA" ]] ||
+    die "Reviewer worktree is not at the exact implementation head"
+
+  REVIEW_PLAN_INPUT="$STATE/cycle-$cycle-review-plan-input.md"
+  {
+    cat "$STATE/task.md"
+    printf '\n\n# Implementation report\n\n'
+    cat "$STATE/cycle-$cycle-terra.txt"
+    if [[ -f "$STATE/cycle-$cycle-controller-validation.log" ]]; then
+      printf '\n\n# Controller-owned deterministic validation\n\n'
+      printf 'Command or file configured: yes\n'
+      printf 'Exit status: '
+      cat "$STATE/cycle-$cycle-controller-validation.rc"
+      printf '\nLast validation output lines:\n\n'
+      tail -n 200 "$STATE/cycle-$cycle-controller-validation.log"
+    fi
+    printf '\n\n# Exact review coordinates\n\n'
+    printf 'Base: %s\nHead: %s\n%s\n' "$BASE_SHA" "$HEAD_SHA" "$REVIEW_COORDINATE"
+  } > "$REVIEW_PLAN_INPUT"
+
+  REVIEW_PLAN_PROMPT=$'Act as an independent verification planner.\nUse available repository tools immediately and review the exact base-to-head change against the supplied task, repository architecture, security boundaries, and planning documents.\nProduce a criterion-linked, bounded verification plan. Prefer controller-supplied deterministic validation evidence over rerunning broad suites.\nLimit the plan to the changed paths and exact supporting anchors unless a criterion requires broader inspection.\nSpecify no more than 12 distinct verification actions, prohibit duplicate commands, and require one shell command per tool call.\nDo not edit files.\nFor a blocked result, include BLOCK_REASON=<concise reason> before the terminal marker.\nA response without exactly one terminal marker is invalid.\nThe final non-empty line must be exactly REVIEW_PLAN_STATUS=READY or REVIEW_PLAN_STATUS=BLOCKED.'
+
+  run_status_stage \
+    "opus-$cycle" "$OPUS_CONFIG" "$REVIEW_WT" xhigh plan \
+    "$REVIEW_PLAN_INPUT" "$REVIEW_PLAN_PROMPT" \
+    "$STATE/cycle-$cycle-opus.jsonl" "$STATE/cycle-$cycle-opus.txt" \
+    "$PLAN_PERMISSIONS" REVIEW_PLAN_STATUS "READY,BLOCKED"
+
+  [[ "$STAGE_STATUS" == "READY" ]] ||
+    stop_blocked "opus-$cycle" "$STATE/cycle-$cycle-opus.txt" "$STAGE_BLOCK_REASON"
+
+  VERIFY_INPUT="$STATE/cycle-$cycle-verify-input.md"
+  {
+    cat "$STATE/task.md"
+    printf '\n\n# Independent verification plan\n\n'
+    cat "$STATE/cycle-$cycle-opus.txt"
+    printf '\n\n# Implementation report\n\n'
+    cat "$STATE/cycle-$cycle-terra.txt"
+    if [[ -f "$STATE/cycle-$cycle-controller-validation.log" ]]; then
+      printf '\n\n# Controller-owned deterministic validation\n\n'
+      printf 'Command or file configured: yes\n'
+      printf 'Exit status: '
+      cat "$STATE/cycle-$cycle-controller-validation.rc"
+      printf '\nLast validation output lines:\n\n'
+      tail -n 200 "$STATE/cycle-$cycle-controller-validation.log"
+    fi
+    printf '\n\n# Exact review coordinates\n\n'
+    printf 'Base: %s\nHead: %s\n%s\n' "$BASE_SHA" "$HEAD_SHA" "$REVIEW_COORDINATE"
+  } > "$VERIFY_INPUT"
+
+  VERIFY_PROMPT=$'Act as the independent verification executor.\nInspect the exact base-to-head diff and execute only the supplied criterion-linked review plan.\nUse controller-supplied deterministic validation evidence instead of rerunning broad suites unless the plan identifies a specific unresolved check.\nDo not use parallel or batched run_commands. Execute one shell command per tool call. Do not repeat a command whose result is available.\nLimit repository inspection to evidence required by an acceptance criterion. Stop and produce the verdict after at most 15 tool calls or when all criteria are resolved.\nDo not edit any file, commit, push, modify the PR, or use network services.\nReport each finding with stable ID, severity, evidence, affected requirement, required correction, and required regression.\nA response without exactly one terminal marker is invalid.\nThe final non-empty line must be exactly PAF_REVIEW_VERDICT=APPROVED or PAF_REVIEW_VERDICT=BLOCKED.'
+
+  run_status_stage \
+    "sonnet-$cycle" "$SONNET_CONFIG" "$REVIEW_WT" high act \
+    "$VERIFY_INPUT" "$VERIFY_PROMPT" \
+    "$STATE/cycle-$cycle-sonnet.jsonl" "$STATE/cycle-$cycle-sonnet.txt" \
+    "$REVIEW_PERMISSIONS" PAF_REVIEW_VERDICT "APPROVED,BLOCKED"
+
+  REVIEW_RESULT="$STATE/cycle-$cycle-sonnet.txt"
+  VERDICT="$STAGE_STATUS"
+
+  REVIEW_DIRTY="$(git -C "$REVIEW_WT" status --porcelain --untracked-files=all)"
+  if [[ -n "$REVIEW_DIRTY" ]]; then
+    python3 - "$REVIEW_RESULT" "$REVIEW_DIRTY" <<'PYDIRTY'
+import re
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+dirty = sys.argv[2]
+text = path.read_text(encoding="utf-8", errors="replace")
+text = re.sub(
+    r"(?m)^PAF_REVIEW_VERDICT=(APPROVED|BLOCKED)\s*$",
+    "",
+    text,
+).rstrip()
+text += (
+    "\n\nFINDING_ID=PAF-REVIEWER-RESIDUE\n"
+    "SEVERITY=blocking\n"
+    "EVIDENCE=Reviewer modified the detached verification worktree:\n"
+    f"{dirty}\n\n"
+    "PAF_REVIEW_VERDICT=BLOCKED\n"
+)
+path.write_text(text, encoding="utf-8")
+PYDIRTY
+    VERDICT="BLOCKED"
+    log "Reviewer residue detected; treating verification as blocked"
+  fi
+
+  cp "$REVIEW_RESULT" "$STATE/latest-review.txt"
+
+  if [[ "$VERDICT" == "APPROVED" ]]; then
+    [[ "$(git -C "$REPO" rev-parse HEAD)" == "$HEAD_SHA" ]] ||
+      die "Primary branch moved after verification"
+    [[ -z "$(git -C "$REPO" status --porcelain --untracked-files=all)" ]] ||
+      die "Primary branch is dirty after approved verification"
+
+    if [[ "$PUBLISH" == "1" ]]; then
+      git -C "$REPO" fetch origin
+      [[ "$(git -C "$REPO" rev-parse "origin/$BRANCH")" == "$HEAD_SHA" ]] ||
+        die "Remote branch does not match the verified exact head"
+    fi
+
+    log "APPROVED at exact head $HEAD_SHA"
+    write_summary "approved" "sonnet-$cycle" "" || true
+    if [[ "$PUBLISH" == "1" ]]; then
+      log "Draft PR #$PR_NUMBER is ready for human review. No merge was attempted."
+      printf '\nPAF cycle approved.\nState: %s\nPR: https://github.com/%s/pull/%s\nHead: %s\n' \
+        "$STATE" "$GITHUB_REPO" "$PR_NUMBER" "$HEAD_SHA"
+    else
+      printf '\nPAF cycle approved locally.\nState: %s\nHead: %s\n' \
+        "$STATE" "$HEAD_SHA"
+    fi
+    exit 0
+  fi
+
+  log "Verification blocked cycle $cycle; findings will be passed to the next Sol/Terra correction cycle"
+
+  if [[ -z "$REVIEW_DIRTY" ]]; then
+    git -C "$REPO" worktree remove "$REVIEW_WT"
+    REVIEW_WT=""
+    rmdir "$REVIEW_ROOT" >/dev/null 2>&1 || true
+    REVIEW_ROOT=""
+  fi
+
+  if [[ $cycle -eq $MAX_CYCLES ]]; then
+    log "Maximum cycles reached. No merge was attempted."
+    write_summary "blocked" "sonnet-$cycle" "maximum review cycles reached" || true
+    if [[ "$PUBLISH" == "1" ]]; then
+      printf '\nPAF cycle stopped after %s blocked cycles.\nState: %s\nPR: https://github.com/%s/pull/%s\n' \
+        "$MAX_CYCLES" "$STATE" "$GITHUB_REPO" "$PR_NUMBER"
+    else
+      printf '\nPAF cycle stopped after %s blocked cycles.\nState: %s\nHead: %s\n' \
+        "$MAX_CYCLES" "$STATE" "$HEAD_SHA"
+    fi
+    exit 2
+  fi
+done
