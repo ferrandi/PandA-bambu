@@ -1,58 +1,48 @@
 # PAF Contract and Provenance Architecture Plan
 
-**Status:** explanatory architecture plan synchronized after PR #25, 2026-08-03
-**Authority chain:** the [requirements matrix](paf-contract-requirements-matrix.md) is the normative completeness audit; the [roadmap](agentic-roadmap.md) allocates milestones; this document explains contract/provenance architecture; the [soundness analysis](paf-architecture-soundness-analysis.md) records advisory gaps and recommendations; the [turnkey plan](paf-turnkey-orchestration-plan.md) specifies operation. Concrete v2 schemas remain future work.
+**Status:** final post-PR #26 ownership architecture; no v2 schema or runtime is implemented here.
+**Authority:** contract layering, fact ownership, authority, evidence, provenance, and graph semantics. Milestones are [roadmap](agentic-roadmap.md); atomic test planning is [traceability](paf-requirements-traceability.md).
 
-New v2 contracts require a PAF-owned namespace whose spelling is decided by PAF-05A3a.2a. `evolvehls.agentic.*` remains a v1 compatibility namespace and fixture family.
+## Contract layers and fact ownership
 
-## Layered architecture and ownership
+The roadmap's 2a–2f, 3a–3f, 4, 5a–5e, 6, and 7 allocations are exclusive. The semantic model, normative encoding profile, canonical bytes, and typed digest/signature input are distinct layers. v2 uses a PAF-owned namespace to be selected in 2a; `evolvehls.agentic.*` is v1 compatibility lineage.
 
-Avoid one top-level schema per UI, methodology, or convenience view.
-
-1. **Small semantic kernel (PAF-05A3a.2a):** Contract Envelope, Contract/Object Reference, Version, Canonicalization Profile, Typed Digest, Principal Reference, Artifact, Representation, Attestation, Provenance Event, Governance Decision, and Error Record.
-2. **Work and Work Graph (PAF-05A3a.3):** Objective, Work Proposal, Work Item, Plan, Workflow, snapshots, mutations, Result, Validation Record, Review Result, ChangeSet, and publication requests.
-3. **Execution and environment (PAF-05A3a.5):** execution, handoff, receipt, trace, environment/access identities, routing, transition, leases, and recovery.
-4. **DSE (PAF-05A3a.4):** studies, immutable candidates, experiments, measurements, campaigns, fidelity, and comparability.
-5. **Learning/governance (PAF-05A3a.6):** eligibility, datasets, evaluation, promotion, rollback, retention, and redaction.
-6. **Domain extension profiles:** SODA-EVOLVE semantics through adapters, not portable PAF types.
-
-## Identity, canonicalization, and migration
-
-Logical object identity is stable across revisions. Revision/version identity identifies one immutable state of that object. A content digest identifies canonical bytes and is not a substitute for either identity. Existing sorted/indented Python JSON is implementation-deterministic only, not a language-neutral v2 standard.
-
-PAF-05A3a.2a must select and publish a versioned canonical JSON profile with duplicate-key rejection, UTF-8 encoding, Unicode handling/normalization decision, numeric restrictions, key ordering, array/set treatment, digest domain separation, schema/version binding, self-digest exclusion, and cross-language conformance vectors. Unsupported versions and unknown authoritative fields fail closed.
-
-Migration creates a derived object and preserves source lineage; missing v1 evidence remains missing/unknown/`null`. Package or repository relocation cannot change portable identity or digest. Compatibility adapters are boundary components. Portable v2 contracts cannot name Bambu or SODA-EVOLVE types.
-
-## Principals, authority, and attestations
-
-Portable principal kinds are human, service, agent, controller, organization, and delegated role. An authority-bearing human or policy decision cites principal, authority source, delegated scope, exact subject digest, operation, constraints, policy-input snapshot, and applicable expiration/revocation. Separation of duties is evaluated from recorded principals and policy.
-
-An Execution Receipt starts as a structured claim. It is trusted evidence only after issuer, executor, exact subject digest, and attestation validate; even then, it establishes execution effects, not semantic correctness.
-
-## Non-overlapping evidence and decisions
-
-| Object | Sole responsibility |
+| Fact | Sole owner |
 |---|---|
-| Result | Semantic outcome and requirement status. |
-| Validation Record | Test/check evidence. |
-| Review Result | Findings and verdict against an exact subject. |
-| Evaluation Record | Normalized quality/performance comparison. |
-| Feedback Record | Later external evidence. |
-| Execution Receipt | Attested execution effects and consumption. |
-| ChangeSet | Coordinated changes, not publication authority. |
-| Publication request / decision / receipt | Requested effect / authority / attested external effect. |
+| Semantic claim/requirement outcome | Result |
+| Attested execution or external effect | Execution Receipt |
+| Check evidence | Validation Record |
+| Finding/verdict | Review Result and Independence Assessment |
+| Permission/gate/obligation | Charter, Grant, Policy or Human Decision |
+| Aggregated immutable references and completeness | Execution Evidence Package Manifest |
+| Resumable controller state | Checkpoint |
 
-Route Candidate Set lists viable routes; Routing Decision selects a route; Transition Decision changes route; Workflow Adaptation Decision changes permitted execution shape; Replanning Decision changes the Work Graph; Policy Decision grants/restricts authority; Human Decision records human judgment. A generic rationale wrapper may reference them but cannot compete with their authority.
+Storage, journals, indexes, dashboards, issue trackers, and boards are replaceable projections and never semantic authority.
 
-## Work Graph, environment, and resources
+## Authority and governed autonomy
 
-PAF-05A3a.3 owns Objective, Work Proposal, Work Item, Work Graph Snapshot, and Work Graph Mutation. A mutation records prior revision/digest, ordered operations, preconditions, idempotency key, policy/human decision, resulting revision/digest, and conflict outcome. It covers split, merge, supersession, reprioritization, deferral, cancellation, dependency/assignment changes, prerequisite insertion, and regeneration.
+A Campaign Charter is versioned standing authority declaring accountable human/organization/project authority, Objective and accepted revision, success/completion, allowed repositories/systems/services, prohibited scope, maximum autonomy, ceilings, protected data/credential/account/funding/licensing/network boundaries, permitted side effects, review/independence, publication/merge/release/fabrication/physical rules, human gates, stop/escalation/emergency-stop, duration/expiry, and amendment/revocation.
 
-Access Binding does not replace environment, adapter/version, provider/runtime, endpoint, model/version, credential reference, account/project/organization scope, funding source, data boundary, capability evidence, or catalog snapshot; each has an independent reference.
+The controller validates **accountable authority → Charter → Authority Grants and policy → Capability/Assignment Grants → enforcement → agent execution**. Policy outcomes are permit, permit-with-obligations, deny, require-independent-review, or require-human-decision. Grants bound exact subjects, operations, scope, expiry, resources, and revocation. A Charter can delegate proposal generation, ordinary authorization, graph operations, eligible route/workspace selection, retries, isolated commits, draft PR creation, testing/CI, and resource consumption until completion/exhaustion/block/gate. Credentials and technical capability never grant authority. Human gates are Charter/policy configured, including protected changes, boundary crossings, security/independence weakening, publication and ambiguous effects.
 
-Budget Request, Budget Allocation, Reserve, Ledger Entry, Actual Consumption, Renewal/Increase Decision, Exhaustion Decision, and Resource Lease are distinct. Leases include workspaces, branches, runners, compute, clusters, EDA licenses, boards, datasets, and instruments.
+## Evidence and provenance
 
-## Validation and extraction
+Every success, failure, timeout, cancellation, refusal, validation/security failure, ambiguous effect, and interrupted cleanup finalizes an immutable content-addressed package, or records an explicit incomplete/unverifiable/ambiguous terminal state. The manifest references exact Objective/Requirement/Work/Workflow/Step revisions; attempt lineage; principals/services; resolved Execution Route; configuration/policy and Charter/grant decisions; request/handoff/context transfer; interactions/prompts; operation requests/receipts and retained native/normalized events; artifacts/workspace identities; Result, Receipt, Validation, Review and errors; retry/compensation/cleanup; budget/leases; time/clock quality; checkpoint/next action; retention/evaluation/training/redistribution; redaction/tombstone/completeness; schema/canonicalization/typed digest.
 
-Conformance verifies schema/version resolution, identity/digest resolution, authorization monotonicity, idempotency, budget non-expansion, lineage, canonicalization vectors, artifact reachability, governance, protected transitions, fidelity/comparability, migration, adversarial inputs, and second-environment portability. PAF-05A3a.7 owns this work. Extraction requires independent tests, dependency-boundary tests, standalone installation/import/CLI smoke tests, and licensing/contributor-provenance review.
+Attempt → Step → Work Item → Workflow/Campaign → Release/Publication packages reference immutable children without rewriting them. Each Step Definition and Operation Descriptor declares one required profile: advisory/read-only, local reversible coding, repository mutation, remote reversible/irreversible effect, publication/release, financial/funding, restricted data, laboratory/instrument, FPGA/ASIC fabrication, or PAF policy/capability evolution.
+
+## Graphs, planning, and APIs
+
+The Objective/Requirement graph, Work dependency graph, Workflow control graph, Team/communication graph, attempt lineage, Artifact/Provenance graph, ChangeSet dependency graph, DSE/Campaign graph, and Decision/supersession graph are distinct. “Work Graph” means authorized Work Items and dependencies only. Accepted Work Graph Mutations are authoritative transitions; snapshots are derived materializations.
+
+The Adaptive Work Planning Cycle consumes graph revision, finalized packages, policies/budgets/resources/deadlines/human decisions; assesses evidence, completion and gaps; emits proposals and a candidate mutation; applies required critique; obtains authorization; then schedules execution. Triggers record source evidence, urgency, affected region, and mandatory/optional/prohibited status: initial acceptance, completion/failure/block/cancellation/ambiguity, validation/review/feedback, dependency/capability gaps, route availability, resource/deadline drift, external drift, human request, risk/no-progress, DSE result, epoch, and policy/security events. Proposals carry identity/lineage, rationale/scope, requirements/acceptance, evidence/validation/review, dependencies, workspaces/capabilities, risk/value/cost/priority/uncertainty, duplicate/freshness/team/route analysis, and generation evidence. Mutations record prior/result revisions/digests, ordered add/split/merge/supersede/reprioritize/defer/cancel/reopen/dependency/reassign/topology/regenerate/duplicate/integration/remediation/capability-gap/epoch-partition operations, preconditions, idempotency, cited evidence/authority, conflict, in-flight/budget/lease treatment, rollback/supersession.
+
+Stability requires materiality, horizon, growth/mutation/replan limits, hysteresis, deduplication, no-progress and remediation bounds, reserves, fairness, escalation/safe stop, and immutable Objective/authority/protected boundaries. P0 is deterministic, P1 one planner, P2 independent critic, P3 competing planners, P4 human-governed. Planner and critic may change eligible routes but cannot acquire authority; only the deterministic controller transitions state.
+
+Step Definitions declare inputs/outputs, preconditions/transitions, operations, effects, capability/authority/budget/resources, validation/review, checkpoint/retry/compensation, compatibility; Step Instances record exact execution. Operation Descriptors define stable semantic identity independent of transport, contracts/encodings, authority/data/effect/reversibility/idempotency/retry/compensation/cost/dry-run/evidence/compatibility. Mutating requests bind identity, idempotency, subject/revision, descriptor revision, authority/policy, budget/lease, inputs, effect, dry run, and causal identity; outcomes are accepted/rejected/human-gated/conflicted/running/completed/failed/cancelled/effect-ambiguous.
+
+## Portability, operations, and resilience
+
+An immutable Execution Route separately records model, provider/runtime, coding environment, framework adapter, access binding, workspace/executor, tool set, context representation, policy, and budget/resources. Descriptors cover catalog/provider/model/environment/runtime/adapter/binding/route; facts carry source, observation, confidence, expiry. Adapters support detect, inspect, doctor, discovery, prepare/session/invoke/events/input/cancel/checkpoint/resume/context/result/receipt/cleanup and report L0 detected through L5 portable transition. Context Package, Transfer Decision/Receipt, normalized events and immutable evidence provide continuity; hidden reasoning is neither required nor transferred. Cycle Policy defines eligible routes, limits, reserves, transition/independence/stability/stopping/gate rules.
+
+Policy sets, layered configuration, replaceable stores, scheduler, external-system synchronization, and extension lifecycle have contracts but no backend owns facts. Configuration precedence is installation→organization→project→repository→user→session→run, with validation, secret references, provenance, immutable run snapshots, drift/migration/offline bundles. Security covers malicious inputs/adapters/models, exfiltration, supply chain, tenancy, deputy/authority/audit/resource/capability attacks; before 05B isolation, allowlists/limits, deny-by-default egress, scoped secrets, classification, supply-chain evidence, destructive authorization, cleanup/forensics are mandatory. Reproducibility grades are exact, deterministic-logical, environment-pinned, statistical, evidence-reconstructable, opaque. Incident and federated bundle contracts preserve containment, revocation, evidence, recovery, reconciliation, residency and delayed updates.

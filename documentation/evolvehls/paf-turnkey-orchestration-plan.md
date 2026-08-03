@@ -1,66 +1,34 @@
 # PAF Turnkey Orchestration Plan
 
-**Status:** post-PR #25 planning synchronization, 2026-08-03
-**Targets:** PAF-05A3a.5, PAF-05B, PAF-05C, PAF-09, PAF-10, and PAF-12. The [roadmap](agentic-roadmap.md) allocates milestones; the [requirements matrix](paf-contract-requirements-matrix.md) is the normative completeness audit; see the [provenance plan](paf-contract-provenance-plan.md) and [soundness analysis](paf-architecture-soundness-analysis.md).
+**Status:** final post-PR #26 operational realization; specification only.
+**Authority:** public operational behavior, controller loops, routing, scheduling, recovery and administration. The v1 CLI implementation remains compatibility evidence and is not renamed.
 
-The bootstrap controller is useful A2 evidence, not the future supported PAF runtime. This document specifies operation and recovery requirements without creating a second contract authority.
-
-## Turnkey surface
-
-Normal operation remains:
+SODA-SPRITZ is the user intent/steering/approval layer above the domain-independent PAF API and CLI. The normative public surface is:
 
 ```text
-agentctl setup
-agentctl doctor
-agentctl run <objective-or-task>
+paf setup        paf doctor       paf plan        paf run         paf status
+paf explain      paf decisions    paf approve     paf pause       paf resume
+paf evidence
 ```
 
-The supported surface also includes:
+`setup` resolves layered configuration and policy; `doctor` reports adapter/catalog/security health; `plan` creates proposals only; `run` starts authorized work; `status`, `explain`, `decisions`, and `evidence` expose projections and immutable facts; `approve` records an exact-subject decision; pause/resume use compatible checkpoints. Existing v1 CLI code is unchanged compatibility evidence, not this public contract.
 
-```text
-agentctl plan
-agentctl status
-agentctl explain
-agentctl decisions
-agentctl approve
-agentctl pause
-agentctl resume
-agentctl evidence
-agentctl doctor --refresh
-```
+## Campaign startup and controller loop
 
-`setup` establishes ignored local state after policy questions. `doctor` reports health; `doctor --refresh` refreshes capability/catalog evidence but never silently mutates a pinned run. `plan` creates Work Proposals or views, not silent authority. `run` resolves an authorized objective or Work Item. `status` exposes Work Graph and stage health. `explain` and `decisions` expose candidates, policy inputs, alternatives, and rationale. `approve` records an exact-subject governance decision. `pause` and `resume` use compatible checkpoints. `evidence` resolves retained artifacts, attestations, validation, and review.
+Startup accepts a Charter, resolves configuration/policy into immutable snapshots, discovers capabilities/catalogs, performs initial planning, authorizes the initial graph, and schedules work. The deterministic controller validates Charter/grants/policy, schemas/revisions/idempotency, budgets/leases, protected boundaries, graph mutations and evidence. It stops/escalates when authority is absent. Reasoning planners and critics only assess evidence, propose/rank work, and challenge drift/feasibility/instability.
 
-## Durable bootstrap requirements
+Material planning triggers and the full proposal/mutation/stability contract are owned by the provenance plan. The operational loop performs them only at a recorded trigger, applies policy/human gates, schedules accepted items, and finalizes attempt evidence even for failure, cancellation, timeout, refusal, ambiguity, and interrupted cleanup. A checkpoint records the deterministic next action, exact graph/work/route/policy state, artifacts, findings, budget/leases and compatible portable context.
 
-Setup and operation require deterministic task delivery; provider/profile/model preflight; ambient-secret presence and scope checks without recording values; adapter event-version detection; normalized terminal success, failure, cancellation, and ambiguity events; profile-state isolation; observable stage health; stale capability/catalog detection; and checkpoint compatibility plus recovery guidance. Portable semantics name no provider, model, client, endpoint, or profile.
+## Routes, adapters, scheduling, and continuity
 
-Effective capability is the intersection of model, environment, access binding, policy, and task. Unknown quota is unknown, never infinite. Catalogs are binding-scoped and pinned for reproducibility-sensitive work.
+Route eligibility is the intersection of task requirements, model, environment, adapter, workspace/security, access-binding permissions, data/licensing/network policy, and budget/resources. The immutable route has independent model, provider/runtime, environment, adapter, binding, workspace/executor, tools, context, policy and resource axes; unknown/opaque observations reduce claims. Adapters expose detect, inspect, doctor, discover models/capabilities, prepare, session, invoke, events, input, cancel, checkpoint/resume, context export, result/receipt collection and cleanup, with honest L0–L5 conformance. Context Package plus Transfer Decision/Receipt provides portable continuity, never hidden reasoning.
 
-## Work Graph operation and methodology
+Cycle Policy may pin, fall back, specialize roles, retry/switch, escalate/downgrade, round-robin, ensemble, compete, shadow/ablate, adapt portfolios, prefer local/restricted routes, or escalate fidelity. It always bounds eligible routes, attempts/switches, budgets/reserves, transitions, independence, oscillation/no-progress, stopping and human gates.
 
-`agentctl plan` and adaptive execution operate on Objective, Work Proposal, Work Item, Work Graph Snapshot, and Work Graph Mutation as allocated by PAF-05A3a.3. Generated work remains a proposal until authorized. Graph mutations carry revisions, digests, preconditions, idempotency, authority, and conflict outcomes. Backlogs, boards, sprint plans, epic trees, and Kanban views project the graph only.
+Scheduling records priority/deadline, fairness/starvation, WIP/concurrency, resource fit, placement/anti-affinity, reservations/leases, aging, preemption, coordinated teams, budget reconciliation and replayable explanation. Stores and policy engines are replaceable; configuration follows documented precedence; Git/issue/board/document adapters use references, cursors, requests/receipts, mappings, drift/conflict/reconciliation and cannot replace the Work Graph.
 
-Scrum-like, Kanban-like, research-development, and hybrid research/hardening/release/maintenance profiles are switchable presentation and operating modes. A methodology transition is explicit and cannot alter objective, acceptance, authority, or evidence-retention semantics.
+## Protected operation
 
-## Routes and explicit switching
+Before 05B, security preflight requires isolation, filesystem/process/time limits, deny-by-default network with approved egress, scoped ephemeral secrets, untrusted-input classification, controller/target separation, supply-chain evidence, destructive authorization and forensic cleanup. Incident flow stops affected work, preserves evidence, revokes credentials/extensions, verifies audit, recovers under human gates, and creates corrective governed work. Air-gapped operation exports/imports signed portable campaign/evidence bundles with allowed classes, transformations/redaction, partial export, disconnected execution, reconciliation, duplicate/conflict provenance, residency, and delayed policy/catalog handling.
 
-The independently switchable dimensions are role; model and version; provider/runtime; agentic environment; endpoint; access binding; credential reference; account/project/organization; funding source; local/cloud/CI/HPC compute; adapter; repository/workspace; team topology; parallelism; methodology; DSE strategy; experiment fidelity; and context/artifact representation.
-
-Every switch is an explicit Transition Decision with source route, alternatives, capability evidence, policy decision, budget and funding impact, data/licensing/network evaluation, reproducibility impact, selected transition, receipt or failure, and checkpoint or rollback behavior. It may never silently cross funding, credential, data, licensing, network, account, reviewer-independence, or pinned-evaluation boundaries. A route cannot expand authority.
-
-## Parallel teams and independence
-
-Operation supports read-only investigators, competing planners, isolated implementers, alternative implementations, parallel test/oracle development, independent and complementary reviewer ensembles, integration agents, DSE workers, and cross-repository/site-local teams. Independence is recorded and evaluated over session, model family, environment, access binding, mutable workspace, context visibility, prior conflicting roles, and route selection—not labels.
-
-Fan-out has explicit join conditions. Quorum, dissent, conflict handling, adjudication, duplicate suppression, cancellation, partial completion, budget reconciliation, and retained evidence are required. A failed or cancelled branch cannot erase successful sibling evidence.
-
-## Budgets, resources, checkpoints, and recovery
-
-Budget Request, Budget Allocation, Reserve, Ledger Entry, Actual Consumption, Renewal/Increase Decision, and Exhaustion Decision are distinct facts. Resource Leases cover workspaces, branches, CI runners, local/cloud/HPC compute, clusters, EDA licenses, FPGA boards, datasets, and instruments. Retries and duplicate delivery cannot exceed an allocation; leases expire, renew, revoke, and fence stale workers.
-
-A portable checkpoint retains exact work/graph revision, decisions and assumptions, artifact/repository digests, validation and findings, child state, budget/lease state, next action, portable context summary, and native references when available. Recovery describes retry safety, approved alternatives, reproducibility impact, rollback, and cross-environment resume.
-
-## Acceptance requirements
-
-Validate each CLI operation; preflight and incompatible event versions; normalized terminal outcomes; profile isolation; successful and failed explicit transitions; refusal of protected-boundary crossings; graph revision and conflicts; pause/resume and rollback; independence policy; partial success/cancellation; budget/lease exhaustion; cross-environment resume; and absence of named providers/models from portable semantics.
+Acceptance covers every command, protected-boundary denial/gating, route degradation, scheduling explanation, checkpoint recovery, package finalization and external-sync drift; transport success never proves semantic or external-effect success.
