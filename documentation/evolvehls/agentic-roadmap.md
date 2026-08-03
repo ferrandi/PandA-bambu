@@ -1,261 +1,137 @@
-# EvolveHLS Portable Agent Framework — Refined Roadmap
+# EvolveHLS Portable Agent Framework Roadmap
 
-**Status:** planning snapshot captured 2026-08-02  
-**Current dependency:** PR #23 (`agent/portable-task-supervisor`) at `4bcdb25b86fb9cd7224c29be41f0567746bfdc99`
+**Status:** post-PR #25 synchronization and architecture refinement, 2026-08-03
+**Authority:** this roadmap assigns milestones; the [requirements matrix](paf-contract-requirements-matrix.md) remains the normative PAF-05A3a.1 completeness audit. See also the [turnkey plan](paf-turnkey-orchestration-plan.md), [contract and provenance plan](paf-contract-provenance-plan.md), and [soundness analysis](paf-architecture-soundness-analysis.md).
 
-## Product vision
+PAF-05A2 merged in PR #23 at `be25381df5f8f50363a98d9ff5557364d8656e1f`. PAF-05A3a.1 merged in PR #25 at `0f3accc999f4402d211fdfca4cb0555117f855a1`. The latter remains accepted matrix work; this document is a post-merge refinement, not a rewrite of that history. **PAF-05A3a.2 is the next implementation phase, and PAF-05A3a.2a is its immediate next coding task.**
 
-PAF is the portable, backend-neutral agent framework underlying EvolveHLS. It must support:
+## Product and dependency boundary
 
-1. autonomous multi-agent development of PAF and the broader EvolveHLS software stack;
-2. autonomous compiler, HLS, architecture, memory-system, FPGA, ASIC, and cross-layer design-space exploration;
-3. governed improvement of PAF itself from auditable development and design evidence.
-
-The normal user experience must be turnkey:
+PAF is a **domain-independent autonomous engineering control plane**. SODA-EVOLVE is the flagship hardware/software codesign application and depends on PAF, never the reverse.
 
 ```text
-agentctl setup
-agentctl doctor
-agentctl run <task>
+PAF
+  generic autonomous engineering infrastructure
+        ↓
+SODA-EVOLVE domain extension
+  compiler/HLS/codesign semantics
+        ↓
+SODA-FIZZ + EvolveHLS
+        ↓
+SODA-OPT, PandA-Bambu, and implementation tools
 ```
 
-Advanced declarative configuration remains available for reproducibility, automation, evaluation, and institutional policy, but must not be required for normal use.
+Portable PAF semantics and v2 vocabulary must not depend on Bambu, SODA-OPT, SODA-FIZZ, SODA-EVOLVE domain types, MLIR, HLS or compiler-specific types, named models, providers, clients, repository paths, private endpoints, or private configuration. Bambu and SODA-OPT are consumer adapters or workspace identities, never core vocabulary. Domain semantics enter only through adapters and namespaced extension profiles.
 
-## Architectural invariants
+## Invariants
 
-- PAF semantics are independent of Cline, Codex, Claude Code, LangGraph, any provider, and any model.
-- Roles, models, agentic environments, endpoints, access bindings, credentials, funding classes, and account scopes are separate concepts.
-- Models are discovered and evaluated within a specific access binding and environment.
-- Two credentials for the same provider are distinct bindings and may expose different models, quotas, policies, projects, billing, or data boundaries.
-- A task describes intent and success, not a provider, client, model, or local command line.
-- A workflow describes collaboration, decomposition, joins, retries, remediation, and gates.
-- An execution request describes one resolved and authorized attempt.
-- Receipts and provenance describe what actually happened.
-- Design-space exploration is represented as scientific search over immutable candidates and evidence, not as an ad hoc coding loop.
-- Every consumed, produced, transformed, selected, rejected, reviewed, or evaluated object is an artifact or provenance event.
-- Audit retention, evaluation eligibility, training eligibility, and redistribution eligibility are independent governance decisions.
-- Running workflows cannot silently alter or promote their own trusted controller or policy.
-- Merge and other consequential operations remain human-gated unless explicitly authorized by policy.
-- Evaluation and ablation runs use pinned routing and reproducible catalog snapshots; development runs may adapt within policy.
-- Dynamic fallback never crosses funding, credential, data, network, or authorization boundaries silently.
+- Autonomy is independent of authority, risk, budget, data sensitivity, duration, publication impact, infrastructure impact, and reproducibility mode.
+- A request or proposal does not grant authority; a generated Work Proposal becomes a Work Item only through applicable policy or human authorization.
+- One semantic fact has one authoritative owner. Boards, backlogs, sprint views, epic trees, Kanban views, roles, and ceremonies are projections or configuration, not competing authorities.
+- Logical identity, immutable revision/version identity, and content digest are distinct. A digest includes its algorithm, canonicalization profile, domain, schema, and version.
+- Results own semantic outcomes; receipts attest attempted effects and are claims until issuer, executor, exact subject, and attestation validate. Neither a receipt nor a result alone establishes the other fact.
+- Pinned evaluation and reproducibility runs do not silently change route, fidelity, catalog, or protected boundary. Missing evidence remains missing, unknown, or `null`; failure never becomes a successful zero.
+- No orchestration framework owns PAF contracts, authority, Work Graphs, checkpoints, or evidence.
 
-## Foundation
+## Incubation and standalone extraction
 
-| Milestone | Objective | Status |
-|---|---|---|
-| PAF-01 | Provider contract and safe capability probing | Foundation completed |
-| PAF-02 | Neutral roles, tasks, results, catalogs, deterministic model selection | Foundation completed |
-| PAF-03A | Execution-profile and routing contracts | Foundation completed |
-| PAF-03B | Turnkey bootstrap, environment detection, generated adapters | Foundation completed |
-| PAF-04 | Durable architecture and inspection knowledge | Foundation completed |
-| PAF-05A1 | Execution request, handoff preview, and receipt contracts | Merged in PR #22 |
-| PAF-05A2 | Trusted worktree management and process supervision | Draft PR #23; final review pending |
-
-The existing v1 task, result, execution-request, fixture-handoff, and execution-receipt contracts remain compatibility fixtures. They are not yet the complete interfaces for autonomous coding, federated workspaces, adaptive orchestration, or design-space exploration.
-
-## PAF-05A3a — Complete contract, provenance, and learning architecture
-
-**Dependency:** approved and merged PAF-05A2.
-
-Before implementing fixture execution or an ad hoc Cline automation loop, converge the complete canonical contract family.
-
-### PAF-05A3a.1 — Requirements and use-case matrix
-
-Document and test requirements for:
-
-- autonomous EvolveHLS coding;
-- dynamic multi-agent planning, implementation, review, remediation, and integration;
-- cross-repository work;
-- design-space exploration;
-- complete provenance;
-- dataset and training governance;
-- controlled evolution of PAF;
-- turnkey setup and recovery;
-- dynamic model/environment/access discovery;
-- adaptive routing and budget exhaustion.
-
-Assign each semantic responsibility to one authoritative contract and record trust boundaries and cross-contract invariants.
-
-### PAF-05A3a.2 — Shared primitives
-
-Define versioned primitives for:
-
-- canonical identifiers and content digests;
-- timestamps and event ordering;
-- artifact descriptors and typed representations;
-- provenance relations and transformations;
-- media types, schemas, units, dimensions, and uncertainty;
-- repository and workspace references;
-- permissions and requested operations;
-- authorization and policy decisions;
-- budgets, reserves, estimates, and ledgers;
-- workflow, stage, parent, child, attempt, and remediation lineage;
-- sensitivity, licensing, retention, evaluation, training, and redistribution governance;
-- redaction records preserving lineage and integrity;
-- model, runtime, adapter, endpoint, account, project, funding, and access-binding identities.
-
-### PAF-05A3a.3 — Autonomous coding contracts
-
-Create or revise:
-
-- Task v2;
-- Plan;
-- Workflow;
-- Spawn request;
-- Result v2;
-- Review result and structured findings;
-- Remediation task derivation;
-- Change set;
-- CI and validation evidence;
-- Repository publication intent and outcomes;
-- Runtime checkpoint;
-- Adaptation decision.
-
-Support dynamic planning, implementation, independent review, remediation, parallel read-only investigators, bounded isolated writers, cancellation, retries, resumability, and human-only merge.
-
-Initial local policy may prefer Sol for coding planning, Terra for implementation, Opus for review planning, and Sonnet for review execution. These names are not hard-coded into portable semantics.
-
-### PAF-05A3a.4 — Design-space exploration contracts
-
-Create:
-
-- Exploration study;
-- Parameter space;
-- Candidate;
-- Experiment request;
-- Measurement set;
-- Exploration strategy;
-- Campaign state;
-- Pareto/result set;
-- Decision report.
-
-Support typed and conditional parameters, feasibility constraints, multi-objective optimization, multiple strategies, deterministic candidate identities, failed/infeasible candidates, repeated trials, noise and uncertainty, mixed fidelity, comparability rules, dynamic parallelism, fidelity escalation, checkpointing, and human gates for expensive experiments.
-
-### PAF-05A3a.5 — Execution and environment integration contracts
-
-Generalize:
-
-- Handoff;
-- Execution request;
-- Execution receipt;
-- Policy decision;
-- Artifact visibility record;
-- Interaction trace;
-- Provenance event;
-- Decision record;
-- Evaluation record;
-- Feedback record;
-- Access binding;
-- Credential reference;
-- Endpoint;
-- Account/project scope;
-- Catalog snapshot;
-- Discovered model;
-- Capability evidence;
-- Binding status;
-- Binding budget;
-- Binding transition policy;
-- Routing decision;
-- Budget policy and ledger;
-- Runtime checkpoint.
-
-Models are discovered per access binding and environment. Multiple keys for the same provider remain separate bindings with separate catalogs, policies, budgets, and provenance.
-
-### PAF-05A3a.6 — Learning and governed PAF evolution contracts
-
-Create:
-
-- Dataset manifest;
-- Learning run;
-- Policy candidate;
-- Policy evaluation;
-- Policy release;
-- Promotion decision;
-- Rollback record.
-
-Require immutable source evidence, explicit dataset-selection policies, separation of audit retention from training eligibility, licensing/consent/security restrictions, held-out and adversarial evaluation, independent review, human promotion, pinned releases, and rollback.
-
-### PAF-05A3a.7 — Conformance suite
-
-Prove autonomous coding, DSE, turnkey setup, multiple bindings, environment portability, adaptive budgets, checkpointing, governance, and controlled PAF evolution with valid, invalid, and adversarial fixtures.
-
-**Acceptance criterion:** the contract family represents all required scenarios without provider-, model-, client-, repository-, or DSE-tool-specific schema extensions.
-
-## PAF-05A3b — End-to-end fixture execution
-
-Implement a trusted fixture executor consuming the converged contracts:
-
-- explicit preview and authorization;
-- isolated worktree;
-- general handoff persistence;
-- trusted process launch;
-- result collection;
-- evidence capture;
-- receipts and provenance events;
-- budget attribution;
-- checkpoint creation;
-- deterministic cleanup and retention.
-
-**Acceptance criterion:** an approved fixture task runs end-to-end and emits a validated, content-addressed evidence graph.
-
-## PAF-05B — Turnkey EvolveHLS autonomous coding reference cycle
-
-Implement the first real autonomous coding cycle as a consumer of PAF contracts:
+PAF remains temporarily incubated in this fork only through:
 
 ```text
-plan → implement → independent review plan → review execution
-     → structured remediation when blocked → human merge gate
+PAF-05A3 contract convergence
+→ PAF-05A3b trusted executor
+→ PAF-05B supported A2 coding cycle
+→ PAF-05C second-runtime proof
+→ PAF-06 standalone extraction
 ```
 
-The cycle must operate on a real EvolveHLS task, use isolated worktrees, support Cline first without embedding Cline semantics, reserve budget for review and final validation, stop or checkpoint on exhaustion, emit structured evidence, and require human merge authorization.
+PAF-06 is a firm gate before the large A3/A4 adaptive, federated, and distributed runtime. Every new v2 implementation is extraction-ready from its first change: a portable PAF-owned package and contract namespace; no Bambu or SODA-EVOLVE imports; independent and dependency-boundary tests; v1 `evolvehls.agentic.*` compatibility adapters; relocation-stable portable identities and digests; standalone installation/import/CLI smoke tests; and licensing plus contributor-provenance review. Repository-specific build, CI, and workspace behavior remains in consumer adapters. Extraction proves portability of the established boundary, not stability of a future A3–A5 API.
 
-## PAF-05C — Second environment and access-mode portability proof
+## Autonomy model
 
-Execute the same canonical task/workflow through a materially different runtime family such as Codex, Claude Code, direct API, or a local direct executor.
+| Level | Meaning |
+|---|---|
+| A0 — Assistive | Advice or generated material; a human directly controls execution. |
+| A1 — Delegated stage | One bounded stage is delegated under explicit inputs and authority. |
+| A2 — Bounded workflow | A controller runs a finite workflow with gates, limits, evidence, and recovery. |
+| A3 — Adaptive development campaign | The system revises Work Graphs and routes within explicit policy. |
+| A4 — Federated autonomous engineering organization | Durable cross-team, cross-repository, cross-site operation. |
+| A5 — Governed self-evolution | Evidence-backed changes to PAF policies or capabilities under promotion controls. |
 
-## PAF-06 — Standalone PAF extraction
+PR #25 is A2 bootstrap evidence, not proof of a supported PAF runtime. The shell/bootstrap controller is not that supported runtime.
 
-Move generic PAF infrastructure from PandA-Bambu into a standalone package and CLI. Bambu remains the first consumer and SODA-OPT becomes the second.
+## PAF-05A3a — contract convergence
 
-## PAF-07 — Federated workspace and coordinated change sets
+### PAF-05A3a.1 — requirements matrix — complete
 
-Support multiple repositories, upstreams, forks, mirrors, pinned dependencies, exact revisions, per-agent access, coordinated branches/commits/PRs, cross-repository artifact edges, and restricted-source classifications.
+Merged in PR #25. The [matrix](paf-contract-requirements-matrix.md) supplies the accepted completeness audit, 69 use cases, compatibility inventory, and v1 migration rules.
 
-## PAF-08 — Guardrails, authorization, funding, and governance
+### PAF-05A3a.2 — small semantic kernel and shared primitives — next phase
 
-Implement operation authorization, credential/network policy, data boundaries, personal/project/institutional/subscription/API/local funding classes, binding-transition authorization, budget reserves, ledgers, human gates, and artifact/training governance.
+**PAF-05A3a.2a — next coding task** defines the language-neutral kernel: Contract Envelope; Contract/Object Reference; Version; Canonicalization Profile; Typed Digest; Principal Reference; Artifact; Representation; Attestation; Provenance Event; Governance Decision; and Error Record. It resolves logical-object versus revision versus content identity, a PAF-owned v2 namespace, schema/version registries, digest domain separation, portable principals and attestation subjects, language-neutral conformance vectors, and v1 treatment. It selects and publishes the exact canonical JSON profile rather than prematurely naming one here.
 
-## PAF-09 — Dynamic orchestration kernel
+Later 05A3a.2 slices may add reusable governance, budget, unit, lineage, and resource primitives, but must reuse this kernel and must not add envelopes, references, or UI/methodology schemas with competing authority.
 
-Implement backend-neutral workflow DAGs, dynamic fan-out/join, bounded retries and remediation, cancellation, failure isolation, lineage, adaptive routing, checkpoints, restart, and deterministic controller decisions.
+### PAF-05A3a.3 — Work and Work Graph contracts
 
-## PAF-10 — Durable orchestration adapter
+Owns Objective, Work Proposal, Work Item, Plan, Workflow, Work Graph Snapshot, Work Graph Mutation, Result, Review Result, Validation Record, ChangeSet, publication requests, and work-lifecycle checkpoints. Split, merge, supersession, reprioritization, deferral, cancellation, dependency change, prerequisite insertion, assignment, and regeneration are mutation kinds, not separate authoritative families. Each mutation records prior revision/digest, ordered operations, preconditions, idempotency key, cited policy or human decision, resulting revision/digest, and conflict outcome. Evidence from completed work survives replanning, cancellation, and partial failure.
 
-Add a LangGraph or equivalent durable backend for persistent checkpoints, resumption, interrupts, approvals, subgraphs, and long-running campaigns. PAF retains ownership of contracts, policies, evidence, and semantics.
+### PAF-05A3a.4 — DSE contracts
 
-## PAF-11 — Model, environment, capability, and modality intelligence
+Owns immutable candidates, experiment fidelity, toolchain epochs, semantic-equivalence obligations, progressive-fidelity evaluation, and leases for scarce experimental resources.
 
-Build evidence-backed catalogs from provider/gateway discovery, environment-native discovery, local runtimes, declared metadata, bounded probes, historical PAF outcomes, and independent benchmarks. Support source code, images, PDFs, MLIR, RTL, waveforms, reports, LEF/DEF, GDSII, and derived representations with provenance.
+### PAF-05A3a.5 — execution, environment, access, and switching
 
-## PAF-12 — Adaptive routing and budget optimization
+Owns generalized Execution Request, Handoff, Receipt, and Interaction Trace; environment, adapter, provider/runtime, endpoint, model, catalog, access, credential-reference, account/project/organization, funding, data-boundary, capability, and resource-lease identities; Route Candidate Sets, Routing Decisions, Transition Decisions, and transition receipts. It must not create a generic Decision Record or Adaptation Decision that duplicates policy, human, routing, transition, workflow-adaptation, or replanning authority.
 
-Dynamically select and adapt model, provider/runtime, environment, access binding, account/funding source, concurrency, delegation, context, experiment batch size, fidelity, and retry/stop behavior. Every decision is recorded; no transition silently crosses a boundary.
+### PAF-05A3a.6 — governed learning
 
-## PAF-13 — Governed evidence-driven evolution of PAF
+Owns offline learning, evaluation, promotion, rollback, retention, eligibility, and redaction governance.
 
-Use approved evidence to improve routing, decomposition, context selection, reviewer assignment, test selection, candidate proposal, fidelity escalation, and stopping policies through offline learning, held-out/adversarial evaluation, independent review, human promotion, pinned releases, and rollback.
+### PAF-05A3a.7 — conformance
 
-## PAF-14 — EvolveHLS autonomous codesign and design-space exploration
+Owns cross-language, cross-contract, migration, portability, negative, adversarial, and second-environment conformance.
 
-Apply PAF to compiler transformation exploration, MLIR lowering and dialect evolution, HLS configuration, dataflow/accelerator architecture, dynamic scheduling, memory architecture and OpenRAM/FPGA macro mapping, FPGA/ASIC implementation, and cross-layer optimization.
+## Generated work, methodologies, and parallelism
 
-## Target user experience
+PAF supports high-level Objectives, generated Work Proposals, authoritative Work Items, and dependency-aware Work Graphs. Evidence may generate remediation and integration proposals. Explicit graph revisions support splitting, merging, supersession, reprioritization, deferral, cancellation, prerequisite insertion, reassignment, and regeneration. Objectives, success criteria, authority, prohibited scope, data boundaries, budgets, review requirements, publication rules, and fabrication policy may never change silently.
 
-A user should be able to state:
+Scrum-like, Kanban-like, research-development, and hybrid research/hardening/release/maintenance modes are configurable methodology profiles. They change projections, not core semantics or the preceding protected facts.
 
-```text
-Implement this paper's algorithm in EvolveHLS, validate it, review it,
-and explore the relevant compiler and architecture choices within this budget.
-```
+PAF supports parallel read-only investigators, competing planners, isolated implementers, alternative implementations, test/oracle developers, independent and complementary reviewer ensembles, integration agents, DSE workers, and cross-repository/site-local teams. Independence is a verifiable policy predicate over session, model family, environment, access binding, mutable workspace, visible context, prior conflicting roles, and route selection. Fan-out/join, quorum, dissent, conflict handling, adjudication, duplicate detection, cancellation, budget reconciliation, and retained evidence are explicit.
 
-PAF should discover authorized environments, bindings, and models; ask minimal policy questions; normalize the objective; select and adapt the team; manage workspaces, budgets, evidence, and checkpoints; stop safely when needed; present only human-authority decisions; preserve complete provenance; and retain only explicitly eligible evidence for evaluation or learning.
+## Later PAF milestones
+
+| Milestone | Allocation |
+|---|---|
+| PAF-05A3b | Trusted executor after contract convergence. |
+| PAF-05B | Supported A2 coding cycle with human merge gate. |
+| PAF-05C | Second materially different runtime proof. |
+| PAF-06 | Mandatory standalone-extraction gate. |
+| PAF-07/08 | Federated ChangeSets; authorization, funding, and governance. |
+| PAF-09 | A3 adaptive development campaigns and governed Work Graph revision. |
+| PAF-10 | A4 durable/distributed operation; an adapter such as LangGraph may be used but is not authoritative. |
+| PAF-11 | Capability and modality intelligence. |
+| PAF-12 | Dynamic switching across all protected dimensions. |
+| PAF-13 | A5 governed self-evolution. |
+
+## SODA-EVOLVE domain realization
+
+These are extension semantics, never PAF core contracts.
+
+| Phase | Scope |
+|---|---|
+| X-A — Domain contracts and adapters | Application/algorithm intent, compiler/IR lineage, hardware-candidate identity, semantic equivalence, fidelity, cross-layer objectives, and capability gaps. |
+| X-B — EvolveHLS autonomous toolchain evolution | Capability gap → generated compiler/HLS work → implementation → validation → independent review → integration → versioned toolchain capability. |
+| X-C — SODA-FIZZ design evolution | Immutable candidates, feasibility, fidelity, experiments, measurements, Pareto updates, and recommendations. |
+| X-D — Nested co-evolution | Design campaign → capability gap → EvolveHLS campaign → validated toolchain release → explicit campaign transition → resumed exploration. |
+| X-E — Progressive-fidelity ladder | Semantic/model evaluation → compiler analysis → HLS estimation → RTL → FPGA/ASIC synthesis → place-and-route → package/system → prototype/silicon. |
+| X-F — Federated campaigns | PAF, SODA-EVOLVE, SODA-OPT, Bambu, architecture libraries, memory generators, OpenFPGA, OpenROAD, benchmarks, and models. |
+| X-G — Reference campaigns and baselines | Paper-to-implementation, graph/sparse ingestion, memory semantics, SPARTA, SVELTO, dataflow, OpenRAM, OpenFPGA, physically aware HLS, and emerging computing; compare one-agent, fixed-pipeline, manual-task, no-switch, no-toolchain-evolution, and single-fidelity baselines. |
+| X-H — Governed domain learning | Improve decomposition, transformations, architecture proposals, fidelity escalation, test selection, review assignment, and stopping rules under PAF policy-promotion controls. |
+
+A toolchain epoch binds exact compiler, HLS tool, library, model, adapter, and flow revisions. Each domain result declares equivalence as exact, tolerance-based numerical, observational, protocol, performance-only, or intentionally changed semantics.
+
+## Framework differentiation
+
+The [soundness analysis](paf-architecture-soundness-analysis.md#framework-comparison) records primary-source comparison links. LangGraph, AutoGen, CrewAI, MetaGPT, SWE-agent/mini-SWE-agent, OpenHands, and OpenAI Agents SDK each report some combinations of multi-agent orchestration, graphs or flows, sandboxes, handoffs, tracing, model selection, persistence, or human controls. PAF/SODA-EVOLVE does not claim any one feature as unique; its differentiation is the integrated combination of design/toolchain co-evolution, durable Objective and Work Graph evolution, autonomy/authority separation, access/funding/data-aware switching, exact-head independent review, federated ChangeSets, progressive-fidelity codesign, governed evidence and learning, and turnkey multi-environment operation.
