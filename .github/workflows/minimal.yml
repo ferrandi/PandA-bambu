@@ -31,7 +31,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  upload-artifacts: ${{ inputs.upload-artifacts || '0' }}
+  upload-artifacts: ${{ github.event_name == 'pull_request' && '1' || inputs.upload-artifacts || '0' }}
   NO_CLEAN_ARG: ${{ inputs['no-clean'] && '--no-clean' || '' }}
   report-dir: test-reports
   storage-url: "${{secrets.CI_STORAGE_URL}}"
@@ -1075,7 +1075,7 @@ jobs:
     env:
       test: hw
       outname: panda_bench_hw
-      args: -c=--evaluation=PERIOD,AREA,FREQUENCY,CLOCK_SLACK,REGISTERS,DSPS,BRAMS -c=--parallel-backend=4
+      args: -c=--evaluation=PERIOD,AREA,FREQUENCY,CLOCK_SLACK,REGISTERS,DSPS,BRAMS
       datapoints: PERIOD,AREA,REGISTERS,DSPS,BRAMS
       J: 5
     steps:

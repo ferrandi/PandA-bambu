@@ -1,6 +1,7 @@
 [submodule "MachSuite"]
 	path = examples/MachSuite/MachSuite
 	url = https://github.com/ferrandi/MachSuite.git
+	branch = dev/panda-hls
 [submodule "CHStone"]
 	path = examples/CHStone/CHStone
 	url = https://github.com/ferrandi/CHStone.git
