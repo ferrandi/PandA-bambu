@@ -14,6 +14,9 @@ ac_types2_array_7bits.cpp --benchmark-name=ac_types2_array_7ubits-c++17 --genera
 ac_types2_array_7bits.cpp --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers --std=c++17
 ac_types3.cpp --benchmark-name=ac_types3-c++17 --generate-tb=a=01234,b=0x1ABCDaBCD,c=3,d=6 --top-fname=sum3numbers --std=c++17
 ac_types3.cpp --generate-tb=a=01234,b=0x1ABCDaBCD,c=3,d=6 --top-fname=sum3numbers --std=c++17
+ac_ap_types_by_value.cpp --generate-tb=input=1,unused=2,output=0 --top-fname=ac_ap_types_by_value
+BENCHMARK_ENV=MANTIS_EXPECT_FAILURE=1,MANTIS_EXPECT_FAILURE_REGEX=Top.function.parameter.is.an.aggregate.type.passed.by.value top_aggregate_by_value.cpp --top-fname=top1 --benchmark-name=top_aggregate_parameter_by_value_expected_failure
+BENCHMARK_ENV=MANTIS_EXPECT_FAILURE=1,MANTIS_EXPECT_FAILURE_REGEX=Top.function.returns.an.aggregate.type.by.value top_aggregate_by_value.cpp --top-fname=top2 --benchmark-name=top_aggregate_return_by_value_expected_failure
 ex1.cpp --benchmark-name=ex1-c++17 --generate-tb="bit_stream={0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},a_out={0}" --top-fname=test_func --std=c++17
 ex1.cpp --generate-tb="bit_stream={0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},a_out={0}" --top-fname=test_func
 iterative_merge_sort.c --generate-tb=arr="{8,7,6,5,4,3,2,1}",n=8 --top-fname=mergeSort  -fno-unroll-loops --benchmark-name=mergeSort
