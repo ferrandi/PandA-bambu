@@ -247,12 +247,15 @@ namespace
             }
          }
       };
-      const auto check_port_index = [&](const structural_objectRef& port, const unsigned int module_port_count) {
+      const auto check_port_index = [&](const structural_objectRef& port,
+                                        const unsigned int ASSERT_PARAMETER(module_port_count)) {
          dataflow_memory_port_info port_info;
          if(parse_dataflow_memory_port(port, port_info) && port_info.var == var &&
             is_dataflow_memory_role_kind(role, port_info.kind))
          {
+#if HAVE_ASSERTS
             const auto local_port_index = get_dataflow_memory_local_port_index(port_info.index);
+#endif
             THROW_ASSERT(local_port_index < module_port_count, "Dataflow memory port index " + STR(local_port_index) +
                                                                    " exceeds " + STR(module_port_count) +
                                                                    " lanes for " + module->get_path());
@@ -498,6 +501,7 @@ namespace
       return max_interface_bitsize != 0 ? max_interface_bitsize : max_bitsize;
    }
 
+#if HAVE_ASSERTS
    bool has_direct_dataflow_memory_interface(const structural_objectRef& circuit, const unsigned int var,
                                              const dataflow_memory_role role)
    {
@@ -514,6 +518,7 @@ namespace
       }
       return false;
    }
+#endif
 
    structural_objectRef find_direct_module_port(const structural_objectRef& module, const std::string& port_name)
    {
@@ -698,10 +703,12 @@ namespace
             }();
             if(!storage_port)
             {
+#if HAVE_ASSERTS
                const auto requires_connection =
                    port_info.kind == "address" ||
                    (port_info.kind == "ce" && module_role == dataflow_memory_role::reader) ||
                    ((port_info.kind == "d" || port_info.kind == "we") && module_role == dataflow_memory_role::writer);
+#endif
                THROW_ASSERT(
                    !(requires_connection && (HLSMgr->get_ding_dong_buffer_candidate(top_id, port_info.var) ||
                                              HLSMgr->get_dataflow_read_only_memory_candidate(top_id, port_info.var))),
@@ -2074,14 +2081,16 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
           [&](const auto port_index) { return dataflow_rom_module->get_out_port(port_index); },
           dataflow_rom_module->get_out_port_size());
       const auto validate_dataflow_rom_port = [&](const std::string& port_name, const so_kind expected_kind,
-                                                  const unsigned int expected_count) {
+                                                  const unsigned int ASSERT_PARAMETER(expected_count)) {
          const auto port = find_direct_module_port(dataflow_rom, port_name);
          THROW_ASSERT(port && port->get_kind() == expected_kind, "Dataflow read-only memory port " +
                                                                      dataflow_rom->get_path() + "/" + port_name +
                                                                      " has unexpected kind");
          if(expected_kind == port_vector_o_K)
          {
+#if HAVE_ASSERTS
             const auto actual_count = GetPointerS<const port_o>(port)->get_ports_size();
+#endif
             THROW_ASSERT(actual_count == expected_count, "Dataflow read-only memory port " + dataflow_rom->get_path() +
                                                              "/" + port_name + " has " + STR(actual_count) +
                                                              " entries but " + STR(expected_count) + " expected");
@@ -2169,6 +2178,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                                   "dataflow_rom_" + std::string(zero_port_name) + "_" + STR(var), "0");
       }
    }
+#if HAVE_ASSERTS
    for(const auto& [var, info] : dataflow_read_only_memory_candidates)
    {
       THROW_ASSERT(!info.consumer_function_ids.empty(), "Dataflow read-only memory has no consumer module");
@@ -2178,6 +2188,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                                                        var) >= 1U,
                    "Read-only dataflow memory " + STR(var) + " has consumers but no structural read ports");
    }
+#endif
    connect_dataflow_memory_ports(HLSMgr, HLS->functionId, SM, circuit, storage_by_var, unique_id);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Managed memory ports");
 
