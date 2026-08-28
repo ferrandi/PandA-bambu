@@ -537,6 +537,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    CustomMap<var_id_t, unsigned long long> var_size;
    CustomMap<var_id_t, CustomMap<func_id_t, CustomOrderedSet<CallGraph::vertex_descriptor>>> var_referring_vertex_map;
    CustomMap<var_id_t, CustomMap<func_id_t, CustomOrderedSet<CallGraph::vertex_descriptor>>> var_load_vertex_map;
+   CustomMap<var_id_t, CustomOrderedSet<func_id_t>> concrete_store_functions;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Pointers classification...");
    for(const auto& fun_id : func_list)
    {
@@ -600,6 +601,10 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             for(const auto& var_node : res_set)
             {
                const auto var = var_node->index;
+               if(op_info.node_type & TYPE_STORE)
+               {
+                  concrete_store_functions[var].insert(fun_id);
+               }
                if(HLSMgr->Rmem->has_sds_var(var) && !HLSMgr->Rmem->is_sds_var(var))
                {
                   continue;
@@ -819,6 +824,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Pointers classification completed");
 
    HLSMgr->clear_ding_dong_buffer_candidates();
+   HLSMgr->clear_dataflow_read_only_memory_candidates();
    const auto is_dataflow_top_function = [&](const unsigned int function_id) {
       const auto function_name = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->GetFunctionName();
       const auto func_arch = HLSMgr->module_arch->GetArchitecture(function_name);
@@ -865,6 +871,101 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       }
       return bundle_names;
    };
+
+   const auto has_dynamic_address_use = [&](const unsigned int top_id, const unsigned int var_id) {
+      const auto top_uses_it = where_used.find(top_id);
+      if(top_uses_it == where_used.end())
+      {
+         return false;
+      }
+      const auto users_it = top_uses_it->second.find(var_id);
+      if(users_it == top_uses_it->second.end())
+      {
+         return false;
+      }
+      const auto& users = users_it->second;
+      return std::any_of(users.begin(), users.end(), [&](const auto function_id) {
+         return HLSMgr->CGetFunctionBehavior(function_id)->get_dynamic_address().count(var_id);
+      });
+   };
+
+   const auto is_initialized_read_only_dataflow_memory = [&](const unsigned int top_id, const unsigned int var_id) {
+      // determine_memory_accesses conservatively records non-const pointer address uses as writes.  Record
+      // only concrete TYPE_STORE operations here; interface directions still classify dataflow writers.
+      (void)top_id;
+      const auto vd = GetPointer<const variable_val_node>(TM->GetIRNode(var_id));
+      return vd && vd->init && !concrete_store_functions.count(var_id);
+   };
+
+   // DATAFLOW modules can be promoted to separate roots.  Recover their concrete shared objects by walking the direct
+   // call sites reachable from each DATAFLOW top, rather than looking for the callee formal in var_map.
+   CustomMap<top_id_t, CustomOrderedSet<func_id_t>> dataflow_reachable_functions;
+   CustomMap<top_id_t, CustomOrderedSet<var_id_t>> dataflow_reachable_objects;
+   const auto& full_call_graph = CGM.GetCallGraph();
+   for(const auto& [top_id, _] : function_allocation_order)
+   {
+      if(!is_dataflow_top_function(top_id))
+      {
+         continue;
+      }
+      CustomOrderedSet<CallGraph::vertex_descriptor> reached_vertices;
+      reached_vertices.insert(CGM.GetVertex(top_id));
+      bool changed = true;
+      while(changed)
+      {
+         changed = false;
+         for(const auto edge : full_call_graph.edges())
+         {
+            const auto caller_vertex = full_call_graph.source(edge);
+            if(!reached_vertices.count(caller_vertex))
+            {
+               continue;
+            }
+            const auto& edge_info = full_call_graph.CGetEdgeInfo(edge);
+            if(edge_info.direct_call_points.empty())
+            {
+               continue;
+            }
+            const auto callee_vertex = full_call_graph.target(edge);
+            changed |= reached_vertices.insert(callee_vertex).second;
+            for(const auto call_point : edge_info.direct_call_points)
+            {
+               const auto call_statement = TM->GetIRNode(call_point);
+               std::vector<ir_nodeRef> actual_parameters;
+               if(call_statement->get_kind() == assign_stmt_K)
+               {
+                  const auto assignment = GetPointerS<const assign_stmt>(call_statement);
+                  if(assignment->op1->get_kind() != call_node_K)
+                  {
+                     continue;
+                  }
+                  actual_parameters = GetPointerS<const call_node>(assignment->op1)->args;
+               }
+               else if(call_statement->get_kind() == call_stmt_K)
+               {
+                  actual_parameters = GetPointerS<const call_stmt>(call_statement)->args;
+               }
+               else
+               {
+                  continue;
+               }
+               for(const auto& actual : actual_parameters)
+               {
+                  const auto base_actual = ir_helper::GetBaseVariable(actual);
+                  if(base_actual && GetPointer<const variable_val_node>(TM->GetIRNode(base_actual->index)))
+                  {
+                     dataflow_reachable_objects[top_id].insert(base_actual->index);
+                  }
+               }
+            }
+         }
+      }
+      for(const auto vertex : reached_vertices)
+      {
+         dataflow_reachable_functions[top_id].insert(CGM.get_function(vertex));
+      }
+   }
+
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Ding-dong candidate classification...");
    for(const auto& [top_id, var_uses] : var_map)
    {
@@ -884,33 +985,26 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             candidate_vars.insert(var_id);
          }
       }
-      for(const auto& [other_top_id, other_var_uses] : var_map)
+      for(const auto object_id : dataflow_reachable_objects[top_id])
       {
-         if(other_top_id == top_id || !is_dataflow_module_function(other_top_id))
+         if(is_internal_obj(object_id, top_id, false))
          {
-            continue;
-         }
-         for(const auto& [var_id, _] : other_var_uses)
-         {
-            if(is_internal_obj(var_id, top_id, false))
-            {
-               candidate_vars.insert(var_id);
-            }
+            candidate_vars.insert(object_id);
          }
       }
       for(const auto var_id : candidate_vars)
       {
          CustomOrderedSet<unsigned int> writer_functions;
          CustomOrderedSet<unsigned int> reader_functions;
+         CustomOrderedSet<unsigned int> direct_memory_reader_functions;
          CustomOrderedSet<unsigned int> dataflow_functions;
          const auto expected_prefix = "DF_bambu_" + STR(top_id) + "_" + STR(var_id) + "FO";
-         for(const auto& [other_top_id, other_var_uses] : var_map)
+         for(const auto function_id : dataflow_reachable_functions[top_id])
          {
-            if(other_top_id == top_id || !other_var_uses.count(var_id) || !is_dataflow_module_function(other_top_id))
+            if(function_id == top_id || !is_dataflow_module_function(function_id))
             {
                continue;
             }
-            const auto function_id = other_top_id;
             const auto function_name =
                 HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->GetFunctionName();
             const auto func_arch = HLSMgr->module_arch->GetArchitecture(function_name);
@@ -950,6 +1044,10 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                else if(direction_it->second == "IN")
                {
                   reader_functions.insert(function_id);
+                  if(mode_it->second == "array")
+                  {
+                     direct_memory_reader_functions.insert(function_id);
+                  }
                }
             }
             if(function_has_matching_bundle)
@@ -964,62 +1062,129 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                                " while classifying ding-dong candidates");
             continue;
          }
-         if(writer_functions.empty() || reader_functions.empty())
+         if(!writer_functions.empty() && !reader_functions.empty())
+         {
+            for(const auto writer_function_id : writer_functions)
+            {
+               if(reader_functions.count(writer_function_id))
+               {
+                  THROW_ERROR_USAGE(
+                      "Ding-dong candidate " + STR(TM->GetIRNode(var_id)) +
+                      " has the same function as both writer and reader: " +
+                      HLSMgr->CGetFunctionBehavior(writer_function_id)->CGetBehavioralHelper()->GetFunctionName() +
+                      ". Each dataflow module connected to a ding-dong buffer must be either a writer or "
+                      "a reader.");
+               }
+            }
+            const auto bundle_names = get_dataflow_bundle_names(top_id, var_id, dataflow_functions);
+            if(bundle_names.empty())
+            {
+               THROW_ERROR_USAGE("Ding-dong candidate " + STR(TM->GetIRNode(var_id)) +
+                                 " has no dataflow bundle names. "
+                                 "Check that the variable is correctly connected to a dataflow interface bundle.");
+            }
+            const auto producer_function_id = *writer_functions.begin();
+            const auto consumer_function_id = *reader_functions.begin();
+            HLS_manager::ding_dong_buffer_info candidate_info{
+                producer_function_id, consumer_function_id,
+                std::set<unsigned int>(writer_functions.begin(), writer_functions.end()),
+                std::set<unsigned int>(reader_functions.begin(), reader_functions.end()), bundle_names};
+            HLSMgr->add_ding_dong_buffer_candidate(top_id, var_id, candidate_info);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Classified ding-dong candidate " + STR(TM->GetIRNode(var_id)) + " in dataflow top " +
+                               HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName() +
+                               " writers=" + STR(writer_functions.size()) + " readers=" + STR(reader_functions.size()));
+         }
+         else if(writer_functions.empty() && !reader_functions.empty() &&
+                 direct_memory_reader_functions.size() != reader_functions.size())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Skipping dataflow read-only candidate without direct array interfaces " +
+                               STR(TM->GetIRNode(var_id)));
+         }
+         else if(writer_functions.empty() && !reader_functions.empty() &&
+                 is_initialized_read_only_dataflow_memory(top_id, var_id))
+         {
+            const auto bundle_names = get_dataflow_bundle_names(top_id, var_id, dataflow_functions);
+            if(bundle_names.empty())
+            {
+               THROW_ERROR_USAGE("Dataflow read-only memory " + STR(TM->GetIRNode(var_id)) +
+                                 " has no dataflow bundle names. "
+                                 "Check that the variable is correctly connected to a dataflow interface bundle.");
+            }
+            HLS_manager::dataflow_read_only_memory_info candidate_info{
+                std::set<unsigned int>(reader_functions.begin(), reader_functions.end()), bundle_names};
+            HLSMgr->add_dataflow_read_only_memory_candidate(top_id, var_id, candidate_info);
+            HLSMgr->Rmem->add_read_only_variable(var_id);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Classified dataflow read-only memory " + STR(TM->GetIRNode(var_id)) +
+                               " in dataflow top " +
+                               HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName() +
+                               " consumers=" + STR(reader_functions.size()) + " bundles=" + STR(bundle_names.size()));
+         }
+         else if(writer_functions.empty() && !reader_functions.empty())
+         {
+            THROW_ERROR_USAGE("Reader-only dataflow memory " + STR(TM->GetIRNode(var_id)) +
+                              " requires a static initializer and no synthesized writes");
+         }
+         else if(!writer_functions.empty() && reader_functions.empty())
+         {
+            THROW_ERROR_USAGE("Producer-only dataflow memory " + STR(TM->GetIRNode(var_id)) +
+                              " has no consumer module");
+         }
+         else
          {
             THROW_ERROR_USAGE("Ding-dong candidate " + STR(TM->GetIRNode(var_id)) + " is used by " +
                               STR(writer_functions.size()) + " writers and " + STR(reader_functions.size()) +
                               " readers (expected at least 1 writer and 1 reader). "
                               "Ensure the variable is connected to producer and consumer dataflow modules.");
          }
-         for(const auto writer_function_id : writer_functions)
-         {
-            if(reader_functions.count(writer_function_id))
-            {
-               THROW_ERROR_USAGE(
-                   "Ding-dong candidate " + STR(TM->GetIRNode(var_id)) +
-                   " has the same function as both writer and reader: " +
-                   HLSMgr->CGetFunctionBehavior(writer_function_id)->CGetBehavioralHelper()->GetFunctionName() +
-                   ". Each dataflow module connected to a ding-dong buffer must be either a writer or "
-                   "a reader.");
-            }
-         }
-         const auto bundle_names = get_dataflow_bundle_names(top_id, var_id, dataflow_functions);
-         if(bundle_names.empty())
-         {
-            THROW_ERROR_USAGE("Ding-dong candidate " + STR(TM->GetIRNode(var_id)) +
-                              " has no dataflow bundle names. "
-                              "Check that the variable is correctly connected to a dataflow interface bundle.");
-         }
-         const auto producer_function_id = *writer_functions.begin();
-         const auto consumer_function_id = *reader_functions.begin();
-         HLS_manager::ding_dong_buffer_info candidate_info{
-             producer_function_id, consumer_function_id,
-             std::set<unsigned int>(writer_functions.begin(), writer_functions.end()),
-             std::set<unsigned int>(reader_functions.begin(), reader_functions.end()), bundle_names};
-         HLSMgr->add_ding_dong_buffer_candidate(top_id, var_id, candidate_info);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Classified ding-dong candidate " + STR(TM->GetIRNode(var_id)) + " in dataflow top " +
-                            HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName() +
-                            " writers=" + STR(writer_functions.size()) + " readers=" + STR(reader_functions.size()));
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Ding-dong candidate classification completed");
-   CustomMap<var_id_t, top_id_t> ding_dong_owner_map;
+   CustomMap<var_id_t, top_id_t> dataflow_shared_memory_owner_map;
    // Build owner map from the registered candidates directly so that variables
    // that are not in var_map[top_id] are still captured.
-   for(const auto& [candidate_top_id, candidate_map] : HLSMgr->get_ding_dong_buffer_candidates())
-   {
-      for(const auto& [candidate_var_id, _] : candidate_map)
+   const auto add_dataflow_shared_memory_owners = [&](const auto& candidates) {
+      for(const auto& [candidate_top_id, candidate_map] : candidates)
       {
-         const auto inserted = ding_dong_owner_map.insert(std::make_pair(candidate_var_id, candidate_top_id));
-         if(!(inserted.second || inserted.first->second == candidate_top_id))
+         for(const auto& [candidate_var_id, _] : candidate_map)
          {
-            THROW_ERROR_USAGE("Ding-dong candidate " + STR(TM->GetIRNode(candidate_var_id)) +
-                              " is assigned to multiple dataflow tops. Ensure the variable belongs to only one "
-                              "top-level function's dataflow interface.");
+            const auto inserted =
+                dataflow_shared_memory_owner_map.insert(std::make_pair(candidate_var_id, candidate_top_id));
+            if(!(inserted.second || inserted.first->second == candidate_top_id))
+            {
+               THROW_ERROR_USAGE(
+                   "Dataflow shared memory " + STR(TM->GetIRNode(candidate_var_id)) +
+                   " is assigned to multiple dataflow tops: " +
+                   HLSMgr->CGetFunctionBehavior(inserted.first->second)->CGetBehavioralHelper()->GetFunctionName() +
+                   " and " + HLSMgr->CGetFunctionBehavior(candidate_top_id)->CGetBehavioralHelper()->GetFunctionName());
+            }
          }
       }
-   }
+   };
+   add_dataflow_shared_memory_owners(HLSMgr->get_ding_dong_buffer_candidates());
+   add_dataflow_shared_memory_owners(HLSMgr->get_dataflow_read_only_memory_candidates());
+   const auto has_dataflow_ding_dong_candidate = [&](const var_id_t var_id) {
+      for(const auto& [_, candidates] : HLSMgr->get_ding_dong_buffer_candidates())
+      {
+         if(candidates.count(var_id))
+         {
+            return true;
+         }
+      }
+      return false;
+   };
+   const auto has_dataflow_read_only_memory_candidate = [&](const var_id_t var_id) {
+      for(const auto& [_, candidates] : HLSMgr->get_dataflow_read_only_memory_candidates())
+      {
+         if(candidates.count(var_id))
+         {
+            return true;
+         }
+      }
+      return false;
+   };
 
    /// compute the number of instances for each function
    CustomMap<top_id_t, CustomMap<CallGraph::vertex_descriptor, unsigned int>> num_instances;
@@ -1102,8 +1267,9 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                             ", uses: " + STR(uses.size()) + ")");
          auto funID = top_id;
          auto multiple_top_call_graph = false;
-         const auto ding_dong_owner_it = ding_dong_owner_map.find(var_id);
-         const auto is_ding_dong_candidate = ding_dong_owner_it != ding_dong_owner_map.end();
+         const auto is_ding_dong_candidate = has_dataflow_ding_dong_candidate(var_id);
+         const auto is_dataflow_read_only_memory = has_dataflow_read_only_memory_candidate(var_id);
+         const auto is_dataflow_shared_memory = is_ding_dong_candidate || is_dataflow_read_only_memory;
          for(const auto& [fid, vu] : var_map)
          {
             if(fid != top_id && vu.count(var_id))
@@ -1112,32 +1278,34 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                break;
             }
          }
+         if(is_dataflow_shared_memory)
+         {
+            const auto owner_it = dataflow_shared_memory_owner_map.find(var_id);
+            THROW_ASSERT(owner_it != dataflow_shared_memory_owner_map.end(),
+                         "Missing owner for dataflow shared memory " + STR(TM->GetIRNode(var_id)));
+            const auto owner_top_id = owner_it->second;
+            if(top_id == owner_top_id)
+            {
+               funID = top_id;
+               multiple_top_call_graph = false;
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Allocating dataflow shared memory " + STR(TM->GetIRNode(var_id)) +
+                                  " in dataflow top " +
+                                  HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName());
+            }
+            else
+            {
+               INDENT_DBG_MEX(
+                   DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                   "<--Skipping dataflow shared memory " + STR(TM->GetIRNode(var_id)) + " in function " +
+                       HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName() +
+                       " (allocated in dataflow top " +
+                       HLSMgr->CGetFunctionBehavior(owner_top_id)->CGetBehavioralHelper()->GetFunctionName() + ")");
+               continue;
+            }
+         }
          if(multiple_top_call_graph)
          {
-            if(is_ding_dong_candidate)
-            {
-               const auto ding_dong_owner_top = ding_dong_owner_it->second;
-               if(top_id == ding_dong_owner_top)
-               {
-                  funID = top_id;
-                  multiple_top_call_graph = false;
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Allocating ding-dong candidate " + STR(TM->GetIRNode(var_id)) +
-                                     " in dataflow top " +
-                                     HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName());
-               }
-               else
-               {
-                  INDENT_DBG_MEX(
-                      DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                      "<--Skipping ding-dong candidate " + STR(TM->GetIRNode(var_id)) + " in function " +
-                          HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName() +
-                          " (allocated in dataflow top " +
-                          HLSMgr->CGetFunctionBehavior(ding_dong_owner_top)->CGetBehavioralHelper()->GetFunctionName() +
-                          ")");
-                  continue;
-               }
-            }
             if(multiple_top_call_graph)
             {
                const auto top_func_name =
@@ -1180,8 +1348,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                            if(iface_it != func_arch->ifaces.end())
                            {
                               const auto mode_it = iface_it->second.find(FunctionArchitecture::iface_mode);
-                              is_memory_bundle = mode_it != iface_it->second.end() &&
-                                                 (mode_it->second == "array" || mode_it->second == "default");
+                              is_memory_bundle = mode_it != iface_it->second.end() && mode_it->second == "array";
                            }
                            has_df_bambu_memory_bundle |= is_memory_bundle;
                            has_df_bambu_channel_bundle |= !is_memory_bundle;
@@ -1201,15 +1368,17 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   {
                      if(has_df_bambu_memory_bundle)
                      {
-                        const auto& candidates = HLSMgr->get_ding_dong_buffer_candidates(top_id);
-                        if(candidates.count(var_id))
+                        const auto& ding_dong_candidates = HLSMgr->get_ding_dong_buffer_candidates(top_id);
+                        const auto& dataflow_read_only_memory_candidates =
+                            HLSMgr->get_dataflow_read_only_memory_candidates(top_id);
+                        if(ding_dong_candidates.count(var_id) || dataflow_read_only_memory_candidates.count(var_id))
                         {
                            INDENT_DBG_MEX(
                                DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                "<--Skipping DF_bambu dataflow variable " + STR(TM->GetIRNode(var_id)) +
                                    " in df_module " +
                                    HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName() +
-                                   " (managed by ding-dong buffer mechanism)");
+                                   " (managed by shared dataflow memory mechanism)");
                            continue;
                         }
                         else
@@ -1217,7 +1386,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                            THROW_ERROR_USAGE(
                                "DF_bambu dataflow variable " + STR(TM->GetIRNode(var_id)) + " in df_module " +
                                HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetFunctionName() +
-                               " is not registered as a ding-dong buffer candidate. "
+                               " is not registered as a ding-dong buffer or dataflow read-only memory candidate. "
                                "This usually happens when the variable does not follow the 1-writer-1-reader rule.");
                         }
                      }
@@ -1379,25 +1548,11 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             {
                THROW_ASSERT(where_used.at(top_id)[var_id].size() > 0, "variable not used anywhere");
                /// check dynamic address use
-               const auto wiu_it_end = where_used.at(top_id).at(var_id).end();
-               for(auto wiu_it = where_used.at(top_id).at(var_id).begin();
-                   wiu_it != wiu_it_end && !is_dynamic_address_used; ++wiu_it)
+               is_dynamic_address_used = has_dynamic_address_use(top_id, var_id);
+               if(is_dynamic_address_used)
                {
-                  const auto cur_function_behavior = HLSMgr->CGetFunctionBehavior(*wiu_it);
-                  if(cur_function_behavior->get_dynamic_address().find(var_id) !=
-                     cur_function_behavior->get_dynamic_address().end())
-                  {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---Found dynamic use of variable: " +
-                                        cur_function_behavior->CGetBehavioralHelper()->PrintVariable(var_id) + " - " +
-                                        STR(var_id) + " - " +
-                                        HLSMgr->CGetFunctionBehavior(*(where_used.at(top_id).at(var_id).begin()))
-                                            ->CGetBehavioralHelper()
-                                            ->PrintVariable(var_id) +
-                                        " in function " +
-                                        cur_function_behavior->CGetBehavioralHelper()->GetFunctionName());
-                     is_dynamic_address_used = true;
-                  }
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Found dynamic use of variable " + STR(var_id));
                }
 
                if(is_dynamic_address_used && !all_pointers_resolved && !assume_aligned_access_p)
@@ -1536,22 +1691,10 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                /// check dynamic address use
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, dbg_lvl, "---Check dynamic use for var " + var_id_string);
                const auto wiu_it_end = where_used.at(top_id).at(var_id).end();
-               for(auto wiu_it = where_used.at(top_id).at(var_id).begin();
-                   wiu_it != wiu_it_end && !is_dynamic_address_used; ++wiu_it)
+               is_dynamic_address_used = has_dynamic_address_use(top_id, var_id);
+               if(is_dynamic_address_used)
                {
-                  const auto cur_function_behavior = HLSMgr->CGetFunctionBehavior(*wiu_it);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, dbg_lvl,
-                                 "---Analyzing function " +
-                                     cur_function_behavior->CGetBehavioralHelper()->GetFunctionName());
-                  if(cur_function_behavior->get_dynamic_address().count(var_id))
-                  {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, dbg_lvl,
-                                    "---Found dynamic use of variable: " +
-                                        cur_function_behavior->CGetBehavioralHelper()->PrintVariable(var_id) + " - " +
-                                        STR(var_id) + " - " + var_id_string + " in function " +
-                                        cur_function_behavior->CGetBehavioralHelper()->GetFunctionName());
-                     is_dynamic_address_used = true;
-                  }
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, dbg_lvl, "---Found dynamic use of variable " + STR(var_id));
                }
 
                if(!is_dynamic_address_used &&                  /// we never have &(var_id_object)

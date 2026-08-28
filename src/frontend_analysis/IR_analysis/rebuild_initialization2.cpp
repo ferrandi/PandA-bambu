@@ -402,6 +402,11 @@ bool rebuild_initialization2::extract_var_decl(const mem_access_node* me, unsign
          {
             return false;
          }
+         if(addr3_assign_op1->get_kind() == addr_node_K)
+         {
+            addr_assign_op1 = addr3_assign_op1;
+            return varFound(addr3_assign_op1, vd_index, vd_node);
+         }
          return unexpetedPattern(addr3_assign_op1);
       }
       else if(addr2_assign_op1->get_kind() == gep_node_K)
@@ -437,6 +442,7 @@ bool rebuild_initialization2::extract_var_decl(const mem_access_node* me, unsign
       }
       if(addr1_assign_op1->get_kind() == addr_node_K)
       {
+         addr_assign_op1 = addr1_assign_op1;
          return varFound(addr1_assign_op1, vd_index, vd_node);
       }
       else if(addr1_assign_op1->get_kind() == ssa_node_K)
@@ -527,6 +533,37 @@ bool rebuild_initialization2::look_for_ROMs()
    std::map<unsigned, unsigned long long> var_writing_elts_size_relation;
    CustomOrderedSet<unsigned> nonConstantVars;
    IRNodeMap<std::map<integer_cst_t, ir_nodeRef>> inits;
+   const auto is_read_only_call = [&](const call_stmt* call) {
+      auto called = call->fn;
+      if(called->get_kind() == addr_node_K)
+      {
+         called = GetPointerS<const unary_node>(called)->op;
+      }
+      const auto called_function = GetPointer<const function_val_node>(called);
+      if(!called_function || called_function->list_of_args.size() != call->args.size())
+      {
+         return false;
+      }
+      for(size_t arg_index = 0; arg_index < call->args.size(); ++arg_index)
+      {
+         const auto& actual = call->args.at(arg_index);
+         if(!ir_helper::IsPointerType(actual))
+         {
+            continue;
+         }
+         const auto base_var = ir_helper::GetBaseVariable(actual);
+         if(!base_var || !var_writing_BB_relation.count(base_var->index))
+         {
+            continue;
+         }
+         const auto formal = GetPointer<const argument_val_node>(called_function->list_of_args.at(arg_index));
+         if(!formal || !formal->readonly_flag)
+         {
+            return false;
+         }
+      }
+      return true;
+   };
 
    /// for each basic block B in CFG compute constantVars candidates
    for(const auto& Bit : sl->list_of_bloc)
@@ -543,6 +580,23 @@ bool rebuild_initialization2::look_for_ROMs()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + inst->ToString());
          auto gn = GetPointerS<node_stmt>(inst);
          auto stmt_kind = inst->get_kind();
+         if(stmt_kind == nop_stmt_K)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement: noop");
+            continue;
+         }
+         if(stmt_kind == call_stmt_K)
+         {
+            if(!is_read_only_call(GetPointerS<const call_stmt>(inst)))
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "<--Examined statement: call may write a candidate");
+               not_supported = true;
+               break;
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement: read-only call");
+            continue;
+         }
          if(gn->vdef && stmt_kind != assign_stmt_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement: pattern not supported");
