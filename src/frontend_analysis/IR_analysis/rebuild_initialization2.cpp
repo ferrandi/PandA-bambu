@@ -533,6 +533,22 @@ bool rebuild_initialization2::look_for_ROMs()
    std::map<unsigned, unsigned long long> var_writing_elts_size_relation;
    CustomOrderedSet<unsigned> nonConstantVars;
    IRNodeMap<std::map<integer_cst_t, ir_nodeRef>> inits;
+   const auto is_byte_scalar_struct = [](const ir_nodeConstRef& type) {
+      if(!ir_helper::IsStructType(type))
+      {
+         return false;
+      }
+      const auto* struct_type = GetPointerS<const struct_ty_node>(type);
+      for(const auto& field : struct_type->list_of_flds)
+      {
+         const auto* field_decl = GetPointer<const field_val_node>(field);
+         if(!field_decl || field_decl->bitfield || (field_decl->offset % 8) != 0 || ir_helper::SizeAlloc(field) != 8)
+         {
+            return false;
+         }
+      }
+      return true;
+   };
    const auto is_read_only_call = [&](const call_stmt* call) {
       auto called = call->fn;
       if(called->get_kind() == addr_node_K)
@@ -661,11 +677,14 @@ bool rebuild_initialization2::look_for_ROMs()
                               unsigned long long elts_size;
                               auto type_index = ir_helper::CGetType(vd_node)->index;
                               ir_helper::get_array_dim_and_bitsize(TM, type_index, dims, elts_size);
-                              if(dims.size() == 1)
+                              const auto element_type = ir_helper::CGetElements(Type);
+                              if(dims.size() == 1 &&
+                                 (element_type->get_kind() == integer_ty_node_K || is_byte_scalar_struct(element_type)))
                               {
                                  /// then in case we are fine we classify as good candidate for being a constant var
                                  var_writing_BB_relation[vd_index] = B->number;
-                                 var_writing_size_relation[vd_index] = dims[0];
+                                 var_writing_size_relation[vd_index] =
+                                     is_byte_scalar_struct(element_type) ? ir_helper::SizeAlloc(Type) / 8 : dims[0];
                                  var_writing_elts_size_relation[vd_index] = elts_size;
                               }
                               else
@@ -879,10 +898,15 @@ bool rebuild_initialization2::look_for_ROMs()
                               THROW_ASSERT(var_writing_elts_size_relation.find(vd_index) !=
                                                var_writing_elts_size_relation.end(),
                                            "unexpected condition");
-                              inits[vd_node]
-                                   [ir_helper::GetConstValue(ppe_op1) /
-                                    (static_cast<integer_cst_t>(var_writing_elts_size_relation[vd_index]) / 8)] =
-                                       ga->op1;
+                              const auto array_type = ir_helper::CGetType(vd_node);
+                              const auto element_type = ir_helper::CGetElements(array_type);
+                              const auto offset = ir_helper::GetConstValue(ppe_op1);
+                              const auto index =
+                                  is_byte_scalar_struct(element_type) ?
+                                      offset :
+                                      offset /
+                                          (static_cast<integer_cst_t>(var_writing_elts_size_relation[vd_index]) / 8);
+                              inits[vd_node][index] = ga->op1;
                            }
                            else
                            {
@@ -1204,6 +1228,32 @@ bool rebuild_initialization2::look_for_ROMs()
       const auto element_type = ir_helper::CGetElements(array_ty_node);
       auto ctor_node = TM->create_ir_node(constructor_node_K, constructor_ir_node_schema);
       auto* constr = GetPointerS<constructor_node>(ctor_node);
+      if(is_byte_scalar_struct(element_type))
+      {
+         const auto* struct_type = GetPointerS<const struct_ty_node>(element_type);
+         const auto element_bytes = ir_helper::SizeAlloc(element_type) / 8;
+         const auto array_elements = ir_helper::SizeAlloc(array_ty_node) / (element_bytes * 8);
+         for(unsigned long long element = 0; element < array_elements; ++element)
+         {
+            ir_manager::IRSchema element_ctor_schema;
+            element_ctor_schema[TOK(TOK_TYPE)] = STR(element_type->index);
+            auto element_ctor_node = TM->create_ir_node(constructor_node_K, element_ctor_schema);
+            auto* element_ctor = GetPointerS<constructor_node>(element_ctor_node);
+            for(const auto& field : struct_type->list_of_flds)
+            {
+               const auto* field_decl = GetPointerS<const field_val_node>(field);
+               const auto byte_offset = element * element_bytes + field_decl->offset / 8;
+               const auto init_it = init.second.find(static_cast<integer_cst_t>(byte_offset));
+               THROW_ASSERT(init_it != init.second.end(), "Missing byte initializer for aggregate field");
+               element_ctor->add_idx_valu(field, init_it->second);
+            }
+            constr->add_idx_valu(TM->CreateUniqueIntegerCst(static_cast<integer_cst_t>(element), integer_ty_node),
+                                 element_ctor_node);
+         }
+         GetPointerS<variable_val_node>(init.first)->init = ctor_node;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Rebuilt init of " + STR(init.first));
+         continue;
+      }
       const auto last_index = init.second.rbegin()->first;
       integer_cst_t index = 0;
       for(index = 0; index <= last_index; index++)
