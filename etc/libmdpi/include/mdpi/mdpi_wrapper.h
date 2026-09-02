@@ -210,8 +210,8 @@ static size_t __m_call_count = 0;
    _m_setargptr(idx, ptr)
 
 #define m_map_channel(ptr) NULL
-#define m_interface_channel(idx, ptr, bitsize, align)             \
-   __m_interface_channel(*m_getptr(P##idx), __m_param_size(idx)); \
+#define m_interface_channel(idx, ptr, bitsize, align, depth) \
+   __m_interface_channel(*m_getptr(P##idx), depth);           \
    _m_setargchannel(idx)
 
 #define m_map_none(...) m_map_default(__VA_ARGS__)
