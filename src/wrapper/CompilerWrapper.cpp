@@ -542,6 +542,11 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
          command += SCRIPT_NEWLINE "-Xclang -plugin-arg-" COMPILER_ASTANALYZER_PLUGIN " -Xclang -outputdir";
          command +=
              SCRIPT_NEWLINE "-Xclang -plugin-arg-" COMPILER_ASTANALYZER_PLUGIN " -Xclang " + output_temporary_directory;
+         if(top_fnames.size())
+         {
+            command += SCRIPT_NEWLINE "-Xclang -plugin-arg-" COMPILER_ASTANALYZER_PLUGIN " -Xclang -top-fname";
+            command += SCRIPT_NEWLINE "-Xclang -plugin-arg-" COMPILER_ASTANALYZER_PLUGIN " -Xclang " + top_fnames;
+         }
 
          if(cpp_input)
          {

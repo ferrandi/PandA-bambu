@@ -266,9 +266,27 @@ void memory_allocation::finalize_memory_allocation()
          const auto pname = behavioral_helper->PrintVariable(function_parameter);
          if(func_arch && root_functions.find(fun_id) != root_functions.end())
          {
-            THROW_ASSERT(func_arch->parms.find(pname) != func_arch->parms.end(),
-                         "Parameter " + pname + " not found in function " + fname);
-            const auto& parm_attrs = func_arch->parms.at(pname);
+            auto parm_it = func_arch->parms.find(pname);
+            if(parm_it == func_arch->parms.end())
+            {
+               const auto function = GetPointerS<const function_val_node>(IRM->GetIRNode(fun_id));
+               const auto formal_it =
+                   std::find_if(function->list_of_args.begin(), function->list_of_args.end(),
+                                [&](const auto& formal) { return formal->index == function_parameter; });
+               if(formal_it != function->list_of_args.end())
+               {
+                  const auto parameter_index = std::to_string(std::distance(function->list_of_args.begin(), formal_it));
+                  parm_it = std::find_if(func_arch->parms.begin(), func_arch->parms.end(), [&](const auto& parm) {
+                     return parm.second.at(FunctionArchitecture::parm_index) == parameter_index;
+                  });
+               }
+            }
+            THROW_ASSERT(parm_it != func_arch->parms.end(), "Parameter " + pname + " not found in function " + fname);
+            if(parm_it == func_arch->parms.end())
+            {
+               continue;
+            }
+            const auto& parm_attrs = parm_it->second;
             const auto& iface_attrs = func_arch->ifaces.at(parm_attrs.at(FunctionArchitecture::parm_bundle));
             const auto& iface_mode = iface_attrs.at(FunctionArchitecture::iface_mode);
             if(iface_mode != "default")

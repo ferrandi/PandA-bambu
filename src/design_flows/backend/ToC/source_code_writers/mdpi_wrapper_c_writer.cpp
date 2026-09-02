@@ -453,7 +453,12 @@ void MdpiWrapperCWriter::InternalWriteFile()
             banked_args_map += std::to_string(param_idx) + ",";
             const auto inter_type = is_pointer_type ? "banked" : iface_type;
             args_set += "m_interface_" + inter_type + "(" + std::to_string(param_idx) + ", banked_args[" +
-                        std::to_string(param_number) + "].addr, " + arg_bitsize + ", " + arg_align + ");\n";
+                        std::to_string(param_number) + "].addr, " + arg_bitsize + ", " + arg_align;
+            if(inter_type == "channel")
+            {
+               args_set += ", " + arg_size;
+            }
+            args_set += ");\n";
             banked_args_decl_size += 1;
          }
          else
@@ -521,7 +526,12 @@ void MdpiWrapperCWriter::InternalWriteFile()
             else
             {
                args_set += "m_interface_" + iface_type + "(" + std::to_string(param_idx) + ", args[" +
-                           std::to_string(param_number) + "].map_addr, " + arg_bitsize + ", " + arg_align + ");\n";
+                           std::to_string(param_number) + "].map_addr, " + arg_bitsize + ", " + arg_align;
+               if(iface_type == "channel")
+               {
+                  args_set += ", " + arg_size;
+               }
+               args_set += ");\n";
             }
             args_decl_size += 1;
          }

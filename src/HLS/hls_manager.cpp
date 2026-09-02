@@ -134,6 +134,43 @@ const HLS_manager::ding_dong_buffer_info* HLS_manager::get_ding_dong_buffer_cand
    return var_it == top_it->second.end() ? nullptr : &var_it->second;
 }
 
+void HLS_manager::clear_dataflow_read_only_memory_candidates()
+{
+   dataflow_read_only_memory_candidates_.clear();
+}
+
+void HLS_manager::add_dataflow_read_only_memory_candidate(const unsigned int top_id, const unsigned int var_id,
+                                                          const dataflow_read_only_memory_info& info)
+{
+   dataflow_read_only_memory_candidates_[top_id][var_id] = info;
+}
+
+const std::map<unsigned int, std::map<unsigned int, HLS_manager::dataflow_read_only_memory_info>>&
+HLS_manager::get_dataflow_read_only_memory_candidates() const
+{
+   return dataflow_read_only_memory_candidates_;
+}
+
+const std::map<unsigned int, HLS_manager::dataflow_read_only_memory_info>&
+HLS_manager::get_dataflow_read_only_memory_candidates(const unsigned int top_id) const
+{
+   static const std::map<unsigned int, dataflow_read_only_memory_info> empty_candidates;
+   const auto candidate_it = dataflow_read_only_memory_candidates_.find(top_id);
+   return candidate_it == dataflow_read_only_memory_candidates_.end() ? empty_candidates : candidate_it->second;
+}
+
+const HLS_manager::dataflow_read_only_memory_info*
+HLS_manager::get_dataflow_read_only_memory_candidate(const unsigned int top_id, const unsigned int var_id) const
+{
+   const auto top_it = dataflow_read_only_memory_candidates_.find(top_id);
+   if(top_it == dataflow_read_only_memory_candidates_.end())
+   {
+      return nullptr;
+   }
+   const auto var_it = top_it->second.find(var_id);
+   return var_it == top_it->second.end() ? nullptr : &var_it->second;
+}
+
 hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functionId)
 {
    THROW_ASSERT(functionId, "No function");

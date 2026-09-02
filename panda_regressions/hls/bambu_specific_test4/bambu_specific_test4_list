@@ -9,3 +9,12 @@ dataflow-struct.cpp --top-fname=dataflow_top --generate-tb=BENCHMARKS_ROOT/tb_da
 hls_stream_dataflow.cpp --top-fname=hls_stream_dataflow_top --generate-tb=BENCHMARKS_ROOT/tb_hls_stream_dataflow.cpp
 pipe_dataflow_stream.cpp --top-fname=top --generate-tb=BENCHMARKS_ROOT/pipe_dataflow_stream_tb.cpp
 pipe_dataflow_stream.cpp --benchmark-name=pipe_dataflow_stream_balanced --top-fname=top --generate-tb=BENCHMARKS_ROOT/pipe_dataflow_stream_tb.cpp --experimental-setup=BAMBU-BALANCED
+dataflow_readonly_global.cpp --top-fname=dataflow_readonly_global --generate-tb=BENCHMARKS_ROOT/tb_dataflow_readonly_global.cpp
+dataflow_readonly_local.cpp --top-fname=dataflow_readonly_local --generate-tb=BENCHMARKS_ROOT/tb_dataflow_readonly_local.cpp
+dataflow_readonly_local2.cpp --top-fname=dataflow_readonly_local --generate-tb=BENCHMARKS_ROOT/tb_dataflow_readonly_local.cpp
+dataflow_readonly_two_consumers.cpp --top-fname=dataflow_readonly_two_consumers --generate-tb=BENCHMARKS_ROOT/tb_dataflow_readonly_two_consumers.cpp
+dataflow_readonly_repeated_consumer.cpp --top-fname=dataflow_readonly_repeated_consumer --generate-tb=BENCHMARKS_ROOT/tb_dataflow_readonly_repeated_consumer.cpp
+dataflow_readonly_repeated_consumer2.cpp --top-fname=dataflow_readonly_repeated_consumer --generate-tb=BENCHMARKS_ROOT/tb_dataflow_readonly_repeated_consumer.cpp
+dataflow_ding_dong.cpp --top-fname=dataflow_ding_dong --generate-tb=BENCHMARKS_ROOT/tb_dataflow_ding_dong.cpp
+BENCHMARK_ENV=MANTIS_EXPECT_FAILURE=1,MANTIS_EXPECT_FAILURE_REGEX=Reader-only.dataflow.memory.*requires.a.static.initializer.and.no.synthesized.writes dataflow_readonly_uninitialized.cpp --top-fname=dataflow_readonly_uninitialized --generate-tb=BENCHMARKS_ROOT/tb_dataflow_readonly_uninitialized.cpp --benchmark-name=dataflow_readonly_uninitialized_expected_failure
+BENCHMARK_ENV=MANTIS_EXPECT_FAILURE=1,MANTIS_EXPECT_FAILURE_REGEX=Producer-only.dataflow.memory.*has.no.consumer.module dataflow_producer_only.cpp --top-fname=dataflow_producer_only --generate-tb=BENCHMARKS_ROOT/tb_dataflow_producer_only.cpp --benchmark-name=dataflow_producer_only_expected_failure

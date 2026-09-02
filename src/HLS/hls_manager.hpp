@@ -153,6 +153,12 @@ class HLS_manager : public application_manager
       std::set<std::string> bundle_names;
    };
 
+   struct dataflow_read_only_memory_info
+   {
+      std::set<unsigned int> consumer_function_ids;
+      std::set<std::string> bundle_names;
+   };
+
  private:
    /// information about the target device/technology for the synthesis
    HLS_deviceRef HLS_D;
@@ -168,6 +174,9 @@ class HLS_manager : public application_manager
 
    /// candidate shared dataflow-top local arrays eligible for ding-dong buffering
    std::map<unsigned int, std::map<unsigned int, ding_dong_buffer_info>> ding_dong_buffer_candidates_;
+
+   /// candidate initialized dataflow-top local arrays eligible for read-only storage
+   std::map<unsigned int, std::map<unsigned int, dataflow_read_only_memory_info>> dataflow_read_only_memory_candidates_;
 
  public:
    /// base address for memory space addressing
@@ -306,6 +315,25 @@ class HLS_manager : public application_manager
 
    /// returns the ding-dong candidate for a given top/variable pair, or null if absent
    const ding_dong_buffer_info* get_ding_dong_buffer_candidate(unsigned int top_id, unsigned int var_id) const;
+
+   /// clears the cached dataflow read-only memory candidates
+   void clear_dataflow_read_only_memory_candidates();
+
+   /// stores a dataflow read-only memory candidate for a dataflow top local array
+   void add_dataflow_read_only_memory_candidate(unsigned int top_id, unsigned int var_id,
+                                                const dataflow_read_only_memory_info& info);
+
+   /// returns all dataflow read-only memory candidates (full map)
+   const std::map<unsigned int, std::map<unsigned int, dataflow_read_only_memory_info>>&
+   get_dataflow_read_only_memory_candidates() const;
+
+   /// returns the dataflow read-only memory candidates associated with a dataflow top
+   const std::map<unsigned int, dataflow_read_only_memory_info>&
+   get_dataflow_read_only_memory_candidates(unsigned int top_id) const;
+
+   /// returns the dataflow read-only memory candidate for a given top/variable pair, or null if absent
+   const dataflow_read_only_memory_info* get_dataflow_read_only_memory_candidate(unsigned int top_id,
+                                                                                 unsigned int var_id) const;
 };
 /// refcount definition of the class
 using HLS_managerRef = refcount<HLS_manager>;

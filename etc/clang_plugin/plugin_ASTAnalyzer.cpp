@@ -2186,8 +2186,10 @@ class HLSASTConsumer : public ASTConsumer
    PrintingPolicy _PP;
    const std::string _archXML;
    const int _parseAction;
+   const std::set<std::string> _topFunctionNames;
 
    std::list<pragma_line_t> _pragmas;
+   std::set<const FunctionDecl*> _validatedTopFunctions;
 
    std::map<std::string, func_attr_t> _func_attributes;
 
@@ -2221,6 +2223,73 @@ class HLSASTConsumer : public ASTConsumer
          return loc_a < loc_b;
       }
       return false;
+   }
+
+   bool isSelectedTopFunction(const FunctionDecl* FD) const
+   {
+      return _topFunctionNames.find(FD->getNameAsString()) != _topFunctionNames.end() ||
+             _topFunctionNames.find(FD->getQualifiedNameAsString()) != _topFunctionNames.end();
+   }
+
+   bool isAcOrApRecordType(const QualType& type) const
+   {
+      const auto* recordType = type->getAs<RecordType>();
+      if(!recordType)
+      {
+         return false;
+      }
+
+      const auto* recordDecl = recordType->getDecl();
+      const auto sourceFile = _SM.getPresumedLoc(recordDecl->getLocation(), false).getFilename();
+      const auto filename = std::string(sourceFile ? sourceFile : "");
+      if(filename.find("/ac_types/") != std::string::npos || filename.find("/ap_types/") != std::string::npos ||
+         filename.find("ac_int.h") != std::string::npos || filename.find("ac_fixed.h") != std::string::npos ||
+         filename.find("ac_float.h") != std::string::npos || filename.find("ac_complex.h") != std::string::npos ||
+         filename.find("ac_channel.h") != std::string::npos || filename.find("ac_matrix.h") != std::string::npos ||
+         filename.find("ap_int.h") != std::string::npos || filename.find("ap_fixed.h") != std::string::npos)
+      {
+         return true;
+      }
+
+      const auto* specializationDecl = dyn_cast<ClassTemplateSpecializationDecl>(recordDecl);
+      if(!specializationDecl || !specializationDecl->getSpecializedTemplate())
+      {
+         return false;
+      }
+      const auto templateName = specializationDecl->getSpecializedTemplate()->getQualifiedNameAsString();
+      return templateName.compare(0, 3, "ac_") == 0 || templateName.compare(0, 3, "ap_") == 0;
+   }
+
+   bool isUnsupportedTopAggregateType(const QualType& type) const
+   {
+      return type->isRecordType() && !isAcOrApRecordType(type);
+   }
+
+   bool validateTopFunctionSignature(FunctionDecl* FD)
+   {
+      if(!(_parseAction & ParseAction_Analyze) || !FD->hasBody() || !isSelectedTopFunction(FD) ||
+         !_validatedTopFunctions.insert(FD->getCanonicalDecl()).second)
+      {
+         return true;
+      }
+
+      bool valid = true;
+      if(isUnsupportedTopAggregateType(FD->getReturnType()))
+      {
+         ReportError(FD->getLocation(), "Top function returns an aggregate type by value; use a void top function with "
+                                        "an output pointer or reference instead");
+         valid = false;
+      }
+      for(const auto* parameter : FD->parameters())
+      {
+         if(isUnsupportedTopAggregateType(parameter->getType()))
+         {
+            ReportError(parameter->getLocation(), "Top function parameter is an aggregate type passed by value; use "
+                                                  "a pointer or reference instead");
+            valid = false;
+         }
+      }
+      return valid;
    }
 
    void AnalyzePragma(FunctionDecl* FD, const pragma_line_t& p) const
@@ -2279,6 +2348,10 @@ class HLSASTConsumer : public ASTConsumer
                ++it;
             }
          }
+         return;
+      }
+      if(!validateTopFunctionSignature(FD))
+      {
          return;
       }
       LLVM_DEBUG({
@@ -2368,14 +2441,16 @@ class HLSASTConsumer : public ASTConsumer
    }
 
  public:
-   HLSASTConsumer(CompilerInstance& CI, PrintingPolicy& pp, const std::string outdir, int _pa)
+   HLSASTConsumer(CompilerInstance& CI, PrintingPolicy& pp, const std::string outdir, int _pa,
+                  const std::set<std::string>& topFunctionNames)
        : _CI(CI),
          _D(CI.getASTContext().getDiagnostics()),
          _SM(CI.getASTContext().getSourceManager()),
          _MC(CI.getASTContext().createMangleContext()),
          _PP(pp),
          _archXML(outdir + "/architecture.xml"),
-         _parseAction(_pa)
+         _parseAction(_pa),
+         _topFunctionNames(topFunctionNames)
    {
       auto& ctx = CI.getASTContext();
 #define ADD_HANDLER(Name, ...)                                                                 \
@@ -2511,6 +2586,7 @@ namespace clang
       int _action;
       std::string _outdir;
       bool _cppflag;
+      std::set<std::string> _topFunctionNames;
 
     protected:
       std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance& CI, StringRef InFile) override
@@ -2522,7 +2598,7 @@ namespace clang
             {
                pp.adjustForCPlusPlus();
             }
-            auto pragmaConsumer = make_unique<HLSASTConsumer>(CI, pp, _outdir, _action);
+            auto pragmaConsumer = make_unique<HLSASTConsumer>(CI, pp, _outdir, _action, _topFunctionNames);
             pragmaConsumer->addPragmaHandler(CI.getPreprocessor());
             return pragmaConsumer;
          }
@@ -2565,6 +2641,30 @@ namespace clang
             {
                _cppflag = true;
             }
+            else if(arg == "-top-fname")
+            {
+               if(i >= e)
+               {
+                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "missing top function name argument"));
+                  return false;
+               }
+               const auto& topFunctionNames = args.at(i++);
+               size_t begin = 0;
+               while(begin <= topFunctionNames.size())
+               {
+                  const auto end = topFunctionNames.find(',', begin);
+                  const auto topFunctionName = topFunctionNames.substr(begin, end - begin);
+                  if(!topFunctionName.empty())
+                  {
+                     _topFunctionNames.insert(topFunctionName);
+                  }
+                  if(end == std::string::npos)
+                  {
+                     break;
+                  }
+                  begin = end + 1;
+               }
+            }
             else if(arg == "-help")
             {
                PrintHelp(errs());
@@ -2585,7 +2685,9 @@ namespace clang
              << " -outputdir <directory>\n"
              << "   Directory where the architecture.xml file will be written\n"
              << " -cppflag\n"
-             << "   Input source file is C++\n";
+             << "   Input source file is C++\n"
+             << " -top-fname <function[,function...]>\n"
+             << "   Check the selected top function signatures\n";
       }
 
       PluginASTAction::ActionType getActionType() override

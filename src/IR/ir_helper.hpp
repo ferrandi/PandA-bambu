@@ -48,6 +48,7 @@ struct function_val_node;
 struct constant_int_val_node;
 struct ssa_node;
 struct statement_list_node;
+class CallGraphManager;
 enum class IRVocabularyTokenTypes_TokenEnum;
 CONSTREF_FORWARD_DECL(ir_manager);
 CONSTREF_FORWARD_DECL(ir_node);
@@ -402,6 +403,20 @@ class ir_helper
     * @return the base variable of a memory access
     */
    static ir_nodeRef GetBaseVariable(const ir_nodeRef& mem, std::vector<ir_nodeRef>* field_offset = nullptr);
+
+   /**
+    * Resolve a pointer formal through its unique chain of direct callers.
+    * @param CGM is the application call graph manager
+    * @param TM is the IR manager
+    * @param var is the pointer expression to resolve
+    * @param function_id is the function owning var
+    * @param field_offset collects the field accesses traversed during the resolution
+    * @return the resolved base object and its owning function
+    */
+   static std::pair<ir_nodeRef, unsigned int> ResolvePointerAlias(const CallGraphManager& CGM,
+                                                                  const ir_managerConstRef& TM, const ir_nodeRef& var,
+                                                                  unsigned int function_id,
+                                                                  std::vector<ir_nodeRef>& field_offset);
 
    static const PointToSolution& GetPointToSet(const ir_nodeConstRef& ptr);
 

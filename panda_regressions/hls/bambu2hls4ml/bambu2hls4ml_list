@@ -5,3 +5,5 @@ io_stream_m64.cpp --top-fname=io_stream_m64 -m64
 issue1_csroa_array_partition/firmware/myproject_float.cpp --top-fname=myproject_float --benchmark-name=issue1_csroa_array_partition
 issue1b_plain_backend_timeout/firmware/myproject.cpp --top-fname=myproject -lm -ftemplate-depth=2048 --benchmark-name=issue1b_plain_backend_timeout
 issue4_m64_interfaceinfer/firmware/myproject_float.cpp --top-fname=myproject_float -m64 --benchmark-name=issue4_m64_interfaceinfer
+bambu_10_Resource_1_synth/firmware/myproject.cpp --top-fname=myproject  -lm -ftemplate-depth=2048 --generate-tb=BENCHMARKS_ROOT/bambu_10_Resource_1_synth/myproject_test.cpp --simulate -DRTL_SIM --benchmark-name=bambu_10_Resource_1_synth
+cliff2_p2_in34/firmware/myproject.cpp --top-fname=myproject  -lm -ftemplate-depth=2048 --generate-tb=BENCHMARKS_ROOT/cliff2_p2_in34/myproject_test.cpp --simulate -DRTL_SIM --benchmark-name=cliff2_p2_in34

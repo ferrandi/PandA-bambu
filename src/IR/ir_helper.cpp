@@ -31,6 +31,7 @@
 #include "ir_helper.hpp"
 
 #include "Range.hpp"
+#include "call_graph_manager.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "ir_basic_block.hpp"
@@ -1489,6 +1490,54 @@ static ir_nodeRef _GetBaseVariable(const ir_nodeRef& node, std::vector<ir_nodeRe
       }
    }
    return {};
+}
+
+std::pair<ir_nodeRef, unsigned int> ir_helper::ResolvePointerAlias(const CallGraphManager& CGM,
+                                                                   const ir_managerConstRef& TM, const ir_nodeRef& var,
+                                                                   const unsigned int function_id,
+                                                                   std::vector<ir_nodeRef>& field_offset)
+{
+   const auto base_var = GetBaseVariable(var, &field_offset);
+   const auto function_vertex = CGM.GetVertex(function_id);
+   const auto& call_graph = CGM.GetCallGraph();
+   if(const auto formal = GetPointer<const argument_val_node>(base_var);
+      formal && call_graph.in_degree(function_vertex) == 1)
+   {
+      const auto incoming_edge = call_graph.in_edges(function_vertex).front();
+      const auto& edge_info = call_graph.CGetEdgeInfo(incoming_edge);
+      if(edge_info.direct_call_points.size() == 1)
+      {
+         const auto call_id = *edge_info.direct_call_points.begin();
+         const auto caller_id = CGM.get_function(call_graph.source(incoming_edge));
+         const auto function = GetPointerS<const function_val_node>(TM->GetIRNode(function_id));
+         const auto formal_it = std::find_if(function->list_of_args.begin(), function->list_of_args.end(),
+                                             [&](const auto& parameter) { return parameter->index == formal->index; });
+         THROW_ASSERT(formal_it != function->list_of_args.end(), "Parameter not found.");
+         const auto call_statement = TM->GetIRNode(call_id);
+         const auto actual_parameters = [&]() {
+            if(const auto assignment = GetPointer<const assign_stmt>(call_statement))
+            {
+               return GetPointerS<const call_node>(assignment->op1)->args;
+            }
+            if(const auto call = GetPointer<const call_stmt>(call_statement))
+            {
+               return call->args;
+            }
+            THROW_UNREACHABLE("Unexpected call statement.");
+            return std::vector<ir_nodeRef>();
+         }();
+         THROW_ASSERT(actual_parameters.size() == function->list_of_args.size(),
+                      "Expected formal and actual parameters' count match.");
+         const auto parameter_index = static_cast<size_t>(std::distance(function->list_of_args.begin(), formal_it));
+         auto resolved = ResolvePointerAlias(CGM, TM, actual_parameters.at(parameter_index), caller_id, field_offset);
+         if(parameter_index == 0)
+         {
+            resolved.second = function_id;
+         }
+         return resolved;
+      }
+   }
+   return {base_var, function_id};
 }
 
 ir_nodeRef ir_helper::GetBaseVariable(const ir_nodeRef& node, std::vector<ir_nodeRef>* field_offset)

@@ -583,7 +583,7 @@ void determine_memory_accesses::analyze_node(const ir_nodeConstRef& tn, bool lef
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not a variable");
                      return false;
                   }
-                  if(vd->readonly_flag && !left_p)
+                  if(vd->readonly_flag && left_p)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---ReadOnly variable");
                      THROW_ERROR("ReadOnly variable on lhs");

@@ -465,35 +465,6 @@ static std::vector<ir_nodeRef> GetCallArgs(ir_nodeRef stmt)
    return std::vector<ir_nodeRef>();
 }
 
-static std::pair<ir_nodeRef, unsigned int> ResolvePointerAlias(const CallGraphManager& CGM,
-                                                               const ir_managerConstRef& TM, const ir_nodeRef& var,
-                                                               unsigned int fid, std::vector<ir_nodeRef>& field_offset)
-{
-   const auto base_var = ir_helper::GetBaseVariable(var, &field_offset);
-   if(const auto pd = GetPointer<const argument_val_node>(base_var))
-   {
-      const auto [caller_id, call_id] = GetCallStmt(CGM, fid);
-      if(caller_id)
-      {
-         const auto fd = GetPointer<const function_val_node>(TM->GetIRNode(fid));
-         const auto parm_idx = static_cast<size_t>(std::distance(
-             fd->list_of_args.begin(), std::find_if(fd->list_of_args.begin(), fd->list_of_args.end(),
-                                                    [&](const auto& tn) { return tn->index == base_var->index; })));
-         THROW_ASSERT(parm_idx < fd->list_of_args.size(), "Parameter not found.");
-         const auto call_args = GetCallArgs(TM->GetIRNode(call_id));
-         THROW_ASSERT(call_args.size() == fd->list_of_args.size(),
-                      "Expected formal and actual parameters' count match.");
-         auto retVal = ResolvePointerAlias(CGM, TM, call_args.at(parm_idx), caller_id, field_offset);
-         if(parm_idx == 0)
-         {
-            retVal.second = fid;
-         }
-         return retVal;
-      }
-   }
-   return {base_var, fid};
-}
-
 InterfaceInfer::InterfaceInfer(const application_managerRef _AppM, const DesignFlowManager& _design_flow_manager,
                                const ParameterConstRef _parameters)
     : ApplicationFrontendFlowStep(_AppM, INTERFACE_INFER, _design_flow_manager, _parameters), already_executed(false)
@@ -691,7 +662,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             if(ir_helper::IsPointerType(arg))
             {
                std::vector<ir_nodeRef> field_offset;
-               const auto [base_var, owner_id] = ResolvePointerAlias(CGM, TM, arg, caller_id, field_offset);
+               const auto [base_var, owner_id] = ir_helper::ResolvePointerAlias(CGM, TM, arg, caller_id, field_offset);
                const auto parm_attr = std::find_if(func_arch->parms.begin(), func_arch->parms.end(), [&](auto& it) {
                   return it.second.at(FunctionArchitecture::parm_index) == std::to_string(idx);
                });
@@ -717,6 +688,13 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                }
                if(const auto dn = GetPointer<const decl_node>(base_var))
                {
+                  const auto base_type = ir_helper::CGetType(base_var);
+                  if(ir_helper::IsArrayType(base_type))
+                  {
+                     func_arch->ifaces[current_bundle].at(FunctionArchitecture::iface_mode) = "array";
+                     parm_attr->second[FunctionArchitecture::parm_elem_count] =
+                         STR(ir_helper::GetArrayTotalSize(base_type));
+                  }
                   unsigned int offset = 0;
                   for(const auto& fld : field_offset)
                   {

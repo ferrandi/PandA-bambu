@@ -715,6 +715,10 @@ void fsm_controller::add_FSM_stages(structural_managerRef SM)
 {
    const auto FB = HLSMgr->CGetFunctionBehavior(funId);
    const auto is_function_pipelined = FB->is_function_pipelined();
+   const auto func_arch = HLSMgr->module_arch->GetArchitecture(FB->CGetBehavioralHelper()->GetFunctionName());
+   const auto is_dataflow_top =
+       func_arch && func_arch->attrs.find(FunctionArchitecture::func_dataflow_top) != func_arch->attrs.end() &&
+       func_arch->attrs.find(FunctionArchitecture::func_dataflow_top)->second == "1";
    auto fsm_info = HLS->fsm_info;
    const auto get_fsm_state = [&](FSMInfo::state_descriptor state) -> const FSMInfo::stateData& {
       return fsm_info->getState(state);
@@ -808,7 +812,10 @@ void fsm_controller::add_FSM_stages(structural_managerRef SM)
                const auto op_port =
                    1 +
                    out_ports[HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::UNBOUNDED, op, data)];
-               auto op_stage = 1 + HLS->fsm_info->GetStepOp(data, v, op);
+               // A DATAFLOW top launches all its child processes for the same invocation. Their individual schedules
+               // must not delay the start token to a later pipeline stage, otherwise a producer can block on a FIFO
+               // before its consumer is ever started.
+               auto op_stage = is_dataflow_top ? 1 : 1 + HLS->fsm_info->GetStepOp(data, v, op);
                stage_table += state_data.name + ":" + std::to_string(op_port) + ":" + std::to_string(op_stage) + ";";
             }
          }
