@@ -63,6 +63,8 @@
 #include "time_info.hpp"
 #include "var_pp_functor.hpp"
 
+#include <algorithm>
+#include <limits>
 #include <memory>
 #include <regex>
 #include <sstream>
@@ -76,6 +78,154 @@
 namespace
 {
    using OrderedInstructionsCache = std::map<unsigned int, std::unique_ptr<FunctionOrderedInstructions>>;
+
+   bool isPointerDerivation(const ir_nodeRef& stmt, const ir_nodeRef& pointer)
+   {
+      if(stmt->get_kind() != assign_stmt_K)
+      {
+         return false;
+      }
+      const auto ga = GetPointerS<const assign_stmt>(stmt);
+      if(ga->op0->get_kind() != ssa_node_K || !ir_helper::IsPointerType(ga->op0))
+      {
+         return false;
+      }
+      if(ga->op1->get_kind() == bitcast_node_K || ga->op1->get_kind() == nop_node_K)
+      {
+         return GetPointerS<const unary_node>(ga->op1)->op->index == pointer->index;
+      }
+      return ga->op1->get_kind() == gep_node_K && GetPointerS<const binary_node>(ga->op1)->op0->index == pointer->index;
+   }
+
+   bool collectAggregateMemoryAccesses(const ir_nodeRef& pointer, const ir_nodeRef& interface_stmt,
+                                       const bool collect_stores, std::vector<ir_nodeRef>& accesses,
+                                       std::vector<ir_nodeRef>& pointer_derivations,
+                                       std::set<unsigned int>& visited_pointers)
+   {
+      if(!visited_pointers.insert(pointer->index).second)
+      {
+         return true;
+      }
+      for(const auto& use : GetPointerS<const ssa_node>(pointer)->CGetUseStmts())
+      {
+         const auto use_stmt = use.first;
+         if(use_stmt->index == interface_stmt->index)
+         {
+            continue;
+         }
+         if(isPointerDerivation(use_stmt, pointer))
+         {
+            pointer_derivations.push_back(use_stmt);
+            if(!collectAggregateMemoryAccesses(GetPointerS<const assign_stmt>(use_stmt)->op0, interface_stmt,
+                                               collect_stores, accesses, pointer_derivations, visited_pointers))
+            {
+               return false;
+            }
+            continue;
+         }
+         if(use_stmt->get_kind() != assign_stmt_K)
+         {
+            return false;
+         }
+         const auto ga = GetPointerS<const assign_stmt>(use_stmt);
+         const auto memory_operand = collect_stores ? ga->op0 : ga->op1;
+         if(memory_operand->get_kind() != mem_access_node_K ||
+            GetPointerS<const mem_access_node>(memory_operand)->op->index != pointer->index)
+         {
+            return false;
+         }
+         accesses.push_back(use_stmt);
+      }
+      return true;
+   }
+
+   bool getConstantPointerBitOffset(const ir_nodeRef& pointer, const ir_nodeRef& expected_base,
+                                    unsigned long long& bit_offset)
+   {
+      std::vector<ir_nodeRef> offsets;
+      const auto base = ir_helper::GetBaseVariable(pointer, &offsets);
+      if(!base || base->index != expected_base->index)
+      {
+         return false;
+      }
+      unsigned long long byte_offset = 0;
+      for(const auto& offset : offsets)
+      {
+         if(offset->get_kind() != constant_int_val_node_K)
+         {
+            return false;
+         }
+         const auto current_offset = static_cast<unsigned long long>(ir_helper::GetConstValue(offset));
+         if(current_offset > (std::numeric_limits<unsigned long long>::max() - byte_offset))
+         {
+            return false;
+         }
+         byte_offset += current_offset;
+      }
+      if(byte_offset > (std::numeric_limits<unsigned long long>::max() / 8))
+      {
+         return false;
+      }
+      bit_offset = byte_offset * 8;
+      return true;
+   }
+
+   bool hasRegularAggregateElementLayout(std::vector<std::pair<unsigned long long, unsigned long long>> element_ranges,
+                                         const unsigned long long payload_size)
+   {
+      std::sort(element_ranges.begin(), element_ranges.end());
+      if(element_ranges.size() == 1)
+      {
+         return element_ranges.front().first == 0 && element_ranges.front().second == payload_size;
+      }
+      if(element_ranges.size() < 2 || element_ranges.front().first != 0)
+      {
+         return false;
+      }
+      const auto element_size = element_ranges.front().second - element_ranges.front().first;
+      const auto element_stride = element_ranges.at(1).first;
+      if(!element_size || element_stride < element_size || payload_size % element_stride != 0 ||
+         element_ranges.size() != payload_size / element_stride)
+      {
+         return false;
+      }
+      for(size_t element_index = 0; element_index < element_ranges.size(); ++element_index)
+      {
+         const auto expected_begin = element_index * element_stride;
+         if(element_ranges.at(element_index).first != expected_begin ||
+            element_ranges.at(element_index).second != expected_begin + element_size)
+         {
+            return false;
+         }
+      }
+      return true;
+   }
+
+   void removeDeadAggregateTemporary(const ir_nodeRef& data_ptr, const std::vector<ir_nodeRef>& pointer_derivations,
+                                     const statement_list_node* sl, const application_managerRef& AppM)
+   {
+      for(auto it = pointer_derivations.rbegin(); it != pointer_derivations.rend(); ++it)
+      {
+         const auto derivation = *it;
+         const auto result = GetPointerS<const assign_stmt>(derivation)->op0;
+         if(GetPointerS<const ssa_node>(result)->CGetUseStmts().empty())
+         {
+            const auto derivation_bb = sl->list_of_bloc.at(GetPointerS<const node_stmt>(derivation)->bb_index);
+            derivation_bb->RemoveStmt(derivation, AppM);
+         }
+      }
+      const auto data_ptr_ssa = GetPointerS<const ssa_node>(data_ptr);
+      if(data_ptr_ssa->CGetUseStmts().empty())
+      {
+         const auto data_ptr_def = data_ptr_ssa->GetDefStmt();
+         if(data_ptr_def && data_ptr_def->get_kind() == assign_stmt_K &&
+            GetPointerS<const assign_stmt>(data_ptr_def)->op1->get_kind() == addr_node_K)
+         {
+            const auto data_ptr_def_bb = sl->list_of_bloc.at(GetPointerS<const node_stmt>(data_ptr_def)->bb_index);
+            data_ptr_def_bb->RemoveStmt(data_ptr_def, AppM);
+         }
+      }
+   }
 
    bool isScalarPointerProtocolWithoutReadback(const std::string& interface_name)
    {
@@ -1664,10 +1814,11 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
       const auto retval = GetPointerS<const assign_stmt>(new_call)->op0;
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- AFTER: " + new_call->ToString());
 
+      std::map<unsigned int, unsigned long long> load_bit_offsets;
+      std::vector<ir_nodeRef> read_pointer_derivations;
       auto enableOptFun = [&]() -> std::pair<bool, std::vector<ir_nodeRef>> {
          std::pair<bool, std::vector<ir_nodeRef>> res;
          res.first = true;
-         auto counter = 0u;
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---data_ptr->" + data_ptr->ToString());
          THROW_ASSERT(data_ptr->get_kind() == ssa_node_K, "unexpected case");
          const auto data_ptr_base = ir_helper::GetBaseVariable(data_ptr);
@@ -1676,49 +1827,40 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
             res.first = false;
             return res;
          }
-         auto vdef_ssa = GetPointerS<ssa_node>(gn->vdef);
-         for(const auto& usingStmt : vdef_ssa->CGetUseStmts())
+         std::set<unsigned int> visited_pointers;
+         if(!collectAggregateMemoryAccesses(data_ptr, stmt, false, res.second, read_pointer_derivations,
+                                            visited_pointers))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---user-> " + usingStmt.first->ToString());
-            if(usingStmt.first->index != stmt->index)
+            res.first = false;
+            return res;
+         }
+         const FunctionOrderedInstructions ordered_instructions(AppM, fd->index);
+         std::vector<std::pair<unsigned long long, unsigned long long>> loaded_ranges;
+         for(const auto& load_stmt : res.second)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---user-> " + load_stmt->ToString());
+            const auto user_ga = GetPointerS<const assign_stmt>(load_stmt);
+            const auto load_ptr = GetPointerS<const mem_access_node>(user_ga->op1)->op;
+            unsigned long long bit_offset = 0;
+            const auto load_size = ir_helper::Size(user_ga->op0);
+            if(!ordered_instructions.dominates(stmt, load_stmt) ||
+               !getConstantPointerBitOffset(load_ptr, data_ptr_base, bit_offset) || bit_offset > data_size ||
+               load_size > (data_size - bit_offset))
             {
-               if(usingStmt.first->get_kind() == assign_stmt_K)
-               {
-                  auto user_ga = GetPointerS<assign_stmt>(usingStmt.first);
-                  if(user_ga->op0->get_kind() == ssa_node_K && user_ga->op1->get_kind() == mem_access_node_K)
-                  {
-                     const auto load_ptr = GetPointerS<const mem_access_node>(user_ga->op1)->op;
-                     const auto load_base = ir_helper::GetBaseVariable(load_ptr);
-                     if(!load_base)
-                     {
-                        res.first = false;
-                     }
-                     else if(load_base->index == data_ptr_base->index)
-                     {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                       "---aliased load " + usingStmt.first->ToString());
-                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                       "---size ssa loaded var " + std::to_string(ir_helper::Size(user_ga->op0)));
-                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                       "---size ssa interface_datatype var " +
-                                           std::to_string(ir_helper::Size(interface_datatype)));
-                        if(ir_helper::Size(user_ga->op0) != (ir_helper::Size(interface_datatype) + (valid_var ? 1 : 0)))
-                        {
-                           res.first = false;
-                        }
-                        else if(counter == 0)
-                        {
-                           ++counter;
-                           res.second.push_back(usingStmt.first);
-                        }
-                        else
-                        {
-                           res.first = false;
-                        }
-                     }
-                  }
-               }
+               res.first = false;
+               return res;
             }
+            load_bit_offsets.emplace(load_stmt->index, bit_offset);
+            loaded_ranges.emplace_back(bit_offset, bit_offset + load_size);
+         }
+         if(!hasRegularAggregateElementLayout(loaded_ranges, data_size))
+         {
+            res.first = false;
+         }
+         if(valid_var && (res.second.size() != 1 || load_bit_offsets.at(res.second.front()->index) != 0 ||
+                          ir_helper::Size(GetPointerS<const assign_stmt>(res.second.front())->op0) != data_size + 1))
+         {
+            res.first = false;
          }
          res.first = res.first && !res.second.empty();
          return res;
@@ -1776,21 +1918,54 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
                }
                else
                {
-                  THROW_ASSERT(ir_helper::Size(user_ga->op0) == data_size,
-                               "Size ret var=" + std::to_string(ir_helper::Size(user_ga->op0)) +
-                                   " payload size=" + std::to_string(data_size));
-                  auto ga_nop = ir_man->CreateNopExpr(retval, interface_datatype, nullptr, nullptr, fd->index);
-                  curr_bb->PushBefore(ga_nop, stmt, AppM);
-                  // Cast read data
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  NOP: " + ga_nop->ToString());
-                  auto data_nop = GetPointerS<const assign_stmt>(ga_nop)->op0;
-                  TM->ReplaceIRNode(ga_nop, data_nop, user_ga->op0);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- NEW-NOP-POST: " + new_call->ToString());
+                  const auto load_bb = sl->list_of_bloc.at(GetPointerS<const node_stmt>(used_stmt)->bb_index);
+                  ir_nodeRef field_value = retval;
+                  const auto bit_offset = load_bit_offsets.at(used_stmt->index);
+                  if(bit_offset)
+                  {
+                     const auto shift_value = TM->CreateUniqueIntegerCst(bit_offset, ret_type);
+                     const auto shift_expr =
+                         ir_man->create_binary_operation(ret_type, retval, shift_value, BUILTIN_LOCINFO, shr_node_K);
+                     const auto shift_stmt =
+                         ir_man->CreateAssignStmt(ret_type, nullptr, nullptr, shift_expr, fd->index, BUILTIN_LOCINFO);
+                     load_bb->PushBefore(shift_stmt, used_stmt, AppM);
+                     field_value = GetPointerS<const assign_stmt>(shift_stmt)->op0;
+                  }
+                  const auto field_type = ir_helper::CGetType(user_ga->op0);
+                  const auto truncate_type = ir_helper::IsRealType(field_type) ?
+                                                 ir_man->GetCustomIntegerType(ir_helper::Size(field_type), false) :
+                                                 field_type;
+                  const auto truncate_expr =
+                      ir_man->create_unary_operation(truncate_type, field_value, BUILTIN_LOCINFO, nop_node_K);
+                  ir_nodeRef replacement;
+                  if(ir_helper::IsRealType(field_type))
+                  {
+                     const auto truncated_value = ir_man->create_ssa_name(nullptr, truncate_type, nullptr, nullptr);
+                     const auto truncate_stmt =
+                         ir_man->create_assign_stmt(truncated_value, truncate_expr, fd->index, BUILTIN_LOCINFO);
+                     load_bb->PushBefore(truncate_stmt, used_stmt, AppM);
+                     const auto bitcast_expr =
+                         ir_man->create_unary_operation(field_type, truncated_value, BUILTIN_LOCINFO, bitcast_node_K);
+                     replacement = ir_man->create_assign_stmt(user_ga->op0, bitcast_expr, fd->index, BUILTIN_LOCINFO);
+                  }
+                  else
+                  {
+                     replacement = ir_man->create_assign_stmt(user_ga->op0, truncate_expr, fd->index, BUILTIN_LOCINFO);
+                  }
+                  load_bb->Replace(used_stmt, replacement, true, AppM);
                }
-               curr_bb->RemoveStmt(used_stmt, AppM);
+               if(valid_var)
+               {
+                  const auto load_bb = sl->list_of_bloc.at(GetPointerS<const node_stmt>(used_stmt)->bb_index);
+                  load_bb->RemoveStmt(used_stmt, AppM);
+               }
             }
          }
          curr_bb->RemoveStmt(stmt, AppM);
+         if(!ret_call)
+         {
+            removeDeadAggregateTemporary(data_ptr, read_pointer_derivations, sl, AppM);
+         }
       }
       else
       {
@@ -2122,6 +2297,7 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
       }
 
       const auto data_type = ir_helper::CGetType(data_obj);
+      const auto data_size = ir_helper::Size(interface_datatype);
       const auto boolean_type = ir_man->GetBooleanType();
       const auto bit_size_type = ir_man->GetUnsignedIntegerType();
       const auto out_ptr_type = ir_man->GetPointerType(interface_datatype);
@@ -2139,9 +2315,10 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
 
       ir_nodeRef lastStmt;
       ir_nodeRef forwarded_data_ptr;
-      std::vector<ir_nodeRef> dead_data_ptr_uses;
+      std::vector<ir_nodeRef> write_pointer_derivations;
       if(isAStruct)
       {
+         std::map<unsigned int, unsigned long long> store_bit_offsets;
          auto enableOpt = [&]() -> std::pair<bool, std::vector<ir_nodeRef>> {
             std::pair<bool, std::vector<ir_nodeRef>> res;
             res.first = true;
@@ -2153,92 +2330,98 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
                res.first = false;
                return res;
             }
-            auto counter = 0u;
-
-            for(const auto& data_ptr_stmt_i : GetPointerS<ssa_node>(data_ptr)->CGetUseStmts())
+            std::set<unsigned int> visited_pointers;
+            if(!collectAggregateMemoryAccesses(data_ptr, stmt, true, res.second, write_pointer_derivations,
+                                               visited_pointers))
             {
-               if(data_ptr_stmt_i.first->index != stmt->index)
+               res.first = false;
+               return res;
+            }
+            const FunctionOrderedInstructions ordered_instructions(AppM, fd->index);
+            std::vector<std::pair<unsigned long long, unsigned long long>> stored_ranges;
+            for(const auto& store_stmt : res.second)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---data_ptr_stmt_i " + store_stmt->ToString());
+               const auto user_ga = GetPointerS<const assign_stmt>(store_stmt);
+               const auto store_ptr = GetPointerS<const mem_access_node>(user_ga->op0)->op;
+               const auto store_size = ir_helper::Size(user_ga->op1);
+               unsigned long long bit_offset = 0;
+               if(GetPointerS<const node_stmt>(store_stmt)->bb_index != gn->bb_index ||
+                  !ordered_instructions.dominates(store_stmt, stmt) ||
+                  (!ir_helper::IsConstant(user_ga->op1) && user_ga->op1->get_kind() != ssa_node_K) ||
+                  !getConstantPointerBitOffset(store_ptr, data_ptr_base, bit_offset) || bit_offset > data_size ||
+                  store_size > (data_size - bit_offset))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                 "---data_ptr_stmt_i " + data_ptr_stmt_i.first->ToString());
-                  if(data_ptr_stmt_i.first->get_kind() == assign_stmt_K)
-                  {
-                     auto user_ga = GetPointerS<assign_stmt>(data_ptr_stmt_i.first);
-                     if((user_ga->op1->get_kind() == ssa_node_K || ir_helper::IsConstant(user_ga->op1)) &&
-                        user_ga->op0->get_kind() == mem_access_node_K)
-                     {
-                        const auto store_ptr = GetPointerS<const mem_access_node>(user_ga->op0)->op;
-                        const auto store_base = ir_helper::GetBaseVariable(store_ptr);
-                        if(!store_base)
-                        {
-                           res.first = false;
-                        }
-                        else if(store_base->index == data_ptr_base->index)
-                        {
-                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                          "---aliased store " + data_ptr_stmt_i.first->ToString());
-                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                          "---size ssa stored var " + std::to_string(ir_helper::Size(user_ga->op1)));
-                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                          "---size ssa interface_datatype var " +
-                                              std::to_string(ir_helper::Size(interface_datatype)));
-                           if(ir_helper::Size(user_ga->op1) != ir_helper::Size(interface_datatype) &&
-                              !ir_helper::IsConstant(user_ga->op1))
-                           {
-                              res.first = false;
-                           }
-                           else if(counter == 0)
-                           {
-                              ++counter;
-                              res.second.push_back(data_ptr_stmt_i.first);
-                           }
-                           else
-                           {
-                              res.first = false;
-                           }
-                        }
-                     }
-                     else if(user_ga->op1->get_kind() == bitcast_node_K &&
-                             GetPointerS<const bitcast_node>(user_ga->op1)->op->index == data_ptr->index &&
-                             GetPointerS<const ssa_node>(user_ga->op0)->CGetUseStmts().empty())
-                     {
-                        // The Clang-16 union bitcast for the channel payload is dead after InterfaceInfer.
-                        // It does not prevent forwarding the stored value directly to the channel.
-                        dead_data_ptr_uses.push_back(data_ptr_stmt_i.first);
-                     }
-                     else
-                     {
-                        res.first = false;
-                     }
-                  }
-                  else
+                  res.first = false;
+                  return res;
+               }
+               for(const auto& [range_begin, range_end] : stored_ranges)
+               {
+                  if(bit_offset < range_end && range_begin < bit_offset + store_size)
                   {
                      res.first = false;
+                     return res;
                   }
                }
+               stored_ranges.emplace_back(bit_offset, bit_offset + store_size);
+               store_bit_offsets.emplace(store_stmt->index, bit_offset);
             }
-            res.first = res.first && !res.second.empty();
+            res.first = res.first && hasRegularAggregateElementLayout(stored_ranges, data_size);
             return res;
          }();
          if(enableOpt.first)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Do the optimization");
+            std::sort(enableOpt.second.begin(), enableOpt.second.end(), [&](const auto& lhs, const auto& rhs) {
+               return store_bit_offsets.at(lhs->index) < store_bit_offsets.at(rhs->index);
+            });
+            ir_nodeRef packed_value;
             for(auto& used_stmt : enableOpt.second)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- STORE to be removed " + used_stmt->ToString());
-               auto user_ga = GetPointerS<assign_stmt>(used_stmt);
-               data_obj = ir_helper::IsConstant(user_ga->op1) ?
-                              TM->CreateUniqueIntegerCst(ir_helper::GetConstValue(user_ga->op1), interface_datatype) :
-                              user_ga->op1;
+               const auto user_ga = GetPointerS<const assign_stmt>(used_stmt);
+               const auto fragment_size = ir_helper::Size(user_ga->op1);
+               const auto fragment_type = ir_man->GetCustomIntegerType(fragment_size, false);
+               const auto fragment_expr =
+                   ir_man->create_unary_operation(fragment_type, user_ga->op1, BUILTIN_LOCINFO,
+                                                  ir_helper::IsRealType(user_ga->op1) ? bitcast_node_K : nop_node_K);
+               const auto fragment_stmt =
+                   ir_man->CreateAssignStmt(fragment_type, nullptr, nullptr, fragment_expr, fd->index, BUILTIN_LOCINFO);
+               curr_bb->PushBefore(fragment_stmt, stmt, AppM);
+               const auto fragment = GetPointerS<const assign_stmt>(fragment_stmt)->op0;
+               const auto extend_expr =
+                   ir_man->create_unary_operation(interface_datatype, fragment, BUILTIN_LOCINFO, nop_node_K);
+               const auto extend_stmt = ir_man->CreateAssignStmt(interface_datatype, nullptr, nullptr, extend_expr,
+                                                                 fd->index, BUILTIN_LOCINFO);
+               curr_bb->PushBefore(extend_stmt, stmt, AppM);
+               ir_nodeRef packed_fragment = GetPointerS<const assign_stmt>(extend_stmt)->op0;
+               const auto bit_offset = store_bit_offsets.at(used_stmt->index);
+               if(bit_offset)
+               {
+                  const auto shift_value = TM->CreateUniqueIntegerCst(bit_offset, interface_datatype);
+                  const auto shift_expr = ir_man->create_binary_operation(interface_datatype, packed_fragment,
+                                                                          shift_value, BUILTIN_LOCINFO, shl_node_K);
+                  const auto shift_stmt = ir_man->CreateAssignStmt(interface_datatype, nullptr, nullptr, shift_expr,
+                                                                   fd->index, BUILTIN_LOCINFO);
+                  curr_bb->PushBefore(shift_stmt, stmt, AppM);
+                  packed_fragment = GetPointerS<const assign_stmt>(shift_stmt)->op0;
+               }
+               if(packed_value)
+               {
+                  const auto packed_expr = ir_man->create_binary_operation(interface_datatype, packed_value,
+                                                                           packed_fragment, BUILTIN_LOCINFO, or_node_K);
+                  const auto packed_stmt = ir_man->CreateAssignStmt(interface_datatype, nullptr, nullptr, packed_expr,
+                                                                    fd->index, BUILTIN_LOCINFO);
+                  curr_bb->PushBefore(packed_stmt, stmt, AppM);
+                  packed_value = GetPointerS<const assign_stmt>(packed_stmt)->op0;
+               }
+               else
+               {
+                  packed_value = packed_fragment;
+               }
                curr_bb->RemoveStmt(used_stmt, AppM);
             }
-            for(const auto& dead_use : dead_data_ptr_uses)
-            {
-               const auto dead_use_bb = sl->list_of_bloc.at(GetPointerS<const node_stmt>(dead_use)->bb_index);
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                              "--- dead pointer use to be removed " + dead_use->ToString());
-               dead_use_bb->RemoveStmt(dead_use, AppM);
-            }
+            data_obj = packed_value;
             forwarded_data_ptr = data_ptr;
             isAStruct = false;
          }
@@ -2320,18 +2503,9 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
       }
       if(forwarded_data_ptr)
       {
-         const auto forwarded_data_ptr_ssa = GetPointerS<const ssa_node>(forwarded_data_ptr);
-         THROW_ASSERT(forwarded_data_ptr_ssa->CGetUseStmts().empty(),
+         removeDeadAggregateTemporary(forwarded_data_ptr, write_pointer_derivations, sl, AppM);
+         THROW_ASSERT(GetPointerS<const ssa_node>(forwarded_data_ptr)->CGetUseStmts().empty(),
                       "Expected the forwarded channel temporary to be unused: " + forwarded_data_ptr->ToString());
-         const auto data_ptr_def = forwarded_data_ptr_ssa->GetDefStmt();
-         if(data_ptr_def && data_ptr_def->get_kind() == assign_stmt_K &&
-            GetPointerS<const assign_stmt>(data_ptr_def)->op1->get_kind() == addr_node_K)
-         {
-            const auto data_ptr_def_bb = sl->list_of_bloc.at(GetPointerS<const node_stmt>(data_ptr_def)->bb_index);
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                           "--- dead channel temporary to be removed " + data_ptr_def->ToString());
-            data_ptr_def_bb->RemoveStmt(data_ptr_def, AppM);
-         }
       }
    }
    else
