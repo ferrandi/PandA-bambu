@@ -2138,6 +2138,8 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
       }();
 
       ir_nodeRef lastStmt;
+      ir_nodeRef forwarded_data_ptr;
+      std::vector<ir_nodeRef> dead_data_ptr_uses;
       if(isAStruct)
       {
          auto enableOpt = [&]() -> std::pair<bool, std::vector<ir_nodeRef>> {
@@ -2162,7 +2164,8 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
                   if(data_ptr_stmt_i.first->get_kind() == assign_stmt_K)
                   {
                      auto user_ga = GetPointerS<assign_stmt>(data_ptr_stmt_i.first);
-                     if(user_ga->op1->get_kind() == ssa_node_K && user_ga->op0->get_kind() == mem_access_node_K)
+                     if((user_ga->op1->get_kind() == ssa_node_K || ir_helper::IsConstant(user_ga->op1)) &&
+                        user_ga->op0->get_kind() == mem_access_node_K)
                      {
                         const auto store_ptr = GetPointerS<const mem_access_node>(user_ga->op0)->op;
                         const auto store_base = ir_helper::GetBaseVariable(store_ptr);
@@ -2179,7 +2182,8 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                           "---size ssa interface_datatype var " +
                                               std::to_string(ir_helper::Size(interface_datatype)));
-                           if(ir_helper::Size(user_ga->op1) != ir_helper::Size(interface_datatype))
+                           if(ir_helper::Size(user_ga->op1) != ir_helper::Size(interface_datatype) &&
+                              !ir_helper::IsConstant(user_ga->op1))
                            {
                               res.first = false;
                            }
@@ -2193,6 +2197,14 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
                               res.first = false;
                            }
                         }
+                     }
+                     else if(user_ga->op1->get_kind() == bitcast_node_K &&
+                             GetPointerS<const bitcast_node>(user_ga->op1)->op->index == data_ptr->index &&
+                             GetPointerS<const ssa_node>(user_ga->op0)->CGetUseStmts().empty())
+                     {
+                        // The Clang-16 union bitcast for the channel payload is dead after InterfaceInfer.
+                        // It does not prevent forwarding the stored value directly to the channel.
+                        dead_data_ptr_uses.push_back(data_ptr_stmt_i.first);
                      }
                      else
                      {
@@ -2215,9 +2227,19 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- STORE to be removed " + used_stmt->ToString());
                auto user_ga = GetPointerS<assign_stmt>(used_stmt);
-               data_obj = user_ga->op1;
+               data_obj = ir_helper::IsConstant(user_ga->op1) ?
+                              TM->CreateUniqueIntegerCst(ir_helper::GetConstValue(user_ga->op1), interface_datatype) :
+                              user_ga->op1;
                curr_bb->RemoveStmt(used_stmt, AppM);
             }
+            for(const auto& dead_use : dead_data_ptr_uses)
+            {
+               const auto dead_use_bb = sl->list_of_bloc.at(GetPointerS<const node_stmt>(dead_use)->bb_index);
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                              "--- dead pointer use to be removed " + dead_use->ToString());
+               dead_use_bb->RemoveStmt(dead_use, AppM);
+            }
+            forwarded_data_ptr = data_ptr;
             isAStruct = false;
          }
          else
@@ -2295,6 +2317,21 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
             serializeInterfaceAccess(gc, interface_fname, channel_write_vdefs, ir_man);
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- AFTER: " + gc->ToString());
+      }
+      if(forwarded_data_ptr)
+      {
+         const auto forwarded_data_ptr_ssa = GetPointerS<const ssa_node>(forwarded_data_ptr);
+         THROW_ASSERT(forwarded_data_ptr_ssa->CGetUseStmts().empty(),
+                      "Expected the forwarded channel temporary to be unused: " + forwarded_data_ptr->ToString());
+         const auto data_ptr_def = forwarded_data_ptr_ssa->GetDefStmt();
+         if(data_ptr_def && data_ptr_def->get_kind() == assign_stmt_K &&
+            GetPointerS<const assign_stmt>(data_ptr_def)->op1->get_kind() == addr_node_K)
+         {
+            const auto data_ptr_def_bb = sl->list_of_bloc.at(GetPointerS<const node_stmt>(data_ptr_def)->bb_index);
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "--- dead channel temporary to be removed " + data_ptr_def->ToString());
+            data_ptr_def_bb->RemoveStmt(data_ptr_def, AppM);
+         }
       }
    }
    else
