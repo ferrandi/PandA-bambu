@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdint.h>
 
 #define abs(x) ((x)>0?(x):-(x))
 
