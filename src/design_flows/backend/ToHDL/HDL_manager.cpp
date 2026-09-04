@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -36,9 +24,6 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "HDL_manager.hpp"
@@ -46,6 +31,7 @@
 #include "NP_functionality.hpp"
 #include "Parameter.hpp"
 #include "VHDL_writer.hpp"
+#include "copyrights_strings.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
@@ -63,14 +49,9 @@
 #include "verilog_writer.hpp"
 
 #include "config_HAVE_ASSERTS.hpp"
-#include "config_HAVE_FLOPOCO.hpp"
 #include "config_PACKAGE_BUGREPORT.hpp"
 #include "config_PACKAGE_NAME.hpp"
 #include "config_PACKAGE_VERSION.hpp"
-
-#if HAVE_FLOPOCO
-#include "flopoco_wrapper.hpp"
-#endif
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
@@ -85,10 +66,6 @@ HDL_manager::HDL_manager(const HLS_managerRef _HLSMgr, const generic_deviceRef _
     : HLSMgr(_HLSMgr),
       device(_device),
       TM(_device->get_technology_manager()),
-#if HAVE_FLOPOCO
-      flopo_wrap(new flopoco_wrapper(_parameters->getOption<int>(OPT_debug_level),
-                                     _device->get_parameter<std::string>("family"))),
-#endif
       SM(_SM),
       parameters(_parameters),
       debug_level(_parameters->get_class_debug_level(GET_CLASS(*this)))
@@ -100,20 +77,14 @@ HDL_manager::HDL_manager(const HLS_managerRef _HLSMgr, const generic_deviceRef _
     : HLSMgr(_HLSMgr),
       device(_device),
       TM(_device->get_technology_manager()),
-#if HAVE_FLOPOCO
-      flopo_wrap(new flopoco_wrapper(_parameters->getOption<int>(OPT_debug_level),
-                                     _device->get_parameter<std::string>("family"))),
-#endif
       parameters(_parameters),
       debug_level(_parameters->get_class_debug_level(GET_CLASS(*this)))
 {
 }
 
-HDL_manager::~HDL_manager() = default;
-
 std::string HDL_manager::write_components(const std::string& filename, HDLWriter_Language language,
                                           const std::list<structural_objectRef>& components,
-                                          std::list<std::string>& aux_files) const
+                                          std::list<std::string>& aux_files, bool is_library) const
 {
    language_writerRef writer = language_writer::create_writer(language, TM, parameters);
 
@@ -128,72 +99,70 @@ std::string HDL_manager::write_components(const std::string& filename, HDLWriter
 
    writer->write_comment("\n");
    writer->write_comment("Send any bug to: " PACKAGE_BUGREPORT "\n");
-   writer->WriteLicense();
+   writer->WriteLicense(is_library);
 
    /// write the header of the file
-   writer->write_header();
+   writer->write_header(is_library);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing components");
    /// write all modules
    for(const auto& c : components)
    {
-      NP_functionalityRef npf = GetPointer<module>(c)->get_NP_functionality();
-      if(npf and npf->get_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) != "")
+      NP_functionalityRef npf = GetPointer<module_o>(c)->get_NP_functionality();
+      if(npf)
       {
-         write_module(writer, c, aux_files);
-         continue;
+         if(npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED) != "" ||
+            npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED) != "")
+         {
+            if(npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED) != "" &&
+               language == HDLWriter_Language::VERILOG)
+            {
+               const auto filename_HDL = npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED);
+               if(std::find(aux_files.begin(), aux_files.end(), filename_HDL) == aux_files.end())
+               {
+                  aux_files.push_back(filename_HDL);
+               }
+            }
+            else if(npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED) != "" &&
+                    language == HDLWriter_Language::VHDL)
+            {
+               const auto filename_HDL = npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED);
+               if(std::find(aux_files.begin(), aux_files.end(), filename_HDL) == aux_files.end())
+               {
+                  aux_files.push_back(filename_HDL);
+               }
+            }
+            else if(npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED) != "")
+            {
+               const auto filename_HDL = npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED);
+               if(std::find(aux_files.begin(), aux_files.end(), filename_HDL) == aux_files.end())
+               {
+                  aux_files.push_back(filename_HDL);
+               }
+            }
+            else if(npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED) != "")
+            {
+               const auto filename_HDL = npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED);
+               if(std::find(aux_files.begin(), aux_files.end(), filename_HDL) == aux_files.end())
+               {
+                  aux_files.push_back(filename_HDL);
+               }
+            }
+            else
+            {
+               THROW_UNREACHABLE("unexpected condition");
+            }
+            continue;
+         }
       }
-      else if(npf && (npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED) != "" ||
-                      npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED) != ""))
-      {
-         if(npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED) != "" &&
-            language == HDLWriter_Language::VERILOG)
-         {
-            std::string filename_HDL = npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED);
-            if(std::find(aux_files.begin(), aux_files.end(), filename_HDL) == aux_files.end())
-            {
-               aux_files.push_back(filename_HDL);
-            }
-         }
-         else if(npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED) != "" &&
-                 language == HDLWriter_Language::VHDL)
-         {
-            std::string filename_HDL = npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED);
-            if(std::find(aux_files.begin(), aux_files.end(), filename_HDL) == aux_files.end())
-            {
-               aux_files.push_back(filename_HDL);
-            }
-         }
-         else if(npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED) != "")
-         {
-            std::string filename_HDL = npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED);
-            if(std::find(aux_files.begin(), aux_files.end(), filename_HDL) == aux_files.end())
-            {
-               aux_files.push_back(filename_HDL);
-            }
-         }
-         else if(npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED) != "")
-         {
-            std::string filename_HDL = npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED);
-            if(std::find(aux_files.begin(), aux_files.end(), filename_HDL) == aux_files.end())
-            {
-               aux_files.push_back(filename_HDL);
-            }
-         }
-         else
-         {
-            THROW_UNREACHABLE("unexpected condition");
-         }
-         continue;
-      }
-      std::string library = TM->get_library(c->get_typeRef()->id_type);
-      structural_objectRef obj = c;
+      const auto library = TM->get_library(c->get_typeRef()->id_type);
+      auto obj = c;
       /// we write the definition of the object stored in library
-      if(library.size())
+      if(!library.empty())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Component " + c->get_typeRef()->id_type + " is in library " + library);
-         technology_nodeRef tn = TM->get_fu(c->get_typeRef()->id_type, library);
+         const auto tn = TM->get_fu(c->get_typeRef()->id_type, library);
          if(GetPointer<functional_unit>(tn))
          {
             THROW_ASSERT(GetPointer<functional_unit>(tn)->CM, tn->get_name());
@@ -201,7 +170,7 @@ std::string HDL_manager::write_components(const std::string& filename, HDLWriter
          }
          else if(GetPointer<functional_unit_template>(tn))
          {
-            technology_nodeRef FU = GetPointer<functional_unit_template>(tn)->FU;
+            const auto FU = GetPointer<functional_unit_template>(tn)->FU;
             obj = GetPointer<functional_unit>(FU)->CM->get_circ();
          }
          else
@@ -209,23 +178,24 @@ std::string HDL_manager::write_components(const std::string& filename, HDLWriter
             THROW_ERROR("unexpected condition");
          }
       }
-      write_module(writer, obj, aux_files);
+      THROW_ASSERT(!is_library || GetPointerS<module_o>(obj)->get_license() == PANDA_MIT_tag, "inconsistent licensing");
+      write_module(writer, obj, is_library);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written components");
    const auto filename_ext = filename + writer->get_extension();
    writer->WriteFile(filename_ext);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written " + filename_ext);
-   return filename_ext;
+   return std::filesystem::canonical(filename_ext).string();
 }
 
 void HDL_manager::write_components(const std::string& filename, const std::list<structural_objectRef>& components,
                                    std::list<std::string>& hdl_files, std::list<std::string>& aux_files,
-                                   bool unique_out)
+                                   HDL_output_mode gen_mode)
 {
    /// default language
    auto language = parameters->getOption<HDLWriter_Language>(OPT_writer_language);
 
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  Everything seems ok. Let's start with the real job.");
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  Everything seems OK. Let's start with the real job.");
 
    NP_functionality::NP_functionaly_type type = NP_functionality::UNKNOWN;
    if(language == HDLWriter_Language::VERILOG)
@@ -249,7 +219,7 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
    std::map<HDLWriter_Language, std::list<structural_objectRef>> hdl_comp, aux_comp;
    for(const auto& component : components)
    {
-      const auto mod = GetPointer<module>(component);
+      const auto mod = GetPointer<module_o>(component);
       THROW_ASSERT(mod, "Expected a component object");
       const auto n_elements = mod->get_internal_objects_size();
       const auto np = mod->get_NP_functionality();
@@ -260,7 +230,6 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
          const auto has_verilog = np->exist_NP_functionality(NP_functionality::VERILOG_PROVIDED) ||
                                   np->exist_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED);
          const auto has_vhdl = np->exist_NP_functionality(NP_functionality::VHDL_PROVIDED) ||
-                               np->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) ||
                                np->exist_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED);
          if(np->exist_NP_functionality(type) || (language == HDLWriter_Language::VERILOG && has_verilog) ||
             (language == HDLWriter_Language::VHDL && has_vhdl) || np->exist_NP_functionality(NP_functionality::FSM) ||
@@ -286,7 +255,7 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
          }
       }
       const auto library = TM->get_library(component->get_typeRef()->id_type);
-      if(unique_out || library.empty() || !starts_with(library, "STD"))
+      if(gen_mode == HDL_OUT_MIX || library.empty() || !starts_with(library, "STD"))
       {
          hdl_comp[comp_language].push_back(component);
       }
@@ -296,15 +265,27 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
       }
    }
 
+   const auto out_dir = std::filesystem::path(filename).parent_path().string();
+   std::filesystem::create_directories(out_dir);
+
    for(auto& [lang, comps] : aux_comp)
    {
       auto writer = language_writer::create_writer(lang, TM, parameters);
-      auto lib_dir = "bambu_lib/" + writer->get_name() + "/";
-      std::filesystem::create_directories(lib_dir);
-      for(auto& comp : comps)
+      if(gen_mode == HDL_OUT_WORK_LIBRARY)
       {
-         auto mod_name = lib_dir + convert_to_identifier(writer.get(), GET_TYPE_NAME(comp));
-         auto generated_filename = write_components(mod_name, lang, {comp}, aux_files);
+         const auto lib_dir = out_dir + "/panda_libtech/" + writer->get_name() + "/";
+         std::filesystem::create_directories(lib_dir);
+         for(auto& comp : comps)
+         {
+            const auto mod_name = lib_dir + convert_to_identifier(GET_TYPE_NAME(comp));
+            const auto generated_filename = write_components(mod_name, lang, {comp}, aux_files);
+            aux_files.push_back(generated_filename);
+         }
+      }
+      else
+      {
+         const auto lib_name = out_dir + "/panda_libtech";
+         const auto generated_filename = write_components(lib_name, lang, comps, aux_files);
          aux_files.push_back(generated_filename);
       }
    }
@@ -312,7 +293,7 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
    for(auto& [lang, comps] : hdl_comp)
    {
       auto writer = language_writer::create_writer(lang, TM, parameters);
-      auto generated_filename = write_components(filename, lang, comps, aux_files);
+      const auto generated_filename = write_components(filename, lang, comps, aux_files, false);
       if(lang == language)
       {
          hdl_files.push_back(generated_filename);
@@ -322,19 +303,11 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
          aux_files.push_back(generated_filename);
       }
    }
-
-#if HAVE_FLOPOCO
-   /// as a last thing to do we wrote all the common FloPoCo components
-   const std::string flopoco_common = flopo_wrap->writeVHDLcommon();
-   if(flopoco_common != "")
-   {
-      aux_files.push_back(flopoco_common);
-   }
-#endif
 }
 
 void HDL_manager::hdl_gen(const std::string& filename, const std::list<structural_objectRef>& cirs,
-                          std::list<std::string>& hdl_files, std::list<std::string>& aux_files, bool unique_out)
+                          std::list<std::string>& hdl_files, std::list<std::string>& aux_files,
+                          HDL_output_mode gen_mode)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                  "  compute the list of components for which a structural description exists");
@@ -349,15 +322,15 @@ void HDL_manager::hdl_gen(const std::string& filename, const std::list<structura
 #if HAVE_ASSERTS
       for(const auto& cir : cirs)
       {
-         THROW_ASSERT(GetPointer<module>(cir), "Expected a component or a channel");
-         THROW_ASSERT(GetPointer<module>(cir)->get_NP_functionality(), "Structural empty description received");
+         THROW_ASSERT(GetPointer<module_o>(cir), "Expected a component");
+         THROW_ASSERT(GetPointer<module_o>(cir)->get_NP_functionality(), "Structural empty description received");
       }
 #endif
       return;
    }
 
    /// generate the HDL descriptions for all the components
-   write_components(filename, list_of_com, hdl_files, aux_files, unique_out);
+   write_components(filename, list_of_com, hdl_files, aux_files, gen_mode);
 }
 
 /**
@@ -368,7 +341,7 @@ struct find_eq_module
    // predicate function
    bool operator()(const structural_objectRef& el)
    {
-      return el == target || HDL_manager::get_mod_typename(lan, el) == HDL_manager::get_mod_typename(lan, target);
+      return el == target || HDL_manager::get_mod_typename(el) == HDL_manager::get_mod_typename(target);
    }
    find_eq_module(const language_writer* _lan, const structural_objectRef& _target) : lan(_lan), target(_target)
    {
@@ -383,8 +356,8 @@ struct find_eq_module
 bool HDL_manager::is_fsm(const structural_objectRef& cir) const
 {
    /// check for a FSM description
-   auto* mod_inst = GetPointer<module>(cir);
-   THROW_ASSERT(mod_inst, "Expected a component or a channel");
+   auto* mod_inst = GetPointer<module_o>(cir);
+   THROW_ASSERT(mod_inst, "Expected a component");
    const NP_functionalityRef& np = mod_inst->get_NP_functionality();
    if(np)
    {
@@ -399,17 +372,15 @@ void HDL_manager::get_post_order_structural_components(const structural_objectRe
 {
    switch(cir->get_kind())
    {
-      case component_o_K:
-      case channel_o_K:
+      case module_o_K:
       {
-         auto* mod = GetPointer<module>(cir);
+         auto* mod = GetPointer<module_o>(cir);
          unsigned int n_elements = mod->get_internal_objects_size();
          for(unsigned int i = 0; i < n_elements; i++)
          {
             switch(mod->get_internal_object(i)->get_kind())
             {
-               case channel_o_K:
-               case component_o_K:
+               case module_o_K:
                {
                   if(!mod->get_internal_object(i)->get_black_box() &&
                      !TM->IsBuiltin(GET_TYPE_NAME(mod->get_internal_object(i))))
@@ -421,11 +392,7 @@ void HDL_manager::get_post_order_structural_components(const structural_objectRe
                case constant_o_K:
                case signal_vector_o_K:
                case signal_o_K:
-               case bus_connection_o_K:
                   break; /// no action for signals and bus
-               case action_o_K:
-               case data_o_K:
-               case event_o_K:
                case port_o_K:
                case port_vector_o_K:
                default:
@@ -487,11 +454,7 @@ void HDL_manager::get_post_order_structural_components(const structural_objectRe
          }
          break;
       }
-      case action_o_K:
-      case bus_connection_o_K:
       case constant_o_K:
-      case data_o_K:
-      case event_o_K:
       case port_o_K:
       case port_vector_o_K:
       case signal_o_K:
@@ -561,32 +524,28 @@ void HDL_manager::io_signal_fix_ith_vector(const language_writerRef writer, cons
    }
 }
 
-void HDL_manager::write_module(const language_writerRef writer, const structural_objectRef cir,
-                               std::list<std::string>& aux_files) const
+void HDL_manager::write_module(const language_writerRef writer, const structural_objectRef cir, bool is_library) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing module " + GET_TYPE_NAME(cir));
-   const module* mod = GetPointer<module>(cir);
+   const module_o* mod = GetPointer<module_o>(cir);
    THROW_ASSERT(mod, "Expected a module got something of different");
 
    const NP_functionalityRef& np = mod->get_NP_functionality();
-   if(np && np->get_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) != "")
-   {
-      PRINT_DBG_MEX(DEBUG_LEVEL_PARANOIC, this->debug_level, "FloPoCo compliant module: " + mod->get_id());
-      this->write_flopoco_module(cir, aux_files);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written module " + cir->get_path());
-      return;
-   }
 
    /// write module declaration
    writer->write_comment(mod->get_description() + "\n");
    writer->write_comment(mod->get_copyright() + "\n");
    writer->write_comment("Author(s): " + mod->get_authors() + "\n");
-   writer->write_comment("License: " + mod->get_license() + "\n");
+   auto license_text = string_to_container<std::vector<std::string>>(mod->get_license(), std::string("\n"));
+   for(const auto& line : license_text)
+   {
+      writer->write_comment("License: " + line + "\n");
+   }
 
    /// write library declaration component
    writer->write_library_declaration(cir);
 
-   writer->write_module_declaration(cir);
+   writer->write_module_declaration(cir, is_library);
 
    writer->write_module_parametrization_decl(cir);
 
@@ -687,8 +646,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
             {
                continue;
             }
-            case channel_o_K:
-            case component_o_K:
+            case module_o_K:
             {
                break;
             }
@@ -698,11 +656,6 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
                cs.push_back(std::make_pair(mod->get_internal_object(i)->get_id(), mod->get_internal_object(i)));
                continue;
             }
-            case bus_connection_o_K:
-               THROW_ERROR("Bus connection not yes supported.");
-            case action_o_K:
-            case data_o_K:
-            case event_o_K:
             case port_o_K:
             case port_vector_o_K:
             default:; // do nothing
@@ -727,17 +680,12 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
       {
          switch(mod->get_internal_object(i)->get_kind())
          {
-            case channel_o_K:
-            case component_o_K:
+            case module_o_K:
             {
                cs.push_back(std::make_pair(mod->get_internal_object(i)->get_id(), mod->get_internal_object(i)));
                break;
             }
-            case action_o_K:
-            case bus_connection_o_K:
             case constant_o_K:
-            case data_o_K:
-            case event_o_K:
             case port_o_K:
             case port_vector_o_K:
             case signal_o_K:
@@ -757,9 +705,9 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
          else
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing module instance " + obj->get_id());
-            writer->write_module_instance_begin(obj, get_mod_typename(writer.get(), obj), true);
+            writer->write_module_instance_begin(obj, get_mod_typename(obj), true);
             /// write IO ports binding
-            auto* mod_inst = GetPointer<module>(obj);
+            auto* mod_inst = GetPointer<module_o>(obj);
             bool first_port_analyzed = false;
             /// First output and then input. Some backend could have benefits from this ordering.
             /// Some customization are possible, like direct translation of gates into built-in statements.
@@ -961,8 +909,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
    /// check if there is some behavior attached to the module
    else if(is_fsm(cir))
    {
-      THROW_ASSERT(np,
-                   "Behavior not expected: " + HDL_manager::convert_to_identifier(writer.get(), GET_TYPE_NAME(cir)));
+      THROW_ASSERT(np, "Behavior not expected: " + HDL_manager::convert_to_identifier(GET_TYPE_NAME(cir)));
       THROW_ASSERT(
           !(np->exist_NP_functionality(NP_functionality::FSM) and np->exist_NP_functionality(NP_functionality::FSM_CS)),
           "Cannot exist both FSM and fsm_cs for the same function");
@@ -975,9 +922,13 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
       {
          fsm_desc = np->get_NP_functionality(NP_functionality::FSM);
       }
-      THROW_ASSERT(fsm_desc != "",
-                   "Behavior not expected: " + HDL_manager::convert_to_identifier(writer.get(), GET_TYPE_NAME(cir)));
-      write_fsm(writer, cir, fsm_desc);
+      THROW_ASSERT(fsm_desc != "", "Behavior not expected: " + HDL_manager::convert_to_identifier(GET_TYPE_NAME(cir)));
+      std::string fsm_stages;
+      if(np->exist_NP_functionality(NP_functionality::FSM_STAGES))
+      {
+         fsm_stages = np->get_NP_functionality(NP_functionality::FSM_STAGES);
+      }
+      write_fsm(writer, cir, fsm_desc, fsm_stages);
    }
    else if(np)
    {
@@ -1029,56 +980,8 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
    }
 
    /// write module_instantiation end
-   writer->write_module_definition_end(cir);
+   writer->write_module_definition_end(cir, is_library);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written module " + GET_TYPE_NAME(cir));
-}
-
-void HDL_manager::write_flopoco_module(const structural_objectRef& cir, std::list<std::string>&
-#if HAVE_FLOPOCO
-                                                                            aux_files
-#endif
-) const
-{
-   auto* mod_inst = GetPointer<module>(cir);
-   unsigned long long int mod_size_in = 0, mod_size_out = 0;
-   for(unsigned int i = 0; i < mod_inst->get_in_port_size(); i++)
-   {
-      // Size of module is size of the largest output
-      if(mod_size_in < STD_GET_SIZE(mod_inst->get_in_port(i)->get_typeRef()))
-      {
-         mod_size_in = STD_GET_SIZE(mod_inst->get_in_port(i)->get_typeRef());
-      }
-   }
-   for(unsigned int i = 0; i < mod_inst->get_out_port_size(); i++)
-   {
-      // Size of module is size of the largest output
-      if(mod_size_out < STD_GET_SIZE(mod_inst->get_out_port(i)->get_typeRef()))
-      {
-         mod_size_out = STD_GET_SIZE(mod_inst->get_out_port(i)->get_typeRef());
-      }
-   }
-#if HAVE_FLOPOCO
-   language_writerRef lan = language_writer::create_writer(HDLWriter_Language::VHDL, TM, parameters);
-   std::string mod_type = mod_inst->get_NP_functionality()->get_NP_functionality(NP_functionality::FLOPOCO_PROVIDED);
-   std::string mod_name = convert_to_identifier(lan.get(), GET_TYPE_NAME(cir));
-   // Create the module
-   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, this->debug_level,
-                 "Creating " + mod_type + ", named " + mod_name + " whose size is " + STR(mod_size_in) + "|" +
-                     STR(mod_size_out));
-   std::string pipe_parameter;
-   if(mod_inst->ExistsParameter(PIPE_PARAMETER))
-   {
-      pipe_parameter = mod_inst->GetParameter(PIPE_PARAMETER);
-   }
-   flopo_wrap->add_FU(mod_type, static_cast<unsigned int>(mod_size_in), static_cast<unsigned int>(mod_size_out),
-                      mod_name, pipe_parameter);
-   std::string created_file;
-   flopo_wrap->writeVHDL(mod_name, static_cast<unsigned int>(mod_size_in), static_cast<unsigned int>(mod_size_out),
-                         pipe_parameter, created_file);
-   aux_files.push_back(created_file);
-#else
-   THROW_ERROR("Floating point based HLS requires --enable-flopoco at configuration time");
-#endif
 }
 
 void HDL_manager::write_behavioral(const language_writerRef writer, const structural_objectRef&,
@@ -1096,7 +999,7 @@ void HDL_manager::write_behavioral(const language_writerRef writer, const struct
 }
 
 void HDL_manager::write_fsm(const language_writerRef writer, const structural_objectRef& cir,
-                            const std::string& fsm_desc_i) const
+                            const std::string& fsm_desc_i, const std::string& fsm_stage_i) const
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Start writing the FSM...");
 
@@ -1113,19 +1016,19 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
    auto it = SplitVec.cbegin();
    tokenizer first_line_tokens(*it, sep);
    tokenizer::iterator tok_iter = first_line_tokens.begin();
-   std::string reset_state = convert_to_identifier(writer.get(), *tok_iter);
+   std::string reset_state = convert_to_identifier(*tok_iter);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Reset state: '" << reset_state << "'");
    ++tok_iter;
    THROW_ASSERT(tok_iter != first_line_tokens.end(), "Wrong FSM description: expected the reset port name");
-   std::string reset_port = convert_to_identifier(writer.get(), *tok_iter);
+   std::string reset_port = convert_to_identifier(*tok_iter);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Reset port: '" << reset_port << "'");
    ++tok_iter;
    THROW_ASSERT(tok_iter != first_line_tokens.end(), "Wrong FSM description: expected the start port name");
-   std::string start_port = convert_to_identifier(writer.get(), *tok_iter);
+   std::string start_port = convert_to_identifier(*tok_iter);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Start port: '" << start_port << "'");
    ++tok_iter;
    THROW_ASSERT(tok_iter != first_line_tokens.end(), "Wrong FSM description: expected the clock port name");
-   std::string clock_port = convert_to_identifier(writer.get(), *tok_iter);
+   std::string clock_port = convert_to_identifier(*tok_iter);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Clock port: '" << clock_port << "'");
    ++tok_iter;
    THROW_ASSERT(tok_iter == first_line_tokens.end(), "Wrong FSM description: unexpetcted tokens" + *tok_iter);
@@ -1161,7 +1064,7 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
    for(; it + 1 != it_end; ++it)
    {
       tokenizer tokens(*it, sep);
-      list_of_states.push_back(convert_to_identifier(writer.get(), *tokens.begin()));
+      list_of_states.push_back(convert_to_identifier(*tokens.begin()));
    }
    auto end = it;
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Number of states: " << list_of_states.size());
@@ -1197,6 +1100,14 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
 
    writer->write_state_declaration(cir, list_of_states, reset_port, reset_state, one_hot_encoding);
 
+   if(fsm_stage_i.size())
+   {
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "write stage declaration");
+      const auto StageVec = string_to_container<std::vector<std::string>>(fsm_stage_i, "|", false);
+      THROW_ASSERT(StageVec.size() == 4, "unexpected stage format");
+      writer->write_stage_declaration(cir, std::stoi(StageVec.at(0)));
+   }
+
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "write module_instantiation begin");
    // write module_instantiation begin
    writer->write_module_definition_begin(cir);
@@ -1207,11 +1118,21 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
                                       parameters->getOption<std::string>(OPT_reset_type),
                                       cir->find_member(PRESENT_STATE_PORT_NAME, port_o_K, cir).get() != nullptr);
 
+   if(fsm_stage_i.size())
+   {
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "write the present_stages update");
+      const auto StageVec = string_to_container<std::vector<std::string>>(fsm_stage_i, "|", false);
+      THROW_ASSERT(StageVec.size() == 4, "unexpected stage format");
+      writer->write_present_stages_update(cir, reset_port, clock_port,
+                                          parameters->getOption<std::string>(OPT_reset_type), start_port,
+                                          std::stoi(StageVec.at(0)));
+   }
+
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "write transition and output functions");
    /// write transition and output functions
    if(parameters->IsParameter("multi-proc-fsm") and parameters->GetParameter<int>("multi-proc-fsm") == 1)
    {
-      const auto mod = GetPointer<module>(cir);
+      const auto mod = GetPointer<module_o>(cir);
       const auto n_outs = mod->get_out_port_size();
       for(unsigned int output_index = 0; output_index <= n_outs; output_index++)
       {
@@ -1224,90 +1145,42 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
             continue;
          }
          writer->write_transition_output_functions(false, output_index, cir, reset_state, reset_port, start_port,
-                                                   clock_port, first, end, is_yosys, bypass_signals);
+                                                   clock_port, first, end, is_yosys, bypass_signals, fsm_stage_i);
       }
    }
    else
    {
       writer->write_transition_output_functions(true, 0, cir, reset_state, reset_port, start_port, clock_port, first,
-                                                end, is_yosys, bypass_signals);
+                                                end, is_yosys, bypass_signals, fsm_stage_i);
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "FSM writing completed!");
 }
 
-std::string HDL_manager::convert_to_identifier(const language_writer* writer, const std::string& id)
+std::string HDL_manager::convert_to_identifier(const std::string& id)
 {
-   auto ret = id;
-   if(dynamic_cast<const VHDL_writer*>(writer))
+   if(verilog_writer::check_keyword_verilog(id) || VHDL_writer::check_keyword_vhdl(id))
    {
-      if(ret.find("__") != std::string::npos or ret.front() == '_' or ret.back() == '_' or writer->check_keyword(ret))
-      {
-         return "\\" + ret + "\\";
-      }
-      else
-      {
-         return ret;
-      }
+      return id + "_r";
    }
-   else if(dynamic_cast<const verilog_writer*>(writer))
+   std::string mangled = id;
+   replace_all_with_restart(id, mangled, "__", "_");
+   if(mangled.front() == '_')
    {
-      if((ret[0] >= '0' && ret[0] <= '9') || (ret.find('.') != std::string::npos) ||
-         (ret.find('[') != std::string::npos) || (ret.find(']') != std::string::npos))
-      {
-         return "\\" + ret + " ";
-      }
-      else if(writer and writer->check_keyword(ret))
-      {
-         return "\\" + ret + " ";
-      }
-      else if(ret == "array")
-      {
-         return ret + "_S";
-      }
-      else
-      {
-         return ret;
-      }
+      mangled = "p" + mangled;
    }
-   else
+   if(mangled.back() == '_')
    {
-      return ret;
+      mangled = mangled + "s";
    }
-   THROW_UNREACHABLE("");
-   return ret;
+   return mangled;
 }
 
-std::string HDL_manager::get_mod_typename(const language_writer* lan, const structural_objectRef& cir)
+std::string HDL_manager::get_mod_typename(const structural_objectRef& cir)
 {
    std::string res = GET_TYPE_NAME(cir);
-   auto* mod = GetPointer<module>(cir);
-   const NP_functionalityRef& np = mod->get_NP_functionality();
-   if(np && np->get_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) != "")
+   if(language_writer::GetHDLReservedNames().count(res))
    {
-      unsigned long long int mod_size_in = 0;
-      for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
-      {
-         // Size of module is size of the largest output
-         if(mod_size_in < STD_GET_SIZE(mod->get_in_port(i)->get_typeRef()))
-         {
-            mod_size_in = STD_GET_SIZE(mod->get_in_port(i)->get_typeRef());
-         }
-      }
-      res = res + "_" + STR(mod_size_in);
-      unsigned long long int mod_size_out = 0;
-      for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
-      {
-         // Size of module is size of the largest output
-         if(mod_size_out < STD_GET_SIZE(mod->get_out_port(i)->get_typeRef()))
-         {
-            mod_size_out = STD_GET_SIZE(mod->get_out_port(i)->get_typeRef());
-         }
-      }
-      res = res + "_" + STR(mod_size_out);
-      if(mod->ExistsParameter(PIPE_PARAMETER) and mod->GetParameter(PIPE_PARAMETER) != "")
-      {
-         res = res + "_" + mod->GetParameter(PIPE_PARAMETER);
-      }
+      res = res + "_r";
    }
-   return convert_to_identifier(lan, res);
+   return convert_to_identifier(res);
 }

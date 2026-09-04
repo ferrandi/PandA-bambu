@@ -1,0 +1,68 @@
+/**
+ * umul64 primitive adapted to the PandA infrastructure by Fabrizio Ferrandi from Politecnico di Milano.
+ * November, 10 2019.
+ *
+ */
+/* Public domain.  */
+
+#include "bambu_config.h"
+
+static __uint64_t __umul3264(__uint32_t u, __uint32_t v)
+{
+   __uint32_t u0v0, u1v0, u0v1, u1v1, u0, u1, v0, v1;
+   __uint64_t t1, t2;
+
+   u0 = u & 0xFFFF;
+   u1 = u >> 16;
+   v0 = v & 0xFFFF;
+   v1 = v >> 16;
+   u0v0 = u0 * v0;
+   u1v0 = u1 * v0;
+   u0v1 = u0 * v1;
+   u1v1 = u1 * v1;
+
+   t1 = (((__uint64_t)u1v0) << 16) + u0v0;
+   t2 = (((__uint64_t)u1v1) << 16) + u0v1;
+   return t1 + (t2 << 16);
+}
+
+__uint64_t __umul64(__uint64_t u, __uint64_t v)
+{
+   __uint64_t t;
+   __uint32_t u0, u1, v0, v1, k;
+   __uint32_t w0, w1;
+   __uint32_t tlast;
+   u1 = u >> 32;
+   u0 = u;
+   v1 = v >> 32;
+   v0 = v;
+   t = __umul3264(u0, v0);
+   w0 = t;
+   k = t >> 32;
+   tlast = u1 * v0 + k;
+   w1 = tlast;
+   tlast = u0 * v1 + w1;
+   return (((__uint64_t)tlast) << 32) | ((__uint64_t)w0);
+}
+
+__int64_t __mul64(__int64_t _u, __int64_t _v)
+{
+   __uint64_t t;
+   __uint64_t u, v;
+   __uint32_t u0, u1, v0, v1, k;
+   __uint32_t w0, w1;
+   __uint32_t tlast;
+   u = ((__uint64_t)_u);
+   v = ((__uint64_t)_v);
+   u1 = u >> 32;
+   u0 = u;
+   v1 = v >> 32;
+   v0 = v;
+   t = __umul3264(u0, v0);
+   w0 = t;
+   k = t >> 32;
+   tlast = u1 * v0 + k;
+   w1 = tlast;
+   tlast = u0 * v1 + w1;
+   return (__int64_t)((((__uint64_t)tlast) << 32) | ((__uint64_t)w0));
+}

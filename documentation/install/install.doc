@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2024 Politecnico di Milano
+ *              Copyright (c) 2004-2026 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -38,7 +38,6 @@
   This section contains the following chapters:
   - \ref install_supportedos
   - \ref install_appimage
-  - \ref install_source
   - \ref install_docker
 
 */

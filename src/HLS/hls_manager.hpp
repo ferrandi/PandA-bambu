@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -36,9 +24,6 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef HLS_MANAGER_HPP
@@ -47,32 +32,34 @@
 #include "application_manager.hpp"
 #include "custom_map.hpp"
 
-#include "config_HAVE_TASTE.hpp"
-
 #include <boost/preprocessor/seq/for_each.hpp>
 
 #include <map>
+#include <set>
 #include <string>
+#include <vector>
 
-REF_FORWARD_DECL(AadlInformation);
 REF_FORWARD_DECL(hls);
 REF_FORWARD_DECL(HLS_device);
 REF_FORWARD_DECL(HLS_manager);
-REF_FORWARD_DECL(functions);
-REF_FORWARD_DECL(memory);
-REF_FORWARD_DECL(SimulationInformation);
-REF_FORWARD_DECL(BackendFlow);
+class BackendWrapper;
+class functions;
+class memory;
+class SimulationInformation;
 
 #define ENUM_ID(r, data, elem) elem,
-#define FUNC_ARCH_ATTR_ENUM \
-   (func_symbol)(func_name)(func_inline)(func_dataflow_top)(func_dataflow_module)(func_pipeline_style)(func_pipeline_ii)
-#define FUNC_ARCH_PARM_ATTR_ENUM                                                                            \
-   (parm_port)(parm_index)(parm_bundle)(parm_offset)(parm_includes)(parm_typename)(parm_original_typename)( \
-       parm_elem_count)(parm_size_in_bytes)
-#define FUNC_ARCH_IFACE_ATTR_ENUM                                                                           \
-   (iface_name)(iface_mode)(iface_direction)(iface_bitwidth)(iface_alignment)(iface_depth)(iface_register)( \
-       iface_cache_ways)(iface_cache_line_count)(iface_cache_line_size)(iface_cache_num_write_outstanding)( \
-       iface_cache_rep_policy)(iface_cache_bus_size)(iface_cache_write_policy)
+#define FUNC_ARCH_ATTR_ENUM                                                                             \
+   (func_symbol)(func_name)(func_inline)(func_dataflow_top)(func_dataflow_module)(func_pipeline_style)( \
+       func_pipeline_ii)(func_csroa)(func_original)
+#define FUNC_ARCH_PARM_ATTR_ENUM                                                                                \
+   (parm_port)(parm_index)(parm_bundle)(parm_offset)(parm_includes)(parm_typename)(parm_original_typename)(     \
+       parm_elem_count)(parm_size_in_bytes)(parm_bank_allocation)(parm_array_dims)(parm_array_partition_types)( \
+       parm_array_partition_factors)
+#define FUNC_ARCH_IFACE_ATTR_ENUM                                                                                  \
+   (iface_name)(iface_global)(iface_mode)(iface_direction)(iface_bitwidth)(iface_alignment)(iface_depth)(          \
+       iface_register)(iface_cache_ways)(iface_cache_line_count)(iface_cache_line_size)(                           \
+       iface_cache_num_write_outstanding)(iface_cache_rep_policy)(iface_cache_bus_size)(iface_cache_write_policy)( \
+       iface_cache_word_size)(iface_bank_number)(iface_chunk_size)
 
 REF_FORWARD_DECL(FunctionArchitecture);
 
@@ -117,7 +104,6 @@ class ModuleArchitecture
 
  public:
    ModuleArchitecture(const std::string& filename);
-   ~ModuleArchitecture();
 
    FunctionArchitectures::const_iterator cbegin() const
    {
@@ -158,6 +144,21 @@ class HLS_manager : public application_manager
    /// node
    using io_binding_type = std::tuple<unsigned int, unsigned int>;
 
+   struct ding_dong_buffer_info
+   {
+      unsigned int producer_function_id;
+      unsigned int consumer_function_id;
+      std::set<unsigned int> producer_function_ids;
+      std::set<unsigned int> consumer_function_ids;
+      std::set<std::string> bundle_names;
+   };
+
+   struct dataflow_read_only_memory_info
+   {
+      std::set<unsigned int> consumer_function_ids;
+      std::set<std::string> bundle_names;
+   };
+
  private:
    /// information about the target device/technology for the synthesis
    HLS_deviceRef HLS_D;
@@ -166,10 +167,16 @@ class HLS_manager : public application_manager
    std::map<unsigned int, hlsRef> hlsMap;
 
    /// reference to the data-structure implementing the backend flow
-   BackendFlowRef back_flow;
+   std::unique_ptr<BackendWrapper> back_flow;
 
    /// The version of memory representation on which this step was applied
    unsigned int memory_version;
+
+   /// candidate shared dataflow-top local arrays eligible for ding-dong buffering
+   std::map<unsigned int, std::map<unsigned int, ding_dong_buffer_info>> ding_dong_buffer_candidates_;
+
+   /// candidate initialized dataflow-top local arrays eligible for read-only storage
+   std::map<unsigned int, std::map<unsigned int, dataflow_read_only_memory_info>> dataflow_read_only_memory_candidates_;
 
  public:
    /// base address for memory space addressing
@@ -179,30 +186,22 @@ class HLS_manager : public application_manager
    long HLS_execution_time;
 
    /// information about function allocation
-   functionsRef Rfuns;
+   std::unique_ptr<functions> Rfuns;
 
    /// information about memory allocation
-   memoryRef Rmem;
+   std::unique_ptr<memory> Rmem;
 
    /// unused port interface
    std::map<unsigned, std::set<std::pair<std::string, std::string>>> unused_interfaces;
 
    /// information about the simulation
-   SimulationInformationRef RSim;
-
-   /// Evaluations
-   CustomMap<std::string, double> evaluations;
+   std::unique_ptr<SimulationInformation> RSim;
 
    /// The auxiliary files
    std::list<std::string> aux_files;
 
    /// The HDL files
    std::list<std::string> hdl_files;
-
-#if HAVE_TASTE
-   /// The information collected from aadl files
-   const AadlInformationRef aadl_information;
-#endif
 
    ModuleArchitectureRef module_arch;
 
@@ -213,15 +212,16 @@ class HLS_manager : public application_manager
    /// global resource constraints
    std::map<std::pair<std::string, std::string>, std::pair<unsigned, unsigned>> global_resource_constraints;
 
+   /// ordered set of bundles required for the banked memory allocation
+   std::deque<std::string> bundle_required;
+
+   /// maps each parameter to the corresponding bundle id
+   std::map<std::string, unsigned int> bundle_map;
+
    /**
     * Constructor.
     */
    HLS_manager(const ParameterConstRef Param, const HLS_deviceRef HLS_D);
-
-   /**
-    * Destructor.
-    */
-   ~HLS_manager() override;
 
    /**
     * Returns the HLS data-structure associated with a specific function
@@ -239,11 +239,6 @@ class HLS_manager : public application_manager
    HLS_deviceRef get_HLS_device() const;
 
    /**
-    * Returns the backend flow
-    */
-   const BackendFlowRef get_backend_flow();
-
-   /**
     * Return the specified constant in string format
     */
    std::string get_constant_string(unsigned int node, unsigned long long precision);
@@ -256,7 +251,7 @@ class HLS_manager : public application_manager
    /**
     * Returns the values required by a vertex
     */
-   std::vector<io_binding_type> get_required_values(unsigned int fun_id, const vertex& v) const;
+   std::vector<io_binding_type> get_required_values(unsigned int fun_id, gc_vertex_descriptor v) const;
 
    /**
     * helper function that return true in case the variable is register compatible
@@ -273,14 +268,19 @@ class HLS_manager : public application_manager
    bool is_reading_writing_function(unsigned funID) const;
 
    /**
-    * Returns all the implementations resulting from the synthesis
+    * Returns all the implementations resulting from the synthesis ordered by functionId.
     */
-   CustomOrderedSet<hlsRef> GetAllImplementations() const;
+   std::vector<hlsRef> GetAllImplementations() const;
 
    /**
     * Return if single write memory is exploited
     */
    bool IsSingleWriteMemory() const;
+
+   /**
+    * Return if SDS private BRAMs should use the single-port wrapper.
+    */
+   bool UseSinglePortSdsMemory() const;
 
    /**
     * Return the version of the memory intermediate representation
@@ -296,6 +296,44 @@ class HLS_manager : public application_manager
 
    /// check if the maximum bitwidth used for registers, busses, muxes, etc. is compatible with prec
    static void check_bitwidth(unsigned long long prec);
+
+   /// returns a pair with the nth element of bundle_required and true if the element exist, false otherwise
+   std::pair<std::string, bool> bundle_required_get_nth_element(unsigned int index) const;
+
+   /// clears the cached ding-dong buffer candidates
+   void clear_ding_dong_buffer_candidates();
+
+   /// stores a ding-dong candidate for a dataflow top local array
+   void add_ding_dong_buffer_candidate(unsigned int top_id, unsigned int var_id, const ding_dong_buffer_info& info);
+
+   /// returns all ding-dong buffer candidates (full map)
+   const std::map<unsigned int, std::map<unsigned int, HLS_manager::ding_dong_buffer_info>>&
+   get_ding_dong_buffer_candidates() const;
+
+   /// returns the ding-dong candidates associated with the given dataflow top
+   const std::map<unsigned int, ding_dong_buffer_info>& get_ding_dong_buffer_candidates(unsigned int top_id) const;
+
+   /// returns the ding-dong candidate for a given top/variable pair, or null if absent
+   const ding_dong_buffer_info* get_ding_dong_buffer_candidate(unsigned int top_id, unsigned int var_id) const;
+
+   /// clears the cached dataflow read-only memory candidates
+   void clear_dataflow_read_only_memory_candidates();
+
+   /// stores a dataflow read-only memory candidate for a dataflow top local array
+   void add_dataflow_read_only_memory_candidate(unsigned int top_id, unsigned int var_id,
+                                                const dataflow_read_only_memory_info& info);
+
+   /// returns all dataflow read-only memory candidates (full map)
+   const std::map<unsigned int, std::map<unsigned int, dataflow_read_only_memory_info>>&
+   get_dataflow_read_only_memory_candidates() const;
+
+   /// returns the dataflow read-only memory candidates associated with a dataflow top
+   const std::map<unsigned int, dataflow_read_only_memory_info>&
+   get_dataflow_read_only_memory_candidates(unsigned int top_id) const;
+
+   /// returns the dataflow read-only memory candidate for a given top/variable pair, or null if absent
+   const dataflow_read_only_memory_info* get_dataflow_read_only_memory_candidate(unsigned int top_id,
+                                                                                 unsigned int var_id) const;
 };
 /// refcount definition of the class
 using HLS_managerRef = refcount<HLS_manager>;

@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "leds_ctrl.h"
 #include "sw_ctrl.h"
 #include "btn_ctrl.h"
@@ -156,6 +157,7 @@ void plot_test() {
     }
 }
 
-void main() {
+int main() {
     plot_test();
+    return 0;
 }

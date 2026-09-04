@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -38,9 +26,6 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "hls_constraints.hpp"
@@ -82,80 +67,6 @@ HLS_constraints::HLS_constraints(const ParameterConstRef& _Param, std::string _f
    add_builtin_constraints();
 
    auto debug_level = parameters->getOption<unsigned int>(OPT_debug_level);
-   if(parameters->isOption(OPT_xml_input_configuration))
-   {
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "parsing the configuration file for constraints...");
-      auto fn = parameters->getOption<std::string>(OPT_xml_input_configuration);
-      try
-      {
-         xml_element* constraint_node = nullptr;
-         XMLDomParser parser(fn);
-         parser.Exec();
-         if(parser)
-         {
-            xml_element* node = parser.get_document()->get_root_node();
-            xml_node::node_list list = node->get_children();
-            for(auto& iter : list)
-            {
-               auto* Enode = GetPointer<xml_element>(iter);
-               if(!Enode || Enode->get_name() != GET_CLASS_NAME(HLS_constraints))
-               {
-                  continue;
-               }
-               std::string function_name;
-               if(!fun_name.empty()) /* constraints related to a specific function */
-               {
-                  if(CE_XVM(function_name, Enode))
-                  {
-                     LOAD_XVM(function_name, Enode);
-                  }
-                  if(function_name == fun_name)
-                  {
-                     constraint_node = Enode;
-                  }
-               }
-               else /* general constraints */
-               {
-                  if(!CE_XVM(function_name, Enode))
-                  {
-                     constraint_node = Enode;
-                  }
-               }
-            }
-         }
-         if(constraint_node)
-         {
-            xload(constraint_node);
-         }
-      }
-      catch(const char* msg)
-      {
-         THROW_ERROR("Error during constraints file parsing: " + std::string(msg));
-      }
-      catch(const std::string& msg)
-      {
-         THROW_ERROR("Error during constraints file parsing: " + msg);
-      }
-      catch(const std::exception& ex)
-      {
-         THROW_ERROR("Error during constraints file parsing: " + std::string(ex.what()));
-      }
-      catch(...)
-      {
-         THROW_ERROR("Error during constraints file parsing");
-      }
-      PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
-                    " ==== XML configuration file parsed for constraints information ====");
-      if(!fun_name.empty())
-      {
-         PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, " Constraints of function: " + fun_name);
-      }
-      else
-      {
-         PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, " Global constraints: ");
-      }
-      PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, *this);
-   }
 
    /// add user defined constraints
    if(parameters->isOption(OPT_constraints_file))
@@ -188,7 +99,7 @@ HLS_constraints::HLS_constraints(const ParameterConstRef& _Param, std::string _f
    }
 }
 
-std::string HLS_constraints::get_function_name() const
+std::string HLS_constraints::GetFunctionName() const
 {
    return fun_name;
 }
@@ -530,6 +441,13 @@ void HLS_constraints::read_HLS_CL_constraints(const std::string& s)
    const auto resource_library_constraints = string_to_container<std::vector<std::string>>(s, ",");
    for(auto resource_library_constraint : resource_library_constraints)
    {
+      const auto throw_invalid_resource_constraints = [&](const std::string& invalid_entry) {
+         THROW_ERROR_USAGE("BadParameters: invalid --resource-constraints/-c entry '" + invalid_entry +
+                           "'. Expected format is "
+                           "<resource_name>:<library_name>[=<num_resources>] "
+                           "with comma-separated entries, for example "
+                           "'add_node:STD_FU=2,mul_node:STD_FU=1'.");
+      };
       if(!resource_library_constraint.empty() && resource_library_constraint.at(0) == '=')
       {
          resource_library_constraint = resource_library_constraint.substr(1);
@@ -546,12 +464,12 @@ void HLS_constraints::read_HLS_CL_constraints(const std::string& s)
             library_name = resource_library_pair.at(1);
             if(library_name.empty() || resource_name.empty())
             {
-               THROW_ERROR("unexpected --constraints format");
+               throw_invalid_resource_constraints(resource_library_constraint);
             }
          }
          else
          {
-            THROW_ERROR("unexpected --constraints format");
+            throw_invalid_resource_constraints(resource_library_constraint);
          }
          unsigned num_resources = 0;
          if(splitted.size() == 1)
@@ -565,7 +483,7 @@ void HLS_constraints::read_HLS_CL_constraints(const std::string& s)
          }
          else
          {
-            THROW_ERROR("unexpected --constraints format");
+            throw_invalid_resource_constraints(resource_library_constraint);
          }
          set_number_fu(resource_name, library_name, num_resources);
       }

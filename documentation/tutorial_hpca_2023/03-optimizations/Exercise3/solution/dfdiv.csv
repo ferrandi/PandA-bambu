@@ -1,6 +1,0 @@
-Benchmark, CYCLES, HLS_execution_time, 
-GCC49:dfdiv_NR:main_0, 825,44.9199999999999999983,
-GCC49:dfdiv_as:main_0, 841,30.1399999999999999994,
-GCC49:dfdiv_none:main_0, 1777,37.5,
-GCC49:dfdiv_nr1:main_0, 1849,41.1800000000000000003,
-GCC49:dfdiv_nr2:main_0, 1105,43.119999999999999999,

@@ -1,0 +1,45 @@
+name: PandA setup
+description: Checkout + download PandA distribution
+inputs:
+  package-name:
+    required: true
+  storage-url:
+    required: true
+  username:
+    required: true
+  password:
+    required: true
+  submodules:
+    required: false
+    default: "false"
+  compilers:
+    required: false
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      with:
+        submodules: ${{ inputs.submodules }}
+    - name: Download PandA distribution
+      uses: ./.github/actions/storage-download
+      with:
+        name: ${{ inputs.package-name }}
+        storage-url: ${{ inputs.storage-url }}
+        username: ${{ inputs.username }}
+        password: ${{ inputs.password }}
+    - name: Download compiler bundles
+      if: ${{ inputs.compilers != '' || env.CI_COMPILERS != '' }}
+      shell: bash
+      run: |
+        set -e
+        DIST_DIR="${DIST_DIR:-panda_dist}"
+        if [[ -z "${DIST_DIR}" ]]; then
+          DIST_DIR="panda_dist"
+        fi
+        COMPILERS="${{ inputs.compilers }}"
+        if [[ -z "${COMPILERS}" ]]; then
+          COMPILERS="${CI_COMPILERS}"
+        fi
+        bash ./.devcontainer/library-scripts/compiler-download.sh "${DIST_DIR}/compilers" "${COMPILERS}" "${LOCAL_COMPILERS_BACKUP}"

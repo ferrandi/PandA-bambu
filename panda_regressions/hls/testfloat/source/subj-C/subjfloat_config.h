@@ -4,13 +4,19 @@
 | exist.
 *----------------------------------------------------------------------------*/
 
-#ifdef FLOAT16
+#if defined(FLOAT16)
 
 #define SUBJ_UI32_TO_F16
 #define SUBJ_UI64_TO_F16
 #define SUBJ_I32_TO_F16
 #define SUBJ_I64_TO_F16
 
+#ifndef NO_PARAMETRIC
+#define SUBJ_F32_TO_I32_RX_NEAR_EVEN
+#define SUBJ_F32_TO_UI32_RX_NEAR_EVEN
+#define SUBJ_F32_TO_I64_RX_NEAR_EVEN
+#define SUBJ_F32_TO_UI64_RX_NEAR_EVEN
+#endif
 #define SUBJ_F16_TO_UI32_RX_MINMAG
 #define SUBJ_F16_TO_UI64_RX_MINMAG
 #define SUBJ_F16_TO_I32_RX_MINMAG
@@ -36,6 +42,12 @@
 #define SUBJ_I32_TO_F32
 #define SUBJ_I64_TO_F32
 
+#ifndef NO_PARAMETRIC
+#define SUBJ_F32_TO_I32_RX_NEAR_EVEN
+#define SUBJ_F32_TO_UI32_RX_NEAR_EVEN
+#define SUBJ_F32_TO_I64_RX_NEAR_EVEN
+#define SUBJ_F32_TO_UI64_RX_NEAR_EVEN
+#endif
 #define SUBJ_F32_TO_UI32_RX_MINMAG
 #define SUBJ_F32_TO_UI64_RX_MINMAG
 #define SUBJ_F32_TO_I32_RX_MINMAG
@@ -67,6 +79,12 @@
 
 #define SUBJ_F32_TO_F64
 
+#ifndef NO_PARAMETRIC
+#define SUBJ_F64_TO_I32_RX_NEAR_EVEN
+#define SUBJ_F64_TO_UI32_RX_NEAR_EVEN
+#define SUBJ_F64_TO_I64_RX_NEAR_EVEN
+#define SUBJ_F64_TO_UI64_RX_NEAR_EVEN
+#endif
 #define SUBJ_F64_TO_UI32_RX_MINMAG
 #define SUBJ_F64_TO_UI64_RX_MINMAG
 #define SUBJ_F64_TO_I32_RX_MINMAG

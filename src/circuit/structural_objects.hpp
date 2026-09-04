@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -38,16 +26,10 @@
  * @author Matteo Barbati <mbarbati@gmail.com>
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef STRUCTURAL_OBJECTS_HPP
 #define STRUCTURAL_OBJECTS_HPP
-
-/// Autoheader include
-#include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 
 #include "NP_functionality.hpp"
 #include "custom_map.hpp"
@@ -56,15 +38,14 @@
 #include "simple_indent.hpp"
 
 #include <boost/preprocessor/seq/for_each.hpp>
+
 #include <ostream>
 #include <string>
 #include <utility>
 #include <vector>
 
-/**
- * @name Forward declarations.
- */
-//@{
+#include "config_HAVE_TECHNOLOGY_BUILT.hpp"
+
 CONSTREF_FORWARD_DECL(BehavioralHelper);
 REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(NP_functionality);
@@ -77,8 +58,6 @@ REF_FORWARD_DECL(attribute);
 /// forward decl of xml Element
 class xml_element;
 class simple_indent;
-
-//@}
 
 #define HIERARCHY_SEPARATOR "/"
 
@@ -93,11 +72,17 @@ class simple_indent;
 #define RESET_PORT_NAME "reset"
 #define CACHE_RESET_PORT_NAME "cache_reset"
 #define DONE_PORT_NAME "done_port"
+#define IDLE_PORT_NAME "idle_port"
 #define RETURN_PORT_NAME "return_port"
 #define START_PORT_NAME_CFC "start_port_CFC"
 #define DONE_PORT_NAME_CFC "done_port_CFC"
 #define MOUT_OE_PORT_NAME "Mout_oe_ram"
 #define MOUT_BACK_PRESSURE_PORT_NAME "Mout_back_pressure"
+#define MOUT_TAG_PORT_NAME "Mout_tag"
+#define M_BACK_PRESSURE_PORT_NAME "M_back_pressure"
+#define M_TAG_PORT_NAME "M_tag"
+#define MOUT_ADDRESSS_RAM_PORT "Mout_addr_ram"
+#define MOUT_ADDRESSS_RAM_PORT_OUT "Mout_addr_ram_out"
 #define PRESENT_STATE_PORT_NAME "present_state"
 #define NEXT_STATE_PORT_NAME "next_state"
 #define NOTIFIER_PORT_MISMATCH "out_mismatch"
@@ -125,7 +110,7 @@ class simple_indent;
  * Structure representing the most relevant information about the type of a structural object.
  * In case the structural object is a signal or a port all member has a real meaning,
  * while when the structural object is a channel, component, event, data or an action the only relevant information
- * stored into the descriptor is the id_type and treenode when available.
+ * stored into the descriptor is the id_type and ir_node_id when available.
  * The size member has also a relevant meaning when a channel, data, and an action? is considered.
  */
 struct structural_type_descriptor
@@ -159,14 +144,11 @@ struct structural_type_descriptor
    /// Original type id of the structural object.
    std::string id_type;
 
-   /// Treenode id of the type
-   unsigned int treenode;
+   /// IR node id of the type
+   unsigned int ir_node_id;
 
-   /**
-    * Constructor
-    */
    structural_type_descriptor()
-       : type(UNKNOWN), size(size_DEFAULT), vector_size(vector_size_DEFAULT), treenode(treenode_DEFAULT)
+       : type(UNKNOWN), size(size_DEFAULT), vector_size(vector_size_DEFAULT), ir_node_id(ir_node_id_DEFAULT)
    {
    }
 
@@ -181,14 +163,14 @@ struct structural_type_descriptor
 
    /**
     * Object factory for module objects.
-    * @param treenode is the treenode descriptor of the type.
+    * @param module_name is the name associated with the module type descriptor.
     */
    explicit structural_type_descriptor(const std::string& module_name)
        : type(OTHER),
          size(size_DEFAULT),
          vector_size(vector_size_DEFAULT),
          id_type(module_name),
-         treenode(treenode_DEFAULT)
+         ir_node_id(ir_node_id_DEFAULT)
    {
    }
 
@@ -198,11 +180,6 @@ struct structural_type_descriptor
     * @param helper is the BehavioralHelper
     */
    structural_type_descriptor(unsigned int index, const BehavioralHelperConstRef helper);
-
-   /**
-    * Destructor
-    */
-   ~structural_type_descriptor() = default;
 
    /**
     * Method that copies the contents of the current structural_type_descriptorRef into another
@@ -226,7 +203,7 @@ struct structural_type_descriptor
 
    /**
     * Load a structural_type_descriptor starting from an xml file.
-    * @param node is a node of the xml tree.
+    * @param Enode is a node of the xml tree.
     * @param owner is the refcount version of this.
     */
    void xload(const xml_element* Enode, structural_type_descriptorRef owner);
@@ -264,15 +241,11 @@ struct structural_type_descriptor
    }
 
  private:
-   /**
-    * @name default values associated with the members of the structural_type_descriptor class.
-    */
-   //@{
    static const s_type type_DEFAULT = OTHER;
-   static const unsigned int treenode_DEFAULT = 0;
+   static const unsigned int ir_node_id_DEFAULT = 0;
    static const unsigned int size_DEFAULT = 0;
    static const unsigned int vector_size_DEFAULT = 0;
-   //@}
+
    /// store the names of the enumerative s_type.
    static const char* s_typeNames[];
 };
@@ -307,17 +280,12 @@ using structural_type_descriptorRef = refcount<structural_type_descriptor>;
  */
 enum so_kind
 {
-   component_o_K,
-   channel_o_K,
-   bus_connection_o_K,
+   module_o_K,
    constant_o_K,
    signal_o_K,
    signal_vector_o_K,
    port_o_K,
-   port_vector_o_K,
-   event_o_K,
-   data_o_K,
-   action_o_K
+   port_vector_o_K
 };
 
 /**
@@ -344,8 +312,8 @@ class structural_object
    /// The description of the type.
    structural_type_descriptorRef type;
 
-   /// index of the treenode in the tree_manager associated with the structural object.
-   unsigned int treenode;
+   /// Index of the IR node in the ir_manager associated with the structural object.
+   unsigned int ir_node_id;
 
    /// True if the structural object is a black box (e.g., a library component).
    bool black_box;
@@ -378,6 +346,7 @@ class structural_object
  public:
    /**
     * Constructor for the structural_object.
+    * @param debug_level is the debug verbosity associated with the object.
     * @param o is the owner (null object for the top object).
     */
    structural_object(int debug_level, const structural_objectRef o);
@@ -397,15 +366,15 @@ class structural_object
    void set_owner(const structural_objectRef new_owner);
 
    /**
-    * Set the treenode id associated with the structural_object.
-    * @param n is the treenode id.
+    * Set the IR node id associated with the structural_object.
+    * @param n is the IR node id.
     */
-   void set_treenode(unsigned int n);
+   void set_ir_node_id(unsigned int n);
 
    /**
-    * Return the treenode id associated with the structural_object.
+    * Return the IR node id associated with the structural_object.
     */
-   unsigned int get_treenode() const;
+   unsigned int get_ir_node_id() const;
 
    /**
     * Set the identifier associated with the structural_object.
@@ -497,7 +466,7 @@ class structural_object
     * and by its owners separated by the HIERARCHY_SEPARATOR. Structural objects are viewed as elements of a standard
     * filesystem.
     */
-   const std::string get_path() const;
+   std::string get_path() const;
 
    /**
     * Perform a copy of the structural object.
@@ -522,7 +491,7 @@ class structural_object
 
    /**
     * Load a structural_object starting from an xml file.
-    * @param node is a node of the xml tree.
+    * @param Enode is a node of the xml tree.
     * @param owner is the refcount version of this.
     * @param CM is the circuit manager.
     */
@@ -530,7 +499,7 @@ class structural_object
 
    /**
     * Add a structural_object to an xml tree.
-    * @param rootnode is the root node at which the xml representation of the structural object is attached.
+    * @param Enode is the root node at which the xml representation of the structural object is attached.
     */
    virtual void xwrite(xml_element* Enode);
 
@@ -582,13 +551,8 @@ class structural_object
 #endif
 
  private:
-   /**
-    * @name default values associated with the members of the structural_type_descriptor class.
-    */
-   //@{
-   static const unsigned int treenode_DEFAULT = 0;
+   static const unsigned int ir_node_id_DEFAULT = 0;
    static const bool black_box_DEFAULT = true;
-   //@}
 };
 
 /**
@@ -611,10 +575,10 @@ using structural_objectRef = refcount<structural_object>;
        S_AXIL_BREADY)(S_AXIL_BRESP)(PI_S_AXIS_TVALID)(PI_S_AXIS_TREADY)(PI_S_AXIS_TDATA)(PI_M_AXIS_TVALID)(            \
        PI_M_AXIS_TREADY)(PI_M_AXIS_TDATA)(PI_DEFAULT)(CACHE_RESET)
 
-#define PORT_DIRECTION_ENUM (IN)(OUT)(IO)(GEN)(UNKNOWN)(TLM_IN)(TLM_OUT)(TLM_INOUT)
+#define PORT_DIRECTION_ENUM (IN)(OUT)(IO)(GEN)(UNKNOWN)
 
 /**
- * This class describes a port associated with a component or a channel.
+ * This class describes a port associated with a component.
  * A port can be in relation with:
  * - another standard port (e.g., primary input/output connections);
  * - a signal (e.g., standard internal connections):
@@ -663,13 +627,12 @@ struct port_o : public structural_object
 
    /**
     * Constructor.
+    * @param debug_level is the debug verbosity associated with the port.
     * @param o is the owner of the port
     * @param dir defines the direction of the port.
+    * @param _port_type identifies the structural-object kind associated with the port.
     */
    port_o(int debug_level, const structural_objectRef o, port_direction dir, so_kind _port_type);
-
-   /// Destructor.
-   ~port_o() override = default;
 
    /// custom size parameter
    std::string size_parameter;
@@ -954,7 +917,7 @@ struct port_o : public structural_object
 
    /**
     * Load a structural_object starting from an xml file.
-    * @param node is a node of the xml tree.
+    * @param Enode is a node of the xml tree.
     * @param owner is the refcount version of this.
     * @param CM is the circuit manager.
     */
@@ -1132,10 +1095,6 @@ struct port_o : public structural_object
    /// port type
    so_kind port_type;
 
-   /**
-    * @name default values associated with the members of the port_o class.
-    */
-   //@{
    static const bool is_clock_DEFAULT = false;
    static const bool is_extern_DEFAULT = false;
    static const bool is_global_DEFAULT = false;
@@ -1152,316 +1111,11 @@ struct port_o : public structural_object
    static const bool is_reverse_DEFAULT = false;
    static const bool is_var_args_DEFAULT = false;
    static const unsigned port_interface_alignment_DEFAULT = 0;
-   //@}
 };
 
 /**
  * This class describes a generic event.
  */
-class event_o : public structural_object
-{
- public:
-   /**
-    * Constructor.
-    * @param o is the owner of the event
-    */
-   event_o(int debug_level, const structural_objectRef o);
-
-   /// Destructor
-   ~event_o() override = default;
-
-   /**
-    * Perform a copy of the event.
-    * @param dest destination object.
-    */
-   void copy(structural_objectRef dest) const override;
-
-   /**
-    * Return the object named id of a given type which belongs to or it is associated with the object.
-    * This method throw and error since does not have associated any structural object.
-    * @param id is the identifier of the object we are looking for.
-    * @param type is the type of the object we are looking for.
-    * @param owner is the owner of the object named id.
-    */
-   structural_objectRef find_member(const std::string& id, so_kind type,
-                                    const structural_objectRef owner) const override;
-
-   /**
-    * Find key in this object.
-    * @param key is the object searched.
-    */
-   structural_objectRef find_isomorphic(const structural_objectRef key) const override;
-
-   /**
-    * Load a structural_object starting from an xml file.
-    * @param node is a node of the xml tree.
-    * @param owner is the refcount version of this.
-    * @param CM is the circuit manager.
-    */
-   void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const& CM) override;
-
-   /**
-    * Add a structural_object to an xml tree.
-    * @param rootnode is the root node at which the xml representation of the structural object is attached.
-    */
-   void xwrite(xml_element* rootnode) override;
-
-   /**
-    * Print the event (for debug purpose)
-    * @param os is an output stream
-    */
-   void print(std::ostream& os) const override;
-
-   /**
-    * Redefinition of get_kind_text()
-    */
-   GET_SO_KIND_TEXT(event_o)
-   /**
-    * Redefinition of get_kind()
-    */
-   GET_SO_KIND(event_o)
-};
-
-/**
- * This class describes a generic data declaration object.
- */
-class data_o : public structural_object
-{
- public:
-   /**
-    * Constructor.
-    * @param o is the owner of the data declaration object.
-    */
-   data_o(int debug_level, const structural_objectRef o);
-
-   /// destructor
-   ~data_o() override = default;
-
-   /**
-    * Perform a copy of the data.
-    * @param dest destination object.
-    */
-   void copy(structural_objectRef dest) const override;
-
-   /**
-    * Return the object named id of a given type which belongs to or it is associated with the object.
-    * This method throw and error since does not have associated any structural object.
-    * @param id is the identifier of the object we are looking for.
-    * @param type is the type of the object we are looking for.
-    * @param owner is the owner of the object named id.
-    */
-   structural_objectRef find_member(const std::string& id, so_kind type,
-                                    const structural_objectRef owner) const override;
-
-   /**
-    * Find key in this object.
-    * @param key is the object searched.
-    */
-   structural_objectRef find_isomorphic(const structural_objectRef key) const override;
-
-   /**
-    * Load a structural_object starting from an xml file.
-    * @param node is a node of the xml tree.
-    * @param owner is the refcount version of this.
-    * @param CM is the circuit manager.
-    */
-   void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const& CM) override;
-
-   /**
-    * Add a structural_object to an xml tree.
-    * @param rootnode is the root node at which the xml representation of the structural object is attached.
-    */
-   void xwrite(xml_element* rootnode) override;
-
-   /**
-    * Print the data declaration object (for debug purpose).
-    * @param os is an output stream.
-    */
-   void print(std::ostream& os) const override;
-
-   /**
-    * Redefinition of get_kind_text()
-    */
-   GET_SO_KIND_TEXT(data_o)
-   /**
-    * Redefinition of get_kind()
-    */
-   GET_SO_KIND(data_o)
-};
-
-/**
- * This class describes a generic systemC action.
- * An action can be a SystemC process or a standard service (aka a member function of a class).
- */
-class action_o : public structural_object
-{
- public:
-   /**
-    * Define the possible types of a process.
-    */
-   enum process_type
-   {
-      THREAD = 0,
-      CTHREAD,
-      METHOD,
-      SERVICE,
-      UNKNOWN
-   };
-
- private:
-   /// The method procedure parameter.
-   std::vector<structural_objectRef> parameters;
-
-   /// The index of the function which represents the behavior.
-   unsigned int function_id;
-
-   /// The type of the action.
-   process_type action_type;
-
-   /// Sensitivity list.
-   std::vector<structural_objectRef> action_sensitivity;
-
-   /// Used to identify the scope of the action (public, private or protected)
-   std::string scope;
-
- public:
-   /**
-    * Constructor.
-    * @param o is the owner of the action.
-    */
-   action_o(int debug_level, const structural_objectRef o);
-
-   /// destructor
-   ~action_o() override = default;
-
-   /**
-    * Add a procedure paramenter.
-    * @param d is the paramenter.
-    */
-   void add_parameter(structural_objectRef d);
-
-   /**
-    * Return the ith input parameter.
-    * @param n is the index of the input parameter.
-    */
-   const structural_objectRef get_parameter(unsigned int n) const;
-
-   /**
-    * Return the number of the parameters.
-    */
-   unsigned int get_parameters_size() const;
-
-   /**
-    * Function that set the function with the action.
-    * @param id is the index of the function
-    */
-   void set_fun_id(unsigned int id);
-
-   /**
-    * Return the function id
-    * @return the index of the function associated with the action
-    */
-   unsigned int get_fun_id() const;
-
-   /**
-    * Set the type of the action.
-    * @param at is the type of the action.
-    */
-   void set_action_type(process_type at);
-
-   /**
-    * Return the type of the action.
-    */
-   process_type get_action_type() const;
-
-   /**
-    * Add an event to the sensitivity list of the action.
-    * @param e is an event.
-    */
-   void add_event_to_sensitivity(structural_objectRef e);
-
-   /**
-    * Return tha size of the sensitivity list.
-    */
-   unsigned int get_sensitivity_size() const;
-
-   /**
-    * Return a specific event of the sensitivity list.
-    * @param n is the index of the event.
-    */
-   const structural_objectRef get_sensitivity(unsigned int n) const;
-
-   /**
-    * Set the scope of the action.
-    * @param sc is the actual scope.
-    */
-   void set_scope(const std::string& sc);
-
-   /**
-    * Return the scope of the action.
-    */
-   const std::string& get_scope() const;
-
-   /**
-    * Return the type of the action: process (true) or services (false).
-    */
-   bool get_process_nservice() const;
-
-   /**
-    * Perform a copy of the action.
-    * @param dest destination object.
-    */
-   void copy(structural_objectRef dest) const override;
-
-   /**
-    * Return the object named id of a given type which belongs to or it is associated with the object.
-    * @param id is the identifier of the object we are looking for.
-    * @param type is the type of the object we are looking for.
-    * @param owner is the owner of the object named id.
-    */
-   structural_objectRef find_member(const std::string& id, so_kind type,
-                                    const structural_objectRef owner) const override;
-
-   /**
-    * Find key in this object.
-    * @param key is the object searched.
-    */
-   structural_objectRef find_isomorphic(const structural_objectRef key) const override;
-
-   /**
-    * Load a structural_object starting from an xml file.
-    * @param node is a node of the xml tree.
-    * @param owner is the refcount version of this.
-    * @param CM is the circuit manager.
-    */
-   void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const& CM) override;
-
-   /**
-    * Add a structural_object to an xml tree.
-    * @param rootnode is the root node at which the xml representation of the structural object is attached.
-    */
-   void xwrite(xml_element* rootnode) override;
-
-   /**
-    * Print the action (for debug purpose)
-    * @param os is an output stream
-    */
-   void print(std::ostream& os) const override;
-
-   /**
-    * Redefinition of get_kind_text()
-    */
-   GET_SO_KIND_TEXT(action_o)
-   /**
-    * Redefinition of get_kind()
-    */
-   GET_SO_KIND(action_o)
-
- private:
-   /// store the names of the enumerative process_type.
-   static const char* process_typeNames[];
-};
-
 /**
  * This class describes a constant value.
  * The value is defined by a size and a value
@@ -1477,19 +1131,18 @@ class constant_o : public structural_object
  public:
    /**
     * Constructor.
+    * @param debug_level is the debug verbosity associated with the constant value.
     * @param o is the owner of the value
     */
    constant_o(int debug_level, const structural_objectRef o);
 
    /**
     * Constructor.
+    * @param debug_level is the debug verbosity associated with the constant value.
     * @param o is the owner of the value
     * @param value is the constant value
     */
    constant_o(int debug_level, const structural_objectRef o, std::string value);
-
-   /// Destructor
-   ~constant_o() override = default;
 
    /**
     * Bind the element object with a port/signal.
@@ -1499,7 +1152,7 @@ class constant_o : public structural_object
 
    /**
     * Return the ith element bounded to the connection.
-    * @param n is the index of the port.
+    * @param idx is the index of the port.
     */
    structural_objectRef get_connection(unsigned int idx) const;
 
@@ -1541,7 +1194,7 @@ class constant_o : public structural_object
 
    /**
     * Load a structural_object starting from an xml file.
-    * @param node is a node of the xml tree.
+    * @param Enode is a node of the xml tree.
     * @param owner is the refcount version of this.
     * @param CM is the circuit manager.
     */
@@ -1571,8 +1224,7 @@ class constant_o : public structural_object
 
 /**
  * This class describes a simple logic/RTL signal.
- * A signal can be an array of bit but it cannot be sliced or partially accessed.
- * In case of partial access or slicing the bus_connection_o object should be used.
+ * A signal can be an array of bits but it cannot be sliced or partially accessed directly.
  */
 class signal_o : public structural_object
 {
@@ -1581,12 +1233,11 @@ class signal_o : public structural_object
 
    /**
     * Constructor.
+    * @param debug_level is the debug verbosity associated with the signal.
     * @param o is the owner of the port
+    * @param _signal_type identifies the structural-object kind associated with the signal.
     */
    signal_o(int debug_level, const structural_objectRef o, so_kind _signal_type);
-
-   /// Destructor
-   ~signal_o() override = default;
 
    /**
     * Bind the connection object with a port.
@@ -1694,7 +1345,7 @@ class signal_o : public structural_object
 
    /**
     * Load a structural_object starting from an xml file.
-    * @param node is a node of the xml tree.
+    * @param Enode is a node of the xml tree.
     * @param owner is the refcount version of this.
     * @param CM is the circuit manager.
     */
@@ -1751,11 +1402,10 @@ class signal_o : public structural_object
 };
 
 /**
- * This class describes a generic module.
- * A module can be further specialized in a channel or in a component.
- * This class should be not instantiated. Only channels and components can be instantiated.
+ * This class describes a generic structural module.
+ * It is the concrete structural node used in the circuit representation.
  */
-class module : public structural_object
+class module_o : public structural_object
 {
    /// input port of this module
    std::vector<structural_objectRef> in_ports;
@@ -1769,20 +1419,8 @@ class module : public structural_object
    /// generic ports of this module
    std::vector<structural_objectRef> gen_ports;
 
-   /// internal components/channels/signals/bus_connection_os (for structural modules)
+   /// internal modules, signals, and constants (for structural modules)
    std::vector<structural_objectRef> internal_objects;
-
-   /// List of local data associated with the module.
-   std::vector<structural_objectRef> local_data;
-
-   /// List of event associated with the module.
-   std::vector<structural_objectRef> list_of_event;
-
-   /// List of processes associated with the module.
-   std::vector<structural_objectRef> list_of_process;
-
-   /// List of services associated with the module.
-   std::vector<structural_objectRef> list_of_service;
 
    /// Alternative descriptions of the behavior of the module.
    NP_functionalityRef NP_descriptions;
@@ -1811,14 +1449,6 @@ class module : public structural_object
    /// this table is used to quickly search internal components used by find_member and find_isomorphic
    std::map<std::string, structural_objectRef> index_components;
 
-   /// index for channels
-   /// this table is used to quickly search internal channels used by find_member and find_isomorphic
-   std::map<std::string, structural_objectRef> index_channels;
-
-   /// index for bus_connections
-   /// this table is used to quickly search internal bus_connections used by find_member and find_isomorphic
-   std::map<std::string, structural_objectRef> index_bus_connections;
-
    /// Store the module description
    std::string description;
 
@@ -1843,12 +1473,10 @@ class module : public structural_object
  public:
    /**
     * Constructor.
+    * @param debug_level is the debug verbosity associated with the module.
     * @param o is the owner of the module.
     */
-   module(int debug_level, const structural_objectRef o);
-
-   /// destructor
-   ~module() override = default;
+   module_o(int debug_level, const structural_objectRef o);
 
    /**
     * Return the total number of the ports
@@ -1930,14 +1558,14 @@ class module : public structural_object
    unsigned int get_gen_port_size() const;
 
    /**
-    * remove a port from the module
-    * @param id is the name of the port
+    * Remove a port from the module.
+    * @param id is the name of the port.
     */
    void remove_port(const std::string& id);
 
    /**
-    * Add an internal component/channel/signal/bus_connection_o.
-    * @param c can be a component, channel, signal or a bus_connection_o.
+    * Add an internal component or signal.
+    * @param c can be a component or signal.
     */
    void add_internal_object(structural_objectRef c);
 
@@ -1953,74 +1581,6 @@ class module : public structural_object
     * Return the number of internal objects
     */
    unsigned int get_internal_objects_size() const;
-
-   /**
-    * Add a process to the module.
-    * @param p is the process.
-    */
-   void add_process(structural_objectRef p);
-
-   /**
-    * Return the ith process.
-    * @param n is the index of the process.
-    */
-   const structural_objectRef get_process(unsigned int n) const;
-
-   /**
-    * Return the number of internal processes.
-    */
-   unsigned int get_process_size() const;
-
-   /**
-    * Add a service to the module.
-    * @param p is the service.
-    */
-   void add_service(structural_objectRef p);
-
-   /**
-    * Return the ith service.
-    * @param n is the index of the service.
-    */
-   const structural_objectRef get_service(unsigned int n) const;
-
-   /**
-    * Return the number of services.
-    */
-   unsigned int get_service_size() const;
-
-   /**
-    * Add an event to the module.
-    * @param e is the event.
-    */
-   void add_event(structural_objectRef e);
-
-   /**
-    * Return the ith event.
-    * @param n is the index of the event.
-    */
-   const structural_objectRef get_event(unsigned int n) const;
-
-   /**
-    * Return the number of events.
-    */
-   unsigned int get_event_size() const;
-
-   /**
-    * Add a local data.
-    * @param d is the local data.
-    */
-   void add_local_data(structural_objectRef d);
-
-   /**
-    * Return the ith local data.
-    * @param n represent the index of the local data.
-    */
-   const structural_objectRef get_local_data(unsigned int n) const;
-
-   /**
-    * Return the number of local data.
-    */
-   unsigned int get_local_data_size() const;
 
    /**
     * Set the alternative module behavior descriptions (Non SystemC based).
@@ -2043,6 +1603,7 @@ class module : public structural_object
     * Return the list of object that can be parametrized.
     * This function is usually used by the backend.
     * @param owner is the refcount version of this.
+    * @param parameters is where the extracted parameter/object pairs are stored.
     */
    void get_NP_library_parameters(structural_objectRef owner,
                                   std::vector<std::pair<std::string, structural_objectRef>>& parameters) const;
@@ -2052,6 +1613,12 @@ class module : public structural_object
     * @param dest destination object.
     */
    void copy(structural_objectRef dest) const override;
+
+   /**
+    * Returns true if the module has the specified port
+    * @param _id is the id of the searched port.
+    */
+   bool has_port(const std::string& _id) const;
 
    /**
     * Return the object named id of a given type which belongs to or it is associated with the object.
@@ -2070,25 +1637,25 @@ class module : public structural_object
 
    /**
     * Load a structural_object starting from an xml file.
-    * @param node is a node of the xml tree.
+    * @param Enode is a node of the xml tree.
     * @param owner is the refcount version of this.
     * @param CM is the circuit manager.
     */
-   void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const& CM) override = 0;
+   void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const& CM) override;
 
 #if HAVE_TECHNOLOGY_BUILT
    /**
-    * Add the list of attributes for the component
+    * Add the list of attributes for the module.
     * @param rootnode is the root node at which the xml representation of the structural object is attached.
     */
-   void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef()) override = 0;
+   void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef()) override;
 #endif
 
    /**
     * Add a structural_object to an xml tree.
     * @param rootnode is the root node at which the xml representation of the structural object is attached.
     */
-   void xwrite(xml_element* rootnode) override = 0;
+   void xwrite(xml_element* rootnode) override;
 
    /**
     * True if one of the ports of the module has the attribute is_var_args=true
@@ -2129,7 +1696,7 @@ class module : public structural_object
 
    /**
     * @brief get_multi_unit_multiplicity
-    * @return the number of units implemented by this module
+    * @return the number of units implemented by this module.
     */
    unsigned int get_multi_unit_multiplicity() const;
 
@@ -2153,7 +1720,7 @@ class module : public structural_object
    void change_port_direction(structural_objectRef port, port_o::port_direction pdir);
 
    /**
-    * Return the description associated with the module
+    * Return the description associated with the module.
     */
    const std::string get_description() const
    {
@@ -2161,7 +1728,7 @@ class module : public structural_object
    }
 
    /**
-    * Set the description associated with the module
+    * Set the description associated with the module.
     */
    void set_description(const std::string& d)
    {
@@ -2169,7 +1736,7 @@ class module : public structural_object
    }
 
    /**
-    * Return the copyright associated with the module
+    * Return the copyright associated with the module.
     */
    const std::string get_copyright() const
    {
@@ -2177,7 +1744,7 @@ class module : public structural_object
    }
 
    /**
-    * Set the copyright associated with the module
+    * Set the copyright associated with the module.
     */
    void set_copyright(const std::string& c)
    {
@@ -2185,7 +1752,7 @@ class module : public structural_object
    }
 
    /**
-    * Return the authors of the functional description of the module
+    * Return the authors of the functional description of the module.
     */
    const std::string get_authors() const
    {
@@ -2193,7 +1760,7 @@ class module : public structural_object
    }
 
    /**
-    * Set the authors associated with the module
+    * Set the authors associated with the module.
     */
    void set_authors(const std::string& a)
    {
@@ -2201,7 +1768,7 @@ class module : public structural_object
    }
 
    /**
-    * Return the license of the functional description of the module
+    * Return the license of the functional description of the module.
     */
    const std::string get_license() const
    {
@@ -2209,7 +1776,7 @@ class module : public structural_object
    }
 
    /**
-    * Set the license associated with the module
+    * Set the license associated with the module.
     */
    void set_license(const std::string& l)
    {
@@ -2257,275 +1824,15 @@ class module : public structural_object
     * @param default_value is the default of the value
     */
    void AddParameter(const std::string& name, const std::string& default_value) override;
-};
-
-/**
- * This class describes a generic component.
- */
-class component_o : public module
-{
- public:
-   /**
-    * Constructor.
-    * @param o is the owner of the component.
-    */
-   component_o(int debug_level, const structural_objectRef o);
-
-   /// destructor
-   ~component_o() override = default;
-
-   /**
-    * Perform a copy of the component.
-    * @param dest destination object.
-    */
-   void copy(structural_objectRef dest) const override;
-
-   /**
-    * Return the object named id of a given type which belongs to or it is associated with the object.
-    * @param id is the identifier of the object we are looking for.
-    * @param type is the type of the object we are looking for.
-    * @param owner is the owner of the object named id.
-    */
-   structural_objectRef find_member(const std::string& id, so_kind type,
-                                    const structural_objectRef owner) const override;
-
-   /**
-    * Find key in this object.
-    * @param key is the object searched.
-    */
-   structural_objectRef find_isomorphic(const structural_objectRef key) const override;
-
-   /**
-    * Load a structural_object starting from an xml file.
-    * @param node is a node of the xml tree.
-    * @param owner is the refcount version of this.
-    * @param CM is the circuit manager.
-    */
-   void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const& CM) override;
-
-   /**
-    * Add a structural_object to an xml tree.
-    * @param rootnode is the root node at which the xml representation of the structural object is attached.
-    */
-   void xwrite(xml_element* rootnode) override;
-
-#if HAVE_TECHNOLOGY_BUILT
-   /**
-    * Add the list of attributes for the component
-    * @param rootnode is the root node at which the xml representation of the structural object is attached.
-    */
-   void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef()) override;
-#endif
-
-   /**
-    * Print the component (for debug purpose)
-    * @param os is an output stream
-    */
-   void print(std::ostream& os) const override;
 
    /**
     * Redefinition of get_kind_text()
     */
-   GET_SO_KIND_TEXT(component_o)
+   GET_SO_KIND_TEXT(module_o)
    /**
     * Redefinition of get_kind()
     */
-   GET_SO_KIND(component_o)
-};
-
-/**
- * This class describes a generic channel.
- */
-class channel_o : public module
-{
-   /// List of the interfaces associated with the channel.
-   std::map<unsigned int, std::string> impl_interfaces;
-
-   /// List of ports bounded by the channel object.
-   std::vector<Wrefcount<structural_object>> connected_objects;
-
- public:
-   /**
-    * Constructor.
-    * @param o is the owner of the channel.
-    */
-   channel_o(int debug_level, const structural_objectRef o);
-
-   /// Destructor
-   ~channel_o() override = default;
-
-   /**
-    * Add an interface to the object.
-    */
-   void add_interface(unsigned int t, const std::string& _interface);
-
-   /**
-    * Return the interface with a given treenode
-    * @param n is the treenode of the interface
-    */
-   const std::string& get_interface(unsigned int t) const;
-
-   /**
-    * Bind the connection object with a port.
-    * @param p is the port
-    */
-   void add_port(structural_objectRef p);
-
-   /**
-    * Return the ith port bounded to the connection.
-    * @param n is the index of the port.
-    */
-   const structural_objectRef get_port(unsigned int n) const;
-
-   /**
-    * Return the number of ports associated with the connection
-    */
-   unsigned int get_connected_objects_size() const;
-
-   /**
-    * Perform a copy of the channel.
-    * @param dest destination object.
-    */
-   void copy(structural_objectRef dest) const override;
-
-   /**
-    * Return the object named id of a given type which belongs to or it is associated with the object.
-    * @param id is the identifier of the object we are looking for.
-    * @param type is the type of the object we are looking for.
-    * @param owner is the owner of the object named id.
-    */
-   structural_objectRef find_member(const std::string& id, so_kind type,
-                                    const structural_objectRef owner) const override;
-
-   /**
-    * Find key in this object.
-    * @param key is the object searched.
-    */
-   structural_objectRef find_isomorphic(const structural_objectRef key) const override;
-
-   /**
-    * Load a structural_object starting from an xml file.
-    * @param node is a node of the xml tree.
-    * @param owner is the refcount version of this.
-    * @param CM is the circuit manager.
-    */
-   void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const& CM) override;
-
-   /**
-    * Add a structural_object to an xml tree.
-    * @param rootnode is the root node at which the xml representation of the structural object is attached.
-    */
-   void xwrite(xml_element* rootnode) override;
-
-#if HAVE_TECHNOLOGY_BUILT
-   /**
-    * Add the list of attributes for the component
-    * @param rootnode is the root node at which the xml representation of the structural object is attached.
-    */
-   void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef()) override;
-#endif
-
-   /**
-    * Print the channel (for debug purpose)
-    * @param os is an output stream
-    */
-   void print(std::ostream& os) const override;
-
-   /**
-    * Redefinition of get_kind_text()
-    */
-   GET_SO_KIND_TEXT(channel_o)
-   /**
-    * Redefinition of get_kind()
-    */
-   GET_SO_KIND(channel_o)
-};
-
-/**
- * This class describes a generic bus connection. A bus_connection_o is a a vector
- * of signals or channels [1..n].
- */
-class bus_connection_o : public structural_object
-{
-   /// List of connections associated with the bus.
-   std::vector<Wrefcount<structural_object>> connections;
-
- public:
-   /**
-    * Constructor.
-    * @param o is the owner of the bus_connection_o.
-    */
-   bus_connection_o(int debug_level, const structural_objectRef o);
-
-   /// destructor
-   ~bus_connection_o() override = default;
-
-   /**
-    * Add a connection (e.g. a signal or a channel) to the bus connection object.
-    * @param c is a signal connection
-    */
-   void add_connection(structural_objectRef c);
-
-   /**
-    * Return a connection.
-    * @param n is the index of the connection
-    */
-   const structural_objectRef get_connection(unsigned int n) const;
-
-   /**
-    * Return the number of connections associated with the bus connection object.
-    */
-   unsigned int get_connections_size() const;
-
-   /**
-    * Perform a copy of the bus_connection_o.
-    * @param dest destination object.
-    */
-   void copy(structural_objectRef dest) const override;
-
-   /**
-    * Return the object named id of a given type which belongs to or it is associated with the object.
-    * @param id is the identifier of the object we are looking for.
-    * @param type is the type of the object we are looking for.
-    * @param owner is the owner of the object named id.
-    */
-   structural_objectRef find_member(const std::string& id, so_kind type,
-                                    const structural_objectRef owner) const override;
-
-   /**
-    * Find key in this object.
-    * @param key is the object searched.
-    */
-   structural_objectRef find_isomorphic(const structural_objectRef key) const override;
-
-   /**
-    * Load a structural_object starting from an xml file.
-    * @param node is a node of the xml tree.
-    * @param owner is the refcount version of this.
-    * @param CM is the circuit manager.
-    */
-   void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const& CM) override;
-
-   /**
-    * Add a structural_object to an xml tree.
-    * @param rootnode is the root node at which the xml representation of the structural object is attached.
-    */
-   void xwrite(xml_element* rootnode) override;
-
-   /**
-    * Print the bus_connection_o (for debug purpose)
-    * @param os is an output stream
-    */
-   void print(std::ostream& os) const override;
-
-   /**
-    * Redefinition of get_kind_text()
-    */
-   GET_SO_KIND_TEXT(bus_connection_o)
-   /**
-    * Redefinition of get_kind()
-    */
-   GET_SO_KIND(bus_connection_o)
+   GET_SO_KIND(module_o)
 };
 
 #endif

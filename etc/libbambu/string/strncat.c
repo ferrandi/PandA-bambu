@@ -4,6 +4,7 @@
  *
  */
 /* Public domain.  */
+
 #include <stddef.h>
 
 char* strncat(char* __restrict dest, const char* __restrict src, size_t n)

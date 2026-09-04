@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -38,17 +26,16 @@
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Michele Fiorito <michele.fiorito@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef REG_BINDING_HPP
 #define REG_BINDING_HPP
 
+#include "HLS/fsm/FSMInfo.hpp"
 #include "Variable.hpp"
 #include "custom_set.hpp"
 #include "refcount.hpp"
+
 #include <iosfwd>
 #include <map>
 #include <string>
@@ -84,9 +71,6 @@ class reg_binding : public variable2obj<generic_objRef>
    /// map between register index and object
    std::map<unsigned int, generic_objRef> unique_table;
 
-   /// map between std register index and stall register object for pipelines
-   std::map<unsigned int, generic_objRef> stall_reg_table;
-
    /// bind the storage value with the register instance
    std::map<unsigned int, unsigned int> reverse_map;
 
@@ -102,6 +86,12 @@ class reg_binding : public variable2obj<generic_objRef>
    /// map between the register and the associated storage value
    std::map<unsigned int, CustomOrderedSet<unsigned int>> reg2storage_values;
 
+   /// set of states where context switch can occur: true for internal cs states, false for inherited cs states
+   CustomMap<FSMInfo::state_descriptor, bool> context_switch_states;
+
+   /// set of registers storing variables subject to context switch
+   CustomSet<unsigned int> context_switch_regs;
+
    /// store the set of register without enable
    CustomOrderedSet<unsigned int> is_without_enable;
 
@@ -110,12 +100,17 @@ class reg_binding : public variable2obj<generic_objRef>
 
    const FunctionBehaviorConstRef FB;
 
-   static std::string reset_type;
+   const std::string reg_typename;
 
    /**
     * compute the is with out enable relation
     */
    void compute_is_without_enable();
+
+   /**
+    * compute context switch registers out of the context switch states set
+    */
+   void compute_context_switch_registers();
 
    /**
     * Specialise a register according to the type of the variables crossing it.
@@ -129,11 +124,6 @@ class reg_binding : public variable2obj<generic_objRef>
     * Constructor.
     */
    reg_binding(const hlsRef& HLS, const HLS_managerRef HLSMgr_);
-
-   /**
-    * Destructor.
-    */
-   ~reg_binding() override;
 
    static reg_bindingRef create_reg_binding(const hlsRef& HLS, const HLS_managerRef HLSMgr_);
 
@@ -219,7 +209,7 @@ class reg_binding : public variable2obj<generic_objRef>
     * @param r is the register
     * @return the set of associated variables
     */
-   CustomOrderedSet<unsigned int> get_vars(const unsigned int& r) const;
+   CustomOrderedSet<std::pair<unsigned int, unsigned int>> get_vars(const unsigned int& r) const;
 
    /**
     * return and set the bitsize associated with given register

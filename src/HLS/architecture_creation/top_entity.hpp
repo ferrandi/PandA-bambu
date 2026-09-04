@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -35,9 +23,6 @@
  * @brief Base class for the top entity creation.
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef TOP_ENTITY_HPP
@@ -46,6 +31,8 @@
 #include "hls_function_step.hpp"
 REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(structural_object);
+
+#define TOP_FUNCTION_WRAPPER_PREFIX "PBI_"
 
 class top_entity : public HLSFunctionStep
 {
@@ -56,6 +43,8 @@ class top_entity : public HLSFunctionStep
    /**
     * Adds the input/output ports to the circuit
     * @param circuit is the reference to the data-structure representing the circuit
+    * @param clock_port is the clock port to be attached
+    * @param reset_port is the reset port to be attached
     */
    void add_ports(structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef reset_port);
 
@@ -85,24 +74,10 @@ class top_entity : public HLSFunctionStep
                                    structural_objectRef reset_port, structural_objectRef e_port);
 
  public:
-   /**
-    * Constructor
-    * @param design_flow_manager is the design flow manager
-    * @param top_entity_type is the type of top entity to be created
-    */
    top_entity(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
-              const DesignFlowManagerConstRef design_flow_manager,
+              const DesignFlowManager& design_flow_manager,
               const HLSFlowStep_Type = HLSFlowStep_Type::TOP_ENTITY_CREATION);
 
-   /**
-    * Destructor
-    */
-   ~top_entity() override;
-
-   /**
-    * Execute the step
-    * @return the exit status of this step
-    */
    DesignFlowStep_Status InternalExec() override;
 };
 #endif

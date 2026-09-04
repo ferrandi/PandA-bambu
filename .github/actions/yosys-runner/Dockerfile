@@ -1,11 +1,13 @@
 
-FROM bambuhls/verilator:focal-23.10 as verilator
-FROM bambuhls/dev-yosys:focal-23.10 as base
+FROM bambuhls/verilator:bullseye-24.08 AS verilator
+
+FROM bambuhls/yosys:bullseye-24.08
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt update && apt install -y --no-install-recommends \
-   python3-defusedxml python3-distutils \
-   && apt-get clean -y && rm -rf /var/lib/apt/lists/*
-COPY --from=verilator /opt/verilator /opt/verilator
+ARG DEBCONF_NONINTERACTIVE_SEEN=true
+RUN apt-get update && apt-get install -y --no-install-recommends \
+   g++ g++-multilib gcc gcc-multilib make perl python3-psutil python3-distutils \
+   && rm -rf /var/lib/apt/lists/*
+COPY --link --from=verilator /opt/verilator /opt/verilator
 COPY entrypoint.sh /entrypoint.sh
-ENV PATH /opt/verilator/bin:$PATH
+ENV PATH=/opt/verilator/bin:$PATH
 ENTRYPOINT [ "/entrypoint.sh" ]

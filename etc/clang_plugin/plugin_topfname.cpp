@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2018-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2018-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -38,7 +26,9 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-// #undef NDEBUG
+#ifndef NDEBUG
+#define NDEBUG
+#endif
 #include "plugin_includes.hpp"
 
 #include "llvm/Analysis/CallGraph.h"
@@ -55,15 +45,13 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Transforms/IPO.h>
 #include <llvm/Transforms/IPO/Internalize.h>
-#include <llvm/Transforms/IPO/PassManagerBuilder.h>
 
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/PassPlugin.h>
+#else
+#include <llvm/Transforms/IPO/PassManagerBuilder.h>
 #endif
-
-#define PUGIXML_NO_EXCEPTIONS
-#define PUGIXML_HEADER_ONLY
 
 #include <pugixml.hpp>
 
@@ -108,11 +96,11 @@ llvm::StringSet<> PreserveSymbolList::ExternalNames;
 
 static PreserveSymbolList preservedSyms;
 
-#define DEF_BUILTIN(X, N, C, T, LT, B, F, NA, AT, IM, COND) N,
+#define BUILTIN(N, C, T) #N,
 static const std::set<std::string> builtinsNames = {
-#include "gcc/builtins.def"
+#include "clang/Basic/Builtins.def"
 };
-#undef DEF_BUILTIN
+#undef BUILTIN
 
 static bool is_builtin_fn(const std::string& declname)
 {
@@ -158,24 +146,21 @@ namespace llvm
    static cl::opt<bool> add_noalias("add-noalias", cl::init(false), cl::desc("Force noalias to pointer parameters"),
                                     cl::value_desc("specify if pointer parameters are noalias"));
 
-   struct CLANG_VERSION_SYMBOL(_plugin_topfname)
-       : public ModulePass
-#if __clang_major__ >= 13
-         ,
-         public PassInfoMixin<CLANG_VERSION_SYMBOL(_plugin_topfname)>
+   struct topfname : public ModulePass
+#if PANDA_LLVM_CLANG_MAJOR >= 13
+       ,
+                     public PassInfoMixin<topfname>
 #endif
    {
       static char ID;
 
-      CLANG_VERSION_SYMBOL(_plugin_topfname)
-      () : ModulePass(ID)
+      topfname() : ModulePass(ID)
       {
          initializeCallGraphWrapperPassPass(*PassRegistry::getPassRegistry());
       }
 
-#if __clang_major__ >= 13
-      CLANG_VERSION_SYMBOL(_plugin_topfname)
-      (const CLANG_VERSION_SYMBOL(_plugin_topfname) &) : CLANG_VERSION_SYMBOL(_plugin_topfname)()
+#if PANDA_LLVM_CLANG_MAJOR >= 13
+      topfname(const topfname&) : topfname()
       {
       }
 #endif
@@ -184,7 +169,6 @@ namespace llvm
       {
          bool changed = false;
          bool hasTopFun = false;
-         std::list<std::string> symbolList;
          std::vector<std::string> TopFunctionNames;
          std::vector<std::string> RootFunctionNames;
 
@@ -198,13 +182,28 @@ namespace llvm
                   LLVM_DEBUG(llvm::dbgs() << "  builtin\n");
                   preservedSyms.addSymbol(fsymbol);
                }
-               if(llvm::find(RootFunctionNames, fsymbol) != RootFunctionNames.end() ||
-                  llvm::find(RootFunctionNames, fname) != RootFunctionNames.end())
+               else if(fname.find(".omp_outlined") != std::string::npos ||
+                       fsymbol.find(".omp_outlined") != std::string::npos)
+               {
+                  LLVM_DEBUG(llvm::dbgs() << " OpenMP outlined\n");
+                  preservedSyms.addSymbol(fname);
+                  if(F->hasFnAttribute(llvm::Attribute::AlwaysInline))
+                  {
+                     F->removeFnAttr(llvm::Attribute::AlwaysInline);
+                  }
+                  F->addFnAttr(Attribute::NoInline);
+               }
+               else if(llvm::find(RootFunctionNames, fsymbol) != RootFunctionNames.end() ||
+                       llvm::find(RootFunctionNames, fname) != RootFunctionNames.end())
                {
                   LLVM_DEBUG(llvm::dbgs() << "  top function\n");
+                  if(F->hasFnAttribute(llvm::Attribute::AlwaysInline))
+                  {
+                     F->removeFnAttr(llvm::Attribute::AlwaysInline);
+                  }
                   F->addFnAttr(Attribute::NoInline);
                   F->setLinkage(GlobalValue::LinkageTypes::ExternalLinkage);
-#if __clang_major__ >= 7
+#if PANDA_LLVM_CLANG_MAJOR >= 7
                   F->setDSOLocal(false);
 #endif
                   preservedSyms.addSymbol(fsymbol);
@@ -224,14 +223,17 @@ namespace llvm
             }
          };
 
-         // Initialize top functions list
-         for(std::size_t last = 0, it = 0; it < TopFunctionName_TFP.size(); last = it + 1)
+         std::stringstream ss(TopFunctionName_TFP);
+         std::string func_symbol;
+         LLVM_DEBUG(dbgs() << "|" << TopFunctionName_TFP << "|\n");
+         while(std::getline(ss, func_symbol, ','))
          {
-            it = TopFunctionName_TFP.find(",", last);
-            const auto func_symbol = TopFunctionName_TFP.substr(last, it);
-            LLVM_DEBUG(dbgs() << " - " << func_symbol << "\n");
-            TopFunctionNames.push_back(func_symbol);
-            RootFunctionNames.push_back(func_symbol);
+            if(!func_symbol.empty())
+            {
+               LLVM_DEBUG(dbgs() << " - " << func_symbol << "\n");
+               TopFunctionNames.push_back(func_symbol);
+               RootFunctionNames.push_back(func_symbol);
+            }
          }
          pugi::xml_document doc;
          const auto arch_filename = outdir_name + "/architecture.xml";
@@ -269,6 +271,7 @@ namespace llvm
          }
 
          SmallPtrSet<Function*, 32> Reachable;
+         SmallPtrSet<Function*, 32> Reached;
          for(auto&& CGN : CG)
          {
             if(!CGN.second)
@@ -289,7 +292,6 @@ namespace llvm
                continue;
             }
 
-            Reachable.insert(fun);
             handleFunction(fun, fsymbol, fname);
 
             SmallVector<const Function*, 8> Tmp({CGN.first});
@@ -312,7 +314,12 @@ namespace llvm
 
                   const auto _fsymbol = funCalled->getName().str();
                   const auto _fname = getDemangled(_fsymbol);
-                  handleFunction(funCalled, _fsymbol, _fname);
+                  Reachable.insert(funCalled);
+                  if(!Reached.count(funCalled))
+                  {
+                     Reached.insert(funCalled);
+                     handleFunction(funCalled, _fsymbol, _fname);
+                  }
                }
             } while(!Tmp.empty());
          }
@@ -325,13 +332,12 @@ namespace llvm
                                  << llvm::join(TopFunctionNames.begin(), TopFunctionNames.end(), ", ") << "\n"
                                  << "Root function symbols: "
                                  << llvm::join(RootFunctionNames.begin(), RootFunctionNames.end(), ", ") << "\n");
-         preservedSyms.addSymbol("signgam");
 
          if(!outdir_name.empty())
          {
             std::error_code EC;
             std::string filename = outdir_name + "/external-symbols.txt";
-#if __clang_major__ >= 7 && !defined(VVD)
+#if PANDA_LLVM_CLANG_MAJOR >= 7 && !defined(VVD)
             llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::FA_Read | llvm::sys::fs::FA_Write);
 #else
             llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
@@ -347,7 +353,7 @@ namespace llvm
 
       bool runOnModule(Module& M) override
       {
-#if __clang_major__ < 13
+#if PANDA_LLVM_CLANG_MAJOR < 13
 
          CallGraphWrapperPass* CGPass = getAnalysisIfAvailable<CallGraphWrapperPass>();
          if(!CGPass)
@@ -363,7 +369,7 @@ namespace llvm
 
       StringRef getPassName() const override
       {
-         return CLANG_VERSION_STRING(_plugin_topfname);
+         return "topfname";
       }
 
       void getAnalysisUsage(AnalysisUsage& AU) const override
@@ -371,7 +377,7 @@ namespace llvm
          AU.addRequired<CallGraphWrapperPass>();
       }
 
-#if __clang_major__ >= 13
+#if PANDA_LLVM_CLANG_MAJOR >= 13
       llvm::PreservedAnalyses run(llvm::Module& M, llvm::ModuleAnalysisManager& MAM)
       {
          const auto changed = exec(M, MAM.getResult<CallGraphAnalysis>(M));
@@ -380,22 +386,21 @@ namespace llvm
 #endif
    };
 
-   char CLANG_VERSION_SYMBOL(_plugin_topfname)::ID = 0;
+   char topfname::ID = 0;
 
 } // namespace llvm
 
 #ifndef _WIN32
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)>
-    XPass(CLANG_VERSION_STRING(_plugin_topfname), "Make all private/static but the top function",
-          false /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::topfname> XPass("topfname", "Make all private/static but the top function",
+                                                false /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 
-#if __clang_major__ >= 13
-llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_topfname)()
+#if PANDA_LLVM_CLANG_MAJOR >= 13
+llvm::PassPluginLibraryInfo gettopfnamePluginInfo()
 {
-   return {LLVM_PLUGIN_API_VERSION, CLANG_VERSION_STRING(_plugin_topfname), "v0.12", [](llvm::PassBuilder& PB) {
+   return {LLVM_PLUGIN_API_VERSION, "topfname", "v0.12", [](llvm::PassBuilder& PB) {
               const auto load = [](llvm::ModulePassManager& MPM) {
-                 MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)());
+                 MPM.addPass(llvm::topfname());
                  if(llvm::Internalize_TFP)
                  {
                     MPM.addPass(llvm::InternalizePass(preservedSyms));
@@ -404,33 +409,41 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_topfname)()
               };
               PB.registerPipelineParsingCallback([&](llvm::StringRef Name, llvm::ModulePassManager& MPM,
                                                      llvm::ArrayRef<llvm::PassBuilder::PipelineElement>) {
-                 if(Name == CLANG_VERSION_STRING(_plugin_topfname))
+                 if(Name == "topfname")
                  {
                     return load(MPM);
                  }
                  return false;
               });
               PB.registerPipelineEarlySimplificationEPCallback([&](llvm::ModulePassManager& MPM,
-#if __clang_major__ < 16
+#if PANDA_LLVM_CLANG_MAJOR < 16
                                                                    llvm::PassBuilder::OptimizationLevel
 #else
                                                                    llvm::OptimizationLevel
 #endif
                                                                ) { return load(MPM); });
+              PB.registerOptimizerLastEPCallback([&](llvm::ModulePassManager& MPM,
+#if PANDA_LLVM_CLANG_MAJOR < 16
+                                                     llvm::PassBuilder::OptimizationLevel
+#else
+                                                                   llvm::OptimizationLevel
+#endif
+                                                 ) { return load(MPM); });
            }};
 }
 
 // This part is the new way of registering your pass
-extern "C" ::llvm::PassPluginLibraryInfo LLVM_ATTRIBUTE_WEAK llvmGetPassPluginInfo()
+extern "C" ::llvm::PassPluginLibraryInfo LLVM_ATTRIBUTE_WEAK __attribute__((visibility("default")))
+llvmGetPassPluginInfo()
 {
-   return CLANG_PLUGIN_INFO(_plugin_topfname)();
+   return gettopfnamePluginInfo();
 }
 #else
 #if ADD_RSP
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
-   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)());
+   PM.add(new llvm::topfname());
    if(llvm::Internalize_TFP)
    {
       PM.add(llvm::createInternalizePass(preservedSyms));
@@ -438,19 +451,6 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
 }
 
 // These constructors add our pass to a list of global extensions.
-static llvm::RegisterStandardPasses
-    CLANG_VERSION_SYMBOL(_plugin_topfname_Ox)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
+static llvm::RegisterStandardPasses topfname_Ox(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
 #endif
 #endif
-
-// using namespace llvm;
-//
-// namespace llvm
-// {
-//    void CLANG_PLUGIN_INIT(_plugin_topfname)(PassRegistry&);
-// } // namespace llvm
-//
-// INITIALIZE_PASS_BEGIN(CLANG_VERSION_SYMBOL(_plugin_topfname), CLANG_VERSION_STRING(_plugin_topfname),
-//                       "Make all private/static but the top function", false, false)
-// INITIALIZE_PASS_END(CLANG_VERSION_SYMBOL(_plugin_topfname), CLANG_VERSION_STRING(_plugin_topfname),
-//                     "Make all private/static but the top function", false, false)

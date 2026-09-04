@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -35,35 +23,24 @@
  * @brief
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef XML_NODE_HPP
 #define XML_NODE_HPP
 
+#include "custom_set.hpp"
 #include "refcount.hpp"
 #include "simple_indent.hpp"
 
 #include <iosfwd>
 #include <list>
 #include <string>
-#include <utility>
 
-/// utility include
-#include "custom_set.hpp"
-
-/**
- * @name forward declarations
- */
-//@{
 REF_FORWARD_DECL(xml_node);
 class xml_element;
 class xml_text_node;
 class xml_comment_node;
 class xml_att_decl_node;
-//@}
 
 #define XML_TAB_SIZE 2
 
@@ -77,13 +54,9 @@ class xml_node
    int line;
 
  public:
-   /**
-    * constructor
-    */
    explicit xml_node(const std::string& _name) : name(_name), line(0)
    {
    }
-   /// destructor
    virtual ~xml_node() = default;
 
    /// type for list of xml nodes
@@ -227,9 +200,6 @@ class xml_node
 class xml_child : public xml_node
 {
  public:
-   /**
-    * constructor
-    */
    explicit xml_child(const std::string& _name) : xml_node(_name), first_text(nullptr)
    {
    }

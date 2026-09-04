@@ -3,8 +3,10 @@
  * Milano. June, 4 2015.
  *
  */
+/* Public domain.  */
+
 extern void abort(void) __attribute__((noreturn));
-extern int printf(const char *format, ...);
+extern int printf(const char* format, ...);
 void __assert(const char* __assertion, const char* __file, int __line)
 {
    printf("%s: %d: Assertion `%s' failed.\n", __file, __line, __assertion);

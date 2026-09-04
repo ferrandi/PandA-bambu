@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -36,35 +24,26 @@
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
-
-/// Header include
 #include "scalar_ssa_data_dependence_computation.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// behavior include
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
 #include "hash_helper.hpp"
 #include "op_graph.hpp"
 #include "operations_graph_constructor.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "string_manipulation.hpp"
 
-ScalarSsaDataDependenceComputation::ScalarSsaDataDependenceComputation(
-    const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id,
-    const DesignFlowManagerConstRef _design_flow_manager)
+ScalarSsaDataDependenceComputation::ScalarSsaDataDependenceComputation(const ParameterConstRef _parameters,
+                                                                       const application_managerRef _AppM,
+                                                                       unsigned int _function_id,
+                                                                       const DesignFlowManager& _design_flow_manager)
     : DataDependenceComputation(_AppM, _function_id, SCALAR_SSA_DATA_FLOW_ANALYSIS, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
-
-ScalarSsaDataDependenceComputation::~ScalarSsaDataDependenceComputation() = default;
 
 CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 ScalarSsaDataDependenceComputation::ComputeFrontendRelationships(
@@ -75,7 +54,6 @@ ScalarSsaDataDependenceComputation::ComputeFrontendRelationships(
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(OP_REACHABILITY_COMPUTATION, SAME_FUNCTION));
          relationships.insert(std::make_pair(VAR_ANALYSIS, SAME_FUNCTION));
          relationships.insert(std::make_pair(OP_ORDER_COMPUTATION, SAME_FUNCTION));
          break;
@@ -97,15 +75,14 @@ void ScalarSsaDataDependenceComputation::Initialize()
 {
    if(bb_version != 0 and bb_version != function_behavior->GetBBVersion())
    {
-      const OpGraphConstRef fsaodg = function_behavior->CGetOpGraph(FunctionBehavior::FSAODG);
-      if(boost::num_vertices(*fsaodg) != 0)
+      const auto fsaodg = function_behavior->GetOpGraph(FunctionBehavior::FSAODG);
+      if(fsaodg.num_vertices() != 0)
       {
-         EdgeIterator edge, edge_end;
-         for(boost::tie(edge, edge_end) = boost::edges(*fsaodg); edge != edge_end; edge++)
+         for(const auto& edge : fsaodg.edges())
          {
-            function_behavior->ogc->RemoveSelector(*edge, DFG_SCA_SELECTOR | FB_DFG_SCA_SELECTOR | ADG_SCA_SELECTOR |
-                                                              FB_ADG_SCA_SELECTOR | ODG_SCA_SELECTOR |
-                                                              FB_ODG_SCA_SELECTOR);
+            function_behavior->ogc->RemoveSelector(edge, DFG_SCA_SELECTOR | FB_DFG_SCA_SELECTOR | ADG_SCA_SELECTOR |
+                                                             FB_ADG_SCA_SELECTOR | ODG_SCA_SELECTOR |
+                                                             FB_ODG_SCA_SELECTOR);
          }
       }
    }

@@ -1,0 +1,1 @@
+../flow/quartus_sta.tcl

@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -35,9 +23,6 @@
  * @brief Class implementation of the connection module converting the type and the size of connection objects
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef CONV_CONN_OBJ_HPP
@@ -55,17 +40,9 @@ class uu_conv_conn_obj : public generic_obj
    unsigned int bitsize;
 
  public:
-   /**
-    * Constructor
-    */
    uu_conv_conn_obj(const std::string& _name) : generic_obj(UU_CONV_CONN_OBJ, _name), bitsize(0)
    {
    }
-
-   /**
-    * Destructor.
-    */
-   ~uu_conv_conn_obj() override = default;
 
    /**
     * add a size to the component
@@ -94,17 +71,9 @@ class ui_conv_conn_obj : public generic_obj
    unsigned int bitsize;
 
  public:
-   /**
-    * Constructor
-    */
    ui_conv_conn_obj(const std::string& _name) : generic_obj(UI_CONV_CONN_OBJ, _name), bitsize(0)
    {
    }
-
-   /**
-    * Destructor.
-    */
-   ~ui_conv_conn_obj() override = default;
 
    /**
     * add a size to the component
@@ -133,17 +102,9 @@ class iu_conv_conn_obj : public generic_obj
    unsigned int bitsize;
 
  public:
-   /**
-    * Constructor
-    */
    iu_conv_conn_obj(const std::string& _name) : generic_obj(IU_CONV_CONN_OBJ, _name), bitsize(0)
    {
    }
-
-   /**
-    * Destructor.
-    */
-   ~iu_conv_conn_obj() override = default;
 
    /**
     * add a size to the component
@@ -172,17 +133,9 @@ class ii_conv_conn_obj : public generic_obj
    unsigned int bitsize;
 
  public:
-   /**
-    * Constructor
-    */
    ii_conv_conn_obj(const std::string& _name) : generic_obj(II_CONV_CONN_OBJ, _name), bitsize(0)
    {
    }
-
-   /**
-    * Destructor.
-    */
-   ~ii_conv_conn_obj() override = default;
 
    /**
     * add a size to the component
@@ -213,17 +166,9 @@ class ff_conv_conn_obj : public generic_obj
    unsigned int bitsize_out;
 
  public:
-   /**
-    * Constructor
-    */
    ff_conv_conn_obj(const std::string& _name) : generic_obj(FF_CONV_CONN_OBJ, _name), bitsize_in(0), bitsize_out(0)
    {
    }
-
-   /**
-    * Destructor.
-    */
-   ~ff_conv_conn_obj() override = default;
 
    /**
     * add a size in to the component
@@ -267,17 +212,9 @@ class i_assign_conn_obj : public generic_obj
    unsigned int bitsize;
 
  public:
-   /**
-    * Constructor
-    */
    i_assign_conn_obj(const std::string& _name) : generic_obj(I_ASSIGN_CONN_OBJ, _name), bitsize(0)
    {
    }
-
-   /**
-    * Destructor.
-    */
-   ~i_assign_conn_obj() override = default;
 
    /**
     * add a size to the component
@@ -306,17 +243,9 @@ class u_assign_conn_obj : public generic_obj
    unsigned int bitsize;
 
  public:
-   /**
-    * Constructor
-    */
    u_assign_conn_obj(const std::string& _name) : generic_obj(U_ASSIGN_CONN_OBJ, _name), bitsize(0)
    {
    }
-
-   /**
-    * Destructor.
-    */
-   ~u_assign_conn_obj() override = default;
 
    /**
     * add a size to the component
@@ -345,17 +274,9 @@ class f_assign_conn_obj : public generic_obj
    unsigned int bitsize;
 
  public:
-   /**
-    * Constructor
-    */
    f_assign_conn_obj(const std::string& _name) : generic_obj(F_ASSIGN_CONN_OBJ, _name), bitsize(0)
    {
    }
-
-   /**
-    * Destructor.
-    */
-   ~f_assign_conn_obj() override = default;
 
    /**
     * add a size to the component

@@ -1,0 +1,17 @@
+src/critical.cpp                 --top-fname=critical     --generate-tb=BENCHMARKS_ROOT/src/vector.xml --channels-number=4  --memory-allocation-policy=NO_BRAM
+src/critical.cpp                 --top-fname=critical     --generate-tb=BENCHMARKS_ROOT/src/vector.xml --channels-number=2  --benchmark-name=criticalCS --context_switch=2
+src/multiple_omp.cpp             --top-fname=vector_add   --generate-tb=BENCHMARKS_ROOT/src/vector.xml --channels-number=4  --memory-allocation-policy=NO_BRAM
+src/multiple_omp.cpp             --top-fname=vector_add   --generate-tb=BENCHMARKS_ROOT/src/vector.xml --channels-number=2  --benchmark-name=multiple_ompCS --context_switch=2
+src/double_reduction.cpp         --top-fname=multiple_red --generate-tb=BENCHMARKS_ROOT/src/vector.xml --channels-number=4  --memory-allocation-policy=NO_BRAM
+src/double_reduction.cpp         --top-fname=multiple_red --generate-tb=BENCHMARKS_ROOT/src/vector.xml --channels-number=2  --benchmark-name=double_reductionCS --context_switch=2
+src/nested_reduction.cpp         --top-fname=nested_red   --generate-tb=BENCHMARKS_ROOT/src/vector.xml --channels-number=4  --memory-allocation-policy=NO_BRAM
+src/nested_reduction.cpp         --top-fname=nested_red   --generate-tb=BENCHMARKS_ROOT/src/vector.xml --channels-number=2  --benchmark-name=nested_reductionCS --context_switch=2
+src/reduction.cpp                --top-fname=red          --generate-tb=BENCHMARKS_ROOT/src/vector.xml --channels-number=4  --memory-allocation-policy=NO_BRAM
+src/reduction.cpp                --top-fname=red          --generate-tb=BENCHMARKS_ROOT/src/vector.xml --channels-number=2  --benchmark-name=reductionCS --context_switch=2
+src/reduction.cpp                --top-fname=red          --generate-tb=BENCHMARKS_ROOT/src/vector.xml --channels-number=4  --memory-allocation-policy=NO_BRAM --benchmark-name=reduction_delay --mem-delay-read=24 --mem-delay-write=24
+src/reduction.cpp                --top-fname=red          --generate-tb=BENCHMARKS_ROOT/src/vector.xml --channels-number=2  --benchmark-name=reductionCS_delay --context_switch=2 --mem-delay-read=24 --mem-delay-write=24
+src/reduction_int.cpp            --top-fname=red          --generate-tb=BENCHMARKS_ROOT/src/vector.xml --channels-number=32 --memory-allocation-policy=NO_BRAM --benchmark-name=reduction_32core -DNTHREADS=32
+src/vector_add.cpp               --top-fname=vector_add   --generate-tb=BENCHMARKS_ROOT/src/vector.xml --channels-number=4  --memory-allocation-policy=NO_BRAM
+src/vector_add.cpp               --top-fname=vector_add   --generate-tb=BENCHMARKS_ROOT/src/vector.xml --channels-number=2  --benchmark-name=vector_addCS --context_switch=2
+src/nested_omp.cpp               --top-fname=vector_op    --generate-tb=BENCHMARKS_ROOT/src/nested_omp.xml --channels-number=4 --memory-allocation-policy=NO_BRAM
+src/nested_omp.cpp               --top-fname=vector_op    --generate-tb=BENCHMARKS_ROOT/src/nested_omp.xml --channels-number=4 --memory-allocation-policy=NO_BRAM  --benchmark-name=nested_ompCS --context_switch=2

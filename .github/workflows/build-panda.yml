@@ -1,0 +1,185 @@
+name: Build PandA project
+
+on:
+  workflow_dispatch:
+    inputs:
+      package-name:
+        description: "Package name"
+        required: true
+        default: "bambu-clang16"
+      branch:
+        description: "Repository branch to build from"
+        required: false
+        default: "main"
+      compilers:
+        description: "Comma separated list of frontend compilers"
+        required: true
+        default: "clang-12,clang-16"
+      package-compilers:
+        description: "Package compilers within the distribution"
+        required: false
+        type: boolean
+        default: true
+      configure:
+        description: "Build configuration options"
+        required: true
+        default: "-DPANDA_ENABLE_RELEASE=ON -DPANDA_ENABLE_ASSERTS=OFF -DPANDA_ENABLE_WERROR=ON"
+
+  workflow_call:
+    inputs:
+      package-name:
+        description: "Package name"
+        required: true
+        type: string
+      compilers:
+        description: "Comma separated list of frontend compilers"
+        required: false
+        type: string
+        default: "clang-12"
+      package-compilers:
+        description: "Package compilers within the distribution"
+        required: false
+        type: boolean
+        default: false
+      configure:
+        description: "Build configuration options"
+        required: false
+        type: string
+        default: "-DPANDA_ENABLE_RELEASE=ON -DPANDA_ENABLE_ASSERTS=OFF -DPANDA_ENABLE_WERROR=ON"
+      upload_config:
+        description: "Upload configuration <CI|release|both>"
+        required: false
+        type: string
+        default: "CI"
+    secrets:
+      CI_STORAGE_URL:
+        required: true
+      CI_STORAGE_USER:
+        required: true
+      CI_STORAGE_TOKEN:
+        required: true
+    outputs:
+      package-name:
+        description: "Package name to download built distribution"
+        value: ${{jobs.build.outputs.package-name}}
+      compilation-db:
+        description: "Stripped build directory with compile_commands.json and configuration headers"
+        value: ${{jobs.build.outputs.compilation-db}}
+
+env:
+  compilers: ${{inputs.compilers}}
+  package-compilers: ${{inputs.package-compilers}}
+  configure: ${{inputs.configure}}
+  storage-url: ${{secrets.CI_STORAGE_URL}}
+  storage-user: ${{secrets.CI_STORAGE_USER}}
+  storage-token: ${{secrets.CI_STORAGE_TOKEN}}
+  storage-path: release
+  package-name: ${{inputs.package-name}}
+  compilation-db-package: compilation-db
+  compilers-dir: compilers
+  host_jobs: $J
+  upload_config: ${{inputs.upload_config}}
+  local-compilers-backup: $LOCAL_COMPILERS_BACKUP
+
+jobs:
+  build:
+    runs-on: [self-hosted]
+    outputs:
+      package-name: ${{env.package-name}}
+      compilation-db: ${{env.compilation-db-package}}
+    steps:
+      - name: Clean workspace
+        shell: bash
+        run: rm -rf .[!.]* *
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{inputs.branch}}
+          submodules: "true"
+      - name: Env setup
+        id: setup
+        shell: bash
+        run: |
+          echo "Current host supports ${{env.host_jobs}} parallel jobs"
+          echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
+          env_id="$(echo $(sed 's/,/\n/g' <<< "${{env.compilers}}" | sort -V) | sed 's/ //g')"
+          echo "version=$(cat configure.ac | grep AC_INIT | sed -E 's/.*,(.*),.*/\1/g;s/ //g')" >> $GITHUB_OUTPUT
+          echo "env_id=$env_id" >> $GITHUB_OUTPUT
+          echo "timestamp=$(date -u +'%Y-%m-%d-%H;%M;%S')" >> $GITHUB_OUTPUT
+          CONFIG_EXTRA=""
+          if ${{env.package-compilers}}; then 
+            CONFIG_EXTRA="--with-compilers=${{env.compilers}}"
+          fi
+          # AppImage build is opt-in via configure args; if enabled but name missing, inject package-name
+          APPIMAGE_BUILD="$(if echo "${{env.configure}}" | grep -E '\-\-with\-appimage|-DPANDA_APPIMAGE_NAME' >/dev/null; then echo 'true'; else echo 'false'; fi)"
+          if ${APPIMAGE_BUILD}; then
+            if ! echo "${{env.configure}}" | grep -E '-DPANDA_APPIMAGE_NAME' >/dev/null; then
+              CONFIG_EXTRA="${CONFIG_EXTRA} -DPANDA_APPIMAGE_NAME=${{env.package-name}}"
+            fi
+          fi
+          echo "appimage-build=${APPIMAGE_BUILD}" >> $GITHUB_OUTPUT
+          echo "configure-extra=${CONFIG_EXTRA}" >> $GITHUB_OUTPUT
+      - name: CCache cache files
+        uses: actions/cache@v5
+        with:
+          path: .ccache
+          key: panda-build-ccache-${{steps.setup.outputs.version}}-${{ steps.setup.outputs.timestamp }}
+          restore-keys: |
+            panda-build-ccache-${{steps.setup.outputs.version}}-
+      - name: Download compilers
+        shell: bash
+        run: |
+          mkdir -p ${{env.compilers-dir}}
+          bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.compilers-dir}}" "${{env.compilers}}" "${{env.local-compilers-backup}}"
+      - name: Build PandA project
+        id: build
+        uses: ./.github/actions/build-panda
+        with:
+          config-args: ${{env.configure}} ${{steps.setup.outputs.configure-extra}} --enable-Werror
+          jobs: ${{steps.setup.outputs.jobs}}
+      - name: Finalize AppImage for CI distribution
+        if: ${{ steps.setup.outputs.appimage-build == 'true' }}
+        shell: bash
+        run: |
+          APPIMAGE_NAME="$(basename $(find ${{steps.build.outputs.dist-dir}} -type f -name '*.AppImage'))"
+          BIN_DIR="${{steps.build.outputs.dist-dir}}/bin"
+          mkdir "${BIN_DIR}"
+          ln -s "$APPIMAGE_NAME" "${BIN_DIR}/bambu"
+          ln -s "$APPIMAGE_NAME" "${BIN_DIR}/eucalyptus"
+          ln -s "$APPIMAGE_NAME" "${BIN_DIR}/tree-panda-cc"
+          printf 'export PATH=$(dirname $(readlink -e ${BASH_SOURCE[0]:-${(%%):-%%x}}))/bin:$PATH\n' > ${{steps.build.outputs.dist-dir}}/settings.sh
+      - name: Store Compilation Database
+        if: ${{ steps.build.outputs.compilation-db != '' && env.upload_config != '' }}
+        uses: ./.github/actions/storage-upload
+        with:
+          name: ${{env.compilation-db-package}}
+          path: ${{steps.build.outputs.compilation-db}}
+          storage-url: ${{env.storage-url}}
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Upload PandA Bambu HLS package for CI
+        if: ${{ env.upload_config != '' && env.upload_config != 'release' }}
+        uses: ./.github/actions/storage-upload
+        with:
+          name: ${{env.package-name}}
+          path: ${{steps.build.outputs.dist-dir}}
+          storage-url: ${{env.storage-url}}
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+          storage-compression: ${{ ! steps.setup.outputs.appimage-build}}
+      - name: Upload PandA Bambu HLS Release
+        if: ${{ env.upload_config != 'CI' }}
+        shell: bash
+        run: |
+          CURL_CMD='curl -L --fail -u ${{env.storage-user}}:${{env.storage-token}}'
+          STORAGE_URL="${{env.storage-url}}/${{env.storage-path}}"
+          if ${{steps.setup.outputs.appimage-build}}; then
+            FILENAME=`find ${{steps.build.outputs.dist-dir}} -type f -name '*.AppImage'`
+            ${CURL_CMD} -T "${FILENAME}" "${STORAGE_URL}/${FILENAME}"
+          else
+            FILENAME="${{env.package-name}}.tar.xz"
+            mv "${{steps.build.outputs.dist-dir}}" "${{env.package-name}}"
+            export XZ_OPT='-T0'
+            tar --mode="u+rwX,g+rwX,o+rX" -cJf - "${{env.package-name}}" | ${CURL_CMD} -T- "${STORAGE_URL}/${FILENAME}"
+          fi
+          echo "### New release available at https://release.bambuhls.eu/${FILENAME}" >> $GITHUB_STEP_SUMMARY

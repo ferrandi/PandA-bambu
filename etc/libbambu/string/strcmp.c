@@ -1,23 +1,16 @@
 /**
  * strcmp primitive adapted to the PandA infrastructure by Fabrizio Ferrandi from Politecnico di Milano.
- * January, 27 2016.
+ * October, 22 2024.
  *
  */
-/* glibc library */
+/* Public domain.  */
 
 int strcmp(const char* p1, const char* p2)
 {
-   const unsigned char* s1 = (const unsigned char*)p1;
-   const unsigned char* s2 = (const unsigned char*)p2;
-   unsigned char c1, c2;
-
-   do
+   while(*p1 && (*p1 == *p2))
    {
-      c1 = (unsigned char)*s1++;
-      c2 = (unsigned char)*s2++;
-      if(c1 == '\0')
-         return c1 - c2;
-   } while(c1 == c2);
-
-   return c1 - c2;
+      p1++;
+      p2++;
+   }
+   return *(unsigned char*)p1 - *(unsigned char*)p2;
 }

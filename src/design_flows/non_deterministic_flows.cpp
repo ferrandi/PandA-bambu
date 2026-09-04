@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2017-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2017-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -47,22 +35,22 @@
 
 #include <filesystem>
 
-const std::string NonDeterministicFlows::ComputeArgString(const size_t seed) const
+std::string NonDeterministicFlows::ComputeArgString(uint_fast32_t seed) const
 {
    const auto argv = parameters->CGetArgv();
    std::string arg_string;
    for(const auto& arg : argv)
    {
       /// Executable
-      if(arg_string == "")
+      if(arg_string.empty())
       {
-         THROW_ASSERT(arg.size() and arg[0] == '/', "Relative path executable not supported " + arg);
+         THROW_ASSERT(!arg.empty() && arg[0] == '/', "Relative path executable not supported " + arg);
          arg_string += arg;
       }
       else
       {
          arg_string += " ";
-         if(arg.find("--test-single-non-deterministic-flow") == std::string::npos and
+         if(arg.find("--test-single-non-deterministic-flow") == std::string::npos &&
             arg.find("--test-multiple-non-deterministic-flows") == std::string::npos)
          {
             arg_string += arg;
@@ -73,7 +61,7 @@ const std::string NonDeterministicFlows::ComputeArgString(const size_t seed) con
    return arg_string;
 }
 
-bool NonDeterministicFlows::ExecuteTool(const size_t seed) const
+bool NonDeterministicFlows::ExecuteTool(uint_fast32_t seed) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Executing with seed " + STR(seed));
    const auto arg_string = ComputeArgString(seed);
@@ -83,35 +71,29 @@ bool NonDeterministicFlows::ExecuteTool(const size_t seed) const
       std::filesystem::remove_all(new_directory);
    }
    std::filesystem::create_directory(new_directory);
-   const auto ret = PandaSystem(parameters, "cd " + new_directory.string() + "; " + arg_string, false,
-                                new_directory / "tool_execution_output");
-   if(IsError(ret))
+   if(IsError(PandaSystem(parameters, "cd " + new_directory.string() + "; " + arg_string, false,
+                          new_directory / "tool_execution_output")))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Failure");
       return false;
    }
-   else
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Success");
-      return true;
-   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Success");
+   return true;
 }
 
-NonDeterministicFlows::NonDeterministicFlows(const DesignFlowManagerConstRef _design_flow_manager,
+NonDeterministicFlows::NonDeterministicFlows(const DesignFlowManager& _design_flow_manager,
                                              const ParameterConstRef _parameters)
     : DesignFlow(_design_flow_manager, DesignFlow_Type::NON_DETERMINISTIC_FLOWS, _parameters)
 {
 }
 
-NonDeterministicFlows::~NonDeterministicFlows() = default;
-
 DesignFlowStep_Status NonDeterministicFlows::Exec()
 {
-   const auto initial_seed = parameters->getOption<size_t>(OPT_seed);
-   const auto number_of_runs = parameters->getOption<size_t>(OPT_test_multiple_non_deterministic_flows);
-   for(size_t run = 0; run < number_of_runs; run++)
+   const auto initial_seed = parameters->getOption<uint_fast32_t>(OPT_seed);
+   const auto number_of_runs = parameters->getOption<uint_fast32_t>(OPT_test_multiple_non_deterministic_flows);
+   for(uint_fast32_t run = initial_seed; run < number_of_runs; ++run)
    {
-      if(not ExecuteTool(initial_seed + run))
+      if(!ExecuteTool(run))
       {
          return DesignFlowStep_Status::ABORTED;
       }

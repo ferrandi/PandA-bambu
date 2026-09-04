@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2015-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2015-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -37,26 +25,36 @@
 #ifndef VCD_TRACE_HEAD_HPP
 #define VCD_TRACE_HEAD_HPP
 
-#include <list>
-#include <string>
-
+#include "refcount.hpp"
 #include "sig_variation.hpp"
 
-// include from parser/vcd/
-#include "DiscrepancyOpInfo.hpp"
+#include <list>
+#include <string>
+#include <vector>
 
 CONSTREF_FORWARD_DECL(HLS_manager);
-CONSTREF_FORWARD_DECL(tree_manager);
+CONSTREF_FORWARD_DECL(ir_manager);
+
+struct op_timing_info
+{
+   bool is_bounded{};
+   unsigned long n_cycles{};
+};
+
+struct op_state_info
+{
+   std::vector<unsigned int> start_states;
+   std::vector<unsigned int> exec_states;
+   std::vector<unsigned int> end_states;
+};
 
 struct vcd_trace_head
 {
  public:
-   vcd_trace_head(const DiscrepancyOpInfo& op_info, std::string signame, const std::list<sig_variation>& fv,
+   vcd_trace_head(const unsigned int op_id, std::string signame, const std::list<sig_variation>& fv,
                   const std::list<sig_variation>& ov, const std::list<sig_variation>& sv, unsigned int init_state_id,
-                  unsigned long long clock_period, const HLS_managerConstRef _HLSMgr, const tree_managerConstRef _TM,
+                  unsigned long long clock_period, const HLS_managerConstRef _HLSMgr, const ir_managerConstRef _TM,
                   const bool one_hot_fsm_encoding);
-
-   ~vcd_trace_head() = default;
 
    void advance();
 
@@ -109,11 +107,14 @@ struct vcd_trace_head
    const bool one_hot_fsm_encoding;
 
  public:
-   const DiscrepancyOpInfo& op_info;
+   const unsigned int op_id;
+   const unsigned int fsm_fun_id;
+   const op_timing_info op_timing;
+   const op_state_info op_states;
    const bool is_phi;
    const bool is_in_reg;
    const HLS_managerConstRef HLSMgr;
-   const tree_managerConstRef TM;
+   const ir_managerConstRef TM;
    const unsigned int initial_state_id;
    const std::list<sig_variation>& fsm_vars;
    std::list<sig_variation>::const_iterator fsm_ss_it; // start state iterator

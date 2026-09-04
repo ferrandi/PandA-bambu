@@ -1,10 +1,8 @@
 #!/bin/bash
 script_dir="$(dirname $(readlink -e $0))"
-BATCH_ARGS=("--evaluation")
 OUT_SUFFIX="pb_xvvd"
 
-python3 $script_dir/../etc/scripts/test_panda.py --tool=bambu  \
-   --args="${BATCH_ARGS[*]}"\
+python3 $script_dir/../etc/scripts/mantis.py --tool=bambu  \
    -lpanda_bench_xilinx_vvd_list \
-   -o "out${OUT_SUFFIX}" -b$script_dir \
-   --name="${OUT_SUFFIX}" "$@"
+   -o "out_${OUT_SUFFIX}" -b$script_dir \
+   "$@"

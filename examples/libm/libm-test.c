@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2021-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2021-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 
@@ -137,21 +125,6 @@ F_TEST_FF(fmod)
 I_MULTITEST_F(fpclassify)
 F_TEST_FIP(frexp)
 
-FLOAT
-#if TEST_FLOAT
-gammaf_test
-#else
-gamma_test
-#endif
-    (FLOAT a, int* pb)
-{
-   signgam = 0;
-   FLOAT res;
-   res = FUNC(gamma)(a);
-   *pb = signgam;
-   return res;
-}
-
 F_TEST_FF(hypot)
 I_TEST_F(ilogb)
 I_MULTITEST_F(isfinite)
@@ -160,17 +133,19 @@ F_TEST_FI(ldexp)
 
 FLOAT
 #if TEST_FLOAT
-lgammaf_test
+lgammaf_r_test
 #else
-lgamma_test
+lgamma_r_test
 #endif
     (FLOAT a, int* pb)
 {
-   signgam = 0;
-   FLOAT res;
-   res = FUNC(lgamma)(a);
-   *pb = signgam;
-   return res;
+   return
+#if TEST_FLOAT
+       lgammaf_r
+#else
+       lgamma_r
+#endif
+       (a, pb);
 }
 
 F_TEST_F(log)

@@ -6,7 +6,7 @@
       <name>sum</name>
       <operation bounded="0" operation_name="sum" />
       <circuit>
-        <component_o id="sum">
+        <module_o id="sum">
           <description>sum IP</description>
           <copyright>foo</copyright>
           <authors>foo</authors>
@@ -31,7 +31,7 @@
             <structural_type_descriptor size="32" type="INT" />
           </port_o>
           <NP_functionality LIBRARY="sum" VERILOG_FILE_PROVIDED="sum.v" />
-        </component_o>
+        </module_o>
       </circuit>
     </cell>
   </library>

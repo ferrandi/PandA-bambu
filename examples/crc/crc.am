@@ -1,7 +1,0 @@
-EXTRA_DIST += \
-   %D%/crc_list \
-   %D%/generic_crc.sh \
-   %D%/README.txt \
-   %D%/spec.c \
-   %D%/test_icrc.xml \
-   %D%/test.xml 

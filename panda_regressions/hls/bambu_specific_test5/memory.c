@@ -1,6 +1,6 @@
 int __attribute__((noinline)) memory(int base, int i)
 {
-#pragma HLS pipeline
+#pragma HLS pipeline II=2
 
    static char str[] = {'a', 'b', 'c', 'd'};
    int flag = 0;

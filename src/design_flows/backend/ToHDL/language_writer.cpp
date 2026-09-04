@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -37,28 +25,18 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "language_writer.hpp"
 
-/// constants include
-#include "copyrights_strings.hpp"
-
+#include "Parameter.hpp"
 #include "VHDL_writer.hpp"
+#include "copyrights_strings.hpp"
+#include "exceptions.hpp"
+#include "indented_output_stream.hpp"
 #include "structural_objects.hpp"
 #include "sv_writer.hpp"
 #include "verilog_writer.hpp"
-
-#include "exceptions.hpp"
-
-///. include
-#include "Parameter.hpp"
-
-/// utility include
-#include "indented_output_stream.hpp"
 
 language_writer::language_writer(char open_char, char close_char, const ParameterConstRef _parameters)
     : indented_output_stream(new IndentedOutputStream(open_char, close_char, 2)),
@@ -66,8 +44,6 @@ language_writer::language_writer(char open_char, char close_char, const Paramete
       debug_level(_parameters->getOption<int>(OPT_debug_level))
 {
 }
-
-language_writer::~language_writer() = default;
 
 unsigned int language_writer::bitnumber(long long unsigned int n)
 {
@@ -111,7 +87,7 @@ void language_writer::write(const std::string& rawString)
    indented_output_stream->Append(rawString);
 }
 
-void language_writer::write_header()
+void language_writer::write_header(bool)
 {
 }
 
@@ -125,24 +101,22 @@ void language_writer::WriteFile(const std::string& filename) const
    indented_output_stream->WriteFile(filename);
 }
 
-CustomSet<std::string> language_writer::GetHDLReservedNames() const
+const CustomSet<std::string>& language_writer::GetHDLReservedNames()
 {
-   CustomSet<std::string> ret;
-   ret.insert(RESET_PORT_NAME);
-   ret.insert(CLOCK_PORT_NAME);
-   ret.insert(DONE_PORT_NAME);
-   ret.insert(START_PORT_NAME);
-   ret.insert(WENABLE_PORT_NAME);
-   ret.insert(RETURN_PORT_NAME);
+   static CustomSet<std::string> ret = {RESET_PORT_NAME, CLOCK_PORT_NAME,   DONE_PORT_NAME,  IDLE_PORT_NAME,
+                                        START_PORT_NAME, WENABLE_PORT_NAME, RETURN_PORT_NAME};
    return ret;
 }
 
-COPYING3_SHORT_MACRO
+MIT_LICENSE_SHORT_MACRO
 
-void language_writer::WriteLicense()
+void language_writer::WriteLicense(bool is_library)
 {
-   for(auto& row : COPYING3_SHORT)
+   if(is_library)
    {
-      write_comment(std::string(row));
+      for(auto& row : MIT_LICENSE_SHORT)
+      {
+         write_comment(std::string(row));
+      }
    }
 }

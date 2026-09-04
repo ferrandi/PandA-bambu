@@ -1,0 +1,14 @@
+This copyright notice is intended for the following libraries
+distributed within the PandA Bambu HLS release:
+  - lib/panda/64/libbambu.a
+  - lib/panda/32/libbambu.a
+  - lib/panda/x32/libbambu.a
+
+The implementation within these libraries is based on proprietary
+work and is licensed under the following copyright notice:
+
+(1)
+    Copyright (C) 2013-2026 Politecnico di Milano
+
+    Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+    SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception

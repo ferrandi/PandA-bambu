@@ -121,7 +121,7 @@ static int calc_chunk(uint8_t chunk[CHUNK_SIZE], struct buffer_state * state)
  *   for bit string lengths that are not multiples of eight, and it really operates on arrays of bytes.
  *   In particular, the len parameter is a number of bytes.
  */
-void calc_sha_256(uint8_t hash[32], const void * input, size_t len)
+void calc_sha_256(uint8_t hash[32], const uint8_t * input, size_t len)
 {
 	/*
 	 * Note 1: All integers (expect indexes) are 32-bit unsigned integers and addition is calculated modulo 2^32.

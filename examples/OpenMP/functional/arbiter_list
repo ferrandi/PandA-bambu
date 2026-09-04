@@ -1,0 +1,15 @@
+src/reduction.cpp                --channels-type=MEM_ACC_11 --top-fname=red          --generate-tb=BENCHMARKS_ROOT/src/vector.xml --benchmark-name=reduction_1ch
+src/reduction.cpp                --channels-type=MEM_ACC_11 --top-fname=red          --generate-tb=BENCHMARKS_ROOT/src/vector.xml --benchmark-name=reduction_1ch_2cs --context_switch=2 -DNTHREADS=4
+src/reduction.cpp                --channels-type=MEM_ACC_11 --top-fname=red          --generate-tb=BENCHMARKS_ROOT/src/vector.xml --benchmark-name=reduction_1ch_4cs --context_switch=4 -DNTHREADS=4
+src/nested_reduction.cpp         --channels-type=MEM_ACC_11 --top-fname=nested_red   --generate-tb=BENCHMARKS_ROOT/src/vector.xml --benchmark-name=nested_reduction_1ch
+src/nested_reduction.cpp         --channels-type=MEM_ACC_11 --top-fname=nested_red   --generate-tb=BENCHMARKS_ROOT/src/vector.xml --benchmark-name=nested_reduction_1ch_2cs --context_switch=2
+src/nested_reduction.cpp         --channels-type=MEM_ACC_11 --top-fname=nested_red   --generate-tb=BENCHMARKS_ROOT/src/vector.xml --benchmark-name=nested_reduction_1ch_4cs --context_switch=4
+src/nested_omp.cpp               --channels-type=MEM_ACC_11 --top-fname=vector_op    --generate-tb=BENCHMARKS_ROOT/src/nested_omp.xml --benchmark-name=nested_omp_1ch
+src/nested_omp.cpp               --channels-type=MEM_ACC_11 --top-fname=vector_op    --generate-tb=BENCHMARKS_ROOT/src/nested_omp.xml --benchmark-name=nested_omp_1ch_2cs --context_switch=2
+
+src/reduction.cpp                --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=red          --generate-tb=BENCHMARKS_ROOT/src/vector.xml --benchmark-name=reduction_2ch
+src/reduction.cpp                --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=red          --generate-tb=BENCHMARKS_ROOT/src/vector.xml --benchmark-name=reduction_2ch_2cs --context_switch=2 -DNTHREADS=4
+src/nested_reduction.cpp         --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=nested_red   --generate-tb=BENCHMARKS_ROOT/src/vector.xml --benchmark-name=nested_reduction_2ch
+src/nested_reduction.cpp         --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=nested_red   --generate-tb=BENCHMARKS_ROOT/src/vector.xml --benchmark-name=nested_reduction_2ch_2cs --context_switch=2
+src/nested_omp.cpp               --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=vector_op    --generate-tb=BENCHMARKS_ROOT/src/nested_omp.xml --benchmark-name=nested_omp_2ch
+src/nested_omp.cpp               --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=vector_op    --generate-tb=BENCHMARKS_ROOT/src/nested_omp.xml --benchmark-name=nested_omp_2ch_2cs --context_switch=2

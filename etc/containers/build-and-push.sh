@@ -1,39 +1,33 @@
 #!/bin/bash
 
 REGISTRY="bambuhls"
-VARIANTS=("bionic" "focal")
-IMAGES=("dev" "iverilog" "verilator")
 VERSION="$(date +'%y.%m')"
 
-DOCKER_BUILD="docker build --pull --quiet"
+function build_and_push() {
+   target="${REGISTRY}/$1-${VERSION}"
+   shift
+   docker build --pull -t ${target} $@
+   docker push ${target} &
+}
 
-for base in ${VARIANTS[@]};
-do
-   for image in ${IMAGES[@]}
-   do
-      echo "Building image ${image} for Ubuntu ${base}"
-      ${DOCKER_BUILD} -f Dockerfile.${image} -t ${REGISTRY}/${image}:${base}-${VERSION} --build-arg BASE=ubuntu:${base} . &
-   done
-done
-echo "Building image cppcheck"
-${DOCKER_BUILD} -f Dockerfile.cppcheck -t ${REGISTRY}/cppcheck:${VERSION} .
-docker push ${REGISTRY}/cppcheck:${VERSION}
-wait
+echo "Build dev toolchain Ubuntu Xenial"
+build_and_push dev:xenial -f Dockerfile --build-arg BASE=ubuntu:xenial --target dev .
+build_and_push toolchain:xenial -f Dockerfile --build-arg BASE=ubuntu:xenial --target toolchain .
+build_and_push base:xenial -f Dockerfile.base --build-arg BASE=ubuntu:xenial .
 
-echo "Building image yosys for Ubuntu focal"
-${DOCKER_BUILD} -f Dockerfile.yosys -t ${REGISTRY}/yosys:focal-${VERSION} --build-arg BASE=ubuntu:focal . &
+echo "Build dev toolchain Debian Bookworm"
+build_and_push dev:bookworm -f Dockerfile --build-arg BASE=debian:bookworm-slim --target dev .
+build_and_push toolchain:bookworm -f Dockerfile --build-arg BASE=debian:bookworm-slim --target toolchain .
+build_and_push base:bookworm -f Dockerfile.base --build-arg BASE=debian:bookworm-slim .
 
-for base in ${VARIANTS[@]};
-do
-   for image in ${IMAGES[@]}
-   do
-      docker push ${REGISTRY}/${image}:${base}-${VERSION}
-   done
-done
-wait
+echo "Build Verilator"
+build_and_push verilator:focal -f Dockerfile.verilator --build-arg BASE=ubuntu:focal .
+build_and_push verilator:bookworm -f Dockerfile.verilator --build-arg BASE=debian:bookworm-slim .
 
-docker push --quiet ${REGISTRY}/yosys:focal-${VERSION} &
-echo "Building image dev-yosys for Ubuntu focal"
-${DOCKER_BUILD} -f Dockerfile.dev-yosys -t ${REGISTRY}/dev-yosys:focal-${VERSION} --build-arg VARIANT=focal-${VERSION} .
-docker push ${REGISTRY}/dev-yosys:focal-${VERSION}
+echo "Build CPP Check"
+build_and_push codechecks:bookworm -f Dockerfile --build-arg BASE=debian:bookworm-slim --target codechecks .
+
+echo "Build Yosys Ubuntu Focal"
+build_and_push yosys:bullseye -f Dockerfile.yosys --build-arg BASE=debian:bullseye .
+
 wait

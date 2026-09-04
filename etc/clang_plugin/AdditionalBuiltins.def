@@ -1,0 +1,7 @@
+BUILTIN(putc, "", "")
+BUILTIN(fputc, "", "")
+BUILTIN(fputs, "", "")
+BUILTIN(putchar, "", "")
+BUILTIN(puts, "", "")
+BUILTIN(strftime, "", "")
+BUILTIN(iswblank, "", "")
