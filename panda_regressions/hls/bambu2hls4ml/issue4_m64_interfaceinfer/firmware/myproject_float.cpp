@@ -26,8 +26,8 @@ static void egress_layer5_out(hls::stream<result_t> &layer5_out, hls::stream<out
     }
 }
 
-#pragma HLS interface mode=axis port=input_stream
-#pragma HLS interface mode=axis port=output_stream
+#pragma HLS interface mode=axis port=input_stream depth=2
+#pragma HLS interface mode=axis port=output_stream depth=2
 void myproject_float(hls::stream<in_container_t> &input_stream, hls::stream<out_container_t> &output_stream)
 {
     #pragma HLS DATAFLOW
