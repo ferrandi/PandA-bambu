@@ -72,6 +72,12 @@ A Google Colab notebook with many examples to play with Bambu is available. [![O
 # CMake build
 The CMake build is the primary path; `compile_commands.json` is generated automatically. Default install prefix is `/usr/local` unless overridden.
 
+**Compiler requirement:** the project must be built with **GCC >= 13**. The main tool targets C++23 (fully supported only by GCC >= 13), and the bundled clang plugins are compiled with the project's C++ compiler against the detected clang headers/ABI (see `cmake/ConfigHeaders.cmake`) — a step that is only supported with a GCC toolchain. Selecting `clang` (for example `clang-13`) as the `CC`/CXX build compiler therefore fails. CMake enforces this at configure time and aborts with a clear error if the detected compiler does not match. To build with a specific GCC, point CMake at it explicitly:
+
+```bash
+cmake -S . -B build -DCMAKE_C_COMPILER=gcc-13 -DCMAKE_CXX_COMPILER=g++-13
+```
+
 ```bash
 mkdir -p build
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
