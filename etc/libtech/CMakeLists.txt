@@ -5,6 +5,11 @@ if(NOT GZIP_EXECUTABLE)
    message(FATAL_ERROR "gzip is required to build etc/libtech data files but was not found.")
 endif()
 
+find_program(BC_EXECUTABLE bc)
+if(NOT BC_EXECUTABLE)
+   message(FATAL_ERROR "bc is required by simulation wrappers but was not found. Install the 'bc' package.")
+endif()
+
 set(LIBTECH_APPEND_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/append_libraries.sh")
 
 set(LIBTECH_DATA_OUTPUTS)
