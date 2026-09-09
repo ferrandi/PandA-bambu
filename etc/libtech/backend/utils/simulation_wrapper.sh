@@ -13,7 +13,9 @@ set -e
 
 sim_elapsed_time=$(date +%s.%N)
 function exit_time {
-  local et=$(echo "$(date +%s.%N) - $sim_elapsed_time" | bc)
+  local now et
+  now=$(date +%s.%N)
+  et=$(awk -v start="$sim_elapsed_time" -v now="$now" 'BEGIN {printf "%.6f", now - start}')
   echo "Sim: Elapsed time: $et"
 }
 trap exit_time EXIT
