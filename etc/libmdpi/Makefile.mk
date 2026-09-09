@@ -64,14 +64,14 @@ override TB_CFLAGS := $(patsubst -fno-exceptions,,$(CFLAGS)) $(TB_CFLAGS)
 MDPI_CFLAGS := $(BEH_CFLAGS) -D_GNU_SOURCE -isystem$(panda_includes)
 LIB_CFLAGS := $(MDPI_CFLAGS)
 ifdef BEH_CC
-	LIB_CFLAGS += $(shell if basename $(BEH_CC) | grep -q '++'; then echo -std=c++11; else echo -std=c11; fi)
+	LIB_CFLAGS += $(shell if basename $(BEH_CC) | grep -q '++'; then echo -std=c++14; else echo -std=c11; fi)
 endif
 DRIVER_CFLAGS := $(shell echo "$(TB_CFLAGS)" | grep -oE '(-mx?[0-9]+)')
 DRIVER_CFLAGS += $(shell echo "$(TB_CFLAGS)" | grep -oE '( (-I|-isystem) ?[^ ]+)' | tr '\n' ' ')
 DRIVER_CFLAGS += $(shell echo "$(TB_CFLAGS)" | grep -oE '( -D(\\.|[^ ])+)' | tr '\n' ' ')
-DRIVER_CFLAGS += $(MDPI_CFLAGS) -std=c++11 -fno-exceptions
+DRIVER_CFLAGS += $(MDPI_CFLAGS) -std=c++14 -fno-exceptions
 
-WRAPPER_CFLAGS := $(MDPI_CFLAGS) -std=c++11 -fno-exceptions $(shell echo "$(CFLAGS)" | sed -E 's/(-{1,2}std=(c|gnu)([0-9]+|\+\+(0|9)([0-9]|x)))//g') -DLIBMDPI_DRIVER
+WRAPPER_CFLAGS := $(MDPI_CFLAGS) -std=c++14 -fno-exceptions $(shell echo "$(CFLAGS)" | sed -E 's/(-{1,2}std=(c|gnu)([0-9]+|\+\+(0|9)([0-9]|x)))//g') -DLIBMDPI_DRIVER
 ifdef PP_SRC
 	ifneq ($(TOP_FNAME),main)
 		ifndef MPPTOP_FNAME

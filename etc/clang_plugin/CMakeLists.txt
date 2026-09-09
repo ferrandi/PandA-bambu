@@ -14,6 +14,7 @@ set(COMPILER_TOPFNAME_PLUGIN "topfname")
 set(COMPILER_EXPANDMEMOPS_PLUGIN "expandMemOps")
 set(COMPILER_OPENMP_PLUGIN "openmpBambu")
 set(COMPILER_ASTANALYZER_PLUGIN "ASTAnalyzer")
+set(COMPILER_CHANNELCTOR_PLUGIN "channelCtorCleanup")
 
 set(_panda_plugin_base_names
    customSROA
@@ -237,6 +238,7 @@ function(_panda_add_clang_plugins ver)
    _panda_make_plugin(clang_plugin_${ver}_expandmemops "${COMPILER_EXPANDMEMOPS_PLUGIN}"  1 "${_src_base}/plugin_expandMemOps.cpp")
    _panda_make_plugin(clang_plugin_${ver}_openmp       "${COMPILER_OPENMP_PLUGIN}"        1 "${_src_base}/plugin_openmp.cpp")
    _panda_make_plugin(clang_plugin_${ver}_ast          "${COMPILER_ASTANALYZER_PLUGIN}"   1 "${_src_base}/plugin_ASTAnalyzer.cpp")
+   _panda_make_plugin(clang_plugin_${ver}_channelctor  "${COMPILER_CHANNELCTOR_PLUGIN}" 1 "${_src_base}/plugin_channelCtorCleanup.cpp")
 
    _panda_make_plugin(clang_plugin_${ver}_opt_empty        "opt_${COMPILER_EMPTY_PLUGIN}"         0 "${_src_base}/plugin_dumpBambuIrEmpty.cpp" ${_dump_sources})
    if(ver GREATER_EQUAL 5)
@@ -248,6 +250,7 @@ function(_panda_add_clang_plugins ver)
    _panda_make_plugin(clang_plugin_${ver}_opt_expandmemops "opt_${COMPILER_EXPANDMEMOPS_PLUGIN}"  0 "${_src_base}/plugin_expandMemOps.cpp")
    _panda_make_plugin(clang_plugin_${ver}_opt_openmp       "opt_${COMPILER_OPENMP_PLUGIN}"        0 "${_src_base}/plugin_openmp.cpp")
    _panda_make_plugin(clang_plugin_${ver}_opt_ast          "opt_${COMPILER_ASTANALYZER_PLUGIN}"   0 "${_src_base}/plugin_ASTAnalyzer.cpp")
+   _panda_make_plugin(clang_plugin_${ver}_opt_channelctor  "opt_${COMPILER_CHANNELCTOR_PLUGIN}" 0 "${_src_base}/plugin_channelCtorCleanup.cpp")
 
    set(_all_plugins
       clang_plugin_${ver}_empty
@@ -264,6 +267,8 @@ function(_panda_add_clang_plugins ver)
       clang_plugin_${ver}_opt_expandmemops
       clang_plugin_${ver}_opt_openmp
       clang_plugin_${ver}_opt_ast
+      clang_plugin_${ver}_channelctor
+      clang_plugin_${ver}_opt_channelctor
    )
    if(ver GREATER_EQUAL 5)
       list(APPEND _all_plugins
