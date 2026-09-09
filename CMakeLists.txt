@@ -102,13 +102,10 @@ set(PANDA_LICENSING_INSTALLDIR_REL "${PANDA_DATA_INSTALLDIR_REL}/licensing")
 set(PANDA_DATA_INSTALLDIR "${PANDA_DATA_INSTALLDIR_REL}")
 set(PANDA_LICENSING_INSTALLDIR "${PANDA_LICENSING_INSTALLDIR_REL}")
 
-find_package(Boost 1.48 QUIET COMPONENTS headers)
-if(NOT Boost_FOUND)
-   find_package(Boost 1.48 QUIET CONFIG COMPONENTS headers)
-endif()
+find_package(Boost 1.70 QUIET CONFIG COMPONENTS headers)
 if(NOT Boost_FOUND)
    message(FATAL_ERROR
-      "Boost (>= 1.48) with 'headers' component was not found.\n"
+      "Boost (>= 1.70) with 'headers' component was not found.\n"
       "Install the Boost development package:\n"
       "  Debian/Ubuntu:  sudo apt-get install libboost-dev\n"
       "  Fedora/RHEL:    sudo dnf install boost-devel\n"
