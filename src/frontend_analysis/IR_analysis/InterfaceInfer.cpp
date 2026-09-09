@@ -1932,13 +1932,15 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
                      field_value = GetPointerS<const assign_stmt>(shift_stmt)->op0;
                   }
                   const auto field_type = ir_helper::CGetType(user_ga->op0);
-                  const auto truncate_type = ir_helper::IsRealType(field_type) ?
-                                                 ir_man->GetCustomIntegerType(ir_helper::Size(field_type), false) :
-                                                 field_type;
+                  const auto needs_shape_cast =
+                      ir_helper::IsRealType(field_type) || ir_helper::IsVectorType(field_type);
+                  const auto truncate_type = needs_shape_cast ?
+                                                  ir_man->GetCustomIntegerType(ir_helper::Size(field_type), false) :
+                                                  field_type;
                   const auto truncate_expr =
                       ir_man->create_unary_operation(truncate_type, field_value, BUILTIN_LOCINFO, nop_node_K);
                   ir_nodeRef replacement;
-                  if(ir_helper::IsRealType(field_type))
+                  if(needs_shape_cast)
                   {
                      const auto truncated_value = ir_man->create_ssa_name(nullptr, truncate_type, nullptr, nullptr);
                      const auto truncate_stmt =
@@ -2034,7 +2036,11 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
             // Mask and cast read data
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  MASK: " + ga_mask->ToString());
             auto data_mask = GetPointerS<const assign_stmt>(ga_mask)->op0;
-            if(ir_helper::IsRealType(data_type))
+            const auto needs_bitcast =
+                ir_helper::IsRealType(data_type) ||
+                (ir_helper::IsVectorType(data_type) && ir_helper::Size(data_type) == ir_helper::Size(interface_datatype) &&
+                 !ir_helper::IsVectorType(interface_datatype));
+            if(needs_bitcast)
             {
                const auto bitcast_expr =
                    ir_man->create_unary_operation(data_type, data_mask, BUILTIN_LOCINFO, bitcast_node_K);
@@ -2184,8 +2190,11 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
          const auto tmp_ssa = ir_man->create_ssa_name(nullptr, tmp_type, nullptr, nullptr);
          const auto gc = ir_man->create_assign_stmt(tmp_ssa, ce, fd->index, BUILTIN_LOCINFO);
          curr_bb->Replace(stmt, gc, true, AppM);
+         const auto same_width = ir_helper::Size(tmp_type) == ir_helper::Size(actual_type);
+         const auto needs_bitcast =
+             is_real || (ir_helper::IsVectorType(actual_type) && same_width && !ir_helper::IsVectorType(tmp_type));
          const auto cast_expr = ir_man->create_unary_operation(actual_type, tmp_ssa, BUILTIN_LOCINFO,
-                                                               is_real ? bitcast_node_K : nop_node_K);
+                                                               needs_bitcast ? bitcast_node_K : nop_node_K);
          const auto cast = ir_man->create_assign_stmt(ga->op0, cast_expr, fd->index, BUILTIN_LOCINFO);
          curr_bb->PushAfter(cast, gc, AppM);
          GetPointer<HLS_manager>(AppM)->design_interface_io[fname][curr_bb->number][arg_name].push_back(gc->index);
@@ -2382,9 +2391,11 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
                const auto user_ga = GetPointerS<const assign_stmt>(used_stmt);
                const auto fragment_size = ir_helper::Size(user_ga->op1);
                const auto fragment_type = ir_man->GetCustomIntegerType(fragment_size, false);
+               const auto needs_bitcast =
+                   ir_helper::IsRealType(user_ga->op1) || ir_helper::IsVectorType(user_ga->op1);
                const auto fragment_expr =
                    ir_man->create_unary_operation(fragment_type, user_ga->op1, BUILTIN_LOCINFO,
-                                                  ir_helper::IsRealType(user_ga->op1) ? bitcast_node_K : nop_node_K);
+                                                  needs_bitcast ? bitcast_node_K : nop_node_K);
                const auto fragment_stmt =
                    ir_man->CreateAssignStmt(fragment_type, nullptr, nullptr, fragment_expr, fd->index, BUILTIN_LOCINFO);
                curr_bb->PushBefore(fragment_stmt, stmt, AppM);
