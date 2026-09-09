@@ -53,6 +53,7 @@
 #include "config_ANALYZER_COMPILER_PLUGINS_DIR.hpp"
 #include "config_BUILD_APPIMAGE.hpp"
 #include "config_COMPILER_ASTANALYZER_PLUGIN.hpp"
+#include "config_COMPILER_CHANNELCTOR_PLUGIN.hpp"
 #include "config_COMPILER_CUSTOMSROA_PLUGIN.hpp"
 #include "config_COMPILER_EMPTY_PLUGIN.hpp"
 #include "config_COMPILER_EXPANDMEMOPS_PLUGIN.hpp"
@@ -180,8 +181,9 @@ enum CompilerMode : int
    CM_OPT_INTERNALIZE = 1 << 8,    // Enable symbol internalize plugin
    CM_OPT_EXPANDMEMOPS = 1 << 9,   // Enable memory operation optimizer plugin
    CM_OPT_DUMPBAMBUIR = 1 << 10,   // Enable IR dump plugin
-   CM_OPT_OPENMP = 1 << 11,        // Enable OpenMP plugin
-   CM_OPT_ALL = (15 << 7),         // Enable backend HLS optimization plugins
+   CM_OPT_CHANNELCTOR = 1 << 11,   // Enable ac_channel/hls::stream construction cleanup plugin
+   CM_OPT_OPENMP = 1 << 12,        // Enable OpenMP plugin
+   CM_OPT_ALL = 31 << 7,         // Enable backend HLS optimization plugins
    CM_LTO_FLAG = 1 << 16,          // Enable LTO optimization flags
    CM_COMPILER_STD = 1 << 24,      // Use default compiler
    CM_COMPILER_OPT = 1 << 25,      // Use compiler optimizer
@@ -581,6 +583,11 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
          command += " " + arg;
       }
    };
+   if(cm & CM_OPT_CHANNELCTOR)
+   {
+      append_arg("-panda-temp-ctor-cleanup=" + output_temporary_directory);
+      load_and_run_plugin(COMPILER_CHANNELCTOR_PLUGIN);
+   }
    if((cm & CM_OPT_INTERNALIZE) && top_fnames.size())
    {
       THROW_ASSERT(!(cm & CM_LTO_FLAG), "Internalizing symbols in partial object files is not expected");
