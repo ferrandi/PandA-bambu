@@ -83,6 +83,11 @@
  *     PointerType::getElementType() and GEP::getSourceElementType() which
  *     are unavailable in opaque-pointer builds (LLVM 17+).
  *
+ * WARNING: with opaque pointers (e.g. --bambu-parameter=opaque-pointers=1)
+ *     the pointee type of an argument is unknown, so arguments pointing to
+ *     singleton hls::stream arrays are NOT scalarized; only allocas (A) are.
+ *     Supporting them requires inferring the pointee type from the uses.
+ *
  * @author Tommaso Fellegara <tommaso.fellegara@polimi.it>
  *
  */
@@ -236,6 +241,11 @@ namespace
       Type* ptrTy = arg->getType();
       if(!ptrTy->isPointerTy())
          return false;
+#if PANDA_LLVM_CLANG_MAJOR >= 15
+      // opaque pointers carry no pointee type
+      if(ptrTy->isOpaquePointerTy())
+         return false;
+#endif
       return isSingletonFifoArrayType(GET_POINTER_TO_TY(ptrTy));
    }
 
