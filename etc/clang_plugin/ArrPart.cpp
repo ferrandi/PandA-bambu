@@ -27,15 +27,20 @@
 #define NDEBUG
 #endif
 // #undef NDEBUG
-#include "arrPart.hpp"
+#include "ArrPart.hpp"
+#include "llvm/ADT/SCCIterator.h"
 #include "llvm/IR/Operator.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/raw_ostream.h"
 #include <cxxabi.h>
+#include <llvm/Analysis/AliasAnalysis.h>
+#include <llvm/Analysis/CallGraph.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Module.h>
+#include <llvm/IR/PassManager.h>
 #include <llvm/Support/Debug.h>
 
+#include <algorithm>
 #include <set>
 
 #include "debug_print.hpp"
@@ -104,11 +109,7 @@ std::vector<size_t> getDimsFromArrayType(ArrayType* arrTy)
 
 void initializePartitionScheme(PartitionScheme& scheme, size_t numDims)
 {
-   scheme.clear();
-   for(size_t i = 0; i < numDims; i++)
-   {
-      scheme.push_back(PartInfo(i));
-   }
+   scheme.assign(numDims, PartInfo());
 }
 
 void setPartitionInfo(PartitionScheme& scheme, const PartInfo& p, uint64_t dim)
@@ -284,37 +285,26 @@ FnPartInfo& getFnInfoOrDie(StringMap<FnPartInfo>& table, StringRef fnName)
    return it->second;
 }
 
+/// Parses a comma separated list of array dimensions.
+/// The `array_dims` attribute is absent for every non-array parameter, in which case pugixml
+/// hands us an empty string: that is not an error, it just means there is nothing to partition
 std::vector<size_t> getDimsFromString(const std::string& dimsStr)
 {
    std::vector<size_t> dims;
-   size_t start = 0;
-   size_t end;
-   do
+   StringRef rest(dimsStr);
+   while(!rest.empty())
    {
-      end = dimsStr.find(',', start);
-      std::string dimSizeStr = dimsStr.substr(start, end - start);
-      size_t dimSize = std::stoull(dimSizeStr);
-      dims.push_back(dimSize);
-      start = end + 1;
-   } while(end != std::string::npos);
-   return dims;
-}
-
-bool hasConstantIndicesN(const std::vector<Value*>& indices, size_t n)
-{
-   if(indices.size() < n)
-   {
-      return false;
-   }
-
-   for(size_t i = 0; i < n; i++)
-   {
-      if(!isa<ConstantInt>(indices[i]))
+      const auto parts = rest.split(',');
+      rest = parts.second;
+      size_t dimSize = 0;
+      if(parts.first.trim().getAsInteger(10, dimSize))
       {
-         return false;
+         REPORT_FATAL_ERROR_WITH_REPORT("Malformed array_dims entry `" + parts.first + "` in `" +
+                                        StringRef(dimsStr) + "`");
       }
+      dims.push_back(dimSize);
    }
-   return true;
+   return dims;
 }
 
 // Needed to do the recursive call
@@ -483,7 +473,37 @@ void collectArrayPartitionFromArg(ArrPartCtx& arrPartCtx, Argument* arg, std::ve
 
    processedValues.insert(arg);
    collectArrayPartitionFromCallInstr(arrPartCtx, arg, parts, processedValues);
-   collectArrayPartitionFromCalledFunctions(arrPartCtx, arg, parts, processedValues);
+}
+
+bool isWholeArrayPointer(const Value* V)
+{
+   // Direct allocation base or function argument carrying the full array.
+   if(isa<AllocaInst>(V) || isa<Argument>(V) || isa<GlobalVariable>(V))
+      return true;
+
+   // A GEP is "whole-array" only if every index is the constant zero.
+   // This covers the C array-decay pattern but not element addressing.
+   if(const auto* GEP = dyn_cast<GEPOperator>(V))
+   {
+      return std::all_of(GEP->idx_begin(), GEP->idx_end(), [](const Use& Idx) {
+         const auto* CI = dyn_cast<ConstantInt>(Idx.get());
+         return CI && CI->isZero();
+      });
+   }
+
+   // Bitcast / addrspacecast: delegate to the operand.
+   if(const auto* Cast = dyn_cast<CastInst>(V))
+   {
+      if(Cast->getOpcode() == Instruction::BitCast || Cast->getOpcode() == Instruction::AddrSpaceCast)
+         return isWholeArrayPointer(Cast->getOperand(0));
+   }
+   if(const auto* CE = dyn_cast<ConstantExpr>(V))
+   {
+      if(CE->getOpcode() == Instruction::BitCast)
+         return isWholeArrayPointer(CE->getOperand(0));
+   }
+
+   return false; // conservative: unknown provenance → not a whole-array ptr
 }
 
 void collectArrayPartitionFromAlloca(ArrPartCtx& arrPartCtx, AllocaInst* alloc,
@@ -511,6 +531,7 @@ void collectArrayPartitionFromAlloca(ArrPartCtx& arrPartCtx, AllocaInst* alloc,
       LLVM_DEBUG(dbgs() << "[ARR_PART] Inserting the alloc "; allocPartInfo.inst->print(dbgs()); dbgs() << "\n");
    }
    processedValues.insert(alloc);
+   collectArrayPartitionFromCallInstr(arrPartCtx, alloc, parts, processedValues);
 
    // This is needed since when the alloca is used in a function call, it is not passed directly, but first there
    // is a GetElementPtr instruction to get the address of the first element and then the value retrieved is
@@ -524,23 +545,10 @@ void collectArrayPartitionFromAlloca(ArrPartCtx& arrPartCtx, AllocaInst* alloc,
          continue;
       }
 
-      std::vector<Value*> gepIndices(gepInst->idx_begin(), gepInst->idx_end());
-      // TODO: We should also check that the gep is taking the pointer of the first element
-      // FIXME: allocPartInfoIt could be null! In the if else before if the flow goes into the else branch
-      // the allocPartInfoIt is not set!
-      // if(!hasConstantIndicesN(gepIndices, allocPartInfoIt->scheme.size()))
-      // {
-      //    continue;
-      // }
-
-      gepAfterAlloc.push_back(gepInst);
-   }
-
-   // To be sure, we search call instructions from the alloca and the GetElementPtr instructions
-   collectArrayPartitionFromCallInstr(arrPartCtx, alloc, parts, processedValues);
-   for(auto* v : gepAfterAlloc)
-   {
-      collectArrayPartitionFromCallInstr(arrPartCtx, v, parts, processedValues);
+      if(isWholeArrayPointer(user))
+      {
+         collectArrayPartitionFromCallInstr(arrPartCtx, user, parts, processedValues);
+      }
    }
 }
 
@@ -867,6 +875,225 @@ void inverseTopologicalSort(Function* fn, std::vector<std::string>& workQueue)
    }
 
    workQueue.push_back(fn->getName().str());
+}
+
+// ==================================================================================
+// architecture.xml rewriting
+//
+// A partitioned parameter becomes one bundle and one parameter entry per bank, so the
+// interface bambu builds from architecture.xml matches the signature CSROA produced.
+// ==================================================================================
+namespace
+{
+   /// The baseType is expected to be in the form of type*, like float* or int*
+   std::string getOriginalType(std::string& baseType, const ArgPartInfo* argPartInfo)
+   {
+      // In this way, it builds something like float (*) or int (*)
+      std::string originalTy = baseType.substr(0, baseType.find('*')) + " (*)";
+      const auto& originalTypeDims = argPartInfo->getOrigTypeDims();
+
+      for(size_t i = 1; i < originalTypeDims.size(); i++)
+      {
+         const auto& partInfo = argPartInfo->scheme[i];
+         switch(partInfo.format)
+         {
+            case COMPLETE:
+               break;
+            case BLOCK:
+            case CYCLIC:
+               originalTy += "[" + std::to_string(originalTypeDims[i] / partInfo.factor) + "]";
+               break;
+            case PartInfoFormat::NONE:
+               originalTy += "[" + std::to_string(originalTypeDims[i]) + "]";
+               break;
+            default:
+               REPORT_FATAL_ERROR_WITH_REPORT("Incorrect partition format");
+         }
+      }
+
+      return originalTy;
+   }
+
+   void createBundleEntryPartition(pugi::xml_node& bundlesNode, const pugi::xml_node& origBundleNode,
+                                   const std::string& name, const std::string& includes)
+   {
+      auto newBundle = bundlesNode.append_child("bundle");
+
+      std::string oldMode = origBundleNode.attribute("mode").as_string();
+      newBundle.append_attribute("mode").set_value(
+          includes.find("hls_stream.h") != std::string::npos ? "fifo" : oldMode.c_str());
+      newBundle.append_attribute("name").set_value(name.c_str());
+   }
+
+   bool isCompletelyPartitioned(const ArgPartInfo& argPartInfo)
+   {
+      return !argPartInfo.scheme.empty() && llvm::all_of(argPartInfo.scheme, [](const PartInfo& partInfo) {
+         return partInfo.format == PartInfoFormat::COMPLETE;
+      });
+   }
+
+   bool isScalarPartitionInterfaceMode(const std::string& mode)
+   {
+      return mode == "none" || mode == "ptrdefault" || mode == "handshake" || mode == "valid" || mode == "ovalid" ||
+             mode == "acknowledge";
+   }
+
+   void createParameterEntryPartition(pugi::xml_node& paramsNode, std::string& name, uint64_t elemCount,
+                                      std::string& includes, uint64_t index, std::string& original_type,
+                                      uint64_t sizeInBytes, std::string& type)
+   {
+      auto newParamNode = paramsNode.append_child("parameter");
+
+      newParamNode.append_attribute("bundle").set_value(name.c_str());
+      newParamNode.append_attribute("elem_count").set_value(elemCount);
+      newParamNode.append_attribute("includes").set_value(includes.c_str());
+      newParamNode.append_attribute("index").set_value(index);
+      newParamNode.append_attribute("original_typename").set_value(original_type.c_str());
+      newParamNode.append_attribute("port").set_value(name.c_str());
+      newParamNode.append_attribute("size_in_bytes").set_value(sizeInBytes);
+      newParamNode.append_attribute("typename").set_value(type.c_str());
+   }
+
+   void createFnPartNode(pugi::xml_node& origFnNode, pugi::xml_node& fnXml, StringRef topFnName,
+                         const std::vector<ArgPartInfo>& objs)
+   {
+      fnXml.append_attribute("csroa").set_value(true);
+      fnXml.append_attribute("name").set_value(topFnName.str().c_str());
+      fnXml.append_attribute("symbol").set_value(topFnName.str().c_str());
+      for(const auto& attr : origFnNode.attributes())
+      {
+         const auto attrName = attr.name();
+         if(strcmp(attrName, "name") == 0 || strcmp(attrName, "symbol") == 0 || strcmp(attrName, "original") == 0)
+         {
+            continue;
+         }
+         fnXml.append_attribute(attrName).set_value(attr.value());
+      }
+
+      auto origBundles = origFnNode.child("bundles");
+      auto origParms = origFnNode.child("parameters");
+
+      auto bundles = fnXml.append_child("bundles");
+      auto parms = fnXml.append_child("parameters");
+
+      uint64_t idxParmCsroa = 0;
+      for(uint64_t idxOrig = 0;; idxOrig++)
+      {
+         auto parmNodeCsroa = origParms.find_child_by_attribute("parameter", "index", std::to_string(idxOrig).c_str());
+         auto bundleNodeCsroa =
+             origBundles.find_child_by_attribute("bundle", "name", parmNodeCsroa.attribute("bundle").as_string());
+         if(!parmNodeCsroa || !bundleNodeCsroa)
+         {
+            break;
+         }
+
+         std::string bundle = parmNodeCsroa.attribute("bundle").as_string();
+         uint64_t storedElemCount = parmNodeCsroa.attribute("elem_count").as_ullong();
+         std::string includes = parmNodeCsroa.attribute("includes").as_string();
+         std::string storedOriginalType = parmNodeCsroa.attribute("original_typename").as_string();
+         uint64_t storedSizeInBytes = parmNodeCsroa.attribute("size_in_bytes").as_ullong();
+         std::string type = parmNodeCsroa.attribute("typename").as_string();
+
+         auto obj = llvm::find_if(objs, [&](const ArgPartInfo& a) { return a.argName == bundle; });
+         if(obj != objs.end())
+         {
+            const std::string bundleMode = bundleNodeCsroa.attribute("mode").as_string();
+            if(isScalarPartitionInterfaceMode(bundleMode) && !isCompletelyPartitioned(*obj))
+            {
+               REPORT_FATAL_ERROR_WITH_REPORT(llvm::Twine("Interface mode '") + bundleMode +
+                                              "' on array-partitioned parameter '" + bundle +
+                                              "' is supported only with complete partitioning of all array dimensions");
+            }
+            if(storedElemCount == 0)
+            {
+               REPORT_FATAL_ERROR_WITH_REPORT(llvm::Twine("architecture.xml parameter '") + bundle +
+                                              "' of an array-partitioned function has no usable elem_count attribute");
+            }
+            uint64_t elemCount = storedElemCount / obj->getNumPartitions();
+            std::string originalType = getOriginalType(type, &(*obj));
+
+            for(uint64_t numPartition = 0; numPartition < obj->getNumPartitions(); numPartition++)
+            {
+               std::string namePartition = bundle + "_" + std::to_string(numPartition);
+               createBundleEntryPartition(bundles, bundleNodeCsroa, namePartition, includes);
+               createParameterEntryPartition(parms, namePartition, elemCount, includes, idxParmCsroa, originalType,
+                                             storedSizeInBytes / storedElemCount * elemCount, type);
+               idxParmCsroa += 1;
+            }
+         }
+         else
+         {
+            auto copy = parms.append_copy(parmNodeCsroa);
+            copy.attribute("index").set_value(idxParmCsroa);
+            copy.remove_attribute("array_dims");
+            bundles.append_copy(bundleNodeCsroa);
+            idxParmCsroa += 1;
+         }
+      }
+   }
+} // namespace
+
+void modifyXMLModule(ArrPartCtx& arrPartCtx, std::string& outdirName)
+{
+   LLVM_DEBUG(llvm::dbgs() << "[CSROA] Modify architecture.xml file\n");
+   auto& doc = *arrPartCtx.doc;
+   auto xmlModule = doc.child("module");
+   std::vector<pugi::xml_node> functions(xmlModule.begin(), xmlModule.end());
+
+   for(auto& f : functions)
+   {
+      const std::string symbol = f.attribute("symbol").as_string();
+      if(!arrPartCtx.fnTable.count(symbol) || getFnInfoOrDie(arrPartCtx.fnTable, symbol).args.empty())
+      {
+         continue;
+      }
+
+      auto& fnInfo = getFnInfoOrDie(arrPartCtx.fnTable, symbol);
+      pugi::xml_node& origFnNode = f;
+      if(symbol == arrPartCtx.topFn->getName())
+      {
+         LLVM_DEBUG(llvm::dbgs() << "[CSROA] Update top function " << symbol << "\n");
+         std::string nameFnOriginal = "original_" + std::string(symbol);
+         origFnNode.attribute("name").set_value(nameFnOriginal.c_str());
+         origFnNode.attribute("symbol").set_value(nameFnOriginal.c_str());
+         origFnNode.append_attribute("original").set_value(true);
+      }
+
+      auto fnPartNode = xmlModule.append_child("function");
+      createFnPartNode(origFnNode, fnPartNode, symbol, fnInfo.args);
+
+      for(auto& parm : origFnNode.child("parameters").children("parameter"))
+      {
+         std::string parmName = parm.attribute("bundle").as_string();
+
+         auto argPartInfoIt =
+             llvm::find_if(fnInfo.args, [&](const ArgPartInfo& argPartInfo) { return argPartInfo.argName == parmName; });
+         if(argPartInfoIt == fnInfo.args.end())
+         {
+            continue;
+         }
+
+         std::string arrayPartitionTypesValue;
+         std::string arrayPartitionFactorsValue;
+         for(size_t i = 0; i < argPartInfoIt->scheme.size(); i++)
+         {
+            if(i > 0)
+            {
+               arrayPartitionTypesValue += ",";
+               arrayPartitionFactorsValue += ",";
+            }
+            const auto& partInfo = argPartInfoIt->scheme[i];
+            arrayPartitionTypesValue += format_to_string(partInfo.format).str();
+            arrayPartitionFactorsValue += std::to_string(partInfo.factor);
+         }
+         parm.append_attribute("array_partition_types").set_value(arrayPartitionTypesValue.c_str());
+         parm.append_attribute("array_partition_factors").set_value(arrayPartitionFactorsValue.c_str());
+      }
+   }
+
+   LLVM_DEBUG(dbgs() << "[CSROA] Saving the new architecture.xml\n");
+   const auto arch_filename = outdirName + "/architecture.xml";
+   doc.save_file(arch_filename.c_str(), "  ", pugi::format_indent | pugi::format_no_empty_element_tags);
 }
 
 bool loadXMLModule(pugi::xml_document& doc, std::string& outdirName)
