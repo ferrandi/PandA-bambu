@@ -28,19 +28,17 @@
 #endif
 // #undef NDEBUG
 #include "ArrPart.hpp"
-#include "llvm/ADT/SCCIterator.h"
 #include "llvm/IR/Operator.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/raw_ostream.h"
 #include <cxxabi.h>
-#include <llvm/Analysis/AliasAnalysis.h>
-#include <llvm/Analysis/CallGraph.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Module.h>
-#include <llvm/IR/PassManager.h>
 #include <llvm/Support/Debug.h>
 
 #include <algorithm>
+#include <cstdlib>
+#include <cstring>
 #include <set>
 
 #include "debug_print.hpp"
@@ -50,15 +48,6 @@
    do                                               \
    {                                                \
       report_fatal_error(CREATE_FATAL_REPORT(msg)); \
-   } while(false)
-
-#define REPORT_WITH_PRINT(v, msg)          \
-   do                                      \
-   {                                       \
-      llvm::errs() << "[UNEXPECTED] ";     \
-      v->print(llvm::errs());              \
-      llvm::errs() << "\n";                \
-      REPORT_FATAL_ERROR_WITH_REPORT(msg); \
    } while(false)
 
 #if LLVM_VERSION_MAJOR >= 10
@@ -112,21 +101,31 @@ void initializePartitionScheme(PartitionScheme& scheme, size_t numDims)
    scheme.assign(numDims, PartInfo());
 }
 
-void setPartitionInfo(PartitionScheme& scheme, const PartInfo& p, uint64_t dim)
+static void partInfoUnion(PartInfo& a, const PartInfo& b)
 {
-   auto& partInfo = scheme[dim];
-   if(partInfo.format == NONE)
+   if(b.format == PartInfoFormat::NONE)
    {
-      partInfo = p;
       return;
    }
 
-   if(partInfo.format != p.format)
+   if(a.format == PartInfoFormat::NONE)
+   {
+      a = b;
+   }
+   else if(a.format == b.format)
+   {
+      a.factor = std::max(a.factor, b.factor);
+   }
+   else
    {
       REPORT_FATAL_ERROR_WITH_REPORT(llvm::Twine("Conflicting partitioning formats on the same memory: (") +
-                                     format_to_string(partInfo.format) + ", " + format_to_string(p.format) + ")");
+                                     format_to_string(a.format) + ", " + format_to_string(b.format) + ")");
    }
-   partInfo.factor = std::max(partInfo.factor, p.factor);
+}
+
+void setPartitionInfo(PartitionScheme& scheme, const PartInfo& p, uint64_t dim)
+{
+   partInfoUnion(scheme[dim], p);
 }
 
 [[nodiscard]] uint64_t getNumPartitionsFromScheme(const PartitionScheme& scheme)
@@ -214,7 +213,7 @@ void PartInfo::validatePartitionFactor(uint64_t numMemoriesArg, uint64_t dimSize
 {
    if(numMemoriesArg == 0 || numMemoriesArg > dimSize)
    {
-      REPORT_FATAL_ERROR_WITH_REPORT("The factor of array partition should be greater than 0 or less equal to the size "
+      REPORT_FATAL_ERROR_WITH_REPORT("The factor of array partition should be greater than 0 and less than or equal to the size "
                                      "of the dimension");
    }
 }
@@ -240,20 +239,6 @@ PartInfo::PartInfo(size_t formatArg, size_t numMemoriesArg, size_t dimSize)
       default:
          REPORT_FATAL_ERROR_WITH_REPORT("Incorrect partition format");
    }
-}
-
-PartInfo createPartInfo(const std::vector<size_t>& completeDims, uint64_t format, uint64_t numMemories, uint64_t idxDim,
-                        uint64_t numDims)
-{
-   if(idxDim >= numDims)
-   {
-      REPORT_FATAL_ERROR_WITH_REPORT("The dim attribute should be between 0 and the dimensions of the array");
-   }
-
-   uint64_t dimSize = completeDims[idxDim];
-   auto conf = PartInfo(format, numMemories, dimSize);
-   LLVM_DEBUG(llvm::dbgs() << "[ARR_PART] Part conf: " << conf.to_string() << "\n");
-   return conf;
 }
 
 void FnPartInfo::remap(ValueToValueMapTy& vMap)
@@ -288,7 +273,7 @@ FnPartInfo& getFnInfoOrDie(StringMap<FnPartInfo>& table, StringRef fnName)
 /// Parses a comma separated list of array dimensions.
 /// The `array_dims` attribute is absent for every non-array parameter, in which case pugixml
 /// hands us an empty string: that is not an error, it just means there is nothing to partition
-std::vector<size_t> getDimsFromString(const std::string& dimsStr)
+static std::vector<size_t> getDimsFromString(const std::string& dimsStr)
 {
    std::vector<size_t> dims;
    StringRef rest(dimsStr);
@@ -307,108 +292,7 @@ std::vector<size_t> getDimsFromString(const std::string& dimsStr)
    return dims;
 }
 
-// Needed to do the recursive call
-void collectArrayPartitionFromArg(ArrPartCtx& arrPartCtx, Argument* arg, std::vector<std::vector<PartInfo>*>& parts,
-                                  std::set<Value*>& processedValues);
-void collectArrayPartitionFromAlloca(ArrPartCtx& arrPartCtx, AllocaInst* alloc,
-                                     std::vector<std::vector<PartInfo>*>& parts, std::set<Value*>& processedValues);
-
-void collectArrayPartitionFromGlobalVar(ArrPartCtx& arrPartCtx, GlobalVariable* globVar,
-                                        std::vector<std::vector<PartInfo>*>& parts, std::set<Value*>& processedValues);
-
-void collectArrayPartitionFromCallInstr(ArrPartCtx& arrPartCtx, Value* val, std::vector<std::vector<PartInfo>*>& parts,
-                                        std::set<Value*>& processedValues)
-{
-   for(const auto& use : val->uses())
-   {
-      const auto* callInst = dyn_cast<CallInst>(use.getUser());
-      if(!callInst || callInst->getCalledFunction() == nullptr || callInst->getCalledFunction()->isIntrinsic() ||
-         callInst->getCalledFunction()->getName() == "__bambu_csroa_partition__")
-      {
-         continue;
-      }
-
-      Function* calledFn = callInst->getCalledFunction();
-      assert(calledFn != nullptr && "Only direct function calls are supported");
-      const auto* it = std::find(callInst->arg_begin(), callInst->arg_end(), use);
-      assert(it != callInst->arg_end() && "Use not found");
-      unsigned idxParam = std::distance(callInst->arg_begin(), it);
-      collectArrayPartitionFromArg(arrPartCtx, GET_ARG_PT(calledFn, idxParam), parts, processedValues);
-   }
-}
-
-void collectArrayPartitionFromCalledFunctions(ArrPartCtx& arrPartCtx, Argument* arg,
-                                              std::vector<std::vector<PartInfo>*>& parts,
-                                              std::set<Value*>& processedValues)
-{
-   for(auto* user : arg->getParent()->users())
-   {
-      const auto* callInst = dyn_cast<CallInst>(user);
-      if(!callInst || callInst->getCalledFunction() == nullptr || callInst->getCalledFunction()->isIntrinsic())
-      {
-         continue;
-      }
-
-      uint64_t paramIdx = arg->getArgNo();
-      Value* paramValue = callInst->getArgOperand(paramIdx);
-      while(!isa<AllocaInst>(paramValue) && !isa<Argument>(paramValue) && !isa<GlobalVariable>(paramValue))
-      {
-         if(auto* gepInst = dyn_cast<GEPOperator>(paramValue))
-         {
-            paramValue = gepInst->getPointerOperand();
-         }
-         else if(auto* bitCastInst = dyn_cast<BitCastOperator>(paramValue))
-         {
-            paramValue = bitCastInst->stripPointerCasts();
-         }
-         else
-         {
-            REPORT_WITH_PRINT(paramValue, "It should be a GetElementPtrInst");
-         }
-      }
-
-      if(auto* paramAllocaInst = dyn_cast<AllocaInst>(paramValue))
-      {
-         collectArrayPartitionFromAlloca(arrPartCtx, paramAllocaInst, parts, processedValues);
-      }
-      else if(auto* paramArg = dyn_cast<Argument>(paramValue))
-      {
-         collectArrayPartitionFromArg(arrPartCtx, paramArg, parts, processedValues);
-      }
-      else if(auto* paramGlobVar = dyn_cast<GlobalVariable>(paramValue))
-      {
-         collectArrayPartitionFromGlobalVar(arrPartCtx, paramGlobVar, parts, processedValues);
-      }
-      else
-      {
-         REPORT_FATAL_ERROR_WITH_REPORT("It should be an Argument or an AllocaInst");
-      }
-   }
-}
-
-void partInfoUnion(PartInfo& a, const PartInfo& b)
-{
-   if(b.format == PartInfoFormat::NONE)
-   {
-      return;
-   }
-
-   if(a.format == PartInfoFormat::NONE)
-   {
-      a = b;
-   }
-   else if(a.format == b.format)
-   {
-      a.factor = std::max(a.factor, b.factor);
-   }
-   else
-   {
-      report_fatal_error(llvm::Twine("Conflicting partitioning formats on the same memory: (") +
-                         format_to_string(a.format) + ", " + format_to_string(b.format) + ")");
-   }
-}
-
-void partsInfoUnion(std::vector<std::vector<PartInfo>*>& parts)
+static void partsInfoUnion(std::vector<std::vector<PartInfo>*>& parts)
 {
    if(parts.empty())
    {
@@ -418,7 +302,10 @@ void partsInfoUnion(std::vector<std::vector<PartInfo>*>& parts)
    std::vector<PartInfo> tmpParts(*parts[0]);
    for(const std::vector<PartInfo>* partsInfo : parts)
    {
-      assert(partsInfo->size() == tmpParts.size());
+      if(partsInfo->size() != tmpParts.size())
+      {
+         REPORT_FATAL_ERROR_WITH_REPORT("Array partition propagated between memories of different rank");
+      }
       for(size_t i = 0; i < tmpParts.size(); i++)
       {
          partInfoUnion(tmpParts[i], (*partsInfo)[i]);
@@ -427,55 +314,11 @@ void partsInfoUnion(std::vector<std::vector<PartInfo>*>& parts)
 
    for(std::vector<PartInfo>* partsInfo : parts)
    {
-      assert(partsInfo->size() == tmpParts.size());
-      for(size_t i = 0; i < tmpParts.size(); i++)
-      {
-         (*partsInfo)[i] = tmpParts[i];
-      }
+      *partsInfo = tmpParts;
    }
 }
 
-void collectArrayPartitionFromArg(ArrPartCtx& arrPartCtx, Argument* arg, std::vector<std::vector<PartInfo>*>& parts,
-                                  std::set<Value*>& processedValues)
-{
-   LLVM_DEBUG(dbgs() << "[ARR PART] Processing the arg "; arg->print(dbgs());
-              dbgs() << " in the function " << arg->getParent()->getName() << "\n";);
-   if(processedValues.count(arg) || arg->getParent()->isDeclaration())
-   {
-      LLVM_DEBUG(dbgs() << "[ARR PART] arg already processed or the arg's function is only a declaration\n");
-      return;
-   }
-
-   StringRef fnName = arg->getParent()->getName();
-   auto& args = arrPartCtx.fnTable.try_emplace(fnName, arg->getParent()).first->second.args;
-   auto argPartInfoIt = findPartInfoInContainer(arg, args);
-
-   if(argPartInfoIt != args.end())
-   {
-      LLVM_DEBUG(dbgs() << "[ARR_PART] Inserting the arg `" << argPartInfoIt->argName
-                        << "` (idx = " << argPartInfoIt->arg->getArgNo() << ")\n");
-      parts.push_back(&argPartInfoIt->scheme);
-   }
-   else
-   {
-      auto nodeFn = arrPartCtx.doc->child("module").find_child_by_attribute("function", "symbol", fnName.data());
-      auto nodeParam = nodeFn.child("parameters")
-                           .find_child_by_attribute("parameter", "index", std::to_string(arg->getArgNo()).c_str());
-      assert(!nodeParam.empty());
-      std::string argName = nodeParam.attribute("bundle").as_string();
-      std::vector<size_t> dims = getDimsFromString(nodeParam.attribute("array_dims").as_string());
-
-      auto argPartInfo = ArgPartInfo(argName, arg, dims);
-      LLVM_DEBUG(dbgs() << "[ARR_PART] Inserting the arg `" << argPartInfo.argName << "`\n");
-      args.push_back(argPartInfo);
-      parts.push_back(&args.back().scheme);
-   }
-
-   processedValues.insert(arg);
-   collectArrayPartitionFromCallInstr(arrPartCtx, arg, parts, processedValues);
-}
-
-bool isWholeArrayPointer(const Value* V)
+static bool isWholeArrayPointer(const Value* V)
 {
    // Direct allocation base or function argument carrying the full array.
    if(isa<AllocaInst>(V) || isa<Argument>(V) || isa<GlobalVariable>(V))
@@ -506,258 +349,276 @@ bool isWholeArrayPointer(const Value* V)
    return false; // conservative: unknown provenance → not a whole-array ptr
 }
 
-void collectArrayPartitionFromAlloca(ArrPartCtx& arrPartCtx, AllocaInst* alloc,
-                                     std::vector<std::vector<PartInfo>*>& parts, std::set<Value*>& processedValues)
+/// Walks back through whole-array GEPs and bitcasts to the memory a pointer refers to.
+/// Returns nullptr when the pointer addresses only a part of the memory (or its origin is unknown).
+static Value* getWholeArrayBase(Value* v)
 {
-   if(processedValues.count(alloc))
+   while(!isa<AllocaInst>(v) && !isa<Argument>(v) && !isa<GlobalVariable>(v))
    {
-      return;
-   }
-
-   StringRef fnName = alloc->getFunction()->getName();
-   auto& allocs = arrPartCtx.fnTable.try_emplace(fnName, alloc->getFunction()).first->second.allocs;
-   auto allocPartInfoIt = llvm::find_if(allocs, [&](const AllocaPartInfo& a) { return a.inst == alloc; });
-
-   if(allocPartInfoIt != allocs.end())
-   {
-      parts.push_back(&allocPartInfoIt->scheme);
-      LLVM_DEBUG(dbgs() << "[ARR_PART] Inserting the alloc "; allocPartInfoIt->inst->print(dbgs()); dbgs() << "\n");
-   }
-   else
-   {
-      auto allocPartInfo = AllocaPartInfo(alloc);
-      allocs.push_back(allocPartInfo);
-      parts.push_back(&allocs.back().scheme);
-      LLVM_DEBUG(dbgs() << "[ARR_PART] Inserting the alloc "; allocPartInfo.inst->print(dbgs()); dbgs() << "\n");
-   }
-   processedValues.insert(alloc);
-   collectArrayPartitionFromCallInstr(arrPartCtx, alloc, parts, processedValues);
-
-   // This is needed since when the alloca is used in a function call, it is not passed directly, but first there
-   // is a GetElementPtr instruction to get the address of the first element and then the value retrieved is
-   // passed to the function
-   std::vector<Value*> gepAfterAlloc;
-   for(User* user : alloc->users())
-   {
-      auto* gepInst = dyn_cast<GetElementPtrInst>(user);
-      if(!gepInst)
+      if(isa<GEPOperator>(v) && isWholeArrayPointer(v))
       {
-         continue;
+         v = cast<GEPOperator>(v)->getPointerOperand();
       }
-
-      if(isWholeArrayPointer(user))
+      else if(isa<BitCastOperator>(v))
       {
-         collectArrayPartitionFromCallInstr(arrPartCtx, user, parts, processedValues);
+         v = cast<BitCastOperator>(v)->getOperand(0);
+      }
+      else
+      {
+         return nullptr;
+      }
+   }
+   return v;
+}
+
+/// Down: formal arguments of the (tracked) callees receiving `ptr` as a whole array.
+static void pushCalleeArgs(Value* ptr, const std::set<Function*>& tracked, std::vector<Value*>& out)
+{
+   for(Use& use : ptr->uses())
+   {
+      User* user = use.getUser();
+      if(auto* callInst = dyn_cast<CallInst>(user))
+      {
+         Function* calledFn = callInst->getCalledFunction();
+         const auto idxParam = use.getOperandNo();
+         if(tracked.count(calledFn) && idxParam < calledFn->arg_size())
+         {
+            out.push_back(GET_ARG_PT(calledFn, idxParam));
+         }
+      }
+      else if((isa<GEPOperator>(user) && isWholeArrayPointer(user)) || isa<BitCastOperator>(user))
+      {
+         pushCalleeArgs(user, tracked, out);
       }
    }
 }
 
-void collectArrayPartitionFromGlobalVar(ArrPartCtx& arrPartCtx, GlobalVariable* globVar,
-                                        std::vector<std::vector<PartInfo>*>& parts, std::set<Value*>& processedValues)
+/// Up: memories the (tracked) callers pass as whole array to the argument `arg`.
+static void pushCallerMemories(Argument* arg, const std::set<Function*>& tracked, std::vector<Value*>& out)
 {
-   if(processedValues.count(globVar))
+   Function* fn = arg->getParent();
+   for(User* user : fn->users())
    {
-      return;
+      auto* callInst = dyn_cast<CallInst>(user);
+      if(!callInst || callInst->getCalledFunction() != fn || !tracked.count(callInst->getFunction()))
+      {
+         continue;
+      }
+      if(auto* base = getWholeArrayBase(callInst->getArgOperand(arg->getArgNo())))
+      {
+         out.push_back(base);
+      }
+   }
+}
+
+/// The architecture.xml entry describing the parameter bound to `arg`
+static pugi::xml_node getParamNode(const ArrPartCtx& arrPartCtx, const Argument* arg)
+{
+   const std::string fnName = arg->getParent()->getName().str();
+   auto nodeFn = arrPartCtx.doc->child("module").find_child_by_attribute("function", "symbol", fnName.c_str());
+   auto nodeParam = nodeFn.child("parameters")
+                        .find_child_by_attribute("parameter", "index", std::to_string(arg->getArgNo()).c_str());
+   if(nodeParam.empty())
+   {
+      REPORT_FATAL_ERROR_WITH_REPORT("Parameter " + Twine(arg->getArgNo()) + " of " + fnName +
+                                     " not found in architecture.xml");
+   }
+   return nodeParam;
+}
+
+static PartitionScheme& getOrCreateScheme(ArrPartCtx& arrPartCtx, Value* v)
+{
+   if(auto* arg = dyn_cast<Argument>(v))
+   {
+      StringRef fnName = arg->getParent()->getName();
+      auto& args = arrPartCtx.fnTable.try_emplace(fnName, arg->getParent()).first->second.args;
+      auto argPartInfoIt = findPartInfoInContainer(arg, args);
+      if(argPartInfoIt != args.end())
+      {
+         return argPartInfoIt->scheme;
+      }
+
+      auto nodeParam = getParamNode(arrPartCtx, arg);
+      std::string argName = nodeParam.attribute("bundle").as_string();
+      std::vector<size_t> dims = getDimsFromString(nodeParam.attribute("array_dims").as_string());
+      LLVM_DEBUG(dbgs() << "[ARR_PART] Inserting the arg `" << argName << "` of " << fnName << "\n");
+      args.push_back(ArgPartInfo(argName, arg, dims));
+      return args.back().scheme;
    }
 
+   if(auto* alloc = dyn_cast<AllocaInst>(v))
+   {
+      auto& allocs = arrPartCtx.fnTable.try_emplace(alloc->getFunction()->getName(), alloc->getFunction())
+                         .first->second.allocs;
+      auto allocPartInfoIt = llvm::find_if(allocs, [&](const AllocaPartInfo& a) { return a.inst == alloc; });
+      if(allocPartInfoIt != allocs.end())
+      {
+         return allocPartInfoIt->scheme;
+      }
+      LLVM_DEBUG(dbgs() << "[ARR_PART] Inserting the alloc "; alloc->print(dbgs()); dbgs() << "\n");
+      allocs.push_back(AllocaPartInfo(alloc));
+      return allocs.back().scheme;
+   }
+
+   auto* globVar = cast<GlobalVariable>(v);
    auto& globalVars = arrPartCtx.globalVars;
    auto globVarPartInfoIt = llvm::find_if(globalVars, [&](const GlobalPartInfo& g) { return g.var == globVar; });
-
    if(globVarPartInfoIt != globalVars.end())
    {
-      parts.push_back(&globVarPartInfoIt->scheme);
-      LLVM_DEBUG(dbgs() << "[ARR_PART] Inserting the global variable "; dbgs() << globVarPartInfoIt->var->getName();
-                 dbgs() << " "; globVarPartInfoIt->var->getType()->print(dbgs()); dbgs() << "\n");
+      return globVarPartInfoIt->scheme;
    }
-   else
-   {
-      auto globVarPartInfo = GlobalPartInfo(globVar);
-      globalVars.push_back(globVarPartInfo);
-      parts.push_back(&globalVars.back().scheme);
-      LLVM_DEBUG(dbgs() << "[ARR_PART] Inserting the global variable "; dbgs() << globVarPartInfo.var->getName();
-                 dbgs() << " "; globVarPartInfo.var->getType()->print(dbgs()); dbgs() << "\n");
-   }
-   processedValues.insert(globVar);
-
-   // This is needed since when the alloca is used in a function call, it is not passed directly, but first there
-   // is a GetElementPtr instruction to get the address of the first element and then the value retrieved is
-   // passed to the function
-   std::vector<Value*> gepAfterAlloc;
-   for(User* user : globVar->users())
-   {
-      auto* gepInst = dyn_cast<GEPOperator>(user);
-      if(!gepInst)
-      {
-         continue;
-      }
-
-      std::vector<Value*> gepIndices(gepInst->idx_begin(), gepInst->idx_end());
-      // TODO: We should also check that the gep is taking the pointer of the first element
-      // FIXME: allocPartInfoIt could be null! In the if else before if the flow goes into the else branch
-      // the allocPartInfoIt is not set!
-      // if(!hasConstantIndicesN(gepIndices, allocPartInfoIt->scheme.size()))
-      // {
-      //    continue;
-      // }
-
-      gepAfterAlloc.push_back(gepInst);
-   }
-
-   // To be sure, we search call instructions from the alloca and the GetElementPtr instructions
-   collectArrayPartitionFromCallInstr(arrPartCtx, globVar, parts, processedValues);
-   for(auto* v : gepAfterAlloc)
-   {
-      collectArrayPartitionFromCallInstr(arrPartCtx, v, parts, processedValues);
-   }
+   LLVM_DEBUG(dbgs() << "[ARR_PART] Inserting the global variable " << globVar->getName() << "\n");
+   globalVars.push_back(GlobalPartInfo(globVar));
+   return globalVars.back().scheme;
 }
 
-void diffuseArrPartConfigs(ArrPartCtx& arrPartCtx, std::vector<std::string>& workQueue)
+/**
+ * Every memory aliased through a chain of calls (towards callers and callees, at any depth) must share
+ * the same partition scheme: the connected components of the alias graph are computed starting from
+ * the memories with a partition request, and the schemes of each component are merged.
+ */
+void diffuseArrPartConfigs(ArrPartCtx& arrPartCtx, const std::vector<std::string>& workQueue)
 {
-   std::vector<std::vector<PartInfo>*> parts;
-   std::set<Value*> processedValues;
+   Module& M = *arrPartCtx.topFn->getParent();
+   std::set<Function*> tracked;
    for(const auto& fnName : workQueue)
    {
-      if(!arrPartCtx.fnTable.count(fnName))
+      // Declarations have no body (nor architecture.xml entry): nothing to propagate through them
+      Function* fn = M.getFunction(fnName);
+      if(fn && !fn->isDeclaration())
+      {
+         tracked.insert(fn);
+      }
+   }
+
+   std::vector<Value*> seeds;
+   for(const auto& fnName : workQueue)
+   {
+      auto it = arrPartCtx.fnTable.find(fnName);
+      if(it == arrPartCtx.fnTable.end())
+      {
+         continue;
+      }
+      for(const auto& argPartInfo : it->second.args)
+      {
+         seeds.push_back(argPartInfo.arg);
+      }
+      for(const auto& allocPartInfo : it->second.allocs)
+      {
+         seeds.push_back(allocPartInfo.inst);
+      }
+   }
+   for(const auto& globalPartInfo : arrPartCtx.globalVars)
+   {
+      seeds.push_back(globalPartInfo.var);
+   }
+
+   std::set<Value*> visited;
+   for(Value* seed : seeds)
+   {
+      if(!visited.insert(seed).second)
       {
          continue;
       }
 
-      LLVM_DEBUG(dbgs() << "\n[ARR_PART] Diffusing the args of the function " << fnName << "\n");
-      auto fnInfo = getFnInfoOrDie(arrPartCtx.fnTable, fnName);
-      for(auto& argPartInfo : fnInfo.args)
+      std::vector<Value*> component;
+      std::vector<Value*> worklist{seed};
+      while(!worklist.empty())
       {
-         LLVM_DEBUG(dbgs() << "\n[ARR_PART] Diffusing the arg " << argPartInfo.argName
-                           << " (idx = " << argPartInfo.arg->getArgNo() << ")\n");
-         collectArrayPartitionFromArg(arrPartCtx, argPartInfo.arg, parts, processedValues);
-         partsInfoUnion(parts);
-         parts.clear();
+         Value* node = worklist.back();
+         worklist.pop_back();
+         component.push_back(node);
+
+         std::vector<Value*> neighbors;
+         pushCalleeArgs(node, tracked, neighbors);
+         if(auto* arg = dyn_cast<Argument>(node))
+         {
+            pushCallerMemories(arg, tracked, neighbors);
+         }
+         for(Value* neighbor : neighbors)
+         {
+            if(visited.insert(neighbor).second)
+            {
+               worklist.push_back(neighbor);
+            }
+         }
       }
 
-      LLVM_DEBUG(dbgs() << "\n[ARR_PART] Diffusing the allocs of the function " << fnName << "\n");
-      for(auto& allocPartInfo : fnInfo.allocs)
+      LLVM_DEBUG(dbgs() << "\n[ARR_PART] Diffusing over " << component.size() << " memories from ";
+                 seed->print(dbgs()); dbgs() << "\n");
+      // Create all the entries first: inserting would invalidate the pointers to the schemes
+      for(Value* v : component)
       {
-         LLVM_DEBUG(dbgs() << "\n[ARR_PART] Diffusing the alloc "; allocPartInfo.inst->print(dbgs()); dbgs() << "\n");
-         collectArrayPartitionFromAlloca(arrPartCtx, allocPartInfo.inst, parts, processedValues);
-         partsInfoUnion(parts);
-         parts.clear();
+         getOrCreateScheme(arrPartCtx, v);
       }
+      std::vector<std::vector<PartInfo>*> parts;
+      for(Value* v : component)
+      {
+         parts.push_back(&getOrCreateScheme(arrPartCtx, v));
+      }
+      partsInfoUnion(parts);
    }
 }
 
-// Helper template function to handle the common dim logic
-template <typename CreateOrUpdateFn>
-void setPartitionByDim(const std::vector<size_t>& completeDims, uint64_t format, uint64_t numMemories, uint64_t dim,
-                       CreateOrUpdateFn createOrUpdate)
+/// Applies a partition request to the dimension `dim` of `mem` (1-indexed), or to all its dimensions when `dim` is 0
+static void setPartitionByDim(ArrPartCtx& arrPartCtx, Value* mem, const std::vector<size_t>& completeDims,
+                              uint64_t format, uint64_t numMemories, uint64_t dim)
 {
-   uint64_t numDims = completeDims.size();
-
-   if(dim == 0)
+   if(dim > completeDims.size())
    {
-      // Apply partitioning to all dimensions
-      for(uint64_t d = 1; d <= numDims; d++)
-      {
-         auto conf = createPartInfo(completeDims, format, numMemories, d - 1, numDims);
-         createOrUpdate(conf, d - 1);
-      }
+      REPORT_FATAL_ERROR_WITH_REPORT("The dim attribute should be between 0 and the dimensions of the array");
    }
-   else
+   const uint64_t firstDim = dim == 0 ? 0 : dim - 1;
+   const uint64_t endDim = dim == 0 ? completeDims.size() : dim;
+   if(firstDim == endDim)
    {
-      // Apply partitioning to specific dimension
-      uint64_t idxDim = dim - 1; // dim is 1-indexed
-      if(idxDim >= numDims)
-      {
-         REPORT_FATAL_ERROR_WITH_REPORT("The dim attribute should be between 0 and the dimensions of the array");
-      }
+      return;
+   }
 
-      auto conf = createPartInfo(completeDims, format, numMemories, idxDim, numDims);
-      createOrUpdate(conf, idxDim);
+   auto& scheme = getOrCreateScheme(arrPartCtx, mem);
+   for(uint64_t idxDim = firstDim; idxDim < endDim; idxDim++)
+   {
+      auto conf = PartInfo(format, numMemories, completeDims[idxDim]);
+      LLVM_DEBUG(llvm::dbgs() << "[ARR_PART] Part conf: " << conf.to_string() << "\n");
+      setPartitionInfo(scheme, conf, idxDim);
    }
 }
 
-inline bool isArgPartitionable(Argument* arg)
+static bool isArgPartitionable(const Argument* arg)
 {
    return arg->getType()->isPointerTy();
 }
 
-void setArrPartArg(ArrPartCtx& arrPartCtx, Argument* arg, uint64_t format, uint64_t numMemories, uint64_t dim)
+static void setArrPartArg(ArrPartCtx& arrPartCtx, Argument* arg, uint64_t format, uint64_t numMemories, uint64_t dim)
 {
-   auto& doc = *arrPartCtx.doc;
-   StringRef fnName = arg->getParent()->getName();
-   auto& args = arrPartCtx.fnTable.try_emplace(fnName, arg->getParent()).first->second.args;
-   auto nodeFn = doc.child("module").find_child_by_attribute("function", "symbol", fnName.data());
-   auto nodeParam = nodeFn.child("parameters")
-                        .find_child_by_attribute("parameter", "index", std::to_string(arg->getArgNo()).c_str());
-   std::string argName = nodeParam.attribute("bundle").as_string();
-   std::vector<size_t> completeDims = getDimsFromString(nodeParam.attribute("array_dims").as_string());
-
    if(!isArgPartitionable(arg))
    {
       REPORT_FATAL_ERROR_WITH_REPORT("Trying to partition a function argument that is not an array");
    }
-
-   setPartitionByDim(completeDims, format, numMemories, dim, [&](const PartInfo& conf, uint64_t idxDim) {
-      auto localArgPartInfoIt = findPartInfoInContainer(arg, args);
-      if(localArgPartInfoIt == args.end())
-      {
-         ArgPartInfo argPartInfo(argName, arg, completeDims);
-         argPartInfo.setPartInfo(conf, idxDim);
-         args.push_back(argPartInfo);
-         return;
-      }
-      localArgPartInfoIt->setPartInfo(conf, idxDim);
-   });
+   const auto completeDims = getDimsFromString(getParamNode(arrPartCtx, arg).attribute("array_dims").as_string());
+   setPartitionByDim(arrPartCtx, arg, completeDims, format, numMemories, dim);
 }
 
-void setArrPartAlloca(ArrPartCtx& arrPartCtx, AllocaInst* allocaInst, uint64_t format, uint64_t numMemories,
-                      uint64_t dim)
+static void setArrPartAlloca(ArrPartCtx& arrPartCtx, AllocaInst* allocaInst, uint64_t format, uint64_t numMemories,
+                             uint64_t dim)
 {
-   if(!allocaInst->getAllocatedType()->isArrayTy())
+   auto* completeTy = dyn_cast<ArrayType>(allocaInst->getAllocatedType());
+   if(completeTy == nullptr)
    {
       REPORT_FATAL_ERROR_WITH_REPORT("Trying to partition a local value that is not an array");
    }
-
-   StringRef fnName = allocaInst->getFunction()->getName();
-   auto& allocs = arrPartCtx.fnTable.try_emplace(fnName, allocaInst->getFunction()).first->second.allocs;
-   auto* completeTy = cast<ArrayType>(allocaInst->getAllocatedType());
-   std::vector<size_t> completeDims = getDimsFromArrayType(completeTy);
-
-   setPartitionByDim(completeDims, format, numMemories, dim, [&](const PartInfo& conf, uint64_t idxDim) {
-      auto localAllocaPartInfoIt = llvm::find_if(allocs, [&](const AllocaPartInfo& a) { return a.inst == allocaInst; });
-      if(localAllocaPartInfoIt == allocs.end())
-      {
-         AllocaPartInfo allocaPartInfo(allocaInst);
-         allocaPartInfo.setPartInfo(conf, idxDim);
-         allocs.push_back(allocaPartInfo);
-         return;
-      }
-      localAllocaPartInfoIt->setPartInfo(conf, idxDim);
-   });
+   setPartitionByDim(arrPartCtx, allocaInst, getDimsFromArrayType(completeTy), format, numMemories, dim);
 }
 
-void setArrPartGlobalVar(ArrPartCtx& arrPartCtx, GlobalVariable* globalVar, uint64_t format, uint64_t numMemories,
-                         uint64_t dim)
+static void setArrPartGlobalVar(ArrPartCtx& arrPartCtx, GlobalVariable* globalVar, uint64_t format,
+                                uint64_t numMemories, uint64_t dim)
 {
-   auto& globalVars = arrPartCtx.globalVars;
    auto* completeTy = dyn_cast<ArrayType>(globalVar->getValueType());
-
    if(!globalVar->getType()->isPointerTy() || completeTy == nullptr)
    {
       REPORT_FATAL_ERROR_WITH_REPORT("Trying to partition a global variable that is not an array");
    }
-
-   std::vector<size_t> completeDims = getDimsFromArrayType(completeTy);
-   setPartitionByDim(completeDims, format, numMemories, dim, [&](const PartInfo& conf, uint64_t idxDim) {
-      auto localGlobalPartInfoIt =
-          llvm::find_if(globalVars, [&](const GlobalPartInfo& g) { return g.var == globalVar; });
-      if(localGlobalPartInfoIt == globalVars.end())
-      {
-         GlobalPartInfo globalPartInfo(globalVar);
-         globalPartInfo.setPartInfo(conf, idxDim);
-         globalVars.push_back(globalPartInfo);
-         return;
-      }
-      localGlobalPartInfoIt->setPartInfo(conf, idxDim);
-   });
+   setPartitionByDim(arrPartCtx, globalVar, getDimsFromArrayType(completeTy), format, numMemories, dim);
 }
 
 /**
@@ -814,7 +675,7 @@ void populateArrPartCtx(Module& M, ArrPartCtx& arrPartCtx)
    }
 }
 
-void describeArrPartRequests(ArrPartCtx& ctx)
+void describeArrPartRequests(const ArrPartCtx& ctx)
 {
    if(!ctx.globalVars.empty())
    {
@@ -829,7 +690,7 @@ void describeArrPartRequests(ArrPartCtx& ctx)
    for(auto it = ctx.fnTable.begin(), end = ctx.fnTable.end(); it != end; it++)
    {
       StringRef fnName = it->first();
-      auto fnPartInfo = it->second;
+      const auto& fnPartInfo = it->second;
       dbgs() << "Function " << fnName << "\n";
       if(!fnPartInfo.args.empty())
       {
@@ -854,27 +715,35 @@ void describeArrPartRequests(ArrPartCtx& ctx)
    }
 }
 
-void inverseTopologicalSort(Function* fn, std::vector<std::string>& workQueue)
+static void inverseTopologicalSort(Function* fn, std::vector<std::string>& workQueue, std::set<Function*>& visited)
 {
+   // Marked before visiting the callees, otherwise a recursive call never terminates
+   visited.insert(fn);
    for(auto& bb : *fn)
    {
       for(auto& inst : bb)
       {
          if(auto* callInst = dyn_cast<CallInst>(&inst))
          {
-            if(!callInst->getCalledFunction() || callInst->getCalledFunction()->isIntrinsic() ||
-               callInst->getCalledFunction()->getName() == BAMBU_CSROA_PARTITION_FUN_NAME ||
-               llvm::is_contained(workQueue, callInst->getCalledFunction()->getName().str()))
+            Function* calledFn = callInst->getCalledFunction();
+            if(!calledFn || calledFn->isIntrinsic() || calledFn->getName() == BAMBU_CSROA_PARTITION_FUN_NAME ||
+               visited.count(calledFn))
             {
                continue;
             }
 
-            inverseTopologicalSort(callInst->getCalledFunction(), workQueue);
+            inverseTopologicalSort(calledFn, workQueue, visited);
          }
       }
    }
 
    workQueue.push_back(fn->getName().str());
+}
+
+void inverseTopologicalSort(Function* fn, std::vector<std::string>& workQueue)
+{
+   std::set<Function*> visited;
+   inverseTopologicalSort(fn, workQueue, visited);
 }
 
 // ==================================================================================
@@ -886,15 +755,15 @@ void inverseTopologicalSort(Function* fn, std::vector<std::string>& workQueue)
 namespace
 {
    /// The baseType is expected to be in the form of type*, like float* or int*
-   std::string getOriginalType(std::string& baseType, const ArgPartInfo* argPartInfo)
+   std::string getOriginalType(const std::string& baseType, const ArgPartInfo& argPartInfo)
    {
       // In this way, it builds something like float (*) or int (*)
       std::string originalTy = baseType.substr(0, baseType.find('*')) + " (*)";
-      const auto& originalTypeDims = argPartInfo->getOrigTypeDims();
+      const auto& originalTypeDims = argPartInfo.getOrigTypeDims();
 
       for(size_t i = 1; i < originalTypeDims.size(); i++)
       {
-         const auto& partInfo = argPartInfo->scheme[i];
+         const auto& partInfo = argPartInfo.scheme[i];
          switch(partInfo.format)
          {
             case COMPLETE:
@@ -938,9 +807,10 @@ namespace
              mode == "acknowledge";
    }
 
-   void createParameterEntryPartition(pugi::xml_node& paramsNode, std::string& name, uint64_t elemCount,
-                                      std::string& includes, uint64_t index, std::string& original_type,
-                                      uint64_t sizeInBytes, std::string& type)
+   void createParameterEntryPartition(pugi::xml_node& paramsNode, const std::string& name, uint64_t elemCount,
+                                      const std::string& includes, uint64_t index,
+                                      const std::string& original_type, uint64_t sizeInBytes,
+                                      const std::string& type)
    {
       auto newParamNode = paramsNode.append_child("parameter");
 
@@ -954,7 +824,7 @@ namespace
       newParamNode.append_attribute("typename").set_value(type.c_str());
    }
 
-   void createFnPartNode(pugi::xml_node& origFnNode, pugi::xml_node& fnXml, StringRef topFnName,
+   void createFnPartNode(const pugi::xml_node& origFnNode, pugi::xml_node& fnXml, StringRef topFnName,
                          const std::vector<ArgPartInfo>& objs)
    {
       fnXml.append_attribute("csroa").set_value(true);
@@ -1010,7 +880,7 @@ namespace
                                               "' of an array-partitioned function has no usable elem_count attribute");
             }
             uint64_t elemCount = storedElemCount / obj->getNumPartitions();
-            std::string originalType = getOriginalType(type, &(*obj));
+            std::string originalType = getOriginalType(type, *obj);
 
             for(uint64_t numPartition = 0; numPartition < obj->getNumPartitions(); numPartition++)
             {
@@ -1033,7 +903,7 @@ namespace
    }
 } // namespace
 
-void modifyXMLModule(ArrPartCtx& arrPartCtx, std::string& outdirName)
+void modifyXMLModule(ArrPartCtx& arrPartCtx, const std::string& outdirName)
 {
    LLVM_DEBUG(llvm::dbgs() << "[CSROA] Modify architecture.xml file\n");
    auto& doc = *arrPartCtx.doc;
@@ -1043,12 +913,13 @@ void modifyXMLModule(ArrPartCtx& arrPartCtx, std::string& outdirName)
    for(auto& f : functions)
    {
       const std::string symbol = f.attribute("symbol").as_string();
-      if(!arrPartCtx.fnTable.count(symbol) || getFnInfoOrDie(arrPartCtx.fnTable, symbol).args.empty())
+      auto fnInfoIt = arrPartCtx.fnTable.find(symbol);
+      if(fnInfoIt == arrPartCtx.fnTable.end() || fnInfoIt->second.args.empty())
       {
          continue;
       }
 
-      auto& fnInfo = getFnInfoOrDie(arrPartCtx.fnTable, symbol);
+      auto& fnInfo = fnInfoIt->second;
       pugi::xml_node& origFnNode = f;
       if(symbol == arrPartCtx.topFn->getName())
       {
@@ -1096,7 +967,7 @@ void modifyXMLModule(ArrPartCtx& arrPartCtx, std::string& outdirName)
    doc.save_file(arch_filename.c_str(), "  ", pugi::format_indent | pugi::format_no_empty_element_tags);
 }
 
-bool loadXMLModule(pugi::xml_document& doc, std::string& outdirName)
+bool loadXMLModule(pugi::xml_document& doc, const std::string& outdirName)
 {
    const auto arch_filename = outdirName + "/architecture.xml";
    if(!doc.load_file(arch_filename.c_str()))
@@ -1137,7 +1008,7 @@ std::string getDemangled(const std::string& declname)
  * Searches the top function in the Module and set it to the arrPartCtx.topFn.
  * It returns true if it is found, false otherwise.
  */
-Function* findTopFunction(Module& M, std::string& topFunctionNameArgPass)
+Function* findTopFunction(Module& M, const std::string& topFunctionNameArgPass)
 {
    auto pred = [&](const Function& f) { return getDemangled(f.getName().str()) == topFunctionNameArgPass; };
    size_t numTopFn = std::count_if(M.functions().begin(), M.functions().end(), pred);

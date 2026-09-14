@@ -89,8 +89,6 @@ class PartInfo
 
    PartInfo() : format(PartInfoFormat::NONE), factor(0){};
 
-   PartInfo(PartInfoFormat format, size_t factor) : format(format), factor(factor){};
-
    explicit PartInfo(size_t formatArg, size_t numMemoriesArg, size_t dimSize);
 
    [[nodiscard]] std::string to_string() const
@@ -184,7 +182,7 @@ struct ArgPartInfo
    std::vector<size_t> origDims;
    std::map<uint64_t, Value*> partitionMap;
 
-   explicit ArgPartInfo(std::string& name, Argument* arg, const std::vector<size_t>& dims)
+   explicit ArgPartInfo(const std::string& name, Argument* arg, const std::vector<size_t>& dims)
        : argName(name), arg(arg), origDims(dims)
    {
       initializePartitionScheme(scheme, dims.size());
@@ -340,17 +338,16 @@ auto findPartInfoInContainer(const ValueT* value, std::vector<PartInfoT>& partit
    return llvm::find_if(partitionInfos, [&](const PartInfoT& p) { return p.key() == value; });
 }
 
-void describeArrPartRequests(ArrPartCtx& ctx);
+void describeArrPartRequests(const ArrPartCtx& ctx);
 void printModuleOnFile(Module& M, const std::string& outPath);
-void diffuseArrPartConfigs(ArrPartCtx& arrPartCtx, std::vector<std::string>& workQueue);
-inline bool isArgPartitionable(Argument* arg);
+void diffuseArrPartConfigs(ArrPartCtx& arrPartCtx, const std::vector<std::string>& workQueue);
 void populateArrPartCtx(Module& M, ArrPartCtx& arrPartCtx);
 bool isArrPartFunctionPresent(Module& M);
 FnPartInfo& getFnInfoOrDie(StringMap<FnPartInfo>& table, StringRef fnName);
 void inverseTopologicalSort(Function* fn, std::vector<std::string>& workQueue);
-bool loadXMLModule(pugi::xml_document& doc, std::string& outdirName);
-void modifyXMLModule(ArrPartCtx& arrPartCtx, std::string& outdirName);
+bool loadXMLModule(pugi::xml_document& doc, const std::string& outdirName);
+void modifyXMLModule(ArrPartCtx& arrPartCtx, const std::string& outdirName);
 std::string getDemangled(const std::string& declname);
-Function* findTopFunction(Module& M, std::string& topFunctionNameArgPass);
+Function* findTopFunction(Module& M, const std::string& topFunctionNameArgPass);
 
 #endif // ARR_PART_HPP
