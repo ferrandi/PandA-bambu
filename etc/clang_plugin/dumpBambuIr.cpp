@@ -2759,10 +2759,13 @@ namespace llvm
       {
          const llvm::GlobalVariable* llvm_obj = reinterpret_cast<const llvm::GlobalVariable*>(t);
 #if PANDA_LLVM_CLANG_MAJOR < 16
-         return std::max(8u, 8 * llvm_obj->getAlignment());
+         if(llvm_obj->getAlignment())
+             return std::max(8u, 8 * llvm_obj->getAlignment());
 #else
-         return std::max(8u, 8 * static_cast<unsigned>(llvm_obj->getAlign()->value()));
+         if(llvm_obj->getAlign())
+             return std::max(8u, 8 * static_cast<unsigned>(llvm_obj->getAlign()->value()));
 #endif
+         return std::max(8u, 8 * static_cast<unsigned>(getAbiTypeAlignmentBytes(DL, llvm_obj->getValueType())));
       }
       else if(IR_CODE(t) == IRC(ALLOCAVARIABLE_VAL_NODE))
       {
