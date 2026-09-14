@@ -638,10 +638,14 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       }
       (cpp_input && !(cm & CM_COMPILER_OPT)) ? load_and_run_plugin(COMPILER_SSA_PLUGINCPP) :
                                                load_and_run_plugin(COMPILER_SSA_PLUGIN);
-      // if(cm & CM_COMPILER_STD)
-      // {
-      //    command += " -S -emit-llvm";
-      // }
+      if((cm & CM_COMPILER_OPT) || (cm & CM_COMPILER_STD))
+      {
+         command += " -S";
+      }
+      if(cm & CM_COMPILER_STD)
+      {
+         command += " -emit-llvm";
+      }
    }
    command += SCRIPT_NEWLINE + passes.get();
 
