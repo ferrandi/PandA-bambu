@@ -1,0 +1,723 @@
+{
+  "schema": {
+    "required": [
+      "name"
+    ],
+    "optional": [
+      "type",
+      "default_value",
+      "description",
+      "category",
+      "declared_in",
+      "allowed_values"
+    ]
+  },
+  "parameters": [
+    {
+      "name": "BRAM_bitsize_max",
+      "type": "UInt",
+      "default_value": "device",
+      "description": "Maximum BRAM size (in bits) supported by the target device.",
+      "category": "technology"
+    },
+    {
+      "name": "BRAM_bitsize_min",
+      "type": "UInt",
+      "default_value": "device",
+      "description": "Minimum BRAM size (in bits) supported by the target device.",
+      "category": "technology"
+    },
+    {
+      "name": "CSE_size",
+      "type": "UInt",
+      "default_value": "2",
+      "description": "Minimum bitwidth (in bits) for common subexpression elimination; smaller expressions are skipped unless they are extract_bit or lut expressions.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "ConnectionOffset",
+      "type": "Double",
+      "default_value": "0.0",
+      "description": "Absolute connection delay added to timing estimates (in time units).",
+      "category": "hls"
+    },
+    {
+      "name": "DSP_allocation_coefficient",
+      "type": "Double",
+      "category": "HLS"
+    },
+    {
+      "name": "DSPs_margin",
+      "type": "Double",
+      "category": "HLS"
+    },
+    {
+      "name": "DSPs_margin_stage",
+      "type": "Double",
+      "category": "HLS"
+    },
+    {
+      "name": "DSPs_rx_sizes",
+      "type": "String",
+      "default_value": "device",
+      "description": "Comma-separated list of DSP pre-adder/register X sizes supported by the device.",
+      "category": "technology"
+    },
+    {
+      "name": "DSPs_ry_sizes",
+      "type": "String",
+      "default_value": "device",
+      "description": "Comma-separated list of DSP pre-adder/register Y sizes supported by the device.",
+      "category": "technology"
+    },
+    {
+      "name": "DSPs_x_sizes",
+      "type": "String",
+      "default_value": "device",
+      "description": "Comma-separated list of DSP operand X sizes supported by the device.",
+      "category": "technology"
+    },
+    {
+      "name": "DSPs_y_sizes",
+      "type": "String",
+      "default_value": "device",
+      "description": "Comma-separated list of DSP operand Y sizes supported by the device.",
+      "category": "technology"
+    },
+    {
+      "name": "DebugDFM",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Enable extra design-flow-manager consistency checks and debug dot dumps (debug builds).",
+      "category": "design_flows"
+    },
+    {
+      "name": "FanOutCoefficient",
+      "type": "Double",
+      "default_value": "0.007",
+      "description": "Coefficient used in fanout delay estimation during allocation.",
+      "category": "hls"
+    },
+    {
+      "name": "LP-BB-list",
+      "type": "String",
+      "default_value": "",
+      "description": "Comma-separated list of basic-block IDs whose loops are eligible for loop pipelining.",
+      "category": "hls"
+    },
+    {
+      "name": "OutputCarryConnectionRatio",
+      "type": "Double",
+      "default_value": "0.6",
+      "description": "Relative carry-output connection delay as a fraction of setup/hold time.",
+      "category": "hls"
+    },
+    {
+      "name": "OutputDSPConnectionRatio",
+      "type": "Double",
+      "default_value": "0.6",
+      "description": "Relative DSP-output connection delay as a fraction of setup/hold time.",
+      "category": "hls"
+    },
+    {
+      "name": "QUEUESIZE_DEPTH",
+      "type": "Int",
+      "default_value": "0",
+      "description": "Override depth for dataflow FIFO interfaces (<=0 means use interface/default depth).",
+      "category": "hls"
+    },
+    {
+      "name": "RelativeConnectionOffset",
+      "type": "Double",
+      "default_value": "0.0",
+      "description": "Connection delay offset relative to setup/hold time.",
+      "category": "hls"
+    },
+    {
+      "name": "StatesNumberNormalization",
+      "type": "Double",
+      "default_value": "1000",
+      "description": "Normalization divisor for the FSM state count when estimating controller delay; used when an explicit state count is available.",
+      "category": "hls"
+    },
+    {
+      "name": "ToDSPRegisterDelay",
+      "type": "Double",
+      "default_value": "0.6",
+      "description": "Base delay (in setup/hold time units) for paths to DSP registers.",
+      "category": "hls"
+    },
+    {
+      "name": "USE_TIME_UNIT_PS",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Device timing reports are in picoseconds (1) instead of nanoseconds (0).",
+      "category": "technology"
+    },
+    {
+      "name": "axi_burst_type",
+      "type": "UInt",
+      "default_value": "0",
+      "description": "AXI burst type required by the device; used to configure AXI adapters.",
+      "category": "technology"
+    },
+    {
+      "name": "bitvalue",
+      "type": "Bool",
+      "default_value": "1",
+      "description": "Enable Bit-Value analysis pass.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "bitvalue-opt",
+      "type": "Bool",
+      "default_value": "1",
+      "description": "Enable Bit-Value optimization pass.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "bus-no-chain",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Disable chaining of operations that access memory through a bus.",
+      "category": "hls"
+    },
+    {
+      "name": "chained-memory-modules",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Use chained memory modules instead of parallel chaining for memory ports.",
+      "category": "hls"
+    },
+    {
+      "name": "connection_offset",
+      "type": "Double",
+      "default_value": "0.0",
+      "description": "Device connection offset used in timing models (device XML parameter).",
+      "category": "technology"
+    },
+    {
+      "name": "constdiv_composite_enable",
+      "type": "Bool",
+      "default_value": "1",
+      "description": "Enable composite lowering for non-power-of-two const div/mod by factoring the divisor into pairs when profitable.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "constdiv_composite_margin",
+      "type": "Double",
+      "default_value": "0.0",
+      "description": "Extra margin added when comparing composite vs atomic const-div cost; higher values make composite less likely.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "constdiv_composite_max_pairs",
+      "type": "UInt",
+      "default_value": "32",
+      "description": "Maximum number of divisor factor pairs to evaluate for composite const-div lowering.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "constdiv_dsp_scale_k",
+      "type": "Double",
+      "default_value": "1.0",
+      "description": "Scale factor applied only to the DSP term (not LUT term) when converting mulhi area to LUT-equivalents in the const-div cost model.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "constdiv_lowering_mode",
+      "type": "String",
+      "default_value": "auto",
+      "description": "Select const div/mod lowering: llvm_magic, linarch, btcd, or auto (cost-driven).",
+      "category": "frontend_analysis",
+      "allowed_values": [
+        "llvm_magic",
+        "linarch",
+        "btcd",
+        "auto"
+      ]
+    },
+    {
+      "name": "constmul_balance_tree",
+      "type": "Bool",
+      "default_value": "1",
+      "description": "Emit balanced add-tree for constant-multiply shift/add terms to reduce dependency depth.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "constmul_balance_tree_min_terms",
+      "type": "UInt",
+      "default_value": "4",
+      "description": "Minimum number of terms before enabling balanced-tree emission for constant multiply.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "constmul_dsp_scale_k",
+      "type": "Double",
+      "default_value": "1.0",
+      "description": "Scale factor applied only to the DSP term (not LUT term) when converting multiplier area to LUT-equivalents in constant-multiply profitability checks.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "constmul_enable",
+      "type": "Bool",
+      "default_value": "1",
+      "description": "Enable constant-multiply expansion into shift/add sequences when profitable.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "constmul_enable_small_factor_chains",
+      "type": "Bool",
+      "default_value": "1",
+      "description": "Enable small-factor addition chains (e.g., 3/5/9) in constant-multiply decomposition.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "constmul_kcm_alpha",
+      "type": "UInt",
+      "default_value": "max_lut_size",
+      "description": "KCM LUT input size (alpha); initialized from max_lut_size and clamped to max_lut_size if user-provided.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "constmul_kcm_cost_model",
+      "type": "String",
+      "default_value": "heuristic",
+      "description": "KCM cost estimator used in IR lowering: heuristic (closed-form) or mockturtle (logic-mapped).",
+      "category": "frontend_analysis",
+      "allowed_values": [
+        "heuristic",
+        "mockturtle"
+      ]
+    },
+    {
+      "name": "constmul_kcm_enable",
+      "type": "Bool",
+      "default_value": "1",
+      "description": "Enable KCM-based constant-multiply lowering (LUT + add).",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "constmul_kcm_merge_table_add",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Use Walters/Wirthlin merge (alpha-1 inputs) for table+add in a rake structure.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "constmul_kcm_sum_strategy",
+      "type": "String",
+      "default_value": "tree",
+      "description": "KCM partial-sum strategy: tree (balanced) or rake (chain).",
+      "category": "frontend_analysis",
+      "allowed_values": [
+        "tree",
+        "rake"
+      ]
+    },
+    {
+      "name": "constmul_max_depth",
+      "type": "UInt",
+      "default_value": "8",
+      "description": "Maximum adder depth allowed for constant-multiply expansion.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "constmul_max_terms",
+      "type": "UInt",
+      "default_value": "16",
+      "description": "Maximum number of shift/add terms allowed for constant-multiply expansion.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "constmul_try_factor_forms",
+      "type": "Bool",
+      "default_value": "1",
+      "description": "Try factor forms (q * (2^m +/- 1)) when building constant-multiply decompositions.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "constmultdiv_decision_metric",
+      "type": "String",
+      "default_value": "auto",
+      "description": "Decision policy for const mult/div alternative selection: auto (objective-driven), score, proxy, or hybrid (score primary with proxy tie-break).",
+      "category": "frontend_analysis",
+      "allowed_values": [
+        "auto",
+        "score",
+        "proxy",
+        "hybrid"
+      ]
+    },
+    {
+      "name": "constmultdiv_lut_cost_model",
+      "type": "String",
+      "default_value": "auto",
+      "description": "LUT cost estimator for const-div table architectures (linarch/btcd): auto (analytic when in_bits <= max_lut_size, otherwise mockturtle), analytic, mockturtle (per-stage), or mockturtle_full (full-network mapping, more accurate and slower).",
+      "category": "frontend_analysis",
+      "allowed_values": [
+        "auto",
+        "analytic",
+        "mockturtle",
+        "mockturtle_full"
+      ]
+    },
+    {
+      "name": "constmultdiv_score",
+      "type": "String",
+      "default_value": "weighted",
+      "description": "Cost score mode for const mult/div: area, delay, atp, or weighted.",
+      "category": "frontend_analysis",
+      "allowed_values": [
+        "area",
+        "delay",
+        "atp",
+        "weighted"
+      ]
+    },
+    {
+      "name": "constmultdiv_w_area",
+      "type": "Double",
+      "default_value": "1.0",
+      "description": "Area weight for the weighted const mult/div score.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "constmultdiv_w_latency",
+      "type": "Double",
+      "default_value": "1.0",
+      "description": "Latency weight for the weighted const mult/div score.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "controller_delay_multiplier",
+      "type": "Double",
+      "category": "HLS"
+    },
+    {
+      "name": "correct-transformation",
+      "type": "UInt",
+      "default_value": "1",
+      "description": "Expected count of correct transformations for find-max-transformations tests.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "dfm_statistics",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Collect design flow manager statistics (time, passes, changes).",
+      "category": "design_flows"
+    },
+    {
+      "name": "disable-THR",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Disable THR cost table construction during tree-manager creation.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "disable-cse",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Disable common subexpression elimination pass.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "disable-dce",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Disable dead code elimination pass.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "disable-extract-patterns",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Disable pattern extraction pass.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "disable-fanout_opt",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Disable fanout optimization pass.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "disable-invalidations",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Disable design-flow invalidation relationships (no re-execution of invalidated steps).",
+      "category": "design_flows"
+    },
+    {
+      "name": "disable_extract_ternary_patterns",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Disable ternary pattern extraction based on device settings.",
+      "category": "technology"
+    },
+    {
+      "name": "enable-FSMX",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Enable FSM-X propagation for write-enable signals in controller generation.",
+      "category": "hls"
+    },
+    {
+      "name": "enable-conservative-sdc",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Enable conservative simple-code-motion behavior when using SDC scheduling.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "enable_CUSTOM-SROA",
+      "type": "Int",
+      "category": "wrapper"
+    },
+    {
+      "name": "family",
+      "type": "String",
+      "default_value": "device",
+      "description": "Target device family name from device XML.",
+      "category": "technology"
+    },
+    {
+      "name": "fast-backend",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Enable fast backend flow mode in synthesis scripts.",
+      "category": "wrapper"
+    },
+    {
+      "name": "function-opt",
+      "type": "Bool",
+      "default_value": "1",
+      "description": "Enable function call optimization/inlining pass.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "is_single_write_memory",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Device memories allow only a single write per cycle.",
+      "category": "technology"
+    },
+    {
+      "name": "load-store-no-chain",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Disable chaining when load/store operations are involved.",
+      "category": "hls"
+    },
+    {
+      "name": "max_distram_nn_size",
+      "type": "UInt",
+      "category": "HLS"
+    },
+    {
+      "name": "max_lut_size",
+      "type": "UInt",
+      "default_value": "device",
+      "description": "Maximum LUT input size for LUT-based transformations and cost models.",
+      "category": "technology"
+    },
+    {
+      "name": "memory_correction_coefficient",
+      "type": "Double",
+      "default_value": "0.7",
+      "description": "Scaling factor applied to memory timing corrections in allocation.",
+      "category": "technology"
+    },
+    {
+      "name": "model",
+      "type": "String",
+      "default_value": "device",
+      "description": "Target device model name from device XML.",
+      "category": "technology"
+    },
+    {
+      "name": "multi-proc-fsm",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Generate FSM output/transition logic as multiple processes in HDL.",
+      "category": "hls"
+    },
+    {
+      "name": "mux_time_multiplier",
+      "type": "Double",
+      "category": "HLS"
+    },
+    {
+      "name": "no-local-mem",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Disable allocation of local memories.",
+      "category": "hls"
+    },
+    {
+      "name": "no-private-mem",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Disable allocation of private memories.",
+      "category": "hls"
+    },
+    {
+      "name": "no-share-max",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Prevent sharing of max/min functional units by forcing zero resource area.",
+      "category": "hls"
+    },
+    {
+      "name": "none-ptrdefault",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Treat ptrdefault interface as none for I/O pointers.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "none-registered-ptrdefault",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Treat ptrdefault interface as none and drop interface registers for I/O pointers.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "opaque-pointers",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Enable opaque pointers for clang 16+; when disabled, passes -no-opaque-pointers.",
+      "category": "wrapper"
+    },
+    {
+      "name": "package",
+      "type": "String",
+      "default_value": "device",
+      "description": "Target device package from device XML.",
+      "category": "technology"
+    },
+    {
+      "name": "panda-lock-csroa",
+      "type": "Int",
+      "category": "wrapper"
+    },
+    {
+      "name": "planner-context-xml",
+      "type": "Bool",
+      "category": "wrapper"
+    },
+    {
+      "name": "print-dot-FF",
+      "type": "Bool",
+      "default_value": "1",
+      "description": "Enable dot graph emission for frontend flow steps when debug output is active.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "print-ir-manager",
+      "type": "Bool",
+      "default_value": "1",
+      "description": "Dump IR manager IR (raw and bambu-LLVM) before/after frontend steps.",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "profile_steps",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Collect per-step profiling statistics in the design flow manager.",
+      "category": "design_flows"
+    },
+    {
+      "name": "ra-disjoint-interval-max",
+      "type": "UInt",
+      "default_value": "8",
+      "description": "Maximum number of disjoint intervals kept per edge predicate; exceeding this threshold degrades to unknown.",
+      "category": "range_analysis",
+      "declared_in": "src/algorithms/range_analysis/ConstraintGraph.cpp"
+    },
+    {
+      "name": "registered_noc",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Use a registered NoC interface in bus generation.",
+      "category": "hls"
+    },
+    {
+      "name": "sds_memory_mode",
+      "type": "String",
+      "default_value": "SDS",
+      "description": "Select the private synchronous SDS BRAM wrapper: SDS keeps split read/write ports, SDS1 uses a single address/size/predicate interface.",
+      "category": "technology",
+      "allowed_values": [
+        "SDS",
+        "SDS1"
+      ]
+    },
+    {
+      "name": "setup_multiplier",
+      "type": "Double",
+      "category": "HLS"
+    },
+    {
+      "name": "simple-benchmark-name",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Use a simplified benchmark name without auto-appending top function suffixes.",
+      "category": "hls"
+    },
+    {
+      "name": "small_normalized_resource_area",
+      "type": "Double",
+      "default_value": "2.0",
+      "description": "Threshold for treating a resource as small in CDFC module binding.",
+      "category": "hls"
+    },
+    {
+      "name": "speed_grade",
+      "type": "String",
+      "default_value": "device",
+      "description": "Target device speed grade from device XML.",
+      "category": "technology"
+    },
+    {
+      "name": "time_multiplier",
+      "type": "Double",
+      "category": "HLS"
+    },
+    {
+      "name": "use_soft_32_mul",
+      "type": "UInt",
+      "category": "frontend_analysis"
+    },
+    {
+      "name": "use_soft_64_mul",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Prefer software 64-bit multiplication instead of DSP-based implementation.",
+      "category": "technology"
+    },
+    {
+      "name": "variable-mem-lat",
+      "type": "Bool",
+      "default_value": "0",
+      "description": "Enable variable-memory-latency checks when allocating RAMs.",
+      "category": "hls"
+    },
+    {
+      "name": "vendor",
+      "type": "String",
+      "default_value": "device",
+      "description": "Target device vendor from device XML.",
+      "category": "technology"
+    },
+    {
+      "name": "wrong-transformation",
+      "type": "UInt",
+      "default_value": "0",
+      "description": "Expected count of wrong transformations for find-max-transformations tests.",
+      "category": "frontend_analysis"
+    }
+  ]
+}

@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -36,63 +24,50 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef OPERATIONS_GRAPH_CONSTRUCTOR_HPP
 #define OPERATIONS_GRAPH_CONSTRUCTOR_HPP
 
-#include "custom_map.hpp" // for map
-#include "graph.hpp"
+#include "custom_map.hpp"
+#include "op_graph.hpp"
 #include "refcount.hpp"
-#include "strong_typedef.hpp"
 
-#include <string> // for string
+#include <string>
+#include <utility>
 
-/**
- * @name Forward declarations
- */
-//@{
-enum class FunctionBehavior_VariableAccessType;
-enum class FunctionBehavior_VariableType;
-STRONG_TYPEDEF_FORWARD_DECL(unsigned int, MemoryAddress);
-REF_FORWARD_DECL(operations_graph_constructor);
-REF_FORWARD_DECL(OpGraph);
-REF_FORWARD_DECL(OpGraphsCollection);
-REF_FORWARD_DECL(tree_manager);
-//@}
+enum class VariableAccessType;
+enum class VariableType;
+REF_FORWARD_DECL(ir_manager);
 
 /**
  * class providing methods to manage an operations graph.
  */
 class operations_graph_constructor
 {
- private:
    /// reference to the bulk operations graph
-   const OpGraphsCollectionRef og;
-
-   /// The graph with all the edges
-   const OpGraphRef op_graph;
+   OpGraphsCollection& og;
 
    /// Mapping between id to index
-   std::map<std::string, vertex> index_map;
+   std::map<std::string, OpGraph::vertex_descriptor> index_map;
 
  public:
-   /**
-    * Return the vertex index given the id of the vertex node.
-    * @param source is the name of the vertex.
-    * @return the index associated with the source.
-    */
-   vertex getIndex(const std::string& source);
+   using EdgeIndex = CustomUnorderedMapUnstable<std::pair<OpGraph::vertex_descriptor, OpGraph::vertex_descriptor>,
+                                                OpGraph::edge_descriptor>;
 
    /**
     * Return the vertex index given the id of the vertex node.
     * @param source is the name of the vertex.
     * @return the index associated with the source.
     */
-   vertex CgetIndex(const std::string& source) const;
+   OpGraph::vertex_descriptor getIndex(const std::string& source);
+
+   /**
+    * Return the vertex index given the id of the vertex node.
+    * @param source is the name of the vertex.
+    * @return the index associated with the source.
+    */
+   OpGraph::vertex_descriptor CgetIndex(const std::string& source) const;
 
    /**
     * add an edge between vertex source and vertex dest
@@ -100,7 +75,23 @@ class operations_graph_constructor
     * @param dest is the dest vertexes
     * @param selector is the type of the edge
     */
-   EdgeDescriptor AddEdge(const vertex source, const vertex dest, int selector);
+   OpGraph::edge_descriptor AddEdge(OpGraph::vertex_descriptor source, OpGraph::vertex_descriptor dest, int selector);
+
+   /**
+    * Build an index of the edges currently stored in the bulk graph.
+    * @param edge_index is the index to initialize.
+    */
+   void InitializeEdgeIndex(EdgeIndex& edge_index) const;
+
+   /**
+    * Add an edge using a caller-owned index to avoid repeated linear graph lookups.
+    * @param source is the source vertex.
+    * @param dest is the destination vertex.
+    * @param selector is the type of the edge.
+    * @param edge_index is the index used by the caller for a batch of insertions.
+    */
+   OpGraph::edge_descriptor AddEdge(OpGraph::vertex_descriptor source, OpGraph::vertex_descriptor dest, int selector,
+                                    EdgeIndex& edge_index);
 
    /**
     * remove a selector between two vertices
@@ -108,14 +99,14 @@ class operations_graph_constructor
     * @param dest is the dest vertexes
     * @param selector is the type of the edge
     */
-   void RemoveEdge(const vertex source, const vertex dest, int selector);
+   void RemoveEdge(OpGraph::vertex_descriptor source, OpGraph::vertex_descriptor dest, int selector);
 
    /**
     * set the selector of an edge between vertex source and vertex dest
     * @param edge is the edge descriptor from which the selector has to be removed
     * @param selector is the selector to be removed
     */
-   void RemoveSelector(const EdgeDescriptor edge, const int selector);
+   void RemoveSelector(const OpGraph::edge_descriptor& edge, const int selector);
 
    /**
     * Remove all redundant edges
@@ -131,69 +122,72 @@ class operations_graph_constructor
     * Add edge info to the graph.
     * @param src is an unique id representing the source node.
     * @param tgt is an unique id representing the target node.
-    * @param ef is the family of the edge. See cdfg_edge_info class for details.
+    * @param selector is the family of the edge. See cdfg_edge_info class for details.
     * @param NodeID is the NodeID of the variable carrying the data through the edge.
     */
-   void add_edge_info(const vertex src, const vertex tgt, const int selector, unsigned int NodeID);
+   void add_edge_info(OpGraph::vertex_descriptor src, OpGraph::vertex_descriptor tgt, const int selector,
+                      unsigned int NodeID);
+
+   /**
+    * Add edge info when the edge descriptor is already available.
+    * @param edge is the edge to update.
+    * @param selector is the family of the edge.
+    * @param NodeID is the variable carried by the edge.
+    */
+   void add_edge_info(const OpGraph::edge_descriptor& edge, const int selector, unsigned int NodeID);
 
    /**
     * Add the operation associated with a vertex.
-    * @param TM is the tree manager
-    * @param source is the vertex name at which the operation is associated.
-    * @param oper is a string representing the operation associated with source.
+    * @param TM is the IR manager
+    * @param src is the vertex name at which the operation is associated.
+    * @param oper is a string representing the operation associated with `src`.
     * @param bb_index is the basic block index associated with the operation.
-    * @param node_id is the index of the tree node
+    * @param node_id is the index of the IR node
     */
-   void AddOperation(const tree_managerRef TM, const std::string& src, const std::string& oper, unsigned int bb_index,
+   void AddOperation(const ir_managerRef TM, const std::string& src, const std::string& oper, unsigned int bb_index,
                      const unsigned int node_id);
 
    /**
     * Add the type associated with a vertex.
-    * @param source is the vertex name at which the type is associated.
-    * @param type is an unsigned int representing the type associated with source.
+    * @param src is the vertex name at which the type is associated.
+    * @param type is an unsigned int representing the type associated with `src`.
     */
    void add_type(const std::string& src, unsigned int type);
 
    /**
     * Constructor.
-    * @param og is the collection of operations graph
+    * @param _og is the collection of operations graphs managed by this helper
     */
-   explicit operations_graph_constructor(OpGraphsCollectionRef _og);
-
-   /**
-    * Destructor.
-    */
-   ~operations_graph_constructor();
+   explicit operations_graph_constructor(OpGraphsCollection& _og);
 
    /**
     * Adds an access to a variable to an operation vertex
     * @param op_vertex is the operation to be considered
     * @param variable is the index of the variable
-    * @param type is the type of the variable
+    * @param variable_type is the type of the variable
     * @param access_type is the type of the access
     */
-   void AddVariable(const vertex op_vertex, const unsigned int variable,
-                    const FunctionBehavior_VariableType variable_type,
-                    const FunctionBehavior_VariableAccessType access_type);
+   void AddVariable(OpGraph::vertex_descriptor op_vertex, const unsigned int variable, const VariableType variable_type,
+                    const VariableAccessType access_type);
 
    /**
     * Adds a (ssa-)variable to the set of variables referred by the operation vertex
     * @param Ver is the operation vertex
-    * @param Var is the node id associated to the variable referred by the operation vertex
+    * @param Vargc is the node id associated with the variable referred by the operation vertex
     */
-   void AddSourceCodeVariable(const vertex& Ver, unsigned int Vargc);
+   void AddSourceCodeVariable(OpGraph::vertex_descriptor Ver, unsigned int Vargc);
 
    /**
     * Adds a parameter to the vertex
     * @param Ver is the operation vertex
-    * @param Var is the node id associated to the variable referred by the operation vertex
+    * @param Vargc is the node id associated with the variable referred by the operation vertex
     */
-   void add_parameter(const vertex& Ver, unsigned int Vargc);
+   void add_parameter(OpGraph::vertex_descriptor Ver, unsigned int Vargc);
 
    /**
     * Adds a call to the vertex
     * @param source is the vertex name at which the type is associated.
-    * @param called is the called function
+    * @param called_function is the index of the called function
     */
    void add_called_function(const std::string& source, unsigned int called_function);
 };

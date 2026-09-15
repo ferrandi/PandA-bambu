@@ -1,0 +1,11 @@
+This copyright notice is intended for the following sources
+distributed within the PandA Bambu HLS release:
+  - include/panda/csroa_directives.h
+The PandA/Bambu bambu_directives library as a whole is subject to the following 
+copyright notice:
+
+(1)
+    Copyright (C) 2025-2026 Politecnico di Milano
+
+    Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+    SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception

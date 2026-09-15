@@ -1,0 +1,168 @@
+#!/bin/sh
+# xmlmerge — merge two simple XML files using sibling xmlq
+# Usage:
+#   xmlmerge [-i] FILE1 FILE2
+#   -i  Merge FILE2 into FILE1 in place (safe temp+mv). Otherwise print to stdout.
+#
+# Merging rules:
+#   • Attributes: merged; same element+attr with different values → exit 4
+#   • Text leaves: values are deduped and kept in encounter order (FILE1 then FILE2)
+#   • Tree: every key from xmlq (/a/b[/c][@attr]) registers ALL containers (/a, /a/b, …)
+# Limits: simple XML (no namespaces/CDATA/entities). Works with the xmlq flattener you use.
+
+set -eu
+
+inplace=0
+while getopts ":i" opt; do
+  case "$opt" in
+    i) inplace=1 ;;
+    *) echo "Usage: $0 [-i] FILE1 FILE2" >&2; exit 2 ;;
+  esac
+done
+shift $((OPTIND-1))
+[ $# -eq 2 ] || { echo "Usage: $0 [-i] FILE1 FILE2" >&2; exit 2; }
+
+f1=$1
+f2=$2
+
+# Always use the xmlq located next to this script
+XMLQ="`dirname $(readlink -e "$0")`/xmlq"
+
+merge_once() {
+  {
+    "$XMLQ" "$f1"
+    "$XMLQ" "$f2"
+  } | awk '
+  function trim(s){ gsub(/^[[:space:]]+|[[:space:]]+$/,"",s); return s }
+  function esc_text(s){ gsub(/&/,"&amp;",s); gsub(/</,"&lt;",s); return s }
+  function esc_attr(s){ gsub(/&/,"&amp;",s); gsub(/"/,"&quot;",s); gsub(/</,"&lt;",s); return s }
+  function preserve_multiplicity(path){ return path ~ /\/run$/ }
+
+  # Maps:
+  #   attrs[path,attr]       -> value
+  #   textList[path]         -> "\n" joined leaf values (dedup, keep order)
+  #   textSeen[path,val]     -> 1
+  #   seenPath[path]         -> 1  (unique element paths in first-seen order)
+  #   order[i]               -> path (i=1..N)
+  #   parent[path]           -> parent path ("/" for root)
+  #   children[parent]       -> "\n" child names (unique; first-seen wins)
+  #   childSeen[parent,name] -> 1
+
+  {
+    key=$1; $1=""; val=substr($0,2); val=trim(val)
+
+    # Get element path (strip @attr)
+    ep = key
+    at = index(ep,"@")
+    if (at>0) ep=substr(ep,1,at-1)
+
+    # Walk ALL segments to register containers and edges
+    n = split(ep, seg, "/")
+    # seg[1] is "", seg[2] is root name (e.g., "application")
+    path = ""
+    for (i=2; i<=n; i++) {
+      prev = (path=="" ? "/" : path)
+      path = (path=="" ? "/" seg[i] : path "/" seg[i])
+
+      # first-time element path order
+      if (!(path in seenPath)) {
+        seenPath[path]=1
+        order[++N]=path
+        parent[path]=prev
+      }
+      # parent→child registration
+      if (!( (prev SUBSEP seg[i]) in childSeen )) {
+        childSeen[prev SUBSEP seg[i]]=1
+        if (children[prev]=="") children[prev]=seg[i]; else children[prev]=children[prev] "\n" seg[i]
+      }
+    }
+
+    # Attributes or text accumulation
+    at = index(key,"@")
+    if (at>0) {
+      an = substr(key, at+1)
+      k = ep SUBSEP an
+      if (!(k in attrs)) {
+        attrs[k]=val
+      } else if (attrs[k]!=val) {
+        print "xmlmerge: conflicting attribute on " ep ":@" an \
+              " -> \"" attrs[k] "\" vs \"" val "\"" > "/dev/stderr"
+        exit 4
+      }
+    } else if (val!="") {
+      if (preserve_multiplicity(ep) || !( (ep SUBSEP val) in textSeen )) {
+        textSeen[ep SUBSEP val]=1
+        if (textList[ep]=="") textList[ep]=val; else textList[ep]=textList[ep] "\n" val
+      }
+    }
+  }
+
+  END{
+    if (N==0) { print ""; exit 0 }
+    root = order[1]   # first element path encountered (from FILE1)
+    render(root)
+    printf "\n"
+  }
+
+  function print_start(ep,    nm,acc,k,v,parts){
+    nm = ep; sub(/^.*\//,"",nm)
+    acc=""
+    for (k in attrs) {
+      split(k, parts, SUBSEP)   # parts[1]=path, parts[2]=attr
+      if (parts[1]==ep) {
+        v=esc_attr(attrs[k])
+        acc = acc " " parts[2] "=\"" v "\""
+      }
+    }
+    printf "<%s%s>", nm, acc
+  }
+  function print_end(ep,    nm){ nm=ep; sub(/^.*\//,"",nm); printf "</%s>", nm }
+
+  function render(ep,    cl,nc,i,nm,childPath,vals,out){
+    hasKids = (ep in children)
+
+    # Pure leaf with a list of values → emit one element per value
+    if (!hasKids && (ep in textList)) {
+      nc = split(textList[ep], vals, "\n")
+      for (i=1;i<=nc;i++) {
+        print_start(ep); printf "%s", esc_text(vals[i]); print_end(ep)
+      }
+      return
+    }
+
+    # Container or empty: single tag, optional joined text before children
+    print_start(ep)
+    if (ep in textList) {
+      nc = split(textList[ep], vals, "\n"); out=""
+      for (i=1;i<=nc;i++) out = (out==""? vals[i] : out " " vals[i])
+      printf "%s", esc_text(out)
+    }
+
+    if (hasKids) {
+      nc = split(children[ep], cl, "\n")
+      for (i=1; i<=nc; i++) {
+        nm = cl[i]; if (nm=="") continue
+        childPath = ep "/" nm
+        render(childPath)
+      }
+    }
+
+    print_end(ep)
+  }
+  '
+}
+
+if [ "$inplace" -eq 0 ]; then
+  merge_once
+else
+  dir=$(dirname -- "$f1")
+  tmp=$(mktemp "$dir/.xmlmerge.XXXXXX") || { echo "xmlmerge: mktemp failed" >&2; exit 1; }
+  trap 'rm -f "$tmp"' EXIT INT TERM
+  if merge_once >"$tmp"; then
+    mv -f -- "$tmp" "$f1"
+    trap - EXIT INT TERM
+  else
+    echo "xmlmerge: merge failed" >&2
+    exit 1
+  fi
+fi

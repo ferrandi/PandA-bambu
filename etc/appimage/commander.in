@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+export LC_ALL="C"
+unset PYTHONHOME  # Python is not bundled with this AppImage
+unset PYTHONPATH
+export PATH="${APPDIR}/usr/bin:${PATH}"
+
+filter_appdir_paths() {
+   local value="$1"
+   local filtered=""
+   local entry=""
+   local old_ifs="${IFS}"
+   IFS=":"
+   for entry in ${value}; do
+      if test -n "${entry}" && [[ "${entry}" == "${APPDIR}"* ]]; then
+         continue
+      fi
+      if test -n "${filtered}"; then
+         filtered="${filtered}:"
+      fi
+      filtered="${filtered}${entry}"
+   done
+   IFS="${old_ifs}"
+   printf '%s' "${filtered}"
+}
+
+if test -n "${LD_LIBRARY_PATH:-}"; then
+   LD_LIBRARY_PATH="$(filter_appdir_paths "${LD_LIBRARY_PATH}")"
+   if test -n "${LD_LIBRARY_PATH}"; then
+      export LD_LIBRARY_PATH
+   else
+      unset LD_LIBRARY_PATH
+   fi
+fi
+
+if test -n "${LIBRARY_PATH:-}"; then
+   LIBRARY_PATH="$(filter_appdir_paths "${LIBRARY_PATH}")"
+   if test -n "${LIBRARY_PATH}"; then
+      export LIBRARY_PATH
+   else
+      unset LIBRARY_PATH
+   fi
+fi
+
+BINARY_NAME="@DIST_DEFAULT_EXE@"
+if test -n "${ARGV0}"; then
+   CANDIDATE=$(basename "${ARGV0#appimage_}")
+   if test -n "${CANDIDATE}" && test "${CANDIDATE}" != "." && command -v "${CANDIDATE}" > /dev/null 2>&1; then
+      BINARY_NAME="${CANDIDATE}"
+   fi
+fi
+
+if test -e "${APPDIR}/usr/settings.sh"; then source "${APPDIR}/usr/settings.sh"; fi
+
+# Ensure we have a runnable binary; fall back to default
+if ! command -v "${BINARY_NAME}" > /dev/null 2>&1; then
+	BINARY_NAME="@DIST_DEFAULT_EXE@"
+fi
+
+cd "${OWD}"
+exec "${BINARY_NAME}" "$@"

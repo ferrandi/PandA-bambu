@@ -7,10 +7,10 @@ ggo_require_compiler=1
 BATCH_ARGS=("-lm" "--simulate" "--experimental-setup=BAMBU" "--expose-globals" "--channels-type=MEM_ACC_NN" "--memory-allocation-policy=EXT_PIPELINED_BRAM" "--std=gnu89")
 OUT_SUFFIX="${compiler}_eg_extp"
 
-python3 $script_dir/../../etc/scripts/test_panda.py gcc_regression_simple --tool=bambu \
+python3 $script_dir/../../etc/scripts/mantis.py gcc_regression_simple --tool=bambu \
    --args="--configuration-name=${compiler}_O0 -O0 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=${compiler}_O1 -O1 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=${compiler}_O2 -O2 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=${compiler}_O3 -O3 ${BATCH_ARGS[*]}" \
    -o "out_${OUT_SUFFIX}" -b$script_dir \
-   --name="${OUT_SUFFIX}" $ARGS
+   $ARGS

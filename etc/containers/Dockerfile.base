@@ -1,0 +1,36 @@
+ARG BASE=ubuntu:xenial
+FROM ${BASE}
+ARG DEBIAN_FRONTEND=noninteractive
+ARG DEBCONF_NONINTERACTIVE_SEEN=true
+ARG LIBSSL_VERSION=3.3.1
+ARG CMAKE_VERSION=3.26.6
+ARG BOOST_VERSION=1.82.0
+RUN { echo 'tzdata tzdata/Areas select Etc'; echo 'tzdata tzdata/Zones/Etc select UTC'; } | debconf-set-selections \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    bison bzip2 ca-certificates file flex g++ gcc gcc-multilib git libgmp-dev \
+    libmpfr-dev make pkg-config python3 time texinfo tzdata wget xz-utils \
+    && rm -rf /var/lib/apt/lists/* \
+    && update-ca-certificates \
+    # Install libSSL from source
+    && wget https://github.com/openssl/openssl/releases/download/openssl-${LIBSSL_VERSION}/openssl-${LIBSSL_VERSION}.tar.gz -qO- | tar xz \
+    && cd openssl-${LIBSSL_VERSION} \
+    && ./Configure --prefix=/usr --libdir=lib/x86_64-linux-gnu \
+    && make -j16 \
+    && make install \
+    && cd .. \
+    && rm -rf openssl-* \
+    # Install CMake from source
+    && wget https://gitlab.kitware.com/cmake/cmake/-/archive/v${CMAKE_VERSION}/cmake-v${CMAKE_VERSION}.tar.gz -qO- | tar xz \
+    && cd cmake-v${CMAKE_VERSION} \
+    && ./bootstrap --parallel=16 -- -DCMAKE_BUILD_TYPE:STRING=Release \
+    && make -j16 install \
+    && cd .. \
+    && rm -rf cmake-* \
+    && wget https://github.com/boostorg/boost/releases/download/boost-${BOOST_VERSION}/boost-${BOOST_VERSION}.tar.xz -qO- | tar xJ \
+    && cd boost-${BOOST_VERSION} \
+    && ./bootstrap.sh --with-libraries=headers,test --without-icu \
+    && ./b2 release install \
+    && cd .. \
+    && rm -rf boost*
+
+CMD [ "/bin/bash" ]

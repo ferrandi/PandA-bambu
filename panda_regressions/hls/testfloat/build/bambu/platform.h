@@ -49,4 +49,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*----------------------------------------------------------------------------
  *----------------------------------------------------------------------------*/
+#ifdef __cplusplus
+#define THREAD_LOCAL thread_local
+#else
 #define THREAD_LOCAL _Thread_local
+#endif

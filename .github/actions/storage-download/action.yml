@@ -52,7 +52,7 @@ runs:
           exit 0
         fi
         echo "Downloading from $PKG_URL to ${{inputs.path}}"
-        TAR_CMD="tar -C "${{inputs.path}}" "
+        TAR_CMD="tar -C ${{inputs.path}} "
         if [[ "$STORAGE_COMPRESSED" != "false" ]]; then
           TAR_CMD+="-xJf"
         else

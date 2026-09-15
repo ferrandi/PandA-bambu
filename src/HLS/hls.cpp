@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -39,12 +27,10 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "hls.hpp"
+#include "fsm/FSMInfo.hpp"
 
 #include "BambuParameter.hpp"
 #include "allocation_information.hpp"
@@ -82,13 +68,25 @@ static void computeResources(const structural_objectRef circ, const technology_m
 hls::hls(const ParameterConstRef _Param, unsigned int _function_id, OpVertexSet _operations, const HLS_deviceRef _HLS_T,
          const HLS_constraintsRef _HLS_C)
     : functionId(_function_id),
+      module_binding_algorithm(HLSFlowStep_Type::UNKNOWN),
+      chaining_algorithm(HLSFlowStep_Type::UNKNOWN),
+      liveVariableAlgorithm(HLSFlowStep_Type::UNKNOWN),
       operations(std::move(_operations)),
       HLS_D(_HLS_T),
       HLS_C(_HLS_C),
-      allocation_information(),
+      allocation_information(nullptr),
+      Rsch(nullptr),
+      Rfu(nullptr),
+      fsm_info(nullptr),
+      RregGroup(nullptr),
+      Rconn(nullptr),
+      chaining_information(nullptr),
       registered_inputs(false),
       registered_done_port(false),
       call_sites_number(0),
+      datapath(nullptr),
+      controller(nullptr),
+      top(nullptr),
       Param(_Param),
       debug_level(_Param->getOption<int>(OPT_debug_level)),
       output_level(_Param->getOption<int>(OPT_output_level)),
@@ -99,20 +97,18 @@ hls::hls(const ParameterConstRef _Param, unsigned int _function_id, OpVertexSet 
    THROW_ASSERT(Param, "HLS initialization: Parameter not available");
 }
 
-hls::~hls() = default;
-
-void hls::xload(const xml_element* node, const OpGraphConstRef data)
+void hls::xload(const xml_element* node, const OpGraph& data)
 {
    ScheduleRef sch = this->Rsch;
    fu_binding& fu = *(this->Rfu);
    unsigned int tot_cstep = 0;
 
-   std::map<std::string, vertex> String2Vertex;
+   std::map<std::string, OpGraph::vertex_descriptor> String2Vertex;
    std::map<std::pair<std::string, std::string>, std::list<unsigned int>> String2Id;
 
    for(auto operation : operations)
    {
-      String2Vertex[GET_NAME(data, operation)] = operation;
+      String2Vertex[data.CGetNodeInfo(operation).vertex_name] = operation;
    }
 
    for(unsigned int id = 0; id < allocation_information->get_number_fu_types(); id++)
@@ -120,7 +116,7 @@ void hls::xload(const xml_element* node, const OpGraphConstRef data)
       String2Id[allocation_information->get_fu_name(id)].push_back(id);
    }
    // Recurse through child nodes:
-   const xml_node::node_list list = node->get_children();
+   const auto list = node->get_children();
    for(const auto& iter : list)
    {
       const auto* Enode = GetPointer<const xml_element>(iter);
@@ -128,7 +124,7 @@ void hls::xload(const xml_element* node, const OpGraphConstRef data)
       {
          continue;
       }
-      const xml_node::node_list list1 = Enode->get_children();
+      const auto list1 = Enode->get_children();
       for(const auto& iter1 : list1)
       {
          const auto* EnodeC = GetPointer<const xml_element>(iter1);
@@ -177,15 +173,15 @@ void hls::xload(const xml_element* node, const OpGraphConstRef data)
                fu_type = String2Id[std::make_pair(fu_name, library)].front();
             }
 
-            sch->set_execution(String2Vertex[vertex_name], ControlStep(cstep));
+            sch->set_execution(String2Vertex[vertex_name], cstep);
             fu.bind(String2Vertex[vertex_name], fu_type, fu_index);
          }
       }
    }
-   sch->set_csteps(ControlStep(tot_cstep + 1u));
+   sch->set_csteps(tot_cstep + 1u);
 }
 
-void hls::xwrite(xml_element* rootnode, const OpGraphConstRef data)
+void hls::xwrite(xml_element* rootnode, const OpGraph& data)
 {
    const ScheduleRef sch = this->Rsch;
    fu_binding& fu = *(this->Rfu);
@@ -195,15 +191,14 @@ void hls::xwrite(xml_element* rootnode, const OpGraphConstRef data)
    for(auto operation : operations)
    {
       xml_element* EnodeC = Enode->add_child_element("scheduling_constraints");
-      std::string vertex_name = GET_NAME(data, operation);
+      std::string vertex_name = data.CGetNodeInfo(operation).vertex_name;
       const auto cstep = sch->get_cstep(operation).second;
       WRITE_XVM(vertex_name, EnodeC);
       WRITE_XVM(cstep, EnodeC);
 
       unsigned int fu_type = fu.get_assign(operation);
       unsigned int fu_index = fu.get_index(operation);
-      std::string fu_name, library;
-      boost::tie(fu_name, library) = allocation_information->get_fu_name(fu_type);
+      const auto [fu_name, library] = allocation_information->get_fu_name(fu_type);
 
       WRITE_XVM(fu_name, EnodeC);
       WRITE_XVM(fu_index, EnodeC);
@@ -233,11 +228,11 @@ void hls::xwrite(xml_element* rootnode, const OpGraphConstRef data)
 static void computeResources(const structural_objectRef circ, const technology_managerRef TM,
                              std::map<std::string, unsigned int>& resources)
 {
-   const module* mod = GetPointer<module>(circ);
+   const module_o* mod = GetPointer<module_o>(circ);
    auto processResources = [&](const structural_objectRef c) {
       THROW_ASSERT(c, "unexpected condition");
       const structural_type_descriptorRef id_type = c->get_typeRef();
-      if(c->get_kind() != component_o_K)
+      if(c->get_kind() != module_o_K)
       {
          return;
       }

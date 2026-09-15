@@ -1,0 +1,20 @@
+name: "Self-hosted artifact upload"
+description: "Upload a workflow artifact to the configured private storage"
+inputs:
+  path:
+    description: "Path of the file or directory to upload"
+    required: true
+  name:
+    description: "Storage id for the given path"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Upload artifact to private storage
+      uses: ./.github/actions/storage-upload
+      with:
+        path: ${{ inputs.path }}
+        name: ${{ inputs.name }}
+        storage-url: ${{ env.storage-url }}
+        username: ${{ env.storage-user }}
+        password: ${{ env.storage-token }}

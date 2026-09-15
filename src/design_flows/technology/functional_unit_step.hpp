@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2015-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2015-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -71,12 +59,14 @@ class FunctionalUnitStep : public virtual DesignFlowStep
    /**
     * Analyze the single cell
     * @param fu is the cell
-    * @param prec is the precision
-    * @param portsize_parameters is the size of parameters
-    * @param portsize_index
-    * @param pipe_parameters
-    * @param stage_index
+    * @param prec is the required precision
+    * @param portsize_parameters lists the port size parameter strings
+    * @param portsize_index selects one of the `portsize_parameters`
+    * @param pipe_parameters lists the pipeline parameter strings
+    * @param stage_index selects the current pipeline stage inside the cell
     * @param constPort is the index of the constant port
+    * @param is_commutative tells if the operation is commutative
+    * @param max_lut_size upper bound for LUT conversion
     */
    virtual void AnalyzeCell(functional_unit* fu, const unsigned int prec,
                             const std::vector<std::string>& portsize_parameters, const size_t portsize_index,
@@ -85,7 +75,7 @@ class FunctionalUnitStep : public virtual DesignFlowStep
 
    /**
     * Analyze all the cells built starting from a template
-    * @param fu is the corresponding functional unit
+    * @param f_unit is the corresponding functional unit template being processed
     */
    virtual void AnalyzeFu(const technology_nodeRef f_unit);
 
@@ -99,15 +89,10 @@ class FunctionalUnitStep : public virtual DesignFlowStep
    /**
     * Constructor.
     * @param _device is the device
-    * @param design_flow_manager is the design flow manager
-    * @param parameters is the set of input parameters
     */
    FunctionalUnitStep(const generic_deviceRef _device);
 
-   /**
-    * Destructor
-    */
-   virtual ~FunctionalUnitStep() override;
+   virtual ~FunctionalUnitStep() override = default;
 
    /**
     * Initialize the step (i.e., like a constructor, but executed just before exec

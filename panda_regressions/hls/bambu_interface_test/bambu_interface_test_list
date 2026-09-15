@@ -1,0 +1,147 @@
+ac_fixed1.cpp --benchmark-name=ac_fixed1-c++17 --generate-tb=a={0.1,1.1,2.2,3.3,4.4,5.5,6.6,7.7},b={0.1,1.1,2.2,3.3,4.4,5.5,6.6,7.7},c={0.1,1.1,2.2,3.3,4.4,5.5,6.6,7.7},d={0,0,0,0,0,0,0,0} --top-fname=sum3numbers --std=c++17
+ac_fixed1.cpp --generate-tb=a={0.1,1.1,2.2,3.3,4.4,5.5,6.6,7.7},b={0.1,1.1,2.2,3.3,4.4,5.5,6.6,7.7},c={0.1,1.1,2.2,3.3,4.4,5.5,6.6,7.7},d={0,0,0,0,0,0,0,0} --top-fname=sum3numbers
+ac_fixed2_tb.cpp --benchmark-name=ac_fixed2_tb-c++17 --generate-tb=BENCHMARKS_ROOT/ac_fixed2_tb.xml --top-fname=sum3numbers --std=c++17
+ac_fixed2_tb.cpp --generate-tb=BENCHMARKS_ROOT/ac_fixed2_tb.xml --top-fname=sum3numbers
+ac_fixed3.cpp --benchmark-name=ac_fixed3-c++17 --generate-tb=a=1.1,b=2.2,c=3.3,d={0.0} --top-fname=sum3numbers --std=c++17
+ac_fixed3.cpp --generate-tb=a=1.1,b=2.2,c=3.3,d={0.0} --top-fname=sum3numbers
+ac_types1.cpp --benchmark-name=ac_types1-c++17 --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers --std=c++17
+ac_types1.cpp --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers
+ac_types2_array_32ubits.cpp --benchmark-name=ac_types2_array_32ubits-c++17 --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers --std=c++17
+ac_types2_array_32ubits.cpp --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers
+ac_types2_array_64ubits.cpp --benchmark-name=ac_types2_array_64ubits-c++17 --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers --std=c++17
+ac_types2_array_64ubits.cpp --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers --std=c++17
+ac_types2_array_7bits.cpp --benchmark-name=ac_types2_array_7ubits-c++17 --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers --std=c++17
+ac_types2_array_7bits.cpp --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers --std=c++17
+ac_types3.cpp --benchmark-name=ac_types3-c++17 --generate-tb=a=01234,b=0x1ABCDaBCD,c=3,d=6 --top-fname=sum3numbers --std=c++17
+ac_types3.cpp --generate-tb=a=01234,b=0x1ABCDaBCD,c=3,d=6 --top-fname=sum3numbers --std=c++17
+ac_ap_types_by_value.cpp --generate-tb=input=1,unused=2,output=0 --top-fname=ac_ap_types_by_value
+BENCHMARK_ENV=MANTIS_EXPECT_FAILURE=1,MANTIS_EXPECT_FAILURE_REGEX=Top.function.parameter.is.an.aggregate.type.passed.by.value top_aggregate_by_value.cpp --top-fname=top1 --benchmark-name=top_aggregate_parameter_by_value_expected_failure
+BENCHMARK_ENV=MANTIS_EXPECT_FAILURE=1,MANTIS_EXPECT_FAILURE_REGEX=Top.function.returns.an.aggregate.type.by.value top_aggregate_by_value.cpp --top-fname=top2 --benchmark-name=top_aggregate_return_by_value_expected_failure
+ex1.cpp --benchmark-name=ex1-c++17 --generate-tb="bit_stream={0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},a_out={0}" --top-fname=test_func --std=c++17
+ex1.cpp --generate-tb="bit_stream={0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},a_out={0}" --top-fname=test_func
+iterative_merge_sort.c --generate-tb=arr="{8,7,6,5,4,3,2,1}",n=8 --top-fname=mergeSort  -fno-unroll-loops --benchmark-name=mergeSort
+iterative_merge_sort_sum.c --generate-tb=arr="{8,7,6,5,4,3,2,1}",n=8 --top-fname=mergeSort  -fno-unroll-loops --benchmark-name=mergeSortAndSum
+simple_c1.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers
+simple_c1_ack.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers 
+simple_c1_in_ack.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers 
+simple_c1_in_valid.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers --benchmark-name=simple_c1_in_valid
+simple_c1_none.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers
+simple_c1_valid_nested.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers --benchmark-name=simple_c1_valid_nested
+simple_c2_none.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers
+simple_c3_none.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers
+simple_c3_ovalid.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers 
+simple_c4_array.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers 
+simple_c4_array.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers -funroll-loops --benchmark-name=simple_c4_array_unroll
+simple_c4_array_32bits.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers 
+simple_c4_array_32bits.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers  -funroll-loops --benchmark-name=simple_c4_array_32bits_unroll
+simple_c4_array_64bits.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers 
+simple_c4_array_64bits.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers  -funroll-loops --benchmark-name=simple_c4_array_64bits_unroll
+simple_c4_array_8bits.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers 
+simple_c4_array_8bits.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers  -funroll-loops --benchmark-name=simple_c4_array_8bits_unroll
+simple_c4_axis_multiple.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{2,3,4,5,6,7,8,9}",c="{3,4,5,6,7,8,9,10}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers 
+simple_c4_axis.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers 
+simple_c4_fifo_multiple.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{2,3,4,5,6,7,8,9}",c="{3,4,5,6,7,8,9,10}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers 
+simple_c4_fifo.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers 
+simple_c4_handshake.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers 
+simple_test.c --generate-tb=a="-7",b="{0}" --top-fname=test
+param_tracking_no_dae.c --generate-tb=x=1,y=2,z=3 --top-fname=param_tracking_no_dae
+param_tracking_deadargelim.c --generate-tb=x=1,y=2 --top-fname=param_tracking_deadargelim
+unused_param.c  --generate-tb=BENCHMARKS_ROOT/unused_param.xml --top-fname=test
+tb_param_size.c --generate-tb=BENCHMARKS_ROOT/tb_param_size.c --top-fname=tb_param_size --tb-param-size=a:40,b:40
+simpleif_c1_none.c --generate-tb=BENCHMARKS_ROOT/simpleif_c1_none_test.xml --top-fname=kim --benchmark-name=simpleif_c1_none_xml
+simpleif_c1_none.c --generate-tb=i1=9,i2=1,i3=5,i4=6,i5=17,i6=19,c1=2,c2=6,c3=13,c4=17,c6=9,COND1=1,COND2=1,o1=0,o2=0 --top-fname=kim --benchmark-name=simpleif_c1_none_no_xml
+simple_axi_m.c --top-fname=maxNumbers --generate-tb=a="{1,2,3,4,5}",n_ptr="{5}"
+simple2_axi_m.c --top-fname=maxNumbers --generate-tb=a="{1,2,3,4,5}",n_ptr="{5}"
+simple3_axi_m.c --top-fname=maxNumbers --generate-tb=BENCHMARKS_ROOT/simple3_axi_tb.xml
+simple4_axi_m.c --top-fname=maxNumbers --generate-tb=BENCHMARKS_ROOT/simple4_axi_tb.xml
+nested_axi_m.c --top-fname=main_module --generate-tb=BENCHMARKS_ROOT/nested_axi_m.xml --bambu-parameter=function-opt=0
+duplicate_axi_m.c --top-fname=main_module --generate-tb=BENCHMARKS_ROOT/nested_axi_m.xml --bambu-parameter=function-opt=0
+ac_channels.cpp --top-fname=sum3numbers --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{}"
+ac_channel_peek.cpp --top-fname=peek_sum --generate-tb=a="{1,2,3,4,5,6,7,8}",d="{2,4,6,8,10,12,14,16}"
+ac_channel_nb_peek.cpp --top-fname=nb_peek_sum --generate-tb=a="{1,2,3,4,5,6,7,8}",d="{2,4,6,8,10,12,14,16}"
+ac_channels_fp32.cpp --top-fname=sum3numbers --generate-tb=a="{1.1,2.2,3.3,4.4,5.5,6.6,7.7,8.8}",b="{1.1,2.2,3.3,4.4,5.5,6.6,7.7,8.8}",c="{1.1,2.2,3.3,4.4,5.5,6.6,7.7,8.8}",d="{}"
+ac_channels_64.cpp --top-fname=sum3numbers --generate-tb=a="{0x8000000000000001,0x8000000000000002,0x8000000000000003,0x8000000000000004,0x8000000000000005,0x8000000000000006,0x8000000000000007,0x8000000000000008}",b="{0x8000000000000001,0x8000000000000002,0x8000000000000003,0x8000000000000004,0x8000000000000005,0x8000000000000006,0x8000000000000007,0x8000000000000008}",c="{0x8000000000000001,0x8000000000000002,0x8000000000000003,0x8000000000000004,0x8000000000000005,0x8000000000000006,0x8000000000000007,0x8000000000000008}",d="{}"
+ac_channels_64-LL.cpp --top-fname=sum3numbers --generate-tb=a="{0x8000000000000001,0x8000000000000002,0x8000000000000003,0x8000000000000004,0x8000000000000005,0x8000000000000006,0x8000000000000007,0x8000000000000008}",b="{0x8000000000000001,0x8000000000000002,0x8000000000000003,0x8000000000000004,0x8000000000000005,0x8000000000000006,0x8000000000000007,0x8000000000000008}",c="{0x8000000000000001,0x8000000000000002,0x8000000000000003,0x8000000000000004,0x8000000000000005,0x8000000000000006,0x8000000000000007,0x8000000000000008}",d="{}"
+ac_channels_64async.cpp --top-fname=count_async --generate-tb=a="{0x8000000000000001,0x8000000000000002,0x8000000000000003,0x8000000000000004,0x8000000000000005,0x8000000000000006,0x8000000000000007,0x8000000000000008}",b="{0x8000000000000002,0x8000000000000004,0x8000000000000006,0x8000000000000008,0x8000000000000010,0x8000000000000012,0x8000000000000014,0x8000000000000016}",d="{}",e="{}" -DBAMBU_SKIP_VERIFICATION
+ac_channels_64async-LL.cpp --top-fname=count_async --generate-tb=a="{0x8000000000000001,0x8000000000000002,0x8000000000000003,0x8000000000000004,0x8000000000000005,0x8000000000000006,0x8000000000000007,0x8000000000000008}",b="{0x8000000000000002,0x8000000000000004,0x8000000000000006,0x8000000000000008,0x8000000000000010,0x8000000000000012,0x8000000000000014,0x8000000000000016}",d="{}",e="{}" -DBAMBU_SKIP_VERIFICATION
+hls_stream.cpp --top-fname=sum3numbers --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{}"
+hls_stream_axis.cpp --top-fname=sum3numbers --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{}"
+bus_vector_add.cpp --benchmark-name=banked_vector_add_int --top-fname=vector_add_int --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DBANKED_BUS=1
+bus_vector_add.cpp --benchmark-name=banked_vector_add_int_none --top-fname=vector_add_int --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DNONE=1 -DBANKED_BUS=1
+bus_vector_add.cpp --benchmark-name=banked_vector_add_int_pointer --top-fname=vector_add_int_pointer --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DBANKED_BUS=1
+bus_vector_add.cpp --benchmark-name=banked_vector_add_array --top-fname=vector_add_array --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DBANKED_BUS=1
+bus_vector_add.cpp --benchmark-name=banked_vector_add_array_inferred --top-fname=vector_add_array --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DINFERRED=1 -DBANKED_BUS=1
+bus_vector_add.cpp --benchmark-name=banked_vector_add --top-fname=vector_add --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DBANKED_BUS=1
+bus_vector_add.cpp --benchmark-name=banked_vector_add_fifo --top-fname=vector_add --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DFIFO=1 -DBANKED_BUS=1
+bus_vector_add.cpp --benchmark-name=banked_vector_add_axi --top-fname=vector_add --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DAXI=1 -DBANKED_BUS=1
+bus_vector_add.cpp --benchmark-name=banked_vector_add_axi_cache --top-fname=vector_add --generate-tb=BENCHMARKS_ROOT/bus.xml --memory-allocation-policy=NO_BRAM -DAXI_CACHE=1 -DBANKED_BUS=1
+bus_vector_add.cpp --benchmark-name=banked_axi_vector_add_int --top-fname=vector_add_int --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DBANKED_BUS_AXI=1
+bus_vector_add.cpp --benchmark-name=banked_axi_vector_add_int_none --top-fname=vector_add_int --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DNONE=1 -DBANKED_BUS_AXI=1
+bus_vector_add.cpp --benchmark-name=banked_axi_vector_add_int_pointer --top-fname=vector_add_int_pointer --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DBANKED_BUS_AXI=1
+bus_vector_add.cpp --benchmark-name=banked_axi_vector_add_array --top-fname=vector_add_array --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DBANKED_BUS_AXI=1
+bus_vector_add.cpp --benchmark-name=banked_axi_vector_add_array_inferred --top-fname=vector_add_array --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DINFERRED=1 -DBANKED_BUS_AXI=1
+bus_vector_add.cpp --benchmark-name=banked_axi_vector_add --top-fname=vector_add --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DBANKED_BUS_AXI=1
+bus_vector_add.cpp --benchmark-name=banked_axi_vector_add_fifo --top-fname=vector_add --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DFIFO=1 -DBANKED_BUS_AXI=1
+bus_vector_add.cpp --benchmark-name=banked_axi_vector_add_banks --top-fname=vector_add --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DBANKS_NUMBER=4 -DBANKED_BUS_AXI=1
+bus_vector_add.cpp --benchmark-name=banked_axi_vector_add_axi --top-fname=vector_add --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DAXI=1 -DBANKED_BUS_AXI=1
+bus_vector_add.cpp --benchmark-name=banked_axi_vector_add_axi_cache --top-fname=vector_add --generate-tb=BENCHMARKS_ROOT/bus.xml --memory-allocation-policy=NO_BRAM -DAXI_CACHE=1 -DBANKED_BUS_AXI=1
+bus_vector_add.cpp --benchmark-name=axi_vector_add_int --top-fname=vector_add_int --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DBUS_AXI=1
+bus_vector_add.cpp --benchmark-name=axi_vector_add_int_none --top-fname=vector_add_int --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DNONE=1 -DBUS_AXI=1
+bus_vector_add.cpp --benchmark-name=axi_vector_add_int_pointer --top-fname=vector_add_int_pointer --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DBUS_AXI=1
+bus_vector_add.cpp --benchmark-name=axi_vector_add_array --top-fname=vector_add_array --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DBUS_AXI=1
+bus_vector_add.cpp --benchmark-name=axi_vector_add_array_inferred --top-fname=vector_add_array --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DINFERRED=1 -DBUS_AXI=1
+bus_vector_add.cpp --benchmark-name=axi_vector_add_fifo --top-fname=vector_add --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DFIFO=1 -DBUS_AXI=1
+bus_vector_add.cpp --benchmark-name=axi_vector_add_axi --top-fname=vector_add --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DAXI=1 -DBUS_AXI=1
+bus_vector_add.cpp --benchmark-name=axi_vector_add_axi_cache --top-fname=vector_add --generate-tb=BENCHMARKS_ROOT/bus.xml --memory-allocation-policy=NO_BRAM -DAXI_CACHE=1 -DBUS_AXI=1
+bus_vector_add.cpp --benchmark-name=vector_add_int --top-fname=vector_add_int --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM 
+bus_vector_add.cpp --benchmark-name=vector_add_int_none --top-fname=vector_add_int --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DNONE=1 
+bus_vector_add.cpp --benchmark-name=vector_add_int_pointer --top-fname=vector_add_int_pointer --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM 
+bus_vector_add.cpp --benchmark-name=vector_add_array --top-fname=vector_add_array --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM
+bus_vector_add.cpp --benchmark-name=vector_add_array_inferred --top-fname=vector_add_array --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DINFERRED=1
+bus_vector_add.cpp --benchmark-name=vector_add --top-fname=vector_add --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM 
+bus_vector_add.cpp --benchmark-name=vector_add_fifo --top-fname=vector_add --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DFIFO=1 
+bus_vector_add.cpp --benchmark-name=vector_add_axi_cache --top-fname=vector_add --generate-tb=BENCHMARKS_ROOT/bus.xml --memory-allocation-policy=NO_BRAM -DAXI_CACHE=1
+ac_range.cpp --top-fname=check_range --generate-tb=a=-1,b=2,c=0
+axi_cache_reset.c --top-fname=write_plus --generate-tb=BENCHMARKS_ROOT/axi_cache_reset.c --benchmark-name=axi_cache_reset
+axi_cache_reset.c --top-fname=write_plus --generate-tb=BENCHMARKS_ROOT/axi_cache_reset.c --benchmark-name=axi_cache_reset_hr --reset-level=high
+axi_small_write.c --top-fname=vector_copy_plus --generate-tb=BENCHMARKS_ROOT/axi_small_write.c --benchmark-name=axi_small_write
+axi_small_write.c --top-fname=vector_copy_plus --generate-tb=BENCHMARKS_ROOT/axi_small_write.c --benchmark-name=axi_small_write_hr --reset-level=high
+axi_small_write.c --top-fname=vector_copy_plus --generate-tb=BENCHMARKS_ROOT/axi_small_write.c -DBIG_BUS --benchmark-name=axi_small_write_64 -m64
+axi_small_write.c --top-fname=vector_copy_plus --generate-tb=BENCHMARKS_ROOT/axi_small_write.c --benchmark-name=axi_small_write_delayed --memory-allocation-policy=GLSS --mem-delay-read=20 --mem-delay-write=20
+axi_different_write.c --top-fname=vector_copy_plus --generate-tb=BENCHMARKS_ROOT/axi_different_write.c --benchmark-name=axi_different_write
+axi_different_write.c --top-fname=vector_copy_plus --generate-tb=BENCHMARKS_ROOT/axi_different_write.c -DBIG_BUS --benchmark-name=axi_different_write_64 -m64
+axi_different_write.c --top-fname=vector_copy_plus --generate-tb=BENCHMARKS_ROOT/axi_different_write.c --benchmark-name=axi_different_write_delayed --memory-allocation-policy=GLSS --mem-delay-read=20 --mem-delay-write=20
+axi_wb_single_line.cpp --top-fname=kernel --generate-interface=INFER --generate-tb=BENCHMARKS_ROOT/axi_wb_single_line.cpp --benchmark-name=axi_wb_single_line
+axi_misaligned_struct_cache.cpp --top-fname=misaligned_struct_axi --generate-tb=BENCHMARKS_ROOT/axi_misaligned_struct_cache.cpp --benchmark-name=axi_misaligned_struct_cache
+axi_mixed_arrays_cache.cpp --top-fname=mixed_arrays_axi --generate-tb=BENCHMARKS_ROOT/axi_mixed_arrays_cache.cpp --benchmark-name=axi_mixed_arrays
+axi_mixed_arrays_cache.cpp --top-fname=mixed_arrays_axi --generate-tb=BENCHMARKS_ROOT/axi_mixed_arrays_cache.cpp -DUSE_CACHE --benchmark-name=axi_mixed_arrays_cache
+BENCHMARK_ENV=MANTIS_EXPECT_FAILURE=1,MANTIS_EXPECT_FAILURE_REGEX=unknown.interface.bundle axi_cache_unknown_bundle.c --top-fname=kernel --generate-tb=x="{1}" --benchmark-name=axi_cache_unknown_bundle_expected_failure
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DBIG_BUFFER --benchmark-name=2mm_cache_big_buffer
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DBIG_BUS --benchmark-name=2mm_cache_big_bus
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DBIG --benchmark-name=2mm_cache_big
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DBIG_LINE --benchmark-name=2mm_cache_big_line
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DFULLY_ASS --benchmark-name=2mm_cache_fully_ass
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DSET_ASS --benchmark-name=2mm_cache_set_ass
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DSIMPLE --benchmark-name=2mm_cache_simple
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DSMALL_LINE --benchmark-name=2mm_cache_small_line
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DBIG_BUFFER_WB --benchmark-name=2mm_cache_big_buffer_wb
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DWRITE_BACK --benchmark-name=2mm_cache_write_back
+2mm.c --top-fname=mmult_tile --generate-tb=BENCHMARKS_ROOT/2mm.c -DTILED --benchmark-name=2mm_tiled_cache
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DBIG_BUFFER --benchmark-name=2mm_cache_big_buffer_delayed --memory-allocation-policy=GLSS --mem-delay-read=20 --mem-delay-write=20
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DBIG_BUS --benchmark-name=2mm_cache_big_bus_delayed --memory-allocation-policy=GLSS --mem-delay-read=20 --mem-delay-write=20
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DBIG --benchmark-name=2mm_cache_big_delayed --memory-allocation-policy=GLSS --mem-delay-read=20 --mem-delay-write=20
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DBIG_LINE --benchmark-name=2mm_cache_big_line_delayed --memory-allocation-policy=GLSS --mem-delay-read=20 --mem-delay-write=20
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DFULLY_ASS --benchmark-name=2mm_cache_fully_ass_delayed --memory-allocation-policy=GLSS --mem-delay-read=20 --mem-delay-write=20
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c --benchmark-name=2mm_delayed --memory-allocation-policy=GLSS --mem-delay-read=20 --mem-delay-write=20
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DSET_ASS --benchmark-name=2mm_cache_set_ass_delayed --memory-allocation-policy=GLSS --mem-delay-read=20 --mem-delay-write=20
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DSIMPLE --benchmark-name=2mm_cache_simple_delayed --memory-allocation-policy=GLSS --mem-delay-read=20 --mem-delay-write=20
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DSMALL_LINE --benchmark-name=2mm_cache_small_line_delayed --memory-allocation-policy=GLSS --mem-delay-read=20 --mem-delay-write=20
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DBIG_BUFFER_WB --benchmark-name=2mm_cache_big_buffer_wb_delayed --memory-allocation-policy=GLSS --mem-delay-read=20 --mem-delay-write=20
+2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DWRITE_BACK --benchmark-name=2mm_cache_write_back_delayed --memory-allocation-policy=GLSS --mem-delay-read=20 --mem-delay-write=20
+2mm.c --top-fname=mmult_tile --generate-tb=BENCHMARKS_ROOT/2mm.c -DTILED --benchmark-name=2mm_tiled_cache_delayed --memory-allocation-policy=GLSS --mem-delay-read=20 --mem-delay-write=20
+simple_c4_vector_8bits.cpp --top-fname=sum3numbers --generate-tb=BENCHMARKS_ROOT/simple_c4_vector_8bits.cpp -DBAMBU_SKIP_VERIFICATION --tb-memory-mapping=SHARED
+ac_channel_struct16.cpp --benchmark-name=reduce16 --top-fname=reduce16 --generate-tb=BENCHMARKS_ROOT/ac_channel_struct16_tb.cpp
+ac_channel_struct16_65bit.cpp --benchmark-name=reduce16_65bit --top-fname=reduce16_65bit --generate-tb=BENCHMARKS_ROOT/ac_channel_struct16_65bit_tb.cpp
+ac_channel_struct16_64bit.cpp --benchmark-name=reduce16_64bit --top-fname=reduce16_64bit --generate-tb=BENCHMARKS_ROOT/ac_channel_struct16_64bit_tb.cpp
+ac_channel_struct16_multi.cpp --benchmark-name=ac_channel_struct16_multi --top-fname=top --generate-tb=BENCHMARKS_ROOT/ac_channel_struct16_multi_tb.cpp
