@@ -28,7 +28,6 @@
 #ifndef NDEBUG
 #define NDEBUG
 #endif
-#include "condInstCombIfTaggedPass.hpp"
 #include "plugin_includes.hpp"
 
 #include <llvm/ADT/STLExtras.h>
@@ -667,7 +666,7 @@ llvm::PassPluginLibraryInfo getexpandMemOpsPluginInfo()
    return {LLVM_PLUGIN_API_VERSION, "expandMemOps", "v0.12", [](llvm::PassBuilder& PB) {
               const auto load = [](llvm::ModulePassManager& MPM) {
                  llvm::FunctionPassManager FPM;
-                 MPM.addPass(llvm::CondInstCombIfTaggedPass());
+                 FPM.addPass(llvm::InstCombinePass());
                  FPM.addPass(llvm::UnifyFunctionExitNodesPass());
                  MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM)));
                  MPM.addPass(llvm::expandMemOps());
@@ -702,7 +701,7 @@ llvmGetPassPluginInfo()
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
-   PM.add(new llvm::CondInstCombIfTaggedPass());
+   PM.add(llvm::createInstructionCombiningPass(1000));
    PM.add(llvm::createUnifyFunctionExitNodesPass());
    PM.add(new llvm::expandMemOps());
 }

@@ -45,10 +45,6 @@
 
 using namespace llvm;
 
-constexpr size_t PartInfoN = 4;
-constexpr size_t SizeTN = 4;
-constexpr size_t PointerN = 8;
-
 /**
  * @brief Partitioning format.
  */
@@ -93,10 +89,6 @@ class PartInfo
 
    PartInfo() : format(PartInfoFormat::NONE), factor(0){};
 
-   PartInfo(PartInfoFormat format, size_t factor) : format(format), factor(factor){};
-
-   PartInfo(size_t dim) : format(PartInfoFormat::NONE), factor(0){};
-
    explicit PartInfo(size_t formatArg, size_t numMemoriesArg, size_t dimSize);
 
    [[nodiscard]] std::string to_string() const
@@ -112,6 +104,11 @@ std::vector<size_t> getDimsFromArrayType(ArrayType* arrTy);
 void initializePartitionScheme(PartitionScheme& scheme, size_t numDims);
 void setPartitionInfo(PartitionScheme& scheme, const PartInfo& p, uint64_t dim);
 [[nodiscard]] uint64_t getNumPartitionsFromScheme(const PartitionScheme& scheme);
+/// Whether at least one dimension carries a partitioning request.
+[[nodiscard]] inline bool hasAnyPartitionedDim(const PartitionScheme& scheme)
+{
+   return llvm::any_of(scheme, [](const PartInfo& p) { return p.format != PartInfoFormat::NONE; });
+}
 [[nodiscard]] std::vector<size_t> getPartitionedDimsFromScheme(const std::vector<size_t>& origDims,
                                                                const PartitionScheme& scheme);
 [[nodiscard]] ArrayType* getPartitionedTypeFromDims(Type* originalType, const std::vector<size_t>& dims);
@@ -122,6 +119,9 @@ void setPartitionInfo(PartitionScheme& scheme, const PartInfo& p, uint64_t dim);
  */
 struct AllocaPartInfo
 {
+   /// An alloca is addressed from its base, so a GEP on it carries a leading whole-object index.
+   static constexpr bool AddressedFromBase = true;
+
    AllocaInst* inst;
    PartitionScheme scheme;
    std::map<uint64_t, Value*> partitionMap;
@@ -129,6 +129,11 @@ struct AllocaPartInfo
    explicit AllocaPartInfo(AllocaInst* inst) : inst(inst)
    {
       initializePartitionScheme(scheme, getDimsFromArrayType(cast<ArrayType>(inst->getAllocatedType())).size());
+   }
+
+   const Value* key() const
+   {
+      return inst;
    }
 
    void setPartInfo(const PartInfo& p, uint64_t dim)
@@ -153,15 +158,7 @@ struct AllocaPartInfo
 
    std::vector<size_t> getOrigTypeDims() const
    {
-      std::vector<size_t> origDims;
-      auto* t = cast<ArrayType>(inst->getAllocatedType());
-      while(t)
-      {
-         auto dimSize = t->getNumElements();
-         origDims.push_back(dimSize);
-         t = dyn_cast<ArrayType>(t->getElementType());
-      }
-      return origDims;
+      return getDimsFromArrayType(cast<ArrayType>(inst->getAllocatedType()));
    }
 
    [[nodiscard]] std::string to_string() const
@@ -175,16 +172,25 @@ struct AllocaPartInfo
  */
 struct ArgPartInfo
 {
+   /// An array argument has already decayed to a pointer to its element type, so a GEP on it
+   /// starts straight at the partitioning indices.
+   static constexpr bool AddressedFromBase = false;
+
    std::string argName; // TODO(perf): Maybe it could be transformed into a StringRef for performance
    Argument* arg;
    PartitionScheme scheme;
    std::vector<size_t> origDims;
    std::map<uint64_t, Value*> partitionMap;
 
-   explicit ArgPartInfo(std::string& name, Argument* arg, const std::vector<size_t>& dims)
+   explicit ArgPartInfo(const std::string& name, Argument* arg, const std::vector<size_t>& dims)
        : argName(name), arg(arg), origDims(dims)
    {
       initializePartitionScheme(scheme, dims.size());
+   }
+
+   const Value* key() const
+   {
+      return arg;
    }
 
    void setPartInfo(const PartInfo& p, uint64_t dim)
@@ -226,8 +232,6 @@ struct ArgPartInfo
    }
 };
 
-constexpr size_t ArgPartInfoN = 4;
-constexpr size_t AllocPartInfoN = 2;
 struct FnPartInfo
 {
    std::string name;
@@ -258,6 +262,9 @@ struct FnPartInfo
  */
 struct GlobalPartInfo
 {
+   /// A global, like an alloca, is addressed from its base.
+   static constexpr bool AddressedFromBase = true;
+
    GlobalVariable* var;
    PartitionScheme scheme;
    std::map<uint64_t, Value*> partitionMap;
@@ -265,6 +272,11 @@ struct GlobalPartInfo
    explicit GlobalPartInfo(GlobalVariable* var) : var(var)
    {
       initializePartitionScheme(scheme, getDimsFromArrayType(cast<ArrayType>(var->getValueType())).size());
+   }
+
+   const Value* key() const
+   {
+      return var;
    }
 
    void setPartInfo(const PartInfo& p, uint64_t dim)
@@ -289,15 +301,7 @@ struct GlobalPartInfo
 
    std::vector<size_t> getOrigTypeDims() const
    {
-      std::vector<size_t> origDims;
-      auto* t = cast<ArrayType>(var->getValueType());
-      while(t)
-      {
-         auto dimSize = t->getNumElements();
-         origDims.push_back(dimSize);
-         t = dyn_cast<ArrayType>(t->getElementType());
-      }
-      return origDims;
+      return getDimsFromArrayType(cast<ArrayType>(var->getValueType()));
    }
 
    [[nodiscard]] std::string to_string() const
@@ -331,33 +335,19 @@ struct ArrPartCtx
 template <typename ValueT, typename PartInfoT>
 auto findPartInfoInContainer(const ValueT* value, std::vector<PartInfoT>& partitionInfos)
 {
-   return llvm::find_if(partitionInfos, [&](const PartInfoT& p) {
-      if constexpr(std::is_same_v<PartInfoT, ArgPartInfo>)
-      {
-         return p.arg == value;
-      }
-      else if constexpr(std::is_same_v<PartInfoT, AllocaPartInfo>)
-      {
-         return p.inst == value;
-      }
-      else if constexpr(std::is_same_v<PartInfoT, GlobalPartInfo>)
-      {
-         return p.var == value;
-      }
-   });
+   return llvm::find_if(partitionInfos, [&](const PartInfoT& p) { return p.key() == value; });
 }
 
-void describeArrPartRequests(ArrPartCtx& ctx);
+void describeArrPartRequests(const ArrPartCtx& ctx);
 void printModuleOnFile(Module& M, const std::string& outPath);
-bool hasConstantIndicesN(const std::vector<Value*>& indices, size_t n);
-void diffuseArrPartConfigs(ArrPartCtx& arrPartCtx, std::vector<std::string>& workQueue);
-inline bool isArgPartitionable(Argument* arg);
+void diffuseArrPartConfigs(ArrPartCtx& arrPartCtx, const std::vector<std::string>& workQueue);
 void populateArrPartCtx(Module& M, ArrPartCtx& arrPartCtx);
 bool isArrPartFunctionPresent(Module& M);
 FnPartInfo& getFnInfoOrDie(StringMap<FnPartInfo>& table, StringRef fnName);
 void inverseTopologicalSort(Function* fn, std::vector<std::string>& workQueue);
-bool loadXMLModule(pugi::xml_document& doc, std::string& outdirName);
+bool loadXMLModule(pugi::xml_document& doc, const std::string& outdirName);
+void modifyXMLModule(ArrPartCtx& arrPartCtx, const std::string& outdirName);
 std::string getDemangled(const std::string& declname);
-Function* findTopFunction(Module& M, std::string& topFunctionNameArgPass);
+Function* findTopFunction(Module& M, const std::string& topFunctionNameArgPass);
 
 #endif // ARR_PART_HPP

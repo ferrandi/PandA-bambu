@@ -22,36 +22,46 @@
  * @author Tommaso Fellegara <tommaso.fellegara@polimi.it>
  *
  */
-#ifndef BAMBU_COND_INST_COMB_IF_TAGGED_PASS_HPP
-#define BAMBU_COND_INST_COMB_IF_TAGGED_PASS_HPP
+#ifndef BAMBU_POINTER_RESOLUTION_PASS_HPP
+#define BAMBU_POINTER_RESOLUTION_PASS_HPP
 
-#include <llvm/IR/Module.h>
-#include <llvm/IR/PassManager.h>
+#include "panda_clang_compat.hpp"
+#include "llvm/Analysis/AliasAnalysis.h"
+#include "llvm/IR/PassManager.h"
+#include <llvm/ADT/StringRef.h>
 #include <llvm/Pass.h>
+#include <string>
+#include <utility>
 
 namespace llvm
 {
-   struct CondInstCombIfTaggedPass : public ModulePass
+   struct PointerResolutionPass : public ModulePass
 #if LLVM_VERSION_MAJOR >= 13
        ,
-                                     public PassInfoMixin<CondInstCombIfTaggedPass>
+                                  public PassInfoMixin<PointerResolutionPass>
 #endif
    {
+    public:
       static char ID;
-      CondInstCombIfTaggedPass() : ModulePass(ID)
+      std::string outdirNameCmd;
+
+      PointerResolutionPass(std::string outdirNameCmd) : ModulePass(ID), outdirNameCmd(std::move(outdirNameCmd))
       {
       }
 
 #if LLVM_VERSION_MAJOR >= 13
-      CondInstCombIfTaggedPass(const CondInstCombIfTaggedPass&) : CondInstCombIfTaggedPass()
+      PointerResolutionPass(const PointerResolutionPass& other) : PointerResolutionPass(other.outdirNameCmd)
       {
       }
 #endif
 
-      PreservedAnalyses run(Module& M, ModuleAnalysisManager& MAM);
+      bool exec(Module& M, llvm::function_ref<llvm::AAResults&(llvm::Function&)> GetAA);
+      PreservedAnalyses run(Module& M, ModuleAnalysisManager& AM);
       bool runOnModule(Module& M) override;
       StringRef getPassName() const override;
+      void getAnalysisUsage(AnalysisUsage& AU) const override;
    };
-} // namespace llvm
 
-#endif // BAMBU_COND_INST_COMB_IF_TAGGED_PASS_HPP
+} // end namespace llvm
+
+#endif // BAMBU_POINTER_RESOLUTION_PASS_HPP

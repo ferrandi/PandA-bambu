@@ -14,7 +14,6 @@ set(COMPILER_TOPFNAME_PLUGIN "topfname")
 set(COMPILER_EXPANDMEMOPS_PLUGIN "expandMemOps")
 set(COMPILER_OPENMP_PLUGIN "openmpBambu")
 set(COMPILER_ASTANALYZER_PLUGIN "ASTAnalyzer")
-set(COMPILER_SCALARIZEARRAYOFFIFO_PLUGIN "scalarizeArrayOfFifo")
 
 set(_panda_plugin_base_names
    customSROA
@@ -217,42 +216,38 @@ function(_panda_add_clang_plugins ver)
    # Source groups mirroring Automake wiring.
    set(_src_base "${_panda_plugin_sources_dir}")
    set(_dump_sources "${_src_base}/dumpBambuIr.cpp")
-   set(_pointer_resolution_src "${_src_base}/pointerResolutionPass.cpp")
+   set(_pointer_resolution_src "${_src_base}/PointerResolutionPass.cpp")
    set(_hardekopf_src "${_src_base}/HardekopfLin_AA.cpp")
    set(_customsroa_sources
-      "${_src_base}/arrPart.cpp"
+      "${_src_base}/ArrPart.cpp"
       "${_src_base}/loopUnrollArrPartPass.cpp"
-      "${_src_base}/plugin_scalarizeArrayOfFifo.cpp"
-      "${_src_base}/canonicalizeHLSStreamGEPPass.cpp")
-   set(_condinstcomb_src "${_src_base}/condInstCombIfTaggedPass.cpp")
+      "${_src_base}/ScalarizeArrayOfFifo.cpp"
+      "${_src_base}/ScalarizeSingletonBanks.cpp"
+      "${_src_base}/canonicalizeHLSStreamGEPPass.cpp"
+      "${_pointer_resolution_src}"
+      )
 
-   if(NOT ver EQUAL 4)
+   if(ver GREATER_EQUAL 5)
       _panda_make_plugin(clang_plugin_${ver}_customsroa "${COMPILER_CUSTOMSROA_PLUGIN}" 1 "${_src_base}/plugin_customSROA.cpp" ${_customsroa_sources})
    endif()
    _panda_make_plugin(clang_plugin_${ver}_empty        "${COMPILER_EMPTY_PLUGIN}"         1 "${_src_base}/plugin_dumpBambuIrEmpty.cpp" ${_dump_sources})
-   _panda_make_plugin(clang_plugin_${ver}_ssa          "${COMPILER_SSA_PLUGIN}"           1 "${_src_base}/plugin_dumpBambuIrSSA.cpp" ${_dump_sources} ${_pointer_resolution_src} ${_hardekopf_src} ${_condinstcomb_src})
-   _panda_make_plugin(clang_plugin_${ver}_ssacpp       "${COMPILER_SSA_PLUGINCPP}"        1 "${_src_base}/plugin_dumpBambuIrSSACpp.cpp" ${_dump_sources} ${_pointer_resolution_src} ${_hardekopf_src} ${_condinstcomb_src})
+   _panda_make_plugin(clang_plugin_${ver}_ssa          "${COMPILER_SSA_PLUGIN}"           1 "${_src_base}/plugin_dumpBambuIrSSA.cpp" ${_dump_sources} ${_pointer_resolution_src} ${_hardekopf_src})
+   _panda_make_plugin(clang_plugin_${ver}_ssacpp       "${COMPILER_SSA_PLUGINCPP}"        1 "${_src_base}/plugin_dumpBambuIrSSACpp.cpp" ${_dump_sources} ${_pointer_resolution_src} ${_hardekopf_src})
    _panda_make_plugin(clang_plugin_${ver}_topfname     "${COMPILER_TOPFNAME_PLUGIN}"      1 "${_src_base}/plugin_topfname.cpp")
-   _panda_make_plugin(clang_plugin_${ver}_expandmemops "${COMPILER_EXPANDMEMOPS_PLUGIN}"  1 "${_src_base}/plugin_expandMemOps.cpp" ${_condinstcomb_src})
+   _panda_make_plugin(clang_plugin_${ver}_expandmemops "${COMPILER_EXPANDMEMOPS_PLUGIN}"  1 "${_src_base}/plugin_expandMemOps.cpp")
    _panda_make_plugin(clang_plugin_${ver}_openmp       "${COMPILER_OPENMP_PLUGIN}"        1 "${_src_base}/plugin_openmp.cpp")
    _panda_make_plugin(clang_plugin_${ver}_ast          "${COMPILER_ASTANALYZER_PLUGIN}"   1 "${_src_base}/plugin_ASTAnalyzer.cpp")
-   if(ver GREATER_EQUAL 16)
-      _panda_make_plugin(clang_plugin_${ver}_scalarizearrayoffifo "${COMPILER_SCALARIZEARRAYOFFIFO_PLUGIN}" 1 "${_src_base}/plugin_scalarizeArrayOfFifo.cpp")
-   endif()
 
    _panda_make_plugin(clang_plugin_${ver}_opt_empty        "opt_${COMPILER_EMPTY_PLUGIN}"         0 "${_src_base}/plugin_dumpBambuIrEmpty.cpp" ${_dump_sources})
-   if(NOT ver EQUAL 4)
+   if(ver GREATER_EQUAL 5)
       _panda_make_plugin(clang_plugin_${ver}_opt_customsroa "opt_${COMPILER_CUSTOMSROA_PLUGIN}" 0 "${_src_base}/plugin_customSROA.cpp" ${_customsroa_sources})
    endif()
-   _panda_make_plugin(clang_plugin_${ver}_opt_ssa          "opt_${COMPILER_SSA_PLUGIN}"           0 "${_src_base}/plugin_dumpBambuIrSSA.cpp" ${_dump_sources} ${_pointer_resolution_src} ${_hardekopf_src} ${_condinstcomb_src})
-   _panda_make_plugin(clang_plugin_${ver}_opt_ssacpp       "opt_${COMPILER_SSA_PLUGINCPP}"        0 "${_src_base}/plugin_dumpBambuIrSSACpp.cpp" ${_dump_sources} ${_pointer_resolution_src} ${_hardekopf_src} ${_condinstcomb_src})
+   _panda_make_plugin(clang_plugin_${ver}_opt_ssa          "opt_${COMPILER_SSA_PLUGIN}"           0 "${_src_base}/plugin_dumpBambuIrSSA.cpp" ${_dump_sources} ${_pointer_resolution_src} ${_hardekopf_src})
+   _panda_make_plugin(clang_plugin_${ver}_opt_ssacpp       "opt_${COMPILER_SSA_PLUGINCPP}"        0 "${_src_base}/plugin_dumpBambuIrSSACpp.cpp" ${_dump_sources} ${_pointer_resolution_src} ${_hardekopf_src})
    _panda_make_plugin(clang_plugin_${ver}_opt_topfname     "opt_${COMPILER_TOPFNAME_PLUGIN}"      0 "${_src_base}/plugin_topfname.cpp")
-   _panda_make_plugin(clang_plugin_${ver}_opt_expandmemops "opt_${COMPILER_EXPANDMEMOPS_PLUGIN}"  0 "${_src_base}/plugin_expandMemOps.cpp" ${_condinstcomb_src})
+   _panda_make_plugin(clang_plugin_${ver}_opt_expandmemops "opt_${COMPILER_EXPANDMEMOPS_PLUGIN}"  0 "${_src_base}/plugin_expandMemOps.cpp")
    _panda_make_plugin(clang_plugin_${ver}_opt_openmp       "opt_${COMPILER_OPENMP_PLUGIN}"        0 "${_src_base}/plugin_openmp.cpp")
    _panda_make_plugin(clang_plugin_${ver}_opt_ast          "opt_${COMPILER_ASTANALYZER_PLUGIN}"   0 "${_src_base}/plugin_ASTAnalyzer.cpp")
-   if(ver GREATER_EQUAL 16)
-      _panda_make_plugin(clang_plugin_${ver}_opt_scalarizearrayoffifo "opt_${COMPILER_SCALARIZEARRAYOFFIFO_PLUGIN}" 0 "${_src_base}/plugin_scalarizeArrayOfFifo.cpp")
-   endif()
 
    set(_all_plugins
       clang_plugin_${ver}_empty
@@ -270,16 +265,10 @@ function(_panda_add_clang_plugins ver)
       clang_plugin_${ver}_opt_openmp
       clang_plugin_${ver}_opt_ast
    )
-   if(NOT ver EQUAL 4)
+   if(ver GREATER_EQUAL 5)
       list(APPEND _all_plugins
          clang_plugin_${ver}_customsroa
          clang_plugin_${ver}_opt_customsroa
-      )
-   endif()
-   if(ver GREATER_EQUAL 16)
-      list(APPEND _all_plugins
-         clang_plugin_${ver}_scalarizearrayoffifo
-         clang_plugin_${ver}_opt_scalarizearrayoffifo
       )
    endif()
 

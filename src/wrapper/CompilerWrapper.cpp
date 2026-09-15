@@ -581,19 +581,6 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
          command += " " + arg;
       }
    };
-   if((cm & CM_OPT_CUSTOMSROA) && compiler_target != CompilerWrapper_CompilerTarget::CT_I386_CLANG4)
-   {
-      append_arg("-panda-outputdir-csroa=" + output_temporary_directory);
-      if(top_fnames.size())
-      {
-         append_arg("-panda-TFN-csroa=" + top_fnames);
-      }
-      if(Param->IsParameter("panda-lock-csroa") && Param->GetParameter<int>("panda-lock-csroa"))
-      {
-         append_arg("-panda-lock-csroa");
-      }
-      load_and_run_plugin(COMPILER_CUSTOMSROA_PLUGIN);
-   }
    if((cm & CM_OPT_INTERNALIZE) && top_fnames.size())
    {
       THROW_ASSERT(!(cm & CM_LTO_FLAG), "Internalizing symbols in partial object files is not expected");
@@ -613,6 +600,20 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
          append_arg("-panda-Internalize");
       }
       load_and_run_plugin(COMPILER_TOPFNAME_PLUGIN);
+   }
+   // customSROA inlines: it must run after topfname has marked top/dataflow functions NoInline
+   if((cm & CM_OPT_CUSTOMSROA) && compiler_target != CompilerWrapper_CompilerTarget::CT_I386_CLANG4)
+   {
+      append_arg("-panda-outputdir-csroa=" + output_temporary_directory);
+      if(top_fnames.size())
+      {
+         append_arg("-panda-TFN-csroa=" + top_fnames);
+      }
+      if(Param->IsParameter("panda-lock-csroa") && Param->GetParameter<int>("panda-lock-csroa"))
+      {
+         append_arg("-panda-lock-csroa");
+      }
+      load_and_run_plugin(COMPILER_CUSTOMSROA_PLUGIN);
    }
    if(cm & CM_OPT_EXPANDMEMOPS)
    {
@@ -637,10 +638,14 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       }
       (cpp_input && !(cm & CM_COMPILER_OPT)) ? load_and_run_plugin(COMPILER_SSA_PLUGINCPP) :
                                                load_and_run_plugin(COMPILER_SSA_PLUGIN);
-      // if(cm & CM_COMPILER_STD)
-      // {
-      //    command += " -S -emit-llvm";
-      // }
+      if((cm & CM_COMPILER_OPT) || (cm & CM_COMPILER_STD))
+      {
+         command += " -S";
+      }
+      if(cm & CM_COMPILER_STD)
+      {
+         command += " -emit-llvm";
+      }
    }
    command += SCRIPT_NEWLINE + passes.get();
 
