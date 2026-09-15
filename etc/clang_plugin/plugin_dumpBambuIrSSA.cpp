@@ -28,9 +28,8 @@
 #ifndef NDEBUG
 #define NDEBUG
 #endif
-#include "condInstCombIfTaggedPass.hpp"
 #include "plugin_includes.hpp"
-#include "pointerResolutionPass.hpp"
+#include "PointerResolutionPass.hpp"
 
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringExtras.h>
@@ -801,15 +800,13 @@ llvm::PassPluginLibraryInfo getdumpSSAPluginInfo()
              if(doOpt)
              {
                 MPM.addPass(llvm::DeadArgumentEliminationPass());
-                llvm::FunctionPassManager PeepholeFPM;
-                MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(PeepholeFPM)));
-                MPM.addPass(llvm::CondInstCombIfTaggedPass());
+                MPM.addPass(llvm::createModuleToFunctionPassAdaptor(llvm::InstCombinePass()));
              }
              // MPM.addPass(llvm::PrintModulePass(llvm::errs()));
              MPM.addPass(llvm::GlobalOptPass());
              MPM.addPass(llvm::GlobalDCEPass());
              MPM.addPass(llvm::createModuleToPostOrderCGSCCPassAdaptor(llvm::ArgumentPromotionPass(256)));
-             MPM.addPass(llvm::CondInstCombIfTaggedPass());
+             MPM.addPass(llvm::createModuleToFunctionPassAdaptor(llvm::InstCombinePass()));
              if(doOpt)
              {
                 llvm::FunctionPassManager FPM1;
@@ -860,7 +857,7 @@ llvm::PassPluginLibraryInfo getdumpSSAPluginInfo()
              llvm::FunctionPassManager FPM3;
              FPM3.addPass(llvm::UnifyFunctionExitNodesPass());
              MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM3)));
-             // MPM.addPass(llvm::PointerResolutionPass(llvm::outdir_name));
+             MPM.addPass(llvm::PointerResolutionPass(llvm::outdir_name));
              // llvm::FunctionPassManager FPM4;
              // FPM4.addPass(llvm::GVNSinkPass());
              // MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM4)));
@@ -930,8 +927,10 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
    PM.add(llvm::createGlobalOptimizerPass());
    PM.add(llvm::createGlobalDCEPass());
    PM.add(llvm::createArgumentPromotionPass(256));
-   PM.add(new llvm::CondInstCombIfTaggedPass());
+   PM.add(llvm::createInstructionCombiningPass(1000));
    PM.add(llvm::createUnifyFunctionExitNodesPass());
+   PM.add(llvm::createCFGSimplificationPass());
+   PM.add(new llvm::PointerResolutionPass(llvm::outdir_name));
 
    PM.add(new llvm::CLANG_VERSION_SYMBOL_DUMP_SSA());
 }
