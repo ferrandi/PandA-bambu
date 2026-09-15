@@ -22,45 +22,51 @@
  * @author Tommaso Fellegara <tommaso.fellegara@polimi.it>
  *
  */
-#ifndef BAMBU_POINTER_RESOLUTION_PASS_HPP
-#define BAMBU_POINTER_RESOLUTION_PASS_HPP
+#ifndef BAMBU_SCALARIZE_FIFO_ARRAY_PASS_HPP
+#define BAMBU_SCALARIZE_FIFO_ARRAY_PASS_HPP
 
-#include "panda_clang_compat.hpp"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/IR/Module.h"
 #include "llvm/IR/PassManager.h"
-#include <llvm/ADT/StringRef.h>
-#include <llvm/Pass.h>
-#include <string>
-#include <utility>
+#include "llvm/Pass.h"
 
 namespace llvm
 {
-   struct PointerResolutionPass : public ModulePass
-#if LLVM_VERSION_MAJOR >= 13
-       ,
-                                  public PassInfoMixin<PointerResolutionPass>
-#endif
+   /// Replaces every  alloca [1 x hls::stream<T>]  with a plain
+   /// alloca %hls::stream<T>  and removes the corresponding no-op GEPs,
+   /// both on the alloca itself and on function parameters that were
+   /// updated at their call sites.
+   ///
+   /// Requires LLVM 15+ (opaque pointers).
+   struct ScalarizeFifoArrayPass : public ModulePass, public PassInfoMixin<ScalarizeFifoArrayPass>
    {
     public:
       static char ID;
-      std::string outdirNameCmd;
+      std::string topFnName;
 
-      PointerResolutionPass(std::string outdirNameCmd) : ModulePass(ID), outdirNameCmd(std::move(outdirNameCmd))
+      ScalarizeFifoArrayPass(std::string topFnName) : ModulePass(ID), topFnName(std::move(topFnName))
       {
       }
 
-#if LLVM_VERSION_MAJOR >= 13
-      PointerResolutionPass(const PointerResolutionPass& other) : PointerResolutionPass(other.outdirNameCmd)
+      ScalarizeFifoArrayPass(const ScalarizeFifoArrayPass& scalarizeFifoArrayPass)
+          : ScalarizeFifoArrayPass(scalarizeFifoArrayPass.topFnName)
       {
       }
-#endif
 
+      /// Shared implementation called by both PM entry-points.
       bool exec(Module& M);
+
+      /// New Pass Manager entry-point (LLVM 15+).
       PreservedAnalyses run(Module& M, ModuleAnalysisManager& AM);
+
+      /// Legacy Pass Manager entry-point.
       bool runOnModule(Module& M) override;
+
       StringRef getPassName() const override;
+
       void getAnalysisUsage(AnalysisUsage& AU) const override;
    };
 
-} // end namespace llvm
+} // namespace llvm
 
-#endif // BAMBU_POINTER_RESOLUTION_PASS_HPP
+#endif // BAMBU_SCALARIZE_FIFO_ARRAY_PASS_HPP

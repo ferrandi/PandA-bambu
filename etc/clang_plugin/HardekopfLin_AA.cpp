@@ -4902,6 +4902,8 @@ void Andersen_AA::visit_func(const llvm::Function* F)
    // First make nodes for all ptr-return insn
    //  (since trace_int may sometimes return values below the current insn).
    // Also number all unnamed instructions that have a result.
+   llvm::ModuleSlotTracker MST(F->getParent(), false);
+   MST.incorporateFunction(*F);
    for(auto& BB : *F)
    {
       for(auto& Inst : BB)
@@ -4914,8 +4916,6 @@ void Andersen_AA::visit_func(const llvm::Function* F)
          }
          if(!I->hasName() && I->getType()->getTypeID() != llvm::Type::VoidTyID)
          {
-            llvm::ModuleSlotTracker MST(F->getParent());
-            MST.incorporateFunction(*F);
             tmp_num[I] = static_cast<u32>(MST.getLocalSlot(I));
          }
       }

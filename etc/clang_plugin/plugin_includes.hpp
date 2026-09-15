@@ -37,6 +37,7 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/GlobalObject.h"
 #include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/ModuleSlotTracker.h"
 #include "llvm/Support/raw_ostream.h"
 
 #if PANDA_LLVM_CLANG_MAJOR > 4
@@ -202,6 +203,8 @@ namespace llvm
       const llvm::DataLayout* DL;
       /// current module pass
       llvm::LLVMContext* moduleContext;
+      /// slot trackers cached per function to avoid repeatedly rebuilding local slots
+      std::map<const llvm::Function*, std::unique_ptr<llvm::ModuleSlotTracker>> moduleSlotTrackers;
       std::vector<std::string> TopFunctionNames;
 
       /// relation between LLVM object and serialization index
@@ -373,6 +376,7 @@ namespace llvm
       bool isSignedOperand(const InstructionOrConstantExpr* inst, unsigned index) const;
       template <class InstructionOrConstantExpr>
       bool isUnsignedOperand(const InstructionOrConstantExpr* inst, unsigned index) const;
+      int getLocalSlot(const llvm::Function* currentFunction, const llvm::Value* value);
       const void* getSSA(const llvm::Value* operand, const void* def_stmt, const llvm::Function* currentFunction,
                          bool isDefault);
       bool is_PTS(unsigned int varId, const llvm::TargetLibraryInfo& TLI, bool with_all = false);
