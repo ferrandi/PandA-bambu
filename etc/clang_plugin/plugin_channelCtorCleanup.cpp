@@ -101,15 +101,73 @@ namespace
       return (status == 0 && res) ? std::string(res.get()) : std::string();
    }
 
-   /// Classifies a callee from its demangled name. Working from the name rather than from the pointee
-   /// struct type is what keeps this going under opaque pointers, where the argument no longer carries
-   /// the type at all, and under LLVM's renaming of duplicate struct names (%class.ac_channel,
-   /// %class.ac_channel.0, ...).
-   ChannelOp classify(StringRef mangled)
+   /// Returns the position of the "::" that separates a class template from its member, i.e. the one
+   /// right after the '>' closing the first '<' - or npos if there is none. Only '<' and '>' are counted,
+   /// so parentheses and "::" inside the template arguments do not matter.
+   size_t findOwnerSeparator(const std::string& full)
    {
-      // Demangling every call in the module would cost an allocation each time; a channel constructor
-      // always carries its class name in the mangled form, so this filter cannot miss one.
-      if(mangled.find("ac_channel") == StringRef::npos && mangled.find("stream") == StringRef::npos)
+      size_t end = full.find('<');
+      for(int depth = 0; end < full.size(); ++end)
+      {
+         depth += full[end] == '<' ? 1 : full[end] == '>' ? -1 : 0;
+         if(depth == 0)
+         {
+            break;
+         }
+      }
+      if(end >= full.size() || full.compare(end + 1, 2, "::") != 0)
+      {
+         return std::string::npos;
+      }
+      return end + 1;
+   }
+
+   /// Splits the demangled name of a member of a class template into three parts:
+   ///
+   ///   hls::stream<ac_fixed<16, 6, true, (ac_q_mode)0, (ac_o_mode)0>, 0>::stream(char const*)
+   ///   `------------------------- owner ----------------------------'  `-fn-'`---- args ---'
+   ///
+   ///   owner  the class the member belongs to, template arguments included;
+   ///   fn     the member's name: the class name for a constructor, "~" + class name for a destructor
+   ///          (the '~' is taken off and dtor set instead), "operator=" for an assignment, ...;
+   ///   args   the parameter list, parentheses included.
+   ///
+   /// Neither '(' nor "::" can be searched for directly: both occur inside template arguments -
+   /// enum values print as casts, "(ac_q_mode)0", and element types carry namespaces, "nnet::array" -
+   /// and inside args too, whenever a parameter's type names the channel itself (copy constructor,
+   /// operator=, initializer_list). Only '<' and '>' delimit the owner, so it ends at the '>' that
+   /// closes its first '<'; "::" must follow, and the first '(' after it opens args, since a member name
+   /// never contains one.
+   bool splitName(StringRef mangled, std::string& owner, std::string& fn, std::string& args, bool& dtor)
+   {
+      const std::string full = demangle(mangled);
+      const size_t sep = findOwnerSeparator(full);
+      if(sep == std::string::npos)
+      {
+         return false;
+      }
+      const size_t paren = full.find('(', sep + 2);
+      if(paren == std::string::npos)
+      {
+         return false;
+      }
+      owner = full.substr(0, sep);
+      fn = full.substr(sep + 2, paren - (sep + 2));
+      args = full.substr(paren);
+      dtor = !fn.empty() && fn.front() == '~';
+      if(dtor)
+      {
+         fn.erase(0, 1);
+      }
+      return true;
+   }
+
+   /// ac_channel<T> members.
+   ChannelOp classifyAcChannel(StringRef mangled)
+   {
+      // Demangling every call in the module would cost an allocation each time; a channel member always
+      // carries its class name in the mangled form, so this filter cannot miss one.
+      if(mangled.find("ac_channel") == StringRef::npos)
       {
          return ChannelOp::none;
       }
@@ -119,45 +177,21 @@ namespace
       {
          return ChannelOp::seam;
       }
-      const std::string full = demangle(mangled);
-      // Everything from the first parenthesis on is the argument list. A channel of function pointers
-      // would put one earlier, but it is not synthesisable to begin with.
-      const size_t paren = full.find('(');
-      if(paren == std::string::npos)
+      std::string owner, fn, args;
+      bool dtor = false;
+      if(!splitName(mangled, owner, fn, args, dtor) || owner.compare(0, 11, "ac_channel<") != 0)
       {
          return ChannelOp::none;
       }
-      const std::string qualified = full.substr(0, paren);
-      const size_t sep = qualified.rfind("::");
-      if(sep == std::string::npos)
-      {
-         return ChannelOp::none;
-      }
-      const std::string owner = qualified.substr(0, sep);
-      std::string fn = qualified.substr(sep + 2);
-      // The function name is the last component of a qualified name and never contains "::" itself, so
-      // the last separator finds it without any bracket matching.
-      const bool dtor = !fn.empty() && fn.front() == '~';
-      if(dtor)
-      {
-         fn.erase(0, 1);
-      }
-      // Copy construction and copy assignment demangle to the same tail, "(<owner> const&)", so one
-      // predicate covers both.
-      const bool copies_a_channel = full.compare(paren, std::string::npos, "(" + owner + " const&)") == 0;
-      // operator= is not named after its class, so it cannot pass the constructor gate below and has to
-      // be recognised here. Testing the owner is what keeps this off the operator= of an unrelated class
-      // that merely holds a channel as a member.
+      // The only operator= ac_channel declares is copy assignment.
       if(fn == "operator=")
       {
-         const bool channel_owner =
-             owner.compare(0, 11, "ac_channel<") == 0 || owner.compare(0, 12, "hls::stream<") == 0;
-         return (copies_a_channel && channel_owner) ? ChannelOp::bad_copy : ChannelOp::none;
+         return ChannelOp::bad_copy;
       }
       // A constructor is named after the class it builds. That alone rejects bambu_bitcast_payload, the
-      // union the non-blocking payload travels in: it is declared inside ac_channel, so its mangled name
-      // carries "ac_channel" too, but its constructor is named after the union.
-      if(fn != "ac_channel" && !(fn == "stream" && owner.compare(0, 5, "hls::") == 0))
+      // union the non-blocking payload travels in: it is declared inside ac_channel, so its owner starts
+      // with "ac_channel<" too, but its constructor is named after the union.
+      if(fn != "ac_channel")
       {
          return ChannelOp::none;
       }
@@ -165,13 +199,48 @@ namespace
       {
          return ChannelOp::erase_dtor;
       }
-      if(copies_a_channel)
+      if(args == "(" + owner + " const&)")
       {
          return ChannelOp::bad_copy;
       }
-      // Taking no argument is what tells the default constructor from the ones that put elements in the
-      // channel first: ac_channel<int> c(8), an initializer list, a binary file.
-      return full.compare(paren, std::string::npos, "()") == 0 ? ChannelOp::erase_ctor : ChannelOp::bad_ctor;
+      // Only the default constructor builds an empty channel. Every other one puts elements in first:
+      // ac_channel<int> c(8), an initializer list, ac_channel(const char* bin_file) reading a file.
+      return args == "()" ? ChannelOp::erase_ctor : ChannelOp::bad_ctor;
+   }
+
+   /// hls::stream<T, DEPTH> members. Under __BAMBU__ its copy constructor and operator= are deleted, so
+   /// they never reach this pass; were they ever allowed back, their bodies would call ac_channel's
+   /// copy, which classifyAcChannel rejects anyway.
+   ChannelOp classifyHlsStream(StringRef mangled)
+   {
+      if(mangled.find("stream") == StringRef::npos)
+      {
+         return ChannelOp::none;
+      }
+      std::string owner, fn, args;
+      bool dtor = false;
+      if(!splitName(mangled, owner, fn, args, dtor) || owner.compare(0, 12, "hls::stream<") != 0 ||
+         fn != "stream")
+      {
+         return ChannelOp::none;
+      }
+      if(dtor)
+      {
+         return ChannelOp::erase_dtor;
+      }
+      // stream(const char* name) builds an empty channel as the default one does: the name is only a
+      // label, and hls4ml gives one to every stream.
+      return (args == "()" || args == "(char const*)") ? ChannelOp::erase_ctor : ChannelOp::bad_ctor;
+   }
+
+   /// Classifies a callee from its demangled name. Working from the name rather than from the pointee
+   /// struct type is what keeps this going under opaque pointers, where the argument no longer carries
+   /// the type at all, and under LLVM's renaming of duplicate struct names (%class.ac_channel,
+   /// %class.ac_channel.0, ...).
+   ChannelOp classify(StringRef mangled)
+   {
+      const ChannelOp op = classifyAcChannel(mangled);
+      return op != ChannelOp::none ? op : classifyHlsStream(mangled);
    }
 
    /// Only calls are looked at, never invokes: bambu compiles every C++ input with -fno-exceptions
@@ -284,7 +353,7 @@ namespace
 
    std::string describe(const Function& F, const Value* obj)
    {
-      std::string where = "'" + F.getName().str() + "'";
+      std::string where = "'" + demangle(F.getName()) + "'";
       if(obj && obj->hasName())
       {
          where += ", channel '" + obj->getName().str() + "'";
@@ -471,12 +540,12 @@ llvmGetPassPluginInfo()
                  if(pluginBeginOS)
                     MPM.addPass(llvm::PrintModulePass(*pluginBeginOS));
                  MPM.addPass(ChannelCtorCleanupPass());
-                 static auto pluginEndOS = createOutputStream("end_plugin_channelCtorCleanup.ll");
-                 if(pluginEndOS)
-                    MPM.addPass(llvm::PrintModulePass(*pluginEndOS));
                  // Takes the now unused constructor and destructor bodies, and with them operator new,
                  // operator delete and the deque helpers left out of line.
                  MPM.addPass(GlobalDCEPass());
+                 static auto pluginEndOS = createOutputStream("end_plugin_channelCtorCleanup.ll");
+                 if(pluginEndOS)
+                    MPM.addPass(llvm::PrintModulePass(*pluginEndOS));
               };
               PB.registerPipelineParsingCallback(
                   [&](StringRef name, ModulePassManager& MPM, ArrayRef<PassBuilder::PipelineElement>) {
