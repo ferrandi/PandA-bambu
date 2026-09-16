@@ -897,9 +897,7 @@ namespace llvm
          else
          {
             const llvm::Function* currentFunction = arg->getParent();
-            llvm::ModuleSlotTracker MST(currentFunction->getParent());
-            MST.incorporateFunction(*currentFunction);
-            auto id = MST.getLocalSlot(arg);
+            auto id = getLocalSlot(currentFunction, arg);
             if(id >= 0)
             {
                snprintf(buffer, LOCAL_BUFFER_LEN, "P%d", id);
@@ -1876,6 +1874,19 @@ namespace llvm
       }
    }
 
+   int DumpBambuIR::getLocalSlot(const llvm::Function* currentFunction, const llvm::Value* value)
+   {
+      assert(currentFunction != nullptr);
+      assert(currentFunction->getParent());
+      auto& slotTracker = moduleSlotTrackers[currentFunction];
+      if(!slotTracker)
+      {
+         slotTracker = std::make_unique<llvm::ModuleSlotTracker>(currentFunction->getParent(), false);
+         slotTracker->incorporateFunction(*currentFunction);
+      }
+      return slotTracker->getLocalSlot(value);
+   }
+
    const void* DumpBambuIR::getSSA(const llvm::Value* operand, const void* def_stmt,
                                    const llvm::Function* currentFunction, bool isDefault)
    {
@@ -1905,9 +1916,7 @@ namespace llvm
          {
             assert(currentFunction != nullptr);
             assert(currentFunction->getParent());
-            llvm::ModuleSlotTracker MST(currentFunction->getParent());
-            MST.incorporateFunction(*currentFunction);
-            ssa_vers = MST.getLocalSlot(operand);
+            ssa_vers = getLocalSlot(currentFunction, operand);
             if(ssa_vers < 0)
             {
                if(memoryaccess2ssaindex.find(operand) == memoryaccess2ssaindex.end())

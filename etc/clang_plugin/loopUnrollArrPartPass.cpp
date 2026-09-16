@@ -26,7 +26,7 @@
 #define NDEBUG
 #endif
 #include "loopUnrollArrPartPass.hpp"
-#include "arrPart.hpp"
+#include "ArrPart.hpp"
 #include <llvm/Analysis/AliasAnalysis.h>
 #include <llvm/Analysis/AssumptionCache.h>
 #include <llvm/Analysis/LoopInfo.h>

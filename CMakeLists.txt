@@ -9,6 +9,29 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Compiler requirement: the project must be built with GCC >= 13.
+#  - The main tool targets C++23, which is only fully supported by GCC >= 13.
+#  - The bundled clang plugins are compiled with the *project* C++ compiler
+#    against the detected clang headers/ABI (see cmake/ConfigHeaders.cmake) and
+#    rpath-linked to that clang's libclang-cpp; that build step is only
+#    supported with a GCC toolchain. Selecting clang (e.g. clang-13) as the
+#    build compiler therefore fails.
+# Verify the compiler at configure time instead of surfacing the failure deep
+# in the build.
+foreach(_lang C CXX)
+   if(NOT CMAKE_${_lang}_COMPILER_ID STREQUAL "GNU"
+      OR NOT CMAKE_${_lang}_COMPILER_VERSION VERSION_GREATER_EQUAL 13)
+      message(FATAL_ERROR
+        "PandA-bambu must be built with GCC >= 13.\n"
+        "The main tool requires C++23, and the clang plugins are compiled with the\n"
+        "project C++ compiler against the detected clang headers/ABI, which is only\n"
+        "supported with a GCC toolchain (clang, e.g. clang-13, does not work).\n"
+        "Detected ${_lang} compiler: ${CMAKE_${_lang}_COMPILER_ID} ${CMAKE_${_lang}_COMPILER_VERSION}.\n"
+        "Point CMake at a GCC 13+ toolchain, e.g.:\n"
+        "  cmake -S . -B build -DCMAKE_C_COMPILER=gcc-13 -DCMAKE_CXX_COMPILER=g++-13")
+   endif()
+endforeach()
+
 include(GNUInstallDirs)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -79,14 +102,15 @@ set(PANDA_LICENSING_INSTALLDIR_REL "${PANDA_DATA_INSTALLDIR_REL}/licensing")
 set(PANDA_DATA_INSTALLDIR "${PANDA_DATA_INSTALLDIR_REL}")
 set(PANDA_LICENSING_INSTALLDIR "${PANDA_LICENSING_INSTALLDIR_REL}")
 
-find_package(Boost 1.48 CONFIG QUIET COMPONENTS headers)
+find_package(Boost 1.70 QUIET CONFIG COMPONENTS headers)
 if(NOT Boost_FOUND)
-   if(POLICY CMP0167)
-      message(FATAL_ERROR
-         "BoostConfig.cmake was not found. Install the Boost development package or set Boost_DIR; "
-         "CMake 4 no longer provides FindBoost.")
-   endif()
-   find_package(Boost 1.48 REQUIRED COMPONENTS headers)
+   message(FATAL_ERROR
+      "Boost (>= 1.70) with 'headers' component was not found.\n"
+      "Install the Boost development package:\n"
+      "  Debian/Ubuntu:  sudo apt-get install libboost-dev\n"
+      "  Fedora/RHEL:    sudo dnf install boost-devel\n"
+      "  macOS:          brew install boost\n"
+      "Or set Boost_DIR to point to a Boost installation that provides BoostConfig.cmake.")
 endif()
 find_package(ZLIB REQUIRED)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
