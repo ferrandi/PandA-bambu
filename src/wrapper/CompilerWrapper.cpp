@@ -33,6 +33,7 @@
 #include "CompilerWrapper.hpp"
 
 #include "Parameter.hpp"
+#include "BambuParameterRegistry.hpp"
 #include "compiler_constants.hpp"
 #include "cpu_stats.hpp"
 #include "cpu_time.hpp"
@@ -170,6 +171,9 @@
 #include <unistd.h>
 
 #define SCRIPT_NEWLINE " \\\n  "
+PANDA_REGISTER_PARAMETER("emit-llvm", PandaParamType::Bool, "0",
+                         "Emit the compiled source file in symbolic llvm instead of an object file",
+                         "debugging");
 
 enum CompilerMode : int
 {
@@ -645,13 +649,16 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       }
       (cpp_input && !(cm & CM_COMPILER_OPT)) ? load_and_run_plugin(COMPILER_SSA_PLUGINCPP) :
                                                load_and_run_plugin(COMPILER_SSA_PLUGIN);
-      if((cm & CM_COMPILER_OPT) || (cm & CM_COMPILER_STD))
+      if(Param->IsParameter("emit-llvm") && Param->GetParameter<bool>("emit-llvm"))
       {
-         command += " -S";
-      }
-      if(cm & CM_COMPILER_STD)
-      {
-         command += " -emit-llvm";
+         if(cm & CM_COMPILER_OPT)
+         {
+            command += " -S";
+         }
+         if(cm & CM_COMPILER_STD)
+         {
+            command += " -S -emit-llvm";
+         }
       }
    }
    command += SCRIPT_NEWLINE + passes.get();
