@@ -458,6 +458,11 @@
       "category": "technology"
     },
     {
+      "name": "emit-llvm",
+      "type": "Bool",
+      "category": "wrapper"
+    },
+    {
       "name": "enable-FSMX",
       "type": "Bool",
       "default_value": "0",
