@@ -143,6 +143,9 @@ namespace llvm
    cl::opt<std::string> outdir_name("panda-outputdir",
                                     cl::desc("Specify the directory where the bambuir file will be written"),
                                     cl::value_desc("directory path"), cl::Required);
+   cl::opt<std::string> architectureFile("bambuir-architecture-file",
+                                         cl::desc("Specify the path to the architecture.xml file"),
+                                         cl::value_desc("file path"), cl::Required);
    cl::list<std::string> InFile("panda-infile", cl::desc("Specify the name of the compiled source file"),
                                 cl::value_desc("filename path"), cl::OneOrMore, cl::CommaSeparated);
    cl::opt<std::string> CostTable("panda-cost-table", cl::desc("Specify the cost per operation"),
@@ -552,7 +555,7 @@ namespace llvm
    {
       llvm::PreservedAnalyses run(llvm::Module& M, llvm::ModuleAnalysisManager&)
       {
-         const auto changed = addFunctionParamTrackingAttrsFromXML(M, outdir_name + "/architecture.xml");
+         const auto changed = addFunctionParamTrackingAttrsFromXML(M, architectureFile);
          return changed ? llvm::PreservedAnalyses::none() : llvm::PreservedAnalyses::all();
       }
    };
@@ -566,7 +569,7 @@ namespace llvm
 
       bool runOnModule(Module& M) override
       {
-         return addFunctionParamTrackingAttrsFromXML(M, outdir_name + "/architecture.xml");
+         return addFunctionParamTrackingAttrsFromXML(M, architectureFile);
       }
    };
    char BambuParamTrackingLegacyPass::ID = 0;
@@ -631,12 +634,11 @@ namespace llvm
          const auto first_filename = InFile.front();
 
          pugi::xml_document doc;
-         const auto arch_filename = outdir_name + "/architecture.xml";
-         if(doc.load_file(arch_filename.c_str()))
+         if(doc.load_file(architectureFile.c_str()))
          {
             if(pruneArchitectureXMLWithModule(doc, M))
             {
-               doc.save_file(arch_filename.c_str());
+               doc.save_file(architectureFile.c_str());
             }
             extendTopFunctionNamesFromArchitecture(doc, TopFunctionNames);
             Fun2Params = loadFunctionParamTracking(doc);

@@ -903,7 +903,7 @@ namespace
    }
 } // namespace
 
-void modifyXMLModule(ArrPartCtx& arrPartCtx, const std::string& outdirName)
+void modifyXMLModule(ArrPartCtx& arrPartCtx, const std::string& architectureFile)
 {
    LLVM_DEBUG(llvm::dbgs() << "[CSROA] Modify architecture.xml file\n");
    auto& doc = *arrPartCtx.doc;
@@ -963,14 +963,12 @@ void modifyXMLModule(ArrPartCtx& arrPartCtx, const std::string& outdirName)
    }
 
    LLVM_DEBUG(dbgs() << "[CSROA] Saving the new architecture.xml\n");
-   const auto arch_filename = outdirName + "/architecture.xml";
-   doc.save_file(arch_filename.c_str(), "  ", pugi::format_indent | pugi::format_no_empty_element_tags);
+   doc.save_file(architectureFile.c_str(), "  ", pugi::format_indent | pugi::format_no_empty_element_tags);
 }
 
-bool loadXMLModule(pugi::xml_document& doc, const std::string& outdirName)
+bool loadXMLModule(pugi::xml_document& doc, const std::string& architectureFile)
 {
-   const auto arch_filename = outdirName + "/architecture.xml";
-   if(!doc.load_file(arch_filename.c_str()))
+   if(!doc.load_file(architectureFile.c_str()))
    {
       errs() << "[ARR_PART] architecture.xml cannot be loaded\n";
       return false;

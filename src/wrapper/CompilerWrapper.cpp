@@ -459,6 +459,7 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
    const auto compiler = GetCompiler();
    const auto output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
    const auto compiler_output_filename = output_temporary_directory + "/" STR_CST_cc_output;
+   const auto arch_file = Param->getOption<std::string>(OPT_architecture_xml);
 
    const auto isWholeProgram =
        Param->isOption(OPT_cc_optimizations) &&
@@ -610,6 +611,7 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       {
          append_arg("-panda-Internalize");
       }
+      append_arg("-topfname-architecture-file=" + arch_file);
       load_and_run_plugin(COMPILER_TOPFNAME_PLUGIN);
    }
    // customSROA inlines: it must run after topfname has marked top/dataflow functions NoInline
@@ -624,6 +626,7 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       {
          append_arg("-panda-lock-csroa");
       }
+      append_arg("-csroa-architecture-file=" + arch_file);
       load_and_run_plugin(COMPILER_CUSTOMSROA_PLUGIN);
    }
    if(cm & CM_OPT_EXPANDMEMOPS)
@@ -647,6 +650,7 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       {
          append_arg("-panda-topfname=" + top_fnames);
       }
+      append_arg("-bambuir-architecture-file=" + arch_file);
       (cpp_input && !(cm & CM_COMPILER_OPT)) ? load_and_run_plugin(COMPILER_SSA_PLUGINCPP) :
                                                load_and_run_plugin(COMPILER_SSA_PLUGIN);
       if(Param->IsParameter("emit-llvm") && Param->GetParameter<bool>("emit-llvm"))
