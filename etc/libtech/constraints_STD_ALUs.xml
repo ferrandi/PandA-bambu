@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<constraints>
+   <HLS_constraints>
+      <tech_constraints fu_name="ternary_ss_node_FU" fu_library="STD_FU" n="0"/>
+      <tech_constraints fu_name="ui_ternary_ss_node_FU" fu_library="STD_FU" n="0"/>
+      <tech_constraints fu_name="ternary_sa_node_FU" fu_library="STD_FU" n="0"/>
+      <tech_constraints fu_name="ui_ternary_sa_node_FU" fu_library="STD_FU" n="0"/>
+      <tech_constraints fu_name="ternary_as_node_FU" fu_library="STD_FU" n="0"/>
+      <tech_constraints fu_name="ui_ternary_as_node_FU" fu_library="STD_FU" n="0"/>
+      <tech_constraints fu_name="ternary_add_node_FU" fu_library="STD_FU" n="0"/>
+      <tech_constraints fu_name="ui_ternary_add_node_FU" fu_library="STD_FU" n="0"/>
+      <tech_constraints fu_name="add_node_FU" fu_library="STD_FU" n="0"/>
+      <tech_constraints fu_name="ui_add_node_FU" fu_library="STD_FU" n="0"/>
+      <tech_constraints fu_name="sub_node_FU" fu_library="STD_FU" n="0"/>
+      <tech_constraints fu_name="ui_sub_node_FU" fu_library="STD_FU" n="0"/>
+      <tech_constraints fu_name="builtin_putchar_FU" fu_library="STD_FU" n="1"/>
+   </HLS_constraints>
+</constraints>

@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -41,6 +29,7 @@
 
 #include "BambuParameter.hpp"
 #include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
 #include "commandport_obj.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
@@ -48,6 +37,7 @@
 #include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
+#include "math_function.hpp"
 #include "multi_unbounded_obj.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
@@ -55,14 +45,11 @@
 #include "utility.hpp"
 
 ControllerCreatorBaseStep::ControllerCreatorBaseStep(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
-                                                     unsigned int _funId,
-                                                     const DesignFlowManagerConstRef _design_flow_manager,
+                                                     unsigned int _funId, const DesignFlowManager& _design_flow_manager,
                                                      const HLSFlowStep_Type _hls_flow_step_type)
     : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type), out_num(0), in_num(0)
 {
 }
-
-ControllerCreatorBaseStep::~ControllerCreatorBaseStep() = default;
 
 HLS_step::HLSRelationships
 ControllerCreatorBaseStep::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -70,17 +57,17 @@ ControllerCreatorBaseStep::ComputeHLSRelationships(const DesignFlowStep::Relatio
    HLSRelationships ret;
    switch(relationship_type)
    {
-      case DEPENDENCE_RELATIONSHIP:
+      case(DEPENDENCE_RELATIONSHIP):
       {
          ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_architecture),
                                     HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          break;
       }
-      case INVALIDATION_RELATIONSHIP:
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case PRECEDENCE_RELATIONSHIP:
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -119,6 +106,24 @@ void ControllerCreatorBaseStep::add_common_ports(structural_objectRef circuit, s
 
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the start port...");
    this->add_start_port(circuit, SM);
+
+   /// add idle_port only for top functions
+   const auto& CGM = HLSMgr->CGetCallGraphManager();
+   const bool is_top = CGM.GetRootFunctions().count(funId) != 0;
+   if(is_top)
+   {
+      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the idle port (top function)...");
+      this->add_idle_port(circuit, SM);
+   }
+
+   const auto omp_info = HLSMgr->CGetFunctionBehavior(funId)->GetOMPInfo();
+   if(omp_info && omp_info->context_count > 1U)
+   {
+      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the context selection port...");
+      const structural_type_descriptorRef selector_port_type(
+          new structural_type_descriptor("bool", ceil_log2(omp_info->context_count)));
+      SM->add_port(SELECTOR_REGISTER_FILE, port_o::IN, circuit, selector_port_type);
+   }
 }
 
 void ControllerCreatorBaseStep::add_clock_reset(structural_objectRef circuit, structural_managerRef SM)
@@ -157,6 +162,16 @@ void ControllerCreatorBaseStep::add_start_port(structural_objectRef circuit, str
    /// add the start port
    SM->add_port(START_PORT_NAME, port_o::IN, circuit, port_type);
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - Start signal added!");
+}
+
+void ControllerCreatorBaseStep::add_idle_port(structural_objectRef circuit, structural_managerRef SM)
+{
+   /// define Boolean type for the idle port
+   structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Start adding Idle signal...");
+   /// add idle port as output (high when the top is not operating)
+   SM->add_port(IDLE_PORT_NAME, port_o::OUT, circuit, port_type);
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - Idle signal added!");
 }
 
 void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit, structural_managerRef SM)
@@ -205,18 +220,9 @@ void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit, 
             }
             else
             {
-               /// operation modifying the control flow (e.g., if, switch, ...)
-               vertex cond_v = GetPointer<commandport_obj>(j.second)->get_vertex();
-               if(GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::SWITCH)
-               {
-                  /// multi bit selector representing the evaluation of a switch
-                  unsigned int var_written = HLSMgr->get_produced_value(HLS->functionId, cond_v);
-                  structural_type_descriptorRef switch_port_type = structural_type_descriptorRef(
-                      new structural_type_descriptor(var_written, FB->CGetBehavioralHelper()));
-                  sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit,
-                                         switch_port_type);
-               }
-               else if(GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::MULTIIF)
+               /// operation modifying the control flow (e.g., MULTIIF, ...)
+               auto cond_v = GetPointer<commandport_obj>(j.second)->get_vertex();
+               if(GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::MULTIIF)
                {
                   std::vector<HLS_manager::io_binding_type> var_read =
                       HLSMgr->get_required_values(HLS->functionId, cond_v);

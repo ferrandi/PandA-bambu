@@ -1,0 +1,1 @@
+../../xilinx/settings64.sh

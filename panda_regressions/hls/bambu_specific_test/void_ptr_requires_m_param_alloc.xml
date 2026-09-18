@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<function>
+  <testbench input="{1,2,3,4}" len="4" return="1"/>
+</function>

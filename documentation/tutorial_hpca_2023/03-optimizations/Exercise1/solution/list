@@ -1,7 +1,0 @@
-adpcm.c --benchmark-name=adpcm_O0 -O0
-adpcm.c --benchmark-name=adpcm_O1 -O1
-adpcm.c --benchmark-name=adpcm_O2 -O2
-adpcm.c --benchmark-name=adpcm_O3 -O3
-adpcm.c --benchmark-name=adpcm_O3_inline -O3 -finline-limit=1000000
-adpcm.c --benchmark-name=adpcm_O3_vectorize -O3 -ftree-vectorize
-adpcm.c --benchmark-name=adpcm_Os -Os
