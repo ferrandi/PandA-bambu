@@ -317,10 +317,7 @@ DesignFlowStep_Status create_ir_manager::Exec()
 
    const auto HLSMgr = GetPointer<HLS_manager>(AppM);
    THROW_ASSERT(HLSMgr, "");
-   const auto arch_filename =
-       parameters->isOption(OPT_architecture_xml) ?
-           parameters->getOption<std::string>(OPT_architecture_xml) :
-           (parameters->getOption<std::string>(OPT_output_temporary_directory) + "/architecture.xml");
+   const auto arch_filename = parameters->getOption<std::string>(OPT_architecture_xml);
    HLSMgr->module_arch = refcount<ModuleArchitecture>(new ModuleArchitecture(arch_filename));
 
    for(auto& [symbol, arch] : *HLSMgr->module_arch)

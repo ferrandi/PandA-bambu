@@ -202,6 +202,10 @@ void Parameter::CheckParameters()
    {
       setOption(OPT_output_hls_directory, getOption<std::string>(OPT_output_directory) + "/HLS_output");
    }
+   if(!isOption(OPT_architecture_xml))
+   {
+      setOption(OPT_architecture_xml, getOption<std::string>(OPT_output_temporary_directory) + "/architecture.xml");
+   }
 
    setup_dir(getOption<std::filesystem::path>(OPT_output_directory));
    // Remove stale temporary directory from a previous run to avoid leftover artifacts

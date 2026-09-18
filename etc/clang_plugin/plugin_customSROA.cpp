@@ -179,11 +179,15 @@ using namespace llvm;
 namespace
 {
    cl::opt<std::string> topFunctionName_CSROA("panda-TFN-csroa", cl::desc("Specify the name of the top function"),
-                                              cl::value_desc("name of the top function") /*, cl::Required*/);
+                                              cl::value_desc("name of the top function"));
 
    cl::opt<std::string> pandaTempPath("panda-outputdir-csroa",
                                       cl::desc("Specify the directory where the bambu IR raw file will be written"),
                                       cl::value_desc("directory path"), cl::Required);
+
+   cl::opt<std::string> architectureFile("csroa-architecture-file",
+                                         cl::desc("Specify the path to the architecture.xml file"),
+                                         cl::value_desc("file path"));
 
    cl::opt<bool> debug_lock("panda-lock-csroa", cl::init(false), cl::desc("Obtain default from a run"));
 
@@ -2627,7 +2631,7 @@ namespace llvm
 
          LLVM_DEBUG(llvm::dbgs() << "[CSROA] TopFunctionName_CSROA: " << arrPartCtx.topFn->getName() << "\n";);
 
-         if(!loadXMLModule(doc, pandaTempPath))
+         if(!loadXMLModule(doc, architectureFile))
          {
             return false;
          }

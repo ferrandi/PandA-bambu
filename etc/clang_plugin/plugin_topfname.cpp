@@ -143,6 +143,10 @@ namespace llvm
        outdir_name("internalize-outputdir",
                    cl::desc("Specify the directory where the external symbols file will be written"),
                    cl::value_desc("directory path"));
+   static cl::opt<std::string>
+       topfname_architecture_file("topfname-architecture-file",
+                                  cl::desc("Specify the path to the architecture.xml file"),
+                                  cl::value_desc("file path"));
    static cl::opt<bool> add_noalias("add-noalias", cl::init(false), cl::desc("Force noalias to pointer parameters"),
                                     cl::value_desc("specify if pointer parameters are noalias"));
 
@@ -236,8 +240,7 @@ namespace llvm
             }
          }
          pugi::xml_document doc;
-         const auto arch_filename = outdir_name + "/architecture.xml";
-         if(doc.load_file(arch_filename.c_str()))
+         if(doc.load_file(topfname_architecture_file.c_str()))
          {
             for(auto& f : doc.child("module"))
             {
