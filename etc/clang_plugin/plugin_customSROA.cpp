@@ -2662,7 +2662,7 @@ namespace llvm
          deleteAllUsersOfArrPartFunction(M);
          applyArrayPartition(M, arrPartCtx, invTopSortFns);
 
-         modifyXMLModule(arrPartCtx, pandaTempPath);
+         modifyXMLModule(arrPartCtx, architectureFile);
 
          cleanIR(M, arrPartCtx, invTopSortFns);
 
