@@ -34,6 +34,7 @@
 #include "cost_latency_table.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
+#include "exceptions.hpp"
 #include "fileIO.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
@@ -48,6 +49,8 @@
 #include "utility.hpp"
 
 #include <algorithm>
+#include <filesystem>
+#include <system_error>
 
 create_ir_manager::create_ir_manager(const ParameterConstRef _parameters, const application_managerRef _AppM,
                                      const DesignFlowManager& _design_flow_manager)
@@ -303,6 +306,21 @@ DesignFlowStep_Status create_ir_manager::Exec()
                                        parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
       const auto cost_table = createCostTable();
       compiler_wrapper.FillIRManager(TM, AppM->input_files, cost_table);
+
+      if(parameters->isOption(OPT_architecture_xml))
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Sto copiando il file");
+         const auto arch_file = parameters->getOption<std::filesystem::path>(OPT_architecture_xml);
+         const auto dest_arch_file = parameters->getOption<std::filesystem::path>(OPT_output_temporary_directory) / "architecture.xml";
+
+         std::error_code ec;
+         std::filesystem::copy_file(arch_file, dest_arch_file, ec);
+         // This should NEVER be true since output_temporary_directory is deleted at the beginning of each run
+         if(ec)
+         {
+            THROW_ERROR("architecture.xml is already present in " + dest_arch_file.string());
+         }
+      }
 
       if(debug_level >= DEBUG_LEVEL_PEDANTIC)
       {
