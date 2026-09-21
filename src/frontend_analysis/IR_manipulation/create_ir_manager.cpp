@@ -34,7 +34,6 @@
 #include "cost_latency_table.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-#include "exceptions.hpp"
 #include "fileIO.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
@@ -49,8 +48,6 @@
 #include "utility.hpp"
 
 #include <algorithm>
-#include <filesystem>
-#include <system_error>
 
 create_ir_manager::create_ir_manager(const ParameterConstRef _parameters, const application_managerRef _AppM,
                                      const DesignFlowManager& _design_flow_manager)
