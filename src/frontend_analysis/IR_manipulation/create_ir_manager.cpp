@@ -306,7 +306,6 @@ DesignFlowStep_Status create_ir_manager::Exec()
 
       if(parameters->isOption(OPT_architecture_xml))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Sto copiando il file");
          const auto arch_file = parameters->getOption<std::filesystem::path>(OPT_architecture_xml);
          const auto dest_arch_file = parameters->getOption<std::filesystem::path>(OPT_output_temporary_directory) / "architecture.xml";
 
