@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2015-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2015-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -41,10 +29,8 @@
 #ifndef TECHNOLOGY_FLOW_STEP_FACTORY_HPP
 #define TECHNOLOGY_FLOW_STEP_FACTORY_HPP
 
-/// Superclass include
 #include "design_flow_step_factory.hpp"
 
-/// utility include
 #include "refcount.hpp"
 
 enum class TechnologyFlowStep_Type;
@@ -71,13 +57,11 @@ class TechnologyFlowStepFactory : public DesignFlowStepFactory
     * @param parameters is the set of input parameters
     */
    TechnologyFlowStepFactory(const technology_managerRef TM, const generic_deviceRef target,
-                             const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
-
-   ~TechnologyFlowStepFactory() override;
+                             const DesignFlowManager& design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Create a scheduling design flow step
-    * @param technology_design_flow_step_type is the type of step to be created
+    * @param technology_flow_step_type is the type of step to be created
     */
    DesignFlowStepRef CreateTechnologyFlowStep(const TechnologyFlowStep_Type technology_flow_step_type) const;
 };

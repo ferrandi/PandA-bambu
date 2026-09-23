@@ -3,23 +3,35 @@ name: Build GCC
 on:
   workflow_dispatch:
     inputs:
-      gcc_ref:
-        description: "GCC branch reference to compile (e.g.: releases/gcc-5)"
+      ref:
+        description: "GCC branch reference to compile (e.g.: releases/gcc-5.5.0)"
         required: true
+      suffix:
+        description: "GCC executable suffix (e.g.: 5)"
+        required: true
+        type: number
       version:
-        description: "Compiled GCC version number (e.g.: 5)"
+        description: "GCC release identifier (e.g.: 5.5.0)"
         required: true
+        type: string
       configure:
-        description: "GCC configuration options"
+        description: "Build configuration options"
         required: false
-        default: "--enable-languages=c,c++,fortran --prefix=/usr --enable-shared --enable-linker-build-id --libexecdir=/usr/lib --without-included-gettext --enable-threads=posix --libdir=/usr/lib --enable-nls --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --enable-gnu-unique-object --disable-vtable-verify --enable-plugin --with-system-zlib --disable-browser-plugin --enable-multiarch --disable-werror --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32,m64,mx32 --enable-multilib --with-tune=generic --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu"
+        default: "--enable-languages=c,c++,fortran --enable-plugin --enable-multilib --with-multilib-list=m32,m64,mx32 --disable-werror --disable-gcov --disable-nls --with-tune=generic --build=x86_64-linux-gnu --host=x86_64-linux-gnu"
       patch:
         description: "Patch to be applied (if necessary)"
         required: false
         default: ""
+        type: choice
+        options:
+          - ""
+          - gcc-4.5.patch
+          - gcc-4.6.patch
+          - gcc-4.7.patch
+          - gcc-4.9.patch
 
 concurrency:
-  group: build-gcc-${{ inputs.version }}
+  group: build-gcc-${{inputs.version}}
   cancel-in-progress: true
 
 env:
@@ -32,9 +44,11 @@ env:
 jobs:
   build:
     runs-on: [self-hosted]
+    env:
+      dist-name: gcc-${{inputs.version}}-x86_64-linux-gnu-compat
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Env setup
         id: host
         shell: bash
@@ -51,15 +65,15 @@ jobs:
         uses: ./.github/actions/build-gcc
         with:
           jobs: ${{steps.host.outputs.jobs}}
-          branch: ${{inputs.gcc_ref}}
-          dist-name: gcc-${{inputs.version}}-bambu
-          config-args: -v --with-pkgversion="Ubuntu gcc-${{inputs.version}}-bambu" --with-bugurl="file:///usr/share/doc/gcc-${{inputs.version}}/README.Bugs" --program-suffix=-${{inputs.version}} ${{ inputs.configure }}
-      - name: Upload GCC-${{inputs.version}} dist directory
+          branch: ${{inputs.ref}}
+          dist-name: ${{env.dist-name}}
+          config-args: ${{inputs.configure}} --with-pkgversion="gcc (Ubuntu ${{inputs.version}}-ubuntu~16.04) ${{inputs.version}}" --program-suffix=-${{inputs.suffix}}
+      - name: Upload ${{env.dist-name}}
         shell: bash
         run: |
-          DIST_TAR="${{steps.build.outputs.dist-dir}}.tar.xz"
+          DIST_TAR="${{env.dist-name}}.tar.xz"
           STORAGE_URL="${{env.storage-url}}/${{env.storage-path}}/${DIST_TAR}"
           export XZ_OPT='-T0'
-          tar -C ${{steps.build.outputs.dist-dir}} . --mode="u+rwX,g+rwX,o+rX" -cJf ${DIST_TAR}
+          tar -C ${{env.dist-name}} . --mode="u+rwX,g+rwX,o+rX" -cJf ${DIST_TAR}
           curl -L --fail -u '${{env.storage-user}}':'${{env.storage-token}}' -T "${DIST_TAR}" "$STORAGE_URL"
           echo "### New release available at https://release.bambuhls.eu/compiler/${DIST_TAR}" >> $GITHUB_STEP_SUMMARY

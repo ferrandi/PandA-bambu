@@ -1,0 +1,1 @@
+mandelbrot.cpp --top-fname=mandelbrot --benchmark-name=mb --generate-tb=BENCHMARKS_ROOT/mandelbrot.cpp

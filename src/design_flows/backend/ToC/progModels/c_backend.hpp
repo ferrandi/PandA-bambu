@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -36,9 +24,6 @@
  *
  * @author Luca Fossati <fossati@elet.polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -53,10 +38,7 @@
 #include <fstream>
 #include <iosfwd>
 #include <list>
-#include <ostream>
-#include <sstream>
 #include <string>
-#include <vector>
 
 CONSTREF_FORWARD_DECL(BehavioralHelper);
 CONSTREF_FORWARD_DECL(CBackendInformation);
@@ -66,8 +48,8 @@ CONSTREF_FORWARD_DECL(OpGraph);
 class OpVertexSet;
 CONSTREF_FORWARD_DECL(Parameter);
 CONSTREF_FORWARD_DECL(application_manager);
-CONSTREF_FORWARD_DECL(tree_manager);
-CONSTREF_FORWARD_DECL(tree_node);
+CONSTREF_FORWARD_DECL(ir_manager);
+CONSTREF_FORWARD_DECL(ir_node);
 
 /**
  * Class simply used to drive the backend in order to print C code
@@ -80,16 +62,13 @@ class CBackend : public DesignFlowStep
 
    /**
     * Constructor
-    * @param type is the type of c backend to be created
     * @param c_backend_information is the information about the backend to be created
     * @param design_flow_manager is the design flow graph manager
     * @param AppM is the manager of the application
-    * @param file_name is the file to be created
-    * @param Param is the set of input parameters
+    * @param _parameters is the set of input parameters
     */
-   CBackend(const CBackendInformationConstRef c_backend_information,
-            const DesignFlowManagerConstRef design_flow_manager, const application_managerConstRef AppM,
-            const ParameterConstRef _parameters);
+   CBackend(const CBackendInformationConstRef c_backend_information, const DesignFlowManager& design_flow_manager,
+            const application_managerConstRef AppM, const ParameterConstRef _parameters);
 
  protected:
    const CWriterRef writer;

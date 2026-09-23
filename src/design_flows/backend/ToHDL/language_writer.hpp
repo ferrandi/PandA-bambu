@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -37,18 +25,11 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef LANGUAGE_WRITER_HPP
 #define LANGUAGE_WRITER_HPP
 
-/// Autoheader include
-#include "config_HAVE_FROM_C_BUILT.hpp"
-
-/// utility include
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
 #include "refcount.hpp"
@@ -59,18 +40,15 @@
 #include <string>
 #include <vector>
 
-/**
- * @name Forward declarations.
- */
-//@{
+#include "config_HAVE_FROM_C_BUILT.hpp"
+
+CONSTREF_FORWARD_DECL(Parameter);
+CONSTREF_FORWARD_DECL(structural_object);
+CONSTREF_FORWARD_DECL(technology_manager);
 REF_FORWARD_DECL(IndentedOutputStream);
 REF_FORWARD_DECL(language_writer);
-CONSTREF_FORWARD_DECL(Parameter);
-REF_FORWARD_DECL(structural_type_descriptor);
-CONSTREF_FORWARD_DECL(structural_object);
 REF_FORWARD_DECL(structural_object);
-CONSTREF_FORWARD_DECL(technology_manager);
-//@}
+REF_FORWARD_DECL(structural_type_descriptor);
 
 #define BITSIZE_PREFIX "BITSIZE_"
 #define PORTSIZE_PREFIX "PORTSIZE_"
@@ -107,6 +85,7 @@ class language_writer
    /// list of customized gates
    CustomOrderedSet<std::string> list_of_customized_gates;
 
+   friend class HDL_manager;
    /// the set of input parameters
    const ParameterConstRef parameters;
 
@@ -114,19 +93,13 @@ class language_writer
    int debug_level;
 
  public:
-   /**
-    * Constructor
-    */
    language_writer(char open_char, char close_char, const ParameterConstRef parameters);
 
-   /**
-    * Destructor
-    */
-   virtual ~language_writer();
+   virtual ~language_writer() = default;
 
    /**
     * Creates the specialization of the writer based on the desired language
-    * @param language_w is the desired language
+    * @param language is the desired language
     * @param TM is the technology manager
     * @param parameters is the set of input parameters
     */
@@ -151,8 +124,9 @@ class language_writer
 
    /**
     * Writes the header part of the file. Write some lines of comments and possibly global libraries.
+    * @param is_library true if writing PandA/Bambu IP library file
     */
-   virtual void write_header();
+   virtual void write_header(bool is_library);
 
    /**
     * Prints a comment.
@@ -180,8 +154,9 @@ class language_writer
    /**
     * Write the declaration of the module.
     * @param cir is the module to be written.
+    * @param is_library true for PANDA/BAMBU IP library components, false for components derived from user input
     */
-   virtual void write_module_declaration(const structural_objectRef& cir) = 0;
+   virtual void write_module_declaration(const structural_objectRef& cir, bool is_library = true) = 0;
    /**
     * Write the declaration of internal objects of the module.
     * @param cir is the module to be written.
@@ -190,6 +165,7 @@ class language_writer
    /**
     * Write the port declaration starting from a port object.
     * @param cir is the port to be written.
+    * @param first_port_analyzed is true after the first port declaration has already been emitted.
     */
    virtual void write_port_declaration(const structural_objectRef& cir, bool first_port_analyzed) = 0;
    /**
@@ -210,8 +186,9 @@ class language_writer
    /**
     * Write the initial part of the instance of a module.
     * @param cir is the module to be instanced.
-    * @param component_name is the name of the module to be instanced. It has to be specified since VHDL and verilog can
-    * print in different ways
+    * @param module_name is the name of the module to be instanced. It has to be specified since VHDL and Verilog can
+    * print instances in different ways.
+    * @param write_parametrization selects whether parameter or generic bindings have to be emitted.
     */
    virtual void write_module_instance_begin(const structural_objectRef& cir, const std::string& module_name,
                                             bool write_parametrization) = 0;
@@ -224,6 +201,7 @@ class language_writer
     * Write the binding of a port. It follows the name binding style.
     * @param port is the port to be bounded.
     * @param top is the component owner of the component that has the port to be bounded.
+    * @param first_port_analyzed is true after the first port binding has already been emitted.
     */
    virtual void write_port_binding(const structural_objectRef& port, const structural_objectRef& top,
                                    bool first_port_analyzed) = 0;
@@ -232,8 +210,9 @@ class language_writer
    /**
     * Write the end part in a module declaration.
     * @param cir is the top component to be declared.
+    * @param is_library true for PANDA/BAMBU IP library components, false for components derived from user input
     */
-   virtual void write_module_definition_end(const structural_objectRef& cir) = 0;
+   virtual void write_module_definition_end(const structural_objectRef& cir, bool is_library = true) = 0;
    /**
     * Write some code managing primary ports to signals connections.
     * Loop signals are present for example in this bench circuit:
@@ -259,35 +238,70 @@ class language_writer
    virtual void write_module_parametrization(const structural_objectRef& cir) = 0;
    /**
     * write the declaration of all the states of the finite state machine.
+    * @param cir is the component containing the FSM.
     * @param list_of_states is the list of all the states.
+    * @param reset_port is the reset port.
+    * @param reset_state is the reset state.
+    * @param one_hot selects one-hot state encoding when true.
     */
    virtual void write_state_declaration(const structural_objectRef& cir, const std::list<std::string>& list_of_states,
                                         const std::string& reset_port, const std::string& reset_state,
                                         bool one_hot) = 0;
+
+   /**
+    * write the declaration for the stage register
+    * @param cir is the component containing the stage register.
+    * @param nStages is the number of stages.
+    */
+   virtual void write_stage_declaration(const structural_objectRef& cir, int nStages) = 0;
+
    /**
     * write the present_state update process
+    * @param cir is the component containing the FSM.
     * @param reset_state is the reset state.
     * @param reset_port is the reset port.
     * @param clock_port is the clock port.
-    * @param reset_type when true the FSM will have an synchronous reset
+    * @param reset_type identifies the reset style to be emitted.
+    * @param connect_present_next_state_signals selects whether the present/next state signals have to be connected.
     */
    virtual void write_present_state_update(const structural_objectRef cir, const std::string& reset_state,
                                            const std::string& reset_port, const std::string& clock_port,
                                            const std::string& reset_type, bool connect_present_next_state_signals) = 0;
+
    /**
-    * Write the transition and output functions.
-    * @param cir is the component.
+    * write the present_stages update process
+    * @param cir is the component containing the stage register.
     * @param reset_port is the reset port.
     * @param clock_port is the clock port.
-    * @param first if the first iterator of the state table.
-    * @param end if the end iterator of the state table.
+    * @param reset_type identifies the reset style to be emitted.
+    * @param start_port is the start port used to initialize stage tracking.
+    * @param nStages is the number of stages to be updated.
+    */
+   virtual void write_present_stages_update(const structural_objectRef cir, const std::string& reset_port,
+                                            const std::string& clock_port, const std::string& reset_type,
+                                            const std::string& start_port, int nStages) = 0;
+
+   /**
+    * Write the transition and output functions.
+    * @param single_proc selects a single-process FSM style when true.
+    * @param output_index is the output-function index to be emitted.
+    * @param cir is the component.
+    * @param reset_state is the reset state.
+    * @param reset_port is the reset port.
+    * @param start_port is the start port.
+    * @param clock_port is the clock port.
+    * @param first is the first iterator of the state table.
+    * @param end is the end iterator of the state table.
     * @param is_yosys is true when the transition table is meant for YOSYS.
+    * @param bypass_signals contains the bypass-signal mapping indexed by output and state.
+    * @param fsm_stage_i is the current FSM stage identifier when stage-aware output logic is emitted.
     */
    virtual void write_transition_output_functions(
        bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state,
        const std::string& reset_port, const std::string& start_port, const std::string& clock_port,
        std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool is_yosys,
-       const std::map<unsigned int, std::map<std::string, std::set<unsigned int>>>& bypass_signals) = 0;
+       const std::map<unsigned int, std::map<std::string, std::set<unsigned int>>>& bypass_signals,
+       const std::string& fsm_stage_i) = 0;
 
    /**
     * Write in the proper language the behavioral description of the module described in "Not Parsed" form.
@@ -335,19 +349,20 @@ class language_writer
 
    /**
     * Write content to a file
-    * @param std::stringg filename;
+    * @param filename is the destination file path.
     */
    void WriteFile(const std::string& filename) const;
 
    /**
-    * Return the names of auxiliary signals which will be used by backend
+    * Write the license
+    * @param is_library true if writing PandA/Bambu IP library file
     */
-   CustomSet<std::string> GetHDLReservedNames() const;
+   void WriteLicense(bool is_library = true);
 
    /**
-    * Write the license
+    * Return the names of auxiliary signals which will be used by backend
     */
-   void WriteLicense();
+   static const CustomSet<std::string>& GetHDLReservedNames();
 };
 /// RefCount definition of the class
 using language_writerRef = refcount<language_writer>;

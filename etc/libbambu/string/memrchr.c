@@ -3,6 +3,8 @@
  * January, 27 2016.
  *
  */
+/* Public domain.  */
+
 #include <stddef.h>
 
 void* memrchr(const void* s, int c, size_t n)

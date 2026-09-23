@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -37,9 +25,6 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * @author Michele Fiorito <michele.fiorito@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "hls_instruction_writer.hpp"
@@ -51,9 +36,9 @@
 #include "function_behavior.hpp"
 #include "hls_manager.hpp"
 #include "indented_output_stream.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
+#include "ir_node.hpp"
 #include "utility.hpp"
 #include "var_pp_functor.hpp"
 
@@ -66,17 +51,15 @@ HLSInstructionWriter::HLSInstructionWriter(const application_managerConstRef _ap
 {
 }
 
-HLSInstructionWriter::~HLSInstructionWriter() = default;
-
 void HLSInstructionWriter::declareFunction(const unsigned int function_id)
 {
    // All I have to do is to change main in _main
-   const auto TM = AppM->get_tree_manager();
+   const auto TM = AppM->get_ir_manager();
    const auto FB = AppM->CGetFunctionBehavior(function_id);
    const auto BH = FB->CGetBehavioralHelper();
-   const auto fname = BH->GetMangledFunctionName();
-   auto fdecl = tree_helper::PrintType(TM, TM->GetTreeNode(function_id), false, true, false, nullptr,
-                                       var_pp_functorConstRef(new std_var_pp_functor(BH)));
+   const auto fname = BH->GetFunctionName();
+   auto fdecl =
+       ir_helper::PrintType(TM->GetIRNode(function_id), true, false, nullptr, std::make_unique<std_var_pp_functor>(BH));
 
    const auto HLSMgr = GetPointer<const HLS_manager>(AppM);
    if(HLSMgr)
