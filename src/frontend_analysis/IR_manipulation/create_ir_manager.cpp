@@ -302,8 +302,6 @@ DesignFlowStep_Status create_ir_manager::Exec()
       CompilerWrapper compiler_wrapper(parameters,
                                        parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
       const auto cost_table = createCostTable();
-      compiler_wrapper.FillIRManager(TM, AppM->input_files, cost_table);
-
       if(parameters->isOption(OPT_architecture_xml))
       {
          const auto arch_file = parameters->getOption<std::filesystem::path>(OPT_architecture_xml);
@@ -317,6 +315,8 @@ DesignFlowStep_Status create_ir_manager::Exec()
             THROW_ERROR("architecture.xml is already present in " + dest_arch_file.string());
          }
       }
+
+      compiler_wrapper.FillIRManager(TM, AppM->input_files, cost_table);
 
       if(debug_level >= DEBUG_LEVEL_PEDANTIC)
       {
