@@ -487,7 +487,7 @@ assign lock_free_next = (lock_free_reg &amp; request_empty) | (|kmp_lock_release
 generate
    if(USE_CS)
    begin
-      assign kmp_lock_acquired_ack = lock_free_reg &amp; ~request_empty ? (1 &lt;&lt; request_selected[ACCELERATOR_NUMBER_BITSIZE+CONTEXT_NUMBER_BITSIZE-1:CONTEXT_NUMBER_BITSIZE]) : 0;
+      assign kmp_lock_acquired_ack = lock_free_reg &amp; ~request_empty ? (1 &lt;&lt; (request_selected &gt;&gt; CONTEXT_NUMBER_BITSIZE)) : 0;
       genvar j;
       for(j=0; j &lt; PORTSIZE_kmp_lock_acquired_ack_tag; j = j + 1)
       begin
