@@ -1551,7 +1551,7 @@ generate
   else
   begin
     // synthesis translate_off
-    $fatal;
+    initial $fatal(1);
     // synthesis translate_on
   end
 endgenerate
@@ -1929,7 +1929,7 @@ genvar channel;
     else
     begin
       // synthesis translate_off
-      $fatal;
+      initial $fatal(1);
       // synthesis translate_on
     end
 
@@ -2358,7 +2358,7 @@ generate
   else
   begin
     // synthesis translate_off
-    $fatal;
+    initial $fatal(1);
     // synthesis translate_on
   end
 endgenerate
@@ -2615,7 +2615,7 @@ assign M_tag_out = M_tag_out_temp;"/>
           <port_o id="valid" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="priority_arbiter_core in1 out1" IP_COMPONENT="multiple_priority_encoder_1_1,multiple_priority_encoder_2_1,multiple_priority_encoder_4_2,multiple_priority_encoder_8_3,multiple_priority_encoder_16_4,multiple_priority_encoder_32_5,multiple_priority_encoder_64_6" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="priority_arbiter_core in1 out1" IP_COMPONENT="multiple_priority_encoder_1_1,multiple_priority_encoder_2_1,multiple_priority_encoder_4_2,multiple_priority_encoder_8_3,multiple_priority_encoder_16_4,multiple_priority_encoder_32_5,multiple_priority_encoder_64_6,multiple_priority_encoder_128_7,multiple_priority_encoder_256_8,multiple_priority_encoder_512_9" VERILOG_PROVIDED="
 wire empty;
 assign valid = !empty;
 
@@ -2672,10 +2672,34 @@ generate
       .i(in1_temp),
       .o(out1));
   end
+  else if(BITSIZE_in1 &lt;= 128)
+  begin
+    wire [127:0] in1_temp;
+    assign in1_temp = in1 | {128{1'b0}};
+    multiple_priority_encoder_128_7 encoder (.empty(empty),
+      .i(in1_temp),
+      .o(out1));
+  end
+  else if(BITSIZE_in1 &lt;= 256)
+  begin
+    wire [255:0] in1_temp;
+    assign in1_temp = in1 | {256{1'b0}};
+    multiple_priority_encoder_256_8 encoder (.empty(empty),
+      .i(in1_temp),
+      .o(out1));
+  end
+  else if(BITSIZE_in1 &lt;= 512)
+  begin
+    wire [511:0] in1_temp;
+    assign in1_temp = in1 | {512{1'b0}};
+    multiple_priority_encoder_512_9 encoder (.empty(empty),
+      .i(in1_temp),
+      .o(out1));
+  end
   else
   begin
     // synthesis translate_off
-    $fatal;
+    initial $fatal(1);
     // synthesis translate_on
   end
 endgenerate
@@ -2707,7 +2731,7 @@ endgenerate
           <port_o id="valid" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="round_robin_arbiter_core in1 out1" IP_COMPONENT="multiple_priority_encoder_1_1,multiple_priority_encoder_2_1,multiple_priority_encoder_4_2,multiple_priority_encoder_8_3,multiple_priority_encoder_16_4,multiple_priority_encoder_32_5,multiple_priority_encoder_64_6" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="round_robin_arbiter_core in1 out1" IP_COMPONENT="multiple_priority_encoder_1_1,multiple_priority_encoder_2_1,multiple_priority_encoder_4_2,multiple_priority_encoder_8_3,multiple_priority_encoder_16_4,multiple_priority_encoder_32_5,multiple_priority_encoder_64_6,multiple_priority_encoder_128_7,multiple_priority_encoder_256_8,multiple_priority_encoder_512_9" VERILOG_PROVIDED="
 `ifndef CLOG2
 `define CLOG2(x) \
   (x &lt;= 2) ? 1 : \
@@ -2718,6 +2742,7 @@ endgenerate
   (x &lt;= 64) ? 6 : \
   (x &lt;= 128) ? 7 : \
   (x &lt;= 256) ? 8 : \
+  (x &lt;= 512) ? 9 : \
   -1
 `endif
 
@@ -2812,7 +2837,7 @@ generate
       .i(in1_temp),
       .o(lower_out));
   end
-  else if(BITSIZE_in1 &lt; 64)
+  else if(BITSIZE_in1 &lt;= 64)
   begin
     wire [63:0] in1_temp, upper_in_temp;
     assign in1_temp = in1 | {64{1'b0}};
@@ -2824,10 +2849,46 @@ generate
       .i(in1_temp),
       .o(lower_out));
   end
+  else if(BITSIZE_in1 &lt;= 128)
+  begin
+    wire [127:0] in1_temp, upper_in_temp;
+    assign in1_temp = in1 | {128{1'b0}};
+    assign upper_in_temp = upper_in | {128{1'b0}};
+    multiple_priority_encoder_128_7 upper (.empty(empty_upper),
+      .i(upper_in_temp),
+      .o(upper_out));
+    multiple_priority_encoder_128_7 lower (.empty(empty_lower),
+      .i(in1_temp),
+      .o(lower_out));
+  end
+  else if(BITSIZE_in1 &lt;= 256)
+  begin
+    wire [255:0] in1_temp, upper_in_temp;
+    assign in1_temp = in1 | {256{1'b0}};
+    assign upper_in_temp = upper_in | {256{1'b0}};
+    multiple_priority_encoder_256_8 upper (.empty(empty_upper),
+      .i(upper_in_temp),
+      .o(upper_out));
+    multiple_priority_encoder_256_8 lower (.empty(empty_lower),
+      .i(in1_temp),
+      .o(lower_out));
+  end
+  else if(BITSIZE_in1 &lt;= 512)
+  begin
+    wire [511:0] in1_temp, upper_in_temp;
+    assign in1_temp = in1 | {512{1'b0}};
+    assign upper_in_temp = upper_in | {512{1'b0}};
+    multiple_priority_encoder_512_9 upper (.empty(empty_upper),
+      .i(upper_in_temp),
+      .o(upper_out));
+    multiple_priority_encoder_512_9 lower (.empty(empty_lower),
+      .i(in1_temp),
+      .o(lower_out));
+  end
   else
   begin
     // synthesis translate_off
-    $fatal;
+    initial $fatal(1);
     // synthesis translate_on
   end
 endgenerate"/>

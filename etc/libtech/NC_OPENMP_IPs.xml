@@ -381,7 +381,7 @@ assign kmp_bambu_wait_all_threads_rd = &amp;barrier_done;"/>
                <port_vector_o id="kmp_lock_acquired_ack_tag" dir="OUT">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
                </port_vector_o>
-               <NP_functionality LIBRARY="kmp_bambu_fork_call_critical_manager ACCELERATOR_NUMBER CONTEXT_NUMBER USE_CS kmp_lock_acquired kmp_lock_acquired_ack kmp_lock_release kmp_lock_acquired_tag kmp_lock_acquired_ack_tag" IP_COMPONENT="multiple_priority_encoder_2_1,multiple_priority_encoder_4_2,multiple_priority_encoder_8_3,multiple_priority_encoder_16_4,multiple_priority_encoder_32_5,multiple_priority_encoder_64_6" VERILOG_PROVIDED="
+               <NP_functionality LIBRARY="kmp_bambu_fork_call_critical_manager ACCELERATOR_NUMBER CONTEXT_NUMBER USE_CS kmp_lock_acquired kmp_lock_acquired_ack kmp_lock_release kmp_lock_acquired_tag kmp_lock_acquired_ack_tag" IP_COMPONENT="multiple_priority_encoder_2_1,multiple_priority_encoder_4_2,multiple_priority_encoder_8_3,multiple_priority_encoder_16_4,multiple_priority_encoder_32_5,multiple_priority_encoder_64_6,multiple_priority_encoder_128_7,multiple_priority_encoder_256_8,multiple_priority_encoder_512_9" VERILOG_PROVIDED="
 `ifndef CLOG2
 `define CLOG2(x) \
   (x &lt;= 2) ? 1 : \
@@ -392,6 +392,7 @@ assign kmp_bambu_wait_all_threads_rd = &amp;barrier_done;"/>
   (x &lt;= 64) ? 6 : \
   (x &lt;= 128) ? 7 : \
   (x &lt;= 256) ? 8 : \
+  (x &lt;= 512) ? 9 : \
   -1
 `endif
 
@@ -473,21 +474,39 @@ generate
       .i(lock_request_reg),
       .o(request_selected));
   end
+  else if(REG_SIZE == 128)
+  begin
+    multiple_priority_encoder_128_7 encoder (.empty(request_empty),
+      .i(lock_request_reg),
+      .o(request_selected));
+  end
+  else if(REG_SIZE == 256)
+  begin
+    multiple_priority_encoder_256_8 encoder (.empty(request_empty),
+      .i(lock_request_reg),
+      .o(request_selected));
+  end
+  else if(REG_SIZE == 512)
+  begin
+    multiple_priority_encoder_512_9 encoder (.empty(request_empty),
+      .i(lock_request_reg),
+      .o(request_selected));
+  end
   else
   begin
     // synthesis translate_off
-    $fatal;
+    initial $fatal(1);
     // synthesis translate_on
   end
 endgenerate
 
-assign lock_request_delete = lock_free_reg &amp; ~request_empty ? 1 &lt;&lt; request_selected : 0;
+assign lock_request_delete = lock_free_reg &amp; ~request_empty ? {{(REG_SIZE-1){1'b0}}, 1'b1} &lt;&lt; request_selected : 0;
 assign lock_free_next = (lock_free_reg &amp; request_empty) | (|kmp_lock_release);
 
 generate
    if(USE_CS)
    begin
-      assign kmp_lock_acquired_ack = lock_free_reg &amp; ~request_empty ? (1 &lt;&lt; (request_selected &gt;&gt; CONTEXT_NUMBER_BITSIZE)) : 0;
+      assign kmp_lock_acquired_ack = lock_free_reg &amp; ~request_empty ? {{(PORTSIZE_kmp_lock_acquired_ack-1){1'b0}}, 1'b1} &lt;&lt; (request_selected &gt;&gt; CONTEXT_NUMBER_BITSIZE) : 0;
       genvar j;
       for(j=0; j &lt; PORTSIZE_kmp_lock_acquired_ack_tag; j = j + 1)
       begin
@@ -711,6 +730,123 @@ assign empty = ~|i;"/>
          </circuit>
       </cell>
       <cell>
+         <name>multiple_priority_encoder_128_7</name>
+         <circuit>
+            <module_o id="multiple_priority_encoder_128_7">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="multiple_priority_encoder_128_7"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="128"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="7"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="multiple_priority_encoder_128_7" VERILOG_PROVIDED="
+wire [1:0] group_empty;
+wire [0:0] group_index;
+wire [5:0] local_index [0:1];
+genvar g;
+generate
+  for (g = 0; g &lt; 2; g = g + 1)
+  begin: encoder_group
+    multiple_priority_encoder_64_6 encoder (.empty(group_empty[g]),
+      .i(i[g*64+:64]),
+      .o(local_index[g]));
+  end
+endgenerate
+multiple_priority_encoder_2_1 group_encoder (.empty(),
+  .i(~group_empty),
+  .o(group_index));
+assign empty = &amp;group_empty;
+assign o = empty ? 7'b0 : {group_index, local_index[group_index]};"/>
+            </module_o>
+         </circuit>
+      </cell>
+      <cell>
+         <name>multiple_priority_encoder_256_8</name>
+         <circuit>
+            <module_o id="multiple_priority_encoder_256_8">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="multiple_priority_encoder_256_8"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="256"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="multiple_priority_encoder_256_8" VERILOG_PROVIDED="
+wire [3:0] group_empty;
+wire [1:0] group_index;
+wire [5:0] local_index [0:3];
+genvar g;
+generate
+  for (g = 0; g &lt; 4; g = g + 1)
+  begin: encoder_group
+    multiple_priority_encoder_64_6 encoder (.empty(group_empty[g]),
+      .i(i[g*64+:64]),
+      .o(local_index[g]));
+  end
+endgenerate
+multiple_priority_encoder_4_2 group_encoder (.empty(),
+  .i(~group_empty),
+  .o(group_index));
+assign empty = &amp;group_empty;
+assign o = empty ? 8'b0 : {group_index, local_index[group_index]};"/>
+            </module_o>
+         </circuit>
+      </cell>
+      <cell>
+         <name>multiple_priority_encoder_512_9</name>
+         <circuit>
+            <module_o id="multiple_priority_encoder_512_9">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="multiple_priority_encoder_512_9"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="512"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="9"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="multiple_priority_encoder_512_9" VERILOG_PROVIDED="
+wire [7:0] group_empty;
+wire [2:0] group_index;
+wire [5:0] local_index [0:7];
+genvar g;
+generate
+  for (g = 0; g &lt; 8; g = g + 1)
+  begin: encoder_group
+    multiple_priority_encoder_64_6 encoder (.empty(group_empty[g]),
+      .i(i[g*64+:64]),
+      .o(local_index[g]));
+  end
+endgenerate
+multiple_priority_encoder_8_3 group_encoder (.empty(),
+  .i(~group_empty),
+  .o(group_index));
+assign empty = &amp;group_empty;
+assign o = empty ? 9'b0 : {group_index, local_index[group_index]};"/>
+            </module_o>
+         </circuit>
+      </cell>
+      <cell>
          <name>cs_manager_internal_map</name>
          <circuit>
             <module_o id="cs_manager_internal_map">
@@ -914,7 +1050,7 @@ generate
    else
    begin
       // synthesis translate_off
-      $fatal;
+      initial $fatal(1);
       // synthesis translate_on
    end
 endgenerate
