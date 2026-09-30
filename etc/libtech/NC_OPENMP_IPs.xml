@@ -636,10 +636,10 @@ assign o[1] = (~i[0] &amp;&amp; ~i[1] &amp;&amp; i[2]) || (~i[0] &amp;&amp; ~i[1
 
 assign o[2] = (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; i[4]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; i[5]) || 
             (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; i[6]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; i[7]) || 
-            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; i[12]) || 
-            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; i[13]) || 
-            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; i[14]) || 
-            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; i[15]);
+            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; i[12]) || 
+            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; i[13]) || 
+            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; i[14]) || 
+            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; i[15]);
 
 assign o[3] = (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[8]) || 
             (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[9]) || 
