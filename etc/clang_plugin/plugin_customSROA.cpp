@@ -2797,10 +2797,10 @@ llvm::PassPluginLibraryInfo getCustomSROAInfo()
                  LPM_Unroll.addPass(llvm::LoopDeletionPass());
                  FPM_Simpl.addPass(llvm::createFunctionToLoopPassAdaptor(std::move(LPM_Unroll)));
                  FPM_Simpl.addPass(llvm::SCCPPass());
-                 // Same configuration -O2 gives its unroller: every loop with a computable trip count
-                 // that fits the cost threshold, not only the ones carrying a pragma.
+                 // Only the loops carrying a pragma (llvm.loop.unroll.* metadata): unrolling replicates
+                 // hardware, so it is the user's call, not the cost threshold's.
                  FPM_Simpl.addPass(LoopUnrollPass(LoopUnrollOptions(/*OptLevel=*/2,
-                                                                    /*OnlyWhenForced=*/false,
+                                                                    /*OnlyWhenForced=*/true,
                                                                     /*ForgetSCEV=*/false)));
 
                  // --- post-unroll cleanup ------------------------------------------------------
