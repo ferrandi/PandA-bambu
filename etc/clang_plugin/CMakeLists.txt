@@ -252,6 +252,44 @@ function(_panda_add_clang_plugins ver)
    _panda_make_plugin(clang_plugin_${ver}_opt_ast          "opt_${COMPILER_ASTANALYZER_PLUGIN}"   0 "${_src_base}/plugin_ASTAnalyzer.cpp")
    _panda_make_plugin(clang_plugin_${ver}_opt_channelctor  "opt_${COMPILER_CHANNELCTOR_PLUGIN}" 0 "${_src_base}/plugin_channelCtorCleanup.cpp")
 
+   # Test seam classification and cross-iteration AA with each detected LLVM.
+   get_filename_component(_test_clang_bin "${PANDA_CLANG${ver}_EXE}" DIRECTORY)
+   get_filename_component(_test_clang_root "${_test_clang_bin}" DIRECTORY)
+   set(_test_llvmconfig "")
+   foreach(_candidate IN ITEMS
+      "${_test_clang_root}/bin/llvm-config-${ver}"
+      "${_test_clang_root}/bin/llvm-config-${ver}.0"
+      "${_test_clang_root}/bin/llvm-config")
+      if(EXISTS "${_candidate}")
+         set(_test_llvmconfig "${_candidate}")
+         break()
+      endif()
+   endforeach()
+   if(_test_llvmconfig)
+      execute_process(COMMAND "${_test_llvmconfig}" --libs support core asmparser analysis --system-libs
+         OUTPUT_VARIABLE _channel_seam_test_libs
+         OUTPUT_STRIP_TRAILING_WHITESPACE
+         RESULT_VARIABLE _channel_seam_test_libs_result)
+      if(_channel_seam_test_libs_result EQUAL 0)
+         separate_arguments(_channel_seam_test_libs NATIVE_COMMAND "${_channel_seam_test_libs}")
+         foreach(_seam_test IN ITEMS channel_seam channel_seam_aa)
+            add_executable(clang_plugin_${ver}_${_seam_test}_test "${_src_base}/test_${_seam_test}.cpp")
+            set_target_properties(clang_plugin_${ver}_${_seam_test}_test PROPERTIES
+               CXX_STANDARD 17
+               CXX_STANDARD_REQUIRED ON)
+            target_include_directories(clang_plugin_${ver}_${_seam_test}_test PRIVATE
+               ${_panda_plugin_common_includes}
+               ${_panda_plugin_buddy_includes})
+            target_compile_options(clang_plugin_${ver}_${_seam_test}_test PRIVATE
+               ${_clang_cxxflags} ${_plugin_std_override} ${_clang_defs})
+            target_link_options(clang_plugin_${ver}_${_seam_test}_test PRIVATE ${_clang_ldflags})
+            target_link_libraries(clang_plugin_${ver}_${_seam_test}_test PRIVATE ${_channel_seam_test_libs})
+            add_test(NAME clang_plugin_${ver}_${_seam_test}
+               COMMAND clang_plugin_${ver}_${_seam_test}_test)
+         endforeach()
+      endif()
+   endif()
+
    set(_all_plugins
       clang_plugin_${ver}_empty
       clang_plugin_${ver}_ssa
