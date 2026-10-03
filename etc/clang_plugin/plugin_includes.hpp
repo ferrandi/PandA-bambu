@@ -34,6 +34,7 @@
 #include "llvm/ADT/DenseMapInfo.h"
 #include "llvm/ADT/Hashing.h"
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/GlobalObject.h"
 #include "llvm/IR/LLVMContext.h"
@@ -624,7 +625,17 @@ namespace llvm
       void serialize_ir_aliased_reaching_defs(llvm::MemoryAccess* MA, llvm::MemorySSA& MSSA,
                                               std::set<llvm::MemoryAccess*>& visited,
                                               const llvm::Function* currentFunction, bool isMemDefVal,
-                                              const llvm::MemoryLocation* Loc);
+                                              const llvm::MemoryLocation* Loc,
+                                              llvm::CallInst* originSeam, llvm::AAResults* funcAA);
+      /// Walks the MemorySSA reaching-def chain of MA. originSeam, when set, is the
+      /// ac_channel seam call whose dependencies are being serialized (kept through
+      /// the whole recursion); funcAA is the alias analysis reused for the
+      /// seam-vs-seam ordering checks (nullptr disables them).
+      /// True when the edge from the origin ac_channel seam call to the defMemAcc def
+      /// can be dropped: the def is another recognized seam call and the alias
+      /// analysis proves that the two calls may not mod/ref any common memory.
+      bool seamOrderingExcluded(llvm::MemoryAccess* defMemAcc, const llvm::CallInst* origin,
+                                llvm::AAResults& AA);
 
       const void* IR_SSA_NAME_VAR(const void* t) const;
       int IR_SSA_NAME_VERSION(const void* t) const;
@@ -716,5 +727,97 @@ namespace llvm
                 const std::string& costTable);
    };
 } // namespace llvm
+
+/// Recognition of the three ac_channel seam members, per the hardware contract:
+/// _read_bambu_internal and _write_bambu_internal change the FIFO state;
+/// _peek_bambu_internal only observes it, unless its signature carries outputs
+/// (a valid bit, an sret result) that the lowering writes. The ac_channel hardware
+/// primitives ("Bambu ABI seam" block in ac_channel.h) are out-of-line declarations
+/// without an LLVM body; their bodies are generated in Verilog later on. Plugins that
+/// need to recognize these calls - assigning their memory contract (topfname), or
+/// filtering the virtual-operand reaching-def chain (dumpBambuIr) - share this
+/// classification. It follows the hardware lowering (InterfaceInfer) rather than the
+/// host-only definitions.
+namespace bambu_channel_seam
+{
+   enum class Op
+   {
+      None = 0,
+      Read,
+      Write,
+      Peek,
+   };
+
+   /// True when name has the complete Itanium ABI envelope of a seam member. The
+   /// fixed leading nested-name component identifies the global ac_channel template;
+   /// the fixed tail identifies the member-template and its ABI signature. This avoids
+   /// interpreting a seam mentioned in a wrapper's template arguments as the wrapper
+   /// itself, and works with LLVM 4--9 where no partial demangler is available.
+   inline bool isMangledSeam(llvm::StringRef name, llvm::StringRef member, llvm::StringRef tail)
+   {
+      static const char owner[] = "_ZN10ac_channelI";
+      const std::size_t owner_len = sizeof(owner) - 1;
+      if(name.size() < owner_len || name.substr(0, owner_len) != owner || name.size() < tail.size() ||
+         name.substr(name.size() - tail.size()) != tail)
+      {
+         return false;
+      }
+      return name.find(member, owner_len) != llvm::StringRef::npos;
+   }
+
+   /// Classify a mangled function name. The only recognized symbols are the three
+   /// out-of-line Bambu ABI seam members of the global ac_channel template. The check
+   /// deliberately matches their complete Itanium ABI form, rather than a demangled
+   /// substring, so wrappers, namespaces and incompatible signatures are rejected.
+   inline Op classify(llvm::StringRef mangled)
+   {
+      if(isMangledSeam(mangled, "E20_read_bambu_internalI", "EEKT_v") ||
+         isMangledSeam(mangled, "E20_read_bambu_internalI", "EEKT_Rb") ||
+         isMangledSeam(mangled, "E20_read_bambu_internalI", "EEKT_RbRb"))
+      {
+         return Op::Read;
+      }
+      if(isMangledSeam(mangled, "E21_write_bambu_internalI", "EEbT_"))
+      {
+         return Op::Write;
+      }
+      if(isMangledSeam(mangled, "E20_peek_bambu_internalI", "EEKT_v") ||
+         isMangledSeam(mangled, "E20_peek_bambu_internalI", "EEKT_Rb") ||
+         isMangledSeam(mangled, "E20_peek_bambu_internalI", "EEKT_RbRb"))
+      {
+         return Op::Peek;
+      }
+      return Op::None;
+   }
+
+   /// Classify a function as a hardware seam declaration. Only out-of-line declarations
+   /// are hardware primitives: a function with a body is a software implementation, which
+   /// may touch allocators or other state, and is conservatively not a seam.
+   inline Op classifyFunction(const llvm::Function* F)
+   {
+      if(!F || !F->isDeclaration())
+      {
+         return Op::None;
+      }
+      return classify(F->getName());
+   }
+
+   /// Number of pointer arguments of the seam declaration, the channel (this) pointer
+   /// included. Every extra pointer argument (a valid-bit output, an sret result, ...) is
+   /// written by the hardware lowering, so it turns the call into a writing one; the
+   /// channel access itself stays a read for peek and a readwrite for read/write.
+   inline unsigned countPointerArgs(const llvm::Function* F)
+   {
+      unsigned n = 0;
+      for(const auto& A : F->args())
+      {
+         if(A.getType()->isPointerTy())
+         {
+            ++n;
+         }
+      }
+      return n;
+   }
+}
 
 #endif
