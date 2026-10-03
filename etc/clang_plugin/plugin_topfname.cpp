@@ -30,6 +30,9 @@
 #define NDEBUG
 #endif
 #include "plugin_includes.hpp"
+#if PANDA_LLVM_CLANG_MAJOR >= 16
+#include <llvm/Support/ModRef.h>
+#endif
 
 #include "llvm/Analysis/CallGraph.h"
 #include <llvm/ADT/StringExtras.h>
@@ -328,6 +331,61 @@ namespace llvm
          {
             return changed;
          }
+         // (tapa 03-stream) ac_channel hardware primitives: out-of-line declarations whose
+         // bodies are generated in Verilog. Give them their memory contract, per signature:
+         // read/write change the FIFO state; peek only observes it, unless its signature
+         // carries pointer outputs (a valid bit, an sret result) that the lowering writes.
+         // Every pointer argument (the channel, outputs, sret) stays in scope via argmem.
+         // Declarations only: a body would be a software implementation, which may touch
+         // allocators or other state, and must not be marked. The virtual-operand serializer
+         // (dumpBambuIr) relies on these effects, through the alias analysis, to drop the
+         // spurious orderings between seam calls of different channels. The mutation is
+         // reported through "changed" so that any analysis computed before this pass, which
+         // the effects depend on, is invalidated rather than preserved.
+         for(auto& F : M)
+         {
+            const auto op = bambu_channel_seam::classifyFunction(&F);
+            if(op == bambu_channel_seam::Op::None)
+            {
+               continue;
+            }
+            const bool read_only = (op == bambu_channel_seam::Op::Peek) &&
+                                   (bambu_channel_seam::countPointerArgs(&F) <= 1);
+#if PANDA_LLVM_CLANG_MAJOR >= 16
+             const llvm::MemoryEffects desired =
+                 read_only ? llvm::MemoryEffects::argMemOnly(llvm::ModRefInfo::Ref)
+                           : llvm::MemoryEffects::argMemOnly();
+             if(F.getMemoryEffects() != desired)
+             {
+                F.setMemoryEffects(desired);
+                changed = true;
+             }
+ #else
+             /// LLVM 4--15: no MemoryEffects API; the equivalent "argmem" [+ "readonly"]
+             /// function attributes carry the same contract.
+             const bool has_readonly = F.hasFnAttribute(llvm::Attribute::ReadOnly);
+             const bool has_argmem = F.hasFnAttribute(llvm::Attribute::ArgMemOnly);
+             const bool has_readnone = F.hasFnAttribute(llvm::Attribute::ReadNone);
+             const bool has_writeonly = F.hasFnAttribute(llvm::Attribute::WriteOnly);
+             if(!has_argmem || has_readonly != read_only || has_readnone || has_writeonly)
+             {
+                F.setOnlyAccessesArgMemory();
+                F.removeFnAttr(llvm::Attribute::ReadNone);
+                F.removeFnAttr(llvm::Attribute::WriteOnly);
+                if(read_only)
+                {
+                   F.setOnlyReadsMemory();
+                }
+                else
+                {
+                   F.removeFnAttr(llvm::Attribute::ReadOnly);
+                }
+                changed = true;
+             }
+#endif
+             LLVM_DEBUG(llvm::dbgs() << "topfname: memory(argmem: " << (read_only ? "read" : "readwrite")
+                                    << ") on " << F.getName() << "\n");
+          }
          LLVM_DEBUG(llvm::dbgs() << "Top function symbols: "
                                  << llvm::join(TopFunctionNames.begin(), TopFunctionNames.end(), ", ") << "\n"
                                  << "Root function symbols: "
