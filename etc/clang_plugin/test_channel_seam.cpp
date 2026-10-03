@@ -21,6 +21,7 @@
 /**
  * @file test_channel_seam.cpp
  * @brief Permanent control for the ac_channel seam classification
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  * Standalone driver (not a plugin) that pins down the positive and negative cases of
  * bambu_channel_seam::classify, in particular the template wrapper whose argument is
