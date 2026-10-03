@@ -1,5 +1,6 @@
 /* Copyright (C) 2026 Politecnico di Milano
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  */
 // Exercise the same cross-iteration predicate used by dumpBambuIr. The loop IR
 // is parsed and verified with each supported LLVM, then queried with real BasicAA.
