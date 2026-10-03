@@ -29,6 +29,7 @@
 #define NDEBUG
 #endif
 #include "plugin_includes.hpp"
+#include "channel_seam_aa.hpp"
 
 #include "HardekopfLin_AA.hpp"
 
@@ -38,6 +39,9 @@
 
 #include <llvm/ADT/Twine.h>
 #include <llvm/Analysis/AliasAnalysis.h>
+#if PANDA_LLVM_CLANG_MAJOR < 14
+#include <llvm/Analysis/BasicAliasAnalysis.h>
+#endif
 #include <llvm/Analysis/AssumptionCache.h>
 #include <llvm/Analysis/CFG.h>
 #include <llvm/Analysis/ConstantFolding.h>
@@ -89,6 +93,9 @@
 #include <cxxabi.h>
 #include <float.h>
 #include <iomanip>
+#if PANDA_LLVM_CLANG_MAJOR < 14
+#include <memory>
+#endif
 
 #define ANDERSEN_AA 1
 
@@ -3438,6 +3445,7 @@ namespace llvm
    //       llvm::AtomicOrdering::Acquire); return !(SeqCstUse || MayClobberIsAcquire);
    //    }
 
+
    void DumpBambuIR::serialize_vops(const void* g)
    {
       assert(IR_CODE(g) != IRC(IR_PHI_VIRTUAL));
@@ -3472,21 +3480,73 @@ namespace llvm
       }
       auto isMemDefVal = startingMA->getValueID() == llvm::Value::MemoryDefVal;
       auto isSimpleDefUse = isa<llvm::CallInst>(inst) || isa<llvm::InvokeInst>(inst) || isa<llvm::FenceInst>(inst);
+      llvm::CallInst* originSeam = nullptr;
+      llvm::AAResults* funcAA = nullptr;
+#if PANDA_LLVM_CLANG_MAJOR < 14
+      std::unique_ptr<llvm::BasicAAResult> seamBar;
+      std::unique_ptr<llvm::AAResults> seamAAR;
+#endif
+      /// ac_channel hardware seam calls (bambu_channel_seam; recognized by their strict
+      /// ABI signature and declaration-ness only): the callee has no LLVM body, so the
+      /// MemorySSA tree orders their defs conservatively, through the whole of memory,
+      /// and this serializer path walks the raw tree for calls (Loc == nullptr, the
+      /// clobber walker is not consulted). The chain is kept intact; the alias analysis
+      /// of the function (the same one MemorySSA was built with, on LLVM 14+) decides,
+      /// edge by edge, which seam-to-seam orderings are real. Without the argmem
+      /// memory contract on the seam declarations (set by the topfname plugin), the
+      /// query stays conservative and every edge is kept.
+      if(auto* ci = llvm::dyn_cast<llvm::CallInst>(inst))
+      {
+         if(bambu_channel_seam::classifyFunction(ci->getCalledFunction()) != bambu_channel_seam::Op::None)
+         {
+            originSeam = ci;
+         }
+      }
+      /// Alias analysis reused for the whole visit instead of being rebuilt per edge.
+      /// On LLVM 14+ that is the analysis MemorySSA was built with; below it, a
+      /// function-local BasicAA result set, kept alive for the whole recursion.
+      if(originSeam)
+      {
+#if PANDA_LLVM_CLANG_MAJOR >= 14
+         funcAA = &MSSA.getAA();
+#else
+         auto& F = *currentFunction;
+         const auto& TLI = GetTLI(F);
+         auto& AC = const_cast<llvm::AssumptionCache&>(GetAC(F));
+         auto& DT = GetDomTree(F);
+         /// BasicAA only: it is where the noalias/argmem facts live, and the
+         /// call-vs-call query is posed on the calls themselves, so TBAA metadata is
+         /// not involved.
+#if PANDA_LLVM_CLANG_MAJOR >= 7
+         seamBar = std::unique_ptr<llvm::BasicAAResult>(
+             new llvm::BasicAAResult(F.getParent()->getDataLayout(), F, TLI, AC, &DT));
+#else
+         seamBar = std::unique_ptr<llvm::BasicAAResult>(
+             new llvm::BasicAAResult(F.getParent()->getDataLayout(), TLI, AC, &DT));
+#endif
+         seamAAR = std::unique_ptr<llvm::AAResults>(new llvm::AAResults(TLI));
+         seamAAR->addAAResult(*seamBar);
+         funcAA = seamAAR.get();
+#endif
+      }
       if(isSimpleDefUse)
       {
-         serialize_ir_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), isMemDefVal, nullptr);
+         serialize_ir_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), isMemDefVal, nullptr,
+                                             originSeam, funcAA);
       }
       else
       {
          const auto Loc = llvm::MemoryLocation::get(inst);
-         serialize_ir_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), isMemDefVal, &Loc);
+         serialize_ir_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), isMemDefVal, &Loc,
+                                             nullptr, nullptr);
       }
    }
 
    void DumpBambuIR::serialize_ir_aliased_reaching_defs(llvm::MemoryAccess* MA, llvm::MemorySSA& MSSA,
                                                         std::set<llvm::MemoryAccess*>& visited,
                                                         const llvm::Function* currentFunction, bool isMemDefVal,
-                                                        const llvm::MemoryLocation* Loc)
+                                                        const llvm::MemoryLocation* Loc, llvm::CallInst* originSeam,
+                                                         llvm::AAResults* funcAA)
    {
       if(MSSA.isLiveOnEntryDef(MA))
       {
@@ -3512,18 +3572,28 @@ namespace llvm
       visited.insert(defMA);
 
       auto manageMemoryDefVal = [&](llvm::MemoryAccess* defMemAcc) {
-         bool isDefault = false;
-         auto def_stmt = getVirtualDefStatement(defMemAcc, isDefault, MSSA, currentFunction);
-         auto ssaV = getSSA(MA, def_stmt, currentFunction, isDefault);
-         if(isMemDefVal)
+         /// Two ac_channel seam calls that cannot touch common memory do not order
+         /// each other. The edge is then not serialized, but the visit continues: an
+         /// earlier def of the same channel is still reachable through this one,
+         /// including across a MemoryPhi.
+         bool excluded = (originSeam && funcAA != nullptr) &&
+                         seamOrderingExcluded(defMemAcc, originSeam, *funcAA);
+         if(!excluded)
          {
-            serialize_child("vover", ssaV);
+            bool isDefault = false;
+            auto def_stmt = getVirtualDefStatement(defMemAcc, isDefault, MSSA, currentFunction);
+            auto ssaV = getSSA(MA, def_stmt, currentFunction, isDefault);
+            if(isMemDefVal)
+            {
+               serialize_child("vover", ssaV);
+            }
+            else
+            {
+               serialize_child("vuse", ssaV);
+            }
          }
-         else
-         {
-            serialize_child("vuse", ssaV);
-         }
-         serialize_ir_aliased_reaching_defs(defMemAcc, MSSA, visited, currentFunction, isMemDefVal, Loc);
+         serialize_ir_aliased_reaching_defs(defMemAcc, MSSA, visited, currentFunction, isMemDefVal, Loc,
+             originSeam, funcAA);
       };
 
       if(defMA->getValueID() == llvm::Value::MemoryDefVal)
@@ -3553,13 +3623,35 @@ namespace llvm
                }
                else
                {
-                  serialize_ir_aliased_reaching_defs(val, MSSA, visited, currentFunction, isMemDefVal, Loc);
+                  serialize_ir_aliased_reaching_defs(val, MSSA, visited, currentFunction, isMemDefVal, Loc,
+                      originSeam, funcAA);
                }
             }
          }
       }
    }
 
+   bool DumpBambuIR::seamOrderingExcluded(llvm::MemoryAccess* defMemAcc, const llvm::CallInst* origin,
+                                            llvm::AAResults& AA)
+   {
+      /// True when the edge from the origin seam call to this reaching def can be
+      /// dropped: the def must be another recognized ac_channel seam call (never the
+      /// origin itself), and the alias analysis must prove that the two calls may not
+      /// mod/ref any common memory in either direction. Everything else - load/store
+      /// defs, unknown or indirect calls, software bodies - is conservatively kept.
+      auto* od = llvm::dyn_cast<llvm::MemoryUseOrDef>(defMemAcc);
+      auto* di = od ? od->getMemoryInst() : nullptr;
+      const auto* defCall = llvm::dyn_cast_or_null<llvm::CallInst>(di);
+      if(di == origin || !defCall)
+      {
+         return false;
+      }
+      if(bambu_channel_seam::classifyFunction(defCall->getCalledFunction()) == bambu_channel_seam::Op::None)
+      {
+         return false;
+      }
+      return bambu_channel_seam::callsModRefIndependentAcrossIterations(origin, defCall, AA);
+   }
    const void* DumpBambuIR::IR_SSA_NAME_VAR(const void* t) const
    {
       const ssa_node* ssa = reinterpret_cast<const ssa_node*>(t);
