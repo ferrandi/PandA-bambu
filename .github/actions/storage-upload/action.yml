@@ -57,7 +57,7 @@ runs:
           CURL_CMD+='-u ${{inputs.username}}:${{inputs.password}} '
         fi
         if [[ -f "${{inputs.path}}" || -d "${{inputs.path}}" ]]; then 
-          tar -C "$(dirname ${{inputs.path}})" "$(basename ${{inputs.path}})" --mode="u+rwX,g+rwX,o+rX" $TAR_OPT - | $CURL_CMD "$PKG_URL"
+          tar --mode="u+rwX,g+rwX,o+rX" -C "$(dirname ${{inputs.path}})" $TAR_OPT - "$(basename ${{inputs.path}})" | $CURL_CMD "$PKG_URL"
           TMP="$(mktemp /tmp/nfo_XXXXXX)"
           echo "${{inputs.storage-compression}}" > $TMP
           find ${{inputs.path}} -type f -print0 | sort -z | xargs -0 sha1sum >> $TMP

@@ -1,0 +1,127 @@
+name: Build compilers
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: build-compilers
+  cancel-in-progress: true
+
+env:
+  storage-url: ${{secrets.CI_STORAGE_URL}}
+  storage-user: ${{secrets.CI_STORAGE_USER}}
+  storage-token: ${{secrets.CI_STORAGE_TOKEN}}
+  storage-path: release/compiler
+  host_jobs: $J
+
+jobs:
+  build-gcc:
+    runs-on: [self-hosted]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - version: 4.9.4
+            suffix: 4.9
+          - version: 5.5.0
+            suffix: 5
+          - version: 6.5.0
+            suffix: 6
+          - version: 7.5.0
+            suffix: 7
+          - version: 8.5.0
+            suffix: 8
+    env:
+      ref: releases/gcc-${{matrix.version}}
+      dist-name: gcc-${{matrix.version}}-x86_64-linux-gnu-ubuntu-20.04
+      configure: --enable-languages=c,c++,fortran --enable-plugin --enable-multilib --with-multilib-list=m32,m64,mx32 --disable-werror --disable-gcov --disable-nls --with-tune=generic --build=x86_64-linux-gnu --host=x86_64-linux-gnu
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Env setup
+        id: host
+        shell: bash
+        run: |
+          echo "Current host supports ${{env.host_jobs}} parallel jobs"
+          echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
+      - name: Set patch
+        shell: bash
+        run: |
+          PATCH_FILE=".github/actions/build-gcc/gcc-${{matrix.suffix}}.patch"
+          if test -e "${PATCH_FILE}"; then
+            cp "${PATCH_FILE}" '${{github.workspace}}'
+          fi
+      - name: Build GCC-${{matrix.version}}
+        id: build
+        uses: ./.github/actions/build-gcc
+        with:
+          jobs: ${{steps.host.outputs.jobs}}
+          branch: ${{env.ref}}
+          dist-name: ${{env.dist-name}}
+          config-args: ${{env.configure}} --with-pkgversion="gcc (Ubuntu ${{matrix.version}}-ubuntu~20.04) ${{matrix.version}}" --program-suffix=-${{matrix.suffix}}
+      - name: Upload ${{env.dist-name}}
+        shell: bash
+        run: |
+          DIST_TAR="${{env.dist-name}}.tar.xz"
+          STORAGE_URL="${{env.storage-url}}/${{env.storage-path}}/${DIST_TAR}"
+          export XZ_OPT='-T0'
+          tar -C ${{env.dist-name}} . --mode="u+rwX,g+rwX,o+rX" -cJf ${DIST_TAR}
+          curl -L --fail -u '${{env.storage-user}}':'${{env.storage-token}}' -T "${DIST_TAR}" "$STORAGE_URL"
+          echo "### New release available at https://release.bambuhls.eu/compiler/${DIST_TAR}" >> $GITHUB_STEP_SUMMARY
+
+  build-llvm:
+    runs-on: [self-hosted]
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          [
+            16.0.6,
+            13.0.1,
+            12.0.1,
+            11.1.0,
+            10.0.1,
+            9.0.1,
+            8.0.1,
+            7.1.0,
+            6.0.1,
+            5.0.2,
+            4.0.1,
+          ]
+    env:
+      ref: llvmorg-${{matrix.version}}
+      dist-name: clang+llvm-${{matrix.version}}-x86_64-oraclelinux_7.6
+      configure: -DLLVM_ENABLE_PROJECTS="clang" -DLLVM_TARGETS_TO_BUILD=X86 -DCMAKE_BUILD_TYPE=Release
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Env setup
+        id: host
+        shell: bash
+        run: |
+          echo "Current host supports ${{env.host_jobs}} parallel jobs"
+          echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
+      - name: Set patch
+        shell: bash
+        run: |
+          PATCH_FILE=".github/actions/build-llvm/${{env.ref}}.patch"
+          if test -e "${PATCH_FILE}"; then
+            cp "${PATCH_FILE}" '${{github.workspace}}'
+          fi
+      - name: Build LLVM ${{matrix.version}}
+        id: build
+        uses: ./.github/actions/build-llvm
+        with:
+          jobs: ${{steps.host.outputs.jobs}}
+          branch: ${{env.ref}}
+          dist-name: ${{env.dist-name}}
+          config-args: ${{env.configure}}
+      - name: Upload LLVM ${{env.dist-name}}
+        shell: bash
+        run: |
+          DIST_TAR="${{env.dist-name}}.tar.xz"
+          STORAGE_URL="${{env.storage-url}}/${{env.storage-path}}/${DIST_TAR}"
+          export XZ_OPT='-T0'
+          tar -C ${{env.dist-name}} . --mode="u+rwX,g+rwX,o+rX" -cJf ${DIST_TAR}
+          curl -L --fail -u '${{env.storage-user}}':'${{env.storage-token}}' -T "${DIST_TAR}" "$STORAGE_URL"
+          echo "### New release available at https://release.bambuhls.eu/compiler/${DIST_TAR}" >> $GITHUB_STEP_SUMMARY

@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -35,9 +23,6 @@
  * @brief Classes to describe design flow graph
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -89,17 +74,12 @@ class DesignFlowInfo
    vertex_descriptor exit;
 };
 
-class DesignFlowGraph
-    : public graph_base<boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, DesignFlowStepInfoRef,
-                                              DesignFlowEdge, DesignFlowInfoRef>>
+using DesignFlowGraphBase = boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS,
+                                                  DesignFlowStepInfoRef, DesignFlowEdge, DesignFlowInfo>;
+
+class DesignFlowGraph : public graph_base<DesignFlowGraphBase>
 {
  public:
-   using self = DesignFlowGraph;
-   using graph_t = graph_base<boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS,
-                                                    DesignFlowStepInfoRef, DesignFlowEdge, DesignFlowInfoRef>>;
-   using vertex_descriptor = self::vertex_descriptor;
-   using edge_descriptor = self::edge_descriptor;
-
    enum EdgeType : DesignFlowEdge
    {
       DEPENDENCE = 1,
@@ -131,13 +111,9 @@ class DesignFlowGraph
     * Write this graph in dot format
     * @param file_name is the file where the graph has to be printed
     */
-   void WriteDot(std::filesystem::path file_name) const;
+   void writeDot(std::filesystem::path file_name) const;
 
  private:
-   using graph_t::AddEdge;
-   using graph_t::AddVertex;
-   using graph_t::WriteDot;
-
    CustomUnorderedMap<DesignFlowStep::signature_t, vertex_descriptor> signature_to_vertex;
 };
 using DesignFlowGraphRef = refcount<DesignFlowGraph>;
@@ -175,7 +151,6 @@ class DesignFlowStepWriter
    /**
     * Constructor
     * @param g is the graph to be printed
-    * @param vertex_history are the vertices which have to be printed
     */
    DesignFlowStepWriter(const DesignFlowGraph* g);
 
@@ -195,9 +170,7 @@ class DesignFlowEdgeWriter
 
    /**
     * Constructor
-    * @param design_flow_graph is the graph to be printed
-    * @param vertex_history are the vertices which have to be printed
-    * @param edge_history are the edges which have to be printed
+    * @param g is the graph to be printed
     */
    DesignFlowEdgeWriter(const DesignFlowGraph* g);
 

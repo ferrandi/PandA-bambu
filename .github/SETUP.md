@@ -17,22 +17,26 @@ If working with docker containers, directories containing license files should b
 ## Environment variables
 Some environment variables are expected to be set by each runner host:
 
-- **J**: number of maximum parallel jobs handled by the runner
-- **LM_LICENSE_FILE**: license file path for simulation/synthesis tools
-- **NXLMD_LICENSE_FILE**: NanoXplore license file path (needed only if different from LM_LICENSE_FILE)
+- **J**: maximum number of parallel jobs handled by the runner
+- **OMP_NUM_THREADS**: maximum number of parallel threads per job handled by the runner
+- **LM_LICENSE_FILE**: Default license file path for simulation/synthesis tools
+- **MGLS_LICENSE_FILE**: Mentor Graphics license file path
+- **NXLMD_LICENSE_FILE**: NanoXplore license file path
 - **NANOXPLORE_BYPASS**: NanoXplore bypass setting
-- **LIBRARY_PATH**: necessary to support older gcc compilers (set to: /usr/lib/x86_64-linux-gnu)
-- **LOCAL_COMPILERS_BACKUP**: directory where to store local copies of frontend compilers used during build process (optional)
+- **SNPSLMD_LICENSE_FILE**: Synopsys license file path
+- **LOCAL_COMPILERS_BACKUP**: (optional) define compilers backup folder for compiler-download.sh script
+- **PATH**: all necessary compilers must be available from PATH on the target system
+- **CMake**: CI builds now use CMake (`cmake -S . -B build ...; cmake --build --parallel $J; cmake --install ...`), so runners must have a recent CMake available in PATH.
 
 ## Python support
-Current CI implementation requires Python 3.6.15 to be available in the runner environment. Pyenv is recommended to provide the support.
+Current CI implementation requires Python 3.11.11 to be available in the runner environment. Pyenv is recommended to provide the support.
 Furthermore pip packages from `etc/scripts/requirements.txt` are required to run python scripts correctly.
 
 Use the following to install the required Python version through PyEnv and set it as global default.
 
 ```
-CONFIGURE_OPTS="--enable-shared" pyenv install 3.6.15
-pyenv global 3.6.15
+CONFIGURE_OPTS="--enable-shared" pyenv install 3.11.11
+pyenv global 3.11.11
 pip install -r /path/to/repo/etc/scripts/requirements.txt
 ```
 

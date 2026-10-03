@@ -4,6 +4,7 @@
  *
  */
 /* Public domain.  */
+
 #include <stddef.h>
 
 static int __local_tolower(int c)

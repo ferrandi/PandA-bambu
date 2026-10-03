@@ -1,0 +1,67 @@
+#!/bin/sh
+# xmlq — POSIX sh + POSIX awk
+# Usage:
+#   xmlq FILE [PATH]
+# If PATH is provided, prints only values for that path.
+# Otherwise, prints all "/path value" pairs.
+
+if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+    echo "Usage: $0 FILE [PATH]" >&2
+    exit 2
+fi
+
+FILE=$1
+WANT=${2-}
+
+awk -v want="$WANT" -f - "$FILE" <<'AWK'
+BEGIN {
+    RS = "<"; FS = ">"; sp = 0
+}
+function push(x){ stack[++sp]=x }
+function pop(){ if (sp>0) sp-- }
+function path(){ p=""; for(i=1;i<=sp;i++) p=p"/"stack[i]; return p }
+function trim(s){ gsub(/^[[:space:]]+|[[:space:]]+$/,"",s); return s }
+function out(line,   i,key){
+    if (want=="") { print line; return }
+    i = index(line, " ")
+    key = (i ? substr(line,1,i-1) : line)
+    if (key==want) {
+        if (i==0) print ""; else print substr(line,i+1)
+    }
+}
+function attrs(rest,   m,k,q,i,v){
+    while (match(rest, /^[[:space:]]*([[:alnum:]_:.+-]+)[[:space:]]*=[[:space:]]*(['"])/, m)) {
+        k = m[1]; q = m[2]
+        rest = substr(rest, RSTART+RLENGTH)
+        i = index(rest, q)
+        if (i==0) { v=rest; rest="" } else { v=substr(rest,1,i-1); rest=substr(rest,i+1) }
+        out(path() "@" k " " v)
+    }
+}
+function maybe_text(s){ s=trim(s); if (s!="") out(path() " " s) }
+
+{
+    if (NR==1 && $0=="") next
+    tag = $1
+    txt = (NF>=2 ? $2 : "")
+
+    # Skip processing instructions, comments, and declarations
+    if (tag ~ /^\?/ || tag ~ /^!--/ || tag ~ /^!/) { maybe_text(txt); next }
+
+    # End tag
+    if (tag ~ /^\/[[:space:]]*/) { pop(); maybe_text(txt); next }
+
+    # Start/self-closing
+    name = tag
+    sub(/[[:space:]].*$/, "", name)
+    rest = substr(tag, length(name)+1)
+
+    sc = 0
+    if (rest ~ /\/[[:space:]]*$/) { sc=1; sub(/\/[[:space:]]*$/, "", rest) }
+
+    push(name)
+    if (trim(rest)!="") attrs(rest)
+    if (sc) pop()
+    maybe_text(txt)
+}
+AWK

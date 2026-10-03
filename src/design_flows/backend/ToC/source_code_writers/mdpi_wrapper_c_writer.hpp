@@ -1,44 +1,28 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2024-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
  * @file mdpi_wrapper_c_writer.hpp
  * @brief
  *
- *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef MDPI_WRAPPER_CWRITER_HPP
@@ -47,7 +31,28 @@
 
 class MdpiWrapperCWriter : public CWriter
 {
-   void WriteSimulatorInitMemory(const unsigned int function_id);
+   void WriteSimulatorInitMemory(const unsigned int function_id, bool global_use_banked);
+
+   /**
+    * Subfunction that writes the inizialitation values for the external variables
+    */
+   unsigned long long WriteMemmap_initalization(unsigned long long base_addr, const unsigned int function_id);
+
+   /**
+    * Allocates the memory on the banks used by the simulation
+    */
+   void WriteSimulatorBankedMemory(const unsigned int function_id, const unsigned int banked_args_decl_size);
+
+   /**
+    * Initialize the data structure used by the banked memory
+    */
+   void InitilizedBMDataStructure(const unsigned int bundle_number, const unsigned int bank_number,
+                                  const bool use_space_required);
+
+   /**
+    * Copies the results of the simulation from the banked memory to the original one
+    */
+   void WriteBankedMemoryWritebackValue(const unsigned int function_id);
 
    void WriteFunctionImplementation(unsigned int) override;
 

@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2015-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2015-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -39,7 +27,7 @@
  */
 #include "technology_flow_step_factory.hpp"
 
-#include "fix_characterization.hpp"
+#include "exceptions.hpp"
 #include "load_builtin_technology.hpp"
 #include "load_default_technology.hpp"
 #include "load_device_technology.hpp"
@@ -48,51 +36,45 @@
 #include "write_technology.hpp"
 
 TechnologyFlowStepFactory::TechnologyFlowStepFactory(const technology_managerRef _TM, const generic_deviceRef _target,
-                                                     const DesignFlowManagerConstRef _design_flow_manager,
+                                                     const DesignFlowManager& _design_flow_manager,
                                                      const ParameterConstRef _parameters)
     : DesignFlowStepFactory(DesignFlowStep::TECHNOLOGY, _design_flow_manager, _parameters), TM(_TM), target(_target)
 {
 }
-
-TechnologyFlowStepFactory::~TechnologyFlowStepFactory() = default;
 
 DesignFlowStepRef
 TechnologyFlowStepFactory::CreateTechnologyFlowStep(const TechnologyFlowStep_Type technology_flow_step_type) const
 {
    switch(technology_flow_step_type)
    {
-      case TechnologyFlowStep_Type::FIX_CHARACTERIZATION:
-      {
-         return DesignFlowStepRef(new FixCharacterization(TM, target, design_flow_manager.lock(), parameters));
-      }
 #if HAVE_CIRCUIT_BUILT
       case TechnologyFlowStep_Type::LOAD_BUILTIN_TECHNOLOGY:
       {
-         return DesignFlowStepRef(new LoadBuiltinTechnology(TM, target, design_flow_manager.lock(), parameters));
+         return DesignFlowStepRef(new LoadBuiltinTechnology(TM, target, design_flow_manager, parameters));
       }
 #endif
       case TechnologyFlowStep_Type::LOAD_DEFAULT_TECHNOLOGY:
       {
-         return DesignFlowStepRef(new LoadDefaultTechnology(TM, target, design_flow_manager.lock(), parameters));
+         return DesignFlowStepRef(new LoadDefaultTechnology(TM, target, design_flow_manager, parameters));
       }
       case TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY:
       {
-         return DesignFlowStepRef(new LoadDeviceTechnology(TM, target, design_flow_manager.lock(), parameters));
+         return DesignFlowStepRef(new LoadDeviceTechnology(TM, target, design_flow_manager, parameters));
       }
       case TechnologyFlowStep_Type::LOAD_FILE_TECHNOLOGY:
       {
-         return DesignFlowStepRef(new LoadFileTechnology(TM, target, design_flow_manager.lock(), parameters));
+         return DesignFlowStepRef(new LoadFileTechnology(TM, target, design_flow_manager, parameters));
       }
       case TechnologyFlowStep_Type::LOAD_TECHNOLOGY:
       {
-         return DesignFlowStepRef(new LoadTechnology(TM, target, design_flow_manager.lock(), parameters));
+         return DesignFlowStepRef(new LoadTechnology(TM, target, design_flow_manager, parameters));
       }
       case TechnologyFlowStep_Type::WRITE_TECHNOLOGY:
       {
-         return DesignFlowStepRef(new WriteTechnology(TM, target, design_flow_manager.lock(), parameters));
+         return DesignFlowStepRef(new WriteTechnology(TM, target, design_flow_manager, parameters));
       }
       default:
-         THROW_UNREACHABLE("");
+         break;
    }
    THROW_UNREACHABLE("");
    return DesignFlowStepRef();

@@ -5,7 +5,7 @@ Basically, adding a constraints on the number of multipliers used just requires 
 <?xml version="1.0"?>
 <constraints>
    <HLS_constraints>
-      <tech_constraints fu_name="mult_expr_FU" fu_library="STD_FU" n="1"/>
+      <tech_constraints fu_name="mult_node_FU" fu_library="STD_FU" n="1"/>
    </HLS_constraints>
 </constraints>
 
