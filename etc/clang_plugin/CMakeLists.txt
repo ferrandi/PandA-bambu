@@ -272,20 +272,29 @@ function(_panda_add_clang_plugins ver)
          RESULT_VARIABLE _channel_seam_test_libs_result)
       if(_channel_seam_test_libs_result EQUAL 0)
          separate_arguments(_channel_seam_test_libs NATIVE_COMMAND "${_channel_seam_test_libs}")
-         foreach(_seam_test IN ITEMS channel_seam channel_seam_aa)
-            add_executable(clang_plugin_${ver}_${_seam_test}_test "${_src_base}/test_${_seam_test}.cpp")
-            set_target_properties(clang_plugin_${ver}_${_seam_test}_test PROPERTIES
+         # Each control is named after what it pins down, and its source is
+         # test_<name>.cpp. The labels allow to select the whole group by feature
+         # (ctest -L ac_channel) or by toolchain.
+         set(_ac_channel_controls
+            ac_channel_abi_recognition
+            ac_channel_disjoint_channels
+         )
+         foreach(_ac_channel_control IN LISTS _ac_channel_controls)
+            add_executable(${_ac_channel_control}_clang${ver}_test "${_src_base}/test_${_ac_channel_control}.cpp")
+            set_target_properties(${_ac_channel_control}_clang${ver}_test PROPERTIES
                CXX_STANDARD 17
                CXX_STANDARD_REQUIRED ON)
-            target_include_directories(clang_plugin_${ver}_${_seam_test}_test PRIVATE
+            target_include_directories(${_ac_channel_control}_clang${ver}_test PRIVATE
                ${_panda_plugin_common_includes}
                ${_panda_plugin_buddy_includes})
-            target_compile_options(clang_plugin_${ver}_${_seam_test}_test PRIVATE
+            target_compile_options(${_ac_channel_control}_clang${ver}_test PRIVATE
                ${_clang_cxxflags} ${_plugin_std_override} ${_clang_defs})
-            target_link_options(clang_plugin_${ver}_${_seam_test}_test PRIVATE ${_clang_ldflags})
-            target_link_libraries(clang_plugin_${ver}_${_seam_test}_test PRIVATE ${_channel_seam_test_libs})
-            add_test(NAME clang_plugin_${ver}_${_seam_test}
-               COMMAND clang_plugin_${ver}_${_seam_test}_test)
+            target_link_options(${_ac_channel_control}_clang${ver}_test PRIVATE ${_clang_ldflags})
+            target_link_libraries(${_ac_channel_control}_clang${ver}_test PRIVATE ${_channel_seam_test_libs})
+            add_test(NAME ${_ac_channel_control}_clang${ver}
+               COMMAND ${_ac_channel_control}_clang${ver}_test)
+            set_tests_properties(${_ac_channel_control}_clang${ver} PROPERTIES
+               LABELS "frontend;ac_channel;clang-${ver}")
          endforeach()
       endif()
    endif()

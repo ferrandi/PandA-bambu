@@ -344,48 +344,47 @@ namespace llvm
          // the effects depend on, is invalidated rather than preserved.
          for(auto& F : M)
          {
-            const auto op = bambu_channel_seam::classifyFunction(&F);
-            if(op == bambu_channel_seam::Op::None)
+            const auto op = bambu_ac_channel_primitives::classifyFunction(&F);
+            if(op == bambu_ac_channel_primitives::Op::None)
             {
                continue;
             }
-            const bool read_only = (op == bambu_channel_seam::Op::Peek) &&
-                                   (bambu_channel_seam::countPointerArgs(&F) <= 1);
+            const bool read_only = (op == bambu_ac_channel_primitives::Op::Peek) &&
+                                   (bambu_ac_channel_primitives::countPointerArgs(&F) <= 1);
 #if PANDA_LLVM_CLANG_MAJOR >= 16
-             const llvm::MemoryEffects desired =
-                 read_only ? llvm::MemoryEffects::argMemOnly(llvm::ModRefInfo::Ref)
-                           : llvm::MemoryEffects::argMemOnly();
-             if(F.getMemoryEffects() != desired)
-             {
-                F.setMemoryEffects(desired);
-                changed = true;
-             }
- #else
-             /// LLVM 4--15: no MemoryEffects API; the equivalent "argmem" [+ "readonly"]
-             /// function attributes carry the same contract.
-             const bool has_readonly = F.hasFnAttribute(llvm::Attribute::ReadOnly);
-             const bool has_argmem = F.hasFnAttribute(llvm::Attribute::ArgMemOnly);
-             const bool has_readnone = F.hasFnAttribute(llvm::Attribute::ReadNone);
-             const bool has_writeonly = F.hasFnAttribute(llvm::Attribute::WriteOnly);
-             if(!has_argmem || has_readonly != read_only || has_readnone || has_writeonly)
-             {
-                F.setOnlyAccessesArgMemory();
-                F.removeFnAttr(llvm::Attribute::ReadNone);
-                F.removeFnAttr(llvm::Attribute::WriteOnly);
-                if(read_only)
-                {
-                   F.setOnlyReadsMemory();
-                }
-                else
-                {
-                   F.removeFnAttr(llvm::Attribute::ReadOnly);
-                }
-                changed = true;
-             }
+            const llvm::MemoryEffects desired =
+                read_only ? llvm::MemoryEffects::argMemOnly(llvm::ModRefInfo::Ref) : llvm::MemoryEffects::argMemOnly();
+            if(F.getMemoryEffects() != desired)
+            {
+               F.setMemoryEffects(desired);
+               changed = true;
+            }
+#else
+            /// LLVM 4--15: no MemoryEffects API; the equivalent "argmem" [+ "readonly"]
+            /// function attributes carry the same contract.
+            const bool has_readonly = F.hasFnAttribute(llvm::Attribute::ReadOnly);
+            const bool has_argmem = F.hasFnAttribute(llvm::Attribute::ArgMemOnly);
+            const bool has_readnone = F.hasFnAttribute(llvm::Attribute::ReadNone);
+            const bool has_writeonly = F.hasFnAttribute(llvm::Attribute::WriteOnly);
+            if(!has_argmem || has_readonly != read_only || has_readnone || has_writeonly)
+            {
+               F.setOnlyAccessesArgMemory();
+               F.removeFnAttr(llvm::Attribute::ReadNone);
+               F.removeFnAttr(llvm::Attribute::WriteOnly);
+               if(read_only)
+               {
+                  F.setOnlyReadsMemory();
+               }
+               else
+               {
+                  F.removeFnAttr(llvm::Attribute::ReadOnly);
+               }
+               changed = true;
+            }
 #endif
-             LLVM_DEBUG(llvm::dbgs() << "topfname: memory(argmem: " << (read_only ? "read" : "readwrite")
-                                    << ") on " << F.getName() << "\n");
-          }
+            LLVM_DEBUG(llvm::dbgs() << "topfname: memory(argmem: " << (read_only ? "read" : "readwrite") << ") on "
+                                    << F.getName() << "\n");
+         }
          LLVM_DEBUG(llvm::dbgs() << "Top function symbols: "
                                  << llvm::join(TopFunctionNames.begin(), TopFunctionNames.end(), ", ") << "\n"
                                  << "Root function symbols: "
