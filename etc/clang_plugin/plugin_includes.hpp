@@ -625,8 +625,8 @@ namespace llvm
       void serialize_ir_aliased_reaching_defs(llvm::MemoryAccess* MA, llvm::MemorySSA& MSSA,
                                               std::set<llvm::MemoryAccess*>& visited,
                                               const llvm::Function* currentFunction, bool isMemDefVal,
-                                              const llvm::MemoryLocation* Loc,
-                                              llvm::CallInst* originSeam, llvm::AAResults* funcAA);
+                                              const llvm::MemoryLocation* Loc, llvm::CallInst* originSeam,
+                                              llvm::AAResults* funcAA);
       /// Walks the MemorySSA reaching-def chain of MA. originSeam, when set, is the
       /// ac_channel seam call whose dependencies are being serialized (kept through
       /// the whole recursion); funcAA is the alias analysis reused for the
@@ -634,8 +634,7 @@ namespace llvm
       /// True when the edge from the origin ac_channel seam call to the defMemAcc def
       /// can be dropped: the def is another recognized seam call and the alias
       /// analysis proves that the two calls may not mod/ref any common memory.
-      bool seamOrderingExcluded(llvm::MemoryAccess* defMemAcc, const llvm::CallInst* origin,
-                                llvm::AAResults& AA);
+      bool seamOrderingExcluded(llvm::MemoryAccess* defMemAcc, const llvm::CallInst* origin, llvm::AAResults& AA);
 
       const void* IR_SSA_NAME_VAR(const void* t) const;
       int IR_SSA_NAME_VERSION(const void* t) const;
@@ -728,17 +727,17 @@ namespace llvm
    };
 } // namespace llvm
 
-/// Recognition of the three ac_channel seam members, per the hardware contract:
-/// _read_bambu_internal and _write_bambu_internal change the FIFO state;
-/// _peek_bambu_internal only observes it, unless its signature carries outputs
-/// (a valid bit, an sret result) that the lowering writes. The ac_channel hardware
-/// primitives ("Bambu ABI seam" block in ac_channel.h) are out-of-line declarations
-/// without an LLVM body; their bodies are generated in Verilog later on. Plugins that
-/// need to recognize these calls - assigning their memory contract (topfname), or
-/// filtering the virtual-operand reaching-def chain (dumpBambuIr) - share this
+/// Recognition of the three ac_channel hardware-primitive members, per the hardware
+/// contract: _read_bambu_internal and _write_bambu_internal change the FIFO state;
+/// _peek_bambu_internal only observes it, unless its signature carries outputs (a
+/// valid bit, an sret result) that the lowering writes. These primitives are the
+/// "Bambu ABI seam" block of ac_channel.h: out-of-line declarations without an LLVM
+/// body, whose bodies are generated in Verilog later on. Plugins that need to
+/// recognize these calls - assigning their memory contract (topfname), or filtering
+/// the virtual-operand reaching-def chain (dumpBambuIr) - share this
 /// classification. It follows the hardware lowering (InterfaceInfer) rather than the
 /// host-only definitions.
-namespace bambu_channel_seam
+namespace bambu_ac_channel_primitives
 {
    enum class Op
    {
@@ -748,12 +747,13 @@ namespace bambu_channel_seam
       Peek,
    };
 
-   /// True when name has the complete Itanium ABI envelope of a seam member. The
-   /// fixed leading nested-name component identifies the global ac_channel template;
-   /// the fixed tail identifies the member-template and its ABI signature. This avoids
-   /// interpreting a seam mentioned in a wrapper's template arguments as the wrapper
-   /// itself, and works with LLVM 4--9 where no partial demangler is available.
-   inline bool isMangledSeam(llvm::StringRef name, llvm::StringRef member, llvm::StringRef tail)
+   /// True when name has the complete Itanium ABI envelope of an ac_channel template
+   /// member: the fixed leading nested-name component identifies the template, the
+   /// fixed tail identifies the member and its ABI signature. Matching the whole
+   /// envelope, rather than a substring, is what keeps a member merely mentioned in
+   /// a wrapper's template arguments from being taken as the wrapper itself. This is
+   /// also why no demangling is needed, which LLVM 4--9 cannot do partially.
+   inline bool isMangledPrimitiveName(llvm::StringRef name, llvm::StringRef member, llvm::StringRef tail)
    {
       static const char owner[] = "_ZN10ac_channelI";
       const std::size_t owner_len = sizeof(owner) - 1;
@@ -766,24 +766,25 @@ namespace bambu_channel_seam
    }
 
    /// Classify a mangled function name. The only recognized symbols are the three
-   /// out-of-line Bambu ABI seam members of the global ac_channel template. The check
-   /// deliberately matches their complete Itanium ABI form, rather than a demangled
-   /// substring, so wrappers, namespaces and incompatible signatures are rejected.
+   /// out-of-line members of the global ac_channel template, the ones declared in its
+   /// "Bambu ABI seam" block. The check deliberately matches their complete Itanium
+   /// ABI form, rather than a demangled substring, so wrappers, namespaces and
+   /// incompatible signatures are rejected.
    inline Op classify(llvm::StringRef mangled)
    {
-      if(isMangledSeam(mangled, "E20_read_bambu_internalI", "EEKT_v") ||
-         isMangledSeam(mangled, "E20_read_bambu_internalI", "EEKT_Rb") ||
-         isMangledSeam(mangled, "E20_read_bambu_internalI", "EEKT_RbRb"))
+      if(isMangledPrimitiveName(mangled, "E20_read_bambu_internalI", "EEKT_v") ||
+         isMangledPrimitiveName(mangled, "E20_read_bambu_internalI", "EEKT_Rb") ||
+         isMangledPrimitiveName(mangled, "E20_read_bambu_internalI", "EEKT_RbRb"))
       {
          return Op::Read;
       }
-      if(isMangledSeam(mangled, "E21_write_bambu_internalI", "EEbT_"))
+      if(isMangledPrimitiveName(mangled, "E21_write_bambu_internalI", "EEbT_"))
       {
          return Op::Write;
       }
-      if(isMangledSeam(mangled, "E20_peek_bambu_internalI", "EEKT_v") ||
-         isMangledSeam(mangled, "E20_peek_bambu_internalI", "EEKT_Rb") ||
-         isMangledSeam(mangled, "E20_peek_bambu_internalI", "EEKT_RbRb"))
+      if(isMangledPrimitiveName(mangled, "E20_peek_bambu_internalI", "EEKT_v") ||
+         isMangledPrimitiveName(mangled, "E20_peek_bambu_internalI", "EEKT_Rb") ||
+         isMangledPrimitiveName(mangled, "E20_peek_bambu_internalI", "EEKT_RbRb"))
       {
          return Op::Peek;
       }
@@ -818,6 +819,6 @@ namespace bambu_channel_seam
       }
       return n;
    }
-}
+} // namespace bambu_ac_channel_primitives
 
 #endif

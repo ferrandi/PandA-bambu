@@ -28,8 +28,8 @@
 #ifndef NDEBUG
 #define NDEBUG
 #endif
+#include "ac_channel_cross_iteration_aa.hpp"
 #include "plugin_includes.hpp"
-#include "channel_seam_aa.hpp"
 
 #include "HardekopfLin_AA.hpp"
 
@@ -2767,10 +2767,10 @@ namespace llvm
          const llvm::GlobalVariable* llvm_obj = reinterpret_cast<const llvm::GlobalVariable*>(t);
 #if PANDA_LLVM_CLANG_MAJOR < 16
          if(llvm_obj->getAlignment())
-             return std::max(8u, 8 * llvm_obj->getAlignment());
+            return std::max(8u, 8 * llvm_obj->getAlignment());
 #else
          if(llvm_obj->getAlign())
-             return std::max(8u, 8 * static_cast<unsigned>(llvm_obj->getAlign()->value()));
+            return std::max(8u, 8 * static_cast<unsigned>(llvm_obj->getAlign()->value()));
 #endif
          return std::max(8u, 8 * static_cast<unsigned>(getAbiTypeAlignmentBytes(DL, llvm_obj->getValueType())));
       }
@@ -3445,7 +3445,6 @@ namespace llvm
    //       llvm::AtomicOrdering::Acquire); return !(SeqCstUse || MayClobberIsAcquire);
    //    }
 
-
    void DumpBambuIR::serialize_vops(const void* g)
    {
       assert(IR_CODE(g) != IRC(IR_PHI_VIRTUAL));
@@ -3486,7 +3485,7 @@ namespace llvm
       std::unique_ptr<llvm::BasicAAResult> seamBar;
       std::unique_ptr<llvm::AAResults> seamAAR;
 #endif
-      /// ac_channel hardware seam calls (bambu_channel_seam; recognized by their strict
+      /// ac_channel hardware seam calls (bambu_ac_channel_primitives; recognized by their strict
       /// ABI signature and declaration-ness only): the callee has no LLVM body, so the
       /// MemorySSA tree orders their defs conservatively, through the whole of memory,
       /// and this serializer path walks the raw tree for calls (Loc == nullptr, the
@@ -3497,7 +3496,8 @@ namespace llvm
       /// query stays conservative and every edge is kept.
       if(auto* ci = llvm::dyn_cast<llvm::CallInst>(inst))
       {
-         if(bambu_channel_seam::classifyFunction(ci->getCalledFunction()) != bambu_channel_seam::Op::None)
+         if(bambu_ac_channel_primitives::classifyFunction(ci->getCalledFunction()) !=
+            bambu_ac_channel_primitives::Op::None)
          {
             originSeam = ci;
          }
@@ -3532,13 +3532,13 @@ namespace llvm
       if(isSimpleDefUse)
       {
          serialize_ir_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), isMemDefVal, nullptr,
-                                             originSeam, funcAA);
+                                            originSeam, funcAA);
       }
       else
       {
          const auto Loc = llvm::MemoryLocation::get(inst);
-         serialize_ir_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), isMemDefVal, &Loc,
-                                             nullptr, nullptr);
+         serialize_ir_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), isMemDefVal, &Loc, nullptr,
+                                            nullptr);
       }
    }
 
@@ -3546,7 +3546,7 @@ namespace llvm
                                                         std::set<llvm::MemoryAccess*>& visited,
                                                         const llvm::Function* currentFunction, bool isMemDefVal,
                                                         const llvm::MemoryLocation* Loc, llvm::CallInst* originSeam,
-                                                         llvm::AAResults* funcAA)
+                                                        llvm::AAResults* funcAA)
    {
       if(MSSA.isLiveOnEntryDef(MA))
       {
@@ -3576,8 +3576,7 @@ namespace llvm
          /// each other. The edge is then not serialized, but the visit continues: an
          /// earlier def of the same channel is still reachable through this one,
          /// including across a MemoryPhi.
-         bool excluded = (originSeam && funcAA != nullptr) &&
-                         seamOrderingExcluded(defMemAcc, originSeam, *funcAA);
+         bool excluded = (originSeam && funcAA != nullptr) && seamOrderingExcluded(defMemAcc, originSeam, *funcAA);
          if(!excluded)
          {
             bool isDefault = false;
@@ -3592,8 +3591,8 @@ namespace llvm
                serialize_child("vuse", ssaV);
             }
          }
-         serialize_ir_aliased_reaching_defs(defMemAcc, MSSA, visited, currentFunction, isMemDefVal, Loc,
-             originSeam, funcAA);
+         serialize_ir_aliased_reaching_defs(defMemAcc, MSSA, visited, currentFunction, isMemDefVal, Loc, originSeam,
+                                            funcAA);
       };
 
       if(defMA->getValueID() == llvm::Value::MemoryDefVal)
@@ -3623,8 +3622,8 @@ namespace llvm
                }
                else
                {
-                  serialize_ir_aliased_reaching_defs(val, MSSA, visited, currentFunction, isMemDefVal, Loc,
-                      originSeam, funcAA);
+                  serialize_ir_aliased_reaching_defs(val, MSSA, visited, currentFunction, isMemDefVal, Loc, originSeam,
+                                                     funcAA);
                }
             }
          }
@@ -3632,7 +3631,7 @@ namespace llvm
    }
 
    bool DumpBambuIR::seamOrderingExcluded(llvm::MemoryAccess* defMemAcc, const llvm::CallInst* origin,
-                                            llvm::AAResults& AA)
+                                          llvm::AAResults& AA)
    {
       /// True when the edge from the origin seam call to this reaching def can be
       /// dropped: the def must be another recognized ac_channel seam call (never the
@@ -3646,11 +3645,12 @@ namespace llvm
       {
          return false;
       }
-      if(bambu_channel_seam::classifyFunction(defCall->getCalledFunction()) == bambu_channel_seam::Op::None)
+      if(bambu_ac_channel_primitives::classifyFunction(defCall->getCalledFunction()) ==
+         bambu_ac_channel_primitives::Op::None)
       {
          return false;
       }
-      return bambu_channel_seam::callsModRefIndependentAcrossIterations(origin, defCall, AA);
+      return bambu_ac_channel_primitives::callsModRefIndependentAcrossIterations(origin, defCall, AA);
    }
    const void* DumpBambuIR::IR_SSA_NAME_VAR(const void* t) const
    {

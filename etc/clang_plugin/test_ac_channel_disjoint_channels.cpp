@@ -4,7 +4,8 @@
  */
 // Exercise the same cross-iteration predicate used by dumpBambuIr. The loop IR
 // is parsed and verified with each supported LLVM, then queried with real BasicAA.
-#include "channel_seam_aa.hpp"
+#include "ac_channel_cross_iteration_aa.hpp"
+#include <cstdio>
 #include <llvm/Analysis/AssumptionCache.h>
 #include <llvm/Analysis/BasicAliasAnalysis.h>
 #include <llvm/Analysis/TargetLibraryInfo.h>
@@ -13,7 +14,6 @@
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/SourceMgr.h>
-#include <cstdio>
 #include <string>
 
 struct Case
@@ -29,17 +29,19 @@ struct Case
 static bool check(const Case& test)
 {
    const std::string qualifier = test.noalias ? " noalias " : " ";
-   std::string ir =
-       "declare void @read(PTR) EFFECTS\n"
-       "declare void @write(PTR) EFFECTS\n"
-       "declare void @read_out(PTR, PTR) EFFECTS\n"
-       "declare void @write_out(PTR, PTR) EFFECTS\n"
-       "declare void @unknown(PTR)\n"
-       "define void @kernel(PTR" + qualifier + "%a, PTR" + qualifier + "%b, PTR" + qualifier +
-       "%x, PTR" + qualifier + "%y) {\nentry:\n" + test.entry + "\n br label %loop\nloop:\n"
-       " %i = phi i32 [0, %entry], [%next, %loop]\n" + test.loop + "\n" + test.calls +
-       "\n %next = add i32 %i, 1\n %done = icmp eq i32 %next, 4\n"
-       " br i1 %done, label %exit, label %loop\nexit:\n ret void\n}\n";
+   std::string ir = "declare void @read(PTR) EFFECTS\n"
+                    "declare void @write(PTR) EFFECTS\n"
+                    "declare void @read_out(PTR, PTR) EFFECTS\n"
+                    "declare void @write_out(PTR, PTR) EFFECTS\n"
+                    "declare void @unknown(PTR)\n"
+                    "define void @kernel(PTR" +
+                    qualifier + "%a, PTR" + qualifier + "%b, PTR" + qualifier + "%x, PTR" + qualifier +
+                    "%y) {\nentry:\n" + test.entry +
+                    "\n br label %loop\nloop:\n"
+                    " %i = phi i32 [0, %entry], [%next, %loop]\n" +
+                    test.loop + "\n" + test.calls +
+                    "\n %next = add i32 %i, 1\n %done = icmp eq i32 %next, 4\n"
+                    " br i1 %done, label %exit, label %loop\nexit:\n ret void\n}\n";
 #if PANDA_LLVM_CLANG_MAJOR >= 16
    const std::string ptr = "ptr", effects = "memory(argmem: readwrite)";
 #else
@@ -100,40 +102,35 @@ static bool check(const Case& test)
    {
       return false;
    }
-   const bool independent = bambu_channel_seam::callsModRefIndependentAcrossIterations(A, B, AA);
+   const bool independent = bambu_ac_channel_primitives::callsModRefIndependentAcrossIterations(A, B, AA);
    const bool ok = independent == test.independent;
-   std::printf("[%s] %s: expected independent=%d, got=%d\n", ok ? "PASS" : "FAIL", test.name,
-               test.independent, independent);
+   std::printf("[%s] %s: expected independent=%d, got=%d\n", ok ? "PASS" : "FAIL", test.name, test.independent,
+               independent);
    return ok;
 }
 
 int main()
 {
-   const char* alternating =
-       " %bit = and i32 %i, 1\n %even = icmp eq i32 %bit, 0\n"
-       " %p = select i1 %even, PTR %a, PTR %b\n %q = select i1 %even, PTR %b, PTR %a\n";
+   const char* alternating = " %bit = and i32 %i, 1\n %even = icmp eq i32 %bit, 0\n"
+                             " %p = select i1 %even, PTR %a, PTR %b\n %q = select i1 %even, PTR %b, PTR %a\n";
    const char* calls = " call void @read(PTR %p)\n call void @write(PTR %q)\n";
    const char* direct = " call void @read(PTR %a)\n call void @write(PTR %b)\n";
    const Case cases[] = {
        {"alternating channels (select)", "", alternating, calls, true, false},
        {"alternating channels (phi)", "",
-        " %p = phi PTR [%a, %entry], [%q, %loop]\n %q = phi PTR [%b, %entry], [%p, %loop]\n",
-        calls, true, false},
+        " %p = phi PTR [%a, %entry], [%q, %loop]\n %q = phi PTR [%b, %entry], [%p, %loop]\n", calls, true, false},
        {"stable noalias parameters", "", "", direct, true, true},
        {"parameters may alias", "", "", direct, false, false},
        {"same channel", "", "", " call void @read(PTR %a)\n call void @write(PTR %a)\n", true, false},
-       {"missing memory contract", "", "", " call void @read(PTR %a)\n call void @unknown(PTR %b)\n",
-        true, false},
+       {"missing memory contract", "", "", " call void @read(PTR %a)\n call void @unknown(PTR %b)\n", true, false},
        {"constant-offset channel addresses", "",
-        " %p = getelementptr i8, PTR %a, i32 1\n %q = getelementptr i8, PTR %b, i32 1\n",
-        calls, true, true},
+        " %p = getelementptr i8, PTR %a, i32 1\n %q = getelementptr i8, PTR %b, i32 1\n", calls, true, true},
        {"entry-block computed addresses",
-        " %p = getelementptr i8, PTR %a, i32 1\n %q = getelementptr i8, PTR %b, i32 1\n", "",
-        calls, true, true},
-       {"shared output", "", "", " call void @read_out(PTR %a, PTR %x)\n call void @write_out(PTR %b, PTR %x)\n",
-        true, false},
-       {"distinct stable outputs", "", "", " call void @read_out(PTR %a, PTR %x)\n call void @write_out(PTR %b, PTR %y)\n",
-        true, true},
+        " %p = getelementptr i8, PTR %a, i32 1\n %q = getelementptr i8, PTR %b, i32 1\n", "", calls, true, true},
+       {"shared output", "", "", " call void @read_out(PTR %a, PTR %x)\n call void @write_out(PTR %b, PTR %x)\n", true,
+        false},
+       {"distinct stable outputs", "", "",
+        " call void @read_out(PTR %a, PTR %x)\n call void @write_out(PTR %b, PTR %y)\n", true, true},
        {"alternating output pointers", "",
         " %bit = and i32 %i, 1\n %even = icmp eq i32 %bit, 0\n"
         " %p = select i1 %even, PTR %x, PTR %y\n %q = select i1 %even, PTR %y, PTR %x\n",
