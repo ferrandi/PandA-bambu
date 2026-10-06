@@ -50,13 +50,16 @@ def discover_results(paths: Sequence[str]) -> List[str]:
     candidates = []
     for path in paths:
         if os.path.isfile(path):
+            if "HLS_output" in os.path.abspath(path).split(os.sep):
+                logging.warning("skipping non-main result XML: %s", path)
+                continue
             candidates.append(path)
             continue
         if not os.path.isdir(path):
             logging.warning("skipping missing input: %s", path)
             continue
         for root, dirs, files in os.walk(path):
-            dirs.sort()
+            dirs[:] = sorted(directory for directory in dirs if directory != "HLS_output")
             for filename in sorted(files):
                 if filename.startswith("bambu_results") and filename.endswith(".xml"):
                     candidates.append(os.path.join(root, filename))
