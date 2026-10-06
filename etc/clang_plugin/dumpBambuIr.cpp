@@ -3450,9 +3450,83 @@ namespace llvm
       assert(IR_CODE(g) != IRC(IR_PHI_VIRTUAL));
       llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
       llvm::Function* currentFunction = inst->getFunction();
+      llvm::CallInst* originSeam = nullptr;
+      llvm::AAResults* funcAA = nullptr;
+#if PANDA_LLVM_CLANG_MAJOR < 14
+      std::unique_ptr<llvm::BasicAAResult> seamBar;
+      std::unique_ptr<llvm::AAResults> seamAAR;
+#endif
+      /// ac_channel hardware seam calls (bambu_ac_channel_primitives; recognized by their strict
+      /// ABI signature and declaration-ness only): the callee has no LLVM body, so the
+      /// MemorySSA tree orders their defs conservatively, through the whole of memory,
+      /// and this serializer path walks the raw tree for calls (Loc == nullptr, the
+      /// clobber walker is not consulted). The chain is kept intact; the alias analysis
+      /// of the function (the same one MemorySSA was built with, on LLVM 14+) decides,
+      /// edge by edge, which seam-to-seam orderings are real. Without the argmem
+      /// memory contract on the seam declarations (set by the topfname plugin), the
+      /// query stays conservative and every edge is kept.
+      if(auto* ci = llvm::dyn_cast<llvm::CallInst>(inst))
+      {
+         if(bambu_ac_channel_primitives::classifyFunction(ci->getCalledFunction()) !=
+            bambu_ac_channel_primitives::Op::None)
+         {
+            originSeam = ci;
+         }
+      }
+      /// Alias analysis reused for the whole visit instead of being rebuilt per edge.
+      /// On LLVM 14+ that is the analysis MemorySSA was built with, and since it is
+      /// carried by the MemorySSA result it is taken after the acquisition below;
+      /// below it, a function-local BasicAA result set, kept alive for the whole
+      /// recursion.
+      ///
+      /// Ordering rule of the legacy pass manager (LLVM 4 to 12 here): a module pass
+      /// that asks for a function analysis goes through getAnalysis<...>(F), i.e.
+      /// MPPassManager::getOnTheFlyPass, which calls releaseMemoryOnTheFly() on every
+      /// function analysis it manages and then runs them all again for F. MemorySSA
+      /// owns its MemoryAccess nodes, so a request issued after MemorySSA has been
+      /// acquired frees the tree the reaching-definition visit walks: use-after-free,
+      /// the crash of the Clang 6 CI builders (bambu_specific_test4/hls_stream_dataflow
+      /// and bambu_interface_test/ac_channels). All the BasicAA prerequisites are
+      /// therefore requested before MemorySSA, and MemorySSA is the last function
+      /// analysis acquired. No helper of the visit may ask the manager for a function
+      /// analysis: TLI and AssumptionCache are module level immutable passes, their
+      /// request does not reach the on-the-fly function pass manager.
+      if(originSeam)
+      {
+#if PANDA_LLVM_CLANG_MAJOR >= 14
+         /// funcAA is the analysis MemorySSA was built with: set below, once
+         /// MemorySSA has been acquired.
+#else
+         auto& F = *currentFunction;
+         const auto& TLI = GetTLI(F);
+         auto& AC = const_cast<llvm::AssumptionCache&>(GetAC(F));
+         auto& DT = GetDomTree(F);
+         /// BasicAA only: it is where the noalias/argmem facts live, and the
+         /// call-vs-call query is posed on the calls themselves, so TBAA metadata is
+         /// not involved.
+#if PANDA_LLVM_CLANG_MAJOR >= 7
+         seamBar = std::unique_ptr<llvm::BasicAAResult>(
+             new llvm::BasicAAResult(F.getParent()->getDataLayout(), F, TLI, AC, &DT));
+#else
+         seamBar = std::unique_ptr<llvm::BasicAAResult>(
+             new llvm::BasicAAResult(F.getParent()->getDataLayout(), TLI, AC, &DT));
+#endif
+         seamAAR = std::unique_ptr<llvm::AAResults>(new llvm::AAResults(TLI));
+         seamAAR->addAAResult(*seamBar);
+         funcAA = seamAAR.get();
+#endif
+      }
+      /// Last function analysis request of this path: from here on the MemorySSA
+      /// object and the MemoryAccess nodes it owns stay alive until the visit ends.
       auto& MSSA = GetMSSA(*currentFunction).getMSSA();
 #if PANDA_LLVM_CLANG_MAJOR > 14
       MSSA.ensureOptimizedUses();
+#endif
+#if PANDA_LLVM_CLANG_MAJOR >= 14
+      if(originSeam)
+      {
+         funcAA = &MSSA.getAA();
+      }
 #endif
       const llvm::MemoryUseOrDef* ma = MSSA.getMemoryAccess(inst);
       if(ma->getValueID() == llvm::Value::MemoryUseVal || ma->getValueID() == llvm::Value::MemoryDefVal)
@@ -3479,56 +3553,6 @@ namespace llvm
       }
       auto isMemDefVal = startingMA->getValueID() == llvm::Value::MemoryDefVal;
       auto isSimpleDefUse = isa<llvm::CallInst>(inst) || isa<llvm::InvokeInst>(inst) || isa<llvm::FenceInst>(inst);
-      llvm::CallInst* originSeam = nullptr;
-      llvm::AAResults* funcAA = nullptr;
-#if PANDA_LLVM_CLANG_MAJOR < 14
-      std::unique_ptr<llvm::BasicAAResult> seamBar;
-      std::unique_ptr<llvm::AAResults> seamAAR;
-#endif
-      /// ac_channel hardware seam calls (bambu_ac_channel_primitives; recognized by their strict
-      /// ABI signature and declaration-ness only): the callee has no LLVM body, so the
-      /// MemorySSA tree orders their defs conservatively, through the whole of memory,
-      /// and this serializer path walks the raw tree for calls (Loc == nullptr, the
-      /// clobber walker is not consulted). The chain is kept intact; the alias analysis
-      /// of the function (the same one MemorySSA was built with, on LLVM 14+) decides,
-      /// edge by edge, which seam-to-seam orderings are real. Without the argmem
-      /// memory contract on the seam declarations (set by the topfname plugin), the
-      /// query stays conservative and every edge is kept.
-      if(auto* ci = llvm::dyn_cast<llvm::CallInst>(inst))
-      {
-         if(bambu_ac_channel_primitives::classifyFunction(ci->getCalledFunction()) !=
-            bambu_ac_channel_primitives::Op::None)
-         {
-            originSeam = ci;
-         }
-      }
-      /// Alias analysis reused for the whole visit instead of being rebuilt per edge.
-      /// On LLVM 14+ that is the analysis MemorySSA was built with; below it, a
-      /// function-local BasicAA result set, kept alive for the whole recursion.
-      if(originSeam)
-      {
-#if PANDA_LLVM_CLANG_MAJOR >= 14
-         funcAA = &MSSA.getAA();
-#else
-         auto& F = *currentFunction;
-         const auto& TLI = GetTLI(F);
-         auto& AC = const_cast<llvm::AssumptionCache&>(GetAC(F));
-         auto& DT = GetDomTree(F);
-         /// BasicAA only: it is where the noalias/argmem facts live, and the
-         /// call-vs-call query is posed on the calls themselves, so TBAA metadata is
-         /// not involved.
-#if PANDA_LLVM_CLANG_MAJOR >= 7
-         seamBar = std::unique_ptr<llvm::BasicAAResult>(
-             new llvm::BasicAAResult(F.getParent()->getDataLayout(), F, TLI, AC, &DT));
-#else
-         seamBar = std::unique_ptr<llvm::BasicAAResult>(
-             new llvm::BasicAAResult(F.getParent()->getDataLayout(), TLI, AC, &DT));
-#endif
-         seamAAR = std::unique_ptr<llvm::AAResults>(new llvm::AAResults(TLI));
-         seamAAR->addAAResult(*seamBar);
-         funcAA = seamAAR.get();
-#endif
-      }
       if(isSimpleDefUse)
       {
          serialize_ir_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), isMemDefVal, nullptr,
