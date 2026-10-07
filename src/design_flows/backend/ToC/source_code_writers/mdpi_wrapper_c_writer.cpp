@@ -945,6 +945,17 @@ void MdpiWrapperCWriter::InitilizedBMDataStructure(const unsigned int bundle_num
    }
    indented_output_stream->Append("};\n");
 
+   indented_output_stream->Append("unsigned int last_bank_selector_on_bundles[WR_BUNDLE_NUMBER] = {");
+   for(unsigned int i = 0; i < bundle_number; i++)
+   {
+      if(i > 0)
+      {
+         indented_output_stream->Append(",");
+      }
+      indented_output_stream->Append("0");
+   }
+   indented_output_stream->Append("};\n");
+
    indented_output_stream->Append("unsigned int last_chunk_space_used_on_bundles[WR_BUNDLE_NUMBER] = {");
    for(unsigned int i = 0; i < bundle_number; i++)
    {
@@ -1089,35 +1100,36 @@ static __bankmap_t bank_map[WR_BANK_OBJ_NUMBER];
    indented_output_stream->Append(R"(
 static bundle_info bi[WR_BUNDLE_NUMBER];
 
-static void update_space_required(unsigned int memory_size, unsigned int index, unsigned int* last_bank_used_on_bundles, unsigned int * last_chunk_space_used_on_bundles, unsigned int* chunk_required_on_banks_by_bundles)
+static void update_space_required(unsigned int memory_size, unsigned int index, unsigned int* last_bank_used_on_bundles, unsigned int * last_chunk_space_used_on_bundles, unsigned int* last_bank_selector_on_bundles, unsigned int* chunk_required_on_banks_by_bundles)
 {
 unsigned int* target_bundle = bi[bundle_map[index]].banks;
 unsigned int bundle_size = bi[bundle_map[index]].size;
-unsigned int first_bank = target_bundle[0];
-unsigned int memory_chunk_number = memory_size / WR_CHUNK_SIZE;
-unsigned int remaining_memory = memory_size % WR_CHUNK_SIZE;
-for(unsigned int temp = 0; temp < bundle_size; temp++)
+unsigned int effective_bank_count = 1;
+while(effective_bank_count < bundle_size)
+effective_bank_count <<= 1;
+unsigned int selector = last_bank_selector_on_bundles[bundle_map[index]];
+unsigned int bank_offset = last_chunk_space_used_on_bundles[bundle_map[index]];
+unsigned int remaining_memory = memory_size;
+while(remaining_memory > 0)
 {
-unsigned int current_bank = ((last_bank_used_on_bundles[bundle_map[index]] + 1 + temp) % bundle_size) + first_bank;
-chunk_required_on_banks_by_bundles[bundle_map[index] * WR_BANK_NUMBER + current_bank] += ((memory_chunk_number / bundle_size) + (temp < (memory_chunk_number % bundle_size)));
-info("Reserving %u chunks for parameter %u on bank %u on bundle %u\n", ((memory_chunk_number / bundle_size) + (temp < (memory_chunk_number % bundle_size))), index, current_bank, bundle_map[index]);
-}
-last_bank_used_on_bundles[bundle_map[index]] = (last_bank_used_on_bundles[bundle_map[index]] + memory_chunk_number) % bundle_size;
-if((last_chunk_space_used_on_bundles[bundle_map[index]] + remaining_memory) < WR_CHUNK_SIZE)
+unsigned int current_bank = target_bundle[selector % bundle_size];
+if(bank_offset == 0)
+chunk_required_on_banks_by_bundles[bundle_map[index] * WR_BANK_NUMBER + current_bank] += 1;
+unsigned int bytes_to_reserve = remaining_memory < WR_CHUNK_SIZE - bank_offset ? remaining_memory : WR_CHUNK_SIZE - bank_offset;
+remaining_memory -= bytes_to_reserve;
+bank_offset += bytes_to_reserve;
+if(bank_offset == WR_CHUNK_SIZE)
 {
-last_chunk_space_used_on_bundles[bundle_map[index]] += remaining_memory;
-info("Reserving %u bytes for parameter %u on bank %u on bundle %u\n", remaining_memory, index, last_bank_used_on_bundles[bundle_map[index]]+ first_bank, bundle_map[index]);
+bank_offset = 0;
+selector = (selector + 1) % effective_bank_count;
 }
-else
-{
-last_chunk_space_used_on_bundles[bundle_map[index]] = (last_chunk_space_used_on_bundles[bundle_map[index]] + remaining_memory) % WR_CHUNK_SIZE;
-last_bank_used_on_bundles[bundle_map[index]] = (last_bank_used_on_bundles[bundle_map[index]] + 1) % bundle_size;
-chunk_required_on_banks_by_bundles[bundle_map[index] * WR_BANK_NUMBER + first_bank + last_bank_used_on_bundles[bundle_map[index]]] += 1;
-info("Reserving 1 chunks for parameter %u on bank %u on bundle %u and %u bytes on the next bank \n", index, last_bank_used_on_bundles[bundle_map[index]] + first_bank, bundle_map[index], last_chunk_space_used_on_bundles[bundle_map[index]]);
 }
+last_bank_selector_on_bundles[bundle_map[index]] = selector;
+last_bank_used_on_bundles[bundle_map[index]] = selector % bundle_size;
+last_chunk_space_used_on_bundles[bundle_map[index]] = bank_offset;
 return;
 }
-   
+
 )");
    indented_output_stream->Append(
        "static void compute_space_required(ptr_t base_addr, char** bank_pointers, __m_argmap_t args[], "
@@ -1173,7 +1185,7 @@ else
 {
 memory_size = bank_map[i].internal_addr - bank_map[i-1].internal_addr + bank_map[i].size - bank_map[i-1].size;
 }
-update_space_required(memory_size, i, last_bank_used_on_bundles, last_chunk_space_used_on_bundles, chunk_required_on_banks_by_bundles);
+update_space_required(memory_size, i, last_bank_used_on_bundles, last_chunk_space_used_on_bundles, last_bank_selector_on_bundles, chunk_required_on_banks_by_bundles);
 info("Considering mem_var: %u, size allocated = %zu\n", i, memory_size);
 }
 )");
@@ -1182,7 +1194,7 @@ info("Considering mem_var: %u, size allocated = %zu\n", i, memory_size);
 {
 const size_t size = __m_param_size(banked_args_map[i]);
 size_t memory_size = size + (args[i].align - 1) - ((size - 1) % args[i].align);
-update_space_required(memory_size, (i + WR_BANK_MEM_VAR_NUMBER), last_bank_used_on_bundles, last_chunk_space_used_on_bundles, chunk_required_on_banks_by_bundles);
+update_space_required(memory_size, (i + WR_BANK_MEM_VAR_NUMBER), last_bank_used_on_bundles, last_chunk_space_used_on_bundles, last_bank_selector_on_bundles, chunk_required_on_banks_by_bundles);
 bank_map[i + WR_BANK_MEM_VAR_NUMBER].external_addr = (char*)args[i].addr;
 bank_map[i + WR_BANK_MEM_VAR_NUMBER].size = size;
 info("Space reserved for parameter: %u, size = %zu\n", banked_args_map[i], memory_size);
@@ -1233,7 +1245,7 @@ abort();
 )");
 
    indented_output_stream->Append(R"(
-static void allocate_on_bank_memory(unsigned int memory_size, unsigned int index, char** bank_pointers, unsigned int* last_bank_used_on_bundles, unsigned int * last_chunk_space_used_on_bundles, unsigned int* space_used_on_banks_by_bundles,char* banked_args_map, ptr_t base_addr)
+static void allocate_on_bank_memory(unsigned int memory_size, unsigned int index, char** bank_pointers, unsigned int* last_bank_used_on_bundles, unsigned int * last_chunk_space_used_on_bundles, unsigned int* last_bank_selector_on_bundles, unsigned int* space_used_on_banks_by_bundles,char* banked_args_map, ptr_t base_addr)
 {
 )");
    indented_output_stream->Append("size_t bank_distance = " + STR(1 << bank_distance) + ";\n");
@@ -1241,19 +1253,21 @@ static void allocate_on_bank_memory(unsigned int memory_size, unsigned int index
    indented_output_stream->Append(R"(
 unsigned int* target_bundle = bi[bundle_map[index]].banks;
 unsigned int bundle_size = bi[bundle_map[index]].size;
-unsigned int first_bank = target_bundle[0];
+unsigned int effective_bank_count = 1;
+while(effective_bank_count < bundle_size)
+effective_bank_count <<= 1;
 unsigned int remaining_memory = memory_size;
 unsigned int memory_copied = 0;
-unsigned int bank_base_addr_position = bundle_map[index] * WR_BANK_NUMBER + last_bank_used_on_bundles[bundle_map[index]]+first_bank;
+unsigned int bank_base_addr_position = bundle_map[index] * WR_BANK_NUMBER + target_bundle[last_bank_selector_on_bundles[bundle_map[index]] % bundle_size];
 bank_map[index].bank_addr = bank_pointers[bank_base_addr_position] + space_used_on_banks_by_bundles[bank_base_addr_position];
-unsigned int space_used_on_boudle = 0;
+unsigned int space_used_on_bundle = 0;
 for(unsigned int i = 0; i < bundle_size; i++)
 {
-space_used_on_boudle += space_used_on_banks_by_bundles[bundle_map[index] * WR_BANK_NUMBER + first_bank + i];
+space_used_on_bundle += space_used_on_banks_by_bundles[bundle_map[index] * WR_BANK_NUMBER + target_bundle[i]];
 }
 if(index >= WR_BANK_MEM_VAR_NUMBER)
 {
-bank_map[index].internal_addr = base_addr + bundle_map[index] * bundle_distance + space_used_on_boudle;
+bank_map[index].internal_addr = base_addr + bundle_map[index] * bundle_distance + space_used_on_bundle;
 info("Parameter: %u has internal address " PTR_FORMAT "\n", banked_args_map[index - WR_BANK_MEM_VAR_NUMBER], bank_map[index].internal_addr);
 }
 else
@@ -1271,7 +1285,8 @@ else
 {
 memcpy(bank_pointers[bank_base_addr_position] + space_used_on_banks_by_bundles[bank_base_addr_position], bank_map[index].external_addr, WR_CHUNK_SIZE - last_chunk_space_used_on_bundles[bundle_map[index]]);
 space_used_on_banks_by_bundles[bank_base_addr_position] += (WR_CHUNK_SIZE - last_chunk_space_used_on_bundles[bundle_map[index]]);
-last_bank_used_on_bundles[bundle_map[index]] = (last_bank_used_on_bundles[bundle_map[index]] + 1) % bundle_size;
+last_bank_selector_on_bundles[bundle_map[index]] = (last_bank_selector_on_bundles[bundle_map[index]] + 1) % effective_bank_count;
+last_bank_used_on_bundles[bundle_map[index]] = last_bank_selector_on_bundles[bundle_map[index]] % bundle_size;
 memory_copied += (WR_CHUNK_SIZE - last_chunk_space_used_on_bundles[bundle_map[index]]);
 remaining_memory = remaining_memory - (WR_CHUNK_SIZE - last_chunk_space_used_on_bundles[bundle_map[index]]);
 last_chunk_space_used_on_bundles[bundle_map[index]] = 0;
@@ -1281,17 +1296,18 @@ if(remaining_memory >= WR_CHUNK_SIZE)
 unsigned int memory_chunk_number = remaining_memory / WR_CHUNK_SIZE;
 for(unsigned int i = 0; i < memory_chunk_number; i++)
 {
-unsigned int current_bank_base_addr = bundle_map[index] * WR_BANK_NUMBER + last_bank_used_on_bundles[bundle_map[index]] +first_bank;
+unsigned int current_bank_base_addr = bundle_map[index] * WR_BANK_NUMBER + target_bundle[last_bank_selector_on_bundles[bundle_map[index]] % bundle_size];
 memcpy(bank_pointers[current_bank_base_addr] + space_used_on_banks_by_bundles[current_bank_base_addr], bank_map[index].external_addr + memory_copied, WR_CHUNK_SIZE);
 space_used_on_banks_by_bundles[current_bank_base_addr] += WR_CHUNK_SIZE;
-last_bank_used_on_bundles[bundle_map[index]] = (last_bank_used_on_bundles[bundle_map[index]] + 1) % bundle_size;
+last_bank_selector_on_bundles[bundle_map[index]] = (last_bank_selector_on_bundles[bundle_map[index]] + 1) % effective_bank_count;
+last_bank_used_on_bundles[bundle_map[index]] = last_bank_selector_on_bundles[bundle_map[index]] % bundle_size;
 memory_copied += WR_CHUNK_SIZE;
 }
 remaining_memory = remaining_memory % WR_CHUNK_SIZE;
 }
 if(remaining_memory > 0)
 {
-unsigned int  current_bank_base_addr = bundle_map[index] * WR_BANK_NUMBER + (last_bank_used_on_bundles[bundle_map[index]] % bundle_size) + first_bank;
+unsigned int  current_bank_base_addr = bundle_map[index] * WR_BANK_NUMBER + target_bundle[last_bank_selector_on_bundles[bundle_map[index]] % bundle_size];
 memcpy(bank_pointers[current_bank_base_addr] + space_used_on_banks_by_bundles[current_bank_base_addr], bank_map[index].external_addr + memory_copied, remaining_memory);
 space_used_on_banks_by_bundles[current_bank_base_addr] += remaining_memory;
 last_chunk_space_used_on_bundles[bundle_map[index]] = remaining_memory;
@@ -1303,14 +1319,17 @@ return;
    // If param_size is not a multiple of align the orignal memory has to copy only the bytes that where originally
    // allocated
    indented_output_stream->Append(R"(  
-static void copy_back_memory_from_banks(unsigned int memory_size, unsigned int index, unsigned int mem_diff, char** bank_pointers, unsigned int* last_bank_used_on_bundles, unsigned int * last_chunk_space_used_on_bundles, unsigned int* space_used_on_banks_by_bundles)
+static void copy_back_memory_from_banks(unsigned int memory_size, unsigned int index, unsigned int mem_diff, char** bank_pointers, unsigned int* last_bank_used_on_bundles, unsigned int * last_chunk_space_used_on_bundles, unsigned int* last_bank_selector_on_bundles, unsigned int* space_used_on_banks_by_bundles)
 {
 unsigned int* target_bundle = bi[bundle_map[index]].banks;
 unsigned int bundle_size = bi[bundle_map[index]].size;
-unsigned int first_bank = target_bundle[0];
+unsigned int effective_bank_count = 1;
+while(effective_bank_count < bundle_size)
+effective_bank_count <<= 1;
 unsigned int remaining_memory = memory_size;
 unsigned int memory_copied = 0;
-unsigned int bank_base_addr_position = bundle_map[index] * WR_BANK_NUMBER + last_bank_used_on_bundles[bundle_map[index]] + first_bank;
+unsigned int valid_memory_size = memory_size - mem_diff;
+unsigned int bank_base_addr_position = bundle_map[index] * WR_BANK_NUMBER + target_bundle[last_bank_selector_on_bundles[bundle_map[index]] % bundle_size];
 if(WR_CHUNK_SIZE - last_chunk_space_used_on_bundles[bundle_map[index]] >  memory_size)
 {
 last_chunk_space_used_on_bundles[bundle_map[index]] += memory_size;
@@ -1325,7 +1344,8 @@ unsigned int memory_to_copy = (WR_CHUNK_SIZE - last_chunk_space_used_on_bundles[
 memcpy(bank_map[index].external_addr, bank_pointers[bank_base_addr_position] + space_used_on_banks_by_bundles[bank_base_addr_position], memory_to_copy); 
 info("Copied back %u bytes from bank pointer " PTR_FORMAT " to pointer parameter " PTR_FORMAT "\n", memory_to_copy, (ptr_t)bank_pointers[bank_base_addr_position] + space_used_on_banks_by_bundles[bank_base_addr_position], (ptr_t)bank_map[index].external_addr);
 space_used_on_banks_by_bundles[bank_base_addr_position] += (WR_CHUNK_SIZE - last_chunk_space_used_on_bundles[bundle_map[index]]);
-last_bank_used_on_bundles[bundle_map[index]] = (last_bank_used_on_bundles[bundle_map[index]] + 1) % bundle_size; 
+last_bank_selector_on_bundles[bundle_map[index]] = (last_bank_selector_on_bundles[bundle_map[index]] + 1) % effective_bank_count;
+last_bank_used_on_bundles[bundle_map[index]] = last_bank_selector_on_bundles[bundle_map[index]] % bundle_size;
 memory_copied += (WR_CHUNK_SIZE - last_chunk_space_used_on_bundles[bundle_map[index]]);
 remaining_memory = remaining_memory - (WR_CHUNK_SIZE - last_chunk_space_used_on_bundles[bundle_map[index]]);
 last_chunk_space_used_on_bundles[bundle_map[index]] = 0;
@@ -1335,30 +1355,35 @@ if(remaining_memory >= WR_CHUNK_SIZE)
 unsigned int memory_chunk_number = remaining_memory / WR_CHUNK_SIZE;
 for(unsigned int i = 0; i < memory_chunk_number; i++)
 {
-unsigned int memory_to_copy = WR_CHUNK_SIZE > (memory_size - mem_diff - memory_copied) ? ((memory_size - mem_diff - memory_copied) > 0 ? (memory_size - mem_diff - memory_copied) : 0) : WR_CHUNK_SIZE;
-unsigned int current_bank_base_addr = bundle_map[index] * WR_BANK_NUMBER + last_bank_used_on_bundles[bundle_map[index]] +first_bank;  
-memcpy(bank_map[index].external_addr + memory_copied, bank_pointers[current_bank_base_addr] + space_used_on_banks_by_bundles[current_bank_base_addr],  memory_to_copy);
+unsigned int bytes_left_to_copy = memory_copied < valid_memory_size ? valid_memory_size - memory_copied : 0;
+unsigned int memory_to_copy = bytes_left_to_copy < WR_CHUNK_SIZE ? bytes_left_to_copy : WR_CHUNK_SIZE;
+unsigned int current_bank_base_addr = bundle_map[index] * WR_BANK_NUMBER + target_bundle[last_bank_selector_on_bundles[bundle_map[index]] % bundle_size];
+if(memory_to_copy > 0)
+memcpy(bank_map[index].external_addr + memory_copied, bank_pointers[current_bank_base_addr] + space_used_on_banks_by_bundles[current_bank_base_addr], memory_to_copy);
 info("Copied back %u bytes from bank pointer " PTR_FORMAT " to pointer parameter " PTR_FORMAT "\n", memory_to_copy, (ptr_t)bank_pointers[current_bank_base_addr] + space_used_on_banks_by_bundles[current_bank_base_addr], (ptr_t)bank_map[index].external_addr + memory_copied);
 space_used_on_banks_by_bundles[current_bank_base_addr] += WR_CHUNK_SIZE;
-last_bank_used_on_bundles[bundle_map[index]] = (last_bank_used_on_bundles[bundle_map[index]] + 1) % bundle_size;
+last_bank_selector_on_bundles[bundle_map[index]] = (last_bank_selector_on_bundles[bundle_map[index]] + 1) % effective_bank_count;
+last_bank_used_on_bundles[bundle_map[index]] = last_bank_selector_on_bundles[bundle_map[index]] % bundle_size;
 memory_copied += WR_CHUNK_SIZE;
 }
 remaining_memory = remaining_memory % WR_CHUNK_SIZE;
 }
 if(remaining_memory > 0)
 {
-unsigned int  current_bank_base_addr = bundle_map[index] * WR_BANK_NUMBER + (last_bank_used_on_bundles[bundle_map[index]] % bundle_size) +first_bank;  
-unsigned int memory_to_copy = remaining_memory > (memory_size - mem_diff - memory_copied) ? ((memory_size - mem_diff - memory_copied) > 0 ? (memory_size - mem_diff - memory_copied) : 0) : remaining_memory;   
+unsigned int  current_bank_base_addr = bundle_map[index] * WR_BANK_NUMBER + target_bundle[last_bank_selector_on_bundles[bundle_map[index]] % bundle_size];
+unsigned int bytes_left_to_copy = memory_copied < valid_memory_size ? valid_memory_size - memory_copied : 0;
+unsigned int memory_to_copy = bytes_left_to_copy < remaining_memory ? bytes_left_to_copy : remaining_memory;
+if(memory_to_copy > 0)
 memcpy(bank_map[index].external_addr + memory_copied, bank_pointers[current_bank_base_addr] + space_used_on_banks_by_bundles[current_bank_base_addr], memory_to_copy);
 info("Copied back %u bytes from bank pointer " PTR_FORMAT " to pointer parameter " PTR_FORMAT "\n", memory_to_copy, (ptr_t)bank_pointers[current_bank_base_addr] + space_used_on_banks_by_bundles[current_bank_base_addr], (ptr_t)bank_map[index].external_addr + memory_copied);
 space_used_on_banks_by_bundles[current_bank_base_addr] += remaining_memory;
 last_chunk_space_used_on_bundles[bundle_map[index]] = remaining_memory;
 }
 return;
-}   
+}
 )");
    indented_output_stream->Append(R"(
-static void get_bank_map_internal_addr(char* ext_addr, ptr_t* int_addr) 
+static void get_bank_map_internal_addr(char* ext_addr, ptr_t* int_addr)
 {
 for(int i = 0; i < WR_BANK_OBJ_NUMBER; i++)
 {
@@ -1471,8 +1496,8 @@ memory_offest = memmap_init[i].addrmap - base_addr;
 }
 else
 {
-memmap_init[i].addr = malloc(memmap_init[i].addrmap - memmap_init[i-1].addrmap + memmap_init[i].size);  
-memory_offest = memmap_init[i].addrmap - memmap_init[i-1].addrmap; 
+memmap_init[i].addr = malloc(memmap_init[i].addrmap - memmap_init[i-1].addrmap + memmap_init[i].size);
+memory_offest = memmap_init[i].addrmap - memmap_init[i-1].addrmap;
 }
 }
 bank_map[i].external_addr = (char*)memmap_init[i].addr;
@@ -1542,7 +1567,7 @@ else
 memory_size = bank_map[i].size;
 memory_size = memory_size + (args[i - WR_BANK_MEM_VAR_NUMBER].align - 1) - ((memory_size - 1) % args[i - WR_BANK_MEM_VAR_NUMBER].align);
 }
-allocate_on_bank_memory(memory_size, i, bank_pointers, last_bank_used_on_bundles, last_chunk_space_used_on_bundles, space_used_on_banks_by_bundles, banked_args_map, base_addr);
+allocate_on_bank_memory(memory_size, i, bank_pointers, last_bank_used_on_bundles, last_chunk_space_used_on_bundles, last_bank_selector_on_bundles, space_used_on_banks_by_bundles, banked_args_map, base_addr);
 }
 }
 )");
@@ -1583,7 +1608,7 @@ memory_size = bank_map[i].size;
 aligned_memory = memory_size + (args[i - WR_BANK_MEM_VAR_NUMBER].align - 1) - ((memory_size - 1) % args[i - WR_BANK_MEM_VAR_NUMBER].align);
 }
 info("Coping back %u bytes for parameter %u\n", memory_size, i); 
-copy_back_memory_from_banks(aligned_memory, i, aligned_memory - memory_size, bank_pointers, last_bank_used_on_bundles, last_chunk_space_used_on_bundles, space_used_on_banks_by_bundles);
+copy_back_memory_from_banks(aligned_memory, i, aligned_memory - memory_size, bank_pointers, last_bank_used_on_bundles, last_chunk_space_used_on_bundles, last_bank_selector_on_bundles, space_used_on_banks_by_bundles);
 }
 for(unsigned int j = 0; j < WR_BUNDLE_NUMBER; j++)
 {
