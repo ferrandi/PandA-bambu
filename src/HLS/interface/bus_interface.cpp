@@ -541,7 +541,7 @@ void bus_interface::create_noc_memory_mapping_unit(const structural_objectRef no
                            [](const std::string& str) { return std::stoul(str); });
             const auto bundle_bank_number = static_cast<unsigned int>(bank_identifier.size());
             const auto bundle_bank_bitsize = bundle_bank_number == 1 ? 0U : ceil_log2(bundle_bank_number);
-            const auto bundle_bank_number_effected = pow(2, bundle_bank_bitsize);
+            const auto bundle_bank_number_effected = 1U << bundle_bank_bitsize;
 
             if(bundle_bank_number == 1)
             {
@@ -590,7 +590,7 @@ void bus_interface::create_noc_memory_mapping_unit(const structural_objectRef no
                    noc_mapping_unit_module->find_member("in1", port_vector_o_K, noc_mapping_unit_module);
                const auto inner_level_noc_mapping_unit_in_port_o =
                    GetPointer<port_o>(inner_level_noc_mapping_unit_in_port);
-               inner_level_noc_mapping_unit_in_port_o->add_n_ports(bundle_bank_number,
+               inner_level_noc_mapping_unit_in_port_o->add_n_ports(bundle_bank_number_effected,
                                                                    inner_level_noc_mapping_unit_in_port);
                port_o::resize_std_port(bi.noc_id_size, 0U, 0, inner_level_noc_mapping_unit_in_port);
 
@@ -609,6 +609,7 @@ void bus_interface::create_noc_memory_mapping_unit(const structural_objectRef no
                 HLS->HLS_D->get_technology_manager());
             noc_addr_adapter_module->SetParameter("BANK_START", STR(bi.bank_index + bundle_bank_bitsize));
             noc_addr_adapter_module->SetParameter("BANK_END", STR(bi.bank_index));
+            noc_addr_adapter_module->SetParameter("BANK_COUNT", STR(bundle_bank_number));
             noc_addr_adapter_module->SetParameter("BUNDLE_START", STR(bundle_bit));
             noc_addr_adapter_module->SetParameter("BUNDLE_END",
                                                   STR(bundle_bit - (bi.bank_index_bits_used - bundle_bank_bitsize)));

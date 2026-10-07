@@ -5,14 +5,13 @@ BATCH_ARGS=("--compiler=I386_CLANG13" "-lm" "-fopenmp" "--generate-interface=INF
 OUT_SUFFIX="banked_allocation"
 
 python3 $script_dir/../../../etc/scripts/mantis.py --tool=bambu \
-   --args="--configuration-name=a0_b0_c1 -DBANK_ALLOCATION=1 ${BATCH_ARGS[*]}" \
-   --args="--configuration-name=a0_b0_c0 -DBANK_ALLOCATION=2 ${BATCH_ARGS[*]}" \
-   --args="--configuration-name=a2_b2_c2 -DBANK_ALLOCATION=3 ${BATCH_ARGS[*]}" \
-   --args="--configuration-name=a0/3_b0/3_c0/3 -DBANK_ALLOCATION=4 ${BATCH_ARGS[*]}" \
-   --args="--configuration-name=3000_byte -DBANK_ALLOCATION=5 ${BATCH_ARGS[*]}" \
-   --args="--configuration-name=4096_byte -DBANK_ALLOCATION=6 ${BATCH_ARGS[*]}" \
-   --args="--configuration-name=5000_byte -DBANK_ALLOCATION=7 ${BATCH_ARGS[*]}" \
-   -lbanked_list \
+   --args="--configuration-name=all_banks23 -DBANK_ALLOCATION=1 ${BATCH_ARGS[*]}" \
+   --args="--configuration-name=a03_b0_c03 -DBANK_ALLOCATION=2 ${BATCH_ARGS[*]}" \
+   --args="--configuration-name=a2_b0_c0 -DBANK_ALLOCATION=3 ${BATCH_ARGS[*]}" \
+   --args="--configuration-name=a0_b2_c3 -DBANK_ALLOCATION=4 ${BATCH_ARGS[*]}" \
+   --args="--configuration-name=all_3bank_allocations -DBANK_ALLOCATION=5 ${BATCH_ARGS[*]}" \
+   --args="--configuration-name=a_default_bc_5bank -DBANK_ALLOCATION=6 -DBANK_NUMBER=8 ${BATCH_ARGS[*]}" \
+   -lbanked_list_allocation \
    -o "out_${OUT_SUFFIX}" -b "$script_dir" \
    "$@"
 exit $?

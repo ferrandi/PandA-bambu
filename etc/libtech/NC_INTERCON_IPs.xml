@@ -828,15 +828,38 @@ endgenerate"/>
           <parameter name="BUNDLE_END">0</parameter>
           <parameter name="BANK_START">0</parameter>
           <parameter name="BANK_END">0</parameter>
+          <parameter name="BANK_COUNT">1</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="noc_addr_adapter BUNDLE_START BUNDLE_END BANK_START BANK_END in1 out1" VERILOG_PROVIDED="
-generate 
-  if(BUNDLE_START == BUNDLE_END)
+          <NP_functionality LIBRARY="noc_addr_adapter BUNDLE_START BUNDLE_END BANK_START BANK_END BANK_COUNT in1 out1" VERILOG_PROVIDED="
+generate
+  if(BANK_COUNT &gt; 1 &amp;&amp; BANK_COUNT != (1 &lt;&lt; (BANK_START - BANK_END)))
+  begin
+    localparam EXTRA_SELECTORS = (1 &lt;&lt; (BANK_START - BANK_END)) - BANK_COUNT;
+    wire [BANK_START-BANK_END-1:0] bank_selector = in1[BANK_START-1:BANK_END];
+    // Extra selectors repeat the first banks, so each repeated bank needs two local slots per group.
+    wire repeated_bank = (bank_selector &lt; EXTRA_SELECTORS) || (bank_selector &gt;= BANK_COUNT);
+    wire repeated_slot = bank_selector &gt;= BANK_COUNT;
+    if(BUNDLE_START == BUNDLE_END)
+    begin
+      wire [BUNDLE_START-BANK_START-1:0] group_index = in1[BUNDLE_START-1:BANK_START];
+      wire [BUNDLE_START-BANK_START-1:0] local_group =
+          repeated_bank ? ((group_index &lt;&lt; 1) + repeated_slot) : group_index;
+      assign out1 = {in1[BITSIZE_in1-1:BUNDLE_START],local_group,in1[BANK_END-1:0]};
+    end
+    else
+    begin
+      wire [BUNDLE_END-BANK_START-1:0] group_index = in1[BUNDLE_END-1:BANK_START];
+      wire [BUNDLE_END-BANK_START-1:0] local_group =
+          repeated_bank ? ((group_index &lt;&lt; 1) + repeated_slot) : group_index;
+      assign out1 = {in1[BITSIZE_in1-1:BUNDLE_START],local_group,in1[BANK_END-1:0]};
+    end
+  end
+  else if(BUNDLE_START == BUNDLE_END)
   begin
     assign out1 = {in1[BITSIZE_in1-1:BANK_START],in1[BANK_END-1:0]};
   end

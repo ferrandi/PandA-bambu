@@ -64,33 +64,29 @@
 #pragma HLS interface port = b mode = bus
 #pragma HLS interface port = c mode = bus
 #elif BANK_ALLOCATION == 1
-#pragma HLS interface port = a mode = bus bank_allocation = 0, 1
-#pragma HLS interface port = b mode = bus bank_allocation = 0, 1
-#pragma HLS interface port = c mode = bus bank_allocation = 1
-#elif BANK_ALLOCATION == 2
-#pragma HLS interface port = a mode = bus bank_allocation = 0
-#pragma HLS interface port = b mode = bus bank_allocation = 0
-#pragma HLS interface port = c mode = bus bank_allocation = 0
-#elif BANK_ALLOCATION == 3
 #pragma HLS interface port = a mode = bus bank_allocation = 2, 3
 #pragma HLS interface port = b mode = bus bank_allocation = 2, 3
 #pragma HLS interface port = c mode = bus bank_allocation = 2, 3
-#elif BANK_ALLOCATION == 4
+#elif BANK_ALLOCATION == 2
 #pragma HLS interface port = a mode = bus bank_allocation = 0, 1, 2, 3
 #pragma HLS interface port = b mode = bus bank_allocation = 0
 #pragma HLS interface port = c mode = bus bank_allocation = 0, 1, 2, 3
-#elif BANK_ALLOCATION == 5
+#elif BANK_ALLOCATION == 3
 #pragma HLS interface port = a mode = bus bank_allocation = 2
 #pragma HLS interface port = b mode = bus bank_allocation = 0
 #pragma HLS interface port = c mode = bus bank_allocation = 0
-#elif BANK_ALLOCATION == 6
-#pragma HLS interface port = a mode = bus bank_allocation = 2
-#pragma HLS interface port = b mode = bus bank_allocation = 1, 2
-#pragma HLS interface port = c mode = bus bank_allocation = 0
-#elif BANK_ALLOCATION == 7
+#elif BANK_ALLOCATION == 4
 #pragma HLS interface port = a mode = bus bank_allocation = 0
 #pragma HLS interface port = b mode = bus bank_allocation = 2
 #pragma HLS interface port = c mode = bus bank_allocation = 3
+#elif BANK_ALLOCATION == 5
+#pragma HLS interface port = a mode = bus bank_allocation = 0, 1, 2
+#pragma HLS interface port = b mode = bus bank_allocation = 0, 1, 2
+#pragma HLS interface port = c mode = bus bank_allocation = 0, 1, 2
+#elif BANK_ALLOCATION == 6
+#pragma HLS interface port = a mode = bus
+#pragma HLS interface port = b mode = bus bank_allocation = 0, 1, 2, 3, 4
+#pragma HLS interface port = c mode = bus bank_allocation = 0, 1, 2, 3, 4
 #endif
 void __attribute__((noinline)) vector_add(float a[N], float b[N], float c[N])
 {
