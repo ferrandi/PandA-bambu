@@ -291,8 +291,23 @@ function(_panda_add_clang_plugins ver)
                ${_clang_cxxflags} ${_plugin_std_override} ${_clang_defs})
             target_link_options(${_ac_channel_control}_clang${ver}_test PRIVATE ${_clang_ldflags})
             target_link_libraries(${_ac_channel_control}_clang${ver}_test PRIVATE ${_channel_seam_test_libs})
+            set(_ac_channel_test_args "")
+            if(_ac_channel_control STREQUAL "ac_channel_abi_recognition")
+               set(_abi_fixture "${CMAKE_CURRENT_BINARY_DIR}/ac_channel_abi_fixture_clang${ver}.ll")
+               set(_ac_types_include "${PROJECT_SOURCE_DIR}/etc/ac_types/include")
+               add_custom_command(OUTPUT "${_abi_fixture}"
+                  COMMAND "${PANDA_CLANG${ver}_EXE}" -x c++ -std=c++14 -O1 -S -emit-llvm
+                     -I "${_ac_types_include}" "${_src_base}/test_ac_channel_abi_fixture.cpp" -o "${_abi_fixture}"
+                  DEPENDS "${_src_base}/test_ac_channel_abi_fixture.cpp"
+                     "${_ac_types_include}/ac_channel.h" "${_ac_types_include}/ac_int.h"
+                     "${_ac_types_include}/ac_fixed.h" "${_ac_types_include}/ac_compat.h"
+                  VERBATIM)
+               add_custom_target(ac_channel_abi_fixture_clang${ver} DEPENDS "${_abi_fixture}")
+               add_dependencies(${_ac_channel_control}_clang${ver}_test ac_channel_abi_fixture_clang${ver})
+               list(APPEND _ac_channel_test_args "${_abi_fixture}")
+            endif()
             add_test(NAME ${_ac_channel_control}_clang${ver}
-               COMMAND ${_ac_channel_control}_clang${ver}_test)
+               COMMAND ${_ac_channel_control}_clang${ver}_test ${_ac_channel_test_args})
             set_tests_properties(${_ac_channel_control}_clang${ver} PROPERTIES
                LABELS "frontend;ac_channel;clang-${ver}")
          endforeach()
