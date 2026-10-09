@@ -1717,8 +1717,24 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
    const auto curr_bb = sl->list_of_bloc.at(gn->bb_index);
    const auto ret_call =
        stmt->get_kind() == assign_stmt_K && GetPointerS<assign_stmt>(stmt)->op1->get_kind() == call_node_K;
-   const auto ref_call = stmt->get_kind() == call_stmt_K;
-   if(ret_call || ref_call)
+   const auto call_statement = stmt->get_kind() == call_stmt_K;
+   // A call statement can also discard a scalar return. Only a void ABI return
+   // has the extra leading pointer used for sret lowering.
+   const auto discarded_return_type = [&]() -> ir_nodeConstRef {
+      if(!call_statement)
+      {
+         return {};
+      }
+      auto callee = GetPointerS<const call_stmt>(stmt)->fn;
+      if(callee->get_kind() == addr_node_K)
+      {
+         callee = GetPointerS<const addr_node>(callee)->op;
+      }
+      return ir_helper::GetFunctionReturnType(callee);
+   }();
+   const auto discarded_return = discarded_return_type != nullptr;
+   const auto ref_call = call_statement && !discarded_return;
+   if(ret_call || call_statement)
    {
       const auto is_peek_call = [&]() {
          ir_nodeRef fnode;
@@ -1741,21 +1757,30 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
       ir_nodeRef stmt_op0;
       ir_nodeRef data_ptr;
       bool oldAsyncSignature;
-      if(ret_call)
+      if(ret_call || discarded_return)
       {
-         const auto ga = GetPointerS<const assign_stmt>(stmt);
-         stmt_op0 = ga->op0;
-         const auto ce = GetPointerS<const call_node>(ga->op1);
-         valid_var = ce->args.size() >= 2;
-         oldAsyncSignature = ce->args.size() == 3;
-         data_type = ir_helper::CGetType(ga->op0);
-         if(valid_var)
+         std::vector<ir_nodeRef> call_args;
+         if(ret_call)
          {
-            valid_ptr = ce->args.at(1);
+            const auto ga = GetPointerS<const assign_stmt>(stmt);
+            stmt_op0 = ga->op0;
+            call_args = GetPointerS<const call_node>(ga->op1)->args;
+            data_type = ir_helper::CGetType(ga->op0);
          }
          else
          {
-            THROW_ASSERT(ce->args.size() == 1, "unexpected condition");
+            call_args = GetPointerS<const call_stmt>(stmt)->args;
+            data_type = discarded_return_type;
+         }
+         valid_var = call_args.size() >= 2;
+         oldAsyncSignature = call_args.size() == 3;
+         if(valid_var)
+         {
+            valid_ptr = call_args.at(1);
+         }
+         else
+         {
+            THROW_ASSERT(call_args.size() == 1, "unexpected condition");
          }
       }
       else
@@ -1782,6 +1807,9 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
       THROW_ASSERT(!gn->memdef && !gn->memuse, "");
 
       const auto data_size = ir_helper::Size(interface_datatype);
+      // The modern non-blocking ABI returns the valid flag above the channel data,
+      // including when the compiler lowers the return value to an sret pointer.
+      const auto packed_return_size = data_size + (valid_var && !oldAsyncSignature ? 1 : 0);
       const auto sel_type = ir_man->GetBooleanType();
       const auto ret_type = ir_man->GetCustomIntegerType(data_size + (valid_var ? 1 : 0), true);
       const auto out_ptr_type = ir_man->GetPointerType(interface_datatype);
@@ -1844,8 +1872,8 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
             unsigned long long bit_offset = 0;
             const auto load_size = ir_helper::Size(user_ga->op0);
             if(!ordered_instructions.dominates(stmt, load_stmt) ||
-               !getConstantPointerBitOffset(load_ptr, data_ptr_base, bit_offset) || bit_offset > data_size ||
-               load_size > (data_size - bit_offset))
+               !getConstantPointerBitOffset(load_ptr, data_ptr_base, bit_offset) || bit_offset > packed_return_size ||
+               load_size > (packed_return_size - bit_offset))
             {
                res.first = false;
                return res;
@@ -1853,7 +1881,7 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
             load_bit_offsets.emplace(load_stmt->index, bit_offset);
             loaded_ranges.emplace_back(bit_offset, bit_offset + load_size);
          }
-         if(!hasRegularAggregateElementLayout(loaded_ranges, data_size))
+         if(!hasRegularAggregateElementLayout(loaded_ranges, packed_return_size))
          {
             res.first = false;
          }
@@ -1868,7 +1896,7 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
       std::pair<bool, std::vector<ir_nodeRef>> enableOpt;
       if(!oldAsyncSignature)
       {
-         if(!ret_call)
+         if(ref_call)
          {
             enableOpt = enableOptFun();
          }
@@ -2027,6 +2055,20 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
             }
             curr_bb->RemoveStmt(stmt, AppM);
          }
+         else if(ref_call && valid_var && !oldAsyncSignature)
+         {
+            // If the sret loads cannot be replaced, preserve the whole packed
+            // return in memory. The bool reference is ignored by this ABI.
+            THROW_ASSERT(ir_helper::Size(data_type) == packed_return_size, "Packed channel return size mismatch");
+            const auto data_cast = ir_man->CreateNopExpr(retval, data_type, nullptr, nullptr, fd->index);
+            curr_bb->PushBefore(data_cast, stmt, AppM);
+            const auto data_ref =
+                ir_man->create_unary_operation(data_type, data_ptr, BUILTIN_LOCINFO, mem_access_node_K);
+            const auto ga_store = ir_man->create_assign_stmt(data_ref, GetPointerS<const assign_stmt>(data_cast)->op0,
+                                                             fd->index, BUILTIN_LOCINFO);
+            curr_bb->Replace(stmt, ga_store, true, AppM);
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- PACKED STORE: " + ga_store->ToString());
+         }
          else
          {
             auto ga_mask = ir_man->CreateNopExpr(retval, interface_datatype, nullptr, nullptr, fd->index);
@@ -2053,7 +2095,7 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---   FIX: " + ga_mask->ToString());
                last_stmt = ga_mask;
             }
-            else
+            else if(ref_call)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Not optimized");
                const auto data_ptr_type = ir_helper::CGetType(data_ptr);
@@ -2113,7 +2155,7 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
                const auto ga_valid_store =
                    ir_man->create_assign_stmt(valid_memref, valid_ref, fd->index, BUILTIN_LOCINFO);
                curr_bb->Replace(stmt, ga_valid_store, true, AppM);
-               if(!ret_call)
+               if(ref_call)
                {
                   auto ssaDef = GetPointerS<assign_stmt>(last_stmt)->vdef;
                   if(GetPointerS<node_stmt>(ga_valid_store)->AddVuse(ssaDef))
@@ -2123,7 +2165,7 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- VALID STORE: " + ga_valid_store->ToString());
             }
-            else if(ret_call)
+            else if(ret_call || discarded_return)
             {
                curr_bb->RemoveStmt(stmt, AppM);
             }
