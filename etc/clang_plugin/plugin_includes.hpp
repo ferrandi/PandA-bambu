@@ -41,6 +41,12 @@
 #include "llvm/IR/ModuleSlotTracker.h"
 #include "llvm/Support/raw_ostream.h"
 
+#if PANDA_LLVM_CLANG_MAJOR >= 16
+#include "llvm/Demangle/Demangle.h"
+#else
+#include <cxxabi.h>
+#endif
+
 #if PANDA_LLVM_CLANG_MAJOR > 4
 #include "llvm/Analysis/MemorySSA.h"
 #else
@@ -52,9 +58,11 @@
 
 #include "debug_print.hpp"
 
+#include <cstdlib>
 #include <deque>
 #include <list>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <unordered_set>
@@ -752,7 +760,7 @@ namespace bambu_ac_channel_primitives
    /// fixed tail identifies the member and its ABI signature. Matching the whole
    /// envelope, rather than a substring, is what keeps a member merely mentioned in
    /// a wrapper's template arguments from being taken as the wrapper itself. This is
-   /// also why no demangling is needed, which LLVM 4--9 cannot do partially.
+   /// the fast path for signatures without parameter-type substitutions.
    inline bool isMangledPrimitiveName(llvm::StringRef name, llvm::StringRef member, llvm::StringRef tail)
    {
       static const char owner[] = "_ZN10ac_channelI";
@@ -765,6 +773,109 @@ namespace bambu_ac_channel_primitives
       return name.find(member, owner_len) != llvm::StringRef::npos;
    }
 
+   /// Resolve substitutions in the valid/dummy parameters. Their indices depend on
+   /// the payload; even the first bool& may already be in the substitution table.
+   /// Keep the const T_ return envelope and check the resolved argument types, so
+   /// accepting an arbitrary S<index>_ cannot turn a different signature into a seam.
+   inline Op classifyNonBlockingWithSubstitutions(llvm::StringRef mangled)
+   {
+      if(!isMangledPrimitiveName(mangled, "E20_read_bambu_internalI", "") &&
+         !isMangledPrimitiveName(mangled, "E20_peek_bambu_internalI", ""))
+      {
+         return Op::None;
+      }
+      const llvm::StringRef return_tail = "EEKT_";
+      const auto return_pos = mangled.rfind(return_tail);
+      if(return_pos == llvm::StringRef::npos)
+      {
+         return Op::None;
+      }
+      auto args = mangled.substr(return_pos + return_tail.size());
+      unsigned count = 0;
+      while(!args.empty() && count < 2)
+      {
+         if(args.substr(0, 2) == "Rb")
+         {
+            args = args.substr(2);
+         }
+         else if(args.front() == 'S')
+         {
+            std::size_t end = 1;
+            while(end < args.size() &&
+                  ((args[end] >= '0' && args[end] <= '9') || (args[end] >= 'A' && args[end] <= 'Z')))
+            {
+               ++end;
+            }
+            if(end == args.size() || args[end] != '_')
+            {
+               return Op::None;
+            }
+            args = args.substr(end + 1);
+         }
+         else
+         {
+            return Op::None;
+         }
+         ++count;
+      }
+      if(!args.empty() || count == 0)
+      {
+         return Op::None;
+      }
+
+#if PANDA_LLVM_CLANG_MAJOR >= 16
+      // The matching LLVM demangler knows _BitInt, unlike older host C++ runtimes.
+      const std::string demangled = llvm::demangle(mangled.str());
+#else
+      int status = 0;
+      const std::unique_ptr<char, void (*)(void*)> buffer(
+          abi::__cxa_demangle(mangled.str().c_str(), nullptr, nullptr, &status), std::free);
+      if(status != 0 || !buffer)
+      {
+         return Op::None;
+      }
+      const std::string demangled(buffer.get());
+#endif
+      llvm::StringRef name(demangled);
+      const llvm::StringRef params = count == 1 ? "(bool&)" : "(bool&, bool&)";
+      if(name.size() < params.size() || name.substr(name.size() - params.size()) != params)
+      {
+         return Op::None;
+      }
+      name = name.substr(0, name.size() - params.size());
+      if(name.empty() || name.back() != '>')
+      {
+         return Op::None;
+      }
+      // Skip the member template arguments from the end. Check the actual member,
+      // not a seam name occurring inside a wrapper's template arguments.
+      unsigned depth = 0;
+      for(std::size_t pos = name.size(); pos != 0;)
+      {
+         const char c = name[--pos];
+         if(c == '>')
+         {
+            ++depth;
+         }
+         else if(c == '<' && --depth == 0)
+         {
+            name = name.substr(0, pos);
+            const llvm::StringRef read = ">::_read_bambu_internal";
+            const llvm::StringRef peek = ">::_peek_bambu_internal";
+            if(name.size() >= read.size() && name.substr(name.size() - read.size()) == read)
+            {
+               return Op::Read;
+            }
+            if(name.size() >= peek.size() && name.substr(name.size() - peek.size()) == peek)
+            {
+               return Op::Peek;
+            }
+            break;
+         }
+      }
+      return Op::None;
+   }
+
    /// Classify a mangled function name. The only recognized symbols are the three
    /// out-of-line members of the global ac_channel template, the ones declared in its
    /// "Bambu ABI seam" block. The check deliberately matches their complete Itanium
@@ -773,8 +884,7 @@ namespace bambu_ac_channel_primitives
    inline Op classify(llvm::StringRef mangled)
    {
       if(isMangledPrimitiveName(mangled, "E20_read_bambu_internalI", "EEKT_v") ||
-         isMangledPrimitiveName(mangled, "E20_read_bambu_internalI", "EEKT_Rb") ||
-         isMangledPrimitiveName(mangled, "E20_read_bambu_internalI", "EEKT_RbRb"))
+         isMangledPrimitiveName(mangled, "E20_read_bambu_internalI", "EEKT_Rb"))
       {
          return Op::Read;
       }
@@ -783,12 +893,11 @@ namespace bambu_ac_channel_primitives
          return Op::Write;
       }
       if(isMangledPrimitiveName(mangled, "E20_peek_bambu_internalI", "EEKT_v") ||
-         isMangledPrimitiveName(mangled, "E20_peek_bambu_internalI", "EEKT_Rb") ||
-         isMangledPrimitiveName(mangled, "E20_peek_bambu_internalI", "EEKT_RbRb"))
+         isMangledPrimitiveName(mangled, "E20_peek_bambu_internalI", "EEKT_Rb"))
       {
          return Op::Peek;
       }
-      return Op::None;
+      return classifyNonBlockingWithSubstitutions(mangled);
    }
 
    /// Classify a function as a hardware seam declaration. Only out-of-line declarations
