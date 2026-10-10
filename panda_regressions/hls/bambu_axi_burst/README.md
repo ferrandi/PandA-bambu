@@ -2,11 +2,14 @@
 
 Run the complete suite through `../bambu_axi_burst.sh`. The script runs the
 six Mantis cycle-gated sum cases, the boundary and negative compiler cases,
-offline gate/metadata/export checks, focused compiler profile and fallback
+offline gate/metadata/export/logging checks, focused compiler profile and fallback
 suites, the configure-to-read virtual-SSA check, the standalone Verilator
 burst-engine suite, and a generated O=1/D=256/B=16 kernel plus wrapper-RID
 simulation. The wrapper-RID simulation reuses the RTL generated for the
 kernel test.
+
+The logging checks exercise large binary streams, producer and log-writer errors,
+and inherited simulator logging without relying on the system `tee` implementation.
 
 The entry point intentionally does not run the broader `all` or `burst-type`
 compiler-runner modes: they duplicate Mantis coverage.
