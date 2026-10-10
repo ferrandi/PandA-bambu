@@ -1,4 +1,82 @@
-=========== PANDA 2024.10 ===========
+=========== PANDA 2026.06 ===========
+Eighteenth private release of PandA framework.
+
+- This release comes with a deep refactoring and cleanup of the code and moved to stdcc+ 23.
+
+=========== PANDA 2026.01 ===========
+Seventeenth release of PandA framework.
+
+New features introduced:
+ - New backend pipeline design
+ - Removed support for TASTE backend
+ - Removed support for Xilinx ISE backend
+ - Removed support for OpenMP SIMD
+
+=========== PANDA 2025.07 ===========
+Sixteenth release of PandA framework.
+
+New features introduced:
+- Improved design flow steps dependencies to reduce invalidation
+- Improved mix Verilog/VHDL code generation support
+- Added support for LLVM 18 and LLVM 19 frontend toolchain
+- Added support for OpenMP library (parallel for, reductions, atomic operations)
+- Improved LLVM frontend alias analysis
+- Improved pipelining algorithms for large IR
+- Minor fixes to co-simulation runtime
+- Added C-based fast simulation environment
+- Removed support for FloPoCo
+- Updated LLVM IR dump implementation
+
+=========== PANDA 2024.11 ===========
+Fifteenth release of PandA framework.
+
+New features introduced:
+- New build environment using all built from source libraries and compilers to reduce dependencies
+- Support for self-contained tar distribution generation
+- PandA framework can now run on systems with GLIBC as old as version 2.12
+- Support for compilation database generation (enable use of cppcheck and clang-tidy)
+- Added --output-directory command line option to specify output directory different from CWD
+- Support for device overlay installation at runtime (no source code modification needed)
+- Minor fixes to Eucalyptus and Spider for device characterization
+- Co-simulation memory space check for pointer parameters before simulation starts
+- Improved range analysis with better induction variables range identification
+- Improved overall runtime performance
+- LibBambu is now compiled as a proper frontend-independent static library
+- Optimized floating-point to integer and integer to floating-point operators implementation
+- Fixes on cache components
+- Support for caches on shared memory bus
+- Support for AXI4 protocol on shared memory bus
+- Support for banked memory through NoC interface on dedicated AXI4 interfaces and on shared memory bus
+- Improved pipelined FSM generation
+- Added support for Newlib and Musl libm implementations
+- Drop support for uClibc libm in favor of Newlib libm as default libm for HLS
+- Added fully unrolled SRT4 floating-point division implementation suitable for pipelining
+- Added proper licensing information for distributed binaries, IP libraries, and software libraries
+- Improved multi-file HDL generation to allow proper licensing of output HDL
+- Added support to VCS simulator from Synopsys
+
+=========== PANDA 2024.06 ===========
+Fourteenth release of PandA framework.
+
+New features introduced:
+- Enhanced support for dataflow architecture
+- Support for structs as ac_channel template parameters
+- Improved Bambu HLS design flow manager performance
+- Path agnostic compiler support
+- Proper multilib support for libbambu libraries (64, 32, x32 specific binaries)
+- Support for multi-file components library output
+
+=========== PANDA 2024.04 ===========
+Tirteenth release of PandA framework.
+
+New features introduced:
+- Enhanced functional pipelining and loop pipelining support
+- Support for variable latency operations in pipelined design (stallable pipeline)
+- Enhanced support for dataflow architecture and nested dataflow architecture
+- Enhanced support for dataflow co-simulation
+- Minor fixes
+
+=========== PANDA 2024.03 ===========
 Twelfth public release of PandA framework.
 
 New features introduced:
@@ -10,9 +88,6 @@ New features introduced:
 - Support for DSP fracturing
 - Support for dataflow architecture generation and co-simulation
 - Enhanced AXI4-Master interface support
-- Fixes to AXI cache implementation
-- Improved C/C++ so-simulation testbench and runtime environment
-- Various fixes and improvements to HLS algorithms
 
 =========== PANDA 2023.10 ===========
 Eleventh public release of PandA framework.

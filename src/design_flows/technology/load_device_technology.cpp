@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -38,26 +26,22 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-
-/// Header include
 #include "load_device_technology.hpp"
 
 #include "Parameter.hpp"
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
 #include "generic_device.hpp"
-#include "xml_document.hpp"
-#include "xml_dom_parser.hpp"
+
+#include "config_PANDA_LIB_INSTALLDIR.hpp"
 
 LoadDeviceTechnology::LoadDeviceTechnology(const technology_managerRef _TM, const generic_deviceRef _target,
-                                           const DesignFlowManagerConstRef _design_flow_manager,
+                                           const DesignFlowManager& _design_flow_manager,
                                            const ParameterConstRef _parameters)
     : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY,
                          _parameters)
 {
 }
-
-LoadDeviceTechnology::~LoadDeviceTechnology() = default;
 
 CustomUnorderedSet<TechnologyFlowStep_Type>
 LoadDeviceTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -92,41 +76,18 @@ LoadDeviceTechnology::ComputeTechnologyRelationships(const DesignFlowStep::Relat
 
 DesignFlowStep_Status LoadDeviceTechnology::Exec()
 {
-   // if configuration file is given, it is parsed to check for technology information
-   if(parameters->isOption(OPT_xml_input_configuration))
-   {
-      auto fn = parameters->getOption<std::string>(OPT_xml_input_configuration);
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                    "checking for technology information in the configuration file...");
-      try
-      {
-         XMLDomParser parser(fn);
-         parser.Exec();
-         if(parser)
-         {
-            target->xload(parser.get_document()->get_root_node());
-         }
-      }
-      catch(const char* msg)
-      {
-         THROW_ERROR("Error during technology file parsing: " + std::string(msg));
-      }
-      catch(const std::string& msg)
-      {
-         THROW_ERROR("Error during technology file parsing: " + msg);
-      }
-      catch(const std::exception& ex)
-      {
-         THROW_ERROR("Error during technology file parsing: " + std::string(ex.what()));
-      }
-      catch(...)
-      {
-         THROW_ERROR("Error during technology file parsing");
-      }
-      PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
-                    " ==== XML configuration file parsed for technology information ====");
-   }
    /// load specific device information
+
+   if(output_level >= OUTPUT_LEVEL_MINIMUM)
+   {
+      std::cout << "Available devices:\n";
+      for(const auto& device_data :
+          std::filesystem::directory_iterator(relocate_install_path(PANDA_LIB_INSTALLDIR "/libtech/targets")))
+      {
+         std::cout << " - " + device_data.path().stem().string() << "\n";
+      }
+   }
+
    target->load_devices();
    return DesignFlowStep_Status::SUCCESS;
 }

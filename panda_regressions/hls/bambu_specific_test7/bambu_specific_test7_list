@@ -1,0 +1,23 @@
+test_medium_cyclic_power_2.c -DUNROLL_FACTOR=2 --benchmark-name=test_medium_cyclic_power_2_unroll_2 --top-fname=top_fun --generate-tb=BENCHMARKS_ROOT/testbench_medium_partitions.c
+test_medium_cyclic_power_2.c -DUNROLL_FACTOR=8 --benchmark-name=test_medium_cyclic_power_2_unroll_8 --top-fname=top_fun --generate-tb=BENCHMARKS_ROOT/testbench_medium_partitions.c
+
+test_medium_block_power_2.c -DUNROLL_FACTOR=2 --benchmark-name=test_medium_block_power_2_unroll_2 --top-fname=top_fun --generate-tb=BENCHMARKS_ROOT/testbench_medium_partitions.c
+
+test_medium_constant_cyclic_power_2.c -DUNROLL_FACTOR=2 --benchmark-name=test_medium_constant_cyclic_power_2_unroll_2 --top-fname=top_fun --generate-tb=BENCHMARKS_ROOT/testbench_medium_constant_partitions.c
+test_medium_constant_cyclic_power_2.c -DUNROLL_FACTOR=8 --benchmark-name=test_medium_constant_cyclic_power_2_unroll_8 --top-fname=top_fun --generate-tb=BENCHMARKS_ROOT/testbench_medium_constant_partitions.c
+
+test_medium_constant_block_power_2.c -DUNROLL_FACTOR=2 --benchmark-name=test_medium_constant_block_power_2_unroll_2 --top-fname=top_fun --generate-tb=BENCHMARKS_ROOT/testbench_medium_constant_partitions.c
+
+test_small_constant_complete.c --benchmark-name=test_small_constant_complete --top-fname=top_fun --generate-tb=BENCHMARKS_ROOT/testbench_small_constant_partitions.c
+test_medium_constant_complete.c --benchmark-name=test_medium_constant_complete --top-fname=top_fun --generate-tb=BENCHMARKS_ROOT/testbench_medium_constant_partitions.c
+
+test_cyclic_2_only_args.c --benchmark-name=test_cyclic_2_only_args --top-fname=top_fun --generate-tb=BENCHMARKS_ROOT/testbench_small_constant_partitions.c
+test_only_locals_and_globals.c --benchmark-name=test_only_locals_and_globals --top-fname=top_fun --generate-tb=BENCHMARKS_ROOT/testbench_medium_constant_partitions.c
+
+test_complete_interface_none.c --benchmark-name=test_complete_interface_none --top-fname=top_fun --generate-tb=BENCHMARKS_ROOT/testbench_complete_interface.c
+test_complete_interface_ptrdefault.c --benchmark-name=test_complete_interface_ptrdefault --top-fname=top_fun --generate-tb=BENCHMARKS_ROOT/testbench_complete_interface.c
+test_complete_interface_handshake.c --benchmark-name=test_complete_interface_handshake --top-fname=top_fun --generate-tb=BENCHMARKS_ROOT/testbench_complete_interface.c
+test_complete_interface_valid.c --benchmark-name=test_complete_interface_valid --top-fname=top_fun --generate-tb=BENCHMARKS_ROOT/testbench_complete_interface.c
+test_complete_interface_ovalid.c --benchmark-name=test_complete_interface_ovalid --top-fname=top_fun --generate-tb=BENCHMARKS_ROOT/testbench_complete_interface.c
+test_complete_interface_acknowledge.c --benchmark-name=test_complete_interface_acknowledge --top-fname=top_fun --generate-tb=BENCHMARKS_ROOT/testbench_complete_interface.c
+template_inline_pragma.cpp --benchmark-name=template_inline_pragma --top-fname=top_fun --generate-tb=BENCHMARKS_ROOT/testbench_complete_interface.c

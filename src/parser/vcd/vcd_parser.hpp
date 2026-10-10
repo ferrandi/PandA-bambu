@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -37,20 +25,15 @@
 #ifndef VCD_PARSER_HPP
 #define VCD_PARSER_HPP
 
-// include from STL
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "refcount.hpp"
+#include "sig_variation.hpp"
+
 #include <list>
 #include <stack>
 #include <string>
 #include <utility>
-
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-
-// include from parser/vcd/
-#include "sig_variation.hpp"
-
-// include from utility/
-#include "refcount.hpp"
 
 // forward declarations
 CONSTREF_FORWARD_DECL(Parameter);
@@ -87,9 +70,9 @@ class vcd_parser
  public:
    /**
     * constructor
-    * @param [in] params: is the class holding bambu parameters
+    * @param [in] param: is the class holding bambu parameters
     */
-   explicit vcd_parser(const ParameterConstRef& params);
+   explicit vcd_parser(const ParameterConstRef& param);
 
    /**
     * this is the type used to select which signals have to be filtered during

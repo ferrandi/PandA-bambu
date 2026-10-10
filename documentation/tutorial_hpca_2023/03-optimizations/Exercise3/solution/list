@@ -1,5 +1,0 @@
-dfdiv.c --benchmark-name=dfdiv_none --hls-div=none
-dfdiv.c --benchmark-name=dfdiv_nr1 --hls-div=nr1
-dfdiv.c --benchmark-name=dfdiv_nr2 --hls-div=nr2
-dfdiv.c --benchmark-name=dfdiv_NR --hls-div=NR
-dfdiv.c --benchmark-name=dfdiv_as --hls-div=as

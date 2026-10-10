@@ -10,7 +10,7 @@ from collections import OrderedDict
 import xml.etree.ElementTree as ET
 
 parser = argparse.ArgumentParser(
-    description="Aggregate failed test from test_panda.py log", fromfile_prefix_chars="@")
+    description="Aggregate failed test from mantis.py log", fromfile_prefix_chars="@")
 parser.add_argument('-l', "--log", help="The path of log file", required=True)
 parser.add_argument(
     '-o', "--output", help="The output file to fill with aggregated failed tests", default="aggregated_failures")
@@ -60,7 +60,7 @@ if test_required:
             bench_suffix += '_' + compiler.group(compiler.lastindex)
             conf_name += compiler.group(compiler.lastindex)
         else:
-            conf_name += 'GCC49'
+            conf_name += 'CLANG13'
         if re.search(r"-wH", test):
             bench_suffix += '_w'
         if re.search(r"--channels-type=MEM_ACC_NN", test):
@@ -98,8 +98,8 @@ if test_required:
     test_runner = '''#!/bin/bash
 script_dir="$(dirname $(readlink -e $0))"
 out_name="TEST_NAME"
-python ${script_dir}/../etc/scripts/test_panda.py --tool=bambu \\
-    -l${out_name}_list -o output_${out_name} -b$script_dir --name="${out_name}" \\
+python ${script_dir}/../etc/scripts/mantis.py --tool=bambu \\
+    -l${out_name}_list -o output_${out_name} -b$script_dir \\
     --timeout=120m --junitdir=test-report_${out_name} "$@"
 '''
     test_runner = test_runner.replace("TEST_NAME", out_file)

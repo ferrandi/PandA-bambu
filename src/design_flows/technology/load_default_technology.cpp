@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -40,8 +28,7 @@
  */
 #include "load_default_technology.hpp"
 
-#include "config_PANDA_DATA_INSTALLDIR.hpp"
-
+#include "Parameter.hpp"
 #include "custom_set.hpp"
 #include "fileIO.hpp"
 #include "string_manipulation.hpp"
@@ -51,15 +38,15 @@
 
 #include <string>
 
+#include "config_PANDA_LIB_INSTALLDIR.hpp"
+
 LoadDefaultTechnology::LoadDefaultTechnology(const technology_managerRef _TM, const generic_deviceRef _target,
-                                             const DesignFlowManagerConstRef _design_flow_manager,
+                                             const DesignFlowManager& _design_flow_manager,
                                              const ParameterConstRef _parameters)
     : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_DEFAULT_TECHNOLOGY,
                          _parameters)
 {
 }
-
-LoadDefaultTechnology::~LoadDefaultTechnology() = default;
 
 CustomUnorderedSet<TechnologyFlowStep_Type>
 LoadDefaultTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType) const
@@ -69,27 +56,20 @@ LoadDefaultTechnology::ComputeTechnologyRelationships(const DesignFlowStep::Rela
 
 DesignFlowStep_Status LoadDefaultTechnology::Exec()
 {
-   size_t i = 0;
+   const auto libtech_dir = relocate_install_path(PANDA_LIB_INSTALLDIR "/libtech");
    try
    {
-      /// Load default resources
-      const char* builtin_resources_data[] = {
-          "C_COMPLEX_IPs.data",   "C_FP_IPs.data",     "C_HLS_IPs.data",      "C_IO_IPs.data",
-          "C_MEM_IPs.data",       "C_PC_IPs.data",     "CS_COMPONENT.data",   "C_PROFILING_IPs.data",
-          "C_STD_IPs.data",       "C_VEC_IPs.data",    "NC_HLS_IPs.data",     "NC_MEM_IPs.data",
-          "NC_PC_IPs.data",       "NC_SF_IPs.data",    "NC_STD_IPs.data",     "NC_VEC_IPs.data",
-          "NC_wishbone_IPs.data", "NC_CACHE_IPs.data", "NC_DATAFLOW_IPs.data"};
-
-      for(i = 0; i < sizeof(builtin_resources_data) / sizeof(char*); ++i)
+      for(const auto& ip_library : std::filesystem::directory_iterator(libtech_dir))
       {
-         XMLDomParser parser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/design_flows/technology/", true) +
-                             builtin_resources_data[i]);
+         if(std::filesystem::is_directory(ip_library))
+         {
+            continue;
+         }
+         XMLDomParser parser(ip_library.path().string());
          parser.Exec();
          if(parser)
          {
-            // Walk the tree:
-            const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
-            TM->xload(node);
+            TM->xload(parser.get_document()->get_root_node());
          }
       }
    }
@@ -99,7 +79,7 @@ DesignFlowStep_Status LoadDefaultTechnology::Exec()
    }
    catch(const std::string& msg)
    {
-      THROW_ERROR("Error during parsing of technology file number " + STR(i) + " : " + msg);
+      THROW_ERROR("Error during parsing of technology file: " + msg);
    }
    catch(const std::exception& ex)
    {
@@ -107,7 +87,7 @@ DesignFlowStep_Status LoadDefaultTechnology::Exec()
    }
    catch(...)
    {
-      THROW_ERROR("Error during parsing of technology file - unknown exception");
+      THROW_ERROR("Error during parsing of technology file: unknown exception");
    }
 
    return DesignFlowStep_Status::SUCCESS;

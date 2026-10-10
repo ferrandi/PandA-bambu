@@ -1,6 +1,0 @@
-<?xml version="1.0"?>
-<constraints>
-   <HLS_constraints>
-      <tech_constraints fu_name="my_ip" fu_library="work" n="1"/>
-   </HLS_constraints>
-</constraints>

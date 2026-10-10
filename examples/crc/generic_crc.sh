@@ -5,10 +5,10 @@ script_dir="$(dirname $(readlink -e $0))"
 BATCH_ARGS=("--simulate" "--experimental-setup=BAMBU")
 OUT_SUFFIX="output_crc"
 
-python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu  \
+python3 $script_dir/../../etc/scripts/mantis.py --tool=bambu  \
    --args="--configuration-name=base   --channels-type=MEM_ACC_11 ${BATCH_ARGS[*]}"\
    --args="--configuration-name=mem-N1 --channels-type=MEM_ACC_N1 ${BATCH_ARGS[*]}"\
    --args="--configuration-name=mem-NN --channels-type=MEM_ACC_NN ${BATCH_ARGS[*]}"\
    -lcrc_list \
-   -o "out${OUT_SUFFIX}" -b$script_dir \
-   --name="${OUT_SUFFIX}" "$@"
+   -o "out_${OUT_SUFFIX}" -b$script_dir \
+   "$@"

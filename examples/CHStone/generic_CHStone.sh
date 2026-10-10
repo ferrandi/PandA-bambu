@@ -10,8 +10,8 @@ configuration="${device}_$(printf "%04.1f" $period)_$(echo $compiler | tr '[:upp
 OUT_SUFFIX="${configuration}_CHStone"
 BENCHMARKS_ROOT="${script_dir}/CHStone"
 
-python3 ${script_dir}/../../etc/scripts/test_panda.py --tool=bambu  \
+python3 ${script_dir}/../../etc/scripts/mantis.py --tool=bambu  \
    --args="--configuration-name=${configuration} ${BATCH_ARGS[*]}"\
    -l${script_dir}/chstone_list \
-   -o "out${OUT_SUFFIX}" -b${BENCHMARKS_ROOT} \
-   --name="${OUT_SUFFIX}" "$@"
+   -o "out_${OUT_SUFFIX}" -b${BENCHMARKS_ROOT} \
+   "$@"

@@ -113,7 +113,6 @@ extern int INPUT_SIZE;
 #define DATA_TYPE double
 #endif
 
-#include <milieu.h>
 #include <softfloat.h>
 
 #define __float_to_in(in) __float_cast(in, IEEE64_SPEC_ARGS, TEST_SPEC_ARGS)

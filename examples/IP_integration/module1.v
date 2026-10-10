@@ -119,20 +119,20 @@ module module1 (clock, reset, start_port, input1, input2, outputs, done_port, Mi
     S_2 = 3'd2,
     S_3 = 3'd3,
     S_4 = 3'd4;
-  reg [2:0] _present_state=S_0, _next_state;
+  reg [2:0] present_state=S_0, next_state;
 
   module1_IP my_module1_IP (.done_port(done_port_my_ip), .clock(clock), .reset(reset), .start_port(start_port), .input1(input1), .input2(input2), .output1(output1_int),  .output2(output2_int),  .output3(output3_int),  .output4(output4_int));
   assign start_port_fsm = done_port_my_ip;
 
-  __builtin_memstore #(.BITSIZE_data(64), .BITSIZE_addr(BITSIZE_outputs), .BITSIZE_size(7), .BITSIZE_Min_addr_ram(BITSIZE_Min_addr_ram), .BITSIZE_Mout_addr_ram(BITSIZE_Mout_addr_ram), .BITSIZE_M_Rdata_ram(BITSIZE_M_Rdata_ram), .BITSIZE_Min_Wdata_ram(BITSIZE_Min_Wdata_ram), .BITSIZE_Mout_Wdata_ram(BITSIZE_Mout_Wdata_ram), .BITSIZE_Min_data_ram_size(BITSIZE_Min_data_ram_size), .BITSIZE_Mout_data_ram_size(BITSIZE_Mout_data_ram_size)) my__builtin_memstore (.clock(clock), .reset(reset), .start_port(start_port_memstore), .data(data_int), .addr(addr_int), .size(size_int), .done_port(done_port_memstore), .Min_oe_ram(Min_oe_ram_int), .Mout_oe_ram(Mout_oe_ram), .Min_we_ram(Min_we_ram_int), .Mout_we_ram(Mout_we_ram), .Min_addr_ram(Min_addr_ram_int), .Mout_addr_ram(Mout_addr_ram), .M_Rdata_ram(M_Rdata_ram), .Min_Wdata_ram(Min_Wdata_ram_int), .Mout_Wdata_ram(Mout_Wdata_ram), .Min_data_ram_size(Min_data_ram_size_int), .Mout_data_ram_size(Mout_data_ram_size), .M_DataRdy(M_DataRdy));
+  builtin_memstore_FU #(.BITSIZE_data(64), .BITSIZE_addr(BITSIZE_outputs), .BITSIZE_size(7), .BITSIZE_Min_addr_ram(BITSIZE_Min_addr_ram), .BITSIZE_Mout_addr_ram(BITSIZE_Mout_addr_ram), .BITSIZE_M_Rdata_ram(BITSIZE_M_Rdata_ram), .BITSIZE_Min_Wdata_ram(BITSIZE_Min_Wdata_ram), .BITSIZE_Mout_Wdata_ram(BITSIZE_Mout_Wdata_ram), .BITSIZE_Min_data_ram_size(BITSIZE_Min_data_ram_size), .BITSIZE_Mout_data_ram_size(BITSIZE_Mout_data_ram_size)) mybuiltin_memstore_FU (.clock(clock), .reset(reset), .start_port(start_port_memstore), .data(data_int), .addr(addr_int), .size(size_int), .done_port(done_port_memstore), .Min_oe_ram(Min_oe_ram_int), .Mout_oe_ram(Mout_oe_ram), .Min_we_ram(Min_we_ram_int), .Mout_we_ram(Mout_we_ram), .Min_addr_ram(Min_addr_ram_int), .Mout_addr_ram(Mout_addr_ram), .M_Rdata_ram(M_Rdata_ram), .Min_Wdata_ram(Min_Wdata_ram_int), .Mout_Wdata_ram(Mout_Wdata_ram), .Min_data_ram_size(Min_data_ram_size_int), .Mout_data_ram_size(Mout_data_ram_size), .M_DataRdy(M_DataRdy));
 
   always @(posedge clock or negedge reset)
     if (!reset)
     begin
-      _present_state <= S_0;
+      present_state <= S_0;
     end
     else 
-      _present_state <= _next_state;
+      present_state <= next_state;
 
   always @(posedge clock or negedge reset)
     if (!reset)
@@ -152,7 +152,7 @@ module module1 (clock, reset, start_port, input1, input2, outputs, done_port, Mi
 
   always @(*)
   begin
-    _next_state=S_0;
+    next_state=S_0;
     done_port=1'b0;
     start_port_memstore=1'b0;
     addr_int=0;
@@ -163,62 +163,62 @@ module module1 (clock, reset, start_port, input1, input2, outputs, done_port, Mi
     Min_data_ram_size_int=Min_data_ram_size;
     Min_Wdata_ram_int=Min_Wdata_ram;
     Min_addr_ram_int=Min_addr_ram;
-    case (_present_state)
+    case (present_state)
       S_0 :
         if(start_port_fsm != 1'b1)
         begin
-          _next_state=S_0;
+          next_state=S_0;
         end
         else
         begin
-          _next_state=S_1;
+          next_state=S_1;
         end
       S_1 :
       begin
-        _next_state=S_1;
+        next_state=S_1;
         start_port_memstore=1'b1;
         addr_int=outputs;
         data_int=output1_reg;
         size_int=64;
         if(done_port_memstore)
         begin
-          _next_state=S_2;
+          next_state=S_2;
         end
       end
       S_2 :
       begin
-        _next_state=S_2;
+        next_state=S_2;
         start_port_memstore=1'b1;
         addr_int=outputs+64/8;
         data_int=output2_reg;
         size_int=64;
         if(done_port_memstore)
         begin
-          _next_state=S_3;
+          next_state=S_3;
         end
       end
       S_3 :
       begin
-        _next_state=S_3;
+        next_state=S_3;
         start_port_memstore=1'b1;
         addr_int=outputs+(64+64)/8;
         data_int=output3_reg;
         size_int=15;
         if(done_port_memstore)
         begin
-          _next_state=S_4;
+          next_state=S_4;
         end
       end
       S_4 :
       begin
-        _next_state=S_4;
+        next_state=S_4;
         start_port_memstore=1'b1;
         addr_int=outputs+(64+64+32)/8;
         data_int=output4_reg;
         size_int=32;
         if(done_port_memstore)
         begin
-          _next_state=S_0;
+          next_state=S_0;
           done_port=1'b1;
         end
       end

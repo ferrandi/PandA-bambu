@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<function>
+  <testbench a="0" b="0"/>
+  <testbench a="-0.0" b="-0.0"/>
+  <testbench a="9" b="0"/>
+  <testbench a="0" b="9"/>
+  <testbench a="-9" b="0"/>
+  <testbench a="0" b="-9"/>
+  <testbench a="__Inf" b="9"/>
+  <testbench a="__Inf" b="-9"/>
+  <testbench a="-__Inf" b="9"/>
+  <testbench a="-__Inf" b="-9"/>
+  <testbench a="9" b="-__Inf"/>
+  <testbench a="-9" b="-__Inf"/>
+  <testbench a="9" b="__Inf"/>
+  <testbench a="-9" b="__Inf"/>
+  <testbench a="0" b="__Nan"/>
+  <testbench a="9" b="__Nan"/>
+  <testbench a="-9" b="__Nan"/>
+  <testbench a="__Nan" b="9"/>
+  <testbench a="__Nan" b="-9"/>
+  <testbench a="__Inf" b="__Nan"/>
+  <testbench a="-__Inf" b="__Nan"/>
+  <testbench a="__Nan" b="__Inf"/>
+  <testbench a="__Nan" b="-__Inf"/>
+  <testbench a="__Nan" b="__Nan"/>
+  <testbench a="__Inf" b="__Inf"/>
+</function>

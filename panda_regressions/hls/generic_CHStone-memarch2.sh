@@ -8,7 +8,7 @@ BATCH_ARGS=("--simulate" "-O2" "-fwhole-program" "--experimental-setup=BAMBU" "-
 OUT_SUFFIX="${compiler}_CHStone-memarch2"
 BENCHMARKS_ROOT="${script_dir}/../../examples/CHStone/CHStone"
 
-python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
+python3 $script_dir/../../etc/scripts/mantis.py --tool=bambu \
    --args="--configuration-name=${compiler}-O2-wp-11-aligned-ALL --memory-allocation-policy=ALL_BRAM --channels-type=MEM_ACC_11 --aligned-access ${BATCH_ARGS[*]}"\
    --args="--configuration-name=${compiler}-O2-wp-N1-aligned-ALL --memory-allocation-policy=ALL_BRAM --channels-type=MEM_ACC_N1 --aligned-access ${BATCH_ARGS[*]}"\
    --args="--configuration-name=${compiler}-O2-wp-NN-aligned-ALL --memory-allocation-policy=ALL_BRAM --channels-type=MEM_ACC_NN --aligned-access ${BATCH_ARGS[*]}"\
@@ -27,8 +27,8 @@ python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=${compiler}-O2-wp-11-unaligned-ALL-bhl4 --memory-allocation-policy=ALL_BRAM --channels-type=MEM_ACC_11 --unaligned-access --bram-high-latency=4 ${BATCH_ARGS[*]}"\
    --args="--configuration-name=${compiler}-O2-wp-N1-unaligned-ALL-bhl4 --memory-allocation-policy=ALL_BRAM --channels-type=MEM_ACC_N1 --unaligned-access --bram-high-latency=4 ${BATCH_ARGS[*]}"\
    --args="--configuration-name=${compiler}-O2-wp-NN-unaligned-ALL-bhl4 --memory-allocation-policy=ALL_BRAM --channels-type=MEM_ACC_NN --unaligned-access --bram-high-latency=4 ${BATCH_ARGS[*]}"\
-   --args="--configuration-name=${compiler}-O2-wp-VVD-NN-LSS --memory-allocation-policy=LSS --channels-type=MEM_ACC_NN ${BATCH_ARGS[*]}"\
-   --args="--configuration-name=${compiler}-O2-wp-VVD-NN-GSS --memory-allocation-policy=GSS --channels-type=MEM_ACC_NN ${BATCH_ARGS[*]}"\
+   --args="--configuration-name=${compiler}-O2-wp-NN-LSS --memory-allocation-policy=LSS --channels-type=MEM_ACC_NN ${BATCH_ARGS[*]}"\
+   --args="--configuration-name=${compiler}-O2-wp-NN-GSS --memory-allocation-policy=GSS --channels-type=MEM_ACC_NN ${BATCH_ARGS[*]}"\
    -l${script_dir}/chstone_memarch_list2 \
    -o "out_${OUT_SUFFIX}" -b${BENCHMARKS_ROOT} \
-   --name="${OUT_SUFFIX}" $ARGS
+   $ARGS

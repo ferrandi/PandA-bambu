@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2023-2024 Politecnico di Milano
+ *              Copyright (c) 2023-2026 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -89,7 +89,6 @@
   The same procedure is valid for any of the PandA framework tools:
   - bambu
   - eucalyptus
-  - spider
 
 
   \section install_appimage_shell Launch a shell within the AppImage environment

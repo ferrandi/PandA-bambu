@@ -1,0 +1,89 @@
+diff --git libstdc++-v3/configure libstdc++-v3/configure
+index d35baaf7c..ab7046258 100755
+--- libstdc++-v3/configure
++++ libstdc++-v3/configure
+@@ -28393,18 +28393,6 @@ $as_echo "#define HAVE_TLS 1" >>confdefs.h
+ 
+   fi
+ 
+-  for ac_func in __cxa_thread_atexit_impl __cxa_thread_atexit
+-do :
+-  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+-ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+-if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
+-  cat >>confdefs.h <<_ACEOF
+-#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+-_ACEOF
+-
+-fi
+-done
+-
+   for ac_func in aligned_alloc posix_memalign memalign _aligned_malloc
+ do :
+   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+@@ -47576,16 +47564,6 @@ $as_echo "$ac_ld_relro" >&6; }
+       $as_echo "#define HAVE_ISNANL 1" >>confdefs.h
+ 
+     fi
+-    for ac_func in __cxa_thread_atexit
+-do :
+-  ac_fn_c_check_func "$LINENO" "__cxa_thread_atexit" "ac_cv_func___cxa_thread_atexit"
+-if test "x$ac_cv_func___cxa_thread_atexit" = xyes; then :
+-  cat >>confdefs.h <<_ACEOF
+-#define HAVE___CXA_THREAD_ATEXIT 1
+-_ACEOF
+-
+-fi
+-done
+ 
+     for ac_func in aligned_alloc posix_memalign memalign _aligned_malloc
+ do :
+@@ -54235,16 +54213,6 @@ $as_echo "$gcc_cv_have_tls" >&6; }
+ $as_echo "#define HAVE_TLS 1" >>confdefs.h
+ 
+   fi
+-    for ac_func in __cxa_thread_atexit_impl
+-do :
+-  ac_fn_c_check_func "$LINENO" "__cxa_thread_atexit_impl" "ac_cv_func___cxa_thread_atexit_impl"
+-if test "x$ac_cv_func___cxa_thread_atexit_impl" = xyes; then :
+-  cat >>confdefs.h <<_ACEOF
+-#define HAVE___CXA_THREAD_ATEXIT_IMPL 1
+-_ACEOF
+-
+-fi
+-done
+ 
+     for ac_func in aligned_alloc posix_memalign memalign _aligned_malloc
+ do :
+diff --git libstdc++-v3/configure.ac libstdc++-v3/configure.ac
+index 0c3c7a2c1..e82f7c5fd 100644
+--- libstdc++-v3/configure.ac
++++ libstdc++-v3/configure.ac
+@@ -288,7 +288,6 @@ if $GLIBCXX_IS_NATIVE; then
+   # For TLS support.
+   GCC_CHECK_TLS
+ 
+-  AC_CHECK_FUNCS(__cxa_thread_atexit_impl __cxa_thread_atexit)
+   AC_CHECK_FUNCS(aligned_alloc posix_memalign memalign _aligned_malloc)
+   AC_CHECK_FUNCS(_wfopen)
+   AC_CHECK_FUNCS(secure_getenv)
+diff --git libstdc++-v3/crossconfig.m4 libstdc++-v3/crossconfig.m4
+index b3269cb88..0106aa41a 100644
+--- libstdc++-v3/crossconfig.m4
++++ libstdc++-v3/crossconfig.m4
+@@ -129,7 +129,6 @@ case "${host}" in
+       AC_DEFINE(HAVE_ISINFL)
+       AC_DEFINE(HAVE_ISNANL)
+     fi
+-    AC_CHECK_FUNCS(__cxa_thread_atexit)
+     AC_CHECK_FUNCS(aligned_alloc posix_memalign memalign _aligned_malloc)
+     AC_CHECK_FUNCS(timespec_get)
+     AC_CHECK_FUNCS(sockatmark)
+@@ -182,7 +181,6 @@ case "${host}" in
+     AC_DEFINE(_GLIBCXX_USE_DEV_RANDOM)
+     AC_DEFINE(_GLIBCXX_USE_RANDOM_TR1)
+     GCC_CHECK_TLS
+-    AC_CHECK_FUNCS(__cxa_thread_atexit_impl)
+     AC_CHECK_FUNCS(aligned_alloc posix_memalign memalign _aligned_malloc)
+     AC_CHECK_FUNCS(timespec_get)
+     AC_CHECK_FUNCS(sockatmark)

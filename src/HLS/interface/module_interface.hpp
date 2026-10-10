@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -38,9 +26,6 @@
  * for connecting high-level synthesis results to microprocessors or buses
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  */
 #ifndef _MODULE_INTERFACE_HPP_
 #define _MODULE_INTERFACE_HPP_
@@ -66,7 +51,7 @@ class module_interface : public HLSFunctionStep
     * @param port1 is the name of the first port
     * @param component2 is the second component
     * @param port2 is the name of the second port
-    * @param sig_name is the name of the signal to be added
+    * @param signal_name is the name of the signal to be added
     */
    void AddSignal(const structural_managerRef SM, const structural_objectRef component1, const std::string& port1,
                   const structural_objectRef component2, const std::string& port2, const std::string& signal_name);
@@ -86,7 +71,7 @@ class module_interface : public HLSFunctionStep
     * Connects a constant to a port
     * @param SM is the circuit
     * @param component is the component to which the port belongs
-    * @param port_name is the name of the port
+    * @param port is the name of the port
     * @param constant is the value of the constant
     * @param size is the size of the port
     */
@@ -106,16 +91,8 @@ class module_interface : public HLSFunctionStep
    HLSRelationships ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
-   /**
-    * Constructor
-    */
    module_interface(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
-                    const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
-
-   /**
-    * Destructor
-    */
-   ~module_interface() override;
+                    const DesignFlowManager& design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
 };
 
 #endif

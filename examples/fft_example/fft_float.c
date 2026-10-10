@@ -1,4 +1,6 @@
 #include <math.h>
+#include <stdio.h>
+
 /*
       This computes an in-place complex-to-complex FFT 
        x and y are the real and imaginary arrays of 2^m points.
