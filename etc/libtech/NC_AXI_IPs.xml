@@ -349,15 +349,15 @@ assign m_axi_awqos = 0;
 assign m_axi_wlast = 1;
 
 `ifndef _SIM_HAVE_CLOG2
-  `define CLOG2(x) \
-    (x &lt;= 2) ? 1 : \
-    (x &lt;= 4) ? 2 : \
-    (x &lt;= 8) ? 3 : \
-    (x &lt;= 16) ? 4 : \
-    (x &lt;= 32) ? 5 : \
-    (x &lt;= 64) ? 6 : \
-    (x &lt;= 128) ? 7 : \
-    -1
+  function integer log2;
+     input integer value;
+     integer temp_value;
+    begin
+      temp_value = value-1;
+      for (log2=0; temp_value&gt;0; log2=log2+1)
+        temp_value = temp_value&gt;&gt;1;
+    end
+  endfunction
 `endif
 
 wire [2:0] size_next;
@@ -366,7 +366,7 @@ generate
   `ifdef _SIM_HAVE_CLOG2
     assign size_next = $clog2(Mout_data_ram_size >> 3);
   `else
-    assign size_next = `CLOG2(Mout_data_ram_size >> 3);
+    assign size_next = `log2(Mout_data_ram_size >> 3);
   `endif
 endgenerate
 
@@ -738,6 +738,529 @@ end
       </circuit>
     </cell>
     <cell>
+      <name>MinimalAXI4MasterPipelined</name>
+      <circuit>
+        <module_o id="MinimalAXI4MasterPipelined">
+          <description>Experimental configured-read burst engine; fixed 32-bit AXI4 INCR reads</description>
+          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+          <authors>PandA/Bambu contributors</authors>
+          <license>MIT</license>
+          <structural_type_descriptor id_type="MinimalAXI4MasterPipelined"/>
+          <parameter name="B_MAX">16</parameter>
+          <parameter name="MAX_OUTSTANDING">1</parameter>
+          <parameter name="FIFO_DEPTH">256</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="in4" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="in5" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="done" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="fault" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_araddr" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="m_axi_arlen" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="m_axi_arsize" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
+          </port_o>
+          <port_o id="m_axi_arburst" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="m_axi_arid" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_arvalid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_arready" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_rdata" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="m_axi_rresp" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="m_axi_rid" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_rlast" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_rvalid" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_rready" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="MinimalAXI4MasterPipelined B_MAX MAX_OUTSTANDING FIFO_DEPTH in1 in2 in3 in4 in5 out1 m_axi_araddr m_axi_arlen m_axi_arsize m_axi_arburst m_axi_arid m_axi_rdata m_axi_rresp m_axi_rid" VERILOG_PROVIDED="    localparam integer FIFO_PTR_W = (FIFO_DEPTH &lt;= 2) ? 1 : $clog2(FIFO_DEPTH);
+    localparam integer FIFO_COUNT_W = (FIFO_DEPTH &lt;= 1) ? 1 : $clog2(FIFO_DEPTH + 1);
+    localparam integer DESC_PTR_W = (MAX_OUTSTANDING &lt;= 2) ? 1 : $clog2(MAX_OUTSTANDING);
+    localparam integer DESC_COUNT_W = (MAX_OUTSTANDING &lt;= 1) ? 1 : $clog2(MAX_OUTSTANDING + 1);
+    localparam integer RESERVATION_COUNT_W = (MAX_OUTSTANDING &lt;= 1) ? 2 : $clog2(MAX_OUTSTANDING + 2);
+
+    // Widths come from the port parameters, so the same component serves any
+    // address and data width the interface asks for. vector_size in the XML is
+    // only the default of these parameters; the writer overrides them per
+    // instance.
+    localparam integer ADDR_BITS  = BITSIZE_m_axi_araddr;
+    localparam integer DATA_BITS  = BITSIZE_m_axi_rdata;
+    localparam integer BEAT_BYTES = DATA_BITS / 8;
+    localparam integer BEAT_SHIFT = $clog2(BEAT_BYTES);
+    // One bus beat carries one element, so ARSIZE is the beat size itself.
+    localparam integer ARSIZE_ENC = BEAT_SHIFT;
+    // Beat index domain: the top BEAT_SHIFT address bits carry no beat info.
+    localparam integer BEAT_IDX_BITS = ADDR_BITS - BEAT_SHIFT;
+    // Comparison domain for the last-beat check: it must also hold the element
+    // count, which is added to the beat index.
+    localparam integer COUNT_BITS = BITSIZE_in5;
+    localparam integer END_BEAT_W = (COUNT_BITS &gt; BEAT_IDX_BITS ? COUNT_BITS : BEAT_IDX_BITS) + 1;
+    // AXI forbids a burst crossing a 4 KiB boundary.
+    localparam integer BOUNDARY_BEATS = 4096 / BEAT_BYTES;
+    localparam integer BOUNDARY_W = $clog2(BOUNDARY_BEATS) + 1;
+    // Element-count domain: validation proves a region holds at most 2^30
+    // elements, so the counters are one bit narrower than the count operand.
+    localparam integer COUNT_W = BITSIZE_in5 - 1;
+    // Burst-length domain: it must be able to hold B_MAX itself.
+    localparam integer LEN_W = $clog2(B_MAX + 1);
+    // ABI opcodes carried by in1.
+    localparam integer OP_LOAD = 0;
+    localparam integer OP_STORE = 1;
+    localparam integer OP_CONFIGURE = 2;
+
+    reg done_reg;
+    reg [BITSIZE_out1-1:0] out1_reg;
+    reg [ADDR_BITS-1:0] m_axi_araddr_reg;
+    reg [BITSIZE_m_axi_arlen-1:0] m_axi_arlen_reg;
+    reg m_axi_arvalid_reg;
+    reg fault_reg;
+    wire reset_n = !(1RESET_VALUE);
+
+    assign done = done_reg;
+    assign out1 = out1_reg;
+    assign fault = fault_reg;
+    assign m_axi_araddr = m_axi_araddr_reg;
+    assign m_axi_arlen = m_axi_arlen_reg;
+    assign m_axi_arvalid = m_axi_arvalid_reg;
+
+
+    reg        region_active;
+    reg [ADDR_BITS-1:0] region_base;
+    // Configuration validation proves count &lt;= 2^30 before this narrowing.
+    // The element-count domain is 31 bits regardless of the address width: one
+    // region holds at most 2^30 elements.
+    reg [COUNT_W-1:0] region_count;
+    reg [ADDR_BITS-1:0] next_expected_address;
+    reg [COUNT_W-1:0] issued;
+    reg [COUNT_W-1:0] returned;
+    reg [COUNT_W-1:0] consumed;
+
+    reg        cfg_seen;
+    reg        cfg_pending;
+    // The descriptor of the configure request that cfg_seen is guarding. Holding start
+    // with the same operands is one request and must be captured once; holding start
+    // with different operands after the first request completed is a new request.
+    reg [BITSIZE_in2-1:0] cfg_size;
+    reg [ADDR_BITS-1:0] cfg_base;
+    // Full width on purpose: a count whose top bit is set is an invalid request, and a
+    // truncated copy would compare equal to the valid one it replaces, so the invalid
+    // request would never reach validation and would be silently dropped.
+    reg [COUNT_BITS-1:0] cfg_count;
+    reg [ADDR_BITS-1:0] pending_base;
+    reg [COUNT_W-1:0] pending_count;
+
+    reg        load_pending;
+    reg        load_pending_valid;
+    reg [ADDR_BITS-1:0] pending_load_address;
+    reg [BITSIZE_in2-1:0] pending_load_size_bits;
+    reg [DATA_BITS-1:0] fifo [0:FIFO_DEPTH-1];
+    reg [FIFO_PTR_W-1:0] fifo_rd_ptr;
+    reg [FIFO_PTR_W-1:0] fifo_wr_ptr;
+    reg [FIFO_COUNT_W-1:0] fifo_count;
+    reg [LEN_W-1:0] descriptor_remaining [0:MAX_OUTSTANDING-1];
+    reg [DESC_PTR_W-1:0] descriptor_rd_ptr;
+    reg [DESC_PTR_W-1:0] descriptor_wr_ptr;
+    reg [DESC_COUNT_W-1:0] descriptor_count;
+    wire burst_outstanding;
+    assign burst_outstanding = (descriptor_count != 0);
+    wire descriptor_pop;
+    wire descriptor_push;
+    reg        fifo_load_done;
+    wire       fifo_load_pop;
+    reg        load_request_valid;
+    wire       r_push;
+    wire       r_good;
+    wire       drain_complete;
+    reg        configure_complete;
+    reg        configure_descriptor_valid;
+    reg        configure_direct_capture;
+    wire       activate_pending;
+
+    reg [END_BEAT_W-1:0] end_beat_ext;
+    reg [COUNT_W-1:0] remaining_beats;
+    reg [ADDR_BITS-1:0] next_address;
+    reg [BOUNDARY_W-1:0] boundary_beats;
+    reg [FIFO_COUNT_W-1:0] credit_beats;
+    reg [LEN_W-1:0] next_burst_length;
+    reg [RESERVATION_COUNT_W-1:0] outstanding_after_reservation;
+    integer      fifo_credit;
+    wire         reservation_eligible;
+    // Highest legal beat index: one past the last beat of the address space.
+    wire [END_BEAT_W-1:0] end_beat_limit = {1'b1, {BEAT_IDX_BITS{1'b0}}};
+
+    // synthesis translate_off
+    initial begin
+        if (!(B_MAX >= 1 &amp;&amp; B_MAX &lt;= 256))
+            $fatal(1, &quot;B_MAX must be in [1,256]&quot;);
+        if (!(MAX_OUTSTANDING >= 1 &amp;&amp; MAX_OUTSTANDING &lt;= 16))
+            $fatal(1, &quot;MAX_OUTSTANDING must be in [1,16]&quot;);
+        if (!(FIFO_DEPTH >= 1 &amp;&amp; FIFO_DEPTH &lt;= 4096 &amp;&amp;
+              (FIFO_DEPTH &amp; (FIFO_DEPTH - 1)) == 0))
+            $fatal(1, &quot;FIFO_DEPTH must be a power of two in [1,4096]&quot;);
+        if (!(DATA_BITS >= 8 &amp;&amp; DATA_BITS &lt;= 4096 &amp;&amp;
+              (DATA_BITS &amp; (DATA_BITS - 1)) == 0))
+            $fatal(1, &quot;BITSIZE_m_axi_rdata must be a power-of-two width in [8,4096]&quot;);
+        if (ADDR_BITS &lt; 12)
+            $fatal(1, &quot;BITSIZE_m_axi_araddr must be at least 12 bits for the 4 KiB rule&quot;);
+    end
+    // synthesis translate_on
+
+
+    assign m_axi_arsize  = ARSIZE_ENC; // log2(bytes per beat, from the data width
+    assign m_axi_arburst = 2'b01; // INCR
+    assign m_axi_arid    = 1'b0;
+
+    // A FIFO word completes a load immediately. When empty, one command is
+    // retained until a word arrives, independently of the later start level.
+    always @* begin
+        done_reg = 1'b0;
+        out1_reg = {BITSIZE_out1{1'b0}};
+        fifo_load_done = 1'b0;
+        configure_complete = 1'b0;
+        load_request_valid = region_active &amp;&amp; consumed &lt; region_count &amp;&amp;
+                             in2 == DATA_BITS &amp;&amp;
+                             in4 == next_expected_address;
+        configure_descriptor_valid = in2 == DATA_BITS &amp;&amp;
+                                     in4[BEAT_SHIFT-1:0] == {BEAT_SHIFT{1'b0}} &amp;&amp;
+                                     // The region counters are COUNT_W bits wide, one narrower
+                                     // than the count operand: a count with its top bit set
+                                     // would truncate silently, and 0x80000000 becomes zero.
+                                     in5[COUNT_BITS-1] == 1'b0 &amp;&amp;
+                                     (in5 == 0 ||
+                                      end_beat_ext &lt;= end_beat_limit);
+        configure_direct_capture = start &amp;&amp; in1 == OP_CONFIGURE &amp;&amp; !cfg_seen &amp;&amp;
+                                   !cfg_pending &amp;&amp; configure_descriptor_valid &amp;&amp;
+                                   (!region_active || drain_complete);
+
+        if (!fault_reg) begin
+            if (load_pending &amp;&amp; load_pending_valid &amp;&amp;
+                pending_load_size_bits == DATA_BITS &amp;&amp;
+                pending_load_address == next_expected_address &amp;&amp; fifo_count != 0) begin
+                done_reg = 1'b1;
+                out1_reg = fifo[fifo_rd_ptr];
+                fifo_load_done = 1'b1;
+            end else if (!load_pending &amp;&amp; start &amp;&amp; in1 == OP_LOAD &amp;&amp;
+                         load_request_valid &amp;&amp; fifo_count != 0) begin
+                done_reg = 1'b1;
+                out1_reg = fifo[fifo_rd_ptr];
+                fifo_load_done = 1'b1;
+            end
+
+            configure_complete = activate_pending;
+            if (configure_direct_capture)
+                configure_complete = 1'b1;
+            done_reg = done_reg || configure_complete;
+        end
+    end
+
+    assign fifo_load_pop = fifo_load_done;
+    assign r_push = m_axi_rvalid &amp;&amp; m_axi_rready;
+    assign r_good = r_push &amp;&amp; (m_axi_rid == 1'b0) &amp;&amp; (m_axi_rresp == 2'b00) &amp;&amp;
+        (((descriptor_count != 0) &amp;&amp; descriptor_remaining[descriptor_rd_ptr] == 1 &amp;&amp; m_axi_rlast) ||
+         ((descriptor_count != 0) &amp;&amp; descriptor_remaining[descriptor_rd_ptr] &gt; 1 &amp;&amp; !m_axi_rlast));
+    assign m_axi_rready = (descriptor_count != 0) &amp;&amp; !fault_reg &amp;&amp;
+                          ((fifo_count &lt; FIFO_DEPTH) || fifo_load_pop);
+    assign descriptor_pop = r_push &amp;&amp;
+        (descriptor_remaining[descriptor_rd_ptr] == 1) &amp;&amp; m_axi_rlast &amp;&amp;
+        (m_axi_rid == 1'b0) &amp;&amp; (m_axi_rresp == 2'b00);
+    assign descriptor_push = m_axi_arvalid_reg &amp;&amp; m_axi_arready;
+
+    always @* begin
+        end_beat_ext = (in4 &gt;&gt; BEAT_SHIFT) + in5;
+
+        remaining_beats = {COUNT_W{1'b0}};
+        next_address = {ADDR_BITS{1'b0}};
+        boundary_beats = {BOUNDARY_W{1'b0}};
+        credit_beats = {FIFO_COUNT_W{1'b0}};
+        next_burst_length = 0;
+        outstanding_after_reservation =
+            {{(RESERVATION_COUNT_W-DESC_COUNT_W){1'b0}}, descriptor_count} +
+            {{(RESERVATION_COUNT_W-1){1'b0}}, m_axi_arvalid_reg};
+        // issued >= consumed and issued-consumed &lt;= FIFO_DEPTH: each
+        // reservation is capped by free FIFO capacity, and consumption only
+        // follows a received word. Keep this subtraction full-width so its
+        // guard retains the original underflow/non-positive semantics; only
+        // narrow the proven nonnegative capacity when selecting a burst.
+        fifo_credit = FIFO_DEPTH - (issued - consumed);
+        if (region_active &amp;&amp; issued &lt; region_count &amp;&amp; !m_axi_arvalid_reg &amp;&amp;
+            outstanding_after_reservation &lt; MAX_OUTSTANDING &amp;&amp; !fault_reg) begin
+            remaining_beats = region_count - issued;
+            // issued is strictly below a validated count &lt;= 2^30, so the
+            // shift cannot overflow the address domain.
+            next_address = region_base + (issued &lt;&lt; BEAT_SHIFT);
+            boundary_beats = BOUNDARY_BEATS - next_address[11:BEAT_SHIFT];
+            // issued-consumed includes every outstanding or buffered result.
+            credit_beats = fifo_credit;
+            next_burst_length = B_MAX;
+            if (remaining_beats &lt; next_burst_length)
+                next_burst_length = remaining_beats;
+            if (boundary_beats &lt; next_burst_length)
+                next_burst_length = boundary_beats;
+            if (credit_beats &lt; next_burst_length)
+                next_burst_length = credit_beats;
+        end
+    end
+
+    assign reservation_eligible = region_active &amp;&amp; issued &lt; region_count &amp;&amp;
+        !m_axi_arvalid_reg &amp;&amp; outstanding_after_reservation &lt; MAX_OUTSTANDING &amp;&amp;
+        fifo_credit &gt; 0 &amp;&amp; !fault_reg;
+
+    assign drain_complete = region_active &amp;&amp;
+        issued == region_count &amp;&amp; returned == region_count &amp;&amp;
+        consumed == region_count &amp;&amp; fifo_count == 0 &amp;&amp;
+        !m_axi_arvalid &amp;&amp; descriptor_count == 0 &amp;&amp; !load_pending;
+    assign activate_pending = drain_complete &amp;&amp; cfg_pending;
+
+    always @(posedge clock) begin
+        if (!reset_n) begin
+            region_active &lt;= 1'b0;
+            region_base &lt;= {ADDR_BITS{1'b0}};
+            region_count &lt;= {COUNT_W{1'b0}};
+            next_expected_address &lt;= {ADDR_BITS{1'b0}};
+            issued &lt;= {COUNT_W{1'b0}};
+            returned &lt;= {COUNT_W{1'b0}};
+            consumed &lt;= {COUNT_W{1'b0}};
+            cfg_seen &lt;= 1'b0;
+            cfg_pending &lt;= 1'b0;
+            cfg_size &lt;= {BITSIZE_in2{1'b0}};
+            cfg_base &lt;= {ADDR_BITS{1'b0}};
+            cfg_count &lt;= {COUNT_BITS{1'b0}};
+            pending_base &lt;= {ADDR_BITS{1'b0}};
+            pending_count &lt;= {COUNT_W{1'b0}};
+            load_pending &lt;= 1'b0;
+            load_pending_valid &lt;= 1'b0;
+            pending_load_address &lt;= {ADDR_BITS{1'b0}};
+            pending_load_size_bits &lt;= {BITSIZE_in2{1'b0}};
+            fifo_rd_ptr &lt;= 0;
+            fifo_wr_ptr &lt;= 0;
+            fifo_count &lt;= 0;
+            descriptor_rd_ptr &lt;= 0;
+            descriptor_wr_ptr &lt;= 0;
+            descriptor_count &lt;= 0;
+            m_axi_araddr_reg &lt;= {ADDR_BITS{1'b0}};
+            m_axi_arlen_reg &lt;= {BITSIZE_m_axi_arlen{1'b0}};
+            m_axi_arvalid_reg &lt;= 1'b0;
+            fault_reg &lt;= 1'b0;
+        end else begin
+            if (!start || in1 != OP_CONFIGURE)
+                cfg_seen &lt;= 1'b0;
+            else if (!cfg_pending &amp;&amp;
+                     (in2 != cfg_size || in4 != cfg_base || in5 != cfg_count))
+                // The guarded request is finished - it is no longer waiting to be
+                // activated - and the operands now differ, so the caller is presenting a
+                // new configure even though start never dropped. Every operand is compared
+                // at full width: comparing only the address and a truncated count makes an
+                // invalid request look like the one already guarded, so it never reaches
+                // validation and produces neither done nor fault. Identical operands keep
+                // the single-capture behaviour, and a request still pending activation
+                // must not be replaced.
+                cfg_seen &lt;= 1'b0;
+
+            // Capture a configure request exactly once while start is held.
+            if (start &amp;&amp; in1 == OP_CONFIGURE &amp;&amp; !cfg_seen) begin
+                cfg_seen &lt;= 1'b1;
+                cfg_size &lt;= in2;
+                cfg_base &lt;= in4;
+                cfg_count &lt;= in5;
+                if (!configure_descriptor_valid) begin
+                    fault_reg &lt;= 1'b1;
+                end else if (!region_active &amp;&amp; !cfg_pending) begin
+                    region_active &lt;= 1'b1;
+                    region_base &lt;= in4;
+                    region_count &lt;= in5[COUNT_W-1:0];
+                    next_expected_address &lt;= in4;
+                    issued &lt;= {COUNT_W{1'b0}};
+                    returned &lt;= {COUNT_W{1'b0}};
+                    consumed &lt;= {COUNT_W{1'b0}};
+                    fifo_rd_ptr &lt;= 0;
+                    fifo_wr_ptr &lt;= 0;
+                    fifo_count &lt;= 0;
+                    load_pending &lt;= 1'b0;
+                    load_pending_valid &lt;= 1'b0;
+                end else if (drain_complete &amp;&amp; !cfg_pending) begin
+                    // Capture the replacement directly if the old region is
+                    // already drained on this edge; do not clear active below.
+                    region_active &lt;= 1'b1;
+                    region_base &lt;= in4;
+                    region_count &lt;= in5[COUNT_W-1:0];
+                    next_expected_address &lt;= in4;
+                    issued &lt;= {COUNT_W{1'b0}};
+                    returned &lt;= {COUNT_W{1'b0}};
+                    consumed &lt;= {COUNT_W{1'b0}};
+                    fifo_rd_ptr &lt;= 0;
+                    fifo_wr_ptr &lt;= 0;
+                    fifo_count &lt;= 0;
+                    load_pending &lt;= 1'b0;
+                    load_pending_valid &lt;= 1'b0;
+                end else if (!cfg_pending) begin
+                    cfg_pending &lt;= 1'b1;
+                    pending_base &lt;= in4;
+                    pending_count &lt;= in5[COUNT_W-1:0];
+                end else begin
+                    fault_reg &lt;= 1'b1;
+                end
+            end
+
+            // Record one load command when the response FIFO is empty.
+            if (start &amp;&amp; in1 == OP_LOAD &amp;&amp; !load_pending) begin
+                if (!load_request_valid)
+                    fault_reg &lt;= 1'b1;
+                else if (fifo_count == 0) begin
+                    load_pending &lt;= 1'b1;
+                    load_pending_valid &lt;= load_request_valid;
+                    pending_load_address &lt;= in4;
+                    pending_load_size_bits &lt;= in2;
+                end
+            end
+            if (fifo_load_done) begin
+                load_pending &lt;= 1'b0;
+                load_pending_valid &lt;= 1'b0;
+                consumed &lt;= consumed + 1'b1;
+                if (fifo_rd_ptr == FIFO_DEPTH-1)
+                    fifo_rd_ptr &lt;= 0;
+                else
+                    fifo_rd_ptr &lt;= fifo_rd_ptr + 1'b1;
+                if (consumed + 1'b1 &lt; region_count)
+                    next_expected_address &lt;= next_expected_address + BEAT_BYTES;
+            end
+
+            // Reserve and freeze one descriptor before asserting ARVALID.
+            if (reservation_eligible) begin
+                m_axi_araddr_reg &lt;= next_address;
+                // 9 bits are required to represent length 256; subtract in
+                // that domain, then retain the 8-bit AXI ARLEN encoding.
+                m_axi_arlen_reg &lt;= next_burst_length - 1'b1;
+                m_axi_arvalid_reg &lt;= 1'b1;
+            end
+
+            if (m_axi_arvalid_reg &amp;&amp; m_axi_arready) begin
+                m_axi_arvalid_reg &lt;= 1'b0;
+                descriptor_remaining[descriptor_wr_ptr] &lt;= {1'b0, m_axi_arlen_reg} + 1'b1;
+                if (descriptor_wr_ptr == MAX_OUTSTANDING-1)
+                    descriptor_wr_ptr &lt;= 0;
+                else
+                    descriptor_wr_ptr &lt;= descriptor_wr_ptr + 1'b1;
+                issued &lt;= issued + {{(COUNT_W-BITSIZE_m_axi_arlen){1'b0}}, m_axi_arlen_reg} + 1'b1;
+            end
+
+            case ({descriptor_push, descriptor_pop})
+                2'b10: descriptor_count &lt;= descriptor_count + 1'b1;
+                2'b01: descriptor_count &lt;= descriptor_count - 1'b1;
+                default: descriptor_count &lt;= descriptor_count;
+            endcase
+
+                if (r_push) begin
+                if (m_axi_rid != 1'b0 || m_axi_rresp != 2'b00 ||
+                    (descriptor_count == 0) ||
+                    (descriptor_remaining[descriptor_rd_ptr] == 1 &amp;&amp; !m_axi_rlast) ||
+                    (descriptor_remaining[descriptor_rd_ptr] &gt; 1 &amp;&amp; m_axi_rlast))
+                    fault_reg &lt;= 1'b1;
+                if (r_good) begin
+                    returned &lt;= returned + 1'b1;
+                    fifo[fifo_wr_ptr] &lt;= m_axi_rdata;
+                    if (fifo_wr_ptr == FIFO_DEPTH-1)
+                        fifo_wr_ptr &lt;= 0;
+                    else
+                        fifo_wr_ptr &lt;= fifo_wr_ptr + 1'b1;
+                    if (descriptor_remaining[descriptor_rd_ptr] == 1) begin
+                        if (descriptor_rd_ptr == MAX_OUTSTANDING-1)
+                            descriptor_rd_ptr &lt;= 0;
+                        else
+                            descriptor_rd_ptr &lt;= descriptor_rd_ptr + 1'b1;
+                    end else begin
+                        descriptor_remaining[descriptor_rd_ptr] &lt;=
+                            descriptor_remaining[descriptor_rd_ptr] - 1'b1;
+                    end
+                end
+            end
+
+            case ({r_good, fifo_load_pop})
+                2'b10: fifo_count &lt;= fifo_count + 1'b1;
+                2'b01: fifo_count &lt;= fifo_count - 1'b1;
+                default: fifo_count &lt;= fifo_count;
+            endcase
+
+            if (activate_pending) begin
+                region_active &lt;= 1'b1;
+                region_base &lt;= pending_base;
+                region_count &lt;= pending_count;
+                next_expected_address &lt;= pending_base;
+                issued &lt;= {COUNT_W{1'b0}};
+                returned &lt;= {COUNT_W{1'b0}};
+                consumed &lt;= {COUNT_W{1'b0}};
+                fifo_rd_ptr &lt;= 0;
+                fifo_wr_ptr &lt;= 0;
+                fifo_count &lt;= 0;
+                descriptor_rd_ptr &lt;= 0;
+                descriptor_wr_ptr &lt;= 0;
+                descriptor_count &lt;= 0;
+                cfg_pending &lt;= 1'b0;
+                load_pending &lt;= 1'b0;
+                load_pending_valid &lt;= 1'b0;
+            end else if (drain_complete &amp;&amp; !configure_direct_capture) begin
+                region_active &lt;= 1'b0;
+            end
+
+            // Keep a sticky error, including unsupported stores. A fault_reg
+            // suppresses the done handshake and is observable on the fault output.
+            if (start &amp;&amp; in1 == OP_STORE)
+                fault_reg &lt;= 1'b1;
+        end
+    end
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+
+    <cell>
       <name>MinimalAXI4AdapterSingleBeat</name>
       <circuit>
         <module_o id="MinimalAXI4AdapterSingleBeat">
@@ -924,15 +1447,15 @@ assign m_axi_wlast = 1;
 assign m_axi_wuser = 0;
 
 `ifndef _SIM_HAVE_CLOG2
-  `define CLOG2(x) \
-    (x &lt;= 2) ? 1 : \
-    (x &lt;= 4) ? 2 : \
-    (x &lt;= 8) ? 3 : \
-    (x &lt;= 16) ? 4 : \
-    (x &lt;= 32) ? 5 : \
-    (x &lt;= 64) ? 6 : \
-    (x &lt;= 128) ? 7 : \
-    -1
+  function integer log2;
+     input integer value;
+     integer temp_value;
+    begin
+      temp_value = value-1;
+      for (log2=0; temp_value&gt;0; log2=log2+1)
+        temp_value = temp_value&gt;&gt;1;
+    end
+  endfunction
 `endif
 
 wire [2:0] size_next;
@@ -941,7 +1464,7 @@ generate
   `ifdef _SIM_HAVE_CLOG2
     assign size_next = $clog2(Mout_data_ram_size >> 3);
   `else
-    assign size_next = `CLOG2(Mout_data_ram_size >> 3);
+    assign size_next = `log2(Mout_data_ram_size >> 3);
   `endif
 endgenerate
 
