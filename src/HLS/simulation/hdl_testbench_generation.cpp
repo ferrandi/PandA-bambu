@@ -477,6 +477,50 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
                    axim_bundle_name + "_fu", axim_bundle_name, LIBRARY_STD, tb_cir, TechM);
                if_modules.push_back(if_port);
                if_port->SetParameter("index", tb_mem->GetParameter("index"));
+               // Per-bundle memory latency: an interface 'latency' attribute overrides the
+               // global --mem-delay-read/--mem-delay-write for the memory reached through
+               // this bundle alone. The parameter carries the nominal latency; the component
+               // body applies the -1 convention of TestbenchMEMAXI.
+               const auto bundle_latency = iface_attrs.find(FunctionArchitecture::iface_latency);
+               // The frontend injects latency=0 for every m_axi bundle that omits the
+               // attribute, so zero means "no per-bundle override" and the global
+               // --mem-delay-read/--mem-delay-write apply. Only an explicit value strictly
+               // between 0 and 2 is a mistake: TestbenchMEMAXI receives the nominal latency
+               // minus one, so a latency of one would wrap.
+               const auto latency_value = bundle_latency != iface_attrs.end() ?
+                                              std::stoull(bundle_latency->second) :
+                                              0ULL;
+               if(latency_value != 0)
+               {
+                  if(latency_value < 2)
+                  {
+                     THROW_ERROR("AXI interface 'latency' for bundle '" + bundle_name +
+                                 "' must be 0 (no override) or at least 2, got " + bundle_latency->second +
+                                 ": the memory model cannot answer that fast.");
+                  }
+                  if_port->SetParameter("READ_DELAY", bundle_latency->second);
+                  if_port->SetParameter("WRITE_DELAY", bundle_latency->second);
+               }
+               else
+               {
+                  if_port->SetParameter(
+                      "READ_DELAY", parameters->getOption<std::string>(OPT_bram_high_latency) == "_3" ?
+                                        "3" :
+                                    parameters->getOption<std::string>(OPT_bram_high_latency) == "_4" ?
+                                        "4" :
+                                        parameters->getOption<std::string>(OPT_mem_delay_read));
+                  // The parameter carries the nominal latency. '_3' historically meant a
+                  // write latency of one, but the AXI model cannot express that: it answers
+                  // only when its delay field reaches one, so a nominal of one becomes a
+                  // delay of zero and the write response never arrives. The lowest nominal
+                  // the model can act on is two.
+                  if_port->SetParameter(
+                      "WRITE_DELAY", parameters->getOption<std::string>(OPT_bram_high_latency) == "_3" ?
+                                         "2" :
+                                     parameters->getOption<std::string>(OPT_bram_high_latency) == "_4" ?
+                                         "2" :
+                                         parameters->getOption<std::string>(OPT_mem_delay_write));
+               }
             }
             const auto if_port = tb_top->add_module_from_technology_library("if_addr_" + arg_name, "IF_PORT_IN",
                                                                             LIBRARY_STD, tb_cir, TechM);
