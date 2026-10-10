@@ -51,8 +51,7 @@ do
    esac
 done
 
-BAMBU_IPC_SIM_CMD="vcs ${COMMON_FLAGS} work.clocked_bambu_testbench +vpi ${SWD}/libmdpi.so -R"
+BAMBU_IPC_SIM_CMD="run_logged \"${SWD}/simulation.log\" vcs ${COMMON_FLAGS} work.clocked_bambu_testbench +vpi ${SWD}/libmdpi.so -R"
 if $(bambu_results /application/backend@assert) ; then
   BAMBU_IPC_SIM_CMD+=" -check_all -psl +lint=all -debug_access+all -deraceclockdata -sn=+rdr"
 fi
-BAMBU_IPC_SIM_CMD+=" 2>&1 | tee ${SWD}/simulation.log; exit \${PIPESTATUS[0]};"

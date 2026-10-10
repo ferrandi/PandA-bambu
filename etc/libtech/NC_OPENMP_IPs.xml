@@ -382,24 +382,28 @@ assign kmp_bambu_wait_all_threads_rd = &amp;barrier_done;"/>
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
                </port_vector_o>
                <NP_functionality LIBRARY="kmp_bambu_fork_call_critical_manager ACCELERATOR_NUMBER CONTEXT_NUMBER USE_CS kmp_lock_acquired kmp_lock_acquired_ack kmp_lock_release kmp_lock_acquired_tag kmp_lock_acquired_ack_tag" IP_COMPONENT="multiple_priority_encoder_2_1,multiple_priority_encoder_4_2,multiple_priority_encoder_8_3,multiple_priority_encoder_16_4,multiple_priority_encoder_32_5,multiple_priority_encoder_64_6,multiple_priority_encoder_128_7,multiple_priority_encoder_256_8,multiple_priority_encoder_512_9" VERILOG_PROVIDED="
-`ifndef CLOG2
-`define CLOG2(x) \
-  (x &lt;= 2) ? 1 : \
-  (x &lt;= 4) ? 2 : \
-  (x &lt;= 8) ? 3 : \
-  (x &lt;= 16) ? 4 : \
-  (x &lt;= 32) ? 5 : \
-  (x &lt;= 64) ? 6 : \
-  (x &lt;= 128) ? 7 : \
-  (x &lt;= 256) ? 8 : \
-  (x &lt;= 512) ? 9 : \
-  -1
+`ifndef _SIM_HAVE_CLOG2
+  function integer log2;
+     input integer value;
+     integer temp_value;
+    begin
+      temp_value = value-1;
+      for (log2=0; temp_value&gt;0; log2=log2+1)
+        temp_value = temp_value&gt;&gt;1;
+    end
+  endfunction
 `endif
 
 localparam REG_SIZE = CONTEXT_NUMBER > 1 ? CONTEXT_NUMBER * PORTSIZE_kmp_lock_acquired : PORTSIZE_kmp_lock_acquired;
-localparam REG_BITSIZE = `CLOG2(REG_SIZE);
-localparam CONTEXT_NUMBER_BITSIZE = `CLOG2(CONTEXT_NUMBER);
-localparam ACCELERATOR_NUMBER_BITSIZE = `CLOG2(ACCELERATOR_NUMBER);
+`ifdef _SIM_HAVE_CLOG2
+localparam REG_BITSIZE = $clog2(REG_SIZE);
+localparam CONTEXT_NUMBER_BITSIZE = $clog2(CONTEXT_NUMBER);
+localparam ACCELERATOR_NUMBER_BITSIZE = $clog2(ACCELERATOR_NUMBER);
+`else
+localparam REG_BITSIZE = log2(REG_SIZE);
+localparam CONTEXT_NUMBER_BITSIZE = log2(CONTEXT_NUMBER);
+localparam ACCELERATOR_NUMBER_BITSIZE = log2(ACCELERATOR_NUMBER);
+`endif
 
 reg [REG_SIZE - 1:0] lock_request_reg;
 wire [REG_SIZE -1:0] lock_request_next, lock_request_delete;

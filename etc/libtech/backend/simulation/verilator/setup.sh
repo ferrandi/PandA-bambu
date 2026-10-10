@@ -64,4 +64,4 @@ fi
 
 make -C "${WORK_DIR}" -j "${VPPTHREADS}" OPT="${OPT}" -f Vbambu_testbench.mk Vbambu_testbench
 
-BAMBU_IPC_SIM_CMD="${WORK_DIR}/Vbambu_testbench 2>&1 | tee ${SWD}/simulation.log; exit \${PIPESTATUS[0]};"
+BAMBU_IPC_SIM_CMD="run_logged \"${SWD}/simulation.log\" \"${WORK_DIR}/Vbambu_testbench\""

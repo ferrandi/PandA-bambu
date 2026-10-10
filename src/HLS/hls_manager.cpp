@@ -51,6 +51,8 @@
 
 #include <pugixml.hpp>
 
+#include <limits>
+
 HLS_manager::HLS_manager(const ParameterConstRef _Param, const HLS_deviceRef _HLS_D)
     : application_manager(false, _Param),
       HLS_D(_HLS_D),
@@ -377,6 +379,116 @@ enum FunctionArchitecture::iface_attr FunctionArchitecture::to_iface_attr(const 
    return to_enum.at(attr);
 }
 
+AXIReadBurstProfile ParseAXIReadBurstProfile(const FunctionArchitecture::iface_attrs& iface_attrs,
+                                             const std::string& bundle_name)
+{
+   const auto parse_bounded_decimal = [&](const FunctionArchitecture::iface_attr attr, const char* attr_name,
+                                          const unsigned int default_value, const unsigned int maximum) {
+      const auto it = iface_attrs.find(attr);
+      if(it == iface_attrs.end())
+      {
+         return default_value;
+      }
+      const auto& text = it->second;
+      const auto fail = [&]() -> void {
+         THROW_ERROR_USAGE("Invalid AXI interface attribute '" + std::string(attr_name) + "' for bundle '" +
+                           bundle_name + "': expected an ASCII decimal integer in [1," + STR(maximum) + "].");
+      };
+      if(text.empty())
+      {
+         fail();
+      }
+      unsigned int value = 0;
+      for(const char ch : text)
+      {
+         if(ch < '0' || ch > '9')
+         {
+            fail();
+         }
+         const auto digit = static_cast<unsigned int>(ch - '0');
+         if(value > (maximum - digit) / 10U)
+         {
+            fail();
+         }
+         value = value * 10U + digit;
+      }
+      if(value == 0U)
+      {
+         fail();
+      }
+      return value;
+   };
+
+   AXIReadBurstProfile profile;
+   profile.max_outstanding = parse_bounded_decimal(FunctionArchitecture::iface_num_read_outstanding,
+                                                   "num_read_outstanding", 1U, 16U);
+   const auto burst_max = parse_bounded_decimal(FunctionArchitecture::iface_max_read_burst_length,
+                                                "max_read_burst_length", 1U, 256U);
+   if(iface_attrs.find(FunctionArchitecture::iface_read_fifo_depth) == iface_attrs.end())
+   {
+      // No explicit depth: size the FIFO so the credit never shortens a burst.
+      // A burst keeps its credit until the kernel consumes the words, not when
+      // they arrive, so issuing and draining only overlap if there is room for
+      // a second full burst. Below this the engine issues shorter bursts and
+      // pays another bus round trip: measured at 64-cycle memory latency,
+      // depth B costs 6% cycles over depth 2B for one outstanding burst.
+      const auto bursts_to_cover = profile.max_outstanding < 2U ? 2U : profile.max_outstanding;
+      const auto needed = bursts_to_cover * burst_max;
+      auto depth = 1U;
+      while(depth < needed && depth < 4096U)
+      {
+         depth <<= 1;
+      }
+      profile.fifo_depth = depth;
+   }
+   else
+   {
+      profile.fifo_depth = parse_bounded_decimal(FunctionArchitecture::iface_read_fifo_depth, "read_fifo_depth", 256U,
+                                                 4096U);
+   }
+   if((profile.fifo_depth & (profile.fifo_depth - 1U)) != 0U)
+   {
+      THROW_ERROR_USAGE("Invalid AXI interface attribute 'read_fifo_depth' for bundle '" + bundle_name +
+                        "': expected a power-of-two decimal integer in [1,4096] beats.");
+   }
+   return profile;
+}
+
+std::uint32_t ParseAXIInterfaceLatency(const FunctionArchitecture::iface_attrs& iface_attrs,
+                                      const std::string& bundle_name)
+{
+   const auto it = iface_attrs.find(FunctionArchitecture::iface_latency);
+   if(it == iface_attrs.end())
+   {
+      return 0U;
+   }
+   const auto& text = it->second;
+   const auto fail = [&]() -> void {
+      THROW_ERROR_USAGE("Invalid AXI interface attribute 'latency' for bundle '" + bundle_name +
+                        "': expected an ASCII decimal integer in [0,4294967295].");
+   };
+   if(text.empty())
+   {
+      fail();
+   }
+   std::uint32_t value = 0U;
+   constexpr auto maximum = std::numeric_limits<std::uint32_t>::max();
+   for(const char ch : text)
+   {
+      if(ch < '0' || ch > '9')
+      {
+         fail();
+      }
+      const auto digit = static_cast<std::uint32_t>(ch - '0');
+      if(value > (maximum - digit) / 10U)
+      {
+         fail();
+      }
+      value = value * 10U + digit;
+   }
+   return value;
+}
+
 ModuleArchitecture::ModuleArchitecture(const std::string& filename)
 {
    pugi::xml_document doc;
@@ -413,10 +525,22 @@ ModuleArchitecture::ModuleArchitecture(const std::string& filename)
          for(auto& i : f.child("bundles"))
          {
             THROW_ASSERT(!i.attribute("name").empty(), "Interface name attribute missing from XML.");
-            auto& iface_attr = fa->ifaces[i.attribute("name").value()];
+            const auto bundle_name = std::string(i.attribute("name").value());
+            auto& iface_attr = fa->ifaces[bundle_name];
             for(auto& a : i.attributes())
             {
                iface_attr.emplace(FunctionArchitecture::to_iface_attr("iface_" + std::string(a.name())), a.value());
+            }
+            const auto latency = iface_attr.find(FunctionArchitecture::iface_latency);
+            if(latency != iface_attr.end())
+            {
+               const auto mode = iface_attr.find(FunctionArchitecture::iface_mode);
+               if(mode == iface_attr.end() || mode->second != "m_axi")
+               {
+                  THROW_ERROR_USAGE("Invalid AXI interface attribute 'latency' for bundle '" + bundle_name +
+                                    "': latency is only valid for mode=m_axi.");
+               }
+               ParseAXIInterfaceLatency(iface_attr, bundle_name);
             }
          }
       }
