@@ -482,6 +482,13 @@
       "category": "wrapper"
     },
     {
+      "name": "experimental-m-axi-burst",
+      "type": "Bool",
+      "default_value": "1",
+      "description": "Enable experimental burst coalescing for supported m_axi accesses. Enabled by default; it applies only to interfaces whose pragma requests it through max_read_burst_length.",
+      "category": "hls"
+    },
+    {
       "name": "family",
       "type": "String",
       "default_value": "device",
