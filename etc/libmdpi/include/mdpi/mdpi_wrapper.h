@@ -97,21 +97,29 @@ static size_t __m_call_count = 0;
 #define _m_argdump(...)
 #endif
 
-#define _ms_argcmp(suffix, idx, cmp)                                                                             \
-   do                                                                                                            \
-   {                                                                                                             \
-      const size_t elm_count = P##idx##_size_##suffix / sizeof(m_getvalt(P##idx));                               \
-      for(i = 0; i < elm_count; ++i)                                                                             \
-      {                                                                                                          \
-         if(m_cmp##cmp((m_getptrt(P##idx))P##idx##_##suffix + i, (m_getptrt(P##idx))m_getptr(P##idx) + i))       \
-         {                                                                                                       \
-            error("Memory parameter %u (%zu/%zu) mismatch with respect to " #suffix " reference.\n", idx, i + 1, \
-                  elm_count);                                                                                    \
-            ++mismatch_count;                                                                                    \
-         }                                                                                                       \
-      }                                                                                                          \
-      _m_argdump(suffix, P##idx##_##suffix, idx);                                                                \
-      free(P##idx##_##suffix);                                                                                   \
+#define _ms_argcmp(suffix, idx, cmp)                                                                                   \
+   do                                                                                                                  \
+   {                                                                                                                   \
+      const size_t elm_count = P##idx##_size_##suffix / sizeof(m_getvalt(P##idx));                                     \
+      for(i = 0; i < elm_count; ++i)                                                                                   \
+      {                                                                                                                \
+         if(m_cmp##cmp((m_getptrt(P##idx))P##idx##_##suffix + i, (m_getptrt(P##idx))m_getptr(P##idx) + i))             \
+         {                                                                                                             \
+            error("Memory parameter %u (%zu/%zu) mismatch with respect to " #suffix " reference.\n", idx, i + 1,       \
+                  elm_count);                                                                                          \
+            ++mismatch_count;                                                                                          \
+         }                                                                                                             \
+      }                                                                                                                \
+      const size_t tail_offset = elm_count * sizeof(m_getvalt(P##idx));                                                \
+      const size_t tail_size = P##idx##_size_##suffix - tail_offset;                                                   \
+      if(tail_size &&                                                                                                  \
+         memcmp((const char*)P##idx##_##suffix + tail_offset, (const char*)m_getptr(P##idx) + tail_offset, tail_size)) \
+      {                                                                                                                \
+         error("Memory parameter %u trailing bytes mismatch with respect to " #suffix " reference.\n", idx);           \
+         ++mismatch_count;                                                                                             \
+      }                                                                                                                \
+      _m_argdump(suffix, P##idx##_##suffix, idx);                                                                      \
+      free(P##idx##_##suffix);                                                                                         \
    } while(0)
 
 #define _ms_setargchannel(suffix, idx) m_getvalt(P##idx) P##idx##_##suffix = *m_getptr(P##idx)
@@ -169,8 +177,8 @@ static size_t __m_call_count = 0;
 
 #define m_map_default(ptr) NULL
 #define m_interface_default(idx, ptr, bitsize, align) \
-   __m_interface_port(ptr, bitsize, align);             \
-   _m_pp_setargptr(idx, ptr);                           \
+   __m_interface_port(ptr, bitsize, align);           \
+   _m_pp_setargptr(idx, ptr);                         \
    _m_setargptr(idx, ptr)
 
 #define m_interface_banked(idx, ptr, bitsize, align) \
@@ -211,7 +219,7 @@ static size_t __m_call_count = 0;
 
 #define m_map_channel(ptr) NULL
 #define m_interface_channel(idx, ptr, bitsize, align, depth) \
-   __m_interface_channel(*m_getptr(P##idx), depth);           \
+   __m_interface_channel(*m_getptr(P##idx), depth);          \
    _m_setargchannel(idx)
 
 #define m_map_none(...) m_map_default(__VA_ARGS__)
