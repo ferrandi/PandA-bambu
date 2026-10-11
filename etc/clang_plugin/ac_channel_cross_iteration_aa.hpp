@@ -30,6 +30,10 @@
  * the two calls may not mod/ref any common memory, that ordering is spurious: the
  * two channels are independent hardware objects, so the edge is not serialized and
  * the obtained IR does not force the two accesses to be interleaved.
+ * No independence is assumed from separate parameter names: AA must prove it.
+ * With INFER interfaces, -add-noalias supplies the nonaliasing port contract;
+ * callers must pass distinct objects to those ports. Without noalias, possibly
+ * aliasing parameters retain their ordering (covered by the AA controls).
  *
  * That decision must hold for every iteration of the enclosing loop, not only for
  * the one the alias analysis happened to look at, because the serializer also
@@ -42,7 +46,8 @@
  * are iteration invariant, which means:
  *
  * - a function argument or a constant;
- * - an instruction of the entry block, which executes once per invocation;
+ * - an instruction of the entry block, which executes once per invocation
+ *   (LLVM's verifier forbids predecessors of the entry block);
  * - a constant-offset GEP or a pointer cast of one of the above.
  *
  * PHIs, selects and loads in any other block are rejected even when a stronger
@@ -53,8 +58,8 @@
  * also covers irreducible cycles without relying on loop analysis.
  *
  * The API is header-only and version dependent: the call-vs-call mod/ref query is
- * ImmutableCallSite based below LLVM 8, plain from 8 to 13, and SimpleAAQueryInfo
- * based from 14 on; the NoModRef sentinel differs below LLVM 6. panda_clang_compat
+ * ImmutableCallSite based below LLVM 8, plain from 8 to 15, and SimpleAAQueryInfo
+ * based from 16 on; the NoModRef sentinel differs below LLVM 6. panda_clang_compat
  * supplies the PANDA_LLVM_CLANG_MAJOR macro this file branches on.
  */
 #ifndef PANDA_AC_CHANNEL_CROSS_ITERATION_AA_HPP
@@ -137,7 +142,7 @@ namespace bambu_ac_channel_primitives
       {
          return false;
       }
-#if PANDA_LLVM_CLANG_MAJOR >= 14
+#if PANDA_LLVM_CLANG_MAJOR >= 16
       llvm::SimpleAAQueryInfo AAQI(AA);
       const auto ab = AA.getModRefInfo(A, B, AAQI);
       const auto ba = AA.getModRefInfo(B, A, AAQI);

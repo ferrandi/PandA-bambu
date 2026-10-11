@@ -79,6 +79,35 @@ namespace
 {
    using OrderedInstructionsCache = std::map<unsigned int, std::unique_ptr<FunctionOrderedInstructions>>;
 
+   /// Interfaces carry integer bits. Resize integers separately from reinterpreting
+   /// floating-point or vector values: bitcasts require equal operand/result widths.
+   ir_nodeRef createInterfaceCast(ir_nodeRef value, const ir_nodeConstRef& target_type,
+                                  const ir_manipulationRef& ir_man, unsigned scope,
+                                  std::vector<ir_nodeRef>& intermediate_stmts)
+   {
+      const auto source_type = ir_helper::CGetType(value);
+      const auto source_is_bits = ir_helper::IsRealType(source_type) || ir_helper::IsVectorType(source_type);
+      const auto target_is_bits = ir_helper::IsRealType(target_type) || ir_helper::IsVectorType(target_type);
+      auto cast_kind = source_is_bits || target_is_bits ? bitcast_node_K : nop_node_K;
+      if(cast_kind == bitcast_node_K && ir_helper::Size(source_type) != ir_helper::Size(target_type))
+      {
+         const auto integer_type =
+             ir_man->GetCustomIntegerType(ir_helper::Size(source_is_bits ? source_type : target_type), true);
+         const auto intermediate_expr = ir_man->create_unary_operation(integer_type, value, BUILTIN_LOCINFO,
+                                                                       source_is_bits ? bitcast_node_K : nop_node_K);
+         const auto intermediate_stmt =
+             ir_man->CreateAssignStmt(integer_type, nullptr, nullptr, intermediate_expr, scope, BUILTIN_LOCINFO);
+         intermediate_stmts.push_back(intermediate_stmt);
+         value = GetPointerS<const assign_stmt>(intermediate_stmt)->op0;
+         cast_kind = target_is_bits ? bitcast_node_K : nop_node_K;
+      }
+      if(cast_kind == bitcast_node_K && ir_helper::Size(value) != ir_helper::Size(target_type))
+      {
+         THROW_ERROR("Interface bitcast width mismatch");
+      }
+      return ir_man->create_unary_operation(target_type, value, BUILTIN_LOCINFO, cast_kind);
+   }
+
    bool isPointerDerivation(const ir_nodeRef& stmt, const ir_nodeRef& pointer)
    {
       if(stmt->get_kind() != assign_stmt_K)
@@ -1730,6 +1759,10 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
       {
          callee = GetPointerS<const addr_node>(callee)->op;
       }
+      if(callee->get_kind() != function_val_node_K && callee->get_kind() != function_ty_node_K)
+      {
+         THROW_ERROR("Unsupported indirect channel primitive call");
+      }
       return ir_helper::GetFunctionReturnType(callee);
    }();
    const auto discarded_return = discarded_return_type != nullptr;
@@ -1809,9 +1842,9 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
       const auto data_size = ir_helper::Size(interface_datatype);
       // The modern non-blocking ABI returns the valid flag above the channel data,
       // including when the compiler lowers the return value to an sret pointer.
-      const auto packed_return_size = data_size + (valid_var && !oldAsyncSignature ? 1 : 0);
+      const auto packed_return_size = data_size + (valid_var ? 1 : 0);
       const auto sel_type = ir_man->GetBooleanType();
-      const auto ret_type = ir_man->GetCustomIntegerType(data_size + (valid_var ? 1 : 0), true);
+      const auto ret_type = ir_man->GetCustomIntegerType(packed_return_size, true);
       const auto out_ptr_type = ir_man->GetPointerType(interface_datatype);
       const auto interface_fname = ENCODE_FDNAME(
           arg_name, valid_var ? (is_peek_call ? "_PeekAsync" : "_ReadAsync") : (is_peek_call ? "_Peek" : "_Read"),
@@ -1960,28 +1993,15 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
                      field_value = GetPointerS<const assign_stmt>(shift_stmt)->op0;
                   }
                   const auto field_type = ir_helper::CGetType(user_ga->op0);
-                  const auto needs_shape_cast =
-                      ir_helper::IsRealType(field_type) || ir_helper::IsVectorType(field_type);
-                  const auto truncate_type = needs_shape_cast ?
-                                                  ir_man->GetCustomIntegerType(ir_helper::Size(field_type), false) :
-                                                  field_type;
-                  const auto truncate_expr =
-                      ir_man->create_unary_operation(truncate_type, field_value, BUILTIN_LOCINFO, nop_node_K);
-                  ir_nodeRef replacement;
-                  if(needs_shape_cast)
+                  std::vector<ir_nodeRef> intermediate_stmts;
+                  const auto cast_expr =
+                      createInterfaceCast(field_value, field_type, ir_man, fd->index, intermediate_stmts);
+                  for(const auto& intermediate_stmt : intermediate_stmts)
                   {
-                     const auto truncated_value = ir_man->create_ssa_name(nullptr, truncate_type, nullptr, nullptr);
-                     const auto truncate_stmt =
-                         ir_man->create_assign_stmt(truncated_value, truncate_expr, fd->index, BUILTIN_LOCINFO);
-                     load_bb->PushBefore(truncate_stmt, used_stmt, AppM);
-                     const auto bitcast_expr =
-                         ir_man->create_unary_operation(field_type, truncated_value, BUILTIN_LOCINFO, bitcast_node_K);
-                     replacement = ir_man->create_assign_stmt(user_ga->op0, bitcast_expr, fd->index, BUILTIN_LOCINFO);
+                     load_bb->PushBefore(intermediate_stmt, used_stmt, AppM);
                   }
-                  else
-                  {
-                     replacement = ir_man->create_assign_stmt(user_ga->op0, truncate_expr, fd->index, BUILTIN_LOCINFO);
-                  }
+                  const auto replacement =
+                      ir_man->create_assign_stmt(user_ga->op0, cast_expr, fd->index, BUILTIN_LOCINFO);
                   load_bb->Replace(used_stmt, replacement, true, AppM);
                }
                if(valid_var)
@@ -2049,8 +2069,13 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
                   field_value = GetPointerS<const assign_stmt>(shift_stmt)->op0;
                }
                const auto field_type = ir_helper::CGetType(use_ga->op0);
+               std::vector<ir_nodeRef> intermediate_stmts;
                const auto truncate_expr =
-                   ir_man->create_unary_operation(field_type, field_value, BUILTIN_LOCINFO, nop_node_K);
+                   createInterfaceCast(field_value, field_type, ir_man, fd->index, intermediate_stmts);
+               for(const auto& intermediate_stmt : intermediate_stmts)
+               {
+                  use_bb->PushBefore(intermediate_stmt, use_stmt, AppM);
+               }
                const auto replacement =
                    ir_man->create_assign_stmt(use_ga->op0, truncate_expr, fd->index, BUILTIN_LOCINFO);
                use_bb->Replace(use_stmt, replacement, true, AppM);
@@ -2061,7 +2086,10 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
          {
             // If the sret loads cannot be replaced, preserve the whole packed
             // return in memory. The bool reference is ignored by this ABI.
-            THROW_ASSERT(ir_helper::Size(data_type) == packed_return_size, "Packed channel return size mismatch");
+            if(ir_helper::Size(data_type) != packed_return_size)
+            {
+               THROW_ERROR("Packed channel return size mismatch");
+            }
             const auto data_cast = ir_man->CreateNopExpr(retval, data_type, nullptr, nullptr, fd->index);
             curr_bb->PushBefore(data_cast, stmt, AppM);
             const auto data_ref =
@@ -2078,16 +2106,15 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
             // Mask and cast read data
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  MASK: " + ga_mask->ToString());
             auto data_mask = GetPointerS<const assign_stmt>(ga_mask)->op0;
-            const auto needs_bitcast =
-                ir_helper::IsRealType(data_type) ||
-                (ir_helper::IsVectorType(data_type) && ir_helper::Size(data_type) == ir_helper::Size(interface_datatype) &&
-                 !ir_helper::IsVectorType(interface_datatype));
-            if(needs_bitcast)
+            if(ir_helper::IsRealType(data_type) || ir_helper::IsVectorType(data_type))
             {
-               const auto bitcast_expr =
-                   ir_man->create_unary_operation(data_type, data_mask, BUILTIN_LOCINFO, bitcast_node_K);
-               ga_mask =
-                   ir_man->CreateAssignStmt(data_type, nullptr, nullptr, bitcast_expr, fd->index, BUILTIN_LOCINFO);
+               std::vector<ir_nodeRef> intermediate_stmts;
+               const auto cast_expr = createInterfaceCast(data_mask, data_type, ir_man, fd->index, intermediate_stmts);
+               for(const auto& intermediate_stmt : intermediate_stmts)
+               {
+                  curr_bb->PushBefore(intermediate_stmt, stmt, AppM);
+               }
+               ga_mask = ir_man->CreateAssignStmt(data_type, nullptr, nullptr, cast_expr, fd->index, BUILTIN_LOCINFO);
                curr_bb->PushBefore(ga_mask, stmt, AppM);
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- BITCAST: " + ga_mask->ToString());
                data_mask = GetPointerS<const assign_stmt>(ga_mask)->op0;
@@ -2226,19 +2253,19 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
       }
       else
       {
-         const auto is_real = ir_helper::IsRealType(actual_type);
-         const auto tmp_type =
-             is_real ? ir_man->GetCustomIntegerType(ir_helper::Size(actual_type), true) : interface_datatype;
-         const auto tmp_ssa = ir_man->create_ssa_name(nullptr, tmp_type, nullptr, nullptr);
+         const auto tmp_ssa = ir_man->create_ssa_name(nullptr, interface_datatype, nullptr, nullptr);
          const auto gc = ir_man->create_assign_stmt(tmp_ssa, ce, fd->index, BUILTIN_LOCINFO);
          curr_bb->Replace(stmt, gc, true, AppM);
-         const auto same_width = ir_helper::Size(tmp_type) == ir_helper::Size(actual_type);
-         const auto needs_bitcast =
-             is_real || (ir_helper::IsVectorType(actual_type) && same_width && !ir_helper::IsVectorType(tmp_type));
-         const auto cast_expr = ir_man->create_unary_operation(actual_type, tmp_ssa, BUILTIN_LOCINFO,
-                                                               needs_bitcast ? bitcast_node_K : nop_node_K);
+         std::vector<ir_nodeRef> intermediate_stmts;
+         const auto cast_expr = createInterfaceCast(tmp_ssa, actual_type, ir_man, fd->index, intermediate_stmts);
+         auto last_stmt = gc;
+         for(const auto& intermediate_stmt : intermediate_stmts)
+         {
+            curr_bb->PushAfter(intermediate_stmt, last_stmt, AppM);
+            last_stmt = intermediate_stmt;
+         }
          const auto cast = ir_man->create_assign_stmt(ga->op0, cast_expr, fd->index, BUILTIN_LOCINFO);
-         curr_bb->PushAfter(cast, gc, AppM);
+         curr_bb->PushAfter(cast, last_stmt, AppM);
          GetPointer<HLS_manager>(AppM)->design_interface_io[fname][curr_bb->number][arg_name].push_back(gc->index);
 
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- AFTER: " + gc->ToString());
@@ -2296,15 +2323,20 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
          data_obj = gc->args.back();
          if(gc->args.size() > 2)
          {
-            const auto packed_type = ir_man->GetCustomIntegerType(ir_helper::Size(interface_datatype), false);
+            const auto packed_type = ir_man->GetCustomIntegerType(ir_helper::Size(interface_datatype), true);
             ir_nodeRef packed_value;
             unsigned long long bit_offset = 0;
             for(size_t payload_idx = 1; payload_idx < gc->args.size(); ++payload_idx)
             {
                const auto fragment = gc->args.at(payload_idx);
                const auto fragment_type = ir_helper::CGetType(fragment);
+               std::vector<ir_nodeRef> intermediate_stmts;
                const auto fragment_value =
-                   ir_man->create_unary_operation(packed_type, fragment, BUILTIN_LOCINFO, nop_node_K);
+                   createInterfaceCast(fragment, packed_type, ir_man, fd->index, intermediate_stmts);
+               for(const auto& intermediate_stmt : intermediate_stmts)
+               {
+                  curr_bb->PushBefore(intermediate_stmt, stmt, AppM);
+               }
                const auto fragment_ssa = ir_man->create_ssa_name(nullptr, packed_type, nullptr, nullptr);
                curr_bb->PushBefore(ir_man->create_assign_stmt(fragment_ssa, fragment_value, fd->index, BUILTIN_LOCINFO),
                                    stmt, AppM);
@@ -2433,11 +2465,13 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
                const auto user_ga = GetPointerS<const assign_stmt>(used_stmt);
                const auto fragment_size = ir_helper::Size(user_ga->op1);
                const auto fragment_type = ir_man->GetCustomIntegerType(fragment_size, false);
-               const auto needs_bitcast =
-                   ir_helper::IsRealType(user_ga->op1) || ir_helper::IsVectorType(user_ga->op1);
+               std::vector<ir_nodeRef> intermediate_stmts;
                const auto fragment_expr =
-                   ir_man->create_unary_operation(fragment_type, user_ga->op1, BUILTIN_LOCINFO,
-                                                  needs_bitcast ? bitcast_node_K : nop_node_K);
+                   createInterfaceCast(user_ga->op1, fragment_type, ir_man, fd->index, intermediate_stmts);
+               for(const auto& intermediate_stmt : intermediate_stmts)
+               {
+                  curr_bb->PushBefore(intermediate_stmt, stmt, AppM);
+               }
                const auto fragment_stmt =
                    ir_man->CreateAssignStmt(fragment_type, nullptr, nullptr, fragment_expr, fd->index, BUILTIN_LOCINFO);
                curr_bb->PushBefore(fragment_stmt, stmt, AppM);
@@ -2495,11 +2529,17 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
             lastStmt = ga_load;
          }
       }
-      else if(ir_helper::IsRealType(data_type))
+      else if(ir_helper::IsRealType(data_type) || ir_helper::IsVectorType(data_type))
       {
-         const auto bitcast_expr = ir_man->create_unary_operation(data_type, data_obj, BUILTIN_LOCINFO, bitcast_node_K);
+         std::vector<ir_nodeRef> intermediate_stmts;
+         const auto cast_expr =
+             createInterfaceCast(data_obj, interface_datatype, ir_man, fd->index, intermediate_stmts);
+         for(const auto& intermediate_stmt : intermediate_stmts)
+         {
+            curr_bb->PushBefore(intermediate_stmt, stmt, AppM);
+         }
          const auto ga_bitcast =
-             ir_man->CreateAssignStmt(interface_datatype, nullptr, nullptr, bitcast_expr, fd->index, BUILTIN_LOCINFO);
+             ir_man->CreateAssignStmt(interface_datatype, nullptr, nullptr, cast_expr, fd->index, BUILTIN_LOCINFO);
          curr_bb->PushBefore(ga_bitcast, stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- BITCAST: " + ga_bitcast->ToString());
          data_obj = GetPointerS<const assign_stmt>(ga_bitcast)->op0;
@@ -2569,22 +2609,18 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
 
       auto value_node = ga->op1;
       auto actual_type = ir_helper::CGetType(value_node);
-      if(ir_helper::IsSameType(interface_datatype, actual_type))
+      if(!ir_helper::IsSameType(interface_datatype, actual_type))
       {
-         ir_nodeRef nop;
-         if(ir_helper::IsRealType(actual_type))
+         std::vector<ir_nodeRef> intermediate_stmts;
+         const auto cast_expr =
+             createInterfaceCast(value_node, interface_datatype, ir_man, fd->index, intermediate_stmts);
+         for(const auto& intermediate_stmt : intermediate_stmts)
          {
-            const auto int_type = ir_man->GetCustomIntegerType(ir_helper::Size(actual_type), true);
-            const auto bitcast_expr =
-                ir_man->create_unary_operation(int_type, value_node, BUILTIN_LOCINFO, bitcast_node_K);
-            value_node = ir_man->create_ssa_name(nullptr, int_type, nullptr, nullptr);
-            nop = ir_man->create_assign_stmt(value_node, bitcast_expr, fd->index, BUILTIN_LOCINFO);
+            curr_bb->PushBefore(intermediate_stmt, stmt, AppM);
          }
-         else
-         {
-            nop = ir_man->CreateNopExpr(value_node, interface_datatype, nullptr, nullptr, ga->parent->index);
-            value_node = GetPointerS<const assign_stmt>(nop)->op0;
-         }
+         const auto nop =
+             ir_man->CreateAssignStmt(interface_datatype, nullptr, nullptr, cast_expr, fd->index, BUILTIN_LOCINFO);
+         value_node = GetPointerS<const assign_stmt>(nop)->op0;
          curr_bb->PushBefore(nop, stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---   NOP: " + nop->ToString());
       }

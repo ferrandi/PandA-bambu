@@ -630,15 +630,15 @@ namespace llvm
       std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>
           CurrentListofMAEntryDef;
       void serialize_vops(const void* g);
+      /// Walks the MemorySSA reaching-def chain of MA. originSeam, when set, is the
+      /// ac_channel seam call whose dependencies are being serialized (kept through
+      /// the whole recursion); funcAA is the alias analysis reused for the
+      /// seam-vs-seam ordering checks (nullptr disables them).
       void serialize_ir_aliased_reaching_defs(llvm::MemoryAccess* MA, llvm::MemorySSA& MSSA,
                                               std::set<llvm::MemoryAccess*>& visited,
                                               const llvm::Function* currentFunction, bool isMemDefVal,
                                               const llvm::MemoryLocation* Loc, llvm::CallInst* originSeam,
                                               llvm::AAResults* funcAA);
-      /// Walks the MemorySSA reaching-def chain of MA. originSeam, when set, is the
-      /// ac_channel seam call whose dependencies are being serialized (kept through
-      /// the whole recursion); funcAA is the alias analysis reused for the
-      /// seam-vs-seam ordering checks (nullptr disables them).
       /// True when the edge from the origin ac_channel seam call to the defMemAcc def
       /// can be dropped: the def is another recognized seam call and the alias
       /// analysis proves that the two calls may not mod/ref any common memory.
@@ -743,8 +743,9 @@ namespace llvm
 /// body, whose bodies are generated in Verilog later on. Plugins that need to
 /// recognize these calls - assigning their memory contract (topfname), or filtering
 /// the virtual-operand reaching-def chain (dumpBambuIr) - share this
-/// classification. It follows the hardware lowering (InterfaceInfer) rather than the
-/// host-only definitions.
+/// classification. It describes the reserved hardware seam rather than host-only
+/// definitions; InterfaceInfer also accepts broader legacy name patterns, for which
+/// this classifier conservatively keeps memory ordering.
 namespace bambu_ac_channel_primitives
 {
    enum class Op
