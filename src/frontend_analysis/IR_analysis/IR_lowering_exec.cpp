@@ -727,8 +727,12 @@ bool IR_lowering::handleMemRefOutput(const blocRef& block, const std::list<ir_no
       }
       const auto op1_type = ir_helper::CGetType(ga->op1);
       auto bitcast_pattern = op1_type->get_kind() == struct_ty_node_K && ga->op1->get_kind() == bitcast_node_K;
+      // A vector constructor is a computation with one input per lane. Materialize
+      // it before the store, whose data/address operands belong to a different FU.
+      // Aggregate constructors retain their dedicated memory initialization path.
       if(!bitcast_pattern && ga->op1->get_kind() != ssa_node_K && !GetPointer<cst_node>(ga->op1) &&
-         ga->op1->get_kind() != mem_access_node_K && ga->op1->get_kind() != constructor_node_K)
+         ga->op1->get_kind() != mem_access_node_K &&
+         (ga->op1->get_kind() != constructor_node_K || ir_helper::IsVectorType(op1_type)))
       {
          const auto op_type = ir_helper::CGetType(ga->op1);
          const auto op_ga =

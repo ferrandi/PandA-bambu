@@ -46,7 +46,7 @@ set(_panda_plugin_buddy_includes
    "${CMAKE_SOURCE_DIR}/ext/buddy/src"
    "${CMAKE_BINARY_DIR}/ext/buddy")
 
-function(_panda_collect_clang_flags ver out_cxx out_ld out_libdir out_defs)
+function(_panda_collect_clang_flags ver out_cxx out_ld out_libdir out_defs out_llvmconfig)
    # Derive toolchain locations from detected compiler path.
    if(NOT PANDA_CLANG${ver}_EXE)
       return()
@@ -148,14 +148,18 @@ function(_panda_collect_clang_flags ver out_cxx out_ld out_libdir out_defs)
    set(${out_ld} "${_ldflags}" PARENT_SCOPE)
    set(${out_libdir} "${_libdir}" PARENT_SCOPE)
    set(${out_defs} "${_defs}" PARENT_SCOPE)
+   set(${out_llvmconfig} "${_llvmconfig_exe}" PARENT_SCOPE)
 endfunction()
+
+# Explicit target for CI and developers; controls do not add LLVM executables to ALL.
+add_custom_target(ac_channel_tests)
 
 function(_panda_add_clang_plugins ver)
    if(NOT PANDA_CLANG${ver}_FOUND)
       return()
    endif()
 
-   _panda_collect_clang_flags(${ver} _clang_cxxflags _clang_ldflags _clang_libdir _clang_defs)
+   _panda_collect_clang_flags(${ver} _clang_cxxflags _clang_ldflags _clang_libdir _clang_defs _test_llvmconfig)
    if(NOT _clang_cxxflags)
       return()
    endif()
@@ -253,18 +257,6 @@ function(_panda_add_clang_plugins ver)
    _panda_make_plugin(clang_plugin_${ver}_opt_channelctor  "opt_${COMPILER_CHANNELCTOR_PLUGIN}" 0 "${_src_base}/plugin_channelCtorCleanup.cpp")
 
    # Test seam classification and cross-iteration AA with each detected LLVM.
-   get_filename_component(_test_clang_bin "${PANDA_CLANG${ver}_EXE}" DIRECTORY)
-   get_filename_component(_test_clang_root "${_test_clang_bin}" DIRECTORY)
-   set(_test_llvmconfig "")
-   foreach(_candidate IN ITEMS
-      "${_test_clang_root}/bin/llvm-config-${ver}"
-      "${_test_clang_root}/bin/llvm-config-${ver}.0"
-      "${_test_clang_root}/bin/llvm-config")
-      if(EXISTS "${_candidate}")
-         set(_test_llvmconfig "${_candidate}")
-         break()
-      endif()
-   endforeach()
    if(_test_llvmconfig)
       execute_process(COMMAND "${_test_llvmconfig}" --libs support core asmparser analysis --system-libs
          OUTPUT_VARIABLE _channel_seam_test_libs
@@ -280,7 +272,8 @@ function(_panda_add_clang_plugins ver)
             ac_channel_disjoint_channels
          )
          foreach(_ac_channel_control IN LISTS _ac_channel_controls)
-            add_executable(${_ac_channel_control}_clang${ver}_test "${_src_base}/test_${_ac_channel_control}.cpp")
+            add_executable(${_ac_channel_control}_clang${ver}_test EXCLUDE_FROM_ALL "${_src_base}/test_${_ac_channel_control}.cpp")
+            add_dependencies(ac_channel_tests ${_ac_channel_control}_clang${ver}_test)
             set_target_properties(${_ac_channel_control}_clang${ver}_test PROPERTIES
                CXX_STANDARD 17
                CXX_STANDARD_REQUIRED ON)
@@ -311,7 +304,11 @@ function(_panda_add_clang_plugins ver)
             set_tests_properties(${_ac_channel_control}_clang${ver} PROPERTIES
                LABELS "frontend;ac_channel;clang-${ver}")
          endforeach()
+      else()
+         message(STATUS "clang-${ver}: LLVM test libraries unavailable; skipping ac_channel controls")
       endif()
+   else()
+      message(STATUS "clang-${ver}: llvm-config unavailable; skipping ac_channel controls")
    endif()
 
    set(_all_plugins

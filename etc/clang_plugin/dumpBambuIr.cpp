@@ -3493,13 +3493,13 @@ namespace llvm
       /// request does not reach the on-the-fly function pass manager.
       if(originSeam)
       {
-#if PANDA_LLVM_CLANG_MAJOR >= 14
+#if PANDA_LLVM_CLANG_MAJOR >= 16
          /// funcAA is the analysis MemorySSA was built with: set below, once
          /// MemorySSA has been acquired.
 #else
          auto& F = *currentFunction;
          const auto& TLI = GetTLI(F);
-         auto& AC = const_cast<llvm::AssumptionCache&>(GetAC(F));
+         auto& AC = GetAC(F);
          auto& DT = GetDomTree(F);
          /// BasicAA only: it is where the noalias/argmem facts live, and the
          /// call-vs-call query is posed on the calls themselves, so TBAA metadata is
@@ -3519,10 +3519,10 @@ namespace llvm
       /// Last function analysis request of this path: from here on the MemorySSA
       /// object and the MemoryAccess nodes it owns stay alive until the visit ends.
       auto& MSSA = GetMSSA(*currentFunction).getMSSA();
-#if PANDA_LLVM_CLANG_MAJOR > 14
+#if PANDA_LLVM_CLANG_MAJOR >= 16
       MSSA.ensureOptimizedUses();
 #endif
-#if PANDA_LLVM_CLANG_MAJOR >= 14
+#if PANDA_LLVM_CLANG_MAJOR >= 16
       if(originSeam)
       {
          funcAA = &MSSA.getAA();
