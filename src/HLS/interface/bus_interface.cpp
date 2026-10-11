@@ -292,7 +292,12 @@ void bus_interface::initialize_bmi(const structural_objectRef wrappedObj)
    auto bank_index = iface_attrs.find(FunctionArchitecture::iface_chunk_size);
    if(bank_index != iface_attrs.end())
    {
-      bi.bank_index = ceil_log2(static_cast<unsigned int>(std::stoul((bank_index->second))));
+      const auto chunk_size = std::stoull(bank_index->second);
+      if(chunk_size == 0 || (chunk_size & (chunk_size - 1)) != 0 || chunk_size > (1ULL << 31))
+      {
+         THROW_ERROR_USAGE("Bus chunk_size must be a nonzero power of two no larger than 2^31 bytes");
+      }
+      bi.bank_index = ceil_log2(static_cast<unsigned int>(chunk_size));
    }
 
    bi.channel_number = parameters->getOption<unsigned int>(OPT_channels_number);
@@ -422,6 +427,29 @@ void bus_interface::create_noc_memory_mapping_unit(const structural_objectRef no
                if(bank_allocation_value != parm_attrs.end())
                {
                   bank_allocation_string = bank_allocation_value->second;
+                  const auto banks = SplitString(bank_allocation_string, ",");
+                  std::set<unsigned long long> bank_ids;
+                  if(banks.empty() || banks.size() > bi.bank_number)
+                  {
+                     THROW_ERROR_USAGE("Invalid bank_allocation for " + param_name + ": too many or no banks");
+                  }
+                  for(const auto& bank : banks)
+                  {
+                     const auto first = bank.find_first_not_of(" \t");
+                     const auto last = bank.find_last_not_of(" \t");
+                     const auto digits =
+                         first == std::string::npos ? std::string() : bank.substr(first, last - first + 1);
+                     if(digits.empty() || digits.find_first_not_of("0123456789") != std::string::npos)
+                     {
+                        THROW_ERROR_USAGE("Invalid bank identifier in bank_allocation for " + param_name);
+                     }
+                     const auto id = std::stoull(digits);
+                     if(id >= bi.bank_number || !bank_ids.insert(id).second)
+                     {
+                        THROW_ERROR_USAGE("Invalid bank_allocation for " + param_name +
+                                          ": duplicate or out-of-range bank");
+                     }
+                  }
                }
                else
                {

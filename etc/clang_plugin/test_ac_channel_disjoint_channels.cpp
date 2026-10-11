@@ -111,6 +111,17 @@ static bool check(const Case& test)
 
 int main()
 {
+   // The structural gate relies on LLVM's entry block being executed once.
+   // Pin down the verifier invariant: a backedge to entry is not legal LLVM IR.
+   llvm::LLVMContext context;
+   llvm::SMDiagnostic diagnostic;
+   const auto invalid =
+       llvm::parseAssemblyString("define void @invalid() { entry: br label %entry }", diagnostic, context);
+   if(!invalid || !llvm::verifyFunction(*invalid->getFunction("invalid")))
+   {
+      std::fprintf(stderr, "[FAIL] entry-block backedge must be rejected by the LLVM verifier\n");
+      return 1;
+   }
    const char* alternating = " %bit = and i32 %i, 1\n %even = icmp eq i32 %bit, 0\n"
                              " %p = select i1 %even, PTR %a, PTR %b\n %q = select i1 %even, PTR %b, PTR %a\n";
    const char* calls = " call void @read(PTR %p)\n call void @write(PTR %q)\n";
