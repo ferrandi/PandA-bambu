@@ -2279,11 +2279,16 @@ namespace
       for(size_t i = 0, itFinal = 0; i < fnPartInfo.fnOriginal->arg_size(); ++i)
       {
          auto argPartInfoIt = findPartInfoInContainer(GET_ARG_PT(fnPartitionedWithDupl, i), fnPartInfo.args);
+         const auto origName = fnPartInfo.fnOriginal->getAttributes().getParamAttr(i, "bambu.orig_name");
          if(isArgPartitioned(argPartInfoIt, fnPartInfo.args))
          {
             for(uint64_t numPartition = 0; numPartition < argPartInfoIt->getNumPartitions(); ++numPartition, ++itFinal)
             {
-               GET_ARG_PT(fnPartitioned, itFinal)->addAttr(llvm::Attribute::NoAlias);
+               auto* argFinal = GET_ARG_PT(fnPartitioned, itFinal);
+               argFinal->addAttr(llvm::Attribute::NoAlias);
+               argFinal->addAttr(llvm::Attribute::get(M.getContext(), "bambu.orig_index", std::to_string(itFinal)));
+               argFinal->addAttr(llvm::Attribute::get(M.getContext(), "bambu.orig_name",
+                                                      argPartInfoIt->argName + "_" + std::to_string(numPartition)));
             }
          }
          else
@@ -2294,6 +2299,11 @@ namespace
             {
                argFinal->addAttr(llvm::Attribute::NoAlias);
             }
+            if(origName.isStringAttribute())
+            {
+               argFinal->addAttr(origName);
+            }
+            argFinal->addAttr(llvm::Attribute::get(M.getContext(), "bambu.orig_index", std::to_string(itFinal)));
             ++itFinal;
          }
       }
@@ -2752,7 +2762,6 @@ llvm::PassPluginLibraryInfo getCustomSROAInfo()
                  MPM.addPass(llvm::IPSCCPPass());
                  MPM.addPass(llvm::GlobalOptPass());
                  MPM.addPass(llvm::createModuleToFunctionPassAdaptor(llvm::PromotePass()));
-                 MPM.addPass(llvm::DeadArgumentEliminationPass());
 
                  FunctionPassManager FPM_PreInline;
                  FPM_PreInline.addPass(llvm::InstCombinePass());
@@ -2833,7 +2842,6 @@ llvm::PassPluginLibraryInfo getCustomSROAInfo()
                  // Fold again what inlining exposed at module scope.
                  MPM.addPass(llvm::IPSCCPPass());
                  MPM.addPass(llvm::GlobalOptPass());
-                 MPM.addPass(llvm::DeadArgumentEliminationPass());
                  // Re-fold the GEP chains the signature rewrite leaves behind: CSROA only knows how to
                  // replace Load/Store/Call users of an alloca GEP. InstCombine refuses to merge an
                  // all-zero GEP into a multi-use one (shouldMergeGEPs), so CSE the duplicate element

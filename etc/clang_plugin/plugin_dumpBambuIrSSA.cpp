@@ -799,7 +799,6 @@ llvm::PassPluginLibraryInfo getdumpSSAPluginInfo()
              MPM.addPass(createModuleToFunctionPassAdaptor(llvm::PromotePass()));
              if(doOpt)
              {
-                MPM.addPass(llvm::DeadArgumentEliminationPass());
                 MPM.addPass(llvm::createModuleToFunctionPassAdaptor(llvm::InstCombinePass()));
              }
              // MPM.addPass(llvm::PrintModulePass(llvm::errs()));
