@@ -13060,7 +13060,7 @@ reg [(PORTSIZE_be*BITSIZE_be)-1:0] be1;
 reg [(PORTSIZE_din_value_aggregated*BITSIZE_din_value_aggregated)-1:0] din_value_aggregated1;
 reg [(PORTSIZE_dout_a*BITSIZE_dout_a)-1:0] dout_a_tmp;
 reg [(PORTSIZE_dout_a*BITSIZE_dout_a)-1:0] dout_a_registered;
-reg [(n_byte_on_databus)*8-1:0] memory [0:n_elements-1]/* synthesis syn_ramstyle = &quot;registers,no_rw_check&quot; */ ;
+(* ram_style = &quot;registers&quot; *) reg [(n_byte_on_databus)*8-1:0] memory [0:n_elements-1]/* synthesis syn_ramstyle = &quot;registers,no_rw_check&quot; */ ;
 integer p1;
 
 initial
