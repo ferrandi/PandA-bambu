@@ -1199,10 +1199,14 @@ ir_nodeRef ir_manipulation::CreateAssignStmtAddrExpr(const ir_nodeConstRef& tn, 
 
 ir_nodeRef ir_manipulation::CreateVectorType(const ir_nodeConstRef& elt_type, integer_cst_t number_of_elements) const
 {
-   const auto bitsizealloc = number_of_elements * ir_helper::SizeAlloc(elt_type);
+   THROW_ASSERT(number_of_elements > 0, "Vector type without elements");
+   // An i1 vector is packed as a whole object; its lanes are not byte-sized.
+   const auto bitsizealloc = ir_helper::Size(elt_type) == 1 ? ((number_of_elements + 7) / 8) * 8 :
+                                                              number_of_elements * ir_helper::SizeAlloc(elt_type);
 
    IRSchema IR_schema;
    IR_schema[TOK(TOK_ELTS)] = STR(elt_type->index);
+   IR_schema[TOK(TOK_NELEMENTS)] = STR(number_of_elements);
    IR_schema[TOK(TOK_BITSIZEALLOC)] = STR(bitsizealloc);
 
    auto vector_type_id = IRM->find0(vector_ty_node_K, IR_schema);
