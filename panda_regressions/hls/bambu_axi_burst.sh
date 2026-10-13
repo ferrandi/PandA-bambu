@@ -68,7 +68,8 @@ fi
 
 python3 -B "$script_dir/bambu_axi_burst/check_burst_results.py" \
   --results "$out" \
-  --expectations "$script_dir/bambu_axi_burst/cycle_expectations.tsv"
+  --expectations "$script_dir/bambu_axi_burst/cycle_expectations.tsv" \
+  --legacy-expectations "$script_dir/bambu_axi_burst/legacy_write_expectations.tsv"
 
 # Mantis and the cycle checker have completed. Put all remaining helper output
 # and temporary files beneath the selected out_ root.
