@@ -3019,19 +3019,17 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                if(ir_helper::IsVectorType(var_node))
                {
                   const auto type = ir_helper::CGetType(var_node);
-                  const auto size = ir_helper::SizeAlloc(type);
-                  const auto element_type = ir_helper::CGetElements(type);
-                  const auto element_size = ir_helper::SizeAlloc(element_type);
+                  const auto element_size = ir_helper::VectorElementBitsize(type);
+                  const auto elements = ir_helper::VectorNumElements(type);
                   required_variables[i] = std::max(required_variables[i], element_size);
 
                   if(num_elements.find(i) == num_elements.end())
                   {
-                     num_elements[i] = size / element_size;
+                     num_elements[i] = elements;
                   }
                   else
                   {
-                     THROW_ASSERT(num_elements.find(i)->second == size / element_size,
-                                  "Performed a wrong module allocation");
+                     THROW_ASSERT(num_elements.find(i)->second == elements, "Performed a wrong module allocation");
                   }
                }
                else
@@ -3240,11 +3238,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                if(ir_helper::IsVectorType(out_node))
                {
                   const auto type = ir_helper::CGetType(out_node);
-                  const auto size = ir_helper::SizeAlloc(type);
-                  const auto element_type = ir_helper::CGetElements(type);
-                  const auto element_size = ir_helper::SizeAlloc(element_type);
-                  n_out_elements = size / element_size;
-                  produced_variables = element_size;
+                  n_out_elements = ir_helper::VectorNumElements(type);
+                  produced_variables = ir_helper::VectorElementBitsize(type);
                }
                else
                {

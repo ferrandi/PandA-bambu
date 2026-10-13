@@ -345,7 +345,7 @@ void ir_node_finder::operator()(const constant_vector_val_node* obj, unsigned in
 void ir_node_finder::operator()(const vector_ty_node* obj, unsigned int& mask)
 {
    ir_node_mask::operator()(obj, mask);
-   find_res = find_res && CHECK_IR_NODE_OPT(TOK_ELTS, obj->elts);
+   find_res = find_res && CHECK_IR_NODE_OPT(TOK_ELTS, obj->elts) && CHECK_VALUE_OPT(TOK_NELEMENTS, obj->nelements);
 }
 
 void ir_node_finder::operator()(const bloc* obj, unsigned int& mask)

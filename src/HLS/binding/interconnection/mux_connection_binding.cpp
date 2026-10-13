@@ -1596,6 +1596,10 @@ unsigned long long mux_connection_binding::object_bitsize(const ir_managerRef IR
       {
          return bus_addr_bitsize;
       }
+      if(ir_helper::IsVectorType(type))
+      {
+         return ir_helper::VectorLogicalBitsize(type);
+      }
       return ir_helper::Size(tn);
    }
    if(second)
