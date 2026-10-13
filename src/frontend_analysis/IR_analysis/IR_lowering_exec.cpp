@@ -939,10 +939,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            {
                               return ir_man->GetBooleanType();
                            }
-                           const auto element_type = ir_helper::CGetElements(lhs_type);
-                           const auto element_size = ir_helper::SizeAlloc(element_type);
-                           const auto vector_size = ir_helper::SizeAlloc(lhs_type);
-                           const auto num_elements = vector_size / element_size;
+                           const auto num_elements = ir_helper::VectorNumElements(lhs_type);
                            return ir_man->CreateVectorType(ir_man->GetBooleanType(), num_elements);
                         }();
                         GetPointer<binary_node>(ga->op1)->type = new_left_type;

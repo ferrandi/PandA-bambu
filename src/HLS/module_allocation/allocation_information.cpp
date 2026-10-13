@@ -1240,12 +1240,12 @@ void AllocationInformation::GetNodeTypePrec(OpGraph::vertex_descriptor node, con
             type = ir_helper::CGetType(var_node);
             if(ir_helper::IsVectorType(type))
             {
-               const auto element_type = ir_helper::CGetElements(type);
-               const auto element_size = ir_helper::SizeAlloc(element_type);
+               const auto element_size = ir_helper::VectorElementBitsize(type);
                max_size_in = std::max(max_size_in, element_size);
-               if(min_n_elements == 0 || ((128 / element_size) < min_n_elements))
+               const auto base128_elements = 128 / element_size;
+               if(min_n_elements == 0 || base128_elements < min_n_elements)
                {
-                  min_n_elements = 128 / element_size;
+                  min_n_elements = base128_elements;
                }
             }
             else
@@ -1277,16 +1277,16 @@ void AllocationInformation::GetNodeTypePrec(OpGraph::vertex_descriptor node, con
             }
             if(ir_helper::IsVectorType(type))
             {
-               const auto element_type = ir_helper::CGetElements(type);
-               const auto vector_size = ir_helper::SizeAlloc(type);
-               const auto element_size = ir_helper::SizeAlloc(element_type);
-               info->real_input_nelem.push_back(vector_size / element_size);
+               const auto element_size = ir_helper::VectorElementBitsize(type);
+               const auto vector_elements = ir_helper::VectorNumElements(type);
+               info->real_input_nelem.push_back(vector_elements);
+               // Characterized vector FUs use 128 bits of logical lanes, independently of memory allocation.
                info->base128_input_nelem.push_back(128 / element_size);
                info->input_prec.push_back(element_size);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Type is " + STR(type->index) + " " + STR(type) +
                                   " - Number of input elements (base128): " + STR(128 / element_size) +
-                                  " - Number of real input elements: " + STR(vector_size / element_size) +
+                                  " - Number of real input elements: " + STR(vector_elements) +
                                   " - Input precision: " + STR(element_size));
             }
             else
@@ -1375,10 +1375,8 @@ void AllocationInformation::GetNodeTypePrec(OpGraph::vertex_descriptor node, con
       type = ir_helper::CGetType(out_node);
       if(ir_helper::IsVectorType(type))
       {
-         const auto element_type = ir_helper::CGetElements(type);
-         const auto element_size = ir_helper::SizeAlloc(element_type);
-         const auto output_size = ir_helper::SizeAlloc(out_node);
-         info->real_output_nelem = output_size / element_size;
+         const auto element_size = ir_helper::VectorElementBitsize(type);
+         info->real_output_nelem = ir_helper::VectorNumElements(type);
          info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
          info->input_prec[0] = max_size_in;
@@ -1463,11 +1461,9 @@ void AllocationInformation::GetNodeTypePrec(OpGraph::vertex_descriptor node, con
             info->output_prec = resize_1_8_pow2(ir_helper::Size(out_node));
             if(ir_helper::IsVectorType(type))
             {
-               const auto element_type = ir_helper::CGetElements(type);
-               const auto element_size = ir_helper::SizeAlloc(element_type);
-               info->output_prec = ir_helper::SizeAlloc(out_node);
+               const auto element_size = ir_helper::VectorElementBitsize(type);
                info->base128_output_nelem = 128 / element_size;
-               info->real_output_nelem = info->output_prec / element_size;
+               info->real_output_nelem = ir_helper::VectorNumElements(type);
                info->output_prec = element_size;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Number of output elements (base128): " + STR(info->base128_output_nelem) +
@@ -1502,10 +1498,8 @@ void AllocationInformation::GetNodeTypePrec(OpGraph::vertex_descriptor node, con
       auto out_prec = ir_helper::Size(out_node);
       if(ir_helper::IsVectorType(type))
       {
-         const auto element_type = ir_helper::CGetElements(type);
-         const auto element_size = ir_helper::SizeAlloc(element_type);
-         out_prec = ir_helper::SizeAlloc(out_node);
-         info->real_output_nelem = out_prec / element_size;
+         const auto element_size = ir_helper::VectorElementBitsize(type);
+         info->real_output_nelem = ir_helper::VectorNumElements(type);
          info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
       }
@@ -1558,10 +1552,8 @@ void AllocationInformation::GetNodeTypePrec(OpGraph::vertex_descriptor node, con
       info->output_prec = resize_1_8_pow2(ir_helper::Size(out_node));
       if(ir_helper::IsVectorType(type))
       {
-         const auto element_type = ir_helper::CGetElements(type);
-         const auto element_size = ir_helper::SizeAlloc(element_type);
-         info->output_prec = ir_helper::SizeAlloc(out_node);
-         info->real_output_nelem = info->output_prec / element_size;
+         const auto element_size = ir_helper::VectorElementBitsize(type);
+         info->real_output_nelem = ir_helper::VectorNumElements(type);
          info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -1622,6 +1614,15 @@ void AllocationInformation::GetNodeTypePrec(OpGraph::vertex_descriptor node, con
       info->output_prec = max_size_in;
       info->base128_output_nelem = min_n_elements;
       info->real_output_nelem = min_n_elements;
+   }
+   const auto output_id = hls_manager->get_produced_value(function_index, node);
+   if(output_id)
+   {
+      const auto output_type = ir_helper::CGetType(IRM->GetIRNode(output_id));
+      if(ir_helper::IsVectorType(output_type))
+      {
+         info->real_output_nelem = ir_helper::VectorNumElements(output_type);
+      }
    }
    size_t n_inputs = info->input_prec.size();
    if(current_op != "widen_mul_node" && current_op != "mul_node")

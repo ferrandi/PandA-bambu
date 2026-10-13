@@ -402,9 +402,17 @@ structural_type_descriptor::structural_type_descriptor(unsigned int index, const
    else if((helper->is_an_array(index) && !helper->is_a_struct(index)) || helper->is_a_vector(index))
    {
       const auto element_type = helper->GetElements(type_index);
-      const auto element_size = helper->get_size(element_type);
-      vector_size = size / element_size;
-      size = element_size;
+      if(helper->is_a_vector(index))
+      {
+         vector_size = helper->get_vector_nelements(index);
+         size = helper->get_vector_element_bitsize(index);
+      }
+      else
+      {
+         const auto element_size = helper->get_size(element_type);
+         vector_size = size / element_size;
+         size = element_size;
+      }
       if(helper->is_bool(element_type))
       {
          type = VECTOR_BOOL;

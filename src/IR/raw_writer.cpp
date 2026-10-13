@@ -623,6 +623,8 @@ void raw_writer::operator()(const vector_ty_node* obj, unsigned int& mask)
    mask = NO_VISIT;
    obj->type_node::visit(this);
    write_when_not_null(STOK(TOK_ELTS), obj->elts);
+   THROW_ASSERT(obj->nelements, "Vector type without nelements");
+   WRITE_NFIELD(os, STOK(TOK_NELEMENTS), obj->nelements);
 }
 
 void raw_writer::operator()(const bloc* obj, unsigned int& mask)

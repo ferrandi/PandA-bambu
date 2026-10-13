@@ -1760,7 +1760,9 @@ namespace llvm
    template <class InstructionOrConstantExpr>
    bool DumpBambuIR::isSignedOperand(const InstructionOrConstantExpr* inst, unsigned index) const
    {
-      if(!inst->getOperand(index)->getType()->isIntegerTy())
+      const auto* operand_type = inst->getOperand(index)->getType();
+      if(!operand_type->isIntegerTy() &&
+         !(operand_type->isVectorTy() && llvm::cast<llvm::VectorType>(operand_type)->getElementType()->isIntegerTy()))
          return false;
       auto opcode = inst->getOpcode();
       switch(opcode)
@@ -1815,7 +1817,9 @@ namespace llvm
    template <class InstructionOrConstantExpr>
    bool DumpBambuIR::isUnsignedOperand(const InstructionOrConstantExpr* inst, unsigned index) const
    {
-      if(!inst->getOperand(index)->getType()->isIntegerTy())
+      const auto* operand_type = inst->getOperand(index)->getType();
+      if(!operand_type->isIntegerTy() &&
+         !(operand_type->isVectorTy() && llvm::cast<llvm::VectorType>(operand_type)->getElementType()->isIntegerTy()))
          return false;
       auto opcode = inst->getOpcode();
       switch(opcode)
@@ -2930,11 +2934,13 @@ namespace llvm
             return assignCode(ty, IRC(POINTER_TY_NODE));
 #if PANDA_LLVM_CLANG_MAJOR >= 11
          case llvm::Type::FixedVectorTyID:
+            return assignCode(ty, IRC(VECTOR_TY_NODE));
          case llvm::Type::ScalableVectorTyID:
+            report_fatal_error("Scalable vector types are not supported by Bambu");
 #else
          case llvm::Type::VectorTyID:
-#endif
             return assignCode(ty, IRC(VECTOR_TY_NODE));
+#endif
          default:
          {
             llvm::errs() << "type id not managed\n";
@@ -3249,9 +3255,19 @@ namespace llvm
 
    uint64_t DumpBambuIR::NELEMENTS(const void* t)
    {
-      assert(IR_CODE(t) == IRC(ARRAY_TY_NODE));
-      const llvm::ArrayType* at = reinterpret_cast<const llvm::ArrayType*>(t);
-      return at->getNumElements();
+      const auto* type = NormalizeSignedTag(reinterpret_cast<const llvm::Type*>(t));
+      if(IR_CODE(t) == IRC(ARRAY_TY_NODE))
+      {
+         const llvm::ArrayType* at = llvm::cast<llvm::ArrayType>(type);
+         return at->getNumElements();
+      }
+      assert(IR_CODE(t) == IRC(VECTOR_TY_NODE));
+#if PANDA_LLVM_CLANG_MAJOR >= 11
+      const auto* vt = llvm::cast<llvm::FixedVectorType>(type);
+#else
+      const auto* vt = llvm::cast<llvm::VectorType>(type);
+#endif
+      return vt->getNumElements();
    }
 
    bool DumpBambuIR::stdarg_p(const void* t) const
@@ -4986,8 +5002,14 @@ namespace llvm
             break;
          }
          case IRC(VECTOR_TY_NODE):
+         {
             serialize_child("elts", IR_TYPE_NODE(t));
+            auto nel = llvm::APInt(64, NELEMENTS(t));
+            SmallString<40> S;
+            nel.toStringUnsigned(S);
+            serialize_int_cst("nelements", S.c_str());
             break;
+         }
 
          case IRC(RECORD_TY_NODE):
          {

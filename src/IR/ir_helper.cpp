@@ -258,6 +258,32 @@ unsigned long long ir_helper::SizeAlloc(const ir_nodeConstRef& t)
    return 0;
 }
 
+unsigned long long ir_helper::VectorNumElements(const ir_nodeConstRef& tn)
+{
+   const auto type = CGetType(tn);
+   THROW_ASSERT(type->get_kind() == vector_ty_node_K, "Expected vector type");
+   const auto elements = GetPointerS<const vector_ty_node>(type)->nelements;
+   THROW_ASSERT(elements, "Vector type without nelements");
+   return elements;
+}
+
+unsigned long long ir_helper::VectorElementBitsize(const ir_nodeConstRef& tn)
+{
+   const auto type = CGetType(tn);
+   THROW_ASSERT(type->get_kind() == vector_ty_node_K, "Expected vector type");
+   const auto element_type = CGetElements(type);
+   if(element_type->get_kind() == integer_ty_node_K)
+   {
+      return GetPointerS<const integer_ty_node>(element_type)->bitsize;
+   }
+   return Size(element_type);
+}
+
+unsigned long long ir_helper::VectorLogicalBitsize(const ir_nodeConstRef& tn)
+{
+   return VectorNumElements(tn) * VectorElementBitsize(tn);
+}
+
 Range ir_helper::NodeRange(const ir_nodeConstRef& tn)
 {
    const auto type = CGetType(tn);
@@ -287,12 +313,15 @@ Range ir_helper::NodeRange(const ir_nodeConstRef& tn)
       const auto el_type = CGetElements(type);
       const auto el_bw = Size(el_type);
       Range r(Empty, bw);
-      const auto stride = static_cast<size_t>(bw / el_bw);
+      const auto stride =
+          static_cast<size_t>(type->get_kind() == vector_ty_node_K ? VectorNumElements(type) : bw / el_bw);
       const auto strides = vc->list_of_valu.size() / stride;
       THROW_ASSERT(strides * stride == vc->list_of_valu.size(), "");
       for(size_t i = 0; i < strides; ++i)
       {
-         auto curr_el = NodeRange(vc->list_of_valu.at(i * stride));
+         // Extend every lane as an unsigned bit pattern before combining it. A true i1
+         // has signed range -1 and would otherwise set every bit in the packed vector.
+         auto curr_el = NodeRange(vc->list_of_valu.at(i * stride)).zextOrTrunc(bw);
          for(size_t j = 1; j < stride; ++j)
          {
             curr_el = NodeRange(vc->list_of_valu.at(i * stride + j))

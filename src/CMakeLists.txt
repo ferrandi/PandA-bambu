@@ -328,6 +328,7 @@ target_link_libraries(panda_hdl_generators PRIVATE panda_core)
 # Panda unit test executable (mirrors automake check target)
 set(PANDA_UNIT_TEST_SOURCES
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/main_tests.cpp"
+   "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/IR/VectorMaskType.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/algorithms/BasicBlockReachability.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/algorithms/Dominance.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/algorithms/Loops.cpp"
@@ -340,8 +341,14 @@ set(PANDA_UNIT_TEST_SOURCES
 )
 
 add_executable(libbambu_unit ${PANDA_UNIT_TEST_SOURCES})
-target_link_libraries(libbambu_unit PRIVATE panda_core Boost::headers)
+target_link_libraries(libbambu_unit PRIVATE panda_core panda_hdl_generators Boost::headers)
 add_test(NAME libbambu_unit COMMAND libbambu_unit)
+add_test(NAME vector_mask_type COMMAND libbambu_unit --run_test=vector_mask_*)
+add_test(NAME vector_mask_ir
+   COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/panda_unit/IR/test_vector_mask_ir.py")
+add_test(NAME vector_mask_hls
+   COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/panda_unit/IR/test_vector_mask_hls.py")
+set_tests_properties(vector_mask_type vector_mask_ir vector_mask_hls PROPERTIES LABELS "vector_mask")
 
 if(PANDA_BUILD_BAMBU)
    add_executable(bambu

@@ -232,6 +232,117 @@ jobs:
         shell: bash
         run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
 
+  vector-frontend-test:
+    needs: [build]
+    if: ${{!cancelled() && needs.build.result == 'success' }}
+    runs-on: [self-hosted]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
+        with:
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "false"
+      - name: Check vector frontend IR across supported Clang versions
+        shell: bash
+        run: |
+          set -eo pipefail
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p "$GITHUB_WORKSPACE/documentation/tmp" "${{env.report-dir}}"
+          export TMPDIR="$GITHUB_WORKSPACE/documentation/tmp" TMP="$GITHUB_WORKSPACE/documentation/tmp" TEMP="$GITHUB_WORKSPACE/documentation/tmp"
+          export OMP_NUM_THREADS=1 CMAKE_BUILD_PARALLEL_LEVEL=1
+          python3 -B panda_unit/IR/test_vector_mask_scalable.py --bambu="$(command -v bambu)" | tee "${{env.report-dir}}/vector-scalable.log"
+          frontend_pids=()
+          for version in 4.0 6.0 7 11 13 16 19; do
+            (
+              python3 -B panda_unit/IR/test_vector_mask_frontend.py \
+                --bambu="$(command -v bambu)" --compiler="I386_CLANG${version%%.*}" \
+                --llvm-dis="$(command -v "llvm-dis-$version")" \
+                | tee "${{env.report-dir}}/vector-frontend-clang-$version.log"
+            ) &
+            frontend_pids+=("$!")
+          done
+          frontend_result=0
+          for frontend_pid in "${frontend_pids[@]}"; do
+            wait "$frontend_pid" || frontend_result=1
+          done
+          exit "$frontend_result"
+      - name: Upload vector frontend reports
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: ./.github/actions/artifact-upload
+        with:
+          name: bambu_vector_frontend_test
+          path: ${{env.report-dir}}
+      - name: Clean frontend workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
+
+  vector-test:
+    needs: [build]
+    if: ${{!cancelled() && needs.build.result == 'success' }}
+    runs-on: [self-hosted, mentor]
+    strategy:
+      fail-fast: false
+      matrix:
+        simulator: [MODELSIM, VERILATOR]
+    env:
+      script: ./panda_regressions/hls/bambu_vector_test.sh
+      args: -j4 --timeout=20m -c=--simulator=${{matrix.simulator}}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
+        with:
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "false"
+      - name: Launch Bambu vector test ${{matrix.simulator}}
+        shell: bash
+        run: |
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p "$GITHUB_WORKSPACE/documentation/tmp"
+          export TMPDIR="$GITHUB_WORKSPACE/documentation/tmp" TMP="$GITHUB_WORKSPACE/documentation/tmp" TEMP="$GITHUB_WORKSPACE/documentation/tmp"
+          export OMP_NUM_THREADS=1 CMAKE_BUILD_PARALLEL_LEVEL=1
+          mkdir -p ${{env.report-dir}}
+          ${{env.script}} ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: bambu_vector_test${{matrix.simulator}}
+          new-results: ${{env.report-dir}}/perf.xml
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.compare-xml != '' }}
+        shell: bash
+        run: mv ${{ steps.perf-check.outputs.compare-xml }} ${{env.report-dir}}
+      - name: Upload test reports
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: ./.github/actions/artifact-upload
+        with:
+          name: bambu_vector_test${{matrix.simulator}}
+          path: ${{env.report-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
+
   interface-test:
     needs: [build]
     if: ${{!cancelled() && needs.build.result == 'success' }}
@@ -1392,6 +1503,8 @@ jobs:
       - gcc_regression_simple-vhdl
       - gcc_regression_simple-pretty_print
       - interface-test
+      - vector-test
+      - vector-frontend-test
       - bambu2hls4ml
       - libm-tests
       - discrepancy-test
@@ -1419,6 +1532,12 @@ jobs:
         run: exit 1
       - name: Check 'Interface Test' status
         if: ${{ needs['interface-test'].result != 'success' }}
+        run: exit 1
+      - name: Check 'Vector Test' status
+        if: ${{ needs['vector-test'].result != 'success' }}
+        run: exit 1
+      - name: Check 'Vector Frontend Test' status
+        if: ${{ needs['vector-frontend-test'].result != 'success' }}
         run: exit 1
       - name: Check 'Bambu hls4ml regression' status
         if: ${{ needs['bambu2hls4ml'].result != 'success' }}

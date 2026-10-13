@@ -1240,7 +1240,8 @@ void constant_vector_val_node::visit(ir_node_visitor* const v) const
 
 std::string vector_ty_node::ToString() const
 {
-   return "<" + STR(1) + " x " + STR(elts) + ">";
+   THROW_ASSERT(nelements, "Vector type without a logical element count");
+   return "<" + STR(nelements) + " x " + STR(elts) + ">";
 }
 
 void vector_ty_node::visit(ir_node_visitor* const v) const

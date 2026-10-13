@@ -13,6 +13,12 @@ static bool compare(size_t size, bool corrupt_tail)
    payload_t* P0 = static_cast<payload_t*>(std::malloc(size));
    const size_t P0_size_ref = size;
    void* P0_ref = std::malloc(size);
+   if(!P0 || !P0_ref)
+   {
+      std::free(P0);
+      std::free(P0_ref);
+      return false;
+   }
    std::memset(P0, 0x5a, size);
    std::memcpy(P0_ref, P0, size);
    if(corrupt_tail)
@@ -21,6 +27,8 @@ static bool compare(size_t size, bool corrupt_tail)
    }
    _ms_argcmp(ref, 0, mem);
    std::free(P0);
+   // _ms_argcmp frees P0_ref; some cppcheck configurations do not expand the macro.
+   // cppcheck-suppress memleak
    return mismatch_count == (corrupt_tail ? 1U : 0U);
 }
 

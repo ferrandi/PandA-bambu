@@ -631,6 +631,11 @@ void ir_node_factory::operator()(const vector_ty_node* obj, unsigned int& mask)
    THROW_ASSERT(obj == curr_ir_node_ptr, "wrong factory setup");
    ir_node_mask::operator()(obj, mask);
    SET_NODE_ID_OPT(TOK_ELTS, elts, vector_ty_node);
+   SET_VALUE_OPT(TOK_NELEMENTS, nelements, vector_ty_node);
+   if(!obj->nelements)
+   {
+      THROW_ERROR("Vector type without nelements");
+   }
 }
 
 void ir_node_factory::operator()(const bloc* obj, unsigned int& mask)

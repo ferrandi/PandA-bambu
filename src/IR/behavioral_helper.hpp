@@ -156,6 +156,12 @@ class BehavioralHelper
     */
    unsigned long long get_size(unsigned int var) const;
 
+   /// Number of logical elements of a vector-valued object.
+   unsigned long long get_vector_nelements(unsigned int var) const;
+
+   /// Logical width of a vector element, without allocation padding.
+   unsigned long long get_vector_element_bitsize(unsigned int var) const;
+
    /**
     * Return the name of the function
     */

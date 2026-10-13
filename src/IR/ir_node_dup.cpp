@@ -885,6 +885,7 @@ void ir_node_dup::operator()(const vector_ty_node* obj, unsigned int& mask)
    THROW_ASSERT(obj == curr_ir_node_ptr, "wrong factory setup");
    ir_node_mask::operator()(obj, mask);
    SET_NODE_ID(elts, vector_ty_node);
+   SET_VALUE(nelements, vector_ty_node);
 }
 
 void ir_node_dup::operator()(const bloc* obj, unsigned int& mask)
