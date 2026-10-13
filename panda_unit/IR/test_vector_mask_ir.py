@@ -9,7 +9,7 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / "panda_regressions/hls/bambu_vector_test"
-SPEC = importlib.util.spec_from_file_location("checker", FIXTURES / "check_vector_mask_ir.py")
+SPEC = importlib.util.spec_from_file_location("checker", str(FIXTURES / "check_vector_mask_ir.py"))
 CHECKER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(CHECKER)
 
