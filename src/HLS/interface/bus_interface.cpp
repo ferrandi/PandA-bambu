@@ -1184,25 +1184,22 @@ void bus_interface::create_axi_adapter(const structural_objectRef input_module, 
       THROW_ASSERT(m_axi_rdata_port, "m_axi_wdata port must be present");
       port_o::resize_std_port(bi.data_bus_bitsize, 0U, 0, m_axi_rdata_port);
 
-      if(is_banked)
-      {
-         // Resize signals for IDs
-         structural_objectRef m_axi_awid_port = adapter_module->find_member("m_axi_awid", port_o_K, adapter_module);
-         THROW_ASSERT(m_axi_awid_port, "m_axi_awid port must be present");
-         port_o::resize_std_port(bi.context_bus_bitsize + bi.noc_id_size, 0U, 0, m_axi_awid_port);
+      // Preserve the full thread/context tag on AXI even without a NoC.
+      structural_objectRef m_axi_awid_port = adapter_module->find_member("m_axi_awid", port_o_K, adapter_module);
+      THROW_ASSERT(m_axi_awid_port, "m_axi_awid port must be present");
+      port_o::resize_std_port(bi.context_bus_bitsize + bi.noc_id_size, 0U, 0, m_axi_awid_port);
 
-         structural_objectRef m_axi_bid_port = adapter_module->find_member("m_axi_bid", port_o_K, adapter_module);
-         THROW_ASSERT(m_axi_bid_port, "m_axi_bid port must be present");
-         port_o::resize_std_port(bi.context_bus_bitsize + bi.noc_id_size, 0U, 0, m_axi_bid_port);
+      structural_objectRef m_axi_bid_port = adapter_module->find_member("m_axi_bid", port_o_K, adapter_module);
+      THROW_ASSERT(m_axi_bid_port, "m_axi_bid port must be present");
+      port_o::resize_std_port(bi.context_bus_bitsize + bi.noc_id_size, 0U, 0, m_axi_bid_port);
 
-         structural_objectRef m_axi_arid_port = adapter_module->find_member("m_axi_arid", port_o_K, adapter_module);
-         THROW_ASSERT(m_axi_arid_port, "m_axi_arid port must be present");
-         port_o::resize_std_port(bi.context_bus_bitsize + bi.noc_id_size, 0U, 0, m_axi_arid_port);
+      structural_objectRef m_axi_arid_port = adapter_module->find_member("m_axi_arid", port_o_K, adapter_module);
+      THROW_ASSERT(m_axi_arid_port, "m_axi_arid port must be present");
+      port_o::resize_std_port(bi.context_bus_bitsize + bi.noc_id_size, 0U, 0, m_axi_arid_port);
 
-         structural_objectRef m_axi_rid_port = adapter_module->find_member("m_axi_rid", port_o_K, adapter_module);
-         THROW_ASSERT(m_axi_rid_port, "m_axi_rid port must be present");
-         port_o::resize_std_port(bi.context_bus_bitsize + bi.noc_id_size, 0U, 0, m_axi_rid_port);
-      }
+      structural_objectRef m_axi_rid_port = adapter_module->find_member("m_axi_rid", port_o_K, adapter_module);
+      THROW_ASSERT(m_axi_rid_port, "m_axi_rid port must be present");
+      port_o::resize_std_port(bi.context_bus_bitsize + bi.noc_id_size, 0U, 0, m_axi_rid_port);
 
       for(unsigned int index = 0; index < adapter_module_mod->get_in_port_size(); index++)
       {
