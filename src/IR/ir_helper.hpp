@@ -90,6 +90,15 @@ class ir_helper
     */
    static unsigned long long SizeAlloc(const ir_nodeConstRef& tn);
 
+   /// Logical lane count of a vector type or vector-valued node.
+   static unsigned long long VectorNumElements(const ir_nodeConstRef& tn);
+
+   /// Logical bit width of one vector element, excluding allocation padding.
+   static unsigned long long VectorElementBitsize(const ir_nodeConstRef& tn);
+
+   /// Logical bit width of all vector elements.
+   static unsigned long long VectorLogicalBitsize(const ir_nodeConstRef& tn);
+
    /**
     * Return the range of a IR node
     * @param tn is the IR node

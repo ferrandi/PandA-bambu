@@ -653,6 +653,16 @@ unsigned long long BehavioralHelper::get_size(unsigned int var) const
    return ir_helper::Size(TM->GetIRNode(var));
 }
 
+unsigned long long BehavioralHelper::get_vector_nelements(unsigned int var) const
+{
+   return ir_helper::VectorNumElements(TM->GetIRNode(var));
+}
+
+unsigned long long BehavioralHelper::get_vector_element_bitsize(unsigned int var) const
+{
+   return ir_helper::VectorElementBitsize(TM->GetIRNode(var));
+}
+
 std::string BehavioralHelper::GetFunctionName() const
 {
    return ir_helper::GetFunctionName(TM->GetIRNode(function_index));
@@ -895,10 +905,7 @@ std::string BehavioralHelper::PrintNode(const ir_nodeConstRef& node, const std::
                               (ir_helper::IsVectorType(right_op_type) && right_op_type->index != be->type->index));
          if(vector)
          {
-            const auto element_type = ir_helper::CGetElements(be->type);
-            const auto element_size = ir_helper::SizeAlloc(element_type);
-            const auto size = ir_helper::SizeAlloc(be->type);
-            const auto vector_size = size / element_size;
+            const auto vector_size = ir_helper::VectorNumElements(be->type);
             res += "(" + ir_helper::PrintType(be->type) + ") ";
             res += "{";
             for(unsigned int ind = 0; ind < vector_size; ++ind)
@@ -977,10 +984,7 @@ std::string BehavioralHelper::PrintNode(const ir_nodeConstRef& node, const std::
                               (ir_helper::IsVectorType(right_op_type) && right_op_type->index != be->type->index));
          if(vector)
          {
-            const auto element_type = ir_helper::CGetElements(be->type);
-            const auto element_size = ir_helper::SizeAlloc(element_type);
-            const auto size = ir_helper::SizeAlloc(be->type);
-            const auto vector_size = size / element_size;
+            const auto vector_size = ir_helper::VectorNumElements(be->type);
             res += "(" + ir_helper::PrintType(be->type) + ") ";
             res += "{";
             for(unsigned int ind = 0; ind < vector_size; ++ind)
@@ -1078,10 +1082,7 @@ std::string BehavioralHelper::PrintNode(const ir_nodeConstRef& node, const std::
                               (ir_helper::IsVectorType(right_op_type) && right_op_type->index != be->type->index));
          if(vector)
          {
-            const auto element_type = ir_helper::CGetElements(be->type);
-            const auto element_size = ir_helper::SizeAlloc(element_type);
-            const auto size = ir_helper::SizeAlloc(be->type);
-            const auto vector_size = size / element_size;
+            const auto vector_size = ir_helper::VectorNumElements(be->type);
             res += "(" + ir_helper::PrintType(be->type) + ") ";
             res += "{";
             for(unsigned int ind = 0; ind < vector_size; ++ind)
@@ -1209,10 +1210,7 @@ std::string BehavioralHelper::PrintNode(const ir_nodeConstRef& node, const std::
       case insertelement_node_K:
       {
          const auto iee = GetPointerS<const insertelement_node>(node);
-         const auto element_type = ir_helper::CGetElements(iee->type);
-         const auto element_size = ir_helper::SizeAlloc(element_type);
-         const auto size = ir_helper::SizeAlloc(iee->type);
-         const auto vector_size = size / element_size;
+         const auto vector_size = ir_helper::VectorNumElements(iee->type);
 
          res += "/*" + iee->get_kind_text() + "*/";
          res += "(" + ir_helper::PrintType(iee->type) + ") ";
@@ -1564,10 +1562,7 @@ std::string BehavioralHelper::PrintNode(const ir_nodeConstRef& node, const std::
                        right_op_type->index != be->type->index;
          if(vector)
          {
-            const auto element_type = ir_helper::CGetElements(be->type);
-            const auto element_size = ir_helper::SizeAlloc(element_type);
-            const auto size = ir_helper::SizeAlloc(be->type);
-            const auto vector_size = size / element_size;
+            const auto vector_size = ir_helper::VectorNumElements(be->type);
             res += "(" + ir_helper::PrintType(be->type) + ") ";
             res += "{";
             for(unsigned int ind = 0; ind < vector_size; ++ind)
@@ -1817,10 +1812,7 @@ std::string BehavioralHelper::PrintNode(const ir_nodeConstRef& node, const std::
          const auto me = GetPointerS<const min_node>(node);
          if(ir_helper::IsVectorType(me->type))
          {
-            const auto element_type = ir_helper::CGetElements(me->type);
-            const auto element_size = ir_helper::SizeAlloc(element_type);
-            const auto size = ir_helper::SizeAlloc(me->type);
-            const auto vector_size = size / element_size;
+            const auto vector_size = ir_helper::VectorNumElements(me->type);
             res += "/*" + me->get_kind_text() + "*/";
             res += "(" + ir_helper::PrintType(me->type) + ") ";
             res += "{";
@@ -1848,10 +1840,7 @@ std::string BehavioralHelper::PrintNode(const ir_nodeConstRef& node, const std::
          const auto me = GetPointerS<const max_node>(node);
          if(ir_helper::IsVectorType(me->type))
          {
-            const auto element_type = ir_helper::CGetElements(me->type);
-            const auto element_size = ir_helper::SizeAlloc(element_type);
-            const auto size = ir_helper::SizeAlloc(me->type);
-            const auto vector_size = size / element_size;
+            const auto vector_size = ir_helper::VectorNumElements(me->type);
             res += "/*" + me->get_kind_text() + "*/";
             res += "(" + ir_helper::PrintType(me->type) + ") ";
             res += "{";
@@ -2009,21 +1998,19 @@ std::string BehavioralHelper::PrintNode(const ir_nodeConstRef& node, const std::
       case shufflevector_node_K:
       {
          const auto vpe = GetPointerS<const shufflevector_node>(node);
-         const auto element_type = ir_helper::CGetElements(vpe->type);
-         const auto element_size = ir_helper::SizeAlloc(element_type);
-         const auto size = ir_helper::SizeAlloc(vpe->op0);
-         const auto vector_size = size / element_size;
+         const auto input_size = ir_helper::VectorNumElements(vpe->op0);
+         const auto output_size = ir_helper::VectorNumElements(vpe->type);
          res += "/*" + vpe->get_kind_text() + "*/";
          res += "(" + ir_helper::PrintType(vpe->type) + ") ";
          res += "{";
-         for(unsigned int ind = 0; ind < vector_size; ++ind)
+         for(unsigned int ind = 0; ind < output_size; ++ind)
          {
-            res += "((((" + PrintNode(vpe->op2, vppf) + ")[" + STR(ind) + "])%" + STR(2 * vector_size) + ") < " +
-                   STR(vector_size) + ") ? (" + PrintNode(vpe->op0, vppf) + ")[(((" + PrintNode(vpe->op2, vppf) + ")[" +
-                   STR(ind) + "])%" + STR(2 * vector_size) + ")] : (" + PrintNode(vpe->op1, vppf) + ")[(((" +
-                   PrintNode(vpe->op2, vppf) + ")[" + STR(ind) + "])%" + STR(2 * vector_size) + ")-" +
-                   STR(vector_size) + "]";
-            if(ind != vector_size - 1)
+            res += "((((" + PrintNode(vpe->op2, vppf) + ")[" + STR(ind) + "])%" + STR(2 * input_size) + ") < " +
+                   STR(input_size) + ") ? (" + PrintNode(vpe->op0, vppf) + ")[(((" + PrintNode(vpe->op2, vppf) + ")[" +
+                   STR(ind) + "])%" + STR(2 * input_size) + ")] : (" + PrintNode(vpe->op1, vppf) + ")[(((" +
+                   PrintNode(vpe->op2, vppf) + ")[" + STR(ind) + "])%" + STR(2 * input_size) + ")-" + STR(input_size) +
+                   "]";
+            if(ind != output_size - 1)
             {
                res += ", ";
             }
