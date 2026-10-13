@@ -29,9 +29,12 @@ function out(line,   i,key){
         if (i==0) print ""; else print substr(line,i+1)
     }
 }
-function attrs(rest,   m,k,q,i,v){
-    while (match(rest, /^[[:space:]]*([[:alnum:]_:.+-]+)[[:space:]]*=[[:space:]]*(['"])/, m)) {
-        k = m[1]; q = m[2]
+function attrs(rest,   k,q,i,v){
+    while (match(rest, /^[[:space:]]*[[:alnum:]_:.+-]+[[:space:]]*=[[:space:]]*['"]/)) {
+        k = substr(rest, RSTART, RLENGTH)
+        sub(/^[[:space:]]*/, "", k)
+        sub(/[[:space:]]*=.*$/, "", k)
+        q = substr(rest, RSTART+RLENGTH-1, 1)
         rest = substr(rest, RSTART+RLENGTH)
         i = index(rest, q)
         if (i==0) { v=rest; rest="" } else { v=substr(rest,1,i-1); rest=substr(rest,i+1) }
