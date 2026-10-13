@@ -634,9 +634,13 @@ begin
   begin
     M_Rdata_ram_reg &lt;= 0;
   end
-  else 
+  else if(M_back_pressure || double_answer_first_next || double_answer_second_next)
   begin
     M_Rdata_ram_reg &lt;= M_Rdata_ram;
+  end
+  else
+  begin
+    M_Rdata_ram_reg &lt;= 0;
   end
 end
 
