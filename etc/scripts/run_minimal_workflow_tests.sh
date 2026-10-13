@@ -649,6 +649,7 @@ run_openmp_group() {
    local -a cases=(
       "functional|./examples/OpenMP/functional/openmp_functional.sh|-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--assert-debug -c=--compiler=I386_CLANG13"
       "arbiter|./examples/OpenMP/functional/openmp_arbiter.sh|-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--assert-debug -c=--compiler=I386_CLANG13"
+      "axi|./examples/OpenMP/axi/openmp_axi.sh|-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--assert-debug -c=--compiler=I386_CLANG13"
       "banked|./examples/OpenMP/banked-memory/openmp_banked.sh|-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--assert-debug -c=--compiler=I386_CLANG13"
       "banked_profiling|./examples/OpenMP/banked-memory/openmp_banked.sh|-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--assert-debug -c=--noc-profiling -c=--compiler=I386_CLANG13"
       "banked_cache|./examples/OpenMP/banked-memory/openmp_banked_cache.sh|-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--assert-debug -c=--compiler=I386_CLANG13"
