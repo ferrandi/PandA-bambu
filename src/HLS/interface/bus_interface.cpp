@@ -1029,6 +1029,14 @@ void bus_interface::create_axi_adapter(const structural_objectRef input_module, 
        {"M_Rdata_ram", "M_Rdata_ram", bi.data_bus_bitsize}};
 
    const bool is_banked = bi.bank_number > 0;
+   const bool is_bus_pipelined =
+       parameters->isOption(OPT_bus_pipelined) && parameters->getOption<bool>(OPT_bus_pipelined);
+   auto adapter_ports = is_banked ? noc_adapter_ports : minimal_adapter_ports;
+   if(!is_banked && is_bus_pipelined)
+   {
+      adapter_ports.emplace_back("Mout_tag", "Mout_tag", bi.context_bus_bitsize);
+      adapter_ports.emplace_back("M_tag", "M_tag", bi.context_bus_bitsize);
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                   "Creating AXI adapter for" + STR(is_banked ? " banked" : "") + " bus with " +
                       STR(is_banked ? bi.bank_number : bi.channel_number) + " channels");
@@ -1102,7 +1110,7 @@ void bus_interface::create_axi_adapter(const structural_objectRef input_module, 
       auto adapter_module_mod = GetPointer<module_o>(adapter_module);
       adapter_module_mod->SetParameter("BURST_TYPE", STR(axi_burst_type));
 
-      for(const auto& p : (is_banked ? noc_adapter_ports : minimal_adapter_ports))
+      for(const auto& p : adapter_ports)
       {
          const auto pname_input = std::get<0>(p);
          const auto pname_adapter = std::get<1>(p);
@@ -1135,6 +1143,10 @@ void bus_interface::create_axi_adapter(const structural_objectRef input_module, 
                 SM->add_constant("null_value_M_back_pressure_" + STR(i), circuit, bp_port->get_typeRef(), STR(0));
             SM->add_connection(bp_port, const_obj_bp);
          }
+      }
+
+      if(!is_banked && !is_bus_pipelined)
+      {
          structural_objectRef ac_port = adapter_module->find_member("Mout_tag", port_vector_o_K, adapter_module);
          if(ac_port)
          {
