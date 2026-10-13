@@ -62,6 +62,7 @@ class omp_fork_fu_binding : public fu_binding
       bool has_wait_all_thread;
       bool context_switch;
       bool use_banked_memory;
+      bool use_axi;
       bool is_top_level;
       bool is_bus_pipelined;
       int debug_level;

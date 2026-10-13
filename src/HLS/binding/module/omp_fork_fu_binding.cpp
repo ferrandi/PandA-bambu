@@ -229,7 +229,7 @@ void omp_fork_fu_binding::add_memory_ports_to_fork_call_module(structural_object
       }
    }
 
-   if(fci.is_bus_pipelined || fci.use_banked_memory || !fci.is_top_level)
+   if(fci.is_bus_pipelined || fci.use_banked_memory || fci.use_axi || !fci.is_top_level)
    {
       structural_objectRef port = fork_call_module->find_member(
           "Mout_back_pressure", fci.channel_number == 1U ? port_o_K : port_vector_o_K, fork_call_module);
@@ -511,7 +511,7 @@ void omp_fork_fu_binding::generate_thread_to_memory_if(
    }
 
    // If there are no Mout_back_pressure_out ports, we add a constant port to avoid undefined signals
-   if(!(fci.is_bus_pipelined || fci.use_banked_memory || !fci.is_top_level))
+   if(!(fci.is_bus_pipelined || fci.use_banked_memory || fci.use_axi || !fci.is_top_level))
    {
       structural_objectRef port = conn_interface->find_member(
           "Mout_back_pressure_out", fci.channel_number == 1U ? port_o_K : port_vector_o_K, conn_interface);
@@ -901,10 +901,12 @@ void omp_fork_fu_binding::manage_memory_ports_parallel_chained(const HLS_manager
    const auto func_arch = HLSMgr->module_arch->GetArchitecture(
        HLSMgr->CGetFunctionBehavior(top_fnode->index)->CGetBehavioralHelper()->GetFunctionName());
    fci.use_banked_memory = false;
-   // Use the banked memory if the top function uses the banked interface.
+   fci.use_axi = false;
+   // Read the memory bus configuration from the top function.
    if(func_arch->ifaces.find("bus") != func_arch->ifaces.end())
    {
       const auto& bus_if = func_arch->ifaces.at("bus");
+      fci.use_axi = bus_if.at(FunctionArchitecture::iface_mode) == "m_axi";
       if(bus_if.find(FunctionArchitecture::iface_bank_number) != bus_if.end())
       {
          fci.use_banked_memory = std::stoul((bus_if.find(FunctionArchitecture::iface_bank_number)->second)) > 0U;
