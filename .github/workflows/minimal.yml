@@ -958,6 +958,7 @@ jobs:
         include:
           - { test: functional, script: ./examples/OpenMP/functional/openmp_functional.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG4" }
           - { test: arbiter, script: ./examples/OpenMP/functional/openmp_arbiter.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG13" }
+          - { test: axi, script: ./examples/OpenMP/axi/openmp_axi.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG13" }
           - { test: banked, script: ./examples/OpenMP/banked-memory/openmp_banked.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG13" }
           - { test: banked_profiling, script: ./examples/OpenMP/banked-memory/openmp_banked.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--noc-profiling -c=--compiler=I386_CLANG13" }
           - { test: banked_cache, script: ./examples/OpenMP/banked-memory/openmp_banked_cache.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG13" }

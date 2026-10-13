@@ -46,6 +46,9 @@ jobs:
           - basename: arbiter
             script: ./examples/OpenMP/functional/openmp_arbiter.sh
             batch: "xc7vx690t-3ffg1930_10.0"
+          - basename: axi
+            script: ./examples/OpenMP/axi/openmp_axi.sh
+            batch: "xc7vx690t-3ffg1930_10.0"
           - basename: banked 
             script: ./examples/OpenMP/banked-memory/openmp_banked.sh
             batch: "xc7vx690t-3ffg1930_10.0"
