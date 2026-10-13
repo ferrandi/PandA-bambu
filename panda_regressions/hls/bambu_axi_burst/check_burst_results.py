@@ -21,6 +21,10 @@ EXPECTED_CASES = {f"sum-o{o}-n{n}" for o in (5, 8, 16) for n in (1024, 2048)}
 # A bundle 'latency' attribute is a property of the memory reached through that
 # bundle, and it must reach the testbench memory model for both directions.
 ATTR_LATENCY = re.compile(r"latency=(\d+)")
+LEGACY_FIELDS = ("case", "cycles", "source")
+CONFIGURED_BURST_CORE = re.compile(
+    r"MinimalAXI4MasterPipelined|MinimalAXI4MasterWritePipelined|"
+    r"configure_read|configure_write|burst_configure", re.I)
 
 
 def fail(message: str) -> None:
@@ -93,6 +97,61 @@ def check_case(results: Path, row: dict[str, str], suite_dir: Path) -> None:
     check_bundle_latency(case_dir, row["case"], suite_dir / row["source"])
 
 
+def read_legacy_expectations(path: Path) -> list[dict[str, str]]:
+    try:
+        with path.open(encoding="utf-8", newline="") as stream:
+            reader = csv.DictReader(stream, delimiter="\t")
+            if reader.fieldnames != list(LEGACY_FIELDS):
+                fail(f"legacy expectation header must be {list(LEGACY_FIELDS)}")
+            rows = list(reader)
+    except OSError as exc:
+        fail(f"cannot read legacy expectation file {path}: {exc}")
+    if not rows:
+        fail("legacy expectation file contains no cases")
+    seen = set()
+    for row in rows:
+        if None in row or any(not row.get(field) for field in LEGACY_FIELDS):
+            fail("legacy expectation row is incomplete or malformed")
+        if row["case"] in seen:
+            fail(f"duplicate legacy expected case: {row['case']}")
+        seen.add(row["case"])
+        if not INTEGER.fullmatch(row["cycles"]) or int(row["cycles"]) <= 0:
+            fail(f"{row['case']}: expected cycle count must be a positive unsigned integer")
+        if not (path.parent / row["source"]).is_file():
+            fail(f"{row['case']}: expected legacy source is missing: {path.parent / row['source']}")
+    return rows
+
+
+def check_legacy_case(results: Path, row: dict[str, str]) -> None:
+    case_dir = results / "AXI-BURST" / row["case"]
+    xml_path = case_dir / "bambu_results.xml"
+    if not xml_path.is_file():
+        fail(f"{row['case']}: missing Bambu results XML: {xml_path}")
+    try:
+        root = ET.parse(xml_path).getroot()
+    except (OSError, ET.ParseError) as exc:
+        fail(f"{row['case']}: malformed/unreadable Bambu results XML: {exc}")
+    evaluations = [element for element in root.iter("evaluation") if "CYCLES" in element.attrib]
+    if len(evaluations) != 1:
+        fail(f"{row['case']}: expected exactly one evaluation CYCLES attribute")
+    actual = evaluations[0].get("CYCLES", "")
+    if not INTEGER.fullmatch(actual):
+        fail(f"{row['case']}: malformed evaluation CYCLES={actual!r}")
+    if int(actual) != int(row["cycles"]):
+        fail(f"{row['case']}: expected {row['cycles']} cycles, got {actual}")
+    rtl_files = [path for path in case_dir.rglob("*")
+                 if path.is_file() and path.suffix.lower() in (".v", ".sv")
+                 and path.name != "panda_libtech.v"]
+    if not rtl_files:
+        fail(f"{row['case']}: generated RTL is missing")
+    for rtl in rtl_files:
+        text = rtl.read_text(encoding="utf-8", errors="replace")
+        match = CONFIGURED_BURST_CORE.search(text)
+        if match:
+            fail(f"{row['case']}: legacy scalar write unexpectedly contains configured burst core "
+                 f"{match.group(0)} in {rtl}")
+
+
 def check_bundle_latency(case_dir: Path, case: str, source: Path) -> None:
     """Witness that a bundle 'latency' attribute drives that bundle's memory model.
 
@@ -151,6 +210,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--results", required=True, type=Path)
     parser.add_argument("--expectations", required=True, type=Path)
+    parser.add_argument("--legacy-expectations", type=Path)
     args = parser.parse_args(argv)
     try:
         if not args.results.is_dir():
@@ -158,6 +218,11 @@ def main(argv: list[str] | None = None) -> int:
         rows = read_expectations(args.expectations)
         for row in rows:
             check_case(args.results, row, args.expectations.parent)
+        legacy_rows = []
+        if args.legacy_expectations:
+            legacy_rows = read_legacy_expectations(args.legacy_expectations)
+            for row in legacy_rows:
+                check_legacy_case(args.results, row)
         boundary_source = args.expectations.parent / "bambu_axi_burst_boundary.cpp"
         if not boundary_source.is_file():
             fail(f"valid-boundary-maxima: expected profile source is missing: {boundary_source}")
@@ -172,7 +237,8 @@ def main(argv: list[str] | None = None) -> int:
     except (OSError, UnicodeError, ValueError) as exc:
         print(f"AXI_BURST_CYCLE_GATE_FAIL: {exc}", file=sys.stderr)
         return 1
-    print(f"AXI_BURST_CYCLE_GATE_PASS: {len(rows)} cases; exact evaluation CYCLES and RTL profiles")
+    print(f"AXI_BURST_CYCLE_GATE_PASS: {len(rows)} read cases and {len(legacy_rows)} legacy cases; "
+          "exact evaluation CYCLES and RTL profiles")
     return 0
 
 

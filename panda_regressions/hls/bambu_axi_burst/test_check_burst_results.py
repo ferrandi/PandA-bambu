@@ -16,6 +16,7 @@ REPO_ROOT = HERE.parents[2]
 TMP_ROOT = REPO_ROOT / "documentation" / "tmp"
 CHECKER = HERE / "check_burst_results.py"
 HEADER = "case\tcycles\tsource\tburst_max\toutstanding\tfifo_depth\taddr_bits\n"
+LEGACY_HEADER = "case\tcycles\tsource\n"
 CASES = [(f"sum-o{o}-n{n}", 1092 if n == 1024 else 2116, o)
          for n in (1024, 2048) for o in (5, 8, 16)]
 
@@ -28,6 +29,7 @@ class BurstResultGateTests(unittest.TestCase):
         self.fixture = self.root / "fixture"
         self.fixture.mkdir()
         self.expectations = self.fixture / "cycle_expectations.tsv"
+        self.legacy_expectations = self.fixture / "legacy_write_expectations.tsv"
         rows = []
         self.results = self.root / "results"
         for case, cycles, outstanding in CASES:
@@ -51,6 +53,16 @@ class BurstResultGateTests(unittest.TestCase):
         (self.fixture / "bambu_axi_burst_boundary.cpp").write_text(
             "#pragma HLS interface mode=m_axi max_read_burst_length=256 "
             "num_read_outstanding=16 read_fifo_depth=4096\n", encoding="utf-8")
+        (self.fixture / "plain_m_axi_write.cpp").write_text(
+            "#pragma HLS interface mode=m_axi port=dst\n", encoding="utf-8")
+        self.legacy_expectations.write_text(
+            LEGACY_HEADER + "plain-m-axi-write-n1024\t52\tplain_m_axi_write.cpp\n",
+            encoding="utf-8")
+        legacy = self.results / "AXI-BURST" / "plain-m-axi-write-n1024"
+        legacy.mkdir(parents=True)
+        (legacy / "bambu_results.xml").write_text(
+            '<results><evaluation CYCLES="52"/></results>\n', encoding="utf-8")
+        (legacy / "kernel.v").write_text("module kernel(input clk); endmodule\n", encoding="utf-8")
         boundary = self.results / "AXI-BURST" / "valid-boundary-maxima"
         boundary.mkdir()
         (boundary / "bambu_results.xml").write_text(
@@ -69,13 +81,26 @@ class BurstResultGateTests(unittest.TestCase):
     def run_gate(self):
         return subprocess.run(
             [sys.executable, "-B", str(CHECKER), "--results", str(self.results),
-             "--expectations", str(self.expectations)], text=True, capture_output=True,
+             "--expectations", str(self.expectations), "--legacy-expectations",
+             str(self.legacy_expectations)], text=True, capture_output=True,
             env=os.environ.copy(), check=False)
 
     def test_valid_cycle_and_profile_pass(self):
         result = self.run_gate()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("PASS: 6 cases", result.stdout)
+        self.assertIn("PASS: 6 read cases and 1 legacy cases", result.stdout)
+
+    def test_legacy_write_wrong_cycle_count_fails(self):
+        case = self.results / "AXI-BURST" / "plain-m-axi-write-n1024"
+        (case / "bambu_results.xml").write_text(
+            '<results><evaluation CYCLES="53"/></results>\n', encoding="utf-8")
+        self.assertIn("expected 52 cycles, got 53", self.run_gate().stderr)
+
+    def test_legacy_write_rejects_configured_burst_core(self):
+        case = self.results / "AXI-BURST" / "plain-m-axi-write-n1024"
+        (case / "kernel.v").write_text(
+            "MinimalAXI4MasterPipelined #(.B_MAX(16)) engine ();\n", encoding="utf-8")
+        self.assertIn("unexpectedly contains configured burst core", self.run_gate().stderr)
 
     def test_wrong_cycle_count_fails(self):
         case = self.results / "AXI-BURST" / CASES[0][0]

@@ -966,304 +966,194 @@ endgenerate"/>
             IP_COMPONENT="if_utils"
             LIBRARY="TestbenchMEMAXI index QUEUE_SIZE READ_DELAY WRITE_DELAY arid araddr arlen arsize arburst arlock arcache arprot arqos arregion aruser rid rdata rresp ruser awid awaddr awlen awsize awburst awlock awcache awprot awqos awregion awuser wdata wstrb wuser bid bresp buser"
             VERILOG_PROVIDED="
-localparam BITSIZE_data=BITSIZE_rdata,
-  BITSIZE_counter=32,
-  BITSIZE_burst=BITSIZE_arburst,
-  BITSIZE_len=BITSIZE_arlen,
-  BITSIZE_delay=32,
-  BITSIZE_size=BITSIZE_arsize,
-  BITSIZE_addr=BITSIZE_araddr,
-  BITSIZE_id=BITSIZE_arid,
-  OFFSET_delay=0,
-  OFFSET_counter=OFFSET_delay+BITSIZE_delay,
-  OFFSET_burst=OFFSET_counter+BITSIZE_counter,
-  OFFSET_len=OFFSET_burst+BITSIZE_burst,
-  OFFSET_size=OFFSET_len+BITSIZE_len,
-  OFFSET_addr=OFFSET_size+BITSIZE_size,
-  OFFSET_id=OFFSET_addr+BITSIZE_addr,
-  OFFSET_data=OFFSET_id+BITSIZE_id,
-  OFFSET_wstrb=OFFSET_data+BITSIZE_data,
-  BITSIZE_aritem=BITSIZE_id+BITSIZE_addr+BITSIZE_size+BITSIZE_len+BITSIZE_burst+BITSIZE_counter+BITSIZE_delay,
-  BITSIZE_awitem=BITSIZE_wstrb+BITSIZE_data+BITSIZE_id+BITSIZE_addr+BITSIZE_size+BITSIZE_len+BITSIZE_burst+BITSIZE_counter+BITSIZE_delay;
-
-reg [QUEUE_SIZE*BITSIZE_aritem-1:0] arqueue;
-reg [QUEUE_SIZE*BITSIZE_aritem-1:0] next_arqueue;
-reg [QUEUE_SIZE*BITSIZE_awitem-1:0] awqueue; 
-reg [QUEUE_SIZE*BITSIZE_awitem-1:0] next_awqueue;
-reg [31:0] test_addr;
-reg [31:0] test_wstrb;
-reg [31:0] test_data;
-reg [31:0] test_addr_read;
-integer arqueue_size, next_arqueue_size;
-integer awqueue_size, next_awqueue_size;
-
-reg [BITSIZE_id-1:0] awid_reg;
-reg [BITSIZE_addr-1:0] awaddr_reg;
-reg [BITSIZE_size-1:0] awsize_reg;
-reg [BITSIZE_len-1:0] awlen_reg; 
-reg [BITSIZE_burst-1:0] awburst_reg;
-reg [BITSIZE_counter-1:0] counter_reg, counter_next;
-reg write_done;
-reg wlast_reg, wlast_next;
-
-initial
-begin
-  arqueue = 0;
-  arqueue_size = 0;
-  next_arqueue = 0;
-  next_arqueue_size = 0;
-  awqueue = 0;
-  awqueue_size = 0;
-  next_awqueue = 0;
-  next_awqueue_size = 0;
-  awid_reg = 0;
-  awaddr_reg = 0;
-  awsize_reg = 0;
-  awlen_reg = 0;
-  awburst_reg = 0;
-end
-
+localparam integer BITSIZE_data = BITSIZE_rdata;
+localparam integer BITSIZE_id = BITSIZE_arid;
+localparam integer BITSIZE_addr = BITSIZE_araddr;
+localparam integer BITSIZE_size = BITSIZE_arsize;
+localparam integer BITSIZE_burst = BITSIZE_arburst;
+localparam integer BITSIZE_len = BITSIZE_arlen;
+localparam integer C_AR = QUEUE_SIZE - 1;
+localparam integer C_AW = QUEUE_SIZE - 1;
+localparam integer C_W = ((QUEUE_SIZE - 1) &gt; (WRITE_DELAY + 1)) ? (QUEUE_SIZE - 1) : (WRITE_DELAY + 1);
+typedef longint unsigned timestamp_t;
 if_utils #(index, BITSIZE_data) m_utils();
 
-reg awready_reg, wready_reg, bvalid_reg, arready_reg, rlast_reg, rvalid_reg;
-reg [BITSIZE_bid-1:0] bid_reg;
-reg [BITSIZE_bresp-1:0] bresp_reg;
-reg [BITSIZE_buser-1:0] buser_reg;
-reg [BITSIZE_rid-1:0] rid_reg;
-reg [BITSIZE_rdata-1:0] rdata_reg;
-reg [BITSIZE_rresp-1:0] rresp_reg;
-reg [BITSIZE_ruser-1:0] ruser_reg;
+integer ar_head, ar_tail, ar_count, ar_beat;
+reg [BITSIZE_id-1:0] ar_id [0:C_AR-1];
+reg [BITSIZE_addr-1:0] ar_addr [0:C_AR-1];
+reg [BITSIZE_size-1:0] ar_size [0:C_AR-1];
+reg [BITSIZE_burst-1:0] ar_burst [0:C_AR-1];
+reg [BITSIZE_len-1:0] ar_len [0:C_AR-1];
+timestamp_t ar_time [0:C_AR-1];
+integer aw_head, aw_tail, aw_count;
+reg [BITSIZE_id-1:0] aw_id [0:C_AW-1];
+reg [BITSIZE_addr-1:0] aw_addr [0:C_AW-1];
+reg [BITSIZE_size-1:0] aw_size [0:C_AW-1];
+reg [BITSIZE_burst-1:0] aw_burst [0:C_AW-1];
+reg [BITSIZE_len-1:0] aw_len [0:C_AW-1];
+timestamp_t aw_time [0:C_AW-1];
+integer aw_committed [0:C_AW-1];
+reg aw_complete [0:C_AW-1];
+integer w_head, w_tail, w_count;
+reg [BITSIZE_data-1:0] w_data_q [0:C_W-1];
+reg [BITSIZE_wstrb-1:0] w_strb_q [0:C_W-1];
+reg w_last_q [0:C_W-1];
+timestamp_t w_time_q [0:C_W-1];
+timestamp_t cycle_count;
+reg rvalid_q, rlast_q;
+reg [BITSIZE_id-1:0] rid_q;
+reg [BITSIZE_data-1:0] rdata_q;
+reg [BITSIZE_rresp-1:0] rresp_q;
+reg [BITSIZE_ruser-1:0] ruser_q;
+integer init_i;
 
-assign awready = awready_reg;
-assign wready = wready_reg;
-assign bid = bid_reg;
-assign bresp = bresp_reg;
-assign buser = buser_reg;
-assign bvalid = bvalid_reg;
-assign arready = arready_reg;
-assign rid = rid_reg;
-assign rdata = rdata_reg;
-assign rresp = rresp_reg;
-assign rlast = rlast_reg;
-assign ruser = ruser_reg;
-assign rvalid = rvalid_reg;
+assign arready = ar_count &lt; C_AR;
+assign awready = aw_count &lt; C_AW;
+assign wready = w_count &lt; C_W;
+assign rvalid = rvalid_q;
+assign rlast = rlast_q;
+assign rid = rid_q;
+assign rdata = rdata_q;
+assign rresp = rresp_q;
+assign ruser = ruser_q;
+assign bvalid = (aw_count &gt; 0) &amp;&amp; aw_complete[aw_head];
+assign bid = bvalid ? aw_id[aw_head] : '0;
+assign bresp = '0;
+assign buser = '0;
 
-initial
-begin
-  awready_reg = 0;
-  wready_reg = 0;
-  bid_reg = 0;
-  bresp_reg = 0;
-  buser_reg = 0;
-  bvalid_reg = 0;
-  arready_reg = 0;
-  rid_reg = 0;
-  rdata_reg = 0;
-  rresp_reg = 0;
-  rlast_reg = 0;
-  ruser_reg = 0;
-  rvalid_reg= 0;
-end
-
-// Combinatorial logic for read transactions
-always@(*)
-begin: read_comb
-  automatic int next_arqueue_size_increase, next_arqueue_size_decrease;
-  automatic integer unsigned i;
-  next_arqueue = arqueue;
-  next_arqueue_size_increase = 0;
-  next_arqueue_size_decrease = 0;
-  for(i = 0; i &lt; QUEUE_SIZE; i = i + 1)
-  begin
-    if(arqueue[i*BITSIZE_aritem+OFFSET_delay+:BITSIZE_delay] &gt; 1)
-    begin
-      next_arqueue[i*BITSIZE_aritem+OFFSET_delay+:BITSIZE_delay] = arqueue[i*BITSIZE_aritem+OFFSET_delay+:BITSIZE_delay] - 1;
+always @(posedge clock) begin : independent_axi_model
+  integer i, n_ar_count, n_ar_head, n_ar_tail, n_ar_beat;
+  integer n_aw_count, n_aw_head, n_aw_tail, n_w_count, n_w_head, n_w_tail;
+  integer owner, owner_scan, expected_beats, beat_number, read_slot, read_beat;
+  integer write_slot;
+  logic can_load_read, last_read;
+  logic aw_is_new, w_is_new, commit_write;
+  logic [BITSIZE_id-1:0] write_id_value;
+  logic [BITSIZE_addr-1:0] write_base_value;
+  logic [BITSIZE_size-1:0] write_size_value;
+  logic [BITSIZE_burst-1:0] write_burst_value;
+  logic [BITSIZE_len-1:0] write_len_value;
+  logic [BITSIZE_data-1:0] write_data_value;
+  logic [BITSIZE_wstrb-1:0] write_strb_value;
+  logic write_last_value;
+  timestamp_t write_aw_time, write_w_time;
+  logic [BITSIZE_addr-1:0] address_value;
+  timestamp_t eligible_at;
+  if (1RESET_VALUE) begin
+    ar_head &lt;= 0; ar_tail &lt;= 0; ar_count &lt;= 0; ar_beat &lt;= 0;
+    aw_head &lt;= 0; aw_tail &lt;= 0; aw_count &lt;= 0;
+    w_head &lt;= 0; w_tail &lt;= 0; w_count &lt;= 0; cycle_count &lt;= 0;
+    rvalid_q &lt;= 0; rlast_q &lt;= 0;
+    rid_q &lt;= '0; rdata_q &lt;= '0; rresp_q &lt;= '0; ruser_q &lt;= '0;
+    for (init_i = 0; init_i &lt; C_AW; init_i = init_i + 1) begin
+      aw_complete[init_i] &lt;= 0; aw_committed[init_i] &lt;= 0; aw_time[init_i] &lt;= 0;
     end
-  end
-  if(arqueue_size &gt; 0 &amp;&amp; arqueue[OFFSET_counter+:BITSIZE_counter] &gt;= (arqueue[OFFSET_len+:BITSIZE_len] + 1) &amp;&amp; rready &amp;&amp; rvalid_reg)
-  begin
-    for(i = 1; i &lt; QUEUE_SIZE; i = i + 1)
-    begin
-      next_arqueue[(i-1)*BITSIZE_aritem+:BITSIZE_aritem] = next_arqueue[i*BITSIZE_aritem+:BITSIZE_aritem];
+    for (init_i = 0; init_i &lt; C_AR; init_i = init_i + 1) ar_time[init_i] &lt;= 0;
+    for (init_i = 0; init_i &lt; C_W; init_i = init_i + 1) w_time_q[init_i] &lt;= 0;
+  end else begin
+    cycle_count &lt;= cycle_count + 1;
+    n_ar_count = ar_count; n_ar_head = ar_head; n_ar_tail = ar_tail; n_ar_beat = ar_beat;
+    n_aw_count = aw_count; n_aw_head = aw_head; n_aw_tail = aw_tail;
+    n_w_count = w_count; n_w_head = w_head; n_w_tail = w_tail;
+    can_load_read = !rvalid_q || rready;
+    if (rvalid_q &amp;&amp; rready) begin
+      if (rlast_q) begin
+        n_ar_head = (ar_head + 1) % C_AR; n_ar_count = n_ar_count - 1; n_ar_beat = 0;
+      end else n_ar_beat = ar_beat + 1;
+      rvalid_q &lt;= 0;
     end
-    next_arqueue_size_decrease = 1;
-  end
-  if(arvalid &amp;&amp; arready_reg)  // Valid and ready -&gt; accept new transaction
-  begin
-    next_arqueue[(arqueue_size - next_arqueue_size_decrease)*BITSIZE_aritem +:BITSIZE_aritem] = {arid, araddr, arsize, arlen, arburst, {BITSIZE_counter{1&apos;b0}}, ({BITSIZE_delay{1&apos;b0}} + READ_DELAY)}; // size of parameter is implementation dependent
-    next_arqueue_size_increase = 1;
-  end
-  next_arqueue_size = arqueue_size + next_arqueue_size_increase - next_arqueue_size_decrease;
-  if(next_arqueue_size &gt; 0 &amp;&amp; (next_arqueue[OFFSET_delay+:BITSIZE_delay] == 1) &amp;&amp; (next_arqueue[OFFSET_counter+:BITSIZE_counter] &lt; (next_arqueue[OFFSET_len+:BITSIZE_len] + 1)))
-  begin
-    next_arqueue[OFFSET_counter+:BITSIZE_counter] = next_arqueue[OFFSET_counter+:BITSIZE_counter] + 1;
-  end
-end
-
-// Combinatorial logic for write transactions
-always@(*) 
-begin: write_comb
-  automatic int next_awqueue_size_increase, next_awqueue_size_decrease;
-  automatic integer i;
-  automatic reg [BITSIZE_counter-1:0] counter;
-  next_awqueue = awqueue;
-  next_awqueue_size_increase = 0;
-  next_awqueue_size_decrease = 0;
-  wlast_next = wlast_reg;
-  counter_next = counter_reg; 
-  for(i = 0; i &lt; QUEUE_SIZE; i = i + 1)
-  begin
-    if(awqueue[i*BITSIZE_awitem+OFFSET_delay+:BITSIZE_delay] &gt; 1)
-    begin
-      next_awqueue[i*BITSIZE_awitem+OFFSET_delay+:BITSIZE_delay] = awqueue[i*BITSIZE_awitem+OFFSET_delay+:BITSIZE_delay] - 1;
+    if (can_load_read &amp;&amp; n_ar_count &gt; 0) begin
+      read_slot = n_ar_head; read_beat = n_ar_beat;
+      if (cycle_count &gt;= ar_time[read_slot] + READ_DELAY - 1) begin
+        if (ar_burst[read_slot] == 2'b00) address_value = ar_addr[read_slot];
+        else if (ar_burst[read_slot] == 2'b01)
+          address_value = ar_addr[read_slot] + read_beat * (1 &lt;&lt; ar_size[read_slot]);
+        else $fatal(1, &quot;Unsupported AXI read burst type: %0d&quot;, ar_burst[read_slot]);
+        rid_q &lt;= ar_id[read_slot]; rdata_q &lt;= m_utils.read_a(address_value);
+        rresp_q &lt;= '0; ruser_q &lt;= '0;
+        last_read = (read_beat == ar_len[read_slot]);
+        rlast_q &lt;= last_read; rvalid_q &lt;= 1;
+      end
     end
-  end
-  if(write_done &amp;&amp; awqueue_size &gt; 0 &amp;&amp; bready)
-  begin
-    for(i = 1; i &lt; QUEUE_SIZE; i = i + 1)
-    begin
-      next_awqueue[(i-1)*BITSIZE_awitem+:BITSIZE_awitem] = next_awqueue[i*BITSIZE_awitem+:BITSIZE_awitem];
+    if (bvalid &amp;&amp; bready) begin
+      aw_complete[aw_head] &lt;= 0; aw_committed[aw_head] &lt;= 0;
+      n_aw_head = (aw_head + 1) % C_AW; n_aw_count = n_aw_count - 1;
     end
-    next_awqueue_size_decrease = 1;
-  end
-  if(awvalid &amp;&amp; awready_reg &amp;&amp; wready_reg &amp;&amp; wvalid) // Valid and ready -&gt; accept new transaction and save data
-  begin
-    next_awqueue[(awqueue_size-next_awqueue_size_decrease)*BITSIZE_awitem+:BITSIZE_awitem] = {wstrb, wdata, awid, awaddr, awsize, awlen, awburst, {BITSIZE_counter{1&apos;b0}}, ({BITSIZE_delay{1&apos;b0}} + WRITE_DELAY)};
-    next_awqueue_size_increase = 1;
-  end
-  else if(awvalid &amp;&amp; awready_reg &amp;&amp; wlast_reg)
-  begin
-    awid_reg = awid;
-    awaddr_reg = awaddr;
-    awsize_reg = awsize;
-    awlen_reg = awlen; 
-    awburst_reg = awburst;
-    counter_next = 0;
-    wlast_next = 0;
-  end
-  else if(wready_reg &amp;&amp; wvalid)
-  begin
-    next_awqueue[(awqueue_size-next_awqueue_size_decrease)*BITSIZE_awitem+:BITSIZE_awitem] = {wstrb, wdata, awid_reg, awaddr_reg, awsize_reg, awlen_reg, awburst_reg, counter_reg, ({BITSIZE_delay{1&apos;b0}} + WRITE_DELAY)};
-    next_awqueue_size_increase = 1;
-    counter_next = counter_reg + 1;
-  end
-  next_awqueue_size = awqueue_size + next_awqueue_size_increase - next_awqueue_size_decrease;
-end
-
-always@(posedge clock)
-begin
-   if(1RESET_VALUE)
-   begin
-    arready_reg &lt;= 0;
-    awready_reg &lt;= 0;
-    wready_reg &lt;= 0;
-    wlast_reg &lt;= 1;
-    counter_reg &lt;= 0;
-   end
-   else
-   begin
-    arready_reg &lt;= (next_arqueue_size - (next_arqueue_size &gt; 0 &amp;&amp; next_arqueue[OFFSET_delay+:BITSIZE_delay] == 1 &amp;&amp; next_arqueue[OFFSET_counter+:BITSIZE_counter] &gt;= next_arqueue[OFFSET_len+:BITSIZE_len])) &lt; (QUEUE_SIZE - 1);  //Ready if next_queue_size - rlast_reg &lt; QUEUE_SIZE
-    awready_reg &lt;= (wlast_next || wlast) &amp;&amp; ((next_awqueue_size - (next_awqueue_size &gt; 0 &amp;&amp; next_awqueue[OFFSET_delay+:BITSIZE_delay] == 1)) &lt; (QUEUE_SIZE - 1)); // ready if next_queue_size - bvalid_reg &lt; QUEUE_SIZE
-    wready_reg &lt;= (next_awqueue_size - (next_awqueue_size &gt; 0 &amp;&amp; next_awqueue[OFFSET_delay+:BITSIZE_delay] == 1)) &lt; (QUEUE_SIZE - 1); 
-    wlast_reg &lt;= wlast_next || wlast;
-    counter_reg &lt;= counter_next;
-   end
-end
-
-always@(posedge clock)
-begin
-   if(1RESET_VALUE)
-   begin
-    rvalid_reg &lt;= 0;
-    bvalid_reg &lt;= 0;
-   end
-   else
-   begin
-    rvalid_reg &lt;= (next_arqueue_size &gt; 0 &amp;&amp; next_arqueue[OFFSET_delay+:BITSIZE_delay] == 1); // if at posedge_clock delay is 1 I have to perfrom the operation in this cycle
-    bvalid_reg &lt;= (next_awqueue_size &gt; 0 &amp;&amp; next_awqueue[OFFSET_delay+:BITSIZE_delay] == 1 &amp;&amp; next_awqueue[OFFSET_counter+:BITSIZE_counter] == (next_awqueue[OFFSET_len+:BITSIZE_len])); // if at posedge_clock delay is 1 I have to perfrom the last operation in this cycle
-   end
-end
-
-always@(posedge clock)
-begin
-   if(1RESET_VALUE)
-   begin
-    arqueue &lt;= 0;
-    arqueue_size &lt;= 0;
-    awqueue &lt;= 0;
-    awqueue_size &lt;= 0;
-   end
-   else
-   begin
-    arqueue &lt;= next_arqueue;
-    arqueue_size &lt;= next_arqueue_size;
-    awqueue &lt;= next_awqueue;
-    awqueue_size &lt;= next_awqueue_size;
-   end
-end
-
-// Sequential logic for read transactions
-always@(posedge clock)
-begin : read_seq
-  automatic ptr_t currAddr;
-  automatic ptr_t endAddr;
-  rlast_reg &lt;= 0;
-  test_addr_read &lt;= 0;
-  if(next_arqueue_size &gt; 0 &amp;&amp; next_arqueue[OFFSET_delay+:BITSIZE_delay] == 1)
-  begin
-    if(next_arqueue[OFFSET_burst+:BITSIZE_burst] == 2&apos;b00)
-    begin
-      currAddr = next_arqueue[OFFSET_addr+:BITSIZE_addr];
+    owner = -1;
+    aw_is_new = 0;
+    w_is_new = 0;
+    commit_write = 0;
+    write_slot = -1;
+    for (i = 0; i &lt; aw_count; i = i + 1) begin
+      owner_scan = (aw_head + i) % C_AW;
+      if (owner == -1 &amp;&amp; !aw_complete[owner_scan]) owner = owner_scan;
     end
-    else if(next_arqueue[OFFSET_burst+:BITSIZE_burst] == 2&apos;b01)
-    begin
-      currAddr = next_arqueue[OFFSET_addr+:BITSIZE_addr] + (next_arqueue[OFFSET_counter+:BITSIZE_counter] - 1) * (1 &lt;&lt; next_arqueue[OFFSET_size+:BITSIZE_size]);
+    if (owner == -1 &amp;&amp; awvalid &amp;&amp; awready) begin
+      owner = n_aw_tail;
+      aw_is_new = 1;
     end
-    else
-    begin
-      $display(&quot;Unsupported burst type: %0d&quot;, next_arqueue[OFFSET_burst+:BITSIZE_burst]);
-      $finish;
+    if (w_count == 0 &amp;&amp; wvalid &amp;&amp; wready) w_is_new = 1;
+    if (owner != -1 &amp;&amp; (w_count &gt; 0 || w_is_new)) begin
+      if (aw_is_new) begin
+        write_id_value = awid; write_base_value = awaddr; write_size_value = awsize;
+        write_burst_value = awburst; write_len_value = awlen; write_aw_time = cycle_count;
+      end else begin
+        write_id_value = aw_id[owner]; write_base_value = aw_addr[owner]; write_size_value = aw_size[owner];
+        write_burst_value = aw_burst[owner]; write_len_value = aw_len[owner]; write_aw_time = aw_time[owner];
+      end
+      if (w_is_new) begin
+        write_data_value = wdata; write_strb_value = wstrb; write_last_value = wlast; write_w_time = cycle_count;
+      end else begin
+        write_data_value = w_data_q[w_head]; write_strb_value = w_strb_q[w_head];
+        write_last_value = w_last_q[w_head]; write_w_time = w_time_q[w_head];
+      end
+      eligible_at = write_aw_time &gt; write_w_time ? write_aw_time : write_w_time;
+      eligible_at = eligible_at + WRITE_DELAY - 1;
+      if (cycle_count &gt;= eligible_at) begin
+        commit_write = 1;
+        expected_beats = write_len_value + 1;
+        beat_number = aw_is_new ? 0 : aw_committed[owner];
+        if (write_last_value != (beat_number == expected_beats - 1))
+          $fatal(1, &quot;AXI WLAST mismatch at beat %0d of %0d&quot;, beat_number, expected_beats);
+        if (write_burst_value == 2'b00) address_value = write_base_value;
+        else if (write_burst_value == 2'b01)
+          address_value = write_base_value + beat_number * (1 &lt;&lt; write_size_value);
+        else $fatal(1, &quot;Unsupported AXI write burst type: %0d&quot;, write_burst_value);
+      end
     end
-    test_addr_read &lt;= currAddr;
-    rid_reg &lt;= next_arqueue[OFFSET_id+:BITSIZE_id];
-    rdata_reg &lt;= m_utils.read_a(currAddr);
-    if(next_arqueue[OFFSET_counter+:BITSIZE_counter] &gt;= (next_arqueue[OFFSET_len+:BITSIZE_len] + 1))
-    begin
-      rlast_reg &lt;= 1;
+    if (arvalid &amp;&amp; arready) begin
+      ar_id[n_ar_tail] &lt;= arid; ar_addr[n_ar_tail] &lt;= araddr; ar_size[n_ar_tail] &lt;= arsize;
+      ar_burst[n_ar_tail] &lt;= arburst; ar_len[n_ar_tail] &lt;= arlen; ar_time[n_ar_tail] &lt;= cycle_count;
+      n_ar_tail = (n_ar_tail + 1) % C_AR; n_ar_count = n_ar_count + 1;
     end
-  end
-end
-
-// Sequential logic for write transactions
-always@(posedge clock)
-begin: write_seq
-  automatic ptr_t currAddr;
-  automatic ptr_t endAddr;
-  test_wstrb &lt;=0;
-  test_addr &lt;= 0;
-  test_data &lt;= 0;
-  write_done &lt;= 0;
-  if(next_awqueue_size &gt; 0 &amp;&amp; next_awqueue[OFFSET_delay+:BITSIZE_delay] == 1) // Performs the first write of the queue
-  begin
-    if(next_awqueue[OFFSET_burst+:BITSIZE_burst] == 2&apos;b00)
-    begin
-      currAddr = next_awqueue[OFFSET_addr+:BITSIZE_addr];
+    if (awvalid &amp;&amp; awready) begin
+      aw_id[n_aw_tail] &lt;= awid; aw_addr[n_aw_tail] &lt;= awaddr; aw_size[n_aw_tail] &lt;= awsize;
+      aw_burst[n_aw_tail] &lt;= awburst; aw_len[n_aw_tail] &lt;= awlen; aw_time[n_aw_tail] &lt;= cycle_count;
+      if (commit_write &amp;&amp; aw_is_new) begin
+        aw_committed[n_aw_tail] &lt;= beat_number + 1;
+        aw_complete[n_aw_tail] &lt;= (beat_number == expected_beats - 1);
+      end else begin
+        aw_committed[n_aw_tail] &lt;= 0;
+        aw_complete[n_aw_tail] &lt;= 0;
+      end
+      n_aw_tail = (n_aw_tail + 1) % C_AW; n_aw_count = n_aw_count + 1;
     end
-    else if(next_awqueue[OFFSET_burst+:BITSIZE_burst] == 2&apos;b01)
-    begin
-      currAddr = next_awqueue[OFFSET_addr+:BITSIZE_addr] + next_awqueue[OFFSET_counter+:BITSIZE_counter] * (1 &lt;&lt; next_awqueue[OFFSET_size+:BITSIZE_size]);
+    if (wvalid &amp;&amp; wready &amp;&amp; !(commit_write &amp;&amp; w_is_new)) begin
+      w_data_q[n_w_tail] &lt;= wdata; w_strb_q[n_w_tail] &lt;= wstrb; w_last_q[n_w_tail] &lt;= wlast;
+      w_time_q[n_w_tail] &lt;= cycle_count;
+      n_w_tail = (n_w_tail + 1) % C_W; n_w_count = n_w_count + 1;
     end
-    else
-    begin
-      $display(&quot;Unsupported burst type: %0d&quot;, next_arqueue[OFFSET_burst+:BITSIZE_burst]);
-      $finish;
+    if (commit_write) begin
+      void'(m_utils.write_strobe(write_data_value, write_strb_value, address_value));
+      if (!w_is_new) begin n_w_head = (w_head + 1) % C_W; n_w_count = n_w_count - 1; end
+      if (!aw_is_new) begin
+        aw_committed[owner] &lt;= beat_number + 1;
+        if (beat_number == expected_beats - 1) aw_complete[owner] &lt;= 1;
+      end
     end
-    test_wstrb &lt;= next_awqueue[OFFSET_wstrb+:BITSIZE_wstrb];
-    test_addr &lt;= currAddr;
-    test_data &lt;= next_awqueue[OFFSET_data+:BITSIZE_data];
-    bid_reg &lt;= next_awqueue[OFFSET_id+:BITSIZE_id];
-    write_done &lt;= 1;
-    void'(m_utils.write_strobe(next_awqueue[OFFSET_data+:BITSIZE_data], next_awqueue[OFFSET_wstrb+:BITSIZE_wstrb], currAddr));
+    ar_head &lt;= n_ar_head; ar_tail &lt;= n_ar_tail; ar_count &lt;= n_ar_count; ar_beat &lt;= n_ar_beat;
+    aw_head &lt;= n_aw_head; aw_tail &lt;= n_aw_tail; aw_count &lt;= n_aw_count;
+    w_head &lt;= n_w_head; w_tail &lt;= n_w_tail; w_count &lt;= n_w_count;
   end
 end"/>
         </module_o>
