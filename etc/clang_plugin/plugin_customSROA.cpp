@@ -2762,6 +2762,7 @@ llvm::PassPluginLibraryInfo getCustomSROAInfo()
                  MPM.addPass(llvm::IPSCCPPass());
                  MPM.addPass(llvm::GlobalOptPass());
                  MPM.addPass(llvm::createModuleToFunctionPassAdaptor(llvm::PromotePass()));
+                 MPM.addPass(llvm::DeadArgumentEliminationPass());
 
                  FunctionPassManager FPM_PreInline;
                  FPM_PreInline.addPass(llvm::InstCombinePass());
@@ -2842,6 +2843,7 @@ llvm::PassPluginLibraryInfo getCustomSROAInfo()
                  // Fold again what inlining exposed at module scope.
                  MPM.addPass(llvm::IPSCCPPass());
                  MPM.addPass(llvm::GlobalOptPass());
+                 MPM.addPass(llvm::DeadArgumentEliminationPass());
                  // Re-fold the GEP chains the signature rewrite leaves behind: CSROA only knows how to
                  // replace Load/Store/Call users of an alloca GEP. InstCombine refuses to merge an
                  // all-zero GEP into a multi-use one (shouldMergeGEPs), so CSE the duplicate element
