@@ -37,6 +37,7 @@ module tb_write_burst_engine #(
     logic [1:0] bresp = 2'b0;
     logic bid = 1'b0;
     logic bvalid = 1'b0;
+    logic hold_b_responses = 1'b0;
     wire bready;
 
     localparam logic [1:0] OP_STORE = 2'd1;
@@ -68,6 +69,7 @@ module tb_write_burst_engine #(
     logic expected_valid [0:MEM_WORDS-1];
     integer aw_wr = 0, aw_rd = 0, w_wr = 0, w_rd = 0;
     integer accepted_aw = 0, accepted_w = 0, committed_beats = 0, response_count = 0;
+    integer reservations = 0, simultaneous_reserve_b = 0, simultaneous_enqueue_w = 0;
     integer before_aw_count;
     integer before_w_count;
     logic [ADDR_BITS+7:0] held_aw;
@@ -108,12 +110,24 @@ module tb_write_burst_engine #(
             accepted_w = 0;
             committed_beats = 0;
             response_count = 0;
+            reservations = 0;
+            simultaneous_reserve_b = 0;
+            simultaneous_enqueue_w = 0;
             bvalid <= 1'b0;
             response_delay <= 0;
             prev_aw_stall <= 1'b0;
             prev_w_stall <= 1'b0;
         end else begin
+            if (int'(dut.reserved_data_count) > int'(dut.fifo_count) ||
+                int'(dut.fifo_count) > FIFO_DEPTH || int'(dut.descriptor_count) > MAX_OUTSTANDING)
+                $fatal(1, "F2_CAPACITY_INVARIANT reserved=%0d fifo=%0d descriptors=%0d",
+                       dut.reserved_data_count, dut.fifo_count, dut.descriptor_count);
             commit_count = 0;
+            if (dut.reserve_beats != 0) reservations = reservations + 1;
+            if ((dut.reserve_beats != 0) && bvalid && bready)
+                simultaneous_reserve_b = simultaneous_reserve_b + 1;
+            if (dut.store_enqueue && wvalid && wready)
+                simultaneous_enqueue_w = simultaneous_enqueue_w + 1;
             if (out1 !== 32'b0)
                 $fatal(1, "WRITE_OUT1_NOT_ZERO");
             if (awvalid && (awsize !== 3'd2 || awburst !== 2'b01 || awid !== 1'b0))
@@ -186,11 +200,11 @@ module tb_write_burst_engine #(
             end
             if (!bvalid && !commit_count && response_delay > 0)
                 response_delay <= response_delay - 1;
-            else if (!bvalid && !commit_count && response_delay == 0 && aw_rd > 0 &&
+            else if (!hold_b_responses && !bvalid && !commit_count && response_delay == 0 && aw_rd > 0 &&
                      (committed_beats > 0) && response_count < aw_rd)
                 bvalid <= 1'b1;
             if (bvalid && bready) begin
-                bvalid <= 1'b0;
+                bvalid <= response_count + 1 < aw_rd;
                 response_count = response_count + 1;
             end
         end
@@ -337,6 +351,485 @@ module tb_write_burst_engine #(
         end
     endtask
 
+    task automatic multi_outstanding_witness;
+        integer total_beats;
+        integer address;
+        integer start_aw;
+        integer start_w;
+        integer start_commit;
+        integer start_b;
+        integer start_reservations;
+        integer start_sim_reserve_b;
+        integer start_sim_enqueue_w;
+        begin
+            total_beats = (MAX_OUTSTANDING + 1) * B_MAX;
+            start_aw = accepted_aw;
+            start_w = accepted_w;
+            start_commit = committed_beats;
+            start_b = response_count;
+            start_reservations = reservations;
+            start_sim_reserve_b = simultaneous_reserve_b;
+            start_sim_enqueue_w = simultaneous_enqueue_w;
+            hold_b_responses = 1'b1;
+            awready_driver = 1'b1;
+            wready = 1'b1;
+            command(OP_CONFIGURE, 32, 0, 32'h3000, total_beats, 1'b0);
+            for (integer beat = 0; beat < total_beats; beat = beat + 1) begin
+                address = 32'h3000 + beat * 4;
+                expected[address/4] = 32'hf200_0000 ^ (MAX_OUTSTANDING << 12) ^ beat;
+                expected_valid[address/4] = 1'b1;
+                command(OP_STORE, 32, expected[address/4], address, 0, 1'b0);
+            end
+            tick(4);
+            if (accepted_aw-start_aw < 2 || response_count != start_b)
+                $fatal(1, "F2_TWO_AW_BEFORE_FIRST_B_REQUIRED O=%0d aw=%0d b=%0d",
+                       MAX_OUTSTANDING, accepted_aw-start_aw, response_count-start_b);
+            if (dut.descriptor_count != MAX_OUTSTANDING ||
+                dut.scheduled != MAX_OUTSTANDING*B_MAX ||
+                dut.fifo_count != B_MAX || dut.reserved_data_count != 0 ||
+                accepted_aw-start_aw != MAX_OUTSTANDING ||
+                accepted_w-start_w != MAX_OUTSTANDING*B_MAX ||
+                committed_beats-start_commit != MAX_OUTSTANDING*B_MAX ||
+                response_count != start_b || bvalid || done || fault)
+                $fatal(1, "F2_FULL_QUEUE_SETUP O=%0d desc=%0d scheduled=%0d fifo=%0d reserved=%0d aw=%0d w=%0d commit=%0d b=%0d",
+                       MAX_OUTSTANDING, dut.descriptor_count, dut.scheduled, dut.fifo_count,
+                       dut.reserved_data_count, accepted_aw-start_aw, accepted_w-start_w,
+                       committed_beats-start_commit, response_count-start_b);
+            @(negedge clock); in1 = OP_DRAIN; in2 = 0; in3 = 0; in4 = 0; in5 = 0; start = 1'b1;
+            tick(3);
+            if (done || fault || !dut.drain_pending || response_count != start_b)
+                $fatal(1, "F2_DRAIN_COMPLETED_BEFORE_B O=%0d", MAX_OUTSTANDING);
+            start = 1'b0;
+            hold_b_responses = 1'b0;
+            timeout_count = 0;
+            while (response_count-start_b != MAX_OUTSTANDING+1 && timeout_count < 4000) begin
+                @(negedge clock);
+                timeout_count = timeout_count + 1;
+            end
+            if (timeout_count == 4000)
+                $fatal(1, "F2_FREED_CREDIT_NO_PROGRESS O=%0d desc=%0d fifo=%0d reserved=%0d",
+                       MAX_OUTSTANDING, dut.descriptor_count, dut.fifo_count,
+                       dut.reserved_data_count);
+            wait_for_done_or_fault(1000, "F2_MULTI_DRAIN", done_seen, fault_seen);
+            if (!done_seen || fault_seen || dut.region_active || fault ||
+                accepted_aw-start_aw != MAX_OUTSTANDING+1 ||
+                accepted_w-start_w != total_beats ||
+                committed_beats-start_commit != total_beats || response_count-start_b != MAX_OUTSTANDING+1 ||
+                reservations-start_reservations != MAX_OUTSTANDING+1 ||
+                simultaneous_reserve_b == start_sim_reserve_b ||
+                simultaneous_enqueue_w == start_sim_enqueue_w ||
+                dut.descriptor_count != 0 || dut.fifo_count != 0 || dut.reserved_data_count != 0)
+                $fatal(1, "F2_EVENT_DELTA_MISMATCH O=%0d reserve=%0d aw=%0d w=%0d commit=%0d b=%0d simultaneous_reserve_b=%0d simultaneous_enqueue_w=%0d desc=%0d fifo=%0d reserved=%0d",
+                       MAX_OUTSTANDING, reservations-start_reservations, accepted_aw-start_aw,
+                       accepted_w-start_w, committed_beats-start_commit, response_count-start_b,
+                       simultaneous_reserve_b-start_sim_reserve_b,
+                       simultaneous_enqueue_w-start_sim_enqueue_w,
+                       dut.descriptor_count, dut.fifo_count, dut.reserved_data_count);
+            start = 1'b0;
+            for (integer burst = 0; burst <= MAX_OUTSTANDING; burst = burst + 1)
+                if (aw_queue_addr[start_aw+burst] !== 32'h3000+burst*B_MAX*4 ||
+                    aw_queue_len[start_aw+burst] != B_MAX)
+                    $fatal(1, "F2_AW_DESCRIPTOR_MISMATCH O=%0d burst=%0d addr=%h len=%0d",
+                           MAX_OUTSTANDING, burst, aw_queue_addr[start_aw+burst],
+                           aw_queue_len[start_aw+burst]);
+            for (integer check_beat = 0; check_beat < total_beats; check_beat = check_beat + 1)
+                if (memory[32'h3000/4+check_beat] !== expected[32'h3000/4+check_beat])
+                    $fatal(1, "F2_MEMORY_MISMATCH O=%0d beat=%0d", MAX_OUTSTANDING, check_beat);
+        end
+    endtask
+
+    task automatic two_aw_before_b_witness;
+        begin
+            if (MAX_OUTSTANDING != 2)
+                $fatal(1, "F2_TWO_AW_WITNESS_REQUIRES_O2");
+            hold_b_responses = 1'b1;
+            awready_driver = 1'b1;
+            wready = 1'b1;
+            command(OP_CONFIGURE, 32, 0, 32'h3c00, 2*B_MAX, 1'b0);
+            for (integer beat = 0; beat < 2*B_MAX; beat = beat + 1) begin
+                expected[32'h3c00/4+beat] = 32'hf230_0000 ^ beat;
+                expected_valid[32'h3c00/4+beat] = 1'b1;
+                command(OP_STORE, 32, expected[32'h3c00/4+beat], 32'h3c00+beat*4, 0, 1'b0);
+            end
+            tick(4);
+            if (accepted_aw != 2 || response_count != 0 || dut.descriptor_count != 2)
+                $fatal(1, "F2_TWO_AW_BEFORE_FIRST_B_REQUIRED aw=%0d b=%0d descriptors=%0d",
+                       accepted_aw, response_count, dut.descriptor_count);
+        end
+    endtask
+
+    task automatic independent_cursor_witness;
+        logic [ADDR_BITS+7:0] saved_address;
+        logic [36:0] saved_payload;
+        begin
+            if (MAX_OUTSTANDING != 2 || FIFO_DEPTH < 2*B_MAX)
+                $fatal(1, "F2_CURSOR_REQUIRES_O2_FIFO2B");
+            hold_b_responses = 1'b1;
+            awready_driver = 1'b1;
+            wready = 1'b0;
+            command(OP_CONFIGURE, 32, 0, 32'h3400, 2*B_MAX, 1'b0);
+            for (integer beat = 0; beat < 2*B_MAX; beat = beat + 1) begin
+                expected[32'h3400/4+beat] = 32'hf210_0000 ^ beat;
+                expected_valid[32'h3400/4+beat] = 1'b1;
+                command(OP_STORE, 32, expected[32'h3400/4+beat], 32'h3400+beat*4, 0, 1'b0);
+            end
+            tick(3);
+            if (accepted_aw != 2 || accepted_w != 0 ||
+                dut.descriptor_count != 2 || !wvalid)
+                $fatal(1, "F2_AW_CURSOR_DID_NOT_RUN_AHEAD aw=%0d w=%0d desc=%0d",
+                       accepted_aw, accepted_w, dut.descriptor_count);
+            saved_payload = {wdata, wstrb, wlast};
+            repeat (3) begin
+                @(negedge clock);
+                if (!wvalid || {wdata, wstrb, wlast} !== saved_payload)
+                    $fatal(1, "F2_W_PAYLOAD_NOT_STABLE_WHILE_STALLED");
+            end
+            reset_fixture();
+
+            hold_b_responses = 1'b1;
+            awready_driver = 1'b0;
+            wready = 1'b1;
+            command(OP_CONFIGURE, 32, 0, 32'h3600, B_MAX, 1'b0);
+            for (integer beat = 0; beat < B_MAX; beat = beat + 1) begin
+                expected[32'h3600/4+beat] = 32'hf215_0000 ^ beat;
+                expected_valid[32'h3600/4+beat] = 1'b1;
+                command(OP_STORE, 32, expected[32'h3600/4+beat], 32'h3600+beat*4, 0, 1'b0);
+            end
+            timeout_count = 0;
+            while (accepted_w != B_MAX && timeout_count < 1000) begin
+                @(negedge clock);
+                timeout_count = timeout_count + 1;
+            end
+            if (timeout_count == 1000 || accepted_aw != 0 || !awvalid ||
+                {awaddr, awlen} !== {32'h3600, 8'(B_MAX-1)} ||
+                dut.descriptor_count != 1 || dut.fifo_count != 0 ||
+                dut.reserved_data_count != 0)
+                $fatal(1, "F2_W_BEFORE_AW_NOT_PROVEN w=%0d aw=%0d awvalid=%b desc=%0d fifo=%0d reserved=%0d",
+                       accepted_w, accepted_aw, awvalid, dut.descriptor_count,
+                       dut.fifo_count, dut.reserved_data_count);
+            saved_address = {awaddr, awlen};
+            repeat (3) begin
+                @(negedge clock);
+                if (!awvalid || {awaddr, awlen} !== saved_address || accepted_aw != 0)
+                    $fatal(1, "F2_AW_PAYLOAD_NOT_STABLE_WHILE_W_RUNS");
+            end
+            awready_driver = 1'b1;
+            timeout_count = 0;
+            while (accepted_aw != 1 && timeout_count < 100) begin
+                @(negedge clock);
+                timeout_count = timeout_count + 1;
+            end
+            if (timeout_count == 100)
+                $fatal(1, "F2_AW_DID_NOT_RESUME_AFTER_W");
+            @(negedge clock); in1 = OP_DRAIN; in2 = 0; in3 = 0; in4 = 0; in5 = 0; start = 1'b1;
+            tick(2);
+            if (done || !dut.drain_pending) $fatal(1, "F2_CURSOR_DRAIN_EARLY");
+            start = 1'b0;
+            hold_b_responses = 1'b0;
+            wait_for_done_or_fault(2000, "F2_CURSOR_DRAIN", done_seen, fault_seen);
+            if (!done_seen || fault_seen || accepted_aw != 1 ||
+                accepted_w != B_MAX || committed_beats != B_MAX ||
+                response_count != 1 || dut.descriptor_count != 0 ||
+                memory[32'h3600/4] !== expected[32'h3600/4] ||
+                memory[32'h3600/4+B_MAX-1] !== expected[32'h3600/4+B_MAX-1])
+                $fatal(1, "F2_CURSOR_FINAL_MISMATCH");
+        end
+    endtask
+
+    task automatic bresp_multi_witness;
+        integer before_accepted;
+        integer before_scheduled;
+        begin
+            if (MAX_OUTSTANDING != 2 || FIFO_DEPTH < 2*B_MAX)
+                $fatal(1, "F2_BRESP_REQUIRES_O2_FIFO2B");
+            hold_b_responses = 1'b1;
+            awready_driver = 1'b1;
+            wready = 1'b1;
+            command(OP_CONFIGURE, 32, 0, 32'h3800, 4*B_MAX, 1'b0);
+            for (integer beat = 0; beat < B_MAX; beat = beat + 1) begin
+                expected[32'h3800/4+beat] = 32'hf220_0000 ^ beat;
+                expected_valid[32'h3800/4+beat] = 1'b1;
+                command(OP_STORE, 32, expected[32'h3800/4+beat], 32'h3800+beat*4, 0, 1'b0);
+            end
+            timeout_count = 0;
+            while ((accepted_aw != 1 || accepted_w != B_MAX || committed_beats != B_MAX) &&
+                   timeout_count < 1000) begin
+                @(negedge clock);
+                timeout_count = timeout_count + 1;
+            end
+            if (timeout_count == 1000 || response_count != 0 || bvalid ||
+                dut.descriptor_count != 1 || dut.scheduled != B_MAX || dut.fifo_count != 0)
+                $fatal(1, "F2_BRESP_FIRST_DESCRIPTOR_SETUP aw=%0d w=%0d commit=%0d b=%0d desc=%0d",
+                       accepted_aw, accepted_w, committed_beats, response_count,
+                       dut.descriptor_count);
+
+            wready = 1'b0;
+            for (integer beat = B_MAX; beat < 3*B_MAX; beat = beat + 1) begin
+                expected[32'h3800/4+beat] = 32'hf220_0000 ^ beat;
+                expected_valid[32'h3800/4+beat] = 1'b1;
+                command(OP_STORE, 32, expected[32'h3800/4+beat], 32'h3800+beat*4, 0, 1'b0);
+            end
+            if (accepted_aw != 2 || accepted_w != B_MAX || dut.descriptor_count != 2 ||
+                dut.scheduled != 2*B_MAX || dut.fifo_count != 2*B_MAX ||
+                dut.reserved_data_count != B_MAX || !wvalid || awvalid ||
+                response_count != 0 || bvalid)
+                $fatal(1, "F2_BRESP_STALLED_SECOND_SETUP aw=%0d w=%0d desc=%0d scheduled=%0d fifo=%0d reserved=%0d",
+                       accepted_aw, accepted_w, dut.descriptor_count, dut.scheduled,
+                       dut.fifo_count, dut.reserved_data_count);
+            bresp = 2'b10;
+            hold_b_responses = 1'b0;
+            timeout_count = 0;
+            while (!fault && timeout_count < 200) begin
+                @(negedge clock);
+                timeout_count = timeout_count + 1;
+            end
+            if (timeout_count == 200 || !fault || done || response_count != 1 ||
+                accepted_aw != 2 || accepted_w != B_MAX || !wvalid ||
+                dut.descriptor_count != 1 || dut.scheduled != 2*B_MAX ||
+                dut.fifo_count != 2*B_MAX || dut.reserved_data_count != B_MAX || awvalid)
+                $fatal(1, "F2_BRESP_STICKY_FAULT_NOT_RAISED aw=%0d w=%0d b=%0d desc=%0d fifo=%0d reserved=%0d",
+                       accepted_aw, accepted_w, response_count, dut.descriptor_count,
+                       dut.fifo_count, dut.reserved_data_count);
+            before_accepted = dut.accepted;
+            before_scheduled = dut.scheduled;
+            @(negedge clock); in1 = OP_STORE; in2 = 32; in3 = 32'hdead_f2b0;
+            in4 = 32'h3800+3*B_MAX*4; in5 = 0; start = 1'b1;
+            tick(3);
+            if (!fault || done || dut.accepted != before_accepted ||
+                dut.scheduled != before_scheduled || accepted_aw != 2 || accepted_w != B_MAX ||
+                response_count != 1 || dut.descriptor_count != 1 || !wvalid || awvalid ||
+                dut.fifo_count != 2*B_MAX || dut.reserved_data_count != B_MAX)
+                $fatal(1, "F2_BRESP_FAULT_DID_NOT_HOLD_EXPOSED_DESCRIPTOR accepted=%0d scheduled=%0d aw=%0d w=%0d b=%0d descriptors=%0d fifo=%0d reserved=%0d",
+                       dut.accepted, dut.scheduled, accepted_aw, accepted_w,
+                       response_count, dut.descriptor_count, dut.fifo_count,
+                       dut.reserved_data_count);
+            start = 1'b0;
+            bresp = 2'b00;
+            wready = 1'b1;
+            timeout_count = 0;
+            while ((accepted_w != 2*B_MAX || response_count != 2) && timeout_count < 1000) begin
+                @(negedge clock);
+                timeout_count = timeout_count + 1;
+            end
+            if (timeout_count == 1000 || !fault || done || accepted_aw != 2 ||
+                accepted_w != 2*B_MAX || committed_beats != 2*B_MAX || response_count != 2 ||
+                dut.descriptor_count != 0 || dut.scheduled != 2*B_MAX ||
+                dut.fifo_count != B_MAX || dut.reserved_data_count != 0 || awvalid || wvalid)
+                $fatal(1, "F2_BRESP_TRANSPORT_DID_NOT_FINISH accepted=%0d scheduled=%0d aw=%0d w=%0d commit=%0d b=%0d desc=%0d fifo=%0d reserved=%0d",
+                       dut.accepted, dut.scheduled, accepted_aw, accepted_w, committed_beats,
+                       response_count, dut.descriptor_count, dut.fifo_count,
+                       dut.reserved_data_count);
+            for (integer beat = 0; beat < 2*B_MAX; beat = beat + 1)
+                if (memory[32'h3800/4+beat] !== expected[32'h3800/4+beat])
+                    $fatal(1, "F2_BRESP_EXPOSED_DATA_MISMATCH beat=%0d", beat);
+            if (memory[32'h3800/4+2*B_MAX] !== 32'h5a5a_a5a5)
+                $fatal(1, "F2_BRESP_UNASSIGNED_DATA_WAS_WRITTEN");
+            if (dut.accepted != before_accepted || dut.scheduled != before_scheduled)
+                $fatal(1, "F2_BRESP_ACCEPTED_STORE_AFTER_FAULT");
+            @(negedge clock); in1 = OP_DRAIN; in2 = 0; in3 = 0; in4 = 0; in5 = 0; start = 1'b1;
+            tick(3);
+            if (!fault || done) $fatal(1, "F2_BRESP_DRAIN_REPORTED_SUCCESS");
+            start = 1'b0;
+        end
+    endtask
+
+    task automatic bresp_interleaving_witness(input integer mode);
+        integer beat;
+        integer expected_aw_count;
+        integer expected_w_count;
+        begin
+            if (MAX_OUTSTANDING != 2 || FIFO_DEPTH < 2*B_MAX || B_MAX != 16)
+                $fatal(1, "F3_BRESP_INTERLEAVING_REQUIRES_O2_FIFO32_B16");
+            hold_b_responses = 1'b1;
+            awready_driver = 1'b1;
+            wready = 1'b1;
+            command(OP_CONFIGURE, 32, 0, 32'h3a00, 4*B_MAX, 1'b0);
+            for (beat = 0; beat < B_MAX; beat = beat + 1) begin
+                expected[32'h3a00/4+beat] = 32'hf330_0000 ^ beat;
+                expected_valid[32'h3a00/4+beat] = 1'b1;
+                command(OP_STORE, 32, expected[32'h3a00/4+beat], 32'h3a00+beat*4, 0, 1'b0);
+            end
+            timeout_count = 0;
+            while ((accepted_aw != 1 || accepted_w != B_MAX || committed_beats != B_MAX) &&
+                   timeout_count < 1000) begin
+                @(negedge clock);
+                timeout_count = timeout_count + 1;
+            end
+            if (timeout_count == 1000 || response_count != 0 || bvalid ||
+                dut.descriptor_count != 1 || dut.scheduled != B_MAX || dut.fifo_count != 0)
+                $fatal(1, "F3_BRESP_FIRST_DESCRIPTOR_SETUP aw=%0d w=%0d commit=%0d b=%0d desc=%0d",
+                       accepted_aw, accepted_w, committed_beats, response_count,
+                       dut.descriptor_count);
+
+            awready_driver = 1'b0;
+            wready = (mode == 0) ? 1'b0 : 1'b1;
+            for (beat = B_MAX; beat < 3*B_MAX; beat = beat + 1) begin
+                expected[32'h3a00/4+beat] = 32'hf330_0000 ^ beat;
+                expected_valid[32'h3a00/4+beat] = 1'b1;
+                command(OP_STORE, 32, expected[32'h3a00/4+beat], 32'h3a00+beat*4, 0, 1'b0);
+            end
+            timeout_count = 0;
+            if (mode == 0) begin
+                while ((!awvalid || !wvalid || dut.descriptor_count != 2) && timeout_count < 200) begin
+                    @(negedge clock);
+                    timeout_count = timeout_count + 1;
+                end
+                if (timeout_count == 200 || accepted_aw != 1 || accepted_w != B_MAX ||
+                    dut.scheduled != 2*B_MAX || dut.fifo_count != 2*B_MAX ||
+                    dut.reserved_data_count != B_MAX || effective_awready || wready)
+                    $fatal(1, "F3_BRESP_BOTH_STALLED_PRECONDITION aw=%0d w=%0d desc=%0d fifo=%0d reserved=%0d",
+                           accepted_aw, accepted_w, dut.descriptor_count,
+                           dut.fifo_count, dut.reserved_data_count);
+            end else begin
+                while ((accepted_w != 2*B_MAX || !awvalid || dut.descriptor_count != 2) &&
+                       timeout_count < 200) begin
+                    @(negedge clock);
+                    timeout_count = timeout_count + 1;
+                end
+                if (timeout_count == 200 || accepted_aw != 1 || accepted_w != 2*B_MAX ||
+                    dut.scheduled != 2*B_MAX || dut.fifo_count != B_MAX ||
+                    dut.reserved_data_count != 0 || !awvalid || wvalid || effective_awready)
+                    $fatal(1, "F3_BRESP_W_BEFORE_AW_PRECONDITION aw=%0d w=%0d desc=%0d fifo=%0d reserved=%0d awvalid=%b wvalid=%b",
+                           accepted_aw, accepted_w, dut.descriptor_count, dut.fifo_count,
+                           dut.reserved_data_count, awvalid, wvalid);
+            end
+
+            bresp = 2'b10;
+            hold_b_responses = 1'b0;
+            timeout_count = 0;
+            while (!fault && timeout_count < 200) begin
+                @(negedge clock);
+                timeout_count = timeout_count + 1;
+            end
+            expected_w_count = (mode == 0) ? B_MAX : 2*B_MAX;
+            if (timeout_count == 200 || !fault || done || response_count != 1 ||
+                accepted_aw != 1 || accepted_w != expected_w_count || awvalid != 1'b1 ||
+                (mode == 0 && !wvalid) || (mode == 1 && wvalid) ||
+                dut.descriptor_count != 1 || dut.scheduled != 2*B_MAX ||
+                dut.fifo_count != ((mode == 0) ? 2*B_MAX : B_MAX) ||
+                dut.reserved_data_count != ((mode == 0) ? B_MAX : 0))
+                $fatal(1, "F3_BRESP_FAULT_EDGE mode=%0d aw=%0d w=%0d b=%0d desc=%0d fifo=%0d reserved=%0d awvalid=%b wvalid=%b",
+                       mode, accepted_aw, accepted_w, response_count, dut.descriptor_count,
+                       dut.fifo_count, dut.reserved_data_count, awvalid, wvalid);
+
+            held_aw = {awaddr, awlen};
+            if (mode == 0) held_stalled_w = {wdata, wstrb, wlast};
+            tick(3);
+            if (!fault || !awvalid || {awaddr, awlen} !== held_aw ||
+                (mode == 0 && (!wvalid || {wdata, wstrb, wlast} !== held_stalled_w)) ||
+                (mode == 1 && wvalid) || accepted_aw != 1 || accepted_w != expected_w_count ||
+                dut.descriptor_count != 1 || dut.fifo_count != ((mode == 0) ? 2*B_MAX : B_MAX) ||
+                dut.reserved_data_count != ((mode == 0) ? B_MAX : 0))
+                $fatal(1, "F3_BRESP_FAULT_DID_NOT_PRESERVE_SECOND_DESCRIPTOR mode=%0d", mode);
+
+            bresp = 2'b00;
+            awready_driver = 1'b1;
+            wready = 1'b1;
+            timeout_count = 0;
+            while ((accepted_aw != 2 || accepted_w != 2*B_MAX || response_count != 2) &&
+                   timeout_count < 1000) begin
+                @(negedge clock);
+                timeout_count = timeout_count + 1;
+            end
+            expected_aw_count = 2;
+            if (timeout_count == 1000 || !fault || done || accepted_aw != expected_aw_count ||
+                accepted_w != 2*B_MAX || committed_beats != 2*B_MAX || response_count != 2 ||
+                dut.descriptor_count != 0 || dut.scheduled != 2*B_MAX ||
+                dut.fifo_count != B_MAX || dut.reserved_data_count != 0 || awvalid || wvalid)
+                $fatal(1, "F3_BRESP_RESERVED_TRANSPORT_DID_NOT_FINISH mode=%0d aw=%0d w=%0d commit=%0d b=%0d",
+                       mode, accepted_aw, accepted_w, committed_beats, response_count);
+            for (beat = 0; beat < 2*B_MAX; beat = beat + 1)
+                if (memory[32'h3a00/4+beat] !== expected[32'h3a00/4+beat])
+                    $fatal(1, "F3_BRESP_RESERVED_DATA_MISMATCH mode=%0d beat=%0d", mode, beat);
+            if (memory[32'h3a00/4+2*B_MAX] !== 32'h5a5a_a5a5)
+                $fatal(1, "F3_BRESP_UNASSIGNED_BURST_WRITTEN mode=%0d", mode);
+            @(negedge clock); in1 = OP_DRAIN; in2 = 0; in3 = 0; in4 = 0; in5 = 0; start = 1'b1;
+            tick(3);
+            if (!fault || done || accepted_aw != 2 || accepted_w != 2*B_MAX)
+                $fatal(1, "F3_BRESP_DRAIN_REPORTED_SUCCESS mode=%0d", mode);
+            start = 1'b0;
+        end
+    endtask
+
+    task automatic premature_configure_b_pending_witness;
+        integer beat;
+        begin
+            hold_b_responses = 1'b1;
+            awready_driver = 1'b1;
+            wready = 1'b1;
+            command(OP_CONFIGURE, 32, 0, 32'h3c00, B_MAX, 1'b0);
+            for (beat = 0; beat < B_MAX; beat = beat + 1) begin
+                expected[32'h3c00/4+beat] = 32'hf440_0000 ^ beat;
+                expected_valid[32'h3c00/4+beat] = 1'b1;
+                command(OP_STORE, 32, expected[32'h3c00/4+beat], 32'h3c00+beat*4, 0, 1'b0);
+            end
+            timeout_count = 0;
+            while ((committed_beats != B_MAX || accepted_aw != 1 || accepted_w != B_MAX) &&
+                   timeout_count < 1000) begin
+                @(negedge clock);
+                timeout_count = timeout_count + 1;
+            end
+            if (timeout_count == 1000 || response_count != 0 || bvalid ||
+                !dut.region_active || dut.region_base !== 32'h3c00 ||
+                dut.region_count != B_MAX || dut.accepted != B_MAX ||
+                dut.scheduled != B_MAX || dut.completed != 0 || awvalid || wvalid ||
+                dut.descriptor_count != 1)
+                $fatal(1, "F3_PREMATURE_CONFIGURE_B_PENDING_SETUP_FAILED");
+            command(OP_CONFIGURE, 32, 0, 32'h3d00, B_MAX, 1'b1);
+            if (!fault || done || !dut.region_active || dut.region_base !== 32'h3c00 ||
+                dut.region_count != B_MAX || dut.accepted != B_MAX || dut.scheduled != B_MAX ||
+                dut.completed != 0 || accepted_aw != 1 || accepted_w != B_MAX ||
+                committed_beats != B_MAX || response_count != 0 || awvalid || wvalid)
+                $fatal(1, "F3_PREMATURE_CONFIGURE_B_PENDING_CHANGED_CONTEXT");
+            hold_b_responses = 1'b0;
+            timeout_count = 0;
+            while (response_count != 1 && timeout_count < 200) begin
+                @(negedge clock);
+                timeout_count = timeout_count + 1;
+            end
+            if (timeout_count == 200 || !fault || done || response_count != 1 ||
+                dut.region_base !== 32'h3c00 || dut.region_count != B_MAX ||
+                dut.completed != B_MAX)
+                $fatal(1, "F3_PREMATURE_CONFIGURE_B_PENDING_RETIREMENT_FAILED");
+            for (beat = 0; beat < B_MAX; beat = beat + 1)
+                if (memory[32'h3c00/4+beat] !== expected[32'h3c00/4+beat])
+                    $fatal(1, "F3_PREMATURE_CONFIGURE_B_PENDING_DATA_MISMATCH beat=%0d", beat);
+            @(negedge clock); in1 = OP_DRAIN; in2 = 0; in3 = 0; in4 = 0; in5 = 0; start = 1'b1;
+            tick(3);
+            if (!fault || done || response_count != 1)
+                $fatal(1, "F3_PREMATURE_CONFIGURE_B_PENDING_DRAIN_SUCCEEDED");
+            start = 1'b0;
+        end
+    endtask
+
+    task automatic multipage_witness;
+        integer page0;
+        integer page1;
+        integer page2;
+        integer aw_index;
+        begin
+            awready_driver = 1'b1;
+            wready = 1'b1;
+            store_region(32'h0000_0ff0, 1050, 15);
+            page0 = 0;
+            page1 = 0;
+            page2 = 0;
+            for (aw_index = 0; aw_index < accepted_aw; aw_index = aw_index + 1) begin
+                case (aw_queue_addr[aw_index] >> 12)
+                    0: page0 = page0 + 1;
+                    1: page1 = page1 + 1;
+                    2: page2 = page2 + 1;
+                    default: $fatal(1, "F3_MULTIPAGE_UNEXPECTED_PAGE addr=%h", aw_queue_addr[aw_index]);
+                endcase
+            end
+            if (accepted_aw != 67 || accepted_w != 1050 || committed_beats != 1050 ||
+                response_count != 67 || page0 != 1 || page1 != 64 || page2 != 2)
+                $fatal(1, "F3_MULTIPAGE_COUNTS aw=%0d w=%0d committed=%0d b=%0d pages=%0d/%0d/%0d",
+                       accepted_aw, accepted_w, committed_beats, response_count,
+                       page0, page1, page2);
+        end
+    endtask
+
     task automatic prepare_pending_store(input logic [ADDR_BITS-1:0] base,
                                          input integer count, input integer tag);
         integer n;
@@ -372,7 +865,7 @@ module tb_write_burst_engine #(
         begin
             reset = RESET_ASSERTED; start = 1'b0; in1 = 0; in2 = 32; in3 = 0; in4 = 0; in5 = 0;
             awready_driver = 1'b0; wait_aw_for_w = 1'b0; wready = 1'b0;
-            bresp = 0; bid = 0; bvalid = 0; response_delay_set = 0;
+            bresp = 0; bid = 0; bvalid = 0; response_delay_set = 0; hold_b_responses = 1'b0;
             tick(3);
             for (n = 0; n < MEM_WORDS; n = n + 1) begin
                 memory[n] = 32'h5a5a_a5a5;
@@ -391,35 +884,39 @@ module tb_write_burst_engine #(
                 $fatal(1, "ASYNC_RESET_CASE_REQUIRES_ASYNC_VARIANT");
             awready_driver = 1'b0;
             wready = 1'b0;
-            command(OP_CONFIGURE, 32, 0, 32'h2800, 16, 1'b0);
-            for (n = 0; n < 16; n = n + 1)
+            command(OP_CONFIGURE, 32, 0, 32'h2800, 32, 1'b0);
+            for (n = 0; n < 32; n = n + 1)
                 command(OP_STORE, 32, 32'hd000_0000+n, 32'h2800+n*4, 0, 1'b0);
             timeout_count = 0;
-            while ((!awvalid || !wvalid) && timeout_count < 100) begin
+            while ((dut.descriptor_count != 2 || !awvalid || !wvalid) && timeout_count < 100) begin
                 @(negedge clock);
                 timeout_count = timeout_count + 1;
             end
-            if (timeout_count == 100 || !dut.region_active || !dut.descriptor_active ||
-                !awvalid || !wvalid || awready || wready || dut.fifo_count != 16)
-                $fatal(1, "ASYNC_RESET_SETUP_FAILED active=%b descriptor=%b aw=%b w=%b fifo=%0d",
-                       dut.region_active, dut.descriptor_active, awvalid, wvalid, dut.fifo_count);
+            if (timeout_count == 100 || !dut.region_active || dut.descriptor_count != 2 ||
+                !awvalid || !wvalid || awready || wready || dut.fifo_count != 32 ||
+                dut.reserved_data_count != 32)
+                $fatal(1, "ASYNC_RESET_SETUP_FAILED active=%b descriptors=%0d aw=%b w=%b fifo=%0d reserved=%0d",
+                       dut.region_active, dut.descriptor_count, awvalid, wvalid,
+                       dut.fifo_count, dut.reserved_data_count);
             @(negedge clock);
-            in1 = OP_CONFIGURE; in2 = 32; in4 = 32'h2800; in5 = 16; start = 1'b1;
+            in1 = OP_CONFIGURE; in2 = 32; in4 = 32'h2800; in5 = 32; start = 1'b1;
             @(posedge clock);
             #1;
-            if (!fault || !awvalid || !wvalid || !dut.descriptor_active ||
-                !dut.region_active || dut.accepted != 16)
-                $fatal(1, "ASYNC_RESET_FAULT_SETUP_FAILED fault=%b aw=%b w=%b active=%b region=%b accepted=%0d",
-                       fault, awvalid, wvalid, dut.descriptor_active, dut.region_active, dut.accepted);
+            if (!fault || !awvalid || !wvalid || dut.descriptor_count != 2 ||
+                !dut.region_active || dut.accepted != 32)
+                $fatal(1, "ASYNC_RESET_FAULT_SETUP_FAILED fault=%b aw=%b w=%b descriptors=%0d region=%b accepted=%0d",
+                       fault, awvalid, wvalid, dut.descriptor_count, dut.region_active, dut.accepted);
             start = 1'b0;
             #1 reset = RESET_ASSERTED;
             #1;
-            if (fault || awvalid || wvalid || dut.descriptor_active || dut.region_active ||
+            if (fault || awvalid || wvalid || dut.descriptor_count != 0 || dut.region_active ||
                 dut.store_pending || dut.accepted != 0 || dut.scheduled != 0 ||
-                dut.completed != 0 || dut.fifo_count != 0 || dut.fifo_rd_ptr != 0 ||
-                dut.fifo_wr_ptr != 0 || dut.aw_done || dut.w_remaining != 0)
-                $fatal(1, "ASYNC_RESET_NOT_IMMEDIATE fault=%b aw=%b w=%b descriptor=%b region=%b pending=%b accepted=%0d scheduled=%0d completed=%0d fifo=%0d",
-                       fault, awvalid, wvalid, dut.descriptor_active, dut.region_active,
+                dut.completed != 0 || dut.fifo_count != 0 || dut.reserved_data_count != 0 ||
+                dut.fifo_rd_ptr != 0 || dut.fifo_wr_ptr != 0 ||
+                dut.descriptor_alloc_ptr != 0 || dut.descriptor_aw_ptr != 0 ||
+                dut.descriptor_w_ptr != 0 || dut.descriptor_b_ptr != 0)
+                $fatal(1, "ASYNC_RESET_NOT_IMMEDIATE fault=%b aw=%b w=%b descriptors=%0d region=%b pending=%b accepted=%0d scheduled=%0d completed=%0d fifo=%0d",
+                       fault, awvalid, wvalid, dut.descriptor_count, dut.region_active,
                        dut.store_pending, dut.accepted, dut.scheduled, dut.completed,
                        dut.fifo_count);
             @(posedge clock);
@@ -504,6 +1001,26 @@ module tb_write_burst_engine #(
             command(OP_DRAIN, 32'hffffffff, 32'hffffffff, '1, 32'hffffffff, 1'b0);
         end else if (selected_case == "ASYNC_RESET") begin
             asynchronous_reset_witness();
+        end else if (selected_case == "MULTI_OUTSTANDING") begin
+            if (MAX_OUTSTANDING < 2)
+                $fatal(1, "F2_MULTI_OUTSTANDING_REQUIRES_O_GT_1");
+            multi_outstanding_witness();
+        end else if (selected_case == "TWO_AW_BEFORE_B") begin
+            two_aw_before_b_witness();
+        end else if (selected_case == "INDEPENDENT_CURSORS") begin
+            independent_cursor_witness();
+        end else if (selected_case == "BRESP_MULTI") begin
+            bresp_multi_witness();
+        end else if (selected_case == "BRESP_AW_W_HELD") begin
+            bresp_interleaving_witness(0);
+        end else if (selected_case == "BRESP_W_BEFORE_AW") begin
+            bresp_interleaving_witness(1);
+        end else if (selected_case == "PREMATURE_CONFIGURE_B_PENDING") begin
+            premature_configure_b_pending_witness();
+        end else if (selected_case == "MULTIPAGE") begin
+            if (ADDR_BITS != 32 || B_MAX != 16 || MAX_OUTSTANDING != 1)
+                $fatal(1, "F3_MULTIPAGE_REQUIRES_A32_B16_O1");
+            multipage_witness();
         end else if (selected_case == "CORE") begin
             awready_driver = 1'b1; wready = 1'b1;
             command(OP_DRAIN, 0, 0, 0, 0, 1'b0);
@@ -736,6 +1253,35 @@ module tb_write_burst_engine #(
             wait_for_done_or_fault(2000, "DRAIN_BEFORE_B", done_seen, fault_seen);
             if (!done_seen || fault_seen) $fatal(1, "DRAIN_NOT_COMPLETED_AFTER_B");
             start = 1'b0;
+        end else if (selected_case == "DRAIN_ONE_SHOT") begin
+            awready_driver = 1'b1; wready = 1'b1; response_delay_set = 24;
+            command(OP_CONFIGURE, 32, 0, 32'h1880, 1, 1'b0);
+            expected[32'h1880/4] = 32'h1880_0001;
+            expected_valid[32'h1880/4] = 1'b1;
+            command(OP_STORE, 32, 32'h1880_0001, 32'h1880, 0, 1'b0);
+            @(negedge clock); in1 = OP_DRAIN; start = 1'b1;
+            @(negedge clock); start = 1'b0;
+            timeout_count = 0;
+            while (committed_beats != 1 && timeout_count < 200) begin
+                @(negedge clock);
+                timeout_count = timeout_count + 1;
+            end
+            if (timeout_count == 200 || response_count != 0 || bvalid || done || fault ||
+                !dut.drain_pending || !dut.region_active)
+                $fatal(1, "DRAIN_ONE_SHOT_NOT_PENDING_BEFORE_B");
+            wait_for_done_or_fault(2000, "DRAIN_ONE_SHOT_FINAL_B", done_seen, fault_seen);
+            if (!done_seen || fault_seen || dut.region_active || dut.drain_pending ||
+                committed_beats != 1 || response_count != 1)
+                $fatal(1, "DRAIN_ONE_SHOT_NOT_CLOSED_AFTER_B");
+            command(OP_CONFIGURE, 32, 0, 32'h18a0, 1, 1'b0);
+            expected[32'h18a0/4] = 32'h18a0_0002;
+            expected_valid[32'h18a0/4] = 1'b1;
+            command(OP_STORE, 32, 32'h18a0_0002, 32'h18a0, 0, 1'b0);
+            response_delay_set = 0;
+            command(OP_DRAIN, 0, 0, 0, 0, 1'b0);
+            if (fault || dut.region_active || dut.drain_pending ||
+                memory[32'h18a0/4] !== expected[32'h18a0/4])
+                $fatal(1, "DRAIN_ONE_SHOT_NEXT_REGION_FAILED");
         end else if (selected_case == "PREMATURE_CONFIGURE") begin
             awready_driver = 1'b0; wready = 1'b0;
             command(OP_CONFIGURE, 32, 0, 32'h1a00, 16, 1'b0);
@@ -753,6 +1299,62 @@ module tb_write_burst_engine #(
             end
             if (timeout_count == 2000 || committed_beats != 16 || accepted_aw != 1)
                 $fatal(1, "PREMATURE_CONFIGURE_DROPPED_EXPOSED_TRANSPORT");
+        end else if (selected_case == "STORE_ACK_PULSE") begin
+            awready_driver = 1'b1; wready = 1'b1;
+            command(OP_CONFIGURE, 32, 0, 32'h1d00, 4, 1'b0);
+            expected[32'h1d00/4] = 32'h1d00_0001;
+            expected_valid[32'h1d00/4] = 1'b1;
+            @(negedge clock);
+            in1 = OP_STORE; in2 = 32; in3 = 32'h1d00_0001; in4 = 32'h1d00; start = 1'b1;
+            @(posedge clock); #1; start = 1'b0; #1;
+            if (!done || fault || dut.accepted != 1)
+                $fatal(1, "STORE_ACK_NOT_VISIBLE_AFTER_START_DROP done=%b fault=%b accepted=%0d",
+                       done, fault, dut.accepted);
+            @(posedge clock); #1;
+            if (done || fault || dut.accepted != 1)
+                $fatal(1, "STORE_ACK_PULSE_NOT_SINGLE_CYCLE done=%b accepted=%0d", done, dut.accepted);
+
+            expected[32'h1d00/4+1] = 32'h1d00_0002;
+            expected_valid[32'h1d00/4+1] = 1'b1;
+            @(negedge clock);
+            in1 = OP_STORE; in2 = 32; in3 = 32'h1d00_0002; in4 = 32'h1d04; start = 1'b1;
+            tick(1);
+            if (fault || dut.accepted != 2)
+                $fatal(1, "SECOND_STORE_NOT_ACCEPTED accepted=%0d", dut.accepted);
+
+            expected[32'h1d00/4+2] = 32'h1d00_0002;
+            expected_valid[32'h1d00/4+2] = 1'b1;
+            in3 = 32'h1d00_0002; in4 = 32'h1d08;
+            @(posedge clock); #1;
+            if (!done || fault || dut.accepted != 3)
+                $fatal(1, "HELD_START_CHANGED_ADDRESS_NOT_REARMED done=%b accepted=%0d", done, dut.accepted);
+            tick(3);
+            if (done || fault || dut.accepted != 3)
+                $fatal(1, "HELD_STORE_REPEATED_OR_ACK_STUCK accepted=%0d", dut.accepted);
+            start = 1'b0; tick(1);
+
+            expected[32'h1d00/4+3] = 32'h1d00_0002;
+            expected_valid[32'h1d00/4+3] = 1'b1;
+            @(negedge clock);
+            in1 = OP_STORE; in2 = 32; in3 = 32'h1d00_0002; in4 = 32'h1d0c; start = 1'b1;
+            @(posedge clock); #1; start = 1'b0; #1;
+            if (!done || fault || dut.accepted != 4)
+                $fatal(1, "IDENTICAL_PAYLOAD_NEXT_STORE_NOT_REARMED done=%b accepted=%0d", done, dut.accepted);
+            @(posedge clock); #1;
+            if (done || fault || dut.accepted != 4)
+                $fatal(1, "IDENTICAL_PAYLOAD_STORE_DUPLICATED accepted=%0d", dut.accepted);
+            command(OP_DRAIN, 0, 0, 0, 0, 1'b0);
+            timeout_count = 0;
+            while (response_count < accepted_aw && timeout_count < 1000) begin
+                @(negedge clock); timeout_count = timeout_count + 1;
+            end
+            if (timeout_count == 1000 || fault || dut.region_active || accepted_w != 4 ||
+                committed_beats != 4 || response_count != 1 ||
+                memory[32'h1d00/4] !== 32'h1d00_0001 ||
+                memory[32'h1d00/4+1] !== 32'h1d00_0002 ||
+                memory[32'h1d00/4+2] !== 32'h1d00_0002 ||
+                memory[32'h1d00/4+3] !== 32'h1d00_0002)
+                $fatal(1, "STORE_ACK_PULSE_DRAIN_FAILED");
         end else if (selected_case == "DUPLICATE_START") begin
             awready_driver = 1'b1; wready = 1'b1;
             @(negedge clock); in1 = OP_CONFIGURE; in2 = 32; in4 = 32'h1900;
@@ -782,7 +1384,37 @@ module tb_write_burst_engine #(
         end else if (selected_case == "BAD_CONFIG_ALIGN") begin
             command(OP_CONFIGURE, 32, 0, 32'h1001, 1, 1'b1);
         end else if (selected_case == "COUNT_MSB") begin
-            command(OP_CONFIGURE, 32, 0, 32'h1000, 32'h8000_0000, 1'b1);
+            @(negedge clock);
+            in1 = OP_CONFIGURE; in2 = 32; in3 = 0;
+            in4 = 32'h1000; in5 = 32'h8000_0000; start = 1'b1;
+            timeout_count = 0;
+            while (!fault && !done && timeout_count < 1000) begin
+                @(posedge clock);
+                #1;
+                if (!fault && !done) @(negedge clock);
+                timeout_count = timeout_count + 1;
+            end
+            start = 1'b0;
+            if (!fault)
+                $fatal(1, "F3_COUNT_MSB_GUARD_INSTALLED_CONTEXT_OR_TRAFFIC");
+            if (!fault || done || dut.region_active || dut.region_base != 0 ||
+                dut.region_count != 0 || dut.accepted != 0 || dut.scheduled != 0 ||
+                dut.completed != 0 || dut.descriptor_count != 0 || dut.fifo_count != 0 ||
+                dut.reserved_data_count != 0 || awvalid || wvalid || accepted_aw != 0 ||
+                accepted_w != 0 || committed_beats != 0 || response_count != 0)
+                $fatal(1, "F3_COUNT_MSB_GUARD_INSTALLED_CONTEXT_OR_TRAFFIC");
+        end else if (selected_case == "COUNT_MAX_64") begin
+            if (ADDR_BITS != 64) $fatal(1, "F3_COUNT_MAX_REQUIRES_A64");
+            command(OP_CONFIGURE, 32, 0, 64'h0000_0000_0000_1000, 32'h7fff_ffff, 1'b0);
+            if (fault || !dut.region_active ||
+                dut.region_base !== 64'h0000_0000_0000_1000 ||
+                dut.region_count !== 32'h7fff_ffff || dut.accepted != 0 ||
+                dut.scheduled != 0 || dut.completed != 0 || dut.descriptor_count != 0 ||
+                dut.fifo_count != 0 || dut.reserved_data_count != 0 || awvalid || wvalid ||
+                accepted_aw != 0 || accepted_w != 0 || committed_beats != 0 || response_count != 0)
+                $fatal(1, "F3_COUNT_MAX_CONFIGURE_MISMATCH active=%b base=%h count=%h accepted=%0d scheduled=%0d completed=%0d",
+                       dut.region_active, dut.region_base, dut.region_count,
+                       dut.accepted, dut.scheduled, dut.completed);
         end else if (selected_case == "OVERFLOW32") begin
             command(OP_CONFIGURE, 32, 0, 32'hffff_fffc, 2, 1'b1);
         end else if (selected_case == "OVERFLOW64") begin
