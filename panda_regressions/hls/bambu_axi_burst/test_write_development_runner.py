@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import hashlib
 import shutil
 import subprocess
 import unittest
@@ -29,8 +30,17 @@ class DevelopmentRunnerTests(unittest.TestCase):
             "run_write_compiler_tests.sh",
             "run_frontend_compatibility_tests.sh",
             "test_write_compiler_artifacts.py",
+            "check_copy_baseline_results.py",
+            "copy_baseline.cpp",
+            "copy_baseline_tb.cpp",
+            "copy_cycle_expectations.tsv",
+            "check_copy_handoff.py",
+            "write_compiler_cases/write_cases.cpp",
+            "run_copy_handoff_tests.sh",
         ):
-            (self.script_dir / name).write_text("# exported stub target\n")
+            path = self.script_dir / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("# exported stub target\n")
         (self.script_dir / "rtl_tests/run_generated_write_kernel_tests.sh").write_text(
             "# exported stub target\n"
         )
@@ -46,6 +56,11 @@ class DevelopmentRunnerTests(unittest.TestCase):
         self.bambu.parent.mkdir(parents=True)
         self.bambu.write_text("#!/bin/sh\nexit 0\n")
         self.bambu.chmod(0o755)
+        prefix = self.bambu.parent.parent
+        (prefix / "settings.sh").write_text("export BAMBU_HLS=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"\n")
+        plugin = prefix / "lib/panda/clang-16/ASTAnalyzer.so"
+        plugin.parent.mkdir(parents=True)
+        plugin.write_text("plugin stub\n")
         self.env = os.environ.copy()
         self.env["PATH"] = f"{self.bin_dir}:{self.env['PATH']}"
         self.env["CALL_LOG"] = str(self.calls)
@@ -57,12 +72,12 @@ class DevelopmentRunnerTests(unittest.TestCase):
         path.write_text("#!/bin/bash\nset -euo pipefail\n" + body)
         path.chmod(0o755)
 
-    def _run(self, mode, output, *, outside_sandbox=False):
+    def _run(self, mode, output, *extra_args, outside_sandbox=False):
         env = self.env.copy()
         if outside_sandbox:
             env["BURST_G2_SIM_OUTSIDE_SANDBOX"] = "1"
         return subprocess.run(
-            ["/bin/bash", str(self.script_dir / RUNNER.name), mode, str(self.bambu), str(output)],
+            ["/bin/bash", str(self.script_dir / RUNNER.name), mode, str(self.bambu), *map(str, extra_args), str(output)],
             cwd=self.export,
             env=env,
             text=True,
@@ -75,6 +90,15 @@ class DevelopmentRunnerTests(unittest.TestCase):
         if not self.calls.exists():
             return []
         return self.calls.read_text().splitlines()
+
+    def _baseline(self, path):
+        path.mkdir()
+        (path / "provenance.txt").write_text(f"baseline={path.name}\n")
+        for name in ("copy-burst-two-bundles", "copy-legacy-two-bundles", "copy-legacy-shared-bundle"):
+            case_dir = path / name
+            case_dir.mkdir()
+            (case_dir / "artifact-sha256.txt").write_text(f"manifest={name}\n")
+        return path
 
     def test_offline_dispatches_only_the_two_manual_offline_checks(self):
         output = self.scratch / "offline-output"
@@ -127,6 +151,67 @@ class DevelopmentRunnerTests(unittest.TestCase):
             self.assertEqual(call.split("|", 5)[4], "1")
         for call in calls:
             self.assertTrue(call.split("|", 5)[1].startswith(str(output)))
+            self.assertNotIn("run_copy_handoff_tests.sh", call)
+
+    def test_handoff_validates_two_baselines_then_dispatches_checker_runner(self):
+        baseline1 = self.scratch / "baseline-one"
+        baseline2 = self.scratch / "baseline-two"
+        self._baseline(baseline1)
+        self._baseline(baseline2)
+        output = self.scratch / "handoff-output"
+        result = self._run("handoff", output, baseline1, baseline2)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = self._calls()
+        self.assertEqual(len(calls), 3)
+        self.assertTrue(calls[0].startswith("python3|"))
+        self.assertIn("check_copy_baseline_results.py", calls[0])
+        self.assertIn(str(baseline1), calls[0])
+        self.assertTrue(calls[1].startswith("python3|"))
+        self.assertIn("check_copy_baseline_results.py", calls[1])
+        self.assertIn(str(baseline2), calls[1])
+        self.assertTrue(calls[2].startswith("bash|"))
+        self.assertIn("run_copy_handoff_tests.sh", calls[2])
+        self.assertTrue(calls[2].endswith(str(output / "handoff")))
+        provenance = (output / "handoff-provenance.txt").read_text()
+        self.assertIn("mode=handoff", provenance)
+        self.assertIn("check_copy_handoff.py", provenance)
+        for baseline in (baseline1, baseline2):
+            self.assertIn(f"baseline_run{1 if baseline == baseline1 else 2}={baseline.resolve()}", provenance)
+            for name in ("provenance.txt", "copy-burst-two-bundles/artifact-sha256.txt",
+                         "copy-legacy-two-bundles/artifact-sha256.txt",
+                         "copy-legacy-shared-bundle/artifact-sha256.txt"):
+                file_path = baseline / name
+                digest = hashlib.sha256(file_path.read_bytes()).hexdigest()
+                self.assertIn(f"{digest}  {file_path.resolve()}", provenance)
+        self.assertFalse((output / "all").exists())
+
+    def test_handoff_rejects_same_canonical_baseline_before_creating_output_or_dispatching(self):
+        baseline = self._baseline(self.scratch / "baseline-one")
+        output = self.scratch / "duplicate-baseline-output"
+        aliased_baseline = baseline.parent / baseline.name / ".." / baseline.name
+        refused = self._run("handoff", output, baseline, aliased_baseline)
+        self.assertNotEqual(refused.returncode, 0)
+        self.assertIn("two distinct baseline run directories", refused.stderr)
+        self.assertFalse(output.exists())
+        self.assertEqual(self._calls(), [])
+
+    def test_handoff_fails_closed_for_missing_baseline_or_existing_output(self):
+        baseline = self.scratch / "baseline"
+        self._baseline(baseline)
+        output = self.scratch / "missing-baseline-output"
+        refused = self._run("handoff", output, baseline, self.scratch / "absent")
+        self.assertNotEqual(refused.returncode, 0)
+        self.assertFalse(output.exists())
+        self.assertEqual(self._calls(), [])
+
+        existing = self.scratch / "existing-handoff-output"
+        existing.mkdir()
+        marker = existing / "keep"
+        marker.write_text("safe")
+        refused = self._run("handoff", existing, baseline, baseline)
+        self.assertNotEqual(refused.returncode, 0)
+        self.assertEqual(marker.read_text(), "safe")
+        self.assertEqual(self._calls(), [])
 
 
 if __name__ == "__main__":
