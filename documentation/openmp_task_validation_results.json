@@ -1,0 +1,500 @@
+{
+  "base_commit": "a48e5ae347c397bc30cf5fba90954dff7d4a096d",
+  "task_rtl": [
+    {
+      "test": "task1Param",
+      "configuration": "nb",
+      "status": 0,
+      "seconds": 20.6
+    },
+    {
+      "test": "task2Params",
+      "configuration": "nb",
+      "status": 0,
+      "seconds": 22.0
+    },
+    {
+      "test": "taskNParams",
+      "configuration": "nb",
+      "status": 0,
+      "seconds": 30.4
+    },
+    {
+      "test": "taskNParamsPartial",
+      "configuration": "nb",
+      "status": 0,
+      "seconds": 23.8
+    },
+    {
+      "test": "taskNParamsSmallGraph",
+      "configuration": "nb",
+      "status": 0,
+      "seconds": 62.0
+    },
+    {
+      "test": "task2ParamsSparse",
+      "configuration": "nb",
+      "status": 0,
+      "seconds": 20.1
+    },
+    {
+      "test": "taskNParamsSparse",
+      "configuration": "nb",
+      "status": 0,
+      "seconds": 20.7
+    },
+    {
+      "test": "taskNestedCalls",
+      "configuration": "nb",
+      "status": 0,
+      "seconds": 17.4
+    },
+    {
+      "test": "task1Param",
+      "configuration": "pipe",
+      "status": 0,
+      "seconds": 18.7
+    },
+    {
+      "test": "task1Param",
+      "configuration": "glss",
+      "status": 0,
+      "seconds": 18.5
+    },
+    {
+      "test": "task1Param",
+      "configuration": "gates",
+      "status": 0,
+      "seconds": 19.9
+    },
+    {
+      "test": "task1Param",
+      "configuration": "duplicate",
+      "status": 0,
+      "seconds": 19.4
+    },
+    {
+      "test": "task1Param",
+      "configuration": "duplicate-gates",
+      "status": 0,
+      "seconds": 20.1
+    },
+    {
+      "test": "taskNestedCalls",
+      "configuration": "pipe",
+      "status": 0,
+      "seconds": 18.5
+    },
+    {
+      "test": "taskNestedCalls",
+      "configuration": "glss",
+      "status": 0,
+      "seconds": 18.5
+    },
+    {
+      "test": "taskNestedCalls",
+      "configuration": "gates",
+      "status": 0,
+      "seconds": 19.0
+    },
+    {
+      "test": "taskNestedCalls",
+      "configuration": "duplicate",
+      "status": 0,
+      "seconds": 19.1
+    },
+    {
+      "test": "taskNestedCalls",
+      "configuration": "duplicate-gates",
+      "status": 0,
+      "seconds": 19.7
+    },
+    {
+      "test": "taskMathCalls",
+      "configuration": "nb",
+      "status": 0,
+      "seconds": 37.7
+    },
+    {
+      "test": "taskMathCalls",
+      "configuration": "gates",
+      "status": 0,
+      "seconds": 38.1
+    },
+    {
+      "test": "task1Param",
+      "configuration": "single-channel",
+      "status": 0,
+      "seconds": 19.3
+    },
+    {
+      "test": "taskNestedCalls",
+      "configuration": "duplicate4",
+      "status": 0,
+      "seconds": 21.5
+    },
+    {
+      "test": "taskNestedCalls",
+      "configuration": "banked",
+      "status": 0,
+      "seconds": 21.5
+    },
+    {
+      "test": "taskNestedCalls",
+      "configuration": "banked-duplicate",
+      "status": 0,
+      "seconds": 21.7
+    },
+    {
+      "test": "sparseLUFact",
+      "configuration": "arb",
+      "status": 0,
+      "seconds": 31.0
+    },
+    {
+      "test": "sparseLUFact",
+      "configuration": "banked",
+      "status": 0,
+      "seconds": 31.9
+    },
+    {
+      "test": "sparseLUFact",
+      "configuration": "banked-pipe",
+      "status": 0,
+      "seconds": 30.6
+    },
+    {
+      "test": "taskSingleEntry",
+      "configuration": "pipe",
+      "status": 0,
+      "seconds": 17.9
+    },
+    {
+      "test": "taskSingleEntry",
+      "configuration": "nb",
+      "status": 0,
+      "seconds": 17.7
+    },
+    {
+      "test": "mnist",
+      "configuration": "train-arb",
+      "status": 0,
+      "seconds": 63.1
+    },
+    {
+      "test": "mnist",
+      "configuration": "inference-arb",
+      "status": 0,
+      "seconds": 56.5
+    },
+    {
+      "test": "mnist",
+      "configuration": "train-banked",
+      "status": 0,
+      "seconds": 67.5
+    },
+    {
+      "test": "mnist",
+      "configuration": "inference-banked",
+      "status": 0,
+      "seconds": 57.3
+    },
+    {
+      "test": "sparseLUFact",
+      "configuration": "axi-arb",
+      "status": 0,
+      "seconds": 33.6
+    },
+    {
+      "test": "sparseLUFact",
+      "configuration": "axi-banked",
+      "status": 0,
+      "seconds": 33.4
+    }
+  ],
+  "ordinary_openmp_rtl": [
+    {
+      "test": "monothread",
+      "compiler": 13,
+      "status": 0,
+      "seconds": 14.9
+    },
+    {
+      "test": "vector_add",
+      "compiler": 13,
+      "status": 0,
+      "seconds": 15.7
+    },
+    {
+      "test": "vector_add_context",
+      "compiler": 13,
+      "status": 0,
+      "seconds": 13.7
+    },
+    {
+      "test": "monothread",
+      "compiler": 4,
+      "status": 0,
+      "seconds": 9.7
+    }
+  ],
+  "encoder_sat_widths": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    32,
+    64,
+    128,
+    256,
+    512
+  ],
+  "encoder_rtl_specification": "passed",
+  "ctest": "passed",
+  "native_small_tests": [
+    {
+      "test": "task1Param",
+      "status": 0
+    },
+    {
+      "test": "task2Params",
+      "status": 0
+    },
+    {
+      "test": "taskNParams",
+      "status": 0
+    },
+    {
+      "test": "taskNParamsPartial",
+      "status": 0
+    },
+    {
+      "test": "taskNParamsSmallGraph",
+      "status": 0
+    },
+    {
+      "test": "task2ParamsSparse",
+      "status": 0
+    },
+    {
+      "test": "taskNParamsSparse",
+      "status": 0
+    },
+    {
+      "test": "taskNestedCalls",
+      "status": 0
+    },
+    {
+      "test": "taskMathCalls",
+      "status": 0
+    },
+    {
+      "test": "taskSingleEntry",
+      "status": 0
+    }
+  ],
+  "native_extended_tests": [
+    {
+      "test": "sparseLUFact",
+      "status": 0
+    },
+    {
+      "test": "mnist-training",
+      "status": 0
+    },
+    {
+      "test": "mnist-inference",
+      "status": 0
+    }
+  ],
+  "native_mnist_stronger_checks": [
+    {
+      "training": 0,
+      "status": 0
+    },
+    {
+      "training": 1,
+      "status": 0
+    }
+  ],
+  "priority_encoder_families": {
+    "family_prefixes": {
+      "hierarchical": "hierarchical_",
+      "tree": "tree_",
+      "gates": ""
+    },
+    "rtl_specification": "passed",
+    "sat_widths": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      32,
+      64,
+      128,
+      256,
+      512
+    ],
+    "sat_checked_modules": 30,
+    "cli": [
+      {
+        "value": "hierarchical",
+        "status": "accepted"
+      },
+      {
+        "value": "tree",
+        "status": "accepted"
+      },
+      {
+        "value": "gates",
+        "status": "accepted"
+      },
+      {
+        "value": "invalid",
+        "status": "rejected"
+      }
+    ],
+    "rtl_integration": [
+      {
+        "test": "critical-hierarchical",
+        "status": 0,
+        "prefix": "hierarchical_",
+        "prefix_selection": "passed",
+        "consumer_modules": [
+          "priority_arbiter_core",
+          "round_robin_arbiter_core",
+          "kmp_bambu_fork_call_critical_manager"
+        ],
+        "seconds": 8.6
+      },
+      {
+        "test": "critical-hierarchical-context",
+        "status": 0,
+        "prefix": "hierarchical_",
+        "prefix_selection": "passed",
+        "consumer_modules": [
+          "priority_arbiter_core",
+          "round_robin_arbiter_core",
+          "kmp_bambu_fork_call_critical_manager",
+          "kmp_bambu_cs_manager"
+        ],
+        "seconds": 8.4
+      },
+      {
+        "test": "taskNestedCalls-hierarchical",
+        "status": 0,
+        "prefix": "hierarchical_",
+        "prefix_selection": "passed",
+        "consumer_modules": [
+          "priority_arbiter_core"
+        ],
+        "seconds": 19.8
+      },
+      {
+        "test": "taskMathCalls-hierarchical",
+        "status": 0,
+        "prefix": "hierarchical_",
+        "prefix_selection": "passed",
+        "consumer_modules": [
+          "priority_arbiter_core",
+          "round_robin_arbiter_core"
+        ],
+        "seconds": 35.1
+      },
+      {
+        "test": "critical-tree",
+        "status": 0,
+        "prefix": "tree_",
+        "prefix_selection": "passed",
+        "consumer_modules": [
+          "priority_arbiter_core",
+          "round_robin_arbiter_core",
+          "kmp_bambu_fork_call_critical_manager"
+        ],
+        "seconds": 8.5
+      },
+      {
+        "test": "critical-tree-context",
+        "status": 0,
+        "prefix": "tree_",
+        "prefix_selection": "passed",
+        "consumer_modules": [
+          "priority_arbiter_core",
+          "round_robin_arbiter_core",
+          "kmp_bambu_fork_call_critical_manager",
+          "kmp_bambu_cs_manager"
+        ],
+        "seconds": 8.3
+      },
+      {
+        "test": "taskNestedCalls-tree",
+        "status": 0,
+        "prefix": "tree_",
+        "prefix_selection": "passed",
+        "consumer_modules": [
+          "priority_arbiter_core"
+        ],
+        "seconds": 19.7
+      },
+      {
+        "test": "taskMathCalls-tree",
+        "status": 0,
+        "prefix": "tree_",
+        "prefix_selection": "passed",
+        "consumer_modules": [
+          "priority_arbiter_core",
+          "round_robin_arbiter_core"
+        ],
+        "seconds": 36.8
+      },
+      {
+        "test": "critical-gates",
+        "status": 0,
+        "prefix": "",
+        "prefix_selection": "passed",
+        "consumer_modules": [
+          "priority_arbiter_core",
+          "round_robin_arbiter_core",
+          "kmp_bambu_fork_call_critical_manager"
+        ],
+        "seconds": 8.4
+      },
+      {
+        "test": "critical-gates-context",
+        "status": 0,
+        "prefix": "",
+        "prefix_selection": "passed",
+        "consumer_modules": [
+          "priority_arbiter_core",
+          "round_robin_arbiter_core",
+          "kmp_bambu_fork_call_critical_manager",
+          "kmp_bambu_cs_manager"
+        ],
+        "seconds": 8.1
+      },
+      {
+        "test": "taskNestedCalls-gates",
+        "status": 0,
+        "prefix": "",
+        "prefix_selection": "passed",
+        "consumer_modules": [
+          "priority_arbiter_core"
+        ],
+        "seconds": 20.4
+      },
+      {
+        "test": "taskMathCalls-gates",
+        "status": 0,
+        "prefix": "",
+        "prefix_selection": "passed",
+        "consumer_modules": [
+          "priority_arbiter_core",
+          "round_robin_arbiter_core"
+        ],
+        "seconds": 33.2
+      }
+    ]
+  }
+}

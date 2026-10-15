@@ -1,0 +1,186 @@
+{
+  "yosys": "Yosys 0.33 (git sha1 2584903a060)",
+  "lut_size": 6,
+  "results": [
+    {
+      "width": 1,
+      "family": "hierarchical",
+      "luts": 1,
+      "lut_depth": 1
+    },
+    {
+      "width": 1,
+      "family": "tree",
+      "luts": 1,
+      "lut_depth": 1
+    },
+    {
+      "width": 1,
+      "family": "gates",
+      "luts": 1,
+      "lut_depth": 1
+    },
+    {
+      "width": 2,
+      "family": "hierarchical",
+      "luts": 2,
+      "lut_depth": 1
+    },
+    {
+      "width": 2,
+      "family": "tree",
+      "luts": 2,
+      "lut_depth": 1
+    },
+    {
+      "width": 2,
+      "family": "gates",
+      "luts": 2,
+      "lut_depth": 1
+    },
+    {
+      "width": 4,
+      "family": "hierarchical",
+      "luts": 3,
+      "lut_depth": 1
+    },
+    {
+      "width": 4,
+      "family": "tree",
+      "luts": 3,
+      "lut_depth": 1
+    },
+    {
+      "width": 4,
+      "family": "gates",
+      "luts": 3,
+      "lut_depth": 1
+    },
+    {
+      "width": 8,
+      "family": "hierarchical",
+      "luts": 7,
+      "lut_depth": 2
+    },
+    {
+      "width": 8,
+      "family": "tree",
+      "luts": 7,
+      "lut_depth": 2
+    },
+    {
+      "width": 8,
+      "family": "gates",
+      "luts": 7,
+      "lut_depth": 2
+    },
+    {
+      "width": 16,
+      "family": "hierarchical",
+      "luts": 17,
+      "lut_depth": 3
+    },
+    {
+      "width": 16,
+      "family": "tree",
+      "luts": 17,
+      "lut_depth": 3
+    },
+    {
+      "width": 16,
+      "family": "gates",
+      "luts": 23,
+      "lut_depth": 3
+    },
+    {
+      "width": 32,
+      "family": "hierarchical",
+      "luts": 37,
+      "lut_depth": 3
+    },
+    {
+      "width": 32,
+      "family": "tree",
+      "luts": 37,
+      "lut_depth": 3
+    },
+    {
+      "width": 32,
+      "family": "gates",
+      "luts": 64,
+      "lut_depth": 4
+    },
+    {
+      "width": 64,
+      "family": "hierarchical",
+      "luts": 79,
+      "lut_depth": 4
+    },
+    {
+      "width": 64,
+      "family": "tree",
+      "luts": 79,
+      "lut_depth": 4
+    },
+    {
+      "width": 64,
+      "family": "gates",
+      "luts": 138,
+      "lut_depth": 5
+    },
+    {
+      "width": 128,
+      "family": "hierarchical",
+      "luts": 157,
+      "lut_depth": 5
+    },
+    {
+      "width": 128,
+      "family": "tree",
+      "luts": 159,
+      "lut_depth": 5
+    },
+    {
+      "width": 128,
+      "family": "gates",
+      "luts": 322,
+      "lut_depth": 6
+    },
+    {
+      "width": 256,
+      "family": "hierarchical",
+      "luts": 319,
+      "lut_depth": 6
+    },
+    {
+      "width": 256,
+      "family": "tree",
+      "luts": 322,
+      "lut_depth": 5
+    },
+    {
+      "width": 256,
+      "family": "gates",
+      "luts": 729,
+      "lut_depth": 7
+    },
+    {
+      "width": 512,
+      "family": "hierarchical",
+      "luts": 638,
+      "lut_depth": 7
+    },
+    {
+      "width": 512,
+      "family": "tree",
+      "luts": 644,
+      "lut_depth": 6
+    },
+    {
+      "width": 512,
+      "family": "gates",
+      "luts": 1652,
+      "lut_depth": 8
+    }
+  ]
+}

@@ -9,8 +9,8 @@
                <parameter name="n_elements">1</parameter>
           <structural_type_descriptor id_type="register_file"/>
           <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
-          <copyright>Copyright (C) 2017-2026 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2017-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>MIT</license>
           <port_o id="clock" dir="IN" is_clock="1">
                   <structural_type_descriptor type="BOOL" size="1"/>
@@ -32,7 +32,7 @@ wire [BITSIZE_selector_register_file-1:0] memory_addr_a;
 integer i;
 
 initial
-begin 
+begin
   for (i=0; i &lt; n_elements; i=i+1)
   begin
     ram[i] = 0;
@@ -232,8 +232,8 @@ wire [PORTSIZE_kmp_bambu_barrier_reached_we - 1 : 0] barrier_done_next;
 wire [PORTSIZE_kmp_bambu_barrier_reached_we - 1 : 0] barrier_done_update;
 wire register_reset;
 
-always @(posedge clock) 
-begin	
+always @(posedge clock)
+begin
    if(1RESET_VALUE)
    begin
       barrier_done &lt;= 0;
@@ -255,14 +255,14 @@ generate
    begin
       assign barrier_done_update = kmp_bambu_barrier_reached_we;
    end
-   else 
+   else
    begin
 
       reg [PORTSIZE_kmp_bambu_barrier_reached_we * TID_BITSIZE-1:0] register;
       wire [PORTSIZE_kmp_bambu_barrier_reached_we * TID_BITSIZE-1:0] register_next;
 
-      always @(posedge clock) 
-      begin	
+      always @(posedge clock)
+      begin
          if(1RESET_VALUE)
          begin
             register &lt;= 0;
@@ -381,7 +381,7 @@ assign kmp_bambu_wait_all_threads_rd = &amp;barrier_done;"/>
                <port_vector_o id="kmp_lock_acquired_ack_tag" dir="OUT">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
                </port_vector_o>
-               <NP_functionality LIBRARY="kmp_bambu_fork_call_critical_manager ACCELERATOR_NUMBER CONTEXT_NUMBER USE_CS kmp_lock_acquired kmp_lock_acquired_ack kmp_lock_release kmp_lock_acquired_tag kmp_lock_acquired_ack_tag" IP_COMPONENT="multiple_priority_encoder_2_1,multiple_priority_encoder_4_2,multiple_priority_encoder_8_3,multiple_priority_encoder_16_4,multiple_priority_encoder_32_5,multiple_priority_encoder_64_6,multiple_priority_encoder_128_7,multiple_priority_encoder_256_8,multiple_priority_encoder_512_9" VERILOG_PROVIDED="
+               <NP_functionality LIBRARY="kmp_bambu_fork_call_critical_manager ACCELERATOR_NUMBER CONTEXT_NUMBER USE_CS kmp_lock_acquired kmp_lock_acquired_ack kmp_lock_release kmp_lock_acquired_tag kmp_lock_acquired_ack_tag" IP_COMPONENT="hierarchical_multiple_priority_encoder_2_1,hierarchical_multiple_priority_encoder_4_2,hierarchical_multiple_priority_encoder_8_3,hierarchical_multiple_priority_encoder_16_4,hierarchical_multiple_priority_encoder_32_5,hierarchical_multiple_priority_encoder_64_6,hierarchical_multiple_priority_encoder_128_7,hierarchical_multiple_priority_encoder_256_8,hierarchical_multiple_priority_encoder_512_9" VERILOG_PROVIDED="
 `ifndef CLOG2
 `define CLOG2(x) \
   (x &lt;= 2) ? 1 : \
@@ -408,14 +408,14 @@ wire lock_free_next;
 wire [REG_BITSIZE-1:0] request_selected;
 wire request_empty;
 
-always @(posedge clock) 
-begin	
+always @(posedge clock)
+begin
    if(1RESET_VALUE)
    begin
       lock_request_reg &lt;= 0;
       lock_free_reg &lt;= 1;
    end
-   else 
+   else
    begin
       lock_request_reg &lt;= lock_request_next;
       lock_free_reg &lt;= lock_free_next;
@@ -425,9 +425,9 @@ end
 generate
    if(USE_CS)
    begin
-      genvar i; 
+      genvar i;
       for (i = 0; i &lt; PORTSIZE_kmp_lock_acquired; i = i + 1)
-      begin 
+      begin
          assign lock_request_next[i*CONTEXT_NUMBER +: CONTEXT_NUMBER] = (kmp_lock_acquired[i] ? (lock_request_reg[i*CONTEXT_NUMBER +: CONTEXT_NUMBER] | (1 &lt;&lt; kmp_lock_acquired_tag[i*BITSIZE_kmp_lock_acquired_tag +: BITSIZE_kmp_lock_acquired_tag])) :  lock_request_reg[i*CONTEXT_NUMBER +: CONTEXT_NUMBER]) &amp; ~lock_request_delete[i*CONTEXT_NUMBER +: CONTEXT_NUMBER];
       end
    end
@@ -440,55 +440,55 @@ endgenerate
 generate
   if(REG_SIZE == 2)
   begin
-    multiple_priority_encoder_2_1 encoder (.empty(request_empty),
+    hierarchical_multiple_priority_encoder_2_1 encoder (.empty(request_empty),
       .i(lock_request_reg),
       .o(request_selected));
   end
   else if(REG_SIZE == 4)
   begin
-    multiple_priority_encoder_4_2 encoder (.empty(request_empty),
+    hierarchical_multiple_priority_encoder_4_2 encoder (.empty(request_empty),
       .i(lock_request_reg),
       .o(request_selected));
   end
   else if(REG_SIZE == 8)
   begin
-    multiple_priority_encoder_8_3 encoder (.empty(request_empty),
+    hierarchical_multiple_priority_encoder_8_3 encoder (.empty(request_empty),
       .i(lock_request_reg),
       .o(request_selected));
   end
   else if(REG_SIZE == 16)
   begin
-    multiple_priority_encoder_16_4 encoder (.empty(request_empty),
+    hierarchical_multiple_priority_encoder_16_4 encoder (.empty(request_empty),
       .i(lock_request_reg),
       .o(request_selected));
   end
   else if(REG_SIZE == 32)
   begin
-    multiple_priority_encoder_32_5 encoder (.empty(request_empty),
+    hierarchical_multiple_priority_encoder_32_5 encoder (.empty(request_empty),
       .i(lock_request_reg),
       .o(request_selected));
   end
   else if(REG_SIZE == 64)
   begin
-    multiple_priority_encoder_64_6 encoder (.empty(request_empty),
+    hierarchical_multiple_priority_encoder_64_6 encoder (.empty(request_empty),
       .i(lock_request_reg),
       .o(request_selected));
   end
   else if(REG_SIZE == 128)
   begin
-    multiple_priority_encoder_128_7 encoder (.empty(request_empty),
+    hierarchical_multiple_priority_encoder_128_7 encoder (.empty(request_empty),
       .i(lock_request_reg),
       .o(request_selected));
   end
   else if(REG_SIZE == 256)
   begin
-    multiple_priority_encoder_256_8 encoder (.empty(request_empty),
+    hierarchical_multiple_priority_encoder_256_8 encoder (.empty(request_empty),
       .i(lock_request_reg),
       .o(request_selected));
   end
   else if(REG_SIZE == 512)
   begin
-    multiple_priority_encoder_512_9 encoder (.empty(request_empty),
+    hierarchical_multiple_priority_encoder_512_9 encoder (.empty(request_empty),
       .i(lock_request_reg),
       .o(request_selected));
   end
@@ -523,14 +523,14 @@ endgenerate"/>
          </circuit>
       </cell>
       <cell>
-         <name>multiple_priority_encoder_1_1</name>
+         <name>hierarchical_multiple_priority_encoder_1_1</name>
          <circuit>
-            <module_o id="multiple_priority_encoder_1_1">
+            <module_o id="hierarchical_multiple_priority_encoder_1_1">
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
                <license>MIT</license>
-               <structural_type_descriptor id_type="multiple_priority_encoder_1_1"/>
+               <structural_type_descriptor id_type="hierarchical_multiple_priority_encoder_1_1"/>
                <port_o id="i" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
                </port_o>
@@ -540,7 +540,7 @@ endgenerate"/>
                <port_o id="empty" dir="OUT">
                   <structural_type_descriptor type="BOOL" size="1"/>
                </port_o>
-               <NP_functionality LIBRARY="multiple_priority_encoder_1_1" VERILOG_PROVIDED="
+               <NP_functionality LIBRARY="hierarchical_multiple_priority_encoder_1_1" VERILOG_PROVIDED="
 assign o = 0;
 assign empty = ~i;
 "/>
@@ -548,14 +548,14 @@ assign empty = ~i;
          </circuit>
       </cell>
       <cell>
-         <name>multiple_priority_encoder_2_1</name>
+         <name>hierarchical_multiple_priority_encoder_2_1</name>
          <circuit>
-            <module_o id="multiple_priority_encoder_2_1">
+            <module_o id="hierarchical_multiple_priority_encoder_2_1">
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
                <license>MIT</license>
-               <structural_type_descriptor id_type="multiple_priority_encoder_2_1"/>
+               <structural_type_descriptor id_type="hierarchical_multiple_priority_encoder_2_1"/>
                <port_o id="i" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
                </port_o>
@@ -565,7 +565,7 @@ assign empty = ~i;
                <port_o id="empty" dir="OUT">
                   <structural_type_descriptor type="BOOL" size="1"/>
                </port_o>
-               <NP_functionality LIBRARY="multiple_priority_encoder_2_1" VERILOG_PROVIDED="
+               <NP_functionality LIBRARY="hierarchical_multiple_priority_encoder_2_1" VERILOG_PROVIDED="
 assign o = (~i[0] &amp;&amp; i[1]);
 assign empty = ~i[0] &amp;&amp; ~i[1];
 "/>
@@ -573,14 +573,14 @@ assign empty = ~i[0] &amp;&amp; ~i[1];
          </circuit>
       </cell>
       <cell>
-         <name>multiple_priority_encoder_4_2</name>
+         <name>hierarchical_multiple_priority_encoder_4_2</name>
          <circuit>
-            <module_o id="multiple_priority_encoder_4_2">
+            <module_o id="hierarchical_multiple_priority_encoder_4_2">
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
                <license>MIT</license>
-               <structural_type_descriptor id_type="multiple_priority_encoder_4_2"/>
+               <structural_type_descriptor id_type="hierarchical_multiple_priority_encoder_4_2"/>
                <port_o id="i" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
                </port_o>
@@ -590,23 +590,28 @@ assign empty = ~i[0] &amp;&amp; ~i[1];
                <port_o id="empty" dir="OUT">
                   <structural_type_descriptor type="BOOL" size="1"/>
                </port_o>
-               <NP_functionality LIBRARY="multiple_priority_encoder_4_2" VERILOG_PROVIDED="
-assign o[0] = (~i[0] &amp;&amp; i[1]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; i[3]);
-assign o[1] = (~i[0] &amp;&amp; ~i[1] &amp;&amp; i[2]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; i[3]); 
-assign empty = ~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3];
+               <NP_functionality LIBRARY="hierarchical_multiple_priority_encoder_4_2" IP_COMPONENT="hierarchical_multiple_priority_encoder_2_1" VERILOG_PROVIDED="
+// Compose two smaller encoders in a balanced tree. Preserve index zero for an
+// empty input, including the index bit selecting the upper half.
+wire lower_empty, upper_empty;
+wire [0:0] lower_index, upper_index;
+hierarchical_multiple_priority_encoder_2_1 lower_encoder (.i(i[1:0]), .o(lower_index), .empty(lower_empty));
+hierarchical_multiple_priority_encoder_2_1 upper_encoder (.i(i[3:2]), .o(upper_index), .empty(upper_empty));
+assign empty = lower_empty &amp; upper_empty;
+assign o = lower_empty ? {~upper_empty, upper_index} : {1'b0, lower_index};
 "/>
             </module_o>
          </circuit>
       </cell>
       <cell>
-         <name>multiple_priority_encoder_8_3</name>
+         <name>hierarchical_multiple_priority_encoder_8_3</name>
          <circuit>
-            <module_o id="multiple_priority_encoder_8_3">
+            <module_o id="hierarchical_multiple_priority_encoder_8_3">
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
                <license>MIT</license>
-               <structural_type_descriptor id_type="multiple_priority_encoder_8_3"/>
+               <structural_type_descriptor id_type="hierarchical_multiple_priority_encoder_8_3"/>
                <port_o id="i" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
                </port_o>
@@ -616,24 +621,28 @@ assign empty = ~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3];
                <port_o id="empty" dir="OUT">
                   <structural_type_descriptor type="BOOL" size="1"/>
                </port_o>
-               <NP_functionality LIBRARY="multiple_priority_encoder_8_3" VERILOG_PROVIDED="
-assign o[0] = (~i[0] &amp;&amp; i[1]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; i[3]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; i[5]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; i[7]);
-assign o[1] = (~i[0] &amp;&amp; ~i[1] &amp;&amp; i[2]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; i[3]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; i[6]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; i[7]);
-assign o[2] = (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; i[4]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; i[5]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; i[6]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; i[7]);
-assign empty = ~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7];
+               <NP_functionality LIBRARY="hierarchical_multiple_priority_encoder_8_3" IP_COMPONENT="hierarchical_multiple_priority_encoder_4_2" VERILOG_PROVIDED="
+// Compose two smaller encoders in a balanced tree. Preserve index zero for an
+// empty input, including the index bit selecting the upper half.
+wire lower_empty, upper_empty;
+wire [1:0] lower_index, upper_index;
+hierarchical_multiple_priority_encoder_4_2 lower_encoder (.i(i[3:0]), .o(lower_index), .empty(lower_empty));
+hierarchical_multiple_priority_encoder_4_2 upper_encoder (.i(i[7:4]), .o(upper_index), .empty(upper_empty));
+assign empty = lower_empty &amp; upper_empty;
+assign o = lower_empty ? {~upper_empty, upper_index} : {1'b0, lower_index};
 "/>
             </module_o>
          </circuit>
       </cell>
       <cell>
-         <name>multiple_priority_encoder_16_4</name>
+         <name>hierarchical_multiple_priority_encoder_16_4</name>
          <circuit>
-            <module_o id="multiple_priority_encoder_16_4">
+            <module_o id="hierarchical_multiple_priority_encoder_16_4">
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
                <license>MIT</license>
-               <structural_type_descriptor id_type="multiple_priority_encoder_16_4"/>
+               <structural_type_descriptor id_type="hierarchical_multiple_priority_encoder_16_4"/>
                <port_o id="i" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="16"/>
                </port_o>
@@ -643,44 +652,28 @@ assign empty = ~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&am
                <port_o id="empty" dir="OUT">
                   <structural_type_descriptor type="BOOL" size="1"/>
                </port_o>
-               <NP_functionality LIBRARY="multiple_priority_encoder_16_4" VERILOG_PROVIDED="
-assign o[0] = (~i[0] &amp;&amp; i[1]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; i[3]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; i[5]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; i[7]) ||
-            (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; i[9]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; i[11]) ||
-            (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; i[13]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; i[15]);
-
-assign o[1] = (~i[0] &amp;&amp; ~i[1] &amp;&amp; i[2]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; i[3]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; i[6]) || 
-            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; i[7]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; i[10]) || 
-            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; i[11]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; i[14]) || 
-            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; i[15]);
-
-assign o[2] = (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; i[4]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; i[5]) || 
-            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; i[6]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; i[7]) || 
-            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; i[12]) || 
-            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; i[13]) || 
-            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; i[14]) || 
-            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; i[15]);
-
-assign o[3] = (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[8]) || 
-            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[9]) || 
-            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[10]) || 
-            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[11]) || 
-            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[12]) || 
-            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[13]) || 
-            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[14]) || 
-            (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[15]);
-assign empty = ~|i;"/>
+               <NP_functionality LIBRARY="hierarchical_multiple_priority_encoder_16_4" IP_COMPONENT="hierarchical_multiple_priority_encoder_8_3" VERILOG_PROVIDED="
+// Compose two smaller encoders in a balanced tree. Preserve index zero for an
+// empty input, including the index bit selecting the upper half.
+wire lower_empty, upper_empty;
+wire [2:0] lower_index, upper_index;
+hierarchical_multiple_priority_encoder_8_3 lower_encoder (.i(i[7:0]), .o(lower_index), .empty(lower_empty));
+hierarchical_multiple_priority_encoder_8_3 upper_encoder (.i(i[15:8]), .o(upper_index), .empty(upper_empty));
+assign empty = lower_empty &amp; upper_empty;
+assign o = lower_empty ? {~upper_empty, upper_index} : {1'b0, lower_index};
+"/>
             </module_o>
          </circuit>
       </cell>
       <cell>
-         <name>multiple_priority_encoder_32_5</name>
+         <name>hierarchical_multiple_priority_encoder_32_5</name>
          <circuit>
-            <module_o id="multiple_priority_encoder_32_5">
+            <module_o id="hierarchical_multiple_priority_encoder_32_5">
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
                <license>MIT</license>
-               <structural_type_descriptor id_type="multiple_priority_encoder_32_5"/>
+               <structural_type_descriptor id_type="hierarchical_multiple_priority_encoder_32_5"/>
                <port_o id="i" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
                </port_o>
@@ -690,25 +683,28 @@ assign empty = ~|i;"/>
                <port_o id="empty" dir="OUT">
                   <structural_type_descriptor type="BOOL" size="1"/>
                </port_o>
-               <NP_functionality LIBRARY="multiple_priority_encoder_32_5" VERILOG_PROVIDED="
-assign o[0] = (~i[0] &amp;&amp; i[1]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; i[3]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; i[5]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; i[7]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; i[9]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; i[11]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; i[13]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; i[15]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; i[17]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; i[19]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; i[21]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; i[23]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; i[25]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; i[27]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; ~i[28] &amp;&amp; i[29]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; ~i[28] &amp;&amp; ~i[30] &amp;&amp; i[31]);
-assign o[1] = (~i[0] &amp;&amp; ~i[1] &amp;&amp; i[2]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; i[3]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; i[6]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; i[7]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; i[10]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; i[11]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; i[14]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; i[15]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; i[18]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; i[19]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; i[22]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; i[23]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; i[26]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; i[27]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; i[30]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; i[31]);
-assign o[2] = (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; i[4]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; i[5]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; i[6]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; i[7]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; i[12]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; i[13]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; i[14]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; i[15]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; i[20]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; i[21]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; i[22]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; i[23]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; i[28]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; i[29]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; i[30]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; i[31]);
-assign o[3] = (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[8]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[9]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[10]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[11]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[12]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[13]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[14]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[15]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; i[24]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; i[25]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; i[26]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; i[27]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; i[28]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; i[29]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; i[30]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; i[31]);
-assign o[4] = (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[16]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[17]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[18]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[19]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[20]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[21]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[22]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[23]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[24]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[25]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[26]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[27]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[28]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[29]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[30]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[31]);
-assign empty = ~|i;"/>
+               <NP_functionality LIBRARY="hierarchical_multiple_priority_encoder_32_5" IP_COMPONENT="hierarchical_multiple_priority_encoder_16_4" VERILOG_PROVIDED="
+// Compose two smaller encoders in a balanced tree. Preserve index zero for an
+// empty input, including the index bit selecting the upper half.
+wire lower_empty, upper_empty;
+wire [3:0] lower_index, upper_index;
+hierarchical_multiple_priority_encoder_16_4 lower_encoder (.i(i[15:0]), .o(lower_index), .empty(lower_empty));
+hierarchical_multiple_priority_encoder_16_4 upper_encoder (.i(i[31:16]), .o(upper_index), .empty(upper_empty));
+assign empty = lower_empty &amp; upper_empty;
+assign o = lower_empty ? {~upper_empty, upper_index} : {1'b0, lower_index};
+"/>
             </module_o>
          </circuit>
       </cell>
       <cell>
-         <name>multiple_priority_encoder_64_6</name>
+         <name>hierarchical_multiple_priority_encoder_64_6</name>
          <circuit>
-            <module_o id="multiple_priority_encoder_64_6">
+            <module_o id="hierarchical_multiple_priority_encoder_64_6">
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
                <license>MIT</license>
-               <structural_type_descriptor id_type="multiple_priority_encoder_64_6"/>
+               <structural_type_descriptor id_type="hierarchical_multiple_priority_encoder_64_6"/>
                <port_o id="i" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="64"/>
                </port_o>
@@ -718,26 +714,28 @@ assign empty = ~|i;"/>
                <port_o id="empty" dir="OUT">
                   <structural_type_descriptor type="BOOL" size="1"/>
                </port_o>
-               <NP_functionality LIBRARY="multiple_priority_encoder_64_6" VERILOG_PROVIDED="
-assign o[0] = (~i[0] &amp;&amp; i[1]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; i[3]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; i[5]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; i[7]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; i[9]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; i[11]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; i[13]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; i[15]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; i[17]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; i[19]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; i[21]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; i[23]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; i[25]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; i[27]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; ~i[28] &amp;&amp; i[29]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; ~i[28] &amp;&amp; ~i[30] &amp;&amp; i[31]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; ~i[28] &amp;&amp; ~i[30] &amp;&amp; ~i[32] &amp;&amp; i[33]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; ~i[28] &amp;&amp; ~i[30] &amp;&amp; ~i[32] &amp;&amp; ~i[34] &amp;&amp; i[35]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; ~i[28] &amp;&amp; ~i[30] &amp;&amp; ~i[32] &amp;&amp; ~i[34] &amp;&amp; ~i[36] &amp;&amp; i[37]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; ~i[28] &amp;&amp; ~i[30] &amp;&amp; ~i[32] &amp;&amp; ~i[34] &amp;&amp; ~i[36] &amp;&amp; ~i[38] &amp;&amp; i[39]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; ~i[28] &amp;&amp; ~i[30] &amp;&amp; ~i[32] &amp;&amp; ~i[34] &amp;&amp; ~i[36] &amp;&amp; ~i[38] &amp;&amp; ~i[40] &amp;&amp; i[41]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; ~i[28] &amp;&amp; ~i[30] &amp;&amp; ~i[32] &amp;&amp; ~i[34] &amp;&amp; ~i[36] &amp;&amp; ~i[38] &amp;&amp; ~i[40] &amp;&amp; ~i[42] &amp;&amp; i[43]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; ~i[28] &amp;&amp; ~i[30] &amp;&amp; ~i[32] &amp;&amp; ~i[34] &amp;&amp; ~i[36] &amp;&amp; ~i[38] &amp;&amp; ~i[40] &amp;&amp; ~i[42] &amp;&amp; ~i[44] &amp;&amp; i[45]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; ~i[28] &amp;&amp; ~i[30] &amp;&amp; ~i[32] &amp;&amp; ~i[34] &amp;&amp; ~i[36] &amp;&amp; ~i[38] &amp;&amp; ~i[40] &amp;&amp; ~i[42] &amp;&amp; ~i[44] &amp;&amp; ~i[46] &amp;&amp; i[47]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; ~i[28] &amp;&amp; ~i[30] &amp;&amp; ~i[32] &amp;&amp; ~i[34] &amp;&amp; ~i[36] &amp;&amp; ~i[38] &amp;&amp; ~i[40] &amp;&amp; ~i[42] &amp;&amp; ~i[44] &amp;&amp; ~i[46] &amp;&amp; ~i[48] &amp;&amp; i[49]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; ~i[28] &amp;&amp; ~i[30] &amp;&amp; ~i[32] &amp;&amp; ~i[34] &amp;&amp; ~i[36] &amp;&amp; ~i[38] &amp;&amp; ~i[40] &amp;&amp; ~i[42] &amp;&amp; ~i[44] &amp;&amp; ~i[46] &amp;&amp; ~i[48] &amp;&amp; ~i[50] &amp;&amp; i[51]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; ~i[28] &amp;&amp; ~i[30] &amp;&amp; ~i[32] &amp;&amp; ~i[34] &amp;&amp; ~i[36] &amp;&amp; ~i[38] &amp;&amp; ~i[40] &amp;&amp; ~i[42] &amp;&amp; ~i[44] &amp;&amp; ~i[46] &amp;&amp; ~i[48] &amp;&amp; ~i[50] &amp;&amp; ~i[52] &amp;&amp; i[53]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; ~i[28] &amp;&amp; ~i[30] &amp;&amp; ~i[32] &amp;&amp; ~i[34] &amp;&amp; ~i[36] &amp;&amp; ~i[38] &amp;&amp; ~i[40] &amp;&amp; ~i[42] &amp;&amp; ~i[44] &amp;&amp; ~i[46] &amp;&amp; ~i[48] &amp;&amp; ~i[50] &amp;&amp; ~i[52] &amp;&amp; ~i[54] &amp;&amp; i[55]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; ~i[28] &amp;&amp; ~i[30] &amp;&amp; ~i[32] &amp;&amp; ~i[34] &amp;&amp; ~i[36] &amp;&amp; ~i[38] &amp;&amp; ~i[40] &amp;&amp; ~i[42] &amp;&amp; ~i[44] &amp;&amp; ~i[46] &amp;&amp; ~i[48] &amp;&amp; ~i[50] &amp;&amp; ~i[52] &amp;&amp; ~i[54] &amp;&amp; ~i[56] &amp;&amp; i[57]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; ~i[28] &amp;&amp; ~i[30] &amp;&amp; ~i[32] &amp;&amp; ~i[34] &amp;&amp; ~i[36] &amp;&amp; ~i[38] &amp;&amp; ~i[40] &amp;&amp; ~i[42] &amp;&amp; ~i[44] &amp;&amp; ~i[46] &amp;&amp; ~i[48] &amp;&amp; ~i[50] &amp;&amp; ~i[52] &amp;&amp; ~i[54] &amp;&amp; ~i[56] &amp;&amp; ~i[58] &amp;&amp; i[59]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; ~i[28] &amp;&amp; ~i[30] &amp;&amp; ~i[32] &amp;&amp; ~i[34] &amp;&amp; ~i[36] &amp;&amp; ~i[38] &amp;&amp; ~i[40] &amp;&amp; ~i[42] &amp;&amp; ~i[44] &amp;&amp; ~i[46] &amp;&amp; ~i[48] &amp;&amp; ~i[50] &amp;&amp; ~i[52] &amp;&amp; ~i[54] &amp;&amp; ~i[56] &amp;&amp; ~i[58] &amp;&amp; ~i[60] &amp;&amp; i[61]) || (~i[0] &amp;&amp; ~i[2] &amp;&amp; ~i[4] &amp;&amp; ~i[6] &amp;&amp; ~i[8] &amp;&amp; ~i[10] &amp;&amp; ~i[12] &amp;&amp; ~i[14] &amp;&amp; ~i[16] &amp;&amp; ~i[18] &amp;&amp; ~i[20] &amp;&amp; ~i[22] &amp;&amp; ~i[24] &amp;&amp; ~i[26] &amp;&amp; ~i[28] &amp;&amp; ~i[30] &amp;&amp; ~i[32] &amp;&amp; ~i[34] &amp;&amp; ~i[36] &amp;&amp; ~i[38] &amp;&amp; ~i[40] &amp;&amp; ~i[42] &amp;&amp; ~i[44] &amp;&amp; ~i[46] &amp;&amp; ~i[48] &amp;&amp; ~i[50] &amp;&amp; ~i[52] &amp;&amp; ~i[54] &amp;&amp; ~i[56] &amp;&amp; ~i[58] &amp;&amp; ~i[60] &amp;&amp; ~i[62] &amp;&amp; i[63]);
-assign o[1] = (~i[0] &amp;&amp; ~i[1] &amp;&amp; i[2]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; i[3]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; i[6]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; i[7]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; i[10]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; i[11]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; i[14]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; i[15]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; i[18]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; i[19]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; i[22]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; i[23]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; i[26]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; i[27]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; i[30]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; i[31]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; i[34]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; i[35]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; i[38]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; i[39]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; i[42]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; i[43]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; i[46]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; i[47]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; i[50]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; i[51]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[52] &amp;&amp; ~i[53] &amp;&amp; i[54]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[52] &amp;&amp; ~i[53] &amp;&amp; i[55]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[52] &amp;&amp; ~i[53] &amp;&amp; ~i[56] &amp;&amp; ~i[57] &amp;&amp; i[58]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[52] &amp;&amp; ~i[53] &amp;&amp; ~i[56] &amp;&amp; ~i[57] &amp;&amp; i[59]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[52] &amp;&amp; ~i[53] &amp;&amp; ~i[56] &amp;&amp; ~i[57] &amp;&amp; ~i[60] &amp;&amp; ~i[61] &amp;&amp; i[62]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[52] &amp;&amp; ~i[53] &amp;&amp; ~i[56] &amp;&amp; ~i[57] &amp;&amp; ~i[60] &amp;&amp; ~i[61] &amp;&amp; i[63]);
-assign o[2] = (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; i[4]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; i[5]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; i[6]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; i[7]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; i[12]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; i[13]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; i[14]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; i[15]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; i[20]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; i[21]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; i[22]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; i[23]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; i[28]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; i[29]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; i[30]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; i[31]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; i[36]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; i[37]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; i[38]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; i[39]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; i[44]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; i[45]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; i[46]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; i[47]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[50] &amp;&amp; ~i[51] &amp;&amp; i[52]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[50] &amp;&amp; ~i[51] &amp;&amp; i[53]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[50] &amp;&amp; ~i[51] &amp;&amp; i[54]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[50] &amp;&amp; ~i[51] &amp;&amp; i[55]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[50] &amp;&amp; ~i[51] &amp;&amp; ~i[56] &amp;&amp; ~i[57] &amp;&amp; ~i[58] &amp;&amp; ~i[59] &amp;&amp; i[60]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[50] &amp;&amp; ~i[51] &amp;&amp; ~i[56] &amp;&amp; ~i[57] &amp;&amp; ~i[58] &amp;&amp; ~i[59] &amp;&amp; i[61]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[50] &amp;&amp; ~i[51] &amp;&amp; ~i[56] &amp;&amp; ~i[57] &amp;&amp; ~i[58] &amp;&amp; ~i[59] &amp;&amp; i[62]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[50] &amp;&amp; ~i[51] &amp;&amp; ~i[56] &amp;&amp; ~i[57] &amp;&amp; ~i[58] &amp;&amp; ~i[59] &amp;&amp; i[63]);
-assign o[3] = (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[8]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[9]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[10]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[11]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[12]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[13]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[14]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; i[15]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; i[24]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; i[25]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; i[26]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; i[27]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; i[28]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; i[29]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; i[30]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; i[31]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; i[40]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; i[41]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; i[42]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; i[43]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; i[44]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; i[45]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; i[46]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; i[47]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[50] &amp;&amp; ~i[51] &amp;&amp; ~i[52] &amp;&amp; ~i[53] &amp;&amp; ~i[54] &amp;&amp; ~i[55] &amp;&amp; i[56]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[50] &amp;&amp; ~i[51] &amp;&amp; ~i[52] &amp;&amp; ~i[53] &amp;&amp; ~i[54] &amp;&amp; ~i[55] &amp;&amp; i[57]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[50] &amp;&amp; ~i[51] &amp;&amp; ~i[52] &amp;&amp; ~i[53] &amp;&amp; ~i[54] &amp;&amp; ~i[55] &amp;&amp; i[58]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[50] &amp;&amp; ~i[51] &amp;&amp; ~i[52] &amp;&amp; ~i[53] &amp;&amp; ~i[54] &amp;&amp; ~i[55] &amp;&amp; i[59]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[50] &amp;&amp; ~i[51] &amp;&amp; ~i[52] &amp;&amp; ~i[53] &amp;&amp; ~i[54] &amp;&amp; ~i[55] &amp;&amp; i[60]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[50] &amp;&amp; ~i[51] &amp;&amp; ~i[52] &amp;&amp; ~i[53] &amp;&amp; ~i[54] &amp;&amp; ~i[55] &amp;&amp; i[61]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[50] &amp;&amp; ~i[51] &amp;&amp; ~i[52] &amp;&amp; ~i[53] &amp;&amp; ~i[54] &amp;&amp; ~i[55] &amp;&amp; i[62]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[48] &amp;&amp; ~i[49] &amp;&amp; ~i[50] &amp;&amp; ~i[51] &amp;&amp; ~i[52] &amp;&amp; ~i[53] &amp;&amp; ~i[54] &amp;&amp; ~i[55] &amp;&amp; i[63]);
-assign o[4] = (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[16]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[17]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[18]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[19]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[20]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[21]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[22]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[23]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[24]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[25]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[26]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[27]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[28]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[29]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[30]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; i[31]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[46] &amp;&amp; ~i[47] &amp;&amp; i[48]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[46] &amp;&amp; ~i[47] &amp;&amp; i[49]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[46] &amp;&amp; ~i[47] &amp;&amp; i[50]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[46] &amp;&amp; ~i[47] &amp;&amp; i[51]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[46] &amp;&amp; ~i[47] &amp;&amp; i[52]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[46] &amp;&amp; ~i[47] &amp;&amp; i[53]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[46] &amp;&amp; ~i[47] &amp;&amp; i[54]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[46] &amp;&amp; ~i[47] &amp;&amp; i[55]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[46] &amp;&amp; ~i[47] &amp;&amp; i[56]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[46] &amp;&amp; ~i[47] &amp;&amp; i[57]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[46] &amp;&amp; ~i[47] &amp;&amp; i[58]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[46] &amp;&amp; ~i[47] &amp;&amp; i[59]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[46] &amp;&amp; ~i[47] &amp;&amp; i[60]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[46] &amp;&amp; ~i[47] &amp;&amp; i[61]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[46] &amp;&amp; ~i[47] &amp;&amp; i[62]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[32] &amp;&amp; ~i[33] &amp;&amp; ~i[34] &amp;&amp; ~i[35] &amp;&amp; ~i[36] &amp;&amp; ~i[37] &amp;&amp; ~i[38] &amp;&amp; ~i[39] &amp;&amp; ~i[40] &amp;&amp; ~i[41] &amp;&amp; ~i[42] &amp;&amp; ~i[43] &amp;&amp; ~i[44] &amp;&amp; ~i[45] &amp;&amp; ~i[46] &amp;&amp; ~i[47] &amp;&amp; i[63]);
-assign o[5] = (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[32]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[33]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[34]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[35]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[36]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[37]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[38]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[39]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[40]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[41]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[42]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[43]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[44]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[45]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[46]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[47]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[48]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[49]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[50]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[51]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[52]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[53]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[54]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[55]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[56]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[57]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[58]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[59]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[60]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[61]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[62]) || (~i[0] &amp;&amp; ~i[1] &amp;&amp; ~i[2] &amp;&amp; ~i[3] &amp;&amp; ~i[4] &amp;&amp; ~i[5] &amp;&amp; ~i[6] &amp;&amp; ~i[7] &amp;&amp; ~i[8] &amp;&amp; ~i[9] &amp;&amp; ~i[10] &amp;&amp; ~i[11] &amp;&amp; ~i[12] &amp;&amp; ~i[13] &amp;&amp; ~i[14] &amp;&amp; ~i[15] &amp;&amp; ~i[16] &amp;&amp; ~i[17] &amp;&amp; ~i[18] &amp;&amp; ~i[19] &amp;&amp; ~i[20] &amp;&amp; ~i[21] &amp;&amp; ~i[22] &amp;&amp; ~i[23] &amp;&amp; ~i[24] &amp;&amp; ~i[25] &amp;&amp; ~i[26] &amp;&amp; ~i[27] &amp;&amp; ~i[28] &amp;&amp; ~i[29] &amp;&amp; ~i[30] &amp;&amp; ~i[31] &amp;&amp; i[63]);
-assign empty = ~|i;"/>
+               <NP_functionality LIBRARY="hierarchical_multiple_priority_encoder_64_6" IP_COMPONENT="hierarchical_multiple_priority_encoder_32_5" VERILOG_PROVIDED="
+// Compose two smaller encoders in a balanced tree. Preserve index zero for an
+// empty input, including the index bit selecting the upper half.
+wire lower_empty, upper_empty;
+wire [4:0] lower_index, upper_index;
+hierarchical_multiple_priority_encoder_32_5 lower_encoder (.i(i[31:0]), .o(lower_index), .empty(lower_empty));
+hierarchical_multiple_priority_encoder_32_5 upper_encoder (.i(i[63:32]), .o(upper_index), .empty(upper_empty));
+assign empty = lower_empty &amp; upper_empty;
+assign o = lower_empty ? {~upper_empty, upper_index} : {1'b0, lower_index};
+"/>
             </module_o>
          </circuit>
       </cell>
       <cell>
-         <name>multiple_priority_encoder_128_7</name>
+         <name>hierarchical_multiple_priority_encoder_128_7</name>
          <circuit>
-            <module_o id="multiple_priority_encoder_128_7">
+            <module_o id="hierarchical_multiple_priority_encoder_128_7">
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
                <license>MIT</license>
-               <structural_type_descriptor id_type="multiple_priority_encoder_128_7"/>
+               <structural_type_descriptor id_type="hierarchical_multiple_priority_encoder_128_7"/>
                <port_o id="i" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="128"/>
                </port_o>
@@ -747,7 +745,7 @@ assign empty = ~|i;"/>
                <port_o id="empty" dir="OUT">
                   <structural_type_descriptor type="BOOL" size="1"/>
                </port_o>
-               <NP_functionality LIBRARY="multiple_priority_encoder_128_7" VERILOG_PROVIDED="
+               <NP_functionality LIBRARY="hierarchical_multiple_priority_encoder_128_7" IP_COMPONENT="hierarchical_multiple_priority_encoder_2_1,hierarchical_multiple_priority_encoder_64_6" VERILOG_PROVIDED="
 wire [1:0] group_empty;
 wire [0:0] group_index;
 wire [5:0] local_index [0:1];
@@ -755,12 +753,12 @@ genvar g;
 generate
   for (g = 0; g &lt; 2; g = g + 1)
   begin: encoder_group
-    multiple_priority_encoder_64_6 encoder (.empty(group_empty[g]),
+    hierarchical_multiple_priority_encoder_64_6 encoder (.empty(group_empty[g]),
       .i(i[g*64+:64]),
       .o(local_index[g]));
   end
 endgenerate
-multiple_priority_encoder_2_1 group_encoder (.empty(),
+hierarchical_multiple_priority_encoder_2_1 group_encoder (.empty(),
   .i(~group_empty),
   .o(group_index));
 assign empty = &amp;group_empty;
@@ -769,14 +767,14 @@ assign o = empty ? 7'b0 : {group_index, local_index[group_index]};"/>
          </circuit>
       </cell>
       <cell>
-         <name>multiple_priority_encoder_256_8</name>
+         <name>hierarchical_multiple_priority_encoder_256_8</name>
          <circuit>
-            <module_o id="multiple_priority_encoder_256_8">
+            <module_o id="hierarchical_multiple_priority_encoder_256_8">
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
                <license>MIT</license>
-               <structural_type_descriptor id_type="multiple_priority_encoder_256_8"/>
+               <structural_type_descriptor id_type="hierarchical_multiple_priority_encoder_256_8"/>
                <port_o id="i" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="256"/>
                </port_o>
@@ -786,7 +784,7 @@ assign o = empty ? 7'b0 : {group_index, local_index[group_index]};"/>
                <port_o id="empty" dir="OUT">
                   <structural_type_descriptor type="BOOL" size="1"/>
                </port_o>
-               <NP_functionality LIBRARY="multiple_priority_encoder_256_8" VERILOG_PROVIDED="
+               <NP_functionality LIBRARY="hierarchical_multiple_priority_encoder_256_8" IP_COMPONENT="hierarchical_multiple_priority_encoder_4_2,hierarchical_multiple_priority_encoder_64_6" VERILOG_PROVIDED="
 wire [3:0] group_empty;
 wire [1:0] group_index;
 wire [5:0] local_index [0:3];
@@ -794,12 +792,12 @@ genvar g;
 generate
   for (g = 0; g &lt; 4; g = g + 1)
   begin: encoder_group
-    multiple_priority_encoder_64_6 encoder (.empty(group_empty[g]),
+    hierarchical_multiple_priority_encoder_64_6 encoder (.empty(group_empty[g]),
       .i(i[g*64+:64]),
       .o(local_index[g]));
   end
 endgenerate
-multiple_priority_encoder_4_2 group_encoder (.empty(),
+hierarchical_multiple_priority_encoder_4_2 group_encoder (.empty(),
   .i(~group_empty),
   .o(group_index));
 assign empty = &amp;group_empty;
@@ -808,14 +806,14 @@ assign o = empty ? 8'b0 : {group_index, local_index[group_index]};"/>
          </circuit>
       </cell>
       <cell>
-         <name>multiple_priority_encoder_512_9</name>
+         <name>hierarchical_multiple_priority_encoder_512_9</name>
          <circuit>
-            <module_o id="multiple_priority_encoder_512_9">
+            <module_o id="hierarchical_multiple_priority_encoder_512_9">
                <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
                <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
                <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
                <license>MIT</license>
-               <structural_type_descriptor id_type="multiple_priority_encoder_512_9"/>
+               <structural_type_descriptor id_type="hierarchical_multiple_priority_encoder_512_9"/>
                <port_o id="i" dir="IN">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="512"/>
                </port_o>
@@ -825,7 +823,7 @@ assign o = empty ? 8'b0 : {group_index, local_index[group_index]};"/>
                <port_o id="empty" dir="OUT">
                   <structural_type_descriptor type="BOOL" size="1"/>
                </port_o>
-               <NP_functionality LIBRARY="multiple_priority_encoder_512_9" VERILOG_PROVIDED="
+               <NP_functionality LIBRARY="hierarchical_multiple_priority_encoder_512_9" IP_COMPONENT="hierarchical_multiple_priority_encoder_64_6,hierarchical_multiple_priority_encoder_8_3" VERILOG_PROVIDED="
 wire [7:0] group_empty;
 wire [2:0] group_index;
 wire [5:0] local_index [0:7];
@@ -833,12 +831,12 @@ genvar g;
 generate
   for (g = 0; g &lt; 8; g = g + 1)
   begin: encoder_group
-    multiple_priority_encoder_64_6 encoder (.empty(group_empty[g]),
+    hierarchical_multiple_priority_encoder_64_6 encoder (.empty(group_empty[g]),
       .i(i[g*64+:64]),
       .o(local_index[g]));
   end
 endgenerate
-multiple_priority_encoder_8_3 group_encoder (.empty(),
+hierarchical_multiple_priority_encoder_8_3 group_encoder (.empty(),
   .i(~group_empty),
   .o(group_index));
 assign empty = &amp;group_empty;
@@ -948,7 +946,7 @@ assign valid = d || l || wa;"/>
                <port_o id="selector_register_file" dir="OUT">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
                </port_o>
-               <NP_functionality LIBRARY="kmp_bambu_cs_manager THREAD_NUMBER THREAD_NUMBER_SIZE M_Rdata_ram_in selector_register_file_in M_Rdata_ram selector_register_file kmp_lock_acquired_ack_tag" IP_COMPONENT="multiple_priority_encoder_2_1,multiple_priority_encoder_4_2,multiple_priority_encoder_8_3,cs_manager_internal_map" VERILOG_PROVIDED="
+               <NP_functionality LIBRARY="kmp_bambu_cs_manager THREAD_NUMBER THREAD_NUMBER_SIZE M_Rdata_ram_in selector_register_file_in M_Rdata_ram selector_register_file kmp_lock_acquired_ack_tag" IP_COMPONENT="hierarchical_multiple_priority_encoder_2_1,hierarchical_multiple_priority_encoder_4_2,hierarchical_multiple_priority_encoder_8_3,cs_manager_internal_map" VERILOG_PROVIDED="
 reg [2*THREAD_NUMBER-1:0] cs_thread_answer_type_reg;
 wire [2*THREAD_NUMBER-1:0] cs_thread_answer_type_reg_next;
 wire [2*THREAD_NUMBER-1:0] cs_thread_answer_type_map_output;
@@ -983,7 +981,7 @@ begin
    begin
       started &lt;= 0;
    end
-   else 
+   else
    begin
       started &lt;= started_next;
    end
@@ -991,8 +989,8 @@ end
 
 assign started_next = (component_done == 1) ? 0 : ((start_port == 1) ? 1 : started);
 
-always @(posedge clock) 
-begin	
+always @(posedge clock)
+begin
    if(1RESET_VALUE || start_port == 1)
    begin
       M_Rdata_ram_reg &lt;= 0;
@@ -1003,7 +1001,7 @@ begin
       cs_thread_answer_type_reg &lt;= 0;
    end
    else
-   begin 
+   begin
       M_Rdata_ram_reg &lt;= M_Rdata_ram_reg_next;
       current_tid &lt;= next_tid;
       thread_ready &lt;= thread_ready_next;
@@ -1031,19 +1029,19 @@ endgenerate
 generate
    if(THREAD_NUMBER == 2)
    begin
-      multiple_priority_encoder_2_1 encoder (.empty(thread_ready_empty_next),
+      hierarchical_multiple_priority_encoder_2_1 encoder (.empty(thread_ready_empty_next),
       .i(thread_ready),
       .o(new_tid));
    end
    else if(THREAD_NUMBER == 4)
    begin
-      multiple_priority_encoder_4_2 encoder (.empty(thread_ready_empty_next),
+      hierarchical_multiple_priority_encoder_4_2 encoder (.empty(thread_ready_empty_next),
       .i(thread_ready),
       .o(new_tid));
    end
    else if(THREAD_NUMBER == 8)
    begin
-      multiple_priority_encoder_8_3 encoder (.empty(thread_ready_empty_next),
+      hierarchical_multiple_priority_encoder_8_3 encoder (.empty(thread_ready_empty_next),
       .i(thread_ready),
       .o(new_tid));
    end
@@ -1078,8 +1076,8 @@ wire kmp_bambu_wait_all_threads_rd_out_reg_next;
 reg kmp_lock_acquired_ack_out_reg;
 wire kmp_lock_acquired_ack_out_reg_next;
 
-always @(posedge clock) 
-begin	
+always @(posedge clock)
+begin
    if(1RESET_VALUE)
    begin
       M_DataRdy_out_reg &lt;= 0;
@@ -1088,7 +1086,7 @@ begin
       kmp_bambu_wait_all_threads_rd_out_reg &lt;= 0;
    end
    else
-   begin 
+   begin
       M_DataRdy_out_reg &lt;= M_DataRdy_out_reg_next ;
       M_Rdata_ram_out_reg &lt;= M_Rdata_ram_out_reg_next;
       kmp_lock_acquired_ack_out_reg &lt;= kmp_lock_acquired_ack_out_reg_next;
@@ -1140,7 +1138,7 @@ reg [THREAD_NUMBER-1:0] done_reg;
 reg [THREAD_NUMBER-1:0] done_reg_next;
 wire done_status;
 
-always @(posedge clock 1RESET_EDGE) 
+always @(posedge clock 1RESET_EDGE)
 begin
    if (1RESET_VALUE || done_status == 1)
    begin
@@ -1152,7 +1150,7 @@ begin
    end
 end
 
-always @(*) 
+always @(*)
 begin
    done_reg_next = done_reg;
    if (done_port_in == 1)
@@ -1200,7 +1198,7 @@ reg [THREAD_NUMBER-1:0] start_reg_next;
 reg started;
 reg started_next;
 
-always @(posedge clock 1RESET_EDGE) 
+always @(posedge clock 1RESET_EDGE)
 begin
    if (1RESET_VALUE)
    begin
@@ -1221,14 +1219,14 @@ end
 
 always @(*)
 begin
-   started_next = started; 
+   started_next = started;
    if(component_done == 1)
    begin
       started_next = 0;
    end
 end
 
-always @(*) 
+always @(*)
 begin
    start_reg_next = start_reg;
    if (start_reg[selector_register_file] == 1 &amp;&amp; started_next)
@@ -1282,7 +1280,7 @@ assign start_port_out = start_reg[selector_register_file]  &amp;&amp; started_ne
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
                </port_vector_o>
                <NP_functionality LIBRARY="kmp_bambu_reduce_manager kmp_bambu_get_th_local_reduce_data_tid kmp_bambu_get_th_local_reduce_data_ld kmp_bambu_set_th_local_reduce_data_tid kmp_bambu_set_th_local_reduce_data_val kmp_bambu_set_th_local_reduce_data_we kmp_bambu_set_th_local_reduce_data_ack kmp_bambu_get_th_local_reduce_data_ack kmp_bambu_get_th_local_reduce_data_val THREAD_NUMBER" VERILOG_PROVIDED="
-reg [THREAD_NUMBER*BITSIZE_kmp_bambu_set_th_local_reduce_data_val-1:0] base_addr;          
+reg [THREAD_NUMBER*BITSIZE_kmp_bambu_set_th_local_reduce_data_val-1:0] base_addr;
 reg [THREAD_NUMBER*BITSIZE_kmp_bambu_set_th_local_reduce_data_val-1:0] base_addr_next;
 reg [PORTSIZE_kmp_bambu_get_th_local_reduce_data_ack-1:0] kmp_bambu_get_th_local_reduce_data_ack_reg;
 reg [PORTSIZE_kmp_bambu_get_th_local_reduce_data_ack-1:0] kmp_bambu_get_th_local_reduce_data_ack_old;
@@ -1290,9 +1288,9 @@ reg [PORTSIZE_kmp_bambu_set_th_local_reduce_data_ack-1:0] kmp_bambu_set_th_local
 reg [PORTSIZE_kmp_bambu_set_th_local_reduce_data_ack-1:0] kmp_bambu_set_th_local_reduce_data_ack_old;
 reg [PORTSIZE_kmp_bambu_get_th_local_reduce_data_val*BITSIZE_kmp_bambu_get_th_local_reduce_data_val-1:0] kmp_bambu_get_th_local_reduce_data_val_reg;
 reg [PORTSIZE_kmp_bambu_get_th_local_reduce_data_val*BITSIZE_kmp_bambu_get_th_local_reduce_data_val-1:0] kmp_bambu_get_th_local_reduce_data_val_old;
-integer i,j;   
+integer i,j;
 
-always @(*) 
+always @(*)
 begin
    base_addr_next = base_addr;
    for (j=0; j &lt; PORTSIZE_kmp_bambu_set_th_local_reduce_data_we; j = j + 1)
@@ -1302,7 +1300,7 @@ begin
       base_addr_next = base_addr_next | (kmp_bambu_set_th_local_reduce_data_val[j*BITSIZE_kmp_bambu_set_th_local_reduce_data_val +: BITSIZE_kmp_bambu_set_th_local_reduce_data_val] &lt;&lt; kmp_bambu_set_th_local_reduce_data_tid[j*BITSIZE_kmp_bambu_set_th_local_reduce_data_tid +: BITSIZE_kmp_bambu_set_th_local_reduce_data_tid]*BITSIZE_kmp_bambu_set_th_local_reduce_data_val);
       kmp_bambu_set_th_local_reduce_data_ack_reg[j] = 1&apos;b1;
    end
-   else 
+   else
    begin
       kmp_bambu_set_th_local_reduce_data_ack_reg[j] = 1&apos;b0;
    end
@@ -1319,14 +1317,14 @@ always @(*)
          kmp_bambu_get_th_local_reduce_data_ack_reg[i] = 1&apos;b1;
       end
       else
-      begin  
-         kmp_bambu_get_th_local_reduce_data_val_reg[i*BITSIZE_kmp_bambu_get_th_local_reduce_data_val +: BITSIZE_kmp_bambu_get_th_local_reduce_data_val] = 0;                      
+      begin
+         kmp_bambu_get_th_local_reduce_data_val_reg[i*BITSIZE_kmp_bambu_get_th_local_reduce_data_val +: BITSIZE_kmp_bambu_get_th_local_reduce_data_val] = 0;
          kmp_bambu_get_th_local_reduce_data_ack_reg[i] = 1&apos;b0;
       end
    end
 end
 
-always @(posedge clock 1RESET_EDGE) 
+always @(posedge clock 1RESET_EDGE)
 begin
    if (1RESET_VALUE)
    begin
@@ -1421,21 +1419,21 @@ assign kmp_bambu_get_th_local_reduce_data_val = kmp_bambu_get_th_local_reduce_da
                </port_o>
                <NP_functionality LIBRARY="kmp_bambu_memory_filter_out INNER_TAG ROOT_SPACE_ALIGNMENT EXTERNAL_BASE_ADDRESS FORK_CALL_ID_START FORK_CALL_ID_END FORK_NUMBER  Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size Mout_tag Mout_addr_ram_memory Mout_Wdata_ram_memory Mout_data_ram_size_memory Mout_tag_memory Mout_addr_ram_local Mout_Wdata_ram_local Mout_data_ram_size_local Mout_tag_local" VERILOG_PROVIDED="
 wire mem;
-generate 
+generate
   if(FORK_CALL_ID_END == FORK_CALL_ID_START)
   begin
-    assign mem = ((ROOT_SPACE_ALIGNMENT == 0 || Mout_addr_ram[ROOT_SPACE_ALIGNMENT] == 1) &amp;&amp; (Mout_addr_ram &lt; EXTERNAL_BASE_ADDRESS)) ? 1&apos;b0 : 1&apos;b1; 
+    assign mem = ((ROOT_SPACE_ALIGNMENT == 0 || Mout_addr_ram[ROOT_SPACE_ALIGNMENT] == 1) &amp;&amp; (Mout_addr_ram &lt; EXTERNAL_BASE_ADDRESS)) ? 1&apos;b0 : 1&apos;b1;
   end
-  else 
+  else
   begin
-    assign mem = ((ROOT_SPACE_ALIGNMENT == 0 || Mout_addr_ram[ROOT_SPACE_ALIGNMENT] == 1) &amp;&amp; (Mout_addr_ram &lt; EXTERNAL_BASE_ADDRESS) &amp;&amp; (Mout_addr_ram[FORK_CALL_ID_END - 1: FORK_CALL_ID_START] == FORK_NUMBER)) ? 1&apos;b0 : 1&apos;b1; 
+    assign mem = ((ROOT_SPACE_ALIGNMENT == 0 || Mout_addr_ram[ROOT_SPACE_ALIGNMENT] == 1) &amp;&amp; (Mout_addr_ram &lt; EXTERNAL_BASE_ADDRESS) &amp;&amp; (Mout_addr_ram[FORK_CALL_ID_END - 1: FORK_CALL_ID_START] == FORK_NUMBER)) ? 1&apos;b0 : 1&apos;b1;
   end
 endgenerate
 
 assign Mout_oe_ram_memory = mem ? Mout_oe_ram : 1&apos;b0;
-assign Mout_oe_ram_local = mem ? 1&apos;b0 : Mout_oe_ram;  
+assign Mout_oe_ram_local = mem ? 1&apos;b0 : Mout_oe_ram;
 assign Mout_we_ram_memory = mem ? Mout_we_ram : 1&apos;b0;
-assign Mout_we_ram_local = mem ? 1&apos;b0 : Mout_we_ram; 
+assign Mout_we_ram_local = mem ? 1&apos;b0 : Mout_we_ram;
 assign Mout_addr_ram_memory = mem ? Mout_addr_ram : {BITSIZE_Mout_addr_ram{1&apos;b0}};
 assign Mout_addr_ram_local= mem ? {BITSIZE_Mout_addr_ram{1&apos;b0}} : Mout_addr_ram;
 assign Mout_Wdata_ram_memory = mem ? Mout_Wdata_ram : {BITSIZE_Mout_Wdata_ram{1&apos;b0}};
@@ -1443,9 +1441,9 @@ assign Mout_Wdata_ram_local = mem ? {BITSIZE_Mout_Wdata_ram{1&apos;b0}} : Mout_W
 assign Mout_data_ram_size_memory = mem ? Mout_data_ram_size : {BITSIZE_Mout_data_ram_size{1&apos;b0}};
 assign Mout_data_ram_size_local = mem ? {BITSIZE_Mout_data_ram_size{1&apos;b0}} : Mout_data_ram_size;
 
-generate 
+generate
   if(INNER_TAG == 1)
-  begin    
+  begin
     assign Mout_tag_memory = mem ? Mout_tag : {BITSIZE_Mout_tag{1&apos;b0}};
     assign Mout_tag_local = mem ? {BITSIZE_Mout_tag{1&apos;b0}} : Mout_tag;
   end
@@ -1502,9 +1500,9 @@ endgenerate"/>
 assign M_DataRdy = M_DataRdy_memory || M_DataRdy_local;
 assign M_Rdata_ram = M_DataRdy_memory ? M_Rdata_ram_memory : M_Rdata_ram_local;
 assign M_back_pressure_local = M_DataRdy_memory &amp;&amp; M_DataRdy_local;
-generate 
+generate
   if(INNER_TAG == 1)
-  begin      
+  begin
     assign M_tag = M_DataRdy_memory ? M_tag_memory : M_tag_local;
   end
   else
@@ -1670,8 +1668,8 @@ generate
          begin
             register_valid_reg &lt;= 0;
             fifo_rd_reg &lt;= 0;
-         end 
-         else 
+         end
+         else
          begin
             register_valid_reg &lt;= register_valid;
             fifo_rd_reg &lt;= fifo_rd;
@@ -1705,7 +1703,7 @@ generate
 
       assign Mout_back_pressure = Mout_back_pressure_memory;
 
-      always @(*) 
+      always @(*)
       begin
          Mout_oe_ram_temp = Mout_oe_ram;
          Mout_we_ram_temp = Mout_we_ram;
@@ -1717,7 +1715,7 @@ generate
    end
 endgenerate
 
-generate 
+generate
    if(USE_FILTER==1)
    begin
       kmp_bambu_memory_filter_in #(.INNER_TAG(INNER_TAG),
@@ -1783,13 +1781,13 @@ generate
       assign Mout_Wdata_ram_memory =  Mout_Wdata_ram_temp;
       assign Mout_data_ram_size_memory = Mout_data_ram_size_temp;
       assign Mout_tag_memory = Mout_tag_temp;
-      assign M_back_pressure_local = 1&apos;b0;  
-      assign Mout_oe_ram_local = 1&apos;b0;  
-      assign Mout_we_ram_local = 1&apos;b0; 
-      assign Mout_addr_ram_local = {BITSIZE_Mout_addr_ram{1&apos;b0}}; 
-      assign Mout_Wdata_ram_local = {BITSIZE_Mout_Wdata_ram{1&apos;b0}}; 
-      assign Mout_data_ram_size_local = {BITSIZE_Mout_data_ram_size{1&apos;b0}}; 
-      assign Mout_tag_local = {BITSIZE_Mout_tag_local{1&apos;b0}}; 
+      assign M_back_pressure_local = 1&apos;b0;
+      assign Mout_oe_ram_local = 1&apos;b0;
+      assign Mout_we_ram_local = 1&apos;b0;
+      assign Mout_addr_ram_local = {BITSIZE_Mout_addr_ram{1&apos;b0}};
+      assign Mout_Wdata_ram_local = {BITSIZE_Mout_Wdata_ram{1&apos;b0}};
+      assign Mout_data_ram_size_local = {BITSIZE_Mout_data_ram_size{1&apos;b0}};
+      assign Mout_tag_local = {BITSIZE_Mout_tag_local{1&apos;b0}};
    end
 endgenerate"/>
             </module_o>
@@ -1840,11 +1838,11 @@ assign empty = status_cnt_reg == 0;
 
 always @(posedge clock 1RESET_EDGE)
 begin : WRITE_POINTER
-  if(1RESET_VALUE) 
+  if(1RESET_VALUE)
   begin
     wr_pointer = 0;
-  end 
-  else 
+  end
+  else
   begin
     wr_pointer = wr_pointer_next;
   end
@@ -1864,10 +1862,10 @@ end
 
 always @(posedge clock 1RESET_EDGE)
 begin : READ_POINTER
-  if(1RESET_VALUE) 
+  if(1RESET_VALUE)
   begin
     rd_pointer = 0;
-  end 
+  end
   else
   begin
     rd_pointer = rd_pointer_next;
@@ -1888,15 +1886,15 @@ end
 
 always @(posedge clock 1RESET_EDGE)
 begin : STATUS_COUNTER
-  if(1RESET_VALUE) 
+  if(1RESET_VALUE)
   begin
     status_cnt_reg &lt;= 0;
-  end 
-  else if (rd_en &amp;&amp; !wr_en  &amp;&amp; (status_cnt_reg != 0)) 
+  end
+  else if (rd_en &amp;&amp; !wr_en  &amp;&amp; (status_cnt_reg != 0))
   begin
     status_cnt_reg &lt;= status_cnt_reg - 1;
-  end 
-  else if (wr_en &amp;&amp; !rd_en &amp;&amp; (status_cnt_reg != RAM_DEPTH)) 
+  end
+  else if (wr_en &amp;&amp; !rd_en &amp;&amp; (status_cnt_reg != RAM_DEPTH))
   begin
     status_cnt_reg &lt;= status_cnt_reg + 1;
   end
@@ -1921,5 +1919,1180 @@ STD_SDP_BRAMFW #(
             </module_o>
          </circuit>
       </cell>
-   </library>
+
+      <cell>
+         <name>tree_multiple_priority_encoder_1_1</name>
+         <circuit>
+            <module_o id="tree_multiple_priority_encoder_1_1">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2025 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="tree_multiple_priority_encoder_1_1"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="tree_multiple_priority_encoder_1_1" VERILOG_PROVIDED="
+assign o = 0;
+assign empty = ~i;
+"/>
+            </module_o>
+         </circuit>
+      </cell>
+      <cell>
+         <name>tree_multiple_priority_encoder_2_1</name>
+         <circuit>
+            <module_o id="tree_multiple_priority_encoder_2_1">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2025 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="tree_multiple_priority_encoder_2_1"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="tree_multiple_priority_encoder_2_1" VERILOG_PROVIDED="
+assign o = (~i[0] &amp;&amp; i[1]);
+assign empty = ~i[0] &amp;&amp; ~i[1];
+"/>
+            </module_o>
+         </circuit>
+      </cell>
+      <cell>
+         <name>tree_multiple_priority_encoder_4_2</name>
+         <circuit>
+            <module_o id="tree_multiple_priority_encoder_4_2">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2025 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="tree_multiple_priority_encoder_4_2"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="tree_multiple_priority_encoder_4_2" VERILOG_PROVIDED="
+// Balanced gate equations without submodule instances. Each node gives priority
+// to its lower half. The upper index bit is zero when both halves are empty.
+genvar level, node;
+generate
+  for (level = 1; level &lt;= 2; level = level + 1)
+  begin: encoder_level
+    wire [(4 &gt;&gt; level)-1:0] group_empty;
+    wire [level-1:0] group_index [0:(4 &gt;&gt; level)-1];
+    for (node = 0; node &lt; (4 &gt;&gt; level); node = node + 1)
+    begin: encoder_node
+      if (level == 1)
+      begin: leaf
+        assign group_empty[node] = ~|i[node*2+:2];
+        assign group_index[node] = ~i[node*2] &amp; i[node*2+1];
+      end
+      else
+      begin: merge
+        wire lower_empty = encoder_level[level-1].group_empty[node*2];
+        wire upper_empty = encoder_level[level-1].group_empty[node*2+1];
+        assign group_empty[node] = lower_empty &amp; upper_empty;
+        assign group_index[node] = {lower_empty &amp; ~upper_empty,
+          ({(level-1){~lower_empty}} &amp; encoder_level[level-1].group_index[node*2]) |
+          ({(level-1){lower_empty}} &amp; encoder_level[level-1].group_index[node*2+1])};
+      end
+    end
+  end
+endgenerate
+assign o = encoder_level[2].group_index[0];
+assign empty = encoder_level[2].group_empty[0];
+"/>
+            </module_o>
+         </circuit>
+      </cell>
+      <cell>
+         <name>tree_multiple_priority_encoder_8_3</name>
+         <circuit>
+            <module_o id="tree_multiple_priority_encoder_8_3">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2025 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="tree_multiple_priority_encoder_8_3"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="tree_multiple_priority_encoder_8_3" VERILOG_PROVIDED="
+// Balanced gate equations without submodule instances. Each node gives priority
+// to its lower half. The upper index bit is zero when both halves are empty.
+genvar level, node;
+generate
+  for (level = 1; level &lt;= 3; level = level + 1)
+  begin: encoder_level
+    wire [(8 &gt;&gt; level)-1:0] group_empty;
+    wire [level-1:0] group_index [0:(8 &gt;&gt; level)-1];
+    for (node = 0; node &lt; (8 &gt;&gt; level); node = node + 1)
+    begin: encoder_node
+      if (level == 1)
+      begin: leaf
+        assign group_empty[node] = ~|i[node*2+:2];
+        assign group_index[node] = ~i[node*2] &amp; i[node*2+1];
+      end
+      else
+      begin: merge
+        wire lower_empty = encoder_level[level-1].group_empty[node*2];
+        wire upper_empty = encoder_level[level-1].group_empty[node*2+1];
+        assign group_empty[node] = lower_empty &amp; upper_empty;
+        assign group_index[node] = {lower_empty &amp; ~upper_empty,
+          ({(level-1){~lower_empty}} &amp; encoder_level[level-1].group_index[node*2]) |
+          ({(level-1){lower_empty}} &amp; encoder_level[level-1].group_index[node*2+1])};
+      end
+    end
+  end
+endgenerate
+assign o = encoder_level[3].group_index[0];
+assign empty = encoder_level[3].group_empty[0];
+"/>
+            </module_o>
+         </circuit>
+      </cell>
+      <cell>
+         <name>tree_multiple_priority_encoder_16_4</name>
+         <circuit>
+            <module_o id="tree_multiple_priority_encoder_16_4">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2025 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="tree_multiple_priority_encoder_16_4"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="16"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="tree_multiple_priority_encoder_16_4" VERILOG_PROVIDED="
+// Balanced gate equations without submodule instances. Each node gives priority
+// to its lower half. The upper index bit is zero when both halves are empty.
+genvar level, node;
+generate
+  for (level = 1; level &lt;= 4; level = level + 1)
+  begin: encoder_level
+    wire [(16 &gt;&gt; level)-1:0] group_empty;
+    wire [level-1:0] group_index [0:(16 &gt;&gt; level)-1];
+    for (node = 0; node &lt; (16 &gt;&gt; level); node = node + 1)
+    begin: encoder_node
+      if (level == 1)
+      begin: leaf
+        assign group_empty[node] = ~|i[node*2+:2];
+        assign group_index[node] = ~i[node*2] &amp; i[node*2+1];
+      end
+      else
+      begin: merge
+        wire lower_empty = encoder_level[level-1].group_empty[node*2];
+        wire upper_empty = encoder_level[level-1].group_empty[node*2+1];
+        assign group_empty[node] = lower_empty &amp; upper_empty;
+        assign group_index[node] = {lower_empty &amp; ~upper_empty,
+          ({(level-1){~lower_empty}} &amp; encoder_level[level-1].group_index[node*2]) |
+          ({(level-1){lower_empty}} &amp; encoder_level[level-1].group_index[node*2+1])};
+      end
+    end
+  end
+endgenerate
+assign o = encoder_level[4].group_index[0];
+assign empty = encoder_level[4].group_empty[0];
+"/>
+            </module_o>
+         </circuit>
+      </cell>
+      <cell>
+         <name>tree_multiple_priority_encoder_32_5</name>
+         <circuit>
+            <module_o id="tree_multiple_priority_encoder_32_5">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2025 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="tree_multiple_priority_encoder_32_5"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="5"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="tree_multiple_priority_encoder_32_5" VERILOG_PROVIDED="
+// Balanced gate equations without submodule instances. Each node gives priority
+// to its lower half. The upper index bit is zero when both halves are empty.
+genvar level, node;
+generate
+  for (level = 1; level &lt;= 5; level = level + 1)
+  begin: encoder_level
+    wire [(32 &gt;&gt; level)-1:0] group_empty;
+    wire [level-1:0] group_index [0:(32 &gt;&gt; level)-1];
+    for (node = 0; node &lt; (32 &gt;&gt; level); node = node + 1)
+    begin: encoder_node
+      if (level == 1)
+      begin: leaf
+        assign group_empty[node] = ~|i[node*2+:2];
+        assign group_index[node] = ~i[node*2] &amp; i[node*2+1];
+      end
+      else
+      begin: merge
+        wire lower_empty = encoder_level[level-1].group_empty[node*2];
+        wire upper_empty = encoder_level[level-1].group_empty[node*2+1];
+        assign group_empty[node] = lower_empty &amp; upper_empty;
+        assign group_index[node] = {lower_empty &amp; ~upper_empty,
+          ({(level-1){~lower_empty}} &amp; encoder_level[level-1].group_index[node*2]) |
+          ({(level-1){lower_empty}} &amp; encoder_level[level-1].group_index[node*2+1])};
+      end
+    end
+  end
+endgenerate
+assign o = encoder_level[5].group_index[0];
+assign empty = encoder_level[5].group_empty[0];
+"/>
+            </module_o>
+         </circuit>
+      </cell>
+      <cell>
+         <name>tree_multiple_priority_encoder_64_6</name>
+         <circuit>
+            <module_o id="tree_multiple_priority_encoder_64_6">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2025 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="tree_multiple_priority_encoder_64_6"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="64"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="6"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="tree_multiple_priority_encoder_64_6" VERILOG_PROVIDED="
+// Balanced gate equations without submodule instances. Each node gives priority
+// to its lower half. The upper index bit is zero when both halves are empty.
+genvar level, node;
+generate
+  for (level = 1; level &lt;= 6; level = level + 1)
+  begin: encoder_level
+    wire [(64 &gt;&gt; level)-1:0] group_empty;
+    wire [level-1:0] group_index [0:(64 &gt;&gt; level)-1];
+    for (node = 0; node &lt; (64 &gt;&gt; level); node = node + 1)
+    begin: encoder_node
+      if (level == 1)
+      begin: leaf
+        assign group_empty[node] = ~|i[node*2+:2];
+        assign group_index[node] = ~i[node*2] &amp; i[node*2+1];
+      end
+      else
+      begin: merge
+        wire lower_empty = encoder_level[level-1].group_empty[node*2];
+        wire upper_empty = encoder_level[level-1].group_empty[node*2+1];
+        assign group_empty[node] = lower_empty &amp; upper_empty;
+        assign group_index[node] = {lower_empty &amp; ~upper_empty,
+          ({(level-1){~lower_empty}} &amp; encoder_level[level-1].group_index[node*2]) |
+          ({(level-1){lower_empty}} &amp; encoder_level[level-1].group_index[node*2+1])};
+      end
+    end
+  end
+endgenerate
+assign o = encoder_level[6].group_index[0];
+assign empty = encoder_level[6].group_empty[0];
+"/>
+            </module_o>
+         </circuit>
+      </cell>
+      <cell>
+         <name>tree_multiple_priority_encoder_128_7</name>
+         <circuit>
+            <module_o id="tree_multiple_priority_encoder_128_7">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2025 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="tree_multiple_priority_encoder_128_7"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="128"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="7"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="tree_multiple_priority_encoder_128_7" VERILOG_PROVIDED="
+// Balanced gate equations without submodule instances. Each node gives priority
+// to its lower half. The upper index bit is zero when both halves are empty.
+genvar level, node;
+generate
+  for (level = 1; level &lt;= 7; level = level + 1)
+  begin: encoder_level
+    wire [(128 &gt;&gt; level)-1:0] group_empty;
+    wire [level-1:0] group_index [0:(128 &gt;&gt; level)-1];
+    for (node = 0; node &lt; (128 &gt;&gt; level); node = node + 1)
+    begin: encoder_node
+      if (level == 1)
+      begin: leaf
+        assign group_empty[node] = ~|i[node*2+:2];
+        assign group_index[node] = ~i[node*2] &amp; i[node*2+1];
+      end
+      else
+      begin: merge
+        wire lower_empty = encoder_level[level-1].group_empty[node*2];
+        wire upper_empty = encoder_level[level-1].group_empty[node*2+1];
+        assign group_empty[node] = lower_empty &amp; upper_empty;
+        assign group_index[node] = {lower_empty &amp; ~upper_empty,
+          ({(level-1){~lower_empty}} &amp; encoder_level[level-1].group_index[node*2]) |
+          ({(level-1){lower_empty}} &amp; encoder_level[level-1].group_index[node*2+1])};
+      end
+    end
+  end
+endgenerate
+assign o = encoder_level[7].group_index[0];
+assign empty = encoder_level[7].group_empty[0];
+"/>
+            </module_o>
+         </circuit>
+      </cell>
+      <cell>
+         <name>tree_multiple_priority_encoder_256_8</name>
+         <circuit>
+            <module_o id="tree_multiple_priority_encoder_256_8">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2025 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="tree_multiple_priority_encoder_256_8"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="256"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="tree_multiple_priority_encoder_256_8" VERILOG_PROVIDED="
+// Balanced gate equations without submodule instances. Each node gives priority
+// to its lower half. The upper index bit is zero when both halves are empty.
+genvar level, node;
+generate
+  for (level = 1; level &lt;= 8; level = level + 1)
+  begin: encoder_level
+    wire [(256 &gt;&gt; level)-1:0] group_empty;
+    wire [level-1:0] group_index [0:(256 &gt;&gt; level)-1];
+    for (node = 0; node &lt; (256 &gt;&gt; level); node = node + 1)
+    begin: encoder_node
+      if (level == 1)
+      begin: leaf
+        assign group_empty[node] = ~|i[node*2+:2];
+        assign group_index[node] = ~i[node*2] &amp; i[node*2+1];
+      end
+      else
+      begin: merge
+        wire lower_empty = encoder_level[level-1].group_empty[node*2];
+        wire upper_empty = encoder_level[level-1].group_empty[node*2+1];
+        assign group_empty[node] = lower_empty &amp; upper_empty;
+        assign group_index[node] = {lower_empty &amp; ~upper_empty,
+          ({(level-1){~lower_empty}} &amp; encoder_level[level-1].group_index[node*2]) |
+          ({(level-1){lower_empty}} &amp; encoder_level[level-1].group_index[node*2+1])};
+      end
+    end
+  end
+endgenerate
+assign o = encoder_level[8].group_index[0];
+assign empty = encoder_level[8].group_empty[0];
+"/>
+            </module_o>
+         </circuit>
+      </cell>
+      <cell>
+         <name>tree_multiple_priority_encoder_512_9</name>
+         <circuit>
+            <module_o id="tree_multiple_priority_encoder_512_9">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="tree_multiple_priority_encoder_512_9"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="512"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="9"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="tree_multiple_priority_encoder_512_9" VERILOG_PROVIDED="
+// Balanced gate equations without submodule instances. Each node gives priority
+// to its lower half. The upper index bit is zero when both halves are empty.
+genvar level, node;
+generate
+  for (level = 1; level &lt;= 9; level = level + 1)
+  begin: encoder_level
+    wire [(512 &gt;&gt; level)-1:0] group_empty;
+    wire [level-1:0] group_index [0:(512 &gt;&gt; level)-1];
+    for (node = 0; node &lt; (512 &gt;&gt; level); node = node + 1)
+    begin: encoder_node
+      if (level == 1)
+      begin: leaf
+        assign group_empty[node] = ~|i[node*2+:2];
+        assign group_index[node] = ~i[node*2] &amp; i[node*2+1];
+      end
+      else
+      begin: merge
+        wire lower_empty = encoder_level[level-1].group_empty[node*2];
+        wire upper_empty = encoder_level[level-1].group_empty[node*2+1];
+        assign group_empty[node] = lower_empty &amp; upper_empty;
+        assign group_index[node] = {lower_empty &amp; ~upper_empty,
+          ({(level-1){~lower_empty}} &amp; encoder_level[level-1].group_index[node*2]) |
+          ({(level-1){lower_empty}} &amp; encoder_level[level-1].group_index[node*2+1])};
+      end
+    end
+  end
+endgenerate
+assign o = encoder_level[9].group_index[0];
+assign empty = encoder_level[9].group_empty[0];
+"/>
+            </module_o>
+         </circuit>
+      </cell>
+      <cell>
+         <name>multiple_priority_encoder_1_1</name>
+         <circuit>
+            <module_o id="multiple_priority_encoder_1_1">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2025 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="multiple_priority_encoder_1_1"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="multiple_priority_encoder_1_1" VERILOG_PROVIDED="
+assign o = 0;
+assign empty = ~i;
+"/>
+            </module_o>
+         </circuit>
+      </cell>
+      <cell>
+         <name>multiple_priority_encoder_2_1</name>
+         <circuit>
+            <module_o id="multiple_priority_encoder_2_1">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2025 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="multiple_priority_encoder_2_1"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="multiple_priority_encoder_2_1" VERILOG_PROVIDED="
+assign o = (~i[0] &amp;&amp; i[1]);
+assign empty = ~i[0] &amp;&amp; ~i[1];
+"/>
+            </module_o>
+         </circuit>
+      </cell>
+      <cell>
+         <name>multiple_priority_encoder_4_2</name>
+         <circuit>
+            <module_o id="multiple_priority_encoder_4_2">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2025 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="multiple_priority_encoder_4_2"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="multiple_priority_encoder_4_2" VERILOG_PROVIDED="
+// Compute each index bit independently using constant masks and reductions.
+// A candidate contributes unless an earlier active index has that bit zero.
+// Keep reductions explicit to avoid deep left-associated logical chains.
+genvar k;
+wire [3:0] selected_0;
+generate
+  for (k = 0; k &lt; 4; k = k + 1)
+  begin: output_bit_0
+    assign selected_0[k] = ((k &amp; 1) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((4'b1 &lt;&lt; k) - 4'b1) &amp; 4'h5);
+  end
+endgenerate
+assign o[0] = |selected_0;
+
+wire [3:0] selected_1;
+generate
+  for (k = 0; k &lt; 4; k = k + 1)
+  begin: output_bit_1
+    assign selected_1[k] = ((k &amp; 2) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((4'b1 &lt;&lt; k) - 4'b1) &amp; 4'h3);
+  end
+endgenerate
+assign o[1] = |selected_1;
+assign empty = ~|i;
+"/>
+            </module_o>
+         </circuit>
+      </cell>
+      <cell>
+         <name>multiple_priority_encoder_8_3</name>
+         <circuit>
+            <module_o id="multiple_priority_encoder_8_3">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2025 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="multiple_priority_encoder_8_3"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="multiple_priority_encoder_8_3" VERILOG_PROVIDED="
+// Compute each index bit independently using constant masks and reductions.
+// A candidate contributes unless an earlier active index has that bit zero.
+// Keep reductions explicit to avoid deep left-associated logical chains.
+genvar k;
+wire [7:0] selected_0;
+generate
+  for (k = 0; k &lt; 8; k = k + 1)
+  begin: output_bit_0
+    assign selected_0[k] = ((k &amp; 1) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((8'b1 &lt;&lt; k) - 8'b1) &amp; 8'h55);
+  end
+endgenerate
+assign o[0] = |selected_0;
+
+wire [7:0] selected_1;
+generate
+  for (k = 0; k &lt; 8; k = k + 1)
+  begin: output_bit_1
+    assign selected_1[k] = ((k &amp; 2) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((8'b1 &lt;&lt; k) - 8'b1) &amp; 8'h33);
+  end
+endgenerate
+assign o[1] = |selected_1;
+
+wire [7:0] selected_2;
+generate
+  for (k = 0; k &lt; 8; k = k + 1)
+  begin: output_bit_2
+    assign selected_2[k] = ((k &amp; 4) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((8'b1 &lt;&lt; k) - 8'b1) &amp; 8'hf);
+  end
+endgenerate
+assign o[2] = |selected_2;
+assign empty = ~|i;
+"/>
+            </module_o>
+         </circuit>
+      </cell>
+      <cell>
+         <name>multiple_priority_encoder_16_4</name>
+         <circuit>
+            <module_o id="multiple_priority_encoder_16_4">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2025 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="multiple_priority_encoder_16_4"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="16"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="multiple_priority_encoder_16_4" VERILOG_PROVIDED="
+// Compute each index bit independently using constant masks and reductions.
+// A candidate contributes unless an earlier active index has that bit zero.
+// Keep reductions explicit to avoid deep left-associated logical chains.
+genvar k;
+wire [15:0] selected_0;
+generate
+  for (k = 0; k &lt; 16; k = k + 1)
+  begin: output_bit_0
+    assign selected_0[k] = ((k &amp; 1) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((16'b1 &lt;&lt; k) - 16'b1) &amp; 16'h5555);
+  end
+endgenerate
+assign o[0] = |selected_0;
+
+wire [15:0] selected_1;
+generate
+  for (k = 0; k &lt; 16; k = k + 1)
+  begin: output_bit_1
+    assign selected_1[k] = ((k &amp; 2) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((16'b1 &lt;&lt; k) - 16'b1) &amp; 16'h3333);
+  end
+endgenerate
+assign o[1] = |selected_1;
+
+wire [15:0] selected_2;
+generate
+  for (k = 0; k &lt; 16; k = k + 1)
+  begin: output_bit_2
+    assign selected_2[k] = ((k &amp; 4) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((16'b1 &lt;&lt; k) - 16'b1) &amp; 16'hf0f);
+  end
+endgenerate
+assign o[2] = |selected_2;
+
+wire [15:0] selected_3;
+generate
+  for (k = 0; k &lt; 16; k = k + 1)
+  begin: output_bit_3
+    assign selected_3[k] = ((k &amp; 8) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((16'b1 &lt;&lt; k) - 16'b1) &amp; 16'hff);
+  end
+endgenerate
+assign o[3] = |selected_3;
+assign empty = ~|i;
+"/>
+            </module_o>
+         </circuit>
+      </cell>
+      <cell>
+         <name>multiple_priority_encoder_32_5</name>
+         <circuit>
+            <module_o id="multiple_priority_encoder_32_5">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2025 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="multiple_priority_encoder_32_5"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="5"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="multiple_priority_encoder_32_5" VERILOG_PROVIDED="
+// Compute each index bit independently using constant masks and reductions.
+// A candidate contributes unless an earlier active index has that bit zero.
+// Keep reductions explicit to avoid deep left-associated logical chains.
+genvar k;
+wire [31:0] selected_0;
+generate
+  for (k = 0; k &lt; 32; k = k + 1)
+  begin: output_bit_0
+    assign selected_0[k] = ((k &amp; 1) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((32'b1 &lt;&lt; k) - 32'b1) &amp; 32'h55555555);
+  end
+endgenerate
+assign o[0] = |selected_0;
+
+wire [31:0] selected_1;
+generate
+  for (k = 0; k &lt; 32; k = k + 1)
+  begin: output_bit_1
+    assign selected_1[k] = ((k &amp; 2) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((32'b1 &lt;&lt; k) - 32'b1) &amp; 32'h33333333);
+  end
+endgenerate
+assign o[1] = |selected_1;
+
+wire [31:0] selected_2;
+generate
+  for (k = 0; k &lt; 32; k = k + 1)
+  begin: output_bit_2
+    assign selected_2[k] = ((k &amp; 4) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((32'b1 &lt;&lt; k) - 32'b1) &amp; 32'hf0f0f0f);
+  end
+endgenerate
+assign o[2] = |selected_2;
+
+wire [31:0] selected_3;
+generate
+  for (k = 0; k &lt; 32; k = k + 1)
+  begin: output_bit_3
+    assign selected_3[k] = ((k &amp; 8) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((32'b1 &lt;&lt; k) - 32'b1) &amp; 32'hff00ff);
+  end
+endgenerate
+assign o[3] = |selected_3;
+
+wire [31:0] selected_4;
+generate
+  for (k = 0; k &lt; 32; k = k + 1)
+  begin: output_bit_4
+    assign selected_4[k] = ((k &amp; 16) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((32'b1 &lt;&lt; k) - 32'b1) &amp; 32'hffff);
+  end
+endgenerate
+assign o[4] = |selected_4;
+assign empty = ~|i;
+"/>
+            </module_o>
+         </circuit>
+      </cell>
+      <cell>
+         <name>multiple_priority_encoder_64_6</name>
+         <circuit>
+            <module_o id="multiple_priority_encoder_64_6">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2025 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="multiple_priority_encoder_64_6"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="64"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="6"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="multiple_priority_encoder_64_6" VERILOG_PROVIDED="
+// Compute each index bit independently using constant masks and reductions.
+// A candidate contributes unless an earlier active index has that bit zero.
+// Keep reductions explicit to avoid deep left-associated logical chains.
+genvar k;
+wire [63:0] selected_0;
+generate
+  for (k = 0; k &lt; 64; k = k + 1)
+  begin: output_bit_0
+    assign selected_0[k] = ((k &amp; 1) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((64'b1 &lt;&lt; k) - 64'b1) &amp; 64'h5555555555555555);
+  end
+endgenerate
+assign o[0] = |selected_0;
+
+wire [63:0] selected_1;
+generate
+  for (k = 0; k &lt; 64; k = k + 1)
+  begin: output_bit_1
+    assign selected_1[k] = ((k &amp; 2) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((64'b1 &lt;&lt; k) - 64'b1) &amp; 64'h3333333333333333);
+  end
+endgenerate
+assign o[1] = |selected_1;
+
+wire [63:0] selected_2;
+generate
+  for (k = 0; k &lt; 64; k = k + 1)
+  begin: output_bit_2
+    assign selected_2[k] = ((k &amp; 4) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((64'b1 &lt;&lt; k) - 64'b1) &amp; 64'hf0f0f0f0f0f0f0f);
+  end
+endgenerate
+assign o[2] = |selected_2;
+
+wire [63:0] selected_3;
+generate
+  for (k = 0; k &lt; 64; k = k + 1)
+  begin: output_bit_3
+    assign selected_3[k] = ((k &amp; 8) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((64'b1 &lt;&lt; k) - 64'b1) &amp; 64'hff00ff00ff00ff);
+  end
+endgenerate
+assign o[3] = |selected_3;
+
+wire [63:0] selected_4;
+generate
+  for (k = 0; k &lt; 64; k = k + 1)
+  begin: output_bit_4
+    assign selected_4[k] = ((k &amp; 16) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((64'b1 &lt;&lt; k) - 64'b1) &amp; 64'hffff0000ffff);
+  end
+endgenerate
+assign o[4] = |selected_4;
+
+wire [63:0] selected_5;
+generate
+  for (k = 0; k &lt; 64; k = k + 1)
+  begin: output_bit_5
+    assign selected_5[k] = ((k &amp; 32) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((64'b1 &lt;&lt; k) - 64'b1) &amp; 64'hffffffff);
+  end
+endgenerate
+assign o[5] = |selected_5;
+assign empty = ~|i;
+"/>
+            </module_o>
+         </circuit>
+      </cell>
+      <cell>
+         <name>multiple_priority_encoder_128_7</name>
+         <circuit>
+            <module_o id="multiple_priority_encoder_128_7">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2025 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="multiple_priority_encoder_128_7"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="128"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="7"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="multiple_priority_encoder_128_7" VERILOG_PROVIDED="
+// Each output bit combines constant-masked input terms using vector reductions.
+// Keep reductions explicit: expanded left-associated &amp;&amp;/|| chains can produce
+// much deeper mapped logic despite implementing the same Boolean function.
+
+genvar k;
+wire [127:0] selected_0;
+generate
+  for (k = 0; k &lt; 128; k = k + 1)
+  begin: output_bit_0
+    assign selected_0[k] = ((k &amp; 1) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((128'b1 &lt;&lt; k) - 128'b1) &amp; 128'h55555555555555555555555555555555);
+  end
+endgenerate
+assign o[0] = |selected_0;
+
+wire [127:0] selected_1;
+generate
+  for (k = 0; k &lt; 128; k = k + 1)
+  begin: output_bit_1
+    assign selected_1[k] = ((k &amp; 2) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((128'b1 &lt;&lt; k) - 128'b1) &amp; 128'h33333333333333333333333333333333);
+  end
+endgenerate
+assign o[1] = |selected_1;
+
+wire [127:0] selected_2;
+generate
+  for (k = 0; k &lt; 128; k = k + 1)
+  begin: output_bit_2
+    assign selected_2[k] = ((k &amp; 4) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((128'b1 &lt;&lt; k) - 128'b1) &amp; 128'hf0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f);
+  end
+endgenerate
+assign o[2] = |selected_2;
+
+wire [127:0] selected_3;
+generate
+  for (k = 0; k &lt; 128; k = k + 1)
+  begin: output_bit_3
+    assign selected_3[k] = ((k &amp; 8) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((128'b1 &lt;&lt; k) - 128'b1) &amp; 128'hff00ff00ff00ff00ff00ff00ff00ff);
+  end
+endgenerate
+assign o[3] = |selected_3;
+
+wire [127:0] selected_4;
+generate
+  for (k = 0; k &lt; 128; k = k + 1)
+  begin: output_bit_4
+    assign selected_4[k] = ((k &amp; 16) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((128'b1 &lt;&lt; k) - 128'b1) &amp; 128'hffff0000ffff0000ffff0000ffff);
+  end
+endgenerate
+assign o[4] = |selected_4;
+
+wire [127:0] selected_5;
+generate
+  for (k = 0; k &lt; 128; k = k + 1)
+  begin: output_bit_5
+    assign selected_5[k] = ((k &amp; 32) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((128'b1 &lt;&lt; k) - 128'b1) &amp; 128'hffffffff00000000ffffffff);
+  end
+endgenerate
+assign o[5] = |selected_5;
+
+wire [127:0] selected_6;
+generate
+  for (k = 0; k &lt; 128; k = k + 1)
+  begin: output_bit_6
+    assign selected_6[k] = ((k &amp; 64) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((128'b1 &lt;&lt; k) - 128'b1) &amp; 128'hffffffffffffffff);
+  end
+endgenerate
+assign o[6] = |selected_6;
+
+assign empty=~|i;
+"/>
+            </module_o>
+         </circuit>
+      </cell>
+            <cell>
+         <name>multiple_priority_encoder_256_8</name>
+         <circuit>
+            <module_o id="multiple_priority_encoder_256_8">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2025 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="multiple_priority_encoder_256_8"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="256"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="multiple_priority_encoder_256_8" VERILOG_PROVIDED="
+// Each output bit combines constant-masked input terms using vector reductions.
+// Keep reductions explicit: expanded left-associated &amp;&amp;/|| chains can produce
+// much deeper mapped logic despite implementing the same Boolean function.
+
+genvar k;
+wire [255:0] selected_0;
+generate
+  for (k = 0; k &lt; 256; k = k + 1)
+  begin: output_bit_0
+    assign selected_0[k] = ((k &amp; 1) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((256'b1 &lt;&lt; k) - 256'b1) &amp; 256'h5555555555555555555555555555555555555555555555555555555555555555);
+  end
+endgenerate
+assign o[0] = |selected_0;
+
+wire [255:0] selected_1;
+generate
+  for (k = 0; k &lt; 256; k = k + 1)
+  begin: output_bit_1
+    assign selected_1[k] = ((k &amp; 2) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((256'b1 &lt;&lt; k) - 256'b1) &amp; 256'h3333333333333333333333333333333333333333333333333333333333333333);
+  end
+endgenerate
+assign o[1] = |selected_1;
+
+wire [255:0] selected_2;
+generate
+  for (k = 0; k &lt; 256; k = k + 1)
+  begin: output_bit_2
+    assign selected_2[k] = ((k &amp; 4) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((256'b1 &lt;&lt; k) - 256'b1) &amp; 256'hf0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f);
+  end
+endgenerate
+assign o[2] = |selected_2;
+
+wire [255:0] selected_3;
+generate
+  for (k = 0; k &lt; 256; k = k + 1)
+  begin: output_bit_3
+    assign selected_3[k] = ((k &amp; 8) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((256'b1 &lt;&lt; k) - 256'b1) &amp; 256'hff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff);
+  end
+endgenerate
+assign o[3] = |selected_3;
+
+wire [255:0] selected_4;
+generate
+  for (k = 0; k &lt; 256; k = k + 1)
+  begin: output_bit_4
+    assign selected_4[k] = ((k &amp; 16) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((256'b1 &lt;&lt; k) - 256'b1) &amp; 256'hffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff);
+  end
+endgenerate
+assign o[4] = |selected_4;
+
+wire [255:0] selected_5;
+generate
+  for (k = 0; k &lt; 256; k = k + 1)
+  begin: output_bit_5
+    assign selected_5[k] = ((k &amp; 32) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((256'b1 &lt;&lt; k) - 256'b1) &amp; 256'hffffffff00000000ffffffff00000000ffffffff00000000ffffffff);
+  end
+endgenerate
+assign o[5] = |selected_5;
+
+wire [255:0] selected_6;
+generate
+  for (k = 0; k &lt; 256; k = k + 1)
+  begin: output_bit_6
+    assign selected_6[k] = ((k &amp; 64) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((256'b1 &lt;&lt; k) - 256'b1) &amp; 256'hffffffffffffffff0000000000000000ffffffffffffffff);
+  end
+endgenerate
+assign o[6] = |selected_6;
+
+wire [255:0] selected_7;
+generate
+  for (k = 0; k &lt; 256; k = k + 1)
+  begin: output_bit_7
+    assign selected_7[k] = ((k &amp; 128) != 0) &amp;&amp; i[k] &amp;&amp;
+      ~|(i &amp; ((256'b1 &lt;&lt; k) - 256'b1) &amp; 256'hffffffffffffffffffffffffffffffff);
+  end
+endgenerate
+assign o[7] = |selected_7;
+
+assign empty=~|i;
+"/>
+            </module_o>
+         </circuit>
+      </cell>
+      <cell>
+         <name>multiple_priority_encoder_512_9</name>
+         <circuit>
+            <module_o id="multiple_priority_encoder_512_9">
+               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+               <copyright>Copyright (C) 2020-2026 Politecnico di Milano</copyright>
+               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+               <license>MIT</license>
+               <structural_type_descriptor id_type="multiple_priority_encoder_512_9"/>
+               <port_o id="i" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="512"/>
+               </port_o>
+               <port_o id="o" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="9"/>
+               </port_o>
+               <port_o id="empty" dir="OUT">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="multiple_priority_encoder_512_9" VERILOG_PROVIDED="
+genvar bit_index;
+wire [511:0] selected_0;
+generate
+  for (bit_index = 0; bit_index &lt; 512; bit_index = bit_index + 1)
+  begin: output_bit_0
+    assign selected_0[bit_index] = ((bit_index &amp; 1) != 0) &amp;&amp; i[bit_index] &amp;&amp;
+      ~|(i &amp; ((512'b1 &lt;&lt; bit_index) - 512'b1) &amp; 512'h55555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555);
+  end
+endgenerate
+assign o[0] = |selected_0;
+
+wire [511:0] selected_1;
+generate
+  for (bit_index = 0; bit_index &lt; 512; bit_index = bit_index + 1)
+  begin: output_bit_1
+    assign selected_1[bit_index] = ((bit_index &amp; 2) != 0) &amp;&amp; i[bit_index] &amp;&amp;
+      ~|(i &amp; ((512'b1 &lt;&lt; bit_index) - 512'b1) &amp; 512'h33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333);
+  end
+endgenerate
+assign o[1] = |selected_1;
+
+wire [511:0] selected_2;
+generate
+  for (bit_index = 0; bit_index &lt; 512; bit_index = bit_index + 1)
+  begin: output_bit_2
+    assign selected_2[bit_index] = ((bit_index &amp; 4) != 0) &amp;&amp; i[bit_index] &amp;&amp;
+      ~|(i &amp; ((512'b1 &lt;&lt; bit_index) - 512'b1) &amp; 512'h0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f);
+  end
+endgenerate
+assign o[2] = |selected_2;
+
+wire [511:0] selected_3;
+generate
+  for (bit_index = 0; bit_index &lt; 512; bit_index = bit_index + 1)
+  begin: output_bit_3
+    assign selected_3[bit_index] = ((bit_index &amp; 8) != 0) &amp;&amp; i[bit_index] &amp;&amp;
+      ~|(i &amp; ((512'b1 &lt;&lt; bit_index) - 512'b1) &amp; 512'h00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff);
+  end
+endgenerate
+assign o[3] = |selected_3;
+
+wire [511:0] selected_4;
+generate
+  for (bit_index = 0; bit_index &lt; 512; bit_index = bit_index + 1)
+  begin: output_bit_4
+    assign selected_4[bit_index] = ((bit_index &amp; 16) != 0) &amp;&amp; i[bit_index] &amp;&amp;
+      ~|(i &amp; ((512'b1 &lt;&lt; bit_index) - 512'b1) &amp; 512'h0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff);
+  end
+endgenerate
+assign o[4] = |selected_4;
+
+wire [511:0] selected_5;
+generate
+  for (bit_index = 0; bit_index &lt; 512; bit_index = bit_index + 1)
+  begin: output_bit_5
+    assign selected_5[bit_index] = ((bit_index &amp; 32) != 0) &amp;&amp; i[bit_index] &amp;&amp;
+      ~|(i &amp; ((512'b1 &lt;&lt; bit_index) - 512'b1) &amp; 512'h00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff);
+  end
+endgenerate
+assign o[5] = |selected_5;
+
+wire [511:0] selected_6;
+generate
+  for (bit_index = 0; bit_index &lt; 512; bit_index = bit_index + 1)
+  begin: output_bit_6
+    assign selected_6[bit_index] = ((bit_index &amp; 64) != 0) &amp;&amp; i[bit_index] &amp;&amp;
+      ~|(i &amp; ((512'b1 &lt;&lt; bit_index) - 512'b1) &amp; 512'h0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff);
+  end
+endgenerate
+assign o[6] = |selected_6;
+
+wire [511:0] selected_7;
+generate
+  for (bit_index = 0; bit_index &lt; 512; bit_index = bit_index + 1)
+  begin: output_bit_7
+    assign selected_7[bit_index] = ((bit_index &amp; 128) != 0) &amp;&amp; i[bit_index] &amp;&amp;
+      ~|(i &amp; ((512'b1 &lt;&lt; bit_index) - 512'b1) &amp; 512'h00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
+  end
+endgenerate
+assign o[7] = |selected_7;
+
+wire [511:0] selected_8;
+generate
+  for (bit_index = 0; bit_index &lt; 512; bit_index = bit_index + 1)
+  begin: output_bit_8
+    assign selected_8[bit_index] = ((bit_index &amp; 256) != 0) &amp;&amp; i[bit_index] &amp;&amp;
+      ~|(i &amp; ((512'b1 &lt;&lt; bit_index) - 512'b1) &amp; 512'h0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
+  end
+endgenerate
+assign o[8] = |selected_8;
+
+assign empty = ~(|i);
+"/>
+            </module_o>
+         </circuit>
+      </cell>
+</library>
 </technology>

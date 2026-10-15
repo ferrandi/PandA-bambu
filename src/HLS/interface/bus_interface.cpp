@@ -648,6 +648,38 @@ void bus_interface::create_noc_memory_mapping_unit(const structural_objectRef no
    }
 }
 
+void bus_interface::resize_axi_port(const structural_objectRef sourceObj, const structural_managerRef SM)
+{
+   const structural_objectRef circuit = SM->get_circ();
+   structural_objectRef m_axi_awaddr_port = sourceObj->find_member("m_axi_awaddr", port_o_K, sourceObj);
+   THROW_ASSERT(m_axi_awaddr_port, "m_axi_awaddr port must be present");
+   port_o::resize_std_port(bi.addr_banked_bitsize, 0U, 0, m_axi_awaddr_port);
+
+   structural_objectRef m_axi_awlen_port = sourceObj->find_member("m_axi_awlen", port_o_K, sourceObj);
+   THROW_ASSERT(m_axi_awlen_port, "m_axi_awlen port must be present");
+   port_o::resize_std_port(8U, 0U, 0, m_axi_awlen_port);
+
+   structural_objectRef m_axi_wdata_port = sourceObj->find_member("m_axi_wdata", port_o_K, sourceObj);
+   THROW_ASSERT(m_axi_wdata_port, "m_axi_wdata port must be present");
+   port_o::resize_std_port(bi.data_bus_bitsize, 0U, 0, m_axi_wdata_port);
+
+   structural_objectRef m_axi_wstrb_port = sourceObj->find_member("m_axi_wstrb", port_o_K, sourceObj);
+   THROW_ASSERT(m_axi_wstrb_port, "m_axi_wstrb port must be present");
+   port_o::resize_std_port(bi.data_bus_bitsize / 8, 0U, 0, m_axi_wstrb_port);
+
+   structural_objectRef m_axi_araddr_port = sourceObj->find_member("m_axi_araddr", port_o_K, sourceObj);
+   THROW_ASSERT(m_axi_araddr_port, "m_axi_araddr port must be present");
+   port_o::resize_std_port(bi.addr_banked_bitsize, 0U, 0, m_axi_araddr_port);
+
+   structural_objectRef m_axi_arlen_port = sourceObj->find_member("m_axi_arlen", port_o_K, sourceObj);
+   THROW_ASSERT(m_axi_arlen_port, "m_axi_arlen port must be present");
+   port_o::resize_std_port(8U, 0U, 0, m_axi_arlen_port);
+
+   structural_objectRef m_axi_rdata_port = sourceObj->find_member("m_axi_rdata", port_o_K, sourceObj);
+   THROW_ASSERT(m_axi_rdata_port, "m_axi_wdata port must be present");
+   port_o::resize_std_port(bi.data_bus_bitsize, 0U, 0, m_axi_rdata_port);
+}
+
 void bus_interface::create_iob_caches(const structural_objectRef input_module, const structural_objectRef wrappedObj,
                                       const structural_managerRef SM)
 {
@@ -671,9 +703,11 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
        {"Mout_addr_ram", "Mout_addr_ram", bi.addr_banked_bitsize},
        {"Mout_Wdata_ram", "Mout_Wdata_ram", bi.data_bus_bitsize},
        {"Mout_data_ram_size", "Mout_data_ram_size", bi.size_bus_bitsize},
+       {"Mout_tag", "Mout_tag", bi.context_bus_bitsize},
        {"Mout_back_pressure", "Mout_back_pressure", 1U},
        {"M_DataRdy", "M_DataRdy", 1U},
-       {"M_Rdata_ram", "M_Rdata_ram", bi.data_bus_bitsize}};
+       {"M_Rdata_ram", "M_Rdata_ram", bi.data_bus_bitsize},
+       {"M_tag", "M_tag", bi.context_bus_bitsize}};
 
    const std::vector<std::tuple<std::string, std::string, unsigned int>> adapter_cache_ports = {
        {"dirty", "dirty", 1U},
@@ -742,22 +776,24 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
          const auto size = std::get<2>(p);
 
          structural_objectRef input_port = input_module->find_member(pname_input, port_vector_o_K, input_module);
-         THROW_ASSERT(input_port, pname_input + " port must be present");
-         const auto input_port_o = GetPointer<port_o>(input_port);
-         if((i == 0) && is_banked)
+         if(input_port)
          {
-            // Noc output ports must be resized
-            input_port_o->add_n_ports(bi.noc_nodes, input_port);
-            port_o::resize_std_port(size, 0U, 0, input_port);
+            const auto input_port_o = GetPointer<port_o>(input_port);
+            if((i == 0) && is_banked)
+            {
+               // Noc output ports must be resized
+               input_port_o->add_n_ports(bi.noc_nodes, input_port);
+               port_o::resize_std_port(size, 0U, 0, input_port);
+            }
+
+            structural_objectRef adapter_port = adapter_module->find_member(pname_adapter, port_o_K, adapter_module);
+            THROW_ASSERT(adapter_port, pname_adapter + " port must be present");
+            port_o::resize_std_port(size, 0U, 0, adapter_port);
+
+            auto sig = SM->add_sign("sig_out_" + pname_input + "_" + STR(i), circuit, adapter_port->get_typeRef());
+            SM->add_connection(sig, (adapter_number > 1 ? input_port_o->get_port(i) : input_port));
+            SM->add_connection(sig, adapter_port);
          }
-
-         structural_objectRef adapter_port = adapter_module->find_member(pname_adapter, port_o_K, adapter_module);
-         THROW_ASSERT(adapter_port, pname_adapter + " port must be present");
-         port_o::resize_std_port(size, 0U, 0, adapter_port);
-
-         auto sig = SM->add_sign("sig_out_" + pname_input + "_" + STR(i), circuit, adapter_port->get_typeRef());
-         SM->add_connection(sig, (adapter_number > 1 ? input_port_o->get_port(i) : input_port));
-         SM->add_connection(sig, adapter_port);
       }
 
       if(!is_banked)
@@ -769,13 +805,16 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
                 SM->add_constant("null_value_M_back_pressure_" + STR(i), circuit, bp_port->get_typeRef(), STR(0));
             SM->add_connection(bp_port, const_obj_bp);
          }
-         structural_objectRef ac_port = adapter_module->find_member("Mout_tag", port_vector_o_K, adapter_module);
-         if(ac_port)
-         {
-            structural_objectRef const_obj_ac =
-                SM->add_constant("null_value_Mout_tag_" + STR(i), circuit, ac_port->get_typeRef(), STR(0));
-            SM->add_connection(ac_port, const_obj_ac);
-         }
+      }
+
+      const auto has_Mout_port = GetPointer<module_o>(wrappedObj)->has_port("Mout_tag");
+      if(!has_Mout_port && !is_banked)
+      {
+         structural_objectRef tag_port = adapter_module->find_member("Mout_tag", port_vector_o_K, adapter_module);
+         THROW_ASSERT(tag_port, "Mout_tag port must be present");
+         structural_objectRef const_obj_tag =
+             SM->add_constant("null_value_adapter_Mout_tag_" + STR(i), circuit, tag_port->get_typeRef(), STR(0));
+         SM->add_connection(tag_port, const_obj_tag);
       }
 
       std::string cache_name = "cache_" + STR(i);
@@ -898,33 +937,7 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
          SM->add_connection(sig, adapter_port);
       }
 
-      structural_objectRef m_axi_awaddr_port = cache_module->find_member("m_axi_awaddr", port_o_K, cache_module);
-      THROW_ASSERT(m_axi_awaddr_port, "m_axi_awaddr port must be present");
-      port_o::resize_std_port(bi.addr_banked_bitsize, 0U, 0, m_axi_awaddr_port);
-
-      structural_objectRef m_axi_awlen_port = cache_module->find_member("m_axi_awlen", port_o_K, cache_module);
-      THROW_ASSERT(m_axi_awlen_port, "m_axi_awlen port must be present");
-      port_o::resize_std_port(8U, 0U, 0, m_axi_awlen_port);
-
-      structural_objectRef m_axi_wdata_port = cache_module->find_member("m_axi_wdata", port_o_K, cache_module);
-      THROW_ASSERT(m_axi_wdata_port, "m_axi_wdata port must be present");
-      port_o::resize_std_port(std::stoull(bus_size), 0U, 0, m_axi_wdata_port);
-
-      structural_objectRef m_axi_wstrb_port = cache_module->find_member("m_axi_wstrb", port_o_K, cache_module);
-      THROW_ASSERT(m_axi_wstrb_port, "m_axi_wstrb port must be present");
-      port_o::resize_std_port(std::stoull(bus_size) / 8, 0U, 0, m_axi_wstrb_port);
-
-      structural_objectRef m_axi_araddr_port = cache_module->find_member("m_axi_araddr", port_o_K, cache_module);
-      THROW_ASSERT(m_axi_araddr_port, "m_axi_araddr port must be present");
-      port_o::resize_std_port(bi.addr_banked_bitsize, 0U, 0, m_axi_araddr_port);
-
-      structural_objectRef m_axi_arlen_port = cache_module->find_member("m_axi_arlen", port_o_K, cache_module);
-      THROW_ASSERT(m_axi_arlen_port, "m_axi_arlen port must be present");
-      port_o::resize_std_port(8U, 0U, 0, m_axi_arlen_port);
-
-      structural_objectRef m_axi_rdata_port = cache_module->find_member("m_axi_rdata", port_o_K, cache_module);
-      THROW_ASSERT(m_axi_rdata_port, "m_axi_wdata port must be present");
-      port_o::resize_std_port(std::stoull(bus_size), 0U, 0, m_axi_rdata_port);
+      resize_axi_port(cache_module, SM);
 
       for(unsigned int index = 0; index < cache_module_mod->get_in_port_size(); index++)
       {
@@ -1117,21 +1130,23 @@ void bus_interface::create_axi_adapter(const structural_objectRef input_module, 
          const auto size = std::get<2>(p);
 
          structural_objectRef input_port = input_module->find_member(pname_input, port_vector_o_K, input_module);
-         THROW_ASSERT(input_port, pname_input + " port must be present");
-         const auto input_port_o = GetPointer<port_o>(input_port);
-         if((i == 0) && is_banked)
+
+         if(input_port)
          {
-            input_port_o->add_n_ports(bi.noc_nodes, input_port);
-            port_o::resize_std_port(size, 0U, 0, input_port);
+            const auto input_port_o = GetPointer<port_o>(input_port);
+            if((i == 0) && is_banked)
+            {
+               // Noc output ports must be resized
+               input_port_o->add_n_ports(bi.noc_nodes, input_port);
+               port_o::resize_std_port(size, 0U, 0, input_port);
+            }
+            structural_objectRef adapter_port = adapter_module->find_member(pname_adapter, port_o_K, adapter_module);
+            THROW_ASSERT(adapter_port, pname_adapter + " port must be present");
+            port_o::resize_std_port(size, 0U, 0, adapter_port);
+            auto sig = SM->add_sign("sig_out_" + pname_input + "_" + STR(i), circuit, adapter_port->get_typeRef());
+            SM->add_connection(sig, (adapter_number > 1 ? input_port_o->get_port(i) : input_port));
+            SM->add_connection(sig, adapter_port);
          }
-
-         structural_objectRef adapter_port = adapter_module->find_member(pname_adapter, port_o_K, adapter_module);
-         THROW_ASSERT(adapter_port, pname_adapter + " port must be present");
-         port_o::resize_std_port(size, 0U, 0, adapter_port);
-
-         auto sig = SM->add_sign("sig_out_" + pname_input + "_" + STR(i), circuit, adapter_port->get_typeRef());
-         SM->add_connection(sig, (adapter_number > 1 ? input_port_o->get_port(i) : input_port));
-         SM->add_connection(sig, adapter_port);
       }
 
       if(!is_banked)
@@ -1156,33 +1171,7 @@ void bus_interface::create_axi_adapter(const structural_objectRef input_module, 
          }
       }
 
-      structural_objectRef m_axi_awaddr_port = adapter_module->find_member("m_axi_awaddr", port_o_K, adapter_module);
-      THROW_ASSERT(m_axi_awaddr_port, "m_axi_awaddr port must be present");
-      port_o::resize_std_port(bi.addr_banked_bitsize, 0U, 0, m_axi_awaddr_port);
-
-      structural_objectRef m_axi_awlen_port = adapter_module->find_member("m_axi_awlen", port_o_K, adapter_module);
-      THROW_ASSERT(m_axi_awlen_port, "m_axi_awlen port must be present");
-      port_o::resize_std_port(8U, 0U, 0, m_axi_awlen_port);
-
-      structural_objectRef m_axi_wdata_port = adapter_module->find_member("m_axi_wdata", port_o_K, adapter_module);
-      THROW_ASSERT(m_axi_wdata_port, "m_axi_wdata port must be present");
-      port_o::resize_std_port(bi.data_bus_bitsize, 0U, 0, m_axi_wdata_port);
-
-      structural_objectRef m_axi_wstrb_port = adapter_module->find_member("m_axi_wstrb", port_o_K, adapter_module);
-      THROW_ASSERT(m_axi_wstrb_port, "m_axi_wstrb port must be present");
-      port_o::resize_std_port(bi.data_bus_bitsize / 8, 0U, 0, m_axi_wstrb_port);
-
-      structural_objectRef m_axi_araddr_port = adapter_module->find_member("m_axi_araddr", port_o_K, adapter_module);
-      THROW_ASSERT(m_axi_araddr_port, "m_axi_araddr port must be present");
-      port_o::resize_std_port(bi.addr_banked_bitsize, 0U, 0, m_axi_araddr_port);
-
-      structural_objectRef m_axi_arlen_port = adapter_module->find_member("m_axi_arlen", port_o_K, adapter_module);
-      THROW_ASSERT(m_axi_arlen_port, "m_axi_arlen port must be present");
-      port_o::resize_std_port(8U, 0U, 0, m_axi_arlen_port);
-
-      structural_objectRef m_axi_rdata_port = adapter_module->find_member("m_axi_rdata", port_o_K, adapter_module);
-      THROW_ASSERT(m_axi_rdata_port, "m_axi_wdata port must be present");
-      port_o::resize_std_port(bi.data_bus_bitsize, 0U, 0, m_axi_rdata_port);
+      resize_axi_port(adapter_module, SM);
 
       // Preserve the full thread/context tag on AXI even without a NoC.
       structural_objectRef m_axi_awid_port = adapter_module->find_member("m_axi_awid", port_o_K, adapter_module);

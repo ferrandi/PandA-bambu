@@ -1,0 +1,735 @@
+{
+  "baseline_commit": "c9c2ce787e14197e08c321bbcb8fb8116fb36fbf",
+  "yosys": "Yosys 0.33 (git sha1 2584903a060)",
+  "lut_size": 6,
+  "baseline_results": [
+    {
+      "width": 16,
+      "family": "hierarchical",
+      "luts": 29,
+      "lut_depth": 3
+    },
+    {
+      "width": 16,
+      "family": "gates",
+      "luts": 29,
+      "lut_depth": 3
+    },
+    {
+      "width": 32,
+      "family": "hierarchical",
+      "luts": 56,
+      "lut_depth": 7
+    },
+    {
+      "width": 32,
+      "family": "gates",
+      "luts": 56,
+      "lut_depth": 7
+    },
+    {
+      "width": 64,
+      "family": "hierarchical",
+      "luts": 151,
+      "lut_depth": 13
+    },
+    {
+      "width": 64,
+      "family": "gates",
+      "luts": 151,
+      "lut_depth": 13
+    },
+    {
+      "width": 128,
+      "family": "hierarchical",
+      "luts": 307,
+      "lut_depth": 14
+    },
+    {
+      "width": 128,
+      "family": "gates",
+      "luts": 351,
+      "lut_depth": 26
+    },
+    {
+      "width": 256,
+      "family": "hierarchical",
+      "luts": 644,
+      "lut_depth": 14
+    },
+    {
+      "width": 256,
+      "family": "gates",
+      "luts": 785,
+      "lut_depth": 51
+    },
+    {
+      "width": 512,
+      "family": "hierarchical",
+      "luts": 1250,
+      "lut_depth": 15
+    },
+    {
+      "width": 512,
+      "family": "gates",
+      "luts": 1652,
+      "lut_depth": 8
+    }
+  ],
+  "candidate_results": [
+    {
+      "width": 2,
+      "variant": "original",
+      "luts": 2,
+      "depth": 1
+    },
+    {
+      "width": 2,
+      "variant": "masked",
+      "luts": 2,
+      "depth": 1
+    },
+    {
+      "width": 2,
+      "variant": "prefix",
+      "luts": 2,
+      "depth": 1
+    },
+    {
+      "width": 2,
+      "variant": "tree",
+      "luts": 2,
+      "depth": 1
+    },
+    {
+      "width": 4,
+      "variant": "original",
+      "luts": 3,
+      "depth": 1
+    },
+    {
+      "width": 4,
+      "variant": "masked",
+      "luts": 3,
+      "depth": 1
+    },
+    {
+      "width": 4,
+      "variant": "prefix",
+      "luts": 3,
+      "depth": 1
+    },
+    {
+      "width": 4,
+      "variant": "tree",
+      "luts": 3,
+      "depth": 1
+    },
+    {
+      "width": 4,
+      "variant": "group2_mux",
+      "luts": 3,
+      "depth": 1
+    },
+    {
+      "width": 4,
+      "variant": "group2_onehot",
+      "luts": 3,
+      "depth": 1
+    },
+    {
+      "width": 8,
+      "variant": "original",
+      "luts": 8,
+      "depth": 2
+    },
+    {
+      "width": 8,
+      "variant": "masked",
+      "luts": 7,
+      "depth": 2
+    },
+    {
+      "width": 8,
+      "variant": "prefix",
+      "luts": 7,
+      "depth": 2
+    },
+    {
+      "width": 8,
+      "variant": "tree",
+      "luts": 7,
+      "depth": 2
+    },
+    {
+      "width": 8,
+      "variant": "group2_mux",
+      "luts": 15,
+      "depth": 3
+    },
+    {
+      "width": 8,
+      "variant": "group2_onehot",
+      "luts": 8,
+      "depth": 2
+    },
+    {
+      "width": 8,
+      "variant": "group4_mux",
+      "luts": 7,
+      "depth": 2
+    },
+    {
+      "width": 8,
+      "variant": "group4_onehot",
+      "luts": 7,
+      "depth": 2
+    },
+    {
+      "width": 16,
+      "variant": "original",
+      "luts": 29,
+      "depth": 3
+    },
+    {
+      "width": 16,
+      "variant": "masked",
+      "luts": 23,
+      "depth": 3
+    },
+    {
+      "width": 16,
+      "variant": "prefix",
+      "luts": 21,
+      "depth": 3
+    },
+    {
+      "width": 16,
+      "variant": "tree",
+      "luts": 17,
+      "depth": 3
+    },
+    {
+      "width": 16,
+      "variant": "group2_mux",
+      "luts": 31,
+      "depth": 5
+    },
+    {
+      "width": 16,
+      "variant": "group2_onehot",
+      "luts": 25,
+      "depth": 3
+    },
+    {
+      "width": 16,
+      "variant": "group4_mux",
+      "luts": 21,
+      "depth": 3
+    },
+    {
+      "width": 16,
+      "variant": "group4_onehot",
+      "luts": 18,
+      "depth": 3
+    },
+    {
+      "width": 16,
+      "variant": "group8_mux",
+      "luts": 20,
+      "depth": 3
+    },
+    {
+      "width": 16,
+      "variant": "group8_onehot",
+      "luts": 20,
+      "depth": 3
+    },
+    {
+      "width": 32,
+      "variant": "original",
+      "luts": 56,
+      "depth": 7
+    },
+    {
+      "width": 32,
+      "variant": "masked",
+      "luts": 64,
+      "depth": 4
+    },
+    {
+      "width": 32,
+      "variant": "prefix",
+      "luts": 45,
+      "depth": 4
+    },
+    {
+      "width": 32,
+      "variant": "tree",
+      "luts": 37,
+      "depth": 3
+    },
+    {
+      "width": 32,
+      "variant": "group2_mux",
+      "luts": 78,
+      "depth": 6
+    },
+    {
+      "width": 32,
+      "variant": "group2_onehot",
+      "luts": 64,
+      "depth": 5
+    },
+    {
+      "width": 32,
+      "variant": "group4_mux",
+      "luts": 45,
+      "depth": 5
+    },
+    {
+      "width": 32,
+      "variant": "group4_onehot",
+      "luts": 40,
+      "depth": 4
+    },
+    {
+      "width": 32,
+      "variant": "group8_mux",
+      "luts": 48,
+      "depth": 4
+    },
+    {
+      "width": 32,
+      "variant": "group8_onehot",
+      "luts": 40,
+      "depth": 4
+    },
+    {
+      "width": 64,
+      "variant": "original",
+      "luts": 151,
+      "depth": 13
+    },
+    {
+      "width": 64,
+      "variant": "masked",
+      "luts": 138,
+      "depth": 5
+    },
+    {
+      "width": 64,
+      "variant": "prefix",
+      "luts": 126,
+      "depth": 5
+    },
+    {
+      "width": 64,
+      "variant": "tree",
+      "luts": 79,
+      "depth": 4
+    },
+    {
+      "width": 64,
+      "variant": "group2_mux",
+      "luts": 165,
+      "depth": 8
+    },
+    {
+      "width": 64,
+      "variant": "group2_onehot",
+      "luts": 161,
+      "depth": 8
+    },
+    {
+      "width": 64,
+      "variant": "group4_mux",
+      "luts": 99,
+      "depth": 7
+    },
+    {
+      "width": 64,
+      "variant": "group4_onehot",
+      "luts": 104,
+      "depth": 5
+    },
+    {
+      "width": 64,
+      "variant": "group8_mux",
+      "luts": 91,
+      "depth": 6
+    },
+    {
+      "width": 64,
+      "variant": "group8_onehot",
+      "luts": 97,
+      "depth": 4
+    },
+    {
+      "width": 128,
+      "variant": "original",
+      "luts": 351,
+      "depth": 26
+    },
+    {
+      "width": 128,
+      "variant": "masked",
+      "luts": 322,
+      "depth": 6
+    },
+    {
+      "width": 256,
+      "variant": "original",
+      "luts": 785,
+      "depth": 51
+    },
+    {
+      "width": 256,
+      "variant": "masked",
+      "luts": 729,
+      "depth": 7
+    },
+    {
+      "width": 4,
+      "variant": "explicit_tree",
+      "luts": 3,
+      "depth": 1
+    },
+    {
+      "width": 4,
+      "variant": "composed_tree",
+      "luts": 3,
+      "depth": 1
+    },
+    {
+      "width": 8,
+      "variant": "explicit_tree",
+      "luts": 7,
+      "depth": 2
+    },
+    {
+      "width": 8,
+      "variant": "composed_tree",
+      "luts": 7,
+      "depth": 2
+    },
+    {
+      "width": 16,
+      "variant": "explicit_tree",
+      "luts": 17,
+      "depth": 3
+    },
+    {
+      "width": 16,
+      "variant": "composed_tree",
+      "luts": 17,
+      "depth": 3
+    },
+    {
+      "width": 32,
+      "variant": "explicit_tree",
+      "luts": 36,
+      "depth": 3
+    },
+    {
+      "width": 32,
+      "variant": "composed_tree",
+      "luts": 36,
+      "depth": 3
+    },
+    {
+      "width": 64,
+      "variant": "explicit_tree",
+      "luts": 79,
+      "depth": 4
+    },
+    {
+      "width": 64,
+      "variant": "composed_tree",
+      "luts": 79,
+      "depth": 4
+    }
+  ],
+  "final_results": [
+    {
+      "width": 1,
+      "family": "hierarchical",
+      "luts": 1,
+      "lut_depth": 1
+    },
+    {
+      "width": 1,
+      "family": "gates",
+      "luts": 1,
+      "lut_depth": 1
+    },
+    {
+      "width": 2,
+      "family": "hierarchical",
+      "luts": 2,
+      "lut_depth": 1
+    },
+    {
+      "width": 2,
+      "family": "gates",
+      "luts": 2,
+      "lut_depth": 1
+    },
+    {
+      "width": 4,
+      "family": "hierarchical",
+      "luts": 3,
+      "lut_depth": 1
+    },
+    {
+      "width": 4,
+      "family": "gates",
+      "luts": 3,
+      "lut_depth": 1
+    },
+    {
+      "width": 8,
+      "family": "hierarchical",
+      "luts": 7,
+      "lut_depth": 2
+    },
+    {
+      "width": 8,
+      "family": "gates",
+      "luts": 7,
+      "lut_depth": 2
+    },
+    {
+      "width": 16,
+      "family": "hierarchical",
+      "luts": 17,
+      "lut_depth": 3
+    },
+    {
+      "width": 16,
+      "family": "gates",
+      "luts": 17,
+      "lut_depth": 3
+    },
+    {
+      "width": 32,
+      "family": "hierarchical",
+      "luts": 37,
+      "lut_depth": 3
+    },
+    {
+      "width": 32,
+      "family": "gates",
+      "luts": 37,
+      "lut_depth": 3
+    },
+    {
+      "width": 64,
+      "family": "hierarchical",
+      "luts": 79,
+      "lut_depth": 4
+    },
+    {
+      "width": 64,
+      "family": "gates",
+      "luts": 79,
+      "lut_depth": 4
+    },
+    {
+      "width": 128,
+      "family": "hierarchical",
+      "luts": 157,
+      "lut_depth": 5
+    },
+    {
+      "width": 128,
+      "family": "gates",
+      "luts": 322,
+      "lut_depth": 6
+    },
+    {
+      "width": 256,
+      "family": "hierarchical",
+      "luts": 319,
+      "lut_depth": 6
+    },
+    {
+      "width": 256,
+      "family": "gates",
+      "luts": 729,
+      "lut_depth": 7
+    },
+    {
+      "width": 512,
+      "family": "hierarchical",
+      "luts": 638,
+      "lut_depth": 7
+    },
+    {
+      "width": 512,
+      "family": "gates",
+      "luts": 1652,
+      "lut_depth": 8
+    }
+  ],
+  "formal_before_after_and_specification": [
+    {
+      "family": "gates",
+      "width": 1,
+      "before_after_equivalence": "passed",
+      "independent_specification": "passed"
+    },
+    {
+      "family": "gates",
+      "width": 2,
+      "before_after_equivalence": "passed",
+      "independent_specification": "passed"
+    },
+    {
+      "family": "gates",
+      "width": 4,
+      "before_after_equivalence": "passed",
+      "independent_specification": "passed"
+    },
+    {
+      "family": "gates",
+      "width": 8,
+      "before_after_equivalence": "passed",
+      "independent_specification": "passed"
+    },
+    {
+      "family": "gates",
+      "width": 16,
+      "before_after_equivalence": "passed",
+      "independent_specification": "passed"
+    },
+    {
+      "family": "gates",
+      "width": 32,
+      "before_after_equivalence": "passed",
+      "independent_specification": "passed"
+    },
+    {
+      "family": "gates",
+      "width": 64,
+      "before_after_equivalence": "passed",
+      "independent_specification": "passed"
+    },
+    {
+      "family": "gates",
+      "width": 128,
+      "before_after_equivalence": "passed",
+      "independent_specification": "passed"
+    },
+    {
+      "family": "gates",
+      "width": 256,
+      "before_after_equivalence": "passed",
+      "independent_specification": "passed"
+    },
+    {
+      "family": "gates",
+      "width": 512,
+      "before_after_equivalence": "passed",
+      "independent_specification": "passed"
+    },
+    {
+      "family": "hierarchical",
+      "width": 1,
+      "before_after_equivalence": "passed",
+      "independent_specification": "passed"
+    },
+    {
+      "family": "hierarchical",
+      "width": 2,
+      "before_after_equivalence": "passed",
+      "independent_specification": "passed"
+    },
+    {
+      "family": "hierarchical",
+      "width": 4,
+      "before_after_equivalence": "passed",
+      "independent_specification": "passed"
+    },
+    {
+      "family": "hierarchical",
+      "width": 8,
+      "before_after_equivalence": "passed",
+      "independent_specification": "passed"
+    },
+    {
+      "family": "hierarchical",
+      "width": 16,
+      "before_after_equivalence": "passed",
+      "independent_specification": "passed"
+    },
+    {
+      "family": "hierarchical",
+      "width": 32,
+      "before_after_equivalence": "passed",
+      "independent_specification": "passed"
+    },
+    {
+      "family": "hierarchical",
+      "width": 64,
+      "before_after_equivalence": "passed",
+      "independent_specification": "passed"
+    },
+    {
+      "family": "hierarchical",
+      "width": 128,
+      "before_after_equivalence": "passed",
+      "independent_specification": "passed"
+    },
+    {
+      "family": "hierarchical",
+      "width": 256,
+      "before_after_equivalence": "passed",
+      "independent_specification": "passed"
+    },
+    {
+      "family": "hierarchical",
+      "width": 512,
+      "before_after_equivalence": "passed",
+      "independent_specification": "passed"
+    }
+  ],
+  "integration": [
+    {
+      "test": "nested-hierarchical",
+      "status": 0,
+      "seconds": 19.8
+    },
+    {
+      "test": "math-gates",
+      "status": 0,
+      "seconds": 33.5
+    },
+    {
+      "test": "critical-hierarchical",
+      "status": 0,
+      "seconds": 8.7
+    },
+    {
+      "test": "critical-gates",
+      "status": 0,
+      "seconds": 8.4
+    }
+  ],
+  "permanent_regression": {
+    "rtl_specification": "passed",
+    "sat_widths": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      32,
+      64,
+      128,
+      256,
+      512
+    ],
+    "checks": "Both families equivalent and lowest-set-bit specification holds"
+  }
+}

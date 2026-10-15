@@ -28,9 +28,11 @@
  *
  */
 #include "technology_manager.hpp"
+#include <boost/algorithm/string/replace.hpp>
 
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
 
+#include "BambuParameterRegistry.hpp"
 #include "Parameter.hpp"
 #include "area_info.hpp"
 #include "constant_strings.hpp"
@@ -43,6 +45,7 @@
 #include "polixml.hpp"
 #include "string_manipulation.hpp"
 #include "structural_manager.hpp"
+#include "structural_objects.hpp"
 #include "technology_node.hpp"
 #include "time_info.hpp"
 #include "utility.hpp"
@@ -52,9 +55,23 @@
 
 const unsigned int technology_manager::XML = 1 << 0;
 
+PANDA_REGISTER_PARAMETER("priority-encoder", PandaParamType::String, "hierarchical",
+                         "Combinatorial priority encoder implementation: hierarchical, tree or gates", "rtl");
+
 technology_manager::technology_manager(const ParameterConstRef _Param) : Param(_Param)
 {
    debug_level = Param->get_class_debug_level(GET_CLASS(*this));
+}
+
+std::string technology_manager::get_priority_encoder_prefix() const
+{
+   const auto family =
+       Param->IsParameter("priority-encoder") ? Param->GetParameter<std::string>("priority-encoder") : "hierarchical";
+   if(family != "hierarchical" && family != "tree" && family != "gates")
+   {
+      THROW_ERROR("Unknown priority encoder family: " + family);
+   }
+   return family == "gates" ? "" : family + "_";
 }
 
 void technology_manager::print(std::ostream& os) const
@@ -205,6 +222,47 @@ void technology_manager::xload(const xml_element* node)
          library_managerRef LM(new library_manager(Param));
          library_manager::xload(Enode, LM, Param);
 
+         // Static selection for --priority-encoder: the technology library contains
+         // hierarchical_multiple_priority_encoder_* (composed, default),
+         // tree_multiple_priority_encoder_* (balanced gate tree, no submodules),
+         // and multiple_priority_encoder_* (constant masks and vector reductions).
+         // Consumer RTL references the hierarchical family in the XML and needs
+         // no Verilog selection parameter. Replace that prefix in instantiations
+         // AND IP_COMPONENT dependencies to emit the matching module definitions.
+         // Leave the encoder definitions and their internal references untouched:
+         // all three families remain available, and hierarchical encoders stay composed.
+         // Task-generated resource managers use get_priority_encoder_prefix() too,
+         // since their RTL is generated after library loading.
+         const auto encoder_prefix = get_priority_encoder_prefix();
+         if(encoder_prefix != "hierarchical_")
+         {
+            for(const auto& entry : LM->get_library_fu())
+            {
+               const auto fu = GetPointer<functional_unit>(entry.second);
+               if(!fu || !fu->CM || entry.first.find("hierarchical_multiple_priority_encoder_") == 0U ||
+                  entry.first.find("tree_multiple_priority_encoder_") == 0U ||
+                  entry.first.find("multiple_priority_encoder_") == 0U)
+               {
+                  continue;
+               }
+               const auto mod = GetPointer<module_o>(fu->CM->get_circ());
+               const auto np = mod->get_NP_functionality();
+               if(!np)
+               {
+                  continue;
+               }
+               for(const auto kind : {NP_functionality::VERILOG_PROVIDED, NP_functionality::IP_COMPONENT})
+               {
+                  if(np->exist_NP_functionality(kind))
+                  {
+                     auto code = np->get_NP_functionality(kind);
+                     boost::replace_all(code, "hierarchical_multiple_priority_encoder_",
+                                        encoder_prefix + "multiple_priority_encoder_");
+                     np->add_NP_functionality(kind, code);
+                  }
+               }
+            }
+         }
          std::string library_name = LM->get_library_name();
          if(library_map.find(library_name) == library_map.end())
          {
