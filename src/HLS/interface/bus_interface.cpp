@@ -1029,10 +1029,10 @@ void bus_interface::create_axi_adapter(const structural_objectRef input_module, 
        {"M_Rdata_ram", "M_Rdata_ram", bi.data_bus_bitsize}};
 
    const bool is_banked = bi.bank_number > 0;
-   const bool is_bus_pipelined =
-       parameters->isOption(OPT_bus_pipelined) && parameters->getOption<bool>(OPT_bus_pipelined);
+   const bool has_tag_ports = input_module->find_member("Mout_tag", port_vector_o_K, input_module) &&
+                              input_module->find_member("M_tag", port_vector_o_K, input_module);
    auto adapter_ports = is_banked ? noc_adapter_ports : minimal_adapter_ports;
-   if(!is_banked && is_bus_pipelined)
+   if(!is_banked && has_tag_ports)
    {
       adapter_ports.emplace_back("Mout_tag", "Mout_tag", bi.context_bus_bitsize);
       adapter_ports.emplace_back("M_tag", "M_tag", bi.context_bus_bitsize);
@@ -1145,7 +1145,7 @@ void bus_interface::create_axi_adapter(const structural_objectRef input_module, 
          }
       }
 
-      if(!is_banked && !is_bus_pipelined)
+      if(!is_banked && !has_tag_ports)
       {
          structural_objectRef ac_port = adapter_module->find_member("Mout_tag", port_vector_o_K, adapter_module);
          if(ac_port)
