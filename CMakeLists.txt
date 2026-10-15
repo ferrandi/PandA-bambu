@@ -500,3 +500,11 @@ add_custom_target(package
 )
 
 message(STATUS "PandA CMake configuration initialized (bambu, eucalyptus, bambu-cc enabled).")
+
+find_program(PANDA_TEST_VERILATOR verilator)
+if(BUILD_TESTING AND PANDA_TEST_VERILATOR)
+   add_test(NAME priority_encoders
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/verilog/priority_encoder/test_priority_encoders.py"
+              --verilator "${PANDA_TEST_VERILATOR}")
+   set_tests_properties(priority_encoders PROPERTIES LABELS "rtl;openmp" TIMEOUT 300)
+endif()

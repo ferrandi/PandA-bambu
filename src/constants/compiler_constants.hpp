@@ -44,4 +44,7 @@
 /// OpenMP source library file
 #define STR_CST_libopenmp_filename "libopenmp/kmp_single_file.cpp"
 
+/// OpenMP task graph extractor outpur IR file name
+#define OMP_TASK_EXTRACTOR_output_filename "pipeline_out.ll"
+
 #endif

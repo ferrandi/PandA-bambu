@@ -62,10 +62,13 @@ const char* PandaParamTypeToString(PandaParamType type);
 #define PANDA_STRINGIZE_DETAIL(x) #x
 #define PANDA_STRINGIZE(x) PANDA_STRINGIZE_DETAIL(x)
 
+#define PANDA_CONCAT_DETAIL(a, b) a##b
+#define PANDA_CONCAT(a, b) PANDA_CONCAT_DETAIL(a, b)
+
 #define PANDA_REGISTER_PARAMETER(NAME, TYPE, DEFAULT, DESC, CATEGORY)                                           \
    namespace                                                                                                    \
    {                                                                                                            \
-      [[maybe_unused]] const bool _panda_param_reg_##__COUNTER__ = RegisterPandaParameter(                      \
+      [[maybe_unused]] const bool PANDA_CONCAT(_panda_param_reg_, __COUNTER__) = RegisterPandaParameter(        \
           PandaParameterInfo{NAME, TYPE, DEFAULT, DESC, CATEGORY, __FILE__ ":" PANDA_STRINGIZE(__LINE__), {}}); \
    }
 

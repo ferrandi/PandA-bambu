@@ -714,6 +714,12 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
        {"ready", "ready", 1U}};
 
    const bool is_banked = bi.bank_number > 0;
+   if(!is_banked && bi.channel_number != 1)
+   {
+      THROW_ERROR_USAGE("Non-banked bus caches require exactly one memory channel: cache coherence between "
+                        "channels is not supported");
+   }
+   const auto adapter_number = is_banked ? bi.bank_number : bi.channel_number;
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                   "Creating IOB caches for" + STR(is_banked ? " banked" : "") + " bus with " +
                       STR(is_banked ? bi.bank_number : bi.channel_number) + " channels");
@@ -736,7 +742,7 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
    auto join_input_port = join_module->find_member("in1", port_o_K, join_module);
    THROW_ASSERT(join_input_port, "Must be present.\n");
    auto join_input_port_o = GetPointer<port_o>(join_input_port);
-   join_input_port_o->add_n_ports(bi.bank_number, join_input_port);
+   join_input_port_o->add_n_ports(adapter_number, join_input_port);
    port_o::resize_std_port(1U, 0U, 0, join_input_port);
 
    auto join_output_port = join_module->find_member("out1", port_o_K, join_module);
@@ -751,7 +757,6 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
    SM->add_connection(done_output_sig, join_output_port);
    SM->add_connection(done_output_sig, done_external_port);
 
-   const auto adapter_number = is_banked ? bi.bank_number : bi.channel_number;
    for(unsigned int i = 0; i < adapter_number; i = i + 1)
    {
       std::string adapter_name = "adapter_" + STR(i);

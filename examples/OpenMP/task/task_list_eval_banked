@@ -1,0 +1,22 @@
+# Banked
+# 1Fu
+src/sparseLUFact/kernel.cpp     -DBANK_NUMBER=32 -DBANK_CHUNK_SIZE=512 -DMAT_SIZE=6 -DBLOCK_SIZE=4 --channels-type=MEM_ACC_NN --channels-number=4 -DBAMBU_SKIP_VERIFICATION --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/sparseLUFact/tb.cpp --benchmark-name=sparseLUFactStackBanked
+
+# 2Fu
+src/sparseLUFact/kernel.cpp     -DBANK_NUMBER=32 -DBANK_CHUNK_SIZE=512 -DMAT_SIZE=6 -DBLOCK_SIZE=4 --channels-type=MEM_ACC_NN --channels-number=8 -DBAMBU_SKIP_VERIFICATION --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/sparseLUFact/tb.cpp --bambu-parameter=task-resource-duplication=2 --benchmark-name=sparseLUFactStackBanked_2FU
+
+# 4 Fu
+src/sparseLUFact/kernel.cpp     -DBANK_NUMBER=32 -DBANK_CHUNK_SIZE=512 -DMAT_SIZE=6 -DBLOCK_SIZE=4 --channels-type=MEM_ACC_NN --channels-number=16 -DBAMBU_SKIP_VERIFICATION --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/sparseLUFact/tb.cpp --bambu-parameter=task-resource-duplication=4 --benchmark-name=sparseLUFactStackBanked_4FU
+
+# 8 Fu
+src/sparseLUFact/kernel.cpp     -DBANK_NUMBER=32 -DBANK_CHUNK_SIZE=512 -DMAT_SIZE=6 -DBLOCK_SIZE=4 --channels-type=MEM_ACC_NN --channels-number=32 -DBAMBU_SKIP_VERIFICATION --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/sparseLUFact/tb.cpp --bambu-parameter=task-resource-duplication=8 --benchmark-name=sparseLUFactStackBanked_8FU
+
+# MNIST uses its built-in synthetic data unless USE_REAL_DATASET is defined.
+src/mnist/mnistKernel.cpp     	-DBANK_NUMBER=32 -DBANK_CHUNK_SIZE=512 -DBAMBU_SKIP_VERIFICATION --channels-type=MEM_ACC_NN --channels-number=19 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --benchmark-name=mnistTrainStaticBanked
+src/mnist/mnistKernel.cpp     	-DBANK_NUMBER=32 -DBANK_CHUNK_SIZE=512 -DBAMBU_SKIP_VERIFICATION -DTRAIN=0 --channels-type=MEM_ACC_NN --channels-number=7 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --benchmark-name=mnistInferenceStaticBanked
+src/mnist/mnistKernel.cpp     	-DBANK_NUMBER=32 -DBANK_CHUNK_SIZE=512 -DBAMBU_SKIP_VERIFICATION --channels-type=MEM_ACC_NN --channels-number=38 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --bambu-parameter=task-resource-duplication=2 --benchmark-name=mnistTrainStaticBanked_2FU
+src/mnist/mnistKernel.cpp     	-DBANK_NUMBER=32 -DBANK_CHUNK_SIZE=512 -DBAMBU_SKIP_VERIFICATION -DTRAIN=0 --channels-type=MEM_ACC_NN --channels-number=14 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --bambu-parameter=task-resource-duplication=2 --benchmark-name=mnistInferenceStaticBanked_2FU
+src/mnist/mnistKernel.cpp     	-DBANK_NUMBER=32 -DBANK_CHUNK_SIZE=512 -DBAMBU_SKIP_VERIFICATION --channels-type=MEM_ACC_NN --channels-number=76 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --bambu-parameter=task-resource-duplication=4 --benchmark-name=mnistTrainStaticBanked_4FU
+src/mnist/mnistKernel.cpp     	-DBANK_NUMBER=32 -DBANK_CHUNK_SIZE=512 -DBAMBU_SKIP_VERIFICATION -DTRAIN=0 --channels-type=MEM_ACC_NN --channels-number=28 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --bambu-parameter=task-resource-duplication=4 --benchmark-name=mnistInferenceStaticBanked_4FU
+src/mnist/mnistKernel.cpp     	-DBANK_NUMBER=32 -DBANK_CHUNK_SIZE=512 -DBAMBU_SKIP_VERIFICATION --channels-type=MEM_ACC_NN --channels-number=152 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --bambu-parameter=task-resource-duplication=8 --benchmark-name=mnistTrainStaticBanked_8FU
+src/mnist/mnistKernel.cpp     	-DBANK_NUMBER=32 -DBANK_CHUNK_SIZE=512 -DBAMBU_SKIP_VERIFICATION -DTRAIN=0 --channels-type=MEM_ACC_NN --channels-number=56 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --bambu-parameter=task-resource-duplication=8 --benchmark-name=mnistInferenceStaticBanked_8FU
