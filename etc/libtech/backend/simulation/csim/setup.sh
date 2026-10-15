@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-CSIMFLAGS=" -DBAMBU_CSIM"
+CSIMFLAGS=" -DBAMBU_CSIM ${BEH_CFLAGS}"
 
 case "$(bambu_results /application/sources@cflags)" in
   *-m32*) CSIMFLAGS+=" -m32" ;;
@@ -29,18 +29,15 @@ done
 
 
 # CC is the compiler recorded for the design sources, so it is often a C++ driver
-# (e.g. clang++-16). A C++ driver compiles ".c" files as C++, which breaks the
-# generated C testbench (void* assignments in the mdpi interface macros). Select
-# the language per file extension instead of trusting the driver name.
+# (e.g. clang++-16). Every CSIM source is C -- the mdpi runtime, the generated
+# CSIM testbench and the generated models, some of which carry a .cpp suffix --
+# so pin the language per invocation instead of trusting the driver name or the
+# file extension. Objects are linked separately to keep "-x c" out of the link.
 CSIM_OBJS=()
 obj_idx=0
 for src in "${CSIM_SRCS[@]}";
 do
-   case ${src} in
-      *.c) src_lang="c" ;;
-      *) src_lang="c++" ;;
-   esac
-   ${CC} -pipe ${CSIMFLAGS} -x "${src_lang}" -c "${src}" -o "${SWD}/csim_obj_${obj_idx}.o" || exit -1
+   ${CC} -pipe ${CSIMFLAGS} -x c -std=gnu11 -c "${src}" -o "${SWD}/csim_obj_${obj_idx}.o" || exit -1
    CSIM_OBJS+=("${SWD}/csim_obj_${obj_idx}.o")
    obj_idx=$((obj_idx + 1))
 done

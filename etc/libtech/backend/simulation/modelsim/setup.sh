@@ -19,11 +19,20 @@ do
   VFLAGS+=" +incdir+${inc}"
 done
 
+OPT_FLAGS="-O5"
 # Intel's ModelSim edition does not accept the commercial optimization switch.
 # Leave optimization to that edition's defaults for both compilation and vopt.
 case "$(vlog -version 2>&1)" in
   *"Intel FPGA"*) OPT_FLAGS="" ;;
-  *) OPT_FLAGS="-O5" ;;
+esac
+# Concurrent Starter simulations can fail on the periodic license lock-file
+# check, so serialize them on a per-user lock.
+case "$(vsim -version 2>&1)" in
+  *"STARTER EDITION"*)
+    OPT_FLAGS=""
+    exec {MODELSIM_LOCK_FD}> "${TMPDIR:-/tmp}/bambu-modelsim-starter-${UID}.lock"
+    flock "${MODELSIM_LOCK_FD}"
+    ;;
 esac
 
 SV_FLAGS="${VFLAGS} ${OPT_FLAGS}"
