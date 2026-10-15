@@ -87,6 +87,7 @@ bus_vector_add.cpp --benchmark-name=banked_axi_vector_add_banks --top-fname=vect
 bus_vector_add.cpp --benchmark-name=banked_axi_vector_add_axi --top-fname=vector_add --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DAXI=1 -DBANKED_BUS_AXI=1
 bus_vector_add.cpp --benchmark-name=banked_axi_vector_add_axi_cache --top-fname=vector_add --generate-tb=BENCHMARKS_ROOT/bus.xml --memory-allocation-policy=NO_BRAM -DAXI_CACHE=1 -DBANKED_BUS_AXI=1
 bus_vector_add.cpp --benchmark-name=axi_vector_add_int --top-fname=vector_add_int --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DBUS_AXI=1
+bus_vector_add.cpp --benchmark-name=axi_vector_add_int_pipelined --bus-pipelined --top-fname=vector_add_int --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DBUS_AXI=1
 bus_vector_add.cpp --benchmark-name=axi_vector_add_int_none --top-fname=vector_add_int --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DNONE=1 -DBUS_AXI=1
 bus_vector_add.cpp --benchmark-name=axi_vector_add_int_pointer --top-fname=vector_add_int_pointer --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DBUS_AXI=1
 bus_vector_add.cpp --benchmark-name=axi_vector_add_array --top-fname=vector_add_array --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DBUS_AXI=1
