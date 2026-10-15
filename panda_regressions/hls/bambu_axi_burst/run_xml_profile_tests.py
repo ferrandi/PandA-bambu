@@ -184,6 +184,7 @@ def main() -> int:
     matrix += [("read_fifo_depth", value) for value in invalid_values]
     matrix += [("read_fifo_depth", "4097"), ("read_fifo_depth", "3"),
                ("read_fifo_depth", "4294967552")]
+    matrix += [("max_read_burst_length", "")]
     for attribute, value in matrix:
         case_dir = output / "cases" / case_name(attribute, value)
         if case_dir.exists():

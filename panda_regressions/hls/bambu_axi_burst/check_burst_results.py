@@ -11,19 +11,30 @@ import sys
 import xml.etree.ElementTree as ET
 
 
-FIELDS = ("case", "cycles", "source", "burst_max", "outstanding", "fifo_depth", "addr_bits")
+FIELDS = ("case", "mode", "cycles", "source", "burst_max", "outstanding", "fifo_depth", "addr_bits")
 INTEGER = re.compile(r"(?:0|[1-9][0-9]*)\Z")
 # The compiler accepts a 32 or 64 bit address bus for the burst resource; the
 # gate witnesses that the generated instance carries the width the case asked
 # for, so the expectation table has to name it.
 ADDR_BITS_ALLOWED = {"32", "64"}
-EXPECTED_CASES = {f"sum-o{o}-n{n}" for o in (5, 8, 16) for n in (1024, 2048)}
+# This inventory is intentionally independent of the TSV: deleting a row from
+# the table must not silently remove a qualified read or write case.
+REQUIRED_CASE_MODES = {
+    **{f"sum-o{o}-n{n}": "read" for o in (5, 8, 16) for n in (1024, 2048)},
+    "sum-o1-n1024": "read",
+    "sum-o1-n2048": "read",
+    "sum-o1-n1024-addr64": "read",
+    "sum-o1-n1024-lat128": "read",
+    "write-burst-n1024": "write",
+    "write-burst-n2048": "write",
+    "write-burst-n1024-addr64": "write",
+}
 # A bundle 'latency' attribute is a property of the memory reached through that
 # bundle, and it must reach the testbench memory model for both directions.
 ATTR_LATENCY = re.compile(r"latency=(\d+)")
 LEGACY_FIELDS = ("case", "cycles", "source")
 CONFIGURED_BURST_CORE = re.compile(
-    r"MinimalAXI4MasterPipelined|MinimalAXI4MasterWritePipelined|"
+    r"\bMinimalAXI4MasterPipelined\b|\bMinimalAXI4MasterPipelinedWrite\b|"
     r"configure_read|configure_write|burst_configure", re.I)
 
 
@@ -42,12 +53,17 @@ def read_expectations(path: Path) -> list[dict[str, str]]:
         fail(f"cannot read expectation file {path}: {exc}")
     if not rows:
         fail("expectation file contains no required cycle cases")
-    actual_cases = {row.get("case", "") for row in rows}
-    # The P2 matrix cases are mandatory; extra cases are allowed so that
-    # non-saturated profiles (e.g. num_read_outstanding=1) can be gated too.
-    missing = sorted(EXPECTED_CASES - actual_cases)
+    actual_modes = {row.get("case", ""): row.get("mode", "") for row in rows}
+    # Extra cases are allowed, but the current qualified read/write inventory
+    # and each case's direction are mandatory.
+    missing = sorted(REQUIRED_CASE_MODES.keys() - actual_modes.keys())
     if missing:
-        fail(f"expectation file does not cover the P2 matrix; missing={missing}")
+        fail(f"expectation file does not cover required cycle cases; missing={missing}")
+    wrong_modes = sorted((case, mode, actual_modes[case])
+                         for case, mode in REQUIRED_CASE_MODES.items()
+                         if actual_modes[case] != mode)
+    if wrong_modes:
+        fail(f"required cycle case mode does not match inventory: {wrong_modes}")
     seen = set()
     for row in rows:
         if None in row or any(not row.get(field) for field in FIELDS):
@@ -55,6 +71,10 @@ def read_expectations(path: Path) -> list[dict[str, str]]:
         if row["case"] in seen:
             fail(f"duplicate expected case: {row['case']}")
         seen.add(row["case"])
+        if row["mode"] not in {"read", "write"}:
+            fail(f"{row['case']}: mode must be 'read' or 'write'")
+        if row["cycles"] == "PENDING":
+            fail(f"{row['case']}: cycle signature is PENDING; measure and qualify it before enabling this case")
         for field in ("cycles", "burst_max", "outstanding", "fifo_depth"):
             if not INTEGER.fullmatch(row[field]):
                 fail(f"{row['case']}: {field} is not an unsigned decimal integer")
@@ -66,9 +86,12 @@ def read_expectations(path: Path) -> list[dict[str, str]]:
         if not profile.is_file():
             fail(f"{row['case']}: expected profile source is missing: {profile}")
         source = profile.read_text(encoding="utf-8")
-        required = (f"max_read_burst_length={row['burst_max']}",
-                    f"num_read_outstanding={row['outstanding']}",
-                    f"read_fifo_depth={row['fifo_depth']}")
+        profile_attrs = {
+            "read": ("max_read_burst_length", "num_read_outstanding", "read_fifo_depth"),
+            "write": ("max_write_burst_length", "write_burst_outstanding", "write_fifo_depth"),
+        }[row["mode"]]
+        required = tuple(f"{attribute}={value}" for attribute, value in zip(
+            profile_attrs, (row["burst_max"], row["outstanding"], row["fifo_depth"])))
         if not all(token in source for token in required):
             fail(f"{row['case']}: static source pragma does not match expected profile")
     return rows
@@ -92,7 +115,7 @@ def check_case(results: Path, row: dict[str, str], suite_dir: Path) -> None:
     if int(actual) != int(row["cycles"]):
         fail(f"{row['case']}: expected {row['cycles']} cycles, got {actual}")
 
-    check_profile_rtl(case_dir, row["case"], row["burst_max"],
+    check_profile_rtl(case_dir, row["case"], row["mode"], row["burst_max"],
                       row["outstanding"], row["fifo_depth"], row["addr_bits"])
     check_bundle_latency(case_dir, row["case"], suite_dir / row["source"])
 
@@ -119,6 +142,9 @@ def read_legacy_expectations(path: Path) -> list[dict[str, str]]:
             fail(f"{row['case']}: expected cycle count must be a positive unsigned integer")
         if not (path.parent / row["source"]).is_file():
             fail(f"{row['case']}: expected legacy source is missing: {path.parent / row['source']}")
+    required_legacy = "plain-m-axi-write-n1024"
+    if required_legacy not in seen:
+        fail(f"legacy expectation file is missing required case: {required_legacy}")
     return rows
 
 
@@ -177,7 +203,29 @@ def check_bundle_latency(case_dir: Path, case: str, source: Path) -> None:
                  f"carries no .{name}({latency})")
 
 
-def check_profile_rtl(case_dir: Path, case: str, burst_max: str,
+def _parameterized_instances(text: str, module_name: str):
+    """Yield named parameters from exact module instances, not across instances."""
+    marker = re.compile(rf"\b{re.escape(module_name)}\s*#\s*\(")
+    for match in marker.finditer(text):
+        start = match.end()
+        depth = 1
+        index = start
+        while index < len(text) and depth:
+            if text[index] == "(":
+                depth += 1
+            elif text[index] == ")":
+                depth -= 1
+            index += 1
+        if depth:
+            continue
+        if not re.match(r"\s*[A-Za-z_$][\w$]*\s*\(", text[index:]):
+            continue
+        body = text[start:index - 1]
+        yield {name: value.strip() for name, value in re.findall(
+            r"\.(\w+)\s*\(\s*([^()]*)\s*\)", body)}
+
+
+def check_profile_rtl(case_dir: Path, case: str, mode: str, burst_max: str,
                       outstanding: str, fifo_depth: str, addr_bits: str) -> None:
 
     rtl_files = [path for path in case_dir.rglob("*")
@@ -185,25 +233,23 @@ def check_profile_rtl(case_dir: Path, case: str, burst_max: str,
                  and path.name != "panda_libtech.v"]
     if not rtl_files:
         fail(f"{case}: generated RTL is missing")
-    pattern = re.compile(
-        rf"MinimalAXI4MasterPipelined\s*#\s*\(\s*\.B_MAX\s*\(\s*{burst_max}\s*\)\s*,\s*"
-        rf"\.MAX_OUTSTANDING\s*\(\s*{outstanding}\s*\)\s*,\s*"
-        rf"\.FIFO_DEPTH\s*\(\s*{fifo_depth}\s*\)\s*"
-        rf"(?:,\s*\.\w+\s*\(\s*[^()]*\s*\)\s*)*\)\s*\w+\s*\(", re.S)
-    # The width parameters must be wired to the real port widths. Leaving them
-    # at the XML defaults, or reading them from the wrong operand, silently
-    # truncates a signal: a one-bit BITSIZE_in5 makes the engine fetch a single
-    # element and the co-simulation hangs instead of finishing.
-    width_patterns = [
-        re.compile(rf"\.BITSIZE_{name}\s*\(\s*{width}\s*\)", re.S)
-        for name, width in (("m_axi_araddr", addr_bits), ("in4", addr_bits),
-                            ("m_axi_rdata", 32), ("in5", 32))
-    ]
+    module_name = {"read": "MinimalAXI4MasterPipelined",
+                   "write": "MinimalAXI4MasterPipelinedWrite"}[mode]
+    required = {"B_MAX": burst_max, "MAX_OUTSTANDING": outstanding,
+                "FIFO_DEPTH": fifo_depth}
+    widths = ({"BITSIZE_m_axi_araddr": addr_bits, "BITSIZE_in4": addr_bits,
+               "BITSIZE_m_axi_rdata": "32", "BITSIZE_in5": "32"}
+              if mode == "read" else
+              {"BITSIZE_in4": addr_bits, "BITSIZE_in5": "32",
+               "BITSIZE_m_axi_awaddr": addr_bits, "BITSIZE_in3": "32",
+               "BITSIZE_m_axi_wdata": "32"})
+    required.update(widths)
     for path in rtl_files:
         text = path.read_text(encoding="utf-8", errors="replace")
-        if pattern.search(text) and all(p.search(text) for p in width_patterns):
-            return
-    fail(f"{case}: generated RTL does not contain the expected burst profile")
+        for parameters in _parameterized_instances(text, module_name):
+            if all(parameters.get(name) == value for name, value in required.items()):
+                return
+    fail(f"{case}: generated RTL does not contain the expected {mode} burst profile in one {module_name} instance")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -233,11 +279,13 @@ def main(argv: list[str] | None = None) -> int:
         boundary_dir = args.results / "AXI-BURST" / "valid-boundary-maxima"
         if not (boundary_dir / "bambu_results.xml").is_file():
             fail(f"valid-boundary-maxima: missing Bambu results XML: {boundary_dir / 'bambu_results.xml'}")
-        check_profile_rtl(boundary_dir, "valid-boundary-maxima", "256", "16", "4096", "32")
+        check_profile_rtl(boundary_dir, "valid-boundary-maxima", "read", "256", "16", "4096", "32")
     except (OSError, UnicodeError, ValueError) as exc:
         print(f"AXI_BURST_CYCLE_GATE_FAIL: {exc}", file=sys.stderr)
         return 1
-    print(f"AXI_BURST_CYCLE_GATE_PASS: {len(rows)} read cases and {len(legacy_rows)} legacy cases; "
+    mode_counts = {mode: sum(row["mode"] == mode for row in rows) for mode in ("read", "write")}
+    print(f"AXI_BURST_CYCLE_GATE_PASS: {mode_counts['read']} read cases, "
+          f"{mode_counts['write']} write cases, and {len(legacy_rows)} legacy cases; "
           "exact evaluation CYCLES and RTL profiles")
     return 0
 

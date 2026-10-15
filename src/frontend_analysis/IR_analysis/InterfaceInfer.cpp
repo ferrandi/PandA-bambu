@@ -1889,7 +1889,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             }
             const auto max_read_burst = iface_attrs.find(FunctionArchitecture::iface_max_read_burst_length);
             const auto max_write_burst = iface_attrs.find(FunctionArchitecture::iface_max_write_burst_length);
-            const bool read_burst_requested = max_read_burst != iface_attrs.end() && !max_read_burst->second.empty();
+            const bool read_burst_requested = max_read_burst != iface_attrs.end();
             const bool write_burst_requested = max_write_burst != iface_attrs.end();
             if(read_burst_requested && effective_burst_type != 1U)
             {
@@ -1902,6 +1902,33 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                THROW_ERROR_USAGE("Configured write bursts for bundle '" + bundle_name +
                                  "' require AXI INCREMENTAL burst type; the effective AXI burst type is " +
                                  (effective_burst_type == 0U ? "FIXED" : "unsupported") + ".");
+            }
+         }
+      }
+      else
+      {
+         for(const auto& iface : func_arch->ifaces)
+         {
+            const auto& bundle_name = iface.first;
+            const auto& iface_attrs = iface.second;
+            const auto mode = iface_attrs.find(FunctionArchitecture::iface_mode);
+            const auto max_read_burst = iface_attrs.find(FunctionArchitecture::iface_max_read_burst_length);
+            const auto max_write_burst = iface_attrs.find(FunctionArchitecture::iface_max_write_burst_length);
+            if(mode == iface_attrs.end() || mode->second != "m_axi")
+            {
+               continue;
+            }
+            if(max_read_burst != iface_attrs.end())
+            {
+               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                              "---Keeping legacy m_axi reads for bundle " + bundle_name +
+                                  ": explicit read-burst request ignored because experimental-m-axi-burst=0");
+            }
+            if(max_write_burst != iface_attrs.end())
+            {
+               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                              "---Keeping legacy m_axi writes for bundle " + bundle_name +
+                                  ": explicit write-burst request ignored because experimental-m-axi-burst=0");
             }
          }
       }
@@ -2280,7 +2307,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                bool burst_profile_eligible = true;
                std::string burst_fallback_reason;
                const bool burst_requested = burst_enabled && interface_type == "m_axi" &&
-                                            max_read_burst != iface_attrs.end() && !max_read_burst->second.empty();
+                                            max_read_burst != iface_attrs.end();
                if(burst_requested)
                {
                   ParseAXIReadBurstProfile(iface_attrs, bundle_name);
@@ -2317,8 +2344,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                         burst_fallback_reason);
                   }
                }
-               if(burst_enabled && interface_type == "m_axi" && max_read_burst != iface_attrs.end() &&
-                  max_read_burst->second.size() && burst_profile_eligible)
+               if(burst_requested && burst_profile_eligible)
                {
                   bool one_pointer_for_bundle = true;
                   for(const auto& other_arg : fd->list_of_args)

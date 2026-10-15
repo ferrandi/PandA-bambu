@@ -40,6 +40,7 @@ run_write_suite() {
     echo "Bambu does not register '$BURST_PARAMETER'; use an F1b-enabled build" >&2; return 2
   fi
   local fixture="$TESTS/write_compiler_cases/write_cases.cpp"
+  local profile_fixture="$TESTS/write_compiler_cases/write_profile_matrix.cpp"
   local checker="$TESTS/check_write_compiler_artifacts.py"
   local feature=1
   run_case() {
@@ -56,14 +57,16 @@ run_write_suite() {
     if [[ "$expectation" == accepted && $rc -ne 0 ]]; then echo "expected $top accepted, rc=$rc; see $dir" >&2; return 1; fi
     if [[ "$expectation" == invalid && $rc -eq 0 ]]; then echo "expected $top rejected, but it compiled; see $dir" >&2; return 1; fi
     if [[ "$expectation" == fallback && $rc -ne 0 ]]; then echo "expected $top to compile with legacy fallback, rc=$rc; see $dir" >&2; return 1; fi
+    if [[ "$expectation" == legacy && $rc -ne 0 ]]; then echo "expected $top to compile on the legacy path, rc=$rc; see $dir" >&2; return 1; fi
     case "$expectation" in
       accepted) ;;
-      fallback) python3 "$checker" fallback --output "$dir" --reason "$reason" ;;
+      fallback) ;;
       invalid) python3 "$checker" invalid --output "$dir" --reason "$reason" ;;
+      legacy) python3 "$checker" legacy --output "$dir" --bundle data --require-legacy ;;
     esac
   }
-  # Positive artifact contract checks. The runtime bound is checked against the
-  # retained IR, not inferred from successful compilation alone.
+  # Retained IR confirms only that a source-level runtime count exists; it does
+  # not prove the post-InterfaceInfer count bound or qualify runtime behavior.
   run_accepted() {
     local top=$1 tag=$2 count_regex=$3 copy=${4:-0}
     run_case "$top" "$tag" accepted
@@ -71,7 +74,12 @@ run_write_suite() {
     [[ "$copy" == 1 ]] && copy_arg+=(--copy)
     python3 "$checker" accepted --output "$OUT/write/$tag" --count-pattern "$count_regex" "${copy_arg[@]}"
   }
-  run_fallback() { run_case "$1" "$2" fallback "$3" "${4:-1}"; }
+  run_fallback() {
+    local top=$1 tag=$2 reason=$3 feature_value=${4:-1} bundle=${5:-data} direction=${6:-writes}
+    run_case "$top" "$tag" fallback "$reason" "$feature_value"
+    python3 "$checker" fallback --output "$OUT/write/$tag" --reason "$reason" \
+      --bundle "$bundle" --direction "$direction"
+  }
   run_invalid_profile() { run_case "$1" "$2" invalid "$3" 1 "$4"; }
   run_accepted write_count runtime-count '(%?[A-Za-z0-9_.]*n|region\.bound|write_count)'
   run_accepted write_count_seed seeded-runtime-count '(%?[A-Za-z0-9_.]*n|region\.bound|write_count_seed)'
@@ -87,41 +95,76 @@ run_write_suite() {
   run_fallback early_return early-return 'write-burst CFG/SSA/effect recognition failed'
   run_fallback conditional_store conditional-store 'write-burst CFG/SSA/effect recognition failed'
   run_fallback strided_store stride 'write-burst CFG/SSA/effect recognition failed'
-  run_fallback byte_store byte-width '32.bit|width|size'
-  run_fallback halfword_store halfword-width '32.bit|width|size'
-  run_fallback volatile_effect volatile-effect 'volatile|effect|ordering'
-  run_fallback call_effect_before_region opaque-effect 'opaque|effect|ordering|call'
+  run_fallback byte_store byte-width 'data width/alignment is not 32-bit/4-byte'
+  run_fallback halfword_store halfword-width 'data width/alignment is not 32-bit/4-byte'
+  run_fallback volatile_effect volatile-effect 'opaque, volatile, atomic, or unclassified memory effects'
+  run_fallback call_effect_before_region opaque-effect 'opaque, volatile, atomic, or unclassified memory effects'
   run_fallback mixed_recognized_and_unknown whole-bundle-fallback \
-    'Keeping legacy m_axi writes for bundle data: opaque, volatile, atomic, or unclassified memory effects'
-  run_fallback read_write_same_bundle same-bundle-mixed-mode 'mixed.mode|duplex|read/write|read and write|same.bundle'
-  run_fallback read_write_distinct_buffers_same_bundle same-bundle-distinct-buffers-mixed-mode 'mixed.mode|duplex|read/write|read and write|same.bundle'
-  run_fallback cache_write cache-fallback 'cache|unsupported'
-  run_fallback write_count feature-off 'disabled|opt.out|feature' 0
+    'opaque, volatile, atomic, or unclassified memory effects'
+  run_fallback read_write_same_bundle same-bundle-mixed-mode 'bundle contains reads; same-bundle read/write requires duplex support' 1 shared writes
+  run_fallback read_write_distinct_buffers_same_bundle same-bundle-distinct-buffers-mixed-mode 'bundle contains reads; same-bundle read/write requires duplex support' 1 shared writes
+  run_fallback cache_write cache-fallback 'cache-enabled bundle'
+  run_case write_count feature-off fallback 'explicit write-burst request ignored because experimental-m-axi-burst=0' 0
+  python3 "$checker" fallback --output "$OUT/write/feature-off" --bundle output --feature-off \
+    --reason 'explicit write-burst request ignored because experimental-m-axi-burst=0'
+  for profile in write_burst_one write_burst_three_default_fifo write_burst_256; do
+    case "$profile" in
+      write_burst_one) burst=1 ;;
+      write_burst_three_default_fifo) burst=3 ;;
+      write_burst_256) burst=256 ;;
+    esac
+    run_case "$profile" "profile-${burst}" accepted '' 1 "$profile_fixture"
+    python3 "$checker" accepted --output "$OUT/write/profile-${burst}" --expected-write-burst "$burst"
+    if [[ "$profile" == write_burst_three_default_fifo ]]; then
+      python3 "$checker" profile --output "$OUT/write/profile-${burst}" \
+        --expect-engine-parameter B_MAX=3 --expect-engine-parameter MAX_OUTSTANDING=1 \
+        --expect-engine-parameter FIFO_DEPTH=8
+    fi
+  done
+  run_case write_outstanding_one profile-outstanding-1 accepted '' 1 "$profile_fixture"
+  python3 "$checker" accepted --output "$OUT/write/profile-outstanding-1" --expected-write-burst 16
+  run_invalid_profile write_outstanding_sixteen f1-o1-limit \
+    "Configured write bursts for bundle 'data' currently support write_burst_outstanding=1 only" "$profile_fixture"
+  run_invalid_profile write_outstanding_zero invalid-outstanding-zero \
+    'write_burst_outstanding must be an integer in \[1,16\]' "$TESTS/write_compiler_cases/invalid_profiles/write_outstanding_zero.cpp"
+  run_case write_duplicate_equal_profile duplicate-equal-profile accepted '' 1 "$profile_fixture"
+  python3 "$checker" accepted --output "$OUT/write/duplicate-equal-profile" --expected-write-burst 16
+  run_invalid_profile write_burst_257 invalid-burst-257 \
+    'Maximum AXI burst length must be an integer in \[1,256\]' "$TESTS/write_compiler_cases/invalid_profiles/write_burst_257.cpp"
+  run_invalid_profile write_fifo_out_of_range invalid-fifo-4097 \
+    'write_fifo_depth must be a power-of-two integer in \[1,4096\] beats' "$TESTS/write_compiler_cases/invalid_profiles/write_fifo_out_of_range.cpp"
+  run_invalid_profile write_outstanding_without_burst invalid-outstanding-without-burst \
+    "Invalid AXI interface attribute 'max_write_burst_length' for bundle 'data': attribute is required" "$TESTS/write_compiler_cases/invalid_profiles/write_outstanding_without_burst.cpp"
+  run_invalid_profile write_attributes_non_m_axi non-m-axi-profile \
+    "Maximum AXI burst length attributes are only valid for mode=m_axi" \
+    "$TESTS/write_compiler_cases/invalid_profiles/write_attributes_non_m_axi.cpp"
+  run_case scalar_m_axi_without_burst no-burst-feature-off legacy '' 0 \
+    "$TESTS/write_compiler_cases/legacy_m_axi_without_write_burst.cpp"
   run_invalid_profile invalid_write_profile invalid-zero \
-    'max_write_burst_length|range|zero|positive' "$TESTS/write_compiler_cases/invalid_profiles/invalid_write_profile.cpp"
+    'Maximum AXI burst length must be an integer in \[1,256\]' "$TESTS/write_compiler_cases/invalid_profiles/invalid_write_profile.cpp"
   run_invalid_profile outstanding_two_profile f1-o1-limitation \
-    'write_burst_outstanding|outstanding.*1|O=1' "$TESTS/write_compiler_cases/invalid_profiles/outstanding_two_profile.cpp"
+    "Configured write bursts for bundle 'data' currently support write_burst_outstanding=1 only" "$TESTS/write_compiler_cases/invalid_profiles/outstanding_two_profile.cpp"
   run_case valid_write_profile valid-write-profile accepted
   python3 "$checker" accepted --output "$OUT/write/valid-write-profile"
   python3 "$checker" profile --output "$OUT/write/valid-write-profile" \
     --expect-profile-attribute write_burst_outstanding=1 --expect-profile-attribute write_fifo_depth=64
   run_invalid_profile invalid_write_outstanding invalid-outstanding \
-    'write_burst_outstanding.*(range|between|1.*16|\[1,16\])' \
+    'write_burst_outstanding must be an integer in \[1,16\]' \
     "$TESTS/write_compiler_cases/invalid_profiles/invalid_write_outstanding.cpp"
   run_invalid_profile invalid_write_fifo_non_power_two invalid-fifo-not-power-two \
-    'write_fifo_depth.*(power.of.two|power of two)' \
+    'write_fifo_depth must be a power-of-two integer in \[1,4096\] beats' \
     "$TESTS/write_compiler_cases/invalid_profiles/invalid_write_fifo_non_power_two.cpp"
   run_invalid_profile invalid_write_fifo_too_shallow invalid-fifo-below-bmax \
-    'write_fifo_depth.*(at least|greater than or equal|B_MAX|burst length)' \
+    "Invalid AXI interface attribute 'write_fifo_depth' for bundle 'data': must be at least max_write_burst_length" \
     "$TESTS/write_compiler_cases/invalid_profiles/invalid_write_fifo_too_shallow.cpp"
   run_invalid_profile invalid_write_fifo_without_burst invalid-fifo-without-burst \
-    'max_write_burst_length.*attribute is required' \
+    "Invalid AXI interface attribute 'max_write_burst_length' for bundle 'data': attribute is required" \
     "$TESTS/write_compiler_cases/invalid_profiles/invalid_write_fifo_without_burst.cpp"
   run_invalid_profile conflicting_write_burst_profile conflicting-write-profile \
-    'Conflicting max_write_burst_length|conflicting.*write.*burst' \
+    "Conflicting maximum AXI burst length values in interface bundle 'data'" \
     "$TESTS/write_compiler_cases/invalid_profiles/conflicting_write_burst_profile.cpp"
   run_invalid_profile conflicting_write_fifo_profile conflicting-write-fifo-profile \
-    'Conflicting write_fifo_depth values in interface bundle' \
+    "Conflicting write_fifo_depth values in interface bundle 'data'" \
     "$TESTS/write_compiler_cases/invalid_profiles/conflicting_write_fifo_profile.cpp"
 }
 

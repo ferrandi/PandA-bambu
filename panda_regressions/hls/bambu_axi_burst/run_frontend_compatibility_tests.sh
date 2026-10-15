@@ -170,4 +170,34 @@ if rg -qi 'Configured write burst region|Configured read burst regions|THROW_ASS
   "$LEGACY_FIXED/stdout.log" "$LEGACY_FIXED/stderr.log"; then
   echo "feature-off FIXED case unexpectedly configured a burst or hit an internal assertion; see $LEGACY_FIXED" >&2; exit 1
 fi
-echo "FRONTEND COMPATIBILITY PASS: copy/global-read compatibility, volatile fallback, early write preflight, and feature-off legacy"
+
+run_feature_off_case() {
+  local top=$1 source=$2 expected_reason=${3:-}
+  local out="$OUT/feature-off-$top"
+  mkdir -p "$out"
+  if ! (cd "$out" && "$BAMBU" "$source" --top-fname="$top" --compiler=I386_CLANG16 \
+      --generate-interface=INFER --device-name=xcu250,-2L,figd2104 --AXI-burst-type=FIXED \
+      --bambu-parameter=experimental-m-axi-burst=0 --no-clean \
+      --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU >stdout.log 2>stderr.log); then
+    echo "$top feature-off legacy case failed; see $out" >&2; exit 1
+  fi
+  if [[ -n "$expected_reason" ]]; then
+    rg -Fq "$expected_reason" "$out/stdout.log" "$out/stderr.log" || {
+      echo "$top lacks its direction-specific feature-off diagnostic; see $out" >&2; exit 1;
+    }
+  elif rg -q 'explicit (read|write)-burst request ignored because experimental-m-axi-burst=0' \
+      "$out/stdout.log" "$out/stderr.log"; then
+    echo "$top emitted a feature-off burst diagnostic without a request; see $out" >&2; exit 1
+  fi
+  if rg -q 'Configured (read|write) burst regions?|MinimalAXI4MasterPipelined|THROW_ASSERT|assertion failed' "$out"; then
+    echo "$top feature-off case configured burst RTL or hit an internal assertion; see $out" >&2; exit 1
+  fi
+}
+
+run_feature_off_case read_with_ordinary_global "$SOURCE" \
+  "Keeping legacy m_axi reads for bundle data: explicit read-burst request ignored because experimental-m-axi-burst=0"
+run_feature_off_case write_only "$SOURCE" \
+  "Keeping legacy m_axi writes for bundle output: explicit write-burst request ignored because experimental-m-axi-burst=0"
+run_feature_off_case scalar_m_axi_without_burst \
+  "$TESTS/write_compiler_cases/legacy_m_axi_without_write_burst.cpp"
+echo "FRONTEND COMPATIBILITY PASS: copy/global-read compatibility, volatile fallback, early write preflight, and symmetric feature-off legacy"
