@@ -17,7 +17,7 @@ ROOT = HERE.parents[3]
 if not (ROOT / "panda_regressions").is_dir():
     raise RuntimeError(f"unexpected T4B harness root: {ROOT}")
 FIXTURES = {
-    "sum": (ROOT / "panda_regressions/hls/tapa/04-memory-access/kernel.cpp", "kernel"),
+    "sum": (HERE / "fixtures/sum_read_kernel.cpp", "kernel"),
     "independent": (HERE / "fixtures/first_read_independent_work.cpp", "first_read_independent_work"),
     "mulxor": (HERE / "fixtures/first_read_mulxor_work.cpp", "first_read_mulxor_work"),
 }

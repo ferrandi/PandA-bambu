@@ -438,7 +438,8 @@ class HLSPragmaHandler : public PragmaHandler
                attr_val = "";
                const auto attr_id = to_lower(PP.getSpelling(Tok));
                const auto is_axi_profile_attr = attr_id == "num_read_outstanding" || attr_id == "read_fifo_depth" ||
-                                                attr_id == "latency";
+                                                attr_id == "write_burst_outstanding" ||
+                                                attr_id == "write_fifo_depth" || attr_id == "latency";
                const auto attr_loc = Tok.getLocation();
 
                PP.Lex(Tok);
@@ -1565,7 +1566,6 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
       parm_attrs.insert(*portName);
       parm_attrs[key_loc_t("index", SourceLocation())] = std::to_string(parmIndex);
       parm_attrs[key_loc_t("bundle", SourceLocation())] = ifaceBundle;
-
       auto& bundle_attrs = func_attrs.ifaces.bundles[ifaceBundle];
       bundle_attrs[key_loc_t("name", SourceLocation())] = ifaceBundle;
       const auto burst_mode = p.attrs.find(key_loc_t("mode", SourceLocation()));
@@ -1658,9 +1658,56 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          }
          bundle_attrs.emplace(key_loc_t(profile_attr, attr_key.loc), normalized_value);
       };
+      const auto process_write_profile_attr = [&](const key_loc_t& attr_key, const std::string& attr_value) {
+         const auto profile_attr = to_lower(attr_key.id);
+         if(burst_mode == p.attrs.end() || burst_mode->second != "m_axi")
+         {
+            ReportError(attr_key.loc,
+                        "AXI write profile attributes write_burst_outstanding and write_fifo_depth are only valid for mode=m_axi");
+            return;
+         }
+         const auto valid_integer = !attr_value.empty() &&
+                                    std::all_of(attr_value.begin(), attr_value.end(),
+                                                [](unsigned char c) { return std::isdigit(c); });
+         if(!valid_integer)
+         {
+            ReportError(attr_key.loc, profile_attr + " must be a decimal integer in its supported range");
+            return;
+         }
+         unsigned int value = 0;
+         const unsigned int limit = profile_attr == "write_burst_outstanding" ? 16U : 4096U;
+         for(const auto digit : attr_value)
+         {
+            value = std::min(limit + 1U, value * 10U + static_cast<unsigned int>(digit - '0'));
+         }
+         const bool valid_value = profile_attr == "write_burst_outstanding" ? value >= 1U && value <= 16U :
+                                  value >= 1U && value <= 4096U && (value & (value - 1U)) == 0U;
+         if(!valid_value)
+         {
+            ReportError(attr_key.loc, profile_attr + (profile_attr == "write_burst_outstanding" ?
+                           " must be an integer in [1,16]" : " must be a power-of-two integer in [1,4096] beats"));
+            return;
+         }
+
+         const auto normalized_value = std::to_string(value);
+         const auto previous = std::find_if(bundle_attrs.begin(), bundle_attrs.end(), [&](const auto& entry) {
+            return iequals(entry.first.id, profile_attr.c_str());
+         });
+         if(previous != bundle_attrs.end())
+         {
+            if(previous->second != normalized_value)
+            {
+               ReportError(attr_key.loc,
+                           "Conflicting " + profile_attr + " values in interface bundle '" + ifaceBundle + "'");
+            }
+            return;
+         }
+         bundle_attrs.emplace(key_loc_t(profile_attr, attr_key.loc), normalized_value);
+      };
       for(auto& attr : p.attrs)
       {
          if(iequals(attr.first.id, "num_read_outstanding") || iequals(attr.first.id, "read_fifo_depth") ||
+            iequals(attr.first.id, "write_burst_outstanding") || iequals(attr.first.id, "write_fifo_depth") ||
             iequals(attr.first.id, "latency"))
          {
             // These attributes are validated below from the occurrence-preserving list.
@@ -1734,7 +1781,15 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          }
          else
          {
-            process_read_profile_attr(attr.first, attr.second);
+            const auto profile_attr = to_lower(attr.first.id);
+            if(profile_attr == "write_burst_outstanding" || profile_attr == "write_fifo_depth")
+            {
+               process_write_profile_attr(attr.first, attr.second);
+            }
+            else
+            {
+               process_read_profile_attr(attr.first, attr.second);
+            }
          }
       }
       if(burst_mode != p.attrs.end() && burst_mode->second == "m_axi" && !has_explicit_latency)

@@ -77,6 +77,12 @@ namespace
       target_module->set_copyright(source_module->get_copyright());
       target_module->set_authors(source_module->get_authors());
       target_module->set_license(source_module->get_license());
+      const auto burst_mode_attribute = std::string("bambu_axi_burst_mode");
+      const auto& source_attributes = source_module->get_attribute_list();
+      if(std::find(source_attributes.begin(), source_attributes.end(), burst_mode_attribute) != source_attributes.end())
+      {
+         target_module->add_attribute(burst_mode_attribute, source_module->get_attribute(burst_mode_attribute));
+      }
       for(const auto& module_parameter : source_module->GetParameters())
       {
          target_module->AddParameter(module_parameter.first,
