@@ -29,6 +29,12 @@ fi
 if [[ -e "$3" || -L "$3" ]]; then
   echo "output directory must not already exist: $3" >&2; exit 2
 fi
+# Parallelism is a launcher decision, not a script policy: any positive value is
+# accepted. The default follows the machine, capped at 16.
+DEFAULT_SIM_JOBS=$(nproc 2>/dev/null || echo 4)
+if ((DEFAULT_SIM_JOBS > 16)); then DEFAULT_SIM_JOBS=16; fi
+SIM_JOBS=${SIM_JOBS:-$DEFAULT_SIM_JOBS}
+[[ "$SIM_JOBS" =~ ^[1-9][0-9]*$ ]] || { echo "SIM_JOBS must be a positive integer" >&2; exit 2; }
 TASK_OUT=$(realpath -m "$3")
 mkdir -p "$TASK_OUT"
 mkdir -p "$TASK_OUT/tmp"
@@ -95,7 +101,7 @@ compile_and_run() {
   local name=$1 source_rtl=$2 source_lib=$3 args=${4:-}
   local obj="$TASK_OUT/$name/obj_dir"
   mkdir -p "$(dirname "$obj")"
-  verilator --binary -j "${SIM_JOBS:-4}" --timing --top-module tb_generated_wrapper_rid -Wno-fatal \
+  verilator --binary -j "$SIM_JOBS" --timing --top-module tb_generated_wrapper_rid -Wno-fatal \
     --Mdir "$obj" "$source_rtl" "$source_lib" "$TB" \
     >"$TASK_OUT/$name-build.log" 2>&1 || {
       tail -n 80 "$TASK_OUT/$name-build.log" >&2

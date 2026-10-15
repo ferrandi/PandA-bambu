@@ -486,6 +486,7 @@ void ir_node_dup::operator()(const unary_node* obj, unsigned int& mask)
    THROW_ASSERT(obj == curr_ir_node_ptr, "wrong factory setup");
    ir_node_mask::operator()(obj, mask);
    SET_NODE_ID(op, unary_node);
+   SET_VALUE(ordinary_memory_access, unary_node);
 }
 
 void ir_node_dup::operator()(const binary_node* obj, unsigned int& mask)

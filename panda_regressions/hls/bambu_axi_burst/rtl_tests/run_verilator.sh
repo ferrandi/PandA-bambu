@@ -10,6 +10,14 @@ if (($# != 1)); then echo "usage: $0 fresh-output-directory" >&2; exit 2; fi
 if [[ -e "$1" || -L "$1" ]]; then
     echo "output directory must not already exist: $1" >&2; exit 2
 fi
+# Parallelism is a launcher decision, not a script policy: any positive value is
+# accepted. The default follows the machine, capped at 16.
+DEFAULT_SIM_JOBS=$(nproc 2>/dev/null || echo 4)
+if ((DEFAULT_SIM_JOBS > 16)); then DEFAULT_SIM_JOBS=16; fi
+SIM_JOBS=${SIM_JOBS:-$DEFAULT_SIM_JOBS}
+if [[ ! $SIM_JOBS =~ ^[1-9][0-9]*$ ]]; then
+    echo "SIM_JOBS must be a positive integer, got: $SIM_JOBS" >&2; exit 2
+fi
 TASK_OUT=$(realpath -m "$1")
 mkdir -p "$TASK_OUT"
 mkdir -p "$TASK_OUT/tmp"
@@ -128,10 +136,6 @@ echo "All generated RTL, logs, and build products: $TASK_OUT"
 
 # Verilator can build and run simulations concurrently. SIM_JOBS bounds both:
 # -j for the model build, and the number of scenario processes in flight.
-SIM_JOBS=${SIM_JOBS:-4}
-if [[ ! $SIM_JOBS =~ ^[1-9][0-9]*$ ]]; then
-    echo "SIM_JOBS must be a positive integer, got: $SIM_JOBS" >&2; exit 2
-fi
 
 wait_scenario_batch() {
     local -n pids_ref=$1

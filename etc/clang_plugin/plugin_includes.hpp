@@ -488,7 +488,8 @@ namespace llvm
          const void* op1;
          const void* op2;
          const void* op3;
-         ir_node() : tc(), type(nullptr), op1(nullptr), op2(nullptr), op3(nullptr)
+         bool ordinary_memory_access;
+         ir_node() : tc(), type(nullptr), op1(nullptr), op2(nullptr), op3(nullptr), ordinary_memory_access(false)
          {
          }
       };

@@ -61,7 +61,8 @@ class SimulationInformation;
        iface_register)(iface_cache_ways)(iface_cache_line_count)(iface_cache_line_size)(                           \
        iface_cache_num_write_outstanding)(iface_cache_rep_policy)(iface_cache_bus_size)(iface_cache_write_policy)( \
        iface_cache_word_size)(iface_bank_number)(iface_chunk_size)(iface_max_read_burst_length)(                 \
-       iface_max_write_burst_length)(iface_burst_enabled)(iface_num_read_outstanding)(iface_read_fifo_depth)(iface_latency)
+       iface_max_write_burst_length)(iface_burst_enabled)(iface_num_read_outstanding)(iface_read_fifo_depth)( \
+       iface_write_burst_outstanding)(iface_write_fifo_depth)(iface_latency)
 
 REF_FORWARD_DECL(FunctionArchitecture);
 
@@ -101,8 +102,17 @@ struct AXIReadBurstProfile
    unsigned int fifo_depth = 256;
 };
 
+struct AXIWriteBurstProfile
+{
+   unsigned int max_burst_length = 0;
+   unsigned int max_outstanding = 1;
+   unsigned int fifo_depth = 0;
+};
+
 AXIReadBurstProfile ParseAXIReadBurstProfile(const FunctionArchitecture::iface_attrs& iface_attrs,
                                              const std::string& bundle_name);
+AXIWriteBurstProfile ParseAXIWriteBurstProfile(const FunctionArchitecture::iface_attrs& iface_attrs,
+                                               const std::string& bundle_name);
 std::uint32_t ParseAXIInterfaceLatency(const FunctionArchitecture::iface_attrs& iface_attrs,
                                       const std::string& bundle_name);
 
