@@ -35,6 +35,12 @@ OUT=$2
 if [[ -e "$OUT" || -L "$OUT" ]]; then
   echo "output directory must not already exist: $OUT" >&2; exit 2
 fi
+# Parallelism is a launcher decision, not a script policy: any positive value is
+# accepted. The default follows the machine, capped at 16.
+DEFAULT_SIM_JOBS=$(nproc 2>/dev/null || echo 4)
+if ((DEFAULT_SIM_JOBS > 16)); then DEFAULT_SIM_JOBS=16; fi
+SIM_JOBS=${SIM_JOBS:-$DEFAULT_SIM_JOBS}
+[[ "$SIM_JOBS" =~ ^[1-9][0-9]*$ ]] || { echo "SIM_JOBS must be a positive integer" >&2; exit 2; }
 OUT=$(realpath -m "$OUT")
 mkdir -p "$OUT"
 mkdir -p "$OUT/tmp" "$OUT/generated"
@@ -106,7 +112,7 @@ rg -q 'src_bambu_artificial_ParmMgr_modgen_16_i0 \(' "$RTL" &&
 sha256sum "$RTL" "$LIB" >>"$OUT/provenance.txt"
 
 OBJ="$OUT/verilator_obj"
-if ! verilator --binary -j "${SIM_JOBS:-4}" --timing --public-flat-rw --top-module tb_generated_kernel -Wno-fatal \
+if ! verilator --binary -j "$SIM_JOBS" --timing --public-flat-rw --top-module tb_generated_kernel -Wno-fatal \
     --Mdir "$OBJ" "$RTL" "$LIB" "$TB" >"$OUT/verilator-build.log" 2>&1; then
   tail -n 120 "$OUT/verilator-build.log" >&2
   echo "Verilator compile failed; see $OUT/verilator-build.log" >&2

@@ -8,8 +8,9 @@ EXTRACTOR="$SCRIPT_DIR/extract_write_engine.py"
 TB="$SCRIPT_DIR/tb_write_burst_engine.sv"
 XML="$ROOT/etc/libtech/NC_AXI_IPs.xml"
 
-if (($# != 1)); then
-    echo "usage: $0 fresh-output-directory-under-documentation/tmp" >&2
+if (($# > 1)); then
+    echo "usage: $0 [fresh-output-directory]" >&2
+    echo "  default: ./out_write_burst_engine, created in the directory the script is launched from" >&2
     exit 2
 fi
 if [[ ${BURST_WRITER_SIM_OUTSIDE_SANDBOX:-} != 1 ]]; then
@@ -20,15 +21,21 @@ if ! command -v verilator >/dev/null 2>&1; then
     echo "verilator is required" >&2
     exit 2
 fi
-OUT_PARENT=$(realpath -m "$(dirname "$1")")
-TASK_OUT=$(realpath -m "$1")
-TMP_ROOT=$(realpath -m "$ROOT/documentation/tmp")
-case "$TASK_OUT/" in
-    "$TMP_ROOT"/*/) ;;
-    *) echo "output directory must be below $TMP_ROOT" >&2; exit 2 ;;
-esac
-if [[ "$TASK_OUT" == "$TMP_ROOT" || -e "$TASK_OUT" || -e "$1" || -L "$1" ]]; then
-    echo "output directory must be fresh and must not be a symlink: $1" >&2
+# Parallelism is a decision of whoever launches the regression, not a policy of
+# the script: any positive value is accepted. The default follows the machine,
+# capped at 16 because that already saturates the reference machine.
+DEFAULT_SIM_JOBS=$(nproc 2>/dev/null || echo 4)
+if ((DEFAULT_SIM_JOBS > 16)); then DEFAULT_SIM_JOBS=16; fi
+SIM_JOBS=${SIM_JOBS:-$DEFAULT_SIM_JOBS}
+if [[ ! $SIM_JOBS =~ ^[1-9][0-9]*$ ]]; then
+    echo "SIM_JOBS must be a positive integer" >&2
+    exit 2
+fi
+OUT_ARG=${1:-out_write_burst_engine}
+OUT_PARENT=$(realpath -m -- "$(dirname "$OUT_ARG")")
+TASK_OUT=$(realpath -m -- "$OUT_ARG")
+if [[ -e "$TASK_OUT" || -e "$OUT_ARG" || -L "$OUT_ARG" ]]; then
+    echo "output directory must be fresh and must not be a symlink: $OUT_ARG" >&2
     exit 2
 fi
 mkdir -p "$OUT_PARENT"
@@ -48,12 +55,6 @@ python3 -B "$EXTRACTOR" --xml "$XML" --out "$TASK_OUT/MinimalAXI4MasterPipelined
     printf 'git_head='; git -C "$ROOT" rev-parse HEAD
     printf 'outside_sandbox_flag=%s\n' "$BURST_WRITER_SIM_OUTSIDE_SANDBOX"
 } > "$TASK_OUT/provenance.txt"
-
-SIM_JOBS=${SIM_JOBS:-4}
-if [[ ! $SIM_JOBS =~ ^[1-9][0-9]*$ ]]; then
-    echo "SIM_JOBS must be a positive integer" >&2
-    exit 2
-fi
 
 build_run() {
     local label=$1 burst=$2 depth=$3 addr=$4 test_case=$5

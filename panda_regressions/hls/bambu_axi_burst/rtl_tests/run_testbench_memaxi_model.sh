@@ -6,26 +6,22 @@ ROOT=$(realpath "$SCRIPT_DIR/../../../../")
 T4B_TESTS="$ROOT/panda_regressions/hls/bambu_axi_burst/t4b_tests"
 
 usage() {
-    echo "usage: $0 characterize|qualify fresh-output-directory" >&2
+    echo "usage: $0 characterize|qualify [fresh-output-directory]" >&2
+    echo "  default: ./out_memaxi_model_<mode>, created in the directory the script is launched from" >&2
     exit 2
 }
 
-[[ $# == 2 ]] || usage
+[[ $# == 1 || $# == 2 ]] || usage
 MODE=$1
-OUT_ARG=$2
 [[ $MODE == characterize || $MODE == qualify ]] || usage
+OUT_ARG=${2:-out_memaxi_model_$MODE}
 [[ ! -L $OUT_ARG ]] || { echo "refusing symlink output path: $OUT_ARG" >&2; exit 2; }
 OUT=$(realpath -m -- "$OUT_ARG")
-case "$OUT" in
-    "$ROOT/documentation/tmp/axi-write/F0/"*|"$ROOT/documentation/tmp/axi-write/F0b/"*) ;;
-    *) echo "output must be below documentation/tmp/axi-write/F0 or F0b" >&2; exit 2 ;;
-esac
 [[ ! -e $OUT ]] || { echo "refusing to reuse output directory: $OUT" >&2; exit 2; }
 [[ ${BURST_MODELSIM_OUTSIDE_SANDBOX:-0} == 1 ]] || {
     echo "refusing ModelSim execution without BURST_MODELSIM_OUTSIDE_SANDBOX=1; invoke this command outside the sandbox" >&2
     exit 2
 }
-mkdir -p "$ROOT/documentation/tmp/axi-write"
 mkdir "$OUT"
 mkdir -p "$OUT/tmp" "$OUT/hdl" "$OUT/logs"
 export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp"
