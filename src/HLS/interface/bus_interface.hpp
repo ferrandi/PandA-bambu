@@ -93,11 +93,13 @@ class bus_interface : public module_interface
    void create_noc_memory_mapping_unit(const structural_objectRef noc_module, const structural_objectRef wrappedObj,
                                        const structural_managerRef SM);
 
-   void create_iob_caches(const structural_objectRef noc_module, const structural_objectRef wrappedObj,
+   void create_iob_caches(const structural_objectRef input_module, const structural_objectRef wrappedObj,
                           const structural_managerRef SM);
 
-   void create_axi_adapter(const structural_objectRef noc_module, const structural_objectRef wrappedObj,
+   void create_axi_adapter(const structural_objectRef input_module, const structural_objectRef wrappedObj,
                            const structural_managerRef SM);
+
+   void resize_axi_port(const structural_objectRef sourceObj, const structural_managerRef SM);
 
    void add_profiling_modules(const structural_managerRef SM);
 

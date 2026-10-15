@@ -37,6 +37,7 @@
 #include "dbgPrintHelper.hpp"
 #include "refcount.hpp"
 
+#include <cstdint>
 #include <filesystem>
 #include <iosfwd>
 #include <vector>
@@ -175,7 +176,7 @@ class CompilerWrapper
     * @param costTable is the cost table description forwarded to the frontend flow
     */
    void CompileFile(std::string& input_filename, const std::string& output_file, const std::string& parameters_line,
-                    passesType passes, int cm, const std::string& costTable);
+                    passesType passes, int64_t cm, const std::string& costTable);
 
    std::string GetAnalyzeCompiler() const;
 

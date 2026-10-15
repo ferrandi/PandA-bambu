@@ -33,6 +33,7 @@
 #include "Parameter.hpp"
 #include "SchedulingStep.hpp"
 #include "TopEntityMemoryMapped.hpp"
+#include "TopEntityOmpTaskGraph.hpp"
 #include "WB4Intercon_interface.hpp"
 #include "WB4_interface.hpp"
 #include "add_library.hpp"
@@ -287,7 +288,15 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
       }
       case HLSFlowStep_Type::TOP_ENTITY_CREATION:
       {
-         design_flow_step = DesignFlowStepRef(new top_entity(parameters, HLS_mgr, funId, design_flow_manager));
+         const bool isOpenmp = parameters->isOption(OPT_openmp) && parameters->getOption<bool>(OPT_openmp);
+         const bool use_task_graph =
+             parameters->IsParameter("enable-task") && parameters->GetParameter<int>("enable-task") == 1;
+         const FunctionBehaviorConstRef FB = HLS_mgr->CGetFunctionBehavior(funId);
+         const std::string function_name = FB->CGetBehavioralHelper()->GetFunctionName();
+         design_flow_step =
+             DesignFlowStepRef(isOpenmp && use_task_graph && function_name.find("task_graph") != std::string::npos ?
+                                   new TopEntityOmpTaskGraph(parameters, HLS_mgr, funId, design_flow_manager) :
+                                   new top_entity(parameters, HLS_mgr, funId, design_flow_manager));
          break;
       }
       case HLSFlowStep_Type::TOP_ENTITY_OMP_CS_CREATION:
