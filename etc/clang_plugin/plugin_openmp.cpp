@@ -1694,7 +1694,7 @@ namespace llvm
 #endif
    {
       static char ID;
-
+      static const std::string openMpTaskEntryPointName;
       openmpBambu() : ModulePass(ID)
       {
          initializeLoopPassPass(*PassRegistry::getPassRegistry());
@@ -1729,9 +1729,33 @@ namespace llvm
          return declname;
       }
 
+      bool hasOpenMpTaskCalls(Module const& M)
+      {
+         for(auto const& F : M.getFunctionList())
+         {
+            auto const& fnName = F.getName();
+            if(fnName.find(openMpTaskEntryPointName) != std::string::npos)
+            {
+               return true;
+            }
+         }
+         return false;
+      }
+
       bool exec(Module& M)
       {
          bool changed = false;
+         const auto isTaskGraph = hasOpenMpTaskCalls(M);
+         if(isTaskGraph)
+         {
+#if PANDA_LLVM_CLANG_MAJOR == 19
+            LLVM_DEBUG(llvm::dbgs() << "Task graph application. Skipping OpenMP parallel for plugin\n");
+            return changed;
+#else
+            assert(false && "OpenMP task are supported with clang19 frontend");
+#endif
+         }
+
          auto default_nt = llvm::ConstantInt::get(M.getContext(), llvm::APInt(32, dflt_nthreads));
          std::set<Function*> ompOutlinedList;
          std::map<Function*, std::set<uint64_t>> argToPromote;
@@ -1799,6 +1823,7 @@ namespace llvm
    };
 
    char openmpBambu::ID = 0;
+   const std::string openmpBambu::openMpTaskEntryPointName = "task_graph";
 
 } // namespace llvm
 

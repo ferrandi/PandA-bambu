@@ -48,6 +48,7 @@
 #include "ir_manipulation.hpp"
 #include "ir_node.hpp"
 #include "library_manager.hpp"
+#include "memory_allocation.hpp"
 #include "op_graph.hpp"
 #include "string_manipulation.hpp"
 #include "structural_manager.hpp"
@@ -147,6 +148,18 @@ DesignFlowStep_Status OMPCGExt::InternalExec()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Generated fork call lowering not needed");
       return DesignFlowStep_Status::UNCHANGED;
+   }
+
+   const bool use_tasks = parameters->IsParameter("enable-task") && parameters->GetParameter<int>("enable-task") == 1;
+   const auto task_entry_name = function_behavior->CGetBehavioralHelper()->GetFunctionName();
+   if(use_tasks && task_entry_name.find("omp_task_entry") != std::string::npos && !function_behavior->GetOMPInfo())
+   {
+      // A task entry owns an independent call graph, just like an outlined
+      // OpenMP core. OMPLowering clones callees and propagates this context,
+      // including single-channel memory allocation, to arbitrary depth.
+      const auto task_info = std::make_shared<OMPInfo>(function_id, 1U, 0U, 1U, function_id, nullptr, 1U);
+      SetSimpleMemFunction(function_id, task_info);
+      function_behavior->SetOMPCore(true);
    }
 
    const auto omp_info = function_behavior->GetOMPInfo();
@@ -263,6 +276,7 @@ DesignFlowStep_Status OMPCGExt::InternalExec()
          }
       }
    }
+
    if(modified)
    {
       AppM->GetFunctionBehavior(function_id)->UpdateBBVersion();
@@ -676,8 +690,8 @@ void OMPCGExt::SetSimpleMemFunction(const unsigned int fid, OMPInfoRef omp_info)
       FB = AppM->GetFunctionBehavior(fid);
    }
    FB->SetChannelsNumber(1);
-   FB->SetChannelsType(static_cast<MemoryAllocation_ChannelsType>(0));
-   FB->SetMemoryAllocationPolicy(static_cast<MemoryAllocation_Policy>(3));
+   FB->SetChannelsType(MemoryAllocation_ChannelsType::MEM_ACC_11);
+   FB->SetMemoryAllocationPolicy(MemoryAllocation_Policy::GLSS);
    if(omp_info)
    {
       FB->SetOMPInfo(omp_info);
@@ -690,6 +704,7 @@ ir_nodeRef OMPCGExt::CloneFunction(const ir_nodeRef& base_fnode, const OMPInfoRe
 {
    const auto suffix = OMPProcSuffix(omp_info->global_idx);
    auto clone_fnode = TM->GetFunction(ir_helper::GetFunctionName(base_fnode) + suffix);
+   const bool new_clone = !clone_fnode;
    if(!clone_fnode)
    {
       clone_fnode = ir_man->CloneFunction(base_fnode, suffix);
@@ -705,6 +720,14 @@ ir_nodeRef OMPCGExt::CloneFunction(const ir_nodeRef& base_fnode, const OMPInfoRe
       }
    }
    SetSimpleMemFunction(clone_fnode->index, omp_info);
+   if(new_clone && GetPointerS<const function_val_node>(clone_fnode)->body)
+   {
+      // SetSimpleMemFunction registers the vertex before its first call point.
+      // addCallPointAndExpand therefore cannot discover the cloned body's edges.
+      // Populate them now, using the new statement IDs, before lowering callees.
+      CustomUnorderedSet<unsigned int> visited{clone_fnode->index};
+      CallGraphManager::expandCallGraphFromFunction(visited, AppM, clone_fnode->index, debug_level);
+   }
    return clone_fnode;
 }
 
@@ -767,6 +790,7 @@ void OMPCGExt::CloneFU(const std::string& fu_name, const std::string& clone_name
    const auto TechM = HLS_D->get_technology_manager();
    std::string fu_lib;
    const auto base_node = TechM->get_fu(fu_name, &fu_lib);
+   THROW_ASSERT(base_node, "Missing functional unit for OpenMP callee " + fu_name);
    THROW_ASSERT(base_node->get_kind() == functional_unit_K, "Functional unit is not a functional unit");
    const auto base_fu = GetPointerS<const functional_unit>(base_node);
    const auto clone_node = TechM->add_resource(fu_lib, clone_name, base_fu->CM);

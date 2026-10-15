@@ -12,6 +12,11 @@ set(COMPILER_SSA_PLUGIN "dumpBambuIrSSA")
 set(COMPILER_SSA_PLUGINCPP "dumpBambuIrSSACpp")
 set(COMPILER_TOPFNAME_PLUGIN "topfname")
 set(COMPILER_EXPANDMEMOPS_PLUGIN "expandMemOps")
+set(COMPILER_OPENMP_TASK_PLUGIN "openmpTask")
+set(COMPILER_ADD_FULL_UNROLL_META_PLUGIN "addFullUnrollMetadata")
+set(COMPILER_DCE_PLUGIN "deadCodeElimination")
+set(COMPILER_OPENMP_ARGUMENT_SIMPLIFY_PLUGIN "openmpTaskdeadArgAndOutlinedSimplify")
+set(COMPILER_DEDUPLICATE_LOAD_INST_PLUGIN "deduplicateLoadInst")
 set(COMPILER_OPENMP_PLUGIN "openmpBambu")
 set(COMPILER_ASTANALYZER_PLUGIN "ASTAnalyzer")
 set(COMPILER_CHANNELCTOR_PLUGIN "channelCtorCleanup")
@@ -256,6 +261,20 @@ function(_panda_add_clang_plugins ver)
    _panda_make_plugin(clang_plugin_${ver}_opt_ast          "opt_${COMPILER_ASTANALYZER_PLUGIN}"   0 "${_src_base}/plugin_ASTAnalyzer.cpp")
    _panda_make_plugin(clang_plugin_${ver}_opt_channelctor  "opt_${COMPILER_CHANNELCTOR_PLUGIN}" 0 "${_src_base}/plugin_channelCtorCleanup.cpp")
 
+   # Task extraction relies on the LLVM 19 pass API.
+   if(ver GREATER_EQUAL 19)
+      _panda_make_plugin(clang_plugin_${ver}_openmp_task "${COMPILER_OPENMP_TASK_PLUGIN}" 1 "${_src_base}/TaskCallGraphPass.cpp")
+      _panda_make_plugin(clang_plugin_${ver}_opt_openmp_task "opt_${COMPILER_OPENMP_TASK_PLUGIN}" 0 "${_src_base}/TaskCallGraphPass.cpp")
+      _panda_make_plugin(clang_plugin_${ver}_add_full_unroll_meta "${COMPILER_ADD_FULL_UNROLL_META_PLUGIN}" 1 "${_src_base}/AddFullUnrollMetadataPass.cpp")
+      _panda_make_plugin(clang_plugin_${ver}_opt_add_full_unroll_meta "opt_${COMPILER_ADD_FULL_UNROLL_META_PLUGIN}" 0 "${_src_base}/AddFullUnrollMetadataPass.cpp")
+      _panda_make_plugin(clang_plugin_${ver}_dce "${COMPILER_DCE_PLUGIN}" 1 "${_src_base}/DcePass.cpp")
+      _panda_make_plugin(clang_plugin_${ver}_opt_dce "opt_${COMPILER_DCE_PLUGIN}" 0 "${_src_base}/DcePass.cpp")
+      _panda_make_plugin(clang_plugin_${ver}_openmp_argument_simplify "${COMPILER_OPENMP_ARGUMENT_SIMPLIFY_PLUGIN}" 1 "${_src_base}/DeadArgAndSimplifyPass.cpp")
+      _panda_make_plugin(clang_plugin_${ver}_opt_openmp_argument_simplify "opt_${COMPILER_OPENMP_ARGUMENT_SIMPLIFY_PLUGIN}" 0 "${_src_base}/DeadArgAndSimplifyPass.cpp")
+      _panda_make_plugin(clang_plugin_${ver}_deduplicate_load_inst "${COMPILER_DEDUPLICATE_LOAD_INST_PLUGIN}" 1 "${_src_base}/DeduplicateLoadPass.cpp")
+      _panda_make_plugin(clang_plugin_${ver}_opt_deduplicate_load_inst "opt_${COMPILER_DEDUPLICATE_LOAD_INST_PLUGIN}" 0 "${_src_base}/DeduplicateLoadPass.cpp")
+   endif()
+
    # Test seam classification and cross-iteration AA with each detected LLVM.
    if(_test_llvmconfig)
       execute_process(COMMAND "${_test_llvmconfig}" --libs support core asmparser analysis --system-libs
@@ -336,6 +355,15 @@ function(_panda_add_clang_plugins ver)
       )
    endif()
 
+   if(ver GREATER_EQUAL 19)
+      list(APPEND _all_plugins
+         clang_plugin_${ver}_openmp_task clang_plugin_${ver}_opt_openmp_task
+         clang_plugin_${ver}_add_full_unroll_meta clang_plugin_${ver}_opt_add_full_unroll_meta
+         clang_plugin_${ver}_dce clang_plugin_${ver}_opt_dce
+         clang_plugin_${ver}_openmp_argument_simplify clang_plugin_${ver}_opt_openmp_argument_simplify
+         clang_plugin_${ver}_deduplicate_load_inst clang_plugin_${ver}_opt_deduplicate_load_inst
+      )
+   endif()
    if(_all_plugins)
       install(TARGETS ${_all_plugins}
               LIBRARY DESTINATION "${PANDA_LIB_INSTALLDIR_REL}/${_plugin_dir}")

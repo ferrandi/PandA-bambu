@@ -82,6 +82,15 @@ do
    cp -a "${case_dir}" "${case_copy}"
    printf '%s\n' "${rel_case}" >> "${manifest}"
    copy_external_log_refs "${case_copy}"
+   # Expose the failure even when the full package is on private storage.
+   printf '::group::Failure details: %s\n' "${rel_case}"
+   tail -n 100 "${marker}" || true
+   while IFS= read -r -d '' log_file
+   do
+      printf '\n--- %s ---\n' "${log_file#${case_copy}/}"
+      tail -n 60 "${log_file}" || true
+   done < <(find "${case_copy}" -type f \( -name simulation.log -o -name launch.log -o -name transcript \) -print0)
+   printf '::endgroup::\n'
    found=1
 done < <(
    find . \

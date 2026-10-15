@@ -20,6 +20,15 @@ do
 done
 
 OPT_FLAGS="-O5"
+# The Intel FPGA Starter Edition does not accept -O5.
+# Concurrent Starter simulations can fail on the periodic license lock-file check.
+case "$(vsim -version 2>&1)" in
+  *"STARTER EDITION"*)
+    OPT_FLAGS=""
+    exec {MODELSIM_LOCK_FD}> "${TMPDIR:-/tmp}/bambu-modelsim-starter-${UID}.lock"
+    flock "${MODELSIM_LOCK_FD}"
+    ;;
+esac
 
 SV_FLAGS="${VFLAGS} ${OPT_FLAGS}"
 if $(bambu_results /application/backend@assert) ; then

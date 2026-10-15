@@ -1,0 +1,23 @@
+# Some test skips bambu verification to due floating point differences
+
+src/sparseLUFact/kernel.cpp                  -DBANK_NUMBER=8 -DBANK_CHUNK_SIZE=4 --channels-type=MEM_ACC_NN -DMAT_SIZE=6 -DBLOCK_SIZE=4 --channels-number=4 -DBAMBU_SKIP_VERIFICATION --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/sparseLUFact/tb.cpp --benchmark-name=sparseLUFactStackBanked
+
+src/sparseLUFact/kernel.cpp                  -DBANK_NUMBER=8 -DBANK_CHUNK_SIZE=4 --channels-type=MEM_ACC_NN -DMAT_SIZE=6 -DBLOCK_SIZE=4 --channels-number=8 -DBAMBU_SKIP_VERIFICATION --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/sparseLUFact/tb.cpp --bambu-parameter=task-resource-duplication=2 --benchmark-name=sparseLUFactStackBanked_2FU
+
+src/sparseLUFact/kernel.cpp                  -DBANK_NUMBER=8 -DBANK_CHUNK_SIZE=4 --channels-type=MEM_ACC_NN -DMAT_SIZE=6 -DBLOCK_SIZE=4 --channels-number=16 -DBAMBU_SKIP_VERIFICATION --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/sparseLUFact/tb.cpp --bambu-parameter=task-resource-duplication=4 --benchmark-name=sparseLUFactStackBanked_4FU
+
+src/sparseLUFact/kernel.cpp                  -DBANK_NUMBER=8 -DBANK_CHUNK_SIZE=4 --channels-type=MEM_ACC_NN -DMAT_SIZE=6 -DBLOCK_SIZE=4 --channels-number=32 -DBAMBU_SKIP_VERIFICATION --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/sparseLUFact/tb.cpp --bambu-parameter=task-resource-duplication=8 --benchmark-name=sparseLUFactStackBanked_8FU
+
+# MNIST uses its built-in synthetic data unless USE_REAL_DATASET is defined.
+src/mnist/mnistKernel.cpp     -DBANK_NUMBER=8 -DBANK_CHUNK_SIZE=4 -DBAMBU_SKIP_VERIFICATION --channels-type=MEM_ACC_NN --channels-number=19 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --benchmark-name=mnistTrainStaticBanked
+src/mnist/mnistKernel.cpp     -DBANK_NUMBER=8 -DBANK_CHUNK_SIZE=4 -DBAMBU_SKIP_VERIFICATION -DTRAIN=0 --channels-type=MEM_ACC_NN --channels-number=7 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --benchmark-name=mnistInferenceStatic
+src/mnist/mnistKernel.cpp     -DBANK_NUMBER=8 -DBANK_CHUNK_SIZE=4 -DBAMBU_SKIP_VERIFICATION --channels-type=MEM_ACC_NN --channels-number=38 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --bambu-parameter=task-resource-duplication=2 --benchmark-name=mnistTrainStaticBanked_2FU
+src/mnist/mnistKernel.cpp     -DBANK_NUMBER=8 -DBANK_CHUNK_SIZE=4 -DBAMBU_SKIP_VERIFICATION -DTRAIN=0 --channels-type=MEM_ACC_NN --channels-number=14 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --bambu-parameter=task-resource-duplication=2 --benchmark-name=mnistInferenceStatic_2FU
+src/mnist/mnistKernel.cpp     -DBANK_NUMBER=8 -DBANK_CHUNK_SIZE=4 -DBAMBU_SKIP_VERIFICATION --channels-type=MEM_ACC_NN --channels-number=76 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --bambu-parameter=task-resource-duplication=4 --benchmark-name=mnistTrainStaticBanked_4FU
+src/mnist/mnistKernel.cpp     -DBANK_NUMBER=8 -DBANK_CHUNK_SIZE=4 -DBAMBU_SKIP_VERIFICATION -DTRAIN=0 --channels-type=MEM_ACC_NN --channels-number=28 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --bambu-parameter=task-resource-duplication=4 --benchmark-name=mnistInferenceStatic_4FU
+src/mnist/mnistKernel.cpp     -DBANK_NUMBER=8 -DBANK_CHUNK_SIZE=4 -DBAMBU_SKIP_VERIFICATION --channels-type=MEM_ACC_NN --channels-number=152 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --bambu-parameter=task-resource-duplication=8 --benchmark-name=mnistTrainStaticBanked_8FU
+src/mnist/mnistKernel.cpp     -DBANK_NUMBER=8 -DBANK_CHUNK_SIZE=4 -DBAMBU_SKIP_VERIFICATION -DTRAIN=0 --channels-type=MEM_ACC_NN --channels-number=56 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --bambu-parameter=task-resource-duplication=8 --benchmark-name=mnistInferenceStatic_8FU
+
+# Small regression for banked task controllers with private nested callees.
+src/taskNestedCalls/kernel.cpp -DBANK_NUMBER=8 --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/taskNestedCalls/tb.cpp --benchmark-name=nested_calls_banked
+src/taskNestedCalls/kernel.cpp -DBANK_NUMBER=8 --channels-type=MEM_ACC_NN --channels-number=4 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/taskNestedCalls/tb.cpp --bambu-parameter=task-resource-duplication=2 --benchmark-name=nested_calls_banked_2FU

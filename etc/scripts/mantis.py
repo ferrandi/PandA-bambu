@@ -100,7 +100,7 @@ def parse_arguments():
     )
     parser.add_argument(
         "--no-clean",
-        help="Skip command working directory cleanup after execution (default=false)",
+        help="Keep successful command workdirs too; failed workdirs are always retained (default=false)",
         default=False,
         action="store_true",
     )
@@ -748,7 +748,8 @@ def run_command(
                 result = "Cancelled"
 
             log_execution(outcome, log_message, result)
-            if run_command.clean_cwd:
+            # Preserve failed simulations for CI post-mortem collection and local replay.
+            if run_command.clean_cwd and outcome == ExecutionOutcome.SUCCESS:
                 for relpath in os.listdir(cwd):
                     if relpath not in run_command.skip_clean:
                         path = os.path.join(cwd, relpath)

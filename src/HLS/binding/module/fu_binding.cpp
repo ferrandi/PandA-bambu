@@ -30,6 +30,7 @@
 #include "fu_binding.hpp"
 
 #include "HDLGeneratorManager.hpp"
+#include "OmpTaskFuBinding.hpp"
 #include "Parameter.hpp"
 #include "allocation_information.hpp"
 #include "behavioral_helper.hpp"
@@ -773,9 +774,15 @@ fu_bindingRef fu_binding::create_fu_binding(const HLS_managerConstRef _HLSMgr, c
                                             const ParameterConstRef _parameters)
 {
    const auto fname = ir_helper::GetFunctionName(_HLSMgr->get_ir_manager()->GetIRNode(_function_id));
-   if(boost::algorithm::starts_with(fname, "__kmp_bambu_fork_call"))
+   const bool isOpenmp = _parameters->isOption(OPT_openmp) && _parameters->getOption<bool>(OPT_openmp);
+   const bool useTask = _parameters->IsParameter("enable-task") && _parameters->GetParameter<int>("enable-task") == 1;
+   if(boost::algorithm::starts_with(fname, "__kmp_bambu_fork_call") && !useTask)
    {
       return fu_bindingRef(new omp_fork_fu_binding(_HLSMgr, _function_id, _parameters));
+   }
+   else if(fname.find("task_graph") != std::string::npos && useTask && isOpenmp)
+   {
+      return fu_bindingRef(new OmpTaskFuBinding(_HLSMgr, _function_id, _parameters));
    }
    return fu_bindingRef(new fu_binding(_HLSMgr, _function_id, _parameters));
 }
@@ -1958,7 +1965,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       ding_dong_buffer->SetParameter("PRIVATE_MEMORY", HLSMgr->Rmem->is_private_memory(var) ? "1" : "0");
       ding_dong_buffer->SetParameter("READ_ONLY_MEMORY", HLSMgr->Rmem->is_read_only_variable(var) ? "1" : "0");
       ding_dong_buffer->SetParameter("MEMORY_INIT_file", "\"\"\"\"");
-      if(omp_info)
+      if(omp_info && omp_info->mem_page_size != 0ULL)
       {
          ding_dong_buffer->SetParameter("CONTEXT_COUNT", STR(omp_info->context_count));
          ding_dong_buffer->SetParameter("CONTEXT_PAGE_BITSIZE", STR(ceil_log2(omp_info->mem_page_size)));
@@ -3390,7 +3397,9 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    fu_module->SetParameter("address_space_rangesize", STR(rangesize));
    fu_module->SetParameter("USE_SPARSE_MEMORY", is_sparse_memory ? "1" : "0");
    unsigned int context_count = 1U;
-   if(omp_info)
+   // A single-context task owns a private call graph but needs no memory pages
+   // for context switching. Its OMPInfo consequently has no allocated page size.
+   if(omp_info && omp_info->mem_page_size != 0ULL)
    {
       context_count = omp_info->context_count;
       fu_module->SetParameter("CONTEXT_COUNT", STR(context_count));
