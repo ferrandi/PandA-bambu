@@ -11,6 +11,25 @@ kernel test.
 The logging checks exercise large binary streams, producer and log-writer errors,
 and inherited simulator logging without relying on the system `tee` implementation.
 
+The recurring regression wrapper also runs the offline unit checks for the
+write-artifact checker and write-engine extractor. The broader write compiler
+matrix and generated-kernel G2 simulations remain opt-in development suites and
+are not added to CI. Run them together with a fresh output directory and the
+exact installed Bambu executable:
+
+```sh
+bash panda_regressions/hls/bambu_axi_burst/run_write_development_tests.sh all \
+  /path/to/install/bin/bambu documentation/tmp/axi-write-development-run
+```
+
+Use mode `offline`, `compiler`, or `g2` to run one part. Compiler mode runs the
+write-profile compiler matrix and frontend compatibility checks. G2 mode
+compiles and simulates the three supported generated tops; run it outside the
+sandbox with `BURST_G2_SIM_OUTSIDE_SANDBOX=1`. The aggregator refuses an existing
+output path and retains per-suite output under it. Historical F1b G2 pass
+markers do not qualify the current runner/script revision; G2 remains unqualified
+until the current aggregator is run successfully.
+
 The entry point intentionally does not run the broader `all` or `burst-type`
 compiler-runner modes: they duplicate Mantis coverage.
 By default all durable output is placed in `./out_bambu_axi_burst`, relative
@@ -33,6 +52,12 @@ are retained. Pass `--no-clean` to retain successful-run intermediates too.
 Mantis writes its configured cases under
 `out_bambu_axi_burst/mantis/AXI-BURST/`; its suite report is in that Mantis
 output directory.
+
+The cycle expectation table contains measured read and writer signatures. The
+three writer cases were simulated externally with ModelSim, checked against the
+write-specific RTL profile, and passed the golden-data/canary testbench. Their
+recorded cycle counts are regression signatures for the documented model
+configuration, not a physical timing or general performance claim.
 Auxiliary job logs are in `<out_root>/jobs/` when outputs are retained with
 `--no-clean` or after a failure; successful default-clean runs remove them.
 

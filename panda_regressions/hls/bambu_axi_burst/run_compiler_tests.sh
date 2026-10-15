@@ -325,7 +325,7 @@ run_shared_resource_case() {
     return 1
   fi
   assert_shared_root_order "$order" "$expected_first" "$expected_second" "$case_dir/stderr.log"
-  if ! rg -qi "Incompatible m_axi resource ABI for bundle 'data': configured burst-read and legacy scalar read roots cannot share this resource.*Use distinct bundle names" \
+  if ! rg -qi "Incompatible m_axi resource ABI for bundle 'data': (existing roots use burst mode 'read' while this root requires 'legacy'|existing roots use burst mode 'legacy' while this root requires 'read')\. Use distinct bundle names for incompatible roots\." \
       "$case_dir/stdout.log" "$case_dir/stderr.log"; then
     echo "mixed shared-bundle roots '$tops' failed without the expected ABI diagnostic; see $case_dir" >&2
     return 1

@@ -1,0 +1,133 @@
+from __future__ import annotations
+
+import os
+import shutil
+import subprocess
+import unittest
+import uuid
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[3]
+RUNNER = ROOT / "panda_regressions/hls/bambu_axi_burst/run_write_development_tests.sh"
+SCRATCH_ROOT = ROOT / "documentation/tmp/f4-guard-gaps/d-offline"
+
+
+class DevelopmentRunnerTests(unittest.TestCase):
+    def setUp(self):
+        SCRATCH_ROOT.mkdir(parents=True, exist_ok=True)
+        self.scratch = SCRATCH_ROOT / f"runner-test-{uuid.uuid4().hex}"
+        self.scratch.mkdir()
+        self.addCleanup(shutil.rmtree, self.scratch, ignore_errors=True)
+        self.export = self.scratch / "export"
+        self.script_dir = self.export / "panda_regressions/hls/bambu_axi_burst"
+        self.script_dir.mkdir(parents=True)
+        shutil.copy2(RUNNER, self.script_dir / RUNNER.name)
+        self.script_dir.joinpath(RUNNER.name).chmod(0o755)
+        (self.script_dir / "rtl_tests").mkdir()
+        for name in (
+            "run_write_compiler_tests.sh",
+            "run_frontend_compatibility_tests.sh",
+            "test_write_compiler_artifacts.py",
+        ):
+            (self.script_dir / name).write_text("# exported stub target\n")
+        (self.script_dir / "rtl_tests/run_generated_write_kernel_tests.sh").write_text(
+            "# exported stub target\n"
+        )
+        (self.script_dir / "rtl_tests/test_extract_write_engine.py").write_text(
+            "# exported stub target\n"
+        )
+        self.bin_dir = self.scratch / "bin"
+        self.bin_dir.mkdir()
+        self.calls = self.scratch / "calls.log"
+        self._stub("python3", "printf 'python3|%s|%s|%s|%s|%s\\n' \"$TMPDIR\" \"$TMP\" \"$TEMP\" \"${BURST_G2_SIM_OUTSIDE_SANDBOX:-}\" \"$*\" >>\"$CALL_LOG\"\n")
+        self._stub("bash", "printf 'bash|%s|%s|%s|%s|%s\\n' \"$TMPDIR\" \"$TMP\" \"$TEMP\" \"${BURST_G2_SIM_OUTSIDE_SANDBOX:-}\" \"$*\" >>\"$CALL_LOG\"\n")
+        self.bambu = self.scratch / "installed/bin/bambu"
+        self.bambu.parent.mkdir(parents=True)
+        self.bambu.write_text("#!/bin/sh\nexit 0\n")
+        self.bambu.chmod(0o755)
+        self.env = os.environ.copy()
+        self.env["PATH"] = f"{self.bin_dir}:{self.env['PATH']}"
+        self.env["CALL_LOG"] = str(self.calls)
+        temp_base = SCRATCH_ROOT.resolve()
+        self.env.update(TMPDIR=str(temp_base), TMP=str(temp_base), TEMP=str(temp_base))
+
+    def _stub(self, name, body):
+        path = self.bin_dir / name
+        path.write_text("#!/bin/bash\nset -euo pipefail\n" + body)
+        path.chmod(0o755)
+
+    def _run(self, mode, output, *, outside_sandbox=False):
+        env = self.env.copy()
+        if outside_sandbox:
+            env["BURST_G2_SIM_OUTSIDE_SANDBOX"] = "1"
+        return subprocess.run(
+            ["/bin/bash", str(self.script_dir / RUNNER.name), mode, str(self.bambu), str(output)],
+            cwd=self.export,
+            env=env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+    def _calls(self):
+        if not self.calls.exists():
+            return []
+        return self.calls.read_text().splitlines()
+
+    def test_offline_dispatches_only_the_two_manual_offline_checks(self):
+        output = self.scratch / "offline-output"
+        result = self._run("offline", output)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = self._calls()
+        self.assertEqual(len(calls), 2)
+        self.assertIn("test_write_compiler_artifacts.py", calls[0])
+        self.assertIn("test_extract_write_engine.py", calls[1])
+        for call in calls:
+            self.assertTrue(call.startswith("python3|"))
+            self.assertEqual(call.split("|", 5)[1:4], [str(output / "offline/tmp")] * 3)
+        self.assertTrue((output / "offline").is_dir())
+
+    def test_output_must_be_fresh_and_g2_is_opt_in(self):
+        existing = self.scratch / "existing"
+        existing.mkdir()
+        marker = existing / "keep"
+        marker.write_text("safe")
+        refused = self._run("offline", existing)
+        self.assertNotEqual(refused.returncode, 0)
+        self.assertEqual(marker.read_text(), "safe")
+        self.assertEqual(self._calls(), [])
+
+        output = self.scratch / "g2-without-opt-in"
+        refused = self._run("g2", output)
+        self.assertNotEqual(refused.returncode, 0)
+        self.assertFalse(output.exists())
+        self.assertIn("BURST_G2_SIM_OUTSIDE_SANDBOX=1", refused.stderr)
+        self.assertEqual(self._calls(), [])
+
+    def test_all_dispatches_compiler_then_all_three_g2_tops(self):
+        output = self.scratch / "all-output"
+        result = self._run("all", output, outside_sandbox=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = self._calls()
+        self.assertEqual(len(calls), 7)
+        self.assertTrue(calls[0].startswith("python3|"))
+        self.assertIn("test_write_compiler_artifacts.py", calls[0])
+        self.assertIn("test_extract_write_engine.py", calls[1])
+        self.assertIn("run_write_compiler_tests.sh all", calls[2])
+        self.assertIn("run_frontend_compatibility_tests.sh", calls[3])
+        for call, top in zip(calls[4:], (
+            "write_count_seed",
+            "write_with_unused_same_bundle",
+            "write_with_unused_same_bundle_reversed",
+        )):
+            self.assertIn("run_generated_write_kernel_tests.sh", call)
+            self.assertTrue(call.endswith(f"{top} {top}"))
+            self.assertEqual(call.split("|", 5)[4], "1")
+        for call in calls:
+            self.assertTrue(call.split("|", 5)[1].startswith(str(output)))
+
+
+if __name__ == "__main__":
+    unittest.main()
