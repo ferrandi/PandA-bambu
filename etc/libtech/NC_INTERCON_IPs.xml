@@ -2638,20 +2638,20 @@ assign M_tag_out = M_tag_out_temp;"/>
           <port_o id="valid" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="priority_arbiter_core in1 out1" IP_COMPONENT="multiple_priority_encoder_1_1,multiple_priority_encoder_2_1,multiple_priority_encoder_4_2,multiple_priority_encoder_8_3,multiple_priority_encoder_16_4,multiple_priority_encoder_32_5,multiple_priority_encoder_64_6,multiple_priority_encoder_128_7,multiple_priority_encoder_256_8,multiple_priority_encoder_512_9" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="priority_arbiter_core in1 out1" IP_COMPONENT="hierarchical_multiple_priority_encoder_1_1,hierarchical_multiple_priority_encoder_2_1,hierarchical_multiple_priority_encoder_4_2,hierarchical_multiple_priority_encoder_8_3,hierarchical_multiple_priority_encoder_16_4,hierarchical_multiple_priority_encoder_32_5,hierarchical_multiple_priority_encoder_64_6,hierarchical_multiple_priority_encoder_128_7,hierarchical_multiple_priority_encoder_256_8,hierarchical_multiple_priority_encoder_512_9" VERILOG_PROVIDED="
 wire empty;
 assign valid = !empty;
 
 generate
   if(BITSIZE_in1 == 1)
   begin
-    multiple_priority_encoder_1_1 encoder (.empty(empty),
+    hierarchical_multiple_priority_encoder_1_1 encoder (.empty(empty),
       .i(in1),
       .o(out1));
   end
   else if(BITSIZE_in1 == 2)
   begin
-    multiple_priority_encoder_2_1 encoder (.empty(empty),
+    hierarchical_multiple_priority_encoder_2_1 encoder (.empty(empty),
       .i(in1),
       .o(out1));
   end
@@ -2659,7 +2659,7 @@ generate
   begin
     wire [3:0] in1_temp;
     assign in1_temp = in1 | {4{1'b0}};
-    multiple_priority_encoder_4_2 encoder (.empty(empty),
+    hierarchical_multiple_priority_encoder_4_2 encoder (.empty(empty),
       .i(in1_temp),
       .o(out1));
   end
@@ -2667,7 +2667,7 @@ generate
   begin
     wire [7:0] in1_temp;
     assign in1_temp = in1 | {8{1'b0}};
-    multiple_priority_encoder_8_3 encoder (.empty(empty),
+    hierarchical_multiple_priority_encoder_8_3 encoder (.empty(empty),
       .i(in1_temp),
       .o(out1));
   end
@@ -2675,7 +2675,7 @@ generate
   begin
     wire [15:0] in1_temp;
     assign in1_temp = in1 | {16{1'b0}};
-    multiple_priority_encoder_16_4 encoder (.empty(empty),
+    hierarchical_multiple_priority_encoder_16_4 encoder (.empty(empty),
       .i(in1_temp),
       .o(out1));
   end
@@ -2683,7 +2683,7 @@ generate
   begin
     wire [31:0] in1_temp;
     assign in1_temp = in1 | {32{1'b0}};
-    multiple_priority_encoder_32_5 encoder (.empty(empty),
+    hierarchical_multiple_priority_encoder_32_5 encoder (.empty(empty),
       .i(in1_temp),
       .o(out1));
   end
@@ -2691,7 +2691,7 @@ generate
   begin
     wire [63:0] in1_temp;
     assign in1_temp = in1 | {64{1'b0}};
-    multiple_priority_encoder_64_6 encoder (.empty(empty),
+    hierarchical_multiple_priority_encoder_64_6 encoder (.empty(empty),
       .i(in1_temp),
       .o(out1));
   end
@@ -2699,7 +2699,7 @@ generate
   begin
     wire [127:0] in1_temp;
     assign in1_temp = in1 | {128{1'b0}};
-    multiple_priority_encoder_128_7 encoder (.empty(empty),
+    hierarchical_multiple_priority_encoder_128_7 encoder (.empty(empty),
       .i(in1_temp),
       .o(out1));
   end
@@ -2707,7 +2707,7 @@ generate
   begin
     wire [255:0] in1_temp;
     assign in1_temp = in1 | {256{1'b0}};
-    multiple_priority_encoder_256_8 encoder (.empty(empty),
+    hierarchical_multiple_priority_encoder_256_8 encoder (.empty(empty),
       .i(in1_temp),
       .o(out1));
   end
@@ -2715,7 +2715,7 @@ generate
   begin
     wire [511:0] in1_temp;
     assign in1_temp = in1 | {512{1'b0}};
-    multiple_priority_encoder_512_9 encoder (.empty(empty),
+    hierarchical_multiple_priority_encoder_512_9 encoder (.empty(empty),
       .i(in1_temp),
       .o(out1));
   end
@@ -2754,7 +2754,7 @@ endgenerate
           <port_o id="valid" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="round_robin_arbiter_core in1 out1" IP_COMPONENT="multiple_priority_encoder_1_1,multiple_priority_encoder_2_1,multiple_priority_encoder_4_2,multiple_priority_encoder_8_3,multiple_priority_encoder_16_4,multiple_priority_encoder_32_5,multiple_priority_encoder_64_6,multiple_priority_encoder_128_7,multiple_priority_encoder_256_8,multiple_priority_encoder_512_9" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="round_robin_arbiter_core in1 out1" IP_COMPONENT="hierarchical_multiple_priority_encoder_1_1,hierarchical_multiple_priority_encoder_2_1,hierarchical_multiple_priority_encoder_4_2,hierarchical_multiple_priority_encoder_8_3,hierarchical_multiple_priority_encoder_16_4,hierarchical_multiple_priority_encoder_32_5,hierarchical_multiple_priority_encoder_64_6,hierarchical_multiple_priority_encoder_128_7,hierarchical_multiple_priority_encoder_256_8,hierarchical_multiple_priority_encoder_512_9" VERILOG_PROVIDED="
 `ifndef CLOG2
 `define CLOG2(x) \
   (x &lt;= 2) ? 1 : \
@@ -2796,19 +2796,19 @@ assign out1 = empty_upper ? lower_out : upper_out;
 generate
   if(BITSIZE_in1 == 1)
   begin
-    multiple_priority_encoder_1_1 upper (.empty(empty_upper),
+    hierarchical_multiple_priority_encoder_1_1 upper (.empty(empty_upper),
       .i(upper_in),
       .o(upper_out));
-    multiple_priority_encoder_1_1 lower (.empty(empty_lower),
+    hierarchical_multiple_priority_encoder_1_1 lower (.empty(empty_lower),
       .i(in1),
       .o(lower_out));
   end
   else if(BITSIZE_in1 == 2)
   begin
-    multiple_priority_encoder_2_1 upper (.empty(empty_upper),
+    hierarchical_multiple_priority_encoder_2_1 upper (.empty(empty_upper),
       .i(upper_in),
       .o(upper_out));
-    multiple_priority_encoder_2_1 lower (.empty(empty_lower),
+    hierarchical_multiple_priority_encoder_2_1 lower (.empty(empty_lower),
       .i(in1),
       .o(lower_out));
   end
@@ -2817,10 +2817,10 @@ generate
     wire [3:0] in1_temp, upper_in_temp;
     assign in1_temp = in1 | {4{1'b0}};
     assign upper_in_temp = upper_in | {4{1'b0}};
-    multiple_priority_encoder_4_2 upper (.empty(empty_upper),
+    hierarchical_multiple_priority_encoder_4_2 upper (.empty(empty_upper),
       .i(upper_in_temp),
       .o(upper_out));
-    multiple_priority_encoder_4_2 lower (.empty(empty_lower),
+    hierarchical_multiple_priority_encoder_4_2 lower (.empty(empty_lower),
       .i(in1_temp),
       .o(lower_out));
   end
@@ -2829,10 +2829,10 @@ generate
     wire [7:0] in1_temp, upper_in_temp;
     assign in1_temp = in1 | {8{1'b0}};
     assign upper_in_temp = upper_in | {8{1'b0}};
-    multiple_priority_encoder_8_3 upper (.empty(empty_upper),
+    hierarchical_multiple_priority_encoder_8_3 upper (.empty(empty_upper),
       .i(upper_in_temp),
       .o(upper_out));
-    multiple_priority_encoder_8_3 lower (.empty(empty_lower),
+    hierarchical_multiple_priority_encoder_8_3 lower (.empty(empty_lower),
       .i(in1_temp),
       .o(lower_out));
   end
@@ -2841,10 +2841,10 @@ generate
     wire [15:0] in1_temp, upper_in_temp;
     assign in1_temp = in1 | {16{1'b0}};
     assign upper_in_temp = upper_in | {16{1'b0}};
-    multiple_priority_encoder_16_4 upper (.empty(empty_upper),
+    hierarchical_multiple_priority_encoder_16_4 upper (.empty(empty_upper),
       .i(upper_in_temp),
       .o(upper_out));
-    multiple_priority_encoder_16_4 lower (.empty(empty_lower),
+    hierarchical_multiple_priority_encoder_16_4 lower (.empty(empty_lower),
       .i(in1_temp),
       .o(lower_out));
   end
@@ -2853,10 +2853,10 @@ generate
     wire [31:0] in1_temp, upper_in_temp;
     assign in1_temp = in1 | {32{1'b0}};
     assign upper_in_temp = upper_in | {32{1'b0}};
-    multiple_priority_encoder_32_5 upper (.empty(empty_upper),
+    hierarchical_multiple_priority_encoder_32_5 upper (.empty(empty_upper),
       .i(upper_in_temp),
       .o(upper_out));
-    multiple_priority_encoder_32_5 lower (.empty(empty_lower),
+    hierarchical_multiple_priority_encoder_32_5 lower (.empty(empty_lower),
       .i(in1_temp),
       .o(lower_out));
   end
@@ -2865,10 +2865,10 @@ generate
     wire [63:0] in1_temp, upper_in_temp;
     assign in1_temp = in1 | {64{1'b0}};
     assign upper_in_temp = upper_in | {64{1'b0}};
-    multiple_priority_encoder_64_6 upper (.empty(empty_upper),
+    hierarchical_multiple_priority_encoder_64_6 upper (.empty(empty_upper),
       .i(upper_in_temp),
       .o(upper_out));
-    multiple_priority_encoder_64_6 lower (.empty(empty_lower),
+    hierarchical_multiple_priority_encoder_64_6 lower (.empty(empty_lower),
       .i(in1_temp),
       .o(lower_out));
   end
@@ -2877,10 +2877,10 @@ generate
     wire [127:0] in1_temp, upper_in_temp;
     assign in1_temp = in1 | {128{1'b0}};
     assign upper_in_temp = upper_in | {128{1'b0}};
-    multiple_priority_encoder_128_7 upper (.empty(empty_upper),
+    hierarchical_multiple_priority_encoder_128_7 upper (.empty(empty_upper),
       .i(upper_in_temp),
       .o(upper_out));
-    multiple_priority_encoder_128_7 lower (.empty(empty_lower),
+    hierarchical_multiple_priority_encoder_128_7 lower (.empty(empty_lower),
       .i(in1_temp),
       .o(lower_out));
   end
@@ -2889,10 +2889,10 @@ generate
     wire [255:0] in1_temp, upper_in_temp;
     assign in1_temp = in1 | {256{1'b0}};
     assign upper_in_temp = upper_in | {256{1'b0}};
-    multiple_priority_encoder_256_8 upper (.empty(empty_upper),
+    hierarchical_multiple_priority_encoder_256_8 upper (.empty(empty_upper),
       .i(upper_in_temp),
       .o(upper_out));
-    multiple_priority_encoder_256_8 lower (.empty(empty_lower),
+    hierarchical_multiple_priority_encoder_256_8 lower (.empty(empty_lower),
       .i(in1_temp),
       .o(lower_out));
   end
@@ -2901,10 +2901,10 @@ generate
     wire [511:0] in1_temp, upper_in_temp;
     assign in1_temp = in1 | {512{1'b0}};
     assign upper_in_temp = upper_in | {512{1'b0}};
-    multiple_priority_encoder_512_9 upper (.empty(empty_upper),
+    hierarchical_multiple_priority_encoder_512_9 upper (.empty(empty_upper),
       .i(upper_in_temp),
       .o(upper_out));
-    multiple_priority_encoder_512_9 lower (.empty(empty_lower),
+    hierarchical_multiple_priority_encoder_512_9 lower (.empty(empty_lower),
       .i(in1_temp),
       .o(lower_out));
   end

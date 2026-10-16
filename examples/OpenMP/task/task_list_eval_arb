@@ -1,0 +1,13 @@
+src/sparseLUFact/kernel.cpp         --channels-type=MEM_ACC_NN -DMAT_SIZE=6 -DBLOCK_SIZE=4 --channels-number=2 -DBAMBU_SKIP_VERIFICATION --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/sparseLUFact/tb.cpp --benchmark-name=sparseLUFactStackArb
+
+src/sparseLUFact/kernel.cpp         --channels-type=MEM_ACC_NN -DMAT_SIZE=6 -DBLOCK_SIZE=4 --channels-number=2 -DBAMBU_SKIP_VERIFICATION --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/sparseLUFact/tb.cpp --bambu-parameter=task-resource-duplication=2 --benchmark-name=sparseLUFactStackArb_2FU
+
+src/sparseLUFact/kernel.cpp         --channels-type=MEM_ACC_NN -DMAT_SIZE=6 -DBLOCK_SIZE=4 --channels-number=2 -DBAMBU_SKIP_VERIFICATION --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/sparseLUFact/tb.cpp --bambu-parameter=task-resource-duplication=4 --benchmark-name=sparseLUFactStackArb_4FU
+
+# MNIST uses its built-in synthetic data unless USE_REAL_DATASET is defined.
+src/mnist/mnistKernel.cpp     			-DBAMBU_SKIP_VERIFICATION --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --benchmark-name=mnistTrainStaticArb
+src/mnist/mnistKernel.cpp     			-DBAMBU_SKIP_VERIFICATION -DTRAIN=0 --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --benchmark-name=mnistInferenceStaticArb
+src/mnist/mnistKernel.cpp     			-DBAMBU_SKIP_VERIFICATION --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --bambu-parameter=task-resource-duplication=2 --benchmark-name=mnistTrainStaticArb_2FU
+src/mnist/mnistKernel.cpp     			-DBAMBU_SKIP_VERIFICATION -DTRAIN=0 --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --bambu-parameter=task-resource-duplication=2 --benchmark-name=mnistInferenceStaticArb_2FU
+src/mnist/mnistKernel.cpp     			-DBAMBU_SKIP_VERIFICATION --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --bambu-parameter=task-resource-duplication=4 --benchmark-name=mnistTrainStaticArb_4FU
+src/mnist/mnistKernel.cpp     			-DBAMBU_SKIP_VERIFICATION -DTRAIN=0 --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --bambu-parameter=task-resource-duplication=4 --benchmark-name=mnistInferenceStaticArb_4FU
