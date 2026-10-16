@@ -1009,7 +1009,7 @@ end
 
     assign fifo_load_pop = fifo_load_done;
     assign r_push = m_axi_rvalid &amp;&amp; m_axi_rready;
-    assign r_structural = (descriptor_count != 0) &amp;&amp; (m_axi_rid == 1'b0) &amp;&amp;
+    assign r_structural = (descriptor_count != 0) &amp;&amp; (!(|m_axi_rid)) &amp;&amp;
         (((descriptor_count != 0) &amp;&amp; descriptor_remaining[descriptor_rd_ptr] == 1 &amp;&amp; m_axi_rlast) ||
          ((descriptor_count != 0) &amp;&amp; descriptor_remaining[descriptor_rd_ptr] &gt; 1 &amp;&amp; !m_axi_rlast));
     assign r_good = r_push &amp;&amp; r_structural &amp;&amp; !fault_reg &amp;&amp; (m_axi_rresp == 2'b00);

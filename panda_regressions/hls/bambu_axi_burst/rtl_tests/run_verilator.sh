@@ -18,6 +18,9 @@ SIM_JOBS=${SIM_JOBS:-$DEFAULT_SIM_JOBS}
 if [[ ! $SIM_JOBS =~ ^[1-9][0-9]*$ ]]; then
     echo "SIM_JOBS must be a positive integer, got: $SIM_JOBS" >&2; exit 2
 fi
+for tool in python3 verilator rg timeout; do
+    command -v "$tool" >/dev/null 2>&1 || { echo "missing required tool: $tool" >&2; exit 2; }
+done
 TASK_OUT=$(realpath -m "$1")
 mkdir -p "$TASK_OUT"
 mkdir -p "$TASK_OUT/tmp"
@@ -25,110 +28,8 @@ export TMPDIR="$TASK_OUT/tmp"
 export TMP="$TASK_OUT/tmp"
 export TEMP="$TASK_OUT/tmp"
 
-python3 - "$XML" "$TASK_OUT/MinimalAXI4MasterPipelined.sv" <<'PY'
-import re
-import sys
-import html
-import xml.etree.ElementTree as ET
-from pathlib import Path
-
-xml_path, output_path = map(Path, sys.argv[1:])
-target = "MinimalAXI4MasterPipelined"
-root = ET.parse(xml_path).getroot()
-cells = [cell for cell in root.findall(".//cell")
-         if cell.findtext("name") == target]
-if len(cells) != 1:
-    raise SystemExit(f"expected exactly one XML cell named {target}, found {len(cells)}")
-module = cells[0].find("circuit/module_o")
-if module is None or module.get("id") != target:
-    raise SystemExit(f"unsupported XML structure for {target}: missing matching circuit/module_o")
-
-parameters = []
-for parameter in module.findall("parameter"):
-    name = parameter.get("name")
-    value = (parameter.text or "").strip()
-    if not name or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
-        raise SystemExit(f"unsupported XML parameter descriptor: {ET.tostring(parameter, encoding='unicode')}")
-    if not re.fullmatch(r"[0-9]+", value):
-        raise SystemExit(f"unsupported non-integer default for parameter {name}: {value!r}")
-    parameters.append((name, value))
-
-ports = []
-for port in module.findall("port_o"):
-    name, direction = port.get("id"), port.get("dir")
-    descriptor = port.find("structural_type_descriptor")
-    if not name or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name) or direction not in ("IN", "OUT"):
-        raise SystemExit(f"unsupported XML port descriptor: {ET.tostring(port, encoding='unicode')}")
-    if descriptor is None:
-        raise SystemExit(f"unsupported XML port {name}: missing structural_type_descriptor")
-    kind = descriptor.get("type")
-    if kind == "BOOL" and descriptor.get("size") == "1":
-        width = 1
-    elif kind == "VECTOR_BOOL" and descriptor.get("size") == "1":
-        vector_size = descriptor.get("vector_size", "")
-        if not vector_size.isdigit() or int(vector_size) < 1:
-            raise SystemExit(f"unsupported vector width for XML port {name}: {vector_size!r}")
-        width = int(vector_size)
-    else:
-        raise SystemExit(f"unsupported XML type for port {name}: {ET.tostring(descriptor, encoding='unicode')}")
-    ports.append((name, direction.lower(), width))
-if not parameters or not ports:
-    raise SystemExit(f"unsupported XML structure for {target}: no parameters or ports")
-
-implementations = module.findall("NP_functionality")
-if len(implementations) != 1:
-    raise SystemExit(f"expected exactly one NP_functionality for {target}, found {len(implementations)}")
-
-# XML normalizes literal newlines inside attribute values to spaces. Preserve
-# the source HDL formatting by recovering this exact attribute from the already
-# uniquely identified XML cell, then decoding its XML entities.
-raw_xml = xml_path.read_text()
-name_token = f"<name>{target}</name>"
-name_at = raw_xml.find(name_token)
-cell_start = raw_xml.rfind("<cell", 0, name_at)
-cell_end = raw_xml.find("</cell>", name_at)
-if name_at < 0 or cell_start < 0 or cell_end < 0:
-    raise SystemExit(f"could not locate raw XML source for the unique {target} cell")
-cell_text = raw_xml[cell_start:cell_end]
-raw_match = re.search(r'\bVERILOG_PROVIDED="([^\"]*)"', cell_text, re.DOTALL)
-if raw_match is None:
-    raise SystemExit(f"could not recover VERILOG_PROVIDED for {target}")
-body = html.unescape(raw_match.group(1)).replace("\r\n", "\n")
-if not body.strip():
-    raise SystemExit(f"{target} has no VERILOG_PROVIDED implementation")
-parsed_body = implementations[0].get("VERILOG_PROVIDED") or ""
-if " ".join(body.split()) != " ".join(parsed_body.split()):
-    raise SystemExit(f"raw and parsed VERILOG_PROVIDED content disagree for {target}")
-
-# Match Bambu's default reset-level and synchronous-reset substitutions.
-body = body.replace("1RESET_EDGE", "")
-body = body.replace("1RESET_VALUE", "reset == 1'b0")
-if re.search(r"1[A-Z][A-Z0-9_]*", body):
-    raise SystemExit(f"unsupported unresolved HDL placeholder in {target}")
-
-# Mirror verilog_writer::write_module_parametrization_decl: every port named in
-# the NP_functionality LIBRARY token list gets a BITSIZE_<name> parameter whose
-# default is the XML vector_size, and is declared as [BITSIZE_<name>-1:0]. The
-# real writer overrides those per instance; here the defaults are the point.
-library_tokens = set((implementations[0].get("LIBRARY") or "").split())
-param_lines = [f"    parameter integer {name} = {value}" for name, value in parameters]
-port_lines = []
-for name, direction, width in ports:
-    sv_direction = "input" if direction == "in" else "output"
-    if name in library_tokens and width > 1:
-        param_lines.append(f"    parameter integer BITSIZE_{name} = {width}")
-        port_lines.append(f"    {sv_direction} wire [BITSIZE_{name}-1:0] {name}")
-    else:
-        packed = "" if width == 1 else f" [{width - 1}:0]"
-        port_lines.append(f"    {sv_direction} wire{packed} {name}")
-parameter_text = ",\n".join(param_lines)
-header = (f"// Generated from {xml_path.relative_to(xml_path.parents[1]) if xml_path.is_relative_to(xml_path.parents[1]) else xml_path}\n"
-          f"module {target} # (\n{parameter_text}\n) (\n" + ",\n".join(port_lines) + "\n);\n")
-output_path.write_text(header + body + "\nendmodule\n")
-print(f"XML component: {target}; parameters={parameters}; ports={len(ports)}")
-print("Reset substitution: 1RESET_VALUE -> (reset == 1'b0); 1RESET_EDGE -> empty (synchronous)")
-print(f"Generated RTL: {output_path}")
-PY
+python3 -B "$TESTS/extract_write_engine.py" --xml "$XML" \
+    --target MinimalAXI4MasterPipelined --out "$TASK_OUT/MinimalAXI4MasterPipelined.sv"
 
 echo "Verilator: $(verilator --version)"
 echo "Stimulus seed: deterministic (no random stimulus)"
@@ -151,6 +52,10 @@ wait_scenario_batch() {
             echo "FAIL scenario $name (status $status); log: $log" >&2
             cat "$log" >&2 || true
             SCENARIO_FAILURES=$((SCENARIO_FAILURES + 1))
+        elif ! rg -q "^DUPLEX_READ PASS CASE=${name}$" "$log"; then
+            echo "FAIL scenario $name: missing exact PASS marker; log: $log" >&2
+            cat "$log" >&2 || true
+            SCENARIO_FAILURES=$((SCENARIO_FAILURES + 1))
         fi
     done
     pids_ref=()
@@ -163,7 +68,7 @@ run_scenarios() {
     local batch_pids=() batch_names=() scenario
     SCENARIO_FAILURES=0
     for scenario in "$@"; do
-        timeout 120s "$binary" "+$scenario" >"$build_dir/scenario-${scenario}.log" 2>&1 &
+        timeout 120s "$binary" "+$scenario" "+CASE=$scenario" >"$build_dir/scenario-${scenario}.log" 2>&1 &
         batch_pids+=("$!")
         batch_names+=("$scenario")
         if (( ${#batch_pids[@]} >= SIM_JOBS )); then
@@ -173,6 +78,22 @@ run_scenarios() {
     wait_scenario_batch batch_pids batch_names "$build_dir"
     if (( SCENARIO_FAILURES != 0 )); then
         echo "ERROR: $SCENARIO_FAILURES scenario(s) failed for $binary" >&2
+        return 1
+    fi
+}
+
+run_one_scenario() {
+    local binary=$1 build_dir=$2 scenario=$3
+    local log="$build_dir/scenario-${scenario}.log" status=0
+    timeout 120s "$binary" "+$scenario" "+CASE=$scenario" >"$log" 2>&1 || status=$?
+    if (( status != 0 )); then
+        echo "FAIL scenario $scenario (status $status); log: $log" >&2
+        cat "$log" >&2 || true
+        return 1
+    fi
+    if ! rg -q "^DUPLEX_READ PASS CASE=${scenario}$" "$log"; then
+        echo "FAIL scenario $scenario: missing exact PASS marker; log: $log" >&2
+        cat "$log" >&2 || true
         return 1
     fi
 }
@@ -198,7 +119,7 @@ run_build() {
             return 1
         }
     if [[ "$launch" == yes ]]; then
-        timeout 120s "$build/V$top"
+        run_one_scenario "$build/V$top" "$build" SMOKE
     fi
 }
 
@@ -229,7 +150,8 @@ for outstanding in 3 15 16; do
     depth=256
     [[ "$outstanding" == 3 ]] && depth=64
     run_build tb_burst_engine 16 "$TESTS/tb_burst_engine.sv" "" "$outstanding" "$depth" no
-    timeout 120s "$TASK_OUT/build-tb_burst_engine-B16-O${outstanding}-D${depth}/Vtb_burst_engine" +MULTI
+        run_one_scenario "$TASK_OUT/build-tb_burst_engine-B16-O${outstanding}-D${depth}/Vtb_burst_engine" \
+            "$TASK_OUT/build-tb_burst_engine-B16-O${outstanding}-D${depth}" MULTI
 done
 
 # Required-hit A+Q+C plus independent bus-derived descriptor accounting,
@@ -249,14 +171,17 @@ run_build tb_burst_engine 16 "$TESTS/tb_burst_engine.sv" "" 16 32 no
 run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O16-D32/Vtb_burst_engine" \
     "$TASK_OUT/build-tb_burst_engine-B16-O16-D32" CREDIT_LIMIT CREDIT_POP
 run_build tb_burst_engine 256 "$TESTS/tb_burst_engine.sv" "" 2 8 no
-timeout 120s "$TASK_OUT/build-tb_burst_engine-B256-O2-D8/Vtb_burst_engine" +CREDIT_LIMIT
+run_one_scenario "$TASK_OUT/build-tb_burst_engine-B256-O2-D8/Vtb_burst_engine" \
+    "$TASK_OUT/build-tb_burst_engine-B256-O2-D8" CREDIT_LIMIT
 run_build tb_burst_engine 16 "$TESTS/tb_burst_engine.sv" "" 1 1 no
-timeout 120s "$TASK_OUT/build-tb_burst_engine-B16-O1-D1/Vtb_burst_engine" +CREDIT_LIMIT
+run_one_scenario "$TASK_OUT/build-tb_burst_engine-B16-O1-D1/Vtb_burst_engine" \
+    "$TASK_OUT/build-tb_burst_engine-B16-O1-D1" CREDIT_LIMIT
 
 # Exercise the largest supported data FIFO and fail closed at every parameter
 # boundary with a checked diagnostic (not merely a compile/runtime failure).
 run_build tb_burst_engine 16 "$TESTS/tb_burst_engine.sv" "" 1 4096 no
-timeout 120s "$TASK_OUT/build-tb_burst_engine-B16-O1-D4096/Vtb_burst_engine" +DEPTH4096
+run_one_scenario "$TASK_OUT/build-tb_burst_engine-B16-O1-D4096/Vtb_burst_engine" \
+    "$TASK_OUT/build-tb_burst_engine-B16-O1-D4096" DEPTH4096
 
 expect_parameter_failure() {
     local name=$1 outstanding=$2 depth=$3 diagnostic=$4
@@ -314,8 +239,18 @@ timeout 120s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fata
         cat "$ct_build/compile.log" >&2
         exit 1
     }
-timeout 120s "$ct_build/Vtb_count_trunc" +COUNT_TRUNC_64 || exit 1
-timeout 120s "$ct_build/Vtb_count_trunc" +COUNT_MAX_64 || exit 1
+for scenario in COUNT_TRUNC_64 COUNT_MAX_64; do
+    log="$ct_build/scenario-${scenario}.log"
+    timeout 120s "$ct_build/Vtb_count_trunc" "+$scenario" >"$log" 2>&1 || {
+        cat "$log" >&2
+        exit 1
+    }
+    rg -q "^DUPLEX_READ PASS CASE=${scenario}$" "$log" || {
+        cat "$log" >&2
+        echo "ERROR: missing exact PASS marker for $scenario" >&2
+        exit 1
+    }
+done
 echo "PASS element-count limit enforced at the counter width, not the address limit"
 
 echo "PASS burst engine RTL regression. Artifacts retained at $TASK_OUT"

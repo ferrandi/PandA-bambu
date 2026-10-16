@@ -93,6 +93,7 @@ module tb_count_trunc #(
                 $fatal(1, "region_count is %0d after rejecting the oversized count",
                        dut.region_count);
             $display("COUNT_TRUNC_64: oversized count rejected with fault");
+            $display("DUPLEX_READ PASS CASE=COUNT_TRUNC_64");
             $finish;
         end
 
@@ -107,6 +108,7 @@ module tb_count_trunc #(
             if (dut.region_count !== 32'h7fffffff)
                 $fatal(1, "region_count is %0d, expected 0x7fffffff", dut.region_count);
             $display("COUNT_MAX_64: largest representable count accepted");
+            $display("DUPLEX_READ PASS CASE=COUNT_MAX_64");
             $finish;
         end else begin
             $fatal(1, "no scenario selected: pass +COUNT_TRUNC_64 or +COUNT_MAX_64");
