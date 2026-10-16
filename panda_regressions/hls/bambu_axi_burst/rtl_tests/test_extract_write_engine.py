@@ -3,6 +3,8 @@ from __future__ import annotations
 import copy
 import importlib.util
 import re
+import subprocess
+import sys
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
@@ -51,6 +53,35 @@ class WriteEngineExtractorTests(unittest.TestCase):
         self.assertIn("(reset == 1'b0)", generated)
         self.assertIn("assign m_axi_wstrb", generated)
         self.assertTrue(generated.endswith("endmodule\n"))
+
+    def test_cli_extracts_reader_when_target_is_selected(self):
+        output = self.scratch / "reader.sv"
+        result = subprocess.run(
+            [sys.executable, str(EXTRACTOR_PATH), "--xml", str(XML), "--out", str(output),
+             "--target", "MinimalAXI4MasterPipelined"],
+            text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Extracted MinimalAXI4MasterPipelined from", result.stdout)
+        self.assertIn("module MinimalAXI4MasterPipelined #(", output.read_text())
+
+    def test_cli_keeps_writer_as_default_target(self):
+        output = self.scratch / "writer-default.sv"
+        result = subprocess.run(
+            [sys.executable, str(EXTRACTOR_PATH), "--xml", str(XML), "--out", str(output)],
+            text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Extracted MinimalAXI4MasterPipelinedWrite from", result.stdout)
+        self.assertIn("module MinimalAXI4MasterPipelinedWrite #(", output.read_text())
+
+    def test_cli_rejects_unknown_target(self):
+        output = self.scratch / "invalid.sv"
+        result = subprocess.run(
+            [sys.executable, str(EXTRACTOR_PATH), "--xml", str(XML), "--out", str(output),
+             "--target", "SomeOtherCell"],
+            text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("invalid choice", result.stderr)
+        self.assertFalse(output.exists())
 
     def test_real_xml_reset_placeholders_and_all_mode_polarity_variants(self):
         source_body = EXTRACTOR._raw_body(XML, EXTRACTOR.CELL_NAME)
