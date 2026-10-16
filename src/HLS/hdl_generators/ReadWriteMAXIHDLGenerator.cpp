@@ -317,7 +317,8 @@ void ReadWriteMAXIHDLGenerator::InternalExec(std::ostream& out, structural_objec
           << "assign " << _ports_out[o_arvalid].name << " = 0;\n"
           << "assign " << _ports_out[o_rready].name << " = 0;\n"
           << "MinimalAXI4MasterPipelinedWrite #(.B_MAX(" << write_profile.max_burst_length
-          << "), .MAX_OUTSTANDING(1), .FIFO_DEPTH(" << write_profile.fifo_depth << "),\n"
+          << "), .MAX_OUTSTANDING(1), .FIFO_DEPTH(" << write_profile.fifo_depth
+          << "), .PEER_FAULT_ENABLE(0),\n"
           << "  .BITSIZE_in1(" << _ports_in[i_in1].type_size << "), .BITSIZE_in2("
           << _ports_in[i_in2].type_size << "), .BITSIZE_in3(" << _ports_in[i_in3].type_size
           << "), .BITSIZE_in4(" << _ports_in[i_in4].type_size << "), .BITSIZE_in5("
@@ -329,7 +330,8 @@ void ReadWriteMAXIHDLGenerator::InternalExec(std::ostream& out, structural_objec
           << "), .BITSIZE_m_axi_wstrb(" << _ports_out[o_wstrb].type_size << "),\n"
           << "  .BITSIZE_m_axi_bresp(" << _ports_in[i_bresp].type_size
           << "), .BITSIZE_m_axi_bid(1)) burst_engine (\n"
-          << "  .clock(clock), .reset(reset), .start(" << _ports_in[i_start].name << "),\n"
+          << "  .clock(clock), .reset(reset), .start(" << _ports_in[i_start].name
+          << "), .peer_fault(1'b0),\n"
           << "  .in1(" << _ports_in[i_in1].name << "), .in2(" << _ports_in[i_in2].name << "),\n"
           << "  .in3(" << _ports_in[i_in3].name << "), .in4(" << _ports_in[i_in4].name << "),\n"
           << "  .in5(" << burst_count_port_name << "), .done(burst_done), .out1(burst_out1), .fault(burst_fault),\n"
@@ -407,7 +409,8 @@ void ReadWriteMAXIHDLGenerator::InternalExec(std::ostream& out, structural_objec
           << "assign " << _ports_out[o_arvalid].name << " = burst_arvalid;\n"
           << "assign " << _ports_out[o_rready].name << " = burst_rready;\n"
           << "MinimalAXI4MasterPipelined #(.B_MAX(" << burst_max << "), .MAX_OUTSTANDING("
-          << read_profile.max_outstanding << "), .FIFO_DEPTH(" << read_profile.fifo_depth << "),\n"
+          << read_profile.max_outstanding << "), .FIFO_DEPTH(" << read_profile.fifo_depth
+          << "), .PEER_FAULT_ENABLE(0),\n"
           << "  .BITSIZE_in1(" << _ports_in[i_in1].type_size << "), .BITSIZE_in2("
           << _ports_in[i_in2].type_size << "),\n"
           << "  .BITSIZE_in3(" << _ports_in[i_in3].type_size << "), .BITSIZE_in4("
@@ -422,7 +425,8 @@ void ReadWriteMAXIHDLGenerator::InternalExec(std::ostream& out, structural_objec
           << "),\n"
           << "  .BITSIZE_m_axi_rresp(" << _ports_in[i_rresp].type_size
           << "), .BITSIZE_m_axi_rid(1)) burst_engine (\n"
-          << "  .clock(clock), .reset(reset), .start(" << _ports_in[i_start].name << "),\n"
+          << "  .clock(clock), .reset(reset), .start(" << _ports_in[i_start].name
+          << "), .peer_fault(1'b0),\n"
           << "  .in1(" << _ports_in[i_in1].name << "), .in2(" << _ports_in[i_in2].name << "),\n"
           << "  .in3(" << _ports_in[i_in3].name << "), .in4(" << _ports_in[i_in4].name << "),\n"
           << "  .in5(" << burst_count_port_name << "), .done(burst_done),\n"

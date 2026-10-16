@@ -588,6 +588,7 @@ namespace
       ir_nodeRef guard;
       ir_nodeRef bound;
       ir_nodeRef base;
+      ir_nodeRef induction;
       std::vector<ir_nodeRef> reads;
    };
 
@@ -599,7 +600,19 @@ namespace
       ir_nodeRef guard;
       ir_nodeRef bound;
       ir_nodeRef base;
+      ir_nodeRef induction;
       ir_nodeRef store;
+   };
+
+   struct SameBaseDuplexProof
+   {
+      unsigned int owner_argument_index = 0;
+      std::string bundle;
+      ir_nodeRef base;
+      ir_nodeRef load_statement;
+      ir_nodeRef store_statement;
+      ReadBurstRegion read_region{};
+      WriteBurstRegion write_region{};
    };
 
    bool isConstantValue(const ir_nodeRef& value, const long long expected)
@@ -691,7 +704,8 @@ namespace
    bool recognizeReadBurstRegion(const statement_list_node* sl, const std::vector<ir_nodeRef>& reads,
                                  const ir_nodeRef& expected_base,
                                  const std::vector<OriginalMemoryAccess>& original_memory_accesses,
-                                 const std::string& expected_bundle, ReadBurstRegion& result)
+                                 const std::string& expected_bundle, ReadBurstRegion& result,
+                                 const ir_nodeRef& paired_store = ir_nodeRef())
    {
       if(reads.empty() || !expected_base || expected_base->get_kind() != ssa_node_K)
       {
@@ -733,6 +747,10 @@ namespace
       for(auto stmt_it = loop_stmts.begin(); stmt_it != std::prev(loop_stmts.end()); ++stmt_it)
       {
          const auto stmt = *stmt_it;
+         if(paired_store && stmt->index == paired_store->index)
+         {
+            continue;
+         }
          if(isPreanalyzedCrossBundleWrite(stmt, original_memory_accesses, expected_base, expected_bundle))
          {
             continue;
@@ -961,6 +979,7 @@ namespace
       result.guard = guard_condition;
       result.bound = bound;
       result.base = expected_base;
+      result.induction = induction;
       result.reads = std::move(loop_reads);
       return true;
    }
@@ -968,7 +987,8 @@ namespace
    bool recognizeWriteBurstRegion(const statement_list_node* sl, const std::vector<ir_nodeRef>& stores,
                                   const ir_nodeRef& expected_base,
                                   const std::vector<OriginalMemoryAccess>& original_memory_accesses,
-                                  const std::string& expected_bundle, WriteBurstRegion& result)
+                                  const std::string& expected_bundle, WriteBurstRegion& result,
+                                  const ir_nodeRef& paired_read = ir_nodeRef())
    {
       if(stores.size() != 1 || !expected_base || expected_base->get_kind() != ssa_node_K)
       {
@@ -1013,6 +1033,10 @@ namespace
       }
       for(auto stmt_it = statements.begin(); stmt_it != std::prev(statements.end()); ++stmt_it)
       {
+         if(paired_read && (*stmt_it)->index == paired_read->index)
+         {
+            continue;
+         }
          if((*stmt_it)->get_kind() != assign_stmt_K)
          {
             return false;
@@ -1234,7 +1258,14 @@ namespace
             }
          }
       }
-      result = {*preheader_it, loop_id, *exit_it, enters_loop->first, bound, expected_base, store_stmt};
+      result.preheader = *preheader_it;
+      result.header = loop_id;
+      result.exit = *exit_it;
+      result.guard = enters_loop->first;
+      result.bound = bound;
+      result.base = expected_base;
+      result.induction = induction;
+      result.store = store_stmt;
       return true;
    }
 
@@ -1794,6 +1825,11 @@ DesignFlowStep_Status InterfaceInfer::Exec()
          bool bundle_has_memory_write = false;
          std::string read_fallback_reason;
          std::string write_fallback_reason;
+         bool same_base_duplex_candidate = false;
+         std::string same_base_duplex_reason = "read/write profile not requested";
+         bool same_base_duplex_profile_eligible = false;
+         std::string same_base_duplex_profile_reason = "read/write profile not requested";
+         std::unique_ptr<SameBaseDuplexProof> same_base_duplex_proof;
          AXIReadBurstProfile read_profile{};
          AXIWriteBurstProfile write_profile{};
          unsigned int read_max_burst_length = 0;
@@ -2036,6 +2072,107 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   decision.write_recognized = all_recognized && !decision.write_regions.empty();
                }
             }
+            if(decision.read_requested && decision.write_requested)
+            {
+               decision.same_base_duplex_profile_reason = cache_enabled ? "cache-enabled bundle" :
+                                                           decision.write_profile.max_outstanding != 1U ?
+                                                               "unsupported write outstanding profile" :
+                                                               "read/write profile is eligible";
+               decision.same_base_duplex_profile_eligible = !cache_enabled &&
+                                                            decision.write_profile.max_outstanding == 1U;
+               decision.same_base_duplex_reason = "original effects are not fully classified ordinary accesses";
+               if(original_memory_effects_safe && original_memory_accesses.size() == 2)
+               {
+                  const auto read_access = std::find_if(original_memory_accesses.begin(), original_memory_accesses.end(),
+                                                        [&](const auto& access) {
+                                                           return !access.is_write && access.bundle == bundle_name;
+                                                        });
+                  const auto write_access = std::find_if(original_memory_accesses.begin(), original_memory_accesses.end(),
+                                                         [&](const auto& access) {
+                                                            return access.is_write && access.bundle == bundle_name;
+                                                         });
+                  if(read_access == original_memory_accesses.end() || write_access == original_memory_accesses.end() ||
+                     !read_access->classified || !write_access->classified || !read_access->ordinary ||
+                     !write_access->ordinary || !read_access->base || !write_access->base ||
+                     read_access->base->index != write_access->base->index ||
+                     read_access->owner_argument_index != write_access->owner_argument_index)
+                  {
+                     decision.same_base_duplex_reason = "not exactly one classified same-base read/store pair";
+                  }
+                  else
+                  {
+                     const auto owner_arg = std::find_if(fd->list_of_args.begin(), fd->list_of_args.end(),
+                                                         [&](const auto& candidate) {
+                                                            return candidate->index == read_access->owner_argument_index;
+                                                         });
+                     if(owner_arg == fd->list_of_args.end())
+                     {
+                        decision.same_base_duplex_reason = "same-base owner argument is unavailable";
+                     }
+                     else
+                     {
+                        const auto expected_base_id = AppM->getSSAFromParm(root_id, (*owner_arg)->index);
+                        const auto expected_base = TM->GetIRNode(expected_base_id);
+                        ReadBurstRegion read_region{};
+                        WriteBurstRegion write_region{};
+                        const std::vector<ir_nodeRef> reads{read_access->statement};
+                        const std::vector<ir_nodeRef> writes{write_access->statement};
+                        const bool read_ok = recognizeReadBurstRegion(sl, reads, expected_base, burst_memory_accesses,
+                                                                      bundle_name, read_region,
+                                                                      write_access->statement);
+                        const bool write_ok = recognizeWriteBurstRegion(sl, writes, expected_base,
+                                                                        burst_memory_accesses, bundle_name,
+                                                                        write_region, read_access->statement);
+                        if(!read_ok || !write_ok)
+                        {
+                           decision.same_base_duplex_reason = "canonical contiguous loop recognition failed";
+                        }
+                        else if(read_region.preheader != write_region.preheader ||
+                                read_region.header != write_region.header ||
+                                read_region.guard->index != write_region.guard->index ||
+                                read_region.bound->index != write_region.bound->index ||
+                                read_region.induction->index != write_region.induction->index ||
+                                read_region.base->index != write_region.base->index)
+                        {
+                           decision.same_base_duplex_reason = "read/store loop, guard, bound, base, or affine index differ";
+                        }
+                        else
+                        {
+                           const auto loop_bb = sl->list_of_bloc.at(read_region.header);
+                           const auto& loop_stmts = loop_bb->CGetStmtList();
+                           const auto read_position = std::find_if(loop_stmts.begin(), loop_stmts.end(),
+                                                                   [&](const auto& stmt) {
+                                                                      return stmt->index == read_access->statement->index;
+                                                                   });
+                           const auto write_position = std::find_if(loop_stmts.begin(), loop_stmts.end(),
+                                                                    [&](const auto& stmt) {
+                                                                       return stmt->index == write_access->statement->index;
+                                                                    });
+                           if(read_position == loop_stmts.end() || write_position == loop_stmts.end() ||
+                              std::distance(loop_stmts.begin(), read_position) >=
+                                  std::distance(loop_stmts.begin(), write_position))
+                           {
+                              decision.same_base_duplex_reason = "LOAD does not precede STORE in the original iteration";
+                           }
+                           else
+                           {
+                              auto proof = std::make_unique<SameBaseDuplexProof>();
+                              proof->owner_argument_index = read_access->owner_argument_index;
+                              proof->bundle = bundle_name;
+                              proof->base = read_region.base;
+                              proof->load_statement = read_access->statement;
+                              proof->store_statement = write_access->statement;
+                              proof->read_region = std::move(read_region);
+                              proof->write_region = std::move(write_region);
+                              decision.same_base_duplex_proof = std::move(proof);
+                              decision.same_base_duplex_candidate = true;
+                              decision.same_base_duplex_reason = "same-base pointwise read-before-write candidate";
+                           }
+                        }
+                     }
+                  }
+               }
+            }
          }
          for(const auto& bundle_decision : burst_decisions)
          {
@@ -2060,7 +2197,71 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                        " write_recognized=" +
                        std::to_string(static_cast<unsigned int>(write_region != decision.write_regions.end())) +
                        " write_fallback=\"" +
-                       (decision.write_fallback_reason.empty() ? "-" : decision.write_fallback_reason) + "\"");
+                       (decision.write_fallback_reason.empty() ? "-" : decision.write_fallback_reason) +
+                       "\" same_base_duplex_candidate=" +
+                       std::to_string(static_cast<unsigned int>(decision.same_base_duplex_candidate)) +
+                       " same_base_duplex_reason=\"" + decision.same_base_duplex_reason + "\"");
+            }
+            if(decision.read_requested && decision.write_requested)
+            {
+               const auto json_string = [](const std::string& value) {
+                  std::string escaped;
+                  escaped.reserve(value.size() + 2U);
+                  for(const auto character : value)
+                  {
+                     if(character == '\\' || character == '"')
+                     {
+                        escaped.push_back('\\');
+                     }
+                     if(character == '\n')
+                     {
+                        escaped += "\\n";
+                     }
+                     else if(character == '\r')
+                     {
+                        escaped += "\\r";
+                     }
+                     else
+                     {
+                        escaped.push_back(character);
+                     }
+                  }
+                  return escaped;
+               };
+               const auto node_id = [](const ir_nodeRef& node) {
+                  return node ? std::to_string(node->index) : std::string("null");
+               };
+               std::ostringstream proof_record;
+               proof_record << "AXI_BURST_DUPLEX_PROOF {\"bundle\":\"" << json_string(bundle_decision.first)
+                            << "\",\"semantic_proof\":"
+                            << (decision.same_base_duplex_proof ? "true" : "false")
+                            << ",\"semantic_reason\":\"" << json_string(decision.same_base_duplex_reason)
+                            << "\",\"profile_eligible\":"
+                            << (decision.same_base_duplex_profile_eligible ? "true" : "false")
+                            << ",\"profile_reason\":\"" << json_string(decision.same_base_duplex_profile_reason)
+                            << "\"";
+               if(decision.same_base_duplex_proof)
+               {
+                  const auto& proof = *decision.same_base_duplex_proof;
+                  proof_record << ",\"owner_argument_index\":" << proof.owner_argument_index
+                               << ",\"base_ssa_index\":" << node_id(proof.base)
+                               << ",\"load_statement_index\":" << node_id(proof.load_statement)
+                               << ",\"store_statement_index\":" << node_id(proof.store_statement)
+                               << ",\"read_preheader_bb\":" << proof.read_region.preheader
+                               << ",\"read_header_bb\":" << proof.read_region.header
+                               << ",\"read_branch_index\":" << node_id(proof.read_region.branch)
+                               << ",\"read_guard_index\":" << node_id(proof.read_region.guard)
+                               << ",\"read_bound_index\":" << node_id(proof.read_region.bound)
+                               << ",\"read_induction_index\":" << node_id(proof.read_region.induction)
+                               << ",\"write_preheader_bb\":" << proof.write_region.preheader
+                               << ",\"write_header_bb\":" << proof.write_region.header
+                               << ",\"write_exit_bb\":" << proof.write_region.exit
+                               << ",\"write_guard_index\":" << node_id(proof.write_region.guard)
+                               << ",\"write_bound_index\":" << node_id(proof.write_region.bound)
+                               << ",\"write_induction_index\":" << node_id(proof.write_region.induction);
+               }
+               proof_record << "}";
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, proof_record.str());
             }
          }
       };
