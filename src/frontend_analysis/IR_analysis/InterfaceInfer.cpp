@@ -1779,6 +1779,292 @@ DesignFlowStep_Status InterfaceInfer::Exec()
           !burst_feature_enabled || !has_read_burst_pragma ||
           ((has_only_read_effects && original_ordinary_effects) || original_memory_effects_safe);
 
+      struct BundleBurstDecision
+      {
+         struct DirectionalAccesses
+         {
+            std::vector<OriginalMemoryAccess> reads;
+            std::vector<OriginalMemoryAccess> writes;
+         };
+         bool read_requested = false;
+         bool write_requested = false;
+         bool read_recognized = false;
+         bool write_recognized = false;
+         bool bundle_has_memory_read = false;
+         bool bundle_has_memory_write = false;
+         std::string read_fallback_reason;
+         std::string write_fallback_reason;
+         AXIReadBurstProfile read_profile{};
+         AXIWriteBurstProfile write_profile{};
+         unsigned int read_max_burst_length = 0;
+         std::map<unsigned int, DirectionalAccesses> accesses_by_argument;
+         std::map<unsigned int, std::vector<ReadBurstRegion>> read_regions;
+         std::map<unsigned int, WriteBurstRegion> write_regions;
+      };
+      std::map<std::string, BundleBurstDecision> burst_decisions;
+      std::vector<OriginalMemoryAccess> burst_memory_accesses = original_memory_accesses;
+      std::map<unsigned int, std::string> dataflow_bundle_by_argument;
+      const auto preanalyze_bursts = [&]() {
+         if(!burst_feature_enabled)
+         {
+            return;
+         }
+         const auto sl = GetPointerS<const statement_list_node>(fd->body);
+         for(const auto& iface : func_arch->ifaces)
+         {
+            const auto& bundle_name = iface.first;
+            const auto& iface_attrs = iface.second;
+            const auto mode = iface_attrs.find(FunctionArchitecture::iface_mode);
+            if(mode == iface_attrs.end() || mode->second != "m_axi")
+            {
+               continue;
+            }
+            auto& decision = burst_decisions[bundle_name];
+            const auto max_read_burst = iface_attrs.find(FunctionArchitecture::iface_max_read_burst_length);
+            const auto max_write_burst = iface_attrs.find(FunctionArchitecture::iface_max_write_burst_length);
+            const auto write_outstanding = iface_attrs.find(FunctionArchitecture::iface_write_burst_outstanding);
+            const auto write_fifo_depth = iface_attrs.find(FunctionArchitecture::iface_write_fifo_depth);
+            const auto read_outstanding = iface_attrs.find(FunctionArchitecture::iface_num_read_outstanding);
+            const auto read_fifo_depth = iface_attrs.find(FunctionArchitecture::iface_read_fifo_depth);
+            decision.read_requested = max_read_burst != iface_attrs.end();
+            decision.write_requested = max_write_burst != iface_attrs.end();
+            if(decision.read_requested)
+            {
+               decision.read_profile = ParseAXIReadBurstProfile(iface_attrs, bundle_name);
+               decision.read_max_burst_length = static_cast<unsigned int>(std::stoul(max_read_burst->second));
+            }
+            if(max_write_burst != iface_attrs.end() || write_outstanding != iface_attrs.end() ||
+               write_fifo_depth != iface_attrs.end())
+            {
+               decision.write_profile = ParseAXIWriteBurstProfile(iface_attrs, bundle_name);
+               if(decision.write_profile.max_outstanding != 1U)
+               {
+                  THROW_ERROR_USAGE("Configured write bursts for bundle '" + bundle_name +
+                                    "' currently support write_burst_outstanding=1 only; values greater than 1 "
+                                    "require the F2 write-burst engine.");
+               }
+            }
+            if(max_read_burst == iface_attrs.end() &&
+               (read_outstanding != iface_attrs.end() || read_fifo_depth != iface_attrs.end()))
+            {
+               THROW_ERROR_USAGE("AXI read profile attributes num_read_outstanding/read_fifo_depth for bundle '" +
+                                 bundle_name +
+                                 "' require max_read_burst_length; the profile cannot be applied to the legacy scalar interface.");
+            }
+            for(const auto& access : burst_memory_accesses)
+            {
+               if(access.bundle == bundle_name && access.classified)
+               {
+                  decision.bundle_has_memory_write |= access.is_write;
+                  decision.bundle_has_memory_read |= !access.is_write;
+                  auto& direction = decision.accesses_by_argument[access.owner_argument_index];
+                  (access.is_write ? direction.writes : direction.reads).push_back(access);
+               }
+            }
+            const bool cache_enabled = iface_attrs.find(FunctionArchitecture::iface_cache_line_count) !=
+                                       iface_attrs.end();
+            if(decision.read_requested)
+            {
+               if(!function_effects_safe)
+               {
+                  decision.read_fallback_reason =
+                      "memory writes or opaque effects; prefetch ordering is not proven";
+               }
+               else if(cache_enabled)
+               {
+                  decision.read_fallback_reason = "cache-enabled bundle";
+               }
+               else if(decision.bundle_has_memory_write)
+               {
+                  decision.read_fallback_reason = "bundle contains stores";
+               }
+               if(decision.read_fallback_reason.empty())
+               {
+                  std::vector<ir_nodeRef> bundle_pointer_args;
+                  for(const auto& candidate_arg : fd->list_of_args)
+                  {
+                     const auto candidate_name = get_decl_name(candidate_arg);
+                     if(func_arch->parms.count(candidate_name) &&
+                        func_arch->parms.at(candidate_name).at(FunctionArchitecture::parm_bundle) == bundle_name &&
+                        ir_helper::IsPointerType(ir_helper::CGetType(candidate_arg)))
+                     {
+                        bundle_pointer_args.push_back(candidate_arg);
+                     }
+                  }
+                  std::set<unsigned int> seen_read_statements;
+                  std::map<unsigned int, std::vector<ir_nodeRef>> loop_reads;
+                  if(bundle_pointer_args.size() == 1)
+                  {
+                     const auto owner_arg = bundle_pointer_args.front();
+                     const auto original_reads = decision.accesses_by_argument.find(owner_arg->index);
+                     if(original_reads != decision.accesses_by_argument.end())
+                     {
+                        for(const auto& access : original_reads->second.reads)
+                        {
+                           if(access.ordinary && seen_read_statements.insert(access.statement->index).second)
+                           {
+                              loop_reads[GetPointerS<const node_stmt>(access.statement)->bb_index].push_back(
+                                  access.statement);
+                           }
+                        }
+                     }
+                     const auto expected_base_id = AppM->getSSAFromParm(root_id, owner_arg->index);
+                     const auto expected_base = TM->GetIRNode(expected_base_id);
+                     std::vector<ReadBurstRegion> regions;
+                     bool owner_recognized = !loop_reads.empty();
+                     for(const auto& read_group : loop_reads)
+                     {
+                        ReadBurstRegion region{};
+                        if(!recognizeReadBurstRegion(sl, read_group.second, expected_base,
+                                                     burst_memory_accesses, bundle_name, region))
+                        {
+                           owner_recognized = false;
+                           break;
+                        }
+                        regions.push_back(std::move(region));
+                     }
+                     if(owner_recognized && !regions.empty())
+                     {
+                        for(size_t first = 0; first < regions.size() && owner_recognized; ++first)
+                        {
+                           for(size_t second = first + 1; second < regions.size(); ++second)
+                           {
+                              const auto first_to_second =
+                                  hasBlockPath(sl, regions[first].preheader, regions[second].preheader);
+                              const auto second_to_first =
+                                  hasBlockPath(sl, regions[second].preheader, regions[first].preheader);
+                              if(first_to_second == second_to_first)
+                              {
+                                 owner_recognized = false;
+                                 break;
+                              }
+                           }
+                        }
+                     }
+                     if(owner_recognized && !regions.empty())
+                     {
+                        std::sort(regions.begin(), regions.end(), [&](const auto& lhs, const auto& rhs) {
+                           return hasBlockPath(sl, lhs.preheader, rhs.preheader);
+                        });
+                        decision.read_regions[owner_arg->index] = std::move(regions);
+                     }
+                  }
+                  decision.read_recognized = !decision.read_regions.empty();
+               }
+            }
+            if(decision.write_requested)
+            {
+               if(!original_memory_effects_safe)
+               {
+                  decision.write_fallback_reason = "opaque, volatile, atomic, or unclassified memory effects";
+               }
+               else if(cache_enabled)
+               {
+                  decision.write_fallback_reason = "cache-enabled bundle";
+               }
+               else if(decision.bundle_has_memory_read)
+               {
+                  decision.write_fallback_reason =
+                      "bundle contains reads; same-bundle read/write requires duplex support";
+               }
+               if(decision.write_fallback_reason.empty())
+               {
+                  bool all_recognized = false;
+                  for(const auto& owner : func_arch->parms)
+                  {
+                     if(owner.second.at(FunctionArchitecture::parm_bundle) != bundle_name)
+                     {
+                        continue;
+                     }
+                     const auto owner_arg = std::find_if(fd->list_of_args.begin(), fd->list_of_args.end(),
+                                                         [&](const auto& candidate) {
+                                                            return get_decl_name(candidate) == owner.first;
+                                                         });
+                     if(owner_arg == fd->list_of_args.end() ||
+                        !ir_helper::IsPointerType(ir_helper::CGetType(*owner_arg)))
+                     {
+                        continue;
+                     }
+                     std::vector<ir_nodeRef> stores;
+                     const auto original_writes = decision.accesses_by_argument.find((*owner_arg)->index);
+                     if(original_writes != decision.accesses_by_argument.end())
+                     {
+                        for(const auto& access : original_writes->second.writes)
+                        {
+                           if(access.ordinary)
+                           {
+                              stores.push_back(access.statement);
+                           }
+                        }
+                     }
+                     std::sort(stores.begin(), stores.end(), [](const auto& lhs, const auto& rhs) {
+                        return lhs->index < rhs->index;
+                     });
+                     stores.erase(std::unique(stores.begin(), stores.end(), [](const auto& lhs, const auto& rhs) {
+                                     return lhs->index == rhs->index;
+                                  }),
+                                  stores.end());
+                     const auto expected_base_id = AppM->getSSAFromParm(root_id, (*owner_arg)->index);
+                     const auto expected_base = TM->GetIRNode(expected_base_id);
+                     WriteBurstRegion region{};
+                     bool recognized = recognizeWriteBurstRegion(sl, stores, expected_base,
+                                                                 burst_memory_accesses, bundle_name, region);
+                     if(recognized)
+                     {
+                        for(const auto& access : burst_memory_accesses)
+                        {
+                           if(access.is_write && access.statement->index != region.store->index)
+                           {
+                              recognized = false;
+                              break;
+                           }
+                           if(!access.is_write &&
+                              (!access.classified || !access.ordinary || !access.base || !expected_base ||
+                               access.base->index == expected_base->index || access.bundle == bundle_name))
+                           {
+                              recognized = false;
+                              break;
+                           }
+                        }
+                     }
+                     if(recognized)
+                     {
+                        decision.write_regions[(*owner_arg)->index] = std::move(region);
+                        all_recognized = true;
+                     }
+                  }
+                  decision.write_recognized = all_recognized && !decision.write_regions.empty();
+               }
+            }
+         }
+         for(const auto& bundle_decision : burst_decisions)
+         {
+            const auto& decision = bundle_decision.second;
+            for(const auto& owner_accesses : decision.accesses_by_argument)
+            {
+               const auto owner_argument_index = owner_accesses.first;
+               const auto read_region = decision.read_regions.find(owner_argument_index);
+               const auto write_region = decision.write_regions.find(owner_argument_index);
+               INDENT_DBG_MEX(
+                   DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                   "AXI_BURST_PREANALYSIS bundle=" + bundle_decision.first +
+                       " owner_argument_index=" + std::to_string(owner_argument_index) +
+                       " read_accesses=" + std::to_string(owner_accesses.second.reads.size()) +
+                       " write_accesses=" + std::to_string(owner_accesses.second.writes.size()) +
+                       " read_requested=" + std::to_string(static_cast<unsigned int>(decision.read_requested)) +
+                       " read_recognized=" +
+                       std::to_string(static_cast<unsigned int>(read_region != decision.read_regions.end())) +
+                       " read_fallback=\"" +
+                       (decision.read_fallback_reason.empty() ? "-" : decision.read_fallback_reason) +
+                       "\" write_requested=" + std::to_string(static_cast<unsigned int>(decision.write_requested)) +
+                       " write_recognized=" +
+                       std::to_string(static_cast<unsigned int>(write_region != decision.write_regions.end())) +
+                       " write_fallback=\"" +
+                       (decision.write_fallback_reason.empty() ? "-" : decision.write_fallback_reason) + "\"");
+            }
+         }
+      };
+
       const ir_manipulationRef ir_man(new ir_manipulation(TM, parameters, AppM));
       const auto is_dataflow_module =
           func_arch->attrs.find(FunctionArchitecture::func_dataflow_module) != func_arch->attrs.end() &&
@@ -1802,10 +2088,13 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   return it.second.at(FunctionArchitecture::parm_index) == std::to_string(idx);
                });
                THROW_ASSERT(parm_attr != func_arch->parms.end(), "Expected parameter index " + std::to_string(idx));
+               THROW_ASSERT(fd->list_of_args.size() > idx, "Unexpected function parameters count");
                auto& current_bundle = parm_attr->second.at(FunctionArchitecture::parm_bundle);
+               const auto argument_index = fd->list_of_args.at(idx)->index;
                std::string bundle_name;
                if(base_var->get_kind() == argument_val_node_K)
                {
+                  dataflow_bundle_by_argument[argument_index] = current_bundle;
                   func_arch->ifaces[current_bundle].at(FunctionArchitecture::iface_mode) = "default";
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                                  "---Parameter " + parm_attr->second.at(FunctionArchitecture::parm_port) +
@@ -1815,6 +2104,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                }
                if(ir_helper::IsConstant(base_var))
                {
+                  dataflow_bundle_by_argument[argument_index] = current_bundle;
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Parameter " + parm_attr->second.at(FunctionArchitecture::parm_port) +
                                      " is constant at this call point");
@@ -1852,7 +2142,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                func_arch->ifaces[bundle_name].at(FunctionArchitecture::iface_name) = bundle_name;
                func_arch->ifaces.erase(current_bundle);
                current_bundle = bundle_name;
-               THROW_ASSERT(fd->list_of_args.size() > idx, "Unexpected function parameters count");
+               dataflow_bundle_by_argument[argument_index] = current_bundle;
                auto pd = GetPointerS<argument_val_node>(fd->list_of_args.at(idx));
                pd->name = ir_man->create_identifier_node(bundle_name);
                INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
@@ -1865,6 +2155,15 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             ++idx;
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      }
+
+      for(auto& access : burst_memory_accesses)
+      {
+         const auto mapped_bundle = dataflow_bundle_by_argument.find(access.owner_argument_index);
+         if(access.classified && mapped_bundle != dataflow_bundle_by_argument.end())
+         {
+            access.bundle = mapped_bundle->second;
+         }
       }
 
       if(burst_feature_enabled)
@@ -1889,15 +2188,13 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             }
             const auto max_read_burst = iface_attrs.find(FunctionArchitecture::iface_max_read_burst_length);
             const auto max_write_burst = iface_attrs.find(FunctionArchitecture::iface_max_write_burst_length);
-            const bool read_burst_requested = max_read_burst != iface_attrs.end();
-            const bool write_burst_requested = max_write_burst != iface_attrs.end();
-            if(read_burst_requested && effective_burst_type != 1U)
+            if(max_read_burst != iface_attrs.end() && effective_burst_type != 1U)
             {
                THROW_ERROR_USAGE("Configured read bursts for bundle '" + bundle_name +
                                  "' require AXI INCREMENTAL burst type; the effective AXI burst type is " +
                                  (effective_burst_type == 0U ? "FIXED" : "unsupported") + ".");
             }
-            if(write_burst_requested && effective_burst_type != 1U)
+            if(max_write_burst != iface_attrs.end() && effective_burst_type != 1U)
             {
                THROW_ERROR_USAGE("Configured write bursts for bundle '" + bundle_name +
                                  "' require AXI INCREMENTAL burst type; the effective AXI burst type is " +
@@ -1905,7 +2202,9 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             }
          }
       }
-      else
+      preanalyze_bursts();
+
+      if(!burst_feature_enabled)
       {
          for(const auto& iface : func_arch->ifaces)
          {
@@ -1998,7 +2297,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                      GetPointerS<const ssa_node>(arg_ssa)->CGetUseStmts().empty();
             const auto& bundle_name = parm_attrs.at(FunctionArchitecture::parm_bundle);
             const bool another_parameter_owns_bundle_access = std::any_of(
-                original_memory_accesses.begin(), original_memory_accesses.end(), [&](const auto& access) {
+                burst_memory_accesses.begin(), burst_memory_accesses.end(), [&](const auto& access) {
                    return access.classified && access.owner_argument_index != arg_id && access.bundle == bundle_name;
                 });
             if(has_no_uses && another_parameter_owns_bundle_access)
@@ -2261,80 +2560,36 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                std::set<std::string> operationsR, operationsW;
                const auto interface_datatype = ir_man->GetCustomIntegerType(info.bitwidth, true);
                const auto& bundle_name = iface_attrs.at(FunctionArchitecture::iface_name);
-               const auto burst_enabled = burst_feature_enabled;
-               const auto max_write_burst = iface_attrs.find(FunctionArchitecture::iface_max_write_burst_length);
-               const auto write_outstanding = iface_attrs.find(FunctionArchitecture::iface_write_burst_outstanding);
-               const auto write_fifo_depth = iface_attrs.find(FunctionArchitecture::iface_write_fifo_depth);
-               const bool write_profile_present = max_write_burst != iface_attrs.end() ||
-                                                  write_outstanding != iface_attrs.end() ||
-                                                  write_fifo_depth != iface_attrs.end();
-               const bool write_burst_requested = burst_enabled && interface_type == "m_axi" &&
-                                                  max_write_burst != iface_attrs.end();
-               AXIWriteBurstProfile requested_write_profile;
-               if(burst_enabled && interface_type == "m_axi" && write_profile_present)
-               {
-                  requested_write_profile = ParseAXIWriteBurstProfile(iface_attrs, bundle_name);
-                  if(requested_write_profile.max_outstanding != 1U)
-                  {
-                     THROW_ERROR_USAGE("Configured write bursts for bundle '" + bundle_name +
-                                       "' currently support write_burst_outstanding=1 only; values greater than 1 "
-                                       "require the F2 write-burst engine.");
-                  }
-               }
-               const auto max_read_burst = iface_attrs.find(FunctionArchitecture::iface_max_read_burst_length);
-               const auto read_outstanding = iface_attrs.find(FunctionArchitecture::iface_num_read_outstanding);
-               const auto read_fifo_depth = iface_attrs.find(FunctionArchitecture::iface_read_fifo_depth);
-               const auto cache_enabled = iface_attrs.find(FunctionArchitecture::iface_cache_line_count) !=
-                                          iface_attrs.end();
-               bool bundle_has_memory_read = false;
-               bool bundle_has_memory_write = false;
-               for(const auto& access : original_memory_accesses)
-               {
-                  if(access.bundle == bundle_name && access.classified)
-                  {
-                     bundle_has_memory_write |= access.is_write;
-                     bundle_has_memory_read |= !access.is_write;
-                  }
-               }
-               if(burst_enabled && interface_type == "m_axi" &&
-                  max_read_burst == iface_attrs.end() &&
-                  (read_outstanding != iface_attrs.end() || read_fifo_depth != iface_attrs.end()))
-               {
-                  THROW_ERROR_USAGE("AXI read profile attributes num_read_outstanding/read_fifo_depth for bundle '" +
-                                    bundle_name +
-                                    "' require max_read_burst_length; the profile cannot be applied to the legacy scalar interface.");
-               }
+               const auto decision_it = burst_decisions.find(bundle_name);
+               const auto* decision = decision_it == burst_decisions.end() ? nullptr : &decision_it->second;
+               const bool burst_enabled = burst_feature_enabled;
+               const bool write_burst_requested = burst_enabled && interface_type == "m_axi" && decision &&
+                                                  decision->write_requested;
+               const bool burst_requested = burst_enabled && interface_type == "m_axi" && decision &&
+                                            decision->read_requested;
                bool burst_profile_eligible = true;
-               std::string burst_fallback_reason;
-               const bool burst_requested = burst_enabled && interface_type == "m_axi" &&
-                                            max_read_burst != iface_attrs.end();
+               std::string burst_fallback_reason = burst_requested ? decision->read_fallback_reason : "";
                if(burst_requested)
                {
-                  ParseAXIReadBurstProfile(iface_attrs, bundle_name);
-                  if(!function_effects_safe)
-                  {
-                     burst_fallback_reason = "memory writes or opaque effects; prefetch ordering is not proven";
-                  }
-                  else if(cache_enabled)
-                  {
-                     burst_fallback_reason = "cache-enabled bundle";
-                  }
-                  else if(bundle_has_memory_write)
-                  {
-                     burst_fallback_reason = "bundle contains stores";
-                  }
-                  else if(info.bitwidth != 32 || info.alignment < 4)
+                  if(burst_fallback_reason.empty() && (info.bitwidth != 32 || info.alignment < 4))
                   {
                      burst_fallback_reason = "data width/alignment is not 32-bit/4-byte";
                   }
-                  else if(iface_attrs.find(FunctionArchitecture::iface_bitwidth) != iface_attrs.end() &&
+                  else if(burst_fallback_reason.empty() &&
+                          iface_attrs.find(FunctionArchitecture::iface_bitwidth) != iface_attrs.end() &&
                           std::stoul(iface_attrs.at(FunctionArchitecture::iface_bitwidth)) != 32)
                   {
                      burst_fallback_reason = "m_axi interface data width is not 32-bit";
                   }
-                  else if(HLSMgr->get_address_bitsize() != 32 && HLSMgr->get_address_bitsize() != 64)
+                  else if(burst_fallback_reason.empty() && HLSMgr->get_address_bitsize() != 32 &&
+                          HLSMgr->get_address_bitsize() != 64)
                   {
                      burst_fallback_reason = "AXI address width is not 32 or 64 bit";
+                  }
+                  else if(burst_fallback_reason.empty() && !decision->read_recognized)
+                  {
+                     burst_fallback_reason =
+                         "read-burst CFG/SSA recognition failed or bundle is not exclusive";
                   }
                   burst_profile_eligible = burst_fallback_reason.empty();
                   if(!burst_profile_eligible)
@@ -2346,63 +2601,15 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                }
                if(burst_requested && burst_profile_eligible)
                {
-                  bool one_pointer_for_bundle = true;
-                  for(const auto& other_arg : fd->list_of_args)
-                  {
-                     const auto other_name = get_decl_name(other_arg);
-                     if(other_name != arg_name && func_arch->parms.count(other_name) &&
-                        func_arch->parms.at(other_name).at(FunctionArchitecture::parm_bundle) == bundle_name &&
-                        ir_helper::IsPointerType(ir_helper::CGetType(other_arg)))
-                     {
-                        one_pointer_for_bundle = false;
-                        break;
-                     }
-                  }
                   const auto sl = GetPointerS<const statement_list_node>(fd->body);
-                  std::map<unsigned int, std::vector<ir_nodeRef>> loop_reads;
-                  for(const auto& read_stmt : readStmt)
-                  {
-                     loop_reads[GetPointerS<const node_stmt>(read_stmt)->bb_index].push_back(read_stmt);
-                  }
-                  std::vector<ReadBurstRegion> regions;
-                  bool recognized = one_pointer_for_bundle && !loop_reads.empty();
                   const auto expected_base_id = AppM->getSSAFromParm(root_id, arg_id);
                   const auto expected_base = TM->GetIRNode(expected_base_id);
-                  for(const auto& read_group : loop_reads)
-                  {
-                     ReadBurstRegion region{};
-                     if(!recognizeReadBurstRegion(sl, read_group.second, expected_base,
-                                                  original_memory_accesses, bundle_name, region))
-                     {
-                        recognized = false;
-                        break;
-                     }
-                     regions.push_back(std::move(region));
-                  }
+                  const auto recognized_regions = decision->read_regions.find(arg_id);
+                  const bool recognized = decision->read_recognized && recognized_regions != decision->read_regions.end();
                   if(recognized)
                   {
-                     for(size_t first = 0; first < regions.size() && recognized; ++first)
-                     {
-                        for(size_t second = first + 1; second < regions.size(); ++second)
-                        {
-                           const auto first_to_second =
-                               hasBlockPath(sl, regions[first].preheader, regions[second].preheader);
-                           const auto second_to_first =
-                               hasBlockPath(sl, regions[second].preheader, regions[first].preheader);
-                           if(first_to_second == second_to_first)
-                           {
-                              recognized = false;
-                              break;
-                           }
-                        }
-                     }
-                  }
-                  if(recognized)
-                  {
-                     std::sort(regions.begin(), regions.end(), [&](const auto& lhs, const auto& rhs) {
-                        return hasBlockPath(sl, lhs.preheader, rhs.preheader);
-                     });
-                     const auto max_burst = static_cast<unsigned>(std::stoul(max_read_burst->second));
+                     const auto& regions = recognized_regions->second;
+                     const auto max_burst = decision->read_max_burst_length;
                      THROW_ASSERT(max_burst >= 1 && max_burst <= 256, "Invalid parsed max_read_burst_length");
                      const auto configure_name = ENCODE_FDNAME(bundle_name, "_configure_read", "");
                      const auto burst_read_name = ENCODE_FDNAME(bundle_name, "_burst_read", "");
@@ -2495,7 +2702,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      readStmt.clear();
                      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                                     "---Configured read burst regions for bundle " + bundle_name + " (B=" +
-                                        max_read_burst->second + ")");
+                                        std::to_string(max_burst) + ")");
                   }
                   else
                   {
@@ -2506,57 +2713,36 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                }
                if(write_burst_requested)
                {
-                  std::string write_fallback_reason;
-                  if(!original_memory_effects_safe)
-                  {
-                     write_fallback_reason = "opaque, volatile, atomic, or unclassified memory effects";
-                  }
-                  else if(cache_enabled)
-                  {
-                     write_fallback_reason = "cache-enabled bundle";
-                  }
-                  else if(bundle_has_memory_read)
-                  {
-                     write_fallback_reason = "bundle contains reads; same-bundle read/write requires duplex support";
-                  }
-                  else if(info.bitwidth != 32 || info.alignment < 4 ||
-                          (iface_attrs.find(FunctionArchitecture::iface_bitwidth) != iface_attrs.end() &&
-                           std::stoul(iface_attrs.at(FunctionArchitecture::iface_bitwidth)) != 32))
+                  std::string write_fallback_reason = decision->write_fallback_reason;
+                  if(write_fallback_reason.empty() &&
+                     (info.bitwidth != 32 || info.alignment < 4 ||
+                      (iface_attrs.find(FunctionArchitecture::iface_bitwidth) != iface_attrs.end() &&
+                       std::stoul(iface_attrs.at(FunctionArchitecture::iface_bitwidth)) != 32)))
                   {
                      write_fallback_reason = "data width/alignment is not 32-bit/4-byte";
                   }
-                  else if(HLSMgr->get_address_bitsize() != 32 && HLSMgr->get_address_bitsize() != 64)
+                  else if(write_fallback_reason.empty() && HLSMgr->get_address_bitsize() != 32 &&
+                          HLSMgr->get_address_bitsize() != 64)
                   {
                      write_fallback_reason = "AXI address width is not 32 or 64 bit";
                   }
-                  std::vector<ir_nodeRef> store_candidates(writeStmt.begin(), writeStmt.end());
+                  else if(write_fallback_reason.empty() && !decision->write_recognized)
+                  {
+                     write_fallback_reason = "write-burst CFG/SSA/effect recognition failed";
+                  }
                   const auto sl = GetPointerS<const statement_list_node>(fd->body);
-                  WriteBurstRegion region{};
                   const auto expected_base_id = AppM->getSSAFromParm(root_id, arg_id);
                   const auto expected_base = TM->GetIRNode(expected_base_id);
-                  bool recognized = write_fallback_reason.empty() &&
-                                    recognizeWriteBurstRegion(sl, store_candidates, expected_base,
-                                                              original_memory_accesses, bundle_name, region);
-                  if(recognized)
+                  const auto recognized_region = decision->write_regions.find(arg_id);
+                  const bool recognized = write_fallback_reason.empty() && decision->write_recognized &&
+                                          recognized_region != decision->write_regions.end();
+                  if(!recognized && write_fallback_reason.empty())
                   {
-                     for(const auto& access : original_memory_accesses)
-                     {
-                        if(access.is_write && access.statement->index != region.store->index)
-                        {
-                           recognized = false;
-                           break;
-                        }
-                        if(!access.is_write &&
-                           (!access.classified || !access.ordinary || !access.base || !expected_base ||
-                            access.base->index == expected_base->index || access.bundle == bundle_name))
-                        {
-                           recognized = false;
-                           break;
-                        }
-                     }
+                     write_fallback_reason = "write-burst CFG/SSA/effect recognition failed";
                   }
                   if(recognized)
                   {
+                     const auto& region = recognized_region->second;
                      const auto configure_name = ENCODE_FDNAME(bundle_name, "_configure_write", "");
                      const auto store_name = ENCODE_FDNAME(bundle_name, "_store_write", "");
                      const auto drain_name = ENCODE_FDNAME(bundle_name, "_drain_write", "");
@@ -2655,14 +2841,10 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      writeStmt.clear();
                      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                                     "---Configured write burst region for bundle " + bundle_name + " (B=" +
-                                        std::to_string(requested_write_profile.max_burst_length) + ")");
+                                        std::to_string(decision->write_profile.max_burst_length) + ")");
                   }
                   else
                   {
-                     if(write_fallback_reason.empty())
-                     {
-                        write_fallback_reason = "write-burst CFG/SSA/effect recognition failed";
-                     }
                      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                                     "---Keeping legacy m_axi writes for bundle " + bundle_name + ": " +
                                         write_fallback_reason);
