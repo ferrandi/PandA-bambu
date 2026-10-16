@@ -200,7 +200,8 @@ def disable_core_dumps():
 
 try:
     with open(log_path, "wb") as log:
-        result = subprocess.run([binary], stdout=log, stderr=subprocess.STDOUT,
+        result = subprocess.run([binary, "+CASE=SMOKE", "+SMOKE"],
+                                stdout=log, stderr=subprocess.STDOUT,
                                 timeout=10, preexec_fn=disable_core_dumps,
                                 check=False)
 except subprocess.TimeoutExpired:

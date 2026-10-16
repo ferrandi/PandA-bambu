@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
@@ -7,10 +6,15 @@ from pathlib import Path
 
 from check_bundle_preanalysis_artifacts import CheckError, verify
 
+HERE = Path(__file__).resolve().parent
+REPO = HERE.parents[2]
+TMP_ROOT = REPO / "documentation" / "tmp"
+
 
 class BundlePreanalysisCheckerTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(prefix="bundle-preanalysis-", dir=os.environ["TMPDIR"])
+        TMP_ROOT.mkdir(parents=True, exist_ok=True)
+        self.temp = tempfile.TemporaryDirectory(prefix="bundle-preanalysis-", dir=TMP_ROOT)
         self.addCleanup(self.temp.cleanup)
         self.output = Path(self.temp.name)
         (self.output / "panda-temp").mkdir()
