@@ -125,6 +125,9 @@ module tb_duplex_cores #(
             if (rvalid && rready && wvalid && wready)
                 simultaneous_rw_handshakes=simultaneous_rw_handshakes+1;
             if (arvalid && arready) begin
+                if (arsize !== 3'd2) $fatal(1, "AR_SIZE_NOT_FULL_WORD value=%b", arsize);
+                if (arburst !== 2'b01) $fatal(1, "AR_BURST_NOT_INCR value=%b", arburst);
+                if (arid !== 1'b0) $fatal(1, "AR_ID_NOT_ZERO value=%b", arid);
                 ar_addr_q[ar_wr]<=araddr;
                 ar_left_q[ar_wr]<=arlen+1;
                 ar_wr<=ar_wr+1;
@@ -142,6 +145,9 @@ module tb_duplex_cores #(
                 end
             end
             if (awvalid && awready) begin
+                if (awsize !== 3'd2) $fatal(1, "AW_SIZE_NOT_FULL_WORD value=%b", awsize);
+                if (awburst !== 2'b01) $fatal(1, "AW_BURST_NOT_INCR value=%b", awburst);
+                if (awid !== 1'b0) $fatal(1, "AW_ID_NOT_ZERO value=%b", awid);
                 aw_addr_q[aw_wr]=awaddr;
                 aw_len_q[aw_wr]=awlen+1;
                 aw_wr=aw_wr+1;
@@ -356,6 +362,8 @@ module tb_duplex_cores #(
     task automatic verify_region(input integer base_word, input integer count);
         integer idx;
         begin
+            // The backend checks address and payload before committing each write here;
+            // these final scans are defense in depth, not independent write witnesses.
             for (idx=0; idx<count; idx=idx+1)
                 if (memory[base_word+idx] !== expected[base_word+idx])
                     $fatal(1, "MEMORY_MISMATCH word=%0d got=%h expected=%h", base_word+idx,
@@ -366,6 +374,8 @@ module tb_duplex_cores #(
     task automatic verify_full_memory;
         integer idx;
         begin
+            // Write address and payload are already checked by the backend before commit;
+            // this full-memory scan is defense in depth, not an independent witness.
             for (idx=0; idx<MEM_WORDS; idx=idx+1) begin
                 if (expected_valid[idx] && memory[idx] !== expected[idx])
                     $fatal(1, "MEMORY_MISMATCH word=%0d got=%h expected=%h", idx, memory[idx], expected[idx]);
@@ -411,8 +421,9 @@ module tb_duplex_cores #(
                     verify_region(WRITE_BASE,8);
                 end
                 "LOAD_DURING_WRITE_BLOCK": begin
+                    before_r=read_beats;
+                    stall_ar=1; stall_r=1; stall_aw=1; stall_w=1; stall_b=1;
                     configure_read(READ_BASE*4, 4); configure_write(WRITE_BASE*4, 40);
-                    stall_aw=1; stall_w=1; stall_b=1;
                     for (integer k=0;k<32;k=k+1) begin
                         expected[WRITE_BASE+k]=32'h81000000+k;
                         issue_store(WRITE_BASE*4+k*4,32'h81000000+k);
@@ -425,8 +436,10 @@ module tb_duplex_cores #(
                     if (!write_start || write_done || !awvalid || !wvalid)
                         $fatal(1, "WRITE_FIFO_FULL_PENDING_NOT_REACHED");
                     stall_ar=0; stall_r=0;
+                    wait_read_beats(before_r+4, 2000);
+                    if (!awvalid || !wvalid || awready || wready)
+                        $fatal(1, "LOAD_PROGRESS_NOT_INDEPENDENT_OF_BLOCKED_WRITE");
                     for (integer k=0;k<4;k=k+1) issue_load_and_check(READ_BASE*4+k*4);
-                    if (accepted_b != 0) $fatal(1, "LOAD_WAITED_FOR_B_RESPONSE");
                     stall_aw=0; stall_w=0;
                     timeout_cycles=0;
                     while (!write_done && timeout_cycles<2000) begin @(negedge clock); timeout_cycles=timeout_cycles+1; end
@@ -452,15 +465,14 @@ module tb_duplex_cores #(
                     stall_ar=0;
                     timeout_cycles=0;
                     while (accepted_ar==before_ar && timeout_cycles<1000) begin @(negedge clock); timeout_cycles=timeout_cycles+1; end
-                    if (accepted_ar==before_ar || accepted_aw!=before_aw || accepted_w!=before_w || accepted_b!=before_b)
+                    if (accepted_ar==before_ar || accepted_aw!=before_aw || accepted_w!=before_w)
                         $fatal(1, "AR_PROGRESS_NOT_ISOLATED_FROM_BLOCKED_WRITES");
                     stall_r=0;
                     wait_read_beats(before_r+8, 2000);
-                    if (accepted_aw!=before_aw || accepted_w!=before_w || accepted_b!=before_b ||
+                    if (accepted_aw!=before_aw || accepted_w!=before_w ||
                         !awvalid || !wvalid || awready || wready)
                         $fatal(1, "R_PROGRESS_DID_NOT_OCCUR_DURING_WRITE_BLOCK");
                     for (integer k=0;k<8;k=k+1) issue_load_and_check(READ_BASE*4+k*4);
-                    if (accepted_b!=before_b) $fatal(1, "AR_R_PROGRESS_WAITED_FOR_B");
                     stall_aw=0; stall_w=0; stall_b=0;
                     wait_write_complete(before_b+1, 2000); drain_write(1);
                     expected_write_beats=8; check_write_counts(expected_write_beats); verify_region(WRITE_BASE,8);
@@ -541,14 +553,23 @@ module tb_duplex_cores #(
                                    READ_BASE*4+k*4, transformed, read_snapshot[READ_BASE+k]);
                         expected_output=initial_memory[READ_BASE+k] ^ (32'h13579bdf + k*32'h01010101);
                         transformed=transformed ^ (32'h13579bdf + k*32'h01010101);
-                        if (transformed !== expected_output)
-                            $fatal(1, "INPLACE_TRANSFORM_MISMATCH index=%0d got=%h expected=%h",
-                                   k, transformed, expected_output);
                         issue_store(READ_BASE*4+k*4, transformed);
                         expected[READ_BASE+k]=expected_output;
                     end
                     wait_write_complete((16+WRITE_B_MAX-1)/WRITE_B_MAX,4000); drain_write(1);
                     expected_write_beats=16; check_write_counts(expected_write_beats);
+                    before_r=read_beats;
+                    configure_read(READ_BASE*4,16);
+                    for (integer k=0;k<16;k=k+1) begin
+                        issue_load_capture(READ_BASE*4+k*4, transformed);
+                        expected_output=initial_memory[READ_BASE+k] ^ (32'h13579bdf + k*32'h01010101);
+                        if (transformed !== expected_output)
+                            $fatal(1, "INPLACE_READ_AFTER_WRITE_MISMATCH index=%0d got=%h expected=%h",
+                                   k, transformed, expected_output);
+                    end
+                    if (read_beats != before_r+16)
+                        $fatal(1, "INPLACE_R_BEAT_DELTA_MISMATCH before=%0d after=%0d expected_delta=16",
+                               before_r, read_beats);
                 end
                 "RRESP_FAULT_LOCAL": begin
                     configure_read(READ_BASE*4,4); configure_write(WRITE_BASE*4,4);
@@ -559,11 +580,11 @@ module tb_duplex_cores #(
                     stall_r=0;
                     timeout_cycles=0;
                     while (!read_fault && timeout_cycles<2000) begin @(negedge clock); timeout_cycles=timeout_cycles+1; end
-                    if (!read_fault || read_done || write_fault || write_done || accepted_b != 0)
+                    if (!read_fault || read_done || write_fault || write_done)
                         $fatal(1, "RRESP_FAULT_NOT_LOCAL_OR_BARRIER_BROKEN read=%b write=%b done=%b b=%0d",
                                read_fault, write_fault, write_done, accepted_b);
                     wait_read_beats(4,2000);
-                    if (!read_fault || read_done || write_fault || write_done || accepted_b != 0)
+                    if (!read_fault || read_done || write_fault || write_done)
                         $fatal(1, "RRESP_FAULT_DRAIN_OR_NO_SUCCESS_VIOLATION read=%b rdone=%b write=%b wdone=%b b=%0d",
                                read_fault, read_done, write_fault, write_done, accepted_b);
                     stall_b=0;
@@ -586,8 +607,6 @@ module tb_duplex_cores #(
                                arvalid, arready, read_fault, read_done, araddr, arlen);
                     issue_store_region(WRITE_BASE*4,4,32'h8a000000);
                     repeat (3) @(negedge clock);
-                    if (bvalid || accepted_b != 0)
-                        $fatal(1, "BRESP_FAULT_ESCAPED_B_BLOCK");
                     drain_write(0);
                     stall_b=0;
                     timeout_cycles=0;

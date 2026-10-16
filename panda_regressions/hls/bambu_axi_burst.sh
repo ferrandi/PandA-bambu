@@ -83,6 +83,7 @@ python3 -B "$script_dir/bambu_axi_burst/test_write_compiler_artifacts.py"
 python3 -B "$script_dir/bambu_axi_burst/rtl_tests/test_extract_write_engine.py"
 python3 -B "$script_dir/bambu_axi_burst/test_axi_latency_metadata.py"
 python3 -B "$script_dir/bambu_axi_burst/test_simulation_logging.py"
+python3 -B "$script_dir/bambu_axi_burst/test_bundle_preanalysis_artifacts.py"
 bash "$script_dir/bambu_axi_burst/test_compiler_runner_export_root.sh"
 
 run_compiler_suite() {
