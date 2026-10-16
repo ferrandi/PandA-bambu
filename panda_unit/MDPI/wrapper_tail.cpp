@@ -1,6 +1,8 @@
 // Copyright (C) 2026 Politecnico di Milano
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-#include "mdpi/mdpi_wrapper.h"
+// Exercise the real comparison macros without pulling in channel interface templates.
+#define __BAMBU_IPC_ENTITY MDPI_ENTITY_DRIVER
+#include "mdpi/mdpi_wrapper_compare.h"
 #include <cstdlib>
 #include <cstring>
 
@@ -27,8 +29,6 @@ static bool compare(size_t size, bool corrupt_tail)
    }
    _ms_argcmp(ref, 0, mem);
    std::free(P0);
-   // _ms_argcmp frees P0_ref; some cppcheck configurations do not expand the macro.
-   // cppcheck-suppress memleak
    return mismatch_count == (corrupt_tail ? 1U : 0U);
 }
 

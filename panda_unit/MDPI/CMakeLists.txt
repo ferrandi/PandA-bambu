@@ -5,6 +5,5 @@ foreach(_mdpi_control IN ITEMS banked_memory wrapper_tail)
    set_tests_properties(mdpi_${_mdpi_control} PROPERTIES LABELS "mdpi;frontend")
 endforeach()
 
-# The comparison macros are tested through the real driver headers in C simulation mode.
-target_include_directories(mdpi_wrapper_tail_test PRIVATE "${PROJECT_SOURCE_DIR}/etc/ac_types/include")
+# The comparison macros are tested through their production header in C simulation mode.
 target_compile_definitions(mdpi_wrapper_tail_test PRIVATE BAMBU_CSIM)

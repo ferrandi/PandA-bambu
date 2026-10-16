@@ -26,6 +26,7 @@ set(LIBMDPI_HEADER_FILES
    include/mdpi/mdpi_types.h
    include/mdpi/mdpi_user.h
    include/mdpi/mdpi_wrapper.h
+   include/mdpi/mdpi_wrapper_compare.h
    include/mdpi/mdpi.h
    include/mdpi/svdpi.h
 )
