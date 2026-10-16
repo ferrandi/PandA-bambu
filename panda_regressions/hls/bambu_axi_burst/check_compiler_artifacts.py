@@ -54,6 +54,41 @@ def verilog_instances(text):
             yield match.group("module"), text[connection_open + 1:connection_close]
 
 
+def parameterized_instances(text, module_name):
+    """Yield named parameters and ports for each exact module instance."""
+    marker = re.compile(rf"\b{re.escape(module_name)}\s*#\s*\(")
+    for match in marker.finditer(text):
+        parameter_open = text.find("(", match.start(), match.end())
+        parameter_close = balanced_end(text, parameter_open)
+        if parameter_close is None:
+            continue
+        cursor = parameter_close + 1
+        instance = re.match(r"\s*[A-Za-z_$][\w$]*\s*\(", text[cursor:])
+        if not instance:
+            continue
+        connection_open = text.find("(", cursor + instance.start(), cursor + instance.end())
+        connection_close = balanced_end(text, connection_open)
+        if connection_close is None:
+            continue
+        parameter_text = text[parameter_open + 1:parameter_close]
+        parameters = {name: value.strip() for name, value in re.findall(
+            r"\.(\w+)\s*\(\s*([^()]*)\s*\)", parameter_text)}
+        ports = text[connection_open + 1:connection_close]
+        yield parameters, ports
+
+
+def has_configured_engine(text, expected_parameters):
+    """Require the expected profile and runtime-count ports on one engine."""
+    for parameters, ports in parameterized_instances(text, "MinimalAXI4MasterPipelined"):
+        if not all(parameters.get(name) == str(value)
+                   for name, value in expected_parameters.items()):
+            continue
+        if (all(re.search(rf"\.in{i}\s*\(", ports) for i in range(1, 6)) and
+                re.search(r"\.in5\s*\(\s*in5\s*\)", ports)):
+            return True
+    return False
+
+
 def named_instance_ports(text, module_pattern):
     for module, connections in verilog_instances(text):
         if re.search(module_pattern, module):
@@ -156,19 +191,11 @@ def main():
         for path in selected:
             text = path.read_text(encoding="utf-8", errors="replace")
             max_value = args.expected_burst_max
-            engine = re.search(
-                rf"MinimalAXI4MasterPipelined\s*#\s*\(\s*\.B_MAX\s*\(\s*{max_value}\s*\)\s*,\s*"
-                rf"\.MAX_OUTSTANDING\s*\(\s*{args.expected_outstanding}\s*\)\s*,\s*"
-                rf"\.FIFO_DEPTH\s*\(\s*{args.expected_fifo_depth}\s*\)\s*"
-                # The generator also passes the BITSIZE_<port> widths here; they
-                # follow the profile parameters and must not break the match.
-                rf"(?:,\s*\.\w+\s*\(\s*[^()]*\s*\)\s*)*\)\s*"
-                r"(?P<instance>\w+)\s*\((?P<ports>.*?)\);", text, re.S)
-            if not engine:
-                continue
-            ports = engine.group("ports")
-            if not all(re.search(rf"\.in{i}\s*\(", ports) for i in range(1, 6)) or not re.search(
-                    r"\.in5\s*\(\s*in5\s*\)", ports):
+            if not has_configured_engine(text, {
+                    "B_MAX": max_value,
+                    "MAX_OUTSTANDING": args.expected_outstanding,
+                    "FIFO_DEPTH": args.expected_fifo_depth,
+            }):
                 continue
             if not re.search(r"configure_read", text):
                 continue

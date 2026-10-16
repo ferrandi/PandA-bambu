@@ -80,6 +80,7 @@ export TMPDIR="$scratch/tmp" TMP="$scratch/tmp" TEMP="$scratch/tmp"
 # bootstraps do not need another Bambu invocation.
 python3 -B "$script_dir/bambu_axi_burst/test_check_burst_results.py"
 python3 -B "$script_dir/bambu_axi_burst/test_write_compiler_artifacts.py"
+python3 -B "$script_dir/bambu_axi_burst/test_read_compiler_artifacts.py"
 python3 -B "$script_dir/bambu_axi_burst/rtl_tests/test_extract_write_engine.py"
 python3 -B "$script_dir/bambu_axi_burst/test_axi_latency_metadata.py"
 python3 -B "$script_dir/bambu_axi_burst/test_simulation_logging.py"

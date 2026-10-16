@@ -100,7 +100,8 @@ def verify(output: Path, top: str, expected: str) -> None:
     for path in required:
         need(path.is_file() and path.stat().st_size > 0, f"required non-empty artifact missing: {path}")
     for path in log_paths:
-        need(path.is_file(), f"required compiler log missing: {path}")
+        need(path.is_file() and path.stat().st_size > 0,
+             f"required non-empty compiler log missing: {path}")
 
     rtl = rtl_path.read_text(encoding="utf-8", errors="replace") if rtl_path.is_file() else ""
     log = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in log_paths)
@@ -112,6 +113,7 @@ def verify(output: Path, top: str, expected: str) -> None:
         print(f"BUNDLE PREANALYSIS CHECK PASS CASE={top} EXPECTATION={expected}")
         return
     bundles = {node.get("name"): node.attrib for node in functions[0].findall("./bundles/bundle")}
+    parameters = functions[0].findall("./parameters/parameter")
     need(bool(bundles), "architecture.xml contains no bundle records")
 
     expected_read = expected == "distinct"
@@ -124,6 +126,17 @@ def verify(output: Path, top: str, expected: str) -> None:
         read_attrs = bundles.get(read_bundle, {})
         need(read_attrs.get("mode") == "m_axi" and read_attrs.get("max_read_burst_length") == "16",
              f"architecture.xml does not retain the {read_bundle} read-burst profile")
+    if expected == "same_bundle_legacy":
+        ports = {node.get("port"): node.get("bundle") for node in parameters}
+        shared_ports = {port for port, bundle in ports.items() if bundle == "shared"}
+        need(ports.get("src") == "shared" and ports.get("dst") == "shared" and
+             shared_ports == {"src", "dst"},
+             "same_bundle_legacy architecture must retain distinct src and dst ports on shared")
+    elif expected == "inplace_legacy":
+        ports = {node.get("port"): node.get("bundle") for node in parameters}
+        shared_ports = {port for port, bundle in ports.items() if bundle == "shared"}
+        need(shared_ports == {"data"},
+             "inplace_legacy architecture must retain only the data port on shared")
     if expected in {"distinct", "write_direction_only", "write_only", "same_bundle_legacy",
                     "inplace_legacy", "mixed_legacy"}:
         write_attrs = bundles.get(write_bundle, {})
