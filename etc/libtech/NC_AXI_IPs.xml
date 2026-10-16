@@ -921,7 +921,9 @@ end
     wire       fifo_load_pop;
     reg        load_request_valid;
     wire       r_push;
+    wire       r_structural;
     wire       r_good;
+    wire       r_fault_event;
     wire       drain_complete;
     reg        configure_complete;
     reg        configure_descriptor_valid;
@@ -1007,14 +1009,18 @@ end
 
     assign fifo_load_pop = fifo_load_done;
     assign r_push = m_axi_rvalid &amp;&amp; m_axi_rready;
-    assign r_good = r_push &amp;&amp; (m_axi_rid == 1'b0) &amp;&amp; (m_axi_rresp == 2'b00) &amp;&amp;
+    assign r_structural = (descriptor_count != 0) &amp;&amp; (m_axi_rid == 1'b0) &amp;&amp;
         (((descriptor_count != 0) &amp;&amp; descriptor_remaining[descriptor_rd_ptr] == 1 &amp;&amp; m_axi_rlast) ||
          ((descriptor_count != 0) &amp;&amp; descriptor_remaining[descriptor_rd_ptr] &gt; 1 &amp;&amp; !m_axi_rlast));
-    assign m_axi_rready = (descriptor_count != 0) &amp;&amp; !fault_reg &amp;&amp;
-                          ((fifo_count &lt; FIFO_DEPTH) || fifo_load_pop);
-    assign descriptor_pop = r_push &amp;&amp;
-        (descriptor_remaining[descriptor_rd_ptr] == 1) &amp;&amp; m_axi_rlast &amp;&amp;
-        (m_axi_rid == 1'b0) &amp;&amp; (m_axi_rresp == 2'b00);
+    assign r_good = r_push &amp;&amp; r_structural &amp;&amp; !fault_reg &amp;&amp; (m_axi_rresp == 2'b00);
+    assign r_fault_event = r_push &amp;&amp; (!r_structural || m_axi_rresp != 2'b00);
+    // RREADY depends only on registered transport/FIFO state and the local
+    // FIFO pop, never on current AXI response inputs. Accepted read credits
+    // ensure a valid response cannot arrive while the FIFO is already full.
+    assign m_axi_rready = (descriptor_count != 0) &amp;&amp;
+        (fault_reg || (fifo_count &lt; FIFO_DEPTH) || fifo_load_pop);
+    assign descriptor_pop = r_push &amp;&amp; r_structural &amp;&amp;
+        (descriptor_remaining[descriptor_rd_ptr] == 1);
     assign descriptor_push = m_axi_arvalid_reg &amp;&amp; m_axi_arready;
 
     always @* begin
@@ -1055,7 +1061,7 @@ end
 
     assign reservation_eligible = region_active &amp;&amp; issued &lt; region_count &amp;&amp;
         !m_axi_arvalid_reg &amp;&amp; outstanding_after_reservation &lt; MAX_OUTSTANDING &amp;&amp;
-        fifo_credit &gt; 0 &amp;&amp; !fault_reg;
+        fifo_credit &gt; 0 &amp;&amp; !fault_reg &amp;&amp; !r_fault_event;
 
     assign drain_complete = region_active &amp;&amp;
         issued == region_count &amp;&amp; returned == region_count &amp;&amp;
@@ -1202,18 +1208,17 @@ end
             endcase
 
                 if (r_push) begin
-                if (m_axi_rid != 1'b0 || m_axi_rresp != 2'b00 ||
-                    (descriptor_count == 0) ||
-                    (descriptor_remaining[descriptor_rd_ptr] == 1 &amp;&amp; !m_axi_rlast) ||
-                    (descriptor_remaining[descriptor_rd_ptr] &gt; 1 &amp;&amp; m_axi_rlast))
+                if (!r_structural || m_axi_rresp != 2'b00)
                     fault_reg &lt;= 1'b1;
-                if (r_good) begin
-                    returned &lt;= returned + 1'b1;
-                    fifo[fifo_wr_ptr] &lt;= m_axi_rdata;
-                    if (fifo_wr_ptr == FIFO_DEPTH-1)
-                        fifo_wr_ptr &lt;= 0;
-                    else
-                        fifo_wr_ptr &lt;= fifo_wr_ptr + 1'b1;
+                if (r_structural) begin
+                    if (r_good) begin
+                        returned &lt;= returned + 1'b1;
+                        fifo[fifo_wr_ptr] &lt;= m_axi_rdata;
+                        if (fifo_wr_ptr == FIFO_DEPTH-1)
+                            fifo_wr_ptr &lt;= 0;
+                        else
+                            fifo_wr_ptr &lt;= fifo_wr_ptr + 1'b1;
+                    end
                     if (descriptor_remaining[descriptor_rd_ptr] == 1) begin
                         if (descriptor_rd_ptr == MAX_OUTSTANDING-1)
                             descriptor_rd_ptr &lt;= 0;
