@@ -18,23 +18,26 @@ class BundlePreanalysisCheckerTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.output = Path(self.temp.name)
         (self.output / "panda-temp").mkdir()
-        (self.output / "stdout.log").write_text("")
-        (self.output / "stderr.log").write_text("")
+        (self.output / "stdout.log").write_text("compiler stdout marker\n")
+        (self.output / "stderr.log").write_text("compiler stderr marker\n")
 
-    def set_artifacts(self, rtl, bundles, log=""):
+    def set_artifacts(self, rtl, bundles, log="", parameters=()):
         (self.output / "design.v").write_text(rtl)
-        (self.output / "stdout.log").write_text(log)
+        (self.output / "stdout.log").write_text(log or "compiler stdout marker\n")
         root = ET.Element("module")
         function = ET.SubElement(root, "function", {"name": "design"})
         collection = ET.SubElement(function, "bundles")
         for name, attrs in bundles.items():
             ET.SubElement(collection, "bundle", {"name": name, **attrs})
+        parameter_list = ET.SubElement(function, "parameters")
+        for attrs in parameters:
+            ET.SubElement(parameter_list, "parameter", attrs)
         ET.ElementTree(root).write(self.output / "panda-temp/architecture.xml")
 
     def set_dataflow_artifacts(self, top, rtl, functions, log="", stderr="", raw=""):
         (self.output / f"{top}.v").write_text(rtl)
-        (self.output / "stdout.log").write_text(log)
-        (self.output / "stderr.log").write_text(stderr)
+        (self.output / "stdout.log").write_text(log or "compiler stdout marker\n")
+        (self.output / "stderr.log").write_text(stderr or "compiler stderr marker\n")
         root = ET.Element("module")
         for name, bundles, parameters in functions:
             function = ET.SubElement(root, "function", {"name": name})
@@ -84,6 +87,29 @@ class BundlePreanalysisCheckerTests(unittest.TestCase):
                            "Configured read burst regions for bundle input (B=16)\n"
                            "Configured write burst region for bundle output (B=16)\n")
         with self.assertRaisesRegex(CheckError, "CONFIGURE/STORE/DRAIN"):
+            verify(self.output, "design", "distinct")
+
+    def test_each_required_compiler_log_must_be_nonempty(self):
+        self.set_artifacts(
+            self.burst_rtl(),
+            {"input": {"mode": "m_axi", "max_read_burst_length": "16"},
+             "output": {"mode": "m_axi", "max_write_burst_length": "16",
+                        "write_burst_outstanding": "1"}},
+            "Configured read burst regions for bundle input (B=16)\n"
+            "Configured write burst region for bundle output (B=16)\n")
+        (self.output / "stdout.log").write_text("")
+        with self.assertRaisesRegex(CheckError, "required non-empty compiler log missing: .*stdout.log"):
+            verify(self.output, "design", "distinct")
+
+        self.set_artifacts(
+            self.burst_rtl(),
+            {"input": {"mode": "m_axi", "max_read_burst_length": "16"},
+             "output": {"mode": "m_axi", "max_write_burst_length": "16",
+                        "write_burst_outstanding": "1"}},
+            "Configured read burst regions for bundle input (B=16)\n"
+            "Configured write burst region for bundle output (B=16)\n")
+        (self.output / "stderr.log").write_text("")
+        with self.assertRaisesRegex(CheckError, "required non-empty compiler log missing: .*stderr.log"):
             verify(self.output, "design", "distinct")
 
     def test_directional_case_rejects_spurious_read_burst(self):
@@ -143,13 +169,38 @@ class BundlePreanalysisCheckerTests(unittest.TestCase):
                                        "max_write_burst_length": "16", "write_burst_outstanding": "1"}},
                            "Keeping legacy m_axi writes for bundle shared: bundle contains reads; "
                            "same-bundle read/write requires duplex support\n"
-                           "Keeping legacy m_axi accesses for bundle shared: bundle contains stores\n")
+                           "Keeping legacy m_axi accesses for bundle shared: bundle contains stores\n",
+                           parameters=({"port": "src", "bundle": "shared"},
+                                       {"port": "dst", "bundle": "shared"}))
         verify(self.output, "design", "same_bundle_legacy")
-        verify(self.output, "design", "inplace_legacy")
 
         self.set_artifacts(self.burst_rtl(read=False, write=False),
                            {"shared": {"mode": "m_axi", "max_read_burst_length": "16",
-                                       "max_write_burst_length": "16", "write_burst_outstanding": "1"}}, "")
+                                       "max_write_burst_length": "16", "write_burst_outstanding": "1"}},
+                           "Keeping legacy m_axi writes for bundle shared: bundle contains reads; "
+                           "same-bundle read/write requires duplex support\n"
+                           "Keeping legacy m_axi accesses for bundle shared: bundle contains stores\n",
+                           parameters=({"port": "data", "bundle": "shared"},))
+        verify(self.output, "design", "inplace_legacy")
+
+        with self.assertRaisesRegex(CheckError, "distinct src and dst ports"):
+            verify(self.output, "design", "same_bundle_legacy")
+        self.set_artifacts(self.burst_rtl(read=False, write=False),
+                           {"shared": {"mode": "m_axi", "max_read_burst_length": "16",
+                                       "max_write_burst_length": "16", "write_burst_outstanding": "1"}},
+                           "Keeping legacy m_axi writes for bundle shared: bundle contains reads; "
+                           "same-bundle read/write requires duplex support\n"
+                           "Keeping legacy m_axi accesses for bundle shared: bundle contains stores\n",
+                           parameters=({"port": "src", "bundle": "shared"},
+                                       {"port": "dst", "bundle": "shared"}))
+        with self.assertRaisesRegex(CheckError, "only the data port"):
+            verify(self.output, "design", "inplace_legacy")
+
+        self.set_artifacts(self.burst_rtl(read=False, write=False),
+                           {"shared": {"mode": "m_axi", "max_read_burst_length": "16",
+                                       "max_write_burst_length": "16", "write_burst_outstanding": "1"}}, "",
+                           parameters=({"port": "src", "bundle": "shared"},
+                                       {"port": "dst", "bundle": "shared"}))
         with self.assertRaisesRegex(CheckError, "fallback diagnostic missing"):
             verify(self.output, "design", "same_bundle_legacy")
 
@@ -158,9 +209,21 @@ class BundlePreanalysisCheckerTests(unittest.TestCase):
                                        "max_write_burst_length": "16", "write_burst_outstanding": "1"}},
                            "Keeping legacy m_axi writes for bundle shared: bundle contains reads; "
                            "same-bundle read/write requires duplex support\n"
-                           "Keeping legacy m_axi accesses for bundle shared: another reason\n")
+                           "Keeping legacy m_axi accesses for bundle shared: another reason\n",
+                           parameters=({"port": "data", "bundle": "shared"},))
         with self.assertRaisesRegex(CheckError, "read direction"):
             verify(self.output, "design", "inplace_legacy")
+
+    def test_write_only_requires_its_positive_configuration_witness(self):
+        bundles = {"output": {"mode": "m_axi", "max_write_burst_length": "16",
+                              "write_burst_outstanding": "1"}}
+        positive = "Configured write burst region for bundle output (B=16)\n"
+        self.set_artifacts(self.burst_rtl(read=False, write=True), bundles, positive)
+        verify(self.output, "design", "write_only")
+
+        self.set_artifacts(self.burst_rtl(read=False, write=True), bundles)
+        with self.assertRaisesRegex(CheckError, "write-burst success diagnostic missing"):
+            verify(self.output, "design", "write_only")
 
     def test_mixed_access_fallback_requires_exact_opaque_effect_reason(self):
         bundles = {"data": {"mode": "m_axi", "max_write_burst_length": "16",
