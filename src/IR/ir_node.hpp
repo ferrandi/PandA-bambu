@@ -2042,7 +2042,10 @@ struct vector_ty_node : public type_node
    /// field elts is the type of an vector element
    ir_nodeRef elts;
 
-   explicit vector_ty_node(unsigned int i) : type_node(i)
+   /// Logical number of vector elements, independent of allocated size.
+   unsigned long long nelements;
+
+   explicit vector_ty_node(unsigned int i) : type_node(i), nelements(0)
    {
    }
 

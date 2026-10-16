@@ -52,7 +52,7 @@ def parse_arguments():
                 self.first_parsed = False
                 setattr(namespace, self.dest, values)
             else:
-                setattr(namespace, self.dest, min(namespace.j, values))
+                setattr(namespace, self.dest, min(getattr(namespace, self.dest), values))
 
     def parse_timeout(timeout_str):
         """Convert timeout string with units into seconds."""
@@ -481,6 +481,21 @@ def check_bambu_expectations(cwd: str, env: dict[str, str], commands: list[str],
     return None
 
 
+def run_post_check(cwd: str, env: dict[str, str]):
+    """Run a benchmark's artifact check before cleanup, without invoking a shell."""
+    command = env.get("MANTIS_POST_CHECK")
+    if not command:
+        return None, ""
+    try:
+        result = subprocess.run(
+            shlex.split(command), cwd=cwd, env=os.environ | env,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=30,
+        )
+        return (None if result.returncode == 0 else f"post-check-failed:{result.returncode}"), result.stdout
+    except (OSError, ValueError, subprocess.TimeoutExpired) as error:
+        return "post-check-launch-error", f"POST CHECK ERROR: {error}\n"
+
+
 def kill_process_tree(pid: int):
     """
     Kill a process and all its child processes recursively, with fallback to SIGKILL if SIGTERM times out.
@@ -596,6 +611,8 @@ def run_command(
     if os.path.exists(retval_file) and open(retval_file, "r").read() == "0\n":
         expectation_result = check_bambu_expectations(cwd, env, commands, bid)
         if expectation_result is None:
+            expectation_result, _ = run_post_check(cwd, env)
+        if expectation_result is None:
             old_result = run_command.get_result(cwd)
             log_execution(ExecutionOutcome.SKIPPED, log_message, old_result)
             return id, cwd, ExecutionOutcome.SKIPPED
@@ -707,9 +724,16 @@ def run_command(
                         os.symlink(os.path.basename(output_file), failure_ln)
                     else:
                         expectation_result = check_bambu_expectations(cwd, env, commands, bid)
+                        if expectation_result is None:
+                            expectation_result, post_output = run_post_check(cwd, env)
+                            output.write(post_output)
                         if expectation_result is not None:
                             outcome = ExecutionOutcome.FAILURE
                             result = expectation_result
+                            # A successful tool invocation is not a successful regression
+                            # when its artifact contract fails. Do not cache it as green.
+                            with open(retval_file, "w") as file:
+                                file.write("-1\n")
                             os.symlink(os.path.basename(output_file), failure_ln)
                         else:
                             result = run_command.get_result(cwd)

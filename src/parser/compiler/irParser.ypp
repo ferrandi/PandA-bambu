@@ -686,8 +686,15 @@ bool pred;
    //void_ty_node: TOK_BISON_VOID_TYPE^ type_node;
    wvoid_type : TOK_BISON_VOID_TYPE{CTN(void_ty_node)} wtype_node;
 
-   //vector_ty_node: TOK_BISON_VECTOR_TYPE^ type_node elts;
-   wvector_type : TOK_BISON_VECTOR_TYPE{CTN(vector_ty_node)} wtype_node elts{NS(vector_ty_node, elts)};
+   //vector_ty_node: TOK_BISON_VECTOR_TYPE^ type_node elts nelements;
+   wvector_type : TOK_BISON_VECTOR_TYPE{CTN(vector_ty_node)} wtype_node elts{NS(vector_ty_node, elts)} vector_nelements;
+
+   vector_nelements : nelements{
+      const auto count = std::stoull(data->curr_string_number);
+      if(!count) THROW_ERROR("Vector type without nelements");
+      NSV(vector_ty_node, nelements, count)
+   }
+   | /*empty*/ {THROW_ERROR("Vector type without nelements");};
 
    //real_ty_node: TOK_BISON_REAL_TYPE^ type_node bitsize;
    wreal_type : TOK_BISON_REAL_TYPE{CTN(real_ty_node)}

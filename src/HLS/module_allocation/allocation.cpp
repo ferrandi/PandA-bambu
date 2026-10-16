@@ -1598,13 +1598,22 @@ DesignFlowStep_Status allocation::InternalExec()
                const auto prec_out = ir_helper::Size(left_type);
                allocation_information->extract_bambu_provided_name(prec_in, prec_out, HLSMgr, current_fu);
             }
+            else if(vector_boolR && boolL)
+            {
+               // Scalarization of an extracted mask lane can leave a shuffled vector whose low bit is the result.
+               current_fu = get_fu(UUDATA_CONVERTER_STD);
+            }
             else if(vector_boolR && vector_intL)
             {
-               current_fu = get_fu(UIVECTOR_CONVERTER_STD);
+               current_fu =
+                   get_fu(ir_helper::IsSignedIntegerType(ir_helper::CGetElements(right_type)) ? IIVECTOR_CONVERTER_STD :
+                                                                                                UIVECTOR_CONVERTER_STD);
             }
             else if(vector_boolR && vector_unsignedL)
             {
-               current_fu = get_fu(UUVECTOR_CONVERTER_STD);
+               current_fu =
+                   get_fu(ir_helper::IsSignedIntegerType(ir_helper::CGetElements(right_type)) ? IUVECTOR_CONVERTER_STD :
+                                                                                                UUVECTOR_CONVERTER_STD);
             }
             else if(vector_unsignedR && vector_boolL)
             {
@@ -1704,9 +1713,7 @@ DesignFlowStep_Status allocation::InternalExec()
             const auto type = ir_helper::CGetType(TM->GetIRNode(out_var));
             if(ir_helper::IsVectorType(type))
             {
-               const auto element_type = ir_helper::CGetElements(type);
-               const auto element_size = ir_helper::SizeAlloc(element_type);
-               allocation_information->precision_map[current_size] = element_size;
+               allocation_information->precision_map[current_size] = ir_helper::VectorElementBitsize(type);
             }
             else
             {
@@ -1758,9 +1765,7 @@ DesignFlowStep_Status allocation::InternalExec()
                   const auto type = ir_helper::CGetType(TM->GetIRNode(out_var));
                   if(ir_helper::IsVectorType(type))
                   {
-                     const auto element_type = ir_helper::CGetElements(type);
-                     const auto element_size = ir_helper::SizeAlloc(element_type);
-                     allocation_information->precision_map[current_size] = element_size;
+                     allocation_information->precision_map[current_size] = ir_helper::VectorElementBitsize(type);
                   }
                   else
                   {
@@ -1795,9 +1800,7 @@ DesignFlowStep_Status allocation::InternalExec()
                const auto type = ir_helper::CGetType(TM->GetIRNode(out_var));
                if(ir_helper::IsVectorType(type))
                {
-                  const auto element_type = ir_helper::CGetElements(type);
-                  const auto element_size = ir_helper::SizeAlloc(element_type);
-                  allocation_information->precision_map[current_size] = element_size;
+                  allocation_information->precision_map[current_size] = ir_helper::VectorElementBitsize(type);
                }
                else
                {

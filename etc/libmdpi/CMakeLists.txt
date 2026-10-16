@@ -13,6 +13,7 @@ set(LIBMDPI_DATA_FILES
 
 set(LIBMDPI_HEADER_FILES
    include/mdpi/mdpi_bbp.h
+   include/mdpi/mdpi_banked.h
    include/mdpi/mdpi_csim.h
    include/mdpi/mdpi_debug.h
    include/mdpi/mdpi_driver.h
@@ -25,6 +26,7 @@ set(LIBMDPI_HEADER_FILES
    include/mdpi/mdpi_types.h
    include/mdpi/mdpi_user.h
    include/mdpi/mdpi_wrapper.h
+   include/mdpi/mdpi_wrapper_compare.h
    include/mdpi/mdpi.h
    include/mdpi/svdpi.h
 )
