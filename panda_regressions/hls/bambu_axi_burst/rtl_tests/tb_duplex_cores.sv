@@ -4,7 +4,8 @@ module tb_duplex_cores #(
     parameter integer READ_FIFO_DEPTH = 64,
     parameter integer WRITE_B_MAX = 8,
     parameter integer WRITE_OUTSTANDING = 2,
-    parameter integer WRITE_FIFO_DEPTH = 32
+    parameter integer WRITE_FIFO_DEPTH = 32,
+    parameter integer PEER_FAULT_TEST = 0
 );
     logic clock = 1'b0;
     always #5 clock = ~clock;
@@ -45,6 +46,8 @@ module tb_duplex_cores #(
     logic awready, wready;
     logic inject_bresp_fault = 0;
     logic inject_rresp_fault = 0;
+    logic inject_peer_fault_reader = 0;
+    logic inject_peer_fault_writer = 0;
     wire [1:0] bresp = inject_bresp_fault ? 2'b10 : 2'b00;
     logic bid = 0, bvalid = 0;
 
@@ -52,11 +55,13 @@ module tb_duplex_cores #(
     logic stall_aw = 1'b0, stall_w = 1'b0, stall_b = 1'b0;
 
     MinimalAXI4MasterPipelined #(
-        .B_MAX(READ_B_MAX), .MAX_OUTSTANDING(READ_OUTSTANDING), .FIFO_DEPTH(READ_FIFO_DEPTH)
+        .B_MAX(READ_B_MAX), .MAX_OUTSTANDING(READ_OUTSTANDING), .FIFO_DEPTH(READ_FIFO_DEPTH),
+        .PEER_FAULT_ENABLE(PEER_FAULT_TEST)
     ) reader (
         .clock(clock), .reset(reset), .start(read_start), .in1(read_op), .in2(read_size),
         .in3(read_payload), .in4(read_base), .in5(read_count), .done(read_done),
-        .out1(read_data), .fault(read_fault), .m_axi_araddr(araddr), .m_axi_arlen(arlen),
+        .out1(read_data), .peer_fault(write_fault | inject_peer_fault_reader), .fault(read_fault),
+        .m_axi_araddr(araddr), .m_axi_arlen(arlen),
         .m_axi_arsize(arsize), .m_axi_arburst(arburst), .m_axi_arid(arid),
         .m_axi_arvalid(arvalid), .m_axi_arready(arready), .m_axi_rdata(rdata),
         .m_axi_rresp(rresp), .m_axi_rid(rid), .m_axi_rlast(rlast), .m_axi_rvalid(rvalid),
@@ -64,11 +69,13 @@ module tb_duplex_cores #(
     );
 
     MinimalAXI4MasterPipelinedWrite #(
-        .B_MAX(WRITE_B_MAX), .MAX_OUTSTANDING(WRITE_OUTSTANDING), .FIFO_DEPTH(WRITE_FIFO_DEPTH)
+        .B_MAX(WRITE_B_MAX), .MAX_OUTSTANDING(WRITE_OUTSTANDING), .FIFO_DEPTH(WRITE_FIFO_DEPTH),
+        .PEER_FAULT_ENABLE(PEER_FAULT_TEST)
     ) writer (
         .clock(clock), .reset(reset), .start(write_start), .in1(write_op), .in2(write_size),
         .in3(write_payload), .in4(write_base), .in5(write_count), .done(write_done),
-        .out1(), .fault(write_fault), .m_axi_awaddr(awaddr), .m_axi_awlen(awlen),
+        .out1(), .peer_fault(read_fault | inject_peer_fault_writer), .fault(write_fault),
+        .m_axi_awaddr(awaddr), .m_axi_awlen(awlen),
         .m_axi_awsize(awsize), .m_axi_awburst(awburst), .m_axi_awid(awid),
         .m_axi_awvalid(awvalid), .m_axi_awready(awready), .m_axi_wdata(wdata),
         .m_axi_wstrb(wstrb), .m_axi_wlast(wlast), .m_axi_wvalid(wvalid),
@@ -388,13 +395,19 @@ module tb_duplex_cores #(
     task automatic run_selected(input string name);
         integer before_ar, before_aw, before_w, before_r, before_b, timeout_cycles;
         integer expected_write_beats;
+        integer expected_ar_count, expected_r_beats, before_scheduled;
+        integer before_descriptors, before_issued;
         logic [31:0] saved_araddr;
+        logic [31:0] saved_wdata;
         logic [31:0] transformed;
         logic [7:0] saved_arlen;
+        logic saved_wlast;
         begin
             reset_cores();
             expected_write_beats=0;
             stall_ar=0; stall_r=0; stall_aw=0; stall_w=0; stall_b=0;
+            inject_bresp_fault=0; inject_rresp_fault=0;
+            inject_peer_fault_reader=0; inject_peer_fault_writer=0;
             case (name)
                 "LOAD_WAIT_STORE": begin
                     stall_r=1;
@@ -627,6 +640,200 @@ module tb_duplex_cores #(
                     expected_write_beats=4; check_write_counts(expected_write_beats);
                     verify_region(WRITE_BASE,4);
                 end
+                "PEER_BRESP_DRAIN": begin
+                    if (PEER_FAULT_TEST != 1) $fatal(1, "PEER_CASE_REQUIRES_PEER_FAULT_PROFILE");
+                    stall_r=1;
+                    configure_read(READ_BASE*4,40);
+                    configure_write(WRITE_BASE*4,1);
+                    timeout_cycles=0;
+                    while (accepted_ar<2 && timeout_cycles<1000) begin
+                        @(negedge clock); timeout_cycles=timeout_cycles+1;
+                    end
+                    if (accepted_ar != 2 || reader.descriptor_count != 2)
+                        $fatal(1, "PEER_BRESP_NEEDS_TWO_ACCEPTED_READ_DESCRIPTORS ar=%0d desc=%0d",
+                               accepted_ar, reader.descriptor_count);
+                    stall_ar=1;
+                    timeout_cycles=0;
+                    while (!arvalid && timeout_cycles<1000) begin @(negedge clock); timeout_cycles=timeout_cycles+1; end
+                    if (!arvalid || arready || read_done)
+                        $fatal(1, "PEER_BRESP_NEEDS_EXPOSED_STALLED_AR");
+                    expected_ar_count=accepted_ar+1;
+                    expected_r_beats=integer'(arlen)+1;
+                    for (integer q=ar_rd;q<ar_wr;q=q+1)
+                        expected_r_beats=expected_r_beats+ar_left_q[q];
+                    stall_b=1;
+                    issue_store(WRITE_BASE*4,32'h8b000000);
+                    drain_write(0);
+                    inject_bresp_fault=1;
+                    stall_b=0;
+                    timeout_cycles=0;
+                    while (!write_fault && timeout_cycles<1000) begin @(negedge clock); timeout_cycles=timeout_cycles+1; end
+                    if (!write_fault) $fatal(1, "PEER_BRESP_SOURCE_FAULT_TIMEOUT");
+                    timeout_cycles=0;
+                    while (!read_fault && timeout_cycles<1000) begin @(negedge clock); timeout_cycles=timeout_cycles+1; end
+                    if (!read_fault || read_done || read_beats!=0)
+                        $fatal(1, "PEER_BRESP_DID_NOT_ABORT_NEW_READ_SUCCESS");
+                    stall_ar=0; stall_r=0;
+                    timeout_cycles=0;
+                    while ((accepted_ar<expected_ar_count || read_beats<expected_r_beats) && timeout_cycles<3000) begin
+                        @(negedge clock); timeout_cycles=timeout_cycles+1;
+                    end
+                    if (timeout_cycles>=3000 || accepted_ar!=expected_ar_count || read_beats!=expected_r_beats ||
+                        reader.descriptor_count!=0)
+                        $fatal(1, "PEER_BRESP_ACCEPTED_READ_TRANSPORT_NOT_DRAINED ar=%0d/%0d r=%0d/%0d desc=%0d",
+                               accepted_ar, expected_ar_count, read_beats, expected_r_beats, reader.descriptor_count);
+                    before_ar=accepted_ar;
+                    @(negedge clock); read_op=OP_LOAD; read_size=32; read_base=READ_BASE*4; read_start=1; #1;
+                    if (read_done || !read_fault) $fatal(1, "PEER_BRESP_ALLOWED_LOAD_AFTER_FAULT");
+                    @(posedge clock); @(negedge clock); read_start=0;
+                    repeat (3) @(negedge clock);
+                    if (accepted_ar!=before_ar || read_done)
+                        $fatal(1, "PEER_BRESP_CREATED_POST_FAULT_READ_RESERVATION");
+                end
+                "PEER_RRESP_RESERVED_WRITE_DRAIN": begin
+                    if (PEER_FAULT_TEST != 1) $fatal(1, "PEER_CASE_REQUIRES_PEER_FAULT_PROFILE");
+                    stall_r=1;
+                    configure_read(READ_BASE*4,4);
+                    configure_write(WRITE_BASE*4,24);
+                    stall_aw=1; stall_w=1; stall_b=1;
+                    issue_store_region(WRITE_BASE*4,24,32'h8c000000);
+                    timeout_cycles=0;
+                    while ((writer.descriptor_count!=2 || !awvalid || !wvalid) && timeout_cycles<2000) begin
+                        @(negedge clock); timeout_cycles=timeout_cycles+1;
+                    end
+                    if (timeout_cycles>=2000 || integer'(writer.scheduled)!=16 ||
+                        writer.fifo_count-writer.reserved_data_count!=8)
+                        $fatal(1, "PEER_RRESP_WRITE_DESCRIPTORS_NOT_FULLY_RESERVED desc=%0d scheduled=%0d aw=%b w=%b",
+                               writer.descriptor_count, writer.scheduled, awvalid, wvalid);
+                    before_scheduled=integer'(writer.scheduled);
+                    before_aw=accepted_aw; before_w=accepted_w; before_b=accepted_b;
+                    before_r=read_beats;
+                    issue_load(READ_BASE*4);
+                    stall_r=0;
+                    timeout_cycles=0;
+                    while (read_beats<before_r+1 && timeout_cycles<1000) begin @(negedge clock); timeout_cycles=timeout_cycles+1; end
+                    if (timeout_cycles>=1000) $fatal(1, "PEER_RRESP_FIRST_GOOD_BEAT_TIMEOUT");
+                    inject_rresp_fault=1;
+                    timeout_cycles=0;
+                    while (!read_fault && timeout_cycles<1000) begin @(negedge clock); timeout_cycles=timeout_cycles+1; end
+                    if (!read_fault || read_done || integer'(writer.scheduled)!=before_scheduled)
+                        $fatal(1, "PEER_RRESP_DID_NOT_STOP_NEW_WRITER_RESERVATIONS");
+                    timeout_cycles=0;
+                    while (!write_fault && timeout_cycles<1000) begin @(negedge clock); timeout_cycles=timeout_cycles+1; end
+                    if (!write_fault || !awvalid || !wvalid || integer'(writer.scheduled)!=before_scheduled)
+                        $fatal(1, "PEER_RRESP_DID_NOT_RETAIN_RESERVED_WRITE_TRANSPORT");
+                    saved_araddr=awaddr; saved_arlen=awlen; saved_wdata=wdata; saved_wlast=wlast;
+                    repeat (3) begin
+                        @(negedge clock);
+                        if (!awvalid || !wvalid || awaddr!==saved_araddr || awlen!==saved_arlen ||
+                            wdata!==saved_wdata || wlast!==saved_wlast ||
+                            integer'(writer.scheduled)!=before_scheduled)
+                            $fatal(1, "PEER_RRESP_STALLED_RESERVED_WRITE_CHANGED");
+                    end
+                    stall_aw=0; stall_w=0;
+                    timeout_cycles=0;
+                    while ((b_pending<2 || accepted_aw<before_aw+2 || accepted_w<before_w+16) && timeout_cycles<3000) begin
+                        @(negedge clock); timeout_cycles=timeout_cycles+1;
+                    end
+                    if (timeout_cycles>=3000 || b_pending!=2 || accepted_b!=before_b)
+                        $fatal(1, "PEER_RRESP_B_RESPONSES_NOT_PENDING_BEFORE_RELEASE");
+                    stall_b=0;
+                    timeout_cycles=0;
+                    while (accepted_b<before_b+2 && timeout_cycles<3000) begin @(negedge clock); timeout_cycles=timeout_cycles+1; end
+                    if (timeout_cycles>=3000 || accepted_aw!=before_aw+2 || accepted_w!=before_w+16 ||
+                        accepted_b!=before_b+2 || writer.descriptor_count!=0 ||
+                        integer'(writer.scheduled)!=before_scheduled ||
+                        writer.fifo_count-writer.reserved_data_count!=8)
+                        $fatal(1, "PEER_RRESP_RESERVED_WRITE_DID_NOT_DRAIN aw=%0d w=%0d b=%0d desc=%0d",
+                               accepted_aw-before_aw, accepted_w-before_w, accepted_b-before_b, writer.descriptor_count);
+                    expected_write_beats=16; check_write_counts(expected_write_beats);
+                    for (integer k=16;k<24;k=k+1) expected_valid[WRITE_BASE+k]=1'b0;
+                    verify_region(WRITE_BASE,16);
+                end
+                "PEER_RRESP_FINAL_BEAT": begin
+                    if (PEER_FAULT_TEST != 1) $fatal(1, "PEER_CASE_REQUIRES_PEER_FAULT_PROFILE");
+                    stall_r=1;
+                    configure_read(READ_BASE*4,4);
+                    before_r=read_beats;
+                    issue_load(READ_BASE*4);
+                    stall_r=0;
+                    timeout_cycles=0;
+                    while (read_beats<before_r+3 && timeout_cycles<1000) begin @(negedge clock); timeout_cycles=timeout_cycles+1; end
+                    if (timeout_cycles>=1000 || reader.descriptor_count!=1 ||
+                        reader.descriptor_remaining[reader.descriptor_rd_ptr]!=1)
+                        $fatal(1, "PEER_RRESP_FINAL_BEAT_PRECONDITION_FAILED");
+                    inject_rresp_fault=1;
+                    timeout_cycles=0;
+                    while (!read_fault && timeout_cycles<1000) begin @(negedge clock); timeout_cycles=timeout_cycles+1; end
+                    if (timeout_cycles>=1000 || read_done || read_beats!=before_r+4 || reader.descriptor_count!=0)
+                        $fatal(1, "PEER_RRESP_FINAL_BEAT_POP_FAULT_EDGE_MISMATCH beats=%0d desc=%0d",
+                               read_beats-before_r, reader.descriptor_count);
+                    timeout_cycles=0;
+                    while (!write_fault && timeout_cycles<1000) begin
+                        @(negedge clock); timeout_cycles=timeout_cycles+1;
+                    end
+                    if (timeout_cycles>=1000)
+                        $fatal(1, "PEER_RRESP_FINAL_BEAT_NOT_PROPAGATED_TO_WRITER");
+                end
+                "PEER_FAULT_BLOCKS_RESERVATION": begin
+                    if (PEER_FAULT_TEST != 1) $fatal(1, "PEER_CASE_REQUIRES_PEER_FAULT_PROFILE");
+                    configure_read(READ_BASE*4,40);
+                    timeout_cycles=0;
+                    while (accepted_ar<1 && timeout_cycles<1000) begin @(negedge clock); timeout_cycles=timeout_cycles+1; end
+                    if (timeout_cycles>=1000) $fatal(1, "PEER_RESERVATION_FIRST_AR_TIMEOUT");
+                    stall_ar=1;
+                    before_issued=integer'(reader.issued);
+                    before_descriptors=integer'(reader.descriptor_count);
+                    if (!reader.region_active || reader.issued>=reader.region_count || reader.m_axi_arvalid_reg ||
+                        reader.fault_reg || before_descriptors>=READ_OUTSTANDING)
+                        $fatal(1, "PEER_RESERVATION_EDGE_NOT_ELIGIBLE issued=%0d desc=%0d arvalid=%b",
+                               reader.issued, reader.descriptor_count, reader.m_axi_arvalid_reg);
+                    inject_peer_fault_reader=1;
+                    @(posedge clock); #1;
+                    if (!read_fault || integer'(reader.issued)!=before_issued ||
+                        integer'(reader.descriptor_count)!=before_descriptors ||
+                        reader.m_axi_arvalid_reg)
+                        $fatal(1, "PEER_FAULT_DID_NOT_BLOCK_SAME_EDGE_RESERVATION");
+                end
+                "PEER_FAULT_RESET_RESTART": begin
+                    if (PEER_FAULT_TEST != 1) $fatal(1, "PEER_CASE_REQUIRES_PEER_FAULT_PROFILE");
+                    stall_r=1;
+                    configure_read(READ_BASE*4,4);
+                    configure_write(WRITE_BASE*4,4);
+                    timeout_cycles=0;
+                    while (accepted_ar<1 && timeout_cycles<1000) begin @(negedge clock); timeout_cycles=timeout_cycles+1; end
+                    if (timeout_cycles>=1000 || reader.descriptor_count!=1)
+                        $fatal(1, "PEER_FAULT_RESET_DRAIN_PRECONDITION_FAILED");
+                    before_r=read_beats;
+                    inject_peer_fault_writer=1;
+                    timeout_cycles=0;
+                    while ((!read_fault || !write_fault) && timeout_cycles<1000) begin @(negedge clock); timeout_cycles=timeout_cycles+1; end
+                    if (timeout_cycles>=1000) $fatal(1, "PEER_FAULT_DID_NOT_REACH_BOTH_CORES");
+                    inject_peer_fault_writer=0;
+                    stall_r=0;
+                    timeout_cycles=0;
+                    while ((read_beats<before_r+4 || reader.descriptor_count!=0) && timeout_cycles<2000) begin
+                        @(negedge clock); timeout_cycles=timeout_cycles+1;
+                    end
+                    if (timeout_cycles>=2000 || read_beats!=before_r+4 || reader.descriptor_count!=0)
+                        $fatal(1, "PEER_FAULT_RESET_DRAIN_DID_NOT_COMPLETE");
+                    reset_cores();
+                    stall_r=1;
+                    configure_read(READ_BASE*4,4);
+                    configure_write(WRITE_BASE*4,4);
+                    issue_store_region(WRITE_BASE*4,4,32'h8d000000);
+                    wait_write_complete(1,2000);
+                    drain_write(1);
+                    expected_write_beats=4; check_write_counts(expected_write_beats);
+                    before_r=read_beats;
+                    stall_r=0;
+                    wait_read_beats(before_r+4,1000);
+                    for (integer k=0;k<4;k=k+1) issue_load_and_check(READ_BASE*4+k*4);
+                    if (read_fault || write_fault || accepted_aw!=1 || accepted_b!=1 || read_beats!=before_r+4)
+                        $fatal(1, "PEER_FAULT_RESET_RESTART_FAILED read=%b write=%b r=%0d",
+                               read_fault, write_fault, read_beats-before_r);
+                    verify_region(WRITE_BASE,4);
+                end
                 "PROFILE_AND_CONFIG_ISOLATION": begin
                     stall_ar=1;
                     configure_read(READ_BASE*4, 13);
@@ -672,8 +879,12 @@ module tb_duplex_cores #(
                 end
                 default: $fatal(1, "UNKNOWN_CASE=%s", name);
             endcase
-            if ((name != "RRESP_FAULT_LOCAL" && read_fault) ||
-                (name != "BRESP_FAULT_LOCAL" && write_fault))
+            if ((name != "RRESP_FAULT_LOCAL" && name != "PEER_BRESP_DRAIN" &&
+                 name != "PEER_RRESP_RESERVED_WRITE_DRAIN" && name != "PEER_RRESP_FINAL_BEAT" &&
+                 name != "PEER_FAULT_BLOCKS_RESERVATION" && name != "PEER_FAULT_RESET_RESTART" && read_fault) ||
+                (name != "BRESP_FAULT_LOCAL" && name != "PEER_BRESP_DRAIN" &&
+                 name != "PEER_RRESP_RESERVED_WRITE_DRAIN" && name != "PEER_RRESP_FINAL_BEAT" &&
+                 name != "PEER_FAULT_BLOCKS_RESERVATION" && name != "PEER_FAULT_RESET_RESTART" && write_fault))
                 $fatal(1, "UNEXPECTED_CORE_FAULT read=%b write=%b", read_fault, write_fault);
             verify_full_memory();
             $display("DUPLEX_CORES PASS CASE=%s AR=%0d R=%0d AW=%0d W=%0d B=%0d", name,
