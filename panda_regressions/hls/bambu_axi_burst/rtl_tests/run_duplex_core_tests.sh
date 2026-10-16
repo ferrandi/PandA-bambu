@@ -17,6 +17,7 @@ if [[ ${BURST_DUPLEX_SIM_OUTSIDE_SANDBOX:-} != 1 ]]; then
     exit 2
 fi
 command -v verilator >/dev/null 2>&1 || { echo "verilator is required" >&2; exit 2; }
+command -v rg >/dev/null 2>&1 || { echo "rg is required" >&2; exit 2; }
 DEFAULT_SIM_JOBS=$(nproc 2>/dev/null || echo 4)
 ((DEFAULT_SIM_JOBS > 16)) && DEFAULT_SIM_JOBS=16
 SIM_JOBS=${SIM_JOBS:-$DEFAULT_SIM_JOBS}
@@ -51,7 +52,7 @@ python3 -B "$EXTRACTOR" --xml "$XML" --target MinimalAXI4MasterPipelinedWrite \
 
 BUILD="$TASK_OUT/build/obj"
 timeout 240s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal \
-    -Wno-UNUSEDSIGNAL -Wno-BLKSEQ --top-module tb_duplex_cores \
+    -Wno-BLKSEQ --top-module tb_duplex_cores \
     -GREAD_B_MAX=16 -GREAD_OUTSTANDING=3 -GREAD_FIFO_DEPTH=64 \
     -GWRITE_B_MAX=8 -GWRITE_OUTSTANDING=2 -GWRITE_FIFO_DEPTH=32 \
     --Mdir "$BUILD" "$TASK_OUT/MinimalAXI4MasterPipelined.sv" \
@@ -63,7 +64,8 @@ timeout 240s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fata
 
 CASES=(LOAD_WAIT_STORE LOAD_DURING_WRITE_BLOCK AW_W_B_BLOCK_AR_PROGRESS \
        AR_R_BLOCK_WRITE_PROGRESS SIMULTANEOUS PROFILE_AND_CONFIG_ISOLATION \
-       ZERO_READ_NONZERO_WRITE ZERO_WRITE_NONZERO_READ)
+       ZERO_READ_NONZERO_WRITE ZERO_WRITE_NONZERO_READ INPLACE_POINTWISE \
+       RRESP_FAULT_LOCAL BRESP_FAULT_LOCAL)
 : > "$TASK_OUT/results.log"
 for case_name in "${CASES[@]}"; do
     log="$TASK_OUT/$case_name.log"

@@ -53,6 +53,7 @@ module tb_burst_engine #(
     integer peak_descriptors = 0;
     integer delay_left = 0;
     integer ar_count = 0;
+    string selected_case;
     integer deferred_cfg_done = 0;
     integer configure_completion_count = 0;
     logic prev_stalled = 1'b0;
@@ -668,6 +669,26 @@ module tb_burst_engine #(
     endtask
 
     initial begin
+        if (!$value$plusargs("CASE=%s", selected_case))
+            $fatal(1, "missing exact CASE selector");
+        case (selected_case)
+            "ERROR", "BADALIGN", "OVERFLOW", "BADSIZE_CONFIG", "STORE",
+            "RANGE_ZERO", "RANGE_LIMIT_BASE0", "RANGE_LIMIT_BASE4",
+            "RANGE_OVER_BASE4", "RANGE_OVER_PLUS1", "RANGE_OVER_HALF",
+            "RANGE_OVER_MAX", "RANGE_TOP_VALID", "RANGE_TOP_OVER", "RANGE_ORACLE",
+            "BADADDR_EMPTY", "BADSIZE_EMPTY", "BADADDR_FULL", "BADSIZE_FULL",
+            "DRAIN_CONFIG_RACE", "CONTINUOUS_CFG", "ADJACENT_CFG",
+            "ADJACENT_CFG_TRUNC", "ADJACENT_CFG_SIZE", "BADRID", "EARLY_RLAST",
+            "RRESP_FIRST", "RRESP_INTERMEDIATE", "RRESP_FINAL", "MISSING_RLAST",
+            "RESET_TRAFFIC", "FIFO_WRAP", "FIFO_BACKPRESSURE", "RESET_MULTI",
+            "FAULT_STALLED_AR", "AQC", "PENDING_SECOND", "BOUNDARY_PENDING",
+            "RRESP_STALLED_AR", "RRESP_RESERVATION_RACE", "RREADY_SIDEBAND",
+            "DEPTH4096", "MULTI",
+            "CREDIT_LIMIT", "CREDIT_POP", "SMOKE": begin end
+            default: $fatal(1, "unknown exact CASE selector: %s", selected_case);
+        endcase
+        if (!$test$plusargs(selected_case))
+            $fatal(1, "selected CASE has no matching scenario plusarg: %s", selected_case);
         if ($test$plusargs("ERROR")) inject_error = 1'b1;
         repeat (4) @(posedge clk);
         reset_n = 1'b1;
@@ -1715,7 +1736,7 @@ module tb_burst_engine #(
             $display("PASS B=%0d drain-edge and same-cycle-pop configure", B_MAX);
             $finish;
         end
-        if ($test$plusargs("ADJACENT_CFG")) begin
+        if ((selected_case == "ADJACENT_CFG") && $test$plusargs("ADJACENT_CFG")) begin
             integer completions_before;
             stall_ar = 1'b0;
             completions_before = configure_completion_count;
@@ -1773,7 +1794,7 @@ module tb_burst_engine #(
             $display("ADJACENT_CFG: back-to-back configures with held start accepted");
         end
 
-        if ($test$plusargs("ADJACENT_CFG_TRUNC")) begin
+        if ((selected_case == "ADJACENT_CFG_TRUNC") && $test$plusargs("ADJACENT_CFG_TRUNC")) begin
             // The guard re-arm must compare every operand at full width. Changing only
             // the count from 0 to a value whose top bit is set is an invalid request: if
             // the comparison truncates the count, the request looks identical to the one
@@ -1805,7 +1826,7 @@ module tb_burst_engine #(
             $finish;
         end
 
-        if ($test$plusargs("ADJACENT_CFG_SIZE")) begin
+        if ((selected_case == "ADJACENT_CFG_SIZE") && $test$plusargs("ADJACENT_CFG_SIZE")) begin
             // Same hole through the other operand: changing only the element size from 32
             // to 16 must be re-armed and rejected. An operand set that ignores size_bits
             // leaves the request unvalidated, with neither done nor fault.
@@ -1959,5 +1980,9 @@ module tb_burst_engine #(
         $fatal(1, "global test watchdog expired O=%0d D=%0d issued=%0d returned=%0d consumed=%0d desc=%0d fifo=%0d AR=%0d R=%0d fault=%b",
                MAX_OUTSTANDING, FIFO_DEPTH, dut.issued, dut.returned, dut.consumed,
                dut.descriptor_count, dut.fifo_count, ar_count, r_beat_count, fault);
+    end
+
+    final begin
+        $display("DUPLEX_READ PASS CASE=%s", selected_case);
     end
 endmodule
