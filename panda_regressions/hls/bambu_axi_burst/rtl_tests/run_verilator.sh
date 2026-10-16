@@ -213,6 +213,7 @@ for burst_max in 1 2 16 256; do
             RANGE_OVER_MAX RANGE_TOP_VALID RANGE_TOP_OVER RANGE_ORACLE \
             BADADDR_EMPTY BADSIZE_EMPTY BADADDR_FULL BADSIZE_FULL \
             DRAIN_CONFIG_RACE CONTINUOUS_CFG ADJACENT_CFG BADRID EARLY_RLAST \
+            RRESP_FIRST RRESP_INTERMEDIATE RRESP_FINAL \
             ADJACENT_CFG_TRUNC ADJACENT_CFG_SIZE \
             MISSING_RLAST RESET_TRAFFIC FIFO_WRAP
     fi
@@ -236,9 +237,11 @@ done
 # boundary/tail with a busy configure, and rejection of a second pending config.
 run_build tb_burst_engine 16 "$TESTS/tb_burst_engine.sv" "" 2 64 no
 run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O2-D64/Vtb_burst_engine" \
-    "$TASK_OUT/build-tb_burst_engine-B16-O2-D64" AQC FAULT_STALLED_AR RESET_MULTI PENDING_SECOND
+    "$TASK_OUT/build-tb_burst_engine-B16-O2-D64" AQC FAULT_STALLED_AR RRESP_STALLED_AR RESET_MULTI PENDING_SECOND
 run_build tb_burst_engine 16 "$TESTS/tb_burst_engine.sv" "" 3 64 no
-timeout 120s "$TASK_OUT/build-tb_burst_engine-B16-O3-D64/Vtb_burst_engine" +BOUNDARY_PENDING
+run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O3-D64/Vtb_burst_engine" \
+    "$TASK_OUT/build-tb_burst_engine-B16-O3-D64" \
+    BOUNDARY_PENDING RRESP_RESERVATION_RACE RREADY_SIDEBAND
 
 # Distinguish descriptor-count limits from beat-credit limits. D=1 also checks
 # minimum-width data FIFO pointers/counters and stop/restart behavior.

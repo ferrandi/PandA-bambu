@@ -28,15 +28,20 @@ module tb_burst_engine #(
     logic [1:0] rresp;
     logic [0:0] rid;
     logic rlast;
-    logic rvalid = 1'b0;
+    logic rvalid_reg = 1'b0;
+    logic force_rvalid = 1'b0;
+    wire rvalid = rvalid_reg || force_rvalid;
     logic rready;
 
     wire slave_active;
     logic stall_ar = 1'b1;
     logic inject_error = 1'b0;
+    integer inject_error_at = -1;
     logic inject_wrong_rid = 1'b0;
     logic inject_early_rlast = 1'b0;
     logic suppress_rlast = 1'b0;
+    logic force_rlast = 1'b0;
+    logic forced_rlast = 1'b0;
     wire [31:0] slave_addr;
     wire [31:0] slave_left;
     reg [31:0] slave_q_addr [0:15];
@@ -64,7 +69,9 @@ module tb_burst_engine #(
     integer simultaneous_push_pop = 0;
     integer monitor_reserved_beats;
     integer bus_issued_beats = 0;
+    integer bus_transport_beats = 0;
     integer bus_returned_beats = 0;
+    integer bus_fault_seen = 0;
     integer bus_desc_count = 0;
     integer bus_desc_rd_ptr = 0;
     integer bus_desc_wr_ptr = 0;
@@ -73,9 +80,10 @@ module tb_burst_engine #(
     integer bus_desc_sum;
     integer bus_reserved_beats;
     integer bus_r_is_good;
+    integer bus_r_structural;
     integer bus_r_finishes_desc;
     wire bus_r_finishes_desc_now = rvalid && rready && bus_desc_count != 0 &&
-        rid == 0 && rresp == 0 && rlast &&
+        rid == 0 && rlast &&
         bus_desc_remaining[bus_desc_rd_ptr] == 1;
     integer aqc_hits = 0;
     integer stalled_fault_ar_hits = 0;
@@ -98,9 +106,10 @@ module tb_burst_engine #(
     assign slave_left = slave_q_count != 0 ? slave_q_left[slave_q_rd] : 0;
     assign rdata = slave_addr >> 2;
     assign rid = inject_wrong_rid ? 1'b1 : 1'b0;
-    assign rlast = suppress_rlast ? 1'b0 :
-                   (inject_early_rlast ? (slave_left == 2) : (slave_left == 1));
-    assign rresp = inject_error ? 2'b10 : 2'b00;
+    assign rlast = force_rlast ? forced_rlast :
+                   (suppress_rlast ? 1'b0 :
+                    (inject_early_rlast ? (slave_left == 2) : (slave_left == 1)));
+    assign rresp = (inject_error || r_beat_count == inject_error_at) ? 2'b10 : 2'b00;
     assign arready = !stall_ar && (slave_q_count < 16 ||
                    (rvalid && rready && slave_left == 1));
 
@@ -112,7 +121,7 @@ module tb_burst_engine #(
         if (reset_n && dut.activate_pending)
             deferred_cfg_done <= deferred_cfg_done + 1;
         if (!reset_n) begin
-            rvalid <= 1'b0;
+            rvalid_reg <= 1'b0;
             slave_q_rd <= 0;
             slave_q_wr <= 0;
             slave_q_count <= 0;
@@ -128,7 +137,9 @@ module tb_burst_engine #(
             descriptor_read_wraps <= 0;
             peak_descriptors <= 0;
             bus_issued_beats = 0;
+            bus_transport_beats = 0;
             bus_returned_beats = 0;
+            bus_fault_seen = 0;
             bus_desc_count = 0;
             bus_desc_rd_ptr = 0;
             bus_desc_wr_ptr = 0;
@@ -145,14 +156,18 @@ module tb_burst_engine #(
             // not use DUT counters to derive accepted beats or descriptor sums.
             if (dut.configure_direct_capture) begin
                 bus_issued_beats = 0;
+                bus_transport_beats = 0;
                 bus_returned_beats = 0;
+                bus_fault_seen = 0;
                 bus_desc_count = 0;
                 bus_desc_rd_ptr = 0;
                 bus_desc_wr_ptr = 0;
                 bus_region_count = count;
             end else if (dut.activate_pending) begin
                 bus_issued_beats = 0;
+                bus_transport_beats = 0;
                 bus_returned_beats = 0;
+                bus_fault_seen = 0;
                 bus_desc_count = 0;
                 bus_desc_rd_ptr = 0;
                 bus_desc_wr_ptr = 0;
@@ -164,11 +179,12 @@ module tb_burst_engine #(
             for (integer bi = 0; bi < MAX_OUTSTANDING; bi = bi + 1)
                 if (bi < bus_desc_count)
                     bus_desc_sum = bus_desc_sum + bus_desc_remaining[(bus_desc_rd_ptr + bi) % MAX_OUTSTANDING];
-            bus_r_is_good = rvalid && rready && bus_desc_count != 0 &&
-                rid == 0 && rresp == 0 &&
+            bus_r_structural = rvalid && rready && bus_desc_count != 0 &&
+                rid == 0 &&
                 ((bus_desc_remaining[bus_desc_rd_ptr] == 1 && rlast) ||
                  (bus_desc_remaining[bus_desc_rd_ptr] > 1 && !rlast));
-            bus_r_finishes_desc = bus_r_is_good &&
+            bus_r_is_good = bus_r_structural && rresp == 0 && !bus_fault_seen;
+            bus_r_finishes_desc = bus_r_structural &&
                 bus_desc_remaining[bus_desc_rd_ptr] == 1;
 
             // Check accounting against pre-edge state. Skip the edge on which
@@ -202,7 +218,7 @@ module tb_burst_engine #(
                            dut.outstanding_after_reservation, dut.issued-dut.returned);
                 if (bus_issued_beats != dut.issued || bus_returned_beats != dut.returned ||
                     bus_desc_count != dut.descriptor_count ||
-                    bus_desc_sum != (bus_issued_beats - bus_returned_beats))
+                    bus_desc_sum != (bus_issued_beats - bus_transport_beats))
                     $fatal(1, "independent bus scoreboard mismatch: ARbeats=%0d Rbeats=%0d desc=%0d sum=%0d; DUT issued=%0d returned=%0d desc=%0d",
                            bus_issued_beats, bus_returned_beats, bus_desc_count,
                            bus_desc_sum, dut.issued, dut.returned, dut.descriptor_count);
@@ -254,10 +270,13 @@ module tb_burst_engine #(
             end
 
             if (rvalid && rready) begin
-                rvalid <= 1'b0;
+                rvalid_reg <= 1'b0;
                 r_beat_count <= r_beat_count + 1;
                 if (bus_r_is_good) begin
                     bus_returned_beats = bus_returned_beats + 1;
+                end
+                if (bus_r_structural) begin
+                    bus_transport_beats = bus_transport_beats + 1;
                     if (bus_r_finishes_desc) begin
                         if (bus_desc_rd_ptr == MAX_OUTSTANDING-1) bus_desc_rd_ptr = 0;
                         else bus_desc_rd_ptr = bus_desc_rd_ptr + 1;
@@ -267,6 +286,8 @@ module tb_burst_engine #(
                             bus_desc_remaining[bus_desc_rd_ptr] - 1;
                     end
                 end
+                if (!bus_r_structural || rresp != 0)
+                    bus_fault_seen = 1;
                 if (slave_left == 1) begin
                     if (slave_q_rd == 15) slave_q_rd <= 0;
                     else slave_q_rd <= slave_q_rd + 1;
@@ -277,7 +298,7 @@ module tb_burst_engine #(
                 end
             end else if (slave_active && !rvalid && ar_count >= hold_responses_until) begin
                 if (delay_left == 0)
-                    rvalid <= 1'b1;
+                    rvalid_reg <= 1'b1;
                 else
                     delay_left <= delay_left - 1;
             end
@@ -1314,6 +1335,298 @@ module tb_burst_engine #(
             if (done)
                 $fatal(1, "done asserted after response fault");
             $display("PASS B=%0d error fault surfaced", B_MAX);
+            $finish;
+        end
+        if ($test$plusargs("RRESP_FIRST") || $test$plusargs("RRESP_INTERMEDIATE") ||
+            $test$plusargs("RRESP_FINAL")) begin
+            integer watchdog;
+            integer error_index;
+            integer base_transport;
+            integer base_payload;
+            reg [31:0] test_base;
+            test_base = 32'h00007100;
+            if ($test$plusargs("RRESP_FIRST"))
+                error_index = 0;
+            else if ($test$plusargs("RRESP_FINAL"))
+                error_index = 3;
+            else
+                error_index = 1;
+            stall_ar = 1'b0;
+            configure(test_base, 4);
+            inject_error_at = r_beat_count + error_index;
+            watchdog = 0;
+            while (!fault && watchdog < 100000) begin
+                @(negedge clk);
+                watchdog = watchdog + 1;
+            end
+            if (!fault || done || bus_transport_beats != error_index + 1 ||
+                bus_returned_beats != error_index || integer'(dut.returned) != error_index ||
+                integer'(dut.fifo_count) != error_index)
+                $fatal(1, "RRESP witness did not fault/discard at beat %0d: transport=%0d payload=%0d returned=%0d fifo=%0d done=%b",
+                       error_index, bus_transport_beats, bus_returned_beats,
+                       dut.returned, dut.fifo_count, done);
+            base_transport = bus_transport_beats;
+            base_payload = bus_returned_beats;
+            start = 1'b1;
+            opcode = 2'd0;
+            size_bits = 32'd32;
+            byte_address = test_base;
+            #1;
+            if (done)
+                $fatal(1, "LOAD completed successfully after RRESP fault");
+            @(posedge clk);
+            #1;
+            if (done || integer'(dut.fifo_count) != base_payload ||
+                bus_returned_beats != base_payload)
+                $fatal(1, "post-fault LOAD consumed or appended payload");
+            @(negedge clk);
+            start = 1'b0;
+            watchdog = 0;
+            while ((bus_desc_count != 0 || slave_q_count != 0 || arvalid) &&
+                   watchdog < 100000) begin
+                @(negedge clk);
+                #1;
+                watchdog = watchdog + 1;
+                if (!fault || done || integer'(dut.fifo_count) != base_payload ||
+                    bus_returned_beats != base_payload || ar_count != 1)
+                    $fatal(1, "RRESP drain wrote payload, completed LOAD, or issued another AR");
+            end
+            if (bus_desc_count != 0 || slave_q_count != 0 ||
+                bus_transport_beats != 4 || dut.descriptor_count != 0 ||
+                bus_issued_beats != bus_transport_beats ||
+                bus_transport_beats - base_transport != 4 - (error_index + 1))
+                $fatal(1, "RRESP transport did not drain exactly once: issued=%0d transported=%0d bus_desc=%0d dut_desc=%0d",
+                       bus_issued_beats, bus_transport_beats, bus_desc_count,
+                       dut.descriptor_count);
+
+            @(negedge clk);
+            start = 1'b0;
+            reset_n = 1'b0;
+            repeat (3) @(posedge clk);
+            @(negedge clk);
+            reset_n = 1'b1;
+            repeat (2) @(posedge clk);
+            inject_error_at = -1;
+            configure(32'h00007200, 3);
+            wait (dut.returned == 3);
+            consume_stream(32'h00007200, 3);
+            wait_drained();
+            check_descriptors(32'h00007200, 3, 0);
+            if ($test$plusargs("RRESP_FIRST"))
+                $display("PASS RRESP first-beat error drained transport and reset recovered");
+            else if ($test$plusargs("RRESP_FINAL"))
+                $display("PASS RRESP final-beat error drained transport and reset recovered");
+            else
+                $display("PASS RRESP intermediate-beat error drained transport and reset recovered");
+            $finish;
+        end
+        if ($test$plusargs("RRESP_STALLED_AR")) begin
+            integer watchdog;
+            integer accepted_before_fault;
+            integer fifo_before_fault;
+            reg [31:0] held_addr;
+            reg [7:0] held_len;
+            stall_ar = 1'b0;
+            hold_responses_until = 2;
+            configure(32'h00007300, 64);
+            watchdog = 0;
+            while (dut.descriptor_count != 2 && watchdog < 100000) begin
+                @(negedge clk);
+                watchdog = watchdog + 1;
+            end
+            if (dut.descriptor_count != 2 || ar_count != 2)
+                $fatal(1, "RRESP/stalled-AR setup did not accept two descriptors");
+            stall_ar = 1'b1;
+            hold_responses_until = 0;
+            watchdog = 0;
+            while ((!arvalid || !rvalid || !rready || !prev_stalled) &&
+                   watchdog < 100000) begin
+                @(negedge clk);
+                watchdog = watchdog + 1;
+            end
+            if (!arvalid || !rvalid || !rready || !prev_stalled || ar_count != 2)
+                $fatal(1, "RRESP/stalled-AR setup lacks two accepted descriptors and held third AR");
+            held_addr = araddr;
+            held_len = arlen;
+            accepted_before_fault = ar_count;
+            inject_error = 1'b1;
+            #1;
+            if (!arvalid || arready || !rready || araddr != held_addr || arlen != held_len)
+                $fatal(1, "could not align RRESP with stable stalled AR");
+            @(posedge clk);
+            #1;
+            inject_error = 1'b0;
+            if (!fault || !arvalid || arready || araddr != held_addr ||
+                arlen != held_len || done)
+                $fatal(1, "RRESP did not fault while preserving the exposed stalled AR");
+            fifo_before_fault = integer'(dut.fifo_count);
+            start = 1'b1;
+            opcode = 2'd0;
+            size_bits = 32'd32;
+            byte_address = 32'h00007300;
+            #1;
+            if (done)
+                $fatal(1, "LOAD completed successfully after RRESP fault with stalled AR");
+            @(posedge clk);
+            #1;
+            if (done || integer'(dut.fifo_count) != fifo_before_fault ||
+                bus_returned_beats != fifo_before_fault)
+                $fatal(1, "post-fault LOAD consumed or appended payload with stalled AR");
+            @(negedge clk);
+            start = 1'b0;
+            stall_ar = 1'b0;
+            watchdog = 0;
+            while ((bus_desc_count != 0 || slave_q_count != 0 || arvalid) &&
+                   watchdog < 100000) begin
+                @(negedge clk);
+                #1;
+                watchdog = watchdog + 1;
+                if (!fault || done || integer'(dut.fifo_count) != fifo_before_fault ||
+                    bus_returned_beats != fifo_before_fault || ar_count > accepted_before_fault+1)
+                    $fatal(1, "RRESP drain wrote payload, completed LOAD, or issued extra AR");
+            end
+            if (ar_count != accepted_before_fault+1 || bus_desc_count != 0 ||
+                slave_q_count != 0 || dut.descriptor_count != 0 ||
+                bus_transport_beats != bus_issued_beats ||
+                dut.issued != bus_issued_beats || !fault || done)
+                $fatal(1, "RRESP drain failed to retire all committed descriptors exactly once");
+            $display("PASS RRESP drain preserved and accepted one exposed stalled AR; transport=%0d payload=%0d",
+                     bus_transport_beats, bus_returned_beats);
+            $finish;
+        end
+        if ($test$plusargs("RRESP_RESERVATION_RACE")) begin
+            integer watchdog;
+            stall_ar = 1'b0;
+            hold_responses_until = 99;
+            configure(32'h00007400, 64);
+            watchdog = 0;
+            while ((ar_count != 2 || dut.descriptor_count != 2 || arvalid ||
+                    !dut.reservation_eligible) && watchdog < 100000) begin
+                @(negedge clk);
+                watchdog = watchdog + 1;
+            end
+            if (ar_count != 2 || dut.descriptor_count != 2 || arvalid ||
+                !dut.reservation_eligible || fault)
+                $fatal(1, "RRESP reservation-race setup lacks two committed descriptors and a free eligible slot");
+            force_rvalid = 1'b1;
+            inject_error = 1'b1;
+            #1;
+            if (!rvalid || !rready || arvalid || dut.fault_reg ||
+                !dut.region_active || dut.issued >= dut.region_count ||
+                dut.m_axi_arvalid_reg ||
+                dut.outstanding_after_reservation >= MAX_OUTSTANDING ||
+                dut.fifo_credit == 0 || dut.reservation_eligible)
+                $fatal(1, "RRESP reservation-race stimulus is not aligned before the edge");
+            @(posedge clk);
+            #1;
+            force_rvalid = 1'b0;
+            inject_error = 1'b0;
+            if (!fault || arvalid || ar_count != 2 || done)
+                $fatal(1, "same-edge RRESP fault exposed or accepted a new AR");
+            hold_responses_until = 0;
+            watchdog = 0;
+            while ((bus_desc_count != 0 || slave_q_count != 0 || arvalid) &&
+                   watchdog < 100000) begin
+                @(negedge clk);
+                #1;
+                watchdog = watchdog + 1;
+                if (!fault || done || arvalid || ar_count != 2 ||
+                    bus_returned_beats != 0 || dut.fifo_count != 0)
+                    $fatal(1, "RRESP reservation-race drain exposed an AR, wrote payload, or completed");
+            end
+            if (bus_desc_count != 0 || slave_q_count != 0 || dut.descriptor_count != 0 ||
+                bus_transport_beats != bus_issued_beats || bus_issued_beats != 32 ||
+                bus_returned_beats != 0 || dut.fifo_count != 0 || ar_count != 2 || !fault || done)
+                $fatal(1, "RRESP reservation-race did not drain exactly the two committed descriptors");
+            $display("PASS RRESP same-edge fault suppressed unexposed reservation and drained committed transport");
+            $finish;
+        end
+        if ($test$plusargs("RREADY_SIDEBAND")) begin
+            integer watchdog;
+            integer beats_at_toggle;
+            logic ready_before_toggle;
+            stall_ar = 1'b0;
+            configure(32'h00007500, 8);
+            watchdog = 0;
+            while ((!rvalid || !rready || dut.descriptor_count == 0) && watchdog < 100000) begin
+                @(negedge clk);
+                watchdog = watchdog + 1;
+            end
+            if (!rvalid || !rready || dut.descriptor_count == 0)
+                $fatal(1, "RREADY sideband witness did not obtain a committed response");
+            inject_error = 1'b1;
+            @(posedge clk);
+            #1;
+            inject_error = 1'b0;
+            if (!fault || dut.descriptor_count == 0 || done ||
+                dut.returned != 0 || dut.fifo_count != 0 || bus_returned_beats != 0)
+                $fatal(1, "RREADY sideband witness failed to establish a sticky RRESP fault with outstanding transport");
+            force_rvalid = 1'b1;
+            #1;
+            ready_before_toggle = rready;
+            beats_at_toggle = r_beat_count;
+            if (!ready_before_toggle || !fault || dut.descriptor_count == 0)
+                $fatal(1, "RREADY sideband witness did not enter discard-ready state");
+            if (rlast !== 1'b0)
+                $fatal(1, "RREADY sideband witness expected RLAST low after the first beat");
+            inject_wrong_rid = 1'b1;
+            #1;
+            if (rready !== ready_before_toggle || !rvalid || r_beat_count != beats_at_toggle)
+                $fatal(1, "RREADY changed with RID while sticky fault was set and no clock edge occurred");
+            inject_wrong_rid = 1'b0;
+            force_rlast = 1'b1;
+            forced_rlast = 1'b1;
+            #1;
+            if (rlast !== 1'b1 || rready !== ready_before_toggle ||
+                !rvalid || r_beat_count != beats_at_toggle)
+                $fatal(1, "RREADY changed or RLAST did not rise while sticky fault was set without a clock edge");
+            forced_rlast = 1'b0;
+            #1;
+            if (rlast !== 1'b0 || rready !== ready_before_toggle ||
+                !rvalid || r_beat_count != beats_at_toggle)
+                $fatal(1, "RREADY changed or RLAST did not fall while sticky fault was set without a clock edge");
+            force_rlast = 1'b0;
+            inject_error = 1'b1;
+            #1;
+            if (rready !== ready_before_toggle || !rvalid || r_beat_count != beats_at_toggle)
+                $fatal(1, "RREADY changed with RRESP while sticky fault was set and no clock edge occurred");
+            inject_error = 1'b0;
+            #1;
+            if (rready !== ready_before_toggle || !rvalid || r_beat_count != beats_at_toggle)
+                $fatal(1, "RREADY did not remain stable after response sideband restoration");
+            force_rvalid = 1'b0;
+            start = 1'b1;
+            opcode = 2'd0;
+            size_bits = 32'd32;
+            byte_address = 32'h00007500;
+            #1;
+            if (done)
+                $fatal(1, "LOAD completed successfully after sticky RRESP fault");
+            @(posedge clk);
+            #1;
+            if (done || dut.returned != 0 || dut.fifo_count != 0 ||
+                bus_returned_beats != 0)
+                $fatal(1, "post-fault LOAD consumed or appended payload in RREADY sideband witness");
+            @(negedge clk);
+            start = 1'b0;
+            watchdog = 0;
+            while ((bus_desc_count != 0 || slave_q_count != 0 || arvalid) &&
+                   watchdog < 100000) begin
+                @(negedge clk);
+                #1;
+                watchdog = watchdog + 1;
+                if (!fault || done || dut.returned != 0 || dut.fifo_count != 0 ||
+                    bus_returned_beats != 0 || ar_count != 1)
+                    $fatal(1, "RREADY sideband discard drain accepted payload, completed LOAD, or issued another AR");
+            end
+            if (bus_desc_count != 0 || slave_q_count != 0 ||
+                dut.descriptor_count != 0 || bus_transport_beats != bus_issued_beats ||
+                dut.issued != bus_issued_beats || bus_issued_beats != 8 ||
+                bus_returned_beats != 0 || dut.fifo_count != 0 || ar_count != 1 ||
+                !fault || done)
+                $fatal(1, "RREADY sideband witness failed to drain committed transport without payload");
+            $display("PASS RREADY stayed stable across RID/RLAST/RRESP toggles under sticky fault; drained=%0d payload=0",
+                     bus_transport_beats);
             $finish;
         end
         if ($test$plusargs("DRAIN_CONFIG_RACE")) begin
