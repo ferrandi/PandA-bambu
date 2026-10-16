@@ -13,6 +13,7 @@ from pathlib import Path
 
 IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
 CELL_NAME = "MinimalAXI4MasterPipelinedWrite"
+TARGETS = ("MinimalAXI4MasterPipelined", CELL_NAME)
 
 
 def _fail(message: str) -> None:
@@ -136,18 +137,19 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--xml", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--target", choices=TARGETS, default=CELL_NAME)
     parser.add_argument("--reset-mode", choices=("sync", "async"), default="sync")
     parser.add_argument("--reset-polarity", choices=("active-low", "active-high"),
                          default="active-low")
     args = parser.parse_args(argv)
     try:
-        text = extract(args.xml, async_reset=args.reset_mode == "async",
+        text = extract(args.xml, target=args.target, async_reset=args.reset_mode == "async",
                        active_low=args.reset_polarity == "active-low")
     except (OSError, ValueError) as error:
         parser.error(str(error))
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(text, encoding="utf-8")
-    print(f"Extracted {CELL_NAME} from {args.xml}; generated {args.out}")
+    print(f"Extracted {args.target} from {args.xml}; generated {args.out}")
     return 0
 
 
