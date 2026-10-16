@@ -2005,7 +2005,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                }
                if(decision.write_fallback_reason.empty())
                {
-                  bool all_recognized = false;
+                  bool any_owner_recognized = false;
                   for(const auto& owner : func_arch->parms)
                   {
                      if(owner.second.at(FunctionArchitecture::parm_bundle) != bundle_name)
@@ -2066,10 +2066,10 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      if(recognized)
                      {
                         decision.write_regions[(*owner_arg)->index] = std::move(region);
-                        all_recognized = true;
+                        any_owner_recognized = true;
                      }
                   }
-                  decision.write_recognized = all_recognized && !decision.write_regions.empty();
+                  decision.write_recognized = any_owner_recognized && !decision.write_regions.empty();
                }
             }
             if(decision.read_requested && decision.write_requested)

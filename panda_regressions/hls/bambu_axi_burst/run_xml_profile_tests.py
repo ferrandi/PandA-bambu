@@ -63,6 +63,29 @@ def write_case_xml(seed: pathlib.Path, target: pathlib.Path, symbol: str,
     tree.write(target, encoding="utf-8", xml_declaration=True)
 
 
+def write_unbound_profile_xml(seed: pathlib.Path, target: pathlib.Path, symbol: str,
+                              bundle_name: str, attributes: dict[str, str]) -> None:
+    tree = ET.parse(seed)
+    functions = [node for node in tree.getroot().findall("function") if node.get("symbol") == symbol]
+    if len(functions) != 1:
+        raise RuntimeError(f"expected exactly one function symbol={symbol!r} in {seed}, found {len(functions)}")
+    bundles = functions[0].find("bundles")
+    if bundles is None:
+        raise RuntimeError(f"function {symbol!r} has no bundles element in {seed}")
+    bundles.append(ET.Element("bundle", {"mode": "m_axi", "name": bundle_name, **attributes}))
+    tree.write(target, encoding="utf-8", xml_declaration=True)
+    written_function = [node for node in ET.parse(target).getroot().findall("function")
+                        if node.get("symbol") == symbol][0]
+    matches = [node for node in written_function.findall("./bundles/bundle")
+               if node.get("name") == bundle_name and node.get("mode") == "m_axi"]
+    if len(matches) != 1:
+        raise RuntimeError(f"expected exactly one unbound m_axi bundle {bundle_name!r} in {target}")
+    parameter_bindings = [node for node in written_function.findall("./parameters/parameter")
+                          if node.get("bundle") == bundle_name]
+    if parameter_bindings:
+        raise RuntimeError(f"test bundle {bundle_name!r} unexpectedly binds parameters in {target}")
+
+
 def record_argv(case_dir: pathlib.Path, argv: list[str]) -> None:
     (case_dir / "argv.json").write_text(json.dumps(argv, indent=2) + "\n", encoding="utf-8")
     (case_dir / "argv.txt").write_text(shlex.join(argv) + "\n", encoding="utf-8")
@@ -117,6 +140,23 @@ def check_negative(case_dir: pathlib.Path, result: subprocess.CompletedProcess[s
             f"see {case_dir}"
         )
     print(f"XML-PROFILE reject PASS: {case_dir.name}")
+
+
+def check_unbound_profile_rejection(case_dir: pathlib.Path,
+                                    result: subprocess.CompletedProcess[str],
+                                    bundle_name: str, reason: str) -> None:
+    if result.returncode == 0 or result.returncode < 0 or result.returncode >= 128:
+        raise RuntimeError(f"unbound profile {bundle_name!r} was accepted or crashed "
+                           f"(exit {result.returncode}); see {case_dir}")
+    combined = result.stdout + "\n" + result.stderr
+    if bundle_name not in combined or reason not in combined:
+        raise RuntimeError(f"unbound profile {bundle_name!r} failed without its bundle/profile diagnostic; "
+                           f"see {case_dir}")
+    emitted_rtl = [path for path in case_dir.rglob("*")
+                   if path.is_file() and path.suffix.lower() in {".v", ".sv"}]
+    if emitted_rtl:
+        raise RuntimeError(f"unbound invalid profile emitted RTL: {emitted_rtl[0]}")
+    print(f"XML-PROFILE unbound reject PASS: {case_dir.name}")
 
 
 def case_name(attribute: str, value: str) -> str:
@@ -205,7 +245,23 @@ def main() -> int:
         write_case_xml(stride_xml, architecture, "stride_two", {attribute: value})
         result = invoke(bambu, case_dir, stride_ir, architecture, "stride_two", args.burst_parameter)
         check_negative(case_dir, result, attribute)
-    print(f"XML-PROFILE suite PASS: {len(positive)} positive, {len(matrix) + 2} negative")
+
+    unbound_profiles = [
+        ("unbound-write-o2", "unbound_write", {
+            "max_write_burst_length": "16", "write_burst_outstanding": "2",
+        }, "write_burst_outstanding=1 only"),
+        ("unbound-read-profile", "unbound_read", {
+            "num_read_outstanding": "1",
+        }, "require max_read_burst_length"),
+    ]
+    for name, bundle_name, attributes, reason in unbound_profiles:
+        case_dir = output / "cases" / name
+        case_dir.mkdir(parents=True, exist_ok=False)
+        architecture = case_dir / "architecture.xml"
+        write_unbound_profile_xml(seed_xml, architecture, "renamed_sum", bundle_name, attributes)
+        result = invoke(bambu, case_dir, seed_ir, architecture, "renamed_sum", args.burst_parameter)
+        check_unbound_profile_rejection(case_dir, result, bundle_name, reason)
+    print(f"XML-PROFILE suite PASS: {len(positive)} positive, {len(matrix) + 4} negative")
     return 0
 
 
