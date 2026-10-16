@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed checker for the manual analysis-only duplex effect gate."""
+"""Fail-closed checker for manual duplex effect and activation gates."""
 from __future__ import annotations
 
 import argparse
@@ -11,6 +11,8 @@ import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from check_burst_results import _parameterized_instances
+
 LEGACY_COMPONENT = re.compile(r"\b(?:MinimalAXI4AdapterSingleBeat|IOB_cache_axi)\b")
 BURST_COMPONENTS = re.compile(r"\b(?:MinimalAXI4MasterPipelined|MinimalAXI4MasterPipelinedWrite)\b")
 BURST_OPS = re.compile(r"fuselector_[A-Za-z0-9_]*(?:configure_read|burst_read|configure_write|store_write|drain_write)\b")
@@ -19,7 +21,8 @@ TRACE = re.compile(
     r'read_accesses=(\d+) write_accesses=(\d+) read_requested=(\d) read_recognized=(\d) '
     r'read_fallback="([^"]*)" write_requested=(\d) write_recognized=(\d) '
     r'write_fallback="([^"]*)" same_base_duplex_candidate=(\d) '
-    r'same_base_duplex_reason="([^"]*)"\s*$', re.MULTILINE)
+    r'same_base_duplex_reason="([^"]*)" production_activated=(\d) '
+    r'activation_reason="([^"]*)"\s*$', re.MULTILINE)
 PROOF_PREFIX = "AXI_BURST_DUPLEX_PROOF "
 SUCCESS = "same-base pointwise read-before-write candidate"
 FALLBACK_READ = "bundle contains stores"
@@ -31,8 +34,9 @@ IDENTITY_FIELDS = {
     "write_exit_bb", "write_guard_index", "write_bound_index", "write_induction_index",
 }
 CASES: dict[str, tuple[str, int, str, str, bool, bool]] = {
-    "same_base_pointwise": (SUCCESS, 1, FALLBACK_READ, FALLBACK_WRITE, True, True),
-    "same_base_pointwise_reversed": (SUCCESS, 1, FALLBACK_READ, FALLBACK_WRITE, True, True),
+    "same_base_pointwise": (SUCCESS, 1, "-", "-", True, True),
+    "same_base_pointwise_reversed": (SUCCESS, 1, "-", "-", True, True),
+    "same_base_asymmetric_64": (SUCCESS, 1, "-", "-", True, True),
     "same_base_cached": (SUCCESS, 1, "cache-enabled bundle", "cache-enabled bundle", True, False),
     "shifted_index": ("canonical contiguous loop recognition failed", 1, FALLBACK_READ, FALLBACK_WRITE, False, True),
     "stride_index": ("canonical contiguous loop recognition failed", 1, FALLBACK_READ, FALLBACK_WRITE, False, True),
@@ -46,8 +50,44 @@ CASES: dict[str, tuple[str, int, str, str, bool, bool]] = {
     "separate_phase": ("original effects are not fully classified ordinary accesses", 1,
                        "memory writes or opaque effects; prefetch ordering is not proven",
                        "opaque, volatile, atomic, or unclassified memory effects", False, True),
+    "split_read_write_loops": ("canonical contiguous loop recognition failed", 1,
+                                FALLBACK_READ, FALLBACK_WRITE, False, True),
+    "same_loop_byte_side_store": ("original effects are not fully classified ordinary accesses", 1,
+                                  "memory writes or opaque effects; prefetch ordering is not proven",
+                                  "opaque, volatile, atomic, or unclassified memory effects", False, True),
+    "same_loop_opaque_call": ("original effects are not fully classified ordinary accesses", 1,
+                              "memory writes or opaque effects; prefetch ordering is not proven",
+                              "opaque, volatile, atomic, or unclassified memory effects", False, True),
     "distinct_bases": ("not exactly one classified same-base read/store pair", 2,
                        FALLBACK_READ, FALLBACK_WRITE, False, True),
+}
+ACCESS_COUNTS: dict[str, tuple[tuple[int, int], ...]] = {
+    "same_base_pointwise": ((1, 1),),
+    "same_base_pointwise_reversed": ((1, 1),),
+    "same_base_asymmetric_64": ((1, 1),),
+    "same_base_cached": ((1, 1),),
+    "shifted_index": ((1, 1),),
+    "stride_index": ((1, 1),),
+    "conditional_store": ((1, 1),),
+    "residual_store": ((1, 2),),
+    "volatile_effect": ((1, 1),),
+    "separate_phase": ((2, 2),),
+    "split_read_write_loops": ((1, 1),),
+    "same_loop_byte_side_store": ((1, 2),),
+    "same_loop_opaque_call": ((1, 1),),
+    "distinct_bases": ((0, 1), (1, 0)),
+}
+ACTIVATED_CASES = {"same_base_pointwise", "same_base_pointwise_reversed", "same_base_asymmetric_64"}
+EXPECTED_ADDRESS_BITS = {"same_base_asymmetric_64": "64"}
+EXPECTED_PROFILES = {"same_base_asymmetric_64": ("8", "2", "16", "1")}
+READ_AXI_INPUTS = {"awready", "wready", "bid", "bresp", "buser", "bvalid",
+                   "arready", "rid", "rdata", "rresp", "rlast", "ruser", "rvalid"}
+AXI_SUFFIXES = {
+    "awready", "wready", "bid", "bresp", "buser", "bvalid", "arready", "rid", "rdata", "rresp",
+    "rlast", "ruser", "rvalid", "awid", "awaddr", "awlen", "awsize", "awburst", "awlock", "awcache",
+    "awprot", "awqos", "awregion", "awuser", "awvalid", "wdata", "wstrb", "wlast", "wuser", "wvalid",
+    "bready", "arid", "araddr", "arlen", "arsize", "arburst", "arlock", "arcache", "arprot", "arqos",
+    "arregion", "aruser", "arvalid", "rready",
 }
 
 
@@ -58,6 +98,262 @@ class CheckError(ValueError):
 def need(condition: bool, message: str) -> None:
     if not condition:
         raise CheckError(message)
+
+
+PRIVATE_FIELDS = ("start", "opcode", "size", "data", "address", "count", "done", "result")
+
+
+def verilog_modules(code: str) -> dict[str, str]:
+    return {match.group(1): match.group(2) + "\n" + match.group(3)
+            for match in re.finditer(
+                r"(?ms)^\s*module\s+([A-Za-z_$][\w$]*)\s*\((.*?)\);(.*?)^\s*endmodule\b", code)}
+
+
+def verilog_instances(body: str) -> list[tuple[str, str, dict[str, str]]]:
+    instances = []
+    pattern = re.compile(
+        r"(?m)^\s*(?!module\b|endmodule\b|input\b|output\b|wire\b|reg\b)"
+        r"([A-Za-z_$][\w$]*)\s*(?:#\s*\((?:[^()]|\([^()]*\))*\)\s*)?"
+        r"([A-Za-z_$][\w$]*)\s*\(")
+    for match in pattern.finditer(body):
+        opening = match.end() - 1
+        depth = 1
+        closing = opening + 1
+        while closing < len(body) and depth:
+            depth += (body[closing] == "(") - (body[closing] == ")")
+            closing += 1
+        if depth:
+            continue
+        arguments = body[opening + 1:closing - 1]
+        ports = {}
+        for port_match in re.finditer(r"\.([A-Za-z_$][\w$]*)\s*\(", arguments):
+            port_open = port_match.end() - 1
+            port_depth = 1
+            port_close = port_open + 1
+            while port_close < len(arguments) and port_depth:
+                port_depth += (arguments[port_close] == "(") - (arguments[port_close] == ")")
+                port_close += 1
+            if not port_depth:
+                ports[port_match.group(1)] = arguments[port_open + 1:port_close - 1].strip()
+        instances.append((match.group(1), match.group(2), ports))
+    return instances
+
+
+def verilog_decl(body: str, name: str, kind: str) -> tuple[str, int]:
+    matches = list(re.finditer(
+        rf"(?m)^\s*(input|output|inout|wire|logic|reg)\s+"
+        rf"(?:signed\s+)?(\[[^\]]+\]\s*)?{re.escape(name)}\s*;?\s*$", body))
+    if kind == "port":
+        matches = [match for match in matches if match.group(1) in {"input", "output", "inout"}]
+    else:
+        matches = [match for match in matches if match.group(1) in {"wire", "logic", "reg"}]
+    need(len(matches) == 1, f"expected exactly one {kind} declaration for {name}")
+    match = matches[0]
+    packed = match.group(2)
+    if not packed:
+        width = 1
+    else:
+        bounds = re.fullmatch(r"\[\s*(\d+)\s*:\s*(\d+)\s*\]", packed.strip())
+        need(bounds is not None, f"{kind} {name} has unsupported width declaration {packed.strip()}")
+        width = abs(int(bounds.group(1)) - int(bounds.group(2))) + 1
+    return match.group(1), width
+
+
+def verify_private_duplex_wiring(code: str, parent_body: str,
+                                 endpoint_instances: dict[str, tuple[str, dict[str, str]]],
+                                 aggregator_type: str, aggregator_args: dict[str, str],
+                                 address_bits: int, data_bits: int) -> None:
+    modules = verilog_modules(code)
+    def module_matches(module_name: str, instance_type: str) -> bool:
+        normalized_type = re.sub(r"_\d+_i\d+$", "_modgen", instance_type)
+        return module_name == instance_type or module_name == normalized_type or \
+            module_name.endswith("_" + instance_type) or module_name.endswith("_" + normalized_type)
+
+    aggregator_modules = [name for name in modules if module_matches(name, aggregator_type)]
+    need(len(aggregator_modules) == 1, "duplex aggregator module definition is missing or ambiguous")
+    aggregator_body = modules[aggregator_modules[0]]
+    wires_seen: set[str] = set()
+    for direction in ("read", "write"):
+        endpoint_type, endpoint_args = endpoint_instances[f"{direction}_endpoint"]
+        endpoint_modules = [name for name in modules if module_matches(name, endpoint_type)]
+        need(len(endpoint_modules) == 1, f"duplex {direction} endpoint module definition is missing or ambiguous")
+        endpoint_body = modules[endpoint_modules[0]]
+        expected_assignments = {
+            "duplex_start": "start_port[0]",
+            "duplex_opcode": "in1",
+            "duplex_size": "in2",
+            "duplex_data": "in3",
+            "duplex_address": "in4",
+            "duplex_count": "in5",
+            "done_port": "duplex_done",
+            "out1": "duplex_result",
+        }
+        assignments: dict[str, list[str]] = {}
+        for assignment in re.finditer(
+                r"\bassign\s+([A-Za-z_$][\w$]*)\s*=\s*([^;]+);", endpoint_body):
+            lhs = assignment.group(1)
+            rhs = re.sub(r"\s+", "", assignment.group(2))
+            assignments.setdefault(lhs, []).append(rhs)
+        for lhs, rhs in expected_assignments.items():
+            values = assignments.get(lhs, [])
+            need(len(values) == 1,
+                 f"{direction} endpoint must assign {lhs} exactly once")
+            need(values[0] == rhs,
+                 f"{direction} endpoint {lhs} must be assigned from {rhs}")
+        for field in PRIVATE_FIELDS:
+            endpoint_port = f"duplex_{field}"
+            aggregator_port = f"{direction}_{field}"
+            endpoint_direction, endpoint_width = verilog_decl(endpoint_body, endpoint_port, "port")
+            aggregator_direction, aggregator_width = verilog_decl(aggregator_body, aggregator_port, "port")
+            expected_direction = "output" if field in {"start", "opcode", "size", "data", "address", "count"} else "input"
+            need(endpoint_direction == expected_direction,
+                 f"{direction} endpoint {endpoint_port} must be {expected_direction}")
+            expected_aggregator_direction = "input" if expected_direction == "output" else "output"
+            need(aggregator_direction == expected_aggregator_direction,
+                 f"aggregator {aggregator_port} must be {expected_aggregator_direction}")
+            expected_width = {"start": 1, "opcode": 2, "size": 32, "data": data_bits,
+                              "address": address_bits, "count": 32, "done": 1,
+                              "result": data_bits}[field]
+            need(endpoint_width == aggregator_width == expected_width,
+                 f"{direction} {field} port width does not match the {expected_width}-bit profile")
+
+            endpoint_net = endpoint_args.get(endpoint_port)
+            aggregator_net = aggregator_args.get(aggregator_port)
+            need(endpoint_net is not None and aggregator_net is not None,
+                 f"{direction} {field} is missing on an endpoint or aggregator instance")
+            identifier = r"[A-Za-z_$][\w$]*"
+            need(re.fullmatch(identifier, endpoint_net) and endpoint_net == aggregator_net,
+                 f"{direction} {field} is not connected through one named net")
+            need(not endpoint_net.startswith(("null_out_signal_", "out_const_")) and
+                 "dummy" not in endpoint_net.lower(),
+                 f"{direction} {field} is connected to a dummy or constant net")
+            need(endpoint_net not in wires_seen, f"duplex private net {endpoint_net} is reused across links")
+            wires_seen.add(endpoint_net)
+            _wire_kind, wire_width = verilog_decl(parent_body, endpoint_net, "wire")
+            need(wire_width == expected_width,
+                 f"{direction} {field} net width does not match the {expected_width}-bit profile")
+
+
+def check_production_duplex(rtl: str, compiler_log: str, top: str, attrs: dict[str, str]) -> None:
+    bundle = "shared"
+    marker = f"Activated same-base pointwise duplex m_axi bundle {bundle} for root {top}"
+    matches = re.findall(rf"(?m)^\s*(?:---)?{re.escape(marker)}\s*$", compiler_log)
+    need(len(matches) == 1, "production activation marker is missing or duplicated")
+    code = re.sub(r"(?s)/\*.*?\*/|//[^\n]*", "", rtl)
+    modules = verilog_modules(code)
+    instances_by_module = {name: verilog_instances(body) for name, body in modules.items()}
+    for role in ("read_endpoint", "write_endpoint", "aggregator"):
+        matches = [module for instances in instances_by_module.values() for module, _instance, _ports in instances
+                   if re.search(rf"_duplex_{role}(?:_modgen)?$", module)]
+        need(len(matches) == 1, f"expected exactly one duplex {role} instance, found {len(matches)}")
+
+    operation_patterns = {
+        "read_endpoint": ("configure_read", "burst_read"),
+        "write_endpoint": ("configure_write", "store_write", "drain_write"),
+    }
+    for role, operations in operation_patterns.items():
+        for operation in operations:
+            pattern = (rf"\bfuselector_[A-Za-z0-9_$]*_duplex_{role}"
+                       rf"(?:_\d+_i\d+)?(?:_[A-Za-z0-9_$]+)*_{operation}\b")
+            need(re.search(pattern, code) is not None,
+                 f"duplex {role} operation mapping is missing {operation}")
+    need(not LEGACY_COMPONENT.search(code), "activated duplex RTL coexists with a legacy memory adapter")
+
+    top_declarations = list(re.finditer(rf"(?m)^\s*module\s+{re.escape(top)}\s*\(", code))
+    need(len(top_declarations) == 1, f"activated duplex RTL must contain exactly one selected top {top}")
+    top_body = modules.get(top, "")
+    need(bool(top_body), f"activated duplex RTL top {top} has no parseable module body")
+    for suffix in AXI_SUFFIXES:
+        direction = "input" if suffix in READ_AXI_INPUTS else "output"
+        address_bits = EXPECTED_ADDRESS_BITS.get(top, "32")
+        width = rf"\[{int(address_bits) - 1}:0\]\s+" if suffix in {"araddr", "awaddr"} else \
+            r"(?:\[[^\]]+\]\s+)?"
+        declaration = re.compile(
+            rf"(?m)^\s*{direction}\s+{width}m_axi_shared_{suffix}\s*;?\s*$")
+        need(declaration.search(top_body) is not None,
+             f"external bundle pin {suffix} is not declared as {direction} on top {top}")
+        need(len(re.findall(rf"\bp_m_axi_shared_{suffix}\b", code)) >= 3,
+             f"physical bundle pin {suffix} is not connected through the aggregator")
+    need(not re.search(r"(?m)^\s*(?:input|output)\b[^;\n]*\bduplex_", top_body),
+         f"private duplex endpoint ports leaked into physical module interface {top}")
+
+    expected_pbi_ports = {f"p_m_axi_shared_{suffix}": f"m_axi_shared_{suffix}"
+                          for suffix in AXI_SUFFIXES}
+    pbi_instances = [ports for module, _instance, ports in verilog_instances(top_body)
+                     if module.startswith("PBI_") and set(expected_pbi_ports) <= ports.keys()]
+    need(len(pbi_instances) == 1,
+         f"top {top} must map every physical pin through exactly one PBI instance")
+    for port, signal in expected_pbi_ports.items():
+        need(pbi_instances[0].get(port) == signal,
+             f"top {top} PBI mapping for {port} must connect to {signal}")
+
+    internal_bundle_modules = []
+    for module_name, body in modules.items():
+        if module_name == top:
+            continue
+        present = {suffix for suffix in AXI_SUFFIXES
+                   if re.search(rf"\bp_m_axi_shared_{suffix}\b", body)}
+        if present == AXI_SUFFIXES:
+            internal_bundle_modules.append((module_name, body))
+    need(internal_bundle_modules,
+         "activated duplex RTL lacks a complete internal p_m_axi bundle module")
+    for module_name, body in internal_bundle_modules:
+        for suffix in AXI_SUFFIXES:
+            need(re.search(rf"(?m)^\s*(?:input|output|inout|wire|logic|reg)\s+"
+                           rf"(?:\[[^\]]+\]\s*)?p_m_axi_shared_{suffix}\s*;?\s*$", body),
+                 f"internal module {module_name} lacks declaration for p_m_axi_shared_{suffix}")
+
+    read_instances = list(_parameterized_instances(code, "MinimalAXI4MasterPipelined"))
+    write_instances = list(_parameterized_instances(code, "MinimalAXI4MasterPipelinedWrite"))
+    need(len(read_instances) == 1, "activated duplex must instantiate exactly one read burst core")
+    need(len(write_instances) == 1, "activated duplex must instantiate exactly one write burst core")
+    read_profile = read_instances[0]
+    write_profile = write_instances[0]
+    expected = {
+        "B_MAX": (attrs.get("max_read_burst_length"), attrs.get("max_write_burst_length")),
+        "MAX_OUTSTANDING": (attrs.get("num_read_outstanding", "1"),
+                            attrs.get("write_burst_outstanding", "1")),
+        "BITSIZE_in4": (EXPECTED_ADDRESS_BITS.get(top, "32"), EXPECTED_ADDRESS_BITS.get(top, "32")),
+    }
+    for parameter, values in expected.items():
+        need(values[0] is not None and values[1] is not None and
+             read_profile.get(parameter) == values[0] and write_profile.get(parameter) == values[1],
+             f"read/write cores do not independently preserve {parameter} profiles")
+    for attr, profile in (("read_fifo_depth", read_profile), ("write_fifo_depth", write_profile)):
+        if attr in attrs:
+            need(profile.get("FIFO_DEPTH") == attrs[attr],
+                 f"duplex core FIFO depth does not match architecture attribute {attr}")
+    for attr, profile in (("read_fifo_depth", read_profile), ("write_fifo_depth", write_profile)):
+        if attr in attrs:
+            need(profile.get("FIFO_DEPTH") == attrs[attr],
+                 f"duplex core FIFO depth does not match architecture attribute {attr}")
+    for profile in (read_profile, write_profile):
+        need(profile.get("MAX_OUTSTANDING") is not None and profile.get("FIFO_DEPTH") is not None,
+             "duplex burst core is missing outstanding/FIFO profile parameters")
+    address_bits = EXPECTED_ADDRESS_BITS.get(top, "32")
+    need(read_profile.get("BITSIZE_m_axi_araddr") == address_bits and
+         write_profile.get("BITSIZE_m_axi_awaddr") == address_bits,
+         "read/write core address widths do not match the selected AXI address profile")
+    need(read_profile.get("BITSIZE_m_axi_rdata", "32") == write_profile.get("BITSIZE_m_axi_wdata", "32"),
+         "read/write core data widths do not match the selected AXI data profile")
+
+    parent_candidates = []
+    for parent_name, body in modules.items():
+        instances = verilog_instances(body)
+        endpoints = {}
+        aggregator = None
+        for module_name, _instance_name, ports in instances:
+            for role in ("read_endpoint", "write_endpoint"):
+                if re.search(rf"_duplex_{role}(?:_modgen)?$", module_name):
+                    endpoints[role] = (module_name, ports)
+            if re.search(r"_duplex_aggregator(?:_modgen)?$", module_name):
+                aggregator = (module_name, ports)
+        if set(endpoints) == {"read_endpoint", "write_endpoint"} and aggregator:
+            parent_candidates.append((parent_name, body, endpoints, aggregator))
+    need(len(parent_candidates) == 1, "duplex endpoint and aggregator instances lack one unique parent module")
+    _parent_name, parent_body, endpoints, (aggregator_type, aggregator_args) = parent_candidates[0]
+    verify_private_duplex_wiring(code, parent_body, endpoints, aggregator_type, aggregator_args,
+                                 int(address_bits), int(read_profile.get("BITSIZE_m_axi_rdata", "32")))
 
 
 def sha256(path: Path) -> str:
@@ -536,11 +832,13 @@ def verify(output: Path, top: str, source: Path, bambu: Path, plugin: Path,
     rtl_path = output / f"{top}.v"
     xml_path = output / "panda-temp/architecture.xml"
     stderr_path = output / "stderr.log"
+    stdout_path = output / "stdout.log"
     for artifact, label in ((rtl_path, "top RTL"), (xml_path, "architecture XML"),
                             (stderr_path, "compiler stderr log")):
         safe_file(artifact, label)
     rtl = rtl_path.read_text(encoding="utf-8", errors="replace")
     stderr = stderr_path.read_text(encoding="utf-8", errors="replace")
+    stdout = stdout_path.read_text(encoding="utf-8", errors="replace") if stdout_path.is_file() else ""
     trace_lines = [line for line in stderr.splitlines() if "AXI_BURST_PREANALYSIS" in line]
     matches = list(TRACE.finditer(stderr))
     (expected_reason, expected_count, expected_read_fallback, expected_write_fallback,
@@ -549,27 +847,38 @@ def verify(output: Path, top: str, source: Path, bambu: Path, plugin: Path,
     need(len(matches) == expected_count,
          f"expected exactly {expected_count} preanalysis trace record(s), found {len(matches)}")
     owners: set[str] = set()
+    access_counts: list[tuple[int, int]] = []
     for match in matches:
-        (bundle, owner, _reads, _writes, read_requested, read_recognized, read_fallback,
-         write_requested, write_recognized, write_fallback, candidate, reason) = match.groups()
+        (bundle, owner, reads, writes, read_requested, read_recognized, read_fallback,
+         write_requested, write_recognized, write_fallback, candidate, reason,
+         production_activated, activation_reason) = match.groups()
         need(bundle == "shared", f"trace names unexpected bundle {bundle}")
         need(owner not in owners, f"duplicate trace owner {owner}")
         owners.add(owner)
-        need((read_requested, read_recognized, read_fallback) == ("1", "0", expected_read_fallback),
-             "read request did not retain the exact legacy fallback in preanalysis trace")
-        need((write_requested, write_recognized, write_fallback) == ("1", "0", expected_write_fallback),
-             "write request did not retain the exact legacy fallback in preanalysis trace")
+        access_counts.append((int(reads), int(writes)))
+        expected_recognized = "1" if top in ACTIVATED_CASES else "0"
+        need((read_requested, read_recognized, read_fallback) ==
+             ("1", expected_recognized, expected_read_fallback),
+             "read request/recognition/fallback does not match the exact preanalysis contract")
+        need((write_requested, write_recognized, write_fallback) ==
+             ("1", expected_recognized, expected_write_fallback),
+             "write request/recognition/fallback does not match the exact preanalysis contract")
         expected_candidate = "1" if expected_semantic else "0"
         need(candidate == expected_candidate and reason == expected_reason,
              f"candidate outcome/reason mismatch: got {candidate}/{reason!r}")
+        expected_activation = "1" if top in ACTIVATED_CASES else "0"
+        need(production_activated == expected_activation,
+             f"production activation mismatch: expected {expected_activation}, got {production_activated}")
+        need(bool(activation_reason), "preanalysis trace has an empty activation reason")
+        if expected_activation == "1":
+            need(activation_reason == "frozen application-wide proof and profile accepted",
+                 "activated trace lacks the frozen proof/profile acceptance reason")
+    need(sorted(access_counts) == sorted(ACCESS_COUNTS[top]),
+         f"classified access counts do not match the selected case: {access_counts!r}")
 
     proof_records = parse_proof_records(stderr)
-    if expected_semantic:
-        need(len(proof_records) == expected_count,
-             "expected exactly one structured duplex proof record per owner")
-    else:
-        need(len(proof_records) in {0, 1},
-             "failed candidates may omit the bundle proof record or provide one non-success record")
+    need(len(proof_records) == 1,
+         "expected exactly one structured duplex proof record for the bundle")
     proof_by_owner: dict[int, dict[str, object]] = {}
     for record in proof_records:
         required = {"bundle", "semantic_proof", "semantic_reason", "profile_eligible", "profile_reason"}
@@ -594,9 +903,10 @@ def verify(output: Path, top: str, source: Path, bambu: Path, plugin: Path,
             verify_success_record(record, raw_path.read_text(encoding="utf-8", errors="replace"), top)
         need(record["profile_eligible"] is expected_profile_eligible,
              "structured profile eligibility does not match the selected profile")
-        if top == "same_base_cached":
-            need(record["profile_reason"] == "cache-enabled bundle",
-                 "cache-negative case lacks the explicit cache profile reason")
+        expected_profile_reason = "cache-enabled bundle" if top == "same_base_cached" else \
+            "read/write profile is eligible"
+        need(record["profile_reason"] == expected_profile_reason,
+             "structured profile reason does not match the selected profile")
 
     root = ET.parse(xml_path).getroot()
     functions = [node for node in root.findall(".//function") if node.get("name") == top]
@@ -604,14 +914,23 @@ def verify(output: Path, top: str, source: Path, bambu: Path, plugin: Path,
     bundles = [node for node in functions[0].findall("./bundles/bundle") if node.get("name") == "shared"]
     need(len(bundles) == 1, "architecture XML must retain exactly one shared bundle")
     attrs = bundles[0].attrib
-    need(attrs.get("mode") == "m_axi" and attrs.get("max_read_burst_length") == "16" and
-         attrs.get("max_write_burst_length") == "16" and attrs.get("write_burst_outstanding") == "1",
+    read_burst, read_outstanding, write_burst, write_outstanding = EXPECTED_PROFILES.get(
+        top, ("16", "1", "16", "1"))
+    need(attrs.get("mode") == "m_axi" and attrs.get("max_read_burst_length") == read_burst and
+         attrs.get("max_write_burst_length") == write_burst and
+         attrs.get("write_burst_outstanding") == write_outstanding and
+         attrs.get("num_read_outstanding", "1") == read_outstanding,
          "architecture XML does not preserve requested read/write m_axi profiles")
-    need(not BURST_COMPONENTS.search(rtl), "analysis-only case unexpectedly emits a burst engine")
-    need(not BURST_OPS.search(rtl), "analysis-only case unexpectedly emits a burst ABI operation")
-    need(LEGACY_COMPONENT.search(rtl), "analysis-only case does not retain a legacy memory resource")
+    if top in ACTIVATED_CASES:
+        need(expected_semantic and expected_profile_eligible,
+             "production activation requires semantic proof and an eligible profile")
+        check_production_duplex(rtl, stdout + "\n" + stderr, top, attrs)
+    else:
+        need(not BURST_COMPONENTS.search(rtl), "analysis-only case unexpectedly emits a burst engine")
+        need(not BURST_OPS.search(rtl), "analysis-only case unexpectedly emits a burst ABI operation")
+        need(LEGACY_COMPONENT.search(rtl), "analysis-only case does not retain a legacy memory resource")
     print(f"DUPLEX EFFECT ANALYSIS CHECK PASS CASE={top} SEMANTIC={1 if expected_semantic else 0} "
-          f"PROFILE={1 if expected_profile_eligible else 0}")
+          f"PROFILE={1 if expected_profile_eligible else 0} ACTIVATED={1 if top in ACTIVATED_CASES else 0}")
 
 
 def main(argv: list[str] | None = None) -> int:

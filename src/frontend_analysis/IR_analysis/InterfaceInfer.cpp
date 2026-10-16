@@ -64,6 +64,7 @@
 #include "var_pp_functor.hpp"
 
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <memory>
 #include <regex>
@@ -1519,6 +1520,73 @@ static std::vector<unsigned int> GetSortedRoots(const CallGraphManager& CGM)
    return sorted_roots;
 }
 
+static std::vector<OriginalMemoryAccess> CollectOriginalMemoryAccesses(
+    const function_val_node* fd, const unsigned int root_id, const FunctionArchitectureRef& func_arch,
+    const application_managerRef& AppM, const ir_managerRef& TM, bool& all_classified)
+{
+   std::vector<OriginalMemoryAccess> accesses;
+   all_classified = true;
+   const auto sl = GetPointerS<const statement_list_node>(fd->body);
+   for(const auto& block : sl->list_of_bloc)
+   {
+      for(const auto& stmt : block.second->CGetStmtList())
+      {
+         if(stmt->get_kind() != assign_stmt_K)
+         {
+            continue;
+         }
+         const auto assignment = GetPointerS<const assign_stmt>(stmt);
+         const auto record_access = [&](const ir_nodeRef& operand, const bool is_write) {
+            if(!operand || operand->get_kind() != mem_access_node_K)
+            {
+               return;
+            }
+            const auto access = GetPointerS<const mem_access_node>(operand);
+            const auto base = ir_helper::GetBaseVariable(access->op);
+            unsigned int owner_argument_index = 0;
+            std::string bundle;
+            bool classified = false;
+            for(const auto& candidate_arg : fd->list_of_args)
+            {
+               if(!ir_helper::IsPointerType(ir_helper::CGetType(candidate_arg)))
+               {
+                  continue;
+               }
+               const auto candidate_ssa = TM->GetIRNode(AppM->getSSAFromParm(root_id, candidate_arg->index));
+               if(!base || (candidate_arg->index != base->index &&
+                            (!candidate_ssa || candidate_ssa->index != base->index)))
+               {
+                  continue;
+               }
+               const auto parm = func_arch->parms.find(get_decl_name(candidate_arg));
+               if(parm == func_arch->parms.end())
+               {
+                  continue;
+               }
+               const auto candidate_bundle = parm->second.at(FunctionArchitecture::parm_bundle);
+               if(!classified)
+               {
+                  owner_argument_index = candidate_arg->index;
+                  bundle = candidate_bundle;
+                  classified = true;
+               }
+               else if(bundle != candidate_bundle)
+               {
+                  classified = false;
+                  break;
+               }
+            }
+            const bool ordinary = access->ordinary_memory_access;
+            all_classified &= classified && ordinary;
+            accesses.push_back({stmt, base, owner_argument_index, bundle, is_write, ordinary, classified});
+         };
+         record_access(assignment->op0, true);
+         record_access(assignment->op1, false);
+      }
+   }
+   return accesses;
+}
+
 static std::tuple<unsigned int, unsigned int> GetCallStmt(const CallGraphManager& CGM, unsigned int fid)
 {
    const auto fv = CGM.GetVertex(fid);
@@ -1536,6 +1604,85 @@ static std::tuple<unsigned int, unsigned int> GetCallStmt(const CallGraphManager
    return {0, 0};
 }
 
+static bool RecognizeSameBaseDuplex(const statement_list_node* sl, const function_val_node* fd,
+                                    const unsigned int root_id, const std::string& bundle_name,
+                                    const std::vector<OriginalMemoryAccess>& original_accesses,
+                                    const std::vector<OriginalMemoryAccess>& burst_accesses,
+                                    const bool original_effects_safe, const application_managerRef& AppM,
+                                    const ir_managerRef& TM, SameBaseDuplexProof& proof, std::string& reason)
+{
+   reason = "original effects are not fully classified ordinary accesses";
+   if(!original_effects_safe || original_accesses.size() != 2)
+   {
+      return false;
+   }
+   const auto read_access = std::find_if(original_accesses.begin(), original_accesses.end(), [&](const auto& access) {
+      return !access.is_write && access.bundle == bundle_name;
+   });
+   const auto write_access = std::find_if(original_accesses.begin(), original_accesses.end(), [&](const auto& access) {
+      return access.is_write && access.bundle == bundle_name;
+   });
+   if(read_access == original_accesses.end() || write_access == original_accesses.end() ||
+      !read_access->classified || !write_access->classified || !read_access->ordinary || !write_access->ordinary ||
+      !read_access->base || !write_access->base || read_access->base->index != write_access->base->index ||
+      read_access->owner_argument_index != write_access->owner_argument_index)
+   {
+      reason = "not exactly one classified same-base read/store pair";
+      return false;
+   }
+   const auto owner_arg = std::find_if(fd->list_of_args.begin(), fd->list_of_args.end(), [&](const auto& candidate) {
+      return candidate->index == read_access->owner_argument_index;
+   });
+   if(owner_arg == fd->list_of_args.end())
+   {
+      reason = "same-base owner argument is unavailable";
+      return false;
+   }
+   const auto expected_base = TM->GetIRNode(AppM->getSSAFromParm(root_id, (*owner_arg)->index));
+   ReadBurstRegion read_region{};
+   WriteBurstRegion write_region{};
+   const std::vector<ir_nodeRef> reads{read_access->statement};
+   const std::vector<ir_nodeRef> writes{write_access->statement};
+   if(!recognizeReadBurstRegion(sl, reads, expected_base, burst_accesses, bundle_name, read_region,
+                                write_access->statement) ||
+      !recognizeWriteBurstRegion(sl, writes, expected_base, burst_accesses, bundle_name, write_region,
+                                 read_access->statement))
+   {
+      reason = "canonical contiguous loop recognition failed";
+      return false;
+   }
+   if(read_region.preheader != write_region.preheader || read_region.header != write_region.header ||
+      read_region.guard->index != write_region.guard->index || read_region.bound->index != write_region.bound->index ||
+      read_region.induction->index != write_region.induction->index || read_region.base->index != write_region.base->index)
+   {
+      reason = "read/store loop, guard, bound, base, or affine index differ";
+      return false;
+   }
+   const auto loop_bb = sl->list_of_bloc.at(read_region.header);
+   const auto& loop_stmts = loop_bb->CGetStmtList();
+   const auto read_position = std::find_if(loop_stmts.begin(), loop_stmts.end(), [&](const auto& stmt) {
+      return stmt->index == read_access->statement->index;
+   });
+   const auto write_position = std::find_if(loop_stmts.begin(), loop_stmts.end(), [&](const auto& stmt) {
+      return stmt->index == write_access->statement->index;
+   });
+   if(read_position == loop_stmts.end() || write_position == loop_stmts.end() ||
+      std::distance(loop_stmts.begin(), read_position) >= std::distance(loop_stmts.begin(), write_position))
+   {
+      reason = "LOAD does not precede STORE in the original iteration";
+      return false;
+   }
+   proof.owner_argument_index = read_access->owner_argument_index;
+   proof.bundle = bundle_name;
+   proof.base = read_region.base;
+   proof.load_statement = read_access->statement;
+   proof.store_statement = write_access->statement;
+   proof.read_region = std::move(read_region);
+   proof.write_region = std::move(write_region);
+   reason = "same-base pointwise read-before-write candidate";
+   return true;
+}
+
 static std::vector<ir_nodeRef> GetCallArgs(ir_nodeRef stmt)
 {
    if(const auto ga = GetPointer<const assign_stmt>(stmt))
@@ -1549,6 +1696,16 @@ static std::vector<ir_nodeRef> GetCallArgs(ir_nodeRef stmt)
    }
    THROW_UNREACHABLE("Unexpected call statement.");
    return std::vector<ir_nodeRef>();
+}
+
+namespace
+{
+   void register_duplex_m_axi_resources(const technology_managerRef& TechMan, const ParameterConstRef& parameters,
+                                        const std::string& bundle_name, unsigned int address_bitsize,
+                                        unsigned int data_bitsize, unsigned int backend_data_bitsize,
+                                        std::uint32_t axi_latency, unsigned int read_max_burst_length,
+                                        const AXIReadBurstProfile& read_profile,
+                                        const AXIWriteBurstProfile& write_profile);
 }
 
 InterfaceInfer::InterfaceInfer(const application_managerRef _AppM, const DesignFlowManager& _design_flow_manager,
@@ -1663,6 +1820,386 @@ DesignFlowStep_Status InterfaceInfer::Exec()
       }
    }
 
+   struct FrozenDuplexContribution
+   {
+      unsigned int root_id = 0;
+      unsigned int owner_argument_index = 0;
+      std::string bundle;
+      SameBaseDuplexProof proof;
+      AXIReadBurstProfile read_profile{};
+      AXIWriteBurstProfile write_profile{};
+      unsigned int read_max_burst_length = 0;
+      unsigned int address_bitsize = 0;
+      unsigned int data_bitsize = 32;
+      std::uint32_t latency = 0;
+   };
+   const auto is_dataflow_architecture = [](const FunctionArchitectureRef& arch) {
+      const auto it = arch->attrs.find(FunctionArchitecture::func_dataflow_module);
+      return it != arch->attrs.end() && it->second == "1";
+   };
+   unsigned int effective_burst_type = parameters->isOption(OPT_axi_burst_type) ?
+                                           parameters->getOption<unsigned int>(OPT_axi_burst_type) :
+                                           0U;
+   unsigned int device_burst_type = 0U;
+   if(HLSMgr->TryGetParameterFromParameterOrDevice<unsigned int>("axi_burst_type", HLSMgr->get_HLS_device(),
+                                                                 device_burst_type))
+   {
+      effective_burst_type = device_burst_type;
+   }
+   if(burst_feature_enabled && effective_burst_type != 1U)
+   {
+      for(const auto root_id : sorted_roots)
+      {
+         const auto symbol = ir_helper::GetFunctionName(TM->GetIRNode(root_id));
+         const auto arch = HLSMgr->module_arch->GetArchitecture(symbol);
+         if(!arch)
+         {
+            continue;
+         }
+         for(const auto& iface : arch->ifaces)
+         {
+            const auto mode = iface.second.find(FunctionArchitecture::iface_mode);
+            if(mode == iface.second.end() || mode->second != "m_axi")
+            {
+               continue;
+            }
+            if(iface.second.count(FunctionArchitecture::iface_max_read_burst_length))
+            {
+               THROW_ERROR_USAGE("Configured read bursts for bundle '" + iface.first +
+                                 "' require AXI INCREMENTAL burst type; the effective AXI burst type is " +
+                                 (effective_burst_type == 0U ? "FIXED" : "unsupported") + ".");
+            }
+            if(iface.second.count(FunctionArchitecture::iface_max_write_burst_length))
+            {
+               THROW_ERROR_USAGE("Configured write bursts for bundle '" + iface.first +
+                                 "' require AXI INCREMENTAL burst type; the effective AXI burst type is " +
+                                 (effective_burst_type == 0U ? "FIXED" : "unsupported") + ".");
+            }
+         }
+      }
+   }
+   const auto get_duplex_contribution = [&](const unsigned int root_id, const FunctionArchitectureRef& arch,
+                                            const std::string& bundle,
+                                            FrozenDuplexContribution& contribution, std::string& reason) {
+      if(!burst_feature_enabled)
+      {
+         reason = "experimental burst feature is disabled";
+         return false;
+      }
+      if(bundle.rfind("DF_bambu_", 0) == 0 || is_dataflow_architecture(arch))
+      {
+         reason = "DATAFLOW/forwarded bundle ownership is unsupported";
+         return false;
+      }
+      const auto call_graph_vertex = CGM.GetVertex(root_id);
+      if(CGM.GetCallGraph().in_degree(call_graph_vertex) != 0)
+      {
+         reason = "bundle contribution is not an independent entry root";
+         return false;
+      }
+      if(effective_burst_type != 1U)
+      {
+         reason = "AXI burst type is not INCREMENTAL";
+         return false;
+      }
+      const auto iface_it = arch->ifaces.find(bundle);
+      if(iface_it == arch->ifaces.end())
+      {
+         reason = "bundle has no explicit interface architecture";
+         return false;
+      }
+      const auto& attrs = iface_it->second;
+      const auto mode = attrs.find(FunctionArchitecture::iface_mode);
+      const auto read_max = attrs.find(FunctionArchitecture::iface_max_read_burst_length);
+      const auto write_max = attrs.find(FunctionArchitecture::iface_max_write_burst_length);
+      if(mode == attrs.end() || mode->second != "m_axi" || read_max == attrs.end() || write_max == attrs.end())
+      {
+         reason = "bundle does not explicitly request both read and write bursts";
+         return false;
+      }
+      if(attrs.count(FunctionArchitecture::iface_cache_line_count))
+      {
+         reason = "cache-enabled bundle";
+         return false;
+      }
+      const auto fd = GetPointer<const function_val_node>(TM->GetIRNode(root_id));
+      const auto sl = GetPointerS<const statement_list_node>(fd->body);
+      std::vector<ir_nodeRef> bundle_pointer_args;
+      for(const auto& argument : fd->list_of_args)
+      {
+         if(!ir_helper::IsPointerType(ir_helper::CGetType(argument)))
+         {
+            continue;
+         }
+         const auto parm = arch->parms.find(get_decl_name(argument));
+         if(parm == arch->parms.end() || parm->second.count(FunctionArchitecture::parm_bundle) == 0)
+         {
+            reason = "original pointer-to-bundle mapping is incomplete";
+            return false;
+         }
+         if(parm->second.at(FunctionArchitecture::parm_bundle) == bundle)
+         {
+            bundle_pointer_args.push_back(argument);
+         }
+      }
+      if(bundle_pointer_args.size() != 1)
+      {
+         reason = "bundle must have exactly one pointer argument";
+         return false;
+      }
+      const auto owner = bundle_pointer_args.front();
+      const auto owner_type = ir_helper::CGetPointedType(ir_helper::CGetType(owner));
+      if(!owner_type || owner_type->get_kind() != integer_ty_node_K || ir_helper::Size(owner_type) != 32 ||
+         ir_helper::SizeAlloc(owner_type) != 32)
+      {
+         reason = "bundle element must be a direct 32-bit integer";
+         return false;
+      }
+      const auto bitwidth = attrs.find(FunctionArchitecture::iface_bitwidth);
+      const auto alignment = attrs.find(FunctionArchitecture::iface_alignment);
+      if((bitwidth != attrs.end() && !bitwidth->second.empty() && std::stoul(bitwidth->second) != 32U) ||
+         (alignment != attrs.end() && !alignment->second.empty() && std::stoul(alignment->second) < 4U))
+      {
+         reason = "unsupported interface width or alignment";
+         return false;
+      }
+      const auto address_bitsize = HLSMgr->get_address_bitsize();
+      if(address_bitsize != 32U && address_bitsize != 64U)
+      {
+         reason = "AXI address width is not 32 or 64 bits";
+         return false;
+      }
+      bool classified = false;
+      const auto original_accesses = CollectOriginalMemoryAccesses(fd, root_id, arch, AppM, TM, classified);
+      const auto original_safe = hasOnlyOrdinaryMemoryEffects(sl) && classified;
+      SameBaseDuplexProof proof{};
+      if(!RecognizeSameBaseDuplex(sl, fd, root_id, bundle, original_accesses, original_accesses,
+                                  original_safe, AppM, TM, proof, reason))
+      {
+         return false;
+      }
+      if(proof.owner_argument_index != owner->index)
+      {
+         reason = "proof owner differs from the unique bundle pointer argument";
+         return false;
+      }
+      contribution.root_id = root_id;
+      contribution.owner_argument_index = owner->index;
+      contribution.bundle = bundle;
+      contribution.proof = std::move(proof);
+      contribution.read_max_burst_length = static_cast<unsigned int>(std::stoul(read_max->second));
+      contribution.read_profile = ParseAXIReadBurstProfile(attrs, bundle);
+      contribution.write_profile = ParseAXIWriteBurstProfile(attrs, bundle);
+      if(contribution.read_max_burst_length < 1U || contribution.read_max_burst_length > 256U ||
+         contribution.write_profile.max_outstanding != 1U)
+      {
+         reason = "unsupported duplex burst profile";
+         return false;
+      }
+      contribution.address_bitsize = address_bitsize;
+      contribution.latency = ParseAXIInterfaceLatency(attrs, bundle);
+      return true;
+   };
+
+   std::map<unsigned int, std::map<std::string, FrozenDuplexContribution>> candidate_duplex_by_root;
+   std::set<std::string> candidate_duplex_bundles;
+   if(burst_feature_enabled)
+   {
+      for(const auto root_id : sorted_roots)
+      {
+         const auto fnode = TM->GetIRNode(root_id);
+         const auto fsymbol = ir_helper::GetFunctionName(fnode);
+         const auto arch = HLSMgr->module_arch->GetArchitecture(fsymbol);
+         if(!arch || is_dataflow_architecture(arch))
+         {
+            continue;
+         }
+         for(const auto& iface : arch->ifaces)
+         {
+            const auto mode = iface.second.find(FunctionArchitecture::iface_mode);
+            const auto read = iface.second.find(FunctionArchitecture::iface_max_read_burst_length);
+            const auto write = iface.second.find(FunctionArchitecture::iface_max_write_burst_length);
+            if(mode == iface.second.end() || mode->second != "m_axi" || read == iface.second.end() ||
+               write == iface.second.end())
+            {
+               continue;
+            }
+            FrozenDuplexContribution contribution{};
+            std::string reason;
+            if(get_duplex_contribution(root_id, arch, iface.first, contribution, reason))
+            {
+               candidate_duplex_bundles.insert(iface.first);
+               candidate_duplex_by_root[root_id].emplace(iface.first, std::move(contribution));
+            }
+         }
+      }
+   }
+
+   std::map<std::string, FrozenDuplexContribution> frozen_duplex_by_bundle;
+   std::map<unsigned int, std::map<std::string, FrozenDuplexContribution>> frozen_duplex_by_root;
+   std::map<std::string, std::string> duplex_bundle_vetoes;
+   for(const auto& candidate_bundle : candidate_duplex_bundles)
+   {
+      std::vector<FrozenDuplexContribution> contributions;
+      std::string veto_reason;
+      for(auto arch_it = HLSMgr->module_arch->cbegin(); arch_it != HLSMgr->module_arch->cend(); ++arch_it)
+      {
+         const auto arch = arch_it->second;
+         const auto iface = arch->ifaces.find(candidate_bundle);
+         if(iface == arch->ifaces.end())
+         {
+            continue;
+         }
+         const auto mode = iface->second.find(FunctionArchitecture::iface_mode);
+         if(mode == iface->second.end() || mode->second != "m_axi")
+         {
+            continue;
+         }
+         const auto symbol = arch->attrs.find(FunctionArchitecture::func_symbol);
+         if(symbol == arch->attrs.end())
+         {
+            veto_reason = "same-name architecture contribution has no resolved function owner";
+            break;
+         }
+         const auto function = TM->GetFunction(symbol->second);
+         if(!function)
+         {
+            veto_reason = "same-name architecture contribution has no resolved function owner";
+            break;
+         }
+         const auto root_id = function->index;
+         const auto existing_candidate = candidate_duplex_by_root.find(root_id);
+         if(existing_candidate == candidate_duplex_by_root.end() ||
+            existing_candidate->second.find(candidate_bundle) == existing_candidate->second.end())
+         {
+            FrozenDuplexContribution contribution{};
+            std::string reason;
+            if(!get_duplex_contribution(root_id, arch, candidate_bundle, contribution, reason))
+            {
+               veto_reason = reason.empty() ? "same-name architecture contribution is not eligible" : reason;
+               break;
+            }
+            contributions.push_back(std::move(contribution));
+         }
+         else
+         {
+            contributions.push_back(existing_candidate->second.at(candidate_bundle));
+         }
+      }
+      if(!veto_reason.empty() || contributions.empty())
+      {
+         duplex_bundle_vetoes[candidate_bundle] =
+             veto_reason.empty() ? "same-name architecture contribution is not eligible" : veto_reason;
+         continue;
+      }
+      const auto& reference = contributions.front();
+      const auto incompatible = std::find_if(std::next(contributions.begin()), contributions.end(), [&](const auto& c) {
+         return c.read_max_burst_length != reference.read_max_burst_length ||
+                c.read_profile.max_outstanding != reference.read_profile.max_outstanding ||
+                c.read_profile.fifo_depth != reference.read_profile.fifo_depth ||
+                c.write_profile.max_burst_length != reference.write_profile.max_burst_length ||
+                c.write_profile.max_outstanding != reference.write_profile.max_outstanding ||
+                c.write_profile.fifo_depth != reference.write_profile.fifo_depth || c.latency != reference.latency ||
+                c.address_bitsize != reference.address_bitsize || c.data_bitsize != reference.data_bitsize;
+      });
+      if(incompatible != contributions.end())
+      {
+         THROW_ERROR_USAGE("Incompatible duplex m_axi profiles or latency for bundle '" + candidate_bundle +
+                           "' across root functions; use distinct bundle names.");
+      }
+      frozen_duplex_by_bundle.emplace(candidate_bundle, reference);
+      for(auto& contribution : contributions)
+      {
+         frozen_duplex_by_root[contribution.root_id].emplace(candidate_bundle, std::move(contribution));
+      }
+   }
+   std::set<std::string> duplex_bundle_force_legacy;
+   for(const auto& candidate_bundle : candidate_duplex_bundles)
+   {
+      if(frozen_duplex_by_bundle.count(candidate_bundle) == 0)
+      {
+         duplex_bundle_force_legacy.insert(candidate_bundle);
+      }
+   }
+
+   if(!frozen_duplex_by_bundle.empty())
+   {
+      const auto HLS_D = HLSMgr->get_HLS_device();
+      const auto TechMan = HLS_D->get_technology_manager();
+      const auto operation_names = [](const std::string& bundle) {
+         return std::array<std::string, 5>{ENCODE_FDNAME(bundle, "_configure_read", ""),
+                                           ENCODE_FDNAME(bundle, "_burst_read", ""),
+                                           ENCODE_FDNAME(bundle, "_configure_write", ""),
+                                           ENCODE_FDNAME(bundle, "_store_write", ""),
+                                           ENCODE_FDNAME(bundle, "_drain_write", "")};
+      };
+      for(const auto& bundle_plan : frozen_duplex_by_bundle)
+      {
+         const auto bundle = bundle_plan.first;
+         const auto names = operation_names(bundle);
+         const auto read_resource = ENCODE_FDNAME(bundle, "_duplex_read_endpoint", "");
+         const auto write_resource = ENCODE_FDNAME(bundle, "_duplex_write_endpoint", "");
+         for(const auto& item : {std::make_pair(names[0], read_resource), std::make_pair(names[1], read_resource),
+                                 std::make_pair(names[2], write_resource), std::make_pair(names[3], write_resource),
+                                 std::make_pair(names[4], write_resource)})
+         {
+            const auto mapped = TechMan->GetFunctionFU(item.first);
+            if(mapped && mapped != TechMan->get_fu(item.second, INTERFACE_LIBRARY))
+            {
+               THROW_ERROR_USAGE("Duplex m_axi operation '" + item.first +
+                                 "' is already owned by an incompatible resource.");
+            }
+         }
+         const auto plain_resource = ENCODE_FDNAME(bundle, "", "");
+         if(TechMan->is_library_manager(INTERFACE_LIBRARY) &&
+            TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(plain_resource))
+         {
+            THROW_ERROR_USAGE("Duplex m_axi bundle '" + bundle +
+                              "' conflicts with an existing single-mode m_axi resource.");
+         }
+         for(const auto& resource : {read_resource, write_resource})
+         {
+            const auto constraint = HLSMgr->global_resource_constraints.find({resource, INTERFACE_LIBRARY});
+            if(constraint != HLSMgr->global_resource_constraints.end() && constraint->second != std::make_pair(1U, 1U))
+            {
+               THROW_ERROR_USAGE("Incompatible duplex resource constraint for bundle '" + bundle + "'.");
+            }
+         }
+      }
+      for(const auto& bundle_plan : frozen_duplex_by_bundle)
+      {
+         const auto& contribution = bundle_plan.second;
+         register_duplex_m_axi_resources(TechMan, parameters, bundle_plan.first, contribution.address_bitsize,
+                                         contribution.data_bitsize, contribution.data_bitsize, contribution.latency,
+                                         contribution.read_max_burst_length, contribution.read_profile,
+                                         contribution.write_profile);
+         const auto names = operation_names(bundle_plan.first);
+         const auto add_if_unmapped = [&](const std::string& op, const std::string& resource) {
+            if(!TechMan->GetFunctionFU(op))
+            {
+               TechMan->add_operation(INTERFACE_LIBRARY, resource, op);
+            }
+            const auto mapped_fu = GetPointerS<functional_unit>(TechMan->GetFunctionFU(op));
+            const auto operation_node = GetPointerS<operation>(mapped_fu->get_operation(op));
+            operation_node->time_m = std::make_shared<time_info>();
+            operation_node->bounded = false;
+            operation_node->time_m->set_execution_time(TechMan->CGetSetupHoldTime() + EPSILON, 0);
+            operation_node->time_m->set_synthesis_dependent(true);
+         };
+         const auto read_resource = ENCODE_FDNAME(bundle_plan.first, "_duplex_read_endpoint", "");
+         const auto write_resource = ENCODE_FDNAME(bundle_plan.first, "_duplex_write_endpoint", "");
+         add_if_unmapped(names[0], read_resource);
+         add_if_unmapped(names[1], read_resource);
+         add_if_unmapped(names[2], write_resource);
+         add_if_unmapped(names[3], write_resource);
+         add_if_unmapped(names[4], write_resource);
+         for(const auto& resource : {read_resource, write_resource})
+         {
+            HLSMgr->global_resource_constraints[{resource, INTERFACE_LIBRARY}] = std::make_pair(1U, 1U);
+         }
+      }
+   }
+
    for(const auto root_id : sorted_roots)
    {
       const auto fnode = TM->GetIRNode(root_id);
@@ -1743,68 +2280,9 @@ DesignFlowStep_Status InterfaceInfer::Exec()
           hasOnlyOrdinaryReadEffects(GetPointerS<const statement_list_node>(fd->body), no_function_memory_info);
       const auto original_statement_list = GetPointerS<const statement_list_node>(fd->body);
       const bool original_ordinary_effects = hasOnlyOrdinaryMemoryEffects(original_statement_list);
-      std::vector<OriginalMemoryAccess> original_memory_accesses;
       bool all_original_memory_accesses_classified = true;
-      for(const auto& block : original_statement_list->list_of_bloc)
-      {
-         for(const auto& stmt : block.second->CGetStmtList())
-         {
-            if(stmt->get_kind() != assign_stmt_K)
-            {
-               continue;
-            }
-            const auto assignment = GetPointerS<const assign_stmt>(stmt);
-            const auto record_access = [&](const ir_nodeRef& operand, const bool is_write) {
-               if(!operand || operand->get_kind() != mem_access_node_K)
-               {
-                  return;
-               }
-               const auto access = GetPointerS<const mem_access_node>(operand);
-               const auto base = ir_helper::GetBaseVariable(access->op);
-               unsigned int owner_argument_index = 0;
-               std::string bundle;
-               bool classified = false;
-               for(const auto& candidate_arg : fd->list_of_args)
-               {
-                  if(!ir_helper::IsPointerType(ir_helper::CGetType(candidate_arg)))
-                  {
-                     continue;
-                  }
-                  const auto candidate_id = AppM->getSSAFromParm(root_id, candidate_arg->index);
-                  const auto candidate_ssa = TM->GetIRNode(candidate_id);
-                  if(!base || (candidate_arg->index != base->index &&
-                               (!candidate_ssa || candidate_ssa->index != base->index)))
-                  {
-                     continue;
-                  }
-                  const auto candidate_name = get_decl_name(candidate_arg);
-                  const auto candidate_parm = func_arch->parms.find(candidate_name);
-                  if(candidate_parm == func_arch->parms.end())
-                  {
-                     continue;
-                  }
-                  const auto candidate_bundle = candidate_parm->second.at(FunctionArchitecture::parm_bundle);
-                  if(!classified)
-                  {
-                     owner_argument_index = candidate_arg->index;
-                     bundle = candidate_bundle;
-                     classified = true;
-                  }
-                  else if(bundle != candidate_bundle)
-                  {
-                     classified = false;
-                     break;
-                  }
-               }
-               const bool ordinary = access->ordinary_memory_access;
-               all_original_memory_accesses_classified &= classified && ordinary;
-               original_memory_accesses.push_back(
-                   {stmt, base, owner_argument_index, bundle, is_write, ordinary, classified});
-            };
-            record_access(assignment->op0, true);
-            record_access(assignment->op1, false);
-         }
-      }
+      auto original_memory_accesses =
+          CollectOriginalMemoryAccesses(fd, root_id, func_arch, AppM, TM, all_original_memory_accesses_classified);
       const bool original_memory_effects_safe = original_ordinary_effects && all_original_memory_accesses_classified;
       const bool function_effects_safe =
           !burst_feature_enabled || !has_read_burst_pragma ||
@@ -1829,6 +2307,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
          std::string same_base_duplex_reason = "read/write profile not requested";
          bool same_base_duplex_profile_eligible = false;
          std::string same_base_duplex_profile_reason = "read/write profile not requested";
+         bool same_base_duplex_activated = false;
+         std::string same_base_duplex_activation_reason = "bundle is not in the frozen activation plan";
          std::unique_ptr<SameBaseDuplexProof> same_base_duplex_proof;
          AXIReadBurstProfile read_profile{};
          AXIWriteBurstProfile write_profile{};
@@ -1845,6 +2325,15 @@ DesignFlowStep_Status InterfaceInfer::Exec()
          {
             return;
          }
+         const auto frozen_proof_for_bundle = [&](const std::string& bundle_name) -> const SameBaseDuplexProof* {
+            const auto root_plan = frozen_duplex_by_root.find(root_id);
+            if(root_plan == frozen_duplex_by_root.end())
+            {
+               return nullptr;
+            }
+            const auto bundle_plan = root_plan->second.find(bundle_name);
+            return bundle_plan == root_plan->second.end() ? nullptr : &bundle_plan->second.proof;
+         };
          const auto sl = GetPointerS<const statement_list_node>(fd->body);
          for(const auto& iface : func_arch->ifaces)
          {
@@ -1910,7 +2399,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                {
                   decision.read_fallback_reason = "cache-enabled bundle";
                }
-               else if(decision.bundle_has_memory_write)
+               else if(decision.bundle_has_memory_write && !frozen_proof_for_bundle(bundle_name))
                {
                   decision.read_fallback_reason = "bundle contains stores";
                }
@@ -1951,8 +2440,10 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      for(const auto& read_group : loop_reads)
                      {
                         ReadBurstRegion region{};
+                        const auto frozen_proof = frozen_proof_for_bundle(bundle_name);
                         if(!recognizeReadBurstRegion(sl, read_group.second, expected_base,
-                                                     burst_memory_accesses, bundle_name, region))
+                                                     burst_memory_accesses, bundle_name, region,
+                                                     frozen_proof ? frozen_proof->store_statement : ir_nodeRef()))
                         {
                            owner_recognized = false;
                            break;
@@ -1998,7 +2489,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                {
                   decision.write_fallback_reason = "cache-enabled bundle";
                }
-               else if(decision.bundle_has_memory_read)
+               else if(decision.bundle_has_memory_read && !frozen_proof_for_bundle(bundle_name))
                {
                   decision.write_fallback_reason =
                       "bundle contains reads; same-bundle read/write requires duplex support";
@@ -2043,8 +2534,10 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      const auto expected_base_id = AppM->getSSAFromParm(root_id, (*owner_arg)->index);
                      const auto expected_base = TM->GetIRNode(expected_base_id);
                      WriteBurstRegion region{};
-                     bool recognized = recognizeWriteBurstRegion(sl, stores, expected_base,
-                                                                 burst_memory_accesses, bundle_name, region);
+                     const auto frozen_proof = frozen_proof_for_bundle(bundle_name);
+                     bool recognized = recognizeWriteBurstRegion(
+                         sl, stores, expected_base, burst_memory_accesses, bundle_name, region,
+                         frozen_proof ? frozen_proof->load_statement : ir_nodeRef());
                      if(recognized)
                      {
                         for(const auto& access : burst_memory_accesses)
@@ -2054,7 +2547,13 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                               recognized = false;
                               break;
                            }
-                           if(!access.is_write &&
+                           const bool paired_duplex_read = frozen_proof &&
+                                                            access.statement->index ==
+                                                                frozen_proof->load_statement->index &&
+                                                            access.bundle == bundle_name && access.classified &&
+                                                            access.ordinary && access.base && expected_base &&
+                                                            access.base->index == expected_base->index;
+                           if(!access.is_write && !paired_duplex_read &&
                               (!access.classified || !access.ordinary || !access.base || !expected_base ||
                                access.base->index == expected_base->index || access.bundle == bundle_name))
                            {
@@ -2081,96 +2580,80 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                decision.same_base_duplex_profile_eligible = !cache_enabled &&
                                                             decision.write_profile.max_outstanding == 1U;
                decision.same_base_duplex_reason = "original effects are not fully classified ordinary accesses";
-               if(original_memory_effects_safe && original_memory_accesses.size() == 2)
+               SameBaseDuplexProof proof{};
+               if(RecognizeSameBaseDuplex(sl, fd, root_id, bundle_name, original_memory_accesses,
+                                          burst_memory_accesses, original_memory_effects_safe, AppM, TM, proof,
+                                          decision.same_base_duplex_reason))
                {
-                  const auto read_access = std::find_if(original_memory_accesses.begin(), original_memory_accesses.end(),
-                                                        [&](const auto& access) {
-                                                           return !access.is_write && access.bundle == bundle_name;
-                                                        });
-                  const auto write_access = std::find_if(original_memory_accesses.begin(), original_memory_accesses.end(),
-                                                         [&](const auto& access) {
-                                                            return access.is_write && access.bundle == bundle_name;
-                                                         });
-                  if(read_access == original_memory_accesses.end() || write_access == original_memory_accesses.end() ||
-                     !read_access->classified || !write_access->classified || !read_access->ordinary ||
-                     !write_access->ordinary || !read_access->base || !write_access->base ||
-                     read_access->base->index != write_access->base->index ||
-                     read_access->owner_argument_index != write_access->owner_argument_index)
-                  {
-                     decision.same_base_duplex_reason = "not exactly one classified same-base read/store pair";
-                  }
-                  else
-                  {
-                     const auto owner_arg = std::find_if(fd->list_of_args.begin(), fd->list_of_args.end(),
-                                                         [&](const auto& candidate) {
-                                                            return candidate->index == read_access->owner_argument_index;
-                                                         });
-                     if(owner_arg == fd->list_of_args.end())
-                     {
-                        decision.same_base_duplex_reason = "same-base owner argument is unavailable";
-                     }
-                     else
-                     {
-                        const auto expected_base_id = AppM->getSSAFromParm(root_id, (*owner_arg)->index);
-                        const auto expected_base = TM->GetIRNode(expected_base_id);
-                        ReadBurstRegion read_region{};
-                        WriteBurstRegion write_region{};
-                        const std::vector<ir_nodeRef> reads{read_access->statement};
-                        const std::vector<ir_nodeRef> writes{write_access->statement};
-                        const bool read_ok = recognizeReadBurstRegion(sl, reads, expected_base, burst_memory_accesses,
-                                                                      bundle_name, read_region,
-                                                                      write_access->statement);
-                        const bool write_ok = recognizeWriteBurstRegion(sl, writes, expected_base,
-                                                                        burst_memory_accesses, bundle_name,
-                                                                        write_region, read_access->statement);
-                        if(!read_ok || !write_ok)
-                        {
-                           decision.same_base_duplex_reason = "canonical contiguous loop recognition failed";
-                        }
-                        else if(read_region.preheader != write_region.preheader ||
-                                read_region.header != write_region.header ||
-                                read_region.guard->index != write_region.guard->index ||
-                                read_region.bound->index != write_region.bound->index ||
-                                read_region.induction->index != write_region.induction->index ||
-                                read_region.base->index != write_region.base->index)
-                        {
-                           decision.same_base_duplex_reason = "read/store loop, guard, bound, base, or affine index differ";
-                        }
-                        else
-                        {
-                           const auto loop_bb = sl->list_of_bloc.at(read_region.header);
-                           const auto& loop_stmts = loop_bb->CGetStmtList();
-                           const auto read_position = std::find_if(loop_stmts.begin(), loop_stmts.end(),
-                                                                   [&](const auto& stmt) {
-                                                                      return stmt->index == read_access->statement->index;
-                                                                   });
-                           const auto write_position = std::find_if(loop_stmts.begin(), loop_stmts.end(),
-                                                                    [&](const auto& stmt) {
-                                                                       return stmt->index == write_access->statement->index;
-                                                                    });
-                           if(read_position == loop_stmts.end() || write_position == loop_stmts.end() ||
-                              std::distance(loop_stmts.begin(), read_position) >=
-                                  std::distance(loop_stmts.begin(), write_position))
-                           {
-                              decision.same_base_duplex_reason = "LOAD does not precede STORE in the original iteration";
-                           }
-                           else
-                           {
-                              auto proof = std::make_unique<SameBaseDuplexProof>();
-                              proof->owner_argument_index = read_access->owner_argument_index;
-                              proof->bundle = bundle_name;
-                              proof->base = read_region.base;
-                              proof->load_statement = read_access->statement;
-                              proof->store_statement = write_access->statement;
-                              proof->read_region = std::move(read_region);
-                              proof->write_region = std::move(write_region);
-                              decision.same_base_duplex_proof = std::move(proof);
-                              decision.same_base_duplex_candidate = true;
-                              decision.same_base_duplex_reason = "same-base pointwise read-before-write candidate";
-                           }
-                        }
-                     }
-                  }
+                  decision.same_base_duplex_proof = std::make_unique<SameBaseDuplexProof>(std::move(proof));
+                  decision.same_base_duplex_candidate = true;
+               }
+            }
+         }
+         for(auto& bundle_decision : burst_decisions)
+         {
+            const auto frozen_root = frozen_duplex_by_root.find(root_id);
+            if(frozen_root != frozen_duplex_by_root.end())
+            {
+               const auto frozen = frozen_root->second.find(bundle_decision.first);
+               if(frozen != frozen_root->second.end())
+               {
+                  auto& decision = bundle_decision.second;
+                  const auto& proof = frozen->second.proof;
+                  THROW_ASSERT(decision.same_base_duplex_candidate && decision.same_base_duplex_proof,
+                               "Frozen duplex proof disappeared before IR transformation for bundle " +
+                                   bundle_decision.first);
+                  const auto& current = *decision.same_base_duplex_proof;
+                  THROW_ASSERT(current.owner_argument_index == proof.owner_argument_index &&
+                                   current.base->index == proof.base->index &&
+                                   current.load_statement->index == proof.load_statement->index &&
+                                   current.store_statement->index == proof.store_statement->index &&
+                                   current.read_region.preheader == proof.read_region.preheader &&
+                                   current.read_region.header == proof.read_region.header &&
+                                   current.read_region.branch->index == proof.read_region.branch->index &&
+                                   current.read_region.guard->index == proof.read_region.guard->index &&
+                                   current.read_region.bound->index == proof.read_region.bound->index &&
+                                   current.read_region.induction->index == proof.read_region.induction->index &&
+                                   current.read_region.base->index == proof.read_region.base->index &&
+                                   current.write_region.preheader == proof.write_region.preheader &&
+                                   current.write_region.header == proof.write_region.header &&
+                                   current.write_region.exit == proof.write_region.exit &&
+                                   current.write_region.guard->index == proof.write_region.guard->index &&
+                                   current.write_region.bound->index == proof.write_region.bound->index &&
+                                   current.write_region.induction->index == proof.write_region.induction->index &&
+                                   current.write_region.base->index == proof.write_region.base->index &&
+                                   current.write_region.store->index == proof.write_region.store->index,
+                               "Original same-base proof snapshot changed before IR transformation for bundle " +
+                                   bundle_decision.first);
+                  decision.same_base_duplex_proof = std::make_unique<SameBaseDuplexProof>(proof);
+                  decision.read_regions[proof.owner_argument_index] = {proof.read_region};
+                  decision.write_regions[proof.owner_argument_index] = proof.write_region;
+                  decision.read_recognized = true;
+                  decision.write_recognized = true;
+                  decision.same_base_duplex_activated = true;
+                  decision.same_base_duplex_activation_reason = "frozen application-wide proof and profile accepted";
+               }
+            }
+            if(!bundle_decision.second.same_base_duplex_activated)
+            {
+               const auto veto = duplex_bundle_vetoes.find(bundle_decision.first);
+               if(veto != duplex_bundle_vetoes.end())
+               {
+                  bundle_decision.second.same_base_duplex_activation_reason = veto->second;
+               }
+               else if(bundle_decision.second.same_base_duplex_candidate)
+               {
+                  bundle_decision.second.same_base_duplex_activation_reason =
+                      bundle_decision.first.rfind("DF_bambu_", 0) == 0 ?
+                          "DATAFLOW/forwarded bundle ownership is unsupported" :
+                          bundle_decision.second.same_base_duplex_profile_eligible ?
+                              "bundle is not a globally eligible activation candidate" :
+                              bundle_decision.second.same_base_duplex_profile_reason;
+               }
+               else if(bundle_decision.second.read_requested && bundle_decision.second.write_requested)
+               {
+                  bundle_decision.second.same_base_duplex_activation_reason =
+                      bundle_decision.second.same_base_duplex_reason;
                }
             }
          }
@@ -2200,7 +2683,10 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                        (decision.write_fallback_reason.empty() ? "-" : decision.write_fallback_reason) +
                        "\" same_base_duplex_candidate=" +
                        std::to_string(static_cast<unsigned int>(decision.same_base_duplex_candidate)) +
-                       " same_base_duplex_reason=\"" + decision.same_base_duplex_reason + "\"");
+                       " same_base_duplex_reason=\"" + decision.same_base_duplex_reason +
+                       "\" production_activated=" +
+                       std::to_string(static_cast<unsigned int>(decision.same_base_duplex_activated)) +
+                       " activation_reason=\"" + decision.same_base_duplex_activation_reason + "\"");
             }
             if(decision.read_requested && decision.write_requested)
             {
@@ -2270,6 +2756,9 @@ DesignFlowStep_Status InterfaceInfer::Exec()
       const auto is_dataflow_module =
           func_arch->attrs.find(FunctionArchitecture::func_dataflow_module) != func_arch->attrs.end() &&
           (func_arch->attrs.find(FunctionArchitecture::func_dataflow_module)->second == "1");
+      const auto is_forced_legacy_duplex_bundle = [&](const std::string& bundle_name) {
+         return duplex_bundle_force_legacy.count(bundle_name) != 0;
+      };
       if(is_dataflow_module)
       {
          const auto [caller_id, call_id] = GetCallStmt(CGM, root_id);
@@ -2291,11 +2780,16 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                THROW_ASSERT(parm_attr != func_arch->parms.end(), "Expected parameter index " + std::to_string(idx));
                THROW_ASSERT(fd->list_of_args.size() > idx, "Unexpected function parameters count");
                auto& current_bundle = parm_attr->second.at(FunctionArchitecture::parm_bundle);
+               const auto original_bundle = current_bundle;
                const auto argument_index = fd->list_of_args.at(idx)->index;
                std::string bundle_name;
                if(base_var->get_kind() == argument_val_node_K)
                {
                   dataflow_bundle_by_argument[argument_index] = current_bundle;
+                  if(is_forced_legacy_duplex_bundle(original_bundle))
+                  {
+                     duplex_bundle_force_legacy.insert(current_bundle);
+                  }
                   func_arch->ifaces[current_bundle].at(FunctionArchitecture::iface_mode) = "default";
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                                  "---Parameter " + parm_attr->second.at(FunctionArchitecture::parm_port) +
@@ -2306,6 +2800,10 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                if(ir_helper::IsConstant(base_var))
                {
                   dataflow_bundle_by_argument[argument_index] = current_bundle;
+                  if(is_forced_legacy_duplex_bundle(original_bundle))
+                  {
+                     duplex_bundle_force_legacy.insert(current_bundle);
+                  }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Parameter " + parm_attr->second.at(FunctionArchitecture::parm_port) +
                                      " is constant at this call point");
@@ -2343,6 +2841,10 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                func_arch->ifaces[bundle_name].at(FunctionArchitecture::iface_name) = bundle_name;
                func_arch->ifaces.erase(current_bundle);
                current_bundle = bundle_name;
+               if(is_forced_legacy_duplex_bundle(original_bundle))
+               {
+                  duplex_bundle_force_legacy.insert(current_bundle);
+               }
                dataflow_bundle_by_argument[argument_index] = current_bundle;
                auto pd = GetPointerS<argument_val_node>(fd->list_of_args.at(idx));
                pd->name = ir_man->create_identifier_node(bundle_name);
@@ -2369,15 +2871,6 @@ DesignFlowStep_Status InterfaceInfer::Exec()
 
       if(burst_feature_enabled)
       {
-         unsigned int effective_burst_type = parameters->isOption(OPT_axi_burst_type) ?
-                                                 parameters->getOption<unsigned int>(OPT_axi_burst_type) :
-                                                 0U;
-         unsigned int device_burst_type = 0U;
-         if(HLSMgr->TryGetParameterFromParameterOrDevice<unsigned int>(
-                "axi_burst_type", HLSMgr->get_HLS_device(), device_burst_type))
-         {
-            effective_burst_type = device_burst_type;
-         }
          for(const auto& iface : func_arch->ifaces)
          {
             const auto& bundle_name = iface.first;
@@ -2765,9 +3258,30 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                const auto* decision = decision_it == burst_decisions.end() ? nullptr : &decision_it->second;
                const bool burst_enabled = burst_feature_enabled;
                const bool write_burst_requested = burst_enabled && interface_type == "m_axi" && decision &&
-                                                  decision->write_requested;
+                                                  decision->write_requested &&
+                                                  !is_forced_legacy_duplex_bundle(bundle_name);
                const bool burst_requested = burst_enabled && interface_type == "m_axi" && decision &&
-                                            decision->read_requested;
+                                            decision->read_requested &&
+                                            !is_forced_legacy_duplex_bundle(bundle_name);
+               const auto same_base_duplex_active = decision && decision->same_base_duplex_activated &&
+                                                    decision->same_base_duplex_proof &&
+                                                    decision->same_base_duplex_proof->owner_argument_index == arg_id;
+               if(same_base_duplex_active)
+               {
+                  const auto& proof = *decision->same_base_duplex_proof;
+                  const auto read_regions = decision->read_regions.find(arg_id);
+                  const auto write_region = decision->write_regions.find(arg_id);
+                  THROW_ASSERT(read_regions != decision->read_regions.end() && read_regions->second.size() == 1 &&
+                                   write_region != decision->write_regions.end() &&
+                                   read_regions->second.front().preheader == proof.read_region.preheader &&
+                                   read_regions->second.front().header == proof.read_region.header &&
+                                   read_regions->second.front().bound->index == proof.read_region.bound->index &&
+                                   write_region->second.preheader == proof.write_region.preheader &&
+                                   write_region->second.header == proof.write_region.header &&
+                                   write_region->second.exit == proof.write_region.exit &&
+                                   write_region->second.bound->index == proof.write_region.bound->index,
+                               "Both frozen duplex regions must be validated before either direction is rewritten");
+               }
                bool burst_profile_eligible = true;
                std::string burst_fallback_reason = burst_requested ? decision->read_fallback_reason : "";
                if(burst_requested)
@@ -3040,6 +3554,12 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                          .push_back(drain_call->index);
                      add_to_modified(drain_call);
                      writeStmt.clear();
+                     if(same_base_duplex_active)
+                     {
+                        INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                       "---Activated same-base pointwise duplex m_axi bundle " + bundle_name +
+                                           " for root " + fsymbol);
+                     }
                      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                                     "---Configured write burst region for bundle " + bundle_name + " (B=" +
                                         std::to_string(decision->write_profile.max_burst_length) + ")");
@@ -3077,7 +3597,10 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   add_to_modified(stmt);
                   store_vdef(stmt);
                }
-               create_resource(operationsR, operationsW, info, func_arch, unused_port, root_id);
+               if(!same_base_duplex_active)
+               {
+                  create_resource(operationsR, operationsW, info, func_arch, unused_port, root_id);
+               }
             }
             else if(interface_type == "none")
             {
@@ -5142,6 +5665,18 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
    const std::string requested_burst_mode = configured_read_resource ? "read" : "write";
    const auto HLS_D = HLSMgr->get_HLS_device();
    const auto TechMan = HLS_D->get_technology_manager();
+   if(TechMan->is_library_manager(INTERFACE_LIBRARY))
+   {
+      const auto library_manager = TechMan->get_library_manager(INTERFACE_LIBRARY);
+      for(const auto& suffix : {"_duplex_read_endpoint", "_duplex_write_endpoint", "_duplex_aggregator"})
+      {
+         if(library_manager->is_fu(ENCODE_FDNAME(bundle_name, suffix, "")))
+         {
+            THROW_ERROR_USAGE("Legacy m_axi resource for bundle '" + bundle_name +
+                              "' conflicts with a registered duplex resource.");
+         }
+      }
+   }
    const bool resource_already_exists = TechMan->is_library_manager(INTERFACE_LIBRARY) &&
                                         TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName);
    const auto& iface_attrs = func_arch->ifaces.at(bundle_name);
@@ -5640,6 +6175,248 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       op->bounded = false;
       op->time_m->set_execution_time(HLS_D->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
       op->time_m->set_synthesis_dependent(true);
+   }
+}
+
+namespace
+{
+   [[maybe_unused]] void register_duplex_m_axi_resources(const technology_managerRef& TechMan,
+                                                          const ParameterConstRef& parameters,
+                                                          const std::string& bundle_name,
+                                                          const unsigned int address_bitsize,
+                                                          const unsigned int data_bitsize,
+                                                          const unsigned int backend_data_bitsize,
+                                                          const std::uint32_t axi_latency,
+                                                          const unsigned int read_max_burst_length,
+                                                          const AXIReadBurstProfile& read_profile,
+                                                          const AXIWriteBurstProfile& write_profile)
+   {
+      if((address_bitsize != 32U && address_bitsize != 64U) || data_bitsize != 32U ||
+         backend_data_bitsize != 32U)
+      {
+         THROW_ERROR_USAGE("Duplex m_axi bundle '" + bundle_name +
+                           "' requires 32 or 64 address bits and 32-bit interface/backend data widths.");
+      }
+      const auto read_name = ENCODE_FDNAME(bundle_name, "_duplex_read_endpoint", "");
+      const auto write_name = ENCODE_FDNAME(bundle_name, "_duplex_write_endpoint", "");
+      const auto aggregator_name = ENCODE_FDNAME(bundle_name, "_duplex_aggregator", "");
+      const std::map<std::string, std::string> metadata{
+          {"bambu_axi_bundle_name", bundle_name},
+          {"bambu_axi_duplex_aggregator", aggregator_name},
+          {"bambu_axi_address_bitsize", std::to_string(address_bitsize)},
+          {"bambu_axi_data_bitsize", std::to_string(data_bitsize)},
+          {"bambu_axi_latency", std::to_string(axi_latency)},
+          {"bambu_max_read_burst_length", std::to_string(read_max_burst_length)},
+          {"bambu_num_read_outstanding", std::to_string(read_profile.max_outstanding)},
+          {"bambu_read_fifo_depth", std::to_string(read_profile.fifo_depth)},
+          {"bambu_max_write_burst_length", std::to_string(write_profile.max_burst_length)},
+          {"bambu_write_burst_outstanding", std::to_string(write_profile.max_outstanding)},
+          {"bambu_write_fifo_depth", std::to_string(write_profile.fifo_depth)}};
+      const auto read_mode = std::string("read");
+      const auto write_mode = std::string("write");
+      const auto duplex_mode = std::string("duplex");
+      const auto register_resource = [&](const std::string& resource_name, const std::string& role,
+                                         const std::string& mode, const bool endpoint) {
+         const auto library_exists = TechMan->is_library_manager(INTERFACE_LIBRARY);
+         const auto resource_exists = library_exists &&
+                                     TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(resource_name);
+         const auto expected_attributes = [&]() {
+            auto attributes = metadata;
+            attributes["bambu_axi_duplex_role"] = role;
+            attributes["bambu_axi_burst_mode"] = mode;
+            return attributes;
+         }();
+         if(resource_exists)
+         {
+            const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(resource_name, INTERFACE_LIBRARY));
+            const auto module = fu->CM ? GetPointer<module_o>(fu->CM->get_circ()) : nullptr;
+            for(const auto& metadata_entry : expected_attributes)
+            {
+               const auto found = fu->attributes.find(metadata_entry.first);
+               const auto module_has_attribute = module &&
+                                                 std::find(module->get_attribute_list().begin(),
+                                                           module->get_attribute_list().end(),
+                                                           metadata_entry.first) != module->get_attribute_list().end();
+               const auto module_attribute = module_has_attribute ? module->get_attribute(metadata_entry.first) :
+                                                                    attributeRef();
+               if(found == fu->attributes.end() || !found->second ||
+                  found->second->get_content_str() != metadata_entry.second || !module_attribute ||
+                  module_attribute->get_content_str() != metadata_entry.second)
+               {
+                  THROW_ERROR_USAGE("Incompatible duplex m_axi resource metadata for bundle '" + bundle_name +
+                                    "' at '" + resource_name + "'.");
+               }
+            }
+            const auto np = module ? module->get_NP_functionality() : NP_functionalityRef();
+            if(!np || (endpoint && (!np->exist_NP_functionality(NP_functionality::VERILOG_PROVIDED) ||
+                                    np->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) ||
+                                    np->exist_NP_functionality(NP_functionality::VHDL_GENERATOR))) ||
+               (!endpoint && (!np->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) ||
+                              np->get_NP_functionality(NP_functionality::VERILOG_GENERATOR) !=
+                                  "DuplexMAXIHDLGenerator")))
+            {
+               THROW_ERROR_USAGE("Incompatible duplex m_axi resource HDL functionality for bundle '" + bundle_name +
+                                 "' at '" + resource_name + "'.");
+            }
+            if(endpoint)
+            {
+               const auto top = fu->CM->get_circ();
+               const auto check_port = [&](const std::string& name, const port_o::port_direction direction,
+                                           const unsigned int width, const bool is_extern) {
+                  const auto port = top->find_member(name, port_o_K, top);
+                  if(!port || GetPointerS<port_o>(port)->get_port_direction() != direction ||
+                     GET_TYPE_SIZE(GetPointerS<port_o>(port)) != width ||
+                     GetPointerS<port_o>(port)->get_is_extern() != is_extern)
+                  {
+                     THROW_ERROR_USAGE("Incompatible duplex m_axi endpoint port '" + name + "' for bundle '" +
+                                       bundle_name + "'.");
+                  }
+               };
+               check_port("in1", port_o::IN, 2, false);
+               check_port("in2", port_o::IN, 32, false);
+               check_port("in3", port_o::IN, data_bitsize, false);
+               check_port("in4", port_o::IN, address_bitsize, false);
+               check_port("in5", port_o::IN, 32, false);
+               check_port(CLOCK_PORT_NAME, port_o::IN, 1, false);
+               check_port(RESET_PORT_NAME, port_o::IN, 1, false);
+               check_port(DONE_PORT_NAME, port_o::OUT, 1, false);
+               check_port("out1", port_o::OUT, data_bitsize, false);
+               check_port("duplex_start", port_o::OUT, 1, true);
+               check_port("duplex_opcode", port_o::OUT, 2, true);
+               check_port("duplex_size", port_o::OUT, 32, true);
+               check_port("duplex_data", port_o::OUT, data_bitsize, true);
+               check_port("duplex_address", port_o::OUT, address_bitsize, true);
+               check_port("duplex_count", port_o::OUT, 32, true);
+               check_port("duplex_done", port_o::IN, 1, true);
+               check_port("duplex_result", port_o::IN, data_bitsize, true);
+               const auto start_port = top->find_member(START_PORT_NAME, port_o_K, top);
+               if(!start_port || GetPointerS<port_o>(start_port)->get_port_direction() != port_o::IN ||
+                  GetPointerS<port_o>(start_port)->get_ports_size() != 1 ||
+                  GetPointerS<port_o>(start_port)->get_is_extern())
+               {
+                  THROW_ERROR_USAGE("Incompatible duplex m_axi start port for bundle '" + bundle_name + "'.");
+               }
+            }
+            return;
+         }
+
+         const structural_managerRef CM(new structural_manager(parameters));
+         const structural_type_descriptorRef module_type(new structural_type_descriptor(resource_name));
+         CM->set_top_info(resource_name, module_type);
+         const auto top = CM->get_circ();
+         const auto module = GetPointerS<module_o>(top);
+         module->set_description("Duplex m_axi resource for bundle: " + bundle_name);
+         module->set_copyright(GENERATED_COPYRIGHT);
+         module->set_authors("Component automatically generated by bambu");
+         module->set_license(GENERATED_LICENSE);
+         module->set_multi_unit_multiplicity(1U);
+
+         const auto add_attribute = [&](const std::string& name, const std::string& value) {
+            const auto numeric = name == "bambu_axi_address_bitsize" || name == "bambu_axi_data_bitsize" ||
+                                 name == "bambu_max_read_burst_length" ||
+                                 name == "bambu_num_read_outstanding" || name == "bambu_read_fifo_depth" ||
+                                 name == "bambu_max_write_burst_length" ||
+                                 name == "bambu_write_burst_outstanding" || name == "bambu_write_fifo_depth";
+            const attributeRef attr(new attribute(numeric ? attribute::INT32 : attribute::STRING, value));
+            module->add_attribute(name, attr);
+         };
+         for(const auto& metadata_entry : expected_attributes)
+         {
+            add_attribute(metadata_entry.first, metadata_entry.second);
+         }
+
+         const structural_type_descriptorRef bool_type(new structural_type_descriptor("bool", 0));
+         if(endpoint)
+         {
+            const structural_type_descriptorRef opcode_type(new structural_type_descriptor("bool", 2));
+            const structural_type_descriptorRef size_type(new structural_type_descriptor("bool", 32));
+            const structural_type_descriptorRef data_type(new structural_type_descriptor("bool", data_bitsize));
+            const structural_type_descriptorRef address_type(new structural_type_descriptor("bool", address_bitsize));
+            CM->add_port(CLOCK_PORT_NAME, port_o::IN, top, bool_type);
+            CM->add_port(RESET_PORT_NAME, port_o::IN, top, bool_type);
+            CM->add_port_vector(START_PORT_NAME, port_o::IN, 1U, top, bool_type);
+            CM->add_port("in1", port_o::IN, top, opcode_type);
+            CM->add_port("in2", port_o::IN, top, size_type);
+            CM->add_port("in3", port_o::IN, top, data_type);
+            CM->add_port("in4", port_o::IN, top, address_type);
+            CM->add_port("in5", port_o::IN, top, size_type);
+            CM->add_port(DONE_PORT_NAME, port_o::OUT, top, bool_type);
+            CM->add_port("out1", port_o::OUT, top, data_type);
+            const auto private_port = [&](const std::string& name, const port_o::port_direction direction,
+                                          const unsigned int width) {
+               const auto port = CM->add_port(name, direction, top,
+                                              structural_type_descriptorRef(new structural_type_descriptor("bool", width)));
+               GetPointerS<port_o>(port)->set_is_extern(true);
+            };
+            private_port("duplex_start", port_o::OUT, 1);
+            private_port("duplex_opcode", port_o::OUT, 2);
+            private_port("duplex_size", port_o::OUT, 32);
+            private_port("duplex_data", port_o::OUT, data_bitsize);
+            private_port("duplex_address", port_o::OUT, address_bitsize);
+            private_port("duplex_count", port_o::OUT, 32);
+            private_port("duplex_done", port_o::IN, 1);
+            private_port("duplex_result", port_o::IN, data_bitsize);
+            const auto assert_port_width = [&](const std::string& name, const unsigned int width) {
+               const auto port = top->find_member(name, port_o_K, top);
+               THROW_ASSERT(port && GET_TYPE_SIZE(GetPointerS<port_o>(port)) == width,
+                            "Unexpected width for duplex m_axi port " + name);
+            };
+            assert_port_width("in1", 2);
+            assert_port_width("in2", 32);
+            assert_port_width("in3", data_bitsize);
+            assert_port_width("in4", address_bitsize);
+            assert_port_width("in5", 32);
+            assert_port_width("out1", data_bitsize);
+            assert_port_width(CLOCK_PORT_NAME, 1);
+            assert_port_width(RESET_PORT_NAME, 1);
+            assert_port_width(DONE_PORT_NAME, 1);
+            assert_port_width("duplex_start", 1);
+            assert_port_width("duplex_opcode", 2);
+            assert_port_width("duplex_size", 32);
+            assert_port_width("duplex_data", data_bitsize);
+            assert_port_width("duplex_address", address_bitsize);
+            assert_port_width("duplex_count", 32);
+            assert_port_width("duplex_done", 1);
+            assert_port_width("duplex_result", data_bitsize);
+            CM->add_NP_functionality(top, NP_functionality::LIBRARY, "in1 in2 in3 in4 in5 out1");
+            CM->add_NP_functionality(top, NP_functionality::VERILOG_PROVIDED,
+                                     "assign duplex_start = " START_PORT_NAME "[0];\n"
+                                     "assign duplex_opcode = in1;\n"
+                                     "assign duplex_size = in2;\n"
+                                     "assign duplex_data = in3;\n"
+                                     "assign duplex_address = in4;\n"
+                                     "assign duplex_count = in5;\n"
+                                     "assign " DONE_PORT_NAME " = duplex_done;\n"
+                                     "assign out1 = duplex_result;");
+         }
+         else
+         {
+            CM->add_NP_functionality(top, NP_functionality::VERILOG_GENERATOR, "DuplexMAXIHDLGenerator");
+         }
+
+         TechMan->add_resource(INTERFACE_LIBRARY, resource_name, CM);
+         const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(resource_name, INTERFACE_LIBRARY));
+         for(const auto& metadata_entry : expected_attributes)
+         {
+            fu->ordered_attributes.push_back(metadata_entry.first);
+            const auto numeric = metadata_entry.first == "bambu_max_read_burst_length" ||
+                                 metadata_entry.first == "bambu_axi_address_bitsize" ||
+                                 metadata_entry.first == "bambu_axi_data_bitsize" ||
+                                 metadata_entry.first == "bambu_num_read_outstanding" ||
+                                 metadata_entry.first == "bambu_read_fifo_depth" ||
+                                 metadata_entry.first == "bambu_max_write_burst_length" ||
+                                 metadata_entry.first == "bambu_write_burst_outstanding" ||
+                                 metadata_entry.first == "bambu_write_fifo_depth";
+            fu->attributes[metadata_entry.first] = attributeRef(
+                new attribute(numeric ? attribute::INT32 : attribute::STRING, metadata_entry.second));
+         }
+         fu->area_m = std::make_shared<area_info>();
+         fu->area_m->resources[area_info::AREA] = 0;
+      };
+
+      register_resource(read_name, "read_endpoint", read_mode, true);
+      register_resource(write_name, "write_endpoint", write_mode, true);
+      register_resource(aggregator_name, "aggregator", duplex_mode, false);
    }
 }
 

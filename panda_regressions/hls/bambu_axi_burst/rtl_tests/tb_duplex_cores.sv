@@ -661,6 +661,7 @@ module tb_duplex_cores #(
                     expected_r_beats=integer'(arlen)+1;
                     for (integer q=ar_rd;q<ar_wr;q=q+1)
                         expected_r_beats=expected_r_beats+ar_left_q[q];
+                    before_b=accepted_b;
                     stall_b=1;
                     issue_store(WRITE_BASE*4,32'h8b000000);
                     drain_write(0);
@@ -668,7 +669,9 @@ module tb_duplex_cores #(
                     stall_b=0;
                     timeout_cycles=0;
                     while (!write_fault && timeout_cycles<1000) begin @(negedge clock); timeout_cycles=timeout_cycles+1; end
-                    if (!write_fault) $fatal(1, "PEER_BRESP_SOURCE_FAULT_TIMEOUT");
+                    if (!write_fault || accepted_b!=before_b+1 || b_pending!=0)
+                        $fatal(1, "PEER_BRESP_NOT_ACCEPTED_ON_FAULT_HANDSHAKE b=%0d pending=%0d",
+                               accepted_b-before_b, b_pending);
                     timeout_cycles=0;
                     while (!read_fault && timeout_cycles<1000) begin @(negedge clock); timeout_cycles=timeout_cycles+1; end
                     if (!read_fault || read_done || read_beats!=0)
@@ -718,6 +721,14 @@ module tb_duplex_cores #(
                     while (!read_fault && timeout_cycles<1000) begin @(negedge clock); timeout_cycles=timeout_cycles+1; end
                     if (!read_fault || read_done || integer'(writer.scheduled)!=before_scheduled)
                         $fatal(1, "PEER_RRESP_DID_NOT_STOP_NEW_WRITER_RESERVATIONS");
+                    expected_r_beats=before_r+4;
+                    timeout_cycles=0;
+                    while ((read_beats<expected_r_beats || reader.descriptor_count!=0) && timeout_cycles<1000) begin
+                        @(negedge clock); timeout_cycles=timeout_cycles+1;
+                    end
+                    if (timeout_cycles>=1000 || read_beats!=expected_r_beats || reader.descriptor_count!=0)
+                        $fatal(1, "PEER_RRESP_READ_TRANSPORT_NOT_DRAINED r=%0d/%0d desc=%0d",
+                               read_beats-before_r, expected_r_beats-before_r, reader.descriptor_count);
                     timeout_cycles=0;
                     while (!write_fault && timeout_cycles<1000) begin @(negedge clock); timeout_cycles=timeout_cycles+1; end
                     if (!write_fault || !awvalid || !wvalid || integer'(writer.scheduled)!=before_scheduled)
