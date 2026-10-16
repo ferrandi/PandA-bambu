@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Manual M-B1.1 compiler/RTL structure gate; deliberately not part of CI.
-# Usage: run_bundle_preanalysis_tests.sh BAMBU FRESH_OUTPUT_DIR
+# Usage: run_bundle_preanalysis_tests.sh BAMBU [FRESH_OUTPUT_DIR]
 set -euo pipefail
 
 TESTS=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
@@ -10,12 +10,12 @@ DATAFLOW_FIXTURE="$ROOT/panda_regressions/hls/bambu_axi_burst/compiler_cases/bun
 CHECKER="$ROOT/panda_regressions/hls/bambu_axi_burst/check_bundle_preanalysis_artifacts.py"
 RUNNER="$TESTS/run_bundle_preanalysis_tests.sh"
 CORE_SOURCE="$ROOT/src/frontend_analysis/IR_analysis/InterfaceInfer.cpp"
-if [[ $# -ne 2 ]]; then
-  echo "usage: $0 <bambu> <fresh-documentation/tmp-output-directory>" >&2
+if [[ $# -lt 1 || $# -gt 2 ]]; then
+  echo "usage: $0 <bambu> [<fresh-output-directory>]" >&2
   exit 2
 fi
 BAMBU_ARG=$1
-OUT_ARG=$2
+OUT_ARG=${2:-"$PWD/out_bundle_preanalysis"}
 if [[ "$BAMBU_ARG" == */* ]]; then BAMBU=$(realpath "$BAMBU_ARG"); else BAMBU=$(command -v "$BAMBU_ARG" || true); [[ -n "$BAMBU" ]] && BAMBU=$(realpath "$BAMBU"); fi
 if [[ -z ${BAMBU:-} || ! -x "$BAMBU" ]]; then echo "Bambu executable not found: $BAMBU_ARG" >&2; exit 2; fi
 PREFIX=$(dirname "$(dirname "$BAMBU")")
@@ -36,8 +36,6 @@ command -v rg >/dev/null || { echo "required tool not found: rg" >&2; exit 2; }
 }
 if [[ -e "$OUT_ARG" || -L "$OUT_ARG" ]]; then echo "output path must not exist or be a symlink: $OUT_ARG" >&2; exit 2; fi
 OUT=$(realpath -m "$OUT_ARG")
-TMP_ROOT=$(realpath -m "$ROOT/documentation/tmp")
-case "$OUT/" in "$TMP_ROOT/"*) ;; *) echo "output must be below $TMP_ROOT" >&2; exit 2 ;; esac
 mkdir -p "$OUT/tmp"
 OUT=$(realpath "$OUT")
 export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp" PYTHONDONTWRITEBYTECODE=1
