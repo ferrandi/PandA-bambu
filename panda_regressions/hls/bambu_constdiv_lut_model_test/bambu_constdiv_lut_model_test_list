@@ -1,0 +1,6 @@
+constdiv_lut_model.c --top-fname=udiv_5_u32 --generate-tb=a=123 --benchmark-name=udiv_5_u32
+constdiv_lut_model.c --top-fname=urem_5_u32 --generate-tb=a=123 --benchmark-name=urem_5_u32
+constdiv_lut_model.c --top-fname=udiv_23_u32 --generate-tb=a=987654321 --benchmark-name=udiv_23_u32
+constdiv_lut_model.c --top-fname=urem_23_u32 --generate-tb=a=987654321 --benchmark-name=urem_23_u32
+constdiv_lut_model.c --top-fname=udiv_9_u64 --generate-tb=a=0x123456789 --benchmark-name=udiv_9_u64
+constdiv_lut_model.c --top-fname=urem_9_u64 --generate-tb=a=0x123456789 --benchmark-name=urem_9_u64

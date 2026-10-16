@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -130,6 +118,7 @@ class DesignFlowManager final
     * @param steps is the set of steps to be added
     * @param unnecessary specify if the steps have to be added only as a possible precedence of other steps (i.e., they
     * could be not executed if no step depends on them)
+    * @param already_visited stores the signatures already traversed during the recursive walk
     */
    void RecursivelyAddSteps(const DesignFlowStepSet& steps, const bool unnecessary,
                             CustomUnorderedSet<std::pair<DesignFlowStep::signature_t, bool>>& already_visited);
@@ -144,6 +133,7 @@ class DesignFlowManager final
     * Recursively remove executed flag starting from a vertex
     * @param starting_vertex is the starting vertex
     * @param force_execution specifies if a skipped vertex has to be changed into a unexecuted
+    * @param already_visited stores the vertices already traversed during the recursive walk
     * @return size_t de-executed steps
     */
    size_t DeExecute(const vertex_descriptor starting_vertex, bool force_execution,
@@ -230,6 +220,4 @@ class DesignFlowManager final
     */
    DesignFlowStepRef CreateFlowStep(DesignFlowStep::signature_t signature) const;
 };
-
-using DesignFlowManagerRef = refcount<DesignFlowManager>;
 #endif

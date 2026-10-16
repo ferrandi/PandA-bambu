@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 
@@ -36,9 +24,6 @@
  * @brief mathematical utility function not provided by standard libraries
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -94,7 +79,7 @@ inline T compute_n_bytes(T bitsize)
 }
 
 /// Test whether a value is zero of a power of two.
-#define EXACT_POWER_OF_2_OR_ZERO_P(x) (((x) & ((x)-1)) == 0)
+#define POWER2_OR_0(x) (((x) & ((x)-1)) == 0)
 
 /// Given X, an unsigned number, return the largest int Y such that 2**Y <= X. If X is 0, return -1.
 template <typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
@@ -104,7 +89,7 @@ inline T floor_log2(T x)
 
    if(x == 0)
    {
-      return static_cast<T>(-1LL);
+      return std::numeric_limits<T>::max();
    }
 
    if(x >= 1ULL << (t + 32))
@@ -142,7 +127,7 @@ inline T exact_log2(T x)
 {
    if(x != (x & -x))
    {
-      return static_cast<T>(-1LL);
+      return std::numeric_limits<T>::max();
    }
    return floor_log2(x);
 }
@@ -155,6 +140,7 @@ inline T ceil_log2(T x)
    {
       return static_cast<T>(-1LL);
    }
+   THROW_ASSERT(x > 0, "Argument of log must be greater than zero");
    return static_cast<T>(floor_log2(static_cast<T>(x - 1)) + 1);
 }
 

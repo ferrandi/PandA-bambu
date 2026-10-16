@@ -43,7 +43,7 @@ jobs:
       script: ./panda_regressions/hls/generic_gcc_regression_simple_bambu_pretty_print.sh
       package-name: ${{inputs.package-name}}
       compiler: ${{inputs.compiler}}
-      args: ${{inputs.additional-args}} --skip_list 20071029-1
+      args: ${{inputs.additional-args}} --skip-list 20071029-1
     secrets: inherit
 
   grs-eg:

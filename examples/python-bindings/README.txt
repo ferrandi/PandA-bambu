@@ -15,7 +15,7 @@ then it is possible to run bambu with the following options:
 
 timeout 2h bambu main.c user_module.xml
   --C-python-no-parse=c_wrapper_for_golden.c
-  --testbench-extra-gcc-options=" -I includedir/for/python2.7/ -lpython2.7 " --simulate
+  --testbench-extra-cc-options=" -I includedir/for/python2.7/ -lpython2.7 " --simulate
 
 plus any other option controlling the bambu behavior.
 This will start the simulation using the function contained in c_wrapper_for_golden_.c
@@ -23,7 +23,7 @@ instead of the HW module for which the user does not have the C code.
 Here it is used python 2.7 but it should work also with python 3.4. The only thing
 that matters is that the user passes the correct include directories and link
 options as extra testbench options. Note that everything included in the
---testbench-extra-gcc-options is passed to the compiler when it
+--testbench-extra-cc-options is passed to the compiler when it
 creates the executable used to create the testbench memory
 initialization values and the software traces used for discrepancy
 analysis. These flags are not passed to bambu when it builds the intermediate

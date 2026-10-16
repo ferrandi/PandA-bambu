@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -38,9 +26,6 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef HLS_HPP
@@ -49,45 +34,36 @@
 #include "op_graph.hpp"
 #include "refcount.hpp"
 
-#include <iosfwd>
 #include <iostream>
 
-/**
- * @name forward declarations
- */
-//@{
+class OpGraph;
+class StorageValueInformation;
+class xml_element;
+enum class HLSFlowStep_Type;
+CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(AllocationInformation);
 REF_FORWARD_DECL(ChainingInformation);
 REF_FORWARD_DECL(conn_binding);
 REF_FORWARD_DECL(fu_binding);
-REF_FORWARD_DECL(hls);
 REF_FORWARD_DECL(HLS_constraints);
 REF_FORWARD_DECL(HLS_device);
-REF_FORWARD_DECL(liveness);
-CONSTREF_FORWARD_DECL(OpGraph);
-CONSTREF_FORWARD_DECL(Parameter);
+REF_FORWARD_DECL(hls);
+REF_FORWARD_DECL(liveVariables);
 REF_FORWARD_DECL(reg_binding);
 REF_FORWARD_DECL(Schedule);
 REF_FORWARD_DECL(StateTransitionGraphManager);
-REF_FORWARD_DECL(StorageValueInformation);
+REF_FORWARD_DECL(FSMInfo);
 REF_FORWARD_DECL(structural_manager);
-class xml_element;
-enum class HLSFlowStep_Type;
-//@}
 
 /**
  * @class hls
  * @ingroup HLS
  * Data structure that contains all information about high level synthesis process
  */
-class hls
+struct hls
 {
- public:
    /// this is the identifier of the function to be implemented
    unsigned int functionId;
-
-   /// The type of controller to be instantiated
-   HLSFlowStep_Type controller_type;
 
    /// The type of module binding to be adopted
    HLSFlowStep_Type module_binding_algorithm;
@@ -95,8 +71,8 @@ class hls
    /// The type of chaining algorithm to be adopted
    HLSFlowStep_Type chaining_algorithm;
 
-   /// The type of liveness algorithm to be adopted
-   HLSFlowStep_Type liveness_algorithm;
+   /// The type of live variable algorithm to be adopted
+   HLSFlowStep_Type liveVariableAlgorithm;
 
    /// Set representing the subset of operations in the specification to be implemented
    OpVertexSet operations;
@@ -120,14 +96,14 @@ class hls
    /// Store the refcounted functional unit binding of the operations.
    fu_bindingRef Rfu;
 
-   /// Store the refcounted state transition graph
-   StateTransitionGraphManagerRef STG;
+   /// Store the finite state machine metadata
+   FSMInfoRef fsm_info;
 
-   /// data-structure containing the variable liveness
-   livenessRef Rliv;
+   /// data-structure containing the live variable sets
+   liveVariablesRef Rliv;
 
    /// data-structure for storage values
-   StorageValueInformationRef storage_value_information;
+   std::unique_ptr<StorageValueInformation> storage_value_information;
 
    /// Store the refcounted register binding of the variables.
    reg_bindingRef Rreg;
@@ -157,9 +133,6 @@ class hls
    /// Store the controller description.
    structural_managerRef controller;
 
-   /// Store the description of the control flow checker
-   structural_managerRef control_flow_checker;
-
    /// Store the top description.
    structural_managerRef top;
 
@@ -186,21 +159,18 @@ class hls
        const HLS_constraintsRef HLS_C);
 
    /**
-    * Destructor
-    */
-   ~hls();
-
-   /**
     * Loads previous HLS results from XML node
     * @param rootnode is the pointer to the node containing all the intermediate results
+    * @param data is the operation graph used to decode the serialized data
     */
-   void xload(const xml_element* rootnode, const OpGraphConstRef data);
+   void xload(const xml_element* rootnode, const OpGraph& data);
 
    /**
     * Writes current HLS results to XML node
     * @param rootnode is the pointer to the node where all the intermediate results have to be stored
+    * @param data is the operation graph used to encode the serialized data
     */
-   void xwrite(xml_element* rootnode, const OpGraphConstRef data);
+   void xwrite(xml_element* rootnode, const OpGraph& data);
 
    // -------------- Printing helpers -------------- //
 

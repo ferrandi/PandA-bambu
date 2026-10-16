@@ -1,0 +1,19 @@
+This directory contains the original upstream gzstream import together with the
+PandA/Bambu-maintained header-only derivative used by the repository build.
+
+Directory structure
+-------------------
+- `gzstream.h`, `gzstream.C`, `README`, `COPYING.LIB`, `index.html`, tests, and
+  related assets are the preserved upstream distribution.
+- `gzstream.hpp` is the PandA/Bambu-maintained derivative of that code. It keeps
+  the project-specific improvements and compiler-compatibility updates that have
+  accumulated over time.
+
+Why this refactoring
+--------------------
+Keeping the maintained derivative in this directory:
+
+- keeps it next to the upstream sources it derives from;
+- makes the provenance of local changes clearer;
+- keeps the third-party-derived component grouped with the rest of the import;
+- lets the build resolve `gzstream.hpp` from `ext/gzstream/` directly.
