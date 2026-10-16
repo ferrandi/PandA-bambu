@@ -223,8 +223,10 @@ structural_objectRef OmpTaskFuBinding::collect_port(structural_objectRef module_
                                                     bool specialize, bool resize) const
 {
    structural_objectRef port_owner = nullptr;
-   THROW_ASSERT(fu_binding::try_find_port(p_name, module_obj, p_type, port_owner),
-                "can not find the requested port " + p_name + " inside " + module_obj->get_id());
+   if(!fu_binding::try_find_port(p_name, module_obj, p_type, port_owner))
+   {
+      THROW_ERROR("can not find the requested port " + p_name + " inside " + module_obj->get_id());
+   }
    const auto port = GetPointer<port_o>(port_owner);
    // Specialize and resize if needed
    if(specialize)
@@ -264,8 +266,11 @@ void OmpTaskFuBinding::forward_ports(const std::vector<std::tuple<std::string, s
    {
       const auto& name = std::get<0>(entry);
       structural_objectRef source;
-      THROW_ASSERT(try_find_port(name, from, std::get<1>(entry), source), "Missing task port " + name);
-      const auto source_port = GetPointerS<port_o>(source);
+      if(!try_find_port(name, from, std::get<1>(entry), source))
+      {
+         THROW_ERROR("Missing task port " + name);
+      }
+      [[maybe_unused]] const auto source_port = GetPointerS<port_o>(source);
       THROW_ASSERT(!source_port->get_is_global() && !source_port->get_is_extern() && !source_port->get_is_memory(),
                    "Task port has not been internalized: " + name);
       const auto kind = memory_port ? port_type : source->get_kind();
@@ -353,7 +358,7 @@ void OmpTaskFuBinding::parse_lambda_modules()
    THROW_ASSERT(hls_params.lambda_modules.size() > 0, "empty lambda modules");
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "_taskEntryNameBambuToOriginalDict:");
-   for(auto& p : task_entry_name_bambu_to_original_dict)
+   for([[maybe_unused]] auto& p : task_entry_name_bambu_to_original_dict)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, p.first + " -> " + p.second);
    }
@@ -362,7 +367,7 @@ void OmpTaskFuBinding::parse_lambda_modules()
       if(duplicates.size())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "original: " + original);
-         for(auto& d : duplicates)
+         for([[maybe_unused]] auto& d : duplicates)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "duplicate: " + d->get_id());
          }
@@ -419,7 +424,7 @@ void OmpTaskFuBinding::generate_generic_module(const std::string& name, const st
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "port name " + p.name);
       structural_objectRef port;
-      port_o* port_ptr = nullptr;
+      [[maybe_unused]] port_o* port_ptr = nullptr;
       // If vector or not vector
       if(p.size == 0)
       {
@@ -493,9 +498,11 @@ void OmpTaskFuBinding::parse_xml(const std::string& file_name)
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parsing graph XML file " + file_name);
 
    pugi::xml_document doc;
-   pugi::xml_parse_result result = doc.load_file(file_name.c_str());
-
-   THROW_ASSERT(result, "pugixml failed to open file " + file_name);
+   const pugi::xml_parse_result result = doc.load_file(file_name.c_str());
+   if(!result)
+   {
+      THROW_ERROR("pugixml failed to open file " + file_name);
+   }
 
    // Get the root element
    pugi::xml_node graph = doc.child("graph");
@@ -908,7 +915,7 @@ void OmpTaskFuBinding::generate_mem_interface()
       // Src is a port vector which must be connected to multiple port_o (a single slot of the vector to multiple
       // port_o)
       const auto& src_vec_port = std::get<0>(to_connect);
-      const auto vec_size = GetPointer<port_o>(src_vec_port)->get_ports_size();
+      [[maybe_unused]] const auto vec_size = GetPointer<port_o>(src_vec_port)->get_ports_size();
       THROW_ASSERT(vec_size == (std::get<1>(to_connect)).size() * dest_port_num,
                    "port vector not specialized. src has " + STR(vec_size) + " ports while dest has " +
                        STR(std::get<1>(to_connect).size() * dest_port_num) + " ports");
@@ -947,7 +954,7 @@ void OmpTaskFuBinding::allocate_em_to_rm()
    for(auto& [rm, ems] : rm_allocation)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "RM: " + rm);
-      for(auto& em : ems)
+      for([[maybe_unused]] auto& em : ems)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "EM: " + em);
       }
@@ -1445,7 +1452,7 @@ void OmpTaskFuBinding::create_lib_resource_managers()
 }
 
 void OmpTaskFuBinding::write_execution_manager(structural_managerRef component, const std::vector<task_port>& ports,
-                                               const std::vector<unsigned>& const_offsets)
+                                               [[maybe_unused]] const std::vector<unsigned>& const_offsets)
 {
    // Ports sequence follow the task_execution_port. Ports number are fixed as we employ port_vector_O for dynamic ports
    // ACPorts = 0,
@@ -1673,8 +1680,10 @@ void OmpTaskFuBinding::generate_topo_graph()
       {
          auto p_type = std::get<1>(p);
          structural_objectRef port;
-         THROW_ASSERT(try_find_port(std::get<0>(p), m, p_type, port),
-                      "expected to find " + STR(std::get<1>(p)) + " inside " + m->get_id());
+         if(!try_find_port(std::get<0>(p), m, p_type, port))
+         {
+            THROW_ERROR("expected to find " + STR(std::get<1>(p)) + " inside " + m->get_id());
+         }
          const auto type_size = GetPointer<port_o>(port)->get_typeRef()->vector_size;
          structural_objectRef const_zero_obj = hls_params.SM->add_constant(
              "const_node_zero_" + m->get_id() + "_" + std::get<0>(p), hls_params.circuit,
@@ -1704,7 +1713,7 @@ void OmpTaskFuBinding::generate_topo_graph()
       {
          structural_objectRef found_port;
          THROW_ASSERT(hls_params.rm_modules.find(rm) != hls_params.rm_modules.end(), "can not rm module_o");
-         const auto found = try_find_port(*p_name, hls_params.rm_modules[rm], port_vector_o_K, found_port);
+         [[maybe_unused]] const auto found = try_find_port(*p_name, hls_params.rm_modules[rm], port_vector_o_K, found_port);
          THROW_ASSERT(found, "can not find port");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "found const input port in RM " + found_port->get_path() + " for " + *p_name);
@@ -1748,7 +1757,7 @@ void OmpTaskFuBinding::generate_topo_graph()
           GetPointer<module_o>(src_module)
               ->find_member(std::get<0>(em_ports[static_cast<unsigned>(EM_DONE_PORT)]),
                             std::get<1>(em_ports[static_cast<unsigned>(EM_DONE_PORT)]), src_module);
-      const auto src_module_out_done_port_ptr = GetPointer<port_o>(src_module_out_done_port);
+      [[maybe_unused]] const auto src_module_out_done_port_ptr = GetPointer<port_o>(src_module_out_done_port);
       THROW_ASSERT(src_module_out_done_port_ptr->get_kind() == port_vector_o_K, "should be a port vector");
       THROW_ASSERT((src_module_out_done_port_ptr->get_ports_size() == 1UL && destinations.size() == 0UL) ||
                        (src_module_out_done_port_ptr->get_ports_size() == destinations.size()),
@@ -2043,7 +2052,7 @@ void OmpTaskFuBinding::generate_topo_graph()
          input_ports[id] = module_ptr->get_in_port(i);
       }
    }
-   for(auto& [id, p] : input_ports)
+   for([[maybe_unused]] auto& [id, p] : input_ports)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "collected input port from datapath " + STR(id) + " " + p->get_id());
@@ -2178,7 +2187,7 @@ void OmpTaskFuBinding::manage_memory_ports_parallel_chained(const HLS_managerRef
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "OpenMP task fu binding");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Input modules size: " + STR(memory_modules.size()));
-   for(auto& m : memory_modules)
+   for([[maybe_unused]] auto& m : memory_modules)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "module_o id " + m->get_id() + " type: " + m->get_typeRef()->id_type);
