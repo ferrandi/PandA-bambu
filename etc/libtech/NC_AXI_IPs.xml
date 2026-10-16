@@ -753,6 +753,7 @@ end
           <parameter name="B_MAX">16</parameter>
           <parameter name="MAX_OUTSTANDING">1</parameter>
           <parameter name="FIFO_DEPTH">256</parameter>
+          <parameter name="PEER_FAULT_ENABLE">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -760,6 +761,9 @@ end
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="peer_fault" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in1" dir="IN">
@@ -825,7 +829,7 @@ end
           <port_o id="m_axi_rready" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="MinimalAXI4MasterPipelined B_MAX MAX_OUTSTANDING FIFO_DEPTH in1 in2 in3 in4 in5 out1 m_axi_araddr m_axi_arlen m_axi_arsize m_axi_arburst m_axi_arid m_axi_rdata m_axi_rresp m_axi_rid" VERILOG_PROVIDED="    localparam integer FIFO_PTR_W = (FIFO_DEPTH &lt;= 2) ? 1 : $clog2(FIFO_DEPTH);
+          <NP_functionality LIBRARY="MinimalAXI4MasterPipelined B_MAX MAX_OUTSTANDING FIFO_DEPTH PEER_FAULT_ENABLE in1 in2 in3 in4 in5 out1 peer_fault m_axi_araddr m_axi_arlen m_axi_arsize m_axi_arburst m_axi_arid m_axi_rdata m_axi_rresp m_axi_rid" VERILOG_PROVIDED="    localparam integer FIFO_PTR_W = (FIFO_DEPTH &lt;= 2) ? 1 : $clog2(FIFO_DEPTH);
     localparam integer FIFO_COUNT_W = (FIFO_DEPTH &lt;= 1) ? 1 : $clog2(FIFO_DEPTH + 1);
     localparam integer DESC_PTR_W = (MAX_OUTSTANDING &lt;= 2) ? 1 : $clog2(MAX_OUTSTANDING);
     localparam integer DESC_COUNT_W = (MAX_OUTSTANDING &lt;= 1) ? 1 : $clog2(MAX_OUTSTANDING + 1);
@@ -929,6 +933,7 @@ end
     reg        configure_descriptor_valid;
     reg        configure_direct_capture;
     wire       activate_pending;
+    wire       peer_fault_active;
 
     reg [END_BEAT_W-1:0] end_beat_ext;
     reg [COUNT_W-1:0] remaining_beats;
@@ -986,7 +991,7 @@ end
                                    !cfg_pending &amp;&amp; configure_descriptor_valid &amp;&amp;
                                    (!region_active || drain_complete);
 
-        if (!fault_reg) begin
+        if (!fault_reg &amp;&amp; !peer_fault_active) begin
             if (load_pending &amp;&amp; load_pending_valid &amp;&amp;
                 pending_load_size_bits == DATA_BITS &amp;&amp;
                 pending_load_address == next_expected_address &amp;&amp; fifo_count != 0) begin
@@ -1008,11 +1013,13 @@ end
     end
 
     assign fifo_load_pop = fifo_load_done;
+    assign peer_fault_active = (PEER_FAULT_ENABLE != 0) ? peer_fault : 1'b0;
     assign r_push = m_axi_rvalid &amp;&amp; m_axi_rready;
     assign r_structural = (descriptor_count != 0) &amp;&amp; (!(|m_axi_rid)) &amp;&amp;
         (((descriptor_count != 0) &amp;&amp; descriptor_remaining[descriptor_rd_ptr] == 1 &amp;&amp; m_axi_rlast) ||
          ((descriptor_count != 0) &amp;&amp; descriptor_remaining[descriptor_rd_ptr] &gt; 1 &amp;&amp; !m_axi_rlast));
-    assign r_good = r_push &amp;&amp; r_structural &amp;&amp; !fault_reg &amp;&amp; (m_axi_rresp == 2'b00);
+    assign r_good = r_push &amp;&amp; r_structural &amp;&amp; !fault_reg &amp;&amp;
+        !peer_fault_active &amp;&amp; (m_axi_rresp == 2'b00);
     assign r_fault_event = r_push &amp;&amp; (!r_structural || m_axi_rresp != 2'b00);
     // RREADY depends only on registered transport/FIFO state and the local
     // FIFO pop, never on current AXI response inputs. Accepted read credits
@@ -1041,7 +1048,8 @@ end
         // narrow the proven nonnegative capacity when selecting a burst.
         fifo_credit = FIFO_DEPTH - (issued - consumed);
         if (region_active &amp;&amp; issued &lt; region_count &amp;&amp; !m_axi_arvalid_reg &amp;&amp;
-            outstanding_after_reservation &lt; MAX_OUTSTANDING &amp;&amp; !fault_reg) begin
+            outstanding_after_reservation &lt; MAX_OUTSTANDING &amp;&amp; !fault_reg &amp;&amp;
+            !peer_fault_active) begin
             remaining_beats = region_count - issued;
             // issued is strictly below a validated count &lt;= 2^30, so the
             // shift cannot overflow the address domain.
@@ -1061,7 +1069,7 @@ end
 
     assign reservation_eligible = region_active &amp;&amp; issued &lt; region_count &amp;&amp;
         !m_axi_arvalid_reg &amp;&amp; outstanding_after_reservation &lt; MAX_OUTSTANDING &amp;&amp;
-        fifo_credit &gt; 0 &amp;&amp; !fault_reg &amp;&amp; !r_fault_event;
+        fifo_credit &gt; 0 &amp;&amp; !fault_reg &amp;&amp; !peer_fault_active &amp;&amp; !r_fault_event;
 
     assign drain_complete = region_active &amp;&amp;
         issued == region_count &amp;&amp; returned == region_count &amp;&amp;
@@ -1100,6 +1108,8 @@ end
             m_axi_arvalid_reg &lt;= 1'b0;
             fault_reg &lt;= 1'b0;
         end else begin
+            if (peer_fault_active)
+                fault_reg &lt;= 1'b1;
             if (!start || in1 != OP_CONFIGURE)
                 cfg_seen &lt;= 1'b0;
             else if (!cfg_pending &amp;&amp;
@@ -1115,7 +1125,7 @@ end
                 cfg_seen &lt;= 1'b0;
 
             // Capture a configure request exactly once while start is held.
-            if (start &amp;&amp; in1 == OP_CONFIGURE &amp;&amp; !cfg_seen) begin
+            if (!peer_fault_active &amp;&amp; start &amp;&amp; in1 == OP_CONFIGURE &amp;&amp; !cfg_seen) begin
                 cfg_seen &lt;= 1'b1;
                 cfg_size &lt;= in2;
                 cfg_base &lt;= in4;
@@ -1160,7 +1170,7 @@ end
             end
 
             // Record one load command when the response FIFO is empty.
-            if (start &amp;&amp; in1 == OP_LOAD &amp;&amp; !load_pending) begin
+            if (!peer_fault_active &amp;&amp; start &amp;&amp; in1 == OP_LOAD &amp;&amp; !load_pending) begin
                 if (!load_request_valid)
                     fault_reg &lt;= 1'b1;
                 else if (fifo_count == 0) begin
@@ -1170,7 +1180,7 @@ end
                     pending_load_size_bits &lt;= in2;
                 end
             end
-            if (fifo_load_done) begin
+            if (fifo_load_done &amp;&amp; !peer_fault_active) begin
                 load_pending &lt;= 1'b0;
                 load_pending_valid &lt;= 1'b0;
                 consumed &lt;= consumed + 1'b1;
@@ -1237,7 +1247,7 @@ end
                 default: fifo_count &lt;= fifo_count;
             endcase
 
-            if (activate_pending) begin
+            if (activate_pending &amp;&amp; !peer_fault_active) begin
                 region_active &lt;= 1'b1;
                 region_base &lt;= pending_base;
                 region_count &lt;= pending_count;
@@ -1692,9 +1702,11 @@ end
           <parameter name="B_MAX">16</parameter>
           <parameter name="MAX_OUTSTANDING">1</parameter>
           <parameter name="FIFO_DEPTH">32</parameter>
+          <parameter name="PEER_FAULT_ENABLE">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1"><structural_type_descriptor type="BOOL" size="1"/></port_o>
           <port_o id="reset" dir="IN"><structural_type_descriptor type="BOOL" size="1"/></port_o>
           <port_o id="start" dir="IN"><structural_type_descriptor type="BOOL" size="1"/></port_o>
+          <port_o id="peer_fault" dir="IN"><structural_type_descriptor type="BOOL" size="1"/></port_o>
           <port_o id="in1" dir="IN"><structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/></port_o>
           <port_o id="in2" dir="IN"><structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/></port_o>
           <port_o id="in3" dir="IN"><structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/></port_o>
@@ -1719,7 +1731,7 @@ end
           <port_o id="m_axi_bid" dir="IN"><structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/></port_o>
           <port_o id="m_axi_bvalid" dir="IN"><structural_type_descriptor type="BOOL" size="1"/></port_o>
           <port_o id="m_axi_bready" dir="OUT"><structural_type_descriptor type="BOOL" size="1"/></port_o>
-          <NP_functionality LIBRARY="MinimalAXI4MasterPipelinedWrite B_MAX MAX_OUTSTANDING FIFO_DEPTH in1 in2 in3 in4 in5 out1 m_axi_awaddr m_axi_awlen m_axi_awsize m_axi_awburst m_axi_awid m_axi_wdata m_axi_wstrb m_axi_bresp m_axi_bid" VERILOG_PROVIDED="    localparam integer ADDR_BITS = BITSIZE_m_axi_awaddr;
+          <NP_functionality LIBRARY="MinimalAXI4MasterPipelinedWrite B_MAX MAX_OUTSTANDING FIFO_DEPTH PEER_FAULT_ENABLE in1 in2 in3 in4 in5 out1 peer_fault m_axi_awaddr m_axi_awlen m_axi_awsize m_axi_awburst m_axi_awid m_axi_wdata m_axi_wstrb m_axi_bresp m_axi_bid" VERILOG_PROVIDED="    localparam integer ADDR_BITS = BITSIZE_m_axi_awaddr;
     localparam integer DATA_BITS = BITSIZE_m_axi_wdata;
     localparam integer BEAT_BYTES = DATA_BITS / 8;
     localparam integer BEAT_SHIFT = $clog2(BEAT_BYTES);
@@ -1813,10 +1825,12 @@ end
     wire aw_valid;
     wire aw_push;
     wire b_fault_now;
+    wire peer_fault_active;
 
     assign done = done_reg;
     assign out1 = {BITSIZE_out1{1'b0}};
     assign fault = fault_reg;
+    assign peer_fault_active = (PEER_FAULT_ENABLE != 0) ? peer_fault : 1'b0;
     assign m_axi_awaddr = descriptor_address[descriptor_aw_ptr];
     assign m_axi_awlen = descriptor_beats[descriptor_aw_ptr] - 1'b1;
     assign m_axi_awsize = BEAT_SHIFT;
@@ -1851,7 +1865,7 @@ end
         (in4[BEAT_SHIFT-1:0] == {BEAT_SHIFT{1'b0}}) &amp;&amp;
         (in5[COUNT_BITS-1] == 1'b0) &amp;&amp;
         ((in5 == 0) || (region_end &lt;= address_end_limit));
-    assign configure_capture = start &amp;&amp; (in1 == OP_CONFIGURE) &amp;&amp; !cfg_seen &amp;&amp;
+    assign configure_capture = !peer_fault_active &amp;&amp; start &amp;&amp; (in1 == OP_CONFIGURE) &amp;&amp; !cfg_seen &amp;&amp;
                               !store_pending;
     assign store_address_valid = in4 == (region_base + accepted_offset);
     assign store_request_valid = region_active &amp;&amp; (accepted &lt; region_count) &amp;&amp;
@@ -1860,9 +1874,9 @@ end
         in3 != store_data || in4 != store_address) &amp;&amp; !store_pending;
     assign pending_store_changed = store_pending &amp;&amp; store_input &amp;&amp;
         (in2 != pending_size || in3 != pending_data || in4 != pending_address);
-    assign pending_store_enqueue = !fault_reg &amp;&amp; store_pending &amp;&amp;
+    assign pending_store_enqueue = !fault_reg &amp;&amp; !peer_fault_active &amp;&amp; store_pending &amp;&amp;
         (fifo_count &lt; FIFO_DEPTH) &amp;&amp; !pending_store_changed;
-    assign store_enqueue = !fault_reg &amp;&amp; ((direct_store &amp;&amp; store_request_valid &amp;&amp;
+    assign store_enqueue = !fault_reg &amp;&amp; !peer_fault_active &amp;&amp; ((direct_store &amp;&amp; store_request_valid &amp;&amp;
                             (fifo_count &lt; FIFO_DEPTH)) || pending_store_enqueue);
     assign store_ack_match = store_ack &amp;&amp; (store_ack_pending ||
         ((in1 == OP_STORE) &amp;&amp; (in2 == store_ack_size) &amp;&amp;
@@ -1897,19 +1911,19 @@ end
             burst_limit = B_MAX;
         if (boundary_beats &lt; burst_limit)
             burst_limit = boundary_beats;
-        if (!fault_reg &amp;&amp; configure_capture &amp;&amp; configure_valid &amp;&amp; !region_active)
+        if (!fault_reg &amp;&amp; !peer_fault_active &amp;&amp; configure_capture &amp;&amp; configure_valid &amp;&amp; !region_active)
             done_reg = 1'b1;
-        if (!fault_reg &amp;&amp; store_ack_match)
+        if (!fault_reg &amp;&amp; !peer_fault_active &amp;&amp; store_ack_match)
             done_reg = 1'b1;
-        if (!fault_reg &amp;&amp; !store_pending &amp;&amp; !store_ack_pending &amp;&amp; start &amp;&amp;
+        if (!fault_reg &amp;&amp; !peer_fault_active &amp;&amp; !store_pending &amp;&amp; !store_ack_pending &amp;&amp; start &amp;&amp;
             (in1 == OP_DRAIN) &amp;&amp;
             ((!region_active) || drain_complete))
             done_reg = 1'b1;
-        if (!fault_reg &amp;&amp; drain_pending &amp;&amp; drain_complete)
+        if (!fault_reg &amp;&amp; !peer_fault_active &amp;&amp; drain_pending &amp;&amp; drain_complete)
             done_reg = 1'b1;
         unassigned_fifo_count = fifo_count - reserved_data_count;
         if (!region_active || (scheduled &gt;= region_count) ||
-            (descriptor_count &gt;= MAX_OUTSTANDING) || fault_reg || b_fault_now)
+            (descriptor_count &gt;= MAX_OUTSTANDING) || fault_reg || peer_fault_active || b_fault_now)
             burst_limit = 0;
         else if (unassigned_fifo_count &gt;= burst_limit)
             reserve_beats = burst_limit;
@@ -1960,6 +1974,8 @@ end
             fifo_wr_ptr &lt;= 0;
             fifo_count &lt;= 0;
         end else begin
+            if (peer_fault_active)
+                fault_reg &lt;= 1'b1;
             store_ack &lt;= store_enqueue;
             store_ack_pending &lt;= store_enqueue &amp;&amp; pending_store_enqueue;
             if (store_enqueue) begin
@@ -2011,7 +2027,7 @@ end
                 end
             end
 
-            if (!fault_reg &amp;&amp; direct_store &amp;&amp; !store_pending) begin
+            if (!fault_reg &amp;&amp; !peer_fault_active &amp;&amp; direct_store &amp;&amp; !store_pending) begin
                 store_seen &lt;= 1'b1;
                 store_size &lt;= in2;
                 store_data &lt;= in3;
@@ -2045,7 +2061,7 @@ end
                 end
             end
 
-            if (!store_pending &amp;&amp; !store_ack_pending &amp;&amp; start &amp;&amp;
+            if (!peer_fault_active &amp;&amp; !store_pending &amp;&amp; !store_ack_pending &amp;&amp; start &amp;&amp;
                 (in1 == OP_DRAIN) &amp;&amp; !drain_seen) begin
                 drain_seen &lt;= 1'b1;
                 if (!region_active) begin
@@ -2056,7 +2072,7 @@ end
                 end else begin
                     drain_pending &lt;= 1'b1;
                 end
-            end else if (!store_pending &amp;&amp; !store_ack_pending &amp;&amp; drain_seen &amp;&amp; start &amp;&amp;
+            end else if (!peer_fault_active &amp;&amp; !store_pending &amp;&amp; !store_ack_pending &amp;&amp; drain_seen &amp;&amp; start &amp;&amp;
                          (in1 == OP_DRAIN) &amp;&amp; drain_complete &amp;&amp; !fault_reg) begin
                 region_active &lt;= 1'b0;
             end
