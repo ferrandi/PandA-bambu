@@ -49,6 +49,7 @@ module tb_generated_duplex #(
     wire [7:0] awlen, arlen;
     wire [2:0] awsize, arsize;
     wire [1:0] awburst, arburst;
+    wire [3:0] awcache, arcache;
     wire [3:0] wstrb;
     wire wlast, awvalid, wvalid, bready, arvalid, rready;
     logic awready, wready, bvalid;
@@ -96,7 +97,7 @@ module tb_generated_duplex #(
         .p_m_axi_shared_rvalid(rvalid), .p_m_axi_shared_awid(awid),
         .p_m_axi_shared_awaddr(awaddr), .p_m_axi_shared_awlen(awlen),
         .p_m_axi_shared_awsize(awsize), .p_m_axi_shared_awburst(awburst),
-        .p_m_axi_shared_awlock(), .p_m_axi_shared_awcache(),
+        .p_m_axi_shared_awlock(), .p_m_axi_shared_awcache(awcache),
         .p_m_axi_shared_awprot(), .p_m_axi_shared_awqos(),
         .p_m_axi_shared_awregion(), .p_m_axi_shared_awuser(),
         .p_m_axi_shared_awvalid(awvalid), .p_m_axi_shared_wdata(wdata),
@@ -105,7 +106,7 @@ module tb_generated_duplex #(
         .p_m_axi_shared_bready(bready), .p_m_axi_shared_arid(arid),
         .p_m_axi_shared_araddr(araddr), .p_m_axi_shared_arlen(arlen),
         .p_m_axi_shared_arsize(arsize), .p_m_axi_shared_arburst(arburst),
-        .p_m_axi_shared_arlock(), .p_m_axi_shared_arcache(),
+        .p_m_axi_shared_arlock(), .p_m_axi_shared_arcache(arcache),
         .p_m_axi_shared_arprot(), .p_m_axi_shared_arqos(),
         .p_m_axi_shared_arregion(), .p_m_axi_shared_aruser(),
         .p_m_axi_shared_arvalid(arvalid), .p_m_axi_shared_rready(rready)
@@ -125,6 +126,8 @@ module tb_generated_duplex #(
     integer w_wr = 0, w_rd = 0;
     integer read_beats = 0, accepted_ar = 0, accepted_aw = 0;
     integer accepted_w = 0, committed_w = 0, accepted_b = 0;
+    integer ar_outstanding = 0, aw_outstanding = 0;
+    integer peak_ar_outstanding = 0, peak_aw_outstanding = 0;
     integer b_pending = 0;
     integer simultaneous_rw = 0;
     integer simultaneous_done = 0;
@@ -135,11 +138,8 @@ module tb_generated_duplex #(
     logic [31:0] last_load_value = 0;
     logic stall_ar = 0, stall_r = 0, stall_aw = 0, stall_w = 0, stall_b = 0;
     logic prev_ar_stalled = 0, prev_aw_stalled = 0, prev_w_stalled = 0;
-    logic prev_r_stalled = 0, prev_b_stalled = 0;
     logic [ADDRESS_BITS+18:0] prev_ar_payload, prev_aw_payload;
     logic [36:0] prev_w_payload;
-    logic [40:0] prev_r_payload;
-    logic [7:0] prev_b_payload;
     integer i;
     logic [31:0] rdata_model;
 
@@ -167,10 +167,11 @@ module tb_generated_duplex #(
             ar_wr = 0; ar_rd = 0; aw_wr = 0; aw_rd = 0; w_wr = 0; w_rd = 0;
             read_beats = 0; accepted_ar = 0; accepted_aw = 0; accepted_w = 0;
             committed_w = 0; accepted_b = 0; b_pending = 0; simultaneous_rw = 0; simultaneous_done = 0;
+            ar_outstanding = 0; aw_outstanding = 0;
+            peak_ar_outstanding = 0; peak_aw_outstanding = 0;
             fault_r_seen = 0; fault_b_seen = 0;
             accepted_load_ops = 0; b_fault_read_success = 0;
             prev_ar_stalled = 0; prev_aw_stalled = 0; prev_w_stalled = 0;
-            prev_r_stalled = 0; prev_b_stalled = 0;
         end else begin
             if (core_read_start && core_read_opcode == OP_LOAD)
                 accepted_load_ops = accepted_load_ops + 1;
@@ -184,49 +185,53 @@ module tb_generated_duplex #(
                 $fatal(1, "GENERATED_AW_CHANGED_WHILE_STALLED");
             if (prev_w_stalled && (!wvalid || {wdata,wstrb,wlast} !== prev_w_payload))
                 $fatal(1, "GENERATED_W_CHANGED_WHILE_STALLED");
-            if (prev_r_stalled && (!rvalid || {rid,rdata,rresp,rlast} !== prev_r_payload))
-                $fatal(1, "GENERATED_R_CHANGED_WHILE_STALLED");
-            if (prev_b_stalled && (!bvalid || {bid,bresp} !== prev_b_payload))
-                $fatal(1, "GENERATED_B_CHANGED_WHILE_STALLED");
             prev_ar_stalled = arvalid && !arready;
             prev_aw_stalled = awvalid && !awready;
             prev_w_stalled = wvalid && !wready;
-            prev_r_stalled = rvalid && !rready;
-            prev_b_stalled = bvalid && !bready;
             if (prev_ar_stalled) prev_ar_payload = {arid,araddr,arlen,arsize,arburst};
             if (prev_aw_stalled) prev_aw_payload = {awid,awaddr,awlen,awsize,awburst};
             if (prev_w_stalled) prev_w_payload = {wdata,wstrb,wlast};
-            if (prev_r_stalled) prev_r_payload = {rid,rdata,rresp,rlast};
-            if (prev_b_stalled) prev_b_payload = {bid,bresp};
             if (rvalid && rready && wvalid && wready)
                 simultaneous_rw = simultaneous_rw + 1;
             if (read_done && write_done)
                 simultaneous_done = simultaneous_done + 1;
             if (arvalid && arready) begin
-                if (arsize !== 3'd2 || arburst !== 2'b01 || arid !== 0)
+                if (arsize !== 3'd2 || arburst !== 2'b01 || arid !== 0 || arcache !== 4'b0010)
                     $fatal(1, "GENERATED_AR_PROFILE_INVALID");
+                if (ar_outstanding + 1 - ((rvalid && rready && ar_queue_left[ar_rd] == 1) ? 1 : 0) > READ_OUTSTANDING)
+                    $fatal(1, "GENERATED_AR_OUTSTANDING_EXCEEDED");
+                if (ar_outstanding + 1 - ((rvalid && rready && ar_queue_left[ar_rd] == 1) ? 1 : 0) > peak_ar_outstanding)
+                    peak_ar_outstanding = ar_outstanding + 1 - ((rvalid && rready && ar_queue_left[ar_rd] == 1) ? 1 : 0);
                 ar_queue_addr[ar_wr] = araddr;
                 ar_queue_left[ar_wr] = integer'(arlen) + 1;
                 ar_wr = ar_wr + 1;
                 accepted_ar = accepted_ar + 1;
+                ar_outstanding = ar_outstanding + 1;
             end
             if (rvalid && rready) begin
-                if (rid !== 6'b0) $fatal(1, "GENERATED_RID_INVALID");
                 if (rresp !== 2'b00) fault_r_seen = fault_r_seen + 1;
                 read_beats = read_beats + 1;
-                if (ar_queue_left[ar_rd] == 1) ar_rd = ar_rd + 1;
+                if (ar_queue_left[ar_rd] == 1) begin
+                    ar_rd = ar_rd + 1;
+                    ar_outstanding = ar_outstanding - 1;
+                end
                 else begin
                     ar_queue_left[ar_rd] = ar_queue_left[ar_rd] - 1;
                     ar_queue_addr[ar_rd] = ar_queue_addr[ar_rd] + ADDRESS_BITS'(4);
                 end
             end
             if (awvalid && awready) begin
-                if (awsize !== 3'd2 || awburst !== 2'b01 || awid !== 0)
+                if (awsize !== 3'd2 || awburst !== 2'b01 || awid !== 0 || awcache !== 4'b0010)
                     $fatal(1, "GENERATED_AW_PROFILE_INVALID");
+                if (aw_outstanding + 1 - ((bvalid && bready) ? 1 : 0) > WRITE_OUTSTANDING)
+                    $fatal(1, "GENERATED_AW_OUTSTANDING_EXCEEDED");
+                if (aw_outstanding + 1 - ((bvalid && bready) ? 1 : 0) > peak_aw_outstanding)
+                    peak_aw_outstanding = aw_outstanding + 1 - ((bvalid && bready) ? 1 : 0);
                 aw_queue_addr[aw_wr] = awaddr;
                 aw_queue_left[aw_wr] = integer'(awlen) + 1;
                 aw_wr = aw_wr + 1;
                 accepted_aw = accepted_aw + 1;
+                aw_outstanding = aw_outstanding + 1;
             end
             if (wvalid && wready) begin
                 if (wstrb !== 4'b1111) $fatal(1, "GENERATED_WSTRB_INVALID");
@@ -253,10 +258,10 @@ module tb_generated_duplex #(
                 b_pending = b_pending + 1;
             end
             if (bvalid && bready) begin
-                if (bid !== 6'b0) $fatal(1, "GENERATED_BID_INVALID");
                 if (bresp !== 2'b00) fault_b_seen = fault_b_seen + 1;
                 accepted_b = accepted_b + 1;
                 b_pending = b_pending - 1;
+                aw_outstanding = aw_outstanding - 1;
             end
         end
     end

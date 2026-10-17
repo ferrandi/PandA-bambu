@@ -94,7 +94,7 @@ module tb_burst_engine #(
         .MAX_OUTSTANDING(MAX_OUTSTANDING), .FIFO_DEPTH(FIFO_DEPTH)) dut (
         .clock(clk), .reset(reset_n), .start(start), .in1(opcode),
         .in2(size_bits), .in3(payload), .in4(byte_address),
-        .in5(count), .done(done), .out1(data_out), .fault(fault),
+        .in5(count), .done(done), .out1(data_out), .fault(fault), .peer_fault(1'b0),
         .m_axi_araddr(araddr), .m_axi_arlen(arlen), .m_axi_arsize(arsize),
         .m_axi_arburst(arburst), .m_axi_arid(arid), .m_axi_arvalid(arvalid),
         .m_axi_arready(arready), .m_axi_rdata(rdata), .m_axi_rresp(rresp),

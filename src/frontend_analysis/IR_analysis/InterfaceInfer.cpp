@@ -2628,11 +2628,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             if(decision.read_requested && decision.write_requested)
             {
                decision.same_base_duplex_profile_reason = cache_enabled ? "cache-enabled bundle" :
-                                                           decision.write_profile.max_outstanding != 1U ?
-                                                               "unsupported write outstanding profile" :
-                                                               "read/write profile is eligible";
-               decision.same_base_duplex_profile_eligible = !cache_enabled &&
-                                                            decision.write_profile.max_outstanding == 1U;
+                                                           "read/write profile is eligible";
+               decision.same_base_duplex_profile_eligible = !cache_enabled;
                decision.same_base_duplex_reason = "original effects are not fully classified ordinary accesses";
                SameBaseDuplexProof proof{};
                if(RecognizeSameBaseDuplex(sl, fd, root_id, bundle_name, original_memory_accesses,
@@ -3628,6 +3625,13 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                                        "---Activated distinct-base restricted pointwise duplex m_axi bundle " :
                                                        "---Activated same-base pointwise duplex m_axi bundle ") + bundle_name +
                                            " for root " + fsymbol);
+                        if(decision->same_base_duplex_proof->distinct_bases)
+                        {
+                           INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                          "WARNING: distinct-base duplex relies on the caller's __restrict contract; "
+                                          "the caller must ensure the accessed regions do not overlap (no runtime "
+                                          "range validation is performed)");
+                        }
                      }
                      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                                     "---Configured write burst region for bundle " + bundle_name + " (B=" +

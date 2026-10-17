@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 RUNNER = ROOT / "panda_regressions/hls/bambu_axi_burst/run_write_development_tests.sh"
-SCRATCH_ROOT = ROOT / "documentation/tmp/f4-guard-gaps/d-offline"
+SCRATCH_ROOT = ROOT / "documentation/tmp/out_write_development_runner_tests"
 
 
 class DevelopmentRunnerTests(unittest.TestCase):
@@ -29,6 +29,7 @@ class DevelopmentRunnerTests(unittest.TestCase):
         for name in (
             "run_write_compiler_tests.sh",
             "run_frontend_compatibility_tests.sh",
+            "run_source_restrict_provenance_tests.sh",
             "test_write_compiler_artifacts.py",
             "check_copy_baseline_results.py",
             "copy_baseline.cpp",
@@ -51,7 +52,7 @@ class DevelopmentRunnerTests(unittest.TestCase):
         self.bin_dir.mkdir()
         self.calls = self.scratch / "calls.log"
         self._stub("python3", "printf 'python3|%s|%s|%s|%s|%s\\n' \"$TMPDIR\" \"$TMP\" \"$TEMP\" \"${BURST_G2_SIM_OUTSIDE_SANDBOX:-}\" \"$*\" >>\"$CALL_LOG\"\n")
-        self._stub("bash", "printf 'bash|%s|%s|%s|%s|%s\\n' \"$TMPDIR\" \"$TMP\" \"$TEMP\" \"${BURST_G2_SIM_OUTSIDE_SANDBOX:-}\" \"$*\" >>\"$CALL_LOG\"\n")
+        self._stub("bash", "printf 'bash|%s|%s|%s|%s|%s\\n' \"$TMPDIR\" \"$TMP\" \"$TEMP\" \"${BURST_G2_SIM_OUTSIDE_SANDBOX:-}\" \"$*\" >>\"$CALL_LOG\"\nif [[ $* == *run_source_restrict_provenance_tests.sh* ]]; then\n  [[ ${SOURCE_RESTRICT_FAIL:-0} != 1 ]] || exit 23\n  output=${!#}\n  mkdir -p \"$output\"\n  printf 'SOURCE-RESTRICT-PROVENANCE PASS: 4 compiler cases\\nSOURCE_RESTRICT_PROVENANCE OUT=%s\\n' \"$output\" >\"$output/aggregate.log\"\nfi\n")
         self.bambu = self.scratch / "installed/bin/bambu"
         self.bambu.parent.mkdir(parents=True)
         self.bambu.write_text("#!/bin/sh\nexit 0\n")
@@ -135,13 +136,17 @@ class DevelopmentRunnerTests(unittest.TestCase):
         result = self._run("all", output, outside_sandbox=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         calls = self._calls()
-        self.assertEqual(len(calls), 7)
+        self.assertEqual(len(calls), 8)
         self.assertTrue(calls[0].startswith("python3|"))
         self.assertIn("test_write_compiler_artifacts.py", calls[0])
         self.assertIn("test_extract_write_engine.py", calls[1])
         self.assertIn("run_write_compiler_tests.sh all", calls[2])
         self.assertIn("run_frontend_compatibility_tests.sh", calls[3])
-        for call, top in zip(calls[4:], (
+        self.assertIn("run_source_restrict_provenance_tests.sh", calls[4])
+        self.assertTrue(calls[4].endswith(str(output / "compiler/source-restrict-provenance")))
+        aggregate = output / "compiler/source-restrict-provenance/aggregate.log"
+        self.assertIn("SOURCE-RESTRICT-PROVENANCE PASS", aggregate.read_text())
+        for call, top in zip(calls[5:], (
             "write_count_seed",
             "write_with_unused_same_bundle",
             "write_with_unused_same_bundle_reversed",
@@ -152,6 +157,25 @@ class DevelopmentRunnerTests(unittest.TestCase):
         for call in calls:
             self.assertTrue(call.split("|", 5)[1].startswith(str(output)))
             self.assertNotIn("run_copy_handoff_tests.sh", call)
+
+    def test_all_propagates_source_restrict_runner_failure(self):
+        output = self.scratch / "all-source-restrict-failure"
+        env = self.env.copy()
+        env["BURST_G2_SIM_OUTSIDE_SANDBOX"] = "1"
+        env["SOURCE_RESTRICT_FAIL"] = "1"
+        result = subprocess.run(
+            ["/bin/bash", str(self.script_dir / RUNNER.name), "all", str(self.bambu), str(output)],
+            cwd=self.export,
+            env=env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        calls = self._calls()
+        self.assertTrue(any("run_source_restrict_provenance_tests.sh" in call for call in calls))
+        self.assertFalse(any("run_generated_write_kernel_tests.sh" in call for call in calls))
 
     def test_handoff_validates_two_baselines_then_dispatches_checker_runner(self):
         baseline1 = self.scratch / "baseline-one"

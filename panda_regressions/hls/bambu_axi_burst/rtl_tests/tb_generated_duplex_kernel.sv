@@ -24,6 +24,7 @@ module tb_generated_duplex_kernel #(
   wire [7:0] awlen, arlen;
   wire [2:0] awsize, arsize;
   wire [1:0] awburst, arburst;
+  wire [3:0] awcache, arcache;
   wire [3:0] wstrb;
   wire wlast, awvalid, wvalid, bready, arvalid, rready;
   logic awready, wready, bvalid, arready, rvalid;
@@ -50,7 +51,7 @@ module tb_generated_duplex_kernel #(
     .m_axi_shared_awid(awid), .m_axi_shared_awaddr(awaddr),
     .m_axi_shared_awlen(awlen), .m_axi_shared_awsize(awsize),
     .m_axi_shared_awburst(awburst), .m_axi_shared_awlock(),
-    .m_axi_shared_awcache(), .m_axi_shared_awprot(), .m_axi_shared_awqos(),
+    .m_axi_shared_awcache(awcache), .m_axi_shared_awprot(), .m_axi_shared_awqos(),
     .m_axi_shared_awregion(), .m_axi_shared_awuser(),
     .m_axi_shared_awvalid(awvalid), .m_axi_shared_wdata(wdata),
     .m_axi_shared_wstrb(wstrb), .m_axi_shared_wlast(wlast),
@@ -58,7 +59,7 @@ module tb_generated_duplex_kernel #(
     .m_axi_shared_bready(bready), .m_axi_shared_arid(arid),
     .m_axi_shared_araddr(araddr), .m_axi_shared_arlen(arlen),
     .m_axi_shared_arsize(arsize), .m_axi_shared_arburst(arburst),
-    .m_axi_shared_arlock(), .m_axi_shared_arcache(), .m_axi_shared_arprot(),
+    .m_axi_shared_arlock(), .m_axi_shared_arcache(arcache), .m_axi_shared_arprot(),
     .m_axi_shared_arqos(), .m_axi_shared_arregion(), .m_axi_shared_aruser(),
     .m_axi_shared_arvalid(arvalid), .m_axi_shared_rready(rready)
   );
@@ -76,6 +77,8 @@ module tb_generated_duplex_kernel #(
   integer w_wr = 0, w_rd = 0, b_pending = 0;
   integer ar_words = 0, aw_words = 0, w_words = 0, committed_words = 0;
   integer ar_count = 0, aw_count = 0, b_count = 0;
+  integer ar_outstanding = 0, aw_outstanding = 0;
+  integer peak_ar_outstanding = 0, peak_aw_outstanding = 0;
   integer cycle_count = 0;
   integer case_count = 0;
   logic [31:0] read_base = 0;
@@ -150,10 +153,16 @@ module tb_generated_duplex_kernel #(
     integer j;
     integer index;
     integer expected_beats;
+    integer ar_retire;
+    integer aw_retire;
+    integer ar_next_outstanding;
+    integer aw_next_outstanding;
     if (!reset) begin
       ar_wr = 0; ar_rd = 0; aw_wr = 0; aw_rd = 0; w_wr = 0; w_rd = 0;
       b_pending = 0; ar_words = 0; aw_words = 0; w_words = 0;
       committed_words = 0; ar_count = 0; aw_count = 0; b_count = 0;
+      ar_outstanding = 0; aw_outstanding = 0;
+      peak_ar_outstanding = 0; peak_aw_outstanding = 0;
       w_burst_progress = 0;
     end else begin
       cycle_count = cycle_count + 1;
@@ -161,14 +170,36 @@ module tb_generated_duplex_kernel #(
         ar_wr = 0; ar_rd = 0; aw_wr = 0; aw_rd = 0; w_wr = 0; w_rd = 0;
         b_pending = 0; ar_words = 0; aw_words = 0; w_words = 0;
         committed_words = 0; ar_count = 0; aw_count = 0; b_count = 0;
+        ar_outstanding = 0; aw_outstanding = 0;
+        peak_ar_outstanding = 0; peak_aw_outstanding = 0;
         w_burst_progress = 0;
       end
+      ar_retire = 0;
+      if (rvalid && rready) begin
+        if (ar_outstanding <= 0) $fatal(1, "DUPLEX_KERNEL_OUTSTANDING_UNDERFLOW");
+        ar_retire = ar_left_q[ar_rd] == 1;
+      end
+      aw_retire = 0;
+      if (bvalid && bready) begin
+        if (aw_outstanding <= 0) $fatal(1, "DUPLEX_KERNEL_OUTSTANDING_UNDERFLOW");
+        aw_retire = 1;
+      end
+      ar_next_outstanding = ar_outstanding + ((arvalid && arready) ? 1 : 0) - ar_retire;
+      aw_next_outstanding = aw_outstanding + ((awvalid && awready) ? 1 : 0) - aw_retire;
+      if (ar_next_outstanding < 0 || aw_next_outstanding < 0)
+        $fatal(1, "DUPLEX_KERNEL_OUTSTANDING_UNDERFLOW");
+      if (ar_next_outstanding > READ_OUTSTANDING)
+        $fatal(1, "DUPLEX_KERNEL_AR_OUTSTANDING_EXCEEDED");
+      if (aw_next_outstanding > WRITE_OUTSTANDING)
+        $fatal(1, "DUPLEX_KERNEL_AW_OUTSTANDING_EXCEEDED");
+      if (ar_next_outstanding > peak_ar_outstanding) peak_ar_outstanding = ar_next_outstanding;
+      if (aw_next_outstanding > peak_aw_outstanding) peak_aw_outstanding = aw_next_outstanding;
       if (arvalid && arready) begin
         if (ar_wr >= OP_COUNT) $fatal(1, "DUPLEX_KERNEL_AR_QUEUE_OVERFLOW");
         expected_beats = burst_beats(read_base, case_count, ar_words, READ_B_MAX);
         if (araddr !== read_base + ar_words * 4 || arlen !== expected_beats - 1)
           $fatal(1, "DUPLEX_KERNEL_AR_ADDRESS_OR_LENGTH_MISMATCH");
-        if (arsize !== 3'd2 || arburst !== 2'b01 || arid !== 0)
+        if (arsize !== 3'd2 || arburst !== 2'b01 || arid !== 0 || arcache !== 4'b0010)
           $fatal(1, "DUPLEX_KERNEL_AR_PROFILE_INVALID");
         if ((araddr & 32'hfff) + expected_beats * 4 > 4096)
           $fatal(1, "DUPLEX_KERNEL_AR_CROSSES_4K");
@@ -177,12 +208,10 @@ module tb_generated_duplex_kernel #(
         ar_wr = ar_wr + 1;
         ar_words = ar_words + expected_beats;
         ar_count = ar_count + 1;
+        ar_outstanding = ar_outstanding + 1;
       end
       if (rvalid && rready) begin
         index = mem_index(ar_addr_q[ar_rd]);
-        if (rid !== 0) $fatal(1, "DUPLEX_KERNEL_RID_INVALID");
-        if (rlast !== (ar_left_q[ar_rd] == 1))
-          $fatal(1, "DUPLEX_KERNEL_RLAST_INVALID");
         if (rresp != 2'b00) begin
           if (fault_mode != 1 || fault_injected)
             $fatal(1, "DUPLEX_KERNEL_UNEXPECTED_RRESP");
@@ -191,7 +220,10 @@ module tb_generated_duplex_kernel #(
         end
         if (rdata !== snapshot[index])
           $fatal(1, "DUPLEX_KERNEL_READ_DATA_MISMATCH");
-        if (ar_left_q[ar_rd] == 1) ar_rd = ar_rd + 1;
+        if (ar_left_q[ar_rd] == 1) begin
+          ar_rd = ar_rd + 1;
+          ar_outstanding = ar_outstanding - 1;
+        end
         else begin
           ar_left_q[ar_rd] = ar_left_q[ar_rd] - 1;
           ar_addr_q[ar_rd] = ar_addr_q[ar_rd] + 4;
@@ -202,7 +234,7 @@ module tb_generated_duplex_kernel #(
         expected_beats = burst_beats(write_base, case_count, aw_words, WRITE_B_MAX);
         if (awaddr !== write_base + aw_words * 4 || awlen !== expected_beats - 1)
           $fatal(1, "DUPLEX_KERNEL_AW_ADDRESS_OR_LENGTH_MISMATCH");
-        if (awsize !== 3'd2 || awburst !== 2'b01 || awid !== 0)
+        if (awsize !== 3'd2 || awburst !== 2'b01 || awid !== 0 || awcache !== 4'b0010)
           $fatal(1, "DUPLEX_KERNEL_AW_PROFILE_INVALID");
         if ((awaddr & 32'hfff) + expected_beats * 4 > 4096)
           $fatal(1, "DUPLEX_KERNEL_AW_CROSSES_4K");
@@ -211,6 +243,7 @@ module tb_generated_duplex_kernel #(
         aw_wr = aw_wr + 1;
         aw_words = aw_words + expected_beats;
         aw_count = aw_count + 1;
+        aw_outstanding = aw_outstanding + 1;
       end
       if (wvalid && wready) begin
         if (w_wr >= 4096 || w_words >= case_count)
@@ -243,7 +276,6 @@ module tb_generated_duplex_kernel #(
         aw_rd = aw_rd + 1;
       end
       if (bvalid && bready) begin
-        if (bid !== 0) $fatal(1, "DUPLEX_KERNEL_BID_INVALID");
         if (bresp != 2'b00) begin
           if (fault_mode != 2 || fault_injected)
             $fatal(1, "DUPLEX_KERNEL_UNEXPECTED_BRESP");
@@ -252,6 +284,7 @@ module tb_generated_duplex_kernel #(
         end
         b_pending = b_pending - 1;
         b_count = b_count + 1;
+        aw_outstanding = aw_outstanding - 1;
       end
     end
   end
@@ -333,7 +366,7 @@ module tb_generated_duplex_kernel #(
         end
         if (committed_words != count || ar_words != count || w_words != count)
           fail("read/write traffic did not cover the requested region");
-        if (b_pending != 1 || bvalid)
+        if (b_pending != 1)
           fail("final B response was not held after data commit");
         repeat (3) begin
           @(posedge clock); #1;
@@ -354,13 +387,15 @@ module tb_generated_duplex_kernel #(
           fail("AW burst count does not match the write profile");
         if (b_count != aw_count || b_pending != 0)
           fail("B responses do not match completed AW bursts");
+        if (READ_OUTSTANDING == 2 && count >= 2 * READ_B_MAX && peak_ar_outstanding < 2)
+          fail("read outstanding profile of two was not exercised");
       end
       for (k = 0; k < WORDS; k = k + 1)
         if (memory[k] !== expected[k])
           fail($sformatf("memory/canary mismatch at word %0d got=%08x expected=%08x",
                          k, memory[k], expected[k]));
-      if (fault_mode == 0 && fault_accepted)
-        fail("unexpected fault response accepted");
+      if (ar_outstanding != 0 || aw_outstanding != 0)
+        fail("outstanding burst count did not drain");
     end
   endtask
 

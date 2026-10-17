@@ -97,8 +97,8 @@ extern "C" void cache_write(int *dst, int n) {
   for (int i = 0; i < n; ++i) dst[i] = i;
 }
 
-// F1b supports write-only bundles, not same-bundle read/write (duplex).
-// Keep this source shape compilable, but require whole-bundle legacy fallback.
+// Same-base pointwise read/write is handled by duplex support. The effect-analysis
+// gate verifies the stronger production duplex structure for this source shape.
 extern "C" void read_write_same_bundle(int *data, int n) {
 #pragma HLS interface mode=m_axi port=data offset=direct bundle=shared max_read_burst_length=16
 #pragma HLS interface mode=m_axi port=data offset=direct bundle=shared max_write_burst_length=16

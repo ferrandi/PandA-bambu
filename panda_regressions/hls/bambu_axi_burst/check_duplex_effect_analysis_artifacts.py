@@ -65,6 +65,10 @@ CASES: dict[str, tuple[str, int, str, str, bool, bool]] = {
                        FALLBACK_READ, FALLBACK_WRITE, False, True),
     "distinct_bases_source_first": (DISTINCT_SUCCESS, 2, "-", "-", True, True),
     "distinct_bases_destination_first": (DISTINCT_SUCCESS, 2, "-", "-", True, True),
+    "distinct_bases_asymmetric_64": (DISTINCT_SUCCESS, 2, "-", "-", True, True),
+    "distinct_bases_mismatched_bounds": (
+        "canonical contiguous loop recognition failed", 2,
+        "bundle contains stores", FALLBACK_WRITE, False, True),
     "distinct_bases_one_restrict": ("distinct-base duplex requires source restrict on both owners", 2,
                                     FALLBACK_READ, FALLBACK_WRITE, False, True),
 }
@@ -85,18 +89,26 @@ ACCESS_COUNTS: dict[str, tuple[tuple[int, int], ...]] = {
     "distinct_bases": ((0, 1), (1, 0)),
     "distinct_bases_source_first": ((1, 0), (0, 1)),
     "distinct_bases_destination_first": ((1, 0), (0, 1)),
+    "distinct_bases_asymmetric_64": ((1, 0), (0, 1)),
+    "distinct_bases_mismatched_bounds": ((1, 0), (0, 1)),
     "distinct_bases_one_restrict": ((1, 0), (0, 1)),
 }
 ACTIVATED_CASES = {"same_base_pointwise", "same_base_pointwise_reversed", "same_base_asymmetric_64",
-                   "distinct_bases_source_first", "distinct_bases_destination_first"}
+                   "distinct_bases_source_first", "distinct_bases_destination_first",
+                   "distinct_bases_asymmetric_64"}
+DISTINCT_BASE_CASES = {"distinct_bases_source_first", "distinct_bases_destination_first",
+                       "distinct_bases_asymmetric_64"}
 RESTRICT_METADATA_CASES = {
     "distinct_bases": {"src": "0", "dst": "0"},
     "distinct_bases_source_first": {"src": "1", "dst": "1"},
     "distinct_bases_destination_first": {"dst": "1", "src": "1"},
+    "distinct_bases_asymmetric_64": {"src": "1", "dst": "1"},
+    "distinct_bases_mismatched_bounds": {"src": "1", "dst": "1"},
     "distinct_bases_one_restrict": {"src": "1", "dst": "0"},
 }
-EXPECTED_ADDRESS_BITS = {"same_base_asymmetric_64": "64"}
-EXPECTED_PROFILES = {"same_base_asymmetric_64": ("8", "2", "16", "1")}
+EXPECTED_ADDRESS_BITS = {"same_base_asymmetric_64": "64", "distinct_bases_asymmetric_64": "64"}
+EXPECTED_PROFILES = {"same_base_asymmetric_64": ("8", "2", "16", "1"),
+                     "distinct_bases_asymmetric_64": ("8", "2", "16", "1")}
 READ_AXI_INPUTS = {"awready", "wready", "bid", "bresp", "buser", "bvalid",
                    "arready", "rid", "rdata", "rresp", "rlast", "ruser", "rvalid"}
 AXI_SUFFIXES = {
@@ -115,6 +127,13 @@ class CheckError(ValueError):
 def need(condition: bool, message: str) -> None:
     if not condition:
         raise CheckError(message)
+
+
+def expected_owner_recognition(top: str, reads: int, writes: int) -> tuple[str, str]:
+    if top in DISTINCT_BASE_CASES:
+        return ("1" if reads == 1 else "0", "1" if writes == 1 else "0")
+    recognized = "1" if top in ACTIVATED_CASES else "0"
+    return recognized, recognized
 
 
 PRIVATE_FIELDS = ("start", "opcode", "size", "data", "address", "count", "done", "result")
@@ -254,10 +273,17 @@ def verify_private_duplex_wiring(code: str, parent_body: str,
 def check_production_duplex(rtl: str, compiler_log: str, top: str, attrs: dict[str, str]) -> None:
     bundle = "shared"
     marker_kind = "distinct-base restricted pointwise" if top in {
-        "distinct_bases_source_first", "distinct_bases_destination_first"} else "same-base pointwise"
+        "distinct_bases_source_first", "distinct_bases_destination_first",
+        "distinct_bases_asymmetric_64"} else "same-base pointwise"
     marker = f"Activated {marker_kind} duplex m_axi bundle {bundle} for root {top}"
     matches = re.findall(rf"(?m)^\s*(?:---)?{re.escape(marker)}\s*$", compiler_log)
     need(len(matches) == 1, "production activation marker is missing or duplicated")
+    if top in {"distinct_bases_source_first", "distinct_bases_destination_first",
+               "distinct_bases_asymmetric_64"}:
+        warning = ("WARNING: distinct-base duplex relies on the caller's __restrict contract; the caller must "
+                   "ensure the accessed regions do not overlap (no runtime range validation is performed)")
+        need(len(re.findall(rf"(?m)^\s*{re.escape(warning)}\s*$", compiler_log)) == 1,
+             "distinct-base activation is missing its caller non-overlap contract warning")
     code = re.sub(r"(?s)/\*.*?\*/|//[^\n]*", "", rtl)
     modules = verilog_modules(code)
     instances_by_module = {name: verilog_instances(body) for name, body in modules.items()}
@@ -341,13 +367,11 @@ def check_production_duplex(rtl: str, compiler_log: str, top: str, attrs: dict[s
         if attr in attrs:
             need(profile.get("FIFO_DEPTH") == attrs[attr],
                  f"duplex core FIFO depth does not match architecture attribute {attr}")
-    for attr, profile in (("read_fifo_depth", read_profile), ("write_fifo_depth", write_profile)):
-        if attr in attrs:
-            need(profile.get("FIFO_DEPTH") == attrs[attr],
-                 f"duplex core FIFO depth does not match architecture attribute {attr}")
     for profile in (read_profile, write_profile):
         need(profile.get("MAX_OUTSTANDING") is not None and profile.get("FIFO_DEPTH") is not None,
              "duplex burst core is missing outstanding/FIFO profile parameters")
+        need(profile.get("PEER_FAULT_ENABLE") == "1",
+             "duplex burst core must enable peer fault propagation")
     address_bits = EXPECTED_ADDRESS_BITS.get(top, "32")
     need(read_profile.get("BITSIZE_m_axi_araddr") == address_bits and
          write_profile.get("BITSIZE_m_axi_awaddr") == address_bits,
@@ -372,6 +396,35 @@ def check_production_duplex(rtl: str, compiler_log: str, top: str, attrs: dict[s
     _parent_name, parent_body, endpoints, (aggregator_type, aggregator_args) = parent_candidates[0]
     verify_private_duplex_wiring(code, parent_body, endpoints, aggregator_type, aggregator_args,
                                  int(address_bits), int(read_profile.get("BITSIZE_m_axi_rdata", "32")))
+    aggregator_modules = [name for name in modules if name == aggregator_type or
+                          name.endswith("_" + aggregator_type)]
+    need(len(aggregator_modules) == 1,
+         "duplex aggregator module definition is missing or ambiguous")
+    aggregator_body = modules[aggregator_modules[0]]
+    peer_assignments: dict[str, list[str]] = {}
+    for assignment in re.finditer(
+            r"\bassign\s+([A-Za-z_$][\w$]*)\s*=\s*([^;]+);|"
+            r"\bwire\s+([A-Za-z_$][\w$]*)\s*=\s*([^;]+);", aggregator_body):
+        lhs = assignment.group(1) or assignment.group(3)
+        rhs = assignment.group(2) or assignment.group(4)
+        peer_assignments.setdefault(lhs, []).append(re.sub(r"\s+", "", rhs))
+    for peer, fault in (("read_peer_fault", "write_core_fault"),
+                        ("write_peer_fault", "read_core_fault")):
+        need(peer_assignments.get(peer) == [fault],
+             f"duplex {peer} must be cross-connected to {fault}")
+    core_instances = [instance for instance in verilog_instances(aggregator_body)
+                      if instance[0] in {"MinimalAXI4MasterPipelined", "MinimalAXI4MasterPipelinedWrite"}]
+    need(len(core_instances) == 2, "duplex aggregator must contain exactly one read and one write core")
+    expected_core_ports = {
+        "MinimalAXI4MasterPipelined": {"peer_fault": "read_peer_fault", "fault": "read_core_fault"},
+        "MinimalAXI4MasterPipelinedWrite": {"peer_fault": "write_peer_fault", "fault": "write_core_fault"},
+    }
+    for module_name, instance_name, ports in core_instances:
+        need(module_name in expected_core_ports,
+             f"unexpected duplex core instance type {module_name}")
+        for port, signal in expected_core_ports[module_name].items():
+            need(ports.get(port) == signal,
+                 f"duplex {instance_name} {port} port must connect to {signal}")
 
 
 def verify_restrict_architecture_metadata(xml_root: ET.Element, top: str, raw_text: str,
@@ -940,12 +993,8 @@ def verify(output: Path, top: str, source: Path, bambu: Path, plugin: Path,
         need(owner not in owners, f"duplicate trace owner {owner}")
         owners.add(owner)
         access_counts.append((int(reads), int(writes)))
-        if top in {"distinct_bases_source_first", "distinct_bases_destination_first"}:
-            expected_read_recognized = "1" if int(reads) == 1 else "0"
-            expected_write_recognized = "1" if int(writes) == 1 else "0"
-        else:
-            expected_read_recognized = "1" if top in ACTIVATED_CASES else "0"
-            expected_write_recognized = expected_read_recognized
+        expected_read_recognized, expected_write_recognized = expected_owner_recognition(
+            top, int(reads), int(writes))
         need((read_requested, read_recognized, read_fallback) ==
              ("1", expected_read_recognized, expected_read_fallback),
              "read request/recognition/fallback does not match the exact preanalysis contract")

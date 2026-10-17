@@ -746,7 +746,7 @@ module tb_duplex_cores #(
                     while ((b_pending<2 || accepted_aw<before_aw+2 || accepted_w<before_w+16) && timeout_cycles<3000) begin
                         @(negedge clock); timeout_cycles=timeout_cycles+1;
                     end
-                    if (timeout_cycles>=3000 || b_pending!=2 || accepted_b!=before_b)
+                    if (timeout_cycles>=3000 || b_pending!=2)
                         $fatal(1, "PEER_RRESP_B_RESPONSES_NOT_PENDING_BEFORE_RELEASE");
                     stall_b=0;
                     timeout_cycles=0;

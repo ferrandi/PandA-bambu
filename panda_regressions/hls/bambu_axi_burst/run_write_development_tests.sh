@@ -155,6 +155,7 @@ run_compiler() {
   export TMPDIR="$compiler_dir/tmp" TMP="$compiler_dir/tmp" TEMP="$compiler_dir/tmp"
   bash "$script_dir/run_write_compiler_tests.sh" all "$bambu" "$compiler_dir/write"
   bash "$script_dir/run_frontend_compatibility_tests.sh" "$bambu" "$compiler_dir/frontend-compatibility"
+  bash "$script_dir/run_source_restrict_provenance_tests.sh" "$bambu" "$compiler_dir/source-restrict-provenance"
 }
 
 run_g2() {

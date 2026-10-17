@@ -32,7 +32,7 @@ if [[ $BAMBU_ARG == */* ]]; then BAMBU=$(realpath -- "$BAMBU_ARG"); else
   [[ -n $BAMBU ]] && BAMBU=$(realpath -- "$BAMBU")
 fi
 [[ -n ${BAMBU:-} && -x $BAMBU ]] || { echo "Bambu executable not found: $BAMBU_ARG" >&2; exit 2; }
-for tool in verilator python3 rg sha256sum timeout nproc; do
+for tool in verilator python3 rg sha256sum timeout; do
   command -v "$tool" >/dev/null || { echo "required tool missing: $tool" >&2; exit 2; }
 done
 [[ -s $SOURCE && -s $COPY_SOURCE && -s $COPY_TB && -s $TB && -s $HELPERS ]] || { echo "G2 kernel source, golden testbench, or helper is missing" >&2; exit 2; }
@@ -51,19 +51,16 @@ PLUGIN="$PREFIX/lib/panda/clang-16/ASTAnalyzer.so"
 OUT_ARG=${2:-"$ROOT/documentation/tmp/out_generated_duplex_kernel"}
 [[ ! -e $OUT_ARG && ! -L $OUT_ARG ]] || { echo "output directory must be fresh and not a symlink: $OUT_ARG" >&2; exit 2; }
 OUT=$(realpath -m -- "$OUT_ARG")
-mkdir -p "$(dirname "$OUT")"
-mkdir "$OUT" "$OUT/tmp" "$OUT/job_logs"
-OUT=$(realpath "$OUT")
-export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp" PYTHONDONTWRITEBYTECODE=1
-
 SIM_JOBS=${SIM_JOBS:-2}
 DUPLEX_G2_JOBS=${DUPLEX_G2_JOBS:-8}
 [[ $SIM_JOBS =~ ^[1-9][0-9]*$ && $DUPLEX_G2_JOBS =~ ^[1-9][0-9]*$ ]] || {
   echo "SIM_JOBS and DUPLEX_G2_JOBS must be positive integers" >&2; exit 2;
 }
 SIM_JOBS=$((10#$SIM_JOBS)); DUPLEX_G2_JOBS=$((10#$DUPLEX_G2_JOBS))
-(( SIM_JOBS <= 2 )) || SIM_JOBS=2
-(( DUPLEX_G2_JOBS <= 8 )) || DUPLEX_G2_JOBS=8
+mkdir -p "$(dirname "$OUT")"
+mkdir "$OUT" "$OUT/tmp" "$OUT/job_logs"
+OUT=$(realpath "$OUT")
+export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp" PYTHONDONTWRITEBYTECODE=1
 
 digest() { sha256sum -- "$1" | awk '{print $1}'; }
 {
