@@ -25,10 +25,13 @@ TRACE = re.compile(
     r'activation_reason="([^"]*)"\s*$', re.MULTILINE)
 PROOF_PREFIX = "AXI_BURST_DUPLEX_PROOF "
 SUCCESS = "same-base pointwise read-before-write candidate"
+DISTINCT_SUCCESS = "distinct-base restricted pointwise read-before-write candidate"
 FALLBACK_READ = "bundle contains stores"
 FALLBACK_WRITE = "bundle contains reads; same-bundle read/write requires duplex support"
 IDENTITY_FIELDS = {
-    "owner_argument_index", "base_ssa_index", "load_statement_index", "store_statement_index",
+    "owner_argument_index", "read_owner_argument_index", "write_owner_argument_index",
+    "base_ssa_index", "read_base_ssa_index", "write_base_ssa_index",
+    "load_statement_index", "store_statement_index",
     "read_preheader_bb", "read_header_bb", "read_branch_index", "read_guard_index",
     "read_bound_index", "read_induction_index", "write_preheader_bb", "write_header_bb",
     "write_exit_bb", "write_guard_index", "write_bound_index", "write_induction_index",
@@ -58,8 +61,12 @@ CASES: dict[str, tuple[str, int, str, str, bool, bool]] = {
     "same_loop_opaque_call": ("original effects are not fully classified ordinary accesses", 1,
                               "memory writes or opaque effects; prefetch ordering is not proven",
                               "opaque, volatile, atomic, or unclassified memory effects", False, True),
-    "distinct_bases": ("not exactly one classified same-base read/store pair", 2,
+    "distinct_bases": ("distinct-base duplex requires source restrict on both owners", 2,
                        FALLBACK_READ, FALLBACK_WRITE, False, True),
+    "distinct_bases_source_first": (DISTINCT_SUCCESS, 2, "-", "-", True, True),
+    "distinct_bases_destination_first": (DISTINCT_SUCCESS, 2, "-", "-", True, True),
+    "distinct_bases_one_restrict": ("distinct-base duplex requires source restrict on both owners", 2,
+                                    FALLBACK_READ, FALLBACK_WRITE, False, True),
 }
 ACCESS_COUNTS: dict[str, tuple[tuple[int, int], ...]] = {
     "same_base_pointwise": ((1, 1),),
@@ -76,8 +83,18 @@ ACCESS_COUNTS: dict[str, tuple[tuple[int, int], ...]] = {
     "same_loop_byte_side_store": ((1, 2),),
     "same_loop_opaque_call": ((1, 1),),
     "distinct_bases": ((0, 1), (1, 0)),
+    "distinct_bases_source_first": ((1, 0), (0, 1)),
+    "distinct_bases_destination_first": ((1, 0), (0, 1)),
+    "distinct_bases_one_restrict": ((1, 0), (0, 1)),
 }
-ACTIVATED_CASES = {"same_base_pointwise", "same_base_pointwise_reversed", "same_base_asymmetric_64"}
+ACTIVATED_CASES = {"same_base_pointwise", "same_base_pointwise_reversed", "same_base_asymmetric_64",
+                   "distinct_bases_source_first", "distinct_bases_destination_first"}
+RESTRICT_METADATA_CASES = {
+    "distinct_bases": {"src": "0", "dst": "0"},
+    "distinct_bases_source_first": {"src": "1", "dst": "1"},
+    "distinct_bases_destination_first": {"dst": "1", "src": "1"},
+    "distinct_bases_one_restrict": {"src": "1", "dst": "0"},
+}
 EXPECTED_ADDRESS_BITS = {"same_base_asymmetric_64": "64"}
 EXPECTED_PROFILES = {"same_base_asymmetric_64": ("8", "2", "16", "1")}
 READ_AXI_INPUTS = {"awready", "wready", "bid", "bresp", "buser", "bvalid",
@@ -236,7 +253,9 @@ def verify_private_duplex_wiring(code: str, parent_body: str,
 
 def check_production_duplex(rtl: str, compiler_log: str, top: str, attrs: dict[str, str]) -> None:
     bundle = "shared"
-    marker = f"Activated same-base pointwise duplex m_axi bundle {bundle} for root {top}"
+    marker_kind = "distinct-base restricted pointwise" if top in {
+        "distinct_bases_source_first", "distinct_bases_destination_first"} else "same-base pointwise"
+    marker = f"Activated {marker_kind} duplex m_axi bundle {bundle} for root {top}"
     matches = re.findall(rf"(?m)^\s*(?:---)?{re.escape(marker)}\s*$", compiler_log)
     need(len(matches) == 1, "production activation marker is missing or duplicated")
     code = re.sub(r"(?s)/\*.*?\*/|//[^\n]*", "", rtl)
@@ -276,7 +295,6 @@ def check_production_duplex(rtl: str, compiler_log: str, top: str, attrs: dict[s
              f"physical bundle pin {suffix} is not connected through the aggregator")
     need(not re.search(r"(?m)^\s*(?:input|output)\b[^;\n]*\bduplex_", top_body),
          f"private duplex endpoint ports leaked into physical module interface {top}")
-
     expected_pbi_ports = {f"p_m_axi_shared_{suffix}": f"m_axi_shared_{suffix}"
                           for suffix in AXI_SUFFIXES}
     pbi_instances = [ports for module, _instance, ports in verilog_instances(top_body)
@@ -354,6 +372,46 @@ def check_production_duplex(rtl: str, compiler_log: str, top: str, attrs: dict[s
     _parent_name, parent_body, endpoints, (aggregator_type, aggregator_args) = parent_candidates[0]
     verify_private_duplex_wiring(code, parent_body, endpoints, aggregator_type, aggregator_args,
                                  int(address_bits), int(read_profile.get("BITSIZE_m_axi_rdata", "32")))
+
+
+def verify_restrict_architecture_metadata(xml_root: ET.Element, top: str, raw_text: str,
+                                          proof_record: dict[str, object] | None) -> None:
+    expected = RESTRICT_METADATA_CASES.get(top)
+    if expected is None:
+        return
+    functions = [node for node in xml_root.findall(".//function") if node.get("name") == top]
+    need(len(functions) == 1, f"architecture XML must contain exactly one function named {top}")
+    parameters = functions[0].find("./parameters")
+    need(parameters is not None, f"architecture function {top} has no parameter metadata")
+    by_port: dict[str, list[ET.Element]] = {}
+    by_index: dict[int, list[ET.Element]] = {}
+    for parameter in parameters.findall("./parameter"):
+        port = parameter.get("port")
+        index = parameter.get("index")
+        if port:
+            by_port.setdefault(port, []).append(parameter)
+        if index is not None and index.isdecimal():
+            by_index.setdefault(int(index), []).append(parameter)
+    for port, expected_value in expected.items():
+        entries = by_port.get(port, [])
+        need(len(entries) == 1, f"expected exactly one architecture parameter {top}.{port}")
+        need(entries[0].get("source_restrict") == expected_value,
+             f"architecture source_restrict for {top}.{port} does not match source provenance")
+    if proof_record is not None and proof_record.get("proof_kind") == "distinct_base_restricted_pointwise":
+        nodes, func, _blocks, _reachable = function_graph(raw_text, top)
+        args = [int(value) for value in fields(nodes[func]).get("arg", [])]
+        read_owner = int(proof_record["read_owner_argument_index"])
+        write_owner = int(proof_record["write_owner_argument_index"])
+        need(read_owner in args and write_owner in args,
+             "distinct proof owners are not both formal arguments in raw IR")
+        read_parameter = by_index.get(args.index(read_owner), [])
+        write_parameter = by_index.get(args.index(write_owner), [])
+        need(len(read_parameter) == 1 and read_parameter[0].get("port") == "src" and
+             read_parameter[0].get("source_restrict") == "1",
+             "raw LOAD owner does not correlate to its restricted architecture parameter")
+        need(len(write_parameter) == 1 and write_parameter[0].get("port") == "dst" and
+             write_parameter[0].get("source_restrict") == "1",
+             "raw STORE owner does not correlate to its restricted architecture parameter")
 
 
 def sha256(path: Path) -> str:
@@ -566,16 +624,31 @@ def verify_success_record(record: dict[str, object], raw_text: str, top: str) ->
     need(IDENTITY_FIELDS <= record.keys(), "semantic proof record is missing identity fields")
     for key in IDENTITY_FIELDS:
         need(type(record[key]) is int, f"semantic identity field {key} is not numeric")
+    proof_kind = record.get("proof_kind")
+    need(proof_kind in {"same_base_pointwise", "distinct_base_restricted_pointwise"},
+         "semantic proof record has an unknown proof kind")
+    distinct_bases = proof_kind == "distinct_base_restricted_pointwise"
+    read_owner = int(record["read_owner_argument_index"])
+    write_owner = int(record["write_owner_argument_index"])
+    read_base_index = int(record["read_base_ssa_index"])
+    write_base_index = int(record["write_base_ssa_index"])
+    need(int(record["owner_argument_index"]) == read_owner,
+         "legacy owner identity does not match the LOAD owner")
     nodes, func, blocks, reachable = function_graph(raw_text, top)
-    owner = int(record["owner_argument_index"])
-    owner_node = node_in_function(nodes, func, reachable, owner, "owner argument")
-    need(owner_node[0] == "argument_val_node", "owner identity is not a function argument")
-    base_index = int(record["base_ssa_index"])
-    base = node_in_function(nodes, func, reachable, base_index, "base SSA")
-    need(base[0] == "ssa_node", "base identity is not SSA")
-    base_var = fields(base).get("var", [])
-    need(str(owner) in base_var,
-         "base SSA does not name the declared owner argument directly")
+    for label, owner, base_index in (("LOAD", read_owner, read_base_index),
+                                     ("STORE", write_owner, write_base_index)):
+        owner_node = node_in_function(nodes, func, reachable, owner, f"{label} owner argument")
+        need(owner_node[0] == "argument_val_node", f"{label} owner identity is not a function argument")
+        base = node_in_function(nodes, func, reachable, base_index, f"{label} base SSA")
+        need(base[0] == "ssa_node", f"{label} base identity is not SSA")
+        base_var = fields(base).get("var", [])
+        need(str(owner) in base_var,
+             f"{label} base SSA does not name its declared owner argument directly")
+    need(int(record["base_ssa_index"]) == read_base_index,
+         "legacy base identity does not match the LOAD base")
+    need((read_owner != write_owner and read_base_index != write_base_index) if distinct_bases else
+         (read_owner == write_owner and read_base_index == write_base_index),
+         "proof kind does not match the declared owner/base identities")
 
     load_index, store_index = int(record["load_statement_index"]), int(record["store_statement_index"])
     load = node_in_function(nodes, func, reachable, load_index, "LOAD statement")
@@ -589,48 +662,59 @@ def verify_success_record(record: dict[str, object], raw_text: str, top: str) ->
     need(load_pos < store_pos, "LOAD does not precede STORE in the original iteration")
     load_address, load_value = memory_operand(nodes, load, "LOAD", 32)
     store_address, store_value = memory_operand(nodes, store, "STORE", 32)
-    need(load_address == store_address,
-         "LOAD and STORE do not use the same original affine address/index")
+    need((load_address != store_address) if distinct_bases else (load_address == store_address),
+         "LOAD and STORE address identity does not match the proof kind")
     need(operand_depends(nodes, store_value, load_value),
          "STORE value is not derived from the preceding LOAD result")
 
-    address = node_in_function(nodes, func, reachable, load_address, "memory address")
-    need(address[0] == "ssa_node", "memory address is not an SSA value")
-    address_defs = fields(address).get("def_stmt", [])
-    need(len(address_defs) == 1 and int(address_defs[0]) in nodes,
-         "memory address has no unique defining assignment")
-    address_def = nodes[int(address_defs[0])]
-    address_expr = assignment_rhs(nodes, address_def, "memory address")
-    gep = node_in_function(nodes, func, reachable, address_expr, "memory address expression")
-    gep_ops = operation_refs(gep)
-    need(gep[0] == "gep_node" and len(gep_ops) == 2,
-         "memory address is not a canonical base-plus-index GEP")
-    gep_base, gep_offset = gep_ops
-    need(gep_base == base_index,
-         "canonical address does not use the declared base as its direct GEP base")
+    def address_gep(address_index: int, label: str) -> tuple[int, int]:
+        address = node_in_function(nodes, func, reachable, address_index, f"{label} memory address")
+        need(address[0] == "ssa_node", f"{label} memory address is not an SSA value")
+        address_defs = fields(address).get("def_stmt", [])
+        need(len(address_defs) == 1 and int(address_defs[0]) in nodes,
+             f"{label} memory address has no unique defining assignment")
+        address_def = nodes[int(address_defs[0])]
+        address_expr = assignment_rhs(nodes, address_def, f"{label} memory address")
+        gep = node_in_function(nodes, func, reachable, address_expr, f"{label} memory address expression")
+        gep_ops = operation_refs(gep)
+        need(gep[0] == "gep_node" and len(gep_ops) == 2,
+             f"{label} memory address is not a canonical base-plus-index GEP")
+        return gep_ops[0], gep_ops[1]
+
+    gep_base, gep_offset = address_gep(load_address, "LOAD")
+    need(gep_base == read_base_index,
+         "LOAD address does not use the declared source base as its direct GEP base")
+    write_gep_base, write_gep_offset = address_gep(store_address, "STORE")
+    need(write_gep_base == write_base_index,
+         "STORE address does not use the declared destination base as its direct GEP base")
     induction_id = int(record["read_induction_index"])
-    offset = node_in_function(nodes, func, reachable, gep_offset, "byte offset")
-    offset_defs = fields(offset).get("def_stmt", []) if offset[0] == "ssa_node" else []
-    need(len(offset_defs) == 1 and int(offset_defs[0]) in nodes,
-         "byte offset has no unique defining assignment")
-    offset_expr = nodes[int(offset_defs[0])]
-    offset_rhs = assignment_rhs(nodes, offset_expr, "byte offset")
-    scale = node_in_function(nodes, func, reachable, offset_rhs, "byte offset expression")
-    scale_ops = operation_refs(scale)
-    scaled_induction = False
-    if scale[0] == "mul_node" and len(scale_ops) == 2:
-        scaled_induction = ((scale_ops[0] == induction_id and
-                             nodes.get(scale_ops[1], ("", ""))[0] == "constant_int_val_node" and
-                             re.search(r"\bvalue: 4(?:\s|$)", nodes[scale_ops[1]][1])) or
-                            (scale_ops[1] == induction_id and
-                             nodes.get(scale_ops[0], ("", ""))[0] == "constant_int_val_node" and
-                             re.search(r"\bvalue: 4(?:\s|$)", nodes[scale_ops[0]][1])))
-    elif scale[0] == "shl_node" and len(scale_ops) == 2:
-        scaled_induction = (scale_ops[0] == induction_id and
-                            nodes.get(scale_ops[1], ("", ""))[0] == "constant_int_val_node" and
-                            re.search(r"\bvalue: 2(?:\s|$)", nodes[scale_ops[1]][1]))
-    need(scaled_induction,
-         "byte offset is not the declared induction scaled by four bytes")
+    def is_induction_byte_offset(offset_index: int, label: str) -> bool:
+        offset = node_in_function(nodes, func, reachable, offset_index, f"{label} byte offset")
+        offset_defs = fields(offset).get("def_stmt", []) if offset[0] == "ssa_node" else []
+        need(len(offset_defs) == 1 and int(offset_defs[0]) in nodes,
+             f"{label} byte offset has no unique defining assignment")
+        offset_expr = nodes[int(offset_defs[0])]
+        offset_rhs = assignment_rhs(nodes, offset_expr, f"{label} byte offset")
+        scale = node_in_function(nodes, func, reachable, offset_rhs, f"{label} byte offset expression")
+        scale_ops = operation_refs(scale)
+        if scale[0] == "mul_node" and len(scale_ops) == 2:
+            return ((scale_ops[0] == induction_id and
+                     nodes.get(scale_ops[1], ("", ""))[0] == "constant_int_val_node" and
+                     re.search(r"\bvalue: 4(?:\s|$)", nodes[scale_ops[1]][1])) or
+                    (scale_ops[1] == induction_id and
+                     nodes.get(scale_ops[0], ("", ""))[0] == "constant_int_val_node" and
+                     re.search(r"\bvalue: 4(?:\s|$)", nodes[scale_ops[0]][1])))
+        if scale[0] == "shl_node" and len(scale_ops) == 2:
+            return (scale_ops[0] == induction_id and
+                    nodes.get(scale_ops[1], ("", ""))[0] == "constant_int_val_node" and
+                    re.search(r"\bvalue: 2(?:\s|$)", nodes[scale_ops[1]][1]))
+        return False
+
+    need(is_induction_byte_offset(gep_offset, "LOAD"),
+         "LOAD byte offset is not the declared induction scaled by four bytes")
+    if distinct_bases:
+        need(is_induction_byte_offset(write_gep_offset, "STORE"),
+             "STORE byte offset is not the declared induction scaled by four bytes")
 
     common = ("read_preheader_bb", "read_header_bb", "read_guard_index", "read_bound_index", "read_induction_index")
     loop_branch: tuple[str, str] | None = None
@@ -856,12 +940,17 @@ def verify(output: Path, top: str, source: Path, bambu: Path, plugin: Path,
         need(owner not in owners, f"duplicate trace owner {owner}")
         owners.add(owner)
         access_counts.append((int(reads), int(writes)))
-        expected_recognized = "1" if top in ACTIVATED_CASES else "0"
+        if top in {"distinct_bases_source_first", "distinct_bases_destination_first"}:
+            expected_read_recognized = "1" if int(reads) == 1 else "0"
+            expected_write_recognized = "1" if int(writes) == 1 else "0"
+        else:
+            expected_read_recognized = "1" if top in ACTIVATED_CASES else "0"
+            expected_write_recognized = expected_read_recognized
         need((read_requested, read_recognized, read_fallback) ==
-             ("1", expected_recognized, expected_read_fallback),
+             ("1", expected_read_recognized, expected_read_fallback),
              "read request/recognition/fallback does not match the exact preanalysis contract")
         need((write_requested, write_recognized, write_fallback) ==
-             ("1", expected_recognized, expected_write_fallback),
+             ("1", expected_write_recognized, expected_write_fallback),
              "write request/recognition/fallback does not match the exact preanalysis contract")
         expected_candidate = "1" if expected_semantic else "0"
         need(candidate == expected_candidate and reason == expected_reason,
@@ -880,6 +969,7 @@ def verify(output: Path, top: str, source: Path, bambu: Path, plugin: Path,
     need(len(proof_records) == 1,
          "expected exactly one structured duplex proof record for the bundle")
     proof_by_owner: dict[int, dict[str, object]] = {}
+    semantic_record: dict[str, object] | None = None
     for record in proof_records:
         required = {"bundle", "semantic_proof", "semantic_reason", "profile_eligible", "profile_reason"}
         need(required <= record.keys(), "duplex proof record is missing required contract fields")
@@ -893,13 +983,19 @@ def verify(output: Path, top: str, source: Path, bambu: Path, plugin: Path,
              "structured semantic proof outcome/reason mismatch")
         if semantic:
             need(IDENTITY_FIELDS <= record.keys(), "semantic proof record is missing identity fields")
+            expected_kind = ("distinct_base_restricted_pointwise" if expected_reason == DISTINCT_SUCCESS else
+                             "same_base_pointwise")
+            need(record.get("proof_kind") == expected_kind,
+                 "structured proof kind does not match the selected candidate")
         else:
-            need(not (IDENTITY_FIELDS & record.keys()), "failed candidate exposes success-only identity fields")
+            need(not (IDENTITY_FIELDS & record.keys()) and "proof_kind" not in record,
+                 "failed candidate exposes success-only identity fields")
         if semantic:
             owner_id = int(record["owner_argument_index"])
             need(str(owner_id) in owners, "structured semantic proof owner has no matching preanalysis trace")
             need(owner_id not in proof_by_owner, f"duplicate structured proof owner {owner_id}")
             proof_by_owner[owner_id] = record
+            semantic_record = record
             verify_success_record(record, raw_path.read_text(encoding="utf-8", errors="replace"), top)
         need(record["profile_eligible"] is expected_profile_eligible,
              "structured profile eligibility does not match the selected profile")
@@ -909,6 +1005,8 @@ def verify(output: Path, top: str, source: Path, bambu: Path, plugin: Path,
              "structured profile reason does not match the selected profile")
 
     root = ET.parse(xml_path).getroot()
+    verify_restrict_architecture_metadata(root, top, raw_path.read_text(encoding="utf-8", errors="replace"),
+                                           semantic_record)
     functions = [node for node in root.findall(".//function") if node.get("name") == top]
     need(len(functions) == 1, f"architecture XML must contain exactly one function named {top}")
     bundles = [node for node in functions[0].findall("./bundles/bundle") if node.get("name") == "shared"]

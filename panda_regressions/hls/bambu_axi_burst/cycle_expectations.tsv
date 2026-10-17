@@ -14,3 +14,5 @@ write-burst-n2048	write	4116	plain_m_axi_write_burst.cpp	-	-	-	16	1	32	32
 write-burst-n1024-addr64	write	2068	plain_m_axi_write_burst.cpp	-	-	-	16	1	32	64
 duplex-symmetric-n1024	duplex	5173	bambu_axi_burst_duplex.cpp	16	1	64	16	1	32	32
 duplex-asymmetric-n1024	duplex	3149	bambu_axi_burst_duplex.cpp	16	2	64	8	1	16	32
+duplex-copy-symmetric-n1024	duplex	5158	bambu_axi_burst_duplex_copy.cpp	16	1	64	16	1	32	32
+duplex-copy-asymmetric-n1024	duplex	2622	bambu_axi_burst_duplex_copy.cpp	16	2	64	8	1	16	32

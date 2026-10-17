@@ -1566,6 +1566,8 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
       parm_attrs.insert(*portName);
       parm_attrs[key_loc_t("index", SourceLocation())] = std::to_string(parmIndex);
       parm_attrs[key_loc_t("bundle", SourceLocation())] = ifaceBundle;
+      parm_attrs[key_loc_t("source_restrict", SourceLocation())] =
+          parmDecl->getType().isRestrictQualified() ? "1" : "0";
       auto& bundle_attrs = func_attrs.ifaces.bundles[ifaceBundle];
       bundle_attrs[key_loc_t("name", SourceLocation())] = ifaceBundle;
       const auto burst_mode = p.attrs.find(key_loc_t("mode", SourceLocation()));

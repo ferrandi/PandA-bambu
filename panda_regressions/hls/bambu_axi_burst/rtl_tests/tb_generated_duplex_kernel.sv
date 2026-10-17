@@ -4,7 +4,7 @@ module tb_generated_duplex_kernel #(
   parameter integer READ_OUTSTANDING = 1,
   parameter integer WRITE_OUTSTANDING = 1
 );
-  localparam integer WORDS = 32768;
+  localparam integer WORDS = 65536;
   localparam integer OP_COUNT = 64;
 
   logic clock = 1'b0;
@@ -13,6 +13,8 @@ module tb_generated_duplex_kernel #(
   logic start_port = 1'b0;
   logic [31:0] data = 0;
   logic [31:0] n = 0;
+  logic [31:0] src = 0;
+  logic [31:0] dst = 0;
   logic cache_reset = 1'b0;
   wire done_port;
   wire idle_port;
@@ -30,8 +32,13 @@ module tb_generated_duplex_kernel #(
   logic [31:0] rdata;
   logic rlast;
 
+`ifdef COPY_MODE
+  kernel dut (
+    .clock(clock), .reset(reset), .start_port(start_port), .src(src), .dst(dst), .n(n),
+`else
   kernel dut (
     .clock(clock), .reset(reset), .start_port(start_port), .data(data), .n(n),
+`endif
     .cache_reset(cache_reset), .m_axi_shared_awready(awready),
     .m_axi_shared_wready(wready), .m_axi_shared_bid(bid),
     .m_axi_shared_bresp(bresp), .m_axi_shared_buser(1'b0),
@@ -71,7 +78,8 @@ module tb_generated_duplex_kernel #(
   integer ar_count = 0, aw_count = 0, b_count = 0;
   integer cycle_count = 0;
   integer case_count = 0;
-  logic [31:0] case_base = 0;
+  logic [31:0] read_base = 0;
+  logic [31:0] write_base = 0;
   logic case_begin = 0;
   logic release_final_b = 0;
   integer fault_mode = 0;
@@ -80,7 +88,12 @@ module tb_generated_duplex_kernel #(
   integer w_burst_progress = 0;
 
   function automatic integer mem_index(input logic [31:0] address);
-    mem_index = integer'(address[16:2]);
+    begin
+      if (address[1:0] != 0) $fatal(1, "DUPLEX_KERNEL_UNALIGNED_ADDRESS");
+      if (address[31:18] != 0 || address[17:2] >= WORDS)
+        $fatal(1, "DUPLEX_KERNEL_ADDRESS_OUT_OF_RANGE");
+      mem_index = integer'(address >> 2);
+    end
   endfunction
 
   function automatic integer burst_beats(input logic [31:0] base,
@@ -152,8 +165,8 @@ module tb_generated_duplex_kernel #(
       end
       if (arvalid && arready) begin
         if (ar_wr >= OP_COUNT) $fatal(1, "DUPLEX_KERNEL_AR_QUEUE_OVERFLOW");
-        expected_beats = burst_beats(case_base, case_count, ar_words, READ_B_MAX);
-        if (araddr !== case_base + ar_words * 4 || arlen !== expected_beats - 1)
+        expected_beats = burst_beats(read_base, case_count, ar_words, READ_B_MAX);
+        if (araddr !== read_base + ar_words * 4 || arlen !== expected_beats - 1)
           $fatal(1, "DUPLEX_KERNEL_AR_ADDRESS_OR_LENGTH_MISMATCH");
         if (arsize !== 3'd2 || arburst !== 2'b01 || arid !== 0)
           $fatal(1, "DUPLEX_KERNEL_AR_PROFILE_INVALID");
@@ -186,8 +199,8 @@ module tb_generated_duplex_kernel #(
       end
       if (awvalid && awready) begin
         if (aw_wr >= OP_COUNT) $fatal(1, "DUPLEX_KERNEL_AW_QUEUE_OVERFLOW");
-        expected_beats = burst_beats(case_base, case_count, aw_words, WRITE_B_MAX);
-        if (awaddr !== case_base + aw_words * 4 || awlen !== expected_beats - 1)
+        expected_beats = burst_beats(write_base, case_count, aw_words, WRITE_B_MAX);
+        if (awaddr !== write_base + aw_words * 4 || awlen !== expected_beats - 1)
           $fatal(1, "DUPLEX_KERNEL_AW_ADDRESS_OR_LENGTH_MISMATCH");
         if (awsize !== 3'd2 || awburst !== 2'b01 || awid !== 0)
           $fatal(1, "DUPLEX_KERNEL_AW_PROFILE_INVALID");
@@ -202,10 +215,10 @@ module tb_generated_duplex_kernel #(
       if (wvalid && wready) begin
         if (w_wr >= 4096 || w_words >= case_count)
           $fatal(1, "DUPLEX_KERNEL_UNEXPECTED_W_BEAT");
-        expected_beats = burst_beats(case_base, case_count, w_words - w_burst_progress,
+        expected_beats = burst_beats(write_base, case_count, w_words - w_burst_progress,
                                      WRITE_B_MAX);
         if (wstrb !== 4'hf) $fatal(1, "DUPLEX_KERNEL_WSTRB_INVALID");
-        index = mem_index(case_base + w_words * 4);
+        index = mem_index(write_base + w_words * 4);
         if (wdata !== expected[index])
           $fatal(1, "DUPLEX_KERNEL_WRITE_DATA_MISMATCH");
         if (wlast !== (w_burst_progress == expected_beats - 1))
@@ -248,19 +261,32 @@ module tb_generated_duplex_kernel #(
     $fatal(1, "%s", message);
   endtask
 
-  task automatic prepare_case(input integer count, input logic [31:0] base);
+  task automatic prepare_case(input integer count, input logic [31:0] source,
+                              input logic [31:0] destination);
     integer k;
     integer index;
     begin
       case_count = count;
-      case_base = base;
+      read_base = source;
+      write_base = destination;
+      index = mem_index(source);
+      index = mem_index(destination);
+`ifdef COPY_MODE
+      if (count > 0 && source < destination + count * 4 &&
+          destination < source + count * 4)
+        $fatal(1, "DUPLEX_KERNEL_COPY_REGIONS_OVERLAP");
+`endif
       for (k = 0; k < WORDS; k = k + 1) begin
         expected[k] = memory[k];
         snapshot[k] = memory[k];
       end
       for (k = 0; k < count; k = k + 1) begin
-        index = mem_index(base + k * 4);
+        index = mem_index(destination + k * 4);
+`ifdef COPY_MODE
+        expected[index] = snapshot[mem_index(source + k * 4)];
+`else
         expected[index] = snapshot[index] * 3 + 1;
+`endif
       end
       @(negedge clock);
       case_begin = 1;
@@ -269,15 +295,21 @@ module tb_generated_duplex_kernel #(
     end
   endtask
 
-  task automatic invoke(input integer count, input logic [31:0] base);
+  task automatic invoke(input integer count, input logic [31:0] source,
+                        input logic [31:0] destination);
     integer cycles;
     integer k;
     logic seen_done;
     begin
-      prepare_case(count, base);
+      prepare_case(count, source, destination);
       release_final_b = 0;
       @(negedge clock);
-      data = base;
+`ifdef COPY_MODE
+      src = source;
+      dst = destination;
+`else
+      data = source;
+`endif
       n = count;
       start_port = 1;
       @(posedge clock); #1;
@@ -316,9 +348,9 @@ module tb_generated_duplex_kernel #(
           cycles = cycles + 1;
         end
         if (!seen_done) fail("kernel did not complete after final B response");
-        if (ar_count != expected_burst_count(case_base, count, READ_B_MAX))
+        if (ar_count != expected_burst_count(read_base, count, READ_B_MAX))
           fail("AR burst count does not match the read profile");
-        if (aw_count != expected_burst_count(case_base, count, WRITE_B_MAX))
+        if (aw_count != expected_burst_count(write_base, count, WRITE_B_MAX))
           fail("AW burst count does not match the write profile");
         if (b_count != aw_count || b_pending != 0)
           fail("B responses do not match completed AW bursts");
@@ -339,13 +371,22 @@ module tb_generated_duplex_kernel #(
     logic accepted;
     begin
       count = 17;
-      prepare_case(count, 32'h00002000);
+`ifdef COPY_MODE
+      prepare_case(count, 32'h00002000, 32'h00003000);
+`else
+      prepare_case(count, 32'h00002000, 32'h00002000);
+`endif
       release_final_b = 1;
       fault_mode = mode;
       fault_injected = 0;
       fault_accepted = 0;
       @(negedge clock);
-      data = case_base;
+`ifdef COPY_MODE
+      src = read_base;
+      dst = write_base;
+`else
+      data = read_base;
+`endif
       n = count;
       start_port = 1;
       @(posedge clock); #1;
@@ -375,16 +416,27 @@ module tb_generated_duplex_kernel #(
       reset = 1;
       fault_injected = 0;
       fault_accepted = 0;
-      invoke(count, 32'h00002000);
+`ifdef COPY_MODE
+      invoke(count, 32'h00002000, 32'h00003000);
+`else
+      invoke(count, 32'h00002000, 32'h00002000);
+`endif
     end
   endtask
 
   task automatic report_pass(input string case_name);
     begin
+`ifdef COPY_MODE
+      if (WRITE_B_MAX == 16)
+        $display("DUPLEX_KERNEL_COPY_G2 PASS CASE=%s PROFILE=symmetric", case_name);
+      else
+        $display("DUPLEX_KERNEL_COPY_G2 PASS CASE=%s PROFILE=asymmetric", case_name);
+`else
       if (WRITE_B_MAX == 16)
         $display("DUPLEX_KERNEL_G2 PASS CASE=%s PROFILE=symmetric", case_name);
       else
         $display("DUPLEX_KERNEL_G2 PASS CASE=%s PROFILE=asymmetric", case_name);
+`endif
     end
   endtask
 
@@ -402,24 +454,25 @@ module tb_generated_duplex_kernel #(
     end
     repeat (3) @(posedge clock);
     reset = 1;
+`ifdef COPY_MODE
     if (selected_case == "COUNTS_0_1_15_16_17") begin
-      invoke(0, 32'h00002000);
-      invoke(1, 32'h00002000);
-      invoke(15, 32'h00002000);
-      invoke(16, 32'h00002000);
-      invoke(17, 32'h00002000);
+      invoke(0, 32'h00002000, 32'h00004000);
+      invoke(1, 32'h00002000, 32'h00004000);
+      invoke(15, 32'h00002000, 32'h00004000);
+      invoke(16, 32'h00002000, 32'h00004000);
+      invoke(17, 32'h00002000, 32'h00004000);
     end else if (selected_case == "COUNT38_SPLITS") begin
-      invoke(38, 32'h00002000);
+      invoke(38, 32'h00002000, 32'h00004000);
     end else if (selected_case == "PAGE_BOUNDARY") begin
-      invoke(17, 32'h00010ff0);
+      invoke(17, 32'h00010ff0, 32'h00020ffc);
     end else if (selected_case == "REINVOKE_DEPENDENT") begin
-      invoke(15, 32'h00003000);
-      invoke(15, 32'h00003000);
+      invoke(15, 32'h00003000, 32'h00005000);
+      invoke(15, 32'h00003000, 32'h00005000);
     end else if (selected_case == "REINVOKE_BASE_COUNT") begin
-      invoke(17, 32'h00005000);
-      invoke(8, 32'h00005004);
+      invoke(17, 32'h00005000, 32'h00007000);
+      invoke(8, 32'h00009000, 32'h0000b004);
     end else if (selected_case == "LAST_B_WAIT") begin
-      invoke(1, 32'h00004000);
+      invoke(1, 32'h00004000, 32'h00006000);
     end else if (selected_case == "RRESP_FAULT_RESET") begin
       fault_reset_restart(1);
     end else if (selected_case == "BRESP_FAULT_RESET") begin
@@ -427,6 +480,33 @@ module tb_generated_duplex_kernel #(
     end else begin
       $fatal(1, "DUPLEX_KERNEL_UNKNOWN_CASE_SELECTOR: %s", selected_case);
     end
+`else
+    if (selected_case == "COUNTS_0_1_15_16_17") begin
+      invoke(0, 32'h00002000, 32'h00002000);
+      invoke(1, 32'h00002000, 32'h00002000);
+      invoke(15, 32'h00002000, 32'h00002000);
+      invoke(16, 32'h00002000, 32'h00002000);
+      invoke(17, 32'h00002000, 32'h00002000);
+    end else if (selected_case == "COUNT38_SPLITS") begin
+      invoke(38, 32'h00002000, 32'h00002000);
+    end else if (selected_case == "PAGE_BOUNDARY") begin
+      invoke(17, 32'h00010ff0, 32'h00010ff0);
+    end else if (selected_case == "REINVOKE_DEPENDENT") begin
+      invoke(15, 32'h00003000, 32'h00003000);
+      invoke(15, 32'h00003000, 32'h00003000);
+    end else if (selected_case == "REINVOKE_BASE_COUNT") begin
+      invoke(17, 32'h00005000, 32'h00005000);
+      invoke(8, 32'h00005004, 32'h00005004);
+    end else if (selected_case == "LAST_B_WAIT") begin
+      invoke(1, 32'h00004000, 32'h00004000);
+    end else if (selected_case == "RRESP_FAULT_RESET") begin
+      fault_reset_restart(1);
+    end else if (selected_case == "BRESP_FAULT_RESET") begin
+      fault_reset_restart(2);
+    end else begin
+      $fatal(1, "DUPLEX_KERNEL_UNKNOWN_CASE_SELECTOR: %s", selected_case);
+    end
+`endif
     report_pass(selected_case);
     $finish;
   end
