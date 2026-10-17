@@ -400,11 +400,6 @@ if(PANDA_BUILD_BAMBU)
    )
    # Generated Bambu scripts require the copier.
    add_dependencies(bambu record_output)
-   install(CODE "
-      if(NOT EXISTS \"${CMAKE_BINARY_DIR}/src/bambu\")
-         execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target bambu)
-      endif()
-   " )
    install(TARGETS bambu
       RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
    )
@@ -425,11 +420,6 @@ if(PANDA_BUILD_EUCALYPTUS)
    set_target_properties(eucalyptus PROPERTIES
       INSTALL_RPATH "\$ORIGIN/../${PANDA_LIB_INSTALLDIR_REL}"
    )
-   install(CODE "
-      if(NOT EXISTS \"${CMAKE_BINARY_DIR}/src/eucalyptus\")
-         execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target eucalyptus)
-      endif()
-   " )
    install(TARGETS eucalyptus
       RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
    )
@@ -450,11 +440,6 @@ if(PANDA_BUILD_CC)
    set_target_properties(bambu-cc PROPERTIES
       INSTALL_RPATH "\$ORIGIN/../${PANDA_LIB_INSTALLDIR_REL}"
    )
-   install(CODE "
-      if(NOT EXISTS \"${CMAKE_BINARY_DIR}/src/bambu-cc\")
-         execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target bambu-cc)
-      endif()
-   " )
    install(TARGETS bambu-cc
       RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
    )
