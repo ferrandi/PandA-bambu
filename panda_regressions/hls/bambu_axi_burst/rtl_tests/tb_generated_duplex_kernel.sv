@@ -2,7 +2,9 @@ module tb_generated_duplex_kernel #(
   parameter integer READ_B_MAX = 16,
   parameter integer WRITE_B_MAX = 16,
   parameter integer READ_OUTSTANDING = 1,
-  parameter integer WRITE_OUTSTANDING = 1
+  parameter integer WRITE_OUTSTANDING = 1,
+  parameter integer READ_FIFO_DEPTH = 64,
+  parameter integer WRITE_FIFO_DEPTH = 32
 );
   localparam integer WORDS = 65536;
   localparam integer OP_COUNT = 64;
@@ -15,6 +17,8 @@ module tb_generated_duplex_kernel #(
   logic [31:0] n = 0;
   logic [31:0] src = 0;
   logic [31:0] dst = 0;
+  logic [31:0] read_bound = 0;
+  logic [31:0] write_bound = 0;
   logic cache_reset = 1'b0;
   wire done_port;
   wire idle_port;
@@ -36,6 +40,10 @@ module tb_generated_duplex_kernel #(
 `ifdef COPY_MODE
   kernel dut (
     .clock(clock), .reset(reset), .start_port(start_port), .src(src), .dst(dst), .n(n),
+`elsif PREFIX_MODE
+  kernel dut (
+    .clock(clock), .reset(reset), .start_port(start_port), .src(src), .dst(dst),
+    .read_bound(read_bound), .write_bound(write_bound), .n(n),
 `else
   kernel dut (
     .clock(clock), .reset(reset), .start_port(start_port), .data(data), .n(n),
@@ -75,7 +83,8 @@ module tb_generated_duplex_kernel #(
   logic w_last_q [0:4095];
   integer ar_wr = 0, ar_rd = 0, aw_wr = 0, aw_rd = 0;
   integer w_wr = 0, w_rd = 0, b_pending = 0;
-  integer ar_words = 0, aw_words = 0, w_words = 0, committed_words = 0;
+  integer ar_words = 0, r_words = 0, aw_words = 0, w_words = 0, committed_words = 0;
+  integer read_case_count = 0;
   integer ar_count = 0, aw_count = 0, b_count = 0;
   integer ar_outstanding = 0, aw_outstanding = 0;
   integer peak_ar_outstanding = 0, peak_aw_outstanding = 0;
@@ -89,6 +98,16 @@ module tb_generated_duplex_kernel #(
   logic fault_injected = 0;
   logic fault_accepted = 0;
   integer w_burst_progress = 0;
+  integer metric_start_cycle = 0;
+  integer metric_total_cycles = 0;
+  integer metric_read_beats = 0, metric_write_beats = 0;
+  integer metric_first_ar_cycle = -1, metric_last_r_cycle = -1;
+  integer metric_first_aw_cycle = -1, metric_last_w_cycle = -1;
+  integer metric_active_window_cycles = 0, metric_overlap_cycles = 0;
+  integer metric_simultaneous_rw = 0;
+  logic metric_case_enabled = 0;
+  logic metric_collect = 0;
+  logic metric_window_started = 0, metric_window_ended = 0;
 
   function automatic integer mem_index(input logic [31:0] address);
     begin
@@ -153,13 +172,14 @@ module tb_generated_duplex_kernel #(
     integer j;
     integer index;
     integer expected_beats;
+    integer accepted_beats;
     integer ar_retire;
     integer aw_retire;
     integer ar_next_outstanding;
     integer aw_next_outstanding;
     if (!reset) begin
       ar_wr = 0; ar_rd = 0; aw_wr = 0; aw_rd = 0; w_wr = 0; w_rd = 0;
-      b_pending = 0; ar_words = 0; aw_words = 0; w_words = 0;
+      b_pending = 0; ar_words = 0; r_words = 0; aw_words = 0; w_words = 0;
       committed_words = 0; ar_count = 0; aw_count = 0; b_count = 0;
       ar_outstanding = 0; aw_outstanding = 0;
       peak_ar_outstanding = 0; peak_aw_outstanding = 0;
@@ -168,7 +188,7 @@ module tb_generated_duplex_kernel #(
       cycle_count = cycle_count + 1;
       if (case_begin) begin
         ar_wr = 0; ar_rd = 0; aw_wr = 0; aw_rd = 0; w_wr = 0; w_rd = 0;
-        b_pending = 0; ar_words = 0; aw_words = 0; w_words = 0;
+        b_pending = 0; ar_words = 0; r_words = 0; aw_words = 0; w_words = 0;
         committed_words = 0; ar_count = 0; aw_count = 0; b_count = 0;
         ar_outstanding = 0; aw_outstanding = 0;
         peak_ar_outstanding = 0; peak_aw_outstanding = 0;
@@ -196,21 +216,30 @@ module tb_generated_duplex_kernel #(
       if (aw_next_outstanding > peak_aw_outstanding) peak_aw_outstanding = aw_next_outstanding;
       if (arvalid && arready) begin
         if (ar_wr >= OP_COUNT) $fatal(1, "DUPLEX_KERNEL_AR_QUEUE_OVERFLOW");
-        expected_beats = burst_beats(read_base, case_count, ar_words, READ_B_MAX);
-        if (araddr !== read_base + ar_words * 4 || arlen !== expected_beats - 1)
+        expected_beats = burst_beats(read_base, read_case_count, ar_words, READ_B_MAX);
+        accepted_beats = {24'b0, arlen} + 1;
+        if (araddr !== read_base + ar_words * 4 || accepted_beats < 1 ||
+            accepted_beats > expected_beats)
           $fatal(1, "DUPLEX_KERNEL_AR_ADDRESS_OR_LENGTH_MISMATCH");
         if (arsize !== 3'd2 || arburst !== 2'b01 || arid !== 0 || arcache !== 4'b0010)
           $fatal(1, "DUPLEX_KERNEL_AR_PROFILE_INVALID");
         if ((araddr & 32'hfff) + expected_beats * 4 > 4096)
           $fatal(1, "DUPLEX_KERNEL_AR_CROSSES_4K");
         ar_addr_q[ar_wr] = araddr;
-        ar_left_q[ar_wr] = expected_beats;
+        ar_left_q[ar_wr] = accepted_beats;
         ar_wr = ar_wr + 1;
-        ar_words = ar_words + expected_beats;
+        ar_words = ar_words + accepted_beats;
         ar_count = ar_count + 1;
         ar_outstanding = ar_outstanding + 1;
       end
       if (rvalid && rready) begin
+        if (metric_collect) begin
+          metric_read_beats = metric_read_beats + 1;
+          metric_last_r_cycle = cycle_count;
+          if (metric_first_ar_cycle < 0 && arvalid && arready)
+            metric_first_ar_cycle = cycle_count;
+        end
+        r_words = r_words + 1;
         index = mem_index(ar_addr_q[ar_rd]);
         if (rresp != 2'b00) begin
           if (fault_mode != 1 || fault_injected)
@@ -230,6 +259,8 @@ module tb_generated_duplex_kernel #(
         end
       end
       if (awvalid && awready) begin
+        if (metric_collect && metric_first_aw_cycle < 0)
+          metric_first_aw_cycle = cycle_count;
         if (aw_wr >= OP_COUNT) $fatal(1, "DUPLEX_KERNEL_AW_QUEUE_OVERFLOW");
         expected_beats = burst_beats(write_base, case_count, aw_words, WRITE_B_MAX);
         if (awaddr !== write_base + aw_words * 4 || awlen !== expected_beats - 1)
@@ -246,6 +277,10 @@ module tb_generated_duplex_kernel #(
         aw_outstanding = aw_outstanding + 1;
       end
       if (wvalid && wready) begin
+        if (metric_collect) begin
+          metric_write_beats = metric_write_beats + 1;
+          metric_last_w_cycle = cycle_count;
+        end
         if (w_wr >= 4096 || w_words >= case_count)
           $fatal(1, "DUPLEX_KERNEL_UNEXPECTED_W_BEAT");
         expected_beats = burst_beats(write_base, case_count, w_words - w_burst_progress,
@@ -286,6 +321,21 @@ module tb_generated_duplex_kernel #(
         b_count = b_count + 1;
         aw_outstanding = aw_outstanding - 1;
       end
+      if (metric_collect) begin
+        if (arvalid && arready && metric_first_ar_cycle < 0)
+          metric_first_ar_cycle = cycle_count;
+        if ((arvalid && arready) || (awvalid && awready))
+          metric_window_started = 1;
+        if ((rvalid && rready) && (wvalid && wready))
+          metric_simultaneous_rw = metric_simultaneous_rw + 1;
+        if (!metric_window_ended && metric_window_started) begin
+          metric_active_window_cycles = metric_active_window_cycles + 1;
+          if (ar_next_outstanding > 0 && aw_next_outstanding > 0)
+            metric_overlap_cycles = metric_overlap_cycles + 1;
+          if (metric_read_beats == 256 && metric_write_beats == 256)
+            metric_window_ended = 1;
+        end
+      end
     end
   end
 
@@ -300,6 +350,7 @@ module tb_generated_duplex_kernel #(
     integer index;
     begin
       case_count = count;
+      read_case_count = count;
       read_base = source;
       write_base = destination;
       index = mem_index(source);
@@ -328,14 +379,59 @@ module tb_generated_duplex_kernel #(
     end
   endtask
 
+  task automatic prepare_prefix_case(input integer read_count, input integer write_count,
+                                     input logic [31:0] source,
+                                     input logic [31:0] destination);
+    integer k;
+    integer index;
+    begin
+      read_case_count = read_count;
+      case_count = write_count;
+      read_base = source;
+      write_base = destination;
+      for (k = 0; k < WORDS; k = k + 1) begin
+        expected[k] = memory[k];
+        snapshot[k] = memory[k];
+      end
+      for (k = 0; k < write_count; k = k + 1) begin
+        index = mem_index(destination + k * 4);
+        if (k < read_count)
+          expected[index] = snapshot[mem_index(source + k * 4)];
+        else if (read_count > 0)
+          expected[index] = snapshot[mem_index(source + (read_count - 1) * 4)];
+        else
+          expected[index] = 32'h5a17c0de;
+      end
+      @(negedge clock);
+      case_begin = 1;
+      @(negedge clock);
+      case_begin = 0;
+    end
+  endtask
+
   task automatic invoke(input integer count, input logic [31:0] source,
                         input logic [31:0] destination);
     integer cycles;
     integer k;
     logic seen_done;
+    string metric_profile;
     begin
       prepare_case(count, source, destination);
       release_final_b = 0;
+      if (metric_case_enabled) begin
+        metric_collect = 0;
+        metric_read_beats = 0;
+        metric_write_beats = 0;
+        metric_first_ar_cycle = -1;
+        metric_last_r_cycle = -1;
+        metric_first_aw_cycle = -1;
+        metric_last_w_cycle = -1;
+        metric_active_window_cycles = 0;
+        metric_overlap_cycles = 0;
+        metric_simultaneous_rw = 0;
+        metric_window_started = 0;
+        metric_window_ended = 0;
+      end
       @(negedge clock);
 `ifdef COPY_MODE
       src = source;
@@ -344,6 +440,10 @@ module tb_generated_duplex_kernel #(
       data = source;
 `endif
       n = count;
+      if (metric_case_enabled) begin
+        metric_start_cycle = cycle_count;
+        metric_collect = 1;
+      end
       start_port = 1;
       @(posedge clock); #1;
       @(negedge clock);
@@ -356,7 +456,7 @@ module tb_generated_duplex_kernel #(
           seen_done = done_port;
           cycles = cycles + 1;
         end
-        if (!seen_done || ar_count != 0 || aw_count != 0 || w_words != 0)
+        if (!seen_done || ar_count != 0 || r_words != 0 || aw_count != 0 || w_words != 0)
           fail("zero-count call did not complete without bus traffic");
       end else begin
         while ((committed_words < count || ar_words < count) && cycles < 20000) begin
@@ -364,7 +464,7 @@ module tb_generated_duplex_kernel #(
           if (done_port) fail("done asserted before final B response");
           cycles = cycles + 1;
         end
-        if (committed_words != count || ar_words != count || w_words != count)
+        if (committed_words != count || ar_words != count || r_words != count || w_words != count)
           fail("read/write traffic did not cover the requested region");
         if (b_pending != 1)
           fail("final B response was not held after data commit");
@@ -381,7 +481,7 @@ module tb_generated_duplex_kernel #(
           cycles = cycles + 1;
         end
         if (!seen_done) fail("kernel did not complete after final B response");
-        if (ar_count != expected_burst_count(read_base, count, READ_B_MAX))
+        if (ar_count < expected_burst_count(read_base, count, READ_B_MAX))
           fail("AR burst count does not match the read profile");
         if (aw_count != expected_burst_count(write_base, count, WRITE_B_MAX))
           fail("AW burst count does not match the write profile");
@@ -390,12 +490,111 @@ module tb_generated_duplex_kernel #(
         if (READ_OUTSTANDING == 2 && count >= 2 * READ_B_MAX && peak_ar_outstanding < 2)
           fail("read outstanding profile of two was not exercised");
       end
+      if (metric_case_enabled) begin
+        metric_total_cycles = cycle_count - metric_start_cycle;
+        metric_collect = 0;
+        if (WRITE_B_MAX == 16 && READ_OUTSTANDING == 1)
+          metric_profile = "symmetric";
+        else
+          metric_profile = "asymmetric";
+        if (count != 256 || metric_read_beats != 256 || metric_write_beats != 256 ||
+            metric_overlap_cycles == 0 || metric_simultaneous_rw == 0 ||
+            metric_first_ar_cycle < 0 || metric_last_r_cycle < 0 ||
+            metric_first_aw_cycle < 0 || metric_last_w_cycle < 0 ||
+            !metric_window_ended)
+          fail("parallelism observations did not satisfy beat and overlap requirements");
+        $display("DUPLEX_PARALLELISM_METRIC CASE=COPY_PARALLELISM_256 PROFILE=%s CARRIER=copy INVOCATIONS=1 EXPECTED_WORDS=256 READ_BEATS=%0d WRITE_BEATS=%0d READ_WRITE_OUTSTANDING_CYCLES=%0d SIMULTANEOUS_RW_HANDSHAKES=%0d FIRST_AR_CYCLE=%0d LAST_R_CYCLE=%0d FIRST_AW_CYCLE=%0d LAST_W_CYCLE=%0d ACTIVE_WINDOW_CYCLES=%0d TOTAL_CYCLES=%0d READ_B_MAX=%0d READ_OUTSTANDING=%0d READ_FIFO_DEPTH=%0d WRITE_B_MAX=%0d WRITE_OUTSTANDING=%0d WRITE_FIFO_DEPTH=%0d AWREADY_PERIOD=5 WREADY_PERIOD=7 ARREADY_PERIOD=4 RVALID_PERIOD=3 BVALID_PERIOD=5 FINAL_B_RELEASE_DELAY=3",
+                 metric_profile,
+                 metric_read_beats, metric_write_beats, metric_overlap_cycles,
+                 metric_simultaneous_rw, metric_first_ar_cycle - metric_start_cycle,
+                 metric_last_r_cycle - metric_start_cycle,
+                 metric_first_aw_cycle - metric_start_cycle,
+                 metric_last_w_cycle - metric_start_cycle, metric_active_window_cycles,
+                 metric_total_cycles, READ_B_MAX, READ_OUTSTANDING, READ_FIFO_DEPTH,
+                 WRITE_B_MAX, WRITE_OUTSTANDING, WRITE_FIFO_DEPTH);
+      end
       for (k = 0; k < WORDS; k = k + 1)
         if (memory[k] !== expected[k])
           fail($sformatf("memory/canary mismatch at word %0d got=%08x expected=%08x",
                          k, memory[k], expected[k]));
       if (ar_outstanding != 0 || aw_outstanding != 0)
         fail("outstanding burst count did not drain");
+    end
+  endtask
+
+  task automatic invoke_prefix(input integer loop_count, input integer read_limit,
+                               input integer write_limit, input logic [31:0] source,
+                               input logic [31:0] destination);
+    integer cycles;
+    integer k;
+    integer read_count;
+    integer write_count;
+    logic seen_done;
+    begin
+      read_count = loop_count < read_limit ? loop_count : read_limit;
+      write_count = loop_count < write_limit ? loop_count : write_limit;
+      prepare_prefix_case(read_count, write_count, source, destination);
+      release_final_b = 0;
+      @(negedge clock);
+      src = source;
+      dst = destination;
+      n = loop_count;
+      read_bound = read_limit;
+      write_bound = write_limit;
+      start_port = 1;
+      @(posedge clock); #1;
+      @(negedge clock);
+      start_port = 0;
+      cycles = 0;
+      while ((committed_words < write_count || ar_words < read_count || r_words < read_count) &&
+             cycles < 20000) begin
+        @(posedge clock); #1;
+        if (done_port) fail("prefix kernel completed before expected channel traffic");
+        cycles = cycles + 1;
+      end
+      if (committed_words != write_count || ar_words != read_count ||
+          r_words != read_count || w_words != write_count || aw_words != write_count)
+        fail("prefix read/write traffic did not match independently bounded regions");
+      if (write_count > 0) begin
+        if (b_pending != 1)
+          fail("prefix final B response was not held after data commit");
+        repeat (3) begin
+          @(posedge clock); #1;
+          if (done_port) fail("prefix done asserted while final B response was withheld");
+        end
+        release_final_b = 1;
+      end
+      cycles = 0;
+      seen_done = 0;
+      while (!seen_done && cycles < 10000) begin
+        @(posedge clock); #1;
+        seen_done = done_port;
+        cycles = cycles + 1;
+      end
+      if (!seen_done) fail("prefix kernel did not complete after its final response");
+      if (ar_count < expected_burst_count(read_base, read_count, READ_B_MAX))
+        fail("prefix AR burst count does not match read bound");
+      if (aw_count != expected_burst_count(write_base, write_count, WRITE_B_MAX))
+        fail("prefix AW burst count does not match write bound");
+      if (b_count != aw_count || b_pending != 0)
+        fail("prefix B responses do not match completed AW bursts");
+      if (READ_OUTSTANDING == 2 && read_count >= 2 * READ_B_MAX && peak_ar_outstanding < 2)
+        fail("prefix read outstanding profile of two was not exercised");
+      for (k = 0; k < WORDS; k = k + 1)
+        if (memory[k] !== expected[k])
+          fail($sformatf("prefix memory/canary mismatch at word %0d got=%08x expected=%08x",
+                         k, memory[k], expected[k]));
+      for (k = 0; k < read_count; k = k + 1)
+        if (memory[mem_index(source + k * 4)] !== snapshot[mem_index(source + k * 4)])
+          fail("prefix source memory changed");
+      if (ar_outstanding != 0 || aw_outstanding != 0)
+        fail("prefix outstanding burst count did not drain");
+      if (WRITE_B_MAX == 16)
+        $display("DUPLEX_KERNEL_PREFIX_COUNTS CASE=%s PROFILE=symmetric AR_BURSTS=%0d R_BEATS=%0d AW_BURSTS=%0d W_BEATS=%0d B_RESPONSES=%0d",
+                 selected_case, ar_count, r_words, aw_count, w_words, b_count);
+      else
+        $display("DUPLEX_KERNEL_PREFIX_COUNTS CASE=%s PROFILE=asymmetric AR_BURSTS=%0d R_BEATS=%0d AW_BURSTS=%0d W_BEATS=%0d B_RESPONSES=%0d",
+                 selected_case, ar_count, r_words, aw_count, w_words, b_count);
     end
   endtask
 
@@ -467,10 +666,17 @@ module tb_generated_duplex_kernel #(
       else
         $display("DUPLEX_KERNEL_COPY_G2 PASS CASE=%s PROFILE=asymmetric", case_name);
 `else
+`ifdef PREFIX_MODE
+      if (WRITE_B_MAX == 16)
+        $display("DUPLEX_KERNEL_PREFIX_G2 PASS CASE=%s PROFILE=symmetric", case_name);
+      else
+        $display("DUPLEX_KERNEL_PREFIX_G2 PASS CASE=%s PROFILE=asymmetric", case_name);
+`else
       if (WRITE_B_MAX == 16)
         $display("DUPLEX_KERNEL_G2 PASS CASE=%s PROFILE=symmetric", case_name);
       else
         $display("DUPLEX_KERNEL_G2 PASS CASE=%s PROFILE=asymmetric", case_name);
+`endif
 `endif
     end
   endtask
@@ -489,7 +695,25 @@ module tb_generated_duplex_kernel #(
     end
     repeat (3) @(posedge clock);
     reset = 1;
-`ifdef COPY_MODE
+`ifdef PREFIX_MODE
+    if (selected_case == "READ_LONGER") begin
+      invoke_prefix(38, 38, 17, 32'h00002000, 32'h00004000);
+    end else if (selected_case == "WRITE_LONGER") begin
+      invoke_prefix(38, 17, 38, 32'h00002000, 32'h00004000);
+    end else if (selected_case == "ZERO_READ_WRITE_TAIL") begin
+      invoke_prefix(17, 0, 17, 32'h00002000, 32'h00004000);
+    end else if (selected_case == "READ_ONLY") begin
+      invoke_prefix(17, 17, 0, 32'h00002000, 32'h00004000);
+    end else if (selected_case == "ZERO_ZERO") begin
+      invoke_prefix(0, 0, 0, 32'h00002000, 32'h00004000);
+    end else if (selected_case == "BOUNDS_CLAMP") begin
+      invoke_prefix(17, 100, 99, 32'h00002000, 32'h00004000);
+    end else if (selected_case == "PAGE_SPLITS") begin
+      invoke_prefix(38, 23, 35, 32'h00010ff4, 32'h00020fe8);
+    end else begin
+      $fatal(1, "DUPLEX_KERNEL_UNKNOWN_CASE_SELECTOR: %s", selected_case);
+    end
+`elsif COPY_MODE
     if (selected_case == "COUNTS_0_1_15_16_17") begin
       invoke(0, 32'h00002000, 32'h00004000);
       invoke(1, 32'h00002000, 32'h00004000);
@@ -512,6 +736,9 @@ module tb_generated_duplex_kernel #(
       fault_reset_restart(1);
     end else if (selected_case == "BRESP_FAULT_RESET") begin
       fault_reset_restart(2);
+    end else if (selected_case == "COPY_PARALLELISM_256") begin
+      metric_case_enabled = 1;
+      invoke(256, 32'h00002000, 32'h00004000);
     end else begin
       $fatal(1, "DUPLEX_KERNEL_UNKNOWN_CASE_SELECTOR: %s", selected_case);
     end

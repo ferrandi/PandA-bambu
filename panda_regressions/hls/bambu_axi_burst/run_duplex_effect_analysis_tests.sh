@@ -18,12 +18,25 @@ DISTINCT_DESTINATION_FIRST_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct
 DISTINCT_ONE_RESTRICT_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_bases_one_restrict.cpp"
 DISTINCT_ASYMMETRIC_64_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_bases_asymmetric_64.cpp"
 DISTINCT_MISMATCHED_BOUNDS_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_bases_mismatched_bounds.cpp"
+DISTINCT_TWO_LOOPS_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_bases_two_loops.cpp"
+PREFIX_READ_LONGER_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_prefix_read_longer.cpp"
+PREFIX_WRITE_LONGER_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_prefix_write_longer.cpp"
+PREFIX_EQUAL_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_prefix_equal.cpp"
+PREFIX_SIGNED_BOUND_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_prefix_signed_bound.cpp"
+PREFIX_WIDTH_BOUND_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_prefix_width_bound.cpp"
+PREFIX_U64_BOUND_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_prefix_u64_bound.cpp"
+PREFIX_EXTRA_CFG_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_prefix_extra_cfg.cpp"
+PREFIX_GUARD_BYPASS_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_prefix_guard_bypass.cpp"
 PARALLEL_HELPERS="$TESTS/parallel_helpers.sh"
 CASES=(same_base_pointwise same_base_pointwise_reversed shifted_index stride_index
   same_base_cached conditional_store residual_store volatile_effect separate_phase
   split_read_write_loops same_loop_byte_side_store same_loop_opaque_call distinct_bases
   distinct_bases_source_first distinct_bases_destination_first distinct_bases_asymmetric_64
-  distinct_bases_mismatched_bounds distinct_bases_one_restrict
+  distinct_bases_mismatched_bounds distinct_bases_two_loops distinct_bases_one_restrict
+  distinct_prefix_read_longer distinct_prefix_write_longer distinct_prefix_equal
+  distinct_prefix_signed_bound distinct_prefix_width_bound distinct_prefix_u64_bound
+  distinct_prefix_extra_cfg
+  distinct_prefix_guard_bypass
   same_base_asymmetric_64)
 
 if [[ $# -lt 1 || $# -gt 2 ]]; then
@@ -52,6 +65,11 @@ command -v sha256sum >/dev/null || { echo "required tool not found: sha256sum" >
    -f "$ASYMMETRIC_64_SOURCE" && -f "$DISTINCT_SOURCE_FIRST_SOURCE" &&
    -f "$DISTINCT_DESTINATION_FIRST_SOURCE" && -f "$DISTINCT_ONE_RESTRICT_SOURCE" &&
    -f "$DISTINCT_ASYMMETRIC_64_SOURCE" && -f "$DISTINCT_MISMATCHED_BOUNDS_SOURCE" &&
+   -f "$DISTINCT_TWO_LOOPS_SOURCE" && -f "$PREFIX_READ_LONGER_SOURCE" &&
+   -f "$PREFIX_WRITE_LONGER_SOURCE" && -f "$PREFIX_EQUAL_SOURCE" &&
+   -f "$PREFIX_SIGNED_BOUND_SOURCE" && -f "$PREFIX_WIDTH_BOUND_SOURCE" &&
+   -f "$PREFIX_U64_BOUND_SOURCE" &&
+   -f "$PREFIX_EXTRA_CFG_SOURCE" && -f "$PREFIX_GUARD_BYPASS_SOURCE" &&
    -f "$CHECKER" && -f "$CORE_SOURCE" && -f "$PARALLEL_HELPERS" ]] || {
   echo "source/checker/parallel helper missing" >&2; exit 2;
 }
@@ -102,6 +120,15 @@ run_case() {
   if [[ "$top" == distinct_bases_one_restrict ]]; then case_source=$DISTINCT_ONE_RESTRICT_SOURCE; fi
   if [[ "$top" == distinct_bases_asymmetric_64 ]]; then case_source=$DISTINCT_ASYMMETRIC_64_SOURCE; fi
   if [[ "$top" == distinct_bases_mismatched_bounds ]]; then case_source=$DISTINCT_MISMATCHED_BOUNDS_SOURCE; fi
+  if [[ "$top" == distinct_bases_two_loops ]]; then case_source=$DISTINCT_TWO_LOOPS_SOURCE; fi
+  if [[ "$top" == distinct_prefix_read_longer ]]; then case_source=$PREFIX_READ_LONGER_SOURCE; fi
+  if [[ "$top" == distinct_prefix_write_longer ]]; then case_source=$PREFIX_WRITE_LONGER_SOURCE; fi
+  if [[ "$top" == distinct_prefix_equal ]]; then case_source=$PREFIX_EQUAL_SOURCE; fi
+  if [[ "$top" == distinct_prefix_signed_bound ]]; then case_source=$PREFIX_SIGNED_BOUND_SOURCE; fi
+  if [[ "$top" == distinct_prefix_width_bound ]]; then case_source=$PREFIX_WIDTH_BOUND_SOURCE; fi
+  if [[ "$top" == distinct_prefix_u64_bound ]]; then case_source=$PREFIX_U64_BOUND_SOURCE; fi
+  if [[ "$top" == distinct_prefix_extra_cfg ]]; then case_source=$PREFIX_EXTRA_CFG_SOURCE; fi
+  if [[ "$top" == distinct_prefix_guard_bypass ]]; then case_source=$PREFIX_GUARD_BYPASS_SOURCE; fi
   if [[ -e "$out" || -L "$out" ]]; then echo "case output path must be fresh and not a symlink: $out" >&2; return 2; fi
   mkdir "$out"
   local args=("--top-fname=$top" "${COMMON[@]}")
@@ -124,6 +151,18 @@ run_case() {
   {
     printf 'raw_ir=%s\nraw_ir_sha256=%s\n' "$raw_ir" "$(digest "$raw_ir")"
   } >>"$out/provenance.txt"
+  if [[ "$top" == distinct_prefix_* || "$top" == same_base_pointwise ||
+        "$top" == same_base_pointwise_reversed || "$top" == same_base_asymmetric_64 ||
+        "$top" == distinct_bases_source_first || "$top" == distinct_bases_destination_first ||
+        "$top" == distinct_bases_asymmetric_64 ]]; then
+    local post_raw="$out/panda-temp/after_Frontend::InterfaceInfer.raw"
+    if [[ ! -s "$post_raw" || -L "$post_raw" ]]; then
+      echo "$top did not retain a regular post-InterfaceInfer raw IR dump for CONFIGURE verification" >&2
+      return 1
+    fi
+    printf 'post_interface_raw=%s\npost_interface_raw_sha256=%s\n' \
+      "$post_raw" "$(digest "$post_raw")" >>"$out/provenance.txt"
+  fi
   python3 "$CHECKER" "$top" --output "$out" --source "$case_source" --bambu "$BAMBU" \
     --plugin "$PLUGIN" --checker "$CHECKER" --runner "$RUNNER"
   printf 'DUPLEX_EFFECT_ANALYSIS PASS CASE=%s\n' "$top"

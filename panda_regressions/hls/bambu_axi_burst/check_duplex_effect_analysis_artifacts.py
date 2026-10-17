@@ -36,14 +36,22 @@ IDENTITY_FIELDS = {
     "read_bound_index", "read_induction_index", "write_preheader_bb", "write_header_bb",
     "write_exit_bb", "write_guard_index", "write_bound_index", "write_induction_index",
 }
+COUNT_PROOF_FIELDS = {
+    "loop_trip_bound_ssa_index", "loop_trip_compare_index",
+    "read_effective_bound_ssa_index", "write_effective_bound_ssa_index",
+    "read_effective_compare_index", "write_effective_compare_index",
+    "read_access_bb", "write_access_bb", "read_count_recipe", "write_count_recipe",
+    "pairing_domain_recipe",
+}
 CASES: dict[str, tuple[str, int, str, str, bool, bool]] = {
     "same_base_pointwise": (SUCCESS, 1, "-", "-", True, True),
     "same_base_pointwise_reversed": (SUCCESS, 1, "-", "-", True, True),
     "same_base_asymmetric_64": (SUCCESS, 1, "-", "-", True, True),
     "same_base_cached": (SUCCESS, 1, "cache-enabled bundle", "cache-enabled bundle", True, False),
-    "shifted_index": ("canonical contiguous loop recognition failed", 1, FALLBACK_READ, FALLBACK_WRITE, False, True),
+    "shifted_index": ("read/write accesses do not share one canonical loop", 1,
+                      FALLBACK_READ, FALLBACK_WRITE, False, True),
     "stride_index": ("canonical contiguous loop recognition failed", 1, FALLBACK_READ, FALLBACK_WRITE, False, True),
-    "conditional_store": ("canonical contiguous loop recognition failed", 1, FALLBACK_READ, FALLBACK_WRITE, False, True),
+    "conditional_store": ("unsupported direction guard CFG", 1, FALLBACK_READ, FALLBACK_WRITE, False, True),
     "residual_store": ("original effects are not fully classified ordinary accesses", 1,
                        "memory writes or opaque effects; prefetch ordering is not proven",
                        "opaque, volatile, atomic, or unclassified memory effects", False, True),
@@ -53,7 +61,7 @@ CASES: dict[str, tuple[str, int, str, str, bool, bool]] = {
     "separate_phase": ("original effects are not fully classified ordinary accesses", 1,
                        "memory writes or opaque effects; prefetch ordering is not proven",
                        "opaque, volatile, atomic, or unclassified memory effects", False, True),
-    "split_read_write_loops": ("canonical contiguous loop recognition failed", 1,
+    "split_read_write_loops": ("read/write accesses do not share one canonical loop", 1,
                                 FALLBACK_READ, FALLBACK_WRITE, False, True),
     "same_loop_byte_side_store": ("original effects are not fully classified ordinary accesses", 1,
                                   "memory writes or opaque effects; prefetch ordering is not proven",
@@ -67,8 +75,22 @@ CASES: dict[str, tuple[str, int, str, str, bool, bool]] = {
     "distinct_bases_destination_first": (DISTINCT_SUCCESS, 2, "-", "-", True, True),
     "distinct_bases_asymmetric_64": (DISTINCT_SUCCESS, 2, "-", "-", True, True),
     "distinct_bases_mismatched_bounds": (
-        "canonical contiguous loop recognition failed", 2,
-        "bundle contains stores", FALLBACK_WRITE, False, True),
+        "effective bound is defined inside loop", 2,
+        FALLBACK_READ, FALLBACK_WRITE, False, True),
+    "distinct_bases_two_loops": ("read/write accesses do not share one canonical loop", 2,
+                                  FALLBACK_READ, FALLBACK_WRITE, False, True),
+    "distinct_prefix_read_longer": (DISTINCT_SUCCESS, 2, "-", "-", True, True),
+    "distinct_prefix_write_longer": (DISTINCT_SUCCESS, 2, "-", "-", True, True),
+    "distinct_prefix_equal": (DISTINCT_SUCCESS, 2, "-", "-", True, True),
+    "distinct_prefix_signed_bound": ("unsupported direction guard CFG", 2,
+                                     FALLBACK_READ, FALLBACK_WRITE, False, True),
+    "distinct_prefix_width_bound": (DISTINCT_SUCCESS, 2, "-", "-", True, True),
+    "distinct_prefix_u64_bound": ("unsupported direction guard CFG", 2,
+                                   FALLBACK_READ, FALLBACK_WRITE, False, True),
+    "distinct_prefix_extra_cfg": ("unsupported direction guard CFG", 2,
+                                  FALLBACK_READ, FALLBACK_WRITE, False, True),
+    "distinct_prefix_guard_bypass": ("unsupported direction guard CFG", 2,
+                                     FALLBACK_READ, FALLBACK_WRITE, False, True),
     "distinct_bases_one_restrict": ("distinct-base duplex requires source restrict on both owners", 2,
                                     FALLBACK_READ, FALLBACK_WRITE, False, True),
 }
@@ -91,19 +113,42 @@ ACCESS_COUNTS: dict[str, tuple[tuple[int, int], ...]] = {
     "distinct_bases_destination_first": ((1, 0), (0, 1)),
     "distinct_bases_asymmetric_64": ((1, 0), (0, 1)),
     "distinct_bases_mismatched_bounds": ((1, 0), (0, 1)),
+    "distinct_bases_two_loops": ((1, 0), (0, 1)),
+    "distinct_prefix_read_longer": ((1, 0), (0, 1)),
+    "distinct_prefix_write_longer": ((1, 0), (0, 1)),
+    "distinct_prefix_equal": ((1, 0), (0, 1)),
+    "distinct_prefix_signed_bound": ((1, 0), (0, 1)),
+    "distinct_prefix_width_bound": ((1, 0), (0, 1)),
+    "distinct_prefix_u64_bound": ((1, 0), (0, 1)),
+    "distinct_prefix_extra_cfg": ((1, 0), (0, 1)),
+    "distinct_prefix_guard_bypass": ((1, 0), (0, 1)),
     "distinct_bases_one_restrict": ((1, 0), (0, 1)),
 }
 ACTIVATED_CASES = {"same_base_pointwise", "same_base_pointwise_reversed", "same_base_asymmetric_64",
                    "distinct_bases_source_first", "distinct_bases_destination_first",
-                   "distinct_bases_asymmetric_64"}
+                   "distinct_bases_asymmetric_64", "distinct_prefix_read_longer",
+                   "distinct_prefix_write_longer", "distinct_prefix_equal", "distinct_prefix_width_bound"}
 DISTINCT_BASE_CASES = {"distinct_bases_source_first", "distinct_bases_destination_first",
-                       "distinct_bases_asymmetric_64"}
+                       "distinct_bases_asymmetric_64", "distinct_prefix_read_longer",
+                       "distinct_prefix_write_longer", "distinct_prefix_equal",
+                       "distinct_prefix_width_bound"}
+PREFIX_COUNT_CASES = {"distinct_prefix_read_longer", "distinct_prefix_write_longer",
+                      "distinct_prefix_equal", "distinct_prefix_width_bound"}
 RESTRICT_METADATA_CASES = {
     "distinct_bases": {"src": "0", "dst": "0"},
     "distinct_bases_source_first": {"src": "1", "dst": "1"},
     "distinct_bases_destination_first": {"dst": "1", "src": "1"},
     "distinct_bases_asymmetric_64": {"src": "1", "dst": "1"},
     "distinct_bases_mismatched_bounds": {"src": "1", "dst": "1"},
+    "distinct_bases_two_loops": {"src": "1", "dst": "1"},
+    "distinct_prefix_read_longer": {"src": "1", "dst": "1"},
+    "distinct_prefix_write_longer": {"src": "1", "dst": "1"},
+    "distinct_prefix_equal": {"src": "1", "dst": "1"},
+    "distinct_prefix_signed_bound": {"src": "1", "dst": "1"},
+    "distinct_prefix_width_bound": {"src": "1", "dst": "1"},
+    "distinct_prefix_u64_bound": {"src": "1", "dst": "1"},
+    "distinct_prefix_extra_cfg": {"src": "1", "dst": "1"},
+    "distinct_prefix_guard_bypass": {"src": "1", "dst": "1"},
     "distinct_bases_one_restrict": {"src": "1", "dst": "0"},
 }
 EXPECTED_ADDRESS_BITS = {"same_base_asymmetric_64": "64", "distinct_bases_asymmetric_64": "64"}
@@ -272,14 +317,12 @@ def verify_private_duplex_wiring(code: str, parent_body: str,
 
 def check_production_duplex(rtl: str, compiler_log: str, top: str, attrs: dict[str, str]) -> None:
     bundle = "shared"
-    marker_kind = "distinct-base restricted pointwise" if top in {
-        "distinct_bases_source_first", "distinct_bases_destination_first",
-        "distinct_bases_asymmetric_64"} else "same-base pointwise"
+    is_distinct_base = top in DISTINCT_BASE_CASES
+    marker_kind = "distinct-base restricted pointwise" if is_distinct_base else "same-base pointwise"
     marker = f"Activated {marker_kind} duplex m_axi bundle {bundle} for root {top}"
     matches = re.findall(rf"(?m)^\s*(?:---)?{re.escape(marker)}\s*$", compiler_log)
     need(len(matches) == 1, "production activation marker is missing or duplicated")
-    if top in {"distinct_bases_source_first", "distinct_bases_destination_first",
-               "distinct_bases_asymmetric_64"}:
+    if is_distinct_base:
         warning = ("WARNING: distinct-base duplex relies on the caller's __restrict contract; the caller must "
                    "ensure the accessed regions do not overlap (no runtime range validation is performed)")
         need(len(re.findall(rf"(?m)^\s*{re.escape(warning)}\s*$", compiler_log)) == 1,
@@ -492,7 +535,9 @@ def parse_manifest(path: Path) -> dict[str, str]:
         fields[key] = value
     required = {"top", "source", "source_sha256", "bambu", "bambu_sha256", "plugin", "plugin_sha256",
                 "checker", "checker_sha256", "runner", "runner_sha256", "raw_ir", "raw_ir_sha256"}
-    need(fields.keys() == required, "provenance manifest fields are missing or unexpected")
+    optional_post_fields = {"post_interface_raw", "post_interface_raw_sha256"}
+    need(fields.keys() in (required, required | optional_post_fields),
+         "provenance manifest fields are missing or unexpected")
     return fields
 
 
@@ -673,6 +718,342 @@ def memory_operand(nodes: dict[int, tuple[str, str]], statement: tuple[str, str]
     return int(address[0]), value_index
 
 
+def unsigned_32_ssa(nodes: dict[int, tuple[str, str]], index: int, label: str) -> None:
+    node = nodes.get(index, ("", ""))
+    need(node[0] == "ssa_node" and is_unsigned_32bit_value(nodes, index),
+         f"{label} is not an unsigned-32 SSA value")
+
+
+def comparison_expression(nodes: dict[int, tuple[str, str]], index: int,
+                          label: str) -> tuple[str, tuple[int, ...]]:
+    node = nodes.get(index, ("", ""))
+    if node[0] == "ssa_node":
+        definitions = fields(node).get("def_stmt", [])
+        need(len(definitions) == 1 and int(definitions[0]) in nodes,
+             f"{label} SSA has no unique definition")
+        statement = nodes[int(definitions[0])]
+        need(statement[0] in {"assign_stmt", "gimple_assign"}, f"{label} SSA definition is not an assignment")
+        rhs = assignment_rhs(nodes, statement, label)
+        node = nodes.get(rhs, ("", ""))
+    operands = operation_refs(node)
+    need(node[0] in {"lt_node", "gt_node", "eq_node"} and len(operands) == 2,
+         f"{label} is not a supported binary comparison")
+    return node[0], tuple(operands)
+
+
+def verify_prefix_loop_trip_control(nodes: dict[int, tuple[str, str]],
+                                    blocks: dict[int, tuple[int, str, list[int], list[str], list[str]]],
+                                    record: dict[str, object], loop_id: int) -> tuple[int, int, int]:
+    def statement_block_id(statement_id: int, label: str) -> int:
+        statement = nodes.get(statement_id, ("", ""))
+        block_index = re.search(r"\bbb_index: (\d+)", statement[1])
+        need(statement[0] in {"assign_stmt", "gimple_assign"} and block_index is not None,
+             f"{label} is not a block-indexed assignment")
+        return int(block_index.group(1))
+
+    header = int(record["read_header_bb"])
+    preheader = int(record["read_preheader_bb"])
+    exit_bb = int(record["write_exit_bb"])
+    need(header in blocks and preheader in blocks and exit_bb in blocks,
+         "prefix loop header, preheader, or exit block does not resolve")
+    trip_bound = int(record["loop_trip_bound_ssa_index"])
+    trip_compare = int(record["loop_trip_compare_index"])
+    induction = int(record["read_induction_index"])
+    unsigned_32_ssa(nodes, trip_bound, "loop trip bound")
+    unsigned_32_ssa(nodes, induction, "prefix loop induction")
+    compare_kind, compare_operands = comparison_expression(nodes, trip_compare, "loop trip comparison")
+    need(compare_kind == "eq_node" and len(compare_operands) == 2,
+         "prefix loop trip condition is not equality")
+
+    induction_node = nodes.get(induction, ("", ""))
+    induction_defs = fields(induction_node).get("def_stmt", [])
+    need(induction_node[0] == "ssa_node" and len(induction_defs) == 1 and
+         int(induction_defs[0]) in nodes and nodes[int(induction_defs[0])][0] == "phi_stmt",
+         "prefix loop induction has no unique PHI definition")
+    induction_phi = nodes[int(induction_defs[0])]
+    phi_bb = re.search(r"\bbb_index: (\d+)", induction_phi[1])
+    need(phi_bb is not None and int(phi_bb.group(1)) == header,
+         "prefix loop induction PHI is not in the declared header")
+    phi_incoming = re.findall(r"\bdef: @(\d+) edge: (\d+)", induction_phi[1])
+    phi_by_edge = {int(edge): int(value) for value, edge in phi_incoming}
+    need(len(phi_by_edge) == 2 and preheader in phi_by_edge,
+         "prefix loop induction PHI does not have one entry and one backedge")
+    latch_candidates = [edge for edge in phi_by_edge if edge != preheader]
+    need(len(latch_candidates) == 1, "prefix loop induction PHI has an ambiguous backedge")
+    latch = latch_candidates[0]
+    need(latch in blocks and blocks[header][0] == loop_id and blocks[latch][0] == loop_id and
+         blocks[preheader][0] == 0 and blocks[exit_bb][0] == 0,
+         "prefix loop blocks do not match the declared header, preheader, latch, and exit")
+    initial = nodes.get(phi_by_edge[preheader], ("", ""))
+    need(initial[0] == "constant_int_val_node" and
+         re.search(r"\bvalue: 0(?:\s|$)", initial[1]),
+         "prefix loop induction PHI does not start at zero")
+    increment = phi_by_edge[latch]
+    unsigned_32_ssa(nodes, increment, "prefix loop increment")
+    need(set(compare_operands) == {increment, trip_bound},
+         "prefix loop trip comparison is not exact increment == trip bound")
+    increment_node = nodes.get(increment, ("", ""))
+    increment_defs = fields(increment_node).get("def_stmt", [])
+    need(increment_node[0] == "ssa_node" and len(increment_defs) == 1 and
+         int(increment_defs[0]) in nodes and statement_block_id(int(increment_defs[0]), "prefix induction increment") == latch and
+         int(increment_defs[0]) in blocks[latch][2],
+         "prefix induction increment is not defined in its recorded latch")
+    increment_statement = nodes[int(increment_defs[0])]
+    increment_expression = nodes.get(assignment_rhs(nodes, increment_statement,
+                                                     "prefix induction increment"), ("", ""))
+    increment_operands = operation_refs(increment_expression)
+    need(increment_expression[0] == "add_node" and len(increment_operands) == 2 and
+         induction in increment_operands and
+         any(nodes.get(value, ("", ""))[0] == "constant_int_val_node" and
+             re.search(r"\bvalue: 1(?:\s|$)", nodes[value][1]) for value in increment_operands),
+         "prefix loop backedge is not the declared induction plus one")
+
+    branch_matches = []
+    for block, (block_loop_id, _attrs, statements, _preds, _succs) in blocks.items():
+        if block_loop_id != loop_id:
+            continue
+        for statement_id in statements:
+            statement = nodes.get(statement_id, ("", ""))
+            if statement[0] != "multi_way_if_stmt":
+                continue
+            condition, true_target, default_target = conditional_branch(statement, "prefix trip branch")
+            if condition == trip_compare:
+                branch_matches.append((block, statement_id, statement, true_target, default_target))
+    need(len(branch_matches) == 1,
+         "recorded prefix trip comparison is not used by one unique loop branch")
+    latch_bb, branch_id, _branch, true_target, default_target = branch_matches[0]
+    need(latch_bb == latch,
+         "prefix trip branch is not on the induction PHI backedge block")
+    need(blocks[latch_bb][2][-1] == branch_id and
+         sum(nodes[statement][0] == "multi_way_if_stmt" for statement in blocks[latch_bb][2]) == 1,
+         "prefix trip branch is not the unique terminal branch in the latch")
+    trip_condition_defs = fields(nodes.get(trip_compare, ("", ""))).get("def_stmt", [])
+    need(len(trip_condition_defs) == 1 and int(trip_condition_defs[0]) in nodes and
+         statement_block_id(int(trip_condition_defs[0]), "prefix trip comparison") == latch and
+         int(trip_condition_defs[0]) in blocks[latch][2],
+         "prefix trip comparison is not defined in its recorded latch")
+    need(true_target == exit_bb and default_target == header,
+         "prefix trip branch does not map true to exit and default to the loop backedge")
+    need(set(blocks[latch_bb][4]) == {str(header), str(exit_bb)},
+         "prefix trip branch CFG successors do not match its backedge and exit targets")
+    need(set(blocks[header][3]) == {str(preheader), str(latch_bb)},
+         "prefix loop header predecessors do not match entry and latch backedges")
+    need(set(blocks[exit_bb][3]) == {str(preheader), str(latch_bb)},
+         "prefix loop exit predecessors do not match zero-trip and latch exits")
+
+    entry_branch_id = int(record["read_branch_index"])
+    entry_branch = nodes.get(entry_branch_id, ("", ""))
+    need(entry_branch[0] == "multi_way_if_stmt" and entry_branch_id in blocks[preheader][2],
+         "prefix loop entry branch is not in the declared preheader")
+    need(blocks[preheader][2][-1] == entry_branch_id and
+         sum(nodes[statement][0] == "multi_way_if_stmt" for statement in blocks[preheader][2]) == 1,
+         "prefix loop entry branch is not the unique terminal preheader branch")
+    entry_condition, entry_true, entry_default = conditional_branch(entry_branch, "prefix loop entry branch")
+    guard_id = int(record["read_guard_index"])
+    need(entry_condition == guard_id and entry_true == exit_bb and entry_default == header,
+         "prefix loop entry branch does not route zero-trip true to exit and nonzero default to header")
+    need(set(blocks[preheader][4]) == {str(header), str(exit_bb)},
+         "prefix loop preheader CFG successors do not match entry and zero-trip exit")
+    guard_defs = fields(nodes.get(guard_id, ("", ""))).get("def_stmt", [])
+    need(nodes.get(guard_id, ("", ""))[0] == "ssa_node" and len(guard_defs) == 1 and
+         int(guard_defs[0]) in nodes and
+         statement_block_id(int(guard_defs[0]), "prefix zero-trip guard") == preheader and
+         int(guard_defs[0]) in blocks[preheader][2],
+         "prefix zero-trip guard is not defined in its preheader")
+    guard_kind, guard_operands = comparison_expression(nodes, guard_id, "prefix loop zero-trip guard")
+    zero_operands = [value for value in guard_operands
+                     if nodes.get(value, ("", ""))[0] == "constant_int_val_node" and
+                     re.search(r"\bvalue: 0(?:\s|$)", nodes[value][1])]
+    need(guard_kind == "eq_node" and len(guard_operands) == 2 and len(zero_operands) == 1 and
+         set(guard_operands) == {trip_bound, zero_operands[0]},
+         "prefix loop entry guard is not exact trip_bound == 0")
+    return latch_bb, trip_compare, increment
+
+
+def verify_unsigned_prefix_comparison(nodes: dict[int, tuple[str, str]], compare_id: int,
+                                      induction: int, bound: int, label: str) -> None:
+    compare_kind, operands = comparison_expression(nodes, compare_id, f"{label} comparison")
+    exact_unsigned_less_than = ((compare_kind == "lt_node" and operands == (induction, bound)) or
+                                (compare_kind == "gt_node" and operands == (bound, induction)))
+    need(exact_unsigned_less_than,
+         f"{label} effective comparison is not induction < its exact bound")
+    unsigned_32_ssa(nodes, induction, f"{label} induction")
+    unsigned_32_ssa(nodes, bound, f"{label} effective bound")
+    induction_type = fields(nodes[induction]).get("type", [])
+    bound_type = fields(nodes[bound]).get("type", [])
+    need(induction_type and induction_type == bound_type,
+         f"{label} induction and effective bound widths/types differ")
+
+
+def block_reaches(blocks: dict[int, tuple[int, str, list[int], list[str], list[str]]],
+                  start: int, target: int, loop_header: int) -> bool:
+    pending = [start]
+    visited: set[int] = set()
+    while pending:
+        current = pending.pop()
+        if current == target:
+            return True
+        if current in visited or current == loop_header or current not in blocks:
+            continue
+        visited.add(current)
+        pending.extend(int(value) for value in blocks[current][4] if value.isdigit())
+    return False
+
+
+def block_reaches_avoiding(blocks: dict[int, tuple[int, str, list[int], list[str], list[str]]],
+                           start: int, target: int, loop_header: int, avoid_block: int) -> bool:
+    pending = [(start, True)]
+    visited: set[tuple[int, bool]] = set()
+    while pending:
+        current, first = pending.pop()
+        state = (current, first)
+        if state in visited or current == avoid_block or current not in blocks:
+            continue
+        visited.add(state)
+        if current == target:
+            return True
+        if current == loop_header and not first:
+            continue
+        for successor in blocks[current][4]:
+            if successor.isdigit():
+                pending.append((int(successor), False))
+    return False
+
+
+def verify_direction_guard_dominance(blocks: dict[int, tuple[int, str, list[int], list[str], list[str]]],
+                                     direction: str, loop_header: int, guard_bb: int,
+                                     true_target: int, false_target: int, access_bb: int) -> None:
+    need(block_reaches(blocks, true_target, access_bb, loop_header) and
+         not block_reaches(blocks, false_target, access_bb, loop_header),
+         f"{direction} memory access is not controlled by the true effective-prefix guard")
+    need(not block_reaches_avoiding(blocks, loop_header, access_bb, loop_header, guard_bb),
+         f"{direction} effective-prefix guard does not dominate memory access")
+
+
+def verify_direction_count_proof(record: dict[str, object], nodes: dict[int, tuple[str, str]],
+                                  blocks: dict[int, tuple[int, str, list[int], list[str], list[str]]],
+                                  func: int, reachable: set[int], loop_header: int,
+                                  access_blocks: dict[str, int], loop_comparison_index: int,
+                                  loop_condition_index: int, loop_increment_index: int) -> None:
+    need(COUNT_PROOF_FIELDS <= record.keys(), "semantic proof record is missing prefix-count proof fields")
+    for key in COUNT_PROOF_FIELDS - {"read_count_recipe", "write_count_recipe", "pairing_domain_recipe"}:
+        need(type(record[key]) is int, f"prefix-count proof field {key} is not numeric")
+    trip_bound = int(record["loop_trip_bound_ssa_index"])
+    unsigned_32_ssa(nodes, trip_bound, "loop trip bound")
+    need(trip_bound == int(record["read_bound_index"]) == int(record["write_bound_index"]),
+         "legacy bound identities do not alias the shared loop-trip bound")
+    trip_compare_id = int(record["loop_trip_compare_index"])
+    node_in_function(nodes, func, reachable, trip_compare_id, "loop trip comparison")
+    trip_compare_kind, trip_compare_operands = comparison_expression(
+        nodes, trip_compare_id, "loop trip comparison")
+    need(trip_compare_id in {loop_comparison_index, loop_condition_index} and
+         trip_compare_kind == "eq_node" and
+         set(trip_compare_operands) == {loop_increment_index, trip_bound},
+         "loop trip comparison is not the exact recorded loop-exit comparison")
+    need(record["pairing_domain_recipe"] == "min_read_write_counts_prefix",
+         "pairing domain is not the common read/write prefix")
+    for direction in ("read", "write"):
+        effective_bound = int(record[f"{direction}_effective_bound_ssa_index"])
+        compare_id = int(record[f"{direction}_effective_compare_index"])
+        need(int(record[f"{direction}_access_bb"]) == access_blocks[direction],
+             f"{direction} access BB does not match the original memory operation")
+        recipe = record[f"{direction}_count_recipe"]
+        need(recipe in {"trip_count", "min_trip_and_effective_bound"},
+             f"{direction} count recipe is unknown")
+        unsigned_32_ssa(nodes, effective_bound, f"{direction} effective bound")
+        if compare_id == 0:
+            need(effective_bound == trip_bound and recipe == "trip_count",
+                 f"unguarded {direction} count does not use the loop trip count")
+            continue
+        need(recipe == "min_trip_and_effective_bound",
+             f"guarded {direction} count does not clamp to its effective bound")
+        node_in_function(nodes, func, reachable, compare_id, f"{direction} effective comparison")
+        induction = int(record[f"{direction}_induction_index"])
+        verify_unsigned_prefix_comparison(nodes, compare_id, induction, effective_bound, direction)
+        branches = []
+        for block, (_loop, _attrs, statements, _preds, _succs) in blocks.items():
+            for statement_id in statements:
+                statement = nodes[statement_id]
+                if statement[0] != "multi_way_if_stmt":
+                    continue
+                condition, true_target, false_target = conditional_branch(statement, f"{direction} prefix guard")
+                condition_node = nodes.get(condition, ("", ""))
+                condition_defs = fields(condition_node).get("def_stmt", []) if condition_node[0] == "ssa_node" else []
+                rhs = None
+                if len(condition_defs) == 1 and int(condition_defs[0]) in nodes:
+                    rhs = assignment_rhs(nodes, nodes[int(condition_defs[0])], f"{direction} prefix guard")
+                if rhs == compare_id or condition == compare_id:
+                    branches.append((block, true_target, false_target))
+        need(len(branches) == 1, f"{direction} effective comparison is not used by one exact CFG guard")
+        guard_bb, true_target, false_target = branches[0]
+        access_bb = access_blocks[direction]
+        verify_direction_guard_dominance(blocks, direction, loop_header, guard_bb,
+                                          true_target, false_target, access_bb)
+
+
+def verify_configure_count_expressions(post_nodes: dict[str, tuple[str, str]], calls: dict,
+                                       record: dict[str, object]) -> None:
+    from check_duplex_activation_matrix import normalized_ssa_expression
+
+    need("configure_read" in calls and "configure_write" in calls,
+         "post-InterfaceInfer IR lacks read/write CONFIGURE calls")
+    trip = str(int(record["loop_trip_bound_ssa_index"]))
+    need(f"@{trip}" in post_nodes, "proof loop-trip bound does not resolve in post-InterfaceInfer IR")
+    trip_expression = normalized_ssa_expression(post_nodes, f"@{trip}")
+    zero_expression = ("constant_int_val_node", "0")
+    expressions = {}
+    for direction in ("read", "write"):
+        bound = str(int(record[f"{direction}_effective_bound_ssa_index"]))
+        guard = str(int(record[f"{direction}_guard_index"]))
+        need(f"@{bound}" in post_nodes and f"@{guard}" in post_nodes,
+             f"post-InterfaceInfer IR lacks the {direction} proof bound or entry guard")
+        bound_expression = normalized_ssa_expression(post_nodes, f"@{bound}")
+        guard_expression = normalized_ssa_expression(post_nodes, f"@{guard}")
+        active_guard_expression = guard_expression
+        guard_operands = guard_expression[1] if len(guard_expression) == 2 else ()
+        is_zero_trip_guard = (guard_expression[0] == "eq_node" and len(guard_operands) == 2 and
+                              ((guard_operands[0] == trip_expression and guard_operands[1] == zero_expression) or
+                               (guard_operands[1] == trip_expression and guard_operands[0] == zero_expression)))
+        if is_zero_trip_guard:
+            active_guard_expression = ("ne_node", guard_operands)
+        compare_index = int(record[f"{direction}_effective_compare_index"])
+        if compare_index == 0:
+            need(record[f"{direction}_count_recipe"] == "trip_count" and bound == trip,
+                 f"unguarded {direction} CONFIGURE recipe is not the loop trip count")
+            selected_count = trip_expression
+        else:
+            need(record[f"{direction}_count_recipe"] == "min_trip_and_effective_bound",
+                 f"guarded {direction} CONFIGURE recipe omits the min clamp")
+            minimum = ("select_node", (("lt_node", (trip_expression, bound_expression)),
+                                        trip_expression, bound_expression))
+            selected_count = minimum
+        expressions[direction] = ("select_node", (active_guard_expression, selected_count, zero_expression))
+    for direction in ("read", "write"):
+        call_args = calls[f"configure_{direction}"][2]
+        need(len(call_args) == 5, f"post-InterfaceInfer CONFIGURE_{direction.upper()} has the wrong arity")
+        actual = normalized_ssa_expression(post_nodes, str(call_args[4]))
+        need(actual == expressions[direction],
+             f"post-InterfaceInfer CONFIGURE_{direction.upper()} count does not implement its recorded recipe")
+
+
+def verify_emitted_configure_counts(output: Path, top: str,
+                                    record: dict[str, object]) -> None:
+    post_raw = output / "panda-temp/after_Frontend::InterfaceInfer.raw"
+    safe_file(post_raw, "post-InterfaceInfer raw IR")
+    need(not post_raw.parent.is_symlink(), "post-InterfaceInfer raw IR parent must not be a symlink")
+    need(os.path.commonpath((str(post_raw.resolve()), str(output.resolve()))) == str(output.resolve()),
+         "post-InterfaceInfer raw IR escapes compiler output directory")
+    manifest = parse_manifest(output / "provenance.txt")
+    need(Path(manifest.get("post_interface_raw", "")).resolve() == post_raw.resolve() and
+         manifest.get("post_interface_raw_sha256") == sha256(post_raw),
+         "post-InterfaceInfer raw IR is not anchored by the case provenance")
+    from check_duplex_activation_matrix import require_raw, root_call_records
+
+    post_nodes = require_raw(post_raw, post_raw.name)
+    calls, _blocks = root_call_records(post_raw, top)
+    verify_configure_count_expressions(post_nodes, calls, record)
+
+
 def verify_success_record(record: dict[str, object], raw_text: str, top: str) -> None:
     need(IDENTITY_FIELDS <= record.keys(), "semantic proof record is missing identity fields")
     for key in IDENTITY_FIELDS:
@@ -710,9 +1091,15 @@ def verify_success_record(record: dict[str, object], raw_text: str, top: str) ->
          "declared LOAD/STORE are not assignment statements")
     load_bb, load_loop, load_pos = statement_block(nodes, blocks, func, reachable, load_index, "LOAD")
     store_bb, store_loop, store_pos = statement_block(nodes, blocks, func, reachable, store_index, "STORE")
-    need(load_bb == store_bb and load_loop != 0 and load_loop == store_loop,
-         "LOAD and STORE are not in the same original loop block")
-    need(load_pos < store_pos, "LOAD does not precede STORE in the original iteration")
+    need(load_loop != 0 and load_loop == store_loop,
+         "LOAD and STORE are not in the same original loop block or common loop")
+    if top in PREFIX_COUNT_CASES:
+        need(COUNT_PROOF_FIELDS <= record.keys(), "semantic proof record is missing prefix-count proof fields")
+        need(int(record["read_access_bb"]) == load_bb and int(record["write_access_bb"]) == store_bb,
+             "prefix proof access-block identities do not match original LOAD/STORE blocks")
+    else:
+        need(load_bb == store_bb, "LOAD and STORE are not in the same original loop block")
+        need(load_pos < store_pos, "LOAD does not precede STORE in the original iteration")
     load_address, load_value = memory_operand(nodes, load, "LOAD", 32)
     store_address, store_value = memory_operand(nodes, store, "STORE", 32)
     need((load_address != store_address) if distinct_bases else (load_address == store_address),
@@ -772,12 +1159,15 @@ def verify_success_record(record: dict[str, object], raw_text: str, top: str) ->
     common = ("read_preheader_bb", "read_header_bb", "read_guard_index", "read_bound_index", "read_induction_index")
     loop_branch: tuple[str, str] | None = None
     loop_comparison: tuple[str, str] | None = None
+    loop_comparison_index = 0
+    prefix_latch_bb: int | None = None
     for side in ("read", "write"):
         header = int(record[f"{side}_header_bb"])
         preheader = int(record[f"{side}_preheader_bb"])
         need(header in blocks and preheader in blocks, f"{side} loop block identity does not resolve")
         need(blocks[header][0] != 0, f"{side} header is not marked as a loop block")
-        need(header == load_bb, f"{side} header is not the memory-operation block")
+        need(blocks[header][0] == load_loop,
+             f"{side} header does not identify the memory operations' canonical loop")
         if side == "read":
             branch_index = int(record["read_branch_index"])
             branch = node_in_function(nodes, func, reachable, branch_index, "read branch")
@@ -793,26 +1183,41 @@ def verify_success_record(record: dict[str, object], raw_text: str, top: str) ->
                  "read branch does not consume the declared guard")
             need(operand_depends(nodes, guard_id, bound_id),
                  "read guard does not depend on the declared bound")
-            loop_branches = [statement for statement in blocks[header][2]
-                             if nodes[statement][0] == "multi_way_if_stmt"]
-            need(len(loop_branches) == 1, "loop header has no unique conditional exit branch")
-            loop_branch = nodes[loop_branches[0]]
-            loop_condition = operation_refs(loop_branch)
-            need(len(loop_condition) == 1, "loop branch has no unique condition operand")
-            condition = node_in_function(nodes, func, reachable, loop_condition[0], "loop condition")
-            condition_defs = fields(condition).get("def_stmt", []) if condition[0] == "ssa_node" else []
-            need(len(condition_defs) == 1 and int(condition_defs[0]) in nodes,
-                 "loop condition has no unique defining assignment")
-            comparison = node_in_function(nodes, func, reachable,
-                                          assignment_rhs(nodes, nodes[int(condition_defs[0])], "loop condition"),
-                                          "loop comparison")
-            comparison_operands = operation_refs(comparison)
-            need(comparison[0] == "eq_node" and
-                 len(comparison_operands) == 2 and
-                 any(operand_depends(nodes, value, induction_id) for value in comparison_operands) and
-                 any(operand_depends(nodes, value, bound_id) for value in comparison_operands),
-                 "loop comparison is not equality over the declared bound and induction")
-            loop_comparison = comparison
+            if top in PREFIX_COUNT_CASES:
+                prefix_latch_bb, loop_comparison_index, _prefix_increment = verify_prefix_loop_trip_control(
+                    nodes, blocks, record, load_loop)
+                loop_condition = loop_comparison_index
+                trip_condition_defs = fields(nodes[loop_comparison_index]).get("def_stmt", [])
+                need(len(trip_condition_defs) == 1 and int(trip_condition_defs[0]) in nodes,
+                     "prefix trip condition has no unique comparison definition")
+                loop_comparison = nodes[assignment_rhs(
+                    nodes, nodes[int(trip_condition_defs[0])], "prefix trip condition")]
+                latch_branches = [statement for statement in blocks[prefix_latch_bb][2]
+                                  if nodes[statement][0] == "multi_way_if_stmt" and
+                                  conditional_branch(nodes[statement], "prefix trip branch")[0] ==
+                                  loop_comparison_index]
+                need(len(latch_branches) == 1, "prefix latch has no unique recorded trip branch")
+                loop_branch = nodes[latch_branches[0]]
+            else:
+                loop_branches = [statement for statement in blocks[header][2]
+                                 if nodes[statement][0] == "multi_way_if_stmt"]
+                need(len(loop_branches) == 1, "loop header has no unique conditional exit branch")
+                loop_branch = nodes[loop_branches[0]]
+                loop_condition = operation_refs(loop_branch)
+                need(len(loop_condition) == 1, "loop branch has no unique condition operand")
+                condition = node_in_function(nodes, func, reachable, loop_condition[0], "loop condition")
+                condition_defs = fields(condition).get("def_stmt", []) if condition[0] == "ssa_node" else []
+                need(len(condition_defs) == 1 and int(condition_defs[0]) in nodes,
+                     "loop condition has no unique defining assignment")
+                loop_comparison_index = assignment_rhs(nodes, nodes[int(condition_defs[0])], "loop condition")
+                comparison = node_in_function(nodes, func, reachable, loop_comparison_index, "loop comparison")
+                comparison_operands = operation_refs(comparison)
+                need(comparison[0] == "eq_node" and
+                     len(comparison_operands) == 2 and
+                     any(operand_depends(nodes, value, induction_id) for value in comparison_operands) and
+                     any(operand_depends(nodes, value, bound_id) for value in comparison_operands),
+                     "loop comparison is not equality over the declared bound and induction")
+                loop_comparison = comparison
         guard = node_in_function(nodes, func, reachable, int(record[f"{side}_guard_index"]), f"{side} guard")
         bound = node_in_function(nodes, func, reachable, int(record[f"{side}_bound_index"]), f"{side} bound")
         induction = node_in_function(nodes, func, reachable, int(record[f"{side}_induction_index"]), f"{side} induction")
@@ -828,31 +1233,32 @@ def verify_success_record(record: dict[str, object], raw_text: str, top: str) ->
     preheader = int(record["read_preheader_bb"])
     header = int(record["read_header_bb"])
     exit_bb = int(record["write_exit_bb"])
-    need(str(preheader) in blocks[header][3] and str(header) in blocks[preheader][4],
-         "declared preheader is not an actual predecessor/entry edge of the loop header")
-    need(set(blocks[header][3]) == {str(preheader), str(header)},
-         "loop header has unexpected CFG predecessors")
-    need(str(header) in blocks[header][4] and str(header) in blocks[header][3],
-         "loop header does not have the required self-edge")
-    need(exit_bb in blocks and str(exit_bb) in blocks[header][4] and
-         str(header) in blocks[exit_bb][3] and exit_bb != header,
-         "declared write exit is not an actual loop-header successor with a matching predecessor")
-    need(set(blocks[header][4]) == {str(header), str(exit_bb)},
-         "loop header has unexpected CFG successors")
-    need(set(blocks[preheader][4]) == {str(header), str(exit_bb)},
-         "preheader entry branch does not have the declared header and exit CFG edges")
-    entry_branches = [statement for statement in blocks[preheader][2]
-                      if nodes[statement][0] == "multi_way_if_stmt"]
-    need(len(entry_branches) == 1, "preheader has no unique loop-entry branch")
-    entry_condition, entry_true_target, entry_default_target = conditional_branch(
-        nodes[entry_branches[0]], "preheader branch")
-    need(entry_condition == int(record["read_guard_index"]),
-         "preheader branch condition differs from the declared signed-bound guard")
-    need(entry_true_target == header and entry_default_target == exit_bb,
-         "preheader branch polarity must map true to loop entry and default/false to exit")
-    loop_condition, loop_true_target, loop_default_target = conditional_branch(loop_branch, "loop branch")
-    need(loop_true_target == exit_bb and loop_default_target == header,
-         "loop branch polarity must map true to exit and default/false to the backedge")
+    if top not in PREFIX_COUNT_CASES:
+        need(str(preheader) in blocks[header][3] and str(header) in blocks[preheader][4],
+             "declared preheader is not an actual predecessor/entry edge of the loop header")
+        need(set(blocks[header][3]) == {str(preheader), str(header)},
+             "loop header has unexpected CFG predecessors")
+        need(str(header) in blocks[header][4] and str(header) in blocks[header][3],
+             "loop header does not have the required self-edge")
+        need(exit_bb in blocks and str(exit_bb) in blocks[header][4] and
+             str(header) in blocks[exit_bb][3] and exit_bb != header,
+             "declared write exit is not an actual loop-header successor with a matching predecessor")
+        need(set(blocks[header][4]) == {str(header), str(exit_bb)},
+             "loop header has unexpected CFG successors")
+        need(set(blocks[preheader][4]) == {str(header), str(exit_bb)},
+             "preheader entry branch does not have the declared header and exit CFG edges")
+        entry_branches = [statement for statement in blocks[preheader][2]
+                          if nodes[statement][0] == "multi_way_if_stmt"]
+        need(len(entry_branches) == 1, "preheader has no unique loop-entry branch")
+        entry_condition, entry_true_target, entry_default_target = conditional_branch(
+            nodes[entry_branches[0]], "preheader branch")
+        need(entry_condition == int(record["read_guard_index"]),
+             "preheader branch condition differs from the declared signed-bound guard")
+        need(entry_true_target == header and entry_default_target == exit_bb,
+             "preheader branch polarity must map true to loop entry and default/false to exit")
+        loop_condition, loop_true_target, loop_default_target = conditional_branch(loop_branch, "loop branch")
+        need(loop_true_target == exit_bb and loop_default_target == header,
+             "loop branch polarity must map true to exit and default/false to the backedge")
     comparison_operands = operation_refs(loop_comparison)
     induction_id = int(record["read_induction_index"])
     increment_defs = fields(nodes[induction_id]).get("def_stmt", [])
@@ -862,39 +1268,41 @@ def verify_success_record(record: dict[str, object], raw_text: str, top: str) ->
     phi_for_increment = nodes[int(increment_defs[0])]
     phi_incoming = re.findall(r"\bdef: @(\d+) edge: (\d+)", phi_for_increment[1])
     phi_by_edge = {int(edge): int(value) for value, edge in phi_incoming}
-    increment_id = phi_by_edge.get(header)
+    backedge = prefix_latch_bb if top in PREFIX_COUNT_CASES else header
+    increment_id = phi_by_edge.get(backedge)
     need(increment_id is not None and set(comparison_operands) ==
          {increment_id, int(record["read_bound_index"])},
          "loop predicate is not exactly increment == declared bound")
-    guard_defs = fields(nodes[entry_condition]).get("def_stmt", [])
-    need(len(guard_defs) == 1 and int(guard_defs[0]) in nodes,
-         "entry guard has no unique defining assignment")
-    guard_comparison = nodes[assignment_rhs(nodes, nodes[int(guard_defs[0])], "entry guard")]
-    guard_operands = operation_refs(guard_comparison)
-    need(guard_comparison[0] == "gt_node" and len(guard_operands) == 2 and
-         nodes.get(guard_operands[1], ("", ""))[0] == "constant_int_val_node" and
-         re.search(r"\bvalue: 0(?:\s|$)", nodes[guard_operands[1]][1]) and
-         is_signed_32bit_value(nodes, guard_operands[0]) and
-         is_signed_32bit_value(nodes, guard_operands[1]),
-         "entry predicate is not signed declared-bound > 0")
-    signed_bound = guard_operands[0]
-    signed_bound_defs = fields(nodes[signed_bound]).get("def_stmt", [])
-    need(nodes[signed_bound][0] == "ssa_node" and len(signed_bound_defs) == 1 and
-         int(signed_bound_defs[0]) in nodes,
-         "entry signed-bound SSA has no unique defining assignment")
-    cast_assignment = nodes[int(signed_bound_defs[0])]
-    cast_operands = operation_refs(cast_assignment)
-    need(cast_assignment[0] in {"assign_stmt", "gimple_assign"} and len(cast_operands) == 2 and
-         cast_operands[0] == signed_bound and cast_operands[1] in nodes and
-         nodes[cast_operands[1]][0] == "nop_node" and
-         operation_refs(nodes[cast_operands[1]]) == [int(record["read_bound_index"])],
-         "entry bound conversion is not a single nop of the declared bound")
-    signed_type = fields(nodes[signed_bound]).get("type", [])
-    conversion_type = fields(nodes[cast_operands[1]]).get("type", [])
-    need(len(signed_type) == 1 and conversion_type == signed_type and
-         is_signed_32bit_value(nodes, cast_operands[1]) and
-         is_unsigned_32bit_value(nodes, int(record["read_bound_index"])),
-         "entry bound conversion type is not unsigned32 to the matching signed32 guard type")
+    if top not in PREFIX_COUNT_CASES:
+        guard_defs = fields(nodes[entry_condition]).get("def_stmt", [])
+        need(len(guard_defs) == 1 and int(guard_defs[0]) in nodes,
+             "entry guard has no unique defining assignment")
+        guard_comparison = nodes[assignment_rhs(nodes, nodes[int(guard_defs[0])], "entry guard")]
+        guard_operands = operation_refs(guard_comparison)
+        need(guard_comparison[0] == "gt_node" and len(guard_operands) == 2 and
+             nodes.get(guard_operands[1], ("", ""))[0] == "constant_int_val_node" and
+             re.search(r"\bvalue: 0(?:\s|$)", nodes[guard_operands[1]][1]) and
+             is_signed_32bit_value(nodes, guard_operands[0]) and
+             is_signed_32bit_value(nodes, guard_operands[1]),
+             "entry predicate is not signed declared-bound > 0")
+        signed_bound = guard_operands[0]
+        signed_bound_defs = fields(nodes[signed_bound]).get("def_stmt", [])
+        need(nodes[signed_bound][0] == "ssa_node" and len(signed_bound_defs) == 1 and
+             int(signed_bound_defs[0]) in nodes,
+             "entry signed-bound SSA has no unique defining assignment")
+        cast_assignment = nodes[int(signed_bound_defs[0])]
+        cast_operands = operation_refs(cast_assignment)
+        need(cast_assignment[0] in {"assign_stmt", "gimple_assign"} and len(cast_operands) == 2 and
+             cast_operands[0] == signed_bound and cast_operands[1] in nodes and
+             nodes[cast_operands[1]][0] == "nop_node" and
+             operation_refs(nodes[cast_operands[1]]) == [int(record["read_bound_index"])],
+             "entry bound conversion is not a single nop of the declared bound")
+        signed_type = fields(nodes[signed_bound]).get("type", [])
+        conversion_type = fields(nodes[cast_operands[1]]).get("type", [])
+        need(len(signed_type) == 1 and conversion_type == signed_type and
+             is_signed_32bit_value(nodes, cast_operands[1]) and
+             is_unsigned_32bit_value(nodes, int(record["read_bound_index"])),
+             "entry bound conversion type is not unsigned32 to the matching signed32 guard type")
     body_node = nodes[int(fields(nodes[func])["body"][0])]
     phis = [int(value) for value in fields(body_node).get("phi", [])]
     induction_phis = [nodes[index] for index in phis if index in nodes and
@@ -905,12 +1313,13 @@ def verify_success_record(record: dict[str, object], raw_text: str, top: str) ->
     incoming = re.findall(r"\bdef: @(\d+) edge: (\d+)", phi[1])
     need(len(incoming) == 2, "induction PHI does not have exactly preheader and backedge values")
     by_edge = {int(edge): int(value) for value, edge in incoming}
-    need(len(by_edge) == 2 and set(by_edge) == {preheader, header},
-         "induction PHI edges do not match the declared preheader and loop header")
+    backedge = prefix_latch_bb if top in PREFIX_COUNT_CASES else header
+    need(len(by_edge) == 2 and set(by_edge) == {preheader, backedge},
+         "induction PHI edges do not match the declared preheader and loop backedge")
     initial = nodes.get(by_edge[preheader], ("", ""))
     need(initial[0] == "constant_int_val_node" and re.search(r"\bvalue: 0(?:\s|$)", initial[1]),
          "induction PHI does not start at zero on the preheader edge")
-    increment = nodes.get(by_edge[header], ("", ""))
+    increment = nodes.get(by_edge[backedge], ("", ""))
     increment_defs = fields(increment).get("def_stmt", []) if increment[0] == "ssa_node" else []
     need(len(increment_defs) == 1 and int(increment_defs[0]) in nodes,
          "induction PHI backedge is not a uniquely defined SSA increment")
@@ -922,6 +1331,10 @@ def verify_success_record(record: dict[str, object], raw_text: str, top: str) ->
          any(nodes.get(value, ("", ""))[0] == "constant_int_val_node" and
              re.search(r"\bvalue: 1(?:\s|$)", nodes[value][1]) for value in increment_ops),
          "induction PHI backedge does not increment by one")
+    verify_direction_count_proof(record, nodes, blocks, func, reachable, header,
+                                 {"read": load_bb, "write": store_bb},
+                                 loop_comparison_index,
+                                 loop_condition, increment_id)
 
 
 def parse_proof_records(stderr: str) -> list[dict[str, object]]:
@@ -1046,6 +1459,8 @@ def verify(output: Path, top: str, source: Path, bambu: Path, plugin: Path,
             proof_by_owner[owner_id] = record
             semantic_record = record
             verify_success_record(record, raw_path.read_text(encoding="utf-8", errors="replace"), top)
+            if top in ACTIVATED_CASES:
+                verify_emitted_configure_counts(output, top, record)
         need(record["profile_eligible"] is expected_profile_eligible,
              "structured profile eligibility does not match the selected profile")
         expected_profile_reason = "cache-enabled bundle" if top == "same_base_cached" else \

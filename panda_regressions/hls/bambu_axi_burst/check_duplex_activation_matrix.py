@@ -42,7 +42,8 @@ POSITIVE_ROOTS = {
     15: {"matrix_candidate"}, 17: {"matrix_candidate"},
 }
 VETO_REASON = {
-    3: "canonical contiguous loop recognition failed", 4: "canonical contiguous loop recognition failed",
+    3: "read/write accesses do not share one canonical loop",
+    4: "read/write accesses do not share one canonical loop",
     5: "bundle does not explicitly request both read and write bursts",
     6: "bundle does not explicitly request both read and write bursts",
     7: "original effects are not fully classified ordinary accesses",
