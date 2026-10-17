@@ -27,7 +27,7 @@ BAMBU_ARG=$1
 if [[ "$BAMBU_ARG" == */* ]]; then BAMBU=$(realpath -- "$BAMBU_ARG"); else BAMBU=$(command -v "$BAMBU_ARG" || true); [[ -n "$BAMBU" ]] && BAMBU=$(realpath -- "$BAMBU"); fi
 [[ -n ${BAMBU:-} && -x "$BAMBU" ]] || { echo "Bambu executable not found: $BAMBU_ARG" >&2; exit 2; }
 command -v verilator >/dev/null || { echo "verilator is required" >&2; exit 2; }
-for tool in rg sha256sum python3 nproc timeout; do command -v "$tool" >/dev/null || { echo "required tool missing: $tool" >&2; exit 2; }; done
+for tool in rg sha256sum python3 timeout; do command -v "$tool" >/dev/null || { echo "required tool missing: $tool" >&2; exit 2; }; done
 
 PREFIX=$(dirname "$(dirname "$BAMBU")")
 SETTINGS="$PREFIX/settings.sh"
@@ -48,18 +48,15 @@ if [[ -e "$OUT_ARG" || -L "$OUT_ARG" ]]; then
   echo "output directory must be fresh and not a symlink: $OUT_ARG" >&2; exit 2
 fi
 OUT=$(realpath -m -- "$OUT_ARG")
-mkdir -p "$(dirname "$OUT")"
-mkdir "$OUT" "$OUT/tmp" "$OUT/job_logs"
-OUT=$(realpath "$OUT")
-export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp" PYTHONDONTWRITEBYTECODE=1
-
 SIM_JOBS=${SIM_JOBS:-2}
 DUPLEX_G1_JOBS=${DUPLEX_G1_JOBS:-8}
 [[ $SIM_JOBS =~ ^[1-9][0-9]*$ ]] || { echo "SIM_JOBS must be a positive integer" >&2; exit 2; }
 [[ $DUPLEX_G1_JOBS =~ ^[1-9][0-9]*$ ]] || { echo "DUPLEX_G1_JOBS must be a positive integer" >&2; exit 2; }
 SIM_JOBS=$((10#$SIM_JOBS)); DUPLEX_G1_JOBS=$((10#$DUPLEX_G1_JOBS))
-(( SIM_JOBS <= 2 )) || SIM_JOBS=2
-(( DUPLEX_G1_JOBS <= 8 )) || DUPLEX_G1_JOBS=8
+mkdir -p "$(dirname "$OUT")"
+mkdir "$OUT" "$OUT/tmp" "$OUT/job_logs"
+OUT=$(realpath "$OUT")
+export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp" PYTHONDONTWRITEBYTECODE=1
 
 digest() { sha256sum -- "$1" | awk '{print $1}'; }
 {

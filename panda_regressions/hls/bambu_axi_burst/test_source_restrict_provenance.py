@@ -23,9 +23,9 @@ class SourceRestrictProvenanceTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temp.cleanup()
 
-    def write_xml(self, params: dict[str, str]) -> None:
+    def write_xml(self, params: dict[str, str], top: str = "restrict_one") -> None:
         root = ET.Element("module")
-        function = ET.SubElement(root, "function", symbol="restrict_one")
+        function = ET.SubElement(root, "function", symbol=top)
         parameters = ET.SubElement(function, "parameters")
         for port, flag in params.items():
             ET.SubElement(parameters, "parameter", port=port, source_restrict=flag)
@@ -43,6 +43,10 @@ class SourceRestrictProvenanceTests(unittest.TestCase):
     def test_one_restrict_parameter_does_not_mark_its_peer(self) -> None:
         self.write_xml({"input": "1", "output": "0"})
         check_architecture(self.path, "restrict_one")
+
+    def test_restrict_typedef_preserves_input_and_does_not_restrict_output(self) -> None:
+        self.write_xml({"input": "1", "output": "0"}, "restrict_typedef")
+        check_architecture(self.path, "restrict_typedef")
 
     def test_missing_source_provenance_fails_closed(self) -> None:
         root = ET.Element("module")

@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[3]
 FAMILY = ROOT / "panda_regressions/hls/bambu_axi_burst"
 RUNNER = FAMILY / "rtl_tests/run_generated_duplex_kernel_tests.sh"
 COPY_SOURCE = FAMILY / "bambu_axi_burst_duplex_copy.cpp"
-SCRATCH_ROOT = ROOT / "documentation/tmp/generated-duplex-kernel-runner-tests"
+SCRATCH_ROOT = ROOT / "documentation/tmp/out_generated_duplex_kernel_runner_tests"
 PROFILES = ("symmetric", "asymmetric")
 KINDS = ("inplace", "copy")
 CASES = (
@@ -155,9 +155,10 @@ chmod +x "$mdir/Vtb_generated_duplex_kernel"
         path.write_text(content)
         path.chmod(0o755)
 
-    def _run(self, mode="pass", output_name="fresh", outside=True):
+    def _run(self, mode="pass", output_name="fresh", outside=True, job_overrides=None):
         env = self.env.copy()
         env["SIM_MODE"] = mode
+        env.update(job_overrides or {})
         if not outside:
             env.pop("BURST_DUPLEX_G2_SIM_OUTSIDE_SANDBOX", None)
         output = self.scratch / output_name
@@ -171,6 +172,12 @@ chmod +x "$mdir/Vtb_generated_duplex_kernel"
         result, output = self._run(outside=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("BURST_DUPLEX_G2_SIM_OUTSIDE_SANDBOX=1", result.stderr)
+        self.assertFalse(output.exists())
+
+    def test_invalid_parallelism_fails_before_output_creation(self):
+        result, output = self._run(output_name="invalid-jobs", job_overrides={"DUPLEX_G2_JOBS": "0"})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("SIM_JOBS and DUPLEX_G2_JOBS must be positive integers", result.stderr)
         self.assertFalse(output.exists())
 
     def test_absent_or_wrong_marker_fails_with_zero_exit(self):

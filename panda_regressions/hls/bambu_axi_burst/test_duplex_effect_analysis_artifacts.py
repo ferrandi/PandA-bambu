@@ -8,7 +8,6 @@ import sys
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
-import xml.etree.ElementTree as ET
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[3]
@@ -16,11 +15,11 @@ TMP_ROOT = REPO / "documentation" / "tmp"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from check_duplex_effect_analysis_artifacts import (  # noqa: E402
-    CheckError, FALLBACK_READ, FALLBACK_WRITE, SUCCESS, verify, verify_restrict_architecture_metadata,
-    verify_success_record,
+    CASES, CheckError, FALLBACK_READ, FALLBACK_WRITE, SUCCESS, verify, verify_restrict_architecture_metadata,
+    verify_success_record, check_production_duplex, expected_owner_recognition,
 )
 from check_duplex_activation_matrix import (
-    ALL_CASES, INCOMPATIBLE, INCOMPATIBLE_PROFILE_DIAGNOSTIC, VETO_REASON,
+    ALL_CASES, INCOMPATIBLE, INCOMPATIBLE_PROFILE_DIAGNOSTIC, VETO_REASON, VETO_REASON_FIELD,
     activation_markers, verify as verify_activation_matrix,
 )
 from check_duplex_activation_matrix import (
@@ -28,7 +27,8 @@ from check_duplex_activation_matrix import (
     verify_backend_guard, verify_backend_rtl, verify_call_contract, verify_drain_exit,
     verify_burst_call_arguments, DATAFLOW_ANALYSIS_ORDER, verify_dataflow_analysis_order,
     verify_dataflow_task_call, verify_dataflow_task_memory,
-    verify_no_legacy_access_contract, verify_unused_peer_veto,
+    verify_no_duplex_backend_rtl, verify_no_legacy_access_contract, verify_preanalysis_veto,
+    verify_unused_peer_veto, pointer_argument_ids,
 )
 
 
@@ -125,9 +125,88 @@ class DuplexEffectArtifactTests(unittest.TestCase):
     def test_activation_matrix_has_explicit_multi_root_contracts(self):
         self.assertEqual(ALL_CASES, set(range(1, 18)))
         self.assertEqual(INCOMPATIBLE, {13, 14})
+        self.assertNotIn(12, VETO_REASON)
+        self.assertNotIn(12, VETO_REASON_FIELD)
         self.assertEqual(POSITIVE_ROOTS[1], {"matrix_candidate", "matrix_peer"})
         for first, second in ((3, 4), (5, 6), (7, 8), (9, 10)):
             self.assertEqual(VETO_REASON[first], VETO_REASON[second])
+
+    def test_activation_veto_owner_lookup_preserves_raw_ir_reference_prefix(self):
+        raw = (
+            '@1 function_val_node name: @2 arg: @3 arg: @4\n'
+            '@2 identifier_node strg: "matrix_candidate"\n'
+            '@3 argument_val_node type: @5\n'
+            '@4 argument_val_node type: @6\n'
+            '@5 pointer_ty_node\n'
+            '@6 integer_ty_node\n'
+        )
+        with tempfile.TemporaryDirectory(dir=TMP_ROOT) as temporary:
+            path = Path(temporary) / "before.raw"
+            path.write_text(raw, encoding="utf-8")
+            self.assertEqual(pointer_argument_ids(path, ("matrix_candidate",)), {3})
+
+    def test_activation_veto_reason_must_be_in_preanalysis_record(self):
+        reason = VETO_REASON[3]
+        record = ('AXI_BURST_PREANALYSIS bundle=shared owner_argument_index=3 read_accesses=1 '
+                  'write_accesses=1 read_requested=1 read_recognized=0 read_fallback="-" '
+                  'write_requested=1 write_recognized=0 write_fallback="-" '
+                  f'same_base_duplex_candidate=0 same_base_duplex_reason="{reason}" '
+                  'production_activated=0 activation_reason="candidate rejected"\n')
+        verify_preanalysis_veto(record, reason, "same_base_duplex_reason", {3})
+        with self.assertRaisesRegex(ValueError, "no shared-bundle preanalysis record"):
+            verify_preanalysis_veto(record.replace(reason, "different veto"), reason,
+                                    "same_base_duplex_reason", {3})
+        with self.assertRaisesRegex(ValueError, "no shared-bundle preanalysis record"):
+            verify_preanalysis_veto(record.replace("bundle=shared", "bundle=other") + reason,
+                                    reason, "same_base_duplex_reason", {3})
+        with self.assertRaisesRegex(ValueError, "selected pointer owner"):
+            verify_preanalysis_veto(record.replace("owner_argument_index=3", "owner_argument_index=4"),
+                                    reason, "same_base_duplex_reason", {3})
+
+    def test_single_direction_veto_uses_activation_reason_for_both_orders(self):
+        for case in (5, 6, 7, 8):
+            reason = VETO_REASON[case]
+            self.assertEqual(VETO_REASON_FIELD[case], "activation_reason")
+            for owner_order in ((3, 6), (6, 3)):
+                traces = []
+                for owner in owner_order:
+                    candidate, semantic_reason = (("1", "same-base pointwise read-before-write candidate")
+                                                  if owner == 3 else ("0", "read/write profile not requested"))
+                    traces.append(
+                        f'AXI_BURST_PREANALYSIS bundle=shared owner_argument_index={owner} '
+                        'read_accesses=1 write_accesses=1 read_requested=1 read_recognized=1 '
+                        'read_fallback="-" write_requested=1 write_recognized=1 write_fallback="-" '
+                        f'same_base_duplex_candidate={candidate} '
+                        f'same_base_duplex_reason="{semantic_reason}" '
+                        f'production_activated=0 activation_reason="{reason}"')
+                verify_preanalysis_veto("\n".join(traces), reason, VETO_REASON_FIELD[case], {3, 6})
+                with self.assertRaisesRegex(ValueError, "no shared-bundle preanalysis record"):
+                    verify_preanalysis_veto("\n".join(traces).replace(
+                        f'activation_reason="{reason}"', 'activation_reason="unrelated"'),
+                        reason, VETO_REASON_FIELD[case], {3, 6})
+
+    def test_vetoed_multi_root_allows_legacy_rtl_but_rejects_duplex_aggregator(self):
+        verify_no_duplex_backend_rtl(self.output)
+        top = self.output / "top.v"
+        top.write_text(
+            "module datapath_matrix_candidate();\n"
+            "  MinimalAXI4AdapterSingleBeat legacy_adapter();\n"
+            "endmodule\n", encoding="utf-8")
+        verify_no_duplex_backend_rtl(self.output)
+        top.write_text(
+            "module datapath_matrix_candidate();\n"
+            "  MinimalAXI4AdapterSingleBeat legacy_adapter();\n"
+            "  shared_duplex_aggregator duplex_adapter();\n"
+            "endmodule\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "unexpectedly instantiates a duplex aggregator"):
+            verify_no_duplex_backend_rtl(self.output)
+        top.write_text("", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "nonempty regular file"):
+            verify_no_duplex_backend_rtl(self.output)
+        top.unlink()
+        top.symlink_to(self.output / "missing.v")
+        with self.assertRaisesRegex(ValueError, "nonempty regular file"):
+            verify_no_duplex_backend_rtl(self.output)
 
     def test_dataflow_cases_require_exact_task_candidate_peer_analysis_order(self):
         for case, expected in DATAFLOW_ANALYSIS_ORDER.items():
@@ -749,10 +828,15 @@ class DuplexEffectArtifactTests(unittest.TestCase):
             f".duplex_{field}(write_{field}_wire)" for field in private_fields)
         aggregator_cores = (
             f"  MinimalAXI4MasterPipelined #(.B_MAX({read_burst}), .MAX_OUTSTANDING({read_outstanding}), "
-            f".FIFO_DEPTH(32), .BITSIZE_in4({address_bits}), .BITSIZE_m_axi_araddr({address_bits})) read_core ();\n"
+            f".FIFO_DEPTH(32), .PEER_FAULT_ENABLE(1), .BITSIZE_in4({address_bits}), "
+            f".BITSIZE_m_axi_araddr({address_bits})) read_core ("
+            ".peer_fault(read_peer_fault), .fault(read_core_fault));\n"
             f"  MinimalAXI4MasterPipelinedWrite #(.B_MAX({write_burst}), "
-            f".MAX_OUTSTANDING({write_outstanding}), .FIFO_DEPTH(16), .BITSIZE_in4({address_bits}), "
-            f".BITSIZE_m_axi_awaddr({address_bits})) write_core ();\n")
+            f".MAX_OUTSTANDING({write_outstanding}), .FIFO_DEPTH(16), .PEER_FAULT_ENABLE(1), "
+            f".BITSIZE_in4({address_bits}), .BITSIZE_m_axi_awaddr({address_bits})) write_core ("
+            ".peer_fault(write_peer_fault), .fault(write_core_fault));\n"
+            "  wire read_peer_fault = write_core_fault;\n"
+            "  wire write_peer_fault = read_core_fault;\n")
         endpoint_ports = "\n".join(
             f"  {'output' if field in {'start', 'opcode', 'size', 'data', 'address', 'count'} else 'input'} "
             f"{'[' + str(private_widths[field] - 1) + ':0]' if private_widths[field] > 1 else ''} "
@@ -900,8 +984,32 @@ class DuplexEffectArtifactTests(unittest.TestCase):
                                                   RECORD_DISTINCT)
         one_restrict_architecture = ET.fromstring(self.architecture("distinct_bases_one_restrict"))
         verify_restrict_architecture_metadata(one_restrict_architecture, "distinct_bases_one_restrict", RAW, None)
-        one_restrict_architecture = ET.fromstring(self.architecture("distinct_bases_one_restrict"))
-        verify_restrict_architecture_metadata(one_restrict_architecture, "distinct_bases_one_restrict", RAW, None)
+
+    def test_distinct_base_activation_requires_non_overlap_contract_warning(self) -> None:
+        top = "distinct_bases_source_first"
+        activation = ("Activated distinct-base restricted pointwise duplex m_axi bundle shared for root "
+                      f"{top}\n")
+        warning = ("WARNING: distinct-base duplex relies on the caller's __restrict contract; the caller must "
+                   "ensure the accessed regions do not overlap (no runtime range validation is performed)\n")
+        rtl = self.activated_rtl(top)
+        profile = {"max_read_burst_length": "16", "max_write_burst_length": "16"}
+        check_production_duplex(rtl, activation + warning, top, profile)
+        with self.assertRaisesRegex(CheckError, "missing its caller non-overlap contract warning"):
+            check_production_duplex(rtl, activation, top, profile)
+
+    def test_distinct_base_64_profile_keeps_per_owner_recognition_expectations(self) -> None:
+        self.assertEqual(expected_owner_recognition("distinct_bases_asymmetric_64", 1, 0), ("1", "0"))
+        self.assertEqual(expected_owner_recognition("distinct_bases_asymmetric_64", 0, 1), ("0", "1"))
+
+    def test_mismatched_bound_fixture_does_not_claim_comparison_guard_coverage(self) -> None:
+        reason, owners, read_fallback, write_fallback, semantic, profile = CASES[
+            "distinct_bases_mismatched_bounds"]
+        self.assertEqual(reason, "canonical contiguous loop recognition failed")
+        self.assertEqual(owners, 2)
+        self.assertEqual((read_fallback, write_fallback),
+                         ("bundle contains stores", "bundle contains reads; same-bundle read/write requires duplex support"))
+        self.assertFalse(semantic)
+        self.assertTrue(profile)
 
     def test_asymmetric_profile_and_64_bit_address_profile_pass(self) -> None:
         self.configure_activated_case("same_base_asymmetric_64", 64, 8, 2, 16, 1)
@@ -909,10 +1017,31 @@ class DuplexEffectArtifactTests(unittest.TestCase):
 
     def test_write_fifo_depth_must_match_architecture_profile(self) -> None:
         self.write_artifact("same_base_pointwise.v", self.activated_rtl().replace(
-            ".MAX_OUTSTANDING(1), .FIFO_DEPTH(16), .BITSIZE_in4(32)",
-            ".MAX_OUTSTANDING(1), .FIFO_DEPTH(32), .BITSIZE_in4(32)"))
+            ".MAX_OUTSTANDING(1), .FIFO_DEPTH(16), .PEER_FAULT_ENABLE(1)",
+            ".MAX_OUTSTANDING(1), .FIFO_DEPTH(32), .PEER_FAULT_ENABLE(1)"))
         with self.assertRaisesRegex(CheckError, "FIFO depth does not match architecture attribute write_fifo_depth"):
             self.check()
+
+    def test_peer_fault_cross_connection_is_required(self) -> None:
+        mutations = (
+            ("wire read_peer_fault = write_core_fault;", "wire read_peer_fault = 1'b0;",
+             "read_peer_fault must be cross-connected to write_core_fault"),
+            ("wire read_peer_fault = write_core_fault;", "wire read_peer_fault = read_core_fault;",
+             "read_peer_fault must be cross-connected to write_core_fault"),
+            ("wire write_peer_fault = read_core_fault;", "wire write_peer_fault = write_core_fault;",
+             "write_peer_fault must be cross-connected to read_core_fault"),
+            (".peer_fault(read_peer_fault)", ".peer_fault(1'b0)",
+             "read_core peer_fault port must connect to read_peer_fault"),
+            (".fault(read_core_fault)", ".fault()",
+             "read_core fault port must connect to read_core_fault"),
+            (".PEER_FAULT_ENABLE(1)", ".PEER_FAULT_ENABLE(0)",
+             "must enable peer fault propagation"),
+        )
+        for old, new, message in mutations:
+            with self.subTest(mutation=new):
+                self.write_artifact("same_base_pointwise.v", self.activated_rtl().replace(old, new, 1))
+                with self.assertRaisesRegex(CheckError, message):
+                    self.check()
 
     def test_activated_trace_requires_recognized_operations_without_fallback(self) -> None:
         self.configure_activated_case("same_base_pointwise")

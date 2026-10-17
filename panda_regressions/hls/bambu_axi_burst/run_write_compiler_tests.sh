@@ -101,9 +101,9 @@ run_write_suite() {
   run_fallback call_effect_before_region opaque-effect 'opaque, volatile, atomic, or unclassified memory effects'
   run_fallback mixed_recognized_and_unknown whole-bundle-fallback \
     'opaque, volatile, atomic, or unclassified memory effects'
-  run_fallback read_write_same_bundle same-bundle-mixed-mode 'bundle contains reads; same-bundle read/write requires duplex support' 1 shared writes
+  run_case read_write_same_bundle same-bundle-pointwise-duplex accepted
+  python3 "$checker" accepted --output "$OUT/write/same-bundle-pointwise-duplex"
   run_fallback read_write_distinct_buffers_same_bundle same-bundle-distinct-buffers-mixed-mode 'bundle contains reads; same-bundle read/write requires duplex support' 1 shared writes
-  run_fallback read_write_same_bundle same-bundle-read-stores 'bundle contains stores' 1 shared accesses
   run_fallback cache_write cache-fallback 'cache-enabled bundle'
   run_case write_count feature-off fallback 'explicit write-burst request ignored because experimental-m-axi-burst=0' 0
   python3 "$checker" fallback --output "$OUT/write/feature-off" --bundle output --feature-off \

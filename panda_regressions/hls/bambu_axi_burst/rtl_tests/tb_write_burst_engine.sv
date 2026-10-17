@@ -51,7 +51,7 @@ module tb_write_burst_engine #(
         .BITSIZE_in4(ADDR_BITS), .BITSIZE_m_axi_awaddr(ADDR_BITS)
     ) dut (
         .clock(clock), .reset(reset), .start(start), .in1(in1), .in2(in2), .in3(in3),
-        .in4(in4), .in5(in5), .done(done), .out1(out1), .fault(fault),
+        .in4(in4), .in5(in5), .done(done), .out1(out1), .fault(fault), .peer_fault(1'b0),
         .m_axi_awaddr(awaddr), .m_axi_awlen(awlen), .m_axi_awsize(awsize),
         .m_axi_awburst(awburst), .m_axi_awid(awid), .m_axi_awvalid(awvalid),
         .m_axi_awready(awready), .m_axi_wdata(wdata), .m_axi_wstrb(wstrb),

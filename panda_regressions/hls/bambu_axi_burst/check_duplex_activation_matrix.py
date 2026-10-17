@@ -50,7 +50,10 @@ VETO_REASON = {
     9: "DATAFLOW/forwarded bundle ownership is unsupported",
     10: "DATAFLOW/forwarded bundle ownership is unsupported",
     11: "DATAFLOW/forwarded bundle ownership is unsupported",
-    12: "experimental burst feature is disabled",
+}
+VETO_REASON_FIELD = {
+    5: "activation_reason", 6: "activation_reason",
+    7: "activation_reason", 8: "activation_reason",
 }
 INCOMPATIBLE = {13, 14}
 INCOMPATIBLE_PROFILE_DIAGNOSTIC = (
@@ -338,6 +341,64 @@ def verify_unused_peer_veto(combined: str, expected_reason: str) -> None:
     need(any(record.get("semantic_proof") is False and
              record.get("semantic_reason") == expected_reason for record in proofs),
          "unused-peer veto fixture lacks its unused contribution proof record")
+
+
+def pointer_argument_ids(path: Path, roots: tuple[str, ...]) -> set[int]:
+    nodes = require_raw(path, path.name)
+    functions = function_nodes(nodes)
+    owner_ids: set[int] = set()
+    for root in roots:
+        need(root in functions and len(functions[root]) == 1,
+             f"{path.name} lacks one selected owner function {root}")
+        for argument in refs(nodes[functions[root][0]][1], "arg"):
+            identifier = argument.lstrip("@")
+            if not identifier.isdigit() or argument not in nodes:
+                continue
+            kind, attrs = nodes[argument]
+            if kind != "argument_val_node":
+                continue
+            if any(type_ref in nodes and nodes[type_ref][0] == "pointer_ty_node"
+                   for type_ref in refs(attrs, "type")):
+                owner_ids.add(int(identifier))
+    return owner_ids
+
+
+def verify_preanalysis_veto(combined: str, expected_reason: str, reason_field: str,
+                            expected_owners: set[int]) -> None:
+    need(reason_field in {"same_base_duplex_reason", "activation_reason"},
+         f"unsupported preanalysis veto field {reason_field}")
+    pattern = re.compile(
+        r'^\s*AXI_BURST_PREANALYSIS bundle=(\S+) owner_argument_index=(\d+) '
+        r'.*same_base_duplex_candidate=(\d) same_base_duplex_reason="([^"]*)" '
+        r'production_activated=(\d) activation_reason="([^"]*)"\s*$', re.MULTILINE)
+    traces = list(pattern.finditer(combined))
+    need(traces, "preanalysis veto record is missing")
+    matched = []
+    for trace in traces:
+        bundle, owner_index, candidate, semantic_reason, activated, activation_reason = trace.groups()
+        selected_reason = semantic_reason if reason_field == "same_base_duplex_reason" else activation_reason
+        if (bundle == "shared" and int(owner_index) in expected_owners and
+                selected_reason == expected_reason):
+            matched.append((candidate, activated))
+    need(matched and all(activated == "0" for _candidate, activated in matched),
+         f"no shared-bundle preanalysis record for the selected pointer owner carries veto reason: {expected_reason}")
+
+
+def verify_no_duplex_backend_rtl(output: Path) -> None:
+    top = output / "top.v"
+    if not top.exists() and not top.is_symlink():
+        return
+    need(not top.is_symlink() and top.is_file() and top.stat().st_size > 0,
+         "vetoed multi-root top.v must be a nonempty regular file when emitted")
+    code = re.sub(r"(?s)/\*.*?\*/|//[^\n]*", "", top.read_text(errors="replace"))
+    modules = [match.group(3) for match in re.finditer(
+        r"(?ms)^\s*module\s+([A-Za-z_$][\w$]*)\s*\((.*?)\);(.*?)^\s*endmodule\b", code)]
+    need(modules, "vetoed multi-root top.v contains no parseable modules")
+    aggregator_instances = [instance for body in modules
+                            for module_type, instance, _ports in named_instances(body)
+                            if re.search(r"_duplex_aggregator(?:_modgen)?$", module_type)]
+    need(not aggregator_instances,
+         "preanalysis-vetoed multi-root top.v unexpectedly instantiates a duplex aggregator")
 
 
 def verify_architecture(path: Path, roots: tuple[str, ...], case: int) -> None:
@@ -845,8 +906,10 @@ def verify(case: int, output: Path, return_code: int) -> None:
         verify_unused_peer_veto(combined, VETO_REASON[case])
     for root in positive_roots:
         verify_drain_exit(after, combined, root)
-    if case in VETO_REASON and case not in {9, 10, 12}:
-        need(VETO_REASON[case] in combined, f"veto reason is missing: {VETO_REASON[case]}")
+    if case in VETO_REASON and case not in {9, 10, 11, 12}:
+        owners = pointer_argument_ids(before, roots)
+        verify_preanalysis_veto(combined, VETO_REASON[case],
+                                VETO_REASON_FIELD.get(case, "same_base_duplex_reason"), owners)
     architecture = output / "panda-temp/architecture.xml"
     need(architecture.is_file() and architecture.stat().st_size > 0, "multi-root architecture XML is missing")
     verify_architecture(architecture, roots, case)
@@ -862,8 +925,7 @@ def verify(case: int, output: Path, return_code: int) -> None:
                      f"root {root} lacks exactly one production activation marker")
             verify_backend_rtl(output / "top.v", roots, positive_roots)
         else:
-            need(not (output / "top.v").exists() or (output / "top.v").stat().st_size > 0,
-                 "partial top.v artifact is malformed")
+            verify_no_duplex_backend_rtl(output)
     else:
         need(return_code == 0, "single-root legacy control did not compile successfully")
         if case == 11:

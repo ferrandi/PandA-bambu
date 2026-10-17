@@ -181,21 +181,8 @@ class BundlePreanalysisCheckerTests(unittest.TestCase):
                            "same-bundle read/write requires duplex support\n"
                            "Keeping legacy m_axi accesses for bundle shared: bundle contains stores\n",
                            parameters=({"port": "data", "bundle": "shared"},))
-        verify(self.output, "design", "inplace_legacy")
-
         with self.assertRaisesRegex(CheckError, "distinct src and dst ports"):
             verify(self.output, "design", "same_bundle_legacy")
-        self.set_artifacts(self.burst_rtl(read=False, write=False),
-                           {"shared": {"mode": "m_axi", "max_read_burst_length": "16",
-                                       "max_write_burst_length": "16", "write_burst_outstanding": "1"}},
-                           "Keeping legacy m_axi writes for bundle shared: bundle contains reads; "
-                           "same-bundle read/write requires duplex support\n"
-                           "Keeping legacy m_axi accesses for bundle shared: bundle contains stores\n",
-                           parameters=({"port": "src", "bundle": "shared"},
-                                       {"port": "dst", "bundle": "shared"}))
-        with self.assertRaisesRegex(CheckError, "only the data port"):
-            verify(self.output, "design", "inplace_legacy")
-
         self.set_artifacts(self.burst_rtl(read=False, write=False),
                            {"shared": {"mode": "m_axi", "max_read_burst_length": "16",
                                        "max_write_burst_length": "16", "write_burst_outstanding": "1"}}, "",
@@ -204,15 +191,64 @@ class BundlePreanalysisCheckerTests(unittest.TestCase):
         with self.assertRaisesRegex(CheckError, "fallback diagnostic missing"):
             verify(self.output, "design", "same_bundle_legacy")
 
-        self.set_artifacts(self.burst_rtl(read=False, write=False),
-                           {"shared": {"mode": "m_axi", "max_read_burst_length": "16",
-                                       "max_write_burst_length": "16", "write_burst_outstanding": "1"}},
-                           "Keeping legacy m_axi writes for bundle shared: bundle contains reads; "
-                           "same-bundle read/write requires duplex support\n"
-                           "Keeping legacy m_axi accesses for bundle shared: another reason\n",
-                           parameters=({"port": "data", "bundle": "shared"},))
-        with self.assertRaisesRegex(CheckError, "read direction"):
-            verify(self.output, "design", "inplace_legacy")
+    @staticmethod
+    def inplace_duplex_rtl():
+        return "\n".join((
+            "module shared_bambu_artificial_ParmMgr_duplex_aggregator_modgen(input p_m_axi_shared_araddr, input p_m_axi_shared_awaddr);",
+            "endmodule",
+            "MinimalAXI4MasterPipelined read_engine();",
+            "MinimalAXI4MasterPipelinedWrite write_engine();",
+            "fuselector_shared_duplex_read_endpoint_configure_read;",
+            "fuselector_shared_duplex_read_endpoint_burst_read;",
+            "fuselector_shared_duplex_write_endpoint_configure_write;",
+            "fuselector_shared_duplex_write_endpoint_store_write;",
+            "fuselector_shared_duplex_write_endpoint_drain_write;",
+            "shared_bambu_artificial_ParmMgr_duplex_aggregator_modgen duplex_aggregator_0 (",
+            "  .p_m_axi_shared_araddr(araddr), .p_m_axi_shared_awaddr(awaddr));",
+        ))
+
+    def set_inplace_duplex(self, rtl=None, log=None, bundles=None, parameters=None):
+        self.set_artifacts(
+            self.inplace_duplex_rtl() if rtl is None else rtl,
+            bundles or {"shared": {"mode": "m_axi", "max_read_burst_length": "16",
+                                    "max_write_burst_length": "16", "write_burst_outstanding": "1"}},
+            log or "Activated same-base pointwise duplex m_axi bundle shared for root design\n",
+            parameters=parameters or ({"port": "data", "bundle": "shared"},))
+
+    def test_inplace_duplex_requires_complete_positive_witnesses(self):
+        self.set_inplace_duplex()
+        verify(self.output, "design", "inplace_duplex")
+
+        self.set_inplace_duplex(rtl=self.inplace_duplex_rtl().replace(
+            "MinimalAXI4MasterPipelinedWrite write_engine();\n", ""))
+        with self.assertRaisesRegex(CheckError, "exactly one shared write-burst engine"):
+            verify(self.output, "design", "inplace_duplex")
+
+        self.set_inplace_duplex(rtl=self.inplace_duplex_rtl().replace(
+            "MinimalAXI4MasterPipelined read_engine();\n", ""))
+        with self.assertRaisesRegex(CheckError, "exactly one shared read-burst engine"):
+            verify(self.output, "design", "inplace_duplex")
+
+        missing_operation = self.inplace_duplex_rtl().replace(
+            "fuselector_shared_duplex_write_endpoint_drain_write;\n", "")
+        self.set_inplace_duplex(rtl=missing_operation)
+        with self.assertRaisesRegex(CheckError, "ABI operations"):
+            verify(self.output, "design", "inplace_duplex")
+
+        self.set_inplace_duplex(rtl=self.inplace_duplex_rtl() +
+                                "MinimalAXI4AdapterSingleBeat legacy_engine();\n")
+        with self.assertRaisesRegex(CheckError, "legacy memory resource"):
+            verify(self.output, "design", "inplace_duplex")
+
+        disconnected = self.inplace_duplex_rtl().replace(
+            ".p_m_axi_shared_awaddr(awaddr)", ".p_m_axi_shared_bvalid(bvalid)")
+        self.set_inplace_duplex(rtl=disconnected)
+        with self.assertRaisesRegex(CheckError, "disconnected from the shared read or write address"):
+            verify(self.output, "design", "inplace_duplex")
+
+        self.set_inplace_duplex(log="compiler succeeded without activation\n")
+        with self.assertRaisesRegex(CheckError, "activation marker is missing"):
+            verify(self.output, "design", "inplace_duplex")
 
     def test_write_only_requires_its_positive_configuration_witness(self):
         bundles = {"output": {"mode": "m_axi", "max_write_burst_length": "16",
