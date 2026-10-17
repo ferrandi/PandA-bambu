@@ -608,8 +608,13 @@ namespace
    struct SameBaseDuplexProof
    {
       unsigned int owner_argument_index = 0;
+      unsigned int read_owner_argument_index = 0;
+      unsigned int write_owner_argument_index = 0;
+      bool distinct_bases = false;
       std::string bundle;
       ir_nodeRef base;
+      ir_nodeRef read_base;
+      ir_nodeRef write_base;
       ir_nodeRef load_statement;
       ir_nodeRef store_statement;
       ReadBurstRegion read_region{};
@@ -1609,7 +1614,8 @@ static bool RecognizeSameBaseDuplex(const statement_list_node* sl, const functio
                                     const std::vector<OriginalMemoryAccess>& original_accesses,
                                     const std::vector<OriginalMemoryAccess>& burst_accesses,
                                     const bool original_effects_safe, const application_managerRef& AppM,
-                                    const ir_managerRef& TM, SameBaseDuplexProof& proof, std::string& reason)
+                                    const ir_managerRef& TM, const FunctionArchitectureRef& func_arch,
+                                    SameBaseDuplexProof& proof, std::string& reason)
 {
    reason = "original effects are not fully classified ordinary accesses";
    if(!original_effects_safe || original_accesses.size() != 2)
@@ -1624,28 +1630,56 @@ static bool RecognizeSameBaseDuplex(const statement_list_node* sl, const functio
    });
    if(read_access == original_accesses.end() || write_access == original_accesses.end() ||
       !read_access->classified || !write_access->classified || !read_access->ordinary || !write_access->ordinary ||
-      !read_access->base || !write_access->base || read_access->base->index != write_access->base->index ||
-      read_access->owner_argument_index != write_access->owner_argument_index)
+      !read_access->base || !write_access->base)
    {
       reason = "not exactly one classified same-base read/store pair";
       return false;
    }
-   const auto owner_arg = std::find_if(fd->list_of_args.begin(), fd->list_of_args.end(), [&](const auto& candidate) {
+   const bool same_base = read_access->base->index == write_access->base->index &&
+                          read_access->owner_argument_index == write_access->owner_argument_index;
+   const bool distinct_base = read_access->base->index != write_access->base->index &&
+                              read_access->owner_argument_index != write_access->owner_argument_index;
+   const auto read_owner_arg = std::find_if(fd->list_of_args.begin(), fd->list_of_args.end(), [&](const auto& candidate) {
       return candidate->index == read_access->owner_argument_index;
    });
-   if(owner_arg == fd->list_of_args.end())
+   const auto write_owner_arg = std::find_if(fd->list_of_args.begin(), fd->list_of_args.end(), [&](const auto& candidate) {
+      return candidate->index == write_access->owner_argument_index;
+   });
+   if(read_owner_arg == fd->list_of_args.end() || write_owner_arg == fd->list_of_args.end())
    {
-      reason = "same-base owner argument is unavailable";
+      reason = "read/write owner argument is unavailable";
       return false;
    }
-   const auto expected_base = TM->GetIRNode(AppM->getSSAFromParm(root_id, (*owner_arg)->index));
+   if(!same_base && distinct_base)
+   {
+      const auto source_attrs = func_arch->parms.find(get_decl_name(*read_owner_arg));
+      const auto destination_attrs = func_arch->parms.find(get_decl_name(*write_owner_arg));
+      const bool source_restricted = source_attrs != func_arch->parms.end() &&
+                                     source_attrs->second.count(FunctionArchitecture::parm_source_restrict) &&
+                                     source_attrs->second.at(FunctionArchitecture::parm_source_restrict) == "1";
+      const bool destination_restricted = destination_attrs != func_arch->parms.end() &&
+                                          destination_attrs->second.count(FunctionArchitecture::parm_source_restrict) &&
+                                          destination_attrs->second.at(FunctionArchitecture::parm_source_restrict) == "1";
+      if(!source_restricted || !destination_restricted)
+      {
+         reason = "distinct-base duplex requires source restrict on both owners";
+         return false;
+      }
+   }
+   else if(!same_base)
+   {
+      reason = "not exactly one classified same-base read/store pair";
+      return false;
+   }
+   const auto expected_read_base = TM->GetIRNode(AppM->getSSAFromParm(root_id, (*read_owner_arg)->index));
+   const auto expected_write_base = TM->GetIRNode(AppM->getSSAFromParm(root_id, (*write_owner_arg)->index));
    ReadBurstRegion read_region{};
    WriteBurstRegion write_region{};
    const std::vector<ir_nodeRef> reads{read_access->statement};
    const std::vector<ir_nodeRef> writes{write_access->statement};
-   if(!recognizeReadBurstRegion(sl, reads, expected_base, burst_accesses, bundle_name, read_region,
+   if(!recognizeReadBurstRegion(sl, reads, expected_read_base, burst_accesses, bundle_name, read_region,
                                 write_access->statement) ||
-      !recognizeWriteBurstRegion(sl, writes, expected_base, burst_accesses, bundle_name, write_region,
+      !recognizeWriteBurstRegion(sl, writes, expected_write_base, burst_accesses, bundle_name, write_region,
                                  read_access->statement))
    {
       reason = "canonical contiguous loop recognition failed";
@@ -1653,7 +1687,9 @@ static bool RecognizeSameBaseDuplex(const statement_list_node* sl, const functio
    }
    if(read_region.preheader != write_region.preheader || read_region.header != write_region.header ||
       read_region.guard->index != write_region.guard->index || read_region.bound->index != write_region.bound->index ||
-      read_region.induction->index != write_region.induction->index || read_region.base->index != write_region.base->index)
+      read_region.induction->index != write_region.induction->index ||
+      (same_base && read_region.base->index != write_region.base->index) ||
+      (distinct_base && read_region.base->index == write_region.base->index))
    {
       reason = "read/store loop, guard, bound, base, or affine index differ";
       return false;
@@ -1673,13 +1709,19 @@ static bool RecognizeSameBaseDuplex(const statement_list_node* sl, const functio
       return false;
    }
    proof.owner_argument_index = read_access->owner_argument_index;
+   proof.read_owner_argument_index = read_access->owner_argument_index;
+   proof.write_owner_argument_index = write_access->owner_argument_index;
+   proof.distinct_bases = distinct_base;
    proof.bundle = bundle_name;
    proof.base = read_region.base;
+   proof.read_base = read_region.base;
+   proof.write_base = write_region.base;
    proof.load_statement = read_access->statement;
    proof.store_statement = write_access->statement;
    proof.read_region = std::move(read_region);
    proof.write_region = std::move(write_region);
-   reason = "same-base pointwise read-before-write candidate";
+   reason = distinct_base ? "distinct-base restricted pointwise read-before-write candidate" :
+                             "same-base pointwise read-before-write candidate";
    return true;
 }
 
@@ -1942,18 +1984,20 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             bundle_pointer_args.push_back(argument);
          }
       }
-      if(bundle_pointer_args.size() != 1)
+      if(bundle_pointer_args.empty() || bundle_pointer_args.size() > 2)
       {
-         reason = "bundle must have exactly one pointer argument";
+         reason = "bundle must have one or two pointer arguments";
          return false;
       }
-      const auto owner = bundle_pointer_args.front();
-      const auto owner_type = ir_helper::CGetPointedType(ir_helper::CGetType(owner));
-      if(!owner_type || owner_type->get_kind() != integer_ty_node_K || ir_helper::Size(owner_type) != 32 ||
-         ir_helper::SizeAlloc(owner_type) != 32)
+      for(const auto& owner : bundle_pointer_args)
       {
-         reason = "bundle element must be a direct 32-bit integer";
-         return false;
+         const auto owner_type = ir_helper::CGetPointedType(ir_helper::CGetType(owner));
+         if(!owner_type || owner_type->get_kind() != integer_ty_node_K || ir_helper::Size(owner_type) != 32 ||
+            ir_helper::SizeAlloc(owner_type) != 32)
+         {
+            reason = "bundle element must be a direct 32-bit integer";
+            return false;
+         }
       }
       const auto bitwidth = attrs.find(FunctionArchitecture::iface_bitwidth);
       const auto alignment = attrs.find(FunctionArchitecture::iface_alignment);
@@ -1974,17 +2018,22 @@ DesignFlowStep_Status InterfaceInfer::Exec()
       const auto original_safe = hasOnlyOrdinaryMemoryEffects(sl) && classified;
       SameBaseDuplexProof proof{};
       if(!RecognizeSameBaseDuplex(sl, fd, root_id, bundle, original_accesses, original_accesses,
-                                  original_safe, AppM, TM, proof, reason))
+                                  original_safe, AppM, TM, arch, proof, reason))
       {
          return false;
       }
-      if(proof.owner_argument_index != owner->index)
+      const auto owner_is_bundled = [&](const unsigned int owner_index) {
+         return std::any_of(bundle_pointer_args.begin(), bundle_pointer_args.end(), [&](const auto& owner) {
+            return owner->index == owner_index;
+         });
+      };
+      if(!owner_is_bundled(proof.read_owner_argument_index) || !owner_is_bundled(proof.write_owner_argument_index))
       {
-         reason = "proof owner differs from the unique bundle pointer argument";
+         reason = "proof owners differ from the bundle pointer arguments";
          return false;
       }
       contribution.root_id = root_id;
-      contribution.owner_argument_index = owner->index;
+      contribution.owner_argument_index = proof.read_owner_argument_index;
       contribution.bundle = bundle;
       contribution.proof = std::move(proof);
       contribution.read_max_burst_length = static_cast<unsigned int>(std::stoul(read_max->second));
@@ -2418,9 +2467,15 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   }
                   std::set<unsigned int> seen_read_statements;
                   std::map<unsigned int, std::vector<ir_nodeRef>> loop_reads;
-                  if(bundle_pointer_args.size() == 1)
+                  const auto frozen_proof = frozen_proof_for_bundle(bundle_name);
+                  const auto read_owner = frozen_proof ?
+                      std::find_if(bundle_pointer_args.begin(), bundle_pointer_args.end(), [&](const auto& arg) {
+                         return arg->index == frozen_proof->read_owner_argument_index;
+                      }) : bundle_pointer_args.begin();
+                  if((bundle_pointer_args.size() == 1 || frozen_proof) &&
+                     read_owner != bundle_pointer_args.end())
                   {
-                     const auto owner_arg = bundle_pointer_args.front();
+                     const auto owner_arg = *read_owner;
                      const auto original_reads = decision.accesses_by_argument.find(owner_arg->index);
                      if(original_reads != decision.accesses_by_argument.end())
                      {
@@ -2440,7 +2495,6 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      for(const auto& read_group : loop_reads)
                      {
                         ReadBurstRegion region{};
-                        const auto frozen_proof = frozen_proof_for_bundle(bundle_name);
                         if(!recognizeReadBurstRegion(sl, read_group.second, expected_base,
                                                      burst_memory_accesses, bundle_name, region,
                                                      frozen_proof ? frozen_proof->store_statement : ir_nodeRef()))
@@ -2552,7 +2606,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                                                 frozen_proof->load_statement->index &&
                                                             access.bundle == bundle_name && access.classified &&
                                                             access.ordinary && access.base && expected_base &&
-                                                            access.base->index == expected_base->index;
+                                                            access.base->index == frozen_proof->read_base->index;
                            if(!access.is_write && !paired_duplex_read &&
                               (!access.classified || !access.ordinary || !access.base || !expected_base ||
                                access.base->index == expected_base->index || access.bundle == bundle_name))
@@ -2582,7 +2636,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                decision.same_base_duplex_reason = "original effects are not fully classified ordinary accesses";
                SameBaseDuplexProof proof{};
                if(RecognizeSameBaseDuplex(sl, fd, root_id, bundle_name, original_memory_accesses,
-                                          burst_memory_accesses, original_memory_effects_safe, AppM, TM, proof,
+                                          burst_memory_accesses, original_memory_effects_safe, AppM, TM, func_arch, proof,
                                           decision.same_base_duplex_reason))
                {
                   decision.same_base_duplex_proof = std::make_unique<SameBaseDuplexProof>(std::move(proof));
@@ -2605,7 +2659,12 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                    bundle_decision.first);
                   const auto& current = *decision.same_base_duplex_proof;
                   THROW_ASSERT(current.owner_argument_index == proof.owner_argument_index &&
+                                   current.read_owner_argument_index == proof.read_owner_argument_index &&
+                                   current.write_owner_argument_index == proof.write_owner_argument_index &&
+                                   current.distinct_bases == proof.distinct_bases &&
                                    current.base->index == proof.base->index &&
+                                   current.read_base->index == proof.read_base->index &&
+                                   current.write_base->index == proof.write_base->index &&
                                    current.load_statement->index == proof.load_statement->index &&
                                    current.store_statement->index == proof.store_statement->index &&
                                    current.read_region.preheader == proof.read_region.preheader &&
@@ -2623,11 +2682,11 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                    current.write_region.induction->index == proof.write_region.induction->index &&
                                    current.write_region.base->index == proof.write_region.base->index &&
                                    current.write_region.store->index == proof.write_region.store->index,
-                               "Original same-base proof snapshot changed before IR transformation for bundle " +
+                               "Original duplex proof snapshot changed before IR transformation for bundle " +
                                    bundle_decision.first);
                   decision.same_base_duplex_proof = std::make_unique<SameBaseDuplexProof>(proof);
-                  decision.read_regions[proof.owner_argument_index] = {proof.read_region};
-                  decision.write_regions[proof.owner_argument_index] = proof.write_region;
+                  decision.read_regions[proof.read_owner_argument_index] = {proof.read_region};
+                  decision.write_regions[proof.write_owner_argument_index] = proof.write_region;
                   decision.read_recognized = true;
                   decision.write_recognized = true;
                   decision.same_base_duplex_activated = true;
@@ -2729,8 +2788,15 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                if(decision.same_base_duplex_proof)
                {
                   const auto& proof = *decision.same_base_duplex_proof;
-                  proof_record << ",\"owner_argument_index\":" << proof.owner_argument_index
+                  proof_record << ",\"proof_kind\":\""
+                               << (proof.distinct_bases ? "distinct_base_restricted_pointwise" :
+                                                           "same_base_pointwise")
+                               << "\",\"owner_argument_index\":" << proof.owner_argument_index
+                               << ",\"read_owner_argument_index\":" << proof.read_owner_argument_index
+                               << ",\"write_owner_argument_index\":" << proof.write_owner_argument_index
                                << ",\"base_ssa_index\":" << node_id(proof.base)
+                               << ",\"read_base_ssa_index\":" << node_id(proof.read_base)
+                               << ",\"write_base_ssa_index\":" << node_id(proof.write_base)
                                << ",\"load_statement_index\":" << node_id(proof.load_statement)
                                << ",\"store_statement_index\":" << node_id(proof.store_statement)
                                << ",\"read_preheader_bb\":" << proof.read_region.preheader
@@ -3265,12 +3331,13 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                             !is_forced_legacy_duplex_bundle(bundle_name);
                const auto same_base_duplex_active = decision && decision->same_base_duplex_activated &&
                                                     decision->same_base_duplex_proof &&
-                                                    decision->same_base_duplex_proof->owner_argument_index == arg_id;
+                                                    (decision->same_base_duplex_proof->read_owner_argument_index == arg_id ||
+                                                     decision->same_base_duplex_proof->write_owner_argument_index == arg_id);
                if(same_base_duplex_active)
                {
                   const auto& proof = *decision->same_base_duplex_proof;
-                  const auto read_regions = decision->read_regions.find(arg_id);
-                  const auto write_region = decision->write_regions.find(arg_id);
+                  const auto read_regions = decision->read_regions.find(proof.read_owner_argument_index);
+                  const auto write_region = decision->write_regions.find(proof.write_owner_argument_index);
                   THROW_ASSERT(read_regions != decision->read_regions.end() && read_regions->second.size() == 1 &&
                                    write_region != decision->write_regions.end() &&
                                    read_regions->second.front().preheader == proof.read_region.preheader &&
@@ -3557,7 +3624,9 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      if(same_base_duplex_active)
                      {
                         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                                       "---Activated same-base pointwise duplex m_axi bundle " + bundle_name +
+                                       std::string(decision->same_base_duplex_proof->distinct_bases ?
+                                                       "---Activated distinct-base restricted pointwise duplex m_axi bundle " :
+                                                       "---Activated same-base pointwise duplex m_axi bundle ") + bundle_name +
                                            " for root " + fsymbol);
                      }
                      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,

@@ -32,6 +32,11 @@ REQUIRED_CASE_MODES = {
     "duplex-symmetric-n1024": "duplex",
     "duplex-asymmetric-n1024": "duplex",
 }
+REQUIRED_CASE_MODES.update({
+    "duplex-copy-symmetric-n1024": "duplex",
+    "duplex-copy-asymmetric-n1024": "duplex",
+})
+COPY_DUPLEX_CASES = {"duplex-copy-symmetric-n1024", "duplex-copy-asymmetric-n1024"}
 # A bundle 'latency' attribute is a property of the memory reached through that
 # bundle, and it must reach the testbench memory model for both directions.
 ATTR_LATENCY = re.compile(r"latency=(\d+)")
@@ -362,9 +367,9 @@ def check_profile_rtl(case_dir: Path, case: str, mode: str, burst_max: str,
 
 
 def check_duplex_profile_rtl(case_dir: Path, row: dict[str, str], source_path: Path) -> None:
-    rtl_files = [path for path in case_dir.rglob("*")
-                 if path.is_file() and path.suffix.lower() in (".v", ".sv")
-                 and path.name != "panda_libtech.v"]
+    rtl_files = sorted(path for path in case_dir.rglob("*")
+                       if path.is_file() and path.suffix.lower() in (".v", ".sv")
+                       and path.name != "panda_libtech.v")
     if not rtl_files:
         fail(f"{row['case']}: generated RTL is missing")
     source = source_path.read_text(encoding="utf-8")
@@ -387,6 +392,17 @@ def check_duplex_profile_rtl(case_dir: Path, row: dict[str, str], source_path: P
                    if element.get("name") == bundle]
     if len(bundles_xml) != 1:
         fail(f"{row['case']}: architecture XML must contain exactly one {bundle} bundle")
+    is_copy = row["case"] in COPY_DUPLEX_CASES
+    if is_copy:
+        parameters = [element.attrib for element in functions[0].findall("./parameters/parameter")]
+        for port in ("src", "dst"):
+            port_parameters = [attrs for attrs in parameters if attrs.get("port") == port]
+            if len(port_parameters) != 1 or port_parameters[0].get("bundle") != bundle:
+                fail(f"{row['case']}: {port} must map exactly once to duplex bundle {bundle}")
+        if ("port=src" not in source or "port=dst" not in source or
+                not re.search(r"port=src[^\n]*max_read_burst_length=", source) or
+                not re.search(r"port=dst[^\n]*max_write_burst_length=", source)):
+            fail(f"{row['case']}: source must declare src-read and dst-write on bundle {bundle}")
     attributes = bundles_xml[0].attrib
     expected_xml_profile = {
         "mode": "m_axi", "max_read_burst_length": row["burst_max"],
@@ -408,10 +424,19 @@ def check_duplex_profile_rtl(case_dir: Path, row: dict[str, str], source_path: P
         "BITSIZE_in4": row["addr_bits"], "BITSIZE_in5": "32", "BITSIZE_in3": "32",
         "BITSIZE_m_axi_wdata": "32",
     }
+    copy_engine_counts = {"read": 0, "write": 0}
+    qualified_copy_carriers = []
+    duplex_profile_found = False
     for path in rtl_files:
         text = path.read_text(encoding="utf-8", errors="replace")
         if re.search(r"\b(?:MinimalAXI4AdapterSingleBeat|IOB_cache_axi)\b", text):
             fail(f"{row['case']}: duplex RTL contains a legacy memory adapter")
+        if is_copy:
+            for _, module_body in _module_bodies(text):
+                copy_engine_counts["read"] += len(list(_parameterized_instances_with_ports(
+                    module_body, "MinimalAXI4MasterPipelined")))
+                copy_engine_counts["write"] += len(list(_parameterized_instances_with_ports(
+                    module_body, "MinimalAXI4MasterPipelinedWrite")))
         carrier_modules = [body for _, body in _module_bodies(text)
                            if re.search(rf"\bp_m_axi_{re.escape(bundle)}_arvalid\b", body)
                            and re.search(rf"\bp_m_axi_{re.escape(bundle)}_awvalid\b", body)]
@@ -427,16 +452,28 @@ def check_duplex_profile_rtl(case_dir: Path, row: dict[str, str], source_path: P
                                          "awvalid", "wdata", "wstrb", "wlast", "wvalid",
                                          "bready")}
         for carrier in carrier_modules:
-            read_instances = _parameterized_instances_with_ports(carrier, "MinimalAXI4MasterPipelined")
-            write_instances = _parameterized_instances_with_ports(
-                carrier, "MinimalAXI4MasterPipelinedWrite")
-            if (any(all(parameters.get(name) == value for name, value in read_required.items()) and
-                    _engine_bundle_ports_connected(carrier, ports, read_incoming, read_outgoing)
-                    for parameters, ports in read_instances) and
-                    any(all(parameters.get(name) == value for name, value in write_required.items()) and
-                        _engine_bundle_ports_connected(carrier, ports, write_incoming, write_outgoing)
-                        for parameters, ports in write_instances)):
-                return
+            read_instances = list(_parameterized_instances_with_ports(
+                carrier, "MinimalAXI4MasterPipelined"))
+            write_instances = list(_parameterized_instances_with_ports(
+                carrier, "MinimalAXI4MasterPipelinedWrite"))
+            if is_copy and (len(read_instances) != 1 or len(write_instances) != 1):
+                continue
+            read_matches = [all(parameters.get(name) == value for name, value in read_required.items()) and
+                            _engine_bundle_ports_connected(carrier, ports, read_incoming, read_outgoing)
+                            for parameters, ports in read_instances]
+            write_matches = [all(parameters.get(name) == value for name, value in write_required.items()) and
+                             _engine_bundle_ports_connected(carrier, ports, write_incoming, write_outgoing)
+                             for parameters, ports in write_instances]
+            if is_copy:
+                if read_matches == [True] and write_matches == [True]:
+                    qualified_copy_carriers.append((path, carrier))
+            elif any(read_matches) and any(write_matches):
+                duplex_profile_found = True
+    if is_copy and (len(qualified_copy_carriers) == 1 and
+                    copy_engine_counts == {"read": 1, "write": 1}):
+        return
+    if not is_copy and duplex_profile_found:
+        return
     fail(f"{row['case']}: generated RTL lacks the expected read/write duplex profiles on bundle {bundle}")
 
 

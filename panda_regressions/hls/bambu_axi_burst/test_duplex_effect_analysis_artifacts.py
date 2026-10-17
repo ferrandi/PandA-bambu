@@ -7,6 +7,8 @@ import json
 import sys
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[3]
@@ -14,7 +16,8 @@ TMP_ROOT = REPO / "documentation" / "tmp"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from check_duplex_effect_analysis_artifacts import (  # noqa: E402
-    CheckError, FALLBACK_READ, FALLBACK_WRITE, SUCCESS, verify,
+    CheckError, FALLBACK_READ, FALLBACK_WRITE, SUCCESS, verify, verify_restrict_architecture_metadata,
+    verify_success_record,
 )
 from check_duplex_activation_matrix import (
     ALL_CASES, INCOMPATIBLE, INCOMPATIBLE_PROFILE_DIAGNOSTIC, VETO_REASON,
@@ -39,7 +42,9 @@ RECORD = {
     "bundle": "shared", "semantic_proof": True,
     "semantic_reason": "same-base pointwise read-before-write candidate",
     "profile_eligible": True, "profile_reason": "read/write profile is eligible",
-    "owner_argument_index": 3, "base_ssa_index": 9,
+    "proof_kind": "same_base_pointwise", "owner_argument_index": 3,
+    "read_owner_argument_index": 3, "write_owner_argument_index": 3,
+    "base_ssa_index": 9, "read_base_ssa_index": 9, "write_base_ssa_index": 9,
     "load_statement_index": 5, "store_statement_index": 6,
     "read_preheader_bb": 0, "read_header_bb": 1, "read_branch_index": 10,
     "read_guard_index": 11, "read_bound_index": 4, "read_induction_index": 13,
@@ -94,6 +99,26 @@ RAW = '''COMPILER_VERSION: "Clang 16"
 @60 multi_way_if_stmt parent: @1 bb_index: 1 op: @38 bloc: 2 bloc: 1
 @70 statement_list_node bloc: 0 loop_id: 0 pred: ENTRY succ: 1 succ: 2 stmt: @12 stmt: @10 bloc: 1 loop_id: 5 pred: 0 pred: 1 succ: 1 succ: 2 phi: @32 stmt: @5 stmt: @6 stmt: @14 stmt: @25 stmt: @39 stmt: @51 stmt: @60 bloc: 2 loop_id: 0 pred: 0 pred: 1 succ: EXIT
 '''
+
+RAW_DISTINCT = RAW.replace(
+    '@1 function_val_node name: @2 arg: @3 arg: @4 body: @70',
+    '@1 function_val_node name: @2 arg: @3 arg: @57 arg: @4 body: @70').replace(
+    '@2 identifier_node strg: "same_base_pointwise"',
+    '@2 identifier_node strg: "distinct_bases_source_first"').replace(
+    '@21 mem_access_node type: @23 op: @8 ordinary_memory_access',
+    '@21 mem_access_node type: @23 op: @59 ordinary_memory_access').replace(
+    '@56 integer_ty_node bitsizealloc: 32 bitsize: 32 unsigned',
+    '@56 integer_ty_node bitsizealloc: 32 bitsize: 32 unsigned\n'
+    '@57 argument_val_node type: @24 parent: @1\n'
+    '@58 ssa_node var: @57\n'
+    '@59 ssa_node type: @24 def_stmt: @61\n'
+    '@61 assign_stmt parent: @1 bb_index: 1 op: @59 op: @62\n'
+    '@62 gep_node type: @24 op: @58 op: @50').replace(
+    'stmt: @5 stmt: @6 stmt: @14', 'stmt: @5 stmt: @61 stmt: @6 stmt: @14')
+
+RECORD_DISTINCT = dict(RECORD, semantic_reason="distinct-base restricted pointwise read-before-write candidate",
+                       proof_kind="distinct_base_restricted_pointwise", write_owner_argument_index=57,
+                       write_base_ssa_index=58)
 
 
 class DuplexEffectArtifactTests(unittest.TestCase):
@@ -664,8 +689,17 @@ class DuplexEffectArtifactTests(unittest.TestCase):
     @staticmethod
     def architecture(top: str, read_burst: int = 16, read_outstanding: int = 1,
                      write_burst: int = 16, write_outstanding: int = 1) -> str:
+        restrict_metadata = {
+            "distinct_bases": {"src": "0", "dst": "0"},
+            "distinct_bases_source_first": {"src": "1", "dst": "1"},
+            "distinct_bases_destination_first": {"dst": "1", "src": "1"},
+            "distinct_bases_one_restrict": {"src": "1", "dst": "0"},
+        }.get(top, {})
+        parameters = "".join(
+            f'<parameter port="{port}" index="{index}" source_restrict="{restricted}" />'
+            for index, (port, restricted) in enumerate(restrict_metadata.items()))
         return f'''<?xml version="1.0"?>
-<root><functions><function name="{top}"><bundles>
+<root><functions><function name="{top}"><parameters>{parameters}</parameters><bundles>
 <bundle name="shared" mode="m_axi" max_read_burst_length="{read_burst}"
  num_read_outstanding="{read_outstanding}" read_fifo_depth="32" write_fifo_depth="16"
  max_write_burst_length="{write_burst}"
@@ -850,9 +884,35 @@ class DuplexEffectArtifactTests(unittest.TestCase):
     def test_valid_structured_proof_passes(self) -> None:
         self.check()
 
+    def test_distinct_base_proof_correlates_both_owners_and_restrict_metadata(self) -> None:
+        verify_success_record(RECORD_DISTINCT, RAW_DISTINCT, "distinct_bases_source_first")
+        architecture = ET.fromstring(self.architecture("distinct_bases_source_first"))
+        verify_restrict_architecture_metadata(architecture, "distinct_bases_source_first", RAW_DISTINCT,
+                                              RECORD_DISTINCT)
+        with self.assertRaisesRegex(CheckError, "STORE base SSA does not name its declared owner argument"):
+            verify_success_record(dict(RECORD_DISTINCT, write_base_ssa_index=9), RAW_DISTINCT,
+                                  "distinct_bases_source_first")
+        bad_architecture = ET.fromstring(self.architecture("distinct_bases_source_first").replace(
+            'port="dst" index="1" source_restrict="1"',
+            'port="dst" index="1" source_restrict="0"'))
+        with self.assertRaisesRegex(CheckError, "source_restrict for distinct_bases_source_first.dst"):
+            verify_restrict_architecture_metadata(bad_architecture, "distinct_bases_source_first", RAW_DISTINCT,
+                                                  RECORD_DISTINCT)
+        one_restrict_architecture = ET.fromstring(self.architecture("distinct_bases_one_restrict"))
+        verify_restrict_architecture_metadata(one_restrict_architecture, "distinct_bases_one_restrict", RAW, None)
+        one_restrict_architecture = ET.fromstring(self.architecture("distinct_bases_one_restrict"))
+        verify_restrict_architecture_metadata(one_restrict_architecture, "distinct_bases_one_restrict", RAW, None)
+
     def test_asymmetric_profile_and_64_bit_address_profile_pass(self) -> None:
         self.configure_activated_case("same_base_asymmetric_64", 64, 8, 2, 16, 1)
         self.check("same_base_asymmetric_64")
+
+    def test_write_fifo_depth_must_match_architecture_profile(self) -> None:
+        self.write_artifact("same_base_pointwise.v", self.activated_rtl().replace(
+            ".MAX_OUTSTANDING(1), .FIFO_DEPTH(16), .BITSIZE_in4(32)",
+            ".MAX_OUTSTANDING(1), .FIFO_DEPTH(32), .BITSIZE_in4(32)"))
+        with self.assertRaisesRegex(CheckError, "FIFO depth does not match architecture attribute write_fifo_depth"):
+            self.check()
 
     def test_activated_trace_requires_recognized_operations_without_fallback(self) -> None:
         self.configure_activated_case("same_base_pointwise")
@@ -1046,7 +1106,7 @@ class DuplexEffectArtifactTests(unittest.TestCase):
     def test_wrong_base_is_rejected(self) -> None:
         record = dict(RECORD, base_ssa_index=27)
         self.write_artifact("stderr.log", self.stderr(record))
-        with self.assertRaisesRegex(CheckError, "base identity is not SSA"):
+        with self.assertRaisesRegex(CheckError, "legacy base identity does not match the LOAD base"):
             self.check()
 
     def test_wrong_index_is_rejected(self) -> None:
@@ -1275,7 +1335,7 @@ class DuplexEffectArtifactTests(unittest.TestCase):
             self.check()
 
     def test_distinct_owner_access_counts_are_required(self) -> None:
-        reason = "not exactly one classified same-base read/store pair"
+        reason = "distinct-base duplex requires source restrict on both owners"
         trace = TRACE.replace("same_base_duplex_candidate=1", "same_base_duplex_candidate=0")
         trace = trace.replace(SUCCESS, reason)
         trace = trace.replace("read_recognized=1", "read_recognized=0").replace(
