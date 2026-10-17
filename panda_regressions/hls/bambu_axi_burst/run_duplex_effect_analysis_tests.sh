@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Manual same-base duplex proof/activation gate; deliberately not part of CI.
+# Manual duplex proof/activation gate; deliberately not part of CI.
 # Positive pointwise cases require production RTL structure; other cases remain legacy.
 # Set DUPLEX_EFFECT_JOBS to bound concurrent independent compiler cases.
 set -euo pipefail
@@ -13,10 +13,14 @@ CORE_SOURCE="$ROOT/src/frontend_analysis/IR_analysis/InterfaceInfer.cpp"
 POINTWISE_SOURCE="$TESTS/compiler_cases/duplex_effects/same_base_pointwise.cpp"
 POINTWISE_REVERSED_SOURCE="$TESTS/compiler_cases/duplex_effects/same_base_pointwise_reversed.cpp"
 ASYMMETRIC_64_SOURCE="$TESTS/compiler_cases/duplex_effects/same_base_asymmetric_64.cpp"
+DISTINCT_SOURCE_FIRST_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_bases_source_first.cpp"
+DISTINCT_DESTINATION_FIRST_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_bases_destination_first.cpp"
+DISTINCT_ONE_RESTRICT_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_bases_one_restrict.cpp"
 PARALLEL_HELPERS="$TESTS/parallel_helpers.sh"
 CASES=(same_base_pointwise same_base_pointwise_reversed shifted_index stride_index
   same_base_cached conditional_store residual_store volatile_effect separate_phase
   split_read_write_loops same_loop_byte_side_store same_loop_opaque_call distinct_bases
+  distinct_bases_source_first distinct_bases_destination_first distinct_bases_one_restrict
   same_base_asymmetric_64)
 
 if [[ $# -lt 1 || $# -gt 2 ]]; then
@@ -42,7 +46,9 @@ if [[ ! -r "$PLUGIN" ]]; then echo "selected ASTAnalyzer plugin is missing: $PLU
 command -v rg >/dev/null || { echo "required tool not found: rg" >&2; exit 2; }
 command -v sha256sum >/dev/null || { echo "required tool not found: sha256sum" >&2; exit 2; }
 [[ -f "$SOURCE" && -f "$POINTWISE_SOURCE" && -f "$POINTWISE_REVERSED_SOURCE" &&
-   -f "$ASYMMETRIC_64_SOURCE" && -f "$CHECKER" && -f "$CORE_SOURCE" && -f "$PARALLEL_HELPERS" ]] || {
+   -f "$ASYMMETRIC_64_SOURCE" && -f "$DISTINCT_SOURCE_FIRST_SOURCE" &&
+   -f "$DISTINCT_DESTINATION_FIRST_SOURCE" && -f "$DISTINCT_ONE_RESTRICT_SOURCE" &&
+   -f "$CHECKER" && -f "$CORE_SOURCE" && -f "$PARALLEL_HELPERS" ]] || {
   echo "source/checker/parallel helper missing" >&2; exit 2;
 }
 DEFAULT_JOBS=$(nproc 2>/dev/null || printf '4')
@@ -87,6 +93,9 @@ run_case() {
   if [[ "$top" == same_base_pointwise ]]; then case_source=$POINTWISE_SOURCE; fi
   if [[ "$top" == same_base_pointwise_reversed ]]; then case_source=$POINTWISE_REVERSED_SOURCE; fi
   if [[ "$top" == same_base_asymmetric_64 ]]; then case_source=$ASYMMETRIC_64_SOURCE; fi
+  if [[ "$top" == distinct_bases_source_first ]]; then case_source=$DISTINCT_SOURCE_FIRST_SOURCE; fi
+  if [[ "$top" == distinct_bases_destination_first ]]; then case_source=$DISTINCT_DESTINATION_FIRST_SOURCE; fi
+  if [[ "$top" == distinct_bases_one_restrict ]]; then case_source=$DISTINCT_ONE_RESTRICT_SOURCE; fi
   if [[ -e "$out" || -L "$out" ]]; then echo "case output path must be fresh and not a symlink: $out" >&2; return 2; fi
   mkdir "$out"
   local args=("--top-fname=$top" "${COMMON[@]}")

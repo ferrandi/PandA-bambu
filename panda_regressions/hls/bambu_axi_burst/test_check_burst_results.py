@@ -90,6 +90,10 @@ class BurstResultGateTests(unittest.TestCase):
                              write_profile=(16, 1, 32))
         self.add_duplex_case("duplex-asymmetric-n1024", "8", read_profile=(16, 2, 64),
                              write_profile=(8, 1, 16))
+        self.add_duplex_case("duplex-copy-symmetric-n1024", "5158", read_profile=(16, 1, 64),
+                             write_profile=(16, 1, 32), copy_ports=True)
+        self.add_duplex_case("duplex-copy-asymmetric-n1024", "2622", read_profile=(16, 2, 64),
+                             write_profile=(8, 1, 16), copy_ports=True)
         (self.fixture / "bambu_axi_burst_boundary.cpp").write_text(
             "#pragma HLS interface mode=m_axi max_read_burst_length=256 "
             "num_read_outstanding=16 read_fifo_depth=4096\n", encoding="utf-8")
@@ -128,7 +132,7 @@ class BurstResultGateTests(unittest.TestCase):
     def test_valid_cycle_and_profile_pass(self):
         result = self.run_gate()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("PASS: 10 read cases, 3 write cases, 2 duplex cases, and 1 legacy cases",
+        self.assertIn("PASS: 10 read cases, 3 write cases, 4 duplex cases, and 1 legacy cases",
                       result.stdout)
 
     def test_each_required_write_case_cannot_be_removed_from_tsv(self):
@@ -291,25 +295,42 @@ class BurstResultGateTests(unittest.TestCase):
                 ".BITSIZE_m_axi_wdata(32)) write_engine ();\n", encoding="utf-8")
 
     def add_duplex_case(self, case, cycles, *, read_profile=(16, 1, 32),
-                        write_profile=(16, 1, 16), addr_bits=32, rtl=None):
-        source = self.fixture / "bambu_axi_burst_duplex.cpp"
-        source.write_text(
-            "#if DUPLEX_PROFILE == 1\n"
-            "#pragma HLS interface mode=m_axi port=data offset=direct bundle=shared "
-            "max_read_burst_length=16 num_read_outstanding=1 read_fifo_depth=64\n"
-            "#elif DUPLEX_PROFILE == 2\n"
-            "#pragma HLS interface mode=m_axi port=data offset=direct bundle=shared "
-            "max_read_burst_length=16 num_read_outstanding=2 read_fifo_depth=64\n"
-            "#endif\n"
-            "#pragma HLS interface mode=m_axi port=data offset=direct bundle=shared "
-            "max_write_burst_length=16 write_burst_outstanding=1 write_fifo_depth=32\n"
-            "#if DUPLEX_PROFILE == 2\n"
-            "#pragma HLS interface mode=m_axi port=data offset=direct bundle=shared "
-            "max_write_burst_length=8 write_burst_outstanding=1 write_fifo_depth=16\n"
-            "#endif\n", encoding="utf-8")
+                        write_profile=(16, 1, 16), addr_bits=32, rtl=None,
+                        copy_ports=False):
+        bundle = "shared"
+        source_name = "bambu_axi_burst_duplex_copy.cpp" if copy_ports else "bambu_axi_burst_duplex.cpp"
+        source = self.fixture / source_name
+        if copy_ports:
+            source.write_text(
+                "#if DUPLEX_PROFILE == 1\n"
+                "#pragma HLS interface mode=m_axi port=src offset=direct bundle=shared "
+                "max_read_burst_length=16 num_read_outstanding=1 read_fifo_depth=64\n"
+                "#pragma HLS interface mode=m_axi port=dst offset=direct bundle=shared "
+                "max_write_burst_length=16 write_burst_outstanding=1 write_fifo_depth=32\n"
+                "#elif DUPLEX_PROFILE == 2\n"
+                "#pragma HLS interface mode=m_axi port=src offset=direct bundle=shared "
+                "max_read_burst_length=16 num_read_outstanding=2 read_fifo_depth=64\n"
+                "#pragma HLS interface mode=m_axi port=dst offset=direct bundle=shared "
+                "max_write_burst_length=8 write_burst_outstanding=1 write_fifo_depth=16\n"
+                "#endif\n", encoding="utf-8")
+        else:
+            source.write_text(
+                "#if DUPLEX_PROFILE == 1\n"
+                "#pragma HLS interface mode=m_axi port=data offset=direct bundle=shared "
+                "max_read_burst_length=16 num_read_outstanding=1 read_fifo_depth=64\n"
+                "#elif DUPLEX_PROFILE == 2\n"
+                "#pragma HLS interface mode=m_axi port=data offset=direct bundle=shared "
+                "max_read_burst_length=16 num_read_outstanding=2 read_fifo_depth=64\n"
+                "#endif\n"
+                "#pragma HLS interface mode=m_axi port=data offset=direct bundle=shared "
+                "max_write_burst_length=16 write_burst_outstanding=1 write_fifo_depth=32\n"
+                "#if DUPLEX_PROFILE == 2\n"
+                "#pragma HLS interface mode=m_axi port=data offset=direct bundle=shared "
+                "max_write_burst_length=8 write_burst_outstanding=1 write_fifo_depth=16\n"
+                "#endif\n", encoding="utf-8")
         self.expectations.write_text(
             self.expectations.read_text(encoding="utf-8") +
-            f"{case}\tduplex\t{cycles}\tbambu_axi_burst_duplex.cpp\t"
+            f"{case}\tduplex\t{cycles}\t{source_name}\t"
             f"{read_profile[0]}\t{read_profile[1]}\t{read_profile[2]}\t"
             f"{write_profile[0]}\t{write_profile[1]}\t{write_profile[2]}\t{addr_bits}\n",
             encoding="utf-8")
@@ -319,30 +340,32 @@ class BurstResultGateTests(unittest.TestCase):
             f'<results><evaluation CYCLES="{cycles}"/></results>\n', encoding="utf-8")
         architecture = case_dir / "panda-temp" / "architecture.xml"
         architecture.parent.mkdir()
+        parameter_xml = ('<parameters><parameter port="src" bundle="shared"/>'
+                         '<parameter port="dst" bundle="shared"/></parameters>' if copy_ports else '')
         architecture.write_text(
             '<module><function name="kernel"><bundles><bundle name="shared" mode="m_axi" '
             f'max_read_burst_length="{read_profile[0]}" num_read_outstanding="{read_profile[1]}" '
             f'read_fifo_depth="{read_profile[2]}" max_write_burst_length="{write_profile[0]}" '
             f'write_burst_outstanding="{write_profile[1]}" write_fifo_depth="{write_profile[2]}"/>'
-            '</bundles></function></module>\n', encoding="utf-8")
+            f'</bundles>{parameter_xml}</function></module>\n', encoding="utf-8")
         read_b, read_o, read_fifo = read_profile
         write_b, write_o, write_fifo = write_profile
         read_signals = ("araddr", "arlen", "arsize", "arburst", "arid", "arvalid", "rready")
         write_signals = ("awaddr", "awlen", "awsize", "awburst", "awid", "awvalid",
                          "wdata", "wstrb", "wlast", "wvalid", "bready")
         assignments = "".join(
-            f"assign p_m_axi_shared_{signal} = read_core_{signal};\n"
+            f"assign p_m_axi_{bundle}_{signal} = read_core_{signal};\n"
             for signal in read_signals) + "".join(
-            f"assign p_m_axi_shared_{signal} = write_core_{signal};\n"
+            f"assign p_m_axi_{bundle}_{signal} = write_core_{signal};\n"
             for signal in write_signals)
         read_inputs = ("arready", "rdata", "rresp", "rlast", "rvalid")
         write_inputs = ("awready", "wready", "bresp", "bvalid")
         read_input_ports = ", ".join(
-            f".m_axi_{signal}(p_m_axi_shared_{signal})" for signal in read_inputs)
-        read_input_ports += ", .m_axi_rid((|p_m_axi_shared_rid))"
+            f".m_axi_{signal}(p_m_axi_{bundle}_{signal})" for signal in read_inputs)
+        read_input_ports += f", .m_axi_rid((|p_m_axi_{bundle}_rid))"
         write_input_ports = ", ".join(
-            f".m_axi_{signal}(p_m_axi_shared_{signal})" for signal in write_inputs)
-        write_input_ports += ", .m_axi_bid((|p_m_axi_shared_bid))"
+            f".m_axi_{signal}(p_m_axi_{bundle}_{signal})" for signal in write_inputs)
+        write_input_ports += f", .m_axi_bid((|p_m_axi_{bundle}_bid))"
         read_output_ports = ", ".join(
             f".m_axi_{signal}(read_core_{signal})" for signal in read_signals)
         write_output_ports = ", ".join(
@@ -359,7 +382,7 @@ class BurstResultGateTests(unittest.TestCase):
             ".BITSIZE_m_axi_wdata(32)) write_engine ("
             f"{write_output_ports}, {write_input_ports});\n")
         physical_bundle = ("module shared_bambu_artificial_ParmMgr_duplex_aggregator_modgen;\n"
-                           "wire p_m_axi_shared_arvalid;\nwire p_m_axi_shared_awvalid;\n")
+                           f"wire p_m_axi_{bundle}_arvalid;\nwire p_m_axi_{bundle}_awvalid;\n")
         (case_dir / "kernel.v").write_text(
             rtl if rtl is not None else physical_bundle + assignments + read_instance +
             write_instance + "endmodule\n",
@@ -368,7 +391,7 @@ class BurstResultGateTests(unittest.TestCase):
     def test_duplex_symmetric_and_asymmetric_profiles_pass(self):
         result = self.run_gate()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("2 duplex cases", result.stdout)
+        self.assertIn("4 duplex cases", result.stdout)
 
     def test_duplex_inventory_requires_both_positive_rows_and_modes(self):
         original = self.expectations.read_text(encoding="utf-8").splitlines()
@@ -387,6 +410,96 @@ class BurstResultGateTests(unittest.TestCase):
         result = self.run_gate()
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("required cycle case mode does not match inventory", result.stderr)
+
+    def test_copy_duplex_inventory_and_bundle_mapping_are_fail_closed(self):
+        original = self.expectations.read_text(encoding="utf-8").splitlines()
+        for case in ("duplex-copy-symmetric-n1024", "duplex-copy-asymmetric-n1024"):
+            with self.subTest(case=case):
+                self.expectations.write_text("\n".join(
+                    line for line in original if not line.startswith(case + "\t")) + "\n",
+                    encoding="utf-8")
+                result = self.run_gate()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("does not cover required cycle cases", result.stderr)
+        self.expectations.write_text("\n".join(original) + "\n", encoding="utf-8")
+
+        case = self.results / "AXI-BURST" / "duplex-copy-symmetric-n1024"
+        architecture = case / "panda-temp" / "architecture.xml"
+        original_architecture = architecture.read_text(encoding="utf-8")
+        architecture.write_text(original_architecture.replace(
+            'port="dst" bundle="shared"', 'port="dst" bundle="other"'), encoding="utf-8")
+        result = self.run_gate()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("dst must map exactly once to duplex bundle shared", result.stderr)
+        architecture.write_text(original_architecture, encoding="utf-8")
+
+        source = self.fixture / "bambu_axi_burst_duplex_copy.cpp"
+        original_source = source.read_text(encoding="utf-8")
+        source.write_text(original_source.replace("port=src", "port=source", 2), encoding="utf-8")
+        result = self.run_gate()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("source must declare src-read and dst-write", result.stderr)
+        source.write_text(original_source, encoding="utf-8")
+
+    def test_copy_duplex_rejects_duplicate_read_engine(self):
+        case = self.results / "AXI-BURST" / "duplex-copy-symmetric-n1024"
+        kernel = case / "kernel.v"
+        original = kernel.read_text(encoding="utf-8")
+        read_start = original.index("MinimalAXI4MasterPipelined #")
+        write_start = original.index("MinimalAXI4MasterPipelinedWrite #", read_start)
+        read_instance = original[read_start:write_start]
+        kernel.write_text(original[:write_start] + read_instance + original[write_start:],
+                          encoding="utf-8")
+        result = self.run_gate()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("lacks the expected read/write duplex profiles", result.stderr)
+
+    def test_copy_duplex_rejects_engines_in_separate_carriers(self):
+        case = self.results / "AXI-BURST" / "duplex-copy-symmetric-n1024"
+        kernel = case / "kernel.v"
+        original = kernel.read_text(encoding="utf-8")
+        read_start = original.index("MinimalAXI4MasterPipelined #")
+        write_start = original.index("MinimalAXI4MasterPipelinedWrite #", read_start)
+        endmodule = original.rindex("endmodule")
+        read_instance = original[read_start:write_start]
+        write_instance = original[write_start:endmodule]
+        read_assignments = "\n".join(
+            line for line in original.splitlines()
+            if line.startswith("assign p_m_axi_shared_") and "= read_core_" in line)
+        write_assignments = "\n".join(
+            line for line in original.splitlines()
+            if line.startswith("assign p_m_axi_shared_") and "= write_core_" in line)
+        carrier_signals = "wire p_m_axi_shared_arvalid; wire p_m_axi_shared_awvalid;\n"
+        kernel.write_text(
+            "module read_carrier;\n" + carrier_signals + read_assignments + "\n" +
+            read_instance + "endmodule\n" +
+            "module write_carrier;\n" + carrier_signals + write_assignments + "\n" +
+            write_instance + "endmodule\n",
+            encoding="utf-8")
+        result = self.run_gate()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("lacks the expected read/write duplex profiles", result.stderr)
+
+    def test_copy_duplex_scans_all_rtl_files_before_passing(self):
+        case = self.results / "AXI-BURST" / "duplex-copy-symmetric-n1024"
+        extra_read = (
+            "module extra_read;\n"
+            "MinimalAXI4MasterPipelined #(.B_MAX(16), .MAX_OUTSTANDING(1), "
+            ".FIFO_DEPTH(64)) extra_engine ();\n"
+            "endmodule\n")
+        legacy_adapter = "module extra_adapter; MinimalAXI4AdapterSingleBeat extra (); endmodule\n"
+        for prefix, content, diagnostic in (
+                ("aaa", extra_read, "lacks the expected read/write duplex profiles"),
+                ("zzz", extra_read, "lacks the expected read/write duplex profiles"),
+                ("aaa", legacy_adapter, "contains a legacy memory adapter"),
+                ("zzz", legacy_adapter, "contains a legacy memory adapter")):
+            with self.subTest(prefix=prefix, content=content.splitlines()[0]):
+                extra = case / f"{prefix}_extra.v"
+                extra.write_text(content, encoding="utf-8")
+                result = self.run_gate()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(diagnostic, result.stderr)
+                extra.unlink()
 
     def test_duplex_rejects_missing_directional_core(self):
         case = self.results / "AXI-BURST" / "duplex-symmetric-n1024"
@@ -516,7 +629,7 @@ class BurstResultGateTests(unittest.TestCase):
         self.add_write_case()
         result = self.run_gate()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("10 read cases, 4 write cases, 2 duplex cases", result.stdout)
+        self.assertIn("10 read cases, 4 write cases, 4 duplex cases", result.stdout)
 
     def test_write_rejects_wrong_mode(self):
         self.add_write_case()
