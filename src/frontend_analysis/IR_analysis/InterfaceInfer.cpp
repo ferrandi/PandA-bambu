@@ -79,6 +79,144 @@ namespace
 {
    using OrderedInstructionsCache = std::map<unsigned int, std::unique_ptr<FunctionOrderedInstructions>>;
 
+   bool isPlainSsaExpression(const ir_nodeRef& expression)
+   {
+      if(!expression)
+      {
+         return false;
+      }
+      switch(static_cast<unsigned int>(expression->get_kind()))
+      {
+         case ssa_node_K:
+         case argument_val_node_K:
+         case constant_int_val_node_K:
+         case constant_fp_val_node_K:
+         case constant_vector_val_node_K:
+            return true;
+         case CASE_UNARY_NODES:
+         {
+            if(expression->get_kind() == mem_access_node_K ||
+               expression->get_kind() == unaligned_mem_access_node_K)
+            {
+               return false;
+            }
+            return isPlainSsaExpression(GetPointerS<const unary_node>(expression)->op);
+         }
+         case CASE_BINARY_NODES:
+         {
+            const auto binary = GetPointerS<const binary_node>(expression);
+            // GEP is pure pointer arithmetic. Keep it in the same recursive
+            // whitelist as integer arithmetic so ordinary address derivations
+            // for read-only loads do not look like opaque effects.
+            return isPlainSsaExpression(binary->op0) && isPlainSsaExpression(binary->op1);
+         }
+         case CASE_TERNARY_NODES:
+         {
+            const auto ternary = GetPointerS<const ternary_node>(expression);
+            return isPlainSsaExpression(ternary->op0) && isPlainSsaExpression(ternary->op1) &&
+                   isPlainSsaExpression(ternary->op2);
+         }
+         default:
+            return false;
+      }
+   }
+
+   bool hasOnlyOrdinaryReadEffects(const statement_list_node* sl,
+                                   const CustomOrderedSet<unsigned int>& function_memory)
+   {
+      if(!sl)
+      {
+         return false;
+      }
+      for(const auto& block : sl->list_of_bloc)
+      {
+         for(const auto& stmt : block.second->CGetStmtList())
+         {
+            const auto node = GetPointerS<const node_stmt>(stmt);
+            if(node->memdef || node->vdef || !node->vovers.empty() || ir_helper::IsStore(stmt, function_memory))
+            {
+               return false;
+            }
+            const bool is_load = ir_helper::IsLoad(stmt, function_memory);
+            if((node->memuse || !node->vuses.empty()) && !is_load)
+            {
+               return false;
+            }
+            switch(static_cast<unsigned int>(stmt->get_kind()))
+            {
+               case assign_stmt_K:
+               {
+                  const auto assign = GetPointerS<const assign_stmt>(stmt);
+                  if(!assign->op0 || assign->op0->get_kind() != ssa_node_K)
+                  {
+                     return false;
+                  }
+                  if(is_load && assign->op1->get_kind() != mem_access_node_K)
+                  {
+                     return false;
+                  }
+                  if(is_load && !isPlainSsaExpression(GetPointerS<const mem_access_node>(assign->op1)->op))
+                  {
+                     return false;
+                  }
+                  if(!is_load && (assign->op1->get_kind() == mem_access_node_K ||
+                                  assign->op1->get_kind() == unaligned_mem_access_node_K))
+                  {
+                     return false;
+                  }
+                  if(!is_load && !isPlainSsaExpression(assign->op1))
+                  {
+                     return false;
+                  }
+                  break;
+               }
+               case phi_stmt_K:
+               {
+                  const auto phi = GetPointerS<const phi_stmt>(stmt);
+                  if(is_load || std::any_of(phi->CGetDefEdgesList().begin(), phi->CGetDefEdgesList().end(),
+                                            [](const auto& edge) { return !isPlainSsaExpression(edge.first); }))
+                  {
+                     return false;
+                  }
+                  break;
+               }
+               case multi_way_if_stmt_K:
+               {
+                  const auto branch = GetPointerS<const multi_way_if_stmt>(stmt);
+                  if(is_load || std::any_of(branch->list_of_cond.begin(), branch->list_of_cond.end(),
+                                            [](const auto& condition) {
+                                               return condition.first && !isPlainSsaExpression(condition.first);
+                                            }))
+                  {
+                     return false;
+                  }
+                  break;
+               }
+               case nop_stmt_K:
+                  if(is_load)
+                  {
+                     return false;
+                  }
+                  break;
+               case return_stmt_K:
+               {
+                  const auto ret = GetPointerS<const return_stmt>(stmt);
+                  if(is_load || (ret->op && !isPlainSsaExpression(ret->op)))
+                  {
+                     return false;
+                  }
+                  break;
+               }
+               default:
+                  // Calls, inline assembly, and any statement kind not explicitly
+                  // classified here may have effects that invalidate prefetching.
+                  return false;
+            }
+         }
+      }
+      return true;
+   }
+
    bool isPointerDerivation(const ir_nodeRef& stmt, const ir_nodeRef& pointer)
    {
       if(stmt->get_kind() != assign_stmt_K)
@@ -331,6 +469,334 @@ namespace
       stmt_node->SetVdef(new_vdef);
       GetPointerS<ssa_node>(new_vdef)->SetDefStmt(stmt);
       last_interface_vdefs[interface_fname] = new_vdef;
+   }
+
+   struct ReadBurstRegion
+   {
+      unsigned int preheader;
+      unsigned int header;
+      ir_nodeRef branch;
+      ir_nodeRef guard;
+      ir_nodeRef bound;
+      ir_nodeRef base;
+      std::vector<ir_nodeRef> reads;
+   };
+
+   bool isConstantValue(const ir_nodeRef& value, const long long expected)
+   {
+      return value && value->get_kind() == constant_int_val_node_K && ir_helper::GetConstValue(value) == expected;
+   }
+
+   bool isUnsigned32Type(const ir_nodeConstRef& type)
+   {
+      return type && type->get_kind() == integer_ty_node_K && ir_helper::Size(type) == 32 &&
+             GetPointerS<const integer_ty_node>(type)->unsigned_flag;
+   }
+
+   bool isSigned32Type(const ir_nodeConstRef& type)
+   {
+      return type && type->get_kind() == integer_ty_node_K && ir_helper::Size(type) == 32 &&
+             !GetPointerS<const integer_ty_node>(type)->unsigned_flag;
+   }
+
+   bool hasBlockPath(const statement_list_node* sl, const unsigned int source, const unsigned int target)
+   {
+      std::vector<unsigned int> pending{source};
+      std::set<unsigned int> visited{source};
+      while(!pending.empty())
+      {
+         const auto current = pending.back();
+         pending.pop_back();
+         if(current == target)
+         {
+            return true;
+         }
+         const auto current_it = sl->list_of_bloc.find(current);
+         if(current_it == sl->list_of_bloc.end())
+         {
+            continue;
+         }
+         for(const auto successor : current_it->second->list_of_succ)
+         {
+            if(visited.insert(successor).second)
+            {
+               pending.push_back(successor);
+            }
+         }
+      }
+      return false;
+   }
+
+   bool recognizeReadBurstRegion(const statement_list_node* sl, const std::vector<ir_nodeRef>& reads,
+                                 const ir_nodeRef& expected_base,
+                                 ReadBurstRegion& result)
+   {
+      if(reads.empty() || !expected_base || expected_base->get_kind() != ssa_node_K)
+      {
+         return false;
+      }
+      const auto first_stmt = reads.front();
+      const auto loop_id = GetPointerS<const node_stmt>(first_stmt)->bb_index;
+      const auto bb_it = sl->list_of_bloc.find(loop_id);
+      if(bb_it == sl->list_of_bloc.end())
+      {
+         return false;
+      }
+      const auto loop_bb = bb_it->second;
+      if(loop_bb->list_of_succ.size() != 2 || loop_bb->list_of_pred.size() != 2 ||
+         std::count(loop_bb->list_of_succ.begin(), loop_bb->list_of_succ.end(), loop_id) != 1 ||
+         std::count(loop_bb->list_of_pred.begin(), loop_bb->list_of_pred.end(), loop_id) != 1)
+      {
+         return false;
+      }
+      const auto preheader_it = std::find_if(loop_bb->list_of_pred.begin(), loop_bb->list_of_pred.end(),
+                                             [&](const auto pred) { return pred != loop_id; });
+      const auto exit_it = std::find_if(loop_bb->list_of_succ.begin(), loop_bb->list_of_succ.end(),
+                                        [&](const auto succ) { return succ != loop_id; });
+      if(preheader_it == loop_bb->list_of_pred.end() || exit_it == loop_bb->list_of_succ.end())
+      {
+         return false;
+      }
+      const auto preheader_id = *preheader_it;
+      const auto preheader_bb_it = sl->list_of_bloc.find(preheader_id);
+      if(preheader_bb_it == sl->list_of_bloc.end() || preheader_bb_it->second->list_of_pred.size() != 1)
+      {
+         return false;
+      }
+      const auto& loop_stmts = loop_bb->CGetStmtList();
+      if(loop_stmts.empty() || loop_stmts.back()->get_kind() != multi_way_if_stmt_K)
+      {
+         return false;
+      }
+      for(auto stmt_it = loop_stmts.begin(); stmt_it != std::prev(loop_stmts.end()); ++stmt_it)
+      {
+         const auto stmt = *stmt_it;
+         if(stmt->get_kind() != assign_stmt_K)
+         {
+            return false;
+         }
+         const auto assignment = GetPointerS<const assign_stmt>(stmt);
+         if(assignment->op0->get_kind() == mem_access_node_K || assignment->op1->get_kind() == call_node_K)
+         {
+            return false;
+         }
+      }
+      const auto loop_branch = loop_stmts.back();
+      const auto loop_branch_node = GetPointerS<const multi_way_if_stmt>(loop_branch);
+      if(loop_branch_node->list_of_cond.empty())
+      {
+         return false;
+      }
+      const auto branch_condition = loop_branch_node->list_of_cond.front().first;
+      if(!branch_condition || branch_condition->get_kind() != ssa_node_K)
+      {
+         return false;
+      }
+      const auto condition_def = GetPointerS<const ssa_node>(branch_condition)->GetDefStmt();
+      if(!condition_def || condition_def->get_kind() != assign_stmt_K ||
+         GetPointerS<const assign_stmt>(condition_def)->op1->get_kind() != eq_node_K)
+      {
+         return false;
+      }
+      const auto compare = GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(condition_def)->op1);
+      ir_nodeRef induction;
+      ir_nodeRef increment;
+      for(const auto& phi_node : loop_bb->CGetPhiList())
+      {
+         if(phi_node->get_kind() != phi_stmt_K)
+         {
+            continue;
+         }
+         const auto phi = GetPointerS<const phi_stmt>(phi_node);
+         if(phi->CGetDefEdgesList().size() != 2)
+         {
+            continue;
+         }
+         ir_nodeRef initial;
+         ir_nodeRef backedge;
+         for(const auto& edge : phi->CGetDefEdgesList())
+         {
+            if(edge.second == preheader_id)
+            {
+               initial = edge.first;
+            }
+            else if(edge.second == loop_id)
+            {
+               backedge = edge.first;
+            }
+         }
+         if(!isConstantValue(initial, 0) || !backedge || backedge->get_kind() != ssa_node_K)
+         {
+            continue;
+         }
+         const auto update_stmt = GetPointerS<const ssa_node>(backedge)->GetDefStmt();
+         if(!update_stmt || update_stmt->get_kind() != assign_stmt_K)
+         {
+            continue;
+         }
+         const auto update = GetPointerS<const assign_stmt>(update_stmt);
+         if(update->op1->get_kind() != add_node_K)
+         {
+            continue;
+         }
+         const auto add = GetPointerS<const binary_node>(update->op1);
+         const auto adds_one = (add->op0->index == phi->res->index && isConstantValue(add->op1, 1)) ||
+                              (add->op1->index == phi->res->index && isConstantValue(add->op0, 1));
+         if(adds_one)
+         {
+            induction = phi->res;
+            increment = backedge;
+            break;
+         }
+      }
+      if(!induction || !increment)
+      {
+         return false;
+      }
+      ir_nodeRef bound;
+      if(compare->op0->index == increment->index)
+      {
+         bound = compare->op1;
+      }
+      else if(compare->op1->index == increment->index)
+      {
+         bound = compare->op0;
+      }
+      else
+      {
+         return false;
+      }
+      if(bound->get_kind() != ssa_node_K || !isUnsigned32Type(ir_helper::CGetType(bound)))
+      {
+         return false;
+      }
+      const auto bound_def = GetPointerS<const ssa_node>(bound)->GetDefStmt();
+      if(bound_def && GetPointerS<const node_stmt>(bound_def)->bb_index == loop_id)
+      {
+         return false;
+      }
+
+      // The IR's conditional edge is the first successor for a true comparison.
+      if(loop_bb->list_of_succ.size() != 2 || loop_branch_node->list_of_cond.front().second != *exit_it)
+      {
+         return false;
+      }
+
+      const auto preheader_bb = preheader_bb_it->second;
+      if(preheader_bb->CGetStmtList().empty() || preheader_bb->CGetStmtList().back()->get_kind() != multi_way_if_stmt_K)
+      {
+         return false;
+      }
+      const auto guard_branch = preheader_bb->CGetStmtList().back();
+      const auto guard_node = GetPointerS<const multi_way_if_stmt>(guard_branch);
+      if(guard_node->list_of_cond.empty())
+      {
+         return false;
+      }
+      const auto guard_condition = guard_node->list_of_cond.front().first;
+      if(!guard_condition || guard_condition->get_kind() != ssa_node_K)
+      {
+         return false;
+      }
+      const auto guard_def = GetPointerS<const ssa_node>(guard_condition)->GetDefStmt();
+      if(!guard_def || guard_def->get_kind() != assign_stmt_K ||
+         GetPointerS<const assign_stmt>(guard_def)->op1->get_kind() != gt_node_K)
+      {
+         return false;
+      }
+      const auto guard_compare = GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(guard_def)->op1);
+      if(!isConstantValue(guard_compare->op1, 0) || guard_compare->op0->get_kind() != ssa_node_K ||
+         !ir_helper::IsSignedIntegerType(guard_compare->op0) || !ir_helper::IsSignedIntegerType(guard_compare->op1))
+      {
+         return false;
+      }
+      const auto signed_bound = GetPointerS<const ssa_node>(guard_compare->op0);
+      const auto signed_bound_def = signed_bound->GetDefStmt();
+      if(!signed_bound_def || signed_bound_def->get_kind() != assign_stmt_K ||
+         GetPointerS<const assign_stmt>(signed_bound_def)->op1->get_kind() != nop_node_K)
+      {
+         return false;
+      }
+      const auto unsigned_bound = GetPointerS<const unary_node>(GetPointerS<const assign_stmt>(signed_bound_def)->op1)->op;
+      if(unsigned_bound->index != bound->index || !isUnsigned32Type(ir_helper::CGetType(unsigned_bound)) ||
+         !isSigned32Type(ir_helper::CGetType(guard_compare->op0)))
+      {
+         return false;
+      }
+      if(guard_node->list_of_cond.front().second != loop_id)
+      {
+         return false;
+      }
+
+      std::vector<ir_nodeRef> loop_reads;
+      if(reads.size() != 1)
+      {
+         return false;
+      }
+      for(const auto& read_stmt : reads)
+      {
+         if(GetPointerS<const node_stmt>(read_stmt)->bb_index != loop_id)
+         {
+            return false;
+         }
+         loop_reads.push_back(read_stmt);
+      }
+      for(const auto& read_stmt : loop_reads)
+      {
+         if(read_stmt->get_kind() != assign_stmt_K)
+         {
+            return false;
+         }
+         const auto read = GetPointerS<const assign_stmt>(read_stmt);
+         const auto read_node = GetPointerS<const node_stmt>(read_stmt);
+         if(read->op1->get_kind() != mem_access_node_K || (read_node->predicate && !isConstantValue(read_node->predicate, 1)) ||
+            ir_helper::Size(read->op0) != 32)
+         {
+            return false;
+         }
+         const auto address = GetPointerS<const mem_access_node>(read->op1)->op;
+         const auto address_def = address && address->get_kind() == ssa_node_K ?
+                                      GetPointerS<const ssa_node>(address)->GetDefStmt() :
+                                      ir_nodeRef();
+         if(!address_def || address_def->get_kind() != assign_stmt_K ||
+            GetPointerS<const assign_stmt>(address_def)->op1->get_kind() != gep_node_K)
+         {
+            return false;
+         }
+         const auto gep = GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(address_def)->op1);
+         if(gep->op0->index != expected_base->index || gep->op1->get_kind() != ssa_node_K)
+         {
+            return false;
+         }
+         const auto index_def = GetPointerS<const ssa_node>(gep->op1)->GetDefStmt();
+         if(!index_def || index_def->get_kind() != assign_stmt_K)
+         {
+            return false;
+         }
+         const auto index_expr = GetPointerS<const assign_stmt>(index_def)->op1;
+         if(index_expr->get_kind() != shl_node_K && index_expr->get_kind() != mul_node_K)
+         {
+            return false;
+         }
+         const auto scale = GetPointerS<const binary_node>(index_expr);
+         const bool scaled = (scale->op0->index == induction->index &&
+                              ((index_expr->get_kind() == shl_node_K && isConstantValue(scale->op1, 2)) ||
+                               (index_expr->get_kind() != shl_node_K && isConstantValue(scale->op1, 4)))) ||
+                             (scale->op1->index == induction->index && index_expr->get_kind() != shl_node_K &&
+                              isConstantValue(scale->op0, 4));
+         if(!scaled)
+         {
+            return false;
+         }
+      }
+      result.preheader = preheader_id;
+      result.header = loop_id;
+      result.branch = guard_branch;
+      result.guard = guard_condition;
+      result.bound = bound;
+      result.base = expected_base;
+      result.reads = std::move(loop_reads);
+      return true;
    }
 
    void preserveBlockingInterfaceAccess(const ir_nodeRef& stmt, const ir_nodeRef& original_stmt,
@@ -698,6 +1164,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
    const auto TM = AppM->get_ir_manager();
    const auto& CGM = AppM->CGetCallGraphManager();
    const auto sorted_roots = GetSortedRoots(CGM);
+   const bool burst_feature_enabled = parameters->IsParameter("experimental-m-axi-burst") &&
+                                      parameters->GetParameter<std::string>("experimental-m-axi-burst") == "1";
 
    std::set<unsigned int> modified;
    const auto add_to_modified = [&](const ir_nodeRef& tn) {
@@ -793,6 +1261,17 @@ DesignFlowStep_Status InterfaceInfer::Exec()
          HLSMgr->module_arch->AddArchitecture(fsymbol, func_arch);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
+
+      const bool has_read_burst_pragma = std::any_of(
+          func_arch->ifaces.begin(), func_arch->ifaces.end(), [](const auto& iface) {
+             return iface.second.find(FunctionArchitecture::iface_max_read_burst_length) != iface.second.end();
+          });
+      // InterfaceInfer runs before FunctionBehavior memory classification is guaranteed
+      // to exist. Use only immutable source-IR evidence here, before per-parameter rewrites.
+      const CustomOrderedSet<unsigned int> no_function_memory_info;
+      const bool function_effects_safe =
+          !burst_feature_enabled || !has_read_burst_pragma ||
+          hasOnlyOrdinaryReadEffects(GetPointerS<const statement_list_node>(fd->body), no_function_memory_info);
 
       const ir_manipulationRef ir_man(new ir_manipulation(TM, parameters, AppM));
       const auto is_dataflow_module =
@@ -1193,6 +1672,244 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                std::set<std::string> operationsR, operationsW;
                const auto interface_datatype = ir_man->GetCustomIntegerType(info.bitwidth, true);
                const auto& bundle_name = iface_attrs.at(FunctionArchitecture::iface_name);
+               const auto burst_enabled = burst_feature_enabled;
+               const auto max_write_burst = iface_attrs.find(FunctionArchitecture::iface_max_write_burst_length);
+               if(burst_enabled && interface_type == "m_axi" && max_write_burst != iface_attrs.end())
+               {
+                  THROW_ERROR_USAGE("Explicit max_write_burst_length is not supported for bundle '" + bundle_name +
+                                    "'; keep stores on the legacy m_axi interface.");
+               }
+               const auto max_read_burst = iface_attrs.find(FunctionArchitecture::iface_max_read_burst_length);
+               const auto read_outstanding = iface_attrs.find(FunctionArchitecture::iface_num_read_outstanding);
+               const auto read_fifo_depth = iface_attrs.find(FunctionArchitecture::iface_read_fifo_depth);
+               const auto cache_enabled = iface_attrs.find(FunctionArchitecture::iface_cache_line_count) !=
+                                          iface_attrs.end();
+               if(burst_enabled && interface_type == "m_axi" &&
+                  max_read_burst == iface_attrs.end() &&
+                  (read_outstanding != iface_attrs.end() || read_fifo_depth != iface_attrs.end()))
+               {
+                  THROW_ERROR_USAGE("AXI read profile attributes num_read_outstanding/read_fifo_depth for bundle '" +
+                                    bundle_name +
+                                    "' require max_read_burst_length; the profile cannot be applied to the legacy scalar interface.");
+               }
+               bool burst_profile_eligible = true;
+               std::string burst_fallback_reason;
+               const bool burst_requested = burst_enabled && interface_type == "m_axi" &&
+                                            max_read_burst != iface_attrs.end() && !max_read_burst->second.empty();
+               if(burst_requested)
+               {
+                  unsigned int burst_type = parameters->isOption(OPT_axi_burst_type) ?
+                                                parameters->getOption<unsigned int>(OPT_axi_burst_type) :
+                                                0U;
+                  unsigned int device_burst_type = 0U;
+                  if(HLSMgr->TryGetParameterFromParameterOrDevice<unsigned int>(
+                         "axi_burst_type", HLSMgr->get_HLS_device(), device_burst_type))
+                  {
+                     burst_type = device_burst_type;
+                  }
+                  // A requested burst resource has no valid FIXED-burst implementation.
+                  // Diagnose the effective setting (including a device override) instead
+                  // of silently compiling the source back to legacy scalar accesses.
+                  if(burst_type != 1U)
+                  {
+                     THROW_ERROR_USAGE("Configured read bursts for bundle '" + bundle_name +
+                                       "' require AXI INCREMENTAL burst type; the effective AXI burst type is " +
+                                       (burst_type == 0U ? "FIXED" : "unsupported") + ".");
+                  }
+                  ParseAXIReadBurstProfile(iface_attrs, bundle_name);
+                  if(!function_effects_safe)
+                  {
+                     burst_fallback_reason = "memory writes or opaque effects; prefetch ordering is not proven";
+                  }
+                  else if(cache_enabled)
+                  {
+                     burst_fallback_reason = "cache-enabled bundle";
+                  }
+                  else if(!writeStmt.empty())
+                  {
+                     burst_fallback_reason = "bundle contains stores";
+                  }
+                  else if(info.bitwidth != 32 || info.alignment < 4)
+                  {
+                     burst_fallback_reason = "data width/alignment is not 32-bit/4-byte";
+                  }
+                  else if(iface_attrs.find(FunctionArchitecture::iface_bitwidth) != iface_attrs.end() &&
+                          std::stoul(iface_attrs.at(FunctionArchitecture::iface_bitwidth)) != 32)
+                  {
+                     burst_fallback_reason = "m_axi interface data width is not 32-bit";
+                  }
+                  else if(HLSMgr->get_address_bitsize() != 32 && HLSMgr->get_address_bitsize() != 64)
+                  {
+                     burst_fallback_reason = "AXI address width is not 32 or 64 bit";
+                  }
+                  burst_profile_eligible = burst_fallback_reason.empty();
+                  if(!burst_profile_eligible)
+                  {
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    "---Keeping legacy m_axi accesses for bundle " + bundle_name + ": " +
+                                        burst_fallback_reason);
+                  }
+               }
+               if(burst_enabled && interface_type == "m_axi" && max_read_burst != iface_attrs.end() &&
+                  max_read_burst->second.size() && burst_profile_eligible)
+               {
+                  bool one_pointer_for_bundle = true;
+                  for(const auto& other_arg : fd->list_of_args)
+                  {
+                     const auto other_name = get_decl_name(other_arg);
+                     if(other_name != arg_name && func_arch->parms.count(other_name) &&
+                        func_arch->parms.at(other_name).at(FunctionArchitecture::parm_bundle) == bundle_name &&
+                        ir_helper::IsPointerType(ir_helper::CGetType(other_arg)))
+                     {
+                        one_pointer_for_bundle = false;
+                        break;
+                     }
+                  }
+                  const auto sl = GetPointerS<const statement_list_node>(fd->body);
+                  std::map<unsigned int, std::vector<ir_nodeRef>> loop_reads;
+                  for(const auto& read_stmt : readStmt)
+                  {
+                     loop_reads[GetPointerS<const node_stmt>(read_stmt)->bb_index].push_back(read_stmt);
+                  }
+                  std::vector<ReadBurstRegion> regions;
+                  bool recognized = one_pointer_for_bundle && !loop_reads.empty();
+                  const auto expected_base_id = AppM->getSSAFromParm(root_id, arg_id);
+                  const auto expected_base = TM->GetIRNode(expected_base_id);
+                  for(const auto& read_group : loop_reads)
+                  {
+                     ReadBurstRegion region{};
+                     if(!recognizeReadBurstRegion(sl, read_group.second, expected_base, region))
+                     {
+                        recognized = false;
+                        break;
+                     }
+                     regions.push_back(std::move(region));
+                  }
+                  if(recognized)
+                  {
+                     for(size_t first = 0; first < regions.size() && recognized; ++first)
+                     {
+                        for(size_t second = first + 1; second < regions.size(); ++second)
+                        {
+                           const auto first_to_second =
+                               hasBlockPath(sl, regions[first].preheader, regions[second].preheader);
+                           const auto second_to_first =
+                               hasBlockPath(sl, regions[second].preheader, regions[first].preheader);
+                           if(first_to_second == second_to_first)
+                           {
+                              recognized = false;
+                              break;
+                           }
+                        }
+                     }
+                  }
+                  if(recognized)
+                  {
+                     std::sort(regions.begin(), regions.end(), [&](const auto& lhs, const auto& rhs) {
+                        return hasBlockPath(sl, lhs.preheader, rhs.preheader);
+                     });
+                     const auto max_burst = static_cast<unsigned>(std::stoul(max_read_burst->second));
+                     THROW_ASSERT(max_burst >= 1 && max_burst <= 256, "Invalid parsed max_read_burst_length");
+                     const auto configure_name = ENCODE_FDNAME(bundle_name, "_configure_read", "");
+                     const auto burst_read_name = ENCODE_FDNAME(bundle_name, "_burst_read", "");
+                     operationsR.insert(configure_name);
+                     operationsR.insert(burst_read_name);
+                     const auto opcode_type = ir_man->GetCustomIntegerType(2, true);
+                     const auto u32_type = ir_man->GetUnsignedIntegerType();
+                     const auto address_type = ir_helper::CGetType(expected_base);
+                     std::vector<ir_nodeConstRef> configure_arg_types{opcode_type, u32_type, interface_datatype,
+                                                                        address_type, u32_type};
+                     const auto configure_decl = ir_man->create_function_decl(
+                         configure_name, fd->parent, configure_arg_types, ir_man->GetVoidType(), BUILTIN_LOCINFO, false);
+                     std::vector<ir_nodeConstRef> burst_read_arg_types{opcode_type, u32_type, interface_datatype,
+                                                                        address_type, u32_type};
+                     const auto burst_read_decl = ir_man->create_function_decl(
+                         burst_read_name, fd->parent, burst_read_arg_types, interface_datatype, BUILTIN_LOCINFO, false);
+
+                     for(const auto& region : regions)
+                     {
+                        const auto preheader = sl->list_of_bloc.at(region.preheader);
+                        const auto branch = preheader->CGetStmtList().back();
+                        const auto zero = TM->CreateUniqueIntegerCst(0, u32_type);
+                        const auto count_expr = ir_man->create_ternary_operation(u32_type, region.guard, region.bound,
+                                                                                  zero, BUILTIN_LOCINFO, select_node_K);
+                        const auto count_stmt = ir_man->CreateAssignStmt(u32_type, nullptr, nullptr, count_expr,
+                                                                         fd->index, BUILTIN_LOCINFO);
+                        preheader->PushBefore(count_stmt, branch, AppM);
+                        const auto count_ssa = GetPointerS<const assign_stmt>(count_stmt)->op0;
+                        std::vector<ir_nodeRef> configure_args{TM->CreateUniqueIntegerCst(2, opcode_type),
+                                                               TM->CreateUniqueIntegerCst(32, u32_type),
+                                                               TM->CreateUniqueIntegerCst(0, interface_datatype),
+                                                               region.base, count_ssa};
+                        const auto configure_call =
+                            ir_man->create_call_stmt(configure_decl, configure_args, fd->index, BUILTIN_LOCINFO);
+                        preheader->PushBefore(configure_call, branch, AppM);
+                        CustomUnorderedSet<unsigned int> call_points;
+                        CallGraphManager::addCallPointAndExpand(call_points, AppM, fd->index, configure_decl->index,
+                                                                configure_call->index,
+                                                                FunctionEdgeInfo::CallType::direct_call,
+                                                                DEBUG_LEVEL_NONE);
+                        serializeInterfaceAccess(configure_call, bundle_name, channel_read_vdefs, ir_man);
+                        GetPointer<HLS_manager>(AppM)->design_interface_io[fsymbol][region.preheader][arg_name]
+                            .push_back(configure_call->index);
+                        add_to_modified(configure_call);
+
+                        for(const auto& read_stmt : region.reads)
+                        {
+                           auto read = GetPointerS<assign_stmt>(read_stmt);
+                           const auto mem_access = GetPointerS<const mem_access_node>(read->op1);
+                           std::vector<ir_nodeRef> burst_read_args{TM->CreateUniqueIntegerCst(0, opcode_type),
+                                                                   TM->CreateUniqueIntegerCst(32, u32_type),
+                                                                   TM->CreateUniqueIntegerCst(0, interface_datatype),
+                                                                   mem_access->op,
+                                                                   TM->CreateUniqueIntegerCst(0, u32_type)};
+                           const auto read_expr = ir_man->CreateCallExpr(burst_read_decl, burst_read_args,
+                                                                         BUILTIN_LOCINFO);
+                           ir_nodeRef rewritten_read = read_stmt;
+                           if(ir_helper::IsSameType(interface_datatype, ir_helper::CGetType(read->op0)))
+                           {
+                              TM->ReplaceIRNode(read_stmt, read->op1, read_expr);
+                           }
+                           else
+                           {
+                              const auto actual_type = ir_helper::CGetType(read->op0);
+                              const auto is_real = ir_helper::IsRealType(actual_type);
+                              const auto tmp_type = is_real ?
+                                                        ir_man->GetCustomIntegerType(ir_helper::Size(actual_type), true) :
+                                                        interface_datatype;
+                              const auto tmp_ssa = ir_man->create_ssa_name(nullptr, tmp_type, nullptr, nullptr);
+                              rewritten_read = ir_man->create_assign_stmt(tmp_ssa, read_expr, fd->index, BUILTIN_LOCINFO);
+                              const auto loop_bb = sl->list_of_bloc.at(region.header);
+                              loop_bb->Replace(read_stmt, rewritten_read, true, AppM);
+                              const auto cast_expr = ir_man->create_unary_operation(
+                                  actual_type, tmp_ssa, BUILTIN_LOCINFO, is_real ? bitcast_node_K : nop_node_K);
+                              const auto cast_stmt = ir_man->create_assign_stmt(read->op0, cast_expr, fd->index,
+                                                                                BUILTIN_LOCINFO);
+                              loop_bb->PushAfter(cast_stmt, rewritten_read, AppM);
+                           }
+                           CallGraphManager::addCallPointAndExpand(call_points, AppM, fd->index,
+                                                                   burst_read_decl->index, rewritten_read->index,
+                                                                   FunctionEdgeInfo::CallType::direct_call,
+                                                                   DEBUG_LEVEL_NONE);
+                           serializeInterfaceAccess(rewritten_read, bundle_name, channel_read_vdefs, ir_man);
+                           GetPointer<HLS_manager>(AppM)->design_interface_io[fsymbol]
+                               [GetPointerS<const node_stmt>(rewritten_read)->bb_index][arg_name]
+                                   .push_back(rewritten_read->index);
+                           add_to_modified(rewritten_read);
+                        }
+                     }
+                     readStmt.clear();
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    "---Configured read burst regions for bundle " + bundle_name + " (B=" +
+                                        max_read_burst->second + ")");
+                  }
+                  else
+                  {
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    "---Keeping legacy m_axi reads for bundle " + bundle_name +
+                                        ": read-burst CFG/SSA recognition failed or bundle is not exclusive");
+                  }
+               }
                const auto require_flush =
                    interface_type == "m_axi" &&
                    iface_attrs.find(FunctionArchitecture::iface_cache_line_count) != iface_attrs.end();
@@ -2927,9 +3644,9 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
    const auto HLSMgr = GetPointerS<HLS_manager>(AppM);
    THROW_ASSERT(func_arch->parms.find(info.arg_id) != func_arch->parms.end(),
                 "Missing parameter '" + info.arg_id + "' from function architecute.");
-   const auto& parm_attrs = func_arch->parms.at(info.arg_id);
-   const auto& bundle_name = parm_attrs.at(FunctionArchitecture::parm_bundle);
-   const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");
+      const auto& parm_attrs = func_arch->parms.at(info.arg_id);
+      const auto& bundle_name = parm_attrs.at(FunctionArchitecture::parm_bundle);
+      const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");
    const auto HLS_D = HLSMgr->get_HLS_device();
    const auto TechMan = HLS_D->get_technology_manager();
    if(!TechMan->is_library_manager(INTERFACE_LIBRARY) ||
@@ -3251,15 +3968,36 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
    const auto& parm_attrs = func_arch->parms.at(info.arg_id);
    const auto& bundle_name = parm_attrs.at(FunctionArchitecture::parm_bundle);
    const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");
+   const auto configure_read_name = ENCODE_FDNAME(bundle_name, "_configure_read", "");
+   const bool configured_read_resource = operationsR.count(configure_read_name) != 0;
    const auto HLS_D = HLSMgr->get_HLS_device();
    const auto TechMan = HLS_D->get_technology_manager();
+   const bool resource_already_exists = TechMan->is_library_manager(INTERFACE_LIBRARY) &&
+                                        TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName);
+   const auto& iface_attrs = func_arch->ifaces.at(bundle_name);
+   const auto burst_profile_attr = std::string("bambu_max_read_burst_length");
+   const auto outstanding_profile_attr = std::string("bambu_num_read_outstanding");
+   const auto fifo_depth_profile_attr = std::string("bambu_read_fifo_depth");
+   const auto axi_latency_attr = std::string("bambu_axi_latency");
+   unsigned int requested_burst_max = 0;
+   auto requested_read_profile = AXIReadBurstProfile{};
+   const auto requested_axi_latency = ParseAXIInterfaceLatency(iface_attrs, bundle_name);
+   if(configured_read_resource)
+   {
+      const auto max_read_burst = iface_attrs.find(FunctionArchitecture::iface_max_read_burst_length);
+      THROW_ASSERT(max_read_burst != iface_attrs.end(),
+                   "Configured burst-read operation has no max_read_burst_length attribute for bundle '" +
+                       bundle_name + "'.");
+      requested_burst_max = static_cast<unsigned int>(std::stoul(max_read_burst->second));
+      THROW_ASSERT(requested_burst_max >= 1 && requested_burst_max <= 256,
+                   "Configured burst-read maximum must be in [1,256] for bundle '" + bundle_name + "'.");
+      requested_read_profile = ParseAXIReadBurstProfile(iface_attrs, bundle_name);
+   }
 
-   if(!TechMan->is_library_manager(INTERFACE_LIBRARY) ||
-      !TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName))
+   if(!resource_already_exists)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                      "-->Creating interface resource: " + INTERFACE_LIBRARY + ":" + ResourceName);
-      const auto& iface_attrs = func_arch->ifaces.at(bundle_name);
       const structural_managerRef CM(new structural_manager(parameters));
       const structural_type_descriptorRef module_type(new structural_type_descriptor(ResourceName));
       CM->set_top_info(ResourceName, module_type);
@@ -3283,8 +4021,10 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
 
       const structural_type_descriptorRef address_interface_datatype(
           new structural_type_descriptor("bool", address_bitsize));
-      const structural_type_descriptorRef size1(new structural_type_descriptor("bool", 1));
-      const structural_type_descriptorRef rwsize(new structural_type_descriptor("bool", nbitDataSize));
+      const structural_type_descriptorRef size1(
+          new structural_type_descriptor("bool", configured_read_resource ? 2 : 1));
+      const structural_type_descriptorRef rwsize(
+          new structural_type_descriptor("bool", configured_read_resource ? 32 : nbitDataSize));
       const structural_type_descriptorRef rwtypeIn(new structural_type_descriptor("bool", interface_bitwidth));
       const structural_type_descriptorRef rwtypeOut(new structural_type_descriptor("bool", backEndBitsize));
       const structural_type_descriptorRef idType(new structural_type_descriptor("bool", 6));
@@ -3314,6 +4054,20 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
 
       const auto addrPort = CM->add_port("in4", port_o::IN, interface_top, address_interface_datatype);
       GetPointerS<port_o>(addrPort)->set_is_addr_bus(true);
+
+      if(configured_read_resource)
+      {
+         THROW_ASSERT(info.bitwidth == 32 && interface_bitwidth == 32 && backEndBitsize == 32 &&
+                          (address_bitsize == 32 || address_bitsize == 64),
+                      "Configured burst-read resource requires 32-bit data and backend widths and a 32 or "
+                      "64 bit address for bundle '" +
+                          bundle_name + "'.");
+         THROW_ASSERT(operationsW.empty(),
+                      "Configured burst-read resource cannot include write operations for bundle '" + bundle_name +
+                          "'.");
+         const structural_type_descriptorRef burst_count_type(new structural_type_descriptor("bool", 32));
+         CM->add_port("in5", port_o::IN, interface_top, burst_count_type);
+      }
 
       const auto cache_reset_port = CM->add_port(CACHE_RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
       GetPointerS<port_o>(cache_reset_port)->set_port_interface(port_o::port_interface::CACHE_RESET);
@@ -3530,7 +4284,8 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
          GetPointerS<port_o>(s_bresp)->set_port_interface(port_o::port_interface::S_AXIL_BRESP);
       }
 
-      CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "in1 in2 in3 in4 out1");
+      const auto library_args = configured_read_resource ? "in1 in2 in3 in4 in5 out1" : "in1 in2 in3 in4 out1";
+      CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, library_args);
       CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR,
                                "ReadWrite" + getHDLGeneratorNameToken(info.name) + "HDLGenerator");
 
@@ -3540,6 +4295,20 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
          HLSMgr->unused_interfaces[root_id].insert(std::make_pair(INTERFACE_LIBRARY, ResourceName));
       }
       const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
+      if(configured_read_resource)
+      {
+         fu->ordered_attributes.push_back(burst_profile_attr);
+         fu->attributes[burst_profile_attr] = attributeRef(new attribute(attribute::INT32, STR(requested_burst_max)));
+         fu->ordered_attributes.push_back(outstanding_profile_attr);
+         fu->attributes[outstanding_profile_attr] =
+             attributeRef(new attribute(attribute::INT32, STR(requested_read_profile.max_outstanding)));
+         fu->ordered_attributes.push_back(fifo_depth_profile_attr);
+         fu->attributes[fifo_depth_profile_attr] =
+             attributeRef(new attribute(attribute::INT32, STR(requested_read_profile.fifo_depth)));
+      }
+      fu->ordered_attributes.push_back(axi_latency_attr);
+      fu->attributes[axi_latency_attr] =
+          attributeRef(new attribute(attribute::STRING, std::to_string(requested_axi_latency)));
       fu->area_m = std::make_shared<area_info>();
       fu->area_m->resources[area_info::AREA] = 0;
       if(iface_attrs.find(FunctionArchitecture::iface_cache_line_count) != iface_attrs.end())
@@ -3556,6 +4325,68 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created");
    }
 
+   // A bundle is shared globally across roots. Its functional-unit ABI is fixed
+   // by the first root that creates it, so reject an incompatible later root
+   // before adding operations that would otherwise silently bind to that ABI.
+   if(resource_already_exists)
+   {
+      const auto existing_fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
+      const auto existing_latency = existing_fu->attributes.find(axi_latency_attr);
+      const auto existing_latency_value = existing_latency == existing_fu->attributes.end() || !existing_latency->second ?
+                                              std::string("0") : existing_latency->second->get_content_str();
+      const auto requested_latency_value = std::to_string(requested_axi_latency);
+      if(existing_latency_value != requested_latency_value)
+      {
+         THROW_ERROR_USAGE("Incompatible AXI latency for bundle '" + bundle_name + "': existing roots use latency=" +
+                           existing_latency_value + " while this root requires latency=" + requested_latency_value +
+                           ". Use distinct bundle names for roots with different AXI latencies.");
+      }
+      const auto existing_circ = existing_fu->CM ? existing_fu->CM->get_circ() : structural_objectRef();
+      const bool existing_configured_read =
+          existing_circ && existing_circ->find_member("in5", port_o_K, existing_circ) != nullptr;
+      if(existing_configured_read != configured_read_resource)
+      {
+         THROW_ERROR_USAGE("Incompatible m_axi resource ABI for bundle '" + bundle_name +
+                           "': configured burst-read and legacy scalar read roots cannot share this resource. "
+                           "Use distinct bundle names for roots that mix configured burst and legacy accesses.");
+      }
+      if(configured_read_resource)
+      {
+         const auto profile = existing_fu->attributes.find(burst_profile_attr);
+         if(profile == existing_fu->attributes.end() || !profile->second ||
+            profile->second->get_content<unsigned int>() != requested_burst_max)
+         {
+            const auto existing_max = profile == existing_fu->attributes.end() || !profile->second ?
+                                          std::string("unknown") :
+                                          profile->second->get_content_str();
+            THROW_ERROR_USAGE("Incompatible m_axi burst profile for bundle '" + bundle_name +
+                              "': existing roots use max_read_burst_length=" + existing_max +
+                              " while this root requires max_read_burst_length=" + STR(requested_burst_max) +
+                              ". Use distinct bundle names for roots with different burst maxima.");
+         }
+         const auto existing_outstanding = existing_fu->attributes.find(outstanding_profile_attr);
+         const auto existing_fifo_depth = existing_fu->attributes.find(fifo_depth_profile_attr);
+         const unsigned int existing_o = existing_outstanding == existing_fu->attributes.end() ||
+                                                 !existing_outstanding->second ?
+                                             1U : existing_outstanding->second->get_content<unsigned int>();
+         // A root with no explicit depth uses the derived default, which is
+         // exactly the value requested_read_profile already carries.
+         const unsigned int existing_d = existing_fifo_depth == existing_fu->attributes.end() ||
+                                                 !existing_fifo_depth->second ?
+                                             requested_read_profile.fifo_depth :
+                                             existing_fifo_depth->second->get_content<unsigned int>();
+         if(existing_o != requested_read_profile.max_outstanding || existing_d != requested_read_profile.fifo_depth)
+         {
+            THROW_ERROR_USAGE("Incompatible m_axi burst profile for bundle '" + bundle_name +
+                              "': existing roots use num_read_outstanding=" + STR(existing_o) +
+                              ", read_fifo_depth=" + STR(existing_d) + " while this root requires "
+                              "num_read_outstanding=" + STR(requested_read_profile.max_outstanding) +
+                              ", read_fifo_depth=" + STR(requested_read_profile.fifo_depth) +
+                              ". Use distinct bundle names for roots with different burst profiles.");
+         }
+      }
+   }
+
    for(const auto& fdName : operationsR)
    {
       TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
@@ -3567,6 +4398,15 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
 
    /* Flush Op */
    const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
+   if(configured_read_resource)
+   {
+      THROW_ASSERT(operationsW.empty(),
+                   "Configured m_axi burst resource cannot include write operations for bundle '" + bundle_name +
+                       "'.");
+      THROW_ASSERT(fu->CM && fu->CM->get_circ() &&
+                       fu->CM->get_circ()->find_member("in5", port_o_K, fu->CM->get_circ()) != nullptr,
+                   "Configured m_axi resource for bundle '" + bundle_name + "' is missing its in5 burst-read port.");
+   }
 
    for(const auto& fdName : operationsR)
    {

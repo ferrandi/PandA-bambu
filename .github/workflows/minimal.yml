@@ -289,6 +289,58 @@ jobs:
         shell: bash
         run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
 
+  bambu-axi-burst:
+    needs: [build]
+    if: ${{!cancelled() && needs.build.result == 'success' }}
+    runs-on: [self-hosted, mentor]
+    env:
+      script: ./panda_regressions/hls/bambu_axi_burst.sh
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
+        with:
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "false"
+      - name: Launch AXI burst regression
+        shell: bash
+        run: |
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p ${{env.report-dir}}
+          ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" -c=--simulator=MODELSIM
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: bambu_axi_burst
+          new-results: ${{env.report-dir}}/perf.xml
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        shell: bash
+        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+      - name: Upload test reports
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: ./.github/actions/artifact-upload
+        with:
+          name: bambu_axi_burst
+          path: ${{env.report-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
+
   AXI4-verification:
     needs: [build]
     runs-on: [self-hosted, xilinx]
