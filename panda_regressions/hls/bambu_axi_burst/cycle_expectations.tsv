@@ -1,14 +1,16 @@
-case	mode	cycles	source	burst_max	outstanding	fifo_depth	addr_bits
-sum-o5-n1024	read	1092	bambu_axi_burst_sum_o5.cpp	16	5	256	32
-sum-o8-n1024	read	1092	bambu_axi_burst_sum_o8.cpp	16	8	256	32
-sum-o16-n1024	read	1092	bambu_axi_burst_sum_o16.cpp	16	16	256	32
-sum-o1-n1024	read	5124	bambu_axi_burst_sum_o1.cpp	16	1	256	32
-sum-o5-n2048	read	2116	bambu_axi_burst_sum_o5.cpp	16	5	256	32
-sum-o8-n2048	read	2116	bambu_axi_burst_sum_o8.cpp	16	8	256	32
-sum-o16-n2048	read	2116	bambu_axi_burst_sum_o16.cpp	16	16	256	32
-sum-o1-n2048	read	10244	bambu_axi_burst_sum_o1.cpp	16	1	256	32
-sum-o1-n1024-addr64	read	5124	bambu_axi_burst_sum_o1.cpp	16	1	256	64
-sum-o1-n1024-lat128	read	9220	bambu_axi_burst_sum_o1_lat128.cpp	16	1	256	32
-write-burst-n1024	write	2068	plain_m_axi_write_burst.cpp	16	1	32	32
-write-burst-n2048	write	4116	plain_m_axi_write_burst.cpp	16	1	32	32
-write-burst-n1024-addr64	write	2068	plain_m_axi_write_burst.cpp	16	1	32	64
+case	mode	cycles	source	burst_max	outstanding	fifo_depth	write_burst_max	write_outstanding	write_fifo_depth	addr_bits
+sum-o5-n1024	read	1092	bambu_axi_burst_sum_o5.cpp	16	5	256	-	-	-	32
+sum-o8-n1024	read	1092	bambu_axi_burst_sum_o8.cpp	16	8	256	-	-	-	32
+sum-o16-n1024	read	1092	bambu_axi_burst_sum_o16.cpp	16	16	256	-	-	-	32
+sum-o1-n1024	read	5124	bambu_axi_burst_sum_o1.cpp	16	1	256	-	-	-	32
+sum-o5-n2048	read	2116	bambu_axi_burst_sum_o5.cpp	16	5	256	-	-	-	32
+sum-o8-n2048	read	2116	bambu_axi_burst_sum_o8.cpp	16	8	256	-	-	-	32
+sum-o16-n2048	read	2116	bambu_axi_burst_sum_o16.cpp	16	16	256	-	-	-	32
+sum-o1-n2048	read	10244	bambu_axi_burst_sum_o1.cpp	16	1	256	-	-	-	32
+sum-o1-n1024-addr64	read	5124	bambu_axi_burst_sum_o1.cpp	16	1	256	-	-	-	64
+sum-o1-n1024-lat128	read	9220	bambu_axi_burst_sum_o1_lat128.cpp	16	1	256	-	-	-	32
+write-burst-n1024	write	2068	plain_m_axi_write_burst.cpp	-	-	-	16	1	32	32
+write-burst-n2048	write	4116	plain_m_axi_write_burst.cpp	-	-	-	16	1	32	32
+write-burst-n1024-addr64	write	2068	plain_m_axi_write_burst.cpp	-	-	-	16	1	32	64
+duplex-symmetric-n1024	duplex	5173	bambu_axi_burst_duplex.cpp	16	1	64	16	1	32	32
+duplex-asymmetric-n1024	duplex	3149	bambu_axi_burst_duplex.cpp	16	2	64	8	1	16	32
