@@ -94,7 +94,7 @@ run_case nonqualifiable_read_normal write_direction_only
 run_case nonqualifiable_read_reversed write_direction_only
 run_case same_bundle_normal same_bundle_legacy
 run_case same_bundle_reversed same_bundle_legacy
-run_case inplace_pointwise inplace_legacy
+run_case inplace_pointwise inplace_duplex
 run_case mixed_unsupported_store mixed_legacy
 run_case unused_same_bundle_normal write_only
 run_case unused_same_bundle_reversed write_only

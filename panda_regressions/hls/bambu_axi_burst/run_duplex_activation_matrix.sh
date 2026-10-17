@@ -18,7 +18,7 @@ if [[ $# -lt 1 || $# -gt 2 ]]; then
   exit 2
 fi
 BAMBU_ARG=$1
-OUT_ARG=${2:-"$ROOT/documentation/tmp/out_duplex_activation_matrix_t4_rooted_20261016"}
+OUT_ARG=${2:-"$ROOT/documentation/tmp/out_duplex_activation_matrix"}
 if [[ "$BAMBU_ARG" == */* ]]; then BAMBU=$(realpath "$BAMBU_ARG"); else BAMBU=$(command -v "$BAMBU_ARG" || true); [[ -n "$BAMBU" ]] && BAMBU=$(realpath "$BAMBU"); fi
 if [[ -z ${BAMBU:-} || ! -x "$BAMBU" ]]; then echo "Bambu executable not found: $BAMBU_ARG" >&2; exit 2; fi
 PREFIX=$(dirname "$(dirname "$BAMBU")")
@@ -35,20 +35,20 @@ for tool in rg sha256sum; do command -v "$tool" >/dev/null || { echo "required t
   echo "matrix source/checker/helper missing" >&2; exit 2;
 }
 [[ ! -e "$OUT_ARG" && ! -L "$OUT_ARG" ]] || { echo "output path must be fresh: $OUT_ARG" >&2; exit 2; }
+DEFAULT_JOBS=$(nproc 2>/dev/null || printf '4')
+if [[ ! $DEFAULT_JOBS =~ ^[1-9][0-9]*$ ]]; then DEFAULT_JOBS=4; fi
+MATRIX_JOBS=${DUPLEX_MATRIX_JOBS:-$DEFAULT_JOBS}
+[[ $MATRIX_JOBS =~ ^[1-9][0-9]*$ ]] || { echo "DUPLEX_MATRIX_JOBS must be positive" >&2; exit 2; }
+MATRIX_JOBS=$((10#$MATRIX_JOBS))
+(( MATRIX_JOBS <= ${#CASES[@]} )) || MATRIX_JOBS=${#CASES[@]}
+
 OUT=$(realpath -m "$OUT_ARG")
 mkdir -p "$OUT/tmp" "$OUT/job_logs"
 OUT=$(realpath "$OUT")
 export PYTHONDONTWRITEBYTECODE=1
 
-DEFAULT_JOBS=$(nproc 2>/dev/null || printf '4')
-if [[ ! $DEFAULT_JOBS =~ ^[1-9][0-9]*$ ]]; then DEFAULT_JOBS=4; fi
-if (( DEFAULT_JOBS > 8 )); then DEFAULT_JOBS=8; fi
-MATRIX_JOBS=${DUPLEX_MATRIX_JOBS:-$DEFAULT_JOBS}
-[[ $MATRIX_JOBS =~ ^[1-9][0-9]*$ ]] || { echo "DUPLEX_MATRIX_JOBS must be positive" >&2; exit 2; }
-MATRIX_JOBS=$((10#$MATRIX_JOBS))
-(( MATRIX_JOBS <= 8 )) || MATRIX_JOBS=8
-
 digest() { sha256sum "$1" | awk '{print $1}'; }
+GIT_HEAD=$(git -C "$ROOT" rev-parse HEAD)
 COMMON=(--AXI-burst-type=INCREMENTAL --compiler=I386_CLANG16 --generate-interface=INFER
   --device-name=xcu250,-2L,figd2104 --clock-period=3.33 --bambu-parameter=print-ir-manager=1
   --debug-classes=InterfaceInfer --print-dot --no-clean --extra-cc-options=-DNDEBUG
@@ -75,9 +75,12 @@ run_case() {
     args+=(--bambu-parameter=experimental-m-axi-burst=1)
   fi
   {
-    printf 'case=%s\ncase_id=%s\nbambu=%s\nbambu_sha256=%s\nplugin=%s\nplugin_sha256=%s\nsource=%s\nsource_sha256=%s\nchecker=%s\nchecker_sha256=%s\n' \
+    printf 'git_head=%s\ncase=%s\ncase_id=%s\nbambu=%s\nbambu_sha256=%s\nplugin=%s\nplugin_sha256=%s\nsource=%s\nsource_sha256=%s\ncore_source=%s\ncore_source_sha256=%s\nchecker=%s\nchecker_sha256=%s\nrunner=%s\nrunner_sha256=%s\nparallel_helpers=%s\nparallel_helpers_sha256=%s\n' \
+      "$GIT_HEAD" \
       "$name" "$case_id" "$BAMBU" "$(digest "$BAMBU")" "$PLUGIN" "$(digest "$PLUGIN")" \
-      "$SOURCE" "$(digest "$SOURCE")" "$CHECKER" "$(digest "$CHECKER")"
+      "$SOURCE" "$(digest "$SOURCE")" "$CORE_SOURCE" "$(digest "$CORE_SOURCE")" \
+      "$CHECKER" "$(digest "$CHECKER")" "$TESTS/run_duplex_activation_matrix.sh" \
+      "$(digest "$TESTS/run_duplex_activation_matrix.sh")" "$PARALLEL_HELPERS" "$(digest "$PARALLEL_HELPERS")"
   } >"$out/provenance.txt"
   printf '%q ' "$BAMBU" "$SOURCE" "${args[@]}" >"$out/argv.txt"; printf '\n' >>"$out/argv.txt"
   if (cd "$out" && TMPDIR="$out/tmp" TMP="$out/tmp" TEMP="$out/tmp" \

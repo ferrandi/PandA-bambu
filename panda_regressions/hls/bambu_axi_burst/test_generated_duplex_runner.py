@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 RUNNER = ROOT / "panda_regressions/hls/bambu_axi_burst/rtl_tests/run_generated_duplex_tests.sh"
-SCRATCH_ROOT = ROOT / "documentation/tmp/generated-duplex-runner-tests"
+SCRATCH_ROOT = ROOT / "documentation/tmp/out_generated_duplex_runner_tests"
 SCENARIOS = (
     "LOAD_WAIT_STORE", "STORE_WAIT_LOAD", "WRITE_STALL_READ_PROGRESS", "READ_STALL_WRITE_PROGRESS",
     "SIMULTANEOUS", "CONFIG_ISOLATION", "ZERO_READ", "ZERO_WRITE", "UNPAIRED_DESCRIPTORS",
@@ -145,9 +145,10 @@ chmod +x "$mdir/Vtb_generated_duplex"
         path.write_text(content)
         path.chmod(0o755)
 
-    def _run(self, mode="pass", output_name="fresh", outside=True):
+    def _run(self, mode="pass", output_name="fresh", outside=True, job_overrides=None):
         env = self.env.copy()
         env["SIM_MODE"] = mode
+        env.update(job_overrides or {})
         if not outside:
             env.pop("BURST_DUPLEX_SIM_OUTSIDE_SANDBOX", None)
         output = self.scratch / output_name
@@ -161,6 +162,12 @@ chmod +x "$mdir/Vtb_generated_duplex"
         result, output = self._run(outside=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("BURST_DUPLEX_SIM_OUTSIDE_SANDBOX=1", result.stderr)
+        self.assertFalse(output.exists())
+
+    def test_invalid_parallelism_fails_before_output_creation(self):
+        result, output = self._run(output_name="invalid-jobs", job_overrides={"SIM_JOBS": "0"})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("SIM_JOBS must be a positive integer", result.stderr)
         self.assertFalse(output.exists())
 
     def test_wrong_or_missing_case_marker_fails_even_on_zero_exit(self):

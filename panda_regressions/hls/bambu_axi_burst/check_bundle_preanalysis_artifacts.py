@@ -42,6 +42,44 @@ def raw_text(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
 
+def verify_inplace_duplex(top: str, rtl: str, log: str, bundles: dict[str, dict[str, str]],
+                          parameters: list[ET.Element]) -> None:
+    shared = bundles.get("shared", {})
+    need(shared.get("mode") == "m_axi" and shared.get("max_read_burst_length") == "16" and
+         shared.get("max_write_burst_length") == "16" and
+         shared.get("write_burst_outstanding") == "1",
+         "in-place duplex must retain the shared read/write B=16/O=1 profile")
+    shared_ports = {node.get("port") for node in parameters if node.get("bundle") == "shared"}
+    need(shared_ports == {"data"},
+         "in-place duplex architecture must map only data to the shared bundle")
+
+    read_engines = component_blocks(rtl, "MinimalAXI4MasterPipelined")
+    write_engines = component_blocks(rtl, "MinimalAXI4MasterPipelinedWrite")
+    need(len(read_engines) == 1, "in-place duplex must instantiate exactly one shared read-burst engine")
+    need(len(write_engines) == 1, "in-place duplex must instantiate exactly one shared write-burst engine")
+    need(all(pattern.search(rtl) for pattern in OPS.values()),
+         "in-place duplex is missing one or more CONFIGURE/LOAD/STORE/DRAIN ABI operations")
+    need(not LEGACY_COMPONENT.search(rtl), "in-place duplex RTL unexpectedly instantiates a legacy memory resource")
+
+    aggregator_definitions = re.findall(
+        r"(?m)^\s*module\s+([A-Za-z0-9_$]*_duplex_aggregator_modgen)\s*\(", rtl)
+    need(len(aggregator_definitions) == 1,
+         "in-place duplex must define exactly one physical-bundle aggregator")
+    aggregator = aggregator_definitions[0]
+    instance_matches = list(re.finditer(rf"(?m)^\s*{re.escape(aggregator)}\s+[A-Za-z0-9_$]+\s*\(", rtl))
+    instances = []
+    for match in instance_matches:
+        end = rtl.find(");", match.end())
+        need(end >= 0, "unterminated in-place duplex aggregator instance")
+        instances.append(rtl[match.start():end + 2])
+    need(len(instances) == 1, "in-place duplex must instantiate exactly one physical-bundle aggregator")
+    need(".p_m_axi_shared_araddr(" in instances[0] and ".p_m_axi_shared_awaddr(" in instances[0],
+         "in-place duplex aggregator is disconnected from the shared read or write address channel")
+    marker = f"Activated same-base pointwise duplex m_axi bundle shared for root {top}"
+    need(len(re.findall(rf"(?m)^\s*(?:---)?{re.escape(marker)}\s*$", log)) == 1,
+         "same-base pointwise duplex activation marker is missing or duplicated")
+
+
 def dataflow_verify(output: Path, top: str, expected: str, rtl: str, log: str, root: ET.Element) -> None:
     functions = [node for node in root.findall(".//function")]
     need(any(node.get("name") == top for node in functions),
@@ -116,13 +154,17 @@ def verify(output: Path, top: str, expected: str) -> None:
     parameters = functions[0].findall("./parameters/parameter")
     need(bool(bundles), "architecture.xml contains no bundle records")
 
+    if expected == "inplace_duplex":
+        verify_inplace_duplex(top, rtl, log, bundles, parameters)
+        return
+
     expected_read = expected == "distinct"
     expected_write = expected in {"distinct", "write_direction_only", "write_only"}
     expected_burst = expected_read or expected_write
-    read_bundle = "shared" if expected in {"same_bundle_legacy", "inplace_legacy"} else "input"
+    read_bundle = "shared" if expected == "same_bundle_legacy" else "input"
     write_bundle = {"same_bundle_legacy": "shared", "inplace_legacy": "shared",
                     "mixed_legacy": "data"}.get(expected, "output")
-    if expected in {"distinct", "write_direction_only", "same_bundle_legacy", "inplace_legacy"}:
+    if expected in {"distinct", "write_direction_only", "same_bundle_legacy"}:
         read_attrs = bundles.get(read_bundle, {})
         need(read_attrs.get("mode") == "m_axi" and read_attrs.get("max_read_burst_length") == "16",
              f"architecture.xml does not retain the {read_bundle} read-burst profile")
@@ -132,13 +174,8 @@ def verify(output: Path, top: str, expected: str) -> None:
         need(ports.get("src") == "shared" and ports.get("dst") == "shared" and
              shared_ports == {"src", "dst"},
              "same_bundle_legacy architecture must retain distinct src and dst ports on shared")
-    elif expected == "inplace_legacy":
-        ports = {node.get("port"): node.get("bundle") for node in parameters}
-        shared_ports = {port for port, bundle in ports.items() if bundle == "shared"}
-        need(shared_ports == {"data"},
-             "inplace_legacy architecture must retain only the data port on shared")
     if expected in {"distinct", "write_direction_only", "write_only", "same_bundle_legacy",
-                    "inplace_legacy", "mixed_legacy"}:
+                    "mixed_legacy"}:
         write_attrs = bundles.get(write_bundle, {})
         need(write_attrs.get("mode") == "m_axi" and write_attrs.get("max_write_burst_length") == "16" and
              write_attrs.get("write_burst_outstanding") == "1",
@@ -193,11 +230,6 @@ def verify(output: Path, top: str, expected: str) -> None:
              in log, "same-bundle fallback diagnostic missing for the write direction")
         need("Keeping legacy m_axi accesses for bundle shared: bundle contains stores" in log,
              "same-bundle fallback diagnostic missing for the read direction")
-    elif expected == "inplace_legacy":
-        need("Keeping legacy m_axi writes for bundle shared: bundle contains reads; same-bundle read/write requires duplex support"
-             in log, "in-place fallback diagnostic missing for the write direction")
-        need("Keeping legacy m_axi accesses for bundle shared: bundle contains stores" in log,
-             "in-place fallback diagnostic missing for the read direction")
     elif expected == "mixed_legacy":
         need("Keeping legacy m_axi writes for bundle data: opaque, volatile, atomic, or unclassified memory effects"
              in log,
@@ -209,7 +241,7 @@ def verify(output: Path, top: str, expected: str) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("expectation", choices=("distinct", "write_direction_only", "write_only",
-                                                "same_bundle_legacy", "inplace_legacy", "mixed_legacy",
+                                                "same_bundle_legacy", "inplace_duplex", "mixed_legacy",
                                                 "dataflow_forwarding"))
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--top", required=True)
