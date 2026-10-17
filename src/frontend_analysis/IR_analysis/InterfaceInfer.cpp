@@ -69,6 +69,7 @@
 #include <memory>
 #include <regex>
 #include <sstream>
+#include <tuple>
 
 #include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
 
@@ -588,6 +589,12 @@ namespace
       ir_nodeRef branch;
       ir_nodeRef guard;
       ir_nodeRef bound;
+      ir_nodeRef loop_trip_bound;
+      ir_nodeRef loop_trip_compare;
+      ir_nodeRef effective_bound;
+      ir_nodeRef effective_compare;
+      unsigned int access_bb = 0;
+      bool has_direction_guard = false;
       ir_nodeRef base;
       ir_nodeRef induction;
       std::vector<ir_nodeRef> reads;
@@ -600,6 +607,12 @@ namespace
       unsigned int exit;
       ir_nodeRef guard;
       ir_nodeRef bound;
+      ir_nodeRef loop_trip_bound;
+      ir_nodeRef loop_trip_compare;
+      ir_nodeRef effective_bound;
+      ir_nodeRef effective_compare;
+      unsigned int access_bb = 0;
+      bool has_direction_guard = false;
       ir_nodeRef base;
       ir_nodeRef induction;
       ir_nodeRef store;
@@ -984,6 +997,12 @@ namespace
       result.branch = guard_branch;
       result.guard = guard_condition;
       result.bound = bound;
+      result.loop_trip_bound = bound;
+      result.loop_trip_compare = branch_condition;
+      result.effective_bound = bound;
+      result.effective_compare = ir_nodeRef();
+      result.access_bb = GetPointerS<const node_stmt>(reads.front())->bb_index;
+      result.has_direction_guard = false;
       result.base = expected_base;
       result.induction = induction;
       result.reads = std::move(loop_reads);
@@ -1269,10 +1288,773 @@ namespace
       result.exit = *exit_it;
       result.guard = enters_loop->first;
       result.bound = bound;
+      result.loop_trip_bound = bound;
+      result.loop_trip_compare = loop_exit_condition->first;
+      result.effective_bound = bound;
+      result.effective_compare = ir_nodeRef();
+      result.access_bb = GetPointerS<const node_stmt>(store_stmt)->bb_index;
+      result.has_direction_guard = false;
       result.base = expected_base;
       result.induction = induction;
       result.store = store_stmt;
       return true;
+   }
+
+   bool recognizePrefixDuplexRegions(const statement_list_node* sl, const ir_nodeRef& read_stmt,
+                                     const ir_nodeRef& write_stmt, const ir_nodeRef& read_base,
+                                     const ir_nodeRef& write_base, ReadBurstRegion& read_region,
+                                     WriteBurstRegion& write_region, std::string& reason)
+   {
+      const auto read_node = GetPointerS<const node_stmt>(read_stmt);
+      const auto write_node = GetPointerS<const node_stmt>(write_stmt);
+      if(!read_node || !write_node || read_node->bb_index == 0 || write_node->bb_index == 0)
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      const auto read_block = sl->list_of_bloc.find(read_node->bb_index);
+      const auto write_block = sl->list_of_bloc.find(write_node->bb_index);
+      if(read_block == sl->list_of_bloc.end() || write_block == sl->list_of_bloc.end() ||
+         read_block->second->loop_id == 0 || read_block->second->loop_id != write_block->second->loop_id)
+      {
+         reason = "read/write accesses do not share one canonical loop";
+         return false;
+      }
+      const auto loop_id = read_block->second->loop_id;
+      std::set<unsigned int> loop_blocks;
+      for(const auto& block : sl->list_of_bloc)
+      {
+         if(block.second->loop_id == loop_id)
+         {
+            loop_blocks.insert(block.first);
+         }
+      }
+      if(loop_blocks.empty())
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+
+      std::vector<unsigned int> headers;
+      for(const auto block_id : loop_blocks)
+      {
+         const auto& block = sl->list_of_bloc.at(block_id);
+         if(std::any_of(block->list_of_pred.begin(), block->list_of_pred.end(), [&](const auto pred) {
+               return !loop_blocks.count(pred);
+            }))
+         {
+            headers.push_back(block_id);
+         }
+      }
+      if(headers.size() != 1)
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      const auto header = headers.front();
+      const auto& header_block = sl->list_of_bloc.at(header);
+      std::vector<unsigned int> preheaders;
+      for(const auto pred : header_block->list_of_pred)
+      {
+         if(!loop_blocks.count(pred))
+         {
+            preheaders.push_back(pred);
+         }
+      }
+      if(preheaders.size() != 1)
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      const auto preheader = preheaders.front();
+      std::vector<unsigned int> latches;
+      std::set<unsigned int> exits;
+      for(const auto block_id : loop_blocks)
+      {
+         const auto& block = sl->list_of_bloc.at(block_id);
+         if(std::count(block->list_of_succ.begin(), block->list_of_succ.end(), header) != 0)
+         {
+            latches.push_back(block_id);
+         }
+         for(const auto succ : block->list_of_succ)
+         {
+            if(!loop_blocks.count(succ))
+            {
+               exits.insert(succ);
+            }
+         }
+      }
+      if(latches.size() != 1 || exits.size() != 1)
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      const auto latch = latches.front();
+      const auto exit = *exits.begin();
+      for(const auto block_id : loop_blocks)
+      {
+         const auto& block = sl->list_of_bloc.at(block_id);
+         if(block_id != latch && std::any_of(block->list_of_succ.begin(), block->list_of_succ.end(),
+                                             [&](const auto succ) { return !loop_blocks.count(succ); }))
+         {
+            reason = "unsupported direction guard CFG";
+            return false;
+         }
+      }
+
+      std::map<unsigned int, unsigned int> indegree;
+      std::deque<unsigned int> ready;
+      for(const auto block_id : loop_blocks)
+      {
+         unsigned int degree = 0;
+         for(const auto pred : sl->list_of_bloc.at(block_id)->list_of_pred)
+         {
+            if(loop_blocks.count(pred) && !(pred == latch && block_id == header))
+            {
+               ++degree;
+            }
+         }
+         indegree[block_id] = degree;
+         if(degree == 0)
+         {
+            ready.push_back(block_id);
+         }
+      }
+      std::vector<unsigned int> topological_order;
+      while(!ready.empty())
+      {
+         const auto current = ready.front();
+         ready.pop_front();
+         topological_order.push_back(current);
+         for(const auto succ : sl->list_of_bloc.at(current)->list_of_succ)
+         {
+            if(!loop_blocks.count(succ) || (current == latch && succ == header))
+            {
+               continue;
+            }
+            auto& degree = indegree[succ];
+            if(--degree == 0)
+            {
+               ready.push_back(succ);
+            }
+         }
+      }
+      if(topological_order.size() != loop_blocks.size())
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      unsigned int body_branch_count = 0;
+      for(const auto block_id : loop_blocks)
+      {
+         if(block_id == latch)
+         {
+            continue;
+         }
+         const auto& statements = sl->list_of_bloc.at(block_id)->CGetStmtList();
+         if(!statements.empty() && statements.back()->get_kind() == multi_way_if_stmt_K)
+         {
+            ++body_branch_count;
+         }
+      }
+      if(body_branch_count > 2)
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+
+      const auto latch_statements = sl->list_of_bloc.at(latch)->CGetStmtList();
+      if(latch_statements.empty() || latch_statements.back()->get_kind() != multi_way_if_stmt_K)
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      const auto latch_branch = GetPointerS<const multi_way_if_stmt>(latch_statements.back());
+      if(latch_branch->list_of_cond.size() != 2)
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      const auto latch_exit_cond = std::find_if(latch_branch->list_of_cond.begin(), latch_branch->list_of_cond.end(),
+                                                [&](const auto& item) {
+                                                   return item.first && item.second == exit;
+                                                });
+      const auto latch_backedge = std::find_if(latch_branch->list_of_cond.begin(), latch_branch->list_of_cond.end(),
+                                               [&](const auto& item) {
+                                                  return !item.first && item.second == header;
+                                               });
+      if(latch_exit_cond == latch_branch->list_of_cond.end() || latch_backedge == latch_branch->list_of_cond.end() ||
+         !latch_exit_cond->first || latch_exit_cond->first->get_kind() != ssa_node_K)
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      const auto loop_compare_def = GetPointerS<const ssa_node>(latch_exit_cond->first)->GetDefStmt();
+      if(!loop_compare_def || loop_compare_def->get_kind() != assign_stmt_K ||
+         GetPointerS<const assign_stmt>(loop_compare_def)->op1->get_kind() != eq_node_K)
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      const auto loop_compare = GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(loop_compare_def)->op1);
+      ir_nodeRef induction;
+      ir_nodeRef increment;
+      for(const auto& phi_node : header_block->CGetPhiList())
+      {
+         if(phi_node->get_kind() != phi_stmt_K)
+         {
+            continue;
+         }
+         const auto phi = GetPointerS<const phi_stmt>(phi_node);
+         ir_nodeRef initial;
+         ir_nodeRef backedge;
+         for(const auto& edge : phi->CGetDefEdgesList())
+         {
+            if(edge.second == preheader)
+            {
+               initial = edge.first;
+            }
+            else if(edge.second == latch)
+            {
+               backedge = edge.first;
+            }
+         }
+         if(!isConstantValue(initial, 0) || !backedge || backedge->get_kind() != ssa_node_K)
+         {
+            continue;
+         }
+         const auto update_stmt = GetPointerS<const ssa_node>(backedge)->GetDefStmt();
+         if(!update_stmt || update_stmt->get_kind() != assign_stmt_K ||
+            GetPointerS<const assign_stmt>(update_stmt)->op1->get_kind() != add_node_K)
+         {
+            continue;
+         }
+         const auto update = GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(update_stmt)->op1);
+         if((update->op0->index == phi->res->index && isConstantValue(update->op1, 1)) ||
+            (update->op1->index == phi->res->index && isConstantValue(update->op0, 1)))
+         {
+            induction = phi->res;
+            increment = backedge;
+            break;
+         }
+      }
+      if(!increment)
+      {
+         reason = "canonical induction must start at zero and increment by one";
+         return false;
+      }
+      ir_nodeRef trip_bound;
+      if(loop_compare->op0->index == increment->index)
+      {
+         trip_bound = loop_compare->op1;
+      }
+      else if(loop_compare->op1->index == increment->index)
+      {
+         trip_bound = loop_compare->op0;
+      }
+      if(!trip_bound || trip_bound->get_kind() != ssa_node_K || !isUnsigned32Type(ir_helper::CGetType(trip_bound)))
+      {
+         reason = "loop trip bound is not unsigned 32-bit SSA";
+         return false;
+      }
+      const auto trip_def = GetPointerS<const ssa_node>(trip_bound)->GetDefStmt();
+      if(trip_def && loop_blocks.count(GetPointerS<const node_stmt>(trip_def)->bb_index))
+      {
+         reason = "loop trip bound is defined inside loop";
+         return false;
+      }
+
+      ir_nodeRef entry_guard;
+      bool entry_guard_recognized = false;
+      const auto preheader_block = sl->list_of_bloc.find(preheader);
+      if(preheader_block == sl->list_of_bloc.end())
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      if(!preheader_block->second->CGetStmtList().empty() &&
+         preheader_block->second->CGetStmtList().back()->get_kind() == multi_way_if_stmt_K)
+      {
+         const auto preheader_branch =
+             GetPointerS<const multi_way_if_stmt>(preheader_block->second->CGetStmtList().back());
+         if(preheader_branch->list_of_cond.size() == 2)
+         {
+            const auto enters = std::find_if(preheader_branch->list_of_cond.begin(), preheader_branch->list_of_cond.end(),
+                                              [&](const auto& item) {
+                                                 return item.first && item.second == header;
+                                              });
+            if(enters != preheader_branch->list_of_cond.end() && enters->first &&
+               enters->first->get_kind() == ssa_node_K)
+            {
+               const auto skips = std::find_if(preheader_branch->list_of_cond.begin(),
+                                               preheader_branch->list_of_cond.end(), [&](const auto& item) {
+                                                  return !item.first && item.second == exit;
+                                               });
+               const auto guard_def = GetPointerS<const ssa_node>(enters->first)->GetDefStmt();
+               if(skips == preheader_branch->list_of_cond.end() || !guard_def ||
+                  guard_def->get_kind() != assign_stmt_K ||
+                  GetPointerS<const assign_stmt>(guard_def)->op1->get_kind() != gt_node_K)
+               {
+                  reason = "unsupported direction guard CFG";
+                  return false;
+               }
+               const auto guard_compare =
+                   GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(guard_def)->op1);
+               if(!isConstantValue(guard_compare->op1, 0) || guard_compare->op0->get_kind() != ssa_node_K ||
+                  !isSigned32Type(ir_helper::CGetType(guard_compare->op0)) ||
+                  !isSigned32Type(ir_helper::CGetType(guard_compare->op1)))
+               {
+                  reason = "unsupported direction guard CFG";
+                  return false;
+               }
+               const auto signed_bound = GetPointerS<const ssa_node>(guard_compare->op0);
+               const auto signed_bound_def = signed_bound->GetDefStmt();
+               if(!signed_bound_def || signed_bound_def->get_kind() != assign_stmt_K ||
+                  GetPointerS<const assign_stmt>(signed_bound_def)->op1->get_kind() != nop_node_K)
+               {
+                  reason = "unsupported direction guard CFG";
+                  return false;
+               }
+               const auto unsigned_bound =
+                   GetPointerS<const unary_node>(GetPointerS<const assign_stmt>(signed_bound_def)->op1)->op;
+               if(unsigned_bound->index != trip_bound->index || !isUnsigned32Type(ir_helper::CGetType(unsigned_bound)) ||
+                  !isSigned32Type(ir_helper::CGetType(guard_compare->op0)))
+               {
+                  reason = "unsupported direction guard CFG";
+                  return false;
+               }
+               entry_guard = enters->first;
+               entry_guard_recognized = true;
+            }
+         }
+         if(!entry_guard_recognized && preheader_branch->list_of_cond.size() == 2)
+         {
+            const auto skips = std::find_if(preheader_branch->list_of_cond.begin(), preheader_branch->list_of_cond.end(),
+                                             [&](const auto& item) {
+                                                return item.first && item.second == exit;
+                                             });
+            const auto enters = std::find_if(preheader_branch->list_of_cond.begin(), preheader_branch->list_of_cond.end(),
+                                              [&](const auto& item) {
+                                                 return !item.first && item.second == header;
+                                              });
+            if(skips != preheader_branch->list_of_cond.end() && enters != preheader_branch->list_of_cond.end() &&
+               skips->first && skips->first->get_kind() == ssa_node_K && isUnsigned32Type(ir_helper::CGetType(trip_bound)))
+            {
+               const auto skip_def = GetPointerS<const ssa_node>(skips->first)->GetDefStmt();
+               if(skip_def && skip_def->get_kind() == assign_stmt_K &&
+                  GetPointerS<const assign_stmt>(skip_def)->op1->get_kind() == eq_node_K)
+               {
+                  const auto zero_test =
+                      GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(skip_def)->op1);
+                  const bool compares_trip_bound_to_zero =
+                      (zero_test->op0->get_kind() == ssa_node_K && zero_test->op0->index == trip_bound->index &&
+                       isConstantValue(zero_test->op1, 0)) ||
+                      (zero_test->op1->get_kind() == ssa_node_K && zero_test->op1->index == trip_bound->index &&
+                       isConstantValue(zero_test->op0, 0));
+                  if(compares_trip_bound_to_zero)
+                  {
+                     entry_guard = skips->first;
+                  }
+                  entry_guard_recognized = compares_trip_bound_to_zero;
+               }
+            }
+         }
+      }
+      if(!entry_guard_recognized)
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+
+      const auto is_reachable_avoiding = [&](unsigned int source, unsigned int target, unsigned int avoid) {
+         if(source == avoid || target == avoid)
+         {
+            return false;
+         }
+         std::vector<unsigned int> pending{source};
+         std::set<unsigned int> visited{source};
+         while(!pending.empty())
+         {
+            const auto current = pending.back();
+            pending.pop_back();
+            if(current == target)
+            {
+               return true;
+            }
+            for(const auto succ : sl->list_of_bloc.at(current)->list_of_succ)
+            {
+               if(!loop_blocks.count(succ) || (current == latch && succ == header) || succ == avoid)
+               {
+                  continue;
+               }
+               if(visited.insert(succ).second)
+               {
+                  pending.push_back(succ);
+               }
+            }
+         }
+         return false;
+      };
+      const auto path_reaches = [&](unsigned int source, unsigned int target) {
+         std::vector<unsigned int> pending{source};
+         std::set<unsigned int> visited{source};
+         while(!pending.empty())
+         {
+            const auto current = pending.back();
+            pending.pop_back();
+            if(current == target)
+            {
+               return true;
+            }
+            for(const auto succ : sl->list_of_bloc.at(current)->list_of_succ)
+            {
+               if(!loop_blocks.count(succ) || (current == latch && succ == header))
+               {
+                  continue;
+               }
+               if(visited.insert(succ).second)
+               {
+                  pending.push_back(succ);
+               }
+            }
+         }
+         return false;
+      };
+      const auto recognize_direction = [&](const unsigned int access_bb, ir_nodeRef& effective_bound,
+                                           ir_nodeRef& effective_compare, bool& guarded) {
+         std::vector<std::tuple<unsigned int, ir_nodeRef, ir_nodeRef>> matching_guards;
+         std::vector<unsigned int> induction_prefix_guard_blocks;
+         bool mentions_induction = false;
+         bool has_controlling_branch = false;
+         unsigned int controlling_branch_count = 0;
+         for(const auto block_id : loop_blocks)
+         {
+            const auto& statements = sl->list_of_bloc.at(block_id)->CGetStmtList();
+            if(statements.empty() || statements.back()->get_kind() != multi_way_if_stmt_K || block_id == latch)
+            {
+               continue;
+            }
+            const auto branch = GetPointerS<const multi_way_if_stmt>(statements.back());
+            if(branch->list_of_cond.size() != 2 || !branch->list_of_cond.front().first ||
+               branch->list_of_cond.front().first->get_kind() != ssa_node_K)
+            {
+               continue;
+            }
+            const auto true_edge = branch->list_of_cond.front();
+            const auto false_edge = branch->list_of_cond.back();
+            const bool true_reaches_access = path_reaches(true_edge.second, access_bb);
+            const bool false_reaches_access = path_reaches(false_edge.second, access_bb);
+            if(true_reaches_access || false_reaches_access)
+            {
+               const auto condition_def =
+                   GetPointerS<const ssa_node>(branch->list_of_cond.front().first)->GetDefStmt();
+               if(condition_def && condition_def->get_kind() == assign_stmt_K)
+               {
+                  const auto condition = GetPointerS<const assign_stmt>(condition_def)->op1;
+                  if(condition->get_kind() == lt_node_K)
+                  {
+                     const auto compare = GetPointerS<const binary_node>(condition);
+                     if(compare->op0->index == induction->index && compare->op1->get_kind() == ssa_node_K &&
+                        isUnsigned32Type(ir_helper::CGetType(compare->op0)) &&
+                        isUnsigned32Type(ir_helper::CGetType(compare->op1)))
+                     {
+                        induction_prefix_guard_blocks.push_back(block_id);
+                     }
+                  }
+               }
+            }
+            if(true_reaches_access == false_reaches_access)
+            {
+               continue;
+            }
+            has_controlling_branch = true;
+            ++controlling_branch_count;
+            const auto compare_def = GetPointerS<const ssa_node>(branch->list_of_cond.front().first)->GetDefStmt();
+            if(!compare_def || compare_def->get_kind() != assign_stmt_K)
+            {
+               continue;
+            }
+            const auto condition = GetPointerS<const assign_stmt>(compare_def)->op1;
+            if(condition->get_kind() != lt_node_K)
+            {
+               if(condition->get_kind() == eq_node_K || condition->get_kind() == ne_node_K ||
+                  condition->get_kind() == gt_node_K || condition->get_kind() == ge_node_K ||
+                  condition->get_kind() == le_node_K)
+               {
+                  const auto other_compare = GetPointerS<const binary_node>(condition);
+                  mentions_induction |= other_compare->op0->index == induction->index ||
+                                        other_compare->op1->index == induction->index;
+               }
+               continue;
+            }
+            const auto compare = GetPointerS<const binary_node>(condition);
+            if(compare->op0->index != induction->index && compare->op1->index != induction->index)
+            {
+               continue;
+            }
+            mentions_induction = true;
+            if(true_reaches_access && !false_reaches_access &&
+               !is_reachable_avoiding(true_edge.second, latch, access_bb))
+            {
+               matching_guards.emplace_back(block_id, branch->list_of_cond.front().first, condition);
+            }
+         }
+         if(matching_guards.empty())
+         {
+            if(std::any_of(induction_prefix_guard_blocks.begin(), induction_prefix_guard_blocks.end(),
+                           [&](const auto guard_bb) {
+                              return is_reachable_avoiding(header, access_bb, guard_bb);
+                           }))
+            {
+               reason = "direction guard does not dominate memory access";
+               return false;
+            }
+            if(is_reachable_avoiding(header, latch, access_bb))
+            {
+               reason = mentions_induction ? "direction guard is not an unsigned induction prefix" :
+                                             "unsupported direction guard CFG";
+               return false;
+            }
+            if(mentions_induction)
+            {
+               reason = "direction guard is not an unsigned induction prefix";
+               return false;
+            }
+            if(has_controlling_branch)
+            {
+               reason = "unsupported direction guard CFG";
+               return false;
+            }
+            effective_bound = trip_bound;
+            effective_compare = ir_nodeRef();
+            guarded = false;
+            return true;
+         }
+         if(matching_guards.size() != 1)
+         {
+            reason = "unsupported direction guard CFG";
+            return false;
+         }
+         if(controlling_branch_count != 1)
+         {
+            reason = "unsupported direction guard CFG";
+            return false;
+         }
+         const auto guard_bb = std::get<0>(matching_guards.front());
+         effective_compare = std::get<1>(matching_guards.front());
+         const auto compare = GetPointerS<const binary_node>(std::get<2>(matching_guards.front()));
+         if(compare->op0->index != induction->index || compare->op1->get_kind() != ssa_node_K ||
+            !isUnsigned32Type(ir_helper::CGetType(compare->op0)) ||
+            !isUnsigned32Type(ir_helper::CGetType(compare->op1)))
+         {
+            reason = "direction guard is not an unsigned induction prefix";
+            return false;
+         }
+         effective_bound = compare->op1;
+         const auto effective_def = GetPointerS<const ssa_node>(effective_bound)->GetDefStmt();
+         if(effective_def && loop_blocks.count(GetPointerS<const node_stmt>(effective_def)->bb_index))
+         {
+            reason = "effective bound is defined inside loop";
+            return false;
+         }
+         if(is_reachable_avoiding(header, access_bb, guard_bb))
+         {
+            reason = "direction guard does not dominate memory access";
+            return false;
+         }
+         guarded = true;
+         return true;
+      };
+
+      ir_nodeRef read_effective_bound;
+      ir_nodeRef read_effective_compare;
+      bool read_guarded = false;
+      if(!recognize_direction(read_node->bb_index, read_effective_bound, read_effective_compare, read_guarded))
+      {
+         return false;
+      }
+      ir_nodeRef write_effective_bound;
+      ir_nodeRef write_effective_compare;
+      bool write_guarded = false;
+      if(!recognize_direction(write_node->bb_index, write_effective_bound, write_effective_compare, write_guarded))
+      {
+         return false;
+      }
+      if(!path_reaches(read_node->bb_index, write_node->bb_index))
+      {
+         reason = "read-before-write is not proven on paired prefix";
+         return false;
+      }
+      if(read_node->bb_index == write_node->bb_index)
+      {
+         const auto& statements = sl->list_of_bloc.at(read_node->bb_index)->CGetStmtList();
+         const auto read_position = std::find(statements.begin(), statements.end(), read_stmt);
+         const auto write_position = std::find(statements.begin(), statements.end(), write_stmt);
+         if(read_position == statements.end() || write_position == statements.end() ||
+            std::distance(statements.begin(), read_position) >= std::distance(statements.begin(), write_position))
+         {
+            reason = "read-before-write is not proven on paired prefix";
+            return false;
+         }
+      }
+      if(!read_base || !write_base || read_base->get_kind() != ssa_node_K || write_base->get_kind() != ssa_node_K)
+      {
+         reason = "canonical contiguous loop recognition failed";
+         return false;
+      }
+      if(read_stmt->get_kind() != assign_stmt_K || write_stmt->get_kind() != assign_stmt_K)
+      {
+         reason = "canonical contiguous loop recognition failed";
+         return false;
+      }
+      if((read_node->predicate && !isConstantValue(read_node->predicate, 1)) ||
+         (write_node->predicate && !isConstantValue(write_node->predicate, 1)))
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      const auto read_assign = GetPointerS<const assign_stmt>(read_stmt);
+      const auto write_assign = GetPointerS<const assign_stmt>(write_stmt);
+      if(read_assign->op1->get_kind() != mem_access_node_K || write_assign->op0->get_kind() != mem_access_node_K)
+      {
+         reason = "canonical contiguous loop recognition failed";
+         return false;
+      }
+      const auto read_address = GetPointerS<const mem_access_node>(read_assign->op1)->op;
+      const auto write_address = GetPointerS<const mem_access_node>(write_assign->op0)->op;
+      if(!read_address || read_address->get_kind() != ssa_node_K || !write_address ||
+         write_address->get_kind() != ssa_node_K)
+      {
+         reason = "canonical contiguous loop recognition failed";
+         return false;
+      }
+      const auto read_gep_def = GetPointerS<const ssa_node>(read_address)->GetDefStmt();
+      const auto write_gep_def = GetPointerS<const ssa_node>(write_address)->GetDefStmt();
+      if(!read_gep_def || !write_gep_def || read_gep_def->get_kind() != assign_stmt_K ||
+         write_gep_def->get_kind() != assign_stmt_K ||
+         GetPointerS<const assign_stmt>(read_gep_def)->op1->get_kind() != gep_node_K ||
+         GetPointerS<const assign_stmt>(write_gep_def)->op1->get_kind() != gep_node_K)
+      {
+         reason = "canonical contiguous loop recognition failed";
+         return false;
+      }
+      const auto read_gep = GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(read_gep_def)->op1);
+      const auto write_gep = GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(write_gep_def)->op1);
+      const auto recognize_scaled_index = [&](const ir_nodeRef& index) {
+         if(!index || index->get_kind() != ssa_node_K)
+         {
+            return false;
+         }
+         const auto index_def = GetPointerS<const ssa_node>(index)->GetDefStmt();
+         if(!index_def || index_def->get_kind() != assign_stmt_K)
+         {
+            return false;
+         }
+         const auto expression = GetPointerS<const assign_stmt>(index_def)->op1;
+         if(expression->get_kind() != mul_node_K && expression->get_kind() != shl_node_K)
+         {
+            return false;
+         }
+         const auto scaled = GetPointerS<const binary_node>(expression);
+         return (scaled->op0->index == induction->index &&
+                 ((expression->get_kind() == shl_node_K && isConstantValue(scaled->op1, 2)) ||
+                  (expression->get_kind() != shl_node_K && isConstantValue(scaled->op1, 4)))) ||
+                (scaled->op1->index == induction->index && expression->get_kind() != shl_node_K &&
+                 isConstantValue(scaled->op0, 4));
+      };
+      if(read_gep->op0->index != read_base->index || write_gep->op0->index != write_base->index ||
+         !recognize_scaled_index(read_gep->op1) || !recognize_scaled_index(write_gep->op1) ||
+         ir_helper::Size(read_assign->op0) != 32 ||
+         ir_helper::Size(write_assign->op1) != 32 ||
+         !GetPointerS<const mem_access_node>(read_assign->op1)->ordinary_memory_access ||
+         !GetPointerS<const mem_access_node>(write_assign->op0)->ordinary_memory_access)
+      {
+         reason = "canonical contiguous loop recognition failed";
+         return false;
+      }
+
+      read_region.preheader = preheader;
+      read_region.header = header;
+      read_region.branch = preheader_block->second->CGetStmtList().back();
+      read_region.guard = entry_guard;
+      read_region.bound = trip_bound;
+      read_region.loop_trip_bound = trip_bound;
+      read_region.loop_trip_compare = latch_exit_cond->first;
+      read_region.effective_bound = read_effective_bound;
+      read_region.effective_compare = read_effective_compare;
+      read_region.access_bb = read_node->bb_index;
+      read_region.has_direction_guard = read_guarded;
+      read_region.base = read_base;
+      read_region.induction = induction;
+      read_region.reads = {read_stmt};
+      write_region.preheader = preheader;
+      write_region.header = header;
+      write_region.exit = exit;
+      write_region.guard = entry_guard;
+      write_region.bound = trip_bound;
+      write_region.loop_trip_bound = trip_bound;
+      write_region.loop_trip_compare = latch_exit_cond->first;
+      write_region.effective_bound = write_effective_bound;
+      write_region.effective_compare = write_effective_compare;
+      write_region.access_bb = write_node->bb_index;
+      write_region.has_direction_guard = write_guarded;
+      write_region.base = write_base;
+      write_region.induction = induction;
+      write_region.store = write_stmt;
+      reason.clear();
+      return true;
+   }
+
+   static ir_nodeRef CreateDuplexDirectionCount(const ir_manipulationRef& ir_man, const ir_managerRef& TM,
+                                                const application_managerRef& AppM, const unsigned int function_id,
+                                                const blocRef& preheader, const ir_nodeRef& insertion_point,
+                                                const ir_nodeRef& entry_guard, const ir_nodeRef& trip_bound,
+                                                const ir_nodeRef& effective_bound, const bool has_direction_guard,
+                                                const ir_nodeConstRef& u32_type)
+   {
+      const auto append_value = [&](const ir_nodeRef& expression, const ir_nodeConstRef& value_type) {
+         const auto statement = ir_man->CreateAssignStmt(value_type, nullptr, nullptr, expression, function_id,
+                                                         BUILTIN_LOCINFO);
+         preheader->PushBefore(statement, insertion_point, AppM);
+         return GetPointerS<const assign_stmt>(statement)->op0;
+      };
+      ir_nodeRef count = trip_bound;
+      if(has_direction_guard)
+      {
+         const auto boolean_type = ir_man->GetBooleanType();
+         const auto compare = ir_man->create_binary_operation(boolean_type, trip_bound, effective_bound,
+                                                              BUILTIN_LOCINFO, lt_node_K);
+         const auto compare_value = append_value(compare, boolean_type);
+         const auto minimum = ir_man->create_ternary_operation(u32_type, compare_value, trip_bound,
+                                                               effective_bound, BUILTIN_LOCINFO, select_node_K);
+         count = append_value(minimum, u32_type);
+      }
+      if(entry_guard)
+      {
+         const auto zero = TM->CreateUniqueIntegerCst(0, u32_type);
+         ir_nodeRef entry_condition = entry_guard;
+         const auto entry_guard_def = GetPointerS<const ssa_node>(entry_guard)->GetDefStmt();
+         if(entry_guard_def && entry_guard_def->get_kind() == assign_stmt_K &&
+            GetPointerS<const assign_stmt>(entry_guard_def)->op1->get_kind() == eq_node_K)
+         {
+            const auto zero_test = GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(entry_guard_def)->op1);
+            const bool is_trip_bound_zero_test =
+                (zero_test->op0->get_kind() == ssa_node_K && zero_test->op0->index == trip_bound->index &&
+                 isConstantValue(zero_test->op1, 0)) ||
+                (zero_test->op1->get_kind() == ssa_node_K && zero_test->op1->index == trip_bound->index &&
+                 isConstantValue(zero_test->op0, 0));
+            if(is_trip_bound_zero_test)
+            {
+               const auto boolean_type = ir_man->GetBooleanType();
+               const auto nonzero_test = ir_man->create_binary_operation(boolean_type, trip_bound, zero,
+                                                                          BUILTIN_LOCINFO, ne_node_K);
+               entry_condition = append_value(nonzero_test, boolean_type);
+            }
+         }
+         count = append_value(ir_man->create_ternary_operation(u32_type, entry_condition, count, zero,
+                                                              BUILTIN_LOCINFO, select_node_K), u32_type);
+      }
+      return count;
    }
 
    void preserveBlockingInterfaceAccess(const ir_nodeRef& stmt, const ir_nodeRef& original_stmt,
@@ -1677,36 +2459,66 @@ static bool RecognizeSameBaseDuplex(const statement_list_node* sl, const functio
    WriteBurstRegion write_region{};
    const std::vector<ir_nodeRef> reads{read_access->statement};
    const std::vector<ir_nodeRef> writes{write_access->statement};
-   if(!recognizeReadBurstRegion(sl, reads, expected_read_base, burst_accesses, bundle_name, read_region,
-                                write_access->statement) ||
-      !recognizeWriteBurstRegion(sl, writes, expected_write_base, burst_accesses, bundle_name, write_region,
-                                 read_access->statement))
+   const bool recognized_by_legacy_shape =
+       recognizeReadBurstRegion(sl, reads, expected_read_base, burst_accesses, bundle_name, read_region,
+                                write_access->statement) &&
+       recognizeWriteBurstRegion(sl, writes, expected_write_base, burst_accesses, bundle_name, write_region,
+                                 read_access->statement);
+   if(!recognized_by_legacy_shape &&
+      !recognizePrefixDuplexRegions(sl, read_access->statement, write_access->statement, expected_read_base,
+                                    expected_write_base, read_region, write_region, reason))
    {
-      reason = "canonical contiguous loop recognition failed";
+      if(reason.empty())
+      {
+         reason = "canonical contiguous loop recognition failed";
+      }
       return false;
    }
    if(read_region.preheader != write_region.preheader || read_region.header != write_region.header ||
-      read_region.guard->index != write_region.guard->index || read_region.bound->index != write_region.bound->index ||
       read_region.induction->index != write_region.induction->index ||
-      (same_base && read_region.base->index != write_region.base->index) ||
-      (distinct_base && read_region.base->index == write_region.base->index))
+      read_region.loop_trip_bound->index != write_region.loop_trip_bound->index ||
+      read_region.loop_trip_compare->index != write_region.loop_trip_compare->index)
    {
-      reason = "read/store loop, guard, bound, base, or affine index differ";
+      reason = "read/write accesses do not share one canonical loop";
       return false;
    }
-   const auto loop_bb = sl->list_of_bloc.at(read_region.header);
-   const auto& loop_stmts = loop_bb->CGetStmtList();
-   const auto read_position = std::find_if(loop_stmts.begin(), loop_stmts.end(), [&](const auto& stmt) {
-      return stmt->index == read_access->statement->index;
-   });
-   const auto write_position = std::find_if(loop_stmts.begin(), loop_stmts.end(), [&](const auto& stmt) {
-      return stmt->index == write_access->statement->index;
-   });
-   if(read_position == loop_stmts.end() || write_position == loop_stmts.end() ||
-      std::distance(loop_stmts.begin(), read_position) >= std::distance(loop_stmts.begin(), write_position))
+   THROW_ASSERT((same_base && read_region.base->index == write_region.base->index) ||
+                   (distinct_base && read_region.base->index != write_region.base->index),
+                "Duplex owner/base classification must imply the accepted base relation");
+   if(!recognized_by_legacy_shape)
    {
-      reason = "LOAD does not precede STORE in the original iteration";
-      return false;
+      if(read_region.access_bb == write_region.access_bb)
+      {
+         const auto& loop_stmts = sl->list_of_bloc.at(read_region.access_bb)->CGetStmtList();
+         const auto read_position = std::find_if(loop_stmts.begin(), loop_stmts.end(), [&](const auto& stmt) {
+            return stmt->index == read_access->statement->index;
+         });
+         const auto write_position = std::find_if(loop_stmts.begin(), loop_stmts.end(), [&](const auto& stmt) {
+            return stmt->index == write_access->statement->index;
+         });
+         if(read_position == loop_stmts.end() || write_position == loop_stmts.end() ||
+            std::distance(loop_stmts.begin(), read_position) >= std::distance(loop_stmts.begin(), write_position))
+         {
+            reason = "read-before-write is not proven on paired prefix";
+            return false;
+         }
+      }
+   }
+   else
+   {
+      const auto& loop_stmts = sl->list_of_bloc.at(read_region.access_bb)->CGetStmtList();
+      const auto read_position = std::find_if(loop_stmts.begin(), loop_stmts.end(), [&](const auto& stmt) {
+         return stmt->index == read_access->statement->index;
+      });
+      const auto write_position = std::find_if(loop_stmts.begin(), loop_stmts.end(), [&](const auto& stmt) {
+         return stmt->index == write_access->statement->index;
+      });
+      if(read_position == loop_stmts.end() || write_position == loop_stmts.end() ||
+         std::distance(loop_stmts.begin(), read_position) >= std::distance(loop_stmts.begin(), write_position))
+      {
+         reason = "LOAD does not precede STORE in the original iteration";
+         return false;
+      }
    }
    proof.owner_argument_index = read_access->owner_argument_index;
    proof.read_owner_argument_index = read_access->owner_argument_index;
@@ -2666,9 +3478,20 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                    current.store_statement->index == proof.store_statement->index &&
                                    current.read_region.preheader == proof.read_region.preheader &&
                                    current.read_region.header == proof.read_region.header &&
-                                   current.read_region.branch->index == proof.read_region.branch->index &&
+                                   ((!current.read_region.branch && !proof.read_region.branch) ||
+                                    (current.read_region.branch && proof.read_region.branch &&
+                                     current.read_region.branch->index == proof.read_region.branch->index)) &&
                                    current.read_region.guard->index == proof.read_region.guard->index &&
                                    current.read_region.bound->index == proof.read_region.bound->index &&
+                                   current.read_region.loop_trip_bound->index == proof.read_region.loop_trip_bound->index &&
+                                   current.read_region.loop_trip_compare->index == proof.read_region.loop_trip_compare->index &&
+                                   current.read_region.effective_bound->index == proof.read_region.effective_bound->index &&
+                                   ((!current.read_region.effective_compare && !proof.read_region.effective_compare) ||
+                                    (current.read_region.effective_compare && proof.read_region.effective_compare &&
+                                     current.read_region.effective_compare->index ==
+                                         proof.read_region.effective_compare->index)) &&
+                                   current.read_region.access_bb == proof.read_region.access_bb &&
+                                   current.read_region.has_direction_guard == proof.read_region.has_direction_guard &&
                                    current.read_region.induction->index == proof.read_region.induction->index &&
                                    current.read_region.base->index == proof.read_region.base->index &&
                                    current.write_region.preheader == proof.write_region.preheader &&
@@ -2676,6 +3499,15 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                    current.write_region.exit == proof.write_region.exit &&
                                    current.write_region.guard->index == proof.write_region.guard->index &&
                                    current.write_region.bound->index == proof.write_region.bound->index &&
+                                   current.write_region.loop_trip_bound->index == proof.write_region.loop_trip_bound->index &&
+                                   current.write_region.loop_trip_compare->index == proof.write_region.loop_trip_compare->index &&
+                                   current.write_region.effective_bound->index == proof.write_region.effective_bound->index &&
+                                   ((!current.write_region.effective_compare && !proof.write_region.effective_compare) ||
+                                    (current.write_region.effective_compare && proof.write_region.effective_compare &&
+                                     current.write_region.effective_compare->index ==
+                                         proof.write_region.effective_compare->index)) &&
+                                   current.write_region.access_bb == proof.write_region.access_bb &&
+                                   current.write_region.has_direction_guard == proof.write_region.has_direction_guard &&
                                    current.write_region.induction->index == proof.write_region.induction->index &&
                                    current.write_region.base->index == proof.write_region.base->index &&
                                    current.write_region.store->index == proof.write_region.store->index,
@@ -2773,6 +3605,9 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                const auto node_id = [](const ir_nodeRef& node) {
                   return node ? std::to_string(node->index) : std::string("null");
                };
+               const auto node_id_or_zero = [](const ir_nodeRef& node) {
+                  return node ? std::to_string(node->index) : std::string("0");
+               };
                std::ostringstream proof_record;
                proof_record << "AXI_BURST_DUPLEX_PROOF {\"bundle\":\"" << json_string(bundle_decision.first)
                             << "\",\"semantic_proof\":"
@@ -2801,12 +3636,34 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                << ",\"read_branch_index\":" << node_id(proof.read_region.branch)
                                << ",\"read_guard_index\":" << node_id(proof.read_region.guard)
                                << ",\"read_bound_index\":" << node_id(proof.read_region.bound)
+                               << ",\"loop_trip_bound_ssa_index\":"
+                               << node_id(proof.read_region.loop_trip_bound)
+                               << ",\"loop_trip_compare_index\":"
+                               << node_id(proof.read_region.loop_trip_compare)
+                               << ",\"read_effective_bound_ssa_index\":"
+                               << node_id(proof.read_region.effective_bound)
+                               << ",\"read_effective_compare_index\":"
+                               << node_id_or_zero(proof.read_region.effective_compare)
+                               << ",\"read_access_bb\":" << proof.read_region.access_bb
+                               << ",\"read_count_recipe\":\""
+                               << (proof.read_region.has_direction_guard ? "min_trip_and_effective_bound" :
+                                                                            "trip_count")
+                               << "\""
                                << ",\"read_induction_index\":" << node_id(proof.read_region.induction)
                                << ",\"write_preheader_bb\":" << proof.write_region.preheader
                                << ",\"write_header_bb\":" << proof.write_region.header
                                << ",\"write_exit_bb\":" << proof.write_region.exit
                                << ",\"write_guard_index\":" << node_id(proof.write_region.guard)
                                << ",\"write_bound_index\":" << node_id(proof.write_region.bound)
+                               << ",\"write_effective_bound_ssa_index\":"
+                               << node_id(proof.write_region.effective_bound)
+                               << ",\"write_effective_compare_index\":"
+                               << node_id_or_zero(proof.write_region.effective_compare)
+                               << ",\"write_access_bb\":" << proof.write_region.access_bb
+                               << ",\"write_count_recipe\":\""
+                               << (proof.write_region.has_direction_guard ? "min_trip_and_effective_bound" :
+                                                                            "trip_count")
+                               << "\",\"pairing_domain_recipe\":\"min_read_write_counts_prefix\""
                                << ",\"write_induction_index\":" << node_id(proof.write_region.induction);
                }
                proof_record << "}";
@@ -3335,15 +4192,40 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   const auto& proof = *decision->same_base_duplex_proof;
                   const auto read_regions = decision->read_regions.find(proof.read_owner_argument_index);
                   const auto write_region = decision->write_regions.find(proof.write_owner_argument_index);
+                  const auto same_optional_node = [](const ir_nodeRef& lhs, const ir_nodeRef& rhs) {
+                     return (!lhs && !rhs) || (lhs && rhs && lhs->index == rhs->index);
+                  };
                   THROW_ASSERT(read_regions != decision->read_regions.end() && read_regions->second.size() == 1 &&
                                    write_region != decision->write_regions.end() &&
                                    read_regions->second.front().preheader == proof.read_region.preheader &&
                                    read_regions->second.front().header == proof.read_region.header &&
                                    read_regions->second.front().bound->index == proof.read_region.bound->index &&
+                                   read_regions->second.front().loop_trip_bound->index ==
+                                       proof.read_region.loop_trip_bound->index &&
+                                   same_optional_node(read_regions->second.front().loop_trip_compare,
+                                                     proof.read_region.loop_trip_compare) &&
+                                   read_regions->second.front().effective_bound->index ==
+                                       proof.read_region.effective_bound->index &&
+                                   same_optional_node(read_regions->second.front().effective_compare,
+                                                     proof.read_region.effective_compare) &&
+                                   read_regions->second.front().has_direction_guard ==
+                                       proof.read_region.has_direction_guard &&
+                                   read_regions->second.front().access_bb == proof.read_region.access_bb &&
                                    write_region->second.preheader == proof.write_region.preheader &&
                                    write_region->second.header == proof.write_region.header &&
                                    write_region->second.exit == proof.write_region.exit &&
-                                   write_region->second.bound->index == proof.write_region.bound->index,
+                                   write_region->second.bound->index == proof.write_region.bound->index &&
+                                   write_region->second.loop_trip_bound->index ==
+                                       proof.write_region.loop_trip_bound->index &&
+                                   same_optional_node(write_region->second.loop_trip_compare,
+                                                     proof.write_region.loop_trip_compare) &&
+                                   write_region->second.effective_bound->index ==
+                                       proof.write_region.effective_bound->index &&
+                                   same_optional_node(write_region->second.effective_compare,
+                                                     proof.write_region.effective_compare) &&
+                                   write_region->second.has_direction_guard ==
+                                       proof.write_region.has_direction_guard &&
+                                   write_region->second.access_bb == proof.write_region.access_bb,
                                "Both frozen duplex regions must be validated before either direction is rewritten");
                }
                bool burst_profile_eligible = true;
@@ -3410,13 +4292,9 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      {
                         const auto preheader = sl->list_of_bloc.at(region.preheader);
                         const auto branch = preheader->CGetStmtList().back();
-                        const auto zero = TM->CreateUniqueIntegerCst(0, u32_type);
-                        const auto count_expr = ir_man->create_ternary_operation(u32_type, region.guard, region.bound,
-                                                                                  zero, BUILTIN_LOCINFO, select_node_K);
-                        const auto count_stmt = ir_man->CreateAssignStmt(u32_type, nullptr, nullptr, count_expr,
-                                                                         fd->index, BUILTIN_LOCINFO);
-                        preheader->PushBefore(count_stmt, branch, AppM);
-                        const auto count_ssa = GetPointerS<const assign_stmt>(count_stmt)->op0;
+                        const auto count_ssa = CreateDuplexDirectionCount(
+                            ir_man, TM, AppM, fd->index, preheader, branch, region.guard, region.loop_trip_bound,
+                            region.effective_bound, region.has_direction_guard, u32_type);
                         std::vector<ir_nodeRef> configure_args{TM->CreateUniqueIntegerCst(2, opcode_type),
                                                                TM->CreateUniqueIntegerCst(32, u32_type),
                                                                TM->CreateUniqueIntegerCst(0, interface_datatype),
@@ -3459,13 +4337,13 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                                         interface_datatype;
                               const auto tmp_ssa = ir_man->create_ssa_name(nullptr, tmp_type, nullptr, nullptr);
                               rewritten_read = ir_man->create_assign_stmt(tmp_ssa, read_expr, fd->index, BUILTIN_LOCINFO);
-                              const auto loop_bb = sl->list_of_bloc.at(region.header);
-                              loop_bb->Replace(read_stmt, rewritten_read, true, AppM);
+                              const auto access_bb = sl->list_of_bloc.at(region.access_bb);
+                              access_bb->Replace(read_stmt, rewritten_read, true, AppM);
                               const auto cast_expr = ir_man->create_unary_operation(
                                   actual_type, tmp_ssa, BUILTIN_LOCINFO, is_real ? bitcast_node_K : nop_node_K);
                               const auto cast_stmt = ir_man->create_assign_stmt(read->op0, cast_expr, fd->index,
                                                                                 BUILTIN_LOCINFO);
-                              loop_bb->PushAfter(cast_stmt, rewritten_read, AppM);
+                              access_bb->PushAfter(cast_stmt, rewritten_read, AppM);
                            }
                            CallGraphManager::addCallPointAndExpand(call_points, AppM, fd->index,
                                                                    burst_read_decl->index, rewritten_read->index,
@@ -3541,13 +4419,9 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                          drain_name, fd->parent, command_arg_types, ir_man->GetVoidType(), BUILTIN_LOCINFO, false);
                      const auto preheader = sl->list_of_bloc.at(region.preheader);
                      const auto preheader_branch = preheader->CGetStmtList().back();
-                     const auto zero = TM->CreateUniqueIntegerCst(0, u32_type);
-                     const auto count_expr = ir_man->create_ternary_operation(
-                         u32_type, region.guard, region.bound, zero, BUILTIN_LOCINFO, select_node_K);
-                     const auto count_stmt = ir_man->CreateAssignStmt(u32_type, nullptr, nullptr, count_expr,
-                                                                      fd->index, BUILTIN_LOCINFO);
-                     preheader->PushBefore(count_stmt, preheader_branch, AppM);
-                     const auto count = GetPointerS<const assign_stmt>(count_stmt)->op0;
+                     const auto count = CreateDuplexDirectionCount(
+                         ir_man, TM, AppM, fd->index, preheader, preheader_branch, region.guard,
+                         region.loop_trip_bound, region.effective_bound, region.has_direction_guard, u32_type);
                      const std::vector<ir_nodeRef> configure_args{TM->CreateUniqueIntegerCst(2, opcode_type),
                                                                   TM->CreateUniqueIntegerCst(32, u32_type),
                                                                   TM->CreateUniqueIntegerCst(0, interface_datatype),
@@ -3573,8 +4447,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                                                          nop_node_K);
                         const auto cast_stmt = ir_man->CreateAssignStmt(interface_datatype, nullptr, nullptr, cast,
                                                                         fd->index, BUILTIN_LOCINFO);
-                        const auto loop_bb = sl->list_of_bloc.at(region.header);
-                        loop_bb->PushBefore(cast_stmt, region.store, AppM);
+                        const auto access_bb = sl->list_of_bloc.at(region.access_bb);
+                        access_bb->PushBefore(cast_stmt, region.store, AppM);
                         value = GetPointerS<const assign_stmt>(cast_stmt)->op0;
                      }
                      const auto address = GetPointerS<const mem_access_node>(store->op0)->op;
@@ -3583,14 +4457,14 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                                               address, TM->CreateUniqueIntegerCst(0, u32_type)};
                      const auto store_call =
                          ir_man->create_call_stmt(store_decl, store_args, fd->index, BUILTIN_LOCINFO);
-                     const auto loop_bb = sl->list_of_bloc.at(region.header);
-                     loop_bb->Replace(region.store, store_call, true, AppM);
+                     const auto access_bb = sl->list_of_bloc.at(region.access_bb);
+                     access_bb->Replace(region.store, store_call, true, AppM);
                      preserveBlockingInterfaceAccess(store_call, region.store, bundle_name, channel_write_vdefs, ir_man);
                      CallGraphManager::addCallPointAndExpand(call_points, AppM, fd->index, store_decl->index,
                                                              store_call->index,
                                                              FunctionEdgeInfo::CallType::direct_call,
                                                              DEBUG_LEVEL_NONE);
-                     GetPointer<HLS_manager>(AppM)->design_interface_io[fsymbol][region.header][arg_name]
+                     GetPointer<HLS_manager>(AppM)->design_interface_io[fsymbol][region.access_bb][arg_name]
                          .push_back(store_call->index);
                      add_to_modified(store_call);
 

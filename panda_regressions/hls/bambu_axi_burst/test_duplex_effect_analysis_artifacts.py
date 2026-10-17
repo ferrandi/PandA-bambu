@@ -15,8 +15,14 @@ TMP_ROOT = REPO / "documentation" / "tmp"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from check_duplex_effect_analysis_artifacts import (  # noqa: E402
-    CASES, CheckError, FALLBACK_READ, FALLBACK_WRITE, SUCCESS, verify, verify_restrict_architecture_metadata,
+    CASES, CheckError, FALLBACK_READ, FALLBACK_WRITE, SUCCESS,
+    verify, verify_restrict_architecture_metadata,
     verify_success_record, check_production_duplex, expected_owner_recognition,
+    verify_configure_count_expressions,
+    verify_unsigned_prefix_comparison,
+    verify_prefix_loop_trip_control,
+    verify_direction_guard_dominance,
+    function_graph,
 )
 from check_duplex_activation_matrix import (
     ALL_CASES, INCOMPATIBLE, INCOMPATIBLE_PROFILE_DIAGNOSTIC, VETO_REASON, VETO_REASON_FIELD,
@@ -47,9 +53,15 @@ RECORD = {
     "base_ssa_index": 9, "read_base_ssa_index": 9, "write_base_ssa_index": 9,
     "load_statement_index": 5, "store_statement_index": 6,
     "read_preheader_bb": 0, "read_header_bb": 1, "read_branch_index": 10,
-    "read_guard_index": 11, "read_bound_index": 4, "read_induction_index": 13,
+    "read_guard_index": 11, "read_bound_index": 63, "read_induction_index": 13,
     "write_preheader_bb": 0, "write_header_bb": 1, "write_exit_bb": 2,
-    "write_guard_index": 11, "write_bound_index": 4, "write_induction_index": 13,
+    "write_guard_index": 11, "write_bound_index": 63, "write_induction_index": 13,
+    "loop_trip_bound_ssa_index": 63, "loop_trip_compare_index": 40,
+    "read_effective_bound_ssa_index": 63, "write_effective_bound_ssa_index": 63,
+    "read_effective_compare_index": 0, "write_effective_compare_index": 0,
+    "read_access_bb": 1, "write_access_bb": 1,
+    "read_count_recipe": "trip_count", "write_count_recipe": "trip_count",
+    "pairing_domain_recipe": "min_read_write_counts_prefix",
 }
 RAW = '''COMPILER_VERSION: "Clang 16"
 @1 function_val_node name: @2 arg: @3 arg: @4 body: @70
@@ -81,7 +93,7 @@ RAW = '''COMPILER_VERSION: "Clang 16"
 @37 add_node op: @13 op: @35
 @38 ssa_node def_stmt: @39
 @39 assign_stmt parent: @1 bb_index: 1 op: @38 op: @40
-@40 eq_node op: @36 op: @4
+@40 eq_node op: @36 op: @63
 @42 constant_int_val_node value: 3
 @43 mul_node op: @19 op: @42
 @44 add_node op: @43 op: @35
@@ -94,8 +106,9 @@ RAW = '''COMPILER_VERSION: "Clang 16"
 @55 constant_int_val_node type: @23 value: 0
 @47 ssa_node type: @23 def_stmt: @48
 @48 assign_stmt parent: @1 bb_index: 0 op: @47 op: @49
-@49 nop_node type: @23 op: @4
+@49 nop_node type: @23 op: @63
 @56 integer_ty_node bitsizealloc: 32 bitsize: 32 unsigned
+@63 ssa_node type: @56 var: @4
 @60 multi_way_if_stmt parent: @1 bb_index: 1 op: @38 bloc: 2 bloc: 1
 @70 statement_list_node bloc: 0 loop_id: 0 pred: ENTRY succ: 1 succ: 2 stmt: @12 stmt: @10 bloc: 1 loop_id: 5 pred: 0 pred: 1 succ: 1 succ: 2 phi: @32 stmt: @5 stmt: @6 stmt: @14 stmt: @25 stmt: @39 stmt: @51 stmt: @60 bloc: 2 loop_id: 0 pred: 0 pred: 1 succ: EXIT
 '''
@@ -753,11 +766,7 @@ class DuplexEffectArtifactTests(unittest.TestCase):
                             (self.plugin, "plugin\n")):
             path.write_text(value, encoding="utf-8")
         self.bambu.chmod(0o755)
-        self.write_artifact("same_base_pointwise.v", self.activated_rtl())
-        self.write_artifact("panda-temp/architecture.xml", self.architecture("same_base_pointwise"))
-        self.write_artifact("stderr.log", self.stderr())
-        self.write_artifact("panda-temp/before_Frontend::InterfaceInfer.raw", RAW)
-        self.write_artifact("provenance.txt", self.provenance())
+        self.configure_activated_case("same_base_pointwise")
 
     def tearDown(self) -> None:
         self.temp.cleanup()
@@ -916,6 +925,8 @@ class DuplexEffectArtifactTests(unittest.TestCase):
                             self.architecture(top, read_burst, read_outstanding, write_burst, write_outstanding))
         self.write_artifact("panda-temp/before_Frontend::InterfaceInfer.raw",
                             RAW.replace('strg: "same_base_pointwise"', f'strg: "{top}"'))
+        self.write_artifact("panda-temp/after_Frontend::InterfaceInfer.raw",
+                            self.post_interface_count_raw(top))
         self.write_artifact("stderr.log", f"---Activated same-base pointwise duplex m_axi bundle shared for root {top}\n" +
                             TRACE + "AXI_BURST_DUPLEX_PROOF " + json.dumps(RECORD, separators=(",", ":")) + "\n")
         self.write_artifact("provenance.txt", self.provenance().replace(
@@ -936,6 +947,10 @@ class DuplexEffectArtifactTests(unittest.TestCase):
             rows.extend((f"{name}={path}", f"{name}_sha256={hashlib.sha256(path.read_bytes()).hexdigest()}"))
         raw = self.output / "panda-temp/before_Frontend::InterfaceInfer.raw"
         rows.extend((f"raw_ir={raw}", f"raw_ir_sha256={hashlib.sha256(raw.read_bytes()).hexdigest()}"))
+        post_raw = self.output / "panda-temp/after_Frontend::InterfaceInfer.raw"
+        if post_raw.is_file():
+            rows.extend((f"post_interface_raw={post_raw}",
+                         f"post_interface_raw_sha256={hashlib.sha256(post_raw.read_bytes()).hexdigest()}"))
         return "\n".join(rows) + "\n"
 
     def refresh_provenance(self) -> None:
@@ -962,6 +977,51 @@ class DuplexEffectArtifactTests(unittest.TestCase):
         self.write_artifact("provenance.txt", self.provenance().replace(
             "top=same_base_pointwise", f"top={top}", 1))
 
+    @staticmethod
+    def post_interface_count_raw(top: str) -> str:
+        names = (
+            "shared_bambu_artificial_ParmMgr_configure_read",
+            "shared_bambu_artificial_ParmMgr_burst_read",
+            "shared_bambu_artificial_ParmMgr_configure_write",
+            "shared_bambu_artificial_ParmMgr_store_write",
+            "shared_bambu_artificial_ParmMgr_drain_write",
+        )
+        args = ((500, 501, 502, 503, 601), (504, 501, 502, 505, 502),
+                (500, 501, 502, 503, 604), (506, 501, 507, 505, 502),
+                (508, 501, 502, 503, 502))
+        blocks = (0, 1, 0, 1, 2)
+        lines = [
+            '@1 function_val_node name: @2 body: @70',
+            f'@2 identifier_node strg: "{top}"',
+            '@70 statement_list_node bloc: 0 loop_id: 0 pred: ENTRY succ: 1 stmt: @200 stmt: @202 '
+            'bloc: 1 loop_id: 1 pred: 0 succ: 2 stmt: @201 stmt: @203 '
+            'bloc: 2 loop_id: 0 pred: 1 succ: EXIT stmt: @204',
+            '@9 integer_ty_node bitsizealloc: 32 bitsize: 32 unsigned',
+            '@10 integer_ty_node bitsizealloc: 1 bitsize: 1 unsigned',
+            '@63 ssa_node type: @9', '@11 ssa_node type: @10',
+            '@80 constant_int_val_node type: @9 value: 0',
+            '@600 select_node type: @9 op: @11 op: @63 op: @80',
+            '@601 ssa_node type: @9 def_stmt: @610',
+            '@610 assign_stmt parent: @1 bb_index: 0 op: @601 op: @600',
+            '@603 select_node type: @9 op: @11 op: @63 op: @80',
+            '@604 ssa_node type: @9 def_stmt: @611',
+            '@611 assign_stmt parent: @1 bb_index: 0 op: @604 op: @603',
+        ]
+        for index, (name, call_args, block) in enumerate(zip(names, args, blocks)):
+            target = 1000 + index * 10
+            statement = 1200 + index
+            lines.extend((f'@{target} function_val_node name: @{target + 1} body: @{target + 2}',
+                          f'@{target + 1} identifier_node strg: "{name}"',
+                          f'@{target + 2} statement_list_node bloc: 0 loop_id: 0',
+                          f'@{target + 3} call_node fn: @{target + 4}',
+                          f'@{target + 4} addr_node op: @{target}',
+                          f'@{statement} call_stmt parent: @1 bb_index: {block} op: @{target + 3} ' +
+                          " ".join(f"arg: @{arg}" for arg in call_args)))
+        for ref, value in ((500, 2), (501, 32), (502, 0), (504, 0),
+                           (506, 1), (508, 3), (507, 0), (505, 700)):
+            lines.append(f'@{ref} constant_int_val_node type: @9 value: {value}')
+        return "\n".join(lines) + "\n"
+
     def replace_record(self, old: str, new: str, record: dict[str, object] | None = None) -> None:
         self.write_artifact("stderr.log", self.stderr(record).replace(old, new))
 
@@ -986,16 +1046,21 @@ class DuplexEffectArtifactTests(unittest.TestCase):
         verify_restrict_architecture_metadata(one_restrict_architecture, "distinct_bases_one_restrict", RAW, None)
 
     def test_distinct_base_activation_requires_non_overlap_contract_warning(self) -> None:
-        top = "distinct_bases_source_first"
-        activation = ("Activated distinct-base restricted pointwise duplex m_axi bundle shared for root "
-                      f"{top}\n")
         warning = ("WARNING: distinct-base duplex relies on the caller's __restrict contract; the caller must "
                    "ensure the accessed regions do not overlap (no runtime range validation is performed)\n")
-        rtl = self.activated_rtl(top)
         profile = {"max_read_burst_length": "16", "max_write_burst_length": "16"}
-        check_production_duplex(rtl, activation + warning, top, profile)
-        with self.assertRaisesRegex(CheckError, "missing its caller non-overlap contract warning"):
-            check_production_duplex(rtl, activation, top, profile)
+        for top in ("distinct_bases_source_first", "distinct_prefix_read_longer"):
+            with self.subTest(top=top):
+                activation = ("Activated distinct-base restricted pointwise duplex m_axi bundle shared for root "
+                              f"{top}\n")
+                rtl = self.activated_rtl(top)
+                check_production_duplex(rtl, activation + warning, top, profile)
+                with self.assertRaisesRegex(CheckError, "missing its caller non-overlap contract warning"):
+                    check_production_duplex(rtl, activation, top, profile)
+                if top == "distinct_prefix_read_longer":
+                    stale_marker = activation.replace("distinct-base restricted", "same-base")
+                    with self.assertRaisesRegex(CheckError, "production activation marker is missing"):
+                        check_production_duplex(rtl, stale_marker + warning, top, profile)
 
     def test_distinct_base_64_profile_keeps_per_owner_recognition_expectations(self) -> None:
         self.assertEqual(expected_owner_recognition("distinct_bases_asymmetric_64", 1, 0), ("1", "0"))
@@ -1004,12 +1069,209 @@ class DuplexEffectArtifactTests(unittest.TestCase):
     def test_mismatched_bound_fixture_does_not_claim_comparison_guard_coverage(self) -> None:
         reason, owners, read_fallback, write_fallback, semantic, profile = CASES[
             "distinct_bases_mismatched_bounds"]
-        self.assertEqual(reason, "canonical contiguous loop recognition failed")
+        self.assertEqual(reason, "effective bound is defined inside loop")
         self.assertEqual(owners, 2)
         self.assertEqual((read_fallback, write_fallback),
-                         ("bundle contains stores", "bundle contains reads; same-bundle read/write requires duplex support"))
+                         (FALLBACK_READ, FALLBACK_WRITE))
         self.assertFalse(semantic)
         self.assertTrue(profile)
+
+    def test_option_c_case_inventory_pins_positive_and_veto_shapes(self) -> None:
+        self.assertEqual(CASES["distinct_prefix_read_longer"][0],
+                         "distinct-base restricted pointwise read-before-write candidate")
+        self.assertEqual(CASES["distinct_prefix_write_longer"][0],
+                         "distinct-base restricted pointwise read-before-write candidate")
+        self.assertEqual(CASES["distinct_prefix_equal"][0],
+                         "distinct-base restricted pointwise read-before-write candidate")
+        self.assertEqual(CASES["distinct_prefix_signed_bound"][0],
+                         "unsupported direction guard CFG")
+        self.assertEqual(CASES["distinct_prefix_width_bound"][0],
+                         "distinct-base restricted pointwise read-before-write candidate")
+        self.assertTrue(CASES["distinct_prefix_width_bound"][4])
+        self.assertEqual(CASES["distinct_prefix_width_bound"][1:],
+                         (2, "-", "-", True, True))
+        self.assertEqual(CASES["distinct_prefix_extra_cfg"][0], "unsupported direction guard CFG")
+        self.assertEqual(CASES["distinct_prefix_guard_bypass"][0],
+                         "unsupported direction guard CFG")
+        self.assertEqual(CASES["distinct_bases_two_loops"][0],
+                         "read/write accesses do not share one canonical loop")
+        self.assertEqual(CASES["distinct_prefix_u64_bound"][0],
+                         "unsupported direction guard CFG")
+        self.assertEqual(CASES["distinct_prefix_u64_bound"][1:],
+                         (2, FALLBACK_READ, FALLBACK_WRITE, False, True))
+        self.assertEqual(CASES["shifted_index"][0],
+                         "read/write accesses do not share one canonical loop")
+
+    def test_prefix_trip_proof_uses_exact_latch_branch_and_cfg_edges(self) -> None:
+        nodes = {
+            1: ("integer_ty_node", "bitsizealloc: 32 bitsize: 32 unsigned"),
+            2: ("integer_ty_node", "bitsizealloc: 1 bitsize: 1 unsigned"),
+            9: ("ssa_node", "type: @1 def_stmt: @10"),
+            10: ("phi_stmt", "parent: @90 bb_index: 2 res: @9 def: @16 edge: 3 def: @11 edge: 4"),
+            11: ("ssa_node", "type: @1 def_stmt: @12"),
+            12: ("assign_stmt", "parent: @90 bb_index: 4 op: @11 op: @13"),
+            13: ("add_node", "type: @1 op: @9 op: @14"),
+            14: ("constant_int_val_node", "type: @1 value: 1"),
+            15: ("ssa_node", "type: @1"),
+            16: ("constant_int_val_node", "type: @1 value: 0"),
+            17: ("eq_node", "type: @2 op: @11 op: @15"),
+            18: ("ssa_node", "type: @2 def_stmt: @19"),
+            19: ("assign_stmt", "parent: @90 bb_index: 4 op: @18 op: @17"),
+            20: ("multi_way_if_stmt", "parent: @90 bb_index: 4 op: @18 bloc: 7 bloc: 2"),
+            22: ("ssa_node", "type: @2 def_stmt: @25"),
+            23: ("constant_int_val_node", "type: @1 value: 0"),
+            24: ("eq_node", "type: @2 op: @15 op: @23"),
+            25: ("assign_stmt", "parent: @90 bb_index: 3 op: @22 op: @24"),
+            26: ("multi_way_if_stmt", "parent: @90 bb_index: 3 op: @22 bloc: 7 bloc: 2"),
+        }
+        blocks = {
+            2: (1, "", [], ["3", "4"], ["5", "6"]),
+            3: (0, "", [25, 26], ["ENTRY"], ["2", "7"]),
+            4: (1, "", [12, 19, 20], ["5"], ["7", "2"]),
+            5: (1, "", [], ["2"], ["4"]),
+            6: (1, "", [], ["2"], ["4"]),
+            7: (0, "", [], ["3", "4"], ["EXIT"]),
+        }
+        record = {"read_header_bb": 2, "read_preheader_bb": 3, "write_exit_bb": 7,
+                  "loop_trip_bound_ssa_index": 15, "loop_trip_compare_index": 18,
+                  "read_induction_index": 9, "read_branch_index": 26, "read_guard_index": 22}
+        self.assertEqual(verify_prefix_loop_trip_control(nodes, blocks, record, 1), (4, 18, 11))
+
+        wrong_trip_bound = dict(nodes)
+        wrong_trip_bound[17] = ("eq_node", "type: @2 op: @11 op: @14")
+        with self.assertRaisesRegex(CheckError, "exact increment == trip bound"):
+            verify_prefix_loop_trip_control(wrong_trip_bound, blocks, record, 1)
+        wrong_increment = dict(nodes)
+        wrong_increment[13] = ("sub_node", "type: @1 op: @9 op: @14")
+        with self.assertRaisesRegex(CheckError, "induction plus one"):
+            verify_prefix_loop_trip_control(wrong_increment, blocks, record, 1)
+        wrong_branch = dict(nodes)
+        wrong_branch[20] = ("multi_way_if_stmt", "parent: @90 bb_index: 4 op: @18 bloc: 2 bloc: 7")
+        with self.assertRaisesRegex(CheckError, "map true to exit"):
+            verify_prefix_loop_trip_control(wrong_branch, blocks, record, 1)
+        wrong_cfg = dict(blocks)
+        wrong_cfg[4] = (1, "", [12, 19, 20], ["5"], ["2", "6"])
+        with self.assertRaisesRegex(CheckError, "CFG successors do not match"):
+            verify_prefix_loop_trip_control(nodes, wrong_cfg, record, 1)
+
+    def test_prefix_guard_rejects_mutated_header_bypass_edge(self) -> None:
+        prefix_raw = '''@1 function_val_node name: @2 body: @20
+@2 identifier_node strg: "prefix_cfg"
+@11 multi_way_if_stmt parent: @1 bb_index: 2 op: @12 bloc: 3 bloc: 4
+@12 ssa_node def_stmt: @13
+@13 assign_stmt parent: @1 bb_index: 2 op: @12 op: @14
+@14 lt_node op: @15 op: @16
+@15 ssa_node
+@16 ssa_node
+@20 statement_list_node bloc: 1 loop_id: 5 pred: ENTRY succ: 2 bloc: 2 loop_id: 5 pred: 1 succ: 3 succ: 4 stmt: @11 bloc: 3 loop_id: 5 pred: 2 succ: 5 bloc: 4 loop_id: 5 pred: 2 succ: 6 bloc: 5 loop_id: 5 pred: 3 succ: 7 bloc: 6 loop_id: 5 pred: 4 succ: 7 bloc: 7 loop_id: 0 pred: 5 pred: 6 succ: EXIT
+'''
+        _, _, prefix_cfg, _ = function_graph(prefix_raw, "prefix_cfg")
+        verify_direction_guard_dominance(prefix_cfg, "read", 1, 2, 3, 4, 5)
+
+        bypass_raw = prefix_raw.replace("pred: ENTRY succ: 2 bloc: 2", "pred: ENTRY succ: 2 succ: 8 bloc: 2")
+        bypass_raw = bypass_raw.replace("succ: EXIT\n", "succ: EXIT bloc: 8 loop_id: 5 pred: 1 succ: 5\n")
+        _, _, bypass_cfg, _ = function_graph(bypass_raw, "prefix_cfg")
+        with self.assertRaisesRegex(CheckError, "read effective-prefix guard does not dominate memory access"):
+            verify_direction_guard_dominance(bypass_cfg, "read", 1, 2, 3, 4, 5)
+
+    def test_prefix_count_proof_rejects_missing_or_inconsistent_recipe_fields(self) -> None:
+        missing = dict(RECORD)
+        del missing["pairing_domain_recipe"]
+        with self.assertRaisesRegex(CheckError, "missing prefix-count proof fields"):
+            verify_success_record(missing, RAW, "same_base_pointwise")
+        with self.assertRaisesRegex(CheckError, "unguarded read count does not use"):
+            verify_success_record(dict(RECORD, read_count_recipe="min_trip_and_effective_bound"),
+                                  RAW, "same_base_pointwise")
+        with self.assertRaisesRegex(CheckError, "read access BB does not match the original memory operation"):
+            verify_success_record(dict(RECORD, read_access_bb=0), RAW, "same_base_pointwise")
+        with self.assertRaisesRegex(CheckError, "loop trip comparison"):
+            verify_success_record(dict(RECORD, loop_trip_compare_index=29), RAW,
+                                  "same_base_pointwise")
+        with self.assertRaisesRegex(CheckError, "read effective bound is not an unsigned-32"):
+            verify_success_record(dict(RECORD, read_effective_compare_index=0,
+                                       read_effective_bound_ssa_index=34,
+                                       read_count_recipe="min_trip_and_effective_bound"),
+                                  RAW, "same_base_pointwise")
+
+    @staticmethod
+    def configure_count_fixture() -> tuple[dict[str, tuple[str, str]], dict, dict[str, object]]:
+        nodes = {
+            "@100": ("ssa_node", "type: @1"),
+            "@101": ("ssa_node", "type: @1"),
+            "@102": ("ssa_node", "type: @1"),
+            "@103": ("ssa_node", "type: @2"),
+            "@104": ("lt_node", "op: @100 op: @101"),
+            "@105": ("select_node", "op: @104 op: @100 op: @101"),
+            "@106": ("select_node", "op: @103 op: @105 op: @110"),
+            "@107": ("lt_node", "op: @100 op: @102"),
+            "@108": ("select_node", "op: @107 op: @100 op: @102"),
+            "@109": ("select_node", "op: @103 op: @108 op: @110"),
+            "@110": ("constant_int_val_node", "value: 0"),
+        }
+        calls = {"configure_read": ("", ("", ""), ["@0", "@0", "@0", "@0", "@106"]),
+                 "configure_write": ("", ("", ""), ["@0", "@0", "@0", "@0", "@109"])}
+        record = {
+            "loop_trip_bound_ssa_index": 100,
+            "read_effective_bound_ssa_index": 101,
+            "write_effective_bound_ssa_index": 102,
+            "read_guard_index": 103,
+            "write_guard_index": 103,
+            "read_effective_compare_index": 201,
+            "write_effective_compare_index": 202,
+            "read_count_recipe": "min_trip_and_effective_bound",
+            "write_count_recipe": "min_trip_and_effective_bound",
+        }
+        return nodes, calls, record
+
+    def test_emitted_configure_counts_follow_distinct_clamped_prefix_recipes(self) -> None:
+        nodes, calls, record = self.configure_count_fixture()
+        verify_configure_count_expressions(nodes, calls, record)
+
+    def test_emitted_configure_count_complements_zero_trip_entry_guard(self) -> None:
+        nodes, calls, record = self.configure_count_fixture()
+        nodes["@103"] = ("eq_node", "op: @100 op: @110")
+        nodes["@111"] = ("ne_node", "op: @100 op: @110")
+        nodes["@106"] = ("select_node", "op: @111 op: @105 op: @110")
+        nodes["@109"] = ("select_node", "op: @111 op: @108 op: @110")
+        verify_configure_count_expressions(nodes, calls, record)
+
+        nodes["@106"] = ("select_node", "op: @103 op: @105 op: @110")
+        with self.assertRaisesRegex(CheckError, "CONFIGURE_READ count does not implement"):
+            verify_configure_count_expressions(nodes, calls, record)
+
+    def test_emitted_configure_rejects_old_shared_count_reuse(self) -> None:
+        nodes, calls, record = self.configure_count_fixture()
+        calls["configure_write"] = (*calls["configure_write"][:2],
+                                    ["@0", "@0", "@0", "@0", "@106"])
+        with self.assertRaisesRegex(CheckError, "CONFIGURE_WRITE count does not implement"):
+            verify_configure_count_expressions(nodes, calls, record)
+
+    def test_emitted_configure_rejects_missing_or_inverted_min_clamp(self) -> None:
+        nodes, calls, record = self.configure_count_fixture()
+        nodes["@106"] = ("select_node", "op: @103 op: @100 op: @110")
+        with self.assertRaisesRegex(CheckError, "CONFIGURE_READ count does not implement"):
+            verify_configure_count_expressions(nodes, calls, record)
+        nodes, calls, record = self.configure_count_fixture()
+        nodes["@104"] = ("lt_node", "op: @101 op: @100")
+        with self.assertRaisesRegex(CheckError, "CONFIGURE_READ count does not implement"):
+            verify_configure_count_expressions(nodes, calls, record)
+
+    def test_guard_proof_requires_exact_unsigned_prefix_predicate(self) -> None:
+        nodes = {
+            1: ("integer_ty_node", "bitsizealloc: 32 bitsize: 32 unsigned"),
+            2: ("ssa_node", "type: @1"),
+            3: ("ssa_node", "type: @1"),
+            4: ("lt_node", "op: @2 op: @3"),
+        }
+        verify_unsigned_prefix_comparison(nodes, 4, 2, 3, "read")
+        nodes[4] = ("gt_node", "op: @3 op: @2")
+        verify_unsigned_prefix_comparison(nodes, 4, 2, 3, "read")
+        nodes[4] = ("gt_node", "op: @2 op: @3")
+        with self.assertRaisesRegex(CheckError, "not induction < its exact bound"):
+            verify_unsigned_prefix_comparison(nodes, 4, 2, 3, "read")
+        nodes[4] = ("lt_node", "op: @3 op: @2")
+        with self.assertRaisesRegex(CheckError, "not induction < its exact bound"):
+            verify_unsigned_prefix_comparison(nodes, 4, 2, 3, "read")
 
     def test_asymmetric_profile_and_64_bit_address_profile_pass(self) -> None:
         self.configure_activated_case("same_base_asymmetric_64", 64, 8, 2, 16, 1)
@@ -1253,14 +1515,14 @@ class DuplexEffectArtifactTests(unittest.TestCase):
             self.check()
 
     def test_loop_comparison_cannot_substitute_base_for_bound(self) -> None:
-        raw = RAW.replace("@40 eq_node op: @36 op: @4", "@40 eq_node op: @36 op: @9")
+        raw = RAW.replace("@40 eq_node op: @36 op: @63", "@40 eq_node op: @36 op: @9")
         self.write_artifact("panda-temp/before_Frontend::InterfaceInfer.raw", raw)
         self.refresh_provenance()
         with self.assertRaisesRegex(CheckError, "loop comparison is not equality"):
             self.check()
 
     def test_loop_relation_must_be_equality(self) -> None:
-        raw = RAW.replace("@40 eq_node op: @36 op: @4", "@40 ne_node op: @36 op: @4")
+        raw = RAW.replace("@40 eq_node op: @36 op: @63", "@40 ne_node op: @36 op: @63")
         self.write_artifact("panda-temp/before_Frontend::InterfaceInfer.raw", raw)
         self.refresh_provenance()
         with self.assertRaisesRegex(CheckError, "loop comparison is not equality"):
@@ -1274,8 +1536,8 @@ class DuplexEffectArtifactTests(unittest.TestCase):
             self.check()
 
     def test_entry_bound_conversion_must_be_exact_nop(self) -> None:
-        raw = RAW.replace("@49 nop_node type: @23 op: @4",
-                          "@49 add_node type: @23 op: @4 op: @57\n@57 constant_int_val_node type: @23 value: 1")
+        raw = RAW.replace("@49 nop_node type: @23 op: @63",
+                          "@49 add_node type: @23 op: @63 op: @57\n@57 constant_int_val_node type: @23 value: 1")
         self.write_artifact("panda-temp/before_Frontend::InterfaceInfer.raw", raw)
         self.refresh_provenance()
         with self.assertRaisesRegex(CheckError, "entry bound conversion is not a single nop"):
@@ -1396,11 +1658,12 @@ class DuplexEffectArtifactTests(unittest.TestCase):
             self.check()
 
     def test_semantic_false_cannot_carry_identity_fields(self) -> None:
+        shifted_reason = "read/write accesses do not share one canonical loop"
         record = {"bundle": "shared", "semantic_proof": False,
-                  "semantic_reason": "canonical contiguous loop recognition failed",
+                  "semantic_reason": shifted_reason,
                   "profile_eligible": True, "profile_reason": "read/write profile is eligible"}
         trace = TRACE.replace("same_base_duplex_candidate=1", "same_base_duplex_candidate=0")
-        trace = trace.replace(SUCCESS, "canonical contiguous loop recognition failed")
+        trace = trace.replace(SUCCESS, shifted_reason)
         trace = trace.replace("read_recognized=1", "read_recognized=0").replace(
             "write_recognized=1", "write_recognized=0")
         trace = trace.replace('read_fallback="-"', f'read_fallback="{FALLBACK_READ}"').replace(
@@ -1440,6 +1703,7 @@ class DuplexEffectArtifactTests(unittest.TestCase):
         self.write_artifact("panda-temp/architecture.xml", self.architecture("same_base_cached"))
         self.write_artifact("panda-temp/before_Frontend::InterfaceInfer.raw",
                             RAW.replace('strg: "same_base_pointwise"', 'strg: "same_base_cached"'))
+        (self.output / "panda-temp/after_Frontend::InterfaceInfer.raw").unlink()
         manifest = self.provenance().replace("top=same_base_pointwise", "top=same_base_cached", 1)
         self.write_artifact("provenance.txt", manifest)
         self.check("same_base_cached")
@@ -1503,9 +1767,15 @@ class DuplexEffectArtifactTests(unittest.TestCase):
 
     def test_split_read_and_write_loops_remain_legacy(self) -> None:
         self.configure_fallback_case(
-            "split_read_write_loops", "canonical contiguous loop recognition failed", 1, 1,
+            "split_read_write_loops", "read/write accesses do not share one canonical loop", 1, 1,
             FALLBACK_READ, FALLBACK_WRITE)
         self.check("split_read_write_loops")
+
+    def test_conditional_store_rejects_unsupported_guard_cfg(self) -> None:
+        self.configure_fallback_case(
+            "conditional_store", "unsupported direction guard CFG", 1, 1,
+            FALLBACK_READ, FALLBACK_WRITE)
+        self.check("conditional_store")
 
     def test_volatile_byte_side_store_is_counted_and_rejected(self) -> None:
         reason = "original effects are not fully classified ordinary accesses"
