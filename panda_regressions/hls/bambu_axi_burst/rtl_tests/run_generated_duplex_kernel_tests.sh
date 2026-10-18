@@ -58,8 +58,12 @@ OUT_ARG=${2:-"$ROOT/documentation/tmp/out_generated_duplex_kernel"}
 OUT=$(realpath -m -- "$OUT_ARG")
 SIM_JOBS=${SIM_JOBS:-2}
 DUPLEX_G2_JOBS=${DUPLEX_G2_JOBS:-8}
+G3_ITERATION_DUMPS=${DUPLEX_G3_ITERATION_DUMPS:-0}
 [[ $SIM_JOBS =~ ^[1-9][0-9]*$ && $DUPLEX_G2_JOBS =~ ^[1-9][0-9]*$ ]] || {
   echo "SIM_JOBS and DUPLEX_G2_JOBS must be positive integers" >&2; exit 2;
+}
+[[ $G3_ITERATION_DUMPS == 0 || $G3_ITERATION_DUMPS == 1 ]] || {
+  echo "DUPLEX_G3_ITERATION_DUMPS must be 0 or 1" >&2; exit 2;
 }
 SIM_JOBS=$((10#$SIM_JOBS)); DUPLEX_G2_JOBS=$((10#$DUPLEX_G2_JOBS))
 mkdir -p "$(dirname "$OUT")"
@@ -104,6 +108,10 @@ generate_one() {
   [[ $profile == symmetric ]] || profile_id=2
   mkdir "$source_out" "$source_out/tmp" "$source_out/generated" "$source_out/scenarios"
   local -a args=("${COMMON[@]}" "--extra-cc-options=-DDUPLEX_PROFILE=$profile_id")
+  if [[ $kind == copy && $G3_ITERATION_DUMPS == 1 ]]; then
+    args+=(--bambu-parameter=print-ir-manager=1
+      --debug-classes=InterfaceInfer,BuildVirtualPhi,parametric_list_based --print-dot)
+  fi
   local read_b=16 read_o=1 read_fifo=64 write_b=16 write_o=1 write_fifo=32
   if [[ $profile == asymmetric ]]; then
     read_o=2; write_b=8; write_fifo=16
