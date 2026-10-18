@@ -3535,10 +3535,14 @@ namespace llvm
       /// Last function analysis request of this path: from here on the MemorySSA
       /// object and the MemoryAccess nodes it owns stay alive until the visit ends.
       auto& MSSA = GetMSSA(*currentFunction).getMSSA();
-#if PANDA_LLVM_CLANG_MAJOR >= 16
+#if PANDA_LLVM_CLANG_MAJOR >= 15
+      /// Available since LLVM 15: without it the uses are left unoptimized and the
+      /// seam ordering below degrades to the conservative answer.
       MSSA.ensureOptimizedUses();
 #endif
 #if PANDA_LLVM_CLANG_MAJOR >= 16
+      /// MemorySSA only exposes the AA it was built with from LLVM 16 (getAA);
+      /// earlier releases fall back to the BasicAA result built above.
       if(originSeam)
       {
          funcAA = &MSSA.getAA();
