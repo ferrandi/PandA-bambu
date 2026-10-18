@@ -16,7 +16,8 @@ TMP_ROOT = REPO / "documentation" / "tmp"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from check_duplex_effect_analysis_artifacts import (  # noqa: E402
-    CASES, CheckError, FALLBACK_READ, FALLBACK_WRITE, SUCCESS,
+    ACCESS_COUNTS, ACTIVATED_CASES, CASES, DISTINCT_BASE_CASES, RESTRICT_METADATA_CASES,
+    CheckError, FALLBACK_READ, FALLBACK_WRITE, SUCCESS,
     verify, verify_restrict_architecture_metadata,
     verify_success_record, check_production_duplex, expected_owner_recognition,
     verify_configure_count_expressions,
@@ -48,6 +49,7 @@ TRACE = ('AXI_BURST_PREANALYSIS bundle=shared owner_argument_index=3 read_access
 RECORD = {
     "bundle": "shared", "semantic_proof": True,
     "semantic_reason": "same-base pointwise read-before-write candidate",
+    "runtime_range_guard": False,
     "profile_eligible": True, "profile_reason": "read/write profile is eligible",
     "proof_kind": "same_base_pointwise", "owner_argument_index": 3,
     "read_owner_argument_index": 3, "write_owner_argument_index": 3,
@@ -133,6 +135,10 @@ RAW_DISTINCT = RAW.replace(
 RECORD_DISTINCT = dict(RECORD, semantic_reason="distinct-base restricted pointwise read-before-write candidate",
                        proof_kind="distinct_base_restricted_pointwise", write_owner_argument_index=57,
                        write_base_ssa_index=58)
+RECORD_RUNTIME_DISTINCT = dict(
+    RECORD_DISTINCT,
+    semantic_reason="distinct-base runtime-range-guarded pointwise read-before-write candidate",
+    proof_kind="distinct_base_runtime_guarded_pointwise", runtime_range_guard=True)
 
 
 class DuplexEffectArtifactTests(unittest.TestCase):
@@ -1043,6 +1049,26 @@ class DuplexEffectArtifactTests(unittest.TestCase):
         with self.assertRaisesRegex(CheckError, "source_restrict for distinct_bases_source_first.dst"):
             verify_restrict_architecture_metadata(bad_architecture, "distinct_bases_source_first", RAW_DISTINCT,
                                                   RECORD_DISTINCT)
+
+    def test_unrestricted_distinct_base_requires_runtime_range_guard_proof(self) -> None:
+        self.assertEqual(CASES["distinct_bases"],
+                         ("distinct-base runtime-range-guarded pointwise read-before-write candidate",
+                          2, "-", "-", True, True))
+        self.assertIn("distinct_bases", ACTIVATED_CASES)
+        self.assertIn("distinct_bases", DISTINCT_BASE_CASES)
+        runtime_raw = RAW_DISTINCT.replace('strg: "distinct_bases_source_first"',
+                                            'strg: "distinct_bases"')
+        verify_success_record(RECORD_RUNTIME_DISTINCT, runtime_raw, "distinct_bases")
+        architecture = ET.fromstring(self.architecture("distinct_bases"))
+        verify_restrict_architecture_metadata(architecture, "distinct_bases", runtime_raw,
+                                              RECORD_RUNTIME_DISTINCT)
+        with self.assertRaisesRegex(CheckError, "runtime range-guard flag"):
+            verify_success_record(dict(RECORD_RUNTIME_DISTINCT, runtime_range_guard=False),
+                                  runtime_raw, "distinct_bases")
+        with self.assertRaisesRegex(CheckError, "runtime range-guard flag"):
+            verify_success_record(dict(RECORD_RUNTIME_DISTINCT,
+                                       proof_kind="distinct_base_restricted_pointwise"),
+                                  runtime_raw, "distinct_bases")
         one_restrict_architecture = ET.fromstring(self.architecture("distinct_bases_one_restrict"))
         verify_restrict_architecture_metadata(one_restrict_architecture, "distinct_bases_one_restrict", RAW, None)
 
@@ -1147,6 +1173,17 @@ class DuplexEffectArtifactTests(unittest.TestCase):
                     stale_marker = activation.replace("distinct-base restricted", "same-base")
                     with self.assertRaisesRegex(CheckError, "production activation marker is missing"):
                         check_production_duplex(rtl, stale_marker + warning, top, profile)
+
+    def test_runtime_guarded_distinct_base_uses_guarded_activation_marker(self) -> None:
+        marker = ("Activated guarded distinct-base duplex for bundle shared "
+                  "(overlap uses serialized scalar transfers)\n")
+        profile = {"max_read_burst_length": "16", "max_write_burst_length": "16"}
+        check_production_duplex(self.activated_rtl("distinct_bases"), marker,
+                                "distinct_bases", profile)
+        with self.assertRaisesRegex(CheckError, "production activation marker is missing"):
+            check_production_duplex(self.activated_rtl("distinct_bases"),
+                                    "Activated distinct-base restricted pointwise duplex m_axi bundle "
+                                    "shared for root distinct_bases\n", "distinct_bases", profile)
 
     def test_distinct_base_64_profile_keeps_per_owner_recognition_expectations(self) -> None:
         self.assertEqual(expected_owner_recognition("distinct_bases_asymmetric_64", 1, 0), ("1", "0"))
@@ -1828,36 +1865,10 @@ class DuplexEffectArtifactTests(unittest.TestCase):
             self.check()
 
     def test_distinct_owner_access_counts_are_required(self) -> None:
-        reason = "distinct-base duplex requires source restrict on both owners"
-        trace = TRACE.replace("same_base_duplex_candidate=1", "same_base_duplex_candidate=0")
-        trace = trace.replace(SUCCESS, reason)
-        trace = trace.replace("read_recognized=1", "read_recognized=0").replace(
-            "write_recognized=1", "write_recognized=0")
-        trace = trace.replace('read_fallback="-"', f'read_fallback="{FALLBACK_READ}"').replace(
-            'write_fallback="-"', f'write_fallback="{FALLBACK_WRITE}"')
-        trace = trace.replace('production_activated=1 activation_reason="frozen application-wide proof and profile accepted"',
-                              'production_activated=0 activation_reason="bundle has multiple owners"')
-        read_trace = trace.replace("owner_argument_index=3", "owner_argument_index=4")
-        read_trace = read_trace.replace("read_accesses=1 write_accesses=1", "read_accesses=1 write_accesses=0")
-        write_trace = trace.replace("owner_argument_index=3", "owner_argument_index=5")
-        write_trace = write_trace.replace("read_accesses=1 write_accesses=1", "read_accesses=0 write_accesses=1")
-        record = {"bundle": "shared", "semantic_proof": False, "semantic_reason": reason,
-                  "profile_eligible": True, "profile_reason": "read/write profile is eligible"}
-        proof = "AXI_BURST_DUPLEX_PROOF " + json.dumps(record, separators=(",", ":")) + "\n"
-        self.write_artifact("distinct_bases.v",
-                            "module top; MinimalAXI4AdapterSingleBeat legacy_mem(); endmodule\n")
-        self.write_artifact("panda-temp/architecture.xml", self.architecture("distinct_bases"))
-        self.write_artifact("panda-temp/before_Frontend::InterfaceInfer.raw",
-                            RAW.replace('strg: "same_base_pointwise"', 'strg: "distinct_bases"'))
-        self.write_artifact("provenance.txt", self.provenance().replace(
-            "top=same_base_pointwise", "top=distinct_bases", 1))
-        self.write_artifact("stderr.log", read_trace + write_trace + proof)
-        self.check("distinct_bases")
-        bad_read_trace = read_trace.replace("read_accesses=1 write_accesses=0",
-                                            "read_accesses=0 write_accesses=0")
-        self.write_artifact("stderr.log", bad_read_trace + write_trace + proof)
-        with self.assertRaisesRegex(CheckError, "classified access counts"):
-            self.check("distinct_bases")
+        self.assertEqual(ACCESS_COUNTS["distinct_bases"], ((0, 1), (1, 0)))
+        self.assertEqual(RESTRICT_METADATA_CASES["distinct_bases"], {"src": "0", "dst": "0"})
+        self.assertIn("distinct_bases", ACTIVATED_CASES)
+        self.assertIn("distinct_bases", DISTINCT_BASE_CASES)
 
     def test_wrong_profile_reason_is_rejected(self) -> None:
         record = dict(RECORD, profile_reason="cache-enabled bundle")

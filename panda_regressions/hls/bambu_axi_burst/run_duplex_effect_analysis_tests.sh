@@ -153,6 +153,7 @@ run_case() {
   } >>"$out/provenance.txt"
   if [[ "$top" == distinct_prefix_* || "$top" == same_base_pointwise ||
         "$top" == same_base_pointwise_reversed || "$top" == same_base_asymmetric_64 ||
+        "$top" == distinct_bases ||
         "$top" == distinct_bases_source_first || "$top" == distinct_bases_destination_first ||
         "$top" == distinct_bases_asymmetric_64 ]]; then
     local post_raw="$out/panda-temp/after_Frontend::InterfaceInfer.raw"
