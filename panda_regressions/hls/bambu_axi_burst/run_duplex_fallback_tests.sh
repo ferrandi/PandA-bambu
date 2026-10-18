@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Manually qualify generated fallback RTL for two duplex-ineligible kernels.
+# Manually qualify generated fallback RTL for duplex-ineligible kernels.
 # Usage: BURST_DUPLEX_FALLBACK_SIM_OUTSIDE_SANDBOX=1 run_duplex_fallback_tests.sh BAMBU [FRESH_OUTPUT_DIR]
 set -Eeuo pipefail
 
@@ -111,6 +111,8 @@ run_profile() {
   case "$profile" in
     phased_erew_reverse_same_bundle) macro=1 ;;
     overlap_rw_same_bundle) macro=2 ;;
+    conditional_read_or_write_same_bundle) macro=3 ;;
+    residual_store_same_bundle) macro=4 ;;
     *) echo "unknown duplex fallback profile: $profile" >&2; return 2 ;;
   esac
   profile_dir="$out/$profile"
@@ -149,7 +151,8 @@ run_profile() {
     done >"$profile_dir/artifact-sha256.txt"
 }
 
-profiles=(phased_erew_reverse_same_bundle overlap_rw_same_bundle)
+profiles=(phased_erew_reverse_same_bundle overlap_rw_same_bundle
+  conditional_read_or_write_same_bundle residual_store_same_bundle)
 if ! run_bounded_jobs "$requested_jobs" run_profile "${profiles[@]}"; then
   echo "DUPLEX_FALLBACK_FAILED output=$out" | tee -a "$out/aggregate.log" >&2
   exit 1
@@ -163,4 +166,5 @@ if ! python3 -B "$checker" "$out" --source "$source_file" --testbench "$testbenc
   exit 1
 fi
 cat "$out/checker.log"
-printf 'DUPLEX_FALLBACK_PASS profiles=%s,%s output=%s\n' "${profiles[0]}" "${profiles[1]}" "$out" | tee "$out/aggregate.log"
+profile_list=$(IFS=,; printf '%s' "${profiles[*]}")
+printf 'DUPLEX_FALLBACK_PASS profiles=%s output=%s\n' "$profile_list" "$out" | tee "$out/aggregate.log"

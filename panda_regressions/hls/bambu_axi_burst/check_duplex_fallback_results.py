@@ -23,11 +23,30 @@ PROFILES = {
         "read_reason": "bundle contains stores",
         "write_reason": "bundle contains reads; same-bundle read/write requires duplex support",
     },
+    "conditional_read_or_write_same_bundle": {
+        "macro": "3",
+        "read_reason": "memory writes or opaque effects; prefetch ordering is not proven",
+        "write_reason": "opaque, volatile, atomic, or unclassified memory effects",
+        "same_base_duplex_reason": "original effects are not fully classified ordinary accesses",
+        "require_unrecognized": True,
+        "read_accesses": "2",
+        "write_accesses": "3",
+    },
+    "residual_store_same_bundle": {
+        "macro": "4",
+        "read_reason": "memory writes or opaque effects; prefetch ordering is not proven",
+        "write_reason": "opaque, volatile, atomic, or unclassified memory effects",
+        "same_base_duplex_reason": "original effects are not fully classified ordinary accesses",
+        "require_unrecognized": True,
+        "read_accesses": "1",
+        "write_accesses": "2",
+    },
 }
 SOURCE_NAME = "bambu_axi_burst_duplex_fallback.cpp"
 TESTBENCH_NAME = "duplex_fallback_tb.cpp"
 MARKER = re.compile(
-    r"(?m)^DUPLEX_FALLBACK_GOLDEN_PASS PROFILE=(phased_erew_reverse_same_bundle|overlap_rw_same_bundle) N=38\s*$"
+    r"(?m)^DUPLEX_FALLBACK_GOLDEN_PASS PROFILE=(phased_erew_reverse_same_bundle|overlap_rw_same_bundle|"
+    r"conditional_read_or_write_same_bundle|residual_store_same_bundle) N=38\s*$"
 )
 FALLBACK = re.compile(
     r"(?m)^\s*(?:---)?Keeping legacy m_axi (?P<direction>accesses|writes|reads) "
@@ -35,12 +54,19 @@ FALLBACK = re.compile(
 )
 PREANALYSIS = re.compile(
     r'^\s*AXI_BURST_PREANALYSIS bundle=shared owner_argument_index=\d+ '
-    r'read_accesses=\d+ write_accesses=\d+ read_requested=(?P<read_requested>[01]) '
-    r'read_recognized=[01] read_fallback="(?P<read_reason>[^"]+)" '
-    r'write_requested=(?P<write_requested>[01]) write_recognized=[01] '
-    r'write_fallback="(?P<write_reason>[^"]+)" same_base_duplex_candidate=[01] '
-    r'same_base_duplex_reason="[^"]*" production_activated=[01] activation_reason="[^"]*"\s*$',
+    r'read_accesses=(?P<read_accesses>\d+) write_accesses=(?P<write_accesses>\d+) '
+    r'read_requested=(?P<read_requested>[01]) read_recognized=(?P<read_recognized>[01]) '
+    r'read_fallback="(?P<read_reason>[^"]+)" '
+    r'write_requested=(?P<write_requested>[01]) write_recognized=(?P<write_recognized>[01]) '
+    r'write_fallback="(?P<write_reason>[^"]+)" '
+    r'same_base_duplex_candidate=(?P<candidate>[01]) '
+    r'same_base_duplex_reason="(?P<duplex_reason>[^"]*)" '
+    r'production_activated=(?P<activated>[01]) activation_reason="(?P<activation_reason>[^"]*)"\s*$',
     re.MULTILINE,
+)
+DUPLEX_ACTIVATION = re.compile(
+    r"(?m)^\s*(?:---\s*)?Activated (?:distinct-base restricted pointwise|same-base pointwise) "
+    r"duplex m_axi bundle shared(?:\s|$)"
 )
 LEGACY = re.compile(r"\b(?:MinimalAXI4AdapterSingleBeat|IOB_cache_axi)\b")
 LEGACY_INSTANCE = re.compile(
@@ -227,13 +253,28 @@ def check_profile(profile_dir: Path, profile: str, args: argparse.Namespace) -> 
              f"expected one exact InterfaceInfer {direction} fallback {reason!r}; got "
              f"{[(match.group('direction'), match.group('reason')) for match in fallback_lines]!r}")
     trace_matches = [match for match in PREANALYSIS.finditer(combined_log)]
-    matching_traces = [match for match in trace_matches
-                       if match.group("read_requested") == "1" and
-                       match.group("write_requested") == "1" and
-                       match.group("read_reason") == expected["read_reason"] and
-                       match.group("write_reason") == expected["write_reason"]]
+    matching_traces = []
+    for match in trace_matches:
+        fields_match = (match.group("read_requested") == "1" and
+                        match.group("write_requested") == "1" and
+                        match.group("candidate") == "0" and
+                        match.group("activated") == "0" and
+                        match.group("read_reason") == expected["read_reason"] and
+                        match.group("write_reason") == expected["write_reason"])
+        if "read_accesses" in expected:
+            fields_match = (fields_match and
+                            match.group("read_accesses") == expected["read_accesses"] and
+                            match.group("write_accesses") == expected["write_accesses"])
+        if expected.get("require_unrecognized"):
+            fields_match = (fields_match and match.group("read_recognized") == "0" and
+                            match.group("write_recognized") == "0" and
+                            match.group("duplex_reason") == expected["same_base_duplex_reason"])
+        if fields_match:
+            matching_traces.append(match)
     need(len(matching_traces) == 1,
          "AXI_BURST_PREANALYSIS trace does not witness both requested directions and exact fallback reasons")
+    need(DUPLEX_ACTIVATION.search(combined_log) is None,
+         "fallback compiler log contains a final duplex activation marker")
 
     rtl, rtl_files = top_rtl(profile_dir)
     need(LEGACY.search(rtl) is not None, "fallback RTL does not instantiate a legacy/cache memory resource")

@@ -30,7 +30,12 @@ if sys.argv[1:] == ["--version"]:
 args = sys.argv[1:]
 macro_arg = next((arg for arg in args if arg.startswith("--extra-cc-options=-DDUPLEX_FALLBACK_PROFILE=")), "")
 macro = macro_arg.rsplit("=", 1)[-1]
-profiles = {"1": "phased_erew_reverse_same_bundle", "2": "overlap_rw_same_bundle"}
+profiles = {
+    "1": "phased_erew_reverse_same_bundle",
+    "2": "overlap_rw_same_bundle",
+    "3": "conditional_read_or_write_same_bundle",
+    "4": "residual_store_same_bundle",
+}
 if macro not in profiles:
     print("wrong profile macro", file=sys.stderr)
     raise SystemExit(3)
@@ -75,7 +80,12 @@ required = {"--source", "--testbench", "--bambu", "--settings", "--plugin",
             "--simulator", "--runner", "--report"}
 if set(options) != required or len(sys.argv[2:]) != 2 * len(required):
     raise SystemExit("unexpected checker arguments")
-expected = {"phased_erew_reverse_same_bundle": "1", "overlap_rw_same_bundle": "2"}
+expected = {
+    "phased_erew_reverse_same_bundle": "1",
+    "overlap_rw_same_bundle": "2",
+    "conditional_read_or_write_same_bundle": "3",
+    "residual_store_same_bundle": "4",
+}
 for profile, macro in expected.items():
     path = run_root / profile
     fields = dict(line.split("=", 1) for line in (path / "provenance.txt").read_text().splitlines())
@@ -176,14 +186,16 @@ class DuplexFallbackRunnerTests(unittest.TestCase):
         self.assertIn("must be under", invalid_output.stdout)
         self.assertFalse(outside.exists())
 
-    def test_two_profiles_are_isolated_and_aggregate_marker_is_persisted(self):
+    def test_four_profiles_are_isolated_and_aggregate_marker_is_persisted(self):
         result = self.run_runner()
         self.assertEqual(result.returncode, 0, result.stdout)
         runs = [json.loads(line) for line in (self.state / "runs.jsonl").read_text().splitlines()]
         self.assertEqual({run["profile"] for run in runs}, {
-            "phased_erew_reverse_same_bundle", "overlap_rw_same_bundle"})
-        self.assertEqual(len({run["cwd"] for run in runs}), 2)
-        self.assertEqual(len({run["tmp"] for run in runs}), 2)
+            "phased_erew_reverse_same_bundle", "overlap_rw_same_bundle",
+            "conditional_read_or_write_same_bundle", "residual_store_same_bundle"})
+        self.assertEqual(len(runs), 4)
+        self.assertEqual(len({run["cwd"] for run in runs}), 4)
+        self.assertEqual(len({run["tmp"] for run in runs}), 4)
         for run in runs:
             args = run["args"]
             self.assertIn("--top-fname=bambu_axi_burst_duplex_fallback", args)
@@ -194,10 +206,16 @@ class DuplexFallbackRunnerTests(unittest.TestCase):
             self.assertIn("--tb-param-size=data:16384", args)
             self.assertTrue(any(arg == "--generate-tb=" + str(self.family / "duplex_fallback_tb.cpp")
                                 for arg in args))
-            macro = "1" if run["profile"] == "phased_erew_reverse_same_bundle" else "2"
+            macro = {
+                "phased_erew_reverse_same_bundle": "1",
+                "overlap_rw_same_bundle": "2",
+                "conditional_read_or_write_same_bundle": "3",
+                "residual_store_same_bundle": "4",
+            }[run["profile"]]
             self.assertIn(f"--extra-cc-options=-DDUPLEX_FALLBACK_PROFILE={macro}", args)
         self.assertEqual((self.output / "aggregate.log").read_text(),
-                         "DUPLEX_FALLBACK_PASS profiles=phased_erew_reverse_same_bundle,overlap_rw_same_bundle output="
+                         "DUPLEX_FALLBACK_PASS profiles=phased_erew_reverse_same_bundle,overlap_rw_same_bundle,"
+                         "conditional_read_or_write_same_bundle,residual_store_same_bundle output="
                          + str(self.output.resolve()) + "\n")
         self.assertTrue((self.output / "checker-called").is_file())
 
@@ -206,6 +224,20 @@ class DuplexFallbackRunnerTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse((self.output / "checker-called").exists())
         self.assertNotIn("DUPLEX_FALLBACK_PASS", (self.output / "aggregate.log").read_text())
+
+    def test_failures_in_new_profiles_prevent_aggregate_pass(self):
+        for profile in ("conditional_read_or_write_same_bundle", "residual_store_same_bundle"):
+            with self.subTest(profile=profile):
+                if self.output.exists():
+                    shutil.rmtree(self.output)
+                if (self.state / "runs.jsonl").exists():
+                    (self.state / "runs.jsonl").unlink()
+                result = self.run_runner(mode="compiler-failure", profile=profile)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse((self.output / "checker-called").exists())
+                self.assertNotIn("DUPLEX_FALLBACK_PASS", (self.output / "aggregate.log").read_text())
+                runs = [json.loads(line) for line in (self.state / "runs.jsonl").read_text().splitlines()]
+                self.assertIn(profile, {run["profile"] for run in runs})
 
     def test_missing_or_wrong_golden_marker_fails(self):
         for mode in ("missing-marker", "wrong-marker"):

@@ -25,18 +25,47 @@ PROFILE_REASONS = {
         "opaque, volatile, atomic, or unclassified memory effects"),
     "overlap_rw_same_bundle": (
         "2", "bundle contains stores", "bundle contains reads; same-bundle read/write requires duplex support"),
+    "conditional_read_or_write_same_bundle": (
+        "3", "memory writes or opaque effects; prefetch ordering is not proven",
+        "opaque, volatile, atomic, or unclassified memory effects"),
+    "residual_store_same_bundle": (
+        "4", "memory writes or opaque effects; prefetch ordering is not proven",
+        "opaque, volatile, atomic, or unclassified memory effects"),
 }
 
 
-def compiler_evidence(read_reason, write_reason):
+def compiler_evidence(read_reason, write_reason, read_accesses=1, write_accesses=1,
+                      read_requested=1, write_requested=1, candidate=0, activated=0,
+                      duplex_reason="not eligible"):
     return (
         f"---Keeping legacy m_axi accesses for bundle shared: {read_reason}\n"
         f"---Keeping legacy m_axi writes for bundle shared: {write_reason}\n"
-        f'AXI_BURST_PREANALYSIS bundle=shared owner_argument_index=1 read_accesses=1 write_accesses=1 '
-        f'read_requested=1 read_recognized=0 read_fallback="{read_reason}" write_requested=1 '
-        f'write_recognized=0 write_fallback="{write_reason}" same_base_duplex_candidate=0 '
-        'same_base_duplex_reason="not eligible" production_activated=0 activation_reason="not activated"\n'
+        f'AXI_BURST_PREANALYSIS bundle=shared owner_argument_index=1 read_accesses={read_accesses} '
+        f'write_accesses={write_accesses} read_requested={read_requested} read_recognized=0 '
+        f'read_fallback="{read_reason}" write_requested={write_requested} '
+        f'write_recognized=0 write_fallback="{write_reason}" same_base_duplex_candidate={candidate} '
+        f'same_base_duplex_reason="{duplex_reason}" production_activated={activated} '
+        'activation_reason="not activated"\n'
     )
+
+
+def valid_profile_evidence(profile, **overrides):
+    _, read_reason, write_reason = PROFILE_REASONS[profile]
+    access_counts = {
+        "conditional_read_or_write_same_bundle": (2, 3),
+        "residual_store_same_bundle": (1, 2),
+    }.get(profile, (1, 1))
+    values = {
+        "read_reason": read_reason,
+        "write_reason": write_reason,
+        "read_accesses": access_counts[0],
+        "write_accesses": access_counts[1],
+        "duplex_reason": ("original effects are not fully classified ordinary accesses"
+                          if profile in {"conditional_read_or_write_same_bundle",
+                                         "residual_store_same_bundle"} else "not eligible"),
+    }
+    values.update(overrides)
+    return compiler_evidence(**values)
 
 
 def digest(path: Path) -> str:
@@ -64,8 +93,16 @@ class DuplexFallbackCheckerTests(unittest.TestCase):
             (directory / "HLS_output/simulation").mkdir(parents=True)
             (directory / "panda-temp").mkdir()
             (directory / "bambu_results.xml").write_text("<results/>\n", encoding="utf-8")
+            read_accesses, write_accesses = {
+                "conditional_read_or_write_same_bundle": (2, 3),
+                "residual_store_same_bundle": (1, 2),
+            }.get(profile, (1, 1))
+            duplex_reason = ("original effects are not fully classified ordinary accesses"
+                             if profile in {"conditional_read_or_write_same_bundle",
+                                            "residual_store_same_bundle"} else "not eligible")
             (directory / "stdout.log").write_text(
-                compiler_evidence(read_reason, write_reason), encoding="utf-8")
+                compiler_evidence(read_reason, write_reason, read_accesses, write_accesses,
+                                  duplex_reason=duplex_reason), encoding="utf-8")
             (directory / "stderr.log").write_text("compiler stderr evidence\n", encoding="utf-8")
             (directory / "HLS_output/simulation/testbench.log").write_text(
                 f"DUPLEX_FALLBACK_GOLDEN_PASS PROFILE={profile} N=38\n", encoding="utf-8")
@@ -126,7 +163,7 @@ class DuplexFallbackCheckerTests(unittest.TestCase):
             self.write_artifact_manifest(profile)
         return self.run_checker()
 
-    def test_valid_two_profile_inventory_passes(self):
+    def test_valid_four_profile_inventory_passes(self):
         self.assertEqual(self.run_checker(), 0)
         self.assertTrue((self.run_dir / "report.json").is_file())
 
@@ -138,6 +175,80 @@ class DuplexFallbackCheckerTests(unittest.TestCase):
         import shutil
         shutil.rmtree(self.profiles["overlap_rw_same_bundle"])
         self.assertEqual(self.run_checker(), 1)
+
+    def test_missing_new_profile_fails_inventory(self):
+        import shutil
+        shutil.rmtree(self.profiles["conditional_read_or_write_same_bundle"])
+        self.assertEqual(self.run_checker(), 1)
+
+    def test_new_profile_macro_mismatch_fails(self):
+        profile = "conditional_read_or_write_same_bundle"
+        path = self.profiles[profile] / "provenance.txt"
+        text = path.read_text(encoding="utf-8").replace("macro=3\n", "macro=4\n")
+        text = text.replace("DUPLEX_FALLBACK_PROFILE=3", "DUPLEX_FALLBACK_PROFILE=4")
+        path.write_text(text, encoding="utf-8")
+        self.assertEqual(self.run_checker(), 1)
+
+    def test_new_profile_wrong_fallback_reason_fails(self):
+        profile = "conditional_read_or_write_same_bundle"
+        self.assertEqual(self.run_checker(), 0)
+        self.assertEqual(self.rewrite_and_run(profile, "stdout.log",
+                                              valid_profile_evidence(profile,
+                                                                     read_reason="wrong read reason")), 1)
+
+    def test_new_profile_missing_directional_request_fails(self):
+        profile = "residual_store_same_bundle"
+        self.assertEqual(self.run_checker(), 0)
+        self.assertEqual(self.rewrite_and_run(
+            profile, "stdout.log", valid_profile_evidence(profile, write_requested=0)), 1)
+
+    def test_new_profile_access_inventory_must_match_trace(self):
+        profile = "conditional_read_or_write_same_bundle"
+        self.assertEqual(self.rewrite_and_run(
+            profile, "stdout.log", valid_profile_evidence(profile, read_accesses=1)), 1)
+
+    def test_new_profile_candidate_or_activation_fails_closed(self):
+        profile = "conditional_read_or_write_same_bundle"
+        self.assertEqual(self.run_checker(), 0)
+        self.assertEqual(self.rewrite_and_run(
+            profile, "stdout.log", valid_profile_evidence(profile, candidate=1)), 1)
+        self.assertEqual(self.rewrite_and_run(
+            profile, "stdout.log", valid_profile_evidence(profile, activated=1)), 1)
+
+    def test_new_profile_golden_marker_must_be_exact(self):
+        profile = "residual_store_same_bundle"
+        self.assertEqual(self.rewrite_and_run(profile, "HLS_output/simulation/testbench.log", ""), 1)
+        self.assertEqual(self.rewrite_and_run(
+            profile, "HLS_output/simulation/testbench.log",
+            f"DUPLEX_FALLBACK_GOLDEN_PASS PROFILE={profile} N=37\n"), 1)
+
+    def test_new_profile_residual_burst_resource_fails(self):
+        profile = "residual_store_same_bundle"
+        self.assertEqual(self.rewrite_and_run(
+            profile, "bambu_axi_burst_duplex_fallback.v",
+            "module top; MinimalAXI4AdapterSingleBeat legacy(); "
+            "MinimalAXI4MasterPipelined engine(); endmodule\n"), 1)
+
+    def test_new_profile_final_activation_marker_fails(self):
+        profile = "residual_store_same_bundle"
+        directory = self.profiles[profile]
+        path = directory / "stderr.log"
+        path.write_text(path.read_text(encoding="utf-8") +
+                        "---Activated same-base pointwise duplex m_axi bundle shared for root kernel\n",
+                        encoding="utf-8")
+        self.write_artifact_manifest(profile)
+        self.assertEqual(self.run_checker(), 1)
+
+    def test_realistic_final_activation_markers_are_detected(self):
+        activations = (
+            "    Activated same-base pointwise duplex m_axi bundle shared for root kernel\n",
+            "    Activated distinct-base restricted pointwise duplex m_axi bundle shared for root kernel\n",
+            "---Activated same-base pointwise duplex m_axi bundle shared for root kernel\n",
+            "---Activated distinct-base restricted pointwise duplex m_axi bundle shared for root kernel\n",
+        )
+        for activation in activations:
+            with self.subTest(activation=activation.strip()):
+                self.assertIsNotNone(checker.DUPLEX_ACTIVATION.search(activation))
 
     def test_unexpected_run_directory_fails(self):
         (self.run_dir / "unexpected").mkdir()
@@ -188,11 +299,15 @@ class DuplexFallbackCheckerTests(unittest.TestCase):
 
     def test_wrong_or_missing_fallback_reason_fails(self):
         profile = "phased_erew_reverse_same_bundle"
-        read_reason, write_reason = PROFILE_REASONS[profile][1:]
+        self.assertEqual(self.run_checker(), 0)
         self.assertEqual(self.rewrite_and_run(profile, "stdout.log",
-                                              compiler_evidence("wrong reason", write_reason)), 1)
+                                              valid_profile_evidence(profile,
+                                                                     read_reason="wrong reason")), 1)
         self.assertEqual(self.rewrite_and_run(profile, "stdout.log",
-                                              compiler_evidence(read_reason, "wrong reason")), 1)
+                                              valid_profile_evidence(profile)), 0)
+        self.assertEqual(self.rewrite_and_run(profile, "stdout.log",
+                                              valid_profile_evidence(profile,
+                                                                     write_reason="wrong reason")), 1)
         self.assertEqual(self.rewrite_and_run(profile, "stdout.log", "compiler completed\n"), 1)
 
     def test_unanchored_echo_does_not_satisfy_fallback(self):
