@@ -34,6 +34,12 @@
 #include <cstring>
 #include <string>
 
+/// IR written by a clang plugin predating the explicit vector lane count cannot be
+/// repaired here: deriving the count from the allocation sizes is wrong for lanes
+/// narrower than a byte, so the parser and the node factory both reject it.
+#define INCOMPATIBLE_VECTOR_NELEMENTS_MSG \
+   "Vector type without nelements: the IR comes from an older clang plugin, regenerate it with the current one"
+
 #define TOKEN_EXPR(tok, bison_tok, name) tok,
 enum class IRVocabularyTokenTypes_TokenEnum
 {
