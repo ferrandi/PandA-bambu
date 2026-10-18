@@ -157,3 +157,4 @@ ac_channel_struct16.cpp --benchmark-name=reduce16 --top-fname=reduce16 --generat
 ac_channel_struct16_65bit.cpp --benchmark-name=reduce16_65bit --top-fname=reduce16_65bit --generate-tb=BENCHMARKS_ROOT/ac_channel_struct16_65bit_tb.cpp
 ac_channel_struct16_64bit.cpp --benchmark-name=reduce16_64bit --top-fname=reduce16_64bit --generate-tb=BENCHMARKS_ROOT/ac_channel_struct16_64bit_tb.cpp
 ac_channel_struct16_multi.cpp --benchmark-name=ac_channel_struct16_multi --top-fname=top --generate-tb=BENCHMARKS_ROOT/ac_channel_struct16_multi_tb.cpp
+ac_channel_nb_struct.cpp --top-fname=nb_struct --generate-tb=BENCHMARKS_ROOT/ac_channel_nb_struct.cpp --benchmark-name=ac_channel_nb_struct --max-sim-cycles=1000
