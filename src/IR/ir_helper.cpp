@@ -284,6 +284,11 @@ unsigned long long ir_helper::VectorLogicalBitsize(const ir_nodeConstRef& tn)
    return VectorNumElements(tn) * VectorElementBitsize(tn);
 }
 
+unsigned long long ir_helper::VectorCharacterizedElementBitsize(const ir_nodeConstRef& tn)
+{
+   return resize_1_8_pow2(VectorElementBitsize(tn));
+}
+
 Range ir_helper::NodeRange(const ir_nodeConstRef& tn)
 {
    const auto type = CGetType(tn);
