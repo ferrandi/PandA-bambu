@@ -61,6 +61,7 @@
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 #include "time_info.hpp"
+#include "token_interface.hpp"
 #include "var_pp_functor.hpp"
 
 #include <algorithm>
@@ -564,6 +565,132 @@ namespace
       }
    }
 
+   blocRef splitBlockBeforeStatement(statement_list_node* sl, const blocRef& block, const ir_nodeRef& first_statement,
+                                     const application_managerRef& AppM, const ir_managerRef& TM)
+   {
+      THROW_ASSERT(block && !block->schedule, "Runtime duplex CFG lowering requires an unscheduled basic block");
+      const auto first = std::find_if(block->CGetStmtList().begin(), block->CGetStmtList().end(),
+                                      [&](const auto& stmt) { return stmt->index == first_statement->index; });
+      THROW_ASSERT(first != block->CGetStmtList().end(), "Split point is not in its expected basic block");
+      const auto old_successors = block->list_of_succ;
+      const auto new_index = sl->list_of_bloc.rbegin()->first + 1U;
+      const auto tail = blocRef(new bloc(new_index));
+      tail->loop_id = block->loop_id;
+      tail->schedule = block->schedule;
+      tail->SetSSAUsesComputed();
+      sl->list_of_bloc.emplace(new_index, tail);
+      std::vector<ir_nodeRef> moved(first, block->CGetStmtList().end());
+      for(const auto& stmt : moved)
+      {
+         block->RemoveStmt(stmt, AppM);
+         tail->PushBack(stmt, AppM);
+      }
+      tail->list_of_pred.push_back(block->number);
+      tail->list_of_succ = old_successors;
+      block->list_of_succ = {new_index};
+      for(const auto successor_id : old_successors)
+      {
+         const auto successor = sl->list_of_bloc.at(successor_id);
+         for(auto& predecessor : successor->list_of_pred)
+         {
+            if(predecessor == block->number)
+            {
+               predecessor = new_index;
+            }
+         }
+         for(const auto& phi_node : successor->CGetPhiList())
+         {
+            auto phi = GetPointerS<phi_stmt>(phi_node);
+            std::vector<phi_stmt::DefEdge> old_edges;
+            for(const auto& edge : phi->CGetDefEdgesList())
+            {
+               if(edge.second == block->number)
+               {
+                  old_edges.push_back(edge);
+               }
+            }
+            for(const auto& edge : old_edges)
+            {
+               phi->ReplaceDefEdge(TM, edge, {edge.first, new_index});
+            }
+         }
+      }
+      return tail;
+   }
+
+   ir_nodeRef createBranch(const ir_managerRef& TM, const unsigned int function_id, const blocRef& block,
+                           const ir_nodeRef& condition, const unsigned int true_target,
+                           const unsigned int false_target, const application_managerRef& AppM)
+   {
+      if(true_target == false_target)
+      {
+         THROW_ASSERT(block->list_of_succ.size() == 1 && block->list_of_succ.front() == true_target,
+                      "Unconditional branch block must already have its sole CFG successor");
+         return ir_nodeRef();
+      }
+      THROW_ASSERT(condition, "Conditional branch requires a condition");
+      ir_manager::IRSchema schema;
+      schema[TOK(TOK_IR_LOCINFO)] = BUILTIN_LOCINFO;
+      schema[TOK(TOK_PARENT)] = STR(function_id);
+      const auto branch = TM->create_ir_node(multi_way_if_stmt_K, schema);
+      const auto branch_stmt = GetPointerS<multi_way_if_stmt>(branch);
+      branch_stmt->add_cond(condition, true_target);
+      branch_stmt->add_cond(ir_nodeRef(), false_target);
+      block->PushBack(branch, AppM);
+      return branch;
+   }
+
+   void insertConditionalCallDiamond(statement_list_node* sl, const blocRef& predecessor, const blocRef& join,
+                                     const ir_nodeRef& fast_mode, const ir_nodeRef& conditional_call,
+                                     const unsigned int function_id, const application_managerRef& AppM,
+                                     const ir_managerRef& TM)
+   {
+      THROW_ASSERT(predecessor->list_of_succ.size() == 1 && predecessor->list_of_succ.front() == join->number,
+                   "Conditional call insertion requires a single predecessor edge");
+      const auto make_block = [&](const unsigned int loop_id) {
+         const auto index = sl->list_of_bloc.rbegin()->first + 1U;
+         const auto block = blocRef(new bloc(index));
+         block->loop_id = loop_id;
+         block->schedule = predecessor->schedule;
+         block->SetSSAUsesComputed();
+         sl->list_of_bloc.emplace(index, block);
+         return block;
+      };
+      const auto dispatch = make_block(predecessor->loop_id);
+      const auto call_block = make_block(predecessor->loop_id);
+      predecessor->list_of_succ = {dispatch->number};
+      dispatch->list_of_pred.push_back(predecessor->number);
+      dispatch->list_of_succ = {join->number, call_block->number};
+      call_block->list_of_pred.push_back(dispatch->number);
+      call_block->list_of_succ.push_back(join->number);
+      join->list_of_pred.erase(
+          std::remove(join->list_of_pred.begin(), join->list_of_pred.end(), predecessor->number),
+          join->list_of_pred.end());
+      join->list_of_pred.push_back(dispatch->number);
+      join->list_of_pred.push_back(call_block->number);
+      for(const auto& phi_node : join->CGetPhiList())
+      {
+         auto phi = GetPointerS<phi_stmt>(phi_node);
+         std::vector<phi_stmt::DefEdge> old_edges;
+         for(const auto& edge : phi->CGetDefEdgesList())
+         {
+            if(edge.second == predecessor->number)
+            {
+               old_edges.push_back(edge);
+            }
+         }
+         for(const auto& edge : old_edges)
+         {
+            phi->ReplaceDefEdge(TM, edge, {edge.first, dispatch->number});
+            phi->AddDefEdge(TM, {edge.first, call_block->number});
+         }
+      }
+      createBranch(TM, function_id, predecessor, ir_nodeRef(), dispatch->number, dispatch->number, AppM);
+      createBranch(TM, function_id, dispatch, fast_mode, join->number, call_block->number, AppM);
+      call_block->PushBack(conditional_call, AppM);
+      createBranch(TM, function_id, call_block, ir_nodeRef(), join->number, join->number, AppM);
+   }
+
    void serializeInterfaceAccess(const ir_nodeRef& stmt, const std::string& interface_fname,
                                  std::map<std::string, ir_nodeRef>& last_interface_vdefs,
                                  const ir_manipulationRef& ir_man)
@@ -624,6 +751,7 @@ namespace
       unsigned int read_owner_argument_index = 0;
       unsigned int write_owner_argument_index = 0;
       bool distinct_bases = false;
+      bool runtime_range_guard = false;
       std::string bundle;
       ir_nodeRef base;
       ir_nodeRef read_base;
@@ -2103,6 +2231,437 @@ namespace
       last_interface_vdefs[interface_fname] = stmt_vdef;
    }
 
+   std::vector<ir_nodeRef> lowerRuntimeGuardedDuplex(
+       const statement_list_node* const_sl, const function_val_node* fd, const unsigned int root_id,
+       const SameBaseDuplexProof& proof, const std::string& bundle_name, const std::string& function_name,
+       const std::string& read_argument_name, const std::string& write_argument_name,
+       const ir_nodeConstRef& interface_datatype, const AXIWriteBurstProfile& write_profile,
+       const unsigned int address_bitsize, const application_managerRef& AppM, const ir_managerRef& TM,
+       const ir_manipulationRef& ir_man, std::map<std::string, ir_nodeRef>& channel_read_vdefs,
+       std::map<std::string, ir_nodeRef>& channel_write_vdefs,
+       std::map<unsigned int, std::map<std::string, std::list<unsigned int>>>& interface_io)
+   {
+      auto sl = const_cast<statement_list_node*>(const_sl);
+      const auto function_id = fd->index;
+      const auto& read_region = proof.read_region;
+      const auto& write_region = proof.write_region;
+      const auto address_type = ir_helper::CGetType(proof.read_base);
+      const auto pointer_bits = static_cast<unsigned int>(ir_helper::SizeAlloc(address_type));
+      const auto write_address_type = ir_helper::CGetType(proof.write_base);
+      const auto count_type = ir_helper::CGetType(read_region.loop_trip_bound);
+      THROW_ASSERT(proof.runtime_range_guard && proof.distinct_bases && pointer_bits >= 32 && pointer_bits <= 64 &&
+                       (pointer_bits == 32 || pointer_bits == 64) &&
+                       (address_bitsize == 32 || address_bitsize == 64) && pointer_bits <= address_bitsize,
+                   "Runtime duplex range guard received an unqualified address profile");
+      THROW_ASSERT(read_region.header == read_region.access_bb && read_region.access_bb == write_region.access_bb &&
+                       read_region.preheader == write_region.preheader &&
+                       read_region.header == write_region.header &&
+                       read_region.loop_trip_bound->index == write_region.loop_trip_bound->index &&
+                       ir_helper::SizeAlloc(write_address_type) == pointer_bits &&
+                       isUnsigned32Type(count_type) &&
+                       ir_helper::Size(GetPointerS<const assign_stmt>(proof.load_statement)->op0) ==
+                           ir_helper::Size(interface_datatype) &&
+                       ir_helper::Size(GetPointerS<const assign_stmt>(proof.store_statement)->op1) == 32,
+                   "Runtime duplex lowering requires the frozen single-block shared loop");
+      const auto preheader = sl->list_of_bloc.at(read_region.preheader);
+      const auto header = sl->list_of_bloc.at(read_region.header);
+      const auto exit = sl->list_of_bloc.at(write_region.exit);
+      THROW_ASSERT(!preheader->CGetStmtList().empty() && !header->CGetStmtList().empty() &&
+                       preheader->CGetStmtList().back()->get_kind() == multi_way_if_stmt_K &&
+                       header->CGetStmtList().back()->get_kind() == multi_way_if_stmt_K &&
+                       std::find(preheader->list_of_succ.begin(), preheader->list_of_succ.end(), header->number) !=
+                           preheader->list_of_succ.end() &&
+                       std::find(header->list_of_succ.begin(), header->list_of_succ.end(), exit->number) !=
+                           header->list_of_succ.end(),
+                   "Runtime duplex loop entry/exit CFG is not canonical");
+      const auto preheader_branch = GetPointerS<multi_way_if_stmt>(preheader->CGetStmtList().back());
+      const auto header_branch = GetPointerS<const multi_way_if_stmt>(header->CGetStmtList().back());
+      THROW_ASSERT(std::any_of(preheader_branch->list_of_cond.begin(), preheader_branch->list_of_cond.end(),
+                               [&](const auto& edge) { return edge.second == header->number; }),
+                   "Runtime duplex preheader terminator does not target its loop header");
+      THROW_ASSERT(std::any_of(header_branch->list_of_cond.begin(), header_branch->list_of_cond.end(),
+                               [&](const auto& edge) { return edge.second == exit->number; }) &&
+                       std::any_of(header_branch->list_of_cond.begin(), header_branch->list_of_cond.end(),
+                                   [&](const auto& edge) { return edge.second == header->number; }),
+                   "Runtime duplex loop terminator must provide backedge and exit edges");
+      const auto load = proof.load_statement;
+      const auto store = proof.store_statement;
+      const auto load_assign = GetPointerS<const assign_stmt>(load);
+      const auto store_assign = GetPointerS<const assign_stmt>(store);
+      const auto load_position = std::find_if(header->CGetStmtList().begin(), header->CGetStmtList().end(),
+                                              [&](const auto& stmt) { return stmt->index == load->index; });
+      const auto header_store_position = std::find_if(
+          header->CGetStmtList().begin(), header->CGetStmtList().end(),
+          [&](const auto& stmt) { return stmt->index == store->index; });
+      THROW_ASSERT(GetPointerS<const node_stmt>(load)->bb_index == header->number &&
+                       GetPointerS<const node_stmt>(store)->bb_index == header->number &&
+                       load_position != header->CGetStmtList().end() &&
+                       header_store_position != header->CGetStmtList().end() &&
+                       std::distance(header->CGetStmtList().begin(), load_position) <
+                           std::distance(header->CGetStmtList().begin(), header_store_position) &&
+                       std::next(header_store_position) != header->CGetStmtList().end() && !header->schedule &&
+                       !preheader->schedule,
+                   "Runtime duplex accesses are not ordered in the validated shared header");
+      for(const auto& phi_node : header->CGetPhiList())
+      {
+         const auto phi = GetPointerS<const phi_stmt>(phi_node);
+         const auto& edges = phi->CGetDefEdgesList();
+         THROW_ASSERT(std::any_of(edges.begin(), edges.end(),
+                                  [&](const auto& edge) { return edge.second == preheader->number; }) &&
+                          std::any_of(edges.begin(), edges.end(),
+                                      [&](const auto& edge) { return edge.second == header->number; }),
+                      "Runtime duplex header PHI must represent both entry and backedge");
+      }
+
+      const auto make_block = [&](const unsigned int loop_id) {
+         const auto index = sl->list_of_bloc.rbegin()->first + 1U;
+         const auto block = blocRef(new bloc(index));
+         block->loop_id = loop_id;
+         block->SetSSAUsesComputed();
+         sl->list_of_bloc.emplace(index, block);
+         return block;
+      };
+      const auto append_value = [&](const blocRef& block, const ir_nodeRef& expression,
+                                    const ir_nodeConstRef& value_type) {
+         const auto statement = ir_man->CreateAssignStmt(value_type, nullptr, nullptr, expression, function_id,
+                                                         BUILTIN_LOCINFO);
+         block->PushBack(statement, AppM);
+         return GetPointerS<const assign_stmt>(statement)->op0;
+      };
+      std::vector<ir_nodeRef> generated_calls;
+      CustomUnorderedSet<unsigned int> call_points;
+      const auto register_call = [&](const ir_nodeRef& call, const ir_nodeRef& declaration,
+                                     const std::string& argument_name,
+                                     const std::string& channel,
+                                     std::map<std::string, ir_nodeRef>& channel_vdefs) {
+         serializeInterfaceAccess(call, bundle_name, channel_vdefs, ir_man);
+         const auto call_bb = GetPointerS<const node_stmt>(call)->bb_index;
+         interface_io[call_bb][argument_name].push_back(call->index);
+         CallGraphManager::addCallPointAndExpand(call_points, AppM, function_id, declaration->index, call->index,
+                                                 FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
+         generated_calls.push_back(call);
+         (void)channel;
+      };
+      const auto append_call = [&](const blocRef& block, const ir_nodeRef& declaration,
+                                   const std::vector<ir_nodeRef>& args, const std::string& argument_name,
+                                   const std::string& channel,
+                                   std::map<std::string, ir_nodeRef>& channel_vdefs) {
+         const auto call = ir_man->create_call_stmt(declaration, args, function_id, BUILTIN_LOCINFO);
+         block->PushBack(call, AppM);
+         register_call(call, declaration, argument_name, channel, channel_vdefs);
+         return call;
+      };
+      const auto opcode_type = ir_man->GetCustomIntegerType(2, true);
+      const auto u32_type = ir_man->GetUnsignedIntegerType();
+      const auto boolean_type = ir_man->GetBooleanType();
+      const auto extended_bits = std::max(address_bitsize + 1U, 35U);
+      const auto extended_type = ir_man->GetCustomIntegerType(extended_bits, true);
+      const auto pointer_type = ir_man->GetCustomIntegerType(pointer_bits, true);
+      const auto address_integer_type = ir_man->GetCustomIntegerType(address_bitsize, true);
+      const auto read_configure_name = ENCODE_FDNAME(bundle_name, "_configure_read", "");
+      const auto burst_read_name = ENCODE_FDNAME(bundle_name, "_burst_read", "");
+      const auto write_configure_name = ENCODE_FDNAME(bundle_name, "_configure_write", "");
+      const auto store_name = ENCODE_FDNAME(bundle_name, "_store_write", "");
+      const auto drain_name = ENCODE_FDNAME(bundle_name, "_drain_write", "");
+      const std::vector<ir_nodeConstRef> command_types{opcode_type, u32_type, interface_datatype, address_type,
+                                                        u32_type};
+      const auto read_configure_decl = ir_man->create_function_decl(
+          read_configure_name, fd->parent, command_types, ir_man->GetVoidType(), BUILTIN_LOCINFO, false);
+      const auto read_decl = ir_man->create_function_decl(
+          burst_read_name, fd->parent, command_types, interface_datatype, BUILTIN_LOCINFO, false);
+      const auto write_configure_decl = ir_man->create_function_decl(
+          write_configure_name, fd->parent, command_types, ir_man->GetVoidType(), BUILTIN_LOCINFO, false);
+      const auto store_decl = ir_man->create_function_decl(
+          store_name, fd->parent, command_types, ir_man->GetVoidType(), BUILTIN_LOCINFO, false);
+      const auto drain_decl = ir_man->create_function_decl(
+          drain_name, fd->parent, command_types, ir_man->GetVoidType(), BUILTIN_LOCINFO, false);
+
+      const auto old_predecessor_edges = [&]() {
+         std::map<unsigned int, ir_nodeRef> incoming;
+         for(const auto& phi_node : header->CGetPhiList())
+         {
+            const auto phi = GetPointerS<const phi_stmt>(phi_node);
+            for(const auto& edge : phi->CGetDefEdgesList())
+            {
+               if(edge.second == preheader->number)
+               {
+                  incoming[phi->index] = edge.first;
+                  break;
+               }
+            }
+         }
+         return incoming;
+      }();
+      const auto entry = make_block(0);
+      const auto full_configure = make_block(0);
+      bool entry_edge_retargeted = false;
+      for(auto& edge : preheader_branch->list_of_cond)
+      {
+         if(edge.second == header->number)
+         {
+            edge.second = entry->number;
+            entry_edge_retargeted = true;
+         }
+      }
+      (void)entry_edge_retargeted;
+      std::replace(preheader->list_of_succ.begin(), preheader->list_of_succ.end(), header->number, entry->number);
+      header->list_of_pred.erase(
+          std::remove(header->list_of_pred.begin(), header->list_of_pred.end(), preheader->number),
+          header->list_of_pred.end());
+      entry->list_of_pred.push_back(preheader->number);
+      entry->list_of_succ = {header->number, full_configure->number};
+      full_configure->list_of_pred.push_back(entry->number);
+      full_configure->list_of_succ.push_back(header->number);
+      header->list_of_pred.push_back(entry->number);
+      header->list_of_pred.push_back(full_configure->number);
+      for(const auto& phi_node : header->CGetPhiList())
+      {
+         const auto phi = GetPointerS<phi_stmt>(phi_node);
+         const auto incoming = old_predecessor_edges.find(phi->index);
+         if(incoming != old_predecessor_edges.end())
+         {
+            phi->ReplaceDefEdge(TM, {incoming->second, preheader->number},
+                                {incoming->second, entry->number});
+            phi->AddDefEdge(TM, {incoming->second, full_configure->number});
+         }
+      }
+
+      const auto append_unsigned_cast = [&](const blocRef& block, const ir_nodeRef& value,
+                                            const ir_nodeConstRef& target_type) {
+         const auto cast = ir_man->CreateNopExpr(value, target_type, nullptr, nullptr, function_id);
+         block->PushBack(cast, AppM);
+         return GetPointerS<const assign_stmt>(cast)->op0;
+      };
+      const auto append_extended_pointer = [&](const ir_nodeRef& pointer) {
+         auto value = append_unsigned_cast(entry, pointer, pointer_type);
+         if(pointer_bits < address_bitsize)
+         {
+            value = append_unsigned_cast(entry, value, address_integer_type);
+         }
+         if(address_bitsize < extended_bits)
+         {
+            value = append_unsigned_cast(entry, value, extended_type);
+         }
+         return value;
+      };
+      const auto read_start = append_extended_pointer(proof.read_base);
+      const auto write_start = append_extended_pointer(proof.write_base);
+      const auto count_u32 = read_region.loop_trip_bound;
+      const auto extended_count = append_unsigned_cast(entry, count_u32, extended_type);
+      const auto shift = TM->CreateUniqueIntegerCst(2, extended_type);
+      const auto byte_count = append_value(
+          entry, ir_man->create_binary_operation(extended_type, extended_count, shift, BUILTIN_LOCINFO, shl_node_K),
+          extended_type);
+      const auto read_end = append_value(
+          entry, ir_man->create_binary_operation(extended_type, read_start, byte_count, BUILTIN_LOCINFO, add_node_K),
+          extended_type);
+      const auto write_end = append_value(
+          entry,
+          ir_man->create_binary_operation(extended_type, write_start, byte_count, BUILTIN_LOCINFO, add_node_K),
+          extended_type);
+      const auto limit_bits = std::min(pointer_bits, address_bitsize);
+      const auto limit = TM->CreateUniqueIntegerCst(integer_cst_t(1) << limit_bits, extended_type);
+      const auto read_valid = append_value(
+          entry, ir_man->create_binary_operation(boolean_type, read_end, limit, BUILTIN_LOCINFO, le_node_K),
+          boolean_type);
+      const auto write_valid = append_value(
+          entry, ir_man->create_binary_operation(boolean_type, write_end, limit, BUILTIN_LOCINFO, le_node_K),
+          boolean_type);
+      const auto both_valid = append_value(
+          entry, ir_man->create_binary_operation(boolean_type, read_valid, write_valid, BUILTIN_LOCINFO, and_node_K),
+          boolean_type);
+      const auto read_before_write = append_value(
+          entry, ir_man->create_binary_operation(boolean_type, read_end, write_start, BUILTIN_LOCINFO, le_node_K),
+          boolean_type);
+      const auto write_before_read = append_value(
+          entry, ir_man->create_binary_operation(boolean_type, write_end, read_start, BUILTIN_LOCINFO, le_node_K),
+          boolean_type);
+      const auto disjoint = append_value(
+          entry,
+          ir_man->create_binary_operation(boolean_type, read_before_write, write_before_read, BUILTIN_LOCINFO,
+                                          or_node_K),
+          boolean_type);
+      const auto nonempty = append_value(
+          entry,
+          ir_man->create_binary_operation(boolean_type, count_u32, TM->CreateUniqueIntegerCst(0, u32_type),
+                                          BUILTIN_LOCINFO, ne_node_K),
+          boolean_type);
+      const auto valid_disjoint = append_value(
+          entry, ir_man->create_binary_operation(boolean_type, both_valid, disjoint, BUILTIN_LOCINFO, and_node_K),
+          boolean_type);
+      const auto fast_mode = append_value(
+          entry, ir_man->create_binary_operation(boolean_type, nonempty, valid_disjoint, BUILTIN_LOCINFO, and_node_K),
+          boolean_type);
+
+      const auto full_read_configure = append_call(
+          full_configure, read_configure_decl,
+          {TM->CreateUniqueIntegerCst(2, opcode_type), TM->CreateUniqueIntegerCst(32, u32_type),
+           TM->CreateUniqueIntegerCst(0, interface_datatype), proof.read_base, read_region.loop_trip_bound},
+          read_argument_name, "read", channel_read_vdefs);
+      const auto full_write_configure = append_call(
+          full_configure, write_configure_decl,
+          {TM->CreateUniqueIntegerCst(2, opcode_type), TM->CreateUniqueIntegerCst(32, u32_type),
+           TM->CreateUniqueIntegerCst(0, interface_datatype), proof.write_base, write_region.loop_trip_bound},
+          write_argument_name, "write", channel_write_vdefs);
+      createBranch(TM, function_id, entry, fast_mode, full_configure->number, header->number, AppM);
+      createBranch(TM, function_id, full_configure, ir_nodeRef(), header->number, header->number, AppM);
+
+      const auto read_address = GetPointerS<const mem_access_node>(load_assign->op1)->op;
+      const auto write_address = GetPointerS<const mem_access_node>(store_assign->op0)->op;
+      const auto scalar_count = TM->CreateUniqueIntegerCst(1, u32_type);
+      const auto scalar_read_configure = ir_man->create_call_stmt(
+          read_configure_decl,
+          {TM->CreateUniqueIntegerCst(2, opcode_type), TM->CreateUniqueIntegerCst(32, u32_type),
+           TM->CreateUniqueIntegerCst(0, interface_datatype), read_address, scalar_count},
+          function_id, BUILTIN_LOCINFO);
+      const auto load_block = header;
+      const auto load_join = splitBlockBeforeStatement(sl, load_block, load, AppM, TM);
+      insertConditionalCallDiamond(sl, load_block, load_join, fast_mode, scalar_read_configure, function_id, AppM, TM);
+      register_call(scalar_read_configure, read_configure_decl, read_argument_name, "read", channel_read_vdefs);
+
+      const auto scalar_write_configure = ir_man->create_call_stmt(
+          write_configure_decl,
+          {TM->CreateUniqueIntegerCst(2, opcode_type), TM->CreateUniqueIntegerCst(32, u32_type),
+           TM->CreateUniqueIntegerCst(0, interface_datatype), write_address, scalar_count},
+          function_id, BUILTIN_LOCINFO);
+      const auto store_block = sl->list_of_bloc.at(GetPointerS<const node_stmt>(store)->bb_index);
+      const auto store_join = splitBlockBeforeStatement(sl, store_block, store, AppM, TM);
+      insertConditionalCallDiamond(sl, store_block, store_join, fast_mode, scalar_write_configure, function_id, AppM,
+                                   TM);
+      register_call(scalar_write_configure, write_configure_decl, write_argument_name, "write", channel_write_vdefs);
+
+      ir_nodeRef read_expr = ir_man->CreateCallExpr(
+          read_decl, {TM->CreateUniqueIntegerCst(0, opcode_type), TM->CreateUniqueIntegerCst(32, u32_type),
+                      TM->CreateUniqueIntegerCst(0, interface_datatype), read_address,
+                      TM->CreateUniqueIntegerCst(0, u32_type)},
+          BUILTIN_LOCINFO);
+      ir_nodeRef rewritten_read = load;
+      if(ir_helper::IsSameType(interface_datatype, ir_helper::CGetType(load_assign->op0)))
+      {
+         TM->ReplaceIRNode(load, load_assign->op1, read_expr);
+      }
+      else
+      {
+         const auto actual_type = ir_helper::CGetType(load_assign->op0);
+         const auto is_real = ir_helper::IsRealType(actual_type);
+         const auto temporary_type = is_real ? ir_man->GetCustomIntegerType(ir_helper::Size(actual_type), true) :
+                                                interface_datatype;
+         const auto temporary = ir_man->create_ssa_name(nullptr, temporary_type, nullptr, nullptr);
+         rewritten_read = ir_man->create_assign_stmt(temporary, read_expr, function_id, BUILTIN_LOCINFO);
+         const auto access_block = sl->list_of_bloc.at(GetPointerS<const node_stmt>(load)->bb_index);
+         access_block->Replace(load, rewritten_read, true, AppM);
+         const auto cast_expression = ir_man->create_unary_operation(
+             actual_type, temporary, BUILTIN_LOCINFO, is_real ? bitcast_node_K : nop_node_K);
+         const auto cast_statement = ir_man->create_assign_stmt(load_assign->op0, cast_expression, function_id,
+                                                                BUILTIN_LOCINFO);
+         access_block->PushAfter(cast_statement, rewritten_read, AppM);
+         generated_calls.push_back(cast_statement);
+      }
+      serializeInterfaceAccess(rewritten_read, bundle_name, channel_read_vdefs, ir_man);
+      CallGraphManager::addCallPointAndExpand(call_points, AppM, function_id, read_decl->index, rewritten_read->index,
+                                              FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
+      interface_io[GetPointerS<const node_stmt>(rewritten_read)->bb_index][read_argument_name].push_back(
+          rewritten_read->index);
+      generated_calls.push_back(rewritten_read);
+
+      auto value = store_assign->op1;
+      if(!ir_helper::IsSameType(interface_datatype, ir_helper::CGetType(value)))
+      {
+         const auto cast = ir_man->create_unary_operation(interface_datatype, value, BUILTIN_LOCINFO, nop_node_K);
+         const auto cast_stmt = ir_man->CreateAssignStmt(interface_datatype, nullptr, nullptr, cast, function_id,
+                                                         BUILTIN_LOCINFO);
+         const auto block = sl->list_of_bloc.at(GetPointerS<const node_stmt>(store)->bb_index);
+         block->PushBefore(cast_stmt, store, AppM);
+         value = GetPointerS<const assign_stmt>(cast_stmt)->op0;
+      }
+      const auto store_call = ir_man->create_call_stmt(
+          store_decl,
+          {TM->CreateUniqueIntegerCst(1, opcode_type), TM->CreateUniqueIntegerCst(32, u32_type), value,
+           write_address, TM->CreateUniqueIntegerCst(0, u32_type)},
+          function_id, BUILTIN_LOCINFO);
+      const auto store_access_block = sl->list_of_bloc.at(GetPointerS<const node_stmt>(store)->bb_index);
+      store_access_block->Replace(store, store_call, true, AppM);
+      preserveBlockingInterfaceAccess(store_call, store, bundle_name, channel_write_vdefs, ir_man);
+      CallGraphManager::addCallPointAndExpand(call_points, AppM, function_id, store_decl->index, store_call->index,
+                                              FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
+      interface_io[GetPointerS<const node_stmt>(store_call)->bb_index][write_argument_name].push_back(store_call->index);
+      generated_calls.push_back(store_call);
+
+      const auto scalar_drain = ir_man->create_call_stmt(
+          drain_decl,
+          {TM->CreateUniqueIntegerCst(3, opcode_type), TM->CreateUniqueIntegerCst(32, u32_type),
+           TM->CreateUniqueIntegerCst(0, interface_datatype), proof.write_base,
+           TM->CreateUniqueIntegerCst(0, u32_type)},
+          function_id, BUILTIN_LOCINFO);
+      const auto current_store_block = sl->list_of_bloc.at(GetPointerS<const node_stmt>(store_call)->bb_index);
+      const auto& store_statements = current_store_block->CGetStmtList();
+      const auto after_store = std::find_if(store_statements.begin(), store_statements.end(), [&](const auto& stmt) {
+         return stmt->index == store_call->index;
+      });
+      const auto latch = splitBlockBeforeStatement(sl, current_store_block, *std::next(after_store), AppM, TM);
+      insertConditionalCallDiamond(sl, current_store_block, latch, fast_mode, scalar_drain, function_id, AppM, TM);
+      register_call(scalar_drain, drain_decl, write_argument_name, "write", channel_write_vdefs);
+      addVirtualUseToStatement(scalar_read_configure, GetPointerS<const node_stmt>(scalar_drain)->vdef);
+
+      const auto full_drain_block = make_block(0);
+      const auto full_drain = append_call(
+          full_drain_block, drain_decl,
+          {TM->CreateUniqueIntegerCst(3, opcode_type), TM->CreateUniqueIntegerCst(32, u32_type),
+           TM->CreateUniqueIntegerCst(0, interface_datatype), proof.write_base,
+           TM->CreateUniqueIntegerCst(0, u32_type)},
+          write_argument_name, "write", channel_write_vdefs);
+      const auto full_drain_join = make_block(0);
+      const auto loop_exit = sl->list_of_bloc.at(write_region.exit);
+      const auto latch_exit_branch = GetPointerS<multi_way_if_stmt>(latch->CGetStmtList().back());
+      bool latch_exit_retargeted = false;
+      for(auto& edge : latch_exit_branch->list_of_cond)
+      {
+         if(edge.second == loop_exit->number)
+         {
+            edge.second = full_drain_join->number;
+            latch_exit_retargeted = true;
+         }
+      }
+      (void)latch_exit_retargeted;
+      std::replace(latch->list_of_succ.begin(), latch->list_of_succ.end(), loop_exit->number,
+                   full_drain_join->number);
+      loop_exit->list_of_pred.erase(
+          std::remove(loop_exit->list_of_pred.begin(), loop_exit->list_of_pred.end(), latch->number),
+          loop_exit->list_of_pred.end());
+      full_drain_join->list_of_pred.push_back(latch->number);
+      full_drain_join->list_of_succ = {loop_exit->number, full_drain_block->number};
+      full_drain_block->list_of_pred.push_back(full_drain_join->number);
+      full_drain_block->list_of_succ.push_back(loop_exit->number);
+      loop_exit->list_of_pred.push_back(full_drain_join->number);
+      loop_exit->list_of_pred.push_back(full_drain_block->number);
+      for(const auto& phi_node : loop_exit->CGetPhiList())
+      {
+         const auto phi = GetPointerS<phi_stmt>(phi_node);
+         std::vector<phi_stmt::DefEdge> latch_edges;
+         for(const auto& edge : phi->CGetDefEdgesList())
+         {
+            if(edge.second == latch->number)
+            {
+               latch_edges.push_back(edge);
+            }
+         }
+         for(const auto& edge : latch_edges)
+         {
+            phi->ReplaceDefEdge(TM, edge, {edge.first, full_drain_join->number});
+            phi->AddDefEdge(TM, {edge.first, full_drain_block->number});
+         }
+      }
+      createBranch(TM, function_id, full_drain_join, fast_mode, full_drain_block->number, loop_exit->number, AppM);
+      createBranch(TM, function_id, full_drain_block, ir_nodeRef(), loop_exit->number, loop_exit->number, AppM);
+      (void)full_read_configure;
+      (void)full_write_configure;
+      (void)full_drain;
+      (void)write_profile;
+      (void)root_id;
+      (void)function_name;
+      return generated_calls;
+   }
+
    bool isSimpleStreamInterface(const application_managerRef& AppM, unsigned int function_id,
                                 const std::string& bundle_name)
    {
@@ -2432,17 +2991,36 @@ static bool RecognizeSameBaseDuplex(const statement_list_node* sl, const functio
       reason = "read/write owner argument is unavailable";
       return false;
    }
+   bool runtime_range_guard = false;
    if(!same_base && distinct_base)
    {
       const auto source_attrs = func_arch->parms.find(get_decl_name(*read_owner_arg));
       const auto destination_attrs = func_arch->parms.find(get_decl_name(*write_owner_arg));
-      const bool source_restricted = source_attrs != func_arch->parms.end() &&
-                                     source_attrs->second.count(FunctionArchitecture::parm_source_restrict) &&
-                                     source_attrs->second.at(FunctionArchitecture::parm_source_restrict) == "1";
-      const bool destination_restricted = destination_attrs != func_arch->parms.end() &&
-                                          destination_attrs->second.count(FunctionArchitecture::parm_source_restrict) &&
-                                          destination_attrs->second.at(FunctionArchitecture::parm_source_restrict) == "1";
-      if(!source_restricted || !destination_restricted)
+      std::string source_restrict;
+      std::string destination_restrict;
+      if(source_attrs != func_arch->parms.end())
+      {
+         const auto attr = source_attrs->second.find(FunctionArchitecture::parm_source_restrict);
+         if(attr != source_attrs->second.end())
+         {
+            source_restrict = attr->second;
+         }
+      }
+      if(destination_attrs != func_arch->parms.end())
+      {
+         const auto attr = destination_attrs->second.find(FunctionArchitecture::parm_source_restrict);
+         if(attr != destination_attrs->second.end())
+         {
+            destination_restrict = attr->second;
+         }
+      }
+      const bool both_unrestricted = source_restrict == "0" && destination_restrict == "0";
+      const bool both_restricted = source_restrict == "1" && destination_restrict == "1";
+      if(both_unrestricted)
+      {
+         runtime_range_guard = true;
+      }
+      else if(!both_restricted)
       {
          reason = "distinct-base duplex requires source restrict on both owners";
          return false;
@@ -2472,6 +3050,66 @@ static bool RecognizeSameBaseDuplex(const statement_list_node* sl, const functio
       {
          reason = "canonical contiguous loop recognition failed";
       }
+      return false;
+   }
+   bool runtime_shape_valid = true;
+   if(runtime_range_guard)
+   {
+      runtime_shape_valid = recognized_by_legacy_shape && read_region.access_bb == write_region.access_bb &&
+                            read_region.access_bb == read_region.header && !read_region.has_direction_guard &&
+                            !write_region.has_direction_guard &&
+                            read_region.preheader == write_region.preheader &&
+                            read_region.effective_bound->index == read_region.loop_trip_bound->index &&
+                            write_region.effective_bound->index == write_region.loop_trip_bound->index &&
+                            read_region.loop_trip_bound->index == write_region.loop_trip_bound->index &&
+                            read_region.loop_trip_compare->index == write_region.loop_trip_compare->index;
+      if(runtime_shape_valid)
+      {
+         const auto header_it = sl->list_of_bloc.find(read_region.header);
+         runtime_shape_valid = header_it != sl->list_of_bloc.end() && header_it->second->loop_id != 0;
+         if(runtime_shape_valid)
+         {
+            const auto& header = header_it->second;
+            const std::set<unsigned int> expected_predecessors{read_region.preheader, read_region.header};
+            const std::set<unsigned int> expected_successors{read_region.header, write_region.exit};
+            runtime_shape_valid = std::set<unsigned int>(header->list_of_pred.begin(), header->list_of_pred.end()) ==
+                                      expected_predecessors &&
+                                  std::set<unsigned int>(header->list_of_succ.begin(), header->list_of_succ.end()) ==
+                                      expected_successors &&
+                                  header->CGetStmtList().size() >= 3 &&
+                                  header->CGetStmtList().back()->get_kind() == multi_way_if_stmt_K;
+            for(const auto& block : sl->list_of_bloc)
+            {
+               if(block.second->loop_id == header->loop_id && block.first != read_region.header)
+               {
+                  runtime_shape_valid = false;
+                  break;
+               }
+            }
+            if(runtime_shape_valid)
+            {
+               const auto branch = GetPointerS<const multi_way_if_stmt>(header->CGetStmtList().back());
+               runtime_shape_valid = branch->list_of_cond.size() == 2 &&
+                                     std::any_of(branch->list_of_cond.begin(), branch->list_of_cond.end(),
+                                                 [&](const auto& edge) {
+                                                    return edge.first && edge.second == write_region.exit;
+                                                 }) &&
+                                     std::any_of(branch->list_of_cond.begin(), branch->list_of_cond.end(),
+                                                 [&](const auto& edge) {
+                                                    return !edge.first && edge.second == read_region.header;
+                                                 });
+            }
+            for(auto stmt = header->CGetStmtList().begin(); runtime_shape_valid &&
+                                                          stmt != std::prev(header->CGetStmtList().end()); ++stmt)
+            {
+               runtime_shape_valid = (*stmt)->get_kind() == assign_stmt_K;
+            }
+         }
+      }
+   }
+   if(runtime_range_guard && !runtime_shape_valid)
+   {
+      reason = "runtime alias fallback requires one straight-line shared access block";
       return false;
    }
    if(read_region.preheader != write_region.preheader || read_region.header != write_region.header ||
@@ -2524,6 +3162,7 @@ static bool RecognizeSameBaseDuplex(const statement_list_node* sl, const functio
    proof.read_owner_argument_index = read_access->owner_argument_index;
    proof.write_owner_argument_index = write_access->owner_argument_index;
    proof.distinct_bases = distinct_base;
+   proof.runtime_range_guard = runtime_range_guard;
    proof.bundle = bundle_name;
    proof.base = read_region.base;
    proof.read_base = read_region.base;
@@ -2532,8 +3171,9 @@ static bool RecognizeSameBaseDuplex(const statement_list_node* sl, const functio
    proof.store_statement = write_access->statement;
    proof.read_region = std::move(read_region);
    proof.write_region = std::move(write_region);
-   reason = distinct_base ? "distinct-base restricted pointwise read-before-write candidate" :
-                             "same-base pointwise read-before-write candidate";
+   reason = runtime_range_guard ? "distinct-base runtime-range-guarded pointwise read-before-write candidate" :
+            distinct_base ? "distinct-base restricted pointwise read-before-write candidate" :
+                            "same-base pointwise read-before-write candidate";
    return true;
 }
 
@@ -2833,6 +3473,15 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                   original_safe, AppM, TM, arch, proof, reason))
       {
          return false;
+      }
+      if(proof.runtime_range_guard)
+      {
+         const auto pointer_bits = static_cast<unsigned int>(ir_helper::SizeAlloc(ir_helper::CGetType(proof.read_base)));
+         if((pointer_bits != 32U && pointer_bits != 64U) || pointer_bits > address_bitsize)
+         {
+            reason = "runtime alias guard requires a 32/64-bit pointer no wider than the AXI address";
+            return false;
+         }
       }
       const auto owner_is_bundled = [&](const unsigned int owner_index) {
          return std::any_of(bundle_pointer_args.begin(), bundle_pointer_args.end(), [&](const auto& owner) {
@@ -3471,6 +4120,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                    current.read_owner_argument_index == proof.read_owner_argument_index &&
                                    current.write_owner_argument_index == proof.write_owner_argument_index &&
                                    current.distinct_bases == proof.distinct_bases &&
+                                   current.runtime_range_guard == proof.runtime_range_guard &&
                                    current.base->index == proof.base->index &&
                                    current.read_base->index == proof.read_base->index &&
                                    current.write_base->index == proof.write_base->index &&
@@ -3613,7 +4263,10 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                             << "\",\"semantic_proof\":"
                             << (decision.same_base_duplex_proof ? "true" : "false")
                             << ",\"semantic_reason\":\"" << json_string(decision.same_base_duplex_reason)
-                            << "\",\"profile_eligible\":"
+                            << "\",\"runtime_range_guard\":"
+                            << (decision.same_base_duplex_proof &&
+                                        decision.same_base_duplex_proof->runtime_range_guard ? "true" : "false")
+                            << ",\"profile_eligible\":"
                             << (decision.same_base_duplex_profile_eligible ? "true" : "false")
                             << ",\"profile_reason\":\"" << json_string(decision.same_base_duplex_profile_reason)
                             << "\"";
@@ -3621,8 +4274,9 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                {
                   const auto& proof = *decision.same_base_duplex_proof;
                   proof_record << ",\"proof_kind\":\""
-                               << (proof.distinct_bases ? "distinct_base_restricted_pointwise" :
-                                                           "same_base_pointwise")
+                               << (proof.runtime_range_guard ? "distinct_base_runtime_guarded_pointwise" :
+                                   proof.distinct_bases ? "distinct_base_restricted_pointwise" :
+                                                          "same_base_pointwise")
                                << "\",\"owner_argument_index\":" << proof.owner_argument_index
                                << ",\"read_owner_argument_index\":" << proof.read_owner_argument_index
                                << ",\"write_owner_argument_index\":" << proof.write_owner_argument_index
@@ -3985,7 +4639,37 @@ DesignFlowStep_Status InterfaceInfer::Exec()
 
                std::list<ir_nodeRef> writeStmt;
                std::list<ir_nodeRef> readStmt;
+               const auto early_decision = burst_decisions.find(parm_attrs.at(FunctionArchitecture::parm_bundle));
+               const bool runtime_guard_candidate =
+                   early_decision != burst_decisions.end() && early_decision->second.same_base_duplex_activated &&
+                   early_decision->second.same_base_duplex_proof &&
+                   early_decision->second.same_base_duplex_proof->runtime_range_guard &&
+                   (arg_id == early_decision->second.same_base_duplex_proof->read_owner_argument_index ||
+                    arg_id == early_decision->second.same_base_duplex_proof->write_owner_argument_index);
                ChasePointerInterface(arg_ssa, writeStmt, readStmt, info);
+               if(runtime_guard_candidate)
+               {
+                  if(info.bitwidth == 0)
+                  {
+                     const auto& proof = *early_decision->second.same_base_duplex_proof;
+                     info.bitwidth = ir_helper::Size(
+                         GetPointerS<const assign_stmt>(proof.load_statement)->op0);
+                  }
+                  writeStmt.clear();
+                  readStmt.clear();
+                  const auto owner = early_decision->second.accesses_by_argument.find(arg_id);
+                  if(owner != early_decision->second.accesses_by_argument.end())
+                  {
+                     for(const auto& access : owner->second.reads)
+                     {
+                        readStmt.push_back(access.statement);
+                     }
+                     for(const auto& access : owner->second.writes)
+                     {
+                        writeStmt.push_back(access.statement);
+                     }
+                  }
+               }
                const auto is_csroa_ac_type = [&]() {
                   const auto type_attr = parm_attrs.find(FunctionArchitecture::parm_original_typename);
                   if(type_attr == parm_attrs.end())
@@ -4187,6 +4871,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                                     decision->same_base_duplex_proof &&
                                                     (decision->same_base_duplex_proof->read_owner_argument_index == arg_id ||
                                                      decision->same_base_duplex_proof->write_owner_argument_index == arg_id);
+               const bool runtime_guarded_duplex = same_base_duplex_active &&
+                                                   decision->same_base_duplex_proof->runtime_range_guard;
                if(same_base_duplex_active)
                {
                   const auto& proof = *decision->same_base_duplex_proof;
@@ -4260,7 +4946,33 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                         burst_fallback_reason);
                   }
                }
-               if(burst_requested && burst_profile_eligible)
+               if(runtime_guarded_duplex &&
+                  arg_id == decision->same_base_duplex_proof->read_owner_argument_index)
+               {
+                  THROW_ASSERT(burst_profile_eligible && decision->write_recognized,
+                               "Frozen runtime duplex profile failed direction eligibility");
+                  const auto lowered_calls = lowerRuntimeGuardedDuplex(
+                      GetPointerS<const statement_list_node>(fd->body), fd, root_id,
+                      *decision->same_base_duplex_proof, bundle_name, fsymbol,
+                      get_decl_name(TM->GetIRNode(decision->same_base_duplex_proof->read_owner_argument_index)),
+                      get_decl_name(TM->GetIRNode(decision->same_base_duplex_proof->write_owner_argument_index)),
+                      interface_datatype, decision->write_profile, HLSMgr->get_address_bitsize(), AppM, TM, ir_man,
+                      channel_read_vdefs, channel_write_vdefs, HLSMgr->design_interface_io[fsymbol]);
+                  for(const auto& call : lowered_calls)
+                  {
+                     add_to_modified(call);
+                  }
+                  readStmt.clear();
+                  operationsR.insert(ENCODE_FDNAME(bundle_name, "_configure_read", ""));
+                  operationsR.insert(ENCODE_FDNAME(bundle_name, "_burst_read", ""));
+                  operationsW.insert(ENCODE_FDNAME(bundle_name, "_configure_write", ""));
+                  operationsW.insert(ENCODE_FDNAME(bundle_name, "_store_write", ""));
+                  operationsW.insert(ENCODE_FDNAME(bundle_name, "_drain_write", ""));
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                 "---Activated guarded distinct-base duplex for bundle " + bundle_name +
+                                     " (overlap uses serialized scalar transfers)");
+               }
+               else if(!runtime_guarded_duplex && burst_requested && burst_profile_eligible)
                {
                   const auto sl = GetPointerS<const statement_list_node>(fd->body);
                   const auto expected_base_id = AppM->getSSAFromParm(root_id, arg_id);
@@ -4368,7 +5080,12 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                         ": read-burst CFG/SSA recognition failed or bundle is not exclusive");
                   }
                }
-               if(write_burst_requested)
+               if(runtime_guarded_duplex &&
+                  arg_id == decision->same_base_duplex_proof->write_owner_argument_index)
+               {
+                  writeStmt.clear();
+               }
+               else if(!runtime_guarded_duplex && write_burst_requested)
                {
                   std::string write_fallback_reason = decision->write_fallback_reason;
                   if(write_fallback_reason.empty() &&
@@ -4495,11 +5212,14 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      if(same_base_duplex_active)
                      {
                         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                                       std::string(decision->same_base_duplex_proof->distinct_bases ?
+                                       std::string(decision->same_base_duplex_proof->runtime_range_guard ?
+                                                       "---Activated distinct-base runtime-range-guarded pointwise duplex m_axi bundle " :
+                                                   decision->same_base_duplex_proof->distinct_bases ?
                                                        "---Activated distinct-base restricted pointwise duplex m_axi bundle " :
                                                        "---Activated same-base pointwise duplex m_axi bundle ") + bundle_name +
                                            " for root " + fsymbol);
-                        if(decision->same_base_duplex_proof->distinct_bases)
+                        if(decision->same_base_duplex_proof->distinct_bases &&
+                           !decision->same_base_duplex_proof->runtime_range_guard)
                         {
                            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                                           "WARNING: distinct-base duplex relies on the caller's __restrict contract; "
