@@ -691,10 +691,13 @@ bool pred;
 
    vector_nelements : nelements{
       const auto count = std::stoull(data->curr_string_number);
-      if(!count) THROW_ERROR("Vector type without nelements");
+      // A vector type with no lane count comes from an IR dumped before the
+      // nelements field existed: the grammar cannot recover it, so the IR has
+      // to be regenerated with the current plugin.
+      if(!count) THROW_ERROR(INCOMPATIBLE_VECTOR_NELEMENTS_MSG);
       NSV(vector_ty_node, nelements, count)
    }
-   | /*empty*/ {THROW_ERROR("Vector type without nelements");};
+   | /*empty*/ {THROW_ERROR(INCOMPATIBLE_VECTOR_NELEMENTS_MSG);};
 
    //real_ty_node: TOK_BISON_REAL_TYPE^ type_node bitsize;
    wreal_type : TOK_BISON_REAL_TYPE{CTN(real_ty_node)}

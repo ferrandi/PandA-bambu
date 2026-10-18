@@ -634,7 +634,7 @@ void ir_node_factory::operator()(const vector_ty_node* obj, unsigned int& mask)
    SET_VALUE_OPT(TOK_NELEMENTS, nelements, vector_ty_node);
    if(!obj->nelements)
    {
-      THROW_ERROR("Vector type without nelements");
+      THROW_ERROR(INCOMPATIBLE_VECTOR_NELEMENTS_MSG);
    }
 }
 
