@@ -88,6 +88,42 @@ convert_results() {
   END{if(rv=="")rv="A";printf"<application><timing><simulation return_value=\"%s\">",rv;for(i=1;i<=c;i++)printf"<run>%s</run>",r[i];print"</simulation></timing></application>"}' "$1"
 }
 
+record_output() {
+  python3 -u -c '
+import sys
+
+with open(sys.argv[1], "wb") as log_file:
+    while True:
+        data = sys.stdin.buffer.read1(65536)
+        if not data:
+            break
+        log_file.write(data)
+        log_file.flush()
+        sys.stdout.buffer.write(data)
+        sys.stdout.buffer.flush()
+' "$1"
+}
+
+run_logged() {
+  local log_file="$1"
+  shift
+  local -a pipeline_status
+  if "$@" 2>&1 | record_output "${log_file}"; then
+    pipeline_status=("${PIPESTATUS[@]}")
+  else
+    pipeline_status=("${PIPESTATUS[@]}")
+  fi
+  if [ "${pipeline_status[0]}" -ne 0 ]; then
+    echo "Sim: ERROR: producer failed (${pipeline_status[0]})" >&2
+    return "${pipeline_status[0]}"
+  fi
+  if [ "${pipeline_status[1]}" -ne 0 ]; then
+    echo "Sim: ERROR: log writer failed (${pipeline_status[1]})" >&2
+    return "${pipeline_status[1]}"
+  fi
+}
+export -f record_output run_logged
+
 if [ -f "${SYS_ELF}" ] && [ "${TARGET}" != "static_driver" ]; then
   function get_class { readelf -h $1 2> /dev/null | grep Class: | sed -E 's/.*Class:\s*(\w+)/\1/'; }
   sys_elf_class=`get_class ${SYS_ELF}`
@@ -100,6 +136,6 @@ if [ -f "${SYS_ELF}" ] && [ "${TARGET}" != "static_driver" ]; then
   fi
   SYS_LOG="${SIM_DIR}/$(basename ${SYS_ELF}).log"
   echo "Sim: Launch user testbench: LD_PRELOAD=\"${TB_PRELOAD}:${LD_PRELOAD}\" ${SYS_ELF} $@"
-  (LD_PRELOAD="${TB_PRELOAD}:$LD_PRELOAD" ${SYS_ELF} "$@" 2>&1 | tee "${SYS_LOG}"; exit ${PIPESTATUS[0]})
+  run_logged "${SYS_LOG}" env "LD_PRELOAD=${TB_PRELOAD}:$LD_PRELOAD" "${SYS_ELF}" "$@"
   convert_results bambu_time_simulation.txt > "${SWD}/bambu_results.xml"
 fi

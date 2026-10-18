@@ -52,7 +52,7 @@ do
    esac
 done
 
-BAMBU_IPC_SIM_CMD="vsim ${VFLAGS} -noautoldlibpath"
+BAMBU_IPC_SIM_CMD="run_logged \"${SWD}/simulation.log\" vsim ${VFLAGS} -noautoldlibpath"
 if $(bambu_results /application/backend@assert) ; then
   BAMBU_IPC_SIM_CMD+=" -pedanticerrors -assertdebug"
   OPT_FLAGS="+acc -hazards ${OPT_FLAGS}"
@@ -62,4 +62,4 @@ if [ -n "${OPT_FLAGS}" ]; then
   BAMBU_IPC_SIM_CMD+=" -voptargs=\"${OPT_FLAGS}\""
 fi
 BAMBU_IPC_SIM_CMD+=" -do \"set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit -f -code 1;}; run -all; exit -f;\""
-BAMBU_IPC_SIM_CMD+=" work.clocked_bambu_testbench 2>&1 | tee ${SWD}/simulation.log; exit \${PIPESTATUS[0]};"
+BAMBU_IPC_SIM_CMD+=" work.clocked_bambu_testbench"
