@@ -81,9 +81,10 @@ namespace
 
    /// Interfaces carry integer bits. Resize integers separately from reinterpreting
    /// floating-point or vector values: bitcasts require equal operand/result widths.
+   /// `context` names the interface parameter, to make a rejected cast diagnosable.
    ir_nodeRef createInterfaceCast(ir_nodeRef value, const ir_nodeConstRef& target_type,
                                   const ir_manipulationRef& ir_man, unsigned scope,
-                                  std::vector<ir_nodeRef>& intermediate_stmts)
+                                  std::vector<ir_nodeRef>& intermediate_stmts, const std::string& context)
    {
       const auto source_type = ir_helper::CGetType(value);
       const auto source_is_bits = ir_helper::IsRealType(source_type) || ir_helper::IsVectorType(source_type);
@@ -91,6 +92,8 @@ namespace
       auto cast_kind = source_is_bits || target_is_bits ? bitcast_node_K : nop_node_K;
       if(cast_kind == bitcast_node_K && ir_helper::Size(source_type) != ir_helper::Size(target_type))
       {
+         // The intermediate is unsigned: the padding bits of a reinterpreted value
+         // carry no sign, so widening it must never fill the upper bits with ones.
          const auto integer_type =
              ir_man->GetCustomIntegerType(ir_helper::Size(source_is_bits ? source_type : target_type), true);
          const auto intermediate_expr = ir_man->create_unary_operation(integer_type, value, BUILTIN_LOCINFO,
@@ -103,7 +106,10 @@ namespace
       }
       if(cast_kind == bitcast_node_K && ir_helper::Size(value) != ir_helper::Size(target_type))
       {
-         THROW_ERROR("Interface bitcast width mismatch");
+         const auto value_type = ir_helper::CGetType(value);
+         THROW_ERROR("Interface bitcast width mismatch on interface '" + context + "': " + STR(value_type) + " (" +
+                     STR(ir_helper::Size(value_type)) + " bits) -> " + STR(target_type) + " (" +
+                     STR(ir_helper::Size(target_type)) + " bits)");
       }
       return ir_man->create_unary_operation(target_type, value, BUILTIN_LOCINFO, cast_kind);
    }
@@ -1840,8 +1846,11 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
       THROW_ASSERT(!gn->memdef && !gn->memuse, "");
 
       const auto data_size = ir_helper::Size(interface_datatype);
-      // The modern non-blocking ABI returns the valid flag above the channel data,
-      // including when the compiler lowers the return value to an sret pointer.
+      // The interface always returns the valid flag above the channel data, whatever
+      // the C++ ABI of the call: recent compilers pack it in the payload through
+      // unsigned _BitInt, older ones take it by reference and ignore the extra bit.
+      // The reference is written from bit data_size of this same returned word, so
+      // the aggregate bound checks below must use the same width as ret_type.
       const auto packed_return_size = data_size + (valid_var ? 1 : 0);
       const auto sel_type = ir_man->GetBooleanType();
       const auto ret_type = ir_man->GetCustomIntegerType(packed_return_size, true);
@@ -1995,7 +2004,7 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
                   const auto field_type = ir_helper::CGetType(user_ga->op0);
                   std::vector<ir_nodeRef> intermediate_stmts;
                   const auto cast_expr =
-                      createInterfaceCast(field_value, field_type, ir_man, fd->index, intermediate_stmts);
+                      createInterfaceCast(field_value, field_type, ir_man, fd->index, intermediate_stmts, arg_name);
                   for(const auto& intermediate_stmt : intermediate_stmts)
                   {
                      load_bb->PushBefore(intermediate_stmt, used_stmt, AppM);
@@ -2071,7 +2080,7 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
                const auto field_type = ir_helper::CGetType(use_ga->op0);
                std::vector<ir_nodeRef> intermediate_stmts;
                const auto truncate_expr =
-                   createInterfaceCast(field_value, field_type, ir_man, fd->index, intermediate_stmts);
+                   createInterfaceCast(field_value, field_type, ir_man, fd->index, intermediate_stmts, arg_name);
                for(const auto& intermediate_stmt : intermediate_stmts)
                {
                   use_bb->PushBefore(intermediate_stmt, use_stmt, AppM);
@@ -2109,7 +2118,8 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
             if(ir_helper::IsRealType(data_type) || ir_helper::IsVectorType(data_type))
             {
                std::vector<ir_nodeRef> intermediate_stmts;
-               const auto cast_expr = createInterfaceCast(data_mask, data_type, ir_man, fd->index, intermediate_stmts);
+               const auto cast_expr =
+                   createInterfaceCast(data_mask, data_type, ir_man, fd->index, intermediate_stmts, arg_name);
                for(const auto& intermediate_stmt : intermediate_stmts)
                {
                   curr_bb->PushBefore(intermediate_stmt, stmt, AppM);
@@ -2257,7 +2267,8 @@ void InterfaceInfer::setReadInterface(ir_nodeRef stmt, const std::string& arg_na
          const auto gc = ir_man->create_assign_stmt(tmp_ssa, ce, fd->index, BUILTIN_LOCINFO);
          curr_bb->Replace(stmt, gc, true, AppM);
          std::vector<ir_nodeRef> intermediate_stmts;
-         const auto cast_expr = createInterfaceCast(tmp_ssa, actual_type, ir_man, fd->index, intermediate_stmts);
+         const auto cast_expr =
+             createInterfaceCast(tmp_ssa, actual_type, ir_man, fd->index, intermediate_stmts, arg_name);
          auto last_stmt = gc;
          for(const auto& intermediate_stmt : intermediate_stmts)
          {
@@ -2332,7 +2343,7 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
                const auto fragment_type = ir_helper::CGetType(fragment);
                std::vector<ir_nodeRef> intermediate_stmts;
                const auto fragment_value =
-                   createInterfaceCast(fragment, packed_type, ir_man, fd->index, intermediate_stmts);
+                   createInterfaceCast(fragment, packed_type, ir_man, fd->index, intermediate_stmts, arg_name);
                for(const auto& intermediate_stmt : intermediate_stmts)
                {
                   curr_bb->PushBefore(intermediate_stmt, stmt, AppM);
@@ -2467,7 +2478,7 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
                const auto fragment_type = ir_man->GetCustomIntegerType(fragment_size, false);
                std::vector<ir_nodeRef> intermediate_stmts;
                const auto fragment_expr =
-                   createInterfaceCast(user_ga->op1, fragment_type, ir_man, fd->index, intermediate_stmts);
+                   createInterfaceCast(user_ga->op1, fragment_type, ir_man, fd->index, intermediate_stmts, arg_name);
                for(const auto& intermediate_stmt : intermediate_stmts)
                {
                   curr_bb->PushBefore(intermediate_stmt, stmt, AppM);
@@ -2533,7 +2544,7 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
       {
          std::vector<ir_nodeRef> intermediate_stmts;
          const auto cast_expr =
-             createInterfaceCast(data_obj, interface_datatype, ir_man, fd->index, intermediate_stmts);
+             createInterfaceCast(data_obj, interface_datatype, ir_man, fd->index, intermediate_stmts, arg_name);
          for(const auto& intermediate_stmt : intermediate_stmts)
          {
             curr_bb->PushBefore(intermediate_stmt, stmt, AppM);
@@ -2613,7 +2624,7 @@ void InterfaceInfer::setWriteInterface(ir_nodeRef stmt, const std::string& arg_n
       {
          std::vector<ir_nodeRef> intermediate_stmts;
          const auto cast_expr =
-             createInterfaceCast(value_node, interface_datatype, ir_man, fd->index, intermediate_stmts);
+             createInterfaceCast(value_node, interface_datatype, ir_man, fd->index, intermediate_stmts, arg_name);
          for(const auto& intermediate_stmt : intermediate_stmts)
          {
             curr_bb->PushBefore(intermediate_stmt, stmt, AppM);

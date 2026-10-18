@@ -61,6 +61,7 @@ ac_channel_peek.cpp --top-fname=peek_sum --generate-tb=a="{1,2,3,4,5,6,7,8}",d="
 ac_channel_nb_peek.cpp --top-fname=nb_peek_sum --generate-tb=a="{1,2,3,4,5,6,7,8}",d="{2,4,6,8,10,12,14,16}"
 ac_channel_nb_read_peek64.cpp --top-fname=nb_read_peek64 --generate-tb=a="{0x8000000000000001,0xffffffffffffffff,0x8000000000000000,0x123456789abcdef0,0x7fffffffffffffff,1,0x8000000000000008,0}",d="{}" --max-sim-cycles=1000
 ac_channels_fp32.cpp --top-fname=sum3numbers --generate-tb=a="{1.1,2.2,3.3,4.4,5.5,6.6,7.7,8.8}",b="{1.1,2.2,3.3,4.4,5.5,6.6,7.7,8.8}",c="{1.1,2.2,3.3,4.4,5.5,6.6,7.7,8.8}",d="{}"
+ac_channel_packed_fields.cpp --top-fname=packed_fields --generate-tb=BENCHMARKS_ROOT/ac_channel_packed_fields.cpp --benchmark-name=ac_channel_packed_fields --max-sim-cycles=1000
 interface_vector_bits.cpp --top-fname=vector_bits --generate-tb=BENCHMARKS_ROOT/interface_vector_bits.cpp --benchmark-name=interface_vector_fifo --max-sim-cycles=1000
 ac_channel_nb_vector.cpp --top-fname=nb_vector --generate-tb=BENCHMARKS_ROOT/ac_channel_nb_vector.cpp --benchmark-name=ac_channel_nb_vector --max-sim-cycles=1000 --no-clean BENCHMARK_ENV="MANTIS_POST_CHECK=python3 'BENCHMARKS_ROOT/../bambu_vector_test/check_vector_mask_hls.py' --case=ac_channel_nb_vector"
 interface_vector_bits.cpp --top-fname=vector_bits --generate-tb=BENCHMARKS_ROOT/interface_vector_bits.cpp --benchmark-name=interface_float_vector_fifo -DFLOAT_VECTOR --max-sim-cycles=1000
