@@ -151,7 +151,8 @@ RESTRICT_METADATA_CASES = {
     "distinct_prefix_guard_bypass": {"src": "1", "dst": "1"},
     "distinct_bases_one_restrict": {"src": "1", "dst": "0"},
 }
-EXPECTED_ADDRESS_BITS = {"same_base_asymmetric_64": "64", "distinct_bases_asymmetric_64": "64"}
+EXPECTED_ADDRESS_BITS = {"same_base_asymmetric_64": "64", "distinct_bases_asymmetric_64": "64",
+                        "bambu_axi_burst_duplex_independent": "64"}
 EXPECTED_PROFILES = {"same_base_asymmetric_64": ("8", "2", "16", "1"),
                      "distinct_bases_asymmetric_64": ("8", "2", "16", "1")}
 READ_AXI_INPUTS = {"awready", "wready", "bid", "bresp", "buser", "bvalid",
@@ -315,9 +316,11 @@ def verify_private_duplex_wiring(code: str, parent_body: str,
                  f"{direction} {field} net width does not match the {expected_width}-bit profile")
 
 
-def check_production_duplex(rtl: str, compiler_log: str, top: str, attrs: dict[str, str]) -> None:
+def check_production_duplex(rtl: str, compiler_log: str, top: str, attrs: dict[str, str], *,
+                            distinct_base_override: bool | None = None) -> None:
     bundle = "shared"
-    is_distinct_base = top in DISTINCT_BASE_CASES
+    is_distinct_base = (top in DISTINCT_BASE_CASES if distinct_base_override is None
+                        else distinct_base_override)
     marker_kind = "distinct-base restricted pointwise" if is_distinct_base else "same-base pointwise"
     marker = f"Activated {marker_kind} duplex m_axi bundle {bundle} for root {top}"
     matches = re.findall(rf"(?m)^\s*(?:---)?{re.escape(marker)}\s*$", compiler_log)
@@ -667,8 +670,78 @@ def assignment_rhs(nodes: dict[int, tuple[str, str]], statement: tuple[str, str]
     return operands[1]
 
 
+OPERAND_DEPENDENCY_LIMIT = 4096
+VALUE_OPERAND_ARITY = {
+    "add_node": 2, "eq_node": 2, "gep_node": 2, "gt_node": 2, "lt_node": 2,
+    "mul_node": 2, "shl_node": 2, "sub_node": 2, "xor_node": 2, "nop_node": 1,
+}
+VALUE_TERMINALS = {"argument_val_node", "constant_int_val_node"}
+
+
+def operand_dependency_result(nodes: dict[int, tuple[str, str]], root: int, target: int,
+                              limit: int = OPERAND_DEPENDENCY_LIMIT) -> tuple[bool, bool]:
+    """Return whether target is reached and whether a negative result is complete."""
+    pending, visited = [root], set()
+    complete = True
+    while pending:
+        if len(visited) >= limit:
+            return False, False
+        index = pending.pop()
+        if index in visited:
+            continue
+        if index not in nodes:
+            complete = False
+            continue
+        if index == target:
+            return True, True
+        visited.add(index)
+        kind, _attrs = nodes[index]
+        node_fields = fields(nodes[index])
+        if kind == "ssa_node":
+            definitions = node_fields.get("def_stmt", [])
+            if definitions:
+                if len(definitions) != 1 or int(definitions[0]) not in nodes:
+                    complete = False
+                    continue
+                statement_index = int(definitions[0])
+                statement = nodes[statement_index]
+                if statement[0] in {"assign_stmt", "gimple_assign"}:
+                    operands = operation_refs(statement)
+                    if len(operands) != 2 or operands[0] != index:
+                        complete = False
+                    else:
+                        pending.append(operands[1])
+                elif statement[0] == "phi_stmt":
+                    results = fields(statement).get("res", [])
+                    definitions = [int(value) for value in fields(statement).get("def", [])]
+                    if len(results) != 1 or int(results[0]) != index or not definitions or \
+                            any(value not in nodes for value in definitions):
+                        complete = False
+                    else:
+                        pending.extend(definitions)
+                else:
+                    complete = False
+            elif len(node_fields.get("var", [])) == 1:
+                variable = int(node_fields["var"][0])
+                if variable not in nodes or nodes[variable][0] != "argument_val_node":
+                    complete = False
+            else:
+                complete = False
+        elif kind in VALUE_TERMINALS:
+            continue
+        elif kind in VALUE_OPERAND_ARITY:
+            operands = operation_refs(nodes[index])
+            if len(operands) == VALUE_OPERAND_ARITY[kind]:
+                pending.extend(operands)
+            else:
+                complete = False
+        else:
+            complete = False
+    return False, complete
+
+
 def operand_depends(nodes: dict[int, tuple[str, str]], root: int, target: int,
-                    limit: int = 4096) -> bool:
+                    limit: int = OPERAND_DEPENDENCY_LIMIT) -> bool:
     """Follow only value operands and SSA definitions, never ownership/use/type links."""
     pending, visited = [root], set()
     while pending and len(visited) < limit:
@@ -680,9 +753,9 @@ def operand_depends(nodes: dict[int, tuple[str, str]], root: int, target: int,
         visited.add(index)
         kind, _attrs = nodes[index]
         if kind == "ssa_node":
-            defs = fields(nodes[index]).get("def_stmt", [])
-            if len(defs) == 1 and int(defs[0]) in nodes:
-                statement = nodes[int(defs[0])]
+            definitions = fields(nodes[index]).get("def_stmt", [])
+            if len(definitions) == 1 and int(definitions[0]) in nodes:
+                statement = nodes[int(definitions[0])]
                 if statement[0] in {"assign_stmt", "gimple_assign"}:
                     pending.extend(operation_refs(statement)[1:])
                 elif statement[0] == "phi_stmt":
@@ -1054,7 +1127,8 @@ def verify_emitted_configure_counts(output: Path, top: str,
     verify_configure_count_expressions(post_nodes, calls, record)
 
 
-def verify_success_record(record: dict[str, object], raw_text: str, top: str) -> None:
+def verify_success_record(record: dict[str, object], raw_text: str, top: str, *,
+                          require_load_store_data_dependency: bool = True) -> None:
     need(IDENTITY_FIELDS <= record.keys(), "semantic proof record is missing identity fields")
     for key in IDENTITY_FIELDS:
         need(type(record[key]) is int, f"semantic identity field {key} is not numeric")
@@ -1104,8 +1178,13 @@ def verify_success_record(record: dict[str, object], raw_text: str, top: str) ->
     store_address, store_value = memory_operand(nodes, store, "STORE", 32)
     need((load_address != store_address) if distinct_bases else (load_address == store_address),
          "LOAD and STORE address identity does not match the proof kind")
-    need(operand_depends(nodes, store_value, load_value),
-         "STORE value is not derived from the preceding LOAD result")
+    data_dependency, dependency_complete = operand_dependency_result(
+        nodes, store_value, load_value, limit=OPERAND_DEPENDENCY_LIMIT)
+    if require_load_store_data_dependency:
+        need(data_dependency, "STORE value dependency does not match the selected read/write proof contract")
+    else:
+        need(dependency_complete and not data_dependency,
+             "STORE value dependency traversal is incomplete or dependency was found")
 
     def address_gep(address_index: int, label: str) -> tuple[int, int]:
         address = node_in_function(nodes, func, reachable, address_index, f"{label} memory address")
@@ -1254,8 +1333,8 @@ def verify_success_record(record: dict[str, object], raw_text: str, top: str) ->
             nodes[entry_branches[0]], "preheader branch")
         need(entry_condition == int(record["read_guard_index"]),
              "preheader branch condition differs from the declared signed-bound guard")
-        need(entry_true_target == header and entry_default_target == exit_bb,
-             "preheader branch polarity must map true to loop entry and default/false to exit")
+        need((entry_true_target, entry_default_target) in {(header, exit_bb), (exit_bb, header)},
+             "preheader branch polarity must separate the declared loop entry and exit")
         loop_condition, loop_true_target, loop_default_target = conditional_branch(loop_branch, "loop branch")
         need(loop_true_target == exit_bb and loop_default_target == header,
              "loop branch polarity must map true to exit and default/false to the backedge")
@@ -1279,30 +1358,42 @@ def verify_success_record(record: dict[str, object], raw_text: str, top: str) ->
              "entry guard has no unique defining assignment")
         guard_comparison = nodes[assignment_rhs(nodes, nodes[int(guard_defs[0])], "entry guard")]
         guard_operands = operation_refs(guard_comparison)
-        need(guard_comparison[0] == "gt_node" and len(guard_operands) == 2 and
-             nodes.get(guard_operands[1], ("", ""))[0] == "constant_int_val_node" and
-             re.search(r"\bvalue: 0(?:\s|$)", nodes[guard_operands[1]][1]) and
-             is_signed_32bit_value(nodes, guard_operands[0]) and
-             is_signed_32bit_value(nodes, guard_operands[1]),
-             "entry predicate is not signed declared-bound > 0")
-        signed_bound = guard_operands[0]
-        signed_bound_defs = fields(nodes[signed_bound]).get("def_stmt", [])
-        need(nodes[signed_bound][0] == "ssa_node" and len(signed_bound_defs) == 1 and
-             int(signed_bound_defs[0]) in nodes,
-             "entry signed-bound SSA has no unique defining assignment")
-        cast_assignment = nodes[int(signed_bound_defs[0])]
-        cast_operands = operation_refs(cast_assignment)
-        need(cast_assignment[0] in {"assign_stmt", "gimple_assign"} and len(cast_operands) == 2 and
-             cast_operands[0] == signed_bound and cast_operands[1] in nodes and
-             nodes[cast_operands[1]][0] == "nop_node" and
-             operation_refs(nodes[cast_operands[1]]) == [int(record["read_bound_index"])],
-             "entry bound conversion is not a single nop of the declared bound")
-        signed_type = fields(nodes[signed_bound]).get("type", [])
-        conversion_type = fields(nodes[cast_operands[1]]).get("type", [])
-        need(len(signed_type) == 1 and conversion_type == signed_type and
-             is_signed_32bit_value(nodes, cast_operands[1]) and
-             is_unsigned_32bit_value(nodes, int(record["read_bound_index"])),
-             "entry bound conversion type is not unsigned32 to the matching signed32 guard type")
+        zero_operands = [operand for operand in guard_operands if nodes.get(operand, ("", ""))[0] ==
+                         "constant_int_val_node" and re.search(r"\bvalue: 0(?:\s|$)", nodes[operand][1])]
+        positive_signed_guard = (
+            guard_comparison[0] == "gt_node" and len(guard_operands) == 2 and
+            guard_operands[1] in zero_operands and entry_true_target == header and
+            entry_default_target == exit_bb and is_signed_32bit_value(nodes, guard_operands[0]) and
+            is_signed_32bit_value(nodes, guard_operands[1]))
+        if positive_signed_guard:
+            signed_bound = guard_operands[0]
+            signed_bound_defs = fields(nodes[signed_bound]).get("def_stmt", [])
+            need(nodes[signed_bound][0] == "ssa_node" and len(signed_bound_defs) == 1 and
+                 int(signed_bound_defs[0]) in nodes,
+                 "entry signed-bound SSA has no unique defining assignment")
+            cast_assignment = nodes[int(signed_bound_defs[0])]
+            cast_operands = operation_refs(cast_assignment)
+            need(cast_assignment[0] in {"assign_stmt", "gimple_assign"} and len(cast_operands) == 2 and
+                 cast_operands[0] == signed_bound and cast_operands[1] in nodes and
+                 nodes[cast_operands[1]][0] == "nop_node" and
+                 operation_refs(nodes[cast_operands[1]]) == [int(record["read_bound_index"])],
+                 "entry bound conversion is not a single nop of the declared bound")
+            signed_type = fields(nodes[signed_bound]).get("type", [])
+            conversion_type = fields(nodes[cast_operands[1]]).get("type", [])
+            need(len(signed_type) == 1 and conversion_type == signed_type and
+                 is_signed_32bit_value(nodes, cast_operands[1]) and
+                 is_unsigned_32bit_value(nodes, int(record["read_bound_index"])),
+                 "entry bound conversion type is not unsigned32 to the matching signed32 guard type")
+        else:
+            unsigned_zero_guard = (
+                guard_comparison[0] == "eq_node" and len(guard_operands) == 2 and
+                int(record["read_bound_index"]) in guard_operands and len(zero_operands) == 1 and
+                guard_operands[0] != guard_operands[1] and entry_true_target == exit_bb and
+                entry_default_target == header and
+                (is_unsigned_32bit_value(nodes, int(record["read_bound_index"])) or
+                 is_signed_32bit_value(nodes, int(record["read_bound_index"]))))
+            need(unsigned_zero_guard,
+                 "entry predicate is not signed declared-bound > 0 or declared-bound == 0 with inverse preheader branch polarity")
     body_node = nodes[int(fields(nodes[func])["body"][0])]
     phis = [int(value) for value in fields(body_node).get("phi", [])]
     induction_phis = [nodes[index] for index in phis if index in nodes and

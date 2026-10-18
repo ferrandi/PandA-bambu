@@ -9,6 +9,7 @@ import tempfile
 import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from unittest.mock import patch
 
 REPO = Path(__file__).resolve().parents[3]
 TMP_ROOT = REPO / "documentation" / "tmp"
@@ -1045,6 +1046,91 @@ class DuplexEffectArtifactTests(unittest.TestCase):
         one_restrict_architecture = ET.fromstring(self.architecture("distinct_bases_one_restrict"))
         verify_restrict_architecture_metadata(one_restrict_architecture, "distinct_bases_one_restrict", RAW, None)
 
+    def test_success_record_can_require_or_forbid_load_store_data_dependency(self) -> None:
+        verify_success_record(RECORD_DISTINCT, RAW_DISTINCT, "distinct_bases_source_first")
+        with self.assertRaisesRegex(CheckError, "dependency was found"):
+            verify_success_record(RECORD_DISTINCT, RAW_DISTINCT, "distinct_bases_source_first",
+                                  require_load_store_data_dependency=False)
+        missing_load_value = RAW_DISTINCT.replace("@19 ssa_node type: @23\n", "")
+        with self.assertRaisesRegex(CheckError, "dependency does not match"):
+            verify_success_record(RECORD_DISTINCT, missing_load_value, "distinct_bases_source_first")
+        independent_raw = RAW_DISTINCT.replace(
+            "@46 assign_stmt parent: @1 bb_index: 1 op: @45 op: @44",
+            "@46 assign_stmt parent: @1 bb_index: 1 op: @45 op: @35")
+        verify_success_record(RECORD_DISTINCT, independent_raw, "distinct_bases_source_first",
+                              require_load_store_data_dependency=False)
+        with self.assertRaisesRegex(CheckError, "dependency does not match"):
+            verify_success_record(RECORD_DISTINCT, independent_raw, "distinct_bases_source_first")
+        xor_independent = independent_raw.replace(
+            "@46 assign_stmt parent: @1 bb_index: 1 op: @45 op: @35",
+            "@46 assign_stmt parent: @1 bb_index: 1 op: @45 op: @44").replace(
+            "@44 add_node op: @43 op: @35", "@44 xor_node op: @42 op: @35")
+        verify_success_record(RECORD_DISTINCT, xor_independent, "distinct_bases_source_first",
+                              require_load_store_data_dependency=False)
+        xor_dependent = xor_independent.replace("@44 xor_node op: @42 op: @35",
+                                                "@44 xor_node op: @19 op: @35")
+        with self.assertRaisesRegex(CheckError, "dependency was found"):
+            verify_success_record(RECORD_DISTINCT, xor_dependent, "distinct_bases_source_first",
+                                  require_load_store_data_dependency=False)
+        sub_independent = xor_independent.replace("@44 xor_node op: @42 op: @35",
+                                                 "@44 sub_node op: @42 op: @35")
+        verify_success_record(RECORD_DISTINCT, sub_independent, "distinct_bases_source_first",
+                              require_load_store_data_dependency=False)
+        sub_dependent = sub_independent.replace("@44 sub_node op: @42 op: @35",
+                                                "@44 sub_node op: @19 op: @35")
+        with self.assertRaisesRegex(CheckError, "dependency was found"):
+            verify_success_record(RECORD_DISTINCT, sub_dependent, "distinct_bases_source_first",
+                                  require_load_store_data_dependency=False)
+
+    def test_independent_store_proof_rejects_incomplete_dependency_traversal(self) -> None:
+        independent_raw = RAW_DISTINCT.replace(
+            "@46 assign_stmt parent: @1 bb_index: 1 op: @45 op: @44",
+            "@46 assign_stmt parent: @1 bb_index: 1 op: @45 op: @35")
+        missing_reference_raw = independent_raw.replace(
+            "@46 assign_stmt parent: @1 bb_index: 1 op: @45 op: @35",
+            "@46 assign_stmt parent: @1 bb_index: 1 op: @45 op: @44")
+        missing_node = missing_reference_raw.replace("@44 add_node op: @43 op: @35\n", "")
+        with self.assertRaisesRegex(CheckError, "traversal is incomplete"):
+            verify_success_record(RECORD_DISTINCT, missing_node, "distinct_bases_source_first",
+                                  require_load_store_data_dependency=False)
+        unsupported_node = missing_reference_raw.replace("@44 add_node op: @43 op: @35",
+                                                          "@44 unsupported_value_node op: @35")
+        with self.assertRaisesRegex(CheckError, "traversal is incomplete"):
+            verify_success_record(RECORD_DISTINCT, unsupported_node, "distinct_bases_source_first",
+                                  require_load_store_data_dependency=False)
+        unsupported_variable = independent_raw.replace(
+            "@46 assign_stmt parent: @1 bb_index: 1 op: @45 op: @35",
+            "@46 assign_stmt parent: @1 bb_index: 1 op: @45 op: @66")
+        unsupported_variable += '@66 ssa_node var: @67 type: @23\n@67 identifier_node strg: "not_an_argument"\n'
+        with self.assertRaisesRegex(CheckError, "traversal is incomplete"):
+            verify_success_record(RECORD_DISTINCT, unsupported_variable, "distinct_bases_source_first",
+                                  require_load_store_data_dependency=False)
+        mismatched_phi_result = independent_raw.replace(
+            "@46 assign_stmt parent: @1 bb_index: 1 op: @45 op: @35",
+            "@46 assign_stmt parent: @1 bb_index: 1 op: @45 op: @44").replace(
+            "@44 add_node op: @43 op: @35", "@44 ssa_node def_stmt: @32")
+        with self.assertRaisesRegex(CheckError, "traversal is incomplete"):
+            verify_success_record(RECORD_DISTINCT, mismatched_phi_result, "distinct_bases_source_first",
+                                  require_load_store_data_dependency=False)
+        direct_assignment = independent_raw.replace(
+            "@46 assign_stmt parent: @1 bb_index: 1 op: @45 op: @35",
+            "@46 assign_stmt parent: @1 bb_index: 1 op: @45 op: @44").replace(
+            "@44 add_node op: @43 op: @35", "@44 assign_stmt op: @45 op: @35")
+        with self.assertRaisesRegex(CheckError, "traversal is incomplete"):
+            verify_success_record(RECORD_DISTINCT, direct_assignment, "distinct_bases_source_first",
+                                  require_load_store_data_dependency=False)
+        direct_phi = independent_raw.replace(
+            "@46 assign_stmt parent: @1 bb_index: 1 op: @45 op: @35",
+            "@46 assign_stmt parent: @1 bb_index: 1 op: @45 op: @44").replace(
+            "@44 add_node op: @43 op: @35", "@44 phi_stmt res: @44 def: @35 edge: 0")
+        with self.assertRaisesRegex(CheckError, "traversal is incomplete"):
+            verify_success_record(RECORD_DISTINCT, direct_phi, "distinct_bases_source_first",
+                                  require_load_store_data_dependency=False)
+        with patch("check_duplex_effect_analysis_artifacts.OPERAND_DEPENDENCY_LIMIT", 1):
+            with self.assertRaisesRegex(CheckError, "traversal is incomplete"):
+                verify_success_record(RECORD_DISTINCT, independent_raw, "distinct_bases_source_first",
+                                      require_load_store_data_dependency=False)
+
     def test_distinct_base_activation_requires_non_overlap_contract_warning(self) -> None:
         warning = ("WARNING: distinct-base duplex relies on the caller's __restrict contract; the caller must "
                    "ensure the accessed regions do not overlap (no runtime range validation is performed)\n")
@@ -1534,6 +1620,20 @@ class DuplexEffectArtifactTests(unittest.TestCase):
         self.refresh_provenance()
         with self.assertRaisesRegex(CheckError, "entry predicate is not signed declared-bound > 0"):
             self.check()
+
+    def test_unsigned_zero_guard_requires_exact_inverted_entry_branch(self) -> None:
+        unsigned_zero = RAW.replace("@26 gt_node op: @47 op: @55", "@26 eq_node op: @63 op: @55")
+        inverted_branch = unsigned_zero.replace(
+            "@10 multi_way_if_stmt parent: @1 bb_index: 0 op: @11 bloc: 1 bloc: 2",
+            "@10 multi_way_if_stmt parent: @1 bb_index: 0 op: @11 bloc: 2 bloc: 1")
+        verify_success_record(RECORD, inverted_branch, "same_base_pointwise")
+        wrong_targets = unsigned_zero
+        with self.assertRaisesRegex(CheckError, "entry predicate is not signed declared-bound > 0"):
+            verify_success_record(RECORD, wrong_targets, "same_base_pointwise")
+        wrong_comparison = inverted_branch.replace("@26 eq_node op: @63 op: @55",
+                                                  "@26 ne_node op: @63 op: @55")
+        with self.assertRaisesRegex(CheckError, "entry predicate is not signed declared-bound > 0"):
+            verify_success_record(RECORD, wrong_comparison, "same_base_pointwise")
 
     def test_entry_bound_conversion_must_be_exact_nop(self) -> None:
         raw = RAW.replace("@49 nop_node type: @23 op: @63",
