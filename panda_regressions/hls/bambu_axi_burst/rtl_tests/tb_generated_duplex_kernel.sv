@@ -108,6 +108,20 @@ module tb_generated_duplex_kernel #(
   logic metric_case_enabled = 0;
   logic metric_collect = 0;
   logic metric_window_started = 0, metric_window_ended = 0;
+`ifdef G3_ITERATION_OBSERVER
+  `include "g3_iteration_binding.svh"
+  logic g3_iteration_capture = 0;
+  integer g3_iteration_event_count;
+  duplex_iteration_observer #(
+    .MAPPING_ID(`G3_MAPPING_ID),
+    .EXPECTED_EVENTS(256),
+    .SOURCE_BASE_BYTES(8192)
+  ) iteration_observer (
+    .clock(clock), .reset(reset), .capture(g3_iteration_capture),
+    .state_name(`G3_STATE_SAMPLE), .loop_index(`G3_INDEX_SAMPLE),
+    .source_address(`G3_SOURCE_ADDRESS_SAMPLE), .event_count(g3_iteration_event_count)
+  );
+`endif
 
   function automatic integer mem_index(input logic [31:0] address);
     begin
@@ -738,7 +752,17 @@ module tb_generated_duplex_kernel #(
       fault_reset_restart(2);
     end else if (selected_case == "COPY_PARALLELISM_256") begin
       metric_case_enabled = 1;
+`ifdef G3_ITERATION_OBSERVER
+      g3_iteration_capture = 1;
+`endif
       invoke(256, 32'h00002000, 32'h00004000);
+`ifdef G3_ITERATION_OBSERVER
+      g3_iteration_capture = 0;
+      if (g3_iteration_event_count != 256)
+        fail($sformatf("iteration observer recorded %0d events, expected 256",
+                       g3_iteration_event_count));
+      $display("DUPLEX_ITERATION_OBSERVER PASS EVENT_COUNT=256");
+`endif
     end else begin
       $fatal(1, "DUPLEX_KERNEL_UNKNOWN_CASE_SELECTOR: %s", selected_case);
     end
