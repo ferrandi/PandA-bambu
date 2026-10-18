@@ -40,7 +40,8 @@ static inline void __m_banked_reserve(size_t memory_size, const unsigned* banks,
          ++required_chunks[bank];
       }
       memory_size -= bytes;
-      *partial += bytes;
+      // bytes never exceeds chunk_size, so the cursor stays representable.
+      *partial += static_cast<unsigned>(bytes);
       if(*partial == chunk_size)
       {
          *partial = 0;
@@ -81,7 +82,8 @@ static inline void __m_banked_transfer(size_t memory_size, size_t valid_size, ch
          memset(bank_addr + copied, 0, reserved - copied);
       }
       space_used[bank] += reserved;
-      *partial += reserved;
+      // reserved never exceeds chunk_size, so the cursor stays representable.
+      *partial += static_cast<unsigned>(reserved);
       if(*partial == chunk_size)
       {
          *partial = 0;

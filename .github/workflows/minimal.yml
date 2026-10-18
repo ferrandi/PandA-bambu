@@ -58,8 +58,10 @@ jobs:
     env:
       cppcheck-dir: cppcheck-report
       # Cppcheck 2.19 reports an internal AST failure for this ac_int.h macro.
-      # Keep all translation units and checks enabled; suppress only this parser failure.
-      cppcheck-args: --enable=all --force --suppress=missingIncludeSystem --suppress=unknownMacro --suppress=internalAstError:etc/ac_types/include/ac_int.h:6354 --inline-suppr -i ext
+      # Keep all translation units and checks enabled; suppress only this parser
+      # failure, and by file rather than by line so that editing ac_int.h cannot
+      # silently re-enable it or hide a different failure behind a stale line.
+      cppcheck-args: --enable=all --force --suppress=missingIncludeSystem --suppress=unknownMacro --suppress=internalAstError:etc/ac_types/include/ac_int.h --inline-suppr -i ext
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
