@@ -38,4 +38,26 @@
 /// The source code default output file
 #define STR_CST_file_IO_source_code_output_file "output.c"
 
+/// Shell function that copies the output of a command both to a log file and to
+/// the console. The generated scripts use it in place of the system tee: tee is
+/// not part of the tool flow, and a tee dying mid-stream closes the pipe and
+/// kills the command whose output was being logged.
+constexpr auto SHELL_CST_record_output =
+    R"sh(record_output() {
+  python3 -u -c '
+import sys
+
+with open(sys.argv[1], "wb") as log_file:
+    while True:
+        data = sys.stdin.buffer.read1(65536)
+        if not data:
+            break
+        log_file.write(data)
+        log_file.flush()
+        sys.stdout.buffer.write(data)
+        sys.stdout.buffer.flush()
+' "$1"
+}
+)sh";
+
 #endif

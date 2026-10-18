@@ -27,4 +27,4 @@ done
 ${CC} -pipe ${CSIMFLAGS} -o bambu_csim ${CSIM_SRCS[@]}
 
 
-BAMBU_IPC_SIM_CMD="${SWD}/bambu_csim 2>&1 | tee ${SWD}/simulation.log; exit \${PIPESTATUS[0]};"
+BAMBU_IPC_SIM_CMD="run_logged \"${SWD}/simulation.log\" \"${SWD}/bambu_csim\""

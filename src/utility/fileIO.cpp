@@ -162,17 +162,26 @@ int PandaSystem(const ParameterConstRef& Param, const std::string& system_comman
           << "fi\n";
    }
 #endif
-   script_file << "(" << system_command << ") ";
-   if(Param->getOption<unsigned int>(OPT_output_level) >= OUTPUT_LEVEL_PEDANTIC)
+   // At pedantic output level the command output is also shown while it runs.
+   // That copy is done by record_output and not by the system tee: tee is not
+   // part of the tool flow, and a tee dying mid-stream would close the pipe and
+   // kill the command whose output was being logged.
+   const bool live_console_copy = Param->getOption<unsigned int>(OPT_output_level) >= OUTPUT_LEVEL_PEDANTIC;
+   if(live_console_copy)
    {
-      script_file << " 2>&1 | tee " << actual_output;
+      script_file << SHELL_CST_record_output << "\n";
+   }
+   script_file << "(" << system_command << ") ";
+   if(live_console_copy)
+   {
+      script_file << " 2>&1 | record_output " << actual_output;
    }
    else
    {
       script_file << " > " << actual_output << " 2>&1 ";
    }
    script_file << "\n";
-   if(Param->getOption<unsigned int>(OPT_output_level) >= OUTPUT_LEVEL_PEDANTIC)
+   if(live_console_copy)
    {
       script_file << "exit ${PIPESTATUS[0]}\n";
    }

@@ -287,6 +287,17 @@ jobs:
         shell: bash
         run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
 
+  simulation-logging-test:
+    needs: [build]
+    if: ${{!cancelled() && needs.build.result == 'success' }}
+    runs-on: [self-hosted]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Check the shared simulation logging wrapper
+        shell: bash
+        run: ./panda_regressions/hls/bambu_simulation_logging_test.sh
+
   vector-test:
     needs: [build]
     if: ${{!cancelled() && needs.build.result == 'success' }}
@@ -1507,6 +1518,7 @@ jobs:
       - gcc_regression_simple-vhdl
       - gcc_regression_simple-pretty_print
       - interface-test
+      - simulation-logging-test
       - vector-test
       - vector-frontend-test
       - bambu2hls4ml
