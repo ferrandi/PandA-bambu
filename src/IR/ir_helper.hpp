@@ -96,6 +96,12 @@ class ir_helper
    /// Logical bit width of one vector element, excluding allocation padding.
    static unsigned long long VectorElementBitsize(const ir_nodeConstRef& tn);
 
+   /// Element width used to look a vector functional unit up in the resource
+   /// library. The library and the generated components exist for 1-bit and for
+   /// byte-or-larger power-of-two element widths only, so a logical width such
+   /// as i7 has to be rounded up. Lane counts keep the logical widths.
+   static unsigned long long VectorCharacterizedElementBitsize(const ir_nodeConstRef& tn);
+
    /// Logical bit width of all vector elements.
    static unsigned long long VectorLogicalBitsize(const ir_nodeConstRef& tn);
 

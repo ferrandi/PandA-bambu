@@ -1240,7 +1240,7 @@ void AllocationInformation::GetNodeTypePrec(OpGraph::vertex_descriptor node, con
             type = ir_helper::CGetType(var_node);
             if(ir_helper::IsVectorType(type))
             {
-               const auto element_size = ir_helper::VectorElementBitsize(type);
+               const auto element_size = ir_helper::VectorCharacterizedElementBitsize(type);
                max_size_in = std::max(max_size_in, element_size);
                const auto base128_elements = 128 / element_size;
                if(min_n_elements == 0 || base128_elements < min_n_elements)
@@ -1277,7 +1277,7 @@ void AllocationInformation::GetNodeTypePrec(OpGraph::vertex_descriptor node, con
             }
             if(ir_helper::IsVectorType(type))
             {
-               const auto element_size = ir_helper::VectorElementBitsize(type);
+               const auto element_size = ir_helper::VectorCharacterizedElementBitsize(type);
                const auto vector_elements = ir_helper::VectorNumElements(type);
                info->real_input_nelem.push_back(vector_elements);
                // Characterized vector FUs use 128 bits of logical lanes, independently of memory allocation.
@@ -1375,7 +1375,7 @@ void AllocationInformation::GetNodeTypePrec(OpGraph::vertex_descriptor node, con
       type = ir_helper::CGetType(out_node);
       if(ir_helper::IsVectorType(type))
       {
-         const auto element_size = ir_helper::VectorElementBitsize(type);
+         const auto element_size = ir_helper::VectorCharacterizedElementBitsize(type);
          info->real_output_nelem = ir_helper::VectorNumElements(type);
          info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
@@ -1461,7 +1461,7 @@ void AllocationInformation::GetNodeTypePrec(OpGraph::vertex_descriptor node, con
             info->output_prec = resize_1_8_pow2(ir_helper::Size(out_node));
             if(ir_helper::IsVectorType(type))
             {
-               const auto element_size = ir_helper::VectorElementBitsize(type);
+               const auto element_size = ir_helper::VectorCharacterizedElementBitsize(type);
                info->base128_output_nelem = 128 / element_size;
                info->real_output_nelem = ir_helper::VectorNumElements(type);
                info->output_prec = element_size;
@@ -1498,7 +1498,7 @@ void AllocationInformation::GetNodeTypePrec(OpGraph::vertex_descriptor node, con
       auto out_prec = ir_helper::Size(out_node);
       if(ir_helper::IsVectorType(type))
       {
-         const auto element_size = ir_helper::VectorElementBitsize(type);
+         const auto element_size = ir_helper::VectorCharacterizedElementBitsize(type);
          info->real_output_nelem = ir_helper::VectorNumElements(type);
          info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
@@ -1552,7 +1552,7 @@ void AllocationInformation::GetNodeTypePrec(OpGraph::vertex_descriptor node, con
       info->output_prec = resize_1_8_pow2(ir_helper::Size(out_node));
       if(ir_helper::IsVectorType(type))
       {
-         const auto element_size = ir_helper::VectorElementBitsize(type);
+         const auto element_size = ir_helper::VectorCharacterizedElementBitsize(type);
          info->real_output_nelem = ir_helper::VectorNumElements(type);
          info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
