@@ -124,6 +124,9 @@ cmake --build "${BUILD_DIR}" --target ac_channel_tests --parallel "${J:-1}"
 ctest --test-dir "${BUILD_DIR}" -L ac_channel --output-on-failure --parallel "${J:-1}" --no-tests=error
 ctest --test-dir "${BUILD_DIR}" -L mdpi --output-on-failure --parallel "${J:-1}" --no-tests=error
 ctest --test-dir "${BUILD_DIR}" -L vector_mask --output-on-failure --parallel "${J:-1}" --no-tests=error
+ctest --test-dir "${BUILD_DIR}" -L vector_allocation --output-on-failure --parallel "${J:-1}" --no-tests=error
+# The Boost suite carries the cases that no label selects, so it is also run whole.
+ctest --test-dir "${BUILD_DIR}" -R '^libbambu_unit$' --output-on-failure --parallel "${J:-1}" --no-tests=error
 echo "::endgroup::"
 
 if test -e "${BUILD_DIR}/compile_commands.json"; then
