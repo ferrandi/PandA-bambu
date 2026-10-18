@@ -26,6 +26,7 @@ TRACE = re.compile(
 PROOF_PREFIX = "AXI_BURST_DUPLEX_PROOF "
 SUCCESS = "same-base pointwise read-before-write candidate"
 DISTINCT_SUCCESS = "distinct-base restricted pointwise read-before-write candidate"
+RUNTIME_DISTINCT_SUCCESS = "distinct-base runtime-range-guarded pointwise read-before-write candidate"
 FALLBACK_READ = "bundle contains stores"
 FALLBACK_WRITE = "bundle contains reads; same-bundle read/write requires duplex support"
 IDENTITY_FIELDS = {
@@ -69,8 +70,7 @@ CASES: dict[str, tuple[str, int, str, str, bool, bool]] = {
     "same_loop_opaque_call": ("original effects are not fully classified ordinary accesses", 1,
                               "memory writes or opaque effects; prefetch ordering is not proven",
                               "opaque, volatile, atomic, or unclassified memory effects", False, True),
-    "distinct_bases": ("distinct-base duplex requires source restrict on both owners", 2,
-                       FALLBACK_READ, FALLBACK_WRITE, False, True),
+    "distinct_bases": (RUNTIME_DISTINCT_SUCCESS, 2, "-", "-", True, True),
     "distinct_bases_source_first": (DISTINCT_SUCCESS, 2, "-", "-", True, True),
     "distinct_bases_destination_first": (DISTINCT_SUCCESS, 2, "-", "-", True, True),
     "distinct_bases_asymmetric_64": (DISTINCT_SUCCESS, 2, "-", "-", True, True),
@@ -125,10 +125,12 @@ ACCESS_COUNTS: dict[str, tuple[tuple[int, int], ...]] = {
     "distinct_bases_one_restrict": ((1, 0), (0, 1)),
 }
 ACTIVATED_CASES = {"same_base_pointwise", "same_base_pointwise_reversed", "same_base_asymmetric_64",
+                   "distinct_bases",
                    "distinct_bases_source_first", "distinct_bases_destination_first",
                    "distinct_bases_asymmetric_64", "distinct_prefix_read_longer",
                    "distinct_prefix_write_longer", "distinct_prefix_equal", "distinct_prefix_width_bound"}
 DISTINCT_BASE_CASES = {"distinct_bases_source_first", "distinct_bases_destination_first",
+                       "distinct_bases",
                        "distinct_bases_asymmetric_64", "distinct_prefix_read_longer",
                        "distinct_prefix_write_longer", "distinct_prefix_equal",
                        "distinct_prefix_width_bound"}
@@ -321,11 +323,14 @@ def check_production_duplex(rtl: str, compiler_log: str, top: str, attrs: dict[s
     bundle = "shared"
     is_distinct_base = (top in DISTINCT_BASE_CASES if distinct_base_override is None
                         else distinct_base_override)
-    marker_kind = "distinct-base restricted pointwise" if is_distinct_base else "same-base pointwise"
-    marker = f"Activated {marker_kind} duplex m_axi bundle {bundle} for root {top}"
+    runtime_guarded = top == "distinct_bases" and distinct_base_override is None
+    marker = ("Activated guarded distinct-base duplex for bundle shared "
+              "(overlap uses serialized scalar transfers)" if runtime_guarded else
+              f"Activated {'distinct-base restricted pointwise' if is_distinct_base else 'same-base pointwise'} "
+              f"duplex m_axi bundle {bundle} for root {top}")
     matches = re.findall(rf"(?m)^\s*(?:---)?{re.escape(marker)}\s*$", compiler_log)
     need(len(matches) == 1, "production activation marker is missing or duplicated")
-    if is_distinct_base:
+    if is_distinct_base and not runtime_guarded:
         warning = ("WARNING: distinct-base duplex relies on the caller's __restrict contract; the caller must "
                    "ensure the accessed regions do not overlap (no runtime range validation is performed)")
         need(len(re.findall(rf"(?m)^\s*{re.escape(warning)}\s*$", compiler_log)) == 1,
@@ -496,7 +501,8 @@ def verify_restrict_architecture_metadata(xml_root: ET.Element, top: str, raw_te
         need(len(entries) == 1, f"expected exactly one architecture parameter {top}.{port}")
         need(entries[0].get("source_restrict") == expected_value,
              f"architecture source_restrict for {top}.{port} does not match source provenance")
-    if proof_record is not None and proof_record.get("proof_kind") == "distinct_base_restricted_pointwise":
+    if proof_record is not None and proof_record.get("proof_kind") in {
+            "distinct_base_restricted_pointwise", "distinct_base_runtime_guarded_pointwise"}:
         nodes, func, _blocks, _reachable = function_graph(raw_text, top)
         args = [int(value) for value in fields(nodes[func]).get("arg", [])]
         read_owner = int(proof_record["read_owner_argument_index"])
@@ -505,12 +511,13 @@ def verify_restrict_architecture_metadata(xml_root: ET.Element, top: str, raw_te
              "distinct proof owners are not both formal arguments in raw IR")
         read_parameter = by_index.get(args.index(read_owner), [])
         write_parameter = by_index.get(args.index(write_owner), [])
+        expected_restrict = "0" if proof_record.get("proof_kind") == "distinct_base_runtime_guarded_pointwise" else "1"
         need(len(read_parameter) == 1 and read_parameter[0].get("port") == "src" and
-             read_parameter[0].get("source_restrict") == "1",
-             "raw LOAD owner does not correlate to its restricted architecture parameter")
+             read_parameter[0].get("source_restrict") == expected_restrict,
+             "raw LOAD owner does not correlate to its expected architecture parameter")
         need(len(write_parameter) == 1 and write_parameter[0].get("port") == "dst" and
-             write_parameter[0].get("source_restrict") == "1",
-             "raw STORE owner does not correlate to its restricted architecture parameter")
+             write_parameter[0].get("source_restrict") == expected_restrict,
+             "raw STORE owner does not correlate to its expected architecture parameter")
 
 
 def sha256(path: Path) -> str:
@@ -1120,9 +1127,55 @@ def verify_emitted_configure_counts(output: Path, top: str,
     need(Path(manifest.get("post_interface_raw", "")).resolve() == post_raw.resolve() and
          manifest.get("post_interface_raw_sha256") == sha256(post_raw),
          "post-InterfaceInfer raw IR is not anchored by the case provenance")
-    from check_duplex_activation_matrix import require_raw, root_call_records
+    from check_duplex_activation_matrix import (burst_call_label, call_names, constant_value,
+                                                function_nodes, normalized_ssa_expression, refs, require_raw,
+                                                root_call_records)
 
     post_nodes = require_raw(post_raw, post_raw.name)
+    if top == "distinct_bases":
+        functions = function_nodes(post_nodes)
+        need(top in functions and len(functions[top]) == 1,
+             "post-InterfaceInfer IR lacks one unambiguous runtime-guarded root")
+        root = functions[top][0]
+        calls: dict[str, list[list[str]]] = {}
+        names = call_names(post_nodes)
+        for statement, callee in names.items():
+            if not callee or refs(post_nodes[statement][1], "parent") != [root]:
+                continue
+            label = burst_call_label(callee)
+            if label is None:
+                continue
+            args = refs(post_nodes[statement][1], "arg")
+            if not args:
+                pending = refs(post_nodes[statement][1], "op")
+                visited: set[str] = set()
+                while pending and not args:
+                    current = pending.pop()
+                    if current in visited or current not in post_nodes:
+                        continue
+                    visited.add(current)
+                    args = refs(post_nodes[current][1], "arg")
+                    pending.extend(refs(post_nodes[current][1], "op"))
+            calls.setdefault(label, []).append(args)
+        need({label: len(args) for label, args in calls.items()} == {
+            "configure_read": 2, "configure_write": 2, "burst_read": 1,
+            "store_write": 1, "drain_write": 2,
+        }, "runtime-guarded post-InterfaceInfer ABI call multiplicity changed")
+        trip = str(int(record["loop_trip_bound_ssa_index"]))
+        trip_expression = normalized_ssa_expression(post_nodes, f"@{trip}")
+        scalar_count = ("constant_int_val_node", "1")
+        for direction in ("read", "write"):
+            count_expressions = []
+            for args in calls[f"configure_{direction}"]:
+                need(len(args) == 5, f"runtime CONFIGURE_{direction.upper()} has the wrong arity")
+                need(constant_value(post_nodes, args[0], f"CONFIGURE_{direction.upper()} opcode") == 2 and
+                     constant_value(post_nodes, args[1], f"CONFIGURE_{direction.upper()} bitwidth") == 32 and
+                     constant_value(post_nodes, args[2], f"CONFIGURE_{direction.upper()} payload") == 0,
+                     f"runtime CONFIGURE_{direction.upper()} has invalid control operands")
+                count_expressions.append(normalized_ssa_expression(post_nodes, args[4]))
+            need(sorted(map(repr, count_expressions)) == sorted(map(repr, (trip_expression, scalar_count))),
+                 f"runtime CONFIGURE_{direction.upper()} must select burst-trip and scalar-one counts")
+        return
     calls, _blocks = root_call_records(post_raw, top)
     verify_configure_count_expressions(post_nodes, calls, record)
 
@@ -1133,9 +1186,14 @@ def verify_success_record(record: dict[str, object], raw_text: str, top: str, *,
     for key in IDENTITY_FIELDS:
         need(type(record[key]) is int, f"semantic identity field {key} is not numeric")
     proof_kind = record.get("proof_kind")
-    need(proof_kind in {"same_base_pointwise", "distinct_base_restricted_pointwise"},
+    need(proof_kind in {"same_base_pointwise", "distinct_base_restricted_pointwise",
+                        "distinct_base_runtime_guarded_pointwise"},
          "semantic proof record has an unknown proof kind")
-    distinct_bases = proof_kind == "distinct_base_restricted_pointwise"
+    runtime_guarded = proof_kind == "distinct_base_runtime_guarded_pointwise"
+    need(record.get("runtime_range_guard") is runtime_guarded,
+         "runtime range-guard flag does not match the semantic proof kind")
+    distinct_bases = proof_kind in {"distinct_base_restricted_pointwise",
+                                    "distinct_base_runtime_guarded_pointwise"}
     read_owner = int(record["read_owner_argument_index"])
     write_owner = int(record["write_owner_argument_index"])
     read_base_index = int(record["read_base_ssa_index"])
@@ -1536,10 +1594,13 @@ def verify(output: Path, top: str, source: Path, bambu: Path, plugin: Path,
              "structured semantic proof outcome/reason mismatch")
         if semantic:
             need(IDENTITY_FIELDS <= record.keys(), "semantic proof record is missing identity fields")
-            expected_kind = ("distinct_base_restricted_pointwise" if expected_reason == DISTINCT_SUCCESS else
+            expected_kind = ("distinct_base_runtime_guarded_pointwise" if top == "distinct_bases" else
+                             "distinct_base_restricted_pointwise" if expected_reason == DISTINCT_SUCCESS else
                              "same_base_pointwise")
             need(record.get("proof_kind") == expected_kind,
                  "structured proof kind does not match the selected candidate")
+            need(record.get("runtime_range_guard") is (top == "distinct_bases"),
+                 "structured runtime range-guard flag does not match the selected candidate")
         else:
             need(not (IDENTITY_FIELDS & record.keys()) and "proof_kind" not in record,
                  "failed candidate exposes success-only identity fields")
