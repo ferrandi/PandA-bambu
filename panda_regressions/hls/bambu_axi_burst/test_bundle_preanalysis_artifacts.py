@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import tempfile
+import json
 import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -214,6 +215,76 @@ class BundlePreanalysisCheckerTests(unittest.TestCase):
                                     "max_write_burst_length": "16", "write_burst_outstanding": "1"}},
             log or "Activated same-base pointwise duplex m_axi bundle shared for root design\n",
             parameters=parameters or ({"port": "data", "bundle": "shared"},))
+
+    @staticmethod
+    def runtime_duplex_rtl():
+        return "\n".join((
+            "module shared_bambu_artificial_ParmMgr_duplex_aggregator_modgen(input p_m_axi_shared_araddr, input p_m_axi_shared_awaddr);",
+            "endmodule",
+            "MinimalAXI4MasterPipelined #(.B_MAX(16), .MAX_OUTSTANDING(1), .FIFO_DEPTH(32), .PEER_FAULT_ENABLE(1)) read_engine();",
+            "MinimalAXI4MasterPipelinedWrite #(.B_MAX(16), .MAX_OUTSTANDING(1), .FIFO_DEPTH(32), .PEER_FAULT_ENABLE(1)) write_engine();",
+            "fuselector_shared_duplex_read_endpoint_configure_read;",
+            "fuselector_shared_duplex_read_endpoint_burst_read;",
+            "fuselector_shared_duplex_write_endpoint_configure_write;",
+            "fuselector_shared_duplex_write_endpoint_store_write;",
+            "fuselector_shared_duplex_write_endpoint_drain_write;",
+            "shared_bambu_artificial_ParmMgr_duplex_aggregator_modgen duplex_aggregator_0 (",
+            "  .p_m_axi_shared_araddr(araddr), .p_m_axi_shared_awaddr(awaddr));",
+        ))
+
+    def set_runtime_duplex(self, rtl=None, log=None, proof=None,
+                           bundles=None, parameters=None):
+        self.set_artifacts(
+            self.runtime_duplex_rtl() if rtl is None else rtl,
+            bundles or {"shared": {"mode": "m_axi", "max_read_burst_length": "16",
+                                    "num_read_outstanding": "1", "read_fifo_depth": "32",
+                                    "max_write_burst_length": "16", "write_burst_outstanding": "1"}},
+            log or "Activated guarded distinct-base duplex for bundle shared "
+                   "(overlap uses serialized scalar transfers)\n",
+            parameters=parameters or ({"port": "src", "bundle": "shared", "source_restrict": "0",
+                                       "index": "0"},
+                                      {"port": "dst", "bundle": "shared", "source_restrict": "0",
+                                       "index": "1"}))
+        if proof is None:
+            proof = {"bundle": "shared", "semantic_proof": True,
+                     "proof_kind": "distinct_base_runtime_guarded_pointwise",
+                     "runtime_range_guard": True,
+                     "read_owner_argument_index": 428892,
+                     "write_owner_argument_index": 428893}
+        (self.output / "stderr.log").write_text(
+            "AXI_BURST_DUPLEX_PROOF " + json.dumps(proof) + "\n")
+
+    def test_runtime_guarded_duplex_requires_complete_positive_witnesses(self):
+        self.set_runtime_duplex()
+        verify(self.output, "design", "runtime_duplex")
+
+        self.set_runtime_duplex(proof=None)
+        (self.output / "stderr.log").write_text("compiler stderr without proof\n")
+        with self.assertRaisesRegex(CheckError, "exactly one structured duplex proof"):
+            verify(self.output, "design", "runtime_duplex")
+
+        wrong_proof = {"bundle": "shared", "semantic_proof": True,
+                       "proof_kind": "distinct_base_restricted_pointwise",
+                       "runtime_range_guard": False,
+                       "read_owner_argument_index": 428892,
+                       "write_owner_argument_index": 428893}
+        self.set_runtime_duplex(proof=wrong_proof)
+        with self.assertRaisesRegex(CheckError, "not a successful runtime-range-guarded"):
+            verify(self.output, "design", "runtime_duplex")
+
+        self.set_runtime_duplex(log="compiler succeeded without activation\n")
+        with self.assertRaisesRegex(CheckError, "activation marker is missing"):
+            verify(self.output, "design", "runtime_duplex")
+
+        self.set_runtime_duplex(rtl=self.runtime_duplex_rtl().replace(
+            "MinimalAXI4MasterPipelinedWrite #(.B_MAX(16), .MAX_OUTSTANDING(1), .FIFO_DEPTH(32), .PEER_FAULT_ENABLE(1)) write_engine();\n", ""))
+        with self.assertRaisesRegex(CheckError, "exactly one write burst engine"):
+            verify(self.output, "design", "runtime_duplex")
+
+        self.set_runtime_duplex(rtl=self.runtime_duplex_rtl() +
+                                "MinimalAXI4AdapterSingleBeat legacy_engine();\n")
+        with self.assertRaisesRegex(CheckError, "legacy memory resource"):
+            verify(self.output, "design", "runtime_duplex")
 
     def test_inplace_duplex_requires_complete_positive_witnesses(self):
         self.set_inplace_duplex()
