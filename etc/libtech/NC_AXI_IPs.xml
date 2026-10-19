@@ -892,6 +892,7 @@ end
     reg issue_remaining_has_high;
     reg [COUNT_W-1:0] returned;
     reg [COUNT_W-1:0] consumed;
+    reg loads_exhausted;
 
     reg        cfg_seen;
     reg        cfg_pending;
@@ -979,7 +980,7 @@ end
         out1_reg = {BITSIZE_out1{1'b0}};
         fifo_load_done = 1'b0;
         configure_complete = 1'b0;
-        load_request_valid = region_active &amp;&amp; consumed &lt; region_count &amp;&amp;
+        load_request_valid = region_active &amp;&amp; !loads_exhausted &amp;&amp;
                              in2 == DATA_BITS &amp;&amp;
                              in4 == next_expected_address;
         configure_descriptor_valid = in2 == DATA_BITS &amp;&amp;
@@ -995,9 +996,7 @@ end
                                    (!region_active || drain_complete);
 
         if (!fault_reg &amp;&amp; !peer_fault_active) begin
-            if (load_pending &amp;&amp; load_pending_valid &amp;&amp;
-                pending_load_size_bits == DATA_BITS &amp;&amp;
-                pending_load_address == next_expected_address &amp;&amp; fifo_count != 0) begin
+            if (load_pending &amp;&amp; load_pending_valid &amp;&amp; fifo_count != 0) begin
                 done_reg = 1'b1;
                 out1_reg = fifo[fifo_rd_ptr];
                 fifo_load_done = 1'b1;
@@ -1071,7 +1070,7 @@ end
 
     assign drain_complete = region_active &amp;&amp;
         issued == region_count &amp;&amp; returned == region_count &amp;&amp;
-        consumed == region_count &amp;&amp; fifo_count == 0 &amp;&amp;
+        loads_exhausted &amp;&amp; fifo_count == 0 &amp;&amp;
         !m_axi_arvalid &amp;&amp; descriptor_count == 0 &amp;&amp; !load_pending;
     assign activate_pending = drain_complete &amp;&amp; cfg_pending;
 
@@ -1086,6 +1085,7 @@ end
             issue_remaining_has_high &lt;= 1'b0;
             returned &lt;= {COUNT_W{1'b0}};
             consumed &lt;= {COUNT_W{1'b0}};
+            loads_exhausted &lt;= 1'b0;
             cfg_seen &lt;= 1'b0;
             cfg_pending &lt;= 1'b0;
             cfg_size &lt;= {BITSIZE_in2{1'b0}};
@@ -1146,6 +1146,7 @@ end
                     issue_remaining_has_high &lt;= (|in5[COUNT_W-1:LEN_W]);
                     returned &lt;= {COUNT_W{1'b0}};
                     consumed &lt;= {COUNT_W{1'b0}};
+                    loads_exhausted &lt;= (in5 == 0);
                     fifo_rd_ptr &lt;= 0;
                     fifo_wr_ptr &lt;= 0;
                     fifo_count &lt;= 0;
@@ -1165,6 +1166,7 @@ end
                     issue_remaining_has_high &lt;= (|in5[COUNT_W-1:LEN_W]);
                     returned &lt;= {COUNT_W{1'b0}};
                     consumed &lt;= {COUNT_W{1'b0}};
+                    loads_exhausted &lt;= (in5 == 0);
                     fifo_rd_ptr &lt;= 0;
                     fifo_wr_ptr &lt;= 0;
                     fifo_count &lt;= 0;
@@ -1194,12 +1196,13 @@ end
                 load_pending &lt;= 1'b0;
                 load_pending_valid &lt;= 1'b0;
                 consumed &lt;= consumed + 1'b1;
+                if (consumed + 1'b1 == region_count)
+                    loads_exhausted &lt;= 1'b1;
                 if (fifo_rd_ptr == FIFO_DEPTH-1)
                     fifo_rd_ptr &lt;= 0;
                 else
                     fifo_rd_ptr &lt;= fifo_rd_ptr + 1'b1;
-                if (consumed + 1'b1 &lt; region_count)
-                    next_expected_address &lt;= next_expected_address + BEAT_BYTES;
+                next_expected_address &lt;= next_expected_address + BEAT_BYTES;
             end
 
             // Reserve and freeze one descriptor before asserting ARVALID.
@@ -1287,6 +1290,7 @@ end
                 issue_remaining_has_high &lt;= (|pending_count[COUNT_W-1:LEN_W]);
                 returned &lt;= {COUNT_W{1'b0}};
                 consumed &lt;= {COUNT_W{1'b0}};
+                loads_exhausted &lt;= (pending_count == 0);
                 fifo_rd_ptr &lt;= 0;
                 fifo_wr_ptr &lt;= 0;
                 fifo_count &lt;= 0;
@@ -1810,6 +1814,9 @@ end
     reg [BITSIZE_in2-1:0] store_size;
     reg [BITSIZE_in3-1:0] store_data;
     reg [ADDR_BITS-1:0] store_address;
+    reg [ADDR_BITS-1:0] next_store_address;
+    reg [COUNT_W-1:0] last_store_index;
+    reg stores_exhausted;
     reg [BITSIZE_out1-1:0] out1_reg;
     localparam integer DESC_DEPTH = (MAX_OUTSTANDING &lt; 1) ? 1 : MAX_OUTSTANDING;
     localparam integer DESC_PTR_W = (DESC_DEPTH &lt;= 2) ? 1 : $clog2(DESC_DEPTH);
@@ -1833,6 +1840,7 @@ end
     wire [END_BEAT_W-1:0] region_end;
     reg [LEN_W-1:0] burst_limit;
     reg [BOUNDARY_W-1:0] boundary_beats;
+    reg boundary_within_burst;
     reg [LEN_W-1:0] reserve_beats;
     wire [LEN_W:0] scheduled_low_sum;
     reg [ADDR_BITS-1:0] reserve_address;
@@ -1852,7 +1860,6 @@ end
     wire pending_store_changed;
     wire store_ack_match;
     wire [END_BEAT_W-1:0] address_end_limit;
-    wire [OFFSET_W-1:0] accepted_offset;
     wire [OFFSET_W-1:0] scheduled_offset;
     wire [BITSIZE_in3-1:0] fifo_head;
     wire b_ready;
@@ -1891,7 +1898,6 @@ end
     assign b_push = m_axi_bvalid &amp;&amp; m_axi_bready;
     assign b_fault_now = b_push &amp;&amp; ((|m_axi_bid) || (m_axi_bresp != 0));
     assign store_input = start &amp;&amp; (in1 == OP_STORE);
-    assign accepted_offset = {{(OFFSET_W-COUNT_W){1'b0}}, accepted} &lt;&lt; BEAT_SHIFT;
     assign scheduled_offset = {{(OFFSET_W-COUNT_W){1'b0}}, scheduled} &lt;&lt; BEAT_SHIFT;
     assign address_end_limit = {1'b1, {(ADDR_BITS-BEAT_SHIFT){1'b0}}};
     assign region_end = {{(END_BEAT_W-(ADDR_BITS-BEAT_SHIFT)){1'b0}},
@@ -1903,8 +1909,8 @@ end
         ((in5 == 0) || (region_end &lt;= address_end_limit));
     assign configure_capture = !peer_fault_active &amp;&amp; start &amp;&amp; (in1 == OP_CONFIGURE) &amp;&amp; !cfg_seen &amp;&amp;
                               !store_pending;
-    assign store_address_valid = in4 == (region_base + accepted_offset);
-    assign store_request_valid = region_active &amp;&amp; (accepted &lt; region_count) &amp;&amp;
+    assign store_address_valid = in4 == next_store_address;
+    assign store_request_valid = region_active &amp;&amp; !stores_exhausted &amp;&amp;
         (in2 == DATA_BITS) &amp;&amp; store_address_valid;
     assign direct_store = store_input &amp;&amp; (!store_seen || in2 != store_size ||
         in3 != store_data || in4 != store_address) &amp;&amp; !store_pending;
@@ -1942,7 +1948,7 @@ end
         reserve_beats = 0;
         reserve_address = region_base + scheduled_offset;
         burst_limit = B_MAX;
-        if (boundary_beats &lt; burst_limit)
+        if (boundary_within_burst &amp;&amp; boundary_beats[LEN_W-1:0] &lt; burst_limit)
             burst_limit = boundary_beats;
         if (!remaining_has_high &amp;&amp;
             remaining_beats[LEN_W-1:0] &lt; burst_limit)
@@ -1957,12 +1963,11 @@ end
             done_reg = 1'b1;
         if (!fault_reg &amp;&amp; !peer_fault_active &amp;&amp; drain_pending &amp;&amp; drain_complete)
             done_reg = 1'b1;
-        unassigned_fifo_count = fifo_count - reserved_data_count;
-        if (!region_active || (!remaining_has_high &amp;&amp;
-            (remaining_beats[LEN_W-1:0] == 0)) ||
-            (descriptor_count &gt;= MAX_OUTSTANDING) || fault_reg || peer_fault_active || b_fault_now)
-            burst_limit = 0;
-        else if (unassigned_fifo_count &gt;= burst_limit)
+        if (region_active &amp;&amp;
+            (remaining_has_high || (remaining_beats[LEN_W-1:0] != 0)) &amp;&amp;
+            (descriptor_count &lt; MAX_OUTSTANDING) &amp;&amp; !fault_reg &amp;&amp;
+            !peer_fault_active &amp;&amp; !b_fault_now &amp;&amp;
+            (unassigned_fifo_count &gt;= burst_limit))
             reserve_beats = burst_limit;
     end
 
@@ -1977,6 +1982,7 @@ end
             remaining_beats &lt;= 0;
             remaining_has_high &lt;= 1'b0;
             boundary_beats &lt;= 0;
+            boundary_within_burst &lt;= 1'b0;
             completed &lt;= 0;
             cfg_seen &lt;= 1'b0;
             store_seen &lt;= 1'b0;
@@ -1997,12 +2003,16 @@ end
             store_size &lt;= 0;
             store_data &lt;= 0;
             store_address &lt;= 0;
+            next_store_address &lt;= 0;
+            last_store_index &lt;= 0;
+            stores_exhausted &lt;= 1'b0;
             descriptor_alloc_ptr &lt;= 0;
             descriptor_aw_ptr &lt;= 0;
             descriptor_w_ptr &lt;= 0;
             descriptor_b_ptr &lt;= 0;
             descriptor_count &lt;= 0;
             reserved_data_count &lt;= 0;
+            unassigned_fifo_count &lt;= 0;
             for (i = 0; i &lt; DESC_DEPTH; i = i + 1) begin
                 descriptor_address[i] &lt;= 0;
                 descriptor_beats[i] &lt;= 0;
@@ -2048,7 +2058,12 @@ end
                     region_active &lt;= 1'b1;
                     region_base &lt;= in4;
                     region_count &lt;= in5[COUNT_W-1:0];
+                    next_store_address &lt;= in4;
+                    last_store_index &lt;= in5[COUNT_W-1:0] - 1'b1;
+                    stores_exhausted &lt;= (in5 == 0);
                     boundary_beats &lt;= BOUNDARY_BEATS - in4[11:BEAT_SHIFT];
+                    boundary_within_burst &lt;=
+                        ((BOUNDARY_BEATS - in4[11:BEAT_SHIFT]) &lt;= B_MAX);
                     accepted &lt;= 0;
                     scheduled &lt;= 0;
                     remaining_beats &lt;= in5[COUNT_W-1:0];
@@ -2063,6 +2078,7 @@ end
                     descriptor_b_ptr &lt;= 0;
                     descriptor_count &lt;= 0;
                     reserved_data_count &lt;= 0;
+                    unassigned_fifo_count &lt;= 0;
                     for (i = 0; i &lt; DESC_DEPTH; i = i + 1) begin
                         descriptor_valid[i] &lt;= 1'b0;
                         descriptor_aw_done[i] &lt;= 1'b0;
@@ -2089,6 +2105,9 @@ end
                     else
                         fifo_wr_ptr &lt;= fifo_wr_ptr + 1'b1;
                     accepted &lt;= accepted + 1'b1;
+                    next_store_address &lt;= next_store_address + BEAT_BYTES;
+                    if (accepted == last_store_index)
+                        stores_exhausted &lt;= 1'b1;
                 end
             end else if (store_pending) begin
                 if (pending_store_changed)
@@ -2100,6 +2119,9 @@ end
                     else
                         fifo_wr_ptr &lt;= fifo_wr_ptr + 1'b1;
                     accepted &lt;= accepted + 1'b1;
+                    next_store_address &lt;= next_store_address + BEAT_BYTES;
+                    if (accepted == last_store_index)
+                        stores_exhausted &lt;= 1'b1;
                     store_pending &lt;= 1'b0;
                 end
             end
@@ -2130,10 +2152,15 @@ end
                     descriptor_alloc_ptr &lt;= 0;
                 else
                     descriptor_alloc_ptr &lt;= descriptor_alloc_ptr + 1'b1;
-                if (reserve_beats == boundary_beats)
+                if (reserve_beats == boundary_beats) begin
                     boundary_beats &lt;= BOUNDARY_BEATS;
-                else
+                    boundary_within_burst &lt;= 1'b0;
+                end else begin
                     boundary_beats &lt;= boundary_beats - reserve_beats;
+                    if (boundary_within_burst ||
+                        (boundary_beats &lt;= (B_MAX + reserve_beats)))
+                        boundary_within_burst &lt;= 1'b1;
+                end
                 scheduled[LEN_W-1:0] &lt;= scheduled_low_sum[LEN_W-1:0];
                 if (scheduled_low_sum[LEN_W])
                     scheduled[COUNT_W-1:LEN_W] &lt;= scheduled[COUNT_W-1:LEN_W] + 1'b1;
@@ -2197,6 +2224,7 @@ end
                 2'b11: reserved_data_count &lt;= reserved_data_count + reserve_beats - 1'b1;
                 default: reserved_data_count &lt;= reserved_data_count;
             endcase
+            unassigned_fifo_count &lt;= unassigned_fifo_count + store_enqueue - reserve_beats;
             if (!store_pending &amp;&amp; !store_ack_pending &amp;&amp; region_active &amp;&amp;
                 (accepted == region_count) &amp;&amp;
                 drain_complete &amp;&amp; !fault_reg &amp;&amp;
