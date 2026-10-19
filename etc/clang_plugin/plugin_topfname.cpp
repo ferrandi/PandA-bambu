@@ -205,11 +205,18 @@ namespace llvm
                      F->removeFnAttr(llvm::Attribute::AlwaysInline);
                   }
                   F->addFnAttr(Attribute::NoInline);
-                  F->setLinkage(GlobalValue::LinkageTypes::ExternalLinkage);
+                  // Only tops stay external: dataflow modules get internalized so that IPSCCP and DAE can
+                  // propagate their constant arguments.
+                  const auto is_top = llvm::find(TopFunctionNames, fsymbol) != TopFunctionNames.end() ||
+                                      llvm::find(TopFunctionNames, fname) != TopFunctionNames.end();
+                  if(is_top)
+                  {
+                     F->setLinkage(GlobalValue::LinkageTypes::ExternalLinkage);
 #if PANDA_LLVM_CLANG_MAJOR >= 7
-                  F->setDSOLocal(false);
+                     F->setDSOLocal(false);
 #endif
-                  preservedSyms.addSymbol(fsymbol);
+                     preservedSyms.addSymbol(fsymbol);
+                  }
                   hasTopFun = true;
                   /// in case add noalias
                   if(add_noalias)
