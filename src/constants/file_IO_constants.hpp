@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -35,8 +23,6 @@
  * @brief constants used in Input/Output
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -51,5 +37,27 @@
 
 /// The source code default output file
 #define STR_CST_file_IO_source_code_output_file "output.c"
+
+/// Shell function that copies the output of a command both to a log file and to
+/// the console. The generated scripts use it in place of the system tee: tee is
+/// not part of the tool flow, and a tee dying mid-stream closes the pipe and
+/// kills the command whose output was being logged.
+constexpr auto SHELL_CST_record_output =
+    R"sh(record_output() {
+  python3 -u -c '
+import sys
+
+with open(sys.argv[1], "wb") as log_file:
+    while True:
+        data = sys.stdin.buffer.read1(65536)
+        if not data:
+            break
+        log_file.write(data)
+        log_file.flush()
+        sys.stdout.buffer.write(data)
+        sys.stdout.buffer.flush()
+' "$1"
+}
+)sh";
 
 #endif

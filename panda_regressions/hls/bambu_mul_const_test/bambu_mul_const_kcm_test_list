@@ -1,0 +1,5 @@
+mul_const.c --top-fname=mul_small_3 --generate-tb=a=37 --benchmark-name=kcm_mul_small_3
+mul_const.c --top-fname=mul_small_3 --generate-tb=a=-37 --benchmark-name=kcm_mul_small_3_negop
+mul_const.c --top-fname=mul_neg_3 --generate-tb=a=37 --benchmark-name=kcm_mul_neg_3
+mul_const.c --top-fname=mul_small_5 --generate-tb=a=11 --benchmark-name=kcm_mul_small_5
+mul_const.c --top-fname=mul_small_7 --generate-tb=a=19 --benchmark-name=kcm_mul_small_7

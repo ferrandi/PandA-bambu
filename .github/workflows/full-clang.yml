@@ -13,14 +13,16 @@ concurrency:
   group: full-clang-${{ github.head_ref }}
   cancel-in-progress: true
 
+env:
+  dist-dir: panda_dist
+
 jobs:
   build:
-    uses: ./.github/workflows/build-appimage.yml
+    uses: ./.github/workflows/build-panda.yml
     with:
       package-name: bambu-clang-full
-      compilers: gcc-7,clang-4,clang-5,clang-6,clang-7,clang-8,clang-9,clang-10,clang-11,clang-12,clang-13,clang-16
-      build-compiler: gcc-8
-      configure: --enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8 --with-gcc8=/bin/false
+      compilers: clang-4.0,clang-5.0,clang-6.0,clang-7,clang-8,clang-9,clang-10,clang-11,clang-12,clang-13,clang-16
+      configure: --enable-opt --with-opt-level=2 --enable-release
     secrets: inherit
 
   simulate-all:
@@ -43,36 +45,28 @@ jobs:
             script: all_clang_CHStone-frontend.sh -c=-wH
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
-          submodules: 'true'
-      - name: Download Bambu AppImage
+          submodules: "true"
+      - name: Download PandA distribution
         uses: ./.github/actions/storage-download
         with:
           name: ${{needs.build.outputs.package-name}}
           storage-url: "${{secrets.CI_STORAGE_URL}}"
           username: "${{secrets.CI_STORAGE_USER}}"
           password: "${{secrets.CI_STORAGE_TOKEN}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Launch test suite
         id: suite
         shell: bash
         run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          source ${{env.dist-dir}}/settings.sh
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "test-reports-dir=$out_dir" >> $GITHUB_OUTPUT
-          ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" ${{env.args}} ${{matrix.args}}
+          ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="$out_dir" --summary="$out_dir/perf.xml" ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{matrix.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
@@ -82,27 +76,53 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compiler: [I386_CLANG4, I386_CLANG5, I386_CLANG6, I386_CLANG7, I386_CLANG8, I386_CLANG9, I386_CLANG10, I386_CLANG11, I386_CLANG12, I386_CLANG13, I386_CLANG16]
+        compiler:
+          [
+            I386_CLANG4,
+            I386_CLANG5,
+            I386_CLANG6,
+            I386_CLANG7,
+            I386_CLANG8,
+            I386_CLANG9,
+            I386_CLANG10,
+            I386_CLANG11,
+            I386_CLANG12,
+            I386_CLANG13,
+            I386_CLANG16,
+          ]
     name: "GRS (Compiler: ${{matrix.compiler}})"
     uses: ./.github/workflows/reusable-grs.yml
     with:
       package-name: ${{needs.build.outputs.package-name}}
       compiler: ${{matrix.compiler}}
-      additional-args: -c=--simulator=VERILATOR -t150m 
+      additional-args: -c=--simulator=VERILATOR -t150m
     secrets: inherit
-  
+
   grs-sdc:
     needs: [build, grs]
     strategy:
       fail-fast: false
       matrix:
-        compiler: [I386_CLANG4, I386_CLANG5, I386_CLANG6, I386_CLANG7, I386_CLANG8, I386_CLANG9, I386_CLANG10, I386_CLANG11, I386_CLANG12, I386_CLANG13, I386_CLANG16]
+        compiler:
+          [
+            I386_CLANG4,
+            I386_CLANG5,
+            I386_CLANG6,
+            I386_CLANG7,
+            I386_CLANG8,
+            I386_CLANG9,
+            I386_CLANG10,
+            I386_CLANG11,
+            I386_CLANG12,
+            I386_CLANG13,
+            I386_CLANG16,
+          ]
     name: "GRS SDC (Compiler: ${{matrix.compiler}})"
     uses: ./.github/workflows/reusable-grs.yml
     with:
       package-name: ${{needs.build.outputs.package-name}}
       compiler: ${{matrix.compiler}}
-      additional-args: -c=--simulator=VERILATOR -t150m -c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1
+      additional-args: -c=--simulator=VERILATOR -t150m -c=--speculative-sdc-scheduling --skip-list 20040705-1,20040705-2,20040629-1
     secrets: inherit
 
   grs-vhdl:
@@ -119,6 +139,38 @@ jobs:
     with:
       package-name: ${{needs.build.outputs.package-name}}
       test-compiler: I386_CLANG16
+    secrets: inherit
+
+  openmp:
+    needs: [build, simulate-all]
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler:
+          [
+            I386_CLANG4,
+            I386_CLANG5,
+            I386_CLANG6,
+            I386_CLANG7,
+            I386_CLANG8,
+            I386_CLANG9,
+            I386_CLANG10,
+            I386_CLANG11,
+            I386_CLANG12,
+            I386_CLANG13,
+          ]
+    uses: ./.github/workflows/reusable-openmp.yml
+    with:
+      package-name: ${{needs.build.outputs.package-name}}
+      test-compiler: ${{matrix.compiler}}
+    secrets: inherit  
+
+  openmp-complex:
+    needs: [build, simulate-all]
+    uses: ./.github/workflows/reusable-openmp-complex.yml
+    with:
+      package-name: ${{needs.build.outputs.package-name}}
+      test-compiler: I386_CLANG13
     secrets: inherit
 
   success:

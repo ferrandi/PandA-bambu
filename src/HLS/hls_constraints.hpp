@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -38,23 +26,18 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef HLS_CONSTRAINTS_HPP
 #define HLS_CONSTRAINTS_HPP
 
-/// STD include
+#include "custom_map.hpp"
+#include "refcount.hpp"
+
 #include <iosfwd>
 #include <limits>
 #include <string>
 #include <utility>
-
-/// utility includes
-#include "custom_map.hpp"
-#include "refcount.hpp"
 
 REF_FORWARD_DECL(HLS_constraints);
 CONSTREF_FORWARD_DECL(Parameter);
@@ -109,7 +92,7 @@ class HLS_constraints
    /**
     * Gets the name of the function which the constraints are associated with
     */
-   std::string get_function_name() const;
+   std::string GetFunctionName() const;
 
    /**
     * Adds the builtin constraints
@@ -153,7 +136,7 @@ class HLS_constraints
 
    /**
     * This method returns the maximum number of functional units available for the design.
-    * @param combined is the name of the functional unit in the form <unit_name>:<library_name>
+    * @param combined is the name of the functional unit in the form `unit_name:library_name`
     * @return the maximum number of functional units available.
     */
    unsigned int get_number_fu(const std::string& combined) const;
@@ -234,13 +217,14 @@ class HLS_constraints
 
    /**
     * Writes the HLS constraints into an XML tree.
-    * @param Enode is the root node which the XML representation of the constraints is attached.
+    * @param rootnode is the root node which the XML representation of the constraints is attached.
     */
    void xwrite(xml_element* rootnode);
 
    /**
     * Writes the generic synthesis constraints
     * @param Enode is the node of the XML tree where the constraints will be stored.
+    * @param forDump controls whether additional dump metadata is produced
     */
    void xwriteHLSConstraints(xml_element* Enode, bool forDump = false);
 
@@ -248,9 +232,9 @@ class HLS_constraints
     * Writes the constraints on the functional units
     * @param Enode is the node of the XML tree where the constraint will be stored.
     * @param fu_name is the name of the functional unit
-    * @param number_fu is the number of the functional unit instances
     * @param fu_library is the name of the library where the functional unit fu_name is contained.
-    * @param fu_index is the ith functional unit instance.
+    * @param number_fu is the number of the functional unit instances
+    * @param forDump controls whether additional dump metadata is produced
     */
    void xwriteFUConstraints(xml_element* Enode, const std::string& fu_name, const std::string& fu_library,
                             unsigned int number_fu, bool forDump = false);
@@ -261,6 +245,7 @@ class HLS_constraints
     * @param vertex_name is the operation name
     * @param fu_name is the name of the functional unit
     * @param fu_library is the name of the library where the functional unit fu_name is contained.
+    * @param fu_index is the index of the functional unit instance bound to the operation
     */
    void xwriteBindingConstraints(xml_element* Enode, const std::string& vertex_name, const std::string& fu_name,
                                  const std::string& fu_library, unsigned int fu_index);

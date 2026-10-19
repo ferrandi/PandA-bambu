@@ -1,5 +1,0 @@
-EXTRA_DIST += \
-   %D%/generic_file_simulate.sh\
-   %D%/module.c \
-   %D%/README.txt \
-   %D%/test.xml

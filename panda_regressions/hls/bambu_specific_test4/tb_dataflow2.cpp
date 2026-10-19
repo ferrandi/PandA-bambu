@@ -4,8 +4,8 @@
 
 int main()
 {
-   ac_channel<int> in1 = {1, 2};
-   ac_channel<int> in2 = {5, 7};
+   ac_channel<int> in1 = {1, 2, -3, -5};
+   ac_channel<int> in2 = {5, 7, 2, 2};
    ac_channel<int> out;
 
    assert(in1.size() == in2.size() && "Input channels must have same size.");

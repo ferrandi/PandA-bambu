@@ -3,6 +3,7 @@
  * January, 27 2016.
  *
  */
+/* Public domain.  */
 
 void* rawmemchr(const void* s, int c)
 {

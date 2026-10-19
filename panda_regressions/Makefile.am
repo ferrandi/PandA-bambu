@@ -1,2 +1,0 @@
-SUBDIRS = hls
-DIST_SUBDIRS = hls

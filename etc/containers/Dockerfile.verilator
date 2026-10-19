@@ -1,32 +1,29 @@
 ARG BASE=ubuntu:bionic
 
-#---
-
-FROM $BASE AS base
-
-#---
-
-FROM base AS build
-
-RUN apt-get update \
-   && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
-   autoconf bc bison build-essential ca-certificates ccache flex git \
+FROM ${BASE} AS build
+ARG DEBIAN_FRONTEND=noninteractive
+ARG DEBCONF_NONINTERACTIVE_SEEN=true
+ARG VERILATOR_VERSION=v5.026
+RUN apt-get update && apt-get install --no-install-recommends -y \
+   autoconf bc bison build-essential ca-certificates flex git help2man \
    libfl-dev libgoogle-perftools-dev perl python3 \
-   && apt-get autoclean && apt-get clean && apt-get -y autoremove \
+   && rm -rf /var/lib/apt/lists/* \
    && update-ca-certificates \
-   && rm -rf /var/lib/apt/lists
-
-RUN git clone --branch v4.028 https://github.com/verilator/verilator.git verilator \
+   && git clone --branch ${VERILATOR_VERSION} https://github.com/verilator/verilator.git verilator \
    && cd verilator \
    && autoconf \
    && ./configure --prefix=/opt/verilator \
-   && make -j4 \
+   && make -j16 \
    && make install
 
-#---
 
-FROM base 
+FROM ${BASE} AS verilator
+ARG DEBIAN_FRONTEND=noninteractive
+ARG DEBCONF_NONINTERACTIVE_SEEN=true
+RUN apt-get update && apt-get install --no-install-recommends -y \
+   gcc libfl2 zlib1g perl python3 \
+   && rm -rf /var/lib/apt/lists/*
+COPY --link --from=build /opt/verilator /opt/verilator
+ENV PATH=/opt/verilator/bin:$PATH
 
-COPY --from=build /opt/verilator /opt/verilator
-
-ENV PATH /opt/verilator/bin:$PATH
+CMD [ "/bin/bash" ]

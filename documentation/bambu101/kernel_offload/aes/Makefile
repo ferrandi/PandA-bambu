@@ -2,12 +2,12 @@ BAMBU?=bambu
 
 CFLAGS?=-O3 -m32 -Wall -Wno-unused-label
 TOP_FNAME?=aes256_encrypt_ecb
-BAMBU_FLAGS?=--compiler=I386_GCC49 -O1 -m32 --generate-interface=INFER --generate-tb=aes_test.c --simulate
+BAMBU_FLAGS?=--compiler=I386_CLANG16 -O1 -m32 --generate-interface=INFER --generate-tb=aes_test.c --simulate
 
-BAMBU_FLAGS_EXTRA=--top-fname=$(TOP_FNAME) --simulator=VERILATOR --verilator-parallel=4 -v4 --print-dot --no-clean
+BAMBU_FLAGS_EXTRA=--top-fname=$(TOP_FNAME) --simulator=VERILATOR --parallel-backend=4 -v4 --print-dot --no-clean
 # BAMBU_FLAGS_EXTRA+= -fno-unroll-loops
 # BAMBU_FLAGS_EXTRA+= --enable-function-proxy
-# BAMBU_FLAGS_EXTRA+= -fno-inline-functions -fno-inline --panda-parameter=function-opt=0
+# BAMBU_FLAGS_EXTRA+= -fno-inline-functions -fno-inline --bambu-parameter=function-opt=0
 
 CFLAGS_EXTRA=-I../common
 LD_FLAGS_EXTRA=-Wl,-rpath,.
