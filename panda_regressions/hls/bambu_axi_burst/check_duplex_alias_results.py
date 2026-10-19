@@ -10,6 +10,8 @@ import shlex
 import sys
 from pathlib import Path
 
+from check_burst_results import _parameterized_instances
+
 
 PROFILES = {"symmetric": "1", "asymmetric": "2"}
 SCENARIOS = {"disjoint": "1", "forward-overlap": "2", "reverse-overlap": "3", "zero-trip": "4"}
@@ -249,6 +251,7 @@ def check_range_probe(out: Path, args: argparse.Namespace) -> None:
         "testbench": str(args.range_probe_testbench.resolve()),
         "runner": str(args.range_probe_runner.resolve()),
         "verilator": str(args.simulator.resolve()),
+        "addr_bits": str(args.addr_bits),
     }
     for key, value in expected.items():
         need(fields.get(key) == value, f"range probe provenance {key} mismatch")
@@ -262,6 +265,8 @@ def check_range_probe(out: Path, args: argparse.Namespace) -> None:
     need(argv and argv[0] == str(args.simulator.resolve()), "range probe executable does not match configured Verilator")
     need("--binary" in argv and "--timing" in argv and "--trace" in argv,
          "range probe does not build a timed Verilator simulation with diagnostic tracing")
+    need(argv.count(f"-DDUPLEX_ALIAS_ADDR_BITS={args.addr_bits}") == 1,
+         "range probe Verilator argv does not select the requested address width exactly once")
     need(argv.count("--top-module") == 1 and
          argv[argv.index("--top-module") + 1] == "tb_duplex_alias_range_guard",
          "range probe top module mismatch")
@@ -280,17 +285,24 @@ def check_range_probe(out: Path, args: argparse.Namespace) -> None:
         "DUPLEX_ALIAS_RANGE_PASS CASE=byte-count-overflow ARLEN=0",
         "DUPLEX_ALIAS_RANGE_PASS CASE=read-end-equals-2p32 ARLEN=15",
     ]
+    if args.addr_bits == 64:
+        expected_markers.append(
+            "DUPLEX_ALIAS_RANGE_PASS CASE=high-bit-valid-disjoint ARLEN=15 ARADDR=0000000080001000")
     lines = probe_log.read_text(encoding="utf-8", errors="strict").splitlines()
     observed = [line for line in lines if line.startswith("DUPLEX_ALIAS_RANGE_PASS CASE=")]
     need(observed == expected_markers, f"range probe scenario markers mismatch: {observed!r}")
-    for case_name in ("valid-disjoint", "read-end-overflow", "write-end-overflow",
-                      "byte-count-overflow", "read-end-equals-2p32"):
+    case_names = ["valid-disjoint", "read-end-overflow", "write-end-overflow",
+                  "byte-count-overflow", "read-end-equals-2p32"]
+    if args.addr_bits == 64:
+        case_names.append("high-bit-valid-disjoint")
+    for case_name in case_names:
         safe_file(probe_dir / f"range_guard_{case_name}.vcd", f"range-probe {case_name} VCD")
     summary = "DUPLEX_ALIAS_RANGE_GUARD_PASS CASES=1 NO_AXI_HANDSHAKES=1"
     summaries = [line for line in lines if line.startswith("DUPLEX_ALIAS_RANGE_GUARD_PASS")]
-    need(summaries == [summary] * 5, "range probe lacks one no-handshake marker per isolated case")
+    need(summaries == [summary] * len(case_names), "range probe lacks one no-handshake marker per isolated case")
     runner_log = safe_file(out / "rtl_range_guard_runner.log", "range-probe runner log")
-    expected_runner_marker = (f"DUPLEX_ALIAS_RANGE_PROBE PASS CASES=5 RTL_SHA256={sha256(kernel)} "
+    expected_runner_marker = (f"DUPLEX_ALIAS_RANGE_PROBE PASS CASES={len(case_names)} ADDR_BITS={args.addr_bits} "
+                              f"RTL_SHA256={sha256(kernel)} "
                               f"OUTPUT={probe_dir}")
     need(runner_log.read_text(encoding="utf-8", errors="strict").splitlines() == [expected_runner_marker],
          "range-probe runner log lacks exact success/provenance marker")
@@ -309,6 +321,7 @@ def check_case(out: Path, profile: str, scenario: str, args: argparse.Namespace)
         "scenario": scenario,
         "scenario_id": scenario_id,
         "feature": "1",
+        "addr_bits": str(args.addr_bits),
         "output": str(case_dir),
         "source": str(args.source.resolve()),
         "testbench": str(args.testbench.resolve()),
@@ -372,6 +385,8 @@ def check_case(out: Path, profile: str, scenario: str, args: argparse.Namespace)
          f"{profile}/{scenario}: invocation executable/source mismatch")
     need("--simulate" in argv and "--simulator=VERILATOR" in argv,
          f"{profile}/{scenario}: invocation does not run Verilator simulation")
+    need(argv.count(f"--addr-bus-bitsize={args.addr_bits}") == 1,
+         f"{profile}/{scenario}: invocation must select AXI address width {args.addr_bits} exactly once")
     need(argv.count("--memory-allocation-policy=NO_BRAM") == 1,
          f"{profile}/{scenario}: invocation must select NO_BRAM for delayed memory responses")
     need(argv.count("--debug-classes=InterfaceInfer,BuildVirtualPhi") == 1,
@@ -390,6 +405,33 @@ def check_case(out: Path, profile: str, scenario: str, args: argparse.Namespace)
          argv.count(f"--extra-cc-options=-DDUPLEX_ALIAS_CASE={scenario_id}") == 1,
          f"{profile}/{scenario}: invocation profile/scenario selection mismatch")
 
+    expected_profile = ({"B_MAX": "16", "MAX_OUTSTANDING": "1", "FIFO_DEPTH": "64"}
+                        if profile == "symmetric" else
+                        {"B_MAX": "16", "MAX_OUTSTANDING": "2", "FIFO_DEPTH": "64"})
+    expected_write_profile = ({"B_MAX": "16", "MAX_OUTSTANDING": "1", "FIFO_DEPTH": "32"}
+                              if profile == "symmetric" else
+                              {"B_MAX": "8", "MAX_OUTSTANDING": "1", "FIFO_DEPTH": "16"})
+    expected_read_profile = {**expected_profile, "BITSIZE_in4": str(args.addr_bits),
+                             "BITSIZE_m_axi_araddr": str(args.addr_bits), "BITSIZE_in5": "32",
+                             "BITSIZE_m_axi_rdata": "32"}
+    expected_write = {**expected_write_profile, "BITSIZE_in4": str(args.addr_bits),
+                      "BITSIZE_m_axi_awaddr": str(args.addr_bits), "BITSIZE_in5": "32",
+                      "BITSIZE_in3": "32", "BITSIZE_m_axi_wdata": "32"}
+    rtl_files = [path for path in case_dir.rglob("*") if path.is_file() and path.suffix.lower() in {".v", ".sv"}
+                 and path.name != "panda_libtech.v"]
+    read_instances = [parameters for path in rtl_files
+                      for parameters in _parameterized_instances(path.read_text(encoding="utf-8", errors="replace"),
+                                                                  "MinimalAXI4MasterPipelined")]
+    write_instances = [parameters for path in rtl_files
+                       for parameters in _parameterized_instances(path.read_text(encoding="utf-8", errors="replace"),
+                                                                   "MinimalAXI4MasterPipelinedWrite")]
+    need(len(read_instances) == 1 and all(read_instances[0].get(key) == value
+                                          for key, value in expected_read_profile.items()),
+         f"{profile}/{scenario}: expected exactly one read engine with complete {args.addr_bits}-bit profile")
+    need(len(write_instances) == 1 and all(write_instances[0].get(key) == value
+                                           for key, value in expected_write.items()),
+         f"{profile}/{scenario}: expected exactly one write engine with complete {args.addr_bits}-bit profile")
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -403,9 +445,13 @@ def main() -> int:
     parser.add_argument("--runner", required=True, type=Path)
     parser.add_argument("--range-probe-runner", required=True, type=Path)
     parser.add_argument("--range-probe-testbench", required=True, type=Path)
+    parser.add_argument("--addr-bits", required=True, type=int, choices=(32, 64))
     args = parser.parse_args()
     out = args.output.resolve(strict=True)
     need(out.is_dir() and not args.output.is_symlink(), "output root missing or symlink")
+    root_provenance = safe_file(out / "provenance.txt", "run provenance").read_text(encoding="utf-8", errors="strict")
+    root_address_widths = re.findall(r"(?m)^addr_bits=(\d+)$", root_provenance)
+    need(root_address_widths == [str(args.addr_bits)], "run provenance address width mismatch")
     for path, label in ((args.source, "source"), (args.testbench, "testbench"), (args.bambu, "Bambu"),
                         (args.settings, "settings"), (args.plugin, "plugin"), (args.simulator, "simulator"),
                         (args.runner, "runner"), (args.range_probe_runner, "range-probe runner"),

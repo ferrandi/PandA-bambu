@@ -71,6 +71,7 @@ if [[ ${RANGE_PROBE_MODE:-good} != missing ]]; then
     +CASE=write-end-overflow) marker='DUPLEX_ALIAS_RANGE_PASS CASE=write-end-overflow ARLEN=0' ;;
     +CASE=byte-count-overflow) marker='DUPLEX_ALIAS_RANGE_PASS CASE=byte-count-overflow ARLEN=0' ;;
     +CASE=read-end-equals-2p32) marker='DUPLEX_ALIAS_RANGE_PASS CASE=read-end-equals-2p32 ARLEN=15' ;;
+    +CASE=high-bit-valid-disjoint) marker='DUPLEX_ALIAS_RANGE_PASS CASE=high-bit-valid-disjoint ARLEN=15 ARADDR=0000000080001000' ;;
     *) exit 3 ;;
   esac
   printf '%s\n%s\n' "$marker" 'DUPLEX_ALIAS_RANGE_GUARD_PASS CASES=1 NO_AXI_HANDSHAKES=1'
@@ -86,14 +87,15 @@ chmod +x "$mdir/Vtb_duplex_alias_range_guard"
 set -eu
 if [[ ${1:-} == --version ]]; then echo "stub bambu 1"; exit 0; fi
 if [[ ${FAKE_BAMBU_FAIL:-} == 1 ]]; then echo "forced compiler failure" >&2; exit 9; fi
-profile= case_id=
+profile= case_id= address_bits=
 for arg in "$@"; do
   case $arg in
     --extra-cc-options=-DDUPLEX_ALIAS_PROFILE=*) profile=${arg##*=};;
     --extra-cc-options=-DDUPLEX_ALIAS_CASE=*) case_id=${arg##*=};;
+    --addr-bus-bitsize=*) address_bits=${arg#*=};;
   esac
 done
-[[ -n $profile && -n $case_id ]]
+[[ -n $profile && -n $case_id && -n $address_bits ]]
 case ${SCENARIO_MARKER_MODE:-good} in
   wrong) scenario=unexpected ;;
   missing) scenario= ;;
@@ -117,7 +119,17 @@ case ${PROOF_MODE:-good} in
 esac
 mkdir -p HLS_output/simulation
 printf '<results/\n' > bambu_results.xml
-printf 'module kernel; endmodule\n' > kernel.v
+read_outstanding=1; write_burst=16; write_fifo=32
+[[ $profile != 2 ]] || { read_outstanding=2; write_burst=8; write_fifo=16; }
+read_addr=$address_bits; write_addr=$address_bits
+if [[ ${RTL_PROFILE_MODE:-good} == mismatch64 ]]; then read_addr=32; write_addr=32; fi
+if [[ ${RTL_PROFILE_MODE:-good} == split ]]; then
+  printf 'module kernel; MinimalAXI4MasterPipelined #(.B_MAX(16), .MAX_OUTSTANDING(%s), .FIFO_DEPTH(64), .BITSIZE_in4(32), .BITSIZE_m_axi_araddr(16), .BITSIZE_in5(32), .BITSIZE_m_axi_rdata(32)) read_profile_engine (); MinimalAXI4MasterPipelined #(.B_MAX(8), .MAX_OUTSTANDING(%s), .FIFO_DEPTH(64), .BITSIZE_in4(32), .BITSIZE_m_axi_araddr(32), .BITSIZE_in5(32), .BITSIZE_m_axi_rdata(32)) read_width_engine (); MinimalAXI4MasterPipelinedWrite #(.B_MAX(%s), .MAX_OUTSTANDING(1), .FIFO_DEPTH(%s), .BITSIZE_in4(32), .BITSIZE_m_axi_awaddr(32), .BITSIZE_in5(32), .BITSIZE_in3(32), .BITSIZE_m_axi_wdata(32)) write_engine (); endmodule\n' \
+    "$read_outstanding" "$read_outstanding" "$write_burst" "$write_fifo" > kernel.v
+else
+  printf 'module kernel; MinimalAXI4MasterPipelined #(.B_MAX(16), .MAX_OUTSTANDING(%s), .FIFO_DEPTH(64), .BITSIZE_in4(%s), .BITSIZE_m_axi_araddr(%s), .BITSIZE_in5(32), .BITSIZE_m_axi_rdata(32)) read_engine (); MinimalAXI4MasterPipelinedWrite #(.B_MAX(%s), .MAX_OUTSTANDING(1), .FIFO_DEPTH(%s), .BITSIZE_in4(%s), .BITSIZE_m_axi_awaddr(%s), .BITSIZE_in5(32), .BITSIZE_in3(32), .BITSIZE_m_axi_wdata(32)) write_engine (); endmodule\n' \
+    "$read_outstanding" "$read_addr" "$read_addr" "$write_burst" "$write_fifo" "$write_addr" "$write_addr" > kernel.v
+fi
 printf 'module library_stub; endmodule\n' > panda_libtech.v
 if [[ -n $scenario ]]; then
   count=64
@@ -209,6 +221,19 @@ printf 'stub compiler stdout\n'
         return subprocess.run(args, cwd=ROOT, env=env, text=True,
                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
+    def check_output(self, out: Path, address_bits: int) -> subprocess.CompletedProcess[str]:
+        args = ["python3", "-B", str(HERE / "check_duplex_alias_results.py"), str(out),
+                "--source", str(HERE / "bambu_axi_burst_duplex_alias.cpp"),
+                "--testbench", str(HERE / "bambu_axi_burst_duplex_alias_tb.cpp"),
+                "--bambu", str(self.bambu), "--settings", str(self.prefix / "settings.sh"),
+                "--plugin", str(self.prefix / "lib/panda/clang-16/ASTAnalyzer.so"),
+                "--simulator", str(self.bin / "verilator"), "--runner", str(RUNNER),
+                "--range-probe-runner", str(HERE / "rtl_tests/run_duplex_alias_range_guard.sh"),
+                "--range-probe-testbench", str(HERE / "rtl_tests/tb_duplex_alias_range_guard.sv"),
+                "--addr-bits", str(address_bits)]
+        return subprocess.run(args, cwd=ROOT, env=self.env, text=True,
+                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
     def test_runs_exact_eight_case_matrix_with_isolated_dirs_and_digests(self) -> None:
         out = self.root / "fresh-output"
         result = self.invoke(out, BURST_DUPLEX_ALIAS_SIM_OUTSIDE_SANDBOX="1", DUPLEX_ALIAS_JOBS="3")
@@ -260,10 +285,71 @@ printf 'stub compiler stdout\n'
         self.assertIn(str(out / "symmetric/disjoint/kernel.v"), probe_argv)
         self.assertIn(str(out / "symmetric/disjoint/panda_libtech.v"), probe_argv)
         self.assertIn(str(HERE / "rtl_tests/tb_duplex_alias_range_guard.sv"), probe_argv)
-        self.assertIn("DUPLEX_ALIAS_RANGE_PROBE PASS CASES=5", (out / "rtl_range_guard_runner.log").read_text())
+        self.assertIn("DUPLEX_ALIAS_RANGE_PROBE PASS CASES=5 ADDR_BITS=32", (out / "rtl_range_guard_runner.log").read_text())
         for case_name in ("valid-disjoint", "read-end-overflow", "write-end-overflow",
                           "byte-count-overflow", "read-end-equals-2p32"):
             self.assertTrue((probe_dir / f"range_guard_{case_name}.vcd").is_file())
+
+    def test_64_bit_address_bus_keeps_pointer_arguments_32_bit(self) -> None:
+        out = self.root / "address-64"
+        result = self.invoke(out, BURST_DUPLEX_ALIAS_SIM_OUTSIDE_SANDBOX="1",
+                             DUPLEX_ALIAS_ADDRESS_BITS="64")
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("DUPLEX_ALIAS_RANGE_PROBE PASS CASES=6 ADDR_BITS=64", result.stdout)
+        root_fields = dict(line.split("=", 1) for line in (out / "provenance.txt").read_text().splitlines()
+                           if "=" in line and not line.startswith("argv="))
+        self.assertEqual(root_fields["addr_bits"], "64")
+        for profile in ("symmetric", "asymmetric"):
+            case_dir = out / profile / "disjoint"
+            fields = dict(line.split("=", 1) for line in (case_dir / "provenance.txt").read_text().splitlines()
+                          if "=" in line and not line.startswith("argv="))
+            self.assertEqual(fields["addr_bits"], "64")
+            argv = shlex.split(next(line for line in (case_dir / "provenance.txt").read_text().splitlines()
+                                    if line.startswith("argv="))[5:])
+            self.assertEqual(argv.count("--addr-bus-bitsize=64"), 1)
+            rtl = (case_dir / "kernel.v").read_text()
+            self.assertIn("BITSIZE_in4(64)", rtl)
+            self.assertIn("BITSIZE_in5(32)", rtl)
+            self.assertIn("BITSIZE_in3(32)", rtl)
+        self.assertIn("CASE=high-bit-valid-disjoint ARLEN=15 ARADDR=0000000080001000",
+                      (out / "rtl_range_guard/probe.log").read_text())
+
+    def test_invalid_address_width_is_rejected_before_output_creation(self) -> None:
+        out = self.root / "invalid-address-width"
+        result = self.invoke(out, BURST_DUPLEX_ALIAS_SIM_OUTSIDE_SANDBOX="1",
+                             DUPLEX_ALIAS_ADDRESS_BITS="48")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("must be 32 or 64", result.stdout)
+        self.assertFalse(out.exists())
+
+    def test_checker_rejects_address_width_provenance_and_argv_mismatch(self) -> None:
+        out = self.root / "provenance-mismatch"
+        result = self.invoke(out, BURST_DUPLEX_ALIAS_SIM_OUTSIDE_SANDBOX="1")
+        self.assertEqual(result.returncode, 0, result.stdout)
+        scenario_file = out / "symmetric/disjoint/provenance.txt"
+        original = scenario_file.read_text()
+        scenario_file.write_text(original.replace("--addr-bus-bitsize=32", "--addr-bus-bitsize=64"))
+        result = self.check_output(out, 32)
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertIn("must select AXI address width 32 exactly once", result.stdout)
+        scenario_file.write_text(original)
+        root_file = out / "provenance.txt"
+        original_root = root_file.read_text()
+        root_file.write_text(original_root.replace("addr_bits=32", "addr_bits=64"))
+        result = self.check_output(out, 32)
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertIn("run provenance address width mismatch", result.stdout)
+
+    def test_rtl_address_width_mismatch_and_split_profiles_fail_closed(self) -> None:
+        for mode, selected_bits in (("mismatch64", "64"), ("split", "32")):
+            with self.subTest(mode=mode):
+                out = self.root / f"rtl-{mode}"
+                result = self.invoke(out, BURST_DUPLEX_ALIAS_SIM_OUTSIDE_SANDBOX="1",
+                                     DUPLEX_ALIAS_ADDRESS_BITS=selected_bits, RTL_PROFILE_MODE=mode)
+                self.assertNotEqual(result.returncode, 0, result.stdout)
+                expected = "complete 64-bit profile" if mode == "mismatch64" else "exactly one read engine"
+                self.assertIn(expected, result.stdout)
+                self.assertFalse((out / "aggregate.log").read_text().startswith("DUPLEX_ALIAS_PASS"))
 
     def test_simulation_requires_explicit_outside_sandbox_opt_in(self) -> None:
         out = self.root / "must-not-exist"
