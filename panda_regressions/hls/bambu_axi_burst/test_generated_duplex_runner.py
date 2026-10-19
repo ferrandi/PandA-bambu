@@ -53,7 +53,8 @@ a = p.parse_args(); out = Path(a.output); fields = {}
 for line in (out / 'provenance.txt').read_text().splitlines():
     key, value = line.split('=', 1); fields[key] = value
 required = {'top','source','source_sha256','bambu','bambu_sha256','plugin','plugin_sha256',
-            'checker','checker_sha256','runner','runner_sha256','raw_ir','raw_ir_sha256'}
+            'checker','checker_sha256','runner','runner_sha256','raw_ir','raw_ir_sha256',
+            'post_interface_raw','post_interface_raw_sha256'}
 assert fields.keys() == required, fields.keys()
 assert fields['top'] == a.top
 for key, path in [('source', a.source), ('bambu', a.bambu), ('plugin', a.plugin),
@@ -63,6 +64,9 @@ for key, path in [('source', a.source), ('bambu', a.bambu), ('plugin', a.plugin)
 raw = Path(fields['raw_ir'])
 assert raw.is_file() and raw.resolve().is_relative_to(out.resolve())
 assert fields['raw_ir_sha256'] == hashlib.sha256(raw.read_bytes()).hexdigest()
+post_raw = Path(fields['post_interface_raw'])
+assert post_raw.is_file() and post_raw.resolve().is_relative_to(out.resolve())
+assert fields['post_interface_raw_sha256'] == hashlib.sha256(post_raw.read_bytes()).hexdigest()
 """)
         self.bin = self.scratch / "bin"
         self.bin.mkdir()
@@ -100,6 +104,7 @@ printf 'module %s(); endmodule\\n' "$profile" >"$profile.v"
 printf 'module generated_library(); endmodule\\n' >panda_libtech.v
 mkdir -p panda-temp
 printf 'raw-ir %s\\n' "$profile" >panda-temp/before_Frontend::InterfaceInfer.raw
+printf 'post-raw-ir %s\\n' "$profile" >panda-temp/after_Frontend::InterfaceInfer.raw
 """
 
     @staticmethod
@@ -195,7 +200,13 @@ chmod +x "$mdir/Vtb_generated_duplex"
         for profile in PROFILES:
             manifest = output / profile / "generated" / "provenance.txt"
             self.assertTrue(manifest.is_file())
-            self.assertIn("raw_ir_sha256=", manifest.read_text())
+            fields = dict(line.split("=", 1) for line in manifest.read_text().splitlines())
+            for stem in ("raw_ir", "post_interface_raw"):
+                artifact = Path(fields[stem])
+                self.assertTrue(artifact.is_file())
+                self.assertTrue(artifact.resolve().is_relative_to(manifest.parent.resolve()))
+                self.assertEqual(fields[f"{stem}_sha256"],
+                                 hashlib.sha256(artifact.read_bytes()).hexdigest())
             for scenario in SCENARIOS:
                 log = output / profile / "scenarios" / f"{scenario}.log"
                 self.assertIn(f"GENERATED_DUPLEX PASS CASE={scenario} PROFILE={profile}", log.read_text())

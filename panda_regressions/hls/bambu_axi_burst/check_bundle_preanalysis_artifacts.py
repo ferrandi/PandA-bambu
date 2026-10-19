@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 import xml.etree.ElementTree as ET
@@ -78,6 +79,86 @@ def verify_inplace_duplex(top: str, rtl: str, log: str, bundles: dict[str, dict[
     marker = f"Activated same-base pointwise duplex m_axi bundle shared for root {top}"
     need(len(re.findall(rf"(?m)^\s*(?:---)?{re.escape(marker)}\s*$", log)) == 1,
          "same-base pointwise duplex activation marker is missing or duplicated")
+
+
+def verify_runtime_duplex(top: str, rtl: str, log: str, stderr: str,
+                          bundles: dict[str, dict[str, str]],
+                          parameters: list[ET.Element]) -> None:
+    shared = bundles.get("shared", {})
+    need(shared.get("mode") == "m_axi" and shared.get("max_read_burst_length") == "16" and
+         shared.get("num_read_outstanding") == "1" and shared.get("read_fifo_depth") == "32" and
+         shared.get("max_write_burst_length") == "16" and
+         shared.get("write_burst_outstanding") == "1",
+         "runtime-guarded duplex must retain the shared read/write B=16/O=1 profiles")
+    owner_parameters: dict[str, list[ET.Element]] = {}
+    for node in parameters:
+        if node.get("port") in {"src", "dst"}:
+            owner_parameters.setdefault(node.get("port", ""), []).append(node)
+    need(set(owner_parameters) == {"src", "dst"} and
+         all(len(owner_parameters[port]) == 1 and
+             owner_parameters[port][0].get("bundle") == "shared" and
+             owner_parameters[port][0].get("source_restrict") == "0"
+             for port in ("src", "dst")),
+         "runtime-guarded duplex must map distinct unrestricted src/dst owners to shared")
+
+    proof_records = []
+    for line in stderr.splitlines():
+        marker = "AXI_BURST_DUPLEX_PROOF "
+        if marker in line:
+            payload = line.split(marker, 1)[1].strip()
+            try:
+                proof_records.append(json.loads(payload))
+            except json.JSONDecodeError as exc:
+                raise CheckError("malformed structured duplex proof record") from exc
+    need(len(proof_records) == 1, "expected exactly one structured duplex proof record")
+    proof = proof_records[0]
+    need(proof.get("bundle") == "shared" and proof.get("semantic_proof") is True and
+         proof.get("proof_kind") == "distinct_base_runtime_guarded_pointwise" and
+         proof.get("runtime_range_guard") is True,
+         "structured proof is not a successful runtime-range-guarded distinct-base proof")
+    read_owner = proof.get("read_owner_argument_index")
+    write_owner = proof.get("write_owner_argument_index")
+    need(type(read_owner) is int and type(write_owner) is int and read_owner != write_owner,
+         "runtime proof must identify two distinct read/write owners")
+
+    for component, label in (("MinimalAXI4MasterPipelined", "read"),
+                             ("MinimalAXI4MasterPipelinedWrite", "write")):
+        instances = component_blocks(rtl, component)
+        need(len(instances) == 1, f"runtime duplex must instantiate exactly one {label} burst engine")
+        params = {name: value for name, value in re.findall(r"\.([A-Za-z0-9_]+)\s*\(\s*([^()]+?)\s*\)", instances[0])}
+        expected = {"B_MAX": "16", "MAX_OUTSTANDING": "1",
+                    "FIFO_DEPTH": "32", "PEER_FAULT_ENABLE": "1"}
+        need(all(params.get(name) == value for name, value in expected.items()),
+             f"runtime duplex {label} engine does not apply the retained burst profile")
+    need(not LEGACY_COMPONENT.search(rtl),
+         "runtime duplex RTL unexpectedly instantiates a legacy memory resource")
+
+    definitions = re.findall(r"(?m)^\s*module\s+([A-Za-z0-9_$]*_duplex_aggregator_modgen)\s*\(", rtl)
+    need(len(definitions) == 1, "runtime duplex must define exactly one physical-bundle aggregator")
+    instance_matches = list(re.finditer(
+        rf"(?m)^\s*{re.escape(definitions[0])}\s+[A-Za-z0-9_$]+\s*\(", rtl))
+    instances = []
+    for match in instance_matches:
+        end = rtl.find(");", match.end())
+        need(end >= 0, "unterminated runtime duplex aggregator instance")
+        instances.append(rtl[match.start():end + 2])
+    need(len(instances) == 1 and ".p_m_axi_shared_araddr(" in instances[0] and
+         ".p_m_axi_shared_awaddr(" in instances[0],
+         "runtime duplex aggregator is missing or disconnected from a shared address channel")
+
+    endpoint_ops = {
+        "configure_read": r"fuselector_[A-Za-z0-9_$]*_duplex_read_endpoint(?:_[A-Za-z0-9_$]+)*_configure_read\b",
+        "load": r"fuselector_[A-Za-z0-9_$]*_duplex_read_endpoint(?:_[A-Za-z0-9_$]+)*_burst_read\b",
+        "configure_write": r"fuselector_[A-Za-z0-9_$]*_duplex_write_endpoint(?:_[A-Za-z0-9_$]+)*_configure_write\b",
+        "store": r"fuselector_[A-Za-z0-9_$]*_duplex_write_endpoint(?:_[A-Za-z0-9_$]+)*_store_write\b",
+        "drain": r"fuselector_[A-Za-z0-9_$]*_duplex_write_endpoint(?:_[A-Za-z0-9_$]+)*_drain_write\b",
+    }
+    need(all(re.search(pattern, rtl) for pattern in endpoint_ops.values()),
+         "runtime duplex is missing one or more duplex CONFIGURE/LOAD/STORE/DRAIN ABI operations")
+    activation = ("Activated guarded distinct-base duplex for bundle shared "
+                 "(overlap uses serialized scalar transfers)")
+    need(len(re.findall(rf"(?m)^\s*(?:---)?{re.escape(activation)}\s*$", log)) == 1,
+         "runtime-guarded duplex activation marker is missing or duplicated")
 
 
 def dataflow_verify(output: Path, top: str, expected: str, rtl: str, log: str, root: ET.Element) -> None:
@@ -156,6 +237,11 @@ def verify(output: Path, top: str, expected: str) -> None:
 
     if expected == "inplace_duplex":
         verify_inplace_duplex(top, rtl, log, bundles, parameters)
+        return
+    if expected == "runtime_duplex":
+        verify_runtime_duplex(top, rtl, log,
+                              (output / "stderr.log").read_text(encoding="utf-8", errors="replace"),
+                              bundles, parameters)
         return
 
     expected_read = expected == "distinct"
@@ -241,7 +327,7 @@ def verify(output: Path, top: str, expected: str) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("expectation", choices=("distinct", "write_direction_only", "write_only",
-                                                "same_bundle_legacy", "inplace_duplex", "mixed_legacy",
+                                                "same_bundle_legacy", "inplace_duplex", "runtime_duplex", "mixed_legacy",
                                                 "dataflow_forwarding"))
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--top", required=True)

@@ -96,6 +96,10 @@ generate_profile() {
   [[ -s "$raw_ir" && ! -L "$raw_ir" ]] || {
     echo "missing retained pre-InterfaceInfer raw IR for $profile: $raw_ir" >&2; return 1;
   }
+  local post_interface_raw="$out/generated/panda-temp/after_Frontend::InterfaceInfer.raw"
+  [[ -s "$post_interface_raw" && ! -L "$post_interface_raw" ]] || {
+    echo "missing retained post-InterfaceInfer raw IR for $profile: $post_interface_raw" >&2; return 1;
+  }
   {
     printf 'top=%s\nsource=%s\nsource_sha256=%s\nbambu=%s\nbambu_sha256=%s\n' \
       "$profile" "$source" "$(digest "$source")" "$BAMBU" "$(digest "$BAMBU")"
@@ -103,6 +107,8 @@ generate_profile() {
       "$PLUGIN" "$(digest "$PLUGIN")" "$CHECKER" "$(digest "$CHECKER")" \
       "$TESTS/run_generated_duplex_tests.sh" "$(digest "$TESTS/run_generated_duplex_tests.sh")"
     printf 'raw_ir=%s\nraw_ir_sha256=%s\n' "$raw_ir" "$(digest "$raw_ir")"
+    printf 'post_interface_raw=%s\npost_interface_raw_sha256=%s\n' \
+      "$post_interface_raw" "$(digest "$post_interface_raw")"
   } >"$out/generated/provenance.txt"
   python3 "$CHECKER" "$profile" --output "$out/generated" --source "$source" --bambu "$BAMBU" \
     --plugin "$PLUGIN" --checker "$CHECKER" --runner "$TESTS/run_generated_duplex_tests.sh" || return $?
