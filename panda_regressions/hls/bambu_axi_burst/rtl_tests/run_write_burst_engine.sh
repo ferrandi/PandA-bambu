@@ -4,6 +4,7 @@ ulimit -c 0
 
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd -P)
 ROOT=$(realpath "$SCRIPT_DIR/../../../../")
+source "$SCRIPT_DIR/../parallel_helpers.sh"
 EXTRACTOR="$SCRIPT_DIR/extract_write_engine.py"
 TB="$SCRIPT_DIR/tb_write_burst_engine.sv"
 XML="$ROOT/etc/libtech/NC_AXI_IPs.xml"
@@ -21,14 +22,14 @@ if ! command -v verilator >/dev/null 2>&1; then
     echo "verilator is required" >&2
     exit 2
 fi
-# Parallelism is a decision of whoever launches the regression, not a policy of
-# the script: any positive value is accepted. The default follows the machine,
-# capped at 16 because that already saturates the reference machine.
-DEFAULT_SIM_JOBS=$(nproc 2>/dev/null || echo 4)
-if ((DEFAULT_SIM_JOBS > 16)); then DEFAULT_SIM_JOBS=16; fi
-SIM_JOBS=${SIM_JOBS:-$DEFAULT_SIM_JOBS}
+SIM_JOBS=${SIM_JOBS:-2}
 if [[ ! $SIM_JOBS =~ ^[1-9][0-9]*$ ]]; then
     echo "SIM_JOBS must be a positive integer" >&2
+    exit 2
+fi
+WRITER_GROUP_JOBS=${BURST_WRITER_GROUP_JOBS:-12}
+if [[ ! $WRITER_GROUP_JOBS =~ ^[1-9][0-9]*$ ]]; then
+    echo "BURST_WRITER_GROUP_JOBS must be a positive integer" >&2
     exit 2
 fi
 OUT_ARG=${1:-out_write_burst_engine}
@@ -85,7 +86,7 @@ build_run() {
             echo "missing exact PASS marker for $label/$case_name" >&2
             return 1
         fi
-        cat "$log" >> "$TASK_OUT/results.log"
+        cat "$log" >> "$RESULTS_LOG"
     done
 }
 
@@ -129,7 +130,7 @@ build_run_o() {
             echo "missing sustained-throughput marker for $label/$case_name" >&2
             return 1
         fi
-        cat "$log" >> "$TASK_OUT/results.log"
+        cat "$log" >> "$RESULTS_LOG"
     done
 }
 
@@ -168,8 +169,8 @@ build_async_reset_run() {
         echo "missing exact PASS marker for $label/ASYNC_RESET" >&2
         return 1
     fi
-    cat "$log" >> "$TASK_OUT/results.log"
-    printf 'ASYNC_RESET_VARIANT_PASS %s polarity=%s\n' "$label" "$polarity" >> "$TASK_OUT/results.log"
+    cat "$log" >> "$RESULTS_LOG"
+    printf 'ASYNC_RESET_VARIANT_PASS %s polarity=%s\n' "$label" "$polarity" >> "$RESULTS_LOG"
 }
 
 expect_parameter_fatal() {
@@ -191,7 +192,7 @@ expect_parameter_fatal() {
         echo "parameter rejection witness failed: $label" >&2
         return 1
     fi
-    echo "EXPECTED_FATAL $label: $expected" >> "$TASK_OUT/results.log"
+    echo "EXPECTED_FATAL $label: $expected" >> "$RESULTS_LOG"
 }
 
 expect_mutation_failure() {
@@ -226,64 +227,160 @@ PY
         echo "mutation witness failed: $label" >&2
         return 1
     fi
-    echo "MUTATION_REJECTED $label: $expected" >> "$TASK_OUT/results.log"
+    echo "MUTATION_REJECTED $label: $expected" >> "$RESULTS_LOG"
 }
 
-: > "$TASK_OUT/results.log"
-build_run B16-D16 16 16 32 CORE W_BEFORE_AW AW_BEFORE_W STALLS \
-    CFG_SIZE_CHANGE CFG_COUNT_CHANGE CONFIG_PIPELINE_VALID CONFIG_PIPELINE_INVALID \
-    BAD_CONFIG_SIZE BAD_CONFIG_ALIGN COUNT_MSB OVERFLOW32 BAD_STORE_SIZE \
-    BAD_STORE_SIZE8 BAD_STORE_ADDRESS EARLY_DRAIN BID BRESP MAX_COUNT \
-    PENDING_STORE PENDING_OPERAND_CHANGE PENDING_OPERAND_CHANGE_ON_FREE \
-    TRANSIENT_DRAIN_RESTORE TRANSIENT_CONFIGURE_PENDING \
-    DRAIN_PENDING_FULL_COUNT DRAIN_PENDING_SHORT_COUNT STORE_ACK_PULSE DUPLICATE_START \
-    DRAIN_BEFORE_B DRAIN_ONE_SHOT PREMATURE_CONFIGURE INIT_DRAIN
-build_run B16-D32 16 32 32 CORE BRESP_NO_NEXT_DESCRIPTOR
-build_run B1-D1 1 1 32 CORE CONFIG_PIPELINE_B1
-build_run_o B1-O16 1 16 1 32 PLAN_FIFO_WITNESS SUSTAINED_B1
-build_run B3-D4 3 4 32 CORE
-build_run B16-D4096 16 4096 32 CORE
-build_run_o O2-D16 16 2 16 32 MULTI_OUTSTANDING TWO_AW_BEFORE_B
-build_run_o O2-D32 16 2 32 32 INDEPENDENT_CURSORS BRESP_MULTI PEER_FAULT_SPECULATIVE SUSTAINED_B16
-build_run_o O3-D16 16 3 16 32 MULTI_OUTSTANDING
-build_run_o O16-D16 16 16 16 32 MULTI_OUTSTANDING
-build_run B16-A64 16 32 64 OVERFLOW64 MAX_COUNT CFG_BASE_CHANGE COUNT_MAX_64 \
-    CONFIGURE64_ZERO_FFFC CONFIGURE64_END_2P64 CONFIGURE64_CARRY_NONMAX \
-    CONFIGURE64_HIGH_MAX_NO_CARRY CONFIGURE64_BAD_ALIGN_ZERO
-build_run B16-A64-MSB 16 32 64 COUNT_MSB
-build_run B16-A32-F3 16 32 32 MULTIPAGE PREMATURE_CONFIGURE_B_PENDING \
-    PREMATURE_CONFIGURE_B_DRAINS_E0
-build_run B255-D256 255 256 32 CORE
-build_run_o B256-O16 256 16 256 32 CORE
-build_run_o O2-D32-F3 16 2 32 32 BRESP_AW_W_HELD BRESP_W_BEFORE_AW
-build_run B256-D256 256 256 32 PARAM
-build_async_reset_run active-low 1
-build_async_reset_run active-high 0
-expect_parameter_fatal B0 0 1 1 "B_MAX must be in [1,256]"
-expect_parameter_fatal B257 257 1 512 "B_MAX must be in [1,256]"
-expect_parameter_fatal O0 16 0 16 "MAX_OUTSTANDING must be in [1,16]"
-expect_parameter_fatal O17 16 17 32 "MAX_OUTSTANDING must be in [1,16]"
-expect_parameter_fatal FIFO_BELOW_B 16 1 8 "FIFO_DEPTH must be a power of two >= B_MAX and <= 4096"
-expect_parameter_fatal FIFO_NONPOWER 3 1 3 "FIFO_DEPTH must be a power of two >= B_MAX and <= 4096"
-expect_mutation_failure data-order "assign m_axi_wdata = fifo_head;" \
-    "assign m_axi_wdata = ~fifo_head;" 16 1 32 32 CORE "WRITE_DATA_MISMATCH"
-expect_mutation_failure last-order "assign m_axi_wlast = w_valid && (descriptor_w_remaining[descriptor_w_ptr] == 1);" \
-    "assign m_axi_wlast = w_valid && (descriptor_w_remaining[descriptor_w_ptr] != 1);" \
-    16 1 32 32 CORE "WLAST_MISMATCH"
-expect_mutation_failure serialize-until-b "(descriptor_count >= MAX_OUTSTANDING)" \
-    "((descriptor_count >= MAX_OUTSTANDING) || (descriptor_count != 0))" \
-    16 2 16 32 TWO_AW_BEFORE_B "F2_TWO_AW_BEFORE_FIRST_B_REQUIRED"
-expect_mutation_failure count-msb-guard "(in5[COUNT_BITS-1] == 1'b0) &&" \
-    "" 16 1 32 64 COUNT_MSB "F3_COUNT_MSB_GUARD_INSTALLED_CONTEXT_OR_TRAFFIC"
-expect_mutation_failure configure-size "in2 != cfg_size" \
-    "1'b0" 16 1 32 32 CFG_SIZE_CHANGE "CONFIGURE_CHANGE_NOT_REJECTED operand=0"
-expect_mutation_failure configure-base-low32 "in4 != cfg_base" \
-    "in4[31:0] != cfg_base[31:0]" 16 1 32 64 CFG_BASE_CHANGE "CONFIGURE_CHANGE_NOT_REJECTED operand=1"
-expect_mutation_failure configure-count-width "in5 != cfg_count" \
-    "in5[COUNT_W-1:0] != cfg_count[COUNT_W-1:0]" \
-    16 1 32 32 CFG_COUNT_CHANGE "CONFIGURE_CHANGE_NOT_REJECTED operand=2"
+run_writer_group() {
+    local group=$1
+    local RESULTS_LOG="$TASK_OUT/group-results/$group.log"
+    : > "$RESULTS_LOG"
+    case "$group" in
+        core-B16-D16)
+            build_run B16-D16 16 16 32 CORE W_BEFORE_AW AW_BEFORE_W STALLS \
+                CFG_SIZE_CHANGE CFG_COUNT_CHANGE CONFIG_PIPELINE_VALID CONFIG_PIPELINE_INVALID \
+                BAD_CONFIG_SIZE BAD_CONFIG_ALIGN COUNT_MSB OVERFLOW32 BAD_STORE_SIZE \
+                BAD_STORE_SIZE8 BAD_STORE_ADDRESS EARLY_DRAIN BID BRESP MAX_COUNT \
+                PENDING_STORE PENDING_OPERAND_CHANGE PENDING_OPERAND_CHANGE_ON_FREE \
+                TRANSIENT_DRAIN_RESTORE TRANSIENT_CONFIGURE_PENDING \
+                DRAIN_PENDING_FULL_COUNT DRAIN_PENDING_SHORT_COUNT STORE_ACK_PULSE DUPLICATE_START \
+                DRAIN_BEFORE_B DRAIN_ONE_SHOT PREMATURE_CONFIGURE INIT_DRAIN
+            ;;
+        core-B16-D32)
+            build_run B16-D32 16 32 32 CORE BRESP_NO_NEXT_DESCRIPTOR
+            ;;
+        core-B1-D1)
+            build_run B1-D1 1 1 32 CORE CONFIG_PIPELINE_B1
+            ;;
+        core-B1-O16)
+            build_run_o B1-O16 1 16 1 32 PLAN_FIFO_WITNESS SUSTAINED_B1
+            ;;
+        core-B3-D4)
+            build_run B3-D4 3 4 32 CORE
+            ;;
+        core-B16-D4096)
+            build_run B16-D4096 16 4096 32 CORE
+            ;;
+        core-B16-A32-F3)
+            build_run B16-A32-F3 16 32 32 MULTIPAGE PREMATURE_CONFIGURE_B_PENDING \
+                PREMATURE_CONFIGURE_B_DRAINS_E0
+            ;;
+        multi-O2-D16)
+            build_run_o O2-D16 16 2 16 32 MULTI_OUTSTANDING TWO_AW_BEFORE_B
+            ;;
+        multi-O2-D32)
+            build_run_o O2-D32 16 2 32 32 INDEPENDENT_CURSORS BRESP_MULTI PEER_FAULT_SPECULATIVE SUSTAINED_B16
+            ;;
+        multi-O3-D16)
+            build_run_o O3-D16 16 3 16 32 MULTI_OUTSTANDING
+            ;;
+        multi-O16-D16)
+            build_run_o O16-D16 16 16 16 32 MULTI_OUTSTANDING
+            ;;
+        multi-O2-D32-F3)
+            build_run_o O2-D32-F3 16 2 32 32 BRESP_AW_W_HELD BRESP_W_BEFORE_AW
+            ;;
+        address-B16-A64)
+            build_run B16-A64 16 32 64 OVERFLOW64 MAX_COUNT CFG_BASE_CHANGE COUNT_MAX_64 \
+                CONFIGURE64_ZERO_FFFC CONFIGURE64_END_2P64 CONFIGURE64_CARRY_NONMAX \
+                CONFIGURE64_HIGH_MAX_NO_CARRY CONFIGURE64_BAD_ALIGN_ZERO
+            ;;
+        address-B16-A64-MSB)
+            build_run B16-A64-MSB 16 32 64 COUNT_MSB
+            ;;
+        limit-B255-D256)
+            build_run B255-D256 255 256 32 CORE
+            ;;
+        limit-B256-O16)
+            build_run_o B256-O16 256 16 256 32 CORE
+            ;;
+        limit-B256-D256)
+            build_run B256-D256 256 256 32 PARAM
+            ;;
+        async-reset-active-low)
+            build_async_reset_run active-low 1
+            ;;
+        async-reset-active-high)
+            build_async_reset_run active-high 0
+            ;;
+        invalid-B0)
+            expect_parameter_fatal B0 0 1 1 "B_MAX must be in [1,256]"
+            ;;
+        invalid-B257)
+            expect_parameter_fatal B257 257 1 512 "B_MAX must be in [1,256]"
+            ;;
+        invalid-O0)
+            expect_parameter_fatal O0 16 0 16 "MAX_OUTSTANDING must be in [1,16]"
+            ;;
+        invalid-O17)
+            expect_parameter_fatal O17 16 17 32 "MAX_OUTSTANDING must be in [1,16]"
+            ;;
+        invalid-FIFO-BELOW-B)
+            expect_parameter_fatal FIFO_BELOW_B 16 1 8 "FIFO_DEPTH must be a power of two >= B_MAX and <= 4096"
+            ;;
+        invalid-FIFO-NONPOWER)
+            expect_parameter_fatal FIFO_NONPOWER 3 1 3 "FIFO_DEPTH must be a power of two >= B_MAX and <= 4096"
+            ;;
+        mutation-data-order)
+            expect_mutation_failure data-order "assign m_axi_wdata = fifo_head;" \
+                "assign m_axi_wdata = ~fifo_head;" 16 1 32 32 CORE "WRITE_DATA_MISMATCH"
+            ;;
+        mutation-last-order)
+            expect_mutation_failure last-order "assign m_axi_wlast = w_valid && (descriptor_w_remaining[descriptor_w_ptr] == 1);" \
+                "assign m_axi_wlast = w_valid && (descriptor_w_remaining[descriptor_w_ptr] != 1);" \
+                16 1 32 32 CORE "WLAST_MISMATCH"
+            ;;
+        mutation-serialize-until-b)
+            expect_mutation_failure serialize-until-b "(descriptor_count >= MAX_OUTSTANDING)" \
+                "((descriptor_count >= MAX_OUTSTANDING) || (descriptor_count != 0))" \
+                16 2 16 32 TWO_AW_BEFORE_B "F2_TWO_AW_BEFORE_FIRST_B_REQUIRED"
+            ;;
+        mutation-count-msb-guard)
+            expect_mutation_failure count-msb-guard "(in5[COUNT_BITS-1] == 1'b0) &&" \
+                "" 16 1 32 64 COUNT_MSB "F3_COUNT_MSB_GUARD_INSTALLED_CONTEXT_OR_TRAFFIC"
+            ;;
+        mutation-configure-size)
+            expect_mutation_failure configure-size "in2 != cfg_size" \
+                "1'b0" 16 1 32 32 CFG_SIZE_CHANGE "CONFIGURE_CHANGE_NOT_REJECTED operand=0"
+            ;;
+        mutation-configure-base-low32)
+            expect_mutation_failure configure-base-low32 "in4 != cfg_base" \
+                "in4[31:0] != cfg_base[31:0]" 16 1 32 64 CFG_BASE_CHANGE "CONFIGURE_CHANGE_NOT_REJECTED operand=1"
+            ;;
+        mutation-configure-count-width)
+            expect_mutation_failure configure-count-width "in5 != cfg_count" \
+                "in5[COUNT_W-1:0] != cfg_count[COUNT_W-1:0]" \
+                16 1 32 32 CFG_COUNT_CHANGE "CONFIGURE_CHANGE_NOT_REJECTED operand=2"
+            ;;
+        configure-pipeline)
+            "$SCRIPT_DIR/run_configure_writer_pipeline.sh" "$TASK_OUT/configure-writer-pipeline" \
+                | tee -a "$RESULTS_LOG"
+            ;;
+        *)
+            echo "internal error: unknown writer test group '$group'" >&2
+            return 2
+            ;;
+    esac
+}
 
-"$SCRIPT_DIR/run_configure_writer_pipeline.sh" "$TASK_OUT/configure-writer-pipeline" \
-    | tee -a "$TASK_OUT/results.log"
+WRITER_GROUPS=(core-B16-D16 core-B16-D32 core-B1-D1 core-B1-O16 core-B3-D4 \
+    core-B16-D4096 core-B16-A32-F3 multi-O2-D16 multi-O2-D32 multi-O3-D16 \
+    multi-O16-D16 multi-O2-D32-F3 address-B16-A64 address-B16-A64-MSB \
+    limit-B255-D256 limit-B256-O16 limit-B256-D256 async-reset-active-low \
+    async-reset-active-high invalid-B0 invalid-B257 invalid-O0 invalid-O17 \
+    invalid-FIFO-BELOW-B invalid-FIFO-NONPOWER mutation-data-order \
+    mutation-last-order mutation-serialize-until-b mutation-count-msb-guard \
+    mutation-configure-size mutation-configure-base-low32 mutation-configure-count-width \
+    configure-pipeline)
+BURST_JOB_LOG_DIR="$TASK_OUT/job-logs"
+mkdir -p "$TASK_OUT/group-results" "$BURST_JOB_LOG_DIR"
+if ! run_bounded_jobs "$WRITER_GROUP_JOBS" run_writer_group "${WRITER_GROUPS[@]}"; then
+    echo "writer RTL test group failed; diagnostics retained at $TASK_OUT/job-logs" >&2
+    exit 1
+fi
+
+: > "$TASK_OUT/results.log"
+for group in "${WRITER_GROUPS[@]}"; do
+    cat "$TASK_OUT/group-results/$group.log" >> "$TASK_OUT/results.log"
+done
 
 echo "WRITE_BURST_ENGINE_QUALIFY_PASS: $TASK_OUT"

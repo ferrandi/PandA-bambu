@@ -19,6 +19,19 @@ fi
 parallelism=$BURST_PARALLELISM
 mantis_args=("${BURST_NORMALIZED_ARGS[@]}")
 out_root=$BURST_OUTPUT
+verilator_jobs=${BURST_VERILATOR_JOBS:-2}
+if [[ ! $verilator_jobs =~ ^[1-9][0-9]*$ ]]; then
+  echo "BURST_VERILATOR_JOBS must be a positive integer, got: $verilator_jobs" >&2
+  exit 2
+fi
+writer_group_jobs=${BURST_WRITER_GROUP_JOBS:-8}
+if [[ ! $writer_group_jobs =~ ^[1-9][0-9]*$ ]]; then
+  echo "BURST_WRITER_GROUP_JOBS must be a positive integer, got: $writer_group_jobs" >&2
+  exit 2
+fi
+if (( writer_group_jobs > parallelism )); then
+  writer_group_jobs=$parallelism
+fi
 
 # Fail closed before invoking any Bambu executable. -L also catches dangling
 # symlinks, which `-e` alone would miss. With --restart the root must already
@@ -107,8 +120,16 @@ run_post_mantis_job() {
       bash "$script_dir/bambu_axi_burst/run_virtual_dependency_tests.sh" \
         "$bambu" "$scratch/virtual-dependencies"
       ;;
-    rtl-verilator)
-      bash "$script_dir/bambu_axi_burst/rtl_tests/run_verilator.sh" "$scratch/rtl-verilator"
+    rtl-verilator-transactions|rtl-verilator-credits|rtl-verilator-bounds|rtl-verilator-configure)
+      local suite=${job#rtl-verilator-}
+      SIM_JOBS="$verilator_jobs" bash "$script_dir/bambu_axi_burst/rtl_tests/run_verilator.sh" \
+        "$scratch/rtl-verilator-$suite" "$suite"
+      ;;
+    rtl-write-engine)
+      BURST_WRITER_SIM_OUTSIDE_SANDBOX=1 SIM_JOBS="$verilator_jobs" \
+        BURST_WRITER_GROUP_JOBS="$writer_group_jobs" \
+        bash "$script_dir/bambu_axi_burst/rtl_tests/run_write_burst_engine.sh" \
+          "$scratch/rtl-write-engine"
       ;;
     rtl-vlog)
       bash "$script_dir/bambu_axi_burst/rtl_tests/run_vlog_portability.sh" \
@@ -117,9 +138,9 @@ run_post_mantis_job() {
     generated-kernel-wrapper)
       # These checks deliberately share generated RTL and must remain serial.
       local generated_out="$scratch/generated-kernel"
-      bash "$script_dir/bambu_axi_burst/rtl_tests/run_generated_kernel_tests.sh" \
+      SIM_JOBS="$verilator_jobs" bash "$script_dir/bambu_axi_burst/rtl_tests/run_generated_kernel_tests.sh" \
         "$bambu" "$generated_out" || return $?
-      bash "$script_dir/bambu_axi_burst/rtl_tests/run_generated_wrapper_rid_tests.sh" \
+      SIM_JOBS="$verilator_jobs" bash "$script_dir/bambu_axi_burst/rtl_tests/run_generated_wrapper_rid_tests.sh" \
         "$bambu" "$generated_out/generated" "$scratch/wrapper-rid" || return $?
       ;;
     *)
@@ -142,7 +163,11 @@ if ! run_bounded_jobs "$parallelism" run_post_mantis_job \
   compiler-root-reinvocation \
   compiler-shared-resource \
   virtual-dependencies \
-  rtl-verilator \
+  rtl-verilator-transactions \
+  rtl-verilator-credits \
+  rtl-verilator-bounds \
+  rtl-verilator-configure \
+  rtl-write-engine \
   rtl-vlog \
   generated-kernel-wrapper; then
   echo "AXI burst helper suite failed; scratch outputs retained at $scratch" >&2
@@ -158,6 +183,9 @@ rm -rf -- \
   "$scratch/compiler-xml-profile" "$scratch/compiler-latency-metadata" \
   "$scratch/compiler-fallback-matrix" "$scratch/compiler-root-reinvocation" \
   "$scratch/compiler-shared-resource" "$scratch/virtual-dependencies" \
-  "$scratch/rtl-verilator" "$scratch/out_axi_core_vlog_portability" \
+  "$scratch/rtl-verilator-transactions" "$scratch/rtl-verilator-credits" \
+  "$scratch/rtl-verilator-bounds" "$scratch/rtl-verilator-configure" \
+  "$scratch/rtl-write-engine" \
+  "$scratch/out_axi_core_vlog_portability" \
   "$scratch/generated-kernel" "$scratch/wrapper-rid"
 printf 'AXI burst regression PASS: %s\n' "$scratch"
