@@ -14,6 +14,7 @@ module tb_count_trunc #(
     parameter integer MAX_OUTSTANDING = 1,
     parameter integer FIFO_DEPTH = 256,
     parameter integer ADDR_BITS = 64,
+    parameter integer IN_BITS = ADDR_BITS,
     parameter integer COUNT_BITS = 32,
     parameter integer DATA_BITS = 32
 );
@@ -25,7 +26,7 @@ module tb_count_trunc #(
     logic [1:0] opcode = 2'b0;
     logic [31:0] size_bits = 32'd32;
     logic [31:0] payload = 32'b0;
-    logic [63:0] byte_address = 64'b0;
+    logic [64:0] byte_address = 65'b0;
     logic [31:0] count = 32'b0;
     logic done;
     logic [31:0] data_out;
@@ -47,7 +48,7 @@ module tb_count_trunc #(
 
     MinimalAXI4MasterPipelined #(
         .B_MAX(B_MAX), .MAX_OUTSTANDING(MAX_OUTSTANDING), .FIFO_DEPTH(FIFO_DEPTH),
-        .BITSIZE_in4(ADDR_BITS), .BITSIZE_m_axi_araddr(ADDR_BITS),
+        .BITSIZE_in4(IN_BITS), .BITSIZE_m_axi_araddr(ADDR_BITS),
         .BITSIZE_in5(COUNT_BITS), .BITSIZE_in2(DATA_BITS),
         .BITSIZE_m_axi_rdata(DATA_BITS), .BITSIZE_out1(DATA_BITS)
     ) dut (
@@ -61,7 +62,8 @@ module tb_count_trunc #(
         .m_axi_rready(rready)
     );
 
-    task automatic apply_configure(input [63:0] base, input [31:0] n);
+    task automatic apply_configure(input [64:0] base, input [31:0] n);
+        integer cycles;
         begin
             @(negedge clk);
             start = 1'b1;
@@ -69,11 +71,43 @@ module tb_count_trunc #(
             size_bits = 32'd32;
             byte_address = base;
             count = n;
+            @(posedge clk); // E0: capture payload and validation result.
+            #1;
+            if (done || fault || arvalid)
+                $fatal(1, "CONFIGURE_COUNT_E0_VISIBLE done=%b fault=%b ARVALID=%b", done, fault, arvalid);
             @(negedge clk);
             start = 1'b0;
             opcode = 2'd0;
+            size_bits = 32'b0;
+            payload = 32'b0;
             count = 32'b0;
-            byte_address = 64'b0;
+            byte_address = 65'b0;
+            cycles = 0;
+            while (!done && !fault && cycles < 16) begin
+                @(posedge clk);
+                #1;
+                cycles = cycles + 1;
+            end
+            if (!done && !fault)
+                $fatal(1, "CONFIGURE_COUNT_E1_TIMEOUT");
+        end
+    endtask
+
+    task automatic expect_configure(
+        input [64:0] base,
+        input [31:0] n,
+        input logic expected_fault,
+        input [31:0] expected_region_count
+    );
+        begin
+            apply_configure(base, n);
+            #1;
+            if (fault !== expected_fault)
+                $fatal(1, "CONFIGURE base=%h count=%h fault=%b expected=%b",
+                       base, n, fault, expected_fault);
+            if (dut.region_count !== expected_region_count)
+                $fatal(1, "CONFIGURE base=%h count=%h region_count=%h expected=%h",
+                       base, n, dut.region_count, expected_region_count);
         end
     endtask
 
@@ -86,7 +120,6 @@ module tb_count_trunc #(
             // 2^31 elements at a 32-bit element size is 8 GiB, well inside a
             // 64-bit address space, but one bit wider than the counters hold.
             apply_configure(64'h0000000000000000, 32'h80000000);
-            #1;
             if (!fault)
                 $fatal(1, "count 0x80000000 was accepted although it does not fit COUNT_W");
             if (dut.region_count !== 32'b0)
@@ -94,6 +127,18 @@ module tb_count_trunc #(
                        dut.region_count);
             $display("COUNT_TRUNC_64: oversized count rejected with fault");
             $display("DUPLEX_READ PASS CASE=COUNT_TRUNC_64");
+            $finish;
+        end else if ($test$plusargs("FALLBACK_NARROW_IN4")) begin
+            expect_configure(65'h0, 32'h1, 1'b0, 32'h1);
+            $display("DUPLEX_READ PASS CASE=FALLBACK_NARROW_IN4");
+            $finish;
+        end else if ($test$plusargs("FALLBACK_WIDE_IN4")) begin
+            expect_configure(65'h1_0000000000000000, 32'h1, 1'b1, 32'h0);
+            $display("DUPLEX_READ PASS CASE=FALLBACK_WIDE_IN4");
+            $finish;
+        end else if ($test$plusargs("FALLBACK_WIDE_ZERO")) begin
+            expect_configure(65'h1_0000000000000000, 32'h0, 1'b0, 32'h0);
+            $display("DUPLEX_READ PASS CASE=FALLBACK_WIDE_ZERO");
             $finish;
         end
 
@@ -110,8 +155,48 @@ module tb_count_trunc #(
             $display("COUNT_MAX_64: largest representable count accepted");
             $display("DUPLEX_READ PASS CASE=COUNT_MAX_64");
             $finish;
+        end else if ($test$plusargs("RANGE_ZERO_COUNT")) begin
+            expect_configure(64'h0, 32'h0, 1'b0, 32'h0);
+            $display("DUPLEX_READ PASS CASE=RANGE_ZERO_COUNT");
+            $finish;
+        end else if ($test$plusargs("RANGE_MAX_COUNT")) begin
+            expect_configure(64'h0, 32'h7fffffff, 1'b0, 32'h7fffffff);
+            $display("DUPLEX_READ PASS CASE=RANGE_MAX_COUNT");
+            $finish;
+        end else if ($test$plusargs("RANGE_TOP_COUNT")) begin
+            expect_configure(64'h0, 32'h80000000, 1'b1, 32'h0);
+            $display("DUPLEX_READ PASS CASE=RANGE_TOP_COUNT");
+            $finish;
+        end else if ($test$plusargs("RANGE_LAST_BEAT_1")) begin
+            expect_configure(64'hfffffffffffffffc, 32'h1, 1'b0, 32'h1);
+            $display("DUPLEX_READ PASS CASE=RANGE_LAST_BEAT_1");
+            $finish;
+        end else if ($test$plusargs("RANGE_LAST_BEAT_2")) begin
+            expect_configure(64'hfffffffffffffffc, 32'h2, 1'b1, 32'h0);
+            $display("DUPLEX_READ PASS CASE=RANGE_LAST_BEAT_2");
+            $finish;
+        end else if ($test$plusargs("RANGE_LOW_CARRY_NONMAX")) begin
+            expect_configure(64'h00000003fffffffc, 32'h2, 1'b0, 32'h2);
+            $display("DUPLEX_READ PASS CASE=RANGE_LOW_CARRY_NONMAX");
+            $finish;
+        end else if ($test$plusargs("RANGE_HIGH_MAX_CARRY_ZERO")) begin
+            expect_configure(64'hfffffffffffffffc, 32'h1, 1'b0, 32'h1);
+            $display("DUPLEX_READ PASS CASE=RANGE_HIGH_MAX_CARRY_ZERO");
+            $finish;
+        end else if ($test$plusargs("RANGE_HIGH_MAX_NO_CARRY")) begin
+            expect_configure(64'hfffffffffffffff8, 32'h1, 1'b0, 32'h1);
+            $display("DUPLEX_READ PASS CASE=RANGE_HIGH_MAX_NO_CARRY");
+            $finish;
+        end else if ($test$plusargs("RANGE_HIGH_MAX_CARRY_NONZERO")) begin
+            expect_configure(64'hfffffffffffffffc, 32'h2, 1'b1, 32'h0);
+            $display("DUPLEX_READ PASS CASE=RANGE_HIGH_MAX_CARRY_NONZERO");
+            $finish;
+        end else if ($test$plusargs("RANGE_ZERO_MISALIGNED")) begin
+            expect_configure(64'h1, 32'h0, 1'b1, 32'h0);
+            $display("DUPLEX_READ PASS CASE=RANGE_ZERO_MISALIGNED");
+            $finish;
         end else begin
-            $fatal(1, "no scenario selected: pass +COUNT_TRUNC_64 or +COUNT_MAX_64");
+            $fatal(1, "no scenario selected");
         end
     end
 
