@@ -54,6 +54,20 @@ class WriteEngineExtractorTests(unittest.TestCase):
         self.assertIn("assign m_axi_wstrb", generated)
         self.assertTrue(generated.endswith("endmodule\n"))
 
+    def test_serialize_until_b_mutation_targets_active_outstanding_guard(self):
+        generated = EXTRACTOR.extract(XML)
+        target = "(descriptor_count >= MAX_OUTSTANDING)"
+        replacement = "((descriptor_count >= MAX_OUTSTANDING) || (descriptor_count != 0))"
+        self.assertEqual(generated.count(target), 1)
+
+        runner = (TESTS / "run_write_burst_engine.sh").read_text()
+        testbench = (TESTS / "tb_write_burst_engine.sv").read_text()
+        self.assertEqual(runner.count(f'"{target}"'), 1)
+        self.assertEqual(runner.count(f'"{replacement}"'), 1)
+        self.assertIn("build_run_o O2-D16 16 2 16 32 MULTI_OUTSTANDING TWO_AW_BEFORE_B", runner)
+        self.assertIn("TWO_AW_BEFORE_B \"F2_TWO_AW_BEFORE_FIRST_B_REQUIRED\"", runner)
+        self.assertIn("F2_TWO_AW_BEFORE_FIRST_B_REQUIRED", testbench)
+
     def test_cli_extracts_reader_when_target_is_selected(self):
         output = self.scratch / "reader.sv"
         result = subprocess.run(

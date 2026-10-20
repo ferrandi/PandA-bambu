@@ -210,24 +210,36 @@ module tb_duplex_cores #(
     endtask
 
     task automatic configure_read(input [31:0] base, input [31:0] count);
+        integer cycles;
         begin
             @(negedge clock); read_op=OP_CONFIGURE; read_size=32; read_base=base; read_count=count; read_start=1;
-            #1;
-            if (!read_done || read_fault) $fatal(1, "READ_CONFIGURE_NOT_ACKNOWLEDGED_BEFORE_CAPTURE");
-            @(posedge clock); #1;
-            if (read_fault) $fatal(1, "READ_CONFIGURE_FAULTED_ON_CAPTURE");
-            @(negedge clock); read_start=0;
+            @(posedge clock); // E0 captures the complete read descriptor.
+            @(negedge clock);
+            read_start=0; read_op=0; read_size=0; read_base=0; read_count=0;
+            cycles=0;
+            while (!read_done && !read_fault && cycles<32) begin
+                @(posedge clock); #1; cycles=cycles+1;
+            end
+            if (!read_done || read_fault)
+                $fatal(1, "READ_CONFIGURE_E1_ACK_TIMEOUT_OR_FAULT cycles=%0d", cycles);
+            @(posedge clock); #1; // Retire the registered ACK before issuing another operation.
         end
     endtask
 
     task automatic configure_write(input [31:0] base, input [31:0] count);
+        integer cycles;
         begin
             @(negedge clock); write_op=OP_CONFIGURE; write_size=32; write_base=base; write_count=count; write_start=1;
-            #1;
-            if (!write_done || write_fault) $fatal(1, "WRITE_CONFIGURE_NOT_ACKNOWLEDGED_BEFORE_CAPTURE");
-            @(posedge clock); #1;
-            if (write_fault) $fatal(1, "WRITE_CONFIGURE_FAULTED_ON_CAPTURE");
-            @(negedge clock); write_start=0;
+            @(posedge clock); // E0 captures the complete write descriptor.
+            @(negedge clock);
+            write_start=0; write_op=0; write_size=0; write_base=0; write_count=0;
+            cycles=0;
+            while (!write_done && !write_fault && cycles<32) begin
+                @(posedge clock); #1; cycles=cycles+1;
+            end
+            if (!write_done || write_fault)
+                $fatal(1, "WRITE_CONFIGURE_E1_ACK_TIMEOUT_OR_FAULT cycles=%0d", cycles);
+            @(posedge clock); #1; // Retire the registered ACK before issuing another operation.
         end
     endtask
 
@@ -504,9 +516,9 @@ module tb_duplex_cores #(
                 end
                 "SIMULTANEOUS": begin
                     before_ar=accepted_ar; before_aw=accepted_aw;
+                    stall_r=1; stall_w=1; stall_b=1; r_beat_limit=3;
                     configure_read(READ_BASE*4, 4); configure_write(WRITE_BASE*4, 4);
                     before_r=simultaneous_rw_handshakes;
-                    stall_r=1; stall_w=1; stall_b=1; r_beat_limit=3;
                     issue_store_region(WRITE_BASE*4,4,32'h84000000);
                     timeout_cycles=0;
                     while (!wvalid && timeout_cycles<1000) begin @(negedge clock); timeout_cycles=timeout_cycles+1; end
@@ -585,8 +597,8 @@ module tb_duplex_cores #(
                                before_r, read_beats);
                 end
                 "RRESP_FAULT_LOCAL": begin
-                    configure_read(READ_BASE*4,4); configure_write(WRITE_BASE*4,4);
                     stall_r=1; stall_b=1; inject_rresp_fault=1;
+                    configure_read(READ_BASE*4,4); configure_write(WRITE_BASE*4,4);
                     issue_load(READ_BASE*4);
                     issue_store_region(WRITE_BASE*4,4,32'h89000000);
                     drain_write(0);

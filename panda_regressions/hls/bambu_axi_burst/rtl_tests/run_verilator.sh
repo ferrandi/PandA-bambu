@@ -56,6 +56,13 @@ wait_scenario_batch() {
             echo "FAIL scenario $name: missing exact PASS marker; log: $log" >&2
             cat "$log" >&2 || true
             SCENARIO_FAILURES=$((SCENARIO_FAILURES + 1))
+        elif [[ "$name" == READY_CREDIT_PROOF ]] && {
+            ! rg -q '^PASS READY_CREDIT_PROOF FULL O=' "$log" ||
+            ! rg -q '^PASS READY_CREDIT_PROOF O=.* full-LOAD-credit-AR-response-drain N=' "$log";
+        }; then
+            echo "FAIL scenario $name: missing positive full-FIFO/credit-release witness; log: $log" >&2
+            cat "$log" >&2 || true
+            SCENARIO_FAILURES=$((SCENARIO_FAILURES + 1))
         fi
     done
     pids_ref=()
@@ -111,7 +118,7 @@ run_build() {
     if [[ "$top" == tb_burst_engine ]]; then
         parameter_args+=(-GMAX_OUTSTANDING="$outstanding" -GFIFO_DEPTH="$depth")
     fi
-    timeout 120s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal \
+    timeout 120s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal -CFLAGS -O0 \
         -Wno-UNUSEDSIGNAL -Wno-BLKSEQ --top-module "$top" \
         "${parameter_args[@]}" --Mdir "$build" "${sources[@]}" \
         >"$build/compile.log" 2>&1 || {
@@ -134,6 +141,7 @@ for burst_max in 1 2 16 256; do
             RANGE_OVER_MAX RANGE_TOP_VALID RANGE_TOP_OVER RANGE_ORACLE \
             BADADDR_EMPTY BADSIZE_EMPTY BADADDR_FULL BADSIZE_FULL \
             DRAIN_CONFIG_RACE CONTINUOUS_CFG ADJACENT_CFG BADRID EARLY_RLAST \
+            CONFIG_PIPELINE_VALID CONFIG_PIPELINE_INVALID \
             RRESP_FIRST RRESP_INTERMEDIATE RRESP_FINAL \
             ADJACENT_CFG_TRUNC ADJACENT_CFG_SIZE \
             MISSING_RLAST RESET_TRAFFIC FIFO_WRAP
@@ -169,13 +177,18 @@ run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O3-D64/Vtb_burst_engine" \
 # minimum-width data FIFO pointers/counters and stop/restart behavior.
 run_build tb_burst_engine 16 "$TESTS/tb_burst_engine.sv" "" 16 32 no
 run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O16-D32/Vtb_burst_engine" \
-    "$TASK_OUT/build-tb_burst_engine-B16-O16-D32" CREDIT_LIMIT CREDIT_POP
+    "$TASK_OUT/build-tb_burst_engine-B16-O16-D32" CREDIT_LIMIT CREDIT_POP READY_CREDIT_PROOF
 run_build tb_burst_engine 256 "$TESTS/tb_burst_engine.sv" "" 2 8 no
 run_one_scenario "$TASK_OUT/build-tb_burst_engine-B256-O2-D8/Vtb_burst_engine" \
     "$TASK_OUT/build-tb_burst_engine-B256-O2-D8" CREDIT_LIMIT
 run_build tb_burst_engine 16 "$TESTS/tb_burst_engine.sv" "" 1 1 no
-run_one_scenario "$TASK_OUT/build-tb_burst_engine-B16-O1-D1/Vtb_burst_engine" \
-    "$TASK_OUT/build-tb_burst_engine-B16-O1-D1" CREDIT_LIMIT
+run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O1-D1/Vtb_burst_engine" \
+    "$TASK_OUT/build-tb_burst_engine-B16-O1-D1" CREDIT_LIMIT READY_CREDIT_PROOF
+
+# Isolate configuration latency from the B=1, FIFO=1 read steady state.
+run_build tb_burst_engine 1 "$TESTS/tb_burst_engine.sv" "" 1 1 no
+run_one_scenario "$TASK_OUT/build-tb_burst_engine-B1-O1-D1/Vtb_burst_engine" \
+    "$TASK_OUT/build-tb_burst_engine-B1-O1-D1" CONFIG_PIPELINE_B1
 
 # Exercise the largest supported data FIFO and fail closed at every parameter
 # boundary with a checked diagnostic (not merely a compile/runtime failure).
@@ -232,7 +245,7 @@ expect_parameter_failure D8192 1 8192 'FIFO_DEPTH must be a power of two in \[1,
 # configure a count the counters cannot hold.
 ct_build="$TASK_OUT/build-tb_count_trunc-addr64"
 mkdir -p "$ct_build"
-timeout 120s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal \
+timeout 120s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal -CFLAGS -O0 \
     -Wno-UNUSEDSIGNAL -Wno-BLKSEQ --top-module tb_count_trunc \
     -GB_MAX=16 -GMAX_OUTSTANDING=1 -GFIFO_DEPTH=256 -GADDR_BITS=64 \
     --Mdir "$ct_build" "$TASK_OUT/MinimalAXI4MasterPipelined.sv" "$TESTS/tb_count_trunc.sv" \
@@ -240,7 +253,12 @@ timeout 120s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fata
         cat "$ct_build/compile.log" >&2
         exit 1
     }
-for scenario in COUNT_TRUNC_64 COUNT_MAX_64; do
+for scenario in COUNT_TRUNC_64 COUNT_MAX_64 \
+    RANGE_ZERO_COUNT RANGE_MAX_COUNT RANGE_TOP_COUNT \
+    RANGE_LAST_BEAT_1 RANGE_LAST_BEAT_2 RANGE_LOW_CARRY_NONMAX \
+    RANGE_HIGH_MAX_CARRY_ZERO RANGE_HIGH_MAX_NO_CARRY \
+    RANGE_HIGH_MAX_CARRY_NONZERO \
+    RANGE_ZERO_MISALIGNED; do
     log="$ct_build/scenario-${scenario}.log"
     timeout 120s "$ct_build/Vtb_count_trunc" "+$scenario" >"$log" 2>&1 || {
         cat "$log" >&2
@@ -253,5 +271,38 @@ for scenario in COUNT_TRUNC_64 COUNT_MAX_64; do
     }
 done
 echo "PASS element-count limit enforced at the counter width, not the address limit"
+echo "PASS 64-bit CONFIGURE range boundaries exercised"
+
+run_range_fallback_case() {
+    local name=$1 input_bits=$2 scenario=$3
+    local build_dir="$TASK_OUT/build-tb_count_trunc-$name"
+    mkdir -p "$build_dir"
+    timeout 120s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal -CFLAGS -O0 \
+        -Wno-UNUSEDSIGNAL -Wno-BLKSEQ --top-module tb_count_trunc \
+        -GB_MAX=16 -GMAX_OUTSTANDING=1 -GFIFO_DEPTH=256 -GADDR_BITS=64 \
+        -GIN_BITS="$input_bits" \
+        --Mdir "$build_dir" "$TASK_OUT/MinimalAXI4MasterPipelined.sv" \
+        "$TESTS/tb_count_trunc.sv" >"$build_dir/compile.log" 2>&1 || {
+            cat "$build_dir/compile.log" >&2
+            exit 1
+        }
+    local log="$build_dir/scenario-$scenario.log"
+    timeout 120s "$build_dir/Vtb_count_trunc" "+$scenario" "+CASE=$scenario" >"$log" 2>&1 || {
+        cat "$log" >&2
+        exit 1
+    }
+    rg -q "^DUPLEX_READ PASS CASE=$scenario$" "$log" || {
+        cat "$log" >&2
+        echo "ERROR: missing exact PASS marker for $scenario" >&2
+        exit 1
+    }
+}
+
+run_range_fallback_case narrow-in4 32 FALLBACK_NARROW_IN4
+run_range_fallback_case wide-in4 65 FALLBACK_WIDE_IN4
+run_range_fallback_case wide-zero-in4 65 FALLBACK_WIDE_ZERO
+echo "PASS CONFIGURE range fallback widths exercised"
+
+"$TESTS/run_configure_read_pipeline.sh" "$TASK_OUT/configure-read-pipeline"
 
 echo "PASS burst engine RTL regression. Artifacts retained at $TASK_OUT"

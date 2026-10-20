@@ -89,6 +89,7 @@ module tb_burst_engine #(
     integer aqc_hits = 0;
     integer stalled_fault_ar_hits = 0;
     integer multi_reset_hits = 0;
+    integer clock_cycles = 0;
 
     MinimalAXI4MasterPipelined #(.B_MAX(B_MAX),
         .MAX_OUTSTANDING(MAX_OUTSTANDING), .FIFO_DEPTH(FIFO_DEPTH)) dut (
@@ -155,7 +156,7 @@ module tb_burst_engine #(
                        MAX_OUTSTANDING, dut.descriptor_count, dut.burst_outstanding);
             // An independent bus-handshake model checks accounting; it does
             // not use DUT counters to derive accepted beats or descriptor sums.
-            if (dut.configure_direct_capture) begin
+            if (dut.configure_ack) begin
                 bus_issued_beats = 0;
                 bus_transport_beats = 0;
                 bus_returned_beats = 0;
@@ -163,16 +164,7 @@ module tb_burst_engine #(
                 bus_desc_count = 0;
                 bus_desc_rd_ptr = 0;
                 bus_desc_wr_ptr = 0;
-                bus_region_count = count;
-            end else if (dut.activate_pending) begin
-                bus_issued_beats = 0;
-                bus_transport_beats = 0;
-                bus_returned_beats = 0;
-                bus_fault_seen = 0;
-                bus_desc_count = 0;
-                bus_desc_rd_ptr = 0;
-                bus_desc_wr_ptr = 0;
-                bus_region_count = dut.pending_count;
+                bus_region_count = dut.region_count;
             end
 
             bus_reserved_beats = arvalid ? (arlen + 1) : 0;
@@ -190,7 +182,8 @@ module tb_burst_engine #(
 
             // Check accounting against pre-edge state. Skip the edge on which
             // reset/reconfiguration atomically replaces the region counters.
-            if (dut.region_active && !fault && !dut.configure_direct_capture && !dut.activate_pending) begin
+            if (dut.region_active && !fault && !dut.peer_fault_active &&
+                !dut.configure_ack) begin
                 if (dut.consumed > dut.returned || dut.returned > dut.issued ||
                     dut.issued > dut.region_count)
                     $fatal(1, "burst counter ordering violated: consumed=%0d returned=%0d issued=%0d count=%0d",
@@ -211,6 +204,18 @@ module tb_burst_engine #(
                 for (integer di = 0; di < MAX_OUTSTANDING; di = di + 1)
                     if (di < dut.descriptor_count)
                         descriptor_sum = descriptor_sum + dut.descriptor_remaining[(dut.descriptor_rd_ptr + di) % MAX_OUTSTANDING];
+                if (dut.fifo_count + descriptor_sum + dut.fifo_credit != FIFO_DEPTH)
+                    $fatal(1, "READY_CREDIT_PROOF credit conservation failed: fifo=%0d outstanding=%0d credit=%0d depth=%0d",
+                           dut.fifo_count, descriptor_sum, dut.fifo_credit, FIFO_DEPTH);
+                if (dut.m_axi_arvalid_reg &&
+                    ({24'b0, dut.m_axi_arlen_reg} + 1) > dut.fifo_credit)
+                    $fatal(1, "READY_CREDIT_PROOF exposed AR exceeds unspent credit: beats=%0d credit=%0d",
+                           {24'b0, dut.m_axi_arlen_reg} + 1, dut.fifo_credit);
+                if ((dut.descriptor_count != 0 && dut.fifo_count == FIFO_DEPTH) ||
+                    (dut.fifo_count == FIFO_DEPTH &&
+                     (dut.m_axi_arvalid_reg || rready)))
+                    $fatal(1, "READY_CREDIT_PROOF full FIFO has live transport: descriptors=%0d ARVALID=%b RREADY=%b",
+                           dut.descriptor_count, dut.m_axi_arvalid_reg, rready);
                 if (dut.descriptor_count > MAX_OUTSTANDING ||
                     dut.descriptor_count + dut.m_axi_arvalid_reg > MAX_OUTSTANDING ||
                     descriptor_sum != (dut.issued - dut.returned))
@@ -316,7 +321,11 @@ module tb_burst_engine #(
         end
     end
 
+    always @(posedge clk)
+        clock_cycles <= clock_cycles + 1;
+
     task automatic configure(input [31:0] base, input [31:0] n);
+        integer cycles;
         begin
             @(negedge clk);
             start = 1'b1;
@@ -324,17 +333,32 @@ module tb_burst_engine #(
             size_bits = 32'd32;
             byte_address = base;
             count = n;
-            #1;
-            if (!done)
-                $fatal(1, "configure was not acknowledged at capture");
-            @(posedge clk);
+            @(posedge clk); // E0: capture the request and its operands.
             @(negedge clk);
             start = 1'b0;
+            opcode = 2'b0;
+            size_bits = 32'b0;
+            payload = 32'b0;
+            byte_address = 32'b0;
+            count = 32'b0;
+            cycles = 0;
+            while (!done && !fault && cycles < 16) begin
+                @(posedge clk);
+                #1;
+                cycles = cycles + 1;
+            end
+            if (fault)
+                $fatal(1, "valid configure faulted after E0 capture base=%h count=%h", base, n);
+            if (!done)
+                $fatal(1, "configure acknowledgement timeout after E0 capture base=%h count=%h", base, n);
+            @(posedge clk); // HLS samples the registered acknowledgement at E2.
+            #1;
         end
     endtask
 
     task automatic configure_invalid(input [31:0] base, input [31:0] n,
                                      input [31:0] invalid_size);
+        integer cycles;
         begin
             @(negedge clk);
             start = 1'b1;
@@ -342,16 +366,24 @@ module tb_burst_engine #(
             size_bits = invalid_size;
             byte_address = base;
             count = n;
-            #1;
-            if (done)
-                $fatal(1, "invalid configure asserted done before capture");
-            @(posedge clk);
-            #1;
-            if (done)
-                $fatal(1, "invalid configure asserted done on capture edge");
+            @(posedge clk); // E0: capture both payload and validation result.
             @(negedge clk);
             start = 1'b0;
-            wait (fault);
+            opcode = 2'b0;
+            size_bits = 32'b0;
+            payload = 32'b0;
+            byte_address = 32'b0;
+            count = 32'b0;
+            cycles = 0;
+            while (!fault && !done && cycles < 16) begin
+                @(posedge clk);
+                #1;
+                cycles = cycles + 1;
+            end
+            if (done)
+                $fatal(1, "invalid configure acknowledged after E0 capture base=%h count=%h", base, n);
+            if (!fault)
+                $fatal(1, "invalid configure fault timeout after E0 capture base=%h count=%h", base, n);
         end
     endtask
 
@@ -391,7 +423,8 @@ module tb_burst_engine #(
                        base, n);
             configure(base, n);
             #1;
-            if (fault || !dut.region_active || dut.region_count != n)
+            if (fault || (n != 0 && !dut.region_active) ||
+                (n == 0 && dut.region_active) || dut.region_count != n)
                 $fatal(1, "valid configure range was rejected/mis-captured: base=%h count=%h fault=%b active=%b captured=%h",
                        base, n, fault, dut.region_active, dut.region_count);
             if (ar_count != 0)
@@ -426,22 +459,41 @@ module tb_burst_engine #(
     endtask
 
     task automatic capture_busy_config(input [31:0] base, input [31:0] n);
+        reg [31:0] active_base_before;
+        reg [30:0] active_count_before;
+        integer watchdog;
         begin
+            active_base_before = dut.region_base;
+            active_count_before = dut.region_count;
             @(negedge clk);
             start = 1'b1;
             opcode = 2'd2;
             size_bits = 32'd32;
             byte_address = base;
             count = n;
+            @(posedge clk); // E0: latch the queued request before changing live inputs.
             #1;
-            if (done)
-                $fatal(1, "busy configure completed before prior region drained");
-            @(posedge clk);
-            #1;
-            if (!dut.cfg_pending || dut.pending_base != base || dut.pending_count != n)
-                $fatal(1, "busy configure did not capture its pending descriptor");
-            @(negedge clk);
+            if (done || fault || dut.cfg_pending)
+                $fatal(1, "busy configure acknowledged or queued at E0");
             start = 1'b0;
+            opcode = 2'b0;
+            size_bits = 32'b0;
+            payload = 32'b0;
+            byte_address = 32'b0;
+            count = 32'b0;
+            watchdog = 0;
+            while (!dut.cfg_pending && watchdog < 16) begin
+                @(negedge clk);
+                watchdog = watchdog + 1;
+            end
+            if (!dut.cfg_pending || dut.pending_base != base || dut.pending_count != n ||
+                !dut.region_active || dut.region_base != active_base_before ||
+                dut.region_count != active_count_before)
+                $fatal(1, "busy configure did not queue its E0-captured descriptor");
+            #1;
+            if (done || !dut.region_active || dut.region_base != active_base_before ||
+                dut.region_count != active_count_before)
+                $fatal(1, "busy configure acknowledged early or overwrote active region");
         end
     endtask
 
@@ -679,12 +731,13 @@ module tb_burst_engine #(
             "BADADDR_EMPTY", "BADSIZE_EMPTY", "BADADDR_FULL", "BADSIZE_FULL",
             "DRAIN_CONFIG_RACE", "CONTINUOUS_CFG", "ADJACENT_CFG",
             "ADJACENT_CFG_TRUNC", "ADJACENT_CFG_SIZE", "BADRID", "EARLY_RLAST",
+            "CONFIG_PIPELINE_VALID", "CONFIG_PIPELINE_INVALID", "CONFIG_PIPELINE_B1",
             "RRESP_FIRST", "RRESP_INTERMEDIATE", "RRESP_FINAL", "MISSING_RLAST",
             "RESET_TRAFFIC", "FIFO_WRAP", "FIFO_BACKPRESSURE", "RESET_MULTI",
             "FAULT_STALLED_AR", "AQC", "PENDING_SECOND", "BOUNDARY_PENDING",
             "RRESP_STALLED_AR", "RRESP_RESERVATION_RACE", "RREADY_SIDEBAND",
             "DEPTH4096", "MULTI",
-            "CREDIT_LIMIT", "CREDIT_POP", "SMOKE": begin end
+            "CREDIT_LIMIT", "CREDIT_POP", "READY_CREDIT_PROOF", "SMOKE": begin end
             default: $fatal(1, "unknown exact CASE selector: %s", selected_case);
         endcase
         if (!$test$plusargs(selected_case))
@@ -693,6 +746,97 @@ module tb_burst_engine #(
         repeat (4) @(posedge clk);
         reset_n = 1'b1;
         repeat (2) @(posedge clk);
+
+        if ($test$plusargs("CONFIG_PIPELINE_VALID")) begin
+            integer completion_cycle;
+            stall_ar = 1'b0;
+            @(negedge clk);
+            start = 1'b1;
+            opcode = 2'd2;
+            size_bits = 32'd32;
+            byte_address = 32'h00051000;
+            count = 3;
+            @(posedge clk); // E0 captures this descriptor.
+            #1;
+            if (done || fault || arvalid || ar_count != 0)
+                $fatal(1, "CONFIG_PIPELINE_E0_VISIBLE done=%b fault=%b arvalid=%b AR=%0d",
+                       done, fault, arvalid, ar_count);
+            @(negedge clk);
+            start = 1'b0;
+            opcode = 2'd3;
+            size_bits = 32'd16;
+            payload = 32'hdead_beef;
+            byte_address = 32'h00051001;
+            count = 32'h8000_0000;
+            @(posedge clk); // E1 consumes the saved valid descriptor.
+            #1;
+            if (!done || fault || !dut.region_active ||
+                dut.region_base != 32'h00051000 || dut.region_count != 3 || ar_count != 0)
+                $fatal(1, "CONFIG_PIPELINE_E1_CAPTURE_MISMATCH done=%b fault=%b active=%b base=%h count=%0d AR=%0d",
+                       done, fault, dut.region_active, dut.region_base, dut.region_count, ar_count);
+            completion_cycle = clock_cycles;
+            @(posedge clk); // Retire configure ACK before presenting the first LOAD.
+            #1;
+            wait (dut.returned == 3);
+            consume_stream(32'h00051000, 3);
+            wait_drained();
+            if (fault || ar_count != 1 || r_beat_count != 3 || dut.consumed != 3)
+                $fatal(1, "CONFIG_PIPELINE_VALID_DATA_OR_TRAFFIC_MISMATCH fault=%b AR=%0d R=%0d consumed=%0d",
+                       fault, ar_count, r_beat_count, dut.consumed);
+            $display("CONFIG_PIPELINE_VALID_PASS E1_cycle=%0d AR=%0d R=%0d",
+                     completion_cycle, ar_count, r_beat_count);
+            $finish;
+        end
+
+        if ($test$plusargs("CONFIG_PIPELINE_INVALID")) begin
+            stall_ar = 1'b0;
+            @(negedge clk);
+            start = 1'b1;
+            opcode = 2'd2;
+            size_bits = 32'd32;
+            byte_address = 32'hffff_fffc;
+            count = 2;
+            @(posedge clk); // E0 captures both the invalid payload and validity.
+            #1;
+            if (done || fault || arvalid || ar_count != 0)
+                $fatal(1, "CONFIG_PIPELINE_INVALID_E0_VISIBLE done=%b fault=%b arvalid=%b AR=%0d",
+                       done, fault, arvalid, ar_count);
+            @(negedge clk);
+            start = 1'b0;
+            opcode = 2'd2;
+            size_bits = 32'd32;
+            byte_address = 32'h00052000;
+            count = 1;
+            @(posedge clk); // E1 must reject the E0-captured invalid request.
+            #1;
+            if (!fault || done || dut.region_active || ar_count != 0)
+                $fatal(1, "CONFIG_PIPELINE_INVALID_E1_NOT_REJECTED fault=%b done=%b active=%b AR=%0d",
+                       fault, done, dut.region_active, ar_count);
+            $display("CONFIG_PIPELINE_INVALID_PASS E1 fault observed without AXI traffic");
+            $finish;
+        end
+
+        if ($test$plusargs("CONFIG_PIPELINE_B1")) begin
+            integer first_cycle;
+            integer last_cycle;
+            if (B_MAX != 1 || FIFO_DEPTH != 1)
+                $fatal(1, "CONFIG_PIPELINE_B1_REQUIRES_B1_FIFO1");
+            stall_ar = 1'b0;
+            configure(32'h00053000, 8);
+            first_cycle = clock_cycles;
+            consume_stream(32'h00053000, 8);
+            last_cycle = clock_cycles;
+            wait_drained();
+            if (last_cycle-first_cycle > 64)
+                $fatal(1, "CONFIG_PIPELINE_B1_THROUGHPUT_REGRESSION cycles=%0d baseline=64 beats=8",
+                       last_cycle-first_cycle);
+            if (fault || ar_count != 8 || r_beat_count != 8 || dut.consumed != 8)
+                $fatal(1, "CONFIG_PIPELINE_B1_READ_TRAFFIC_MISMATCH fault=%b AR=%0d R=%0d consumed=%0d",
+                       fault, ar_count, r_beat_count, dut.consumed);
+            $display("CONFIG_PIPELINE_B1_PASS read_cycles=%0d baseline_cycles=64 beats=8 AR=%0d R=%0d",
+                     last_cycle-first_cycle, ar_count, r_beat_count);
+            $finish;
+        end
 
         if ($test$plusargs("RANGE_ORACLE")) begin : range_oracle_case
             reg [31:0] prng_state;
@@ -1076,10 +1220,19 @@ module tb_burst_engine #(
             size_bits = 32'd32;
             byte_address = 32'h00034000;
             count = 7;
+            @(posedge clk); // E0 captures the conflicting second request.
             #1;
-            if (done)
-                $fatal(1, "distinct second pending configure completed");
-            @(posedge clk);
+            if (fault || done || !dut.cfg_pending || dut.pending_base != 32'h00033000 ||
+                dut.pending_count != 5)
+                $fatal(1, "second pending request changed the original slot at E0");
+            @(negedge clk);
+            start = 1'b0;
+            opcode = 2'b0;
+            size_bits = 32'b0;
+            payload = 32'b0;
+            byte_address = 32'b0;
+            count = 32'b0;
+            @(posedge clk); // E1 rejects without overwriting the queued descriptor.
             #1;
             if (!fault || !dut.cfg_pending || dut.pending_base != 32'h00033000 ||
                 dut.pending_count != 5)
@@ -1346,6 +1499,79 @@ module tb_burst_engine #(
             wait_drained();
             check_descriptors(32'h0001c000, target_n, 0);
             $display("PASS simultaneous R+FIFO pop at D-1=%0d occupancy", FIFO_DEPTH-1);
+            $finish;
+        end
+
+        if ($test$plusargs("READY_CREDIT_PROOF")) begin
+            integer target_n;
+            integer watchdog;
+            integer held_ar_count;
+            reg [31:0] test_base;
+            target_n = FIFO_DEPTH + 4;
+            test_base = 32'h0001d000;
+            stall_ar = 1'b0;
+            configure(test_base, target_n);
+            watchdog = 0;
+            while (dut.fifo_count != FIFO_DEPTH && watchdog < 100000) begin
+                @(negedge clk);
+                watchdog = watchdog + 1;
+            end
+            if (dut.fifo_count != FIFO_DEPTH || dut.descriptor_count != 0 ||
+                dut.m_axi_arvalid_reg || arvalid || rready || slave_active ||
+                dut.fifo_credit != 0 || dut.returned != FIFO_DEPTH ||
+                dut.consumed != 0)
+                $fatal(1, "READY_CREDIT_PROOF failed to reach isolated full FIFO: fifo=%0d desc=%0d ARVALID=%b RREADY=%b active=%b credit=%0d returned=%0d consumed=%0d",
+                       dut.fifo_count, dut.descriptor_count, arvalid, rready,
+                       slave_active, dut.fifo_credit, dut.returned, dut.consumed);
+            held_ar_count = ar_count;
+            $display("PASS READY_CREDIT_PROOF FULL O=%0d D=%0d AR=%0d",
+                     MAX_OUTSTANDING, FIFO_DEPTH, held_ar_count);
+
+            @(negedge clk);
+            start = 1'b1;
+            opcode = 2'd0;
+            size_bits = 32'd32;
+            byte_address = test_base;
+            #1;
+            if (!done || !dut.fifo_load_done || rready ||
+                data_out !== (test_base >> 2))
+                $fatal(1, "READY_CREDIT_PROOF full-FIFO LOAD did not complete with RREADY low");
+            @(posedge clk);
+            @(negedge clk);
+            start = 1'b0;
+            if (dut.fifo_count != FIFO_DEPTH-1 || dut.fifo_credit != 1 ||
+                dut.consumed != 1 || rready)
+                $fatal(1, "READY_CREDIT_PROOF LOAD failed to release exactly one credit: fifo=%0d credit=%0d consumed=%0d RREADY=%b",
+                       dut.fifo_count, dut.fifo_credit, dut.consumed, rready);
+
+            watchdog = 0;
+            while (dut.issued != FIFO_DEPTH+1 && watchdog < 100000) begin
+                @(negedge clk);
+                watchdog = watchdog + 1;
+            end
+            if (dut.issued != FIFO_DEPTH+1 || ar_count <= held_ar_count)
+                $fatal(1, "READY_CREDIT_PROOF released credit did not permit a new AR: issued=%0d AR=%0d prior=%0d",
+                       dut.issued, ar_count, held_ar_count);
+            watchdog = 0;
+            while (dut.returned != FIFO_DEPTH+1 && watchdog < 100000) begin
+                @(negedge clk);
+                watchdog = watchdog + 1;
+            end
+            if (dut.returned != FIFO_DEPTH+1 || dut.fifo_count != FIFO_DEPTH)
+                $fatal(1, "READY_CREDIT_PROOF released credit did not produce the next response: returned=%0d fifo=%0d",
+                       dut.returned, dut.fifo_count);
+
+            consume_stream(test_base + 4, target_n-1);
+            wait_drained();
+            check_descriptors(test_base, target_n, 0);
+            if (dut.issued != target_n || dut.returned != target_n ||
+                dut.consumed != target_n || bus_returned_beats != target_n ||
+                dut.fifo_count != 0)
+                $fatal(1, "READY_CREDIT_PROOF region did not drain exactly once: issued=%0d returned=%0d consumed=%0d bus=%0d fifo=%0d",
+                       dut.issued, dut.returned, dut.consumed, bus_returned_beats,
+                       dut.fifo_count);
+            $display("PASS READY_CREDIT_PROOF O=%0d D=%0d full-LOAD-credit-AR-response-drain N=%0d",
+                     MAX_OUTSTANDING, FIFO_DEPTH, target_n);
             $finish;
         end
 
@@ -1652,43 +1878,30 @@ module tb_burst_engine #(
         end
         if ($test$plusargs("DRAIN_CONFIG_RACE")) begin
             integer completions_before;
+            integer watchdog;
             stall_ar = 1'b0;
-
-            // Arrive after the last pop, while drain_complete is true but
-            // before the old region's active bit is cleared.
             configure(32'h0000b000, 1);
             completions_before = configure_completion_count;
             wait (dut.returned == 1);
-            @(negedge clk);
-            start = 1'b1;
-            opcode = 2'd0;
-            size_bits = 32'd32;
-            byte_address = 32'h0000b000;
-            #1;
-            if (!done)
-                $fatal(1, "final old-region load was not immediately available");
-            @(posedge clk); // final load pop makes drain_complete true
-            @(negedge clk);
-            start = 1'b1;
-            opcode = 2'd2;
-            size_bits = 32'd32;
-            byte_address = 32'h0000c000;
-            count = 2;
-            #1;
-            if (!dut.drain_complete || !done || !dut.configure_direct_capture)
-                $fatal(1, "configure was not accepted on the already-drained edge");
-            @(posedge clk);
-            #1;
-            if (!dut.region_active || dut.region_base != 32'h0000c000 ||
-                dut.cfg_pending || configure_completion_count != completions_before + 1)
-                $fatal(1, "direct drain-edge configure failed or completed more than once");
-            @(negedge clk);
-            start = 1'b0;
+            capture_busy_config(32'h0000c000, 2);
+            if (configure_completion_count != completions_before)
+                $fatal(1, "busy configure acknowledged before the old region drained");
+            consume_stream(32'h0000b000, 1);
+            watchdog = 0;
+            while ((dut.region_base != 32'h0000c000 ||
+                    configure_completion_count != completions_before + 1) && watchdog < 32) begin
+                @(posedge clk);
+                #1;
+                watchdog = watchdog + 1;
+            end
+            if (watchdog == 32 || !dut.region_active || dut.region_base != 32'h0000c000 ||
+                dut.region_count != 2 || configure_completion_count != completions_before + 1)
+                $fatal(1, "pending configure did not activate and acknowledge after old region drain");
             wait (dut.returned == 2);
             consume_stream(32'h0000c000, 2);
             wait_drained();
 
-            // Also collide configure capture with the final pending-load pop.
+            // Capture a second configure while the last old-region load is pending.
             stall_ar = 1'b1;
             configure(32'h0000d000, 1);
             completions_before = configure_completion_count;
@@ -1703,33 +1916,43 @@ module tb_burst_engine #(
             @(posedge clk);
             @(negedge clk);
             start = 1'b0;
+            opcode = 2'b0;
+            size_bits = 32'b0;
+            byte_address = 32'b0;
             stall_ar = 1'b0;
-            while (!done) begin
+            watchdog = 0;
+            while (!done && watchdog < 1000) begin
                 @(negedge clk);
                 #1;
+                watchdog = watchdog + 1;
             end
+            if (watchdog == 1000)
+                $fatal(1, "pending load failed to return before queued configure");
             start = 1'b1;
             opcode = 2'd2;
             size_bits = 32'd32;
             byte_address = 32'h0000e000;
             count = 2;
+            @(posedge clk); // E0 captures configure while the final old load retires.
             #1;
-            if (dut.configure_complete)
-                $fatal(1, "reconfigure completed on the old pending-load result");
-            @(posedge clk); // captures configure and consumes old pending load
-            #1;
-            if (!dut.cfg_pending || dut.consumed != 1 || !dut.configure_complete)
-                $fatal(1, "same-cycle configure/load-pop state was not retained");
+            if (dut.cfg_pending || done || dut.consumed != 1 ||
+                configure_completion_count != completions_before)
+                $fatal(1, "E0 configure/load-pop exposed activation before E1");
             @(negedge clk);
             start = 1'b0;
-            #1;
-            if (!dut.configure_complete || !done)
-                $fatal(1, "deferred configure did not complete after the final pop");
-            @(posedge clk);
-            #1;
-            if (!dut.region_active || dut.region_base != 32'h0000e000 ||
+            opcode = 2'b0;
+            size_bits = 32'b0;
+            byte_address = 32'b0;
+            count = 32'b0;
+            watchdog = 0;
+            while (configure_completion_count != completions_before + 1 && watchdog < 32) begin
+                @(posedge clk);
+                #1;
+                watchdog = watchdog + 1;
+            end
+            if (watchdog == 32 || !dut.region_active || dut.region_base != 32'h0000e000 ||
                 dut.cfg_pending || configure_completion_count != completions_before + 1)
-                $fatal(1, "same-cycle reconfigure failed or completion count was not exact");
+                $fatal(1, "E1 reconfigure failed after the final pending-load pop");
             wait (dut.returned == 2);
             consume_stream(32'h0000e000, 2);
             wait_drained();
@@ -1738,6 +1961,7 @@ module tb_burst_engine #(
         end
         if ((selected_case == "ADJACENT_CFG") && $test$plusargs("ADJACENT_CFG")) begin
             integer completions_before;
+            integer guard;
             stall_ar = 1'b0;
             completions_before = configure_completion_count;
 
@@ -1754,27 +1978,18 @@ module tb_burst_engine #(
             // can be captured directly instead of waiting for a region that nothing
             // consumes. The point under test is the guard, not the drain path.
             count = 0;
-            #1;
-            if (!done)
-                $fatal(1, "adjacent-cfg first configure did not complete at capture");
-            @(posedge clk);
-
-            // Change only the operands: start and opcode stay exactly as they are.
-            // The engine releases its guard on the edge that sees the new operands and
-            // captures on the following one, so wait on clock edges rather than assuming
-            // a single cycle.
+            @(posedge clk); // E0 captures the first empty descriptor.
             @(negedge clk);
             byte_address = 32'h00022000;
             count = 0;
-            begin
-                integer guard = 0;
-                while (configure_completion_count < completions_before + 2 && guard < 12) begin
-                    @(posedge clk);
-                    guard = guard + 1;
-                end
-                if (configure_completion_count < completions_before + 2)
-                    $fatal(1, "adjacent-cfg second configure never completed");
+            guard = 0;
+            while (configure_completion_count < completions_before + 2 && guard < 24) begin
+                @(posedge clk);
+                #1;
+                guard = guard + 1;
             end
+            if (configure_completion_count < completions_before + 2)
+                $fatal(1, "adjacent-cfg second configure never completed after E0/E1");
             if (configure_completion_count != completions_before + 2)
                 $fatal(1, "adjacent-cfg completions = %0d, expected %0d",
                        configure_completion_count, completions_before + 2);
@@ -1783,9 +1998,9 @@ module tb_burst_engine #(
             @(posedge clk);
             repeat (2) begin
                 @(negedge clk);
-                #1;
-                if (done)
-                    $fatal(1, "adjacent-cfg repeated identical configure completed again");
+                if (fault)
+                    $fatal(1, "adjacent-cfg identical held request faulted");
+                @(posedge clk);
             end
             if (configure_completion_count != completions_before + 2)
                 $fatal(1, "adjacent-cfg identical repeat produced an extra completion");
@@ -1795,63 +2010,25 @@ module tb_burst_engine #(
         end
 
         if ((selected_case == "ADJACENT_CFG_TRUNC") && $test$plusargs("ADJACENT_CFG_TRUNC")) begin
-            // The guard re-arm must compare every operand at full width. Changing only
-            // the count from 0 to a value whose top bit is set is an invalid request: if
-            // the comparison truncates the count, the request looks identical to the one
-            // already guarded, is never captured, and never reaches validation - so it
-            // produces neither done nor fault.
-            integer guard;
+            // The nonzero high count bit must reach E1 validation after the
+            // one-cycle E0 capture even though all live operands are then cleared.
             stall_ar = 1'b0;
-            @(negedge clk);
-            start = 1'b1;
-            opcode = 2'd2;
-            size_bits = 32'd32;
-            byte_address = 32'h00023000;
-            count = 0;
-            #1;
-            if (!done)
-                $fatal(1, "adjacent-cfg-trunc baseline configure did not complete");
-            @(posedge clk);
-            @(negedge clk);
-            count = 32'h80000000;
-            guard = 0;
-            while (!fault && guard < 12) begin
-                @(posedge clk);
-                guard = guard + 1;
-            end
-            #1;
-            if (!fault)
-                $fatal(1, "adjacent-cfg-trunc: oversized count was ignored instead of rejected");
+            configure(32'h00023000, 0);
+            configure_invalid(32'h00023000, 32'h80000000, 32'd32);
+            if (ar_count != 0)
+                $fatal(1, "adjacent-cfg-trunc: oversized count issued AXI traffic");
             $display("ADJACENT_CFG_TRUNC: oversized count reached validation and faulted");
             $finish;
         end
 
         if ((selected_case == "ADJACENT_CFG_SIZE") && $test$plusargs("ADJACENT_CFG_SIZE")) begin
-            // Same hole through the other operand: changing only the element size from 32
-            // to 16 must be re-armed and rejected. An operand set that ignores size_bits
-            // leaves the request unvalidated, with neither done nor fault.
-            integer guard;
+            // A non-full-word size must be captured at E0 and rejected at E1
+            // after the live input bus changes.
             stall_ar = 1'b0;
-            @(negedge clk);
-            start = 1'b1;
-            opcode = 2'd2;
-            size_bits = 32'd32;
-            byte_address = 32'h00024000;
-            count = 0;
-            #1;
-            if (!done)
-                $fatal(1, "adjacent-cfg-size baseline configure did not complete");
-            @(posedge clk);
-            @(negedge clk);
-            size_bits = 32'd16;
-            guard = 0;
-            while (!fault && guard < 12) begin
-                @(posedge clk);
-                guard = guard + 1;
-            end
-            #1;
-            if (!fault)
-                $fatal(1, "adjacent-cfg-size: changed element size was ignored instead of rejected");
+            configure(32'h00024000, 0);
+            configure_invalid(32'h00024000, 1, 32'd16);
+            if (ar_count != 0)
+                $fatal(1, "adjacent-cfg-size: invalid size issued AXI traffic");
             $display("ADJACENT_CFG_SIZE: changed element size reached validation and faulted");
             $finish;
         end
@@ -1859,26 +2036,31 @@ module tb_burst_engine #(
         if ($test$plusargs("CONTINUOUS_CFG")) begin
             integer completions_before;
             integer descriptors_before;
+            integer guard;
             stall_ar = 1'b0;
             completions_before = configure_completion_count;
             descriptors_before = ar_count;
 
-            // Keep start high while holding configure; it must capture once.
             @(negedge clk);
             start = 1'b1;
             opcode = 2'd2;
             size_bits = 32'd32;
             byte_address = 32'h00011000;
             count = 1;
-            #1;
-            if (!done)
-                $fatal(1, "first continuous configure did not complete at capture");
-            @(posedge clk);
-            repeat (2) begin
-                @(negedge clk);
-                if (done || configure_completion_count != completions_before + 1)
-                    $fatal(1, "held configure completed more than once");
+            @(posedge clk); // E0 captures the request while start remains asserted.
+            guard = 0;
+            while (configure_completion_count < completions_before + 1 && guard < 16) begin
                 @(posedge clk);
+                #1;
+                guard = guard + 1;
+            end
+            if (guard == 16 || fault || configure_completion_count != completions_before + 1)
+                $fatal(1, "held configure did not receive one E1 acknowledgement");
+            repeat (2) begin
+                @(posedge clk);
+                #1;
+                if (fault || configure_completion_count != completions_before + 1)
+                    $fatal(1, "held configure completed more than once");
             end
 
             // Transition to a scalar read without lowering start.
@@ -1896,7 +2078,7 @@ module tb_burst_engine #(
             end
             if (data_out !== (32'h00011000 >> 2))
                 $fatal(1, "continuous-sequence first load returned wrong data");
-            @(posedge clk); // last pop
+            @(posedge clk); // last pop retires the first region.
 
             // The opcode left configure, so the next held-start configure is new.
             @(negedge clk);
@@ -1904,20 +2086,21 @@ module tb_burst_engine #(
             size_bits = 32'd32;
             byte_address = 32'h00012000;
             count = 2;
-            #1;
-            if (!dut.drain_complete || !dut.configure_direct_capture || !done)
-                $fatal(1, "configure after continuous-start loads was not accepted");
-            @(posedge clk);
-            #1;
+            guard = 0;
+            while (configure_completion_count < completions_before + 2 && guard < 24) begin
+                @(posedge clk);
+                #1;
+                guard = guard + 1;
+            end
             if (!dut.region_active || dut.region_base != 32'h00012000 ||
                 dut.cfg_pending || configure_completion_count != completions_before + 2 ||
-                ar_count != descriptors_before + 1)
+                ar_count != descriptors_before + 1 || guard == 24)
                 $fatal(1, "continuous configure sequence duplicated or lost a capture");
             repeat (2) begin
-                @(negedge clk);
-                if (done || configure_completion_count != completions_before + 2)
-                    $fatal(1, "second held configure completed more than once");
                 @(posedge clk);
+                #1;
+                if (fault || configure_completion_count != completions_before + 2)
+                    $fatal(1, "second held configure completed more than once");
             end
             consume_stream(32'h00012000, 2);
             wait_drained();
@@ -1947,17 +2130,7 @@ module tb_burst_engine #(
         before_ar = ar_count;
         configure(32'h00007000, 4);
         wait (dut.returned == 4);
-        @(negedge clk);
-        start = 1'b1;
-        opcode = 2'd2;
-        byte_address = 32'h00008000;
-        count = 2;
-        #1;
-        if (done)
-            $fatal(1, "busy configure completed before the old region drained");
-        @(posedge clk);
-        @(negedge clk);
-        start = 1'b0;
+        capture_busy_config(32'h00008000, 2);
         consume_stream(32'h00007000, 4);
         wait (deferred_cfg_done != 0);
         if (deferred_cfg_done == 0 || !dut.region_active || dut.region_base != 32'h00008000)

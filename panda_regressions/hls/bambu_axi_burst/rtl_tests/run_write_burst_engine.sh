@@ -61,8 +61,8 @@ build_run() {
     shift 5
     local build="$TASK_OUT/build-$label"
     mkdir -p "$build"
-    timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal \
-        -Wno-UNUSEDSIGNAL -Wno-BLKSEQ --top-module tb_write_burst_engine \
+    timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal -CFLAGS -O0 \
+        -Wno-UNUSEDSIGNAL -Wno-BLKSEQ -DPLAN_FIFO_PRESENT --top-module tb_write_burst_engine \
         -GB_MAX="$burst" -GMAX_OUTSTANDING=1 -GFIFO_DEPTH="$depth" -GADDR_BITS="$addr" \
         --Mdir "$build/obj" "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" "$TB" \
         > "$build/compile.log" 2>&1 || {
@@ -94,8 +94,8 @@ build_run_o() {
     shift 6
     local build="$TASK_OUT/build-$label"
     mkdir -p "$build"
-    timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal \
-        -Wno-UNUSEDSIGNAL -Wno-BLKSEQ --top-module tb_write_burst_engine \
+    timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal -CFLAGS -O0 \
+        -Wno-UNUSEDSIGNAL -Wno-BLKSEQ -DPLAN_FIFO_PRESENT --top-module tb_write_burst_engine \
         -GB_MAX="$burst" -GMAX_OUTSTANDING="$outstanding" -GFIFO_DEPTH="$depth" -GADDR_BITS="$addr" \
         --Mdir "$build/obj" "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" "$TB" \
         > "$build/compile.log" 2>&1 || {
@@ -117,6 +117,18 @@ build_run_o() {
             echo "missing exact PASS marker for $label/$case_name" >&2
             return 1
         fi
+        if [[ $case_name == SUSTAINED_B1 ]] &&
+           ! rg -q '^WRITE_SUSTAINED_PASS profile=B1-O16-F1 ' "$log"; then
+            cat "$log" >&2
+            echo "missing sustained-throughput marker for $label/$case_name" >&2
+            return 1
+        fi
+        if [[ $case_name == SUSTAINED_B16 ]] &&
+           ! rg -q '^WRITE_SUSTAINED_PASS profile=B16-O2-D32 ' "$log"; then
+            cat "$log" >&2
+            echo "missing sustained-throughput marker for $label/$case_name" >&2
+            return 1
+        fi
         cat "$log" >> "$TASK_OUT/results.log"
     done
 }
@@ -136,8 +148,8 @@ build_async_reset_run() {
         printf 'extractor='; sha256sum "$EXTRACTOR"
         printf 'testbench='; sha256sum "$TB"
     } > "$build/provenance.txt"
-    timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal \
-        -Wno-UNUSEDSIGNAL -Wno-BLKSEQ --top-module tb_write_burst_engine \
+    timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal -CFLAGS -O0 \
+        -Wno-UNUSEDSIGNAL -Wno-BLKSEQ -DPLAN_FIFO_PRESENT --top-module tb_write_burst_engine \
         -GB_MAX=16 -GMAX_OUTSTANDING=2 -GFIFO_DEPTH=32 -GADDR_BITS=32 \
         -GASYNC_RESET=1 -GRESET_ACTIVE_LOW="$active_low" \
         --Mdir "$build/obj" "$source" "$TB" > "$build/compile.log" 2>&1 || {
@@ -164,7 +176,7 @@ expect_parameter_fatal() {
     local label=$1 burst=$2 outstanding=$3 depth=$4 expected=$5
     local build="$TASK_OUT/negative-$label"
     mkdir -p "$build"
-    timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wno-fatal \
+    timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wno-fatal -CFLAGS -O0 \
         --top-module tb_write_burst_engine -GB_MAX="$burst" -GMAX_OUTSTANDING="$outstanding" \
         -GFIFO_DEPTH="$depth" --Mdir "$build/obj" \
         "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" "$TB" > "$build/compile.log" 2>&1 || {
@@ -199,7 +211,7 @@ if text.count(needle) != 1:
 Path(target).write_text(text.replace(needle, replacement))
 PY
     mkdir -p "$build"
-    timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wno-fatal \
+    timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wno-fatal -CFLAGS -O0 \
         --top-module tb_write_burst_engine -GB_MAX="$burst" -GMAX_OUTSTANDING="$outstanding" \
         -GFIFO_DEPTH="$depth" -GADDR_BITS="$addr" \
         --Mdir "$build/obj" "$mutant" "$TB" > "$build/compile.log" 2>&1 || {
@@ -219,7 +231,7 @@ PY
 
 : > "$TASK_OUT/results.log"
 build_run B16-D16 16 16 32 CORE W_BEFORE_AW AW_BEFORE_W STALLS \
-    CFG_SIZE_CHANGE CFG_COUNT_CHANGE \
+    CFG_SIZE_CHANGE CFG_COUNT_CHANGE CONFIG_PIPELINE_VALID CONFIG_PIPELINE_INVALID \
     BAD_CONFIG_SIZE BAD_CONFIG_ALIGN COUNT_MSB OVERFLOW32 BAD_STORE_SIZE \
     BAD_STORE_SIZE8 BAD_STORE_ADDRESS EARLY_DRAIN BID BRESP MAX_COUNT \
     PENDING_STORE PENDING_OPERAND_CHANGE PENDING_OPERAND_CHANGE_ON_FREE \
@@ -227,16 +239,22 @@ build_run B16-D16 16 16 32 CORE W_BEFORE_AW AW_BEFORE_W STALLS \
     DRAIN_PENDING_FULL_COUNT DRAIN_PENDING_SHORT_COUNT STORE_ACK_PULSE DUPLICATE_START \
     DRAIN_BEFORE_B DRAIN_ONE_SHOT PREMATURE_CONFIGURE INIT_DRAIN
 build_run B16-D32 16 32 32 CORE BRESP_NO_NEXT_DESCRIPTOR
-build_run B1-D1 1 1 32 CORE
+build_run B1-D1 1 1 32 CORE CONFIG_PIPELINE_B1
+build_run_o B1-O16 1 16 1 32 PLAN_FIFO_WITNESS SUSTAINED_B1
 build_run B3-D4 3 4 32 CORE
 build_run B16-D4096 16 4096 32 CORE
-build_run_o O2-D16 16 2 16 32 MULTI_OUTSTANDING
-build_run_o O2-D32 16 2 32 32 INDEPENDENT_CURSORS BRESP_MULTI
+build_run_o O2-D16 16 2 16 32 MULTI_OUTSTANDING TWO_AW_BEFORE_B
+build_run_o O2-D32 16 2 32 32 INDEPENDENT_CURSORS BRESP_MULTI PEER_FAULT_SPECULATIVE SUSTAINED_B16
 build_run_o O3-D16 16 3 16 32 MULTI_OUTSTANDING
 build_run_o O16-D16 16 16 16 32 MULTI_OUTSTANDING
-build_run B16-A64 16 32 64 OVERFLOW64 MAX_COUNT CFG_BASE_CHANGE COUNT_MAX_64
+build_run B16-A64 16 32 64 OVERFLOW64 MAX_COUNT CFG_BASE_CHANGE COUNT_MAX_64 \
+    CONFIGURE64_ZERO_FFFC CONFIGURE64_END_2P64 CONFIGURE64_CARRY_NONMAX \
+    CONFIGURE64_HIGH_MAX_NO_CARRY CONFIGURE64_BAD_ALIGN_ZERO
 build_run B16-A64-MSB 16 32 64 COUNT_MSB
-build_run B16-A32-F3 16 32 32 MULTIPAGE PREMATURE_CONFIGURE_B_PENDING
+build_run B16-A32-F3 16 32 32 MULTIPAGE PREMATURE_CONFIGURE_B_PENDING \
+    PREMATURE_CONFIGURE_B_DRAINS_E0
+build_run B255-D256 255 256 32 CORE
+build_run_o B256-O16 256 16 256 32 CORE
 build_run_o O2-D32-F3 16 2 32 32 BRESP_AW_W_HELD BRESP_W_BEFORE_AW
 build_run B256-D256 256 256 32 PARAM
 build_async_reset_run active-low 1
@@ -252,8 +270,8 @@ expect_mutation_failure data-order "assign m_axi_wdata = fifo_head;" \
 expect_mutation_failure last-order "assign m_axi_wlast = w_valid && (descriptor_w_remaining[descriptor_w_ptr] == 1);" \
     "assign m_axi_wlast = w_valid && (descriptor_w_remaining[descriptor_w_ptr] != 1);" \
     16 1 32 32 CORE "WLAST_MISMATCH"
-expect_mutation_failure serialize-until-b "(descriptor_count >= MAX_OUTSTANDING) || fault_reg" \
-    "((descriptor_count >= MAX_OUTSTANDING) || (descriptor_count != 0)) || fault_reg" \
+expect_mutation_failure serialize-until-b "(descriptor_count >= MAX_OUTSTANDING)" \
+    "((descriptor_count >= MAX_OUTSTANDING) || (descriptor_count != 0))" \
     16 2 16 32 TWO_AW_BEFORE_B "F2_TWO_AW_BEFORE_FIRST_B_REQUIRED"
 expect_mutation_failure count-msb-guard "(in5[COUNT_BITS-1] == 1'b0) &&" \
     "" 16 1 32 64 COUNT_MSB "F3_COUNT_MSB_GUARD_INSTALLED_CONTEXT_OR_TRAFFIC"
@@ -264,5 +282,8 @@ expect_mutation_failure configure-base-low32 "in4 != cfg_base" \
 expect_mutation_failure configure-count-width "in5 != cfg_count" \
     "in5[COUNT_W-1:0] != cfg_count[COUNT_W-1:0]" \
     16 1 32 32 CFG_COUNT_CHANGE "CONFIGURE_CHANGE_NOT_REJECTED operand=2"
+
+"$SCRIPT_DIR/run_configure_writer_pipeline.sh" "$TASK_OUT/configure-writer-pipeline" \
+    | tee -a "$TASK_OUT/results.log"
 
 echo "WRITE_BURST_ENGINE_QUALIFY_PASS: $TASK_OUT"
