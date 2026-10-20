@@ -6,7 +6,12 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd -P)
 ROOT=$(realpath "$SCRIPT_DIR/../../../../")
 TESTS="$SCRIPT_DIR"
 XML="$ROOT/etc/libtech/NC_AXI_IPs.xml"
-if (($# != 1)); then echo "usage: $0 fresh-output-directory" >&2; exit 2; fi
+if (($# < 1 || $# > 2)); then echo "usage: $0 fresh-output-directory [transactions|credits|bounds|configure|all]" >&2; exit 2; fi
+SUITE=${2:-all}
+case "$SUITE" in
+    transactions|credits|bounds|configure|all) ;;
+    *) echo "unknown Verilator suite: $SUITE" >&2; exit 2 ;;
+esac
 if [[ -e "$1" || -L "$1" ]]; then
     echo "output directory must not already exist: $1" >&2; exit 2
 fi
@@ -34,6 +39,7 @@ python3 -B "$TESTS/extract_write_engine.py" --xml "$XML" \
 echo "Verilator: $(verilator --version)"
 echo "Stimulus seed: deterministic (no random stimulus)"
 echo "All generated RTL, logs, and build products: $TASK_OUT"
+echo "Verilator suite: $SUITE (build and scenario parallelism: $SIM_JOBS)"
 
 # Verilator can build and run simulations concurrently. SIM_JOBS bounds both:
 # -j for the model build, and the number of scenario processes in flight.
@@ -130,71 +136,76 @@ run_build() {
     fi
 }
 
-for burst_max in 1 2 16 256; do
-    run_build tb_burst_engine "$burst_max" "$TESTS/tb_burst_engine.sv"
-    if [[ "$burst_max" == 16 ]]; then
-        run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O1-D256/Vtb_burst_engine" \
-            "$TASK_OUT/build-tb_burst_engine-B16-O1-D256" \
-            ERROR BADALIGN OVERFLOW BADSIZE_CONFIG STORE \
-            RANGE_ZERO RANGE_LIMIT_BASE0 RANGE_LIMIT_BASE4 \
-            RANGE_OVER_BASE4 RANGE_OVER_PLUS1 RANGE_OVER_HALF \
-            RANGE_OVER_MAX RANGE_TOP_VALID RANGE_TOP_OVER RANGE_ORACLE \
-            BADADDR_EMPTY BADSIZE_EMPTY BADADDR_FULL BADSIZE_FULL \
-            DRAIN_CONFIG_RACE CONTINUOUS_CFG ADJACENT_CFG BADRID EARLY_RLAST \
-            CONFIG_PIPELINE_VALID CONFIG_PIPELINE_INVALID \
-            RRESP_FIRST RRESP_INTERMEDIATE RRESP_FINAL \
-            ADJACENT_CFG_TRUNC ADJACENT_CFG_SIZE \
-            MISSING_RLAST RESET_TRAFFIC FIFO_WRAP
-    fi
-    if [[ "$burst_max" == 256 ]]; then
-        run_scenarios "$TASK_OUT/build-tb_burst_engine-B256-O1-D256/Vtb_burst_engine" \
-            "$TASK_OUT/build-tb_burst_engine-B256-O1-D256" FIFO_BACKPRESSURE
-    fi
-done
+if [[ $SUITE == all || $SUITE == transactions ]]; then
+    for burst_max in 1 2 16 256; do
+        run_build tb_burst_engine "$burst_max" "$TESTS/tb_burst_engine.sv"
+        if [[ "$burst_max" == 16 ]]; then
+            run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O1-D256/Vtb_burst_engine" \
+                "$TASK_OUT/build-tb_burst_engine-B16-O1-D256" \
+                ERROR BADALIGN OVERFLOW BADSIZE_CONFIG STORE \
+                RANGE_ZERO RANGE_LIMIT_BASE0 RANGE_LIMIT_BASE4 \
+                RANGE_OVER_BASE4 RANGE_OVER_PLUS1 RANGE_OVER_HALF \
+                RANGE_OVER_MAX RANGE_TOP_VALID RANGE_TOP_OVER RANGE_ORACLE \
+                BADADDR_EMPTY BADSIZE_EMPTY BADADDR_FULL BADSIZE_FULL \
+                DRAIN_CONFIG_RACE CONTINUOUS_CFG ADJACENT_CFG BADRID EARLY_RLAST \
+                CONFIG_PIPELINE_VALID CONFIG_PIPELINE_INVALID \
+                RRESP_FIRST RRESP_INTERMEDIATE RRESP_FINAL \
+                ADJACENT_CFG_TRUNC ADJACENT_CFG_SIZE \
+                MISSING_RLAST RESET_TRAFFIC FIFO_WRAP
+        fi
+        if [[ "$burst_max" == 256 ]]; then
+            run_scenarios "$TASK_OUT/build-tb_burst_engine-B256-O1-D256/Vtb_burst_engine" \
+                "$TASK_OUT/build-tb_burst_engine-B256-O1-D256" FIFO_BACKPRESSURE
+        fi
+    done
 
-# Keep responses held until the requested descriptor queue is full. This proves
-# actual AR overlap and exercises explicit descriptor-pointer wrap for O=3/15.
-for outstanding in 3 15 16; do
-    depth=256
-    [[ "$outstanding" == 3 ]] && depth=64
-    run_build tb_burst_engine 16 "$TESTS/tb_burst_engine.sv" "" "$outstanding" "$depth" no
+    # Keep responses held until the requested descriptor queue is full. This proves
+    # actual AR overlap and exercises explicit descriptor-pointer wrap for O=3/15.
+    for outstanding in 3 15 16; do
+        depth=256
+        [[ "$outstanding" == 3 ]] && depth=64
+        run_build tb_burst_engine 16 "$TESTS/tb_burst_engine.sv" "" "$outstanding" "$depth" no
         run_one_scenario "$TASK_OUT/build-tb_burst_engine-B16-O${outstanding}-D${depth}/Vtb_burst_engine" \
             "$TASK_OUT/build-tb_burst_engine-B16-O${outstanding}-D${depth}" MULTI
-done
+    done
 
-# Required-hit A+Q+C plus independent bus-derived descriptor accounting,
-# malformed R during a held later AR, coordinated multi-outstanding reset,
-# boundary/tail with a busy configure, and rejection of a second pending config.
-run_build tb_burst_engine 16 "$TESTS/tb_burst_engine.sv" "" 2 64 no
-run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O2-D64/Vtb_burst_engine" \
-    "$TASK_OUT/build-tb_burst_engine-B16-O2-D64" AQC FAULT_STALLED_AR RRESP_STALLED_AR RESET_MULTI PENDING_SECOND
-run_build tb_burst_engine 16 "$TESTS/tb_burst_engine.sv" "" 3 64 no
-run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O3-D64/Vtb_burst_engine" \
-    "$TASK_OUT/build-tb_burst_engine-B16-O3-D64" \
-    BOUNDARY_PENDING RRESP_RESERVATION_RACE RREADY_SIDEBAND
+    # Required-hit A+Q+C plus independent bus-derived descriptor accounting,
+    # malformed R during a held later AR, coordinated multi-outstanding reset,
+    # boundary/tail with a busy configure, and rejection of a second pending config.
+    run_build tb_burst_engine 16 "$TESTS/tb_burst_engine.sv" "" 2 64 no
+    run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O2-D64/Vtb_burst_engine" \
+        "$TASK_OUT/build-tb_burst_engine-B16-O2-D64" AQC FAULT_STALLED_AR RRESP_STALLED_AR RESET_MULTI PENDING_SECOND
+    run_build tb_burst_engine 16 "$TESTS/tb_burst_engine.sv" "" 3 64 no
+    run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O3-D64/Vtb_burst_engine" \
+        "$TASK_OUT/build-tb_burst_engine-B16-O3-D64" \
+        BOUNDARY_PENDING RRESP_RESERVATION_RACE RREADY_SIDEBAND
+fi
 
 # Distinguish descriptor-count limits from beat-credit limits. D=1 also checks
 # minimum-width data FIFO pointers/counters and stop/restart behavior.
-run_build tb_burst_engine 16 "$TESTS/tb_burst_engine.sv" "" 16 32 no
-run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O16-D32/Vtb_burst_engine" \
-    "$TASK_OUT/build-tb_burst_engine-B16-O16-D32" CREDIT_LIMIT CREDIT_POP READY_CREDIT_PROOF
-run_build tb_burst_engine 256 "$TESTS/tb_burst_engine.sv" "" 2 8 no
-run_one_scenario "$TASK_OUT/build-tb_burst_engine-B256-O2-D8/Vtb_burst_engine" \
-    "$TASK_OUT/build-tb_burst_engine-B256-O2-D8" CREDIT_LIMIT
-run_build tb_burst_engine 16 "$TESTS/tb_burst_engine.sv" "" 1 1 no
-run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O1-D1/Vtb_burst_engine" \
-    "$TASK_OUT/build-tb_burst_engine-B16-O1-D1" CREDIT_LIMIT READY_CREDIT_PROOF
+if [[ $SUITE == all || $SUITE == credits ]]; then
+    run_build tb_burst_engine 16 "$TESTS/tb_burst_engine.sv" "" 16 32 no
+    run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O16-D32/Vtb_burst_engine" \
+        "$TASK_OUT/build-tb_burst_engine-B16-O16-D32" CREDIT_LIMIT CREDIT_POP READY_CREDIT_PROOF
+    run_build tb_burst_engine 256 "$TESTS/tb_burst_engine.sv" "" 2 8 no
+    run_one_scenario "$TASK_OUT/build-tb_burst_engine-B256-O2-D8/Vtb_burst_engine" \
+        "$TASK_OUT/build-tb_burst_engine-B256-O2-D8" CREDIT_LIMIT
+    run_build tb_burst_engine 16 "$TESTS/tb_burst_engine.sv" "" 1 1 no
+    run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O1-D1/Vtb_burst_engine" \
+        "$TASK_OUT/build-tb_burst_engine-B16-O1-D1" CREDIT_LIMIT READY_CREDIT_PROOF
 
-# Isolate configuration latency from the B=1, FIFO=1 read steady state.
-run_build tb_burst_engine 1 "$TESTS/tb_burst_engine.sv" "" 1 1 no
-run_one_scenario "$TASK_OUT/build-tb_burst_engine-B1-O1-D1/Vtb_burst_engine" \
-    "$TASK_OUT/build-tb_burst_engine-B1-O1-D1" CONFIG_PIPELINE_B1
+    # Isolate configuration latency from the B=1, FIFO=1 read steady state.
+    run_build tb_burst_engine 1 "$TESTS/tb_burst_engine.sv" "" 1 1 no
+    run_one_scenario "$TASK_OUT/build-tb_burst_engine-B1-O1-D1/Vtb_burst_engine" \
+        "$TASK_OUT/build-tb_burst_engine-B1-O1-D1" CONFIG_PIPELINE_B1
+fi
 
 # Exercise the largest supported data FIFO and fail closed at every parameter
 # boundary with a checked diagnostic (not merely a compile/runtime failure).
-run_build tb_burst_engine 16 "$TESTS/tb_burst_engine.sv" "" 1 4096 no
-run_one_scenario "$TASK_OUT/build-tb_burst_engine-B16-O1-D4096/Vtb_burst_engine" \
-    "$TASK_OUT/build-tb_burst_engine-B16-O1-D4096" DEPTH4096
+if [[ $SUITE == all || $SUITE == bounds ]]; then
+    run_build tb_burst_engine 16 "$TESTS/tb_burst_engine.sv" "" 1 4096 no
+    run_one_scenario "$TASK_OUT/build-tb_burst_engine-B16-O1-D4096/Vtb_burst_engine" \
+        "$TASK_OUT/build-tb_burst_engine-B16-O1-D4096" DEPTH4096
 
 expect_parameter_failure() {
     local name=$1 outstanding=$2 depth=$3 diagnostic=$4
@@ -302,7 +313,10 @@ run_range_fallback_case narrow-in4 32 FALLBACK_NARROW_IN4
 run_range_fallback_case wide-in4 65 FALLBACK_WIDE_IN4
 run_range_fallback_case wide-zero-in4 65 FALLBACK_WIDE_ZERO
 echo "PASS CONFIGURE range fallback widths exercised"
+fi
 
-"$TESTS/run_configure_read_pipeline.sh" "$TASK_OUT/configure-read-pipeline"
+if [[ $SUITE == all || $SUITE == configure ]]; then
+    "$TESTS/run_configure_read_pipeline.sh" "$TASK_OUT/configure-read-pipeline"
+fi
 
-echo "PASS burst engine RTL regression. Artifacts retained at $TASK_OUT"
+echo "PASS burst engine RTL regression group=$SUITE. Artifacts retained at $TASK_OUT"
