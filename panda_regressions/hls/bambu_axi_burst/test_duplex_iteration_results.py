@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -10,7 +11,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[3]
-TMP_ROOT = ROOT / "documentation" / "tmp"
+TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 FAMILY = Path(__file__).resolve().parent
 sys.path.insert(0, str(FAMILY))
 import check_duplex_iteration_results as checker  # noqa: E402

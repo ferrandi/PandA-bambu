@@ -10,7 +10,6 @@ source_file="$script_dir/bambu_axi_burst_duplex_independent.cpp"
 testbench="$script_dir/duplex_independent_tb.cpp"
 checker="$script_dir/check_duplex_independent_results.py"
 helpers="$script_dir/parallel_helpers.sh"
-tmp_root="$repo_root/documentation/tmp"
 
 usage() { echo "usage: BURST_DUPLEX_INDEPENDENT_SIM_OUTSIDE_SANDBOX=1 $0 BAMBU [FRESH_OUTPUT_DIR]" >&2; }
 if (($# < 1 || $# > 2)); then usage; exit 2; fi
@@ -57,16 +56,11 @@ if [[ $requested_jobs == 0 || ${#requested_jobs} -gt 10 ]] || \
 fi
 requested_jobs=$((10#$requested_jobs))
 
-out_arg=${2:-"$tmp_root/out_duplex_independent"}
+out_arg=${2:-"$PWD/out_duplex_independent"}
 if [[ -e $out_arg || -L $out_arg ]]; then
   echo "output directory must be fresh and not a symlink: $out_arg" >&2; exit 2
 fi
 out=$(realpath -m -- "$out_arg")
-tmp_root_real=$(realpath -m -- "$tmp_root")
-case "$out/" in
-  "$tmp_root_real/"*) ;;
-  *) echo "output directory must be under $tmp_root_real: $out" >&2; exit 2 ;;
-esac
 
 device="$repo_root/etc/libtech/xilinx/xcu250-2Lfigd2104.xml"
 [[ -r $device ]] || { echo "device description missing: $device" >&2; exit 2; }
@@ -79,17 +73,17 @@ common=(--top-fname=bambu_axi_burst_duplex_independent --compiler=I386_CLANG16
   --tb-param-size=src:16384 --tb-param-size=dst:16384
   --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU)
 
-mkdir -p "$tmp_root"
 mkdir "$out"
 out=$(realpath "$out")
-mkdir "$out/job_logs"
+mkdir "$out/job_logs" "$out/tmp"
+export TMPDIR="$out/tmp" TMP="$out/tmp" TEMP="$out/tmp"
 export PYTHONDONTWRITEBYTECODE=1
 
 digest() { sha256sum -- "$1" | awk '{print $1}'; }
 git_head=$(git -C "$repo_root" rev-parse HEAD)
 {
   printf 'git_head=%s\ninvocation=' "$git_head"
-  printf '%q ' "$0" "$bambu_arg" "${2:-$tmp_root/out_duplex_independent}"
+  printf '%q ' "$0" "$bambu_arg" "${2:-$PWD/out_duplex_independent}"
   printf '\nrepo_root=%s\noutput=%s\nbambu=%s\nsettings=%s\nplugin=%s\nsimulator=%s\njobs=%s\n' \
     "$repo_root" "$out" "$bambu" "$(realpath "$settings")" "$plugin" "$simulator" "$requested_jobs"
   printf 'source=%s\nsource_sha256=%s\ntestbench=%s\ntestbench_sha256=%s\nchecker=%s\nchecker_sha256=%s\nrunner=%s\nrunner_sha256=%s\nparallel_helper=%s\nparallel_helper_sha256=%s\n' \

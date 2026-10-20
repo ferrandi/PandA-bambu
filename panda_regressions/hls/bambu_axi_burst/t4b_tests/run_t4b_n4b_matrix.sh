@@ -6,23 +6,21 @@ usage() { echo 'Usage: run_t4b_n4b_matrix.sh FRESH_OUT' >&2; exit 2; }
 fail() { echo "run_t4b_n4b_matrix: $*" >&2; exit 2; }
 [[ $# == 1 ]] || usage
 [[ ${BURST_MODELSIM_OUTSIDE_SANDBOX:-0} == 1 ]] || fail 'ModelSim matrix requires BURST_MODELSIM_OUTSIDE_SANDBOX=1 (run outside the sandbox)'
+LAUNCH_DIR=$PWD
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
 ROOT=$(git -C "$HERE" rev-parse --show-toplevel)
-TMP_ROOT="$ROOT/documentation/tmp"
-mkdir -p "$TMP_ROOT"
-TMP_ROOT=$(realpath "$TMP_ROOT")
 OUT_ARG=$1
-OUT_PARENT=$(realpath -m "$(dirname "$OUT_ARG")")
+[[ $OUT_ARG == /* ]] || OUT_ARG="$LAUNCH_DIR/$OUT_ARG"
+OUT_PARENT=$(realpath -m -- "$(dirname "$OUT_ARG")")
 OUT="$OUT_PARENT/$(basename "$OUT_ARG")"
-case "$OUT/" in "$TMP_ROOT/"*) ;; *) fail "output must be below $TMP_ROOT" ;; esac
-[[ "$OUT" != "$TMP_ROOT" ]] || fail 'output must be a fresh child directory of documentation/tmp'
 [[ ! -e "$OUT" ]] || fail "refusing existing output: $OUT"
 mkdir -p "$OUT_PARENT"
 CASE_RUNNER=${T4B_N4B_CASE_RUNNER:-$HERE/run_t4b_matched.sh}
 [[ -x "$CASE_RUNNER" ]] || fail "case runner is not executable: $CASE_RUNNER"
-export TMPDIR="$TMP_ROOT" TMP="$TMP_ROOT" TEMP="$TMP_ROOT"
 mkdir "$OUT"
 mkdir "$OUT/cases"
+mkdir "$OUT/tmp"
+export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp"
 MANIFEST="$OUT/manifest.tsv"
 SUMMARY="$OUT/summary.tsv"
 HEADER=$'case_id\tfixture\tN\tcomparison\tmode\tstatus\tB_requested\tO_requested\tD_requested\tB_applied\tO_applied\tD_applied\tL\tQ\tC_total\tC_stream\tchannel_latency\tcorrectness\tfirst_wait_cycles\texposed_wait_cycles\tstate_stall_cycles\toutstanding_peak\tn_desc\tIR_index\tDOT_index\tXML_index'

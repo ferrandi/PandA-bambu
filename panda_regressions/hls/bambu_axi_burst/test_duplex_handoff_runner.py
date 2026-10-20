@@ -12,7 +12,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
 HERE = Path(__file__).resolve().parent
-TMP_ROOT = ROOT / "documentation/tmp"
+TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
 os.environ.update(TMPDIR=str(TMP_ROOT), TMP=str(TMP_ROOT), TEMP=str(TMP_ROOT))
 RUNNER = HERE / "run_duplex_handoff_tests.sh"
@@ -83,7 +83,7 @@ exec /usr/bin/python3 "$@"
     def invoke(self, *args: str, **extra_env: str) -> subprocess.CompletedProcess[str]:
         env = self.env.copy()
         env.update(extra_env)
-        return subprocess.run(["bash", str(RUNNER), str(self.bambu), *args], cwd=ROOT,
+        return subprocess.run(["bash", str(RUNNER), str(self.bambu), *args], cwd=self.root,
                               env=env, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     def test_fresh_output_runs_four_profiles_and_records_digests(self) -> None:
@@ -111,11 +111,12 @@ exec /usr/bin/python3 "$@"
         self.assertIn("plugin_sha256=", run_provenance)
         self.assertIn("check_duplex_effect_analysis_artifacts.py", run_provenance)
 
-    def test_default_output_is_under_documentation_tmp(self) -> None:
+    def test_default_output_is_under_launch_directory(self) -> None:
         result = self.invoke()
         self.assertEqual(result.returncode, 0, result.stdout)
-        self.assertTrue((TMP_ROOT / "out_duplex_handoff" / "aggregate.log").is_file())
-        shutil.rmtree(TMP_ROOT / "out_duplex_handoff")
+        default_output = self.root / "out_duplex_handoff"
+        self.assertTrue((default_output / "aggregate.log").is_file())
+        shutil.rmtree(default_output)
 
     def test_preexisting_output_and_symlink_are_refused(self) -> None:
         existing = self.root / "existing"

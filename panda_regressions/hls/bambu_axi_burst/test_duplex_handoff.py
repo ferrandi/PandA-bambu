@@ -12,7 +12,7 @@ from unittest import mock
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[3]
-TMP_ROOT = ROOT / "documentation/tmp"
+TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
 os.environ["TMPDIR"] = str(TMP_ROOT)
 os.environ["TMP"] = str(TMP_ROOT)

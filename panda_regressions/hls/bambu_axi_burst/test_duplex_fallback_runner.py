@@ -12,7 +12,7 @@ from pathlib import Path
 
 FAMILY = Path(__file__).resolve().parent
 REPO = FAMILY.parents[2]
-TMP_ROOT = REPO / "documentation" / "tmp"
+TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
 
 STUB_BAMBU = r'''#!/usr/bin/env python3
@@ -134,13 +134,13 @@ class DuplexFallbackRunnerTests(unittest.TestCase):
         self.verilator.chmod(0o755)
         self.state = self.scratch / "state"
         self.state.mkdir()
-        self.output = self.repo / "documentation/tmp/out_duplex_fallback"
+        self.output = self.repo / "out_duplex_fallback"
         self.env = os.environ.copy()
         self.env.update({
             "PATH": f"{self.verilator.parent}:{self.env['PATH']}",
-            "TMPDIR": str(self.repo / "documentation/tmp"),
-            "TMP": str(self.repo / "documentation/tmp"),
-            "TEMP": str(self.repo / "documentation/tmp"),
+            "TMPDIR": str(self.scratch),
+            "TMP": str(self.scratch),
+            "TEMP": str(self.scratch),
             "STUB_STATE": str(self.state),
             "BURST_DUPLEX_FALLBACK_SIM_OUTSIDE_SANDBOX": "1",
             "DUPLEX_FALLBACK_JOBS": "2",
@@ -181,10 +181,10 @@ class DuplexFallbackRunnerTests(unittest.TestCase):
         self.assertIn("DUPLEX_FALLBACK_JOBS", invalid_jobs.stdout)
         self.assertFalse(self.output.exists())
         outside = self.scratch / "outside-output"
+        outside.mkdir()
         invalid_output = self.run_runner(output=outside)
         self.assertNotEqual(invalid_output.returncode, 0)
-        self.assertIn("must be under", invalid_output.stdout)
-        self.assertFalse(outside.exists())
+        self.assertIn("must be fresh", invalid_output.stdout)
 
     def test_four_profiles_are_isolated_and_aggregate_marker_is_persisted(self):
         result = self.run_runner()

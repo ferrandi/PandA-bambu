@@ -8,14 +8,14 @@ PREPARE_ONLY=0
 
 usage() {
   cat <<'EOF'
-Usage: run_t4b_models.sh [--prepare-only] FRESH_OUT
+Usage: run_t4b_models.sh [--prepare-only] [FRESH_OUT]
 
 Extracts the original MinimalAXI4MasterPipelined and TestbenchMEMAXI cells,
 then under ModelSim runs the DUT-less N1 memory characterization and N1b
 engine-plus-matched-slave floor/knee matrix. N1b uses B in {1,16}, D=256,
 N in {1024,2048}, two repeats, and O in {1,2,3,4,5,6,8,12,16} for B=16.
 
-FRESH_OUT must be a new directory named t4b-* below <repo>/documentation/tmp.
+FRESH_OUT defaults to ./out_t4b_models and must not already exist.
 ModelSim execution must be launched outside the Codex sandbox with
 BURST_MODELSIM_OUTSIDE_SANDBOX=1. MODELSIM_ROOT defaults to /opt/mentor.
 --prepare-only extracts and hashes the HDL and writes a run plan without
@@ -27,21 +27,16 @@ while (($#)); do
   case "$1" in
     --prepare-only) PREPARE_ONLY=1; shift ;;
     -h|--help) usage; exit 0 ;;
-    *)
+  *)
       [[ -z $OUT_ARG ]] || { usage >&2; exit 2; }
       OUT_ARG=$1; shift ;;
   esac
 done
-[[ -n $OUT_ARG ]] || { usage >&2; exit 2; }
+OUT_ARG=${OUT_ARG:-"$PWD/out_t4b_models"}
 
 [[ ! -L $OUT_ARG ]] || { echo "refusing symlink output path: $OUT_ARG" >&2; exit 2; }
 OUT=$(realpath -m -- "$OUT_ARG")
-case "$OUT" in
-  "$ROOT/documentation/tmp/t4b-"*) ;;
-  *) echo "FRESH_OUT must be named t4b-* under $ROOT/documentation/tmp" >&2; exit 2 ;;
-esac
 [[ ! -e $OUT ]] || { echo "refusing to reuse existing output: $OUT" >&2; exit 2; }
-mkdir -p "$ROOT/documentation/tmp"
 mkdir "$OUT"
 mkdir -p "$OUT/tmp" "$OUT/hdl" "$OUT/logs"
 export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp"

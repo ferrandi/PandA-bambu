@@ -15,7 +15,7 @@ PAYLOAD = bytes(range(256)) * 4096 + b"\nlast fragment without newline"
 
 class SimulationLoggingTest(unittest.TestCase):
     def setUp(self):
-        scratch = Path(os.environ.get("BURST_TEST_TMPDIR", ROOT / "documentation/tmp"))
+        scratch = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
         scratch.mkdir(parents=True, exist_ok=True)
         self.temporary = TemporaryDirectory(dir=scratch)
         self.addCleanup(self.temporary.cleanup)

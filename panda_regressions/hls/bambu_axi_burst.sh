@@ -52,7 +52,7 @@ scratch=$out_root
 # sibling child for temporary files.
 mkdir -p "$scratch/tmp"
 export TMPDIR="$scratch/tmp" TMP="$scratch/tmp" TEMP="$scratch/tmp"
-export BURST_TEST_TMPDIR="$scratch/tmp"
+export BURST_TEST_TMPDIR="$scratch"
 out="$scratch/mantis"
 
 # Mantis cleanup would remove bambu_results.xml before the cycle gate runs.
@@ -82,6 +82,7 @@ python3 -B "$script_dir/bambu_axi_burst/test_check_burst_results.py"
 python3 -B "$script_dir/bambu_axi_burst/test_write_compiler_artifacts.py"
 python3 -B "$script_dir/bambu_axi_burst/test_read_compiler_artifacts.py"
 python3 -B "$script_dir/bambu_axi_burst/rtl_tests/test_extract_write_engine.py"
+python3 -B "$script_dir/bambu_axi_burst/rtl_tests/test_vlog_portability_runner.py"
 python3 -B "$script_dir/bambu_axi_burst/test_axi_latency_metadata.py"
 python3 -B "$script_dir/bambu_axi_burst/test_simulation_logging.py"
 python3 -B "$script_dir/bambu_axi_burst/test_bundle_preanalysis_artifacts.py"
@@ -108,6 +109,10 @@ run_post_mantis_job() {
       ;;
     rtl-verilator)
       bash "$script_dir/bambu_axi_burst/rtl_tests/run_verilator.sh" "$scratch/rtl-verilator"
+      ;;
+    rtl-vlog)
+      bash "$script_dir/bambu_axi_burst/rtl_tests/run_vlog_portability.sh" \
+        "$scratch/out_axi_core_vlog_portability"
       ;;
     generated-kernel-wrapper)
       # These checks deliberately share generated RTL and must remain serial.
@@ -138,6 +143,7 @@ if ! run_bounded_jobs "$parallelism" run_post_mantis_job \
   compiler-shared-resource \
   virtual-dependencies \
   rtl-verilator \
+  rtl-vlog \
   generated-kernel-wrapper; then
   echo "AXI burst helper suite failed; scratch outputs retained at $scratch" >&2
   exit 1
@@ -152,5 +158,6 @@ rm -rf -- \
   "$scratch/compiler-xml-profile" "$scratch/compiler-latency-metadata" \
   "$scratch/compiler-fallback-matrix" "$scratch/compiler-root-reinvocation" \
   "$scratch/compiler-shared-resource" "$scratch/virtual-dependencies" \
-  "$scratch/rtl-verilator" "$scratch/generated-kernel" "$scratch/wrapper-rid"
+  "$scratch/rtl-verilator" "$scratch/out_axi_core_vlog_portability" \
+  "$scratch/generated-kernel" "$scratch/wrapper-rid"
 printf 'AXI burst regression PASS: %s\n' "$scratch"

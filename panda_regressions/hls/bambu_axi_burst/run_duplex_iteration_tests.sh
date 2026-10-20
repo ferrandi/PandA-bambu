@@ -38,17 +38,9 @@ done
 SIM_JOBS=${SIM_JOBS:-2}
 [[ $SIM_JOBS =~ ^[1-9][0-9]*$ ]] || { echo "SIM_JOBS must be a positive integer" >&2; exit 2; }
 SIM_JOBS=$((10#$SIM_JOBS))
-TMP_ROOT="$ROOT/documentation/tmp"
-OUT_ARG=${2:-"$TMP_ROOT/out_duplex_iteration"}
-mkdir -p "$TMP_ROOT"
-OUT_PARENT=$(realpath -m -- "$(dirname -- "$OUT_ARG")")
-case "$OUT_PARENT/" in "$TMP_ROOT/"*) ;; *)
-  echo "output directory must be under $TMP_ROOT: $OUT_ARG" >&2; exit 2 ;;
-esac
+OUT_ARG=${2:-"$PWD/out_duplex_iteration"}
 [[ ! -e $OUT_ARG && ! -L $OUT_ARG ]] || { echo "output directory must be fresh: $OUT_ARG" >&2; exit 2; }
 OUT=$(realpath -m -- "$OUT_ARG")
-mkdir -p "$ROOT/documentation/tmp"
-export TMPDIR="$ROOT/documentation/tmp" TMP="$ROOT/documentation/tmp" TEMP="$ROOT/documentation/tmp" PYTHONDONTWRITEBYTECODE=1
 mkdir "$OUT" "$OUT/tmp" "$OUT/job_logs"
 export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp"
 

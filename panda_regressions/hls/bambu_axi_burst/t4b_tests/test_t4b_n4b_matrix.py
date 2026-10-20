@@ -13,7 +13,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[3]
 if not (ROOT / "panda_regressions").is_dir():
     raise RuntimeError(f"unexpected repository root for T4B tests: {ROOT}")
-TMP_ROOT = ROOT / "documentation" / "tmp"
+TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 WRAPPER = HERE / "run_t4b_n4b_matrix.sh"
 
 

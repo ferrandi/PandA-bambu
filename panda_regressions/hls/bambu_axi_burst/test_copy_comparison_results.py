@@ -1,5 +1,6 @@
 """Offline fail-closed tests for the controlled copy comparison checker."""
 import hashlib
+import os
 from pathlib import Path
 import shlex
 import shutil
@@ -9,7 +10,7 @@ import unittest
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
-TMP_ROOT = REPO / "documentation" / "tmp"
+TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 sys.path.insert(0, str(HERE))
 import check_copy_comparison_results as checker
 

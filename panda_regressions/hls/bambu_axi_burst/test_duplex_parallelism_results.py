@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Offline adversarial tests for the duplex parallelism evidence checker."""
 from pathlib import Path
+import os
 import sys
 import tempfile
 import unittest
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
-TMP_ROOT = REPO / "documentation" / "tmp"
+TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
 sys.path.insert(0, str(HERE))
 import check_duplex_parallelism_results as checker

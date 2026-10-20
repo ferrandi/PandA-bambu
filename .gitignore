@@ -54,8 +54,6 @@ build_release/
 obj/
 panda_dist/
 install/
-documentation/tmp/
-
 # Regression harness outputs: scripts under panda_regressions/hls create a fresh
 # out_<test-name> directory in the directory they are launched from.
 out_*

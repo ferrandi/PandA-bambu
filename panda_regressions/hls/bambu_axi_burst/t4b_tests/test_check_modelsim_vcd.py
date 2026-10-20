@@ -13,7 +13,8 @@ HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[3]
 if not (REPO_ROOT / "panda_regressions").is_dir():
     raise RuntimeError(f"unexpected repository root for T4B tests: {REPO_ROOT}")
-TMP_ROOT = REPO_ROOT / "documentation" / "tmp"
+TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
+TMP_ROOT.mkdir(parents=True, exist_ok=True)
 CHECKER = HERE / "check_modelsim_vcd.py"
 sys.path.insert(0, str(HERE))
 import t4b_vcd

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -12,7 +13,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 REPO = Path(__file__).resolve().parents[3]
-TMP_ROOT = REPO / "documentation" / "tmp"
+TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from check_duplex_effect_analysis_artifacts import (  # noqa: E402

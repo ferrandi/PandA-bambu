@@ -4,7 +4,7 @@ set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 ROOT=$(realpath "$HERE/../../..")
 if [[ ${1:-} == -h || ${1:-} == --help ]]; then
-  echo "Usage: $0 BAMBU [OUTPUT_DIR] (OUTPUT_DIR must not exist; default is documentation/tmp/out_source_restrict_provenance)"
+  echo "Usage: $0 BAMBU [OUTPUT_DIR] (OUTPUT_DIR must not exist; default is ./out_source_restrict_provenance)"
   exit 0
 fi
 if [[ $# -lt 1 || $# -gt 2 ]]; then
@@ -12,11 +12,13 @@ if [[ $# -lt 1 || $# -gt 2 ]]; then
   exit 2
 fi
 BAMBU_ARG=${1:?Bambu executable required}
-OUT_ARG=${2:-"$ROOT/documentation/tmp/out_source_restrict_provenance"}
+OUT_ARG=${2:-"$PWD/out_source_restrict_provenance"}
 if [[ "$BAMBU_ARG" == */* ]]; then BAMBU=$(realpath "$BAMBU_ARG"); else BAMBU=$(command -v "$BAMBU_ARG" || true); [[ -n ${BAMBU:-} ]] && BAMBU=$(realpath "$BAMBU"); fi
 if [[ -z ${BAMBU:-} || ! -x "$BAMBU" ]]; then echo "Bambu executable not found: $BAMBU_ARG" >&2; exit 2; fi
 if [[ -e "$OUT_ARG" || -L "$OUT_ARG" ]]; then echo "output directory must not exist: $OUT_ARG" >&2; exit 2; fi
-OUT=$(realpath -m "$OUT_ARG")
+OUT=$(realpath -m -- "$OUT_ARG")
+mkdir -p -- "$(dirname -- "$OUT")"
+mkdir "$OUT"
 mkdir -p "$OUT/tmp"
 export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp"
 FIXTURE="$HERE/compiler_cases/duplex_effects/source_restrict_provenance.cpp"
@@ -33,11 +35,6 @@ fi
 [[ -n ${BAMBU_HLS:-} ]] || { echo "BAMBU_HLS is unset; refusing to guess the ASTAnalyzer plugin" >&2; exit 2; }
 PLUGIN="$(realpath "$BAMBU_HLS")/lib/panda/clang-16/ASTAnalyzer.so"
 [[ -r "$PLUGIN" ]] || { echo "selected ASTAnalyzer plugin is missing: $PLUGIN" >&2; exit 2; }
-TMP_ROOT=$(realpath "$ROOT/documentation/tmp")
-case "$OUT/" in
-  "$TMP_ROOT/"*) ;;
-  *) echo "warning: provenance output is outside documentation/tmp: $OUT" >&2 ;;
-esac
 digest() { sha256sum "$1" | awk '{print $1}'; }
 GIT_HEAD=$(git -C "$ROOT" rev-parse HEAD)
 {

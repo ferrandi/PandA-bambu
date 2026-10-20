@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 RUNNER = ROOT / "panda_regressions/hls/bambu_axi_burst/rtl_tests/run_generated_duplex_tests.sh"
-SCRATCH_ROOT = ROOT / "documentation/tmp/out_generated_duplex_runner_tests"
+SCRATCH_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 SCENARIOS = (
     "LOAD_WAIT_STORE", "STORE_WAIT_LOAD", "WRITE_STALL_READ_PROGRESS", "READ_STALL_WRITE_PROGRESS",
     "SIMULTANEOUS", "CONFIG_ISOLATION", "ZERO_READ", "ZERO_WRITE", "UNPAIRED_DESCRIPTORS",

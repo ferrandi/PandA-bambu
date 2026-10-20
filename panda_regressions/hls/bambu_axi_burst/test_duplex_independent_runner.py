@@ -13,7 +13,7 @@ from pathlib import Path
 
 FAMILY = Path(__file__).resolve().parent
 REPO = FAMILY.parents[2]
-TMP_ROOT = REPO / "documentation" / "tmp"
+TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
 
 STUB_BAMBU = r'''#!/usr/bin/env python3
@@ -153,13 +153,13 @@ class DuplexIndependentRunnerTests(unittest.TestCase):
         self.state = self.scratch / "state"
         self.state.mkdir()
         (self.state / "state.json").write_text(json.dumps({"active": 0, "max_active": 0}))
-        self.output = self.repo / "documentation/tmp/out_duplex_independent"
+        self.output = self.repo / "out_duplex_independent"
         self.env = os.environ.copy()
         self.env.update({
             "PATH": f"{self.verilator.parent}:{self.env['PATH']}",
-            "TMPDIR": str(self.repo / "documentation/tmp"),
-            "TMP": str(self.repo / "documentation/tmp"),
-            "TEMP": str(self.repo / "documentation/tmp"),
+            "TMPDIR": str(self.scratch),
+            "TMP": str(self.scratch),
+            "TEMP": str(self.scratch),
             "STUB_STATE": str(self.state),
             "BURST_DUPLEX_INDEPENDENT_SIM_OUTSIDE_SANDBOX": "1",
             "DUPLEX_INDEPENDENT_JOBS": "2",
@@ -193,7 +193,7 @@ class DuplexIndependentRunnerTests(unittest.TestCase):
             shutil.rmtree(self.output)
         (self.state / "runs.jsonl").unlink(missing_ok=True)
         (self.state / "state.json").write_text(json.dumps({"active": 0, "max_active": 0}))
-        (self.repo / "documentation/tmp").mkdir(parents=True, exist_ok=True)
+        self.repo.mkdir(parents=True, exist_ok=True)
 
     def test_requires_outside_sandbox_opt_in(self):
         result = self.run_runner(outside="0")
@@ -210,10 +210,10 @@ class DuplexIndependentRunnerTests(unittest.TestCase):
                 self.assertIn("DUPLEX_INDEPENDENT_JOBS", result.stdout)
                 self.assertFalse(self.output.exists())
         outside = self.scratch / "outside-output"
+        outside.mkdir()
         result = self.run_runner(output=outside)
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("must be under", result.stdout)
-        self.assertFalse(outside.exists())
+        self.assertIn("must be fresh", result.stdout)
         self.output.parent.mkdir(parents=True, exist_ok=True)
         self.output.mkdir()
         result = self.run_runner()

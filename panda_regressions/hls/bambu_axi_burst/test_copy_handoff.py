@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import os
 import re
 import tempfile
 import unittest
@@ -10,7 +11,7 @@ import xml.etree.ElementTree as ET
 import check_copy_handoff as checker
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-SCRATCH = REPO_ROOT / "documentation/tmp/f5/handoff-worker/offline-tests"
+SCRATCH = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 SCRATCH.mkdir(parents=True, exist_ok=True)
 
 

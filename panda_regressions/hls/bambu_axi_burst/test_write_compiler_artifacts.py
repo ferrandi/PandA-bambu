@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Unit tests for the isolated manual F1b artifact checker."""
 import pathlib
+import os
 import re
 import tempfile
 import unittest
@@ -11,7 +12,7 @@ from io import StringIO
 from check_write_compiler_artifacts import check_case, main
 
 REPO = pathlib.Path(__file__).resolve().parents[3]
-TMP_ROOT = REPO / "documentation" / "tmp" / "f4-guard-gaps" / "a-offline"
+TMP_ROOT = pathlib.Path(os.environ.get("BURST_TEST_TMPDIR", pathlib.Path.cwd())) / f"out_{pathlib.Path(__file__).stem}"
 
 
 class CheckerTests(unittest.TestCase):

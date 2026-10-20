@@ -10,10 +10,13 @@ range_ok() { is_uint "$1" && ((${#1} <= ${#3})) && (( $1 >= $2 && $1 <= $3 )); }
 
 TESTS=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
 ROOT=$(git -C "$TESTS" rev-parse --show-toplevel)
+LAUNCH_DIR=$PWD
+OUT_ARG_ABSOLUTE=
 cd "$ROOT"
 if [[ ${1:-} == -h || ${1:-} == --help ]]; then usage; exit 0; fi
 (( $# >= 7 )) || { usage; exit 2; }
 B=$1 O=$2 D=$3 L=$4 N=$5 Q=$6 OUT_ARG=$7
+if [[ $OUT_ARG == /* ]]; then OUT_ARG_ABSOLUTE=$OUT_ARG; else OUT_ARG_ABSOLUTE="$LAUNCH_DIR/$OUT_ARG"; fi
 shift 7
 FIXTURE=sum MODE=burst AXI_TYPE=INCR
 while (( $# )); do
@@ -35,11 +38,8 @@ range_ok "$Q" 0 4095 || fail 'Q must be an unsigned decimal integer in 0..4095'
 case $FIXTURE in sum|independent|mulxor) ;; *) fail "unknown fixture: $FIXTURE" ;; esac
 case $MODE in burst|legacy|scheduler-off) ;; *) fail "unknown mode: $MODE" ;; esac
 
-TMP_ROOT="$ROOT/documentation/tmp"
-mkdir -p "$TMP_ROOT"
-[[ ! -L $OUT_ARG ]] || fail "refusing symlink output path: $OUT_ARG"
-if [[ $OUT_ARG == /* ]]; then OUT=$(realpath -m -- "$OUT_ARG"); else OUT=$(realpath -m -- "$ROOT/$OUT_ARG"); fi
-case "$OUT" in "$TMP_ROOT"/*) ;; *) fail "FRESH_OUT must resolve below $TMP_ROOT" ;; esac
+[[ ! -L $OUT_ARG_ABSOLUTE ]] || fail "refusing symlink output path: $OUT_ARG_ABSOLUTE"
+OUT=$(realpath -m -- "$OUT_ARG_ABSOLUTE")
 [[ ! -e $OUT ]] || fail "refusing to reuse existing output: $OUT"
 [[ ! -L $(dirname "$OUT") ]] || fail 'output parent may not be a symlink'
 
@@ -61,7 +61,8 @@ fi
 mkdir -p "$(dirname "$OUT")"
 mkdir "$OUT"
 mkdir -p "$OUT/run" "$OUT/preflight"
-export TMPDIR="$TMP_ROOT" TMP="$TMP_ROOT" TEMP="$TMP_ROOT"
+mkdir -p "$OUT/tmp"
+export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp"
 PROFILE_CPP="$OUT/profile.cpp"
 PROFILE_JSON="$OUT/profile.json"
 python3 -B "$PROFILE_TOOL" --fixture "$FIXTURE" --b "$B" --o "$O" --d "$D" --l "$L" --output "$PROFILE_CPP" --manifest "$PROFILE_JSON" >"$OUT/profile.stdout.log" 2>"$OUT/profile.stderr.log" || fail 'profile generation failed'
@@ -76,7 +77,7 @@ SETTINGS="$INSTALL_PREFIX/settings.sh"
 # shellcheck disable=SC1090
 source "$SETTINGS"
 IFS=$' \t\n'
-export TMPDIR="$TMP_ROOT" TMP="$TMP_ROOT" TEMP="$TMP_ROOT"
+export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp"
 BAMBU="$INSTALL_PREFIX/bin/bambu"
 [[ -x $BAMBU ]] || fail "installed Bambu executable missing: $BAMBU"
 if [[ $MODE != scheduler-off ]]; then export PATH="$(dirname "$VSIM"):$PATH"; fi

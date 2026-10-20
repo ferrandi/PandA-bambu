@@ -2,6 +2,7 @@
 """Negative offline tests for the copy-baseline artifact gate."""
 import csv
 import hashlib
+import os
 from pathlib import Path
 import shutil
 import sys
@@ -10,7 +11,7 @@ import unittest
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
-TMP_ROOT = REPO / "documentation" / "tmp"
+TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 sys.path.insert(0, str(HERE))
 import check_copy_baseline_results as checker
 
