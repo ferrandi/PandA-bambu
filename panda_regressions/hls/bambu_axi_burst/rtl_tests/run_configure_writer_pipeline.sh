@@ -28,7 +28,7 @@ if [[ ! $SIM_JOBS =~ ^[1-9][0-9]*$ ]]; then
     exit 2
 fi
 
-OUT_ARG=${1:-documentation/tmp/out_configure_writer_pipeline}
+OUT_ARG=${1:-"$PWD/out_configure_writer_pipeline"}
 OUT_PARENT=$(realpath -m -- "$(dirname "$OUT_ARG")")
 TASK_OUT=$(realpath -m -- "$OUT_ARG")
 if [[ -e "$TASK_OUT" || -e "$OUT_ARG" || -L "$OUT_ARG" ]]; then

@@ -56,14 +56,9 @@ def main(argv: list[str] | None = None) -> int:
         o = parse_positive("O", args.o, 16)
         d = parse_positive("D", args.d, 4096)
         latency = parse_positive("L", args.l, 0xFFFFFFFF)
-        tmp_root = (ROOT / "documentation/tmp").resolve()
         output_path = args.output.resolve()
         manifest_path = args.manifest.resolve()
         for label, path in (("output", output_path), ("manifest", manifest_path)):
-            try:
-                path.relative_to(tmp_root)
-            except ValueError as error:
-                raise ValueError(f"{label} must be under {tmp_root}") from error
             if path.exists():
                 raise ValueError(f"refusing to overwrite existing {label}: {path}")
         if output_path == manifest_path:

@@ -11,12 +11,11 @@ CHECKER="$ROOT/panda_regressions/hls/bambu_axi_burst/check_bundle_preanalysis_ar
 RUNNER="$TESTS/run_bundle_preanalysis_tests.sh"
 CORE_SOURCE="$ROOT/src/frontend_analysis/IR_analysis/InterfaceInfer.cpp"
 if [[ $# -lt 1 || $# -gt 2 ]]; then
-  echo "usage: $0 <bambu> [<fresh-output-directory; defaults to documentation/tmp/out_bundle_preanalysis>]" >&2
+  echo "usage: $0 <bambu> [<fresh-output-directory; defaults to ./out_bundle_preanalysis>]" >&2
   exit 2
 fi
 BAMBU_ARG=$1
-TMP_ROOT=$(realpath -m "$ROOT/documentation/tmp")
-OUT_ARG=${2:-"$TMP_ROOT/out_bundle_preanalysis"}
+OUT_ARG=${2:-"$PWD/out_bundle_preanalysis"}
 if [[ "$BAMBU_ARG" == */* ]]; then BAMBU=$(realpath "$BAMBU_ARG"); else BAMBU=$(command -v "$BAMBU_ARG" || true); [[ -n "$BAMBU" ]] && BAMBU=$(realpath "$BAMBU"); fi
 if [[ -z ${BAMBU:-} || ! -x "$BAMBU" ]]; then echo "Bambu executable not found: $BAMBU_ARG" >&2; exit 2; fi
 PREFIX=$(dirname "$(dirname "$BAMBU")")
@@ -36,10 +35,9 @@ command -v rg >/dev/null || { echo "required tool not found: rg" >&2; exit 2; }
   echo "fixture/checker missing" >&2; exit 2;
 }
 if [[ -e "$OUT_ARG" || -L "$OUT_ARG" ]]; then echo "output path must not exist or be a symlink: $OUT_ARG" >&2; exit 2; fi
-OUT=$(realpath -m "$OUT_ARG")
-if [[ "$OUT" != "$TMP_ROOT" && "$OUT" != "$TMP_ROOT/"* ]]; then
-  echo "warning: output directory is outside documentation/tmp: $OUT" >&2
-fi
+OUT=$(realpath -m -- "$OUT_ARG")
+mkdir -p -- "$(dirname -- "$OUT")"
+mkdir "$OUT"
 mkdir -p "$OUT/tmp"
 OUT=$(realpath "$OUT")
 export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp" PYTHONDONTWRITEBYTECODE=1

@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 RUNNER = ROOT / "panda_regressions/hls/bambu_axi_burst/run_write_development_tests.sh"
-SCRATCH_ROOT = ROOT / "documentation/tmp/out_write_development_runner_tests"
+SCRATCH_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 
 
 class DevelopmentRunnerTests(unittest.TestCase):
@@ -51,8 +51,8 @@ class DevelopmentRunnerTests(unittest.TestCase):
         self.bin_dir = self.scratch / "bin"
         self.bin_dir.mkdir()
         self.calls = self.scratch / "calls.log"
-        self._stub("python3", "printf 'python3|%s|%s|%s|%s|%s\\n' \"$TMPDIR\" \"$TMP\" \"$TEMP\" \"${BURST_G2_SIM_OUTSIDE_SANDBOX:-}\" \"$*\" >>\"$CALL_LOG\"\n")
-        self._stub("bash", "printf 'bash|%s|%s|%s|%s|%s\\n' \"$TMPDIR\" \"$TMP\" \"$TEMP\" \"${BURST_G2_SIM_OUTSIDE_SANDBOX:-}\" \"$*\" >>\"$CALL_LOG\"\nif [[ $* == *run_source_restrict_provenance_tests.sh* ]]; then\n  [[ ${SOURCE_RESTRICT_FAIL:-0} != 1 ]] || exit 23\n  output=${!#}\n  mkdir -p \"$output\"\n  printf 'SOURCE-RESTRICT-PROVENANCE PASS: 4 compiler cases\\nSOURCE_RESTRICT_PROVENANCE OUT=%s\\n' \"$output\" >\"$output/aggregate.log\"\nfi\n")
+        self._stub("python3", "printf 'python3|%s|%s|%s|%s|%s|%s\\n' \"$TMPDIR\" \"$TMP\" \"$TEMP\" \"${BURST_G2_SIM_OUTSIDE_SANDBOX:-}\" \"${BURST_TEST_TMPDIR:-}\" \"$*\" >>\"$CALL_LOG\"\n")
+        self._stub("bash", "printf 'bash|%s|%s|%s|%s|%s|%s\\n' \"$TMPDIR\" \"$TMP\" \"$TEMP\" \"${BURST_G2_SIM_OUTSIDE_SANDBOX:-}\" \"${BURST_TEST_TMPDIR:-}\" \"$*\" >>\"$CALL_LOG\"\nif [[ $* == *run_source_restrict_provenance_tests.sh* ]]; then\n  [[ ${SOURCE_RESTRICT_FAIL:-0} != 1 ]] || exit 23\n  output=${!#}\n  mkdir -p \"$output\"\n  printf 'SOURCE-RESTRICT-PROVENANCE PASS: 4 compiler cases\\nSOURCE_RESTRICT_PROVENANCE OUT=%s\\n' \"$output\" >\"$output/aggregate.log\"\nfi\n")
         self.bambu = self.scratch / "installed/bin/bambu"
         self.bambu.parent.mkdir(parents=True)
         self.bambu.write_text("#!/bin/sh\nexit 0\n")
@@ -67,6 +67,7 @@ class DevelopmentRunnerTests(unittest.TestCase):
         self.env["CALL_LOG"] = str(self.calls)
         temp_base = SCRATCH_ROOT.resolve()
         self.env.update(TMPDIR=str(temp_base), TMP=str(temp_base), TEMP=str(temp_base))
+        self.env["BURST_TEST_TMPDIR"] = str(self.scratch / "stale-inherited-test-output")
 
     def _stub(self, name, body):
         path = self.bin_dir / name
@@ -111,7 +112,10 @@ class DevelopmentRunnerTests(unittest.TestCase):
         self.assertIn("test_extract_write_engine.py", calls[1])
         for call in calls:
             self.assertTrue(call.startswith("python3|"))
-            self.assertEqual(call.split("|", 5)[1:4], [str(output / "offline/tmp")] * 3)
+            fields = call.split("|", 6)
+            self.assertEqual(fields[1:4], [str(output / "offline/tmp")] * 3)
+            self.assertEqual(fields[5], str(output / "offline"))
+            self.assertNotEqual(fields[5], self.env["BURST_TEST_TMPDIR"])
         self.assertTrue((output / "offline").is_dir())
 
     def test_output_must_be_fresh_and_g2_is_opt_in(self):

@@ -13,7 +13,7 @@ import unittest
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[2]
-TMP_ROOT = REPO_ROOT / "documentation" / "tmp"
+TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 CHECKER = HERE / "check_burst_results.py"
 HEADER = ("case\tmode\tcycles\tsource\tburst_max\toutstanding\tfifo_depth\t"
           "write_burst_max\twrite_outstanding\twrite_fifo_depth\taddr_bits\n")

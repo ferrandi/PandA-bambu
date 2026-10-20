@@ -145,6 +145,7 @@ run_offline() {
   local offline_dir="$out_root/offline"
   mkdir -p "$offline_dir/tmp"
   export TMPDIR="$offline_dir/tmp" TMP="$offline_dir/tmp" TEMP="$offline_dir/tmp"
+  export BURST_TEST_TMPDIR="$offline_dir"
   python3 -B "$script_dir/test_write_compiler_artifacts.py"
   python3 -B "$script_dir/rtl_tests/test_extract_write_engine.py"
 }

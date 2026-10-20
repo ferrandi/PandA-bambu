@@ -17,7 +17,7 @@ EXTRACTOR = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 SPEC.loader.exec_module(EXTRACTOR)
 ROOT = EXTRACTOR.ROOT
-TMP_ROOT = ROOT / "documentation/tmp"
+TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 
 
 class T4BModelHarnessTests(unittest.TestCase):

@@ -14,7 +14,6 @@ checker="$script_dir/check_duplex_alias_results.py"
 helpers="$script_dir/parallel_helpers.sh"
 range_probe_runner="$script_dir/rtl_tests/run_duplex_alias_range_guard.sh"
 range_probe_testbench="$script_dir/rtl_tests/tb_duplex_alias_range_guard.sv"
-tmp_root="$repo_root/documentation/tmp"
 
 usage() { echo "usage: BURST_DUPLEX_ALIAS_SIM_OUTSIDE_SANDBOX=1 $0 BAMBU [FRESH_OUTPUT_DIR]" >&2; }
 if (($# < 1 || $# > 2)); then usage; exit 2; fi
@@ -26,8 +25,7 @@ address_bits=${DUPLEX_ALIAS_ADDRESS_BITS:-32}
 if [[ $address_bits != 32 && $address_bits != 64 ]]; then
   echo "DUPLEX_ALIAS_ADDRESS_BITS must be 32 or 64 (got '$address_bits')" >&2; exit 2
 fi
-mkdir -p "$tmp_root"
-export TMPDIR="$tmp_root" TMP="$tmp_root" TEMP="$tmp_root" PYTHONDONTWRITEBYTECODE=1
+export PYTHONDONTWRITEBYTECODE=1
 
 bambu_arg=$1
 if [[ $bambu_arg == */* ]]; then
@@ -66,20 +64,17 @@ if [[ $requested_jobs == 0 || ${#requested_jobs} -gt 10 ]] || \
 fi
 requested_jobs=$((10#$requested_jobs))
 
-out_arg=${2:-"$tmp_root/out_duplex_alias"}
+out_arg=${2:-"$PWD/out_duplex_alias"}
 if [[ -e $out_arg || -L $out_arg ]]; then
   echo "output directory must be fresh and not a symlink: $out_arg" >&2; exit 2
 fi
 out=$(realpath -m -- "$out_arg")
-tmp_root_real=$(realpath -m -- "$tmp_root")
-case "$out/" in
-  "$tmp_root_real/"*) ;;
-  *) echo "output directory must be under $tmp_root_real: $out" >&2; exit 2 ;;
-esac
 
 mkdir "$out"
 mkdir "$out/jobs"
 out=$(realpath "$out")
+mkdir "$out/tmp"
+export TMPDIR="$out/tmp" TMP="$out/tmp" TEMP="$out/tmp"
 
 digest() { sha256sum -- "$1" | awk '{print $1}'; }
 git_head=$(git -C "$repo_root" rev-parse HEAD)

@@ -14,7 +14,7 @@ ROOT = TESTS.parents[3]
 EXTRACTOR_PATH = TESTS / "extract_testbench_memaxi.py"
 T4B_EXTRACTOR_PATH = ROOT / "panda_regressions/hls/bambu_axi_burst/t4b_tests/extract_t4b_cells.py"
 XML_PATH = ROOT / "etc/libtech/NC_TESTBENCH_IPs.xml"
-TMP_ROOT = ROOT / "documentation/tmp"
+TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 SPEC = importlib.util.spec_from_file_location("t4b_extractor", T4B_EXTRACTOR_PATH)
 T4B_EXTRACTOR = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

@@ -18,7 +18,7 @@ if [[ $# -lt 1 || $# -gt 2 ]]; then
   exit 2
 fi
 BAMBU_ARG=$1
-OUT_ARG=${2:-"$ROOT/documentation/tmp/out_duplex_activation_matrix"}
+OUT_ARG=${2:-"$PWD/out_duplex_activation_matrix"}
 if [[ "$BAMBU_ARG" == */* ]]; then BAMBU=$(realpath "$BAMBU_ARG"); else BAMBU=$(command -v "$BAMBU_ARG" || true); [[ -n "$BAMBU" ]] && BAMBU=$(realpath "$BAMBU"); fi
 if [[ -z ${BAMBU:-} || ! -x "$BAMBU" ]]; then echo "Bambu executable not found: $BAMBU_ARG" >&2; exit 2; fi
 PREFIX=$(dirname "$(dirname "$BAMBU")")
@@ -42,10 +42,12 @@ MATRIX_JOBS=${DUPLEX_MATRIX_JOBS:-$DEFAULT_JOBS}
 MATRIX_JOBS=$((10#$MATRIX_JOBS))
 (( MATRIX_JOBS <= ${#CASES[@]} )) || MATRIX_JOBS=${#CASES[@]}
 
-OUT=$(realpath -m "$OUT_ARG")
+OUT=$(realpath -m -- "$OUT_ARG")
+mkdir -p -- "$(dirname -- "$OUT")"
+mkdir "$OUT"
 mkdir -p "$OUT/tmp" "$OUT/job_logs"
 OUT=$(realpath "$OUT")
-export PYTHONDONTWRITEBYTECODE=1
+export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp" PYTHONDONTWRITEBYTECODE=1
 
 digest() { sha256sum "$1" | awk '{print $1}'; }
 GIT_HEAD=$(git -C "$ROOT" rev-parse HEAD)

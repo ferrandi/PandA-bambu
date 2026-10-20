@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import importlib.util
+import os
 import re
 import subprocess
 import sys
@@ -23,7 +24,7 @@ SPEC.loader.exec_module(EXTRACTOR)
 
 class WriteEngineExtractorTests(unittest.TestCase):
     def setUp(self):
-        temp_root = ROOT / "documentation/tmp"
+        temp_root = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
         temp_root.mkdir(parents=True, exist_ok=True)
         temp = tempfile.TemporaryDirectory(prefix="write-engine-extract-", dir=temp_root)
         self.addCleanup(temp.cleanup)

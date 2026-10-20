@@ -53,7 +53,7 @@ source "$SETTINGS"
 PLUGIN="$PREFIX/lib/panda/clang-16/ASTAnalyzer.so"
 [[ -s $PLUGIN ]] || { echo "selected ASTAnalyzer plugin is missing: $PLUGIN" >&2; exit 2; }
 
-OUT_ARG=${2:-"$ROOT/documentation/tmp/out_generated_duplex_kernel"}
+OUT_ARG=${2:-"$PWD/out_generated_duplex_kernel"}
 [[ ! -e $OUT_ARG && ! -L $OUT_ARG ]] || { echo "output directory must be fresh and not a symlink: $OUT_ARG" >&2; exit 2; }
 OUT=$(realpath -m -- "$OUT_ARG")
 SIM_JOBS=${SIM_JOBS:-2}

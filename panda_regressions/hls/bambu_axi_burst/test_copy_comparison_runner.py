@@ -11,7 +11,7 @@ from pathlib import Path
 
 SOURCE_ROOT = Path(__file__).resolve().parent
 REPO_ROOT = SOURCE_ROOT.parents[2]
-TMP_ROOT = REPO_ROOT / "documentation" / "tmp"
+TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
 
 PROFILES = {
@@ -216,7 +216,7 @@ class CopyComparisonRunnerTests(unittest.TestCase):
             if path.is_file():
                 path.unlink()
         env = os.environ.copy()
-        scratch = self.root / "documentation" / "tmp"
+        scratch = self.root / "tmp"
         scratch.mkdir(parents=True, exist_ok=True)
         env.update({
             "PATH": self.bin_path,

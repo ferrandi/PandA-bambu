@@ -3,12 +3,14 @@
 
 import unittest
 import importlib.util
+import os
 from pathlib import Path
 import subprocess
 from tempfile import TemporaryDirectory
 
 
 ROOT = Path(__file__).resolve().parents[3]
+TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 RUNNER = Path(__file__).with_name("run_latency_metadata_tests.py")
 
 
@@ -45,9 +47,8 @@ def agree_for_shared_bundle(root_values):
 
 class AxiLatencyMetadataTest(unittest.TestCase):
     def test_compiled_suite_creates_its_output_directory(self):
-        scratch = ROOT / "documentation" / "tmp"
-        scratch.mkdir(parents=True, exist_ok=True)
-        with TemporaryDirectory(dir=scratch) as temporary:
+        TMP_ROOT.mkdir(parents=True, exist_ok=True)
+        with TemporaryDirectory(dir=TMP_ROOT) as temporary:
             output = Path(temporary) / "compiler" / "latency-metadata"
             prepared = load_runner().prepare_output(output)
             self.assertEqual(prepared, output.resolve(strict=True))

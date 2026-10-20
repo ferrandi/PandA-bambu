@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import tempfile
 import json
+import os
+import subprocess
 import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -9,7 +11,7 @@ from check_bundle_preanalysis_artifacts import CheckError, verify
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
-TMP_ROOT = REPO / "documentation" / "tmp"
+TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 
 
 class BundlePreanalysisCheckerTests(unittest.TestCase):
@@ -54,6 +56,48 @@ class BundlePreanalysisCheckerTests(unittest.TestCase):
             raw_path.write_text(raw)
         else:
             raw_path.unlink(missing_ok=True)
+
+    def test_runner_creates_missing_parent_for_nested_relative_output(self):
+        with tempfile.TemporaryDirectory(prefix="bundle-preanalysis-runner-", dir=TMP_ROOT) as temp:
+            launch = Path(temp) / "launch"
+            launch.mkdir()
+            prefix = Path(temp) / "install"
+            bambu = prefix / "bin/bambu"
+            bambu.parent.mkdir(parents=True)
+            invocation = Path(temp) / "bambu-invocation.txt"
+            bambu.write_text(
+                "#!/usr/bin/env bash\n"
+                "set -euo pipefail\n"
+                "if [[ ${1:-} == --version ]]; then echo 'stub bambu'; exit 0; fi\n"
+                "printf '%s\\n' \"$PWD\" >\"$BAMBU_INVOCATION\"\n"
+                "exit 27\n"
+            )
+            bambu.chmod(0o755)
+            (prefix / "settings.sh").write_text(
+                f'export BAMBU_HLS="{prefix}"\n'
+            )
+            plugin = prefix / "lib/panda/clang-16/ASTAnalyzer.so"
+            plugin.parent.mkdir(parents=True)
+            plugin.write_text("stub plugin\n")
+            relative_output = Path("created") / "by" / "runner" / "out_nested"
+            env = os.environ.copy()
+            env["BAMBU_INVOCATION"] = str(invocation)
+            result = subprocess.run(
+                [str(HERE / "run_bundle_preanalysis_tests.sh"), str(bambu), str(relative_output)],
+                cwd=launch,
+                env=env,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 27, result.stderr)
+            output = launch / relative_output
+            first_case = output / "distinct_normal"
+            self.assertTrue(first_case.is_dir())
+            self.assertTrue((first_case / "stdout.log").is_file())
+            self.assertEqual(invocation.read_text().strip(), str(first_case.resolve()))
+            self.assertNotIn("cannot create directory", result.stderr)
 
     @staticmethod
     def burst_rtl(read=True, write=True, legacy=False):
