@@ -11,7 +11,6 @@ burst_checker="$script_dir/check_burst_results.py"
 helpers="$script_dir/parallel_helpers.sh"
 copy_source="$script_dir/bambu_axi_burst_duplex_copy.cpp"
 independent_source="$script_dir/bambu_axi_burst_duplex_independent.cpp"
-tmp_root="$repo_root/documentation/tmp"
 
 usage() { echo "usage: $0 BAMBU [FRESH_OUTPUT_DIR]" >&2; }
 if (($# < 1 || $# > 2)); then usage; exit 2; fi
@@ -47,18 +46,12 @@ fi
 requested_jobs=$((10#$requested_jobs))
 (( requested_jobs <= 4 )) || requested_jobs=4
 
-out_arg=${2:-"$tmp_root/out_duplex_handoff"}
+out_arg=${2:-"$PWD/out_duplex_handoff"}
 if [[ -e $out_arg || -L $out_arg ]]; then
   echo "output directory must be fresh and not a symlink: $out_arg" >&2; exit 2
 fi
 out=$(realpath -m -- "$out_arg")
-tmp_root_real=$(realpath -m -- "$tmp_root")
-case "$out/" in
-  "$tmp_root_real/"*) ;;
-  *) echo "output directory must be under $tmp_root_real: $out" >&2; exit 2 ;;
-esac
 
-mkdir -p "$tmp_root"
 mkdir "$out"
 out=$(realpath "$out")
 mkdir "$out/job_logs" "$out/tmp"

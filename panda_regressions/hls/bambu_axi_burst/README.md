@@ -19,7 +19,7 @@ exact installed Bambu executable:
 
 ```sh
 bash panda_regressions/hls/bambu_axi_burst/run_write_development_tests.sh all \
-  /path/to/install/bin/bambu documentation/tmp/axi-write-development-run
+  /path/to/install/bin/bambu out_axi_write_development_run
 ```
 
 Use mode `offline`, `compiler`, or `g2` to run one part. Compiler mode runs the
@@ -36,13 +36,16 @@ By default all durable output is placed in `./out_bambu_axi_burst`, relative
 to the caller's current directory. The script refuses to run if that path (or
 an explicitly selected `-o/--output` path) already exists, including a
 dangling symlink. Use a fresh path for each run. Mantis writes cases/report
-under `<out_root>/mantis`; Mantis, the cycle gate, internal mock checks, and
-auxiliary runners use `<out_root>/tmp` for temporary files. No run artifacts
-are created outside `<out_root>`.
+under `<out_root>/mantis`; temporary files use `<out_root>/tmp`. Internal mock
+checks and auxiliary Python suites write to per-suite `out_<suite>` children
+under `<out_root>`. No run artifacts are created outside `<out_root>`.
 
-Standalone helper/test scripts do not choose a scratch location: pass a fresh
-output directory to RTL runners and set `BURST_TEST_TMPDIR` to a directory
-under the intended output root for mock tests.
+Standalone shell runners default to a fresh `./out_<test>` directory in the
+launch directory; an explicit relative output path is resolved from that same
+directory. Python offline suites create their own `out_<suite>` directory under
+`BURST_TEST_TMPDIR` when set, or under the launch directory otherwise. The main
+regression sets that parent to its selected output root, keeping helper outputs
+and temporary files beneath the same run.
 
 Like sibling classic regressions, the default behavior cleans generated
 intermediates after all gates pass, while preserving the `out_` root, report,

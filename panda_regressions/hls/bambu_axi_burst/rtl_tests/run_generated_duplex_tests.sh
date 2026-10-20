@@ -43,7 +43,7 @@ PLUGIN="$PREFIX/lib/panda/clang-16/ASTAnalyzer.so"
   echo "G1 checker/helper/testbench/source missing" >&2; exit 2;
 }
 
-OUT_ARG=${2:-"$ROOT/documentation/tmp/out_generated_duplex"}
+OUT_ARG=${2:-"$PWD/out_generated_duplex"}
 if [[ -e "$OUT_ARG" || -L "$OUT_ARG" ]]; then
   echo "output directory must be fresh and not a symlink: $OUT_ARG" >&2; exit 2
 fi

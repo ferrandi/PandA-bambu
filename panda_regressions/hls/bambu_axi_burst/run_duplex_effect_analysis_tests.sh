@@ -44,7 +44,7 @@ if [[ $# -lt 1 || $# -gt 2 ]]; then
   exit 2
 fi
 BAMBU_ARG=$1
-OUT_ARG=${2:-"$ROOT/documentation/tmp/out_duplex_effect_analysis"}
+OUT_ARG=${2:-"$PWD/out_duplex_effect_analysis"}
 if [[ "$BAMBU_ARG" == */* ]]; then BAMBU=$(realpath "$BAMBU_ARG"); else BAMBU=$(command -v "$BAMBU_ARG" || true); [[ -n "$BAMBU" ]] && BAMBU=$(realpath "$BAMBU"); fi
 if [[ -z ${BAMBU:-} || ! -x "$BAMBU" ]]; then echo "Bambu executable not found: $BAMBU_ARG" >&2; exit 2; fi
 PREFIX=$(dirname "$(dirname "$BAMBU")")
@@ -88,7 +88,9 @@ else
   if (( DUPLEX_EFFECT_JOBS > ${#CASES[@]} )); then DUPLEX_EFFECT_JOBS=${#CASES[@]}; fi
 fi
 if [[ -e "$OUT_ARG" || -L "$OUT_ARG" ]]; then echo "output path must not exist or be a symlink: $OUT_ARG" >&2; exit 2; fi
-OUT=$(realpath -m "$OUT_ARG")
+OUT=$(realpath -m -- "$OUT_ARG")
+mkdir -p -- "$(dirname -- "$OUT")"
+mkdir "$OUT"
 mkdir -p "$OUT/tmp"
 OUT=$(realpath "$OUT")
 export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp" PYTHONDONTWRITEBYTECODE=1

@@ -7,12 +7,11 @@ ROOT=$(realpath "$SCRIPT_DIR/../../../../")
 XML="$ROOT/etc/libtech/NC_AXI_IPs.xml"
 EXTRACTOR="$SCRIPT_DIR/extract_write_engine.py"
 TB="$SCRIPT_DIR/tb_configure_read_pipeline.sv"
-TMP_ROOT="$ROOT/documentation/tmp"
 if (($# > 1)); then
     echo "usage: $0 [output-directory]" >&2
     exit 2
 fi
-OUT=${1:-"$TMP_ROOT/out_configure_read_pipeline"}
+OUT=${1:-"$PWD/out_configure_read_pipeline"}
 
 DEFAULT_SIM_JOBS=$(nproc 2>/dev/null || echo 4)
 SIM_JOBS=${SIM_JOBS:-$DEFAULT_SIM_JOBS}
@@ -23,11 +22,7 @@ fi
 for tool in python3 verilator rg timeout sha256sum git; do
     command -v "$tool" >/dev/null 2>&1 || { echo "missing required tool: $tool" >&2; exit 2; }
 done
-OUT=$(realpath -m "$OUT")
-case "$OUT/" in
-    "$TMP_ROOT/"*) ;;
-    *) echo "warning: output directory is outside documentation/tmp: $OUT" >&2 ;;
-esac
+OUT=$(realpath -m -- "$OUT")
 if [[ -e "$OUT" || -L "$OUT" ]]; then
     echo "output directory must not already exist: $OUT" >&2
     exit 2

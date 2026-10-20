@@ -17,7 +17,8 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[3]
 if not (ROOT / "panda_regressions").is_dir():
     raise RuntimeError(f"unexpected repository root for T4B tests: {ROOT}")
-TMP_ROOT = ROOT / "documentation" / "tmp"
+TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
+TMP_ROOT.mkdir(parents=True, exist_ok=True)
 PROFILE = HERE / "t4b_profile.py"
 RUNNER = HERE / "run_t4b_matched.sh"
 REAL_CHECKER = HERE / "t4b_vcd.py"
@@ -441,7 +442,7 @@ class T4BRunnerTests(unittest.TestCase):
         cmake.write_text(
             "#!/bin/bash\n"
             f"echo cmake:$* >> '{event_log}'\n"
-            "[[ $TMPDIR == */documentation/tmp && $TMP == $TMPDIR && $TEMP == $TMPDIR ]] || exit 84\n",
+            "[[ $TMPDIR == \"$T4B_EXPECTED_TMP\" && $TMP == $TMPDIR && $TEMP == $TMPDIR ]] || exit 84\n",
             encoding="utf-8",
         )
         cmake.chmod(0o755)
@@ -479,6 +480,7 @@ class T4BRunnerTests(unittest.TestCase):
             "MODELSIM_ROOT": str(modelsim_root),
             "T4B_TEST_MODE": "1", "T4B_TEST_INSTALL_PREFIX": str(prefix),
             "T4B_TEST_CHECKER": str(checker), "T4B_EVENT_LOG": str(event_log),
+            "T4B_EXPECTED_TMP": str(output / "tmp"),
             "T4B_MOCK_MISSING_VCD": "1" if missing_vcd else "0",
             "T4B_MOCK_BAD_TOTAL": "1" if bad_total else "0",
             "T4B_MOCK_MISSING_LATENCY": "1" if missing_latency else "0",
