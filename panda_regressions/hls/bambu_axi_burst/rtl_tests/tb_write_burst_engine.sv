@@ -5,7 +5,8 @@ module tb_write_burst_engine #(
     parameter integer ADDR_BITS = 32,
     parameter integer ASYNC_RESET = 0,
     parameter integer RESET_ACTIVE_LOW = 1,
-    parameter integer PEER_FAULT_ENABLE = 1
+    parameter integer PEER_FAULT_ENABLE = 1,
+    parameter integer FAST_STORE_ACK = 0
 );
     logic clock = 1'b0;
     always #5 clock = ~clock;
@@ -51,7 +52,7 @@ module tb_write_burst_engine #(
     MinimalAXI4MasterPipelinedWrite #(
         .B_MAX(B_MAX), .MAX_OUTSTANDING(MAX_OUTSTANDING), .FIFO_DEPTH(FIFO_DEPTH),
         .BITSIZE_in4(ADDR_BITS), .BITSIZE_m_axi_awaddr(ADDR_BITS),
-        .PEER_FAULT_ENABLE(PEER_FAULT_ENABLE)
+        .PEER_FAULT_ENABLE(PEER_FAULT_ENABLE), .FAST_STORE_ACK(FAST_STORE_ACK)
     ) dut (
         .clock(clock), .reset(reset), .start(start), .in1(in1), .in2(in2), .in3(in3),
         .in4(in4), .in5(in5), .done(done), .out1(out1), .fault(fault), .peer_fault(peer_fault),
@@ -78,6 +79,11 @@ module tb_write_burst_engine #(
     integer plan_peak_occupancy = 0;
     integer descriptor_peak_occupancy = 0;
     integer fifo_peak_occupancy = 0;
+    integer fast_pipe_accepts = 0, fast_pipe_pushes = 0;
+    logic [31:0] fast_accept_data = 32'h0;
+    logic fast_accept_recorded = 1'b0;
+    logic pending_capture_seen = 1'b0;
+    logic prev_store_pending = 1'b0;
     integer before_aw_count;
     integer before_w_count;
     logic [ADDR_BITS+7:0] held_aw;
@@ -99,13 +105,31 @@ module tb_write_burst_engine #(
     integer region_word_base;
     integer clock_cycles = 0;
     integer expected_burst_index = 0;
+    logic [ADDR_BITS-1:0] expected_store_frontier;
     logic check_38_split = 1'b0;
     integer i;
     string selected_case;
 
+    function automatic integer scoreboard_index(input logic [ADDR_BITS-1:0] address);
+        begin
+            if (ADDR_BITS == 64 && address == 64'h0000_0003_ffff_fffc)
+                scoreboard_index = MEM_WORDS - 4;
+            else if (ADDR_BITS == 64 && address == 64'h0000_0004_0000_0000)
+                scoreboard_index = MEM_WORDS - 3;
+            else if (ADDR_BITS == 64 && address == 64'hffff_ffff_ffff_fffc)
+                scoreboard_index = MEM_WORDS - 1;
+            else if (address < MEM_WORDS*4)
+                scoreboard_index = int'(address >> 2);
+            else
+                scoreboard_index = -1;
+        end
+    endfunction
+
     logic awready_driver = 1'b0;
     wire effective_awready = awready_driver && (!wait_aw_for_w || wvalid);
     assign awready = effective_awready;
+    wire tb_fifo_push = (FAST_STORE_ACK != 0) ?
+        (dut.fast_pipe_push || dut.pending_store_enqueue) : dut.store_enqueue;
 
     always @(posedge clock) begin
         integer j;
@@ -128,6 +152,11 @@ module tb_write_burst_engine #(
             plan_peak_occupancy = 0;
             descriptor_peak_occupancy = 0;
             fifo_peak_occupancy = 0;
+            fast_pipe_accepts = 0;
+            fast_pipe_pushes = 0;
+            fast_accept_recorded = 1'b0;
+            pending_capture_seen = 1'b0;
+            prev_store_pending = 1'b0;
             bvalid <= 1'b0;
             response_delay <= 0;
             prev_aw_stall <= 1'b0;
@@ -141,6 +170,44 @@ module tb_write_burst_engine #(
                 descriptor_peak_occupancy = int'(dut.descriptor_count);
             if (int'(dut.fifo_count) > fifo_peak_occupancy)
                 fifo_peak_occupancy = int'(dut.fifo_count);
+            if (FAST_STORE_ACK != 0 && dut.region_active && !fault) begin
+                expected_store_frontier = dut.region_base +
+                    (ADDR_BITS'(dut.accepted) << 2);
+                if (dut.next_expected_address !== expected_store_frontier ||
+                    dut.stores_exhausted !== (dut.accepted == dut.region_count))
+                    $fatal(1, "FAST_STORE_ACK_FRONTIER_INVARIANT accepted=%0d count=%0d expected=%h actual=%h exhausted=%b",
+                           dut.accepted, dut.region_count, expected_store_frontier,
+                           dut.next_expected_address, dut.stores_exhausted);
+            end
+            if (FAST_STORE_ACK != 0 && dut.direct_store_ack &&
+                (dut.pending_store_enqueue || dut.store_pending))
+                $fatal(1, "FAST_STORE_ACK_DIRECT_ACK_NOT_EXCLUSIVE enqueue=%b pending=%b",
+                       dut.pending_store_enqueue, dut.store_pending);
+            if (FAST_STORE_ACK != 0 &&
+                int'(dut.fifo_count) + int'(dut.fast_pipe_valid) + int'(dut.store_pending) >
+                FIFO_DEPTH + 1)
+                $fatal(1, "FAST_STORE_ACK_PIPE_CREDIT_OVERFLOW fifo=%0d pipe=%0d pending=%0d depth=%0d",
+                       dut.fifo_count, dut.fast_pipe_valid, dut.store_pending, FIFO_DEPTH);
+            if (FAST_STORE_ACK != 0 && dut.store_pending && !prev_store_pending)
+                pending_capture_seen = 1'b1;
+            prev_store_pending = dut.store_pending;
+            if (FAST_STORE_ACK != 0 && fast_pipe_accepts != fast_pipe_pushes +
+                int'(dut.fast_pipe_valid))
+                $fatal(1, "FAST_STORE_ACK_PIPE_ACCOUNTING accepts=%0d pushes=%0d pipe=%0d",
+                       fast_pipe_accepts, fast_pipe_pushes, dut.fast_pipe_valid);
+            if (FAST_STORE_ACK != 0) begin
+                if (dut.fast_pipe_push) begin
+                    if (!fast_accept_recorded || dut.fast_pipe_data !== fast_accept_data)
+                        $fatal(1, "FAST_STORE_ACK_PIPE_DATA pushed=%h expected=%h recorded=%b",
+                               dut.fast_pipe_data, fast_accept_data, fast_accept_recorded);
+                    fast_pipe_pushes = fast_pipe_pushes + 1;
+                end
+                if (dut.fast_store_accept) begin
+                    fast_accept_data = in3;
+                    fast_accept_recorded = 1'b1;
+                    fast_pipe_accepts = fast_pipe_accepts + 1;
+                end
+            end
 `ifdef PLAN_FIFO_PRESENT
             if (dut.plan_count > 2 || (dut.plan_push && dut.plan_count == 2 && !dut.plan_pop) ||
                 (dut.plan_pop && dut.plan_count == 0))
@@ -165,15 +232,19 @@ module tb_write_burst_engine #(
                     plan_full_exchange_seen = 1'b1;
             end
 `endif
-            if ($test$plusargs("TRACE") && dut.store_enqueue)
+            if ($test$plusargs("TRACE") && tb_fifo_push)
                 $display("RTL_TRACE STORE_ACCEPT %0d %h %08x", $time,
-                         dut.pending_store_enqueue ? dut.pending_address : in4,
-                         dut.pending_store_enqueue ? dut.pending_data : in3);
+                         (FAST_STORE_ACK != 0 && !dut.pending_store_enqueue) ?
+                             (dut.next_expected_address - ADDR_BITS'(4)) :
+                             (dut.pending_store_enqueue ? dut.pending_address : in4),
+                         (FAST_STORE_ACK != 0 && !dut.pending_store_enqueue) ?
+                             dut.fast_pipe_data :
+                             (dut.pending_store_enqueue ? dut.pending_data : in3));
             commit_count = 0;
             if (dut.reserve_beats != 0) reservations = reservations + 1;
             if ((dut.reserve_beats != 0) && bvalid && bready)
                 simultaneous_reserve_b = simultaneous_reserve_b + 1;
-            if (dut.store_enqueue && wvalid && wready)
+            if (tb_fifo_push && wvalid && wready)
                 simultaneous_enqueue_w = simultaneous_enqueue_w + 1;
             if (out1 !== 32'b0)
                 $fatal(1, "WRITE_OUT1_NOT_ZERO");
@@ -234,7 +305,7 @@ module tb_write_burst_engine #(
                     for (j = 0; j < count_for_aw; j = j + 1) begin
                         if (w_queue_last[w_rd+j] !== (j == count_for_aw-1))
                             $fatal(1, "WLAST_MISMATCH burst=%0d beat=%0d", aw_rd, j);
-                        write_index = (aw_queue_addr[aw_rd] >> 2) + j;
+                        write_index = scoreboard_index(aw_queue_addr[aw_rd] + j*4);
                         if (write_index < 0 || write_index >= MEM_WORDS)
                             $fatal(1, "SCOREBOARD_ADDRESS_OUT_OF_RANGE addr=%h", aw_queue_addr[aw_rd]);
                         if (!expected_valid[write_index] || expected[write_index] !== w_queue_data[w_rd+j])
@@ -279,12 +350,16 @@ module tb_write_burst_engine #(
             seen_fault = 1'b0;
             while (!seen_done && !seen_fault && cycles < max_cycles) begin
                 #1;
+                if (done)
+                    seen_done = 1'b1;
                 if (fault)
                     seen_fault = 1'b1;
                 @(posedge clock);
                 if (done)
                     seen_done = 1'b1;
                 #1;
+                if (done)
+                    seen_done = 1'b1;
                 if (fault)
                     seen_fault = 1'b1;
                 @(negedge clock);
@@ -327,12 +402,16 @@ module tb_write_burst_engine #(
             seen_fault = 1'b0;
             while (!seen_done && !seen_fault && cycles < 1000) begin
                 #1;
+                if (done)
+                    seen_done = 1'b1;
                 if (fault)
                     seen_fault = 1'b1;
                 @(posedge clock);
                 if (done)
                     seen_done = 1'b1;
                 #1;
+                if (done)
+                    seen_done = 1'b1;
                 if (fault)
                     seen_fault = 1'b1;
                 @(negedge clock);
@@ -473,6 +552,377 @@ module tb_write_burst_engine #(
             $display("WRITE_SUSTAINED_OCCUPANCY profile=%s plan_peak=%0d fifo_peak=%0d descriptor_peak=%0d",
                      label, plan_peak_occupancy, fifo_peak_occupancy,
                      descriptor_peak_occupancy);
+        end
+    endtask
+
+    task automatic fast_store_ack_stream;
+        integer beat;
+        integer last_cycle;
+        logic [ADDR_BITS-1:0] base;
+        begin
+            if (FAST_STORE_ACK == 0 || B_MAX != 16 || FIFO_DEPTH < 16)
+                $fatal(1, "FAST_STORE_ACK_STREAM_REQUIRES_FAST_B16_FIFO16");
+            base = 32'h0000_1c00;
+            awready_driver = 1'b1;
+            wready = 1'b1;
+            command(OP_CONFIGURE, 32, 0, base, 64, 1'b0);
+            @(negedge clock);
+            start = 1'b1;
+            in1 = OP_STORE;
+            in2 = 32;
+            in5 = 0;
+            for (beat = 0; beat < 64; beat = beat + 1) begin
+                if (beat != 0)
+                    @(negedge clock);
+                in3 = 32'hfa57_0000 ^ beat;
+                in4 = base + beat*4;
+                expected[(base >> 2)+beat] = in3;
+                expected_valid[(base >> 2)+beat] = 1'b1;
+                #1;
+                if (!done || !dut.direct_store_ack || !dut.fast_store_accept ||
+                    dut.pending_store_enqueue || dut.accepted != beat)
+                    $fatal(1, "FAST_STORE_ACK_DIRECT_ACK_MISSING beat=%0d done=%b direct=%b accept=%b accepted=%0d",
+                           beat, done, dut.direct_store_ack, dut.fast_store_accept, dut.accepted);
+                @(posedge clock);
+                #1;
+                if (fault || dut.accepted != beat+1)
+                    $fatal(1, "FAST_STORE_ACK_ACCEPT_COUNT beat=%0d accepted=%0d fault=%b",
+                           beat, dut.accepted, fault);
+                if (beat == 0)
+                    last_cycle = clock_cycles;
+                else begin
+                    if (clock_cycles-last_cycle != 1)
+                        $fatal(1, "FAST_STORE_ACK_INTERVAL beat=%0d interval=%0d",
+                               beat, clock_cycles-last_cycle);
+                    last_cycle = clock_cycles;
+                end
+            end
+            if (dut.accepted != 64 || !dut.stores_exhausted ||
+                dut.next_expected_address !== base + 64*4)
+                $fatal(1, "FAST_STORE_ACK_REGION_EXHAUSTION accepted=%0d exhausted=%b next=%h expected=%h",
+                       dut.accepted, dut.stores_exhausted, dut.next_expected_address,
+                       base + 64*4);
+            @(negedge clock);
+            start = 1'b0;
+            in1 = 0;
+            in2 = 0;
+            in3 = 0;
+            in4 = '0;
+            in5 = 0;
+            command(OP_DRAIN, 0, 0, '0, 0, 1'b0);
+            timeout_count = 0;
+            while (response_count != 4 && timeout_count < 1000) begin
+                @(negedge clock);
+                timeout_count = timeout_count + 1;
+            end
+            if (timeout_count == 1000 || fault || dut.region_active ||
+                dut.accepted != 64 || accepted_w != 64 || committed_beats != 64 ||
+                response_count != 4)
+                $fatal(1, "FAST_STORE_ACK_STREAM_DRAIN accepted=%0d w=%0d committed=%0d b=%0d",
+                       dut.accepted, accepted_w, committed_beats, response_count);
+            for (beat = 0; beat < 64; beat = beat + 1)
+                if (memory[(base >> 2)+beat] !== (32'hfa57_0000 ^ beat))
+                    $fatal(1, "FAST_STORE_ACK_STREAM_DATA beat=%0d", beat);
+            $display("WRITE_FAST_STORE_ACK_STREAM beats=64 interval=1");
+        end
+    endtask
+
+    // The generated kernel de-asserts `start` one cycle after presenting an
+    // operation and then waits for `done`, so the engine must consume every
+    // presented STORE in the cycle it appears: either through the payload pipe
+    // (fast accept) or through the single pending slot.  This scenario drives the
+    // fast engine at full rate while the AXI transport is stalled, so the pipe and
+    // the pending slot are the only capacity left, then releases the transport and
+    // requires every beat to arrive exactly once.
+    task automatic fast_store_ack_backpressure_witness;
+        integer beat;
+        integer wait_cycles;
+        logic ack_in_request_cycle;
+        logic [ADDR_BITS-1:0] base;
+        localparam integer STORES = 48;
+        begin
+            if (FAST_STORE_ACK == 0 || B_MAX != 16 || FIFO_DEPTH < 16)
+                $fatal(1, "FAST_STORE_ACK_BACKPRESSURE_REQUIRES_FAST_B16_FIFO16");
+            base = 32'h0000_1e00;
+            awready_driver = 1'b1;
+            wready = 1'b1;
+            command(OP_CONFIGURE, 32, 0, base, STORES, 1'b0);
+            for (beat = 0; beat < STORES; beat = beat + 1) begin
+                if (beat == FIFO_DEPTH) begin
+                    awready_driver = 1'b0;
+                    wready = 1'b0;
+                end
+                @(negedge clock);
+                in1 = OP_STORE;
+                in2 = 32;
+                in5 = 0;
+                in3 = 32'hb8c0_0000 ^ beat;
+                in4 = base + beat*4;
+                expected[(base >> 2)+beat] = in3;
+                expected_valid[(base >> 2)+beat] = 1'b1;
+                start = 1'b1;
+                #1;
+                ack_in_request_cycle = done;
+                @(posedge clock);
+                @(negedge clock);
+                start = 1'b0;
+                wait_cycles = 0;
+                while (!ack_in_request_cycle && !done && !fault && wait_cycles < 1200) begin
+                    @(negedge clock);
+                    wait_cycles = wait_cycles + 1;
+                    if (wait_cycles == 6) begin
+                        awready_driver = 1'b1;
+                        wready = 1'b1;
+                    end
+                end
+                if (fault)
+                    $fatal(1, "FAST_STORE_ACK_BACKPRESSURE_FAULT beat=%0d accepted=%0d",
+                           beat, dut.accepted);
+                if (wait_cycles == 1200)
+                    $fatal(1, "FAST_STORE_ACK_BACKPRESSURE_LOST_REQUEST beat=%0d accepted=%0d fifo=%0d pipe=%b pending=%b",
+                           beat, dut.accepted, dut.fifo_count, dut.fast_pipe_valid,
+                           dut.store_pending);
+                if (int'(dut.accepted) != beat + 1)
+                    $fatal(1, "FAST_STORE_ACK_BACKPRESSURE_ACCOUNTING beat=%0d accepted=%0d",
+                           beat, dut.accepted);
+            end
+            if (!pending_capture_seen)
+                $fatal(1, "FAST_STORE_ACK_BACKPRESSURE_NO_PENDING_CAPTURE fifo_peak=%0d",
+                       fifo_peak_occupancy);
+            awready_driver = 1'b1;
+            wready = 1'b1;
+            @(negedge clock);
+            in1 = 0;
+            in2 = 0;
+            in3 = 0;
+            in4 = '0;
+            in5 = 0;
+            command(OP_DRAIN, 0, 0, '0, 0, 1'b0);
+            timeout_count = 0;
+            while ((int'(dut.completed) != STORES || int'(dut.fifo_count) != 0 ||
+                    dut.region_active) && timeout_count < 4000) begin
+                @(negedge clock);
+                timeout_count = timeout_count + 1;
+            end
+            if (timeout_count == 4000 || fault || dut.region_active ||
+                int'(dut.accepted) != STORES || accepted_w != STORES ||
+                committed_beats != STORES || response_count != accepted_aw)
+                $fatal(1, "FAST_STORE_ACK_BACKPRESSURE_DRAIN accepted=%0d completed=%0d w=%0d committed=%0d b=%0d aw=%0d",
+                       dut.accepted, dut.completed, accepted_w, committed_beats,
+                       response_count, accepted_aw);
+            for (beat = 0; beat < STORES; beat = beat + 1)
+                if (memory[(base >> 2)+beat] !== (32'hb8c0_0000 ^ beat))
+                    $fatal(1, "FAST_STORE_ACK_BACKPRESSURE_DATA beat=%0d actual=%h expected=%h",
+                           beat, memory[(base >> 2)+beat], 32'hb8c0_0000 ^ beat);
+            $display("WRITE_FAST_STORE_ACK_BACKPRESSURE_PASS beats=%0d AW=%0d W=%0d B=%0d fifo_peak=%0d",
+                     STORES, accepted_aw, accepted_w, response_count, fifo_peak_occupancy);
+        end
+    endtask
+
+    task automatic fast_store_ack_invalid_witness;
+        begin
+            if (FAST_STORE_ACK == 0)
+                $fatal(1, "FAST_STORE_ACK_INVALID_REQUIRES_MODE1");
+            command(OP_CONFIGURE, 32, 0, 32'h1d80, 2, 1'b0);
+            @(negedge clock);
+            start = 1'b1;
+            in1 = OP_STORE;
+            in2 = 32;
+            in3 = 32'hbad0_0001;
+            in4 = 32'h1d84;
+            #1;
+            if (done || dut.direct_store_ack || dut.fast_store_accept ||
+                dut.fast_pipe_valid || dut.store_enqueue)
+                $fatal(1, "FAST_STORE_ACK_INVALID_ACK done=%b direct=%b accept=%b pipe=%b enqueue=%b",
+                       done, dut.direct_store_ack, dut.fast_store_accept,
+                       dut.fast_pipe_valid, dut.store_enqueue);
+            @(posedge clock);
+            #1;
+            if (!fault || done || dut.accepted != 0 || dut.fast_pipe_valid)
+                $fatal(1, "FAST_STORE_ACK_INVALID_NOT_REJECTED fault=%b done=%b accepted=%0d pipe=%b",
+                       fault, done, dut.accepted, dut.fast_pipe_valid);
+            @(negedge clock);
+            start = 1'b0;
+        end
+    endtask
+
+    task automatic fast_store_ack_zero_region_witness;
+        begin
+            if (FAST_STORE_ACK == 0)
+                $fatal(1, "FAST_STORE_ACK_ZERO_REGION_REQUIRES_MODE1");
+            command(OP_CONFIGURE, 32, 0, 32'h1d40, 0, 1'b0);
+            @(negedge clock);
+            start = 1'b1;
+            in1 = OP_STORE;
+            in2 = 32;
+            in3 = 32'h0bad_0000;
+            in4 = 32'h1d40;
+            #1;
+            if (done || dut.direct_store_ack || dut.store_enqueue ||
+                !dut.stores_exhausted || dut.accepted != 0)
+                $fatal(1, "FAST_STORE_ACK_ZERO_REGION_ACK done=%b direct=%b enqueue=%b exhausted=%b accepted=%0d",
+                       done, dut.direct_store_ack, dut.store_enqueue,
+                       dut.stores_exhausted, dut.accepted);
+            @(posedge clock);
+            #1;
+            if (!fault || done || dut.accepted != 0)
+                $fatal(1, "FAST_STORE_ACK_ZERO_REGION_NOT_REJECTED fault=%b done=%b accepted=%0d",
+                       fault, done, dut.accepted);
+            @(negedge clock);
+            start = 1'b0;
+        end
+    endtask
+
+    task automatic fast_store_ack_checked_accept(
+        input logic [ADDR_BITS-1:0] address,
+        input logic [31:0] data,
+        input logic [ADDR_BITS-1:0] expected_frontier,
+        input logic expected_exhausted,
+        input integer expected_accepted);
+        begin
+            @(negedge clock);
+            start = 1'b1;
+            in1 = OP_STORE;
+            in2 = 32;
+            in3 = data;
+            in4 = address;
+            in5 = 0;
+            #1;
+            if (!done || !dut.direct_store_ack || !dut.fast_store_accept ||
+                dut.pending_store_enqueue || dut.accepted != expected_accepted)
+                $fatal(1, "FAST_STORE_ACK_EDGE_ACK address=%h done=%b direct=%b accept=%b pending=%b accepted=%0d expected=%0d",
+                       address, done, dut.direct_store_ack, dut.fast_store_accept,
+                       dut.pending_store_enqueue, dut.accepted, expected_accepted);
+            @(posedge clock);
+            #1;
+            if (fault || dut.accepted != expected_accepted+1 ||
+                dut.next_expected_address !== expected_frontier ||
+                dut.stores_exhausted !== expected_exhausted)
+                $fatal(1, "FAST_STORE_ACK_EDGE_FRONTIER address=%h next=%h expected=%h exhausted=%b expected_exhausted=%b accepted=%0d",
+                       address, dut.next_expected_address, expected_frontier,
+                       dut.stores_exhausted, expected_exhausted, dut.accepted);
+            @(negedge clock);
+            start = 1'b0;
+        end
+    endtask
+
+    task automatic fast_store_ack_carry_witness;
+        logic [63:0] base;
+        integer first_index;
+        integer second_index;
+        begin
+            if (FAST_STORE_ACK == 0 || ADDR_BITS != 64)
+                $fatal(1, "FAST_STORE_ACK_CARRY_REQUIRES_MODE1_A64");
+            awready_driver = 1'b1;
+            wready = 1'b1;
+            base = 64'h0000_0003_ffff_fffc;
+            first_index = scoreboard_index(base);
+            second_index = scoreboard_index(base + 4);
+            expected[first_index] = 32'hca77_0001;
+            expected_valid[first_index] = 1'b1;
+            expected[second_index] = 32'hca77_0002;
+            expected_valid[second_index] = 1'b1;
+            command(OP_CONFIGURE, 32, 0, base, 2, 1'b0);
+            fast_store_ack_checked_accept(base, expected[first_index],
+                64'h0000_0004_0000_0000, 1'b0, 0);
+            fast_store_ack_checked_accept(base + 4, expected[second_index],
+                64'h0000_0004_0000_0004, 1'b1, 1);
+            command(OP_DRAIN, 0, 0, '0, 0, 1'b0);
+            timeout_count = 0;
+            while (response_count != 2 && timeout_count < 1000) begin
+                @(negedge clock);
+                timeout_count = timeout_count + 1;
+            end
+            if (timeout_count == 1000 || fault || committed_beats != 2 ||
+                memory[first_index] !== expected[first_index] ||
+                memory[second_index] !== expected[second_index])
+                $fatal(1, "FAST_STORE_ACK_CARRY_COMMIT committed=%0d b=%0d fault=%b",
+                       committed_beats, response_count, fault);
+        end
+    endtask
+
+    task automatic fast_store_ack_wrap_witness;
+        integer final_index;
+        begin
+            if (FAST_STORE_ACK == 0 || ADDR_BITS != 64)
+                $fatal(1, "FAST_STORE_ACK_WRAP_REQUIRES_MODE1_A64");
+            awready_driver = 1'b1;
+            wready = 1'b1;
+            final_index = scoreboard_index(64'hffff_ffff_ffff_fffc);
+            expected[final_index] = 32'hca77_00ff;
+            expected_valid[final_index] = 1'b1;
+            command(OP_CONFIGURE, 32, 0, 64'hffff_ffff_ffff_fffc, 1, 1'b0);
+            fast_store_ack_checked_accept(64'hffff_ffff_ffff_fffc,
+                expected[final_index], 64'b0, 1'b1, 0);
+            @(negedge clock);
+            start = 1'b1;
+            in1 = OP_STORE;
+            in2 = 32;
+            in3 = 32'hca77_0000;
+            in4 = 64'b0;
+            #1;
+            if (done || dut.direct_store_ack || dut.store_enqueue)
+                $fatal(1, "FAST_STORE_ACK_WRAP_EXTRA_ACK done=%b direct=%b enqueue=%b",
+                       done, dut.direct_store_ack, dut.store_enqueue);
+            @(posedge clock);
+            #1;
+            if (!fault || done || dut.accepted != 1)
+                $fatal(1, "FAST_STORE_ACK_WRAP_EXTRA_NOT_REJECTED fault=%b done=%b accepted=%0d",
+                       fault, done, dut.accepted);
+            @(negedge clock);
+            start = 1'b0;
+            timeout_count = 0;
+            while (response_count != 1 && timeout_count < 1000) begin
+                @(negedge clock);
+                timeout_count = timeout_count + 1;
+            end
+            if (timeout_count == 1000 || committed_beats != 1 ||
+                memory[final_index] !== expected[final_index])
+                $fatal(1, "FAST_STORE_ACK_WRAP_COMMIT committed=%0d b=%0d",
+                       committed_beats, response_count);
+        end
+    endtask
+
+    task automatic fast_store_ack_bfault_witness;
+        integer cycles;
+        integer beat;
+        begin
+            if (FAST_STORE_ACK == 0)
+                $fatal(1, "FAST_STORE_ACK_BFAULT_REQUIRES_MODE1");
+            awready_driver = 1'b1;
+            wready = 1'b1;
+            response_delay_set = 8;
+            command(OP_CONFIGURE, 32, 0, 32'h1e00, 17, 1'b0);
+            for (beat = 0; beat < 16; beat = beat + 1) begin
+                expected[32'h1e00/4+beat] = 32'hbfa0_0000 ^ beat;
+                expected_valid[32'h1e00/4+beat] = 1'b1;
+                command(OP_STORE, 32, expected[32'h1e00/4+beat], 32'h1e00+beat*4, 0, 1'b0);
+            end
+            cycles = 0;
+            while (!(bvalid && bready) && cycles < 200) begin
+                @(negedge clock);
+                cycles = cycles + 1;
+            end
+            if (cycles == 200)
+                $fatal(1, "FAST_STORE_ACK_BFAULT_SETUP_TIMEOUT");
+            bresp = 2'b10;
+            start = 1'b1;
+            in1 = OP_STORE;
+            in2 = 32;
+            in3 = 32'hbfa0_0010;
+            in4 = 32'h1e40;
+            expected[32'h1e00/4+16] = 32'hbfa0_0010;
+            expected_valid[32'h1e00/4+16] = 1'b1;
+            #1;
+            if (!dut.b_fault_now || done || dut.direct_store_ack)
+                $fatal(1, "FAST_STORE_ACK_BFAULT_ACKED b_fault=%b done=%b direct=%b",
+                       dut.b_fault_now, done, dut.direct_store_ack);
+            @(posedge clock);
+            #1;
+            if (!fault || done)
+                $fatal(1, "FAST_STORE_ACK_BFAULT_NOT_REPORTED fault=%b done=%b", fault, done);
+            @(negedge clock);
+            start = 1'b0;
         end
     endtask
 
@@ -1622,16 +2072,27 @@ module tb_write_burst_engine #(
                 if (memory[32'h1c00/4+i] !== expected[32'h1c00/4+i])
                     $fatal(1, "TRANSIENT_CONFIGURE_DATA_MISMATCH index=%0d", i);
         end else if (selected_case == "DRAIN_PENDING_FULL_COUNT") begin
+            integer drain_wait_cycles;
             prepare_pending_store(32'h1e00, FIFO_DEPTH+1, 3);
             in1 = OP_DRAIN; in2 = 0; in3 = 0; in4 = 0; in5 = 0;
             tick(2);
             if (fault || done || !dut.store_pending)
                 $fatal(1, "DRAIN_DID_NOT_DEFER_FOR_PENDING_STORE");
+            hold_b_responses = 1'b1;
             awready_driver = 1'b1; wready = 1'b1;
             wait_for_done_or_fault(2000, "DRAIN_PENDING_STORE_DONE", done_seen, fault_seen);
+            drain_wait_cycles = 0;
+            while (!dut.drain_pending && drain_wait_cycles < 4) begin
+                @(posedge clock);
+                #1;
+                drain_wait_cycles = drain_wait_cycles + 1;
+            end
             if (!done_seen || fault_seen || dut.accepted != FIFO_DEPTH+1 || done ||
-                response_count >= accepted_aw)
-                $fatal(1, "PENDING_STORE_ACK_OR_DRAIN_ORDER_INVALID");
+                !dut.drain_pending || response_count >= accepted_aw || drain_wait_cycles == 4)
+                $fatal(1, "PENDING_STORE_ACK_OR_DRAIN_ORDER_INVALID seen=%b fault_seen=%b accepted=%0d done=%b drain_pending=%b wait=%0d response=%0d aw=%0d",
+                       done_seen, fault_seen, dut.accepted, done, dut.drain_pending,
+                       drain_wait_cycles, response_count, accepted_aw);
+            hold_b_responses = 1'b0;
             wait_for_done_or_fault(2000, "DRAIN_PENDING_FINAL_B", done_seen, fault_seen);
             if (!done_seen || fault_seen || dut.accepted != FIFO_DEPTH+1 ||
                 committed_beats != FIFO_DEPTH+1 || response_count != accepted_aw || bvalid)
@@ -1647,9 +2108,18 @@ module tb_write_burst_engine #(
             wait_for_done_or_fault(2000, "DRAIN_PENDING_SHORT_STORE_DONE", done_seen, fault_seen);
             if (!done_seen || fault_seen || dut.accepted != FIFO_DEPTH+1 || dut.store_pending)
                 $fatal(1, "SHORT_DRAIN_PREEMPTED_PENDING_STORE");
-            wait_for_done_or_fault(2000, "DRAIN_PENDING_SHORT_FAULT", done_seen, fault_seen);
+            timeout_count = 0;
+            while (!fault && timeout_count < 4) begin
+                @(posedge clock);
+                #1;
+                timeout_count = timeout_count + 1;
+            end
+            fault_seen = fault;
+            done_seen = done;
             if (!fault_seen || done_seen || dut.accepted != FIFO_DEPTH+1 || dut.store_pending)
-                $fatal(1, "SHORT_DRAIN_DID_NOT_FAULT_AFTER_PENDING_STORE");
+                $fatal(1, "SHORT_DRAIN_DID_NOT_FAULT_AFTER_PENDING_STORE fault_seen=%b done_seen=%b fault=%b done=%b accepted=%0d pending=%b drain_pending=%b start=%b opcode=%0d",
+                       fault_seen, done_seen, fault, done, dut.accepted, dut.store_pending,
+                       dut.drain_pending, start, in1);
         end else if (selected_case == "PENDING_OPERAND_CHANGE_ON_FREE") begin
             prepare_pending_store(32'h2000, FIFO_DEPTH+1, 5);
             in3 = in3 ^ 32'h0000_0100;
@@ -1690,9 +2160,13 @@ module tb_write_burst_engine #(
                 !dut.drain_pending || !dut.region_active)
                 $fatal(1, "DRAIN_ONE_SHOT_NOT_PENDING_BEFORE_B");
             wait_for_done_or_fault(2000, "DRAIN_ONE_SHOT_FINAL_B", done_seen, fault_seen);
+            @(posedge clock);
+            #1;
             if (!done_seen || fault_seen || dut.region_active || dut.drain_pending ||
                 committed_beats != 1 || response_count != 1)
-                $fatal(1, "DRAIN_ONE_SHOT_NOT_CLOSED_AFTER_B");
+                $fatal(1, "DRAIN_ONE_SHOT_NOT_CLOSED_AFTER_B seen=%b fault_seen=%b fault=%b done=%b active=%b drain_pending=%b committed=%0d response=%0d",
+                       done_seen, fault_seen, fault, done, dut.region_active,
+                       dut.drain_pending, committed_beats, response_count);
             command(OP_CONFIGURE, 32, 0, 32'h18a0, 1, 1'b0);
             expected[32'h18a0/4] = 32'h18a0_0002;
             expected_valid[32'h18a0/4] = 1'b1;
@@ -1726,8 +2200,17 @@ module tb_write_burst_engine #(
             expected_valid[32'h1d00/4] = 1'b1;
             @(negedge clock);
             in1 = OP_STORE; in2 = 32; in3 = 32'h1d00_0001; in4 = 32'h1d00; start = 1'b1;
+            #1;
+            if (FAST_STORE_ACK != 0 &&
+                (!done || !dut.direct_store_ack || dut.accepted != 0))
+                $fatal(1, "STORE_ACK_NOT_VISIBLE_BEFORE_EDGE done=%b direct=%b accepted=%0d",
+                       done, dut.direct_store_ack, dut.accepted);
             @(posedge clock); #1; start = 1'b0; #1;
-            if (!done || fault || dut.accepted != 1)
+            if (FAST_STORE_ACK != 0) begin
+                if (done || fault || dut.accepted != 1 || !dut.fast_pipe_valid)
+                    $fatal(1, "STORE_ACK_FAST_SINGLE_PULSE done=%b fault=%b accepted=%0d pipe=%b",
+                           done, fault, dut.accepted, dut.fast_pipe_valid);
+            end else if (!done || fault || dut.accepted != 1)
                 $fatal(1, "STORE_ACK_NOT_VISIBLE_AFTER_START_DROP done=%b fault=%b accepted=%0d",
                        done, fault, dut.accepted);
             @(posedge clock); #1;
@@ -1745,8 +2228,12 @@ module tb_write_burst_engine #(
             expected[32'h1d00/4+2] = 32'h1d00_0002;
             expected_valid[32'h1d00/4+2] = 1'b1;
             in3 = 32'h1d00_0002; in4 = 32'h1d08;
+            #1;
+            if (FAST_STORE_ACK != 0 && (!done || !dut.fast_store_accept))
+                $fatal(1, "HELD_START_FAST_ACK_NOT_VISIBLE done=%b accept=%b",
+                       done, dut.fast_store_accept);
             @(posedge clock); #1;
-            if (!done || fault || dut.accepted != 3)
+            if (fault || dut.accepted != 3 || (FAST_STORE_ACK == 0 && !done))
                 $fatal(1, "HELD_START_CHANGED_ADDRESS_NOT_REARMED done=%b accepted=%0d", done, dut.accepted);
             tick(3);
             if (done || fault || dut.accepted != 3)
@@ -1757,8 +2244,12 @@ module tb_write_burst_engine #(
             expected_valid[32'h1d00/4+3] = 1'b1;
             @(negedge clock);
             in1 = OP_STORE; in2 = 32; in3 = 32'h1d00_0002; in4 = 32'h1d0c; start = 1'b1;
+            #1;
+            if (FAST_STORE_ACK != 0 && (!done || !dut.fast_store_accept))
+                $fatal(1, "IDENTICAL_PAYLOAD_FAST_ACK_NOT_VISIBLE done=%b accept=%b",
+                       done, dut.fast_store_accept);
             @(posedge clock); #1; start = 1'b0; #1;
-            if (!done || fault || dut.accepted != 4)
+            if (fault || dut.accepted != 4 || (FAST_STORE_ACK == 0 && !done))
                 $fatal(1, "IDENTICAL_PAYLOAD_NEXT_STORE_NOT_REARMED done=%b accepted=%0d", done, dut.accepted);
             @(posedge clock); #1;
             if (done || fault || dut.accepted != 4)
@@ -1775,6 +2266,20 @@ module tb_write_burst_engine #(
                 memory[32'h1d00/4+2] !== 32'h1d00_0002 ||
                 memory[32'h1d00/4+3] !== 32'h1d00_0002)
                 $fatal(1, "STORE_ACK_PULSE_DRAIN_FAILED");
+        end else if (selected_case == "FAST_STORE_ACK_STREAM") begin
+            fast_store_ack_stream();
+        end else if (selected_case == "FAST_STORE_ACK_BACKPRESSURE") begin
+            fast_store_ack_backpressure_witness();
+        end else if (selected_case == "FAST_STORE_ACK_INVALID") begin
+            fast_store_ack_invalid_witness();
+        end else if (selected_case == "FAST_STORE_ACK_ZERO_REGION") begin
+            fast_store_ack_zero_region_witness();
+        end else if (selected_case == "FAST_STORE_ACK_CARRY") begin
+            fast_store_ack_carry_witness();
+        end else if (selected_case == "FAST_STORE_ACK_WRAP") begin
+            fast_store_ack_wrap_witness();
+        end else if (selected_case == "FAST_STORE_ACK_BFAULT") begin
+            fast_store_ack_bfault_witness();
         end else if (selected_case == "DUPLICATE_START") begin
             awready_driver = 1'b1; wready = 1'b1;
             @(negedge clock); in1 = OP_CONFIGURE; in2 = 32; in4 = 32'h1900;
@@ -1886,6 +2391,13 @@ module tb_write_burst_engine #(
             command(OP_CONFIGURE, 32, 0, 32'h1480, 48, 1'b0);
             for (i = 0; i < 32; i = i + 1)
                 command(OP_STORE, 32, 32'hb1d1_0000+i, 32'h1480+i*4, 0, 1'b0);
+            // The registered payload path makes the last accepted beat visible to
+            // the planner one cycle later; settle within a bounded window instead.
+            timeout_count = 0;
+            while ((dut.descriptor_count != 2 || !awvalid || !wvalid) && timeout_count < 8) begin
+                @(negedge clock);
+                timeout_count = timeout_count + 1;
+            end
             if (dut.descriptor_count != 2 || !awvalid || !wvalid)
                 $fatal(1, "PEER_FAULT_SPECULATIVE_EXPOSED_SETUP descriptors=%0d aw=%b w=%b",
                        dut.descriptor_count, awvalid, wvalid);

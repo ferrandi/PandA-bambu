@@ -48,38 +48,43 @@ python3 -B "$EXTRACTOR" --xml "$XML" --target MinimalAXI4MasterPipelinedWrite \
     printf 'verilator='; verilator --version
     printf 'sim_jobs=%s\n' "$SIM_JOBS"
     printf 'peer_fault_scope=peer-fault-core-prerequisite-not-production-wrapper-G1\n'
-    printf 'profiles=PEER_FAULT_TEST:0(base scenarios),1(peer-fault scenarios)\n'
+    printf 'profiles=PEER_FAULT_TEST:0(base scenarios),1(peer-fault scenarios); '
+    printf 'FAST_STORE_ACK:0(legacy acknowledgement),1(always-on acknowledgement)\n'
 } > "$TASK_OUT/provenance.txt"
 
 compile_profile() {
     local peer_fault_test=$1
-    local build="$TASK_OUT/build/profile-$peer_fault_test/obj"
+    local fast_store_ack=$2
+    local profile="pf${peer_fault_test}-fast${fast_store_ack}"
+    local build="$TASK_OUT/build/profile-$profile/obj"
     mkdir -p "$(dirname -- "$build")"
     timeout 240s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal \
         -Wno-BLKSEQ --top-module tb_duplex_cores \
         -GREAD_B_MAX=16 -GREAD_OUTSTANDING=3 -GREAD_FIFO_DEPTH=64 \
         -GWRITE_B_MAX=8 -GWRITE_OUTSTANDING=2 -GWRITE_FIFO_DEPTH=32 \
-        -GPEER_FAULT_TEST="$peer_fault_test" \
+        -GPEER_FAULT_TEST="$peer_fault_test" -GFAST_STORE_ACK="$fast_store_ack" \
         --Mdir "$build" "$TASK_OUT/MinimalAXI4MasterPipelined.sv" \
         "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" "$TB" \
-        > "$TASK_OUT/build/profile-$peer_fault_test/compile.log" 2>&1 || {
-            tail -n 120 "$TASK_OUT/build/profile-$peer_fault_test/compile.log" >&2
-            echo "duplex-core RTL compile failed for PEER_FAULT_TEST=$peer_fault_test" >&2
+        > "$TASK_OUT/build/profile-$profile/compile.log" 2>&1 || {
+            tail -n 120 "$TASK_OUT/build/profile-$profile/compile.log" >&2
+            echo "duplex-core RTL compile failed for $profile" >&2
             exit 1
         }
-    printf '%s\n' "profile_$peer_fault_test=$build/Vtb_duplex_cores" >> "$TASK_OUT/provenance.txt"
+    printf '%s\n' "profile_$profile=$build/Vtb_duplex_cores" >> "$TASK_OUT/provenance.txt"
 }
 
 run_profile_cases() {
     local peer_fault_test=$1
-    shift
-    local build="$TASK_OUT/build/profile-$peer_fault_test/obj"
+    local fast_store_ack=$2
+    local profile="pf${peer_fault_test}-fast${fast_store_ack}"
+    shift 2
+    local build="$TASK_OUT/build/profile-$profile/obj"
     local case_name log
     for case_name in "$@"; do
-        log="$TASK_OUT/$case_name.log"
+        log="$TASK_OUT/${case_name}-${profile}.log"
         timeout 90s "$build/Vtb_duplex_cores" "+CASE=$case_name" > "$log" 2>&1 || {
             cat "$log" >&2
-            echo "duplex-core scenario failed: $case_name (PEER_FAULT_TEST=$peer_fault_test)" >&2
+            echo "duplex-core scenario failed: $case_name (profile=$profile)" >&2
             exit 1
         }
         if ! rg -q "^DUPLEX_CORES PASS CASE=$case_name " "$log"; then
@@ -99,8 +104,13 @@ PEER_FAULT_CASES=(PEER_BRESP_DRAIN PEER_RRESP_RESERVED_WRITE_DRAIN \
                   PEER_RRESP_FINAL_BEAT PEER_FAULT_BLOCKS_RESERVATION \
                   PEER_FAULT_RESET_RESTART)
 : > "$TASK_OUT/results.log"
-compile_profile 0
-run_profile_cases 0 "${BASE_CASES[@]}"
-compile_profile 1
-run_profile_cases 1 "${PEER_FAULT_CASES[@]}"
+compile_profile 0 1
+run_profile_cases 0 1 "${BASE_CASES[@]}"
+compile_profile 1 1
+run_profile_cases 1 1 "${PEER_FAULT_CASES[@]}"
+compile_profile 0 0
+run_profile_cases 0 0 "${BASE_CASES[@]}"
+compile_profile 1 0
+run_profile_cases 1 0 "${PEER_FAULT_CASES[@]}"
+printf 'DUPLEX_CORE_PROFILES_QUALIFIED: FAST_STORE_ACK=0 and 1, PEER_FAULT_TEST=0 and 1\n' >> "$TASK_OUT/results.log"
 echo "DUPLEX_CORE_PRELIMINARY_PASS: $TASK_OUT"

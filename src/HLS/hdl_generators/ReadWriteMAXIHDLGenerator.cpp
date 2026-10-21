@@ -185,7 +185,6 @@ void ReadWriteMAXIHDLGenerator::InternalExec(std::ostream& out, structural_objec
    const auto Param = HLSMgr->get_parameter();
    const auto has_requested_burst_type = Param->isOption(OPT_axi_burst_type);
    unsigned int axi_burst_type = has_requested_burst_type ? Param->getOption<unsigned int>(OPT_axi_burst_type) : 0U;
-
    const auto hls_d = HLSMgr->get_HLS_device();
    unsigned int device_burst_type = 0U;
    const auto has_device_burst_type =
@@ -318,7 +317,9 @@ void ReadWriteMAXIHDLGenerator::InternalExec(std::ostream& out, structural_objec
           << "assign " << _ports_out[o_rready].name << " = 0;\n"
           << "MinimalAXI4MasterPipelinedWrite #(.B_MAX(" << write_profile.max_burst_length
           << "), .MAX_OUTSTANDING(1), .FIFO_DEPTH(" << write_profile.fifo_depth
-          << "), .PEER_FAULT_ENABLE(0),\n"
+          // The early STORE acknowledgement is always on; the module parameter keeps its
+          // role of RTL-qualification handle (default 1).
+          << "), .PEER_FAULT_ENABLE(0), .FAST_STORE_ACK(1),\n"
           << "  .BITSIZE_in1(" << _ports_in[i_in1].type_size << "), .BITSIZE_in2("
           << _ports_in[i_in2].type_size << "), .BITSIZE_in3(" << _ports_in[i_in3].type_size
           << "), .BITSIZE_in4(" << _ports_in[i_in4].type_size << "), .BITSIZE_in5("

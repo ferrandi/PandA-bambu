@@ -322,12 +322,62 @@ class CheckerTests(unittest.TestCase):
         self.assertIn("port=data offset=direct bundle=shared max_write_burst_length=16", block)
         self.assertIn("data[i] = data[i] + 1", block)
 
-    def test_distinct_buffers_on_same_bundle_still_require_legacy_fallback(self):
+    def test_distinct_buffers_on_same_bundle_are_a_guarded_duplex_source_shape(self):
         source = (pathlib.Path(__file__).parent / "write_compiler_cases" / "write_cases.cpp").read_text()
         block = source.split('extern "C" void read_write_distinct_buffers_same_bundle', 1)[1].split('extern "C"', 1)[0]
         self.assertIn("port=dst offset=direct bundle=shared max_write_burst_length=16", block)
         self.assertIn("port=src offset=direct bundle=shared max_read_burst_length=16", block)
         self.assertIn("dst[i] = src[i]", block)
+
+    def write_duplex_artifacts(self, activation_bundle="shared", fallback_line="",
+                               instantiate_aggregator=True):
+        self.write("design.bambuir", "pre-InterfaceInfer IR with two distinct pointers on one bundle\n")
+        self.write("stderr.log",
+                   f"    Activated guarded distinct-base duplex for bundle {activation_bundle} "
+                   "(overlap uses serialized scalar transfers)\n" + fallback_line)
+        rtl = ("module shared_bambu_artificial_ParmMgr_duplex_read_endpoint; endmodule\n"
+               "module shared_bambu_artificial_ParmMgr_duplex_write_endpoint; endmodule\n"
+               "module shared_bambu_artificial_ParmMgr_duplex_aggregator_modgen; endmodule\n"
+               "  MinimalAXI4MasterPipelined duplex_read_engine();\n"
+               "  MinimalAXI4MasterPipelinedWrite duplex_write_engine();\n"
+               "  output [31:0] p_m_axi_shared_awaddr;\n"
+               "  input [31:0] p_m_axi_shared_araddr;\n")
+        if instantiate_aggregator:
+            rtl += ("  shared_bambu_artificial_ParmMgr_duplex_aggregator_modgen duplex_aggregator_0 "
+                    "(.burst_awaddr(burst_awaddr));\n")
+        self.write("design.v", rtl)
+
+    def duplex_args(self, bundle="shared"):
+        return type("Args", (), {"output": self.root, "kind": "duplex", "bundle": bundle})()
+
+    def test_duplex_kind_accepts_guarded_duplex_structure(self):
+        self.write_duplex_artifacts()
+        self.assertEqual(check_case(self.duplex_args()), 0)
+
+    def test_duplex_kind_rejects_legacy_fallback_on_the_bundle(self):
+        self.write_duplex_artifacts(
+            fallback_line="    Keeping legacy m_axi writes for bundle shared: bundle contains reads; "
+                          "same-bundle read/write requires duplex support\n")
+        with self.assertRaisesRegex(ValueError, "fell back to legacy for bundle shared"):
+            check_case(self.duplex_args())
+
+    def test_duplex_kind_requires_activation_for_the_checked_bundle(self):
+        self.write_duplex_artifacts(activation_bundle="other")
+        with self.assertRaisesRegex(ValueError,
+                                    "exactly one guarded distinct-base duplex activation for bundle shared"):
+            check_case(self.duplex_args())
+
+    def test_duplex_kind_requires_instantiated_aggregator(self):
+        self.write_duplex_artifacts(instantiate_aggregator=False)
+        with self.assertRaisesRegex(ValueError, "duplex aggregator is not instantiated"):
+            check_case(self.duplex_args())
+
+    def test_duplex_cli_requires_bundle(self):
+        stderr = StringIO()
+        with redirect_stderr(stderr), self.assertRaises(SystemExit) as error:
+            main(["duplex", "--output", str(self.root)])
+        self.assertEqual(error.exception.code, 2)
+        self.assertIn("--bundle", stderr.getvalue())
 
     def test_seeded_reinvocation_witness_uses_one_bundle_and_runtime_seed(self):
         source = (pathlib.Path(__file__).parent / "write_compiler_cases" / "write_cases.cpp").read_text()

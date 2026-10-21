@@ -157,6 +157,7 @@ run_compiler() {
   bash "$script_dir/run_write_compiler_tests.sh" all "$bambu" "$compiler_dir/write"
   bash "$script_dir/run_frontend_compatibility_tests.sh" "$bambu" "$compiler_dir/frontend-compatibility"
   bash "$script_dir/run_source_restrict_provenance_tests.sh" "$bambu" "$compiler_dir/source-restrict-provenance"
+  bash "$script_dir/run_duplex_fast_store_ack_tests.sh" "$bambu" "$compiler_dir/duplex-fast-store-ack"
 }
 
 run_g2() {

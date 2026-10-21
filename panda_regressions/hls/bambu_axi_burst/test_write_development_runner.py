@@ -30,6 +30,7 @@ class DevelopmentRunnerTests(unittest.TestCase):
             "run_write_compiler_tests.sh",
             "run_frontend_compatibility_tests.sh",
             "run_source_restrict_provenance_tests.sh",
+            "run_duplex_fast_store_ack_tests.sh",
             "test_write_compiler_artifacts.py",
             "check_copy_baseline_results.py",
             "copy_baseline.cpp",
@@ -140,7 +141,7 @@ class DevelopmentRunnerTests(unittest.TestCase):
         result = self._run("all", output, outside_sandbox=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         calls = self._calls()
-        self.assertEqual(len(calls), 8)
+        self.assertEqual(len(calls), 9)
         self.assertTrue(calls[0].startswith("python3|"))
         self.assertIn("test_write_compiler_artifacts.py", calls[0])
         self.assertIn("test_extract_write_engine.py", calls[1])
@@ -148,9 +149,11 @@ class DevelopmentRunnerTests(unittest.TestCase):
         self.assertIn("run_frontend_compatibility_tests.sh", calls[3])
         self.assertIn("run_source_restrict_provenance_tests.sh", calls[4])
         self.assertTrue(calls[4].endswith(str(output / "compiler/source-restrict-provenance")))
+        self.assertIn("run_duplex_fast_store_ack_tests.sh", calls[5])
+        self.assertTrue(calls[5].endswith(str(output / "compiler/duplex-fast-store-ack")))
         aggregate = output / "compiler/source-restrict-provenance/aggregate.log"
         self.assertIn("SOURCE-RESTRICT-PROVENANCE PASS", aggregate.read_text())
-        for call, top in zip(calls[5:], (
+        for call, top in zip(calls[6:], (
             "write_count_seed",
             "write_with_unused_same_bundle",
             "write_with_unused_same_bundle_reversed",

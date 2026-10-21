@@ -312,7 +312,10 @@ void DuplexMAXIHDLGenerator::InternalExec(std::ostream& out, structural_objectRe
        << "  .m_axi_rresp(" << p("rresp") << "), .m_axi_rid((|" << p("rid") << ")), .m_axi_rlast("
        << p("rlast") << "), .m_axi_rvalid(" << p("rvalid") << "), .m_axi_rready(read_core_rready));\n"
        << "MinimalAXI4MasterPipelinedWrite #(.B_MAX(" << profile.write_burst << "), .MAX_OUTSTANDING("
-       << profile.write_outstanding << "), .FIFO_DEPTH(" << profile.write_fifo << "), .PEER_FAULT_ENABLE(1),\n"
+       << profile.write_outstanding << "), .FIFO_DEPTH(" << profile.write_fifo << "), .PEER_FAULT_ENABLE(1), "
+       // The early STORE acknowledgement is always on in generated kernels; the libtech
+       // module keeps FAST_STORE_ACK as an RTL-qualification handle with default 1.
+       << ".FAST_STORE_ACK(1),\n"
        << "  .BITSIZE_in1(2), .BITSIZE_in2(32), .BITSIZE_in3(32), .BITSIZE_in4(" << profile.address_bits
        << "), .BITSIZE_in5(32), .BITSIZE_out1(32), .BITSIZE_m_axi_awaddr(" << profile.address_bits
        << "), .BITSIZE_m_axi_awlen(8), .BITSIZE_m_axi_awsize(3), .BITSIZE_m_axi_awburst(2), .BITSIZE_m_axi_awid(1),\n"

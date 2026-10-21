@@ -5,7 +5,8 @@ module tb_duplex_cores #(
     parameter integer WRITE_B_MAX = 8,
     parameter integer WRITE_OUTSTANDING = 2,
     parameter integer WRITE_FIFO_DEPTH = 32,
-    parameter integer PEER_FAULT_TEST = 0
+    parameter integer PEER_FAULT_TEST = 0,
+    parameter integer FAST_STORE_ACK = 1
 );
     logic clock = 1'b0;
     always #5 clock = ~clock;
@@ -70,7 +71,7 @@ module tb_duplex_cores #(
 
     MinimalAXI4MasterPipelinedWrite #(
         .B_MAX(WRITE_B_MAX), .MAX_OUTSTANDING(WRITE_OUTSTANDING), .FIFO_DEPTH(WRITE_FIFO_DEPTH),
-        .PEER_FAULT_ENABLE(PEER_FAULT_TEST)
+        .PEER_FAULT_ENABLE(PEER_FAULT_TEST), .FAST_STORE_ACK(FAST_STORE_ACK)
     ) writer (
         .clock(clock), .reset(reset), .start(write_start), .in1(write_op), .in2(write_size),
         .in3(write_payload), .in4(write_base), .in5(write_count), .done(write_done),
@@ -270,6 +271,16 @@ module tb_duplex_cores #(
         end
     endtask
 
+    // With FAST_STORE_ACK=1 the engine acknowledges a STORE combinationally, in the very cycle in
+    // which the harness presents it. Polling write_done at the following negedge would miss that
+    // pulse, so the acknowledgement is latched while a STORE request is on the interface. With
+    // FAST_STORE_ACK=0 the acknowledgement is registered and this latch is equivalent to polling.
+    logic store_request_open = 1'b0;
+    logic store_ack_latch = 1'b0;
+
+    always @(write_done)
+        if (write_done && store_request_open) store_ack_latch = 1'b1;
+
     task automatic issue_store(input [31:0] address, input [31:0] payload);
         integer cycles;
         begin
@@ -277,9 +288,11 @@ module tb_duplex_cores #(
             expected_valid[address/4]=1'b1;
             @(negedge clock); write_op=OP_STORE; write_size=32; write_base=address;
             write_payload=payload; write_start=1;
+            store_ack_latch=1'b0; store_request_open=1'b1;
             cycles=0;
-            while (!write_done && cycles<2000) begin @(negedge clock); cycles=cycles+1; end
-            if (!write_done) $fatal(1, "STORE_ACK_TIMEOUT address=%h", address);
+            while (!store_ack_latch && cycles<2000) begin @(negedge clock); cycles=cycles+1; end
+            store_request_open=1'b0;
+            if (!store_ack_latch) $fatal(1, "STORE_ACK_TIMEOUT address=%h", address);
             @(negedge clock); write_start=0;
         end
     endtask
