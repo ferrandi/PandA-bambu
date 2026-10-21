@@ -1766,6 +1766,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       THROW_ASSERT(aggregator_template, "Missing duplex aggregator template " + aggregator_name);
       const auto aggregator_technology = GetPointerS<const functional_unit>(aggregator_template);
       THROW_ASSERT(aggregator_technology->CM, "Missing duplex aggregator structural template " + aggregator_name);
+#if HAVE_ASSERTS
       const auto aggregator_np =
           GetPointerS<const module_o>(aggregator_technology->CM->get_circ())->get_NP_functionality();
       THROW_ASSERT(aggregator_np &&
@@ -1787,18 +1788,23 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       THROW_ASSERT(aggregator_mode != aggregator_technology->attributes.end() && aggregator_mode->second &&
                        aggregator_mode->second->get_content_str() == "duplex",
                    "Invalid duplex aggregator mode for bundle " + bundle);
+#endif
       const auto address_bits = static_cast<unsigned int>(std::stoul(metadata.at("bambu_axi_address_bitsize")));
       const auto data_bits = static_cast<unsigned int>(std::stoul(metadata.at("bambu_axi_data_bitsize")));
 
       const auto validate_port = [&](const structural_objectRef& module, const std::string& name,
-                                     const port_o::port_direction direction, const unsigned int width,
-                                     const bool is_extern, const port_o::port_interface interface_tag) {
+                                     const port_o::port_direction ASSERT_PARAMETER(direction),
+                                     const unsigned int ASSERT_PARAMETER(width),
+                                     const bool ASSERT_PARAMETER(is_extern),
+                                     const port_o::port_interface ASSERT_PARAMETER(interface_tag)) {
          const auto port = module->find_member(name, port_o_K, module);
+#if HAVE_ASSERTS
          THROW_ASSERT(port && GetPointerS<const port_o>(port)->get_port_direction() == direction &&
                           GET_TYPE_SIZE(GetPointerS<const port_o>(port)) == width &&
                           GetPointerS<const port_o>(port)->get_is_extern() == is_extern &&
                           GetPointerS<const port_o>(port)->get_port_interface() == interface_tag,
                       "Invalid duplex port " + name + " on " + module->get_id() + " for bundle " + bundle);
+#endif
          return port;
       };
       const auto connect_command = [&](const structural_objectRef& endpoint, const std::string& endpoint_name,
@@ -1890,6 +1896,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       connect_command(writer.module, "duplex_done", aggregator, "write_done", port_o::IN, port_o::OUT, 1U);
       connect_command(writer.module, "duplex_result", aggregator, "write_result", port_o::IN, port_o::OUT, data_bits);
 
+#if HAVE_ASSERTS
       unsigned int cache_reset_ports = 0U;
       for(unsigned int port_index = 0; port_index < GetPointerS<const module_o>(aggregator)->get_in_port_size();
           ++port_index)
@@ -2047,6 +2054,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                          "Physical M_AXI pin already mapped for duplex bundle " + bundle + ": " + port->get_id());
          }
       }
+#endif
       manage_module_ports(HLSMgr, HLS, SM, aggregator, 0);
    }
 
