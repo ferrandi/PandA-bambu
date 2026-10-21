@@ -2132,6 +2132,47 @@ module tb_write_burst_engine #(
                 $fatal(1, "PENDING_OPERAND_CHANGE_ON_FREE_NOT_REJECTED atomically");
             @(negedge clock);
             start = 1'b0;
+        end else if (selected_case == "PENDING_OPERAND_CHANGE_WITH_ROOM") begin
+            // The FIFO is drained so that write credit really appears. A STORE whose operands the
+            // kernel changed while it was pending must never be committed: the engine faults and
+            // keeps the request held, so the region scoreboard never counts it.
+            prepare_pending_store(32'h2100, FIFO_DEPTH+1, 7);
+            in3 = in3 ^ 32'h0000_0100;
+            awready_driver = 1'b1; wready = 1'b1;
+            timeout_count = 0;
+            while (dut.fifo_count > FIFO_DEPTH/2 && timeout_count < 2000) begin
+                @(negedge clock); timeout_count = timeout_count + 1;
+            end
+            if (timeout_count == 2000)
+                $fatal(1, "PENDING_OPERAND_CHANGE_WITH_ROOM_NO_CREDIT fifo_count=%0d", dut.fifo_count);
+            if (!fault) $fatal(1, "PENDING_OPERAND_CHANGE_WITH_ROOM_NOT_REJECTED");
+            if (dut.accepted != FIFO_DEPTH || !dut.store_pending)
+                $fatal(1, "PENDING_OPERAND_CHANGE_WITH_ROOM_COMMITTED accepted=%0d pending=%b",
+                       dut.accepted, dut.store_pending);
+            @(negedge clock);
+            start = 1'b0;
+        end else if (selected_case == "PENDING_OPERAND_CHANGE_AT_COMMIT") begin
+            // Discriminating case for the FIFO write gate: the credit is already visible, so the
+            // pending store commits at the next rising edge. Changing the operands in exactly that
+            // cycle must still block the commit; a write gate that no longer sees the operand change
+            // would commit the captured payload and only then report the fault.
+            prepare_pending_store(32'h2180, FIFO_DEPTH+1, 8);
+            awready_driver = 1'b1; wready = 1'b1;
+            timeout_count = 0;
+            while (dut.fifo_count >= FIFO_DEPTH && timeout_count < 2000) begin
+                @(negedge clock); timeout_count = timeout_count + 1;
+            end
+            if (timeout_count == 2000)
+                $fatal(1, "PENDING_OPERAND_CHANGE_AT_COMMIT_NO_CREDIT fifo_count=%0d", dut.fifo_count);
+            in3 = in3 ^ 32'h0000_0100;
+            @(posedge clock);
+            #1;
+            if (!fault) $fatal(1, "PENDING_OPERAND_CHANGE_AT_COMMIT_NOT_REJECTED");
+            if (dut.accepted != FIFO_DEPTH || !dut.store_pending)
+                $fatal(1, "PENDING_OPERAND_CHANGE_AT_COMMIT_COMMITTED accepted=%0d pending=%b",
+                       dut.accepted, dut.store_pending);
+            @(negedge clock);
+            start = 1'b0;
         end else if (selected_case == "DRAIN_BEFORE_B") begin
             awready_driver = 1'b1; wready = 1'b1; response_delay_set = 12;
             command(OP_CONFIGURE, 32, 0, 32'h1880, 1, 1'b0);
