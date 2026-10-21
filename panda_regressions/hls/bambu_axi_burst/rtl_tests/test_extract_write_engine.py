@@ -88,6 +88,10 @@ class WriteEngineExtractorTests(unittest.TestCase):
         self.assertIn("Extracted MinimalAXI4MasterPipelinedWrite from", result.stdout)
         self.assertIn("module MinimalAXI4MasterPipelinedWrite #(", output.read_text())
 
+    def test_writer_fast_store_ack_defaults_to_fast_mode(self):
+        generated = EXTRACTOR.extract(XML)
+        self.assertRegex(generated, r"parameter integer FAST_STORE_ACK = 1")
+
     def test_cli_rejects_unknown_target(self):
         output = self.scratch / "invalid.sv"
         result = subprocess.run(

@@ -60,11 +60,17 @@ python3 -B "$EXTRACTOR" --xml "$XML" --out "$TASK_OUT/MinimalAXI4MasterPipelined
 build_run() {
     local label=$1 burst=$2 depth=$3 addr=$4 test_case=$5
     shift 5
+    local fast_store_ack=0
+    if [[ ${1:-} == --fast-store-ack=* ]]; then
+        fast_store_ack=${1#*=}
+        shift
+    fi
     local build="$TASK_OUT/build-$label"
     mkdir -p "$build"
     timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal -CFLAGS -O0 \
         -Wno-UNUSEDSIGNAL -Wno-BLKSEQ -DPLAN_FIFO_PRESENT --top-module tb_write_burst_engine \
         -GB_MAX="$burst" -GMAX_OUTSTANDING=1 -GFIFO_DEPTH="$depth" -GADDR_BITS="$addr" \
+        -GFAST_STORE_ACK="$fast_store_ack" \
         --Mdir "$build/obj" "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" "$TB" \
         > "$build/compile.log" 2>&1 || {
             tail -n 100 "$build/compile.log" >&2
@@ -86,6 +92,18 @@ build_run() {
             echo "missing exact PASS marker for $label/$case_name" >&2
             return 1
         fi
+        if [[ $case_name == FAST_STORE_ACK_STREAM ]] &&
+           ! rg -q '^WRITE_FAST_STORE_ACK_STREAM beats=64 interval=1$' "$log"; then
+            cat "$log" >&2
+            echo "missing fast STORE ACK throughput marker for $label/$case_name" >&2
+            return 1
+        fi
+        if [[ $case_name == FAST_STORE_ACK_BACKPRESSURE ]] &&
+           ! rg -q '^WRITE_FAST_STORE_ACK_BACKPRESSURE_PASS ' "$log"; then
+            cat "$log" >&2
+            echo "missing fast STORE pending-capture marker for $label/$case_name" >&2
+            return 1
+        fi
         cat "$log" >> "$RESULTS_LOG"
     done
 }
@@ -93,11 +111,17 @@ build_run() {
 build_run_o() {
     local label=$1 burst=$2 outstanding=$3 depth=$4 addr=$5 test_case=$6
     shift 6
+    local fast_store_ack=0
+    if [[ ${1:-} == --fast-store-ack=* ]]; then
+        fast_store_ack=${1#*=}
+        shift
+    fi
     local build="$TASK_OUT/build-$label"
     mkdir -p "$build"
     timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal -CFLAGS -O0 \
         -Wno-UNUSEDSIGNAL -Wno-BLKSEQ -DPLAN_FIFO_PRESENT --top-module tb_write_burst_engine \
         -GB_MAX="$burst" -GMAX_OUTSTANDING="$outstanding" -GFIFO_DEPTH="$depth" -GADDR_BITS="$addr" \
+        -GFAST_STORE_ACK="$fast_store_ack" \
         --Mdir "$build/obj" "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" "$TB" \
         > "$build/compile.log" 2>&1 || {
             tail -n 100 "$build/compile.log" >&2
@@ -130,12 +154,24 @@ build_run_o() {
             echo "missing sustained-throughput marker for $label/$case_name" >&2
             return 1
         fi
+        if [[ $case_name == FAST_STORE_ACK_STREAM ]] &&
+           ! rg -q '^WRITE_FAST_STORE_ACK_STREAM beats=64 interval=1$' "$log"; then
+            cat "$log" >&2
+            echo "missing fast STORE ACK throughput marker for $label/$case_name" >&2
+            return 1
+        fi
+        if [[ $case_name == FAST_STORE_ACK_BACKPRESSURE ]] &&
+           ! rg -q '^WRITE_FAST_STORE_ACK_BACKPRESSURE_PASS ' "$log"; then
+            cat "$log" >&2
+            echo "missing fast STORE pending-capture marker for $label/$case_name" >&2
+            return 1
+        fi
         cat "$log" >> "$RESULTS_LOG"
     done
 }
 
 build_async_reset_run() {
-    local polarity=$1 active_low=$2
+    local polarity=$1 active_low=$2 fast_store_ack=${3:-0}
     local label="ASYNC_RESET_${polarity}"
     local source="$TASK_OUT/MinimalAXI4MasterPipelinedWrite-$label.sv"
     local build="$TASK_OUT/build-$label"
@@ -152,6 +188,7 @@ build_async_reset_run() {
     timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal -CFLAGS -O0 \
         -Wno-UNUSEDSIGNAL -Wno-BLKSEQ -DPLAN_FIFO_PRESENT --top-module tb_write_burst_engine \
         -GB_MAX=16 -GMAX_OUTSTANDING=2 -GFIFO_DEPTH=32 -GADDR_BITS=32 \
+        -GFAST_STORE_ACK="$fast_store_ack" \
         -GASYNC_RESET=1 -GRESET_ACTIVE_LOW="$active_low" \
         --Mdir "$build/obj" "$source" "$TB" > "$build/compile.log" 2>&1 || {
             tail -n 100 "$build/compile.log" >&2
@@ -197,7 +234,7 @@ expect_parameter_fatal() {
 
 expect_mutation_failure() {
     local label=$1 source_pattern=$2 replacement=$3 burst=$4 outstanding=$5 depth=$6
-    local addr=$7 test_case=$8 expected=$9
+    local addr=$7 test_case=$8 expected=$9 fast_store_ack=${10:-0}
     local mutant="$TASK_OUT/mutant-$label.sv"
     local build="$TASK_OUT/mutation-$label"
     python3 - "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" "$mutant" \
@@ -214,7 +251,7 @@ PY
     mkdir -p "$build"
     timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wno-fatal -CFLAGS -O0 \
         --top-module tb_write_burst_engine -GB_MAX="$burst" -GMAX_OUTSTANDING="$outstanding" \
-        -GFIFO_DEPTH="$depth" -GADDR_BITS="$addr" \
+        -GFIFO_DEPTH="$depth" -GADDR_BITS="$addr" -GFAST_STORE_ACK="$fast_store_ack" \
         --Mdir "$build/obj" "$mutant" "$TB" > "$build/compile.log" 2>&1 || {
             tail -n 80 "$build/compile.log" >&2
             echo "mutation fixture compile failed: $label" >&2
@@ -351,6 +388,47 @@ run_writer_group() {
                 "in5[COUNT_W-1:0] != cfg_count[COUNT_W-1:0]" \
                 16 1 32 32 CFG_COUNT_CHANGE "CONFIGURE_CHANGE_NOT_REJECTED operand=2"
             ;;
+        fast-store-ack)
+            build_run FAST-B16-D16 16 16 32 FAST_STORE_ACK_INVALID --fast-store-ack=1 \
+                FAST_STORE_ACK_BFAULT FAST_STORE_ACK_ZERO_REGION STORE_ACK_PULSE \
+                PENDING_STORE PENDING_OPERAND_CHANGE PENDING_OPERAND_CHANGE_ON_FREE \
+                TRANSIENT_DRAIN_RESTORE DRAIN_PENDING_FULL_COUNT DRAIN_PENDING_SHORT_COUNT \
+                DRAIN_BEFORE_B DRAIN_ONE_SHOT FAST_STORE_ACK_BACKPRESSURE
+            ;;
+        fast-store-ack-address64)
+            build_run FAST-A64 16 32 64 FAST_STORE_ACK_STREAM --fast-store-ack=1 \
+                CONFIGURE64_ZERO_FFFC CONFIGURE64_END_2P64 CONFIGURE64_CARRY_NONMAX \
+                CONFIGURE64_HIGH_MAX_NO_CARRY CONFIGURE64_BAD_ALIGN_ZERO \
+                FAST_STORE_ACK_CARRY FAST_STORE_ACK_WRAP \
+                COUNT_MSB OVERFLOW64
+            ;;
+        fast-store-ack-stream)
+            build_run_o FAST-STREAM-O2-D32 16 2 32 32 FAST_STORE_ACK_STREAM --fast-store-ack=1
+            ;;
+        fast-peer-fault)
+            build_run_o FAST-O2-D32 16 2 32 32 PEER_FAULT_SPECULATIVE --fast-store-ack=1
+            ;;
+        fast-async-reset)
+            build_async_reset_run active-low 1 1
+            ;;
+        mutation-fast-store-ack)
+            expect_mutation_failure fast-store-ack-disabled \
+                "assign fast_store_accept = (FAST_STORE_ACK != 0) && store_input && !store_pending &&" \
+                "assign fast_store_accept = 1'b0 && store_input && !store_pending &&" \
+                16 2 32 32 FAST_STORE_ACK_STREAM "FAST_STORE_ACK_DIRECT_ACK_MISSING" 1
+            ;;
+        mutation-fast-store-ack-pending)
+            expect_mutation_failure fast-store-ack-pending-capture \
+                $'                end else if ((FAST_STORE_ACK == 0) ? (fifo_count == FIFO_DEPTH) :\n                    !fast_store_accept) begin' \
+                $'                end else if (fifo_count == FIFO_DEPTH) begin' \
+                16 2 32 32 FAST_STORE_ACK_BACKPRESSURE "FAST_STORE_ACK_BACKPRESSURE" 1
+            ;;
+        mutation-fast-store-ack-credit)
+            expect_mutation_failure fast-store-ack-credit-pending \
+                "        (fast_pipe_valid | store_pending)}) < FIFO_SLOT_LIMIT;" \
+                "        (fast_pipe_valid)}) < FIFO_SLOT_LIMIT;" \
+                16 2 32 32 FAST_STORE_ACK_BACKPRESSURE "FAST_STORE_ACK_BACKPRESSURE" 1
+            ;;
         configure-pipeline)
             "$SCRIPT_DIR/run_configure_writer_pipeline.sh" "$TASK_OUT/configure-writer-pipeline" \
                 | tee -a "$RESULTS_LOG"
@@ -370,7 +448,41 @@ WRITER_GROUPS=(core-B16-D16 core-B16-D32 core-B1-D1 core-B1-O16 core-B3-D4 \
     invalid-FIFO-BELOW-B invalid-FIFO-NONPOWER mutation-data-order \
     mutation-last-order mutation-serialize-until-b mutation-count-msb-guard \
     mutation-configure-size mutation-configure-base-low32 mutation-configure-count-width \
-    configure-pipeline)
+    configure-pipeline fast-store-ack fast-store-ack-stream fast-peer-fault fast-async-reset \
+    fast-store-ack-address64 mutation-fast-store-ack mutation-fast-store-ack-pending \
+    mutation-fast-store-ack-credit)
+if [[ -n ${BURST_WRITER_GROUP_FILTER:-} ]]; then
+    IFS=, read -r -a WRITER_GROUPS <<< "$BURST_WRITER_GROUP_FILTER"
+    for group in "${WRITER_GROUPS[@]}"; do
+        if [[ ! $group =~ ^[a-zA-Z0-9-]+$ ]]; then
+            echo "invalid writer group filter entry: $group" >&2
+            exit 2
+        fi
+        case "$group" in
+            core-B16-D16|core-B16-D32|core-B1-D1|core-B1-O16|core-B3-D4|core-B16-D4096|\
+            core-B16-A32-F3|multi-O2-D16|multi-O2-D32|multi-O3-D16|multi-O16-D16|\
+            multi-O2-D32-F3|address-B16-A64|address-B16-A64-MSB|limit-B255-D256|\
+            limit-B256-O16|limit-B256-D256|async-reset-active-low|async-reset-active-high|\
+            invalid-B0|invalid-B257|invalid-O0|invalid-O17|invalid-FIFO-BELOW-B|\
+            invalid-FIFO-NONPOWER|mutation-data-order|mutation-last-order|\
+            mutation-serialize-until-b|mutation-count-msb-guard|mutation-configure-size|\
+            mutation-configure-base-low32|mutation-configure-count-width|configure-pipeline|\
+            fast-store-ack|fast-store-ack-address64|fast-store-ack-stream|fast-peer-fault|fast-async-reset|\
+            mutation-fast-store-ack|mutation-fast-store-ack-pending|\
+            mutation-fast-store-ack-credit) ;;
+            *) echo "unknown writer group filter entry: $group" >&2; exit 2 ;;
+        esac
+    done
+fi
+if [[ -n ${BURST_WRITER_GROUP_FILTER:-} ]]; then
+    printf 'writer_group_run=filtered\nwriter_group_filter=%s\nwriter_groups=' \
+        "$BURST_WRITER_GROUP_FILTER" >> "$TASK_OUT/provenance.txt"
+    printf '%s\n' "$(IFS=,; echo "${WRITER_GROUPS[*]}")" >> "$TASK_OUT/provenance.txt"
+else
+    printf 'writer_group_run=full\nwriter_group_filter=<unset>\nwriter_groups=' \
+        >> "$TASK_OUT/provenance.txt"
+    printf '%s\n' "$(IFS=,; echo "${WRITER_GROUPS[*]}")" >> "$TASK_OUT/provenance.txt"
+fi
 BURST_JOB_LOG_DIR="$TASK_OUT/job-logs"
 mkdir -p "$TASK_OUT/group-results" "$BURST_JOB_LOG_DIR"
 if ! run_bounded_jobs "$WRITER_GROUP_JOBS" run_writer_group "${WRITER_GROUPS[@]}"; then
@@ -383,4 +495,8 @@ for group in "${WRITER_GROUPS[@]}"; do
     cat "$TASK_OUT/group-results/$group.log" >> "$TASK_OUT/results.log"
 done
 
-echo "WRITE_BURST_ENGINE_QUALIFY_PASS: $TASK_OUT"
+if [[ -n ${BURST_WRITER_GROUP_FILTER:-} ]]; then
+    echo "WRITE_BURST_ENGINE_SUBSET_PASS: filter=$BURST_WRITER_GROUP_FILTER output=$TASK_OUT"
+else
+    echo "WRITE_BURST_ENGINE_QUALIFY_PASS: $TASK_OUT"
+fi

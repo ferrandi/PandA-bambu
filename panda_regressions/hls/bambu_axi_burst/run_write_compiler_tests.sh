@@ -103,7 +103,10 @@ run_write_suite() {
     'opaque, volatile, atomic, or unclassified memory effects'
   run_case read_write_same_bundle same-bundle-pointwise-duplex accepted
   python3 "$checker" accepted --output "$OUT/write/same-bundle-pointwise-duplex"
-  run_fallback read_write_distinct_buffers_same_bundle same-bundle-distinct-buffers-mixed-mode 'bundle contains reads; same-bundle read/write requires duplex support' 1 shared writes
+  # Reads and writes on one bundle are a duplex case: the guarded distinct-base duplex mode is
+  # the accepted outcome, and the bundle must not fall back to legacy scalar transfers.
+  run_case read_write_distinct_buffers_same_bundle same-bundle-distinct-buffers-mixed-mode accepted
+  python3 "$checker" duplex --output "$OUT/write/same-bundle-distinct-buffers-mixed-mode" --bundle shared
   run_fallback cache_write cache-fallback 'cache-enabled bundle'
   run_case write_count feature-off fallback 'explicit write-burst request ignored because experimental-m-axi-burst=0' 0
   python3 "$checker" fallback --output "$OUT/write/feature-off" --bundle output --feature-off \
