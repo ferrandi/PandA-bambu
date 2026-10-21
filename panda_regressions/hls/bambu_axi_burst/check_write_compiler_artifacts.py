@@ -15,6 +15,10 @@ FALLBACK_DIAGNOSTIC = re.compile(
     r"^\s*(?:---)?Keeping legacy m_axi (?P<direction>writes|accesses) for bundle "
     r"(?P<bundle>[A-Za-z0-9_.-]+): (?P<reason>.+?)\s*$"
 )
+GUARDED_DUPLEX_ACTIVATION = re.compile(
+    r"^\s*(?:---)?Activated guarded distinct-base duplex for bundle "
+    r"(?P<bundle>[A-Za-z0-9_.-]+) \(overlap uses serialized scalar transfers\)\s*$"
+)
 ERROR_DIAGNOSTICS = re.compile(r"^\s*(?:error\s*->\s*(?P<tool>.+)|.*:\s*error:\s*(?P<clang>.+))$")
 WRITE_COMPONENT = re.compile(r"(?i)MinimalAXI4MasterPipelinedWrite\b")
 READ_COMPONENT = re.compile(r"(?i)MinimalAXI4MasterPipelined(?!Write)\b")
@@ -119,6 +123,35 @@ def check_case(args):
             missing.append("runtime count pattern absent from retained compiler IR")
         if missing:
             raise ValueError("; ".join(missing))
+    elif args.kind == "duplex":
+        # Same-bundle read and write are a duplex case: the bundle must be activated with the
+        # runtime alias guard, and must not fall back to legacy scalar transfers.
+        activation = [m for m in (GUARDED_DUPLEX_ACTIVATION.match(line) for line in log.splitlines())
+                      if m]
+        fallback_for_bundle = [m for m in
+                               (FALLBACK_DIAGNOSTIC.match(line) for line in log.splitlines())
+                               if m and m.group("bundle") == args.bundle]
+        module_base = re.escape(f"{args.bundle}_bambu_artificial_ParmMgr_duplex_")
+        missing = []
+        if len(activation) != 1 or activation[0].group("bundle") != args.bundle:
+            missing.append("expected exactly one guarded distinct-base duplex activation for "
+                           f"bundle {args.bundle}")
+        if fallback_for_bundle:
+            missing.append(f"same-bundle read and write fell back to legacy for bundle {args.bundle}")
+        for role in ("read_endpoint", "write_endpoint", "aggregator_modgen"):
+            if not re.search(rf"module\s+{module_base}{role}\b", top_rtl):
+                missing.append(f"duplex {role} module is absent from top-level RTL")
+        if not re.search(rf"{module_base}aggregator_modgen\s+[A-Za-z0-9_]+\s*\(", top_rtl):
+            missing.append("duplex aggregator is not instantiated in top-level RTL")
+        if not READ_COMPONENT.search(top_rtl):
+            missing.append("duplex read endpoint engine is absent from top-level RTL")
+        if not WRITE_COMPONENT.search(top_rtl):
+            missing.append("duplex write endpoint engine is absent from top-level RTL")
+        for port in ("awaddr", "araddr"):
+            if f"p_m_axi_{args.bundle}_{port}" not in top_rtl:
+                missing.append(f"bundle {args.bundle} is not wired on the top level ({port})")
+        if missing:
+            raise ValueError("; ".join(missing))
     elif args.kind == "fallback":
         fallback_matches = [FALLBACK_DIAGNOSTIC.match(line) for line in log.splitlines()]
         fallback_matches = [match for match in fallback_matches if match]
@@ -188,7 +221,8 @@ def check_case(args):
 
 def main(argv=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument("kind", choices=("accepted", "fallback", "invalid", "profile", "legacy"))
+    parser.add_argument("kind",
+                        choices=("accepted", "fallback", "invalid", "profile", "legacy", "duplex"))
     parser.add_argument("--output", required=True, type=pathlib.Path)
     parser.add_argument("--reason", help="exact fallback reason or diagnostic regex for invalid cases")
     parser.add_argument("--bundle", help="bundle name required in the complete fallback diagnostic")
@@ -213,6 +247,8 @@ def main(argv=None):
         parser.error("fallback and invalid checks require --reason")
     if args.kind == "fallback" and not args.bundle:
         parser.error("fallback checks require --bundle")
+    if args.kind == "duplex" and not args.bundle:
+        parser.error("duplex checks require --bundle")
     if args.kind == "fallback" and args.feature_off and args.direction != "writes":
         parser.error("feature-off fallback applies only to write requests")
     if args.kind == "legacy" and not args.bundle:

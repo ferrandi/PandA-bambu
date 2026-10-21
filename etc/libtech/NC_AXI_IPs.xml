@@ -1781,6 +1781,7 @@ end
           <parameter name="MAX_OUTSTANDING">1</parameter>
           <parameter name="FIFO_DEPTH">32</parameter>
           <parameter name="PEER_FAULT_ENABLE">0</parameter>
+          <parameter name="FAST_STORE_ACK">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1"><structural_type_descriptor type="BOOL" size="1"/></port_o>
           <port_o id="reset" dir="IN"><structural_type_descriptor type="BOOL" size="1"/></port_o>
           <port_o id="start" dir="IN"><structural_type_descriptor type="BOOL" size="1"/></port_o>
@@ -1809,7 +1810,7 @@ end
           <port_o id="m_axi_bid" dir="IN"><structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/></port_o>
           <port_o id="m_axi_bvalid" dir="IN"><structural_type_descriptor type="BOOL" size="1"/></port_o>
           <port_o id="m_axi_bready" dir="OUT"><structural_type_descriptor type="BOOL" size="1"/></port_o>
-          <NP_functionality LIBRARY="MinimalAXI4MasterPipelinedWrite B_MAX MAX_OUTSTANDING FIFO_DEPTH PEER_FAULT_ENABLE in1 in2 in3 in4 in5 out1 peer_fault m_axi_awaddr m_axi_awlen m_axi_awsize m_axi_awburst m_axi_awid m_axi_wdata m_axi_wstrb m_axi_bresp m_axi_bid" VERILOG_PROVIDED="    localparam integer ADDR_BITS = BITSIZE_m_axi_awaddr;
+          <NP_functionality LIBRARY="MinimalAXI4MasterPipelinedWrite B_MAX MAX_OUTSTANDING FIFO_DEPTH PEER_FAULT_ENABLE FAST_STORE_ACK in1 in2 in3 in4 in5 out1 peer_fault m_axi_awaddr m_axi_awlen m_axi_awsize m_axi_awburst m_axi_awid m_axi_wdata m_axi_wstrb m_axi_bresp m_axi_bid" VERILOG_PROVIDED="    localparam integer ADDR_BITS = BITSIZE_m_axi_awaddr;
     localparam integer DATA_BITS = BITSIZE_m_axi_wdata;
     localparam integer BEAT_BYTES = DATA_BITS / 8;
     localparam integer BEAT_SHIFT = $clog2(BEAT_BYTES);
@@ -1832,6 +1833,18 @@ end
     reg region_active;
     reg [ADDR_BITS-1:0] region_base;
     reg [COUNT_W-1:0] region_count;
+    reg [ADDR_BITS-1:0] next_expected_address;
+    reg stores_exhausted;
+    // The payload pipeline register has to survive synthesis: folding it into the
+    // distributed-RAM write port would put the kernel payload cone straight back onto the
+    // FIFO write path, which is what this fast mode exists to avoid. DONT_TOUCH keeps it, and
+    // the register plus its attribute exist only when FAST_STORE_ACK is set, so the
+    // FAST_STORE_ACK=0 flow keeps exactly its original structure. FAST_STORE_ACK defaults
+    // to 1 and the generated kernels always pass 1: the fast acknowledgement has no
+    // compiler switch anymore. Value 0 is only reachable from the RTL qualification
+    // harness, which instantiates the engine directly.
+    wire fast_pipe_valid;
+    wire [BITSIZE_in3-1:0] fast_pipe_data;
     reg [COUNT_W-1:0] accepted;
     reg [COUNT_W-1:0] scheduled;
     reg [COUNT_W-1:0] remaining_beats;
@@ -1875,6 +1888,7 @@ end
     localparam integer DESC_COUNT_W = (DESC_DEPTH &lt;= 1) ? 1 : $clog2(DESC_DEPTH + 1);
     localparam integer RESERVED_COUNT_W = $clog2(DESC_DEPTH * B_MAX + 1);
     localparam integer STORE_ADDR_CHUNK_BITS = 8;
+    localparam [FIFO_COUNT_W-1:0] FIFO_SLOT_LIMIT = FIFO_DEPTH;
     localparam integer STORE_ADDR_CHUNK_COUNT = (ADDR_BITS + STORE_ADDR_CHUNK_BITS - 1) /
                                                 STORE_ADDR_CHUNK_BITS;
     reg [ADDR_BITS-1:0] descriptor_address [0:DESC_DEPTH-1];
@@ -1916,6 +1930,11 @@ end
     wire pending_store_enqueue;
     wire pending_store_changed;
     wire store_ack_match;
+    wire direct_store_ack;
+    wire fast_credit_available;
+    wire fast_store_accept;
+    wire fast_pipe_push;
+    wire fast_data_enqueue;
     wire [END_BEAT_W-1:0] address_end_limit;
     wire configure_range_valid;
     wire [OFFSET_W-1:0] accepted_offset;
@@ -2032,23 +2051,67 @@ end
             assign store_address_high_zero = 1'b1;
         end
     endgenerate
-    assign store_address_valid = (&amp;store_address_chunk_valid) &amp;&amp; store_address_high_zero;
-    assign store_request_valid = region_active &amp;&amp; (accepted &lt; region_count) &amp;&amp;
-        (in2 == DATA_BITS) &amp;&amp; store_address_valid;
+    assign store_address_valid = (FAST_STORE_ACK != 0) ?
+        (in4 == next_expected_address) :
+        ((&amp;store_address_chunk_valid) &amp;&amp; store_address_high_zero);
+    assign store_request_valid = (FAST_STORE_ACK != 0) ?
+        (region_active &amp;&amp; !stores_exhausted &amp;&amp; (in2 == DATA_BITS) &amp;&amp; store_address_valid) :
+        (region_active &amp;&amp; (accepted &lt; region_count) &amp;&amp; (in2 == DATA_BITS) &amp;&amp; store_address_valid);
     assign direct_store = store_input &amp;&amp; (!store_seen || in2 != store_size ||
         in3 != store_data || in4 != store_address) &amp;&amp; !store_pending;
     assign pending_store_changed = store_pending &amp;&amp; store_input &amp;&amp;
         (in2 != pending_size || in3 != pending_data || in4 != pending_address);
     assign pending_store_enqueue = !fault_reg &amp;&amp; !peer_fault_active &amp;&amp; store_pending &amp;&amp;
-        (fifo_count &lt; FIFO_DEPTH) &amp;&amp; !pending_store_changed;
-    assign store_enqueue = !fault_reg &amp;&amp; !peer_fault_active &amp;&amp; ((direct_store &amp;&amp; store_request_valid &amp;&amp;
-                            (fifo_count &lt; FIFO_DEPTH)) || pending_store_enqueue);
+        (fifo_count &lt; FIFO_DEPTH) &amp;&amp; !pending_store_changed &amp;&amp;
+        ((FAST_STORE_ACK != 0) ? !fast_pipe_valid : 1'b1);
+    assign store_enqueue = !fault_reg &amp;&amp; !peer_fault_active &amp;&amp;
+        ((FAST_STORE_ACK != 0) ? pending_store_enqueue :
+        ((direct_store &amp;&amp; store_request_valid &amp;&amp; (fifo_count &lt; FIFO_DEPTH)) ||
+         pending_store_enqueue));
+    assign fast_credit_available = (fifo_count + {{(FIFO_COUNT_W-1){1'b0}},
+        (fast_pipe_valid | store_pending)}) &lt; FIFO_SLOT_LIMIT;
+    assign fast_store_accept = (FAST_STORE_ACK != 0) &amp;&amp; store_input &amp;&amp; !store_pending &amp;&amp;
+        store_request_valid &amp;&amp; fast_credit_available &amp;&amp;
+        !fault_reg &amp;&amp; !peer_fault_active &amp;&amp; !b_fault_now;
     assign store_ack_match = store_ack &amp;&amp; (store_ack_pending ||
         ((in1 == OP_STORE) &amp;&amp; (in2 == store_ack_size) &amp;&amp;
          (in3 == store_ack_data) &amp;&amp; (in4 == store_ack_address)));
+    assign direct_store_ack = fast_store_accept;
+    generate
+    if (FAST_STORE_ACK != 0) begin : g_fast_pipe_hold
+        (* dont_touch = &quot;true&quot; *) reg fast_pipe_hold_valid;
+        (* dont_touch = &quot;true&quot; *) reg [BITSIZE_in3-1:0] fast_pipe_hold_data;
+        // The accepted CONFIGURE clears the payload pipe; the condition mirrors the
+        // CONFIGURE-pipeline branch of the main sequential block.
+        wire fast_pipe_cfg_clear = cfg_pipe_valid &amp;&amp; cfg_pipe_legal &amp;&amp;
+            (cfg_pipe_size == DATA_BITS) &amp;&amp; cfg_pipe_idle &amp;&amp; !fault_reg &amp;&amp; !peer_fault_active;
+        always @(posedge clock 1RESET_EDGE) begin
+            if (1RESET_VALUE) begin
+                fast_pipe_hold_valid &lt;= 1'b0;
+                fast_pipe_hold_data &lt;= 0;
+            end else if (fast_store_accept) begin
+                // An accept wins over an accepted CONFIGURE in the same cycle, as in the
+                // original single-block ordering where the accept statement followed it.
+                fast_pipe_hold_valid &lt;= 1'b1;
+                fast_pipe_hold_data &lt;= in3;
+            end else if (fast_pipe_cfg_clear || fast_pipe_hold_valid) begin
+                fast_pipe_hold_valid &lt;= 1'b0;
+            end
+        end
+        assign fast_pipe_valid = fast_pipe_hold_valid;
+        assign fast_pipe_data = fast_pipe_hold_data;
+    end else begin : g_fast_pipe_off
+        assign fast_pipe_valid = 1'b0;
+        assign fast_pipe_data = {BITSIZE_in3{1'b0}};
+    end
+    endgenerate
+
+    assign fast_pipe_push = fast_pipe_valid;
+    assign fast_data_enqueue = fast_pipe_push || pending_store_enqueue;
     assign drain_complete = region_active &amp;&amp; (accepted == region_count) &amp;&amp;
         (completed == region_count) &amp;&amp; (fifo_count == 0) &amp;&amp; (plan_count == 0) &amp;&amp;
-        (descriptor_count == 0) &amp;&amp; !store_pending;
+        (descriptor_count == 0) &amp;&amp; !store_pending &amp;&amp;
+        ((FAST_STORE_ACK != 0) ? !fast_pipe_valid : 1'b1);
 
     // synthesis translate_off
     initial begin
@@ -2080,7 +2143,7 @@ end
             burst_limit = plan_beats[plan_rd_ptr];
         if (!fault_reg &amp;&amp; !peer_fault_active &amp;&amp; configure_ack)
             done_reg = 1'b1;
-        if (!fault_reg &amp;&amp; !peer_fault_active &amp;&amp; store_ack_match)
+        if (!fault_reg &amp;&amp; !peer_fault_active &amp;&amp; (store_ack_match || direct_store_ack))
             done_reg = 1'b1;
         if (!fault_reg &amp;&amp; !peer_fault_active &amp;&amp; !store_pending &amp;&amp; !store_ack_pending &amp;&amp; start &amp;&amp;
             (in1 == OP_DRAIN) &amp;&amp;
@@ -2108,6 +2171,10 @@ end
             region_active &lt;= 1'b0;
             region_base &lt;= 0;
             region_count &lt;= 0;
+            if (FAST_STORE_ACK != 0) begin
+                next_expected_address &lt;= 0;
+                stores_exhausted &lt;= 1'b0;
+            end
             accepted &lt;= 0;
             scheduled &lt;= 0;
             remaining_beats &lt;= 0;
@@ -2175,6 +2242,10 @@ end
                 store_ack_size &lt;= pending_store_enqueue ? pending_size : in2;
                 store_ack_data &lt;= pending_store_enqueue ? pending_data : in3;
                 store_ack_address &lt;= pending_store_enqueue ? pending_address : in4;
+                if (FAST_STORE_ACK != 0) begin
+                    next_expected_address &lt;= next_expected_address + BEAT_BYTES;
+                    stores_exhausted &lt;= (accepted + 1'b1 == region_count);
+                end
             end
             if (!store_pending) begin
                 if (!cfg_pipe_valid) begin
@@ -2213,6 +2284,10 @@ end
                     region_active &lt;= 1'b1;
                     region_base &lt;= cfg_pipe_base;
                     region_count &lt;= cfg_pipe_count[COUNT_W-1:0];
+                    if (FAST_STORE_ACK != 0) begin
+                        next_expected_address &lt;= cfg_pipe_base;
+                        stores_exhausted &lt;= (cfg_pipe_count == 0);
+                    end
                     boundary_beats &lt;= BOUNDARY_BEATS - cfg_pipe_base[11:BEAT_SHIFT];
                     boundary_within_burst &lt;=
                         ((BOUNDARY_BEATS - cfg_pipe_base[11:BEAT_SHIFT]) &lt;= B_MAX);
@@ -2242,19 +2317,36 @@ end
                 end
             end
 
+            if (fast_pipe_push) begin
+                fifo[fifo_wr_ptr] &lt;= fast_pipe_data;
+                if (fifo_wr_ptr == FIFO_DEPTH-1)
+                    fifo_wr_ptr &lt;= 0;
+                else
+                    fifo_wr_ptr &lt;= fifo_wr_ptr + 1'b1;
+            end
+            if (fast_store_accept) begin
+                next_expected_address &lt;= next_expected_address + BEAT_BYTES;
+                stores_exhausted &lt;= (accepted + 1'b1 == region_count);
+                accepted &lt;= accepted + 1'b1;
+            end
             if (!fault_reg &amp;&amp; !peer_fault_active &amp;&amp; direct_store &amp;&amp; !store_pending) begin
+                // The kernel drops `start` one cycle after presenting a request,
+                // so the engine consumes it in this cycle either through the fast
+                // accept or through the pending capture; the novelty state follows
+                // the baseline rule in both modes.
                 store_seen &lt;= 1'b1;
                 store_size &lt;= in2;
                 store_data &lt;= in3;
                 store_address &lt;= in4;
                 if (!store_request_valid) begin
                     fault_reg &lt;= 1'b1;
-                end else if (fifo_count == FIFO_DEPTH) begin
+                end else if ((FAST_STORE_ACK == 0) ? (fifo_count == FIFO_DEPTH) :
+                    !fast_store_accept) begin
                     store_pending &lt;= 1'b1;
                     pending_size &lt;= in2;
                     pending_data &lt;= in3;
                     pending_address &lt;= in4;
-                end else begin
+                end else if (FAST_STORE_ACK == 0) begin
                     fifo[fifo_wr_ptr] &lt;= in3;
                     if (fifo_wr_ptr == FIFO_DEPTH-1)
                         fifo_wr_ptr &lt;= 0;
@@ -2364,7 +2456,7 @@ end
                 end
             end
 
-            case ({store_enqueue, w_push})
+            case ({((FAST_STORE_ACK != 0) ? fast_data_enqueue : store_enqueue), w_push})
                 2'b10: fifo_count &lt;= fifo_count + 1'b1;
                 2'b01: fifo_count &lt;= fifo_count - 1'b1;
                 default: fifo_count &lt;= fifo_count;
