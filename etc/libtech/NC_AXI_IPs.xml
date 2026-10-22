@@ -1883,6 +1883,10 @@ end
     reg [BITSIZE_in3-1:0] store_data;
     reg [ADDR_BITS-1:0] store_address;
     reg [BITSIZE_out1-1:0] out1_reg;
+    // The clamp only keeps the derived widths well-formed. The elaboration-time check below
+    // rejects MAX_OUTSTANDING outside [1,16] in simulation and in synthesis alike, so no
+    // out-of-range value reaches the descriptor ring: this is a defensive width, not a policy
+    // that silently accepts a wrong parameter.
     localparam integer DESC_DEPTH = (MAX_OUTSTANDING &lt; 1) ? 1 : MAX_OUTSTANDING;
     localparam integer DESC_PTR_W = (DESC_DEPTH &lt;= 2) ? 1 : $clog2(DESC_DEPTH);
     localparam integer DESC_COUNT_W = (DESC_DEPTH &lt;= 1) ? 1 : $clog2(DESC_DEPTH + 1);
@@ -2113,6 +2117,31 @@ end
         (descriptor_count == 0) &amp;&amp; !store_pending &amp;&amp;
         ((FAST_STORE_ACK != 0) ? !fast_pipe_valid : 1'b1);
 
+    // Parameter legality is checked at elaboration time, where synthesis can see it too: an
+    // out-of-range parameter stops the build instead of being clamped or silently accepted.
+    // Vivado reports the message (Synth 8-6058); Verilator reports it as USERFATAL, which the
+    // regression harness promotes to an error with -Werror-USERFATAL.
+    generate
+        if (!(B_MAX &gt;= 1 &amp;&amp; B_MAX &lt;= 256)) begin : PARAM_CHECK_B_MAX
+            $fatal(1, &quot;B_MAX must be in [1,256]&quot;);
+        end
+        if (!(MAX_OUTSTANDING &gt;= 1 &amp;&amp; MAX_OUTSTANDING &lt;= 16)) begin : PARAM_CHECK_MAX_OUTSTANDING
+            $fatal(1, &quot;MAX_OUTSTANDING must be in [1,16]&quot;);
+        end
+        if (!(FIFO_DEPTH &gt;= B_MAX &amp;&amp; FIFO_DEPTH &lt;= 4096 &amp;&amp;
+              (FIFO_DEPTH &amp; (FIFO_DEPTH - 1)) == 0)) begin : PARAM_CHECK_FIFO_DEPTH
+            $fatal(1, &quot;FIFO_DEPTH must be a power of two &gt;= B_MAX and &lt;= 4096&quot;);
+        end
+        if (DATA_BITS != 32) begin : PARAM_CHECK_DATA_BITS
+            $fatal(1, &quot;F1 writer supports 32-bit data beats only&quot;);
+        end
+        if (ADDR_BITS &lt; 12) begin : PARAM_CHECK_ADDR_BITS
+            $fatal(1, &quot;address width must be at least 12 bits for the 4 KiB rule&quot;);
+        end
+    endgenerate
+
+    // Simulation-only backstop for tools that evaluate the checks at run time instead of at
+    // elaboration; it aborts the run at time 0 with the same messages.
     // synthesis translate_off
     initial begin
         if (!(B_MAX &gt;= 1 &amp;&amp; B_MAX &lt;= 256))
