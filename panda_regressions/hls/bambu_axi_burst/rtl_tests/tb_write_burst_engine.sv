@@ -73,6 +73,9 @@ module tb_write_burst_engine #(
     logic expected_valid [0:MEM_WORDS-1];
     integer aw_wr = 0, aw_rd = 0, w_wr = 0, w_rd = 0;
     integer accepted_aw = 0, accepted_w = 0, committed_beats = 0, response_count = 0;
+    // Longest burst the engine actually put on the bus, in beats: the witness that the
+    // B_MAX limit is exercised with traffic and not only rejected by the monitor.
+    integer longest_aw_beats = 0;
     integer reservations = 0, simultaneous_reserve_b = 0, simultaneous_enqueue_w = 0;
     logic plan_simultaneous_seen = 1'b0;
     logic plan_full_exchange_seen = 1'b0;
@@ -257,6 +260,7 @@ module tb_write_burst_engine #(
                     $fatal(1, "AW_CROSSES_4K_OR_UNALIGNED addr=%h len=%0d", awaddr, awlen);
                 if ((awlen + 1) > B_MAX)
                     $fatal(1, "AW_EXCEEDS_B_MAX len=%0d B_MAX=%0d", awlen + 1, B_MAX);
+                if ((awlen + 1) > longest_aw_beats) longest_aw_beats = awlen + 1;
                 if (check_38_split) begin
                     case (expected_burst_index)
                         0: if (awlen + 1 != 16) $fatal(1, "COUNT38_SPLIT_0 len=%0d", awlen + 1);
@@ -1126,6 +1130,39 @@ module tb_write_burst_engine #(
         end
     endtask
 
+    // F2 review closure: traffic at the B_MAX limit. With B_MAX=256 the engine must emit
+    // full-length bursts, i.e. AWLEN=255, instead of splitting them: the monitor records the
+    // longest burst seen and this task requires it to be exactly B_MAX.
+    task automatic max_burst_length_witness;
+        integer total_beats;
+        integer address;
+        begin
+            if (B_MAX != 256)
+                $fatal(1, "F2_MAX_LENGTH_WITNESS_REQUIRES_B256 B=%0d", B_MAX);
+            if (FIFO_DEPTH < 2*B_MAX || MAX_OUTSTANDING < 2)
+                $fatal(1, "F2_MAX_LENGTH_WITNESS_NEEDS_FIFO_2B_AND_O2 FIFO=%0d O=%0d",
+                       FIFO_DEPTH, MAX_OUTSTANDING);
+            total_beats = 2 * B_MAX;
+            awready_driver = 1'b1;
+            wready = 1'b1;
+            // 0x3c00 leaves exactly 1 KiB inside the last 4 KiB page, so a 256-beat burst
+            // (1024 bytes) is legal and has no 4 KiB reason to split.
+            command(OP_CONFIGURE, 32, 0, 32'h3c00, total_beats, 1'b0);
+            for (integer beat = 0; beat < total_beats; beat = beat + 1) begin
+                address = 32'h3c00 + beat*4;
+                expected[address/4] = 32'hf2ff_0000 ^ beat;
+                expected_valid[address/4] = 1'b1;
+                command(OP_STORE, 32, expected[address/4], address, 0, 1'b0);
+            end
+            tick(4);
+            if (accepted_aw != 2)
+                $fatal(1, "F2_MAX_LENGTH_AW_COUNT aw=%0d expected=2", accepted_aw);
+            if (longest_aw_beats != B_MAX)
+                $fatal(1, "F2_MAX_LENGTH_AW_NOT_SEEN longest=%0d B_MAX=%0d",
+                       longest_aw_beats, B_MAX);
+        end
+    endtask
+
     task automatic two_aw_before_b_witness;
         begin
             if (MAX_OUTSTANDING != 2)
@@ -1773,6 +1810,8 @@ module tb_write_burst_engine #(
             if (MAX_OUTSTANDING < 2)
                 $fatal(1, "F2_MULTI_OUTSTANDING_REQUIRES_O_GT_1");
             multi_outstanding_witness();
+        end else if (selected_case == "MAX_BURST_LENGTH") begin
+            max_burst_length_witness();
         end else if (selected_case == "TWO_AW_BEFORE_B") begin
             two_aw_before_b_witness();
         end else if (selected_case == "INDEPENDENT_CURSORS") begin
