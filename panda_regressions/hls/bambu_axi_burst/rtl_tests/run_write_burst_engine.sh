@@ -210,18 +210,29 @@ build_async_reset_run() {
     printf 'ASYNC_RESET_VARIANT_PASS %s polarity=%s\n' "$label" "$polarity" >> "$RESULTS_LOG"
 }
 
+# Rejection witness for an out-of-range parameter. The engine checks its parameters at
+# elaboration, so the normal outcome is that the build itself refuses: -Werror-USERFATAL turns
+# the elaboration-time message into a Verilator error. A build that succeeds is still accepted
+# as a witness when the simulation aborts with the same message (run-time backstop), but any
+# other failure mode is an error.
 expect_parameter_fatal() {
     local label=$1 burst=$2 outstanding=$3 depth=$4 expected=$5
     local build="$TASK_OUT/negative-$label"
     mkdir -p "$build"
-    timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wno-fatal -CFLAGS -O0 \
-        --top-module tb_write_burst_engine -GB_MAX="$burst" -GMAX_OUTSTANDING="$outstanding" \
+    local compiled=0
+    timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wno-fatal -Werror-USERFATAL \
+        -CFLAGS -O0 --top-module tb_write_burst_engine -GB_MAX="$burst" -GMAX_OUTSTANDING="$outstanding" \
         -GFIFO_DEPTH="$depth" --Mdir "$build/obj" \
-        "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" "$TB" > "$build/compile.log" 2>&1 || {
-            tail -n 80 "$build/compile.log" >&2
-            echo "negative parameter fixture compile failed: $label" >&2
-            return 1
-        }
+        "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" "$TB" > "$build/compile.log" 2>&1 || compiled=1
+    if (( compiled )); then
+        if rg -Fq "$expected" "$build/compile.log"; then
+            echo "EXPECTED_ELABORATION_REJECTION $label: $expected" >> "$RESULTS_LOG"
+            return 0
+        fi
+        tail -n 80 "$build/compile.log" >&2
+        echo "negative parameter fixture compile failed without the expected message: $label" >&2
+        return 1
+    fi
     local status=0
     timeout 20s "$build/obj/Vtb_write_burst_engine" +CASE=PARAM > "$build/run.log" 2>&1 || status=$?
     if (( status == 0 )) || ! rg -Fq "$expected" "$build/run.log"; then
@@ -229,7 +240,7 @@ expect_parameter_fatal() {
         echo "parameter rejection witness failed: $label" >&2
         return 1
     fi
-    echo "EXPECTED_FATAL $label: $expected" >> "$RESULTS_LOG"
+    echo "EXPECTED_RUN_TIME_FATAL $label: $expected" >> "$RESULTS_LOG"
 }
 
 expect_mutation_failure() {
@@ -273,7 +284,7 @@ run_writer_group() {
     : > "$RESULTS_LOG"
     case "$group" in
         core-B16-D16)
-            build_run B16-D16 16 16 32 CORE W_BEFORE_AW AW_BEFORE_W STALLS \
+            build_run B16-D16 16 16 32 CORE BOUNDARY W_BEFORE_AW AW_BEFORE_W STALLS \
                 CFG_SIZE_CHANGE CFG_COUNT_CHANGE CONFIG_PIPELINE_VALID CONFIG_PIPELINE_INVALID \
                 BAD_CONFIG_SIZE BAD_CONFIG_ALIGN COUNT_MSB OVERFLOW32 BAD_STORE_SIZE \
                 BAD_STORE_SIZE8 BAD_STORE_ADDRESS EARLY_DRAIN BID BRESP MAX_COUNT \
@@ -284,7 +295,10 @@ run_writer_group() {
                 DRAIN_BEFORE_B DRAIN_ONE_SHOT PREMATURE_CONFIGURE INIT_DRAIN
             ;;
         core-B16-D32)
-            build_run B16-D32 16 32 32 CORE BRESP_NO_NEXT_DESCRIPTOR
+            # CFG_SIZE_CHANGE and CFG_COUNT_CHANGE also run here: the configure-size and
+            # configure-count-width mutations run at FIFO_DEPTH=32, so the clean comparison has
+            # to be at the same parameters.
+            build_run B16-D32 16 32 32 CORE BRESP_NO_NEXT_DESCRIPTOR CFG_SIZE_CHANGE CFG_COUNT_CHANGE
             ;;
         core-B1-D1)
             build_run B1-D1 1 1 32 CORE CONFIG_PIPELINE_B1
@@ -333,6 +347,9 @@ run_writer_group() {
             ;;
         limit-B256-D256)
             build_run B256-D256 256 256 32 PARAM
+            ;;
+        maxlen-B256-O2)
+            build_run_o B256-O2-MAXLEN 256 2 512 32 MAX_BURST_LENGTH
             ;;
         async-reset-active-low)
             build_async_reset_run active-low 1
@@ -445,7 +462,7 @@ run_writer_group() {
 WRITER_GROUPS=(core-B16-D16 core-B16-D32 core-B1-D1 core-B1-O16 core-B3-D4 \
     core-B16-D4096 core-B16-A32-F3 multi-O2-D16 multi-O2-D32 multi-O3-D16 \
     multi-O16-D16 multi-O2-D32-F3 address-B16-A64 address-B16-A64-MSB \
-    limit-B255-D256 limit-B256-O16 limit-B256-D256 async-reset-active-low \
+    limit-B255-D256 limit-B256-O16 limit-B256-D256 maxlen-B256-O2 async-reset-active-low \
     async-reset-active-high invalid-B0 invalid-B257 invalid-O0 invalid-O17 \
     invalid-FIFO-BELOW-B invalid-FIFO-NONPOWER mutation-data-order \
     mutation-last-order mutation-serialize-until-b mutation-count-msb-guard \
@@ -464,7 +481,7 @@ if [[ -n ${BURST_WRITER_GROUP_FILTER:-} ]]; then
             core-B16-D16|core-B16-D32|core-B1-D1|core-B1-O16|core-B3-D4|core-B16-D4096|\
             core-B16-A32-F3|multi-O2-D16|multi-O2-D32|multi-O3-D16|multi-O16-D16|\
             multi-O2-D32-F3|address-B16-A64|address-B16-A64-MSB|limit-B255-D256|\
-            limit-B256-O16|limit-B256-D256|async-reset-active-low|async-reset-active-high|\
+            limit-B256-O16|limit-B256-D256|maxlen-B256-O2|async-reset-active-low|async-reset-active-high|\
             invalid-B0|invalid-B257|invalid-O0|invalid-O17|invalid-FIFO-BELOW-B|\
             invalid-FIFO-NONPOWER|mutation-data-order|mutation-last-order|\
             mutation-serialize-until-b|mutation-count-msb-guard|mutation-configure-size|\
