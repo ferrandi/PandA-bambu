@@ -127,8 +127,14 @@ run_write_suite() {
   done
   run_case write_outstanding_one profile-outstanding-1 accepted '' 1 "$profile_fixture"
   python3 "$checker" accepted --output "$OUT/write/profile-outstanding-1" --expected-write-burst 16
-  run_invalid_profile write_outstanding_sixteen f1-o1-limit \
-    "Configured write bursts for bundle 'data' currently support write_burst_outstanding=1 only" "$profile_fixture"
+  # F2: more than one write burst may be in flight. The requested outstanding must survive
+  # into the emitted engine generic; the FIFO default stays next_pow2(2*B_MAX).
+  run_case write_outstanding_sixteen profile-outstanding-16 accepted '' 1 "$profile_fixture"
+  python3 "$checker" accepted --output "$OUT/write/profile-outstanding-16" --expected-write-burst 16
+  python3 "$checker" profile --output "$OUT/write/profile-outstanding-16" \
+    --expect-profile-attribute write_burst_outstanding=16 \
+    --expect-engine-parameter B_MAX=16 --expect-engine-parameter MAX_OUTSTANDING=16 \
+    --expect-engine-parameter FIFO_DEPTH=64
   run_invalid_profile write_outstanding_zero invalid-outstanding-zero \
     'write_burst_outstanding must be an integer in \[1,16\]' "$TESTS/write_compiler_cases/invalid_profiles/write_outstanding_zero.cpp"
   run_case write_duplicate_equal_profile duplicate-equal-profile accepted '' 1 "$profile_fixture"
@@ -146,8 +152,19 @@ run_write_suite() {
     "$TESTS/write_compiler_cases/legacy_m_axi_without_write_burst.cpp"
   run_invalid_profile invalid_write_profile invalid-zero \
     'Maximum AXI burst length must be an integer in \[1,256\]' "$TESTS/write_compiler_cases/invalid_profiles/invalid_write_profile.cpp"
-  run_invalid_profile outstanding_two_profile f1-o1-limitation \
-    "Configured write bursts for bundle 'data' currently support write_burst_outstanding=1 only" "$TESTS/write_compiler_cases/invalid_profiles/outstanding_two_profile.cpp"
+  run_case outstanding_two_profile outstanding-two accepted '' 1 \
+    "$TESTS/write_compiler_cases/outstanding_two_profile.cpp"
+  python3 "$checker" accepted --output "$OUT/write/outstanding-two" --expected-write-burst 16
+  python3 "$checker" profile --output "$OUT/write/outstanding-two" \
+    --expect-profile-attribute write_burst_outstanding=2 \
+    --expect-engine-parameter B_MAX=16 --expect-engine-parameter MAX_OUTSTANDING=2 \
+    --expect-engine-parameter FIFO_DEPTH=32
+  run_case write_outstanding_three profile-outstanding-3 accepted '' 1 "$profile_fixture"
+  python3 "$checker" accepted --output "$OUT/write/profile-outstanding-3" --expected-write-burst 16
+  python3 "$checker" profile --output "$OUT/write/profile-outstanding-3" \
+    --expect-profile-attribute write_burst_outstanding=3 \
+    --expect-engine-parameter B_MAX=16 --expect-engine-parameter MAX_OUTSTANDING=3 \
+    --expect-engine-parameter FIFO_DEPTH=32
   run_case valid_write_profile valid-write-profile accepted
   python3 "$checker" accepted --output "$OUT/write/valid-write-profile"
   python3 "$checker" profile --output "$OUT/write/valid-write-profile" \

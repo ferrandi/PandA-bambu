@@ -18,6 +18,11 @@ extern "C" void write_outstanding_one(int *dst, int n) {
   for (int i = 0; i < n; ++i) dst[i] = i;
 }
 
+extern "C" void write_outstanding_three(int *dst, int n) {
+#pragma HLS interface mode=m_axi port=dst offset=direct bundle=data max_write_burst_length=16 write_burst_outstanding=3
+  for (int i = 0; i < n; ++i) dst[i] = i;
+}
+
 extern "C" void write_outstanding_sixteen(int *dst, int n) {
 #pragma HLS interface mode=m_axi port=dst offset=direct bundle=data max_write_burst_length=16 write_burst_outstanding=16 write_fifo_depth=64
   for (int i = 0; i < n; ++i) dst[i] = i;

@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # Manual end-to-end G2 test: compile and simulate a generated write top.
+# WRITE_OUTSTANDING (1, 2 or 3, default 1) selects the fixture whose write_burst_outstanding
+# attribute, generated engine generic and testbench slave limit are checked against each other;
+# the TOP default follows it.
 # Usage (outside the sandbox):
 #   BURST_G2_SIM_OUTSIDE_SANDBOX=1 run_generated_write_kernel_tests.sh BAMBU \
 #     [FRESH_OUTPUT_DIR] [TOP]
@@ -53,11 +56,30 @@ export TMPDIR="$TASK_OUT/tmp" TMP="$TASK_OUT/tmp" TEMP="$TASK_OUT/tmp"
 SOURCE="$ROOT/panda_regressions/hls/bambu_axi_burst/write_compiler_cases/write_cases.cpp"
 TB="$TESTS/tb_generated_write_kernel.sv"
 GEN="$TASK_OUT/generated"
-TOP_ARG=${3:-write_count_seed}
+# The number of write bursts the kernel may keep in flight. It selects the fixture, the
+# generated engine generic and the limit the testbench slave enforces.
+WRITE_OUTSTANDING=${WRITE_OUTSTANDING:-1}
+case "$WRITE_OUTSTANDING" in
+    1) default_top=write_count_seed ;;
+    2) default_top=write_count_seed_two ;;
+    3) default_top=write_count_seed_three ;;
+    *) echo "WRITE_OUTSTANDING must be 1, 2 or 3" >&2; exit 2 ;;
+esac
+TOP_ARG=${3:-$default_top}
 case "$TOP_ARG" in
-    write_count_seed|write_with_unused_same_bundle|write_with_unused_same_bundle_reversed) ;;
+    write_count_seed|write_count_seed_two|write_count_seed_three|write_with_unused_same_bundle|write_with_unused_same_bundle_reversed) ;;
     *) echo "unsupported G2 top: $TOP_ARG" >&2; exit 2 ;;
 esac
+case "$TOP_ARG" in
+    write_count_seed) expected_outstanding=1 ;;
+    write_count_seed_two) expected_outstanding=2 ;;
+    write_count_seed_three) expected_outstanding=3 ;;
+    *) expected_outstanding=1 ;;
+esac
+[[ $expected_outstanding -eq $WRITE_OUTSTANDING ]] || {
+    echo "top $TOP_ARG carries write_burst_outstanding=$expected_outstanding, but WRITE_OUTSTANDING=$WRITE_OUTSTANDING" >&2
+    exit 2
+}
 ARGS=("--top-fname=$TOP_ARG" --compiler=I386_CLANG16 --generate-interface=INFER
       --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --no-clean
       --bambu-parameter=experimental-m-axi-burst=1
@@ -66,7 +88,7 @@ ARGS=("--top-fname=$TOP_ARG" --compiler=I386_CLANG16 --generate-interface=INFER
     printf 'root=%s\noutput=%s\nbambu=%s\nprefix=%s\nsettings=%s\nplugin=%s\n' \
         "$ROOT" "$TASK_OUT" "$BAMBU" "$PREFIX" "$(realpath "$SETTINGS")" "$PLUGIN"
     printf 'TMPDIR=%s\nTMP=%s\nTEMP=%s\n' "$TMPDIR" "$TMP" "$TEMP"
-    printf 'source=%s\ntestbench=%s\nargv=' "$SOURCE" "$TB"
+    printf 'source=%s\ntestbench=%s\nwrite_outstanding=%s\nargv=' "$SOURCE" "$TB" "$WRITE_OUTSTANDING"
     printf '%q ' "$BAMBU" "$SOURCE" "${ARGS[@]}"; printf '\n'
     "$BAMBU" --version 2>&1 | head -n 2
     verilator --version
@@ -85,7 +107,7 @@ LIB="$GEN/panda_libtech.v"
 for artifact in "$RTL" "$LIB"; do
     [[ -s "$artifact" ]] || { echo "missing generated artifact: $artifact" >&2; exit 2; }
 done
-python3 - "$RTL" "$LIB" "$TOP_ARG" <<'PY'
+python3 - "$RTL" "$LIB" "$TOP_ARG" "$WRITE_OUTSTANDING" <<'PY'
 from pathlib import Path
 import re
 import sys
@@ -93,6 +115,8 @@ import sys
 rtl = Path(sys.argv[1]).read_text(errors="replace")
 lib = Path(sys.argv[2]).read_text(errors="replace")
 requested_top = sys.argv[3]
+expected_outstanding = int(sys.argv[4])
+seed_tops = ("write_count_seed", "write_count_seed_two", "write_count_seed_three")
 top_matches = list(re.finditer(rf"(?m)^module\s+({re.escape(requested_top)}|kernel)\s*\(", rtl))
 if not top_matches:
     raise SystemExit(f"expected generated {requested_top} top ({requested_top} or kernel naming)")
@@ -102,7 +126,7 @@ if end < 0:
     raise SystemExit("generated top module has no endmodule")
 top_body = rtl[top.start():end]
 inputs = ["clock", "reset", "start_port", "dst", "n"]
-if requested_top == "write_count_seed":
+if requested_top in seed_tops:
     inputs.append("seed")
 inputs += [
           "m_axi_output_awready", "m_axi_output_wready", "m_axi_output_bid",
@@ -121,13 +145,14 @@ missing = [name for direction, names in (("input", inputs), ("output", outputs))
 if missing:
     raise SystemExit("generated top port directions/names differ from G2 assumptions: " + ", ".join(missing))
 unused_port = re.search(r"(?m)^\s*input\s+(?:\[[^]]+\]\s*)?unused\s*;", top_body)
-if requested_top != "write_count_seed" and unused_port is None:
+if requested_top not in seed_tops and unused_port is None:
     raise SystemExit(f"generated {requested_top} top does not expose the unused pointer sentinel input")
 if "MinimalAXI4MasterPipelinedWrite" not in rtl or "module MinimalAXI4MasterPipelinedWrite" not in lib:
     raise SystemExit("generated RTL/library lacks the selected write-burst component")
 normalized = re.sub(r"\s+", "", rtl)
-if not all(value in normalized for value in (".B_MAX(16)", ".MAX_OUTSTANDING(1)")):
-    raise SystemExit("generated writer parameters are not B_MAX=16, MAX_OUTSTANDING=1")
+expected_parameters = (".B_MAX(16)", f".MAX_OUTSTANDING({expected_outstanding})", ".FIFO_DEPTH(32)")
+if not all(value in normalized for value in expected_parameters):
+    raise SystemExit("generated writer parameters are not " + ", ".join(expected_parameters))
 PY
 sha256sum "$RTL" "$LIB" >>"$TASK_OUT/provenance.txt"
 printf 'generated_top=%s\n' "$(basename "$RTL" .v)" >>"$TASK_OUT/provenance.txt"
@@ -139,21 +164,23 @@ TOP=$(sed -nE "s/^module[[:space:]]+($TOP_ARG|kernel)[[:space:]]*\\(.*/\\1/p" "$
 [[ -n "$TOP" ]] || { echo "could not identify generated write_count_seed top" >&2; exit 2; }
 TB_TOP=tb_generated_write_kernel
 TB_DEFINES=("+define+GENERATED_TOP=$TOP")
-if [[ "$TOP_ARG" != write_count_seed ]]; then
+# Only the unused-bundle cases drive an extra pointer sentinel; the write_count_seed family
+# (any outstanding value) drives the seed operand instead.
+if [[ "$TOP_ARG" != write_count_seed* ]]; then
     TB_DEFINES+=(+define+UNUSED_BUNDLE_CASE)
     if rg -q '^\s*input\s+(\[[^]]+\]\s*)?unused\s*;' "$RTL"; then
         TB_DEFINES+=(+define+GENERATED_UNUSED_PORT)
     fi
 fi
 if ! verilator --binary -j "$SIM_JOBS" --timing --assert --public-flat-rw -Wno-fatal \
-    --top-module "$TB_TOP" --Mdir "$TASK_OUT/verilator_obj" \
+    --top-module "$TB_TOP" -GWRITE_OUTSTANDING="$WRITE_OUTSTANDING" --Mdir "$TASK_OUT/verilator_obj" \
     "$RTL" "$LIB" "$TB" "${TB_DEFINES[@]}" >"$TASK_OUT/verilator-build.log" 2>&1; then
     tail -n 120 "$TASK_OUT/verilator-build.log" >&2
     echo "Verilator build failed; see $TASK_OUT/verilator-build.log" >&2
     exit 1
 fi
 timeout 180s "$TASK_OUT/verilator_obj/V$TB_TOP" | tee "$TASK_OUT/simulation.log"
-rg -q '^GENERATED_WRITE_KERNEL_G2_PASS ' "$TASK_OUT/simulation.log" || {
-    echo "missing G2 pass marker" >&2; exit 1;
+rg -q "^GENERATED_WRITE_KERNEL_G2_PASS .*outstanding_profile=$WRITE_OUTSTANDING " "$TASK_OUT/simulation.log" || {
+    echo "missing G2 pass marker for WRITE_OUTSTANDING=$WRITE_OUTSTANDING" >&2; exit 1;
 }
 echo "GENERATED_WRITE_KERNEL_G2_PASS: $TASK_OUT"

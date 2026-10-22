@@ -3500,8 +3500,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
       contribution.read_max_burst_length = static_cast<unsigned int>(std::stoul(read_max->second));
       contribution.read_profile = ParseAXIReadBurstProfile(attrs, bundle);
       contribution.write_profile = ParseAXIWriteBurstProfile(attrs, bundle);
-      if(contribution.read_max_burst_length < 1U || contribution.read_max_burst_length > 256U ||
-         contribution.write_profile.max_outstanding != 1U)
+      if(contribution.read_max_burst_length < 1U || contribution.read_max_burst_length > 256U)
       {
          reason = "unsupported duplex burst profile";
          return false;
@@ -3872,12 +3871,6 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                write_fifo_depth != iface_attrs.end())
             {
                decision.write_profile = ParseAXIWriteBurstProfile(iface_attrs, bundle_name);
-               if(decision.write_profile.max_outstanding != 1U)
-               {
-                  THROW_ERROR_USAGE("Configured write bursts for bundle '" + bundle_name +
-                                    "' currently support write_burst_outstanding=1 only; values greater than 1 "
-                                    "require the F2 write-burst engine.");
-               }
             }
             if(max_read_burst == iface_attrs.end() &&
                (read_outstanding != iface_attrs.end() || read_fifo_depth != iface_attrs.end()))
@@ -7373,8 +7366,6 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
    if(configured_write_resource)
    {
       requested_write_profile = ParseAXIWriteBurstProfile(iface_attrs, bundle_name);
-      THROW_ASSERT(requested_write_profile.max_outstanding == 1U,
-                   "Configured F1 write-burst resource requires write_burst_outstanding=1.");
    }
 
    if(!resource_already_exists)

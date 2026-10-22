@@ -1,4 +1,7 @@
 module tb_generated_write_kernel;
+  // The profile under test: the slave accepts at most this many unacknowledged write bursts,
+  // and records the largest number it actually saw.
+  parameter integer WRITE_OUTSTANDING = 1;
   logic clock = 1'b0;
   always #5 clock = ~clock;
 
@@ -38,6 +41,7 @@ module tb_generated_write_kernel;
   integer aw_wr = 0, aw_rd = 0, w_wr = 0, w_rd = 0;
   integer responses_pending = 0;
   integer response_count = 0;
+  integer outstanding_peak = 0;
   integer committed_words = 0;
   integer committed_bursts = 0;
   integer expected_aw_words = 0;
@@ -156,8 +160,9 @@ module tb_generated_write_kernel;
       if (!bvalid && responses_pending > 0 &&
           (committed_words < case_count || release_final_b))
         bvalid = 1'b1;
-      if (aw_wr - response_count > 1)
-        fail("more than one write response outstanding");
+      if (aw_wr - response_count > WRITE_OUTSTANDING)
+        fail($sformatf("more than WRITE_OUTSTANDING=%0d write responses outstanding", WRITE_OUTSTANDING));
+      if (aw_wr - response_count > outstanding_peak) outstanding_peak = aw_wr - response_count;
     end
   end
 
@@ -292,7 +297,10 @@ module tb_generated_write_kernel;
     launch_case(38, 32'h0000_6000, 32'd4096);
     launch_case(38, 32'h0000_8ff8, 32'd0);
     `endif
-    $display("GENERATED_WRITE_KERNEL_G2_PASS cases=8 reinvocation=1");
+    if (WRITE_OUTSTANDING > 1 && outstanding_peak < 2)
+      fail($sformatf("OUTSTANDING_NOT_EXERCISED peak=%0d profile=%0d", outstanding_peak, WRITE_OUTSTANDING));
+    $display("GENERATED_WRITE_KERNEL_G2_PASS cases=8 reinvocation=1 outstanding_profile=%0d outstanding_peak=%0d",
+             WRITE_OUTSTANDING, outstanding_peak);
     $finish;
   end
 endmodule

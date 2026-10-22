@@ -236,8 +236,6 @@ void ReadWriteMAXIHDLGenerator::InternalExec(std::ostream& out, structural_objec
    if(line_count == 0 && configured_write_resource)
    {
       const auto write_profile = ParseAXIWriteBurstProfile(iface_attrs, bundle_name);
-      THROW_ASSERT(write_profile.max_outstanding == 1U,
-                   "Configured AXI write burst resource requires write_burst_outstanding=1.");
       THROW_ASSERT(axi_burst_type == 1U,
                    "Configured AXI write burst resource requires AXI INCR burst type.");
       THROW_ASSERT(_ports_in[i_in1].type_size == 2 && _ports_in[i_in2].type_size == 32 &&
@@ -316,7 +314,8 @@ void ReadWriteMAXIHDLGenerator::InternalExec(std::ostream& out, structural_objec
           << "assign " << _ports_out[o_arvalid].name << " = 0;\n"
           << "assign " << _ports_out[o_rready].name << " = 0;\n"
           << "MinimalAXI4MasterPipelinedWrite #(.B_MAX(" << write_profile.max_burst_length
-          << "), .MAX_OUTSTANDING(1), .FIFO_DEPTH(" << write_profile.fifo_depth
+          << "), .MAX_OUTSTANDING(" << write_profile.max_outstanding
+          << "), .FIFO_DEPTH(" << write_profile.fifo_depth
           // The early STORE acknowledgement is always on; the module parameter keeps its
           // role of RTL-qualification handle (default 1).
           << "), .PEER_FAULT_ENABLE(0), .FAST_STORE_ACK(1),\n"
