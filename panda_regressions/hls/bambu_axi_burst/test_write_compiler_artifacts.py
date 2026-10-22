@@ -397,9 +397,8 @@ class CheckerTests(unittest.TestCase):
     def test_invalid_profiles_are_isolated_from_shared_fixture(self):
         cases = pathlib.Path(__file__).parent / "write_compiler_cases"
         ordinary = (cases / "write_cases.cpp").read_text()
-        for invalid_value in ("max_write_burst_length=0", "write_burst_outstanding=2",
-                              "write_burst_outstanding=17", "write_fifo_depth=48",
-                              "write_fifo_depth=8"):
+        for invalid_value in ("max_write_burst_length=0", "write_burst_outstanding=17",
+                              "write_fifo_depth=48", "write_fifo_depth=8"):
             self.assertNotIn(invalid_value, ordinary)
         invalid_dir = cases / "invalid_profiles"
         expected = {
@@ -409,7 +408,6 @@ class CheckerTests(unittest.TestCase):
             "write_fifo_out_of_range.cpp": "write_fifo_depth=4097",
             "write_outstanding_without_burst.cpp": "write_burst_outstanding=1",
             "write_attributes_non_m_axi.cpp": "mode=array",
-            "outstanding_two_profile.cpp": "write_burst_outstanding=2",
             "invalid_write_outstanding.cpp": "write_burst_outstanding=17",
             "invalid_write_fifo_non_power_two.cpp": "write_fifo_depth=48",
             "invalid_write_fifo_too_shallow.cpp": "write_fifo_depth=8",
@@ -422,14 +420,23 @@ class CheckerTests(unittest.TestCase):
             self.assertEqual(text.count('extern "C" void '), 1, filename)
             self.assertIn(pragma, text, filename)
 
+    def test_accepted_outstanding_profiles_are_not_invalid_fixtures(self):
+        """write_burst_outstanding in [2,16] is a supported profile, not a rejected one."""
+        cases = pathlib.Path(__file__).parent / "write_compiler_cases"
+        self.assertFalse((cases / "invalid_profiles" / "outstanding_two_profile.cpp").exists())
+        text = (cases / "outstanding_two_profile.cpp").read_text()
+        self.assertEqual(text.count('extern "C" void '), 1)
+        self.assertIn("write_burst_outstanding=2", text)
+
     def test_profile_matrix_covers_supported_boundaries_and_inactive_attributes(self):
         source = (pathlib.Path(__file__).parent / "write_compiler_cases" / "write_profile_matrix.cpp").read_text()
         for witness in ("max_write_burst_length=1", "max_write_burst_length=3",
                         "max_write_burst_length=256", "write_burst_outstanding=1",
-                        "write_burst_outstanding=16", "write_duplicate_equal_profile"):
+                        "write_burst_outstanding=3", "write_burst_outstanding=16",
+                        "write_duplicate_equal_profile"):
             self.assertIn(witness, source)
         for top in ("write_burst_one", "write_burst_three_default_fifo", "write_burst_256",
-                    "write_outstanding_one", "write_outstanding_sixteen",
+                    "write_outstanding_one", "write_outstanding_three", "write_outstanding_sixteen",
                     "write_duplicate_equal_profile"):
             self.assertEqual(source.count(f'extern "C" void {top}('), 1, top)
 

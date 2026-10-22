@@ -159,6 +159,30 @@ def check_unbound_profile_rejection(case_dir: pathlib.Path,
     print(f"XML-PROFILE unbound reject PASS: {case_dir.name}")
 
 
+def check_unbound_write_profile(case_dir: pathlib.Path,
+                                result: subprocess.CompletedProcess[str],
+                                bundle_name: str, outstanding: int) -> None:
+    """An unbound write bundle may ask for more than one burst in flight.
+
+    The profile is read from the architecture XML, so this case proves the XML path accepts the
+    attribute; the emitted engine generic is checked by the pragma-path cases in the write
+    compiler suite, where the bundle is bound to a variable and an engine is actually emitted.
+    """
+    if result.returncode != 0:
+        raise RuntimeError(f"unbound write profile {bundle_name!r} with outstanding={outstanding} "
+                           f"was rejected (exit {result.returncode}); see {case_dir}")
+    combined = result.stdout + "\n" + result.stderr
+    refused = [line for line in combined.splitlines()
+               if "write_burst_outstanding" in line and "only" in line]
+    if refused:
+        raise RuntimeError(f"unbound write profile {bundle_name!r} was refused despite succeeding: "
+                           f"{refused[0]}; see {case_dir}")
+    if not [path for path in case_dir.rglob("*.v") if path.is_file()]:
+        raise RuntimeError(f"unbound write profile {bundle_name!r} emitted no Verilog under {case_dir}")
+    (case_dir / "unbound_write_outstanding.txt").write_text(f"{outstanding}\n", encoding="utf-8")
+    print(f"XML-PROFILE unbound write accept PASS: {case_dir.name} write_burst_outstanding={outstanding}")
+
+
 def case_name(attribute: str, value: str) -> str:
     labels = {"": "empty", " ": "whitespace", "-1": "negative", "+1": "plus-one",
               "0": "zero", "3x": "suffix", "1x": "suffix", "18446744073709551616": "overflow"}
@@ -246,10 +270,22 @@ def main() -> int:
         result = invoke(bambu, case_dir, stride_ir, architecture, "stride_two", args.burst_parameter)
         check_negative(case_dir, result, attribute)
 
+    # F2 unlocked write_burst_outstanding > 1: an unbound bundle asking for two bursts in
+    # flight compiles and carries the value into the engine generic, so it is a positive case.
+    write_case_dir = output / "cases" / "unbound-write-o2"
+    write_case_dir.mkdir(parents=True, exist_ok=False)
+    write_architecture = write_case_dir / "architecture.xml"
+    # An unbound bundle carries no variable to infer the byte alignment from, so the test
+    # states it explicitly; the outstanding request is what this case is about.
+    write_attributes = {"max_write_burst_length": "16", "write_burst_outstanding": "2",
+                        "alignment": "4"}
+    write_unbound_profile_xml(seed_xml, write_architecture, "renamed_sum", "unbound_write",
+                              write_attributes)
+    write_result = invoke(bambu, write_case_dir, seed_ir, write_architecture, "renamed_sum",
+                          args.burst_parameter)
+    check_unbound_write_profile(write_case_dir, write_result, "unbound_write", 2)
+
     unbound_profiles = [
-        ("unbound-write-o2", "unbound_write", {
-            "max_write_burst_length": "16", "write_burst_outstanding": "2",
-        }, "write_burst_outstanding=1 only"),
         ("unbound-read-profile", "unbound_read", {
             "num_read_outstanding": "1",
         }, "require max_read_burst_length"),
@@ -261,7 +297,7 @@ def main() -> int:
         write_unbound_profile_xml(seed_xml, architecture, "renamed_sum", bundle_name, attributes)
         result = invoke(bambu, case_dir, seed_ir, architecture, "renamed_sum", args.burst_parameter)
         check_unbound_profile_rejection(case_dir, result, bundle_name, reason)
-    print(f"XML-PROFILE suite PASS: {len(positive)} positive, {len(matrix) + 4} negative")
+    print(f"XML-PROFILE suite PASS: {len(positive) + 1} positive, {len(matrix) + 3} negative")
     return 0
 
 
