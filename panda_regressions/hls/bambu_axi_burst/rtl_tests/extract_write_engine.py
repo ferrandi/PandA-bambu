@@ -13,7 +13,8 @@ from pathlib import Path
 
 IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
 CELL_NAME = "MinimalAXI4MasterPipelinedWrite"
-TARGETS = ("MinimalAXI4MasterPipelined", CELL_NAME)
+TARGETS = ("MinimalAXI4MasterPipelined", CELL_NAME,
+           "MinimalAXI4Adapter", "MinimalAXI4AdapterSingleBeat")
 
 
 def _fail(message: str) -> None:

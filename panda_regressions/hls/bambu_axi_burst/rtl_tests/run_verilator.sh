@@ -136,6 +136,35 @@ run_build() {
     fi
 }
 
+run_async_reset_build() {
+    local polarity=$1 active_low=1
+    local label source build
+    if [[ $polarity == active-high ]]; then active_low=0; fi
+    label="ASYNC_RESET_${polarity}"
+    source="$TASK_OUT/MinimalAXI4MasterPipelined-${label}.sv"
+    build="$TASK_OUT/build-${label}"
+    mkdir -p "$build"
+    python3 -B "$TESTS/extract_write_engine.py" --xml "$XML" \
+        --target MinimalAXI4MasterPipelined --reset-mode async --reset-polarity "$polarity" \
+        --out "$source" > "$build/extract.log" 2>&1 || {
+            cat "$build/extract.log" >&2
+            echo "extraction failed for $label" >&2
+            return 1
+        }
+    printf '%s  %s\n' "$(sha256sum "$source")" "$source" >> "$TASK_OUT/extracted_hdl_sha256.txt"
+    timeout 120s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal -CFLAGS -O0 \
+        -Wno-UNUSEDSIGNAL -Wno-BLKSEQ --top-module tb_burst_engine \
+        -GB_MAX=16 -GMAX_OUTSTANDING=1 -GFIFO_DEPTH=256 -GASYNC_RESET=1 \
+        -GRESET_ACTIVE_LOW="$active_low" --Mdir "$build" "$source" "$TESTS/tb_burst_engine.sv" \
+        > "$build/compile.log" 2>&1 || {
+            cat "$build/compile.log" >&2
+            echo "RTL compile failed for $label" >&2
+            return 1
+        }
+    run_one_scenario "$build/Vtb_burst_engine" "$build" ASYNC_RESET || return 1
+    echo "ASYNC_RESET_VARIANT_PASS polarity=$polarity reset_mode=async"
+}
+
 if [[ $SUITE == all || $SUITE == transactions ]]; then
     for burst_max in 1 2 16 256; do
         run_build tb_burst_engine "$burst_max" "$TESTS/tb_burst_engine.sv"
@@ -179,6 +208,14 @@ if [[ $SUITE == all || $SUITE == transactions ]]; then
     run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O3-D64/Vtb_burst_engine" \
         "$TASK_OUT/build-tb_burst_engine-B16-O3-D64" \
         BOUNDARY_PENDING RRESP_RESERVATION_RACE RREADY_SIDEBAND
+
+    # Asynchronous reset: with --reset-type=async the reader's sequential blocks must discard the
+    # region, the pointers and the FIFO credits on the reset edge itself, not on the next clock
+    # edge. The bench asserts the reset in the middle of a cycle and inspects the state 1 ns later,
+    # so a block that is only clock-sensitive fails with ASYNC_RESET_NOT_IMMEDIATE.
+    for polarity in active-low active-high; do
+        run_async_reset_build "$polarity"
+    done
 fi
 
 # Distinguish descriptor-count limits from beat-credit limits. D=1 also checks

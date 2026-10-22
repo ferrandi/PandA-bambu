@@ -1,12 +1,18 @@
 module tb_burst_engine #(
     parameter integer B_MAX = 16,
     parameter integer MAX_OUTSTANDING = 1,
-    parameter integer FIFO_DEPTH = 256
+    parameter integer FIFO_DEPTH = 256,
+    parameter integer ASYNC_RESET = 0,
+    parameter integer RESET_ACTIVE_LOW = 1
 );
     logic clk = 1'b0;
     always #5 clk <= ~clk;
 
     logic reset_n = 1'b0;
+    // reset_n is the logical "out of reset" level of the bench; the value driven into the
+    // component depends on the polarity the extractor substituted for 1RESET_VALUE.
+    localparam logic RESET_ASSERTED = RESET_ACTIVE_LOW[0] ? 1'b0 : 1'b1;
+    wire dut_reset = reset_n ? ~RESET_ASSERTED : RESET_ASSERTED;
     logic start = 1'b0;
     logic [1:0] opcode = 2'b0;
     logic [31:0] size_bits = 32'd32;
@@ -93,7 +99,7 @@ module tb_burst_engine #(
 
     MinimalAXI4MasterPipelined #(.B_MAX(B_MAX),
         .MAX_OUTSTANDING(MAX_OUTSTANDING), .FIFO_DEPTH(FIFO_DEPTH)) dut (
-        .clock(clk), .reset(reset_n), .start(start), .in1(opcode),
+        .clock(clk), .reset(dut_reset), .start(start), .in1(opcode),
         .in2(size_bits), .in3(payload), .in4(byte_address),
         .in5(count), .done(done), .out1(data_out), .fault(fault), .peer_fault(1'b0),
         .m_axi_araddr(araddr), .m_axi_arlen(arlen), .m_axi_arsize(arsize),
@@ -736,7 +742,7 @@ module tb_burst_engine #(
             "RESET_TRAFFIC", "FIFO_WRAP", "FIFO_BACKPRESSURE", "RESET_MULTI",
             "FAULT_STALLED_AR", "AQC", "PENDING_SECOND", "BOUNDARY_PENDING",
             "RRESP_STALLED_AR", "RRESP_RESERVATION_RACE", "RREADY_SIDEBAND",
-            "DEPTH4096", "MULTI",
+            "DEPTH4096", "MULTI", "ASYNC_RESET",
             "CREDIT_LIMIT", "CREDIT_POP", "READY_CREDIT_PROOF", "SMOKE": begin end
             default: $fatal(1, "unknown exact CASE selector: %s", selected_case);
         endcase
@@ -1029,6 +1035,48 @@ module tb_burst_engine #(
             wait_drained();
             check_descriptors(32'h00014000, 5, 0);
             $display("PASS B=%0d coordinated reset in outstanding-burst response gap, then clean recovery",
+                     B_MAX);
+            $finish;
+        end
+
+        if ($test$plusargs("ASYNC_RESET")) begin
+            integer watchdog;
+            if (!ASYNC_RESET)
+                $fatal(1, "ASYNC_RESET_CASE_REQUIRES_ASYNC_VARIANT");
+            stall_ar = 1'b0;
+            configure(32'h00013000, 16);
+            watchdog = 0;
+            while ((!slave_active || dut.descriptor_count == 0 || rvalid || !rready) &&
+                   watchdog < 20000) begin
+                @(negedge clk);
+                watchdog = watchdog + 1;
+            end
+            if (!slave_active || dut.descriptor_count == 0 || rvalid || !rready)
+                $fatal(1, "asynchronous reset gap setup failed: RVALID=%b active=%b outstanding=%b RREADY=%b",
+                       rvalid, slave_active, dut.descriptor_count, rready);
+            // The reset is asserted in the middle of a cycle and inspected 1 ns later: no clock
+            // edge separates the assertion from the check, so only a block that is genuinely
+            // sensitive to the asynchronous reset edge can discard the in-flight state here.
+            @(negedge clk);
+            #1 reset_n = 1'b0;
+            #1;
+            if (dut.region_active || dut.descriptor_count != 0 || dut.m_axi_arvalid_reg ||
+                dut.fifo_count != 0 || dut.issued != 0 || dut.returned != 0 || dut.consumed != 0 ||
+                dut.fifo_credit_committed != FIFO_DEPTH ||
+                dut.fifo_credit_minus_one != FIFO_DEPTH - 1 || dut.fifo_credit_token != 1'b0)
+                $fatal(1, "ASYNC_RESET_NOT_IMMEDIATE active=%b descriptors=%0d arvalid=%b fifo=%0d issued=%0d returned=%0d consumed=%0d credit=%0d",
+                       dut.region_active, dut.descriptor_count, dut.m_axi_arvalid_reg, dut.fifo_count,
+                       dut.issued, dut.returned, dut.consumed, dut.fifo_credit_committed);
+            @(posedge clk);
+            @(negedge clk);
+            reset_n = 1'b1;
+            repeat (2) @(posedge clk);
+            configure(32'h00014000, 5);
+            wait (dut.returned == 5);
+            consume_stream(32'h00014000, 5);
+            wait_drained();
+            check_descriptors(32'h00014000, 5, 0);
+            $display("PASS B=%0d asynchronous reset between clock edges discards in-flight AXI state, then clean recovery",
                      B_MAX);
             $finish;
         end
