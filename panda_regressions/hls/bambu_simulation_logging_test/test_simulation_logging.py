@@ -187,6 +187,54 @@ class SimulationLoggingTest(unittest.TestCase):
         self.assertIn(b"producer failed (137)", result.stderr)
         self.assertEqual(log.read_bytes(), PAYLOAD)
 
+    @staticmethod
+    def extract_shell_constant(name):
+        """The product text of a shell constant of file_IO_constants.hpp."""
+        text = (ROOT / "src" / "constants" / "file_IO_constants.hpp").read_text(encoding="utf-8")
+        anchor = text.index(name)
+        start = text.index('R"sh(', anchor) + len('R"sh(')
+        end = text.index(')sh"', start)
+        return text[start:end]
+
+    def run_generated_pipeline(self, producer_command, log_path):
+        """Run the real PandaSystem generated-script tail after a real
+        producer | record_output pipeline, as the generated command scripts do."""
+        script = self.work / "command_script.sh"
+        script.write_text(
+            "#!/usr/bin/env bash\n"
+            f'( {producer_command} ) 2>&1 | "{self.tool}" {log_path}\n'
+            + self.extract_shell_constant("SHELL_CST_record_output_status"),
+            encoding="utf-8",
+        )
+        return subprocess.run(["bash", "-f", str(script)], capture_output=True, timeout=30)
+
+    def test_command_scripts_success_keeps_success(self):
+        log = self.work / "tail_ok.log"
+        result = self.run_generated_pipeline(f'cat "{self.payload_file}"', str(log))
+        self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
+        self.assertEqual(log.read_bytes(), PAYLOAD)
+
+    def test_command_scripts_producer_failure_wins(self):
+        log = self.work / "tail_producer.log"
+        result = self.run_generated_pipeline(f'cat "{self.payload_file}"; exit 7', str(log))
+        self.assertEqual(result.returncode, 7)
+        self.assertEqual(log.read_bytes(), PAYLOAD)
+
+    def test_command_scripts_never_hide_the_copier_failure(self):
+        """A log opened but unwritable (/dev/full): the copier drains the
+        producer, so only an explicit check of its status avoids reporting
+        the run as a success with an incomplete log."""
+        if not os.path.exists("/dev/full"):
+            self.skipTest("/dev/full not available")
+        result = self.run_generated_pipeline("head -c 2097152 /dev/zero", "/dev/full")
+        self.assertEqual(result.returncode, 1, result.stderr.decode(errors="replace"))
+        self.assertIn(b"log writer failed (1)", result.stderr)
+
+    def test_generated_command_scripts_check_the_copier(self):
+        source = (ROOT / "src" / "utility" / "fileIO.cpp").read_text(encoding="utf-8")
+        self.assertIn("SHELL_CST_record_output_status", source)
+        self.assertNotIn("exit ${PIPESTATUS[0]}", source)
+
     def test_log_writer_failure_is_not_hidden(self):
         result, _ = self.run_wrapper(invalid_log=True)
         self.assertNotEqual(result.returncode, 0)
