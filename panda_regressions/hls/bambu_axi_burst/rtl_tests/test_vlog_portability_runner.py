@@ -222,7 +222,7 @@ class VlogPortabilityRunnerTests(unittest.TestCase):
                 for utility in utilities:
                     if utility == missing:
                         continue
-                    found = shutil.which(utility)
+                    found = shutil.which(utility, path=self.env["PATH"])
                     if found:
                         link = bin_dir / utility
                         if not link.exists():
