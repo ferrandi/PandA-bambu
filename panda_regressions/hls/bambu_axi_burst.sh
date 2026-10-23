@@ -109,6 +109,7 @@ python3 -B "$script_dir/bambu_axi_burst/rtl_tests/test_vlog_portability_runner.p
 python3 -B "$script_dir/bambu_axi_burst/test_axi_latency_metadata.py"
 python3 -B "$script_dir/bambu_axi_burst/test_simulation_logging.py"
 python3 -B "$script_dir/bambu_axi_burst/test_bundle_preanalysis_artifacts.py"
+python3 -B "$script_dir/bambu_axi_burst/test_parallel_helpers.py"
 python3 -B "$script_dir/bambu_axi_burst/test_duplex_effect_analysis_artifacts.py"
 python3 -B "$script_dir/bambu_axi_burst/test_generated_duplex_kernel_runner.py"
 python3 -B "$script_dir/bambu_axi_burst/test_generated_duplex_runner.py"
