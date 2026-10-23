@@ -340,6 +340,7 @@ set(PANDA_UNIT_TEST_SOURCES
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/utility/ConstDivMagic.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/utility/KcmConstMul.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/utility/Range.cpp"
+   "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/utility/RecordOutput.cpp"
 )
 
 add_executable(libbambu_unit ${PANDA_UNIT_TEST_SOURCES})
@@ -363,6 +364,14 @@ add_executable(record_output "${CMAKE_CURRENT_SOURCE_DIR}/utility/record_output.
 install(TARGETS record_output
    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+# The record_output unit tests spawn the real tool and check that a broken
+# simulation or a broken console never blocks the flow forever.
+add_dependencies(libbambu_unit record_output)
+target_compile_definitions(libbambu_unit PRIVATE
+   RECORD_OUTPUT_TOOL="$<TARGET_FILE:record_output>")
+add_test(NAME record_output_tool COMMAND libbambu_unit --run_test=record_output_tool)
+set_tests_properties(record_output_tool PROPERTIES TIMEOUT 300)
 
 if(PANDA_BUILD_BAMBU)
    add_executable(bambu

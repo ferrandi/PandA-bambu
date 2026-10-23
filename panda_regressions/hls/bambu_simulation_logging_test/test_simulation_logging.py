@@ -105,8 +105,9 @@ class SimulationLoggingTest(unittest.TestCase):
         )
 
     def run_wrapper(self, producer_status=0, nested=False, invalid_log=False, bash_producer=False,
-                    extra_path=None):
-        executable = self.bash_producer() if bash_producer else self.producer
+                    extra_path=None, executable=None):
+        if executable is None:
+            executable = self.bash_producer() if bash_producer else self.producer
         if nested:
             executable = self.work / "driver"
             executable.write_text(
@@ -127,7 +128,7 @@ class SimulationLoggingTest(unittest.TestCase):
             TARGET="testbench",
             SYS_ELF=str(executable),
             SWD=str(self.work / "backend with spaces"),
-            RECORD_PRODUCER=str(executable if bash_producer else self.producer),
+            RECORD_PRODUCER=str(self.producer),
             PAYLOAD_FILE=str(self.payload_file),
             PRODUCER_STATUS=str(producer_status),
             TMPDIR=str(self.work),
@@ -167,6 +168,21 @@ class SimulationLoggingTest(unittest.TestCase):
         result, log = self.run_wrapper(producer_status=7)
         self.assertEqual(result.returncode, 7)
         self.assertIn(b"producer failed (7)", result.stderr)
+        self.assertEqual(log.read_bytes(), PAYLOAD)
+
+    def test_producer_crash_by_signal_does_not_hang_and_is_reported(self):
+        """A logged tool killing itself must be reported, not deadlock the flow."""
+        crasher = self.work / "crasher"
+        crasher.write_text(
+            "#!/usr/bin/env bash\n"
+            'cat "${PAYLOAD_FILE}"\n'
+            "kill -9 $$\n",
+            encoding="utf-8",
+        )
+        crasher.chmod(0o755)
+        result, log = self.run_wrapper(executable=crasher)
+        self.assertEqual(result.returncode, 137)
+        self.assertIn(b"producer failed (137)", result.stderr)
         self.assertEqual(log.read_bytes(), PAYLOAD)
 
     def test_log_writer_failure_is_not_hidden(self):
