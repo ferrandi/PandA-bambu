@@ -4955,8 +4955,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                                    decision->same_base_duplex_proof->runtime_range_guard;
                if(same_base_duplex_active)
                {
-                  const auto& proof = *decision->same_base_duplex_proof;
 #if HAVE_ASSERTS
+                  const auto& proof = *decision->same_base_duplex_proof;
                   const auto read_regions = decision->read_regions.find(proof.read_owner_argument_index);
                   const auto write_region = decision->write_regions.find(proof.write_owner_argument_index);
                   const auto same_optional_node = [](const ir_nodeRef& lhs, const ir_nodeRef& rhs) {
