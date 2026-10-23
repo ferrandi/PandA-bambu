@@ -37,6 +37,8 @@
 #include <random>
 #include <regex>
 
+#include <unistd.h>
+
 #include "config_BUILD_APPIMAGE.hpp"
 
 #if !defined(PATH_MAX)
@@ -133,6 +135,33 @@ std::filesystem::path relocate_install_path(const std::filesystem::path& path, b
    return (relocatable ? reloc_exe_path : abs_exe_path) / path;
 }
 
+// Locate the record_output copier distributed with bambu: first next to the
+// running executable, so that also the build tree and the AppImage work, then
+// in the bin directory of the installation pointed by BAMBU_HLS, then in the
+// compiled-in installation tree. An empty path means that the tool is missing.
+static std::filesystem::path find_record_output_tool()
+{
+   auto candidate = get_exe_path().parent_path() / "record_output";
+   if(::access(candidate.c_str(), X_OK) == 0)
+   {
+      return candidate;
+   }
+   if(const auto* bambu_hls = getenv("BAMBU_HLS"))
+   {
+      candidate = std::filesystem::path(bambu_hls) / "bin" / "record_output";
+      if(::access(candidate.c_str(), X_OK) == 0)
+      {
+         return candidate;
+      }
+   }
+   candidate = relocate_install_path("bin/record_output");
+   if(::access(candidate.c_str(), X_OK) == 0)
+   {
+      return candidate;
+   }
+   return std::filesystem::path();
+}
+
 int PandaSystem(const ParameterConstRef& Param, const std::string& system_command,
                 bool
 #if BUILD_APPIMAGE
@@ -163,18 +192,19 @@ int PandaSystem(const ParameterConstRef& Param, const std::string& system_comman
    }
 #endif
    // At pedantic output level the command output is also shown while it runs.
-   // That copy is done by record_output and not by the system tee: tee is not
-   // part of the tool flow, and a tee dying mid-stream would close the pipe and
-   // kill the command whose output was being logged.
-   const bool live_console_copy = Param->getOption<unsigned int>(OPT_output_level) >= OUTPUT_LEVEL_PEDANTIC;
-   if(live_console_copy)
-   {
-      script_file << SHELL_CST_record_output << "\n";
-   }
+   // That copy is done by the record_output tool, distributed and installed
+   // with bambu, and not by the system tee: tee is not part of the tool flow,
+   // and a tee dying mid-stream would close the pipe and kill the command
+   // whose output was being logged. If the tool is missing, the output is
+   // logged only: the live console copy is lost, but the run is never
+   // endangered.
+   static const auto record_output_tool = find_record_output_tool();
+   const bool live_console_copy =
+       Param->getOption<unsigned int>(OPT_output_level) >= OUTPUT_LEVEL_PEDANTIC && !record_output_tool.empty();
    script_file << "(" << system_command << ") ";
    if(live_console_copy)
    {
-      script_file << " 2>&1 | record_output " << actual_output;
+      script_file << " 2>&1 | \"" << record_output_tool.string() << "\" " << actual_output;
    }
    else
    {
