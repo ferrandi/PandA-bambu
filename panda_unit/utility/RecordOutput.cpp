@@ -31,10 +31,16 @@
  * - the console consuming the live copy disappears mid-stream;
  * - the log file cannot be opened, or cannot be written at all.
  *
- * Every test waits with a deadline: the copier must never block the flow
- * forever, and a blocked copier is a test failure, not a hanging suite. The
- * copier must terminate on its own as soon as its input ends, even when the
- * logged tool is still alive, and it must never be killed by a signal.
+ * Every wait, and every read from the copier pipes, uses a deadline: the
+ * copier must never block the flow forever, and a blocked copier is a test
+ * failure, not a hanging suite. The copier must terminate on its own as soon
+ * as its input ends, even when the logged tool is still alive, and it must
+ * never be killed by a signal. The children are owned by a scope guard, so
+ * they are always collected, even when an assertion fails in the middle of
+ * a case. The spawned copier starts with the signal dispositions of the real
+ * flow, i.e., with SIGPIPE at the default action, and it must survive the
+ * broken pipes with its own handling, not with a disposition inherited from
+ * the test process.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  */
@@ -56,6 +62,7 @@
 #include <cerrno>
 #include <csignal>
 #include <fcntl.h>
+#include <poll.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -72,6 +79,14 @@ namespace
    // flow must never do.
    constexpr int wait_limit_ms = 15000;
    constexpr int timeout_marker = -9999;
+
+   using Clock = std::chrono::steady_clock;
+   using TimePoint = Clock::time_point;
+
+   TimePoint deadline_after(int limit_ms)
+   {
+      return Clock::now() + std::chrono::milliseconds(limit_ms);
+   }
 
    int wait_with_deadline(pid_t pid, int limit_ms = wait_limit_ms)
    {
@@ -260,6 +275,16 @@ namespace
       }
    }
 
+   // In a child, right after the fork, restore the signal dispositions of the
+   // real flow: the test process ignores SIGPIPE to poke the pipes without
+   // dying, but an ignored disposition survives exec. The copier must instead
+   // win against the broken pipes with its own std::signal call, which is
+   // exactly what these tests check, so it must start from SIG_DFL.
+   void reset_signals()
+   {
+      ::signal(SIGPIPE, SIG_DFL);
+   }
+
    // Launch the copier with the given stdin/stdout redirections: -1 means
    // inherit. Args are the command line arguments of the tool.
    pid_t spawn_tool(const std::vector<std::string>& args, int in_fd, int out_fd)
@@ -283,11 +308,8 @@ namespace
          {
             ::dup2(out_fd, STDOUT_FILENO);
          }
-         // The child must not keep copies of the test pipes: a copy of the
-         // producer write end would prevent the end-of-file, and a copy of the
-         // console read end would prevent the broken-pipe, exactly the blocking
-         // situations the flow must avoid.
          close_extra_fds({});
+         reset_signals();
          ::execv(RECORD_OUTPUT_TOOL, argv.data());
          ::_exit(127);
       }
@@ -301,11 +323,50 @@ namespace
       if(pid == 0)
       {
          close_extra_fds(keep_fds);
+         reset_signals();
          body();
          ::_exit(0);
       }
       return pid;
    }
+
+   // A child owned by the scope: whatever the assertions do, even throwing,
+   // the child is killed and collected when the case ends. wait_with_deadline
+   // always returns having collected the child, also when it expires, so the
+   // ownership is released in both cases.
+   class Child
+   {
+    public:
+      Child() = default;
+      explicit Child(pid_t pid) : pid_(pid)
+      {
+      }
+      Child(const Child&) = delete;
+      Child& operator=(const Child&) = delete;
+      ~Child()
+      {
+         dismiss();
+      }
+      int wait(int limit_ms = wait_limit_ms)
+      {
+         const int status = wait_with_deadline(pid_, limit_ms);
+         pid_ = -1;
+         return status;
+      }
+      void dismiss()
+      {
+         if(pid_ > 0)
+         {
+            ::kill(pid_, SIGKILL);
+            int status = 0;
+            ::waitpid(pid_, &status, 0);
+            pid_ = -1;
+         }
+      }
+
+    private:
+      pid_t pid_ = -1;
+   };
 
    void write_all_fd(int fd, const std::string& data)
    {
@@ -325,16 +386,61 @@ namespace
       }
    }
 
-   std::string read_all_fd(int fd)
+   // Wait until the fd has data, or reaches the end-of-file or an error,
+   // without ever staying past the deadline: a copier blocked while keeping
+   // the console open must not keep the test inside a blocking read.
+   bool readable_until(int fd, const TimePoint& deadline)
    {
-      std::string out;
+      while(true)
+      {
+         const auto now = Clock::now();
+         if(now >= deadline)
+         {
+            return false;
+         }
+         const auto remaining =
+             static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(deadline - now).count()) + 1;
+         struct pollfd watch;
+         watch.fd = fd;
+         watch.events = POLLIN;
+         watch.revents = 0;
+         const int ready = ::poll(&watch, 1, std::min(remaining, 100));
+         if(ready > 0)
+         {
+            return true;
+         }
+         if(ready < 0 && errno != EINTR)
+         {
+            return false;
+         }
+      }
+   }
+
+   struct ReadAll
+   {
+      std::string data;
+      bool timed_out = false;
+   };
+
+   // Read until the end-of-file, with the deadline on the whole read: the
+   // returned flag tells whether the read was interrupted, and the caller can
+   // collect the children before reporting the failure.
+   ReadAll read_all_fd(int fd, int limit_ms = wait_limit_ms)
+   {
+      ReadAll result;
+      const TimePoint deadline = deadline_after(limit_ms);
       char buffer[65536];
       while(true)
       {
+         if(!readable_until(fd, deadline))
+         {
+            result.timed_out = true;
+            return result;
+         }
          const auto res = ::read(fd, buffer, sizeof(buffer));
          if(res == 0)
          {
-            return out;
+            return result;
          }
          if(res < 0)
          {
@@ -342,9 +448,9 @@ namespace
             {
                continue;
             }
-            return out;
+            return result;
          }
-         out.append(buffer, static_cast<size_t>(res));
+         result.data.append(buffer, static_cast<size_t>(res));
       }
    }
 
@@ -362,13 +468,20 @@ namespace
       return std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
    }
 
-   // The test process must not die of SIGPIPE while poking the pipes.
+   // The test process must not die of SIGPIPE while poking the pipes: the
+   // previous disposition is saved and restored when the case ends, and the
+   // spawned children reset it to the default, so that the copier can only
+   // survive the broken pipes with its own signal handling.
    struct IgnoreSigpipe
    {
-      IgnoreSigpipe()
+      IgnoreSigpipe() : previous(::signal(SIGPIPE, SIG_IGN))
       {
-         ::signal(SIGPIPE, SIG_IGN);
       }
+      ~IgnoreSigpipe()
+      {
+         ::signal(SIGPIPE, previous);
+      }
+      void (*previous)(int);
    };
 
    int open_devnull()
@@ -391,18 +504,17 @@ BOOST_AUTO_TEST_CASE(record_output_crashed_tool_does_not_block)
    Fd producer_write{producer_pipe[1]};
    Fd devnull{open_devnull()};
    TempPath log("crashed.log");
-   const pid_t producer = spawn_producer(
+   Child producer{spawn_producer(
        [&]() {
           write_all_fd(producer_pipe[1], banner);
           ::raise(SIGKILL);
        },
-       {producer_pipe[1]});
-   const pid_t copier = spawn_tool({log.path().string()}, producer_read.get(), devnull.get());
+       {producer_pipe[1]})};
+   Child copier{spawn_tool({log.path().string()}, producer_read.get(), devnull.get())};
    producer_read.close();
    producer_write.close();
-   BOOST_REQUIRE_EQUAL(0, wait_with_deadline(copier));
-   const int producer_status = wait_with_deadline(producer);
-   BOOST_CHECK(producer_status == -SIGKILL);
+   BOOST_REQUIRE_EQUAL(0, copier.wait());
+   BOOST_CHECK(producer.wait() == -SIGKILL);
    BOOST_CHECK_EQUAL(read_file(log.path()), banner);
 }
 
@@ -417,7 +529,7 @@ BOOST_AUTO_TEST_CASE(record_output_hung_tool_closing_its_output_does_not_block)
    Fd producer_read{producer_pipe[0]};
    Fd producer_write{producer_pipe[1]};
    TempPath log("hung_closed.log");
-   const pid_t producer = spawn_producer(
+   Child producer{spawn_producer(
        [&]() {
           write_all_fd(producer_pipe[1], banner);
           ::close(producer_pipe[1]);
@@ -426,15 +538,14 @@ BOOST_AUTO_TEST_CASE(record_output_hung_tool_closing_its_output_does_not_block)
              ::pause();
           }
        },
-       {producer_pipe[1]});
+       {producer_pipe[1]})};
    Fd devnull{open_devnull()};
-   const pid_t copier = spawn_tool({log.path().string()}, producer_read.get(), devnull.get());
+   Child copier{spawn_tool({log.path().string()}, producer_read.get(), devnull.get())};
    producer_read.close();
    producer_write.close();
-   BOOST_REQUIRE_EQUAL(0, wait_with_deadline(copier, 5000));
+   BOOST_REQUIRE_EQUAL(0, copier.wait(5000));
    BOOST_CHECK_EQUAL(read_file(log.path()), banner);
-   ::kill(producer, SIGKILL);
-   wait_with_deadline(producer, 5000);
+   producer.dismiss();
 }
 
 BOOST_AUTO_TEST_CASE(record_output_tool_killed_while_hanging_does_not_block)
@@ -449,7 +560,7 @@ BOOST_AUTO_TEST_CASE(record_output_tool_killed_while_hanging_does_not_block)
    Fd producer_read{producer_pipe[0]};
    Fd producer_write{producer_pipe[1]};
    TempPath log("hung_killed.log");
-   const pid_t producer = spawn_producer(
+   Child producer{spawn_producer(
        [&]() {
           write_all_fd(producer_pipe[1], banner);
           while(true)
@@ -457,24 +568,21 @@ BOOST_AUTO_TEST_CASE(record_output_tool_killed_while_hanging_does_not_block)
              ::pause();
           }
        },
-       {producer_pipe[1]});
+       {producer_pipe[1]})};
    producer_write.close();
    Fd devnull{open_devnull()};
-   const pid_t copier = spawn_tool({log.path().string()}, producer_read.get(), devnull.get());
+   Child copier{spawn_tool({log.path().string()}, producer_read.get(), devnull.get())};
    producer_read.close();
    // Synchronization: wait until the copier has logged what the producer
    // wrote, so that the kill below is not in race with the write.
-   const auto sync_start = std::chrono::steady_clock::now();
+   const TimePoint sync_deadline = deadline_after(10000);
    while(read_file(log.path()).empty())
    {
-      const auto elapsed =
-          std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - sync_start).count();
-      BOOST_REQUIRE(elapsed <= 10000);
+      BOOST_REQUIRE(Clock::now() < sync_deadline);
       std::this_thread::sleep_for(std::chrono::milliseconds(2));
    }
-   ::kill(producer, SIGKILL);
-   BOOST_REQUIRE_EQUAL(0, wait_with_deadline(copier));
-   wait_with_deadline(producer, 5000);
+   producer.dismiss();
+   BOOST_REQUIRE_EQUAL(0, copier.wait());
    BOOST_CHECK_EQUAL(read_file(log.path()), banner);
 }
 
@@ -483,7 +591,9 @@ BOOST_AUTO_TEST_CASE(record_output_console_death_keeps_the_log_complete)
    IgnoreSigpipe guard;
    // The consumer of the live copy reads a few bytes and then closes the
    // pipe: the copier must disable the console copy, keep the log complete,
-   // and exit with 0 without being killed by SIGPIPE.
+   // and exit with 0 without being killed by SIGPIPE. The copier starts with
+   // SIGPIPE at the default action, like in the real flow, so surviving here
+   // proves that the tool installs its own handling.
    const auto payload = make_payload(4 * 1024 * 1024);
    TempPath input("payload.bin");
    BOOST_REQUIRE(write_file(input.path(), payload));
@@ -495,12 +605,19 @@ BOOST_AUTO_TEST_CASE(record_output_console_death_keeps_the_log_complete)
    Fd console_read{console[0]};
    Fd console_write{console[1]};
    TempPath log("console_death.log");
-   const pid_t copier = spawn_tool({log.path().string()}, input_fd.get(), console_write.get());
+   Child copier{spawn_tool({log.path().string()}, input_fd.get(), console_write.get())};
    console_write.close();
    char first[64];
-   BOOST_REQUIRE_EQUAL(static_cast<ssize_t>(sizeof(first)), ::read(console_read.get(), first, sizeof(first)));
+   if(readable_until(console_read.get(), deadline_after(5000)))
+   {
+      BOOST_REQUIRE_EQUAL(static_cast<ssize_t>(sizeof(first)), ::read(console_read.get(), first, sizeof(first)));
+   }
+   else
+   {
+      BOOST_ERROR("the copier did not write the live copy within the deadline");
+   }
    console_read.close();
-   BOOST_REQUIRE_EQUAL(0, wait_with_deadline(copier));
+   BOOST_REQUIRE_EQUAL(0, copier.wait());
    BOOST_CHECK_EQUAL(read_file(log.path()), payload);
 }
 
@@ -508,7 +625,8 @@ BOOST_AUTO_TEST_CASE(record_output_large_output_through_live_console_does_not_de
 {
    IgnoreSigpipe guard;
    // A large output must stream end to end: the copier must drain the input
-   // and mirror it live without any deadlock between the two sinks.
+   // and mirror it live without any deadlock between the two sinks. The read
+   // is bounded: a stalled copier fails the case, it does not stall the suite.
    const auto payload = make_payload(8 * 1024 * 1024);
    TempPath input("big_payload.bin");
    BOOST_REQUIRE(write_file(input.path(), payload));
@@ -520,11 +638,16 @@ BOOST_AUTO_TEST_CASE(record_output_large_output_through_live_console_does_not_de
    Fd console_read{console[0]};
    Fd console_write{console[1]};
    TempPath log("large.log");
-   const pid_t copier = spawn_tool({log.path().string()}, input_fd.get(), console_write.get());
+   Child copier{spawn_tool({log.path().string()}, input_fd.get(), console_write.get())};
    console_write.close();
-   const std::string console_data = read_all_fd(console_read.get());
-   BOOST_REQUIRE_EQUAL(0, wait_with_deadline(copier));
-   BOOST_CHECK_EQUAL(console_data, payload);
+   const ReadAll console_data = read_all_fd(console_read.get());
+   if(console_data.timed_out)
+   {
+      copier.wait(1000);
+      BOOST_FAIL("the console copy stalled: the copier blocked the pipeline");
+   }
+   BOOST_REQUIRE_EQUAL(0, copier.wait());
+   BOOST_CHECK_EQUAL(console_data.data, payload);
    BOOST_CHECK_EQUAL(read_file(log.path()), payload);
 }
 
@@ -535,8 +658,8 @@ BOOST_AUTO_TEST_CASE(record_output_unwritable_log_exits_fast)
    // with a non-zero status, without waiting for the logged output.
    TempPath log_dir("log_dir", /*as_directory=*/true);
    Fd devnull{open_devnull()};
-   const pid_t copier = spawn_tool({log_dir.path().string()}, devnull.get(), devnull.get());
-   BOOST_REQUIRE_EQUAL(1, wait_with_deadline(copier, 5000));
+   Child copier{spawn_tool({log_dir.path().string()}, devnull.get(), devnull.get())};
+   BOOST_REQUIRE_EQUAL(1, copier.wait(5000));
 }
 
 BOOST_AUTO_TEST_CASE(record_output_unwritable_data_and_dead_console_still_terminate)
@@ -560,13 +683,16 @@ BOOST_AUTO_TEST_CASE(record_output_unwritable_data_and_dead_console_still_termin
    BOOST_REQUIRE_EQUAL(0, ::pipe(console));
    Fd console_read{console[0]};
    Fd console_write{console[1]};
-   const pid_t copier = spawn_tool({"/dev/full"}, input_fd.get(), console_write.get());
+   Child copier{spawn_tool({"/dev/full"}, input_fd.get(), console_write.get())};
    console_write.close();
    char first[16];
-   const ssize_t console_data = ::read(console_read.get(), first, sizeof(first));
-   (void)console_data;
+   if(readable_until(console_read.get(), deadline_after(5000)))
+   {
+      const ssize_t console_data = ::read(console_read.get(), first, sizeof(first));
+      (void)console_data;
+   }
    console_read.close();
-   BOOST_REQUIRE_EQUAL(1, wait_with_deadline(copier));
+   BOOST_REQUIRE_EQUAL(1, copier.wait());
 }
 
 BOOST_AUTO_TEST_CASE(record_output_quiet_writes_only_the_log)
@@ -583,10 +709,12 @@ BOOST_AUTO_TEST_CASE(record_output_quiet_writes_only_the_log)
    Fd console_read{console[0]};
    Fd console_write{console[1]};
    TempPath log("quiet.log");
-   const pid_t copier = spawn_tool({"-q", log.path().string()}, input_fd.get(), console_write.get());
+   Child copier{spawn_tool({"-q", log.path().string()}, input_fd.get(), console_write.get())};
    console_write.close();
-   BOOST_CHECK_EQUAL(read_all_fd(console_read.get()), std::string());
-   BOOST_REQUIRE_EQUAL(0, wait_with_deadline(copier));
+   const ReadAll console_data = read_all_fd(console_read.get());
+   BOOST_REQUIRE(!console_data.timed_out);
+   BOOST_CHECK_EQUAL(console_data.data, std::string());
+   BOOST_REQUIRE_EQUAL(0, copier.wait());
    BOOST_CHECK_EQUAL(read_file(log.path()), payload);
 }
 
@@ -595,9 +723,12 @@ BOOST_AUTO_TEST_CASE(record_output_usage_errors_terminate)
    IgnoreSigpipe guard;
    // Misuse must exit immediately with the usage status, never hang.
    Fd devnull{open_devnull()};
-   BOOST_CHECK_EQUAL(2, wait_with_deadline(spawn_tool({}, devnull.get(), devnull.get()), 5000));
-   BOOST_CHECK_EQUAL(2, wait_with_deadline(spawn_tool({"a.log", "b.log"}, devnull.get(), devnull.get()), 5000));
-   BOOST_CHECK_EQUAL(0, wait_with_deadline(spawn_tool({"-h"}, devnull.get(), devnull.get()), 5000));
+   Child no_arguments{spawn_tool({}, devnull.get(), devnull.get())};
+   Child two_logs{spawn_tool({"a.log", "b.log"}, devnull.get(), devnull.get())};
+   Child help{spawn_tool({"-h"}, devnull.get(), devnull.get())};
+   BOOST_CHECK_EQUAL(2, no_arguments.wait(5000));
+   BOOST_CHECK_EQUAL(2, two_logs.wait(5000));
+   BOOST_CHECK_EQUAL(0, help.wait(5000));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

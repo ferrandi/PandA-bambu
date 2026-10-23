@@ -346,6 +346,10 @@ set(PANDA_UNIT_TEST_SOURCES
 add_executable(libbambu_unit ${PANDA_UNIT_TEST_SOURCES})
 target_link_libraries(libbambu_unit PRIVATE panda_core panda_hdl_generators Boost::headers)
 add_test(NAME libbambu_unit COMMAND libbambu_unit)
+# Explicit bound: the record_output copier cases run inside this test too, and
+# an internal deadline failure must not degrade into the ctest fallback
+# timeout (DART_TESTING_TIMEOUT).
+set_tests_properties(libbambu_unit PROPERTIES TIMEOUT 900)
 add_test(NAME vector_mask_type COMMAND libbambu_unit --run_test=vector_mask_*)
 add_test(NAME vector_allocation COMMAND libbambu_unit --run_test=vector_allocation_*)
 add_test(NAME vector_mask_ir
