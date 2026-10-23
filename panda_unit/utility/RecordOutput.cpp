@@ -135,13 +135,61 @@ namespace
       return payload;
    }
 
-   // A temporary log file, removed at the end of the test.
+   // A temporary directory, unique and atomically allocated per test process:
+   // ctest can run the same suite through several processes in parallel, i.e.,
+   // the whole libbambu_unit test together with the record_output_tool one,
+   // and fixed names in the shared temporary directory would make the
+   // processes delete each other's inputs and logs.
+   class ProcessTempDir
+   {
+    public:
+      ProcessTempDir()
+      {
+         std::error_code ignored;
+         const std::filesystem::path parent = std::filesystem::temp_directory_path() / "panda_record_output_tests";
+         std::filesystem::create_directories(parent, ignored);
+         const std::string pattern = (parent / "proc_XXXXXX").string();
+         std::vector<char> buffer(pattern.begin(), pattern.end());
+         buffer.push_back('\0');
+         const char* made = ::mkdtemp(buffer.data());
+         if(made)
+         {
+            path_ = made;
+         }
+      }
+      ~ProcessTempDir()
+      {
+         std::error_code ignored;
+         if(!path_.empty())
+         {
+            std::filesystem::remove_all(path_, ignored);
+         }
+      }
+      const std::filesystem::path& path() const
+      {
+         return path_;
+      }
+
+    private:
+      std::filesystem::path path_;
+   };
+
+   const ProcessTempDir& process_temp_dir()
+   {
+      static const ProcessTempDir instance;
+      return instance;
+   }
+
+   // A temporary log file, inside the unique directory of the process,
+   // removed at the end of the test.
    class TempPath
    {
     public:
       explicit TempPath(const std::string& name, bool as_directory = false)
       {
-         path_ = std::filesystem::temp_directory_path() / ("panda_record_output_" + name);
+         const auto& root = process_temp_dir().path();
+         const auto fallback = std::filesystem::temp_directory_path() / ("panda_record_output_" + name);
+         path_ = root.empty() ? fallback : root / ("panda_record_output_" + name);
          std::filesystem::remove_all(path_);
          if(as_directory)
          {
