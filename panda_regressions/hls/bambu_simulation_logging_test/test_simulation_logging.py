@@ -49,7 +49,7 @@ class SimulationLoggingTest(unittest.TestCase):
             raise unittest.SkipTest("no C++ compiler to build the record_output tool")
         cls.tool = Path(cls.build_dir.name) / "record_output"
         compile_result = subprocess.run(
-            [compiler, str(TOOL_SOURCE), "-o", str(cls.tool)],
+            [compiler, "-std=c++17", str(TOOL_SOURCE), "-o", str(cls.tool)],
             capture_output=True,
             timeout=120,
         )
