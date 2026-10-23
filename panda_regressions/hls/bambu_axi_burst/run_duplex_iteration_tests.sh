@@ -29,7 +29,7 @@ if [[ $BAMBU_ARG == */* ]]; then BAMBU=$(realpath -- "$BAMBU_ARG"); else
   [[ -n $BAMBU ]] && BAMBU=$(realpath -- "$BAMBU")
 fi
 [[ -n ${BAMBU:-} && -x $BAMBU ]] || { echo "Bambu executable not found: $BAMBU_ARG" >&2; exit 2; }
-for tool in verilator python3 rg sha256sum timeout; do
+for tool in verilator python3 grep sha256sum timeout; do
   command -v "$tool" >/dev/null || { echo "required tool missing: $tool" >&2; exit 2; }
 done
 [[ -s $G2_RUNNER && -s $MAPPING_CHECKER && -s $TB && -s $LOAD_OBSERVER && -s $ITERATION_OBSERVER && -s $ITERATION_UNIT_TB && -s $HELPERS ]] || {
@@ -73,7 +73,7 @@ BURST_DUPLEX_G2_SIM_OUTSIDE_SANDBOX=1 DUPLEX_G3_ITERATION_DUMPS=1 SIM_JOBS="$SIM
     echo "G2/G3.1 prerequisite runner failed; see $OUT/g2-prerequisite.log" >&2
     exit 1
   }
-rg -Fq 'GENERATED_DUPLEX_KERNEL_G2 PASS' "$OUT/g2-prerequisite.log" || {
+grep -Fq 'GENERATED_DUPLEX_KERNEL_G2 PASS' "$OUT/g2-prerequisite.log" || {
   echo "G2 prerequisite omitted its exact aggregate marker" >&2; exit 1;
 }
 
@@ -145,10 +145,10 @@ run_one() {
     tail -n 120 "$log" >&2
     echo "G3 iteration simulation failed for $profile" >&2; return 1
   fi
-  rg -Fqx 'DUPLEX_ITERATION_OBSERVER PASS EVENT_COUNT=256' "$log" || {
+  grep -Fqx 'DUPLEX_ITERATION_OBSERVER PASS EVENT_COUNT=256' "$log" || {
     cat "$log" >&2; echo "missing exact iteration event marker for $profile" >&2; return 1;
   }
-  rg -Fqx "DUPLEX_KERNEL_COPY_G2 PASS CASE=COPY_PARALLELISM_256 PROFILE=$profile" "$log" || {
+  grep -Fqx "DUPLEX_KERNEL_COPY_G2 PASS CASE=COPY_PARALLELISM_256 PROFILE=$profile" "$log" || {
     cat "$log" >&2; echo "missing preserved G2 payload/canary marker for $profile" >&2; return 1;
   }
   python3 -B "$MAPPING_CHECKER" "$generated" --profile "$profile" \
@@ -176,7 +176,7 @@ if ! (cd "$UNIT_OUT" && TMPDIR="$UNIT_OUT/tmp" TMP="$UNIT_OUT/tmp" TEMP="$UNIT_O
     ./obj/Vtb_duplex_iteration_observer >unit.log 2>&1); then
   cat "$UNIT_OUT/unit.log" >&2; echo "iteration observer unit simulation failed" >&2; exit 1
 fi
-rg -Fqx 'DUPLEX_ITERATION_OBSERVER_UNIT PASS COUNT=3 STATE=S_7' "$UNIT_OUT/unit.log" || {
+grep -Fqx 'DUPLEX_ITERATION_OBSERVER_UNIT PASS COUNT=3 STATE=S_7' "$UNIT_OUT/unit.log" || {
   cat "$UNIT_OUT/unit.log" >&2; echo "iteration observer unit marker missing" >&2; exit 1;
 }
 BURST_JOB_LOG_DIR="$OUT/job_logs/mapping"; mkdir "$BURST_JOB_LOG_DIR"
@@ -187,9 +187,9 @@ run_bounded_jobs "$SIM_JOBS" build_one "${PROFILES[@]}"
 BURST_JOB_LOG_DIR="$OUT/job_logs/scenario"; mkdir "$BURST_JOB_LOG_DIR"
 run_bounded_jobs "$SIM_JOBS" run_one "${PROFILES[@]}"
 for profile in "${PROFILES[@]}"; do
-  rg -Fq 'DUPLEX ITERATION MAPPING PASS' "$OUT/$profile/mapping.log"
-  rg -Fq 'DUPLEX EFFECTIVE II' "$OUT/$profile/iteration-check.log"
-  rg -Fq 'DUPLEX LOAD INTERVAL' "$OUT/$profile/iteration-check.log"
+  grep -Fq 'DUPLEX ITERATION MAPPING PASS' "$OUT/$profile/mapping.log"
+  grep -Fq 'DUPLEX EFFECTIVE II' "$OUT/$profile/iteration-check.log"
+  grep -Fq 'DUPLEX LOAD INTERVAL' "$OUT/$profile/iteration-check.log"
 done
 sha256sum "$ITERATION_OBSERVER" "$ITERATION_UNIT_TB" "$TB" "$MAPPING_CHECKER" >>"$OUT/provenance.txt"
 echo "DUPLEX_ITERATION_G3 PASS PROFILES=2 EVENTS_PER_PROFILE=256 SCHEDULED_II_AND_RUNTIME_INTERVALS=REPORTED" \

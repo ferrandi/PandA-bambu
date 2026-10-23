@@ -16,7 +16,7 @@ if [[ ${BURST_WRITER_SIM_OUTSIDE_SANDBOX:-} != 1 ]]; then
     echo "refusing RTL simulation unless BURST_WRITER_SIM_OUTSIDE_SANDBOX=1 is set" >&2
     exit 2
 fi
-for tool in verilator python3 rg sha256sum; do
+for tool in verilator python3 sha256sum; do
     if ! command -v "$tool" >/dev/null 2>&1; then
         echo "$tool is required" >&2
         exit 2
@@ -73,7 +73,7 @@ for scenario in RESET_E1 PEER_FAULT_E1; do
         echo "RTL scenario failed: $scenario" >&2
         exit 1
     }
-    if ! rg -q "^CONFIGURE_WRITER_PIPELINE PASS CASE=$scenario$" "$log"; then
+    if ! grep -Eq "^CONFIGURE_WRITER_PIPELINE PASS CASE=$scenario$" "$log"; then
         cat "$log" >&2
         echo "missing exact PASS marker for $scenario" >&2
         exit 1
