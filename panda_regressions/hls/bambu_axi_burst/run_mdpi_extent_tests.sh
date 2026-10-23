@@ -101,6 +101,7 @@ run_case() {
   if [[ $case_id == 1 ]]; then args+=(--tb-param-size=data:4); fi
   if [[ $case_id == 6 ]]; then args+=(--tb-param-size=data:8); fi
   if [[ $case_id == 7 ]]; then args+=(--tb-param-size=data:0); fi
+  if [[ $case_id == 10 ]]; then args+=(--tb-param-size=data:32); fi
   {
     printf 'case=%s\ncase_id=%s\nexpected=%s\nsource=%s\ntestbench=%s\n' \
       "$case_name" "$case_id" "$expected" "$source_file" "$testbench"
@@ -160,7 +161,8 @@ run_case() {
 
 jobs=(pointer_cli_size_4:1:pass int_array_one:2:pass byte_array_one:3:pass
   byte_pointer_runtime_size:4:pass pointer_missing_runtime_size:5:failure int_array_cli_override:6:pass
-  pointer_cli_size_zero:7:failure)
+  pointer_cli_size_zero:7:failure int_reference_array_four:8:pass
+  pointer_to_array_missing_extent:9:failure pointer_to_array_cli_size:10:pass)
 if ! run_bounded_jobs "$requested_jobs" run_case "${jobs[@]}"; then
   echo "MDPI_EXTENT_TESTS_FAILED output=$out" >&2
   exit 1

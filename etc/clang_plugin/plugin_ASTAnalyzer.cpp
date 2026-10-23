@@ -1907,6 +1907,10 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          parmSizeInBytes = std::to_string(getInterfaceTypeSizeInBytes(parmDecl->getLocation(), ptdType));
          if(isa<ConstantArrayType>(ptdType))
          {
+            if(argType->isReferenceType())
+            {
+               parm_attrs[key_loc_t("extent_known", SourceLocation())] = "1";
+            }
             manageArray(cast<ConstantArrayType>(ptdType), false);
          }
          else
