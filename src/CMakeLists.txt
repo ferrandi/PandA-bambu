@@ -365,6 +365,14 @@ set_tests_properties(vector_allocation PROPERTIES LABELS "vector_allocation")
 # it is installed next to bambu so that the runtime flow only needs the tools
 # of the distribution.
 add_executable(record_output "${CMAKE_CURRENT_SOURCE_DIR}/utility/record_output.cpp")
+# An older build tree updated to this patch may not have the tool yet, and a
+# partial build of another target would leave the installation without the
+# artifact to install: build it before installing, like the other executables.
+install(CODE "
+   if(NOT EXISTS \"${CMAKE_BINARY_DIR}/src/record_output\")
+      execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target record_output)
+   endif()
+" )
 install(TARGETS record_output
    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
@@ -392,6 +400,9 @@ if(PANDA_BUILD_BAMBU)
    set_target_properties(bambu PROPERTIES
       INSTALL_RPATH "\$ORIGIN/../${PANDA_LIB_INSTALLDIR_REL}"
    )
+   # bambu dispatches the copier through the scripts it generates, at pedantic
+   # output level: building bambu must also build the tool it runs.
+   add_dependencies(bambu record_output)
    install(CODE "
       if(NOT EXISTS \"${CMAKE_BINARY_DIR}/src/bambu\")
          execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target bambu)
