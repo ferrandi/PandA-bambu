@@ -153,7 +153,7 @@ run_bounded_jobs() {
   shift 2
   local -a pending=("$@") pids=()
   local -A labels=() log_paths=()
-  local next=0 active=0 failed=0 pid done_pid status label log
+  local next=0 active=0 failed=0 pid done_pid status label log running_jobs
 
   if [[ ${BURST_QUIET_JOB_STATUS:-0} != 1 ]]; then
     printf 'Starting %d burst helper jobs (parallel limit %s); details: %s/\n' \
@@ -174,8 +174,30 @@ run_bounded_jobs() {
     done
 
     ((${#pids[@]})) || break
+    # Bash 5.0 lacks wait's PID-capture option, so find a completed child
+    # through the job table and then wait for that exact PID.
+    # Include stopped jobs in the live set: wait must not mistake a stop for
+    # completion. Poll briefly instead of waiting on the oldest PID, which
+    # would serialize jobs that finish out of order.
+    running_jobs=$(jobs -pr; jobs -ps)
     done_pid=
-    if wait -n -p done_pid "${pids[@]}"; then
+    for pid in "${pids[@]}"; do
+      if [[ $'\n'${running_jobs}$'\n' != *$'\n'"$pid"$'\n'* ]]; then
+        # A child may have changed state between the two `jobs` queries. Keep
+        # it active if it still exists; a terminated child will be reaped by
+        # Bash and become waitable on the next scan.
+        if kill -0 "$pid" 2>/dev/null; then
+          continue
+        fi
+        done_pid=$pid
+        break
+      fi
+    done
+    if [[ -z $done_pid ]]; then
+      sleep 0.05
+      continue
+    fi
+    if wait "$done_pid"; then
       status=0
     else
       status=$?
