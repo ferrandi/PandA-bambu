@@ -39,7 +39,10 @@ class SimulationLoggingTest(unittest.TestCase):
         cls.build_dir = TemporaryDirectory(dir=scratch)
         compiler = None
         for candidate in (os.environ.get("CXX"), "c++", "g++", "clang++"):
-            if candidate and shutil.which(candidate):
+            if not candidate or not shutil.which(candidate):
+                continue
+            probe = subprocess.run([candidate, "--version"], capture_output=True, timeout=30)
+            if probe.returncode == 0:
                 compiler = candidate
                 break
         if compiler is None:
@@ -51,8 +54,12 @@ class SimulationLoggingTest(unittest.TestCase):
             timeout=120,
         )
         if compile_result.returncode != 0:
-            raise unittest.SkipTest(
-                "cannot build the record_output tool: " + compile_result.stderr.decode(errors="replace")
+            # The compiler is available, so this is a failure compiling the
+            # product source, e.g., a regression: it must fail the check, it
+            # must never turn into a green run without any coverage.
+            raise RuntimeError(
+                f"{compiler} failed to build the record_output tool: "
+                + compile_result.stderr.decode(errors="replace")
             )
 
     @classmethod
