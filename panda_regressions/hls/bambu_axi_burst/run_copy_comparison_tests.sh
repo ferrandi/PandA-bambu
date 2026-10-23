@@ -30,7 +30,7 @@ else
 fi
 [[ -n ${bambu:-} && -x $bambu ]] || { echo "Bambu executable not found: $bambu_arg" >&2; exit 2; }
 command -v verilator >/dev/null || { echo "Verilator is required" >&2; exit 2; }
-command -v rg >/dev/null || { echo "ripgrep is required to validate scenario markers" >&2; exit 2; }
+command -v grep >/dev/null || { echo "grep is required to validate scenario markers" >&2; exit 2; }
 [[ -r $source_file && -r $testbench && -r $checker && -r $helpers ]] || {
   echo "copy-comparison source, testbench, checker, or parallel helper is missing" >&2; exit 2;
 }
@@ -144,7 +144,7 @@ run_copy_job() {
   [[ -n $rtl ]] || { echo "$job missing generated RTL" >&2; return 1; }
   local tb_log="$case_dir/HLS_output/simulation/testbench.log"
   [[ -s $tb_log ]] || { echo "$job missing nonempty testbench log: $tb_log" >&2; return 1; }
-  if ! rg -F -x -q "$marker" "$tb_log"; then
+  if ! grep -F -x -q "$marker" "$tb_log"; then
     echo "$job missing exact testbench marker: $marker" >&2
     tail -n 80 "$tb_log" >&2 || true
     return 1

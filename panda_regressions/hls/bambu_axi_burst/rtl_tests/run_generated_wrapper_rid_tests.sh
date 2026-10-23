@@ -72,7 +72,7 @@ for artifact in "$RTL" "$LIB"; do
   [[ -s "$artifact" ]] || { echo "missing generated artifact: $artifact" >&2; exit 2; }
 done
 if [[ -s "$GEN/bambu.stderr.log" ]]; then
-  rg -q 'Configured read burst regions for bundle src \(B=16\)' "$GEN/bambu.stderr.log" || {
+  grep -Eq 'Configured read burst regions for bundle src \(B=16\)' "$GEN/bambu.stderr.log" || {
     echo "Bambu did not configure the src burst region; refusing a legacy-path wrapper test" >&2; exit 2;
   }
 fi
@@ -90,10 +90,10 @@ for width_param in (".BITSIZE_m_axi_araddr(32)", ".BITSIZE_m_axi_rdata(32)", ".B
     if width_param not in normalized:
         raise SystemExit(f"generated wrapper lacks width parameter {width_param}")
 PY
-rg -q '^module src_bambu_artificial_ParmMgr_modgen\(' "$RTL" || {
+grep -Eq '^module src_bambu_artificial_ParmMgr_modgen\(' "$RTL" || {
   echo "expected generated m_axi resource wrapper is absent" >&2; exit 2;
 }
-rg -q 'wire burst_rid = \|p_m_axi_src_rid;' "$RTL" || {
+grep -Eq 'wire burst_rid = \|p_m_axi_src_rid;' "$RTL" || {
   echo "generated wrapper does not contain the expected full-width RID reduction" >&2; exit 2;
 }
 

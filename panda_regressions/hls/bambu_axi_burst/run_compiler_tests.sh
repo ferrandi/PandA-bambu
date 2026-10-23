@@ -108,7 +108,7 @@ run_pragma_case() {
     local plugin_outputs=("$case_dir/stdout.log" "$case_dir/stderr.log")
     while IFS= read -r output; do plugin_outputs+=("$output"); done \
       < <(find "$case_dir/panda-temp" -maxdepth 1 -type f -name '__cc_output*' -print 2>/dev/null || true)
-    if ! rg -qi 'Maximum AXI burst length|Conflicting maximum AXI burst length values' "${plugin_outputs[@]}"; then
+    if ! grep -Eqi 'Maximum AXI burst length|Conflicting maximum AXI burst length values' "${plugin_outputs[@]}"; then
       echo "'$top' exited $rc but has no ASTAnalyzer burst-pragma diagnostic in compiler output; see $case_dir" >&2
       return 1
     fi
@@ -171,7 +171,7 @@ run_burst_profile_suite() {
       >stdout.log 2>stderr.log); then
     echo "O/D profile without max_read_burst_length unexpectedly accepted with opt-in" >&2; return 1
   fi
-  if ! rg -qi "AXI read profile attributes num_read_outstanding/read_fifo_depth.*require max_read_burst_length.*cannot be applied to the legacy scalar interface" \
+  if ! grep -Eqi "AXI read profile attributes num_read_outstanding/read_fifo_depth.*require max_read_burst_length.*cannot be applied to the legacy scalar interface" \
       "$no_b_dir/stdout.log" "$no_b_dir/stderr.log"; then
     echo "O/D without B failed without the explicit unsupported-profile diagnostic; see $no_b_dir" >&2; return 1
   fi
@@ -233,7 +233,7 @@ run_burst_profile_suite() {
         --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU >stdout.log 2>stderr.log); then
       echo "expected read-profile fixture '$top' to fail; see $invalid_dir" >&2; return 1
     fi
-    if ! rg -q "$diagnostic" "$invalid_dir/stdout.log" "$invalid_dir/stderr.log" \
+    if ! grep -Eq "$diagnostic" "$invalid_dir/stdout.log" "$invalid_dir/stderr.log" \
         "$invalid_dir"/panda-temp/__cc_output* 2>/dev/null; then
       echo "read-profile fixture '$top' failed without expected diagnostic '$diagnostic'; see $invalid_dir" >&2; return 1
     fi
@@ -325,12 +325,12 @@ run_shared_resource_case() {
     return 1
   fi
   assert_shared_root_order "$order" "$expected_first" "$expected_second" "$case_dir/stderr.log"
-  if ! rg -qi "Incompatible m_axi resource ABI for bundle 'data': (existing roots use burst mode 'read' while this root requires 'legacy'|existing roots use burst mode 'legacy' while this root requires 'read')\. Use distinct bundle names for incompatible roots\." \
+  if ! grep -Eqi "Incompatible m_axi resource ABI for bundle 'data': (existing roots use burst mode 'read' while this root requires 'legacy'|existing roots use burst mode 'legacy' while this root requires 'read')\. Use distinct bundle names for incompatible roots\." \
       "$case_dir/stdout.log" "$case_dir/stderr.log"; then
     echo "mixed shared-bundle roots '$tops' failed without the expected ABI diagnostic; see $case_dir" >&2
     return 1
   fi
-  if find "$case_dir" -type f \( -name 'panda_libtech.v' -o -name 'kernel.v' \) -print -quit | rg -q .; then
+  if find "$case_dir" -type f \( -name 'panda_libtech.v' -o -name 'kernel.v' \) -print -quit | grep -Eq .; then
     echo "mixed shared-bundle roots '$tops' emitted resource RTL despite the ABI conflict; see $case_dir" >&2
     return 1
   fi
@@ -354,7 +354,7 @@ run_shared_profile_case() {
     return 1
   fi
   assert_shared_root_order "$order" "$expected_first" "$expected_second" "$case_dir/stderr.log"
-  if ! rg -qi "Incompatible m_axi burst profile for bundle 'data': existing roots use max_read_burst_length=(16|32) while this root requires max_read_burst_length=(16|32).*Use distinct bundle names" \
+  if ! grep -Eqi "Incompatible m_axi burst profile for bundle 'data': existing roots use max_read_burst_length=(16|32) while this root requires max_read_burst_length=(16|32).*Use distinct bundle names" \
       "$case_dir/stdout.log" "$case_dir/stderr.log"; then
     echo "configured roots '$tops' failed without the expected burst-profile diagnostic; see $case_dir" >&2
     return 1
@@ -375,7 +375,7 @@ run_shared_od_conflict_case() {
     return 1
   fi
   assert_shared_root_order "$tag" "$first" "$second" "$case_dir/stderr.log"
-  if ! rg -qi "Incompatible m_axi burst profile for bundle 'data': existing roots use .*${field}=${existing}.*while this root requires .*${field}=${requested}.*Use distinct bundle names" \
+  if ! grep -Eqi "Incompatible m_axi burst profile for bundle 'data': existing roots use .*${field}=${existing}.*while this root requires .*${field}=${requested}.*Use distinct bundle names" \
       "$case_dir/stdout.log" "$case_dir/stderr.log"; then
     echo "shared roots '$tops' failed without expected $field conflict; see $case_dir" >&2
     return 1
@@ -396,8 +396,8 @@ run_shared_default_match_case() {
     return 1
   fi
   assert_shared_root_order "$tag" "$first" "$second" "$case_dir/stderr.log"
-  if ! rg -q "Expected single top function name" "$case_dir/stdout.log" "$case_dir/stderr.log" || \
-     rg -q "Incompatible m_axi burst profile" "$case_dir/stdout.log" "$case_dir/stderr.log"; then
+  if ! grep -Eq "Expected single top function name" "$case_dir/stdout.log" "$case_dir/stderr.log" || \
+     grep -Eq "Incompatible m_axi burst profile" "$case_dir/stdout.log" "$case_dir/stderr.log"; then
     echo "omitted and explicit O1/D32 roots did not pass profile compatibility; see $case_dir" >&2
     return 1
   fi
@@ -417,7 +417,7 @@ run_burst_type_case() {
     local xilinx_device="$ROOT/etc/libtech/xilinx/xcu250-2Lfigd2104.xml"
     sed 's/<axi_burst_type value="1"\/>/<axi_burst_type value="0"\/>/' "$xilinx_device" \
       >"$case_dir/fixed_device.xml"
-    if ! rg -q '<axi_burst_type value="0"/>' "$case_dir/fixed_device.xml"; then
+    if ! grep -Eq '<axi_burst_type value="0"/>' "$case_dir/fixed_device.xml"; then
       echo "could not create FIXED device override from $xilinx_device" >&2; return 2
     fi
     args+=(-b "$case_dir/fixed_device.xml")
@@ -435,7 +435,7 @@ run_burst_type_case() {
     echo "expected accepted AXI burst case '$tag'; see $case_dir/stderr.log" >&2; return 1
   elif [[ "$expected" == reject && $rc -eq 0 ]]; then
     echo "expected FIXED burst case '$tag' to fail; see $case_dir" >&2; return 1
-  elif [[ "$expected" == reject ]] && ! rg -qi 'Configured read bursts.*require AXI INCREMENTAL.*effective AXI burst type is FIXED' \
+  elif [[ "$expected" == reject ]] && ! grep -Eqi 'Configured read bursts.*require AXI INCREMENTAL.*effective AXI burst type is FIXED' \
       "$case_dir/stdout.log" "$case_dir/stderr.log"; then
     echo "FIXED burst case '$tag' failed without the expected diagnostic; see $case_dir" >&2; return 1
   fi

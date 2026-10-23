@@ -87,14 +87,14 @@ TCL
     timeout 900s "$VIVADO" -mode batch -nojournal -log "$dir/vivado.log" -source "$tcl" \
         > "$log" 2>&1 || status=$?
     local outcome=error
-    if rg -q "^SYNTH_TOOL_OUTCOME ok$" "$log"; then outcome=ok; fi
+    if grep -Eq "^SYNTH_TOOL_OUTCOME ok$" "$log"; then outcome=ok; fi
     if [[ $expect == reject ]]; then
         if [[ $outcome == ok ]]; then
             tail -n 40 "$log" >&2
             echo "synthesis accepted an illegal parameter set: $label" >&2
             return 1
         fi
-        if [[ -n $message ]] && ! rg -Fq "$message" "$log"; then
+        if [[ -n $message ]] && ! grep -Fq "$message" "$log"; then
             tail -n 40 "$log" >&2
             echo "synthesis rejection lacks the guard message: $label (status=$status)" >&2
             return 1

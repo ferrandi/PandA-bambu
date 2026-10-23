@@ -76,10 +76,10 @@ LIB="$GEN/panda_libtech.v"
 for artifact in "$RTL" "$LIB"; do
   [[ -s "$artifact" ]] || { echo "missing generated artifact: $artifact" >&2; exit 2; }
 done
-rg -q 'Configured read burst regions for bundle src \(B=16\)' "$GEN/bambu.stderr.log" || {
+grep -Eq 'Configured read burst regions for bundle src \(B=16\)' "$GEN/bambu.stderr.log" || {
   echo "Bambu did not report the configured B=16 region; refusing legacy-path simulation" >&2; exit 2;
 }
-rg -q '^module kernel\(' "$RTL" || { echo "generated kernel top is absent" >&2; exit 2; }
+grep -Eq '^module kernel\(' "$RTL" || { echo "generated kernel top is absent" >&2; exit 2; }
 python3 - "$RTL" <<'PY'
 from pathlib import Path
 import re
@@ -97,16 +97,16 @@ for width_param in (".BITSIZE_m_axi_araddr(32)", ".BITSIZE_m_axi_rdata(32)", ".B
     if width_param not in normalized:
         raise SystemExit(f"generated burst resource lacks width parameter {width_param}")
 PY
-rg -q 'module MinimalAXI4MasterPipelined\(' "$LIB" || {
+grep -Eq 'module MinimalAXI4MasterPipelined\(' "$LIB" || {
   echo "generated library lacks MinimalAXI4MasterPipelined" >&2; exit 2;
 }
 # These checks intentionally bind the test to the generated resource's real
 # FIFO consume path. A hierarchy refactor must update/review this qualification.
-rg -q 'fifo_load_pop' "$LIB" && rg -q 'fifo \[0:FIFO_DEPTH-1\]' "$LIB" || {
+grep -Eq 'fifo_load_pop' "$LIB" && grep -Eq 'fifo \[0:FIFO_DEPTH-1\]' "$LIB" || {
   echo "generated burst engine no longer exposes the expected FIFO consume path" >&2; exit 2;
 }
-rg -q 'src_bambu_artificial_ParmMgr_modgen_16_i0 \(' "$RTL" &&
-  rg -q 'MinimalAXI4MasterPipelined' "$RTL" || {
+grep -Eq 'src_bambu_artificial_ParmMgr_modgen_16_i0 \(' "$RTL" &&
+  grep -Eq 'MinimalAXI4MasterPipelined' "$RTL" || {
   echo "expected generated resource hierarchy is absent" >&2; exit 2;
 }
 sha256sum "$RTL" "$LIB" >>"$OUT/provenance.txt"
@@ -124,7 +124,7 @@ if "$EXE" +NEGATIVE_SENSITIVITY >"$OUT/negative-sensitivity.log" 2>&1; then
   echo "data-order negative-sensitivity run unexpectedly passed" >&2
   exit 1
 fi
-rg -q 'AXI response data order/value mismatch|generated AXI engine FIFO consume/pop data order/value mismatch' \
+grep -Eq 'AXI response data order/value mismatch|generated AXI engine FIFO consume/pop data order/value mismatch' \
   "$OUT/negative-sensitivity.log" || {
     cat "$OUT/negative-sensitivity.log" >&2
     echo "negative-sensitivity failed for an unexpected reason" >&2

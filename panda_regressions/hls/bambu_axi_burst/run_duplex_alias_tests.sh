@@ -35,7 +35,7 @@ else
   [[ -z $bambu ]] || bambu=$(realpath "$bambu")
 fi
 [[ -n ${bambu:-} && -x $bambu ]] || { echo "Bambu executable not found: $bambu_arg" >&2; exit 2; }
-for tool in verilator rg python3 sha256sum; do
+for tool in verilator grep python3 sha256sum; do
   command -v "$tool" >/dev/null || { echo "$tool is required" >&2; exit 2; }
 done
 [[ -r $source_file && -r $testbench && -r $checker && -r $helpers && -x $range_probe_runner && -r $range_probe_testbench ]] || {
@@ -146,7 +146,7 @@ run_case() {
     return 1
   fi
   local activation_count
-  activation_count=$( (rg -F -o -- "$activation_witness" "$case_dir/stdout.log" "$case_dir/stderr.log" || true) | wc -l)
+  activation_count=$( (grep -F -o -- "$activation_witness" "$case_dir/stdout.log" "$case_dir/stderr.log" || true) | wc -l)
   [[ $activation_count == 1 ]] || {
     echo "$profile/$scenario requires exactly one runtime-guard activation witness; found $activation_count" >&2
     tail -n 80 "$case_dir/stdout.log" "$case_dir/stderr.log" >&2 || true
@@ -154,7 +154,7 @@ run_case() {
   }
   local testbench_log="$case_dir/HLS_output/simulation/testbench.log"
   [[ -s $testbench_log ]] || { echo "$profile/$scenario missing nonempty testbench log" >&2; return 1; }
-  rg -F -x -q "$marker" "$testbench_log" || {
+  grep -F -x -q "$marker" "$testbench_log" || {
     echo "$profile/$scenario missing exact marker: $marker" >&2
     tail -n 80 "$testbench_log" >&2 || true
     return 1

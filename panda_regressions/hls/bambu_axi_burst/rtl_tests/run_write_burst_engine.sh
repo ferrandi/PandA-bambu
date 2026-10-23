@@ -86,20 +86,20 @@ build_run() {
             echo "RTL scenario failed: $label/$case_name" >&2
             return 1
         }
-        if ! rg -q "^WRITE_BURST_ENGINE PASS CASE=$case_name " "$log" &&
-           ! rg -q "^WRITE_BURST_ENGINE PARAM PASS " "$log"; then
+        if ! grep -Eq "^WRITE_BURST_ENGINE PASS CASE=$case_name " "$log" &&
+           ! grep -Eq "^WRITE_BURST_ENGINE PARAM PASS " "$log"; then
             cat "$log" >&2
             echo "missing exact PASS marker for $label/$case_name" >&2
             return 1
         fi
         if [[ $case_name == FAST_STORE_ACK_STREAM ]] &&
-           ! rg -q '^WRITE_FAST_STORE_ACK_STREAM beats=64 interval=1$' "$log"; then
+           ! grep -Eq '^WRITE_FAST_STORE_ACK_STREAM beats=64 interval=1$' "$log"; then
             cat "$log" >&2
             echo "missing fast STORE ACK throughput marker for $label/$case_name" >&2
             return 1
         fi
         if [[ $case_name == FAST_STORE_ACK_BACKPRESSURE ]] &&
-           ! rg -q '^WRITE_FAST_STORE_ACK_BACKPRESSURE_PASS ' "$log"; then
+           ! grep -Eq '^WRITE_FAST_STORE_ACK_BACKPRESSURE_PASS ' "$log"; then
             cat "$log" >&2
             echo "missing fast STORE pending-capture marker for $label/$case_name" >&2
             return 1
@@ -137,31 +137,31 @@ build_run_o() {
             echo "RTL scenario failed: $label/$case_name" >&2
             return 1
         }
-        if ! rg -q "^WRITE_BURST_ENGINE PASS CASE=$case_name " "$log"; then
+        if ! grep -Eq "^WRITE_BURST_ENGINE PASS CASE=$case_name " "$log"; then
             cat "$log" >&2
             echo "missing exact PASS marker for $label/$case_name" >&2
             return 1
         fi
         if [[ $case_name == SUSTAINED_B1 ]] &&
-           ! rg -q '^WRITE_SUSTAINED_PASS profile=B1-O16-F1 ' "$log"; then
+           ! grep -Eq '^WRITE_SUSTAINED_PASS profile=B1-O16-F1 ' "$log"; then
             cat "$log" >&2
             echo "missing sustained-throughput marker for $label/$case_name" >&2
             return 1
         fi
         if [[ $case_name == SUSTAINED_B16 ]] &&
-           ! rg -q '^WRITE_SUSTAINED_PASS profile=B16-O2-D32 ' "$log"; then
+           ! grep -Eq '^WRITE_SUSTAINED_PASS profile=B16-O2-D32 ' "$log"; then
             cat "$log" >&2
             echo "missing sustained-throughput marker for $label/$case_name" >&2
             return 1
         fi
         if [[ $case_name == FAST_STORE_ACK_STREAM ]] &&
-           ! rg -q '^WRITE_FAST_STORE_ACK_STREAM beats=64 interval=1$' "$log"; then
+           ! grep -Eq '^WRITE_FAST_STORE_ACK_STREAM beats=64 interval=1$' "$log"; then
             cat "$log" >&2
             echo "missing fast STORE ACK throughput marker for $label/$case_name" >&2
             return 1
         fi
         if [[ $case_name == FAST_STORE_ACK_BACKPRESSURE ]] &&
-           ! rg -q '^WRITE_FAST_STORE_ACK_BACKPRESSURE_PASS ' "$log"; then
+           ! grep -Eq '^WRITE_FAST_STORE_ACK_BACKPRESSURE_PASS ' "$log"; then
             cat "$log" >&2
             echo "missing fast STORE pending-capture marker for $label/$case_name" >&2
             return 1
@@ -201,7 +201,7 @@ build_async_reset_run() {
         echo "RTL scenario failed: $label/ASYNC_RESET" >&2
         return 1
     }
-    if ! rg -q '^WRITE_BURST_ENGINE PASS CASE=ASYNC_RESET ' "$log"; then
+    if ! grep -Eq '^WRITE_BURST_ENGINE PASS CASE=ASYNC_RESET ' "$log"; then
         cat "$log" >&2
         echo "missing exact PASS marker for $label/ASYNC_RESET" >&2
         return 1
@@ -225,7 +225,7 @@ expect_parameter_fatal() {
         -GFIFO_DEPTH="$depth" --Mdir "$build/obj" \
         "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" "$TB" > "$build/compile.log" 2>&1 || compiled=1
     if (( compiled )); then
-        if rg -Fq "$expected" "$build/compile.log"; then
+        if grep -Fq "$expected" "$build/compile.log"; then
             echo "EXPECTED_ELABORATION_REJECTION $label: $expected" >> "$RESULTS_LOG"
             return 0
         fi
@@ -235,7 +235,7 @@ expect_parameter_fatal() {
     fi
     local status=0
     timeout 20s "$build/obj/Vtb_write_burst_engine" +CASE=PARAM > "$build/run.log" 2>&1 || status=$?
-    if (( status == 0 )) || ! rg -Fq "$expected" "$build/run.log"; then
+    if (( status == 0 )) || ! grep -Fq "$expected" "$build/run.log"; then
         cat "$build/run.log" >&2
         echo "parameter rejection witness failed: $label" >&2
         return 1
@@ -270,7 +270,7 @@ PY
         }
     local status=0
     timeout 60s "$build/obj/Vtb_write_burst_engine" "+CASE=$test_case" > "$build/run.log" 2>&1 || status=$?
-    if (( status == 0 || status == 124 || status == 137 )) || ! rg -Fq "$expected" "$build/run.log"; then
+    if (( status == 0 || status == 124 || status == 137 )) || ! grep -Fq "$expected" "$build/run.log"; then
         cat "$build/run.log" >&2
         echo "mutation witness failed: $label" >&2
         return 1

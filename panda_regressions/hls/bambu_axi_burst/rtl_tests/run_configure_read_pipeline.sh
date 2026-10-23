@@ -19,7 +19,7 @@ if [[ ! $SIM_JOBS =~ ^[1-9][0-9]*$ ]]; then
     echo "SIM_JOBS must be a positive integer, got: $SIM_JOBS" >&2
     exit 2
 fi
-for tool in python3 verilator rg timeout sha256sum git; do
+for tool in python3 verilator timeout sha256sum git; do
     command -v "$tool" >/dev/null 2>&1 || { echo "missing required tool: $tool" >&2; exit 2; }
 done
 OUT=$(realpath -m -- "$OUT")
@@ -59,7 +59,7 @@ for scenario in READ_RESET READ_PEER_FAULT; do
         echo "reader configure pipeline scenario failed: $scenario" >&2
         exit 1
     }
-    rg -q "^READ_CONFIG_PIPELINE PASS CASE=$scenario$" "$log" || {
+    grep -Eq "^READ_CONFIG_PIPELINE PASS CASE=$scenario$" "$log" || {
         cat "$log" >&2
         echo "missing exact PASS marker for $scenario" >&2
         exit 1

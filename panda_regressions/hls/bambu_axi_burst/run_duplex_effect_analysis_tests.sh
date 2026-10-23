@@ -59,7 +59,7 @@ fi
 if [[ -z ${BAMBU_HLS:-} ]]; then echo "BAMBU_HLS is unset; refusing to guess the ASTAnalyzer plugin" >&2; exit 2; fi
 PLUGIN="$(realpath "$BAMBU_HLS")/lib/panda/clang-16/ASTAnalyzer.so"
 if [[ ! -r "$PLUGIN" ]]; then echo "selected ASTAnalyzer plugin is missing: $PLUGIN" >&2; exit 2; fi
-command -v rg >/dev/null || { echo "required tool not found: rg" >&2; exit 2; }
+command -v grep >/dev/null || { echo "required tool not found: grep" >&2; exit 2; }
 command -v sha256sum >/dev/null || { echo "required tool not found: sha256sum" >&2; exit 2; }
 [[ -f "$SOURCE" && -f "$POINTWISE_SOURCE" && -f "$POINTWISE_REVERSED_SOURCE" &&
    -f "$ASYMMETRIC_64_SOURCE" && -f "$DISTINCT_SOURCE_FIRST_SOURCE" &&
@@ -183,13 +183,13 @@ if ! run_bounded_jobs "$DUPLEX_EFFECT_JOBS" run_case "${CASES[@]}"; then
 fi
 for top in "${CASES[@]}"; do
   log="$BURST_JOB_LOG_DIR/$top.log"
-  rg -q "^DUPLEX EFFECT ANALYSIS CHECK PASS CASE=$top " "$log" || {
+  grep -Eq "^DUPLEX EFFECT ANALYSIS CHECK PASS CASE=$top " "$log" || {
     echo "missing exact checker PASS marker for $top; see $log" >&2; exit 1;
   }
-  rg -q "^DUPLEX_EFFECT_ANALYSIS PASS CASE=$top$" "$log" || {
+  grep -Eq "^DUPLEX_EFFECT_ANALYSIS PASS CASE=$top$" "$log" || {
     echo "missing exact runner PASS marker for $top; see $log" >&2; exit 1;
   }
-  rg '^(DUPLEX EFFECT ANALYSIS CHECK PASS|DUPLEX_EFFECT_ANALYSIS PASS CASE=)' "$log"
+  grep -E '^(DUPLEX EFFECT ANALYSIS CHECK PASS|DUPLEX_EFFECT_ANALYSIS PASS CASE=)' "$log"
 done
 printf 'DUPLEX_EFFECT_ANALYSIS PASS: %d compiler cases; positive cases require duplex RTL structure, no RTL simulation.\n' \
   "${#CASES[@]}" | tee "$OUT/aggregate.log"

@@ -16,7 +16,7 @@ export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp"
 DEVICE="$ROOT/etc/libtech/xilinx/xcu250-2Lfigd2104.xml"
 FIXED_DEVICE="$OUT/xcu250-fixed.xml"
 sed 's/<axi_burst_type value="1"\/>/<axi_burst_type value="0"\/>/' "$DEVICE" >"$FIXED_DEVICE"
-rg -q '<axi_burst_type value="0"/>' "$FIXED_DEVICE" || {
+grep -Eq '<axi_burst_type value="0"/>' "$FIXED_DEVICE" || {
   echo "could not create FIXED device override from $DEVICE" >&2; exit 2;
 }
 
@@ -33,13 +33,13 @@ if (cd "$INCR" && "$BAMBU" "$SOURCE" "${COMMON[@]}" --AXI-burst-type=INCREMENTAL
 else
   echo "INCR write-burst positive case failed; see $INCR" >&2; exit 1
 fi
-rg -q "Configured read burst regions for bundle z_input" "$INCR/stdout.log" "$INCR/stderr.log" || {
+grep -Eq "Configured read burst regions for bundle z_input" "$INCR/stdout.log" "$INCR/stderr.log" || {
   echo "INCR case did not configure the read region; see $INCR" >&2; exit 1;
 }
-rg -q "Configured write burst region for bundle a_output" "$INCR/stdout.log" "$INCR/stderr.log" || {
+grep -Eq "Configured write burst region for bundle a_output" "$INCR/stdout.log" "$INCR/stderr.log" || {
   echo "INCR case did not configure the write region; see $INCR" >&2; exit 1;
 }
-rg -q "$PARAMETER_LINE" "$INCR/stdout.log" "$INCR/stderr.log" || {
+grep -Eq "$PARAMETER_LINE" "$INCR/stdout.log" "$INCR/stderr.log" || {
   echo "INCR case did not reach parameter processing; see $INCR" >&2; exit 1;
 }
 
@@ -96,25 +96,25 @@ if not re.search(
 ):
     raise SystemExit("Bambu IR has no ordinary memory load through ordinary_global")
 PY
-rg -q "Configured read burst regions for bundle data" "$ORDINARY_GLOBAL/stdout.log" "$ORDINARY_GLOBAL/stderr.log" || {
+grep -Eq "Configured read burst regions for bundle data" "$ORDINARY_GLOBAL/stdout.log" "$ORDINARY_GLOBAL/stderr.log" || {
   echo "ordinary global read disabled the unrelated pointer read burst; see $ORDINARY_GLOBAL" >&2; exit 1;
 }
-if rg -q '^[[:space:]]*Parameter @[^[:cntrl:]]*ordinary_global' "$ORDINARY_GLOBAL/stdout.log" "$ORDINARY_GLOBAL/stderr.log"; then
+if grep -Eq '^[[:space:]]*Parameter @[^[:cntrl:]]*ordinary_global' "$ORDINARY_GLOBAL/stdout.log" "$ORDINARY_GLOBAL/stderr.log"; then
   echo "ordinary global was incorrectly attributed as a top-level interface parameter; see $ORDINARY_GLOBAL" >&2; exit 1
 fi
-rg -q 'MinimalAXI4MasterPipelined.*\.B_MAX\(16\)' "$ORDINARY_GLOBAL/read_with_ordinary_global.v" || {
+grep -Eq 'MinimalAXI4MasterPipelined.*\.B_MAX\(16\)' "$ORDINARY_GLOBAL/read_with_ordinary_global.v" || {
   echo "ordinary global case did not generate the expected read burst resource; see $ORDINARY_GLOBAL" >&2; exit 1;
 }
-rg -q 'output p_m_axi_data_arvalid' "$ORDINARY_GLOBAL/read_with_ordinary_global.v" || {
+grep -Eq 'output p_m_axi_data_arvalid' "$ORDINARY_GLOBAL/read_with_ordinary_global.v" || {
   echo "ordinary global case did not generate the data-bundle AXI read interface; see $ORDINARY_GLOBAL" >&2; exit 1;
 }
 
 for top in read_with_volatile_global; do
   out=$(run_global_read_case "$top")
-  if rg -q "Configured read burst regions for bundle data" "$out/stdout.log" "$out/stderr.log"; then
+  if grep -Eq "Configured read burst regions for bundle data" "$out/stdout.log" "$out/stderr.log"; then
     echo "$top unexpectedly enabled read bursting across a non-ordinary global access; see $out" >&2; exit 1
   fi
-  rg -q "Keeping legacy m_axi accesses for bundle data: memory writes or opaque effects" \
+  grep -Eq "Keeping legacy m_axi accesses for bundle data: memory writes or opaque effects" \
     "$out/stdout.log" "$out/stderr.log" || {
     echo "$top fell back without the expected conservative reason; see $out" >&2; exit 1;
   }
@@ -126,15 +126,15 @@ if (cd "$FIXED" && "$BAMBU" "$SOURCE" "${COMMON[@]}" --AXI-burst-type=INCREMENTA
     >stdout.log 2>stderr.log); then
   echo "FIXED device override unexpectedly accepted; see $FIXED" >&2; exit 1
 fi
-rg -q "Configured write bursts for bundle 'a_output' require AXI INCREMENTAL burst type; the effective AXI burst type is FIXED\\." \
+grep -Eq "Configured write bursts for bundle 'a_output' require AXI INCREMENTAL burst type; the effective AXI burst type is FIXED\\." \
   "$FIXED/stdout.log" "$FIXED/stderr.log" || {
   echo "FIXED override failed without the expected early usage diagnostic; see $FIXED" >&2; exit 1;
 }
-if rg -qi 'THROW_ASSERT|assertion failed|Configured write burst region|Configured read burst regions' \
+if grep -Eqi 'THROW_ASSERT|assertion failed|Configured write burst region|Configured read burst regions' \
   "$FIXED/stdout.log" "$FIXED/stderr.log"; then
   echo "FIXED override reached interface rewriting/configuration or an internal assertion; see $FIXED" >&2; exit 1
 fi
-if rg -q "$PARAMETER_LINE" "$FIXED/stdout.log" "$FIXED/stderr.log"; then
+if grep -Eq "$PARAMETER_LINE" "$FIXED/stdout.log" "$FIXED/stderr.log"; then
   echo "FIXED override reached parameter processing before rejecting the burst; see $FIXED" >&2; exit 1
 fi
 
@@ -147,15 +147,15 @@ if (cd "$WRITE_ONLY_FIXED" && "$BAMBU" "$SOURCE" "${WRITE_ONLY_COMMON[@]}" \
     >stdout.log 2>stderr.log); then
   echo "FIXED device override unexpectedly accepted write-only burst; see $WRITE_ONLY_FIXED" >&2; exit 1
 fi
-rg -q "Configured write bursts for bundle 'output' require AXI INCREMENTAL burst type; the effective AXI burst type is FIXED\\." \
+grep -Eq "Configured write bursts for bundle 'output' require AXI INCREMENTAL burst type; the effective AXI burst type is FIXED\\." \
   "$WRITE_ONLY_FIXED/stdout.log" "$WRITE_ONLY_FIXED/stderr.log" || {
   echo "write-only FIXED override failed without the expected usage diagnostic; see $WRITE_ONLY_FIXED" >&2; exit 1;
 }
-if rg -qi 'THROW_ASSERT|assertion failed|Configured write burst region|Configured read burst regions' \
+if grep -Eqi 'THROW_ASSERT|assertion failed|Configured write burst region|Configured read burst regions' \
   "$WRITE_ONLY_FIXED/stdout.log" "$WRITE_ONLY_FIXED/stderr.log"; then
   echo "write-only FIXED override reached configuration/interface rewriting or an internal assertion; see $WRITE_ONLY_FIXED" >&2; exit 1
 fi
-if rg -q "$PARAMETER_LINE" "$WRITE_ONLY_FIXED/stdout.log" "$WRITE_ONLY_FIXED/stderr.log"; then
+if grep -Eq "$PARAMETER_LINE" "$WRITE_ONLY_FIXED/stdout.log" "$WRITE_ONLY_FIXED/stderr.log"; then
   echo "write-only FIXED override reached parameter processing before rejecting the burst; see $WRITE_ONLY_FIXED" >&2; exit 1
 fi
 
@@ -166,7 +166,7 @@ if ! (cd "$LEGACY_FIXED" && "$BAMBU" "$SOURCE" "${WRITE_ONLY_COMMON[@]}" \
     >stdout.log 2>stderr.log); then
   echo "feature-off FIXED legacy case failed; see $LEGACY_FIXED" >&2; exit 1
 fi
-if rg -qi 'Configured write burst region|Configured read burst regions|THROW_ASSERT|assertion failed' \
+if grep -Eqi 'Configured write burst region|Configured read burst regions|THROW_ASSERT|assertion failed' \
   "$LEGACY_FIXED/stdout.log" "$LEGACY_FIXED/stderr.log"; then
   echo "feature-off FIXED case unexpectedly configured a burst or hit an internal assertion; see $LEGACY_FIXED" >&2; exit 1
 fi
@@ -182,14 +182,14 @@ run_feature_off_case() {
     echo "$top feature-off legacy case failed; see $out" >&2; exit 1
   fi
   if [[ -n "$expected_reason" ]]; then
-    rg -Fq "$expected_reason" "$out/stdout.log" "$out/stderr.log" || {
+    grep -Fq "$expected_reason" "$out/stdout.log" "$out/stderr.log" || {
       echo "$top lacks its direction-specific feature-off diagnostic; see $out" >&2; exit 1;
     }
-  elif rg -q 'explicit (read|write)-burst request ignored because experimental-m-axi-burst=0' \
+  elif grep -Eq 'explicit (read|write)-burst request ignored because experimental-m-axi-burst=0' \
       "$out/stdout.log" "$out/stderr.log"; then
     echo "$top emitted a feature-off burst diagnostic without a request; see $out" >&2; exit 1
   fi
-  if rg -q 'Configured (read|write) burst regions?|MinimalAXI4MasterPipelined|THROW_ASSERT|assertion failed' "$out"; then
+  if grep -rIEq 'Configured (read|write) burst regions?|MinimalAXI4MasterPipelined|THROW_ASSERT|assertion failed' "$out"; then
     echo "$top feature-off case configured burst RTL or hit an internal assertion; see $out" >&2; exit 1
   fi
 }

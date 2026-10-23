@@ -27,7 +27,7 @@ BAMBU_ARG=$1
 if [[ "$BAMBU_ARG" == */* ]]; then BAMBU=$(realpath -- "$BAMBU_ARG"); else BAMBU=$(command -v "$BAMBU_ARG" || true); [[ -n "$BAMBU" ]] && BAMBU=$(realpath -- "$BAMBU"); fi
 [[ -n ${BAMBU:-} && -x "$BAMBU" ]] || { echo "Bambu executable not found: $BAMBU_ARG" >&2; exit 2; }
 command -v verilator >/dev/null || { echo "verilator is required" >&2; exit 2; }
-for tool in rg sha256sum python3 timeout; do command -v "$tool" >/dev/null || { echo "required tool missing: $tool" >&2; exit 2; }; done
+for tool in sha256sum python3 timeout; do command -v "$tool" >/dev/null || { echo "required tool missing: $tool" >&2; exit 2; }; done
 
 PREFIX=$(dirname "$(dirname "$BAMBU")")
 SETTINGS="$PREFIX/settings.sh"
@@ -142,7 +142,7 @@ BURST_JOB_LOG_DIR="$OUT/job_logs/build"; mkdir "$BURST_JOB_LOG_DIR"
 BURST_QUIET_JOB_STATUS=1; source "$HELPERS"
 run_bounded_jobs "$SIM_JOBS" generate_profile "${PROFILES[@]}"
 for profile in "${PROFILES[@]}"; do
-  rg -q "^GENERATED_DUPLEX_BUILD PASS PROFILE=$profile$" "$BURST_JOB_LOG_DIR/$profile.log" || {
+  grep -Eq "^GENERATED_DUPLEX_BUILD PASS PROFILE=$profile$" "$BURST_JOB_LOG_DIR/$profile.log" || {
     echo "missing build completion marker for $profile" >&2; exit 1;
   }
 done
@@ -157,7 +157,7 @@ run_scenario() {
     rc=0
   else rc=$?; fi
   [[ $rc -eq 0 ]] || { echo "scenario $profile/$scenario failed rc=$rc; see $log" >&2; return "$rc"; }
-  rg -q "^GENERATED_DUPLEX PASS CASE=$scenario PROFILE=$profile$" "$log" || {
+  grep -Eq "^GENERATED_DUPLEX PASS CASE=$scenario PROFILE=$profile$" "$log" || {
     echo "missing exact success marker for $profile/$scenario; see $log" >&2; return 1;
   }
   printf 'GENERATED_DUPLEX_SCENARIO PASS PROFILE=%s CASE=%s\n' "$profile" "$scenario"
@@ -171,7 +171,7 @@ run_bounded_jobs "$DUPLEX_G1_JOBS" dispatch_scenario "${SCENARIO_JOBS[@]}"
 for profile in "${PROFILES[@]}"; do
   for scenario in "${CASES[@]}"; do
     log="$OUT/$profile/scenarios/$scenario.log"
-    rg -q "^GENERATED_DUPLEX PASS CASE=$scenario PROFILE=$profile$" "$log" || {
+    grep -Eq "^GENERATED_DUPLEX PASS CASE=$scenario PROFILE=$profile$" "$log" || {
       echo "scenario omitted from completed evidence: $profile/$scenario" >&2; exit 1;
     }
     printf '%s\n' "$(digest "$log")  $profile/scenarios/$scenario.log" >>"$OUT/scenario-sha256.txt"
@@ -179,5 +179,5 @@ for profile in "${PROFILES[@]}"; do
 done
 (cd "$OUT" && sha256sum --check scenario-sha256.txt)
 printf 'GENERATED_DUPLEX PASS: %d scenarios x %d profiles\n' "${#CASES[@]}" "${#PROFILES[@]}" | tee "$OUT/aggregate.log"
-rg -q '^GENERATED_DUPLEX PASS: 13 scenarios x 2 profiles$' "$OUT/aggregate.log" || exit 1
+grep -Eq '^GENERATED_DUPLEX PASS: 13 scenarios x 2 profiles$' "$OUT/aggregate.log" || exit 1
 echo "Output: $OUT"

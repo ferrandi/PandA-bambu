@@ -28,7 +28,7 @@ else
 fi
 [[ -n ${bambu:-} && -x $bambu ]] || { echo "Bambu executable not found: $bambu_arg" >&2; exit 2; }
 command -v verilator >/dev/null || { echo "Verilator is required" >&2; exit 2; }
-for tool in rg sha256sum timeout; do command -v "$tool" >/dev/null || { echo "$tool is required" >&2; exit 2; }; done
+for tool in grep sha256sum timeout; do command -v "$tool" >/dev/null || { echo "$tool is required" >&2; exit 2; }; done
 [[ -r $source_file && -r $testbench && -r $helpers ]] || {
   echo "MDPI extent source, testbench, or parallel helper is missing" >&2; exit 2;
 }
@@ -126,14 +126,14 @@ run_case() {
       echo "$case_name missing nonempty regular testbench log: $tb_log" >&2
       return 1
     fi
-    if ! rg -F -q \
+    if ! grep -F -q \
       "MDPI parameter extent is zero: pointer parameter 'data' of function 'kernel' must resolve to a positive size from the source extent, --tb-param-size, or m_param_alloc before the top-function call." \
       "$tb_log"; then
       echo "$case_name failed without the targeted missing-extent diagnostic" >&2
       tail -n 80 "$case_dir/stdout.log" "$case_dir/stderr.log" "$tb_log" >&2 || true
       return 1
     fi
-    if ! rg -F -x -q "Sim: Driver terminated with code: 1" "$tb_log"; then
+    if ! grep -F -x -q "Sim: Driver terminated with code: 1" "$tb_log"; then
       echo "$case_name failed without the simulator failure marker" >&2
       tail -n 80 "$case_dir/stdout.log" "$case_dir/stderr.log" "$tb_log" >&2 || true
       return 1
@@ -151,7 +151,7 @@ run_case() {
     echo "$case_name missing nonempty regular testbench log: $tb_log" >&2
     return 1
   }
-  if ! rg -F -x -q "$marker" "$tb_log"; then
+  if ! grep -F -x -q "$marker" "$tb_log"; then
     echo "$case_name missing exact testbench marker: $marker" >&2
     tail -n 80 "$tb_log" >&2 || true
     return 1

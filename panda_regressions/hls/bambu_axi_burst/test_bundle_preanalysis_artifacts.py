@@ -73,13 +73,6 @@ class BundlePreanalysisCheckerTests(unittest.TestCase):
                 "exit 27\n"
             )
             bambu.chmod(0o755)
-            rg_stub = bambu.parent / "rg"
-            rg_stub.write_text(
-                "#!/bin/sh\n"
-                "# This test exits before rg is used; only the prerequisite check is exercised.\n"
-                "exit 99\n"
-            )
-            rg_stub.chmod(0o755)
             (prefix / "settings.sh").write_text(
                 f'export BAMBU_HLS="{prefix}"\n'
             )
@@ -89,7 +82,6 @@ class BundlePreanalysisCheckerTests(unittest.TestCase):
             relative_output = Path("created") / "by" / "runner" / "out_nested"
             env = os.environ.copy()
             env["BAMBU_INVOCATION"] = str(invocation)
-            env["PATH"] = f"{bambu.parent}{os.pathsep}{env['PATH']}"
             result = subprocess.run(
                 [str(HERE / "run_bundle_preanalysis_tests.sh"), str(bambu), str(relative_output)],
                 cwd=launch,

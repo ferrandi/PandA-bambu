@@ -187,7 +187,7 @@ class CopyComparisonRunnerTests(unittest.TestCase):
         verilator = bin_dir / "verilator"
         verilator.write_text("#!/usr/bin/env bash\necho 'Verilator 5.000 stub'\n")
         verilator.chmod(0o755)
-        (bin_dir / "rg").symlink_to(shutil.which("rg"))
+        (bin_dir / "grep").symlink_to(shutil.which("grep"))
         (bin_dir / "getconf").symlink_to(shutil.which("getconf"))
         (bin_dir / "sha256sum").symlink_to(shutil.which("sha256sum"))
         (bin_dir / "sed").symlink_to(shutil.which("sed"))

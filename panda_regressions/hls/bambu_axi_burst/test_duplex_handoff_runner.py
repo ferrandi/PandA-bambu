@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import hashlib
 import os
-from pathlib import Path
+import shlex
 import shutil
 import subprocess
 import tempfile
 import unittest
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 HERE = Path(__file__).resolve().parent
@@ -37,6 +38,9 @@ class DuplexHandoffRunnerTests(unittest.TestCase):
         self.python_stub = self.bin / "python3"
         self.python_stub.write_text(self.python_stub_source())
         self.python_stub.chmod(0o755)
+        self.real_grep = shutil.which("grep")
+        if self.real_grep is None:
+            raise RuntimeError("grep is required for the shell runner fixture")
         self.env = os.environ.copy()
         self.env.update(PATH=f"{self.bin}:{os.environ['PATH']}", TMPDIR=str(TMP_ROOT),
                         TMP=str(TMP_ROOT), TEMP=str(TMP_ROOT), PYTHONDONTWRITEBYTECODE="1")
@@ -142,14 +146,15 @@ exec /usr/bin/python3 "$@"
         self.assertFalse((out / "aggregate.log").read_text().startswith("DUPLEX_HANDOFF_PASS"))
 
     def test_missing_or_wrong_child_marker_fails_closed(self) -> None:
-        rg = self.bin / "rg"
-        rg.write_text(r'''#!/usr/bin/env bash
-if [[ ${FAKE_RG_REJECT:-} == 1 && "$*" == *DUPLEX_HANDOFF_PASS* ]]; then exit 1; fi
-exec /usr/bin/rg "$@"
-''')
-        rg.chmod(0o755)
+        grep = self.bin / "grep"
+        grep.write_text(
+            "#!/usr/bin/env bash\n"
+            "if [[ ${FAKE_GREP_REJECT:-} == 1 && \"$*\" == *DUPLEX_HANDOFF_PASS* ]]; then exit 1; fi\n"
+            f"exec {shlex.quote(self.real_grep)} \"$@\"\n"
+        )
+        grep.chmod(0o755)
         out = self.root / "marker-fails"
-        result = self.invoke(str(out), FAKE_RG_REJECT="1")
+        result = self.invoke(str(out), FAKE_GREP_REJECT="1")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("missing exact PASS marker", result.stdout)
 

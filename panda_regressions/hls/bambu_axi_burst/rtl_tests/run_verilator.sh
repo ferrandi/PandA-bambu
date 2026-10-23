@@ -23,7 +23,7 @@ SIM_JOBS=${SIM_JOBS:-$DEFAULT_SIM_JOBS}
 if [[ ! $SIM_JOBS =~ ^[1-9][0-9]*$ ]]; then
     echo "SIM_JOBS must be a positive integer, got: $SIM_JOBS" >&2; exit 2
 fi
-for tool in python3 verilator rg timeout; do
+for tool in python3 verilator timeout; do
     command -v "$tool" >/dev/null 2>&1 || { echo "missing required tool: $tool" >&2; exit 2; }
 done
 TASK_OUT=$(realpath -m "$1")
@@ -58,13 +58,13 @@ wait_scenario_batch() {
             echo "FAIL scenario $name (status $status); log: $log" >&2
             cat "$log" >&2 || true
             SCENARIO_FAILURES=$((SCENARIO_FAILURES + 1))
-        elif ! rg -q "^DUPLEX_READ PASS CASE=${name}$" "$log"; then
+        elif ! grep -Eq "^DUPLEX_READ PASS CASE=${name}$" "$log"; then
             echo "FAIL scenario $name: missing exact PASS marker; log: $log" >&2
             cat "$log" >&2 || true
             SCENARIO_FAILURES=$((SCENARIO_FAILURES + 1))
         elif [[ "$name" == READY_CREDIT_PROOF ]] && {
-            ! rg -q '^PASS READY_CREDIT_PROOF FULL O=' "$log" ||
-            ! rg -q '^PASS READY_CREDIT_PROOF O=.* full-LOAD-credit-AR-response-drain N=' "$log";
+            ! grep -Eq '^PASS READY_CREDIT_PROOF FULL O=' "$log" ||
+            ! grep -Eq '^PASS READY_CREDIT_PROOF O=.* full-LOAD-credit-AR-response-drain N=' "$log";
         }; then
             echo "FAIL scenario $name: missing positive full-FIFO/credit-release witness; log: $log" >&2
             cat "$log" >&2 || true
@@ -104,7 +104,7 @@ run_one_scenario() {
         cat "$log" >&2 || true
         return 1
     fi
-    if ! rg -q "^DUPLEX_READ PASS CASE=${scenario}$" "$log"; then
+    if ! grep -Eq "^DUPLEX_READ PASS CASE=${scenario}$" "$log"; then
         echo "FAIL scenario $scenario: missing exact PASS marker; log: $log" >&2
         cat "$log" >&2 || true
         return 1
@@ -275,7 +275,7 @@ with open(log_path, "ab") as log:
 if result.returncode == 0:
     sys.exit(f"ERROR: invalid parameters {case_name} unexpectedly passed")
 PY
-    if ! rg -q "$diagnostic" "$log"; then
+    if ! grep -Eq "$diagnostic" "$log"; then
         cat "$log" >&2
         echo "ERROR: invalid parameters $name did not report '$diagnostic'" >&2
         return 1
@@ -312,7 +312,7 @@ for scenario in COUNT_TRUNC_64 COUNT_MAX_64 \
         cat "$log" >&2
         exit 1
     }
-    rg -q "^DUPLEX_READ PASS CASE=${scenario}$" "$log" || {
+    grep -Eq "^DUPLEX_READ PASS CASE=${scenario}$" "$log" || {
         cat "$log" >&2
         echo "ERROR: missing exact PASS marker for $scenario" >&2
         exit 1
@@ -339,7 +339,7 @@ run_range_fallback_case() {
         cat "$log" >&2
         exit 1
     }
-    rg -q "^DUPLEX_READ PASS CASE=$scenario$" "$log" || {
+    grep -Eq "^DUPLEX_READ PASS CASE=$scenario$" "$log" || {
         cat "$log" >&2
         echo "ERROR: missing exact PASS marker for $scenario" >&2
         exit 1

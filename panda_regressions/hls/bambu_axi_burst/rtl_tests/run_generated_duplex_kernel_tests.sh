@@ -37,7 +37,7 @@ if [[ $BAMBU_ARG == */* ]]; then BAMBU=$(realpath -- "$BAMBU_ARG"); else
   [[ -n $BAMBU ]] && BAMBU=$(realpath -- "$BAMBU")
 fi
 [[ -n ${BAMBU:-} && -x $BAMBU ]] || { echo "Bambu executable not found: $BAMBU_ARG" >&2; exit 2; }
-for tool in verilator python3 rg sha256sum timeout; do
+for tool in verilator python3 sha256sum timeout; do
   command -v "$tool" >/dev/null || { echo "required tool missing: $tool" >&2; exit 2; }
 done
 [[ -s $SOURCE && -s $COPY_SOURCE && -s $COPY_TB && -s $PREFIX_SOURCE && -s $TB && -s $OBSERVER && -s $OBSERVER_UNIT_TB && -s $PARALLELISM_CHECKER && -s $HELPERS ]] || { echo "G2/G3 kernel source, observer, unit testbench, checker, or helper is missing" >&2; exit 2; }
@@ -179,7 +179,7 @@ for profile in "${PROFILES[@]}"; do profile_jobs+=("${profile}__prefix"); done
 run_bounded_jobs "$SIM_JOBS" generate_profile "${profile_jobs[@]}"
 for pair in "${profile_jobs[@]}"; do
   profile=${pair%%__*}; kind=${pair#*__}
-  rg -q "^GENERATED_DUPLEX_KERNEL_BUILD PASS PROFILE=$profile KIND=$kind$" "$BURST_JOB_LOG_DIR/$pair.log" || {
+  grep -Eq "^GENERATED_DUPLEX_KERNEL_BUILD PASS PROFILE=$profile KIND=$kind$" "$BURST_JOB_LOG_DIR/$pair.log" || {
     echo "missing generation completion marker for $profile/$kind" >&2; exit 1;
   }
 done
@@ -229,7 +229,7 @@ if ! (cd "$OBSERVER_UNIT_OUT" && TMPDIR="$OBSERVER_UNIT_OUT/tmp" TMP="$OBSERVER_
   cat "$OBSERVER_UNIT_OUT/observer-unit.log" >&2
   echo "duplex load observer unit test failed; see $OBSERVER_UNIT_OUT/observer-unit.log" >&2; exit 1
 fi
-rg -Fqx 'DUPLEX_LOAD_OBSERVER_UNIT PASS IMMEDIATE_COUNT=1 INDEX=0 CYCLE=0 PENDING_COUNT=1 INDEX=7 CYCLE=2' \
+grep -Fqx 'DUPLEX_LOAD_OBSERVER_UNIT PASS IMMEDIATE_COUNT=1 INDEX=0 CYCLE=0 PENDING_COUNT=1 INDEX=7 CYCLE=2' \
   "$OBSERVER_UNIT_OUT/observer-unit.log" || {
   cat "$OBSERVER_UNIT_OUT/observer-unit.log" >&2
   echo "duplex load observer unit test omitted its exact PASS marker" >&2; exit 1;
@@ -256,7 +256,7 @@ run_scenario() {
     rc=0
   else rc=$?; fi
   [[ $rc -eq 0 ]] || { echo "$profile/$scenario failed rc=$rc; see $log" >&2; return "$rc"; }
-  rg -Fqx "$marker PASS CASE=$scenario PROFILE=$profile" "$log" || {
+  grep -Fqx "$marker PASS CASE=$scenario PROFILE=$profile" "$log" || {
     echo "missing exact success marker for $profile/$kind/$scenario; see $log" >&2; return 1;
   }
   if [[ $kind == prefix ]]; then
@@ -277,7 +277,7 @@ run_scenario() {
         WRITE_LONGER|PAGE_SPLITS) expected_aw=5 ;;
       esac
     fi
-    rg -Fqx "DUPLEX_KERNEL_PREFIX_COUNTS CASE=$scenario PROFILE=$profile AR_BURSTS=$expected_ar R_BEATS=$expected_read AW_BURSTS=$expected_aw W_BEATS=$expected_write B_RESPONSES=$expected_aw" "$log" || {
+    grep -Fqx "DUPLEX_KERNEL_PREFIX_COUNTS CASE=$scenario PROFILE=$profile AR_BURSTS=$expected_ar R_BEATS=$expected_read AW_BURSTS=$expected_aw W_BEATS=$expected_write B_RESPONSES=$expected_aw" "$log" || {
       echo "missing or incorrect prefix transaction-count witness for $profile/$scenario; see $log" >&2; return 1;
     }
   fi
@@ -301,7 +301,7 @@ run_bounded_jobs "$DUPLEX_G2_JOBS" run_scenario_job "${scenario_jobs[@]}"
   exit 1
 }
 for profile in "${PROFILES[@]}"; do
-  rg -Fqx "DUPLEX PARALLELISM PASS PROFILE=$profile" "$OUT/parallelism-check.log" || {
+  grep -Fqx "DUPLEX PARALLELISM PASS PROFILE=$profile" "$OUT/parallelism-check.log" || {
     echo "parallelism checker omitted profile $profile" >&2; exit 1;
   }
 done
@@ -316,7 +316,7 @@ for profile in "${PROFILES[@]}"; do
     [[ $kind == copy ]] && local_scenarios+=(COPY_PARALLELISM_256)
     for scenario in "${local_scenarios[@]}"; do
       log="$out/scenarios/$scenario.log"
-      rg -Fqx "$marker PASS CASE=$scenario PROFILE=$profile" "$log" || {
+      grep -Fqx "$marker PASS CASE=$scenario PROFILE=$profile" "$log" || {
         echo "scenario omitted from evidence: $profile/$kind/$scenario" >&2; exit 1;
       }
       (cd "$OUT" && sha256sum "${out#"$OUT/"}/scenarios/$scenario.log") >>"$OUT/scenario-sha256.txt"
@@ -325,7 +325,7 @@ for profile in "${PROFILES[@]}"; do
   out=$(profile_dir "$profile" prefix)
   for scenario in "${PREFIX_CASES[@]}"; do
     log="$out/scenarios/$scenario.log"
-    rg -Fqx "DUPLEX_KERNEL_PREFIX_G2 PASS CASE=$scenario PROFILE=$profile" "$log" || {
+    grep -Fqx "DUPLEX_KERNEL_PREFIX_G2 PASS CASE=$scenario PROFILE=$profile" "$log" || {
       echo "prefix scenario omitted from evidence: $profile/$scenario" >&2; exit 1;
     }
     (cd "$OUT" && sha256sum "${out#"$OUT/"}/scenarios/$scenario.log") >>"$OUT/scenario-sha256.txt"

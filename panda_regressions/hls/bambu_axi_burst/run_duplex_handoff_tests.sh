@@ -18,7 +18,7 @@ bambu_arg=$1
 if [[ $bambu_arg == */* ]]; then bambu=$(realpath "$bambu_arg" 2>/dev/null || true)
 else bambu=$(command -v "$bambu_arg" || true); [[ -z $bambu ]] || bambu=$(realpath "$bambu"); fi
 [[ -n ${bambu:-} && -x $bambu ]] || { echo "Bambu executable not found: $bambu_arg" >&2; exit 2; }
-for tool in python3 sha256sum rg; do command -v "$tool" >/dev/null || { echo "required tool not found: $tool" >&2; exit 2; }; done
+for tool in python3 sha256sum grep; do command -v "$tool" >/dev/null || { echo "required tool not found: $tool" >&2; exit 2; }; done
 [[ -r $checker && -r $effect_checker && -r $burst_checker && -r $helpers && -r $copy_source && -r $independent_source ]] || {
   echo "duplex handoff checker, sources, or parallel helper missing" >&2; exit 2;
 }
@@ -140,7 +140,7 @@ if ! run_bounded_jobs "$requested_jobs" run_profile "${profiles[@]}"; then
   exit 1
 fi
 for case_name in "${profiles[@]}"; do
-  rg -F -x -q "$(profile_marker "$case_name")" "$out/$case_name/aggregate.log" || {
+  grep -F -x -q "$(profile_marker "$case_name")" "$out/$case_name/aggregate.log" || {
     echo "missing exact PASS marker for $case_name" >&2; exit 1;
   }
 done

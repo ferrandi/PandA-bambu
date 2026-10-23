@@ -162,8 +162,8 @@ PY
 if (( BAMBU_RC == 0 )); then
   if [[ $MODE == scheduler-off ]]; then
     find "$OUT/run" -type f \( -name '*.bambuir' -o -name '*.ir' -o -name '*.dot' -o -name '*.gv' \) -print >"$OUT/ir_dot_artifacts.txt"
-    rg -q '\.bambuir$' "$OUT/ir_dot_artifacts.txt" || fail 'scheduler-off capture produced no .bambuir artifact'
-    rg -q '\.(dot|gv)$' "$OUT/ir_dot_artifacts.txt" || fail 'scheduler-off capture produced no DOT artifact'
+    grep -Eq '\.bambuir$' "$OUT/ir_dot_artifacts.txt" || fail 'scheduler-off capture produced no .bambuir artifact'
+    grep -Eq '\.(dot|gv)$' "$OUT/ir_dot_artifacts.txt" || fail 'scheduler-off capture produced no DOT artifact'
   else
     SIM_DIR="$OUT/run/HLS_output/simulation"
     TEST_LOG="$SIM_DIR/testbench.log"
@@ -215,10 +215,10 @@ manifest["descriptor_count_vcd_scope"] = "burst_engine" if declarations else Non
 manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 PY
     then fail 'descriptor_count VCD evidence is malformed or has conflicting declarations'; fi
-    rg -q 'T4B_GOLDEN_PASS' "$TEST_LOG" || fail 'testbench did not report golden-result PASS'
-    rg -q 'Errors[[:space:]]*=[[:space:]]*0([,[:space:]]|$)' "$TEST_LOG" || fail 'testbench transcript reports errors'
-    rg -q '^# End time:' "$BACKEND_LOG" || fail 'ModelSim transcript lacks completion marker'
-    rg -q '<simulation return_value="0">' "$RESULTS" || fail 'Bambu simulation result is not PASS'
+    grep -Eq 'T4B_GOLDEN_PASS' "$TEST_LOG" || fail 'testbench did not report golden-result PASS'
+    grep -Eq 'Errors[[:space:]]*=[[:space:]]*0([,[:space:]]|$)' "$TEST_LOG" || fail 'testbench transcript reports errors'
+    grep -Eq '^# End time:' "$BACKEND_LOG" || fail 'ModelSim transcript lacks completion marker'
+    grep -Eq '<simulation return_value="0">' "$RESULTS" || fail 'Bambu simulation result is not PASS'
     RTL_FILE="$OUT/run/$TOP.v"
     [[ -s $RTL_FILE ]] || fail "generated RTL for top '$TOP' is missing: $RTL_FILE"
     [[ -s $OUT/run/HLS_output/simulation/bambu_testbench.v ]] || fail 'generated simulation RTL is missing'
@@ -299,7 +299,7 @@ for name, wanted in expected.items():
 PY
       then fail "generated burst engine in $RTL_FILE is absent, ambiguous, or has a mismatched B/O/D profile"; fi
     else
-      if rg -q 'MinimalAXI4MasterPipelined' "$RTL_FILE"; then fail "legacy mode unexpectedly generated a burst engine in $RTL_FILE"; fi
+      if grep -Eq 'MinimalAXI4MasterPipelined' "$RTL_FILE"; then fail "legacy mode unexpectedly generated a burst engine in $RTL_FILE"; fi
     fi
     if ! python3 -B "$PARAM_CHECKER" --vcd "$VCD" --manifest "$OUT/manifest.json" --latency "$L" --queue-size "$Q" \
       >"$OUT/effective-params.stdout.log" 2>"$OUT/effective-params.stderr.log"; then

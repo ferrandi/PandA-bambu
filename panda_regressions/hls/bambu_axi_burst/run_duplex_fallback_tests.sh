@@ -30,7 +30,7 @@ else
 fi
 [[ -n ${bambu:-} && -x $bambu ]] || { echo "Bambu executable not found: $bambu_arg" >&2; exit 2; }
 command -v verilator >/dev/null || { echo "Verilator is required" >&2; exit 2; }
-command -v rg >/dev/null || { echo "ripgrep is required to validate scenario markers" >&2; exit 2; }
+command -v grep >/dev/null || { echo "grep is required to validate scenario markers" >&2; exit 2; }
 for tool in python3 sha256sum; do command -v "$tool" >/dev/null || { echo "$tool is required" >&2; exit 2; }; done
 [[ -r $source_file && -r $testbench && -r $checker && -r $helpers ]] || {
   echo "duplex fallback source, testbench, checker, or parallel helper is missing" >&2; exit 2;
@@ -136,7 +136,7 @@ run_profile() {
   fi
   local testbench_log="$profile_dir/HLS_output/simulation/testbench.log"
   [[ -s $testbench_log ]] || { echo "$profile missing testbench log: $testbench_log" >&2; return 1; }
-  if ! rg -F -x -q "$marker" "$testbench_log"; then
+  if ! grep -F -x -q "$marker" "$testbench_log"; then
     echo "$profile missing exact testbench marker: $marker" >&2
     tail -n 80 "$testbench_log" >&2 || true
     return 1

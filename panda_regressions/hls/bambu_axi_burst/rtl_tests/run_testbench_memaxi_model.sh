@@ -84,7 +84,7 @@ else
                 "$VSIM" -c work.tb_testbench_memaxi_model -gWRITE_DELAY="$delay" "+MODE=$MODE" "+NEGATIVE=$test_case" \
                     -do 'run -all; quit -f' >"$LOG" 2>&1 || status=$?
                 printf '%s\n' "$status" >"$LOG.status"
-                rg -Fq "F0_NEGATIVE_START case=$test_case delay=$delay" "$LOG" || {
+                grep -Fq "F0_NEGATIVE_START case=$test_case delay=$delay" "$LOG" || {
                     echo "negative case did not start: case=$test_case delay=$delay (vsim exit=$status)" >&2
                     tail -n 80 "$LOG" >&2
                     exit 1
@@ -97,26 +97,26 @@ else
                     write_wrap) diagnostic='Unsupported AXI write burst type: 2' ;;
                     write_reserved) diagnostic='Unsupported AXI write burst type: 3' ;;
                 esac
-                rg -q "^#? *\\*\\* Fatal: $diagnostic$" "$LOG" || {
+                grep -Eq "^#? *\\*\\* Fatal: $diagnostic$" "$LOG" || {
                     echo "negative case missed exact Fatal diagnostic: case=$test_case delay=$delay expected='$diagnostic' (vsim exit=$status)" >&2
                     tail -n 80 "$LOG" >&2
                     exit 1
                 }
-                fatal_count=$(rg -c '^#? *\*\* Fatal:' "$LOG" || true)
-                if [[ $fatal_count != 1 ]] || rg -q '^#? *\*\* Error:' "$LOG"; then
+                fatal_count=$(grep -Ec '^#? *\*\* Fatal:' "$LOG" || true)
+                if [[ $fatal_count != 1 ]] || grep -Eq '^#? *\*\* Error:' "$LOG"; then
                     echo "negative case emitted additional simulator errors: case=$test_case delay=$delay fatals=$fatal_count (vsim exit=$status)" >&2
                     tail -n 80 "$LOG" >&2
                     exit 1
                 fi
-                rg -q 'memory(/|\.)independent_axi_model' "$LOG" &&
-                    rg -q 'File: .*/TestbenchMEMAXI\.sv' "$LOG" || {
+                grep -Eq 'memory(/|\.)independent_axi_model' "$LOG" &&
+                    grep -Eq 'File: .*/TestbenchMEMAXI\.sv' "$LOG" || {
                     echo "negative case Fatal did not identify the generated model process/file: case=$test_case delay=$delay (vsim exit=$status)" >&2
                     tail -n 80 "$LOG" >&2
                     exit 1
                 }
-                if rg -Fq 'F0 fixture watchdog expired' "$LOG" ||
-                    rg -Fq 'F0_NEGATIVE_DID_NOT_ABORT' "$LOG" ||
-                    rg -Fq 'F0_QUALIFY_PASS' "$LOG"; then
+                if grep -Fq 'F0 fixture watchdog expired' "$LOG" ||
+                    grep -Fq 'F0_NEGATIVE_DID_NOT_ABORT' "$LOG" ||
+                    grep -Fq 'F0_QUALIFY_PASS' "$LOG"; then
                     echo "negative case ended through an invalid path: case=$test_case delay=$delay (vsim exit=$status)" >&2
                     tail -n 80 "$LOG" >&2
                     exit 1
@@ -129,14 +129,14 @@ fi
 
 if [[ $MODE == characterize ]]; then
     for marker in R_STALL_PAYLOAD_CHANGED R_BACKEND_READ_DURING_STALL R_BEAT_HANDSHAKE_COUNT W_COMMIT_DUPLICATION_WHILE_B_STALLED W_COMMIT_COUNT W_BEFORE_AW_ASSOCIATION; do
-        rg -q "F0_EXPECTED_VIOLATION $marker" "$OUT/logs/$MODE.log" || {
+        grep -Eq "F0_EXPECTED_VIOLATION $marker" "$OUT/logs/$MODE.log" || {
             echo "missing required characterization witness '$marker'" >&2
             tail -n 120 "$OUT/logs/$MODE.log" >&2
             exit 1
         }
     done
     for marker in 'F0_OBSERVED AR_NEXT_ACCEPTED_DURING_FINAL_STALL' 'F0_OBSERVED AW_W_DISTINCT_HANDSHAKES' 'F0_CHARACTERIZATION_EXPECTED_DEFECTS'; do
-        rg -q "$marker" "$OUT/logs/$MODE.log" || {
+        grep -Eq "$marker" "$OUT/logs/$MODE.log" || {
             echo "missing required characterization observation '$marker'" >&2
             tail -n 120 "$OUT/logs/$MODE.log" >&2
             exit 1
@@ -148,7 +148,7 @@ if [[ $MODE == characterize ]]; then
         'F0_OBSERVED R_STALL_CASE beat=1 beats=4 same_address_write=1' \
         'F0_OBSERVED R_STALL_CASE beat=3 beats=4 same_address_write=1' \
         'F0_OBSERVED R_STALL_CASE beat=0 beats=1 same_address_write=1'; do
-        rg -q "$marker" "$OUT/logs/$MODE.log" || {
+        grep -Eq "$marker" "$OUT/logs/$MODE.log" || {
             echo "missing required stall witness '$marker'" >&2
             tail -n 120 "$OUT/logs/$MODE.log" >&2
             exit 1
@@ -157,23 +157,23 @@ if [[ $MODE == characterize ]]; then
 else
     for delay in 1 63; do
         LOG="$OUT/logs/$MODE-delay-$delay.log"
-        rg -q 'F0_QUALIFY_PASS' "$LOG" || {
+        grep -Eq 'F0_QUALIFY_PASS' "$LOG" || {
             echo "qualify mode did not emit a pass marker for WRITE_DELAY=$delay" >&2
             tail -n 120 "$LOG" >&2
             exit 1
         }
-        if rg -q 'F0_QUALIFY_FAILURE|F0_EXPECTED_VIOLATION' "$LOG"; then
+        if grep -Eq 'F0_QUALIFY_FAILURE|F0_EXPECTED_VIOLATION' "$LOG"; then
             echo "qualify mode reported a violation for WRITE_DELAY=$delay" >&2
             tail -n 120 "$LOG" >&2
             exit 1
         fi
-        rg -q 'F0_WITNESS_PASS R_MULTI_BEAT_DRAIN' "$LOG" || {
+        grep -Eq 'F0_WITNESS_PASS R_MULTI_BEAT_DRAIN' "$LOG" || {
             echo "qualify mode did not prove the multi-beat read drain for WRITE_DELAY=$delay" >&2
             tail -n 120 "$LOG" >&2
             exit 1
         }
         for order in 0 1 2; do
-            rg -q "F0_WRITE_TIMING_PASS order=$order delay=$delay " "$LOG" || {
+            grep -Eq "F0_WRITE_TIMING_PASS order=$order delay=$delay " "$LOG" || {
                 echo "qualify mode missed write timing order=$order delay=$delay" >&2
                 tail -n 120 "$LOG" >&2
                 exit 1
