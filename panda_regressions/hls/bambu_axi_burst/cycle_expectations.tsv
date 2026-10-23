@@ -9,10 +9,10 @@ sum-o16-n2048	read	2117	bambu_axi_burst_sum_o16.cpp	16	16	256	-	-	-	32
 sum-o1-n2048	read	10245	bambu_axi_burst_sum_o1.cpp	16	1	256	-	-	-	32
 sum-o1-n1024-addr64	read	5125	bambu_axi_burst_sum_o1.cpp	16	1	256	-	-	-	64
 sum-o1-n1024-lat128	read	9221	bambu_axi_burst_sum_o1_lat128.cpp	16	1	256	-	-	-	32
-write-burst-n1024	write	2070	plain_m_axi_write_burst.cpp	-	-	-	16	1	32	32
-write-burst-n2048	write	4118	plain_m_axi_write_burst.cpp	-	-	-	16	1	32	32
-write-burst-n1024-addr64	write	2070	plain_m_axi_write_burst.cpp	-	-	-	16	1	32	64
-duplex-symmetric-n1024	duplex	5174	bambu_axi_burst_duplex.cpp	16	1	64	16	1	32	32
-duplex-asymmetric-n1024	duplex	3150	bambu_axi_burst_duplex.cpp	16	2	64	8	1	16	32
-duplex-copy-symmetric-n1024	duplex	5159	bambu_axi_burst_duplex_copy.cpp	16	1	64	16	1	32	32
-duplex-copy-asymmetric-n1024	duplex	2623	bambu_axi_burst_duplex_copy.cpp	16	2	64	8	1	16	32
+write-burst-n1024	write	1174	plain_m_axi_write_burst.cpp	-	-	-	16	1	32	32
+write-burst-n2048	write	2326	plain_m_axi_write_burst.cpp	-	-	-	16	1	32	32
+write-burst-n1024-addr64	write	1174	plain_m_axi_write_burst.cpp	-	-	-	16	1	32	64
+duplex-symmetric-n1024	duplex	5160	bambu_axi_burst_duplex.cpp	16	1	64	16	1	32	32
+duplex-asymmetric-n1024	duplex	2624	bambu_axi_burst_duplex.cpp	16	2	64	8	1	16	32
+duplex-copy-symmetric-n1024	duplex	5145	bambu_axi_burst_duplex_copy.cpp	16	1	64	16	1	32	32
+duplex-copy-asymmetric-n1024	duplex	2599	bambu_axi_burst_duplex_copy.cpp	16	2	64	8	1	16	32

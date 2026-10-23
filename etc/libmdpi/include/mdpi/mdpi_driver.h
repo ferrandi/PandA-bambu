@@ -41,6 +41,7 @@ extern "C"
    size_t __m_param_size(uint8_t idx);
 
    void __m_sim_start();
+   void __m_sim_preflight_fail();
    unsigned int __m_sim_end();
 
    void __m_exit(int __status);

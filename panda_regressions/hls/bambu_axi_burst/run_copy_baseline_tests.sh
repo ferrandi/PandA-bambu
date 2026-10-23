@@ -96,7 +96,7 @@ run_case() {
     >"$case_dir/artifact-sha256.txt"
 }
 
-run_case copy-burst-two-bundles burst 1
+run_case copy-nonrestrict-two-bundles nonrestrict-two 1
 run_case copy-legacy-two-bundles legacy-two 2
 run_case copy-legacy-shared-bundle legacy-shared 3
 python3 -B "$script_dir/check_copy_baseline_results.py" --results "$out" \

@@ -305,15 +305,43 @@ class CheckerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "does not serialize write_fifo_depth=64"):
             check_case(args)
 
-    def test_positive_copy_fixtures_use_distinct_unrestricted_buffers(self):
+    def _fixture_block(self, source, name):
+        return source.split(f'extern "C" void {name}', 1)[1].split('extern "C"', 1)[0]
+
+    def test_positive_copy_fixtures_state_the_cross_bundle_restrict_contract(self):
+        """A pair of distinct m_axi bundles is coalesced only when the caller states that the two
+        ranges are disjoint: the accepted copy fixtures must carry __restrict on both pointers."""
         source = (pathlib.Path(__file__).parent / "write_compiler_cases" / "write_cases.cpp").read_text()
         for name in ("copy_distinct_buffers", "copy_distinct_buffers_reversed"):
-            block = source.split(f'extern "C" void {name}', 1)[1].split('extern "C"', 1)[0]
-            self.assertNotIn("restrict", block)
+            block = self._fixture_block(source, name)
+            self.assertEqual(block.count("__restrict"), 2, name)
             self.assertIn("int *unused", block)
             self.assertIn("bundle=output", block)
             self.assertIn("bundle=input", block)
             self.assertIn("dst[i] = src[i]", block)
+
+    def test_unused_nonrestrict_write_owner_does_not_block_cross_bundle_copy(self):
+        source = (pathlib.Path(__file__).parent / "write_compiler_cases" / "write_cases.cpp").read_text()
+        block = self._fixture_block(source, "copy_distinct_with_unused_write_owner")
+        self.assertEqual(block.count("__restrict"), 2)
+        self.assertIn("int *unused", block)
+        self.assertIn("port=unused offset=direct bundle=output", block)
+        self.assertIn("port=dst offset=direct bundle=output max_write_burst_length=16", block)
+        self.assertIn("port=src offset=direct bundle=input max_read_burst_length=16", block)
+        gate = (pathlib.Path(__file__).parent / "run_write_compiler_tests.sh").read_text()
+        self.assertIn("run_case copy_distinct_with_unused_write_owner", gate)
+        self.assertIn("--copy --single-write-bundle output", gate)
+
+    def test_unrestricted_copy_fixture_keeps_the_scalar_fallback(self):
+        """The corpus must keep the unrestricted twin, whose cross-bundle bursts are refused."""
+        source = (pathlib.Path(__file__).parent / "write_compiler_cases" / "write_cases.cpp").read_text()
+        block = self._fixture_block(source, "copy_unrestricted_buffers")
+        self.assertNotIn("__restrict", block)
+        self.assertIn("bundle=output", block)
+        self.assertIn("bundle=input", block)
+        self.assertIn("dst[i] = src[i]", block)
+        gate = (pathlib.Path(__file__).parent / "run_write_compiler_tests.sh").read_text()
+        self.assertIn("run_fallback copy_unrestricted_buffers", gate)
 
     def test_same_bundle_read_write_source_is_not_another_bundle_alias_case(self):
         source = (pathlib.Path(__file__).parent / "write_compiler_cases" / "write_cases.cpp").read_text()

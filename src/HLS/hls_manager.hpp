@@ -55,7 +55,7 @@ class SimulationInformation;
 #define FUNC_ARCH_PARM_ATTR_ENUM                                                                                \
    (parm_port)(parm_index)(parm_bundle)(parm_offset)(parm_includes)(parm_typename)(parm_original_typename)(     \
        parm_elem_count)(parm_size_in_bytes)(parm_bank_allocation)(parm_array_dims)(parm_array_partition_types)( \
-       parm_array_partition_factors)(parm_source_restrict)
+       parm_array_partition_factors)(parm_source_restrict)(parm_extent_known)
 #define FUNC_ARCH_IFACE_ATTR_ENUM                                                                                  \
    (iface_name)(iface_global)(iface_mode)(iface_direction)(iface_bitwidth)(iface_alignment)(iface_depth)(          \
        iface_register)(iface_cache_ways)(iface_cache_line_count)(iface_cache_line_size)(                           \

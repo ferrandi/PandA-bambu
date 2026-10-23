@@ -114,6 +114,8 @@ run_case() {
     --memory-allocation-policy=NO_BRAM
     --AXI-burst-type=INCREMENTAL --no-clean --simulate --simulator=VERILATOR
     --debug-classes=InterfaceInfer,BuildVirtualPhi
+    # Unbounded pointer parameters: size the co-simulation image of the streamed memory.
+    --tb-param-size=src:1024 --tb-param-size=dst:1024
     "--generate-tb=$testbench" --bambu-parameter=experimental-m-axi-burst=1
     --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU
     "--extra-cc-options=-DDUPLEX_ALIAS_PROFILE=$profile_id"
