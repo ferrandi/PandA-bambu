@@ -55,3 +55,7 @@ obj/
 panda_dist/
 install/
 documentation/tmp/
+.cache
+/build*/
+**/obj/
+/panda_dist*/

@@ -269,11 +269,22 @@ DesignFlowStep_Status classic_datapath::InternalExec()
    }
 
    /// allocate interconnections
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding interconnections");
-   HLS->Rconn->add_to_SM(HLSMgr, HLS, HLS->datapath);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
+   const bool is_openmp = parameters->isOption(OPT_openmp) && parameters->getOption<bool>(OPT_openmp);
+   const auto use_omp_task_graph =
+       parameters->IsParameter("enable-task") && parameters->GetParameter<int>("enable-task") == 1;
+   bool is_task_graph_datapath = fsymbol.find("task_graph") != std::string::npos;
    auto datapath_cir_module = GetPointer<module_o>(datapath_cir);
-   unsigned int n_elements = datapath_cir_module->get_internal_objects_size();
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding interconnections");
+   if(is_openmp && is_task_graph_datapath && use_omp_task_graph)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Skipping interconnections for omp task graph");
+   }
+   else
+   {
+      HLS->Rconn->add_to_SM(HLSMgr, HLS, HLS->datapath);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
+   }
+   const auto n_elements = datapath_cir_module->get_internal_objects_size();
    if(n_elements == 0)
    {
       structural_objectRef dummy_gate = HLS->datapath->add_module_from_technology_library(

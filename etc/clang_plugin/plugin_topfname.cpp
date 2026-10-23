@@ -180,7 +180,7 @@ namespace llvm
             {
                LLVM_DEBUG(llvm::dbgs() << "Checking function: " << fsymbol << " | " << fname << " (" << F->getLinkage()
                                        << ")\n");
-               if(is_builtin_fn(fsymbol) || is_builtin_fn(fname))
+               if(is_builtin_fn(fsymbol))
                {
                   LLVM_DEBUG(llvm::dbgs() << "  builtin\n");
                   preservedSyms.addSymbol(fsymbol);

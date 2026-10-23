@@ -107,8 +107,9 @@ DesignFlowStep_Status PredicateStatements::InternalExec()
          const auto predicate_stmt = gc ? static_cast<node_stmt*>(gc) : static_cast<node_stmt*>(ga);
          THROW_ASSERT(predicate_stmt, "unexpected condition");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Predicating " + STR(stmt));
-         THROW_ASSERT(!predicate_stmt->predicate || predicate_stmt->predicate->index == true_value->index,
-                      "unexpected condition");
+         // A task-private clone may already contain predicates introduced while
+         // lowering its original callee. Preserve them, including nonconstant
+         // guards; replacing them with true would enable speculative side effects.
          if(!predicate_stmt->predicate)
          {
             predicate_stmt->predicate = true_value;
