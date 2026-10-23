@@ -17,6 +17,10 @@ extern "C" void kernel(unsigned char *data);
 extern "C" void kernel(int data[1]);
 #elif MDPI_EXTENT_CASE == 3
 extern "C" void kernel(unsigned char data[1]);
+#elif MDPI_EXTENT_CASE == 8
+extern "C" void kernel(int (&data)[4]);
+#elif MDPI_EXTENT_CASE == 9 || MDPI_EXTENT_CASE == 10
+extern "C" void kernel(int (*data)[4]);
 #endif
 
 int main() {
@@ -29,6 +33,10 @@ int main() {
   }
 #elif MDPI_EXTENT_CASE == 6
   static int data[2] = {7, 9};
+#elif MDPI_EXTENT_CASE == 8
+  static int data[4] = {7, 9, 11, 13};
+#elif MDPI_EXTENT_CASE == 9 || MDPI_EXTENT_CASE == 10
+  static int data[2][4] = {{1, 2, 3, 4}, {5, 6, 7, 8}};
 #else
   static int data[1] = {7};
 #endif
@@ -47,6 +55,26 @@ int main() {
       return 1;
     }
   }
+#elif MDPI_EXTENT_CASE == 8
+  static const int expected[4] = {7, 9, 11, 14};
+  for (size_t i = 0; i < 4; ++i) {
+    if (data[i] != expected[i]) {
+      std::fprintf(stderr, "MDPI_EXTENT_GOLDEN_FAIL CASE=%d index=%zu value=%d expected=%d\n", MDPI_EXTENT_CASE,
+                   i, data[i], expected[i]);
+      return 1;
+    }
+  }
+#elif MDPI_EXTENT_CASE == 9 || MDPI_EXTENT_CASE == 10
+  static const int expected[2][4] = {{1, 2, 3, 4}, {5, 6, 7, 9}};
+  for (size_t row = 0; row < 2; ++row) {
+    for (size_t column = 0; column < 4; ++column) {
+      if (data[row][column] != expected[row][column]) {
+        std::fprintf(stderr, "MDPI_EXTENT_GOLDEN_FAIL CASE=%d row=%zu column=%zu value=%d expected=%d\n",
+                     MDPI_EXTENT_CASE, row, column, data[row][column], expected[row][column]);
+        return 1;
+      }
+    }
+  }
 #else
   if (data[0] != 8) {
     std::fprintf(stderr, "MDPI_EXTENT_GOLDEN_FAIL CASE=%d value=%u\n", MDPI_EXTENT_CASE,
@@ -57,16 +85,19 @@ int main() {
 #ifdef __BAMBU_SIM__
   const size_t expected_size = MDPI_EXTENT_CASE == 1 ? 4 :
                                MDPI_EXTENT_CASE == 3 ? 1 : MDPI_EXTENT_CASE == 4 ? 38 :
-                               MDPI_EXTENT_CASE == 6 ? 8 : 4;
+                               MDPI_EXTENT_CASE == 6 ? 8 : MDPI_EXTENT_CASE == 8 ? 16 :
+                               MDPI_EXTENT_CASE == 10 ? 32 : 4;
   if (__m_param_size(0) != expected_size) {
     std::fprintf(stderr, "MDPI_EXTENT_GOLDEN_FAIL CASE=%d size=%zu expected=%zu\n", MDPI_EXTENT_CASE,
                  __m_param_size(0), expected_size);
     return 1;
   }
-  if (MDPI_EXTENT_CASE == 6 && data[1] != 9) {
+#if MDPI_EXTENT_CASE == 6
+  if (data[1] != 9) {
     std::fprintf(stderr, "MDPI_EXTENT_GOLDEN_FAIL CASE=%d tail=%d\n", MDPI_EXTENT_CASE, data[1]);
     return 1;
   }
+#endif
 #endif
   std::printf("MDPI_EXTENT_GOLDEN_PASS CASE=%d\n", MDPI_EXTENT_CASE);
   return 0;
