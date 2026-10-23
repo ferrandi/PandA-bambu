@@ -72,6 +72,8 @@ common=(--top-fname=bambu_axi_burst_duplex_fallback --compiler=I386_CLANG16
   --AXI-burst-type=INCREMENTAL --mem-delay-read=64 --mem-delay-write=2 --tb-queue-size=32
   --debug-classes=InterfaceInfer,BuildVirtualPhi,parametric_list_based
   --memory-allocation-policy=NO_BRAM --distram-threshold=0 --clock-period=3.33
+  # Unbounded pointer parameter: size the co-simulation image of the streamed memory.
+  --tb-param-size=data:16384
   --no-clean --simulate --simulator=VERILATOR "--generate-tb=$testbench"
   --tb-param-size=data:16384 --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU)
 

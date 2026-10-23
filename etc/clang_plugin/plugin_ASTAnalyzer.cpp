@@ -1568,6 +1568,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
       parm_attrs[key_loc_t("bundle", SourceLocation())] = ifaceBundle;
       parm_attrs[key_loc_t("source_restrict", SourceLocation())] =
           parmDecl->getType().isRestrictQualified() ? "1" : "0";
+      parm_attrs[key_loc_t("extent_known", SourceLocation())] = "0";
       auto& bundle_attrs = func_attrs.ifaces.bundles[ifaceBundle];
       bundle_attrs[key_loc_t("name", SourceLocation())] = ifaceBundle;
       const auto burst_mode = p.attrs.find(key_loc_t("mode", SourceLocation()));
@@ -1871,6 +1872,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          const auto DT = cast<DecayedType>(argType)->getOriginalType().IgnoreParens();
          if(isa<ConstantArrayType>(DT))
          {
+            parm_attrs[key_loc_t("extent_known", SourceLocation())] = "1";
             parmSizeInBytes = std::to_string(getInterfaceTypeSizeInBytes(parmDecl->getLocation(), DT));
             const auto requestedIfaceMode = ifaceMode;
             const auto partitionedScalarIface = IsScalarPartitionInterfaceMode(requestedIfaceMode);

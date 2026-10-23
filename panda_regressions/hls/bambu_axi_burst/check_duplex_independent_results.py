@@ -247,8 +247,12 @@ def check_run_inventory(run_dir: Path) -> None:
     entries = list(run_dir.iterdir())
     need(all(not path.is_symlink() for path in entries), "run directory contains a symlink")
     children = {path.name for path in entries if path.is_dir()}
+    # The gate keeps its scratch TMPDIR ("tmp") inside the run directory (see the gate's
+    # "mkdir \"$out/job_logs\" \"$out/tmp\" line), so it belongs to the expected inventory.
     expected = set(PROFILE_DATA) | {"job_logs"}
-    need(children == expected,
+    # The gate keeps its scratch TMPDIR ("tmp") inside the run directory (its
+    # "mkdir \"$out/job_logs\" \"$out/tmp\" line), so it is tolerated; nothing else is.
+    need(children in (expected, expected | {"tmp"}),
          f"run directory inventory mismatch: expected {sorted(expected)}, got {sorted(children)}")
     need((run_dir / "job_logs").is_dir() and not (run_dir / "job_logs").is_symlink(),
          "runner-owned job_logs directory is missing or invalid")

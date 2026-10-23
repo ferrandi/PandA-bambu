@@ -15,15 +15,36 @@ extern "C" void write_nonpositive_bound(int *dst, int n) {
   for (int i = 0; i < n; ++i) dst[i] = i;
 }
 
-extern "C" void copy_distinct_buffers(int *dst, const int *src, int *unused, int n) {
+// The two bundles address different buffers, and the compiler only accepts that claim when the
+// signature states it: without __restrict the ranges may overlap, so the burst engines stay
+// inactive and the scalar interface is kept (see cross_bundle_burst_is_disjoint).
+extern "C" void copy_distinct_buffers(int *__restrict dst, const int *__restrict src, int *unused, int n) {
 #pragma HLS interface mode=m_axi port=dst offset=direct bundle=output max_write_burst_length=16
 #pragma HLS interface mode=m_axi port=src offset=direct bundle=input max_read_burst_length=16
   for (int i = 0; i < n; ++i) dst[i] = src[i];
 }
 
-extern "C" void copy_distinct_buffers_reversed(const int *src, int *dst, int *unused, int n) {
+extern "C" void copy_distinct_buffers_reversed(const int *__restrict src, int *__restrict dst, int *unused, int n) {
 #pragma HLS interface mode=m_axi port=src offset=direct bundle=input max_read_burst_length=16
 #pragma HLS interface mode=m_axi port=dst offset=direct bundle=output max_write_burst_length=16
+  for (int i = 0; i < n; ++i) dst[i] = src[i];
+}
+
+extern "C" void copy_distinct_with_unused_write_owner(int *__restrict dst, const int *__restrict src, int *unused,
+                                                       int n) {
+#pragma HLS interface mode=m_axi port=dst offset=direct bundle=output max_write_burst_length=16
+#pragma HLS interface mode=m_axi port=src offset=direct bundle=input max_read_burst_length=16
+#pragma HLS interface mode=m_axi port=unused offset=direct bundle=output
+  for (int i = 0; i < n; ++i) dst[i] = src[i];
+}
+
+// The unrestricted twin of the accepted pair. The two bundles are still distinct in the source,
+// but nothing proves that their ranges are disjoint, so both directions must keep the scalar
+// m_axi interface: the read burst would prefetch values that in-order semantics require to
+// observe the stores of previous iterations.
+extern "C" void copy_unrestricted_buffers(int *dst, const int *src, int *unused, int n) {
+#pragma HLS interface mode=m_axi port=dst offset=direct bundle=output max_write_burst_length=16
+#pragma HLS interface mode=m_axi port=src offset=direct bundle=input max_read_burst_length=16
   for (int i = 0; i < n; ++i) dst[i] = src[i];
 }
 

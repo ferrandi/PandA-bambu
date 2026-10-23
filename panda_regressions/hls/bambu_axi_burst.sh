@@ -19,6 +19,16 @@ fi
 parallelism=$BURST_PARALLELISM
 mantis_args=("${BURST_NORMALIZED_ARGS[@]}")
 out_root=$BURST_OUTPUT
+
+# --no-clean is forwarded to Mantis, but it must also hold back this script's own cleanup: the
+# RTL, the intermediates, the auxiliary logs and the helper results it deletes are exactly the
+# artifacts the caller asked to keep.
+retain_artifacts=0
+for mantis_arg in "${mantis_args[@]}"; do
+  if [[ $mantis_arg == --no-clean ]]; then
+    retain_artifacts=1
+  fi
+done
 verilator_jobs=${BURST_VERILATOR_JOBS:-2}
 if [[ ! $verilator_jobs =~ ^[1-9][0-9]*$ ]]; then
   echo "BURST_VERILATOR_JOBS must be a positive integer, got: $verilator_jobs" >&2
@@ -176,6 +186,9 @@ fi
 
 # Mantis puts this configuration directly below out_<suffix>. Restrict the
 # canonical-file walk to its case tree; the suite report is at the root.
+if (( retain_artifacts )); then
+  printf 'AXI_BURST_RETAIN_ARTIFACTS: --no-clean given, keeping Mantis case trees and helper scratch\n'
+else
 cleanup_mantis_cases "$out/AXI-BURST"
 rm -rf -- \
   "$scratch/jobs" "$scratch/tmp" \
@@ -188,4 +201,5 @@ rm -rf -- \
   "$scratch/rtl-write-engine" \
   "$scratch/out_axi_core_vlog_portability" \
   "$scratch/generated-kernel" "$scratch/wrapper-rid"
+fi
 printf 'AXI burst regression PASS: %s\n' "$scratch"

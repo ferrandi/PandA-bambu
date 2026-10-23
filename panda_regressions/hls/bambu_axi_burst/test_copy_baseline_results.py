@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Negative offline tests for the copy-baseline artifact gate."""
 import csv
+import contextlib
 import hashlib
 import os
 from pathlib import Path
@@ -97,12 +98,32 @@ class CopyBaselineGateTests(unittest.TestCase):
             "".join(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.absolute()}\n"
                     for path in artifacts), encoding="utf-8")
 
+    @contextlib.contextmanager
+    def _coalesced_case(self):
+        """Re-cast the first case as a coalesced (burst) profile to keep the burst-shape
+        validation covered: the shipped baseline matrix has no coalesced two-bundle case
+        because the non-restrict pair must fall back."""
+        case = self.rows[0]["case"]
+        original = checker.CASES[case]
+        checker.CASES[case] = ("burst", original[1], original[2], original[3])
+        try:
+            self._rebuild_case(self.rows[0])
+            yield
+        finally:
+            checker.CASES[case] = original
+            self._rebuild_case(self.rows[0])
+
+    def _rebuild_case(self, row):
+        shutil.rmtree(self.results / row["case"], ignore_errors=True)
+        self._build_case(row, 100)
+
     def _check_row(self, index=0):
         return checker.check_case(self.results, self.rows[index], self.source, self.testbench,
                                   self.bambu, self.settings, self.plugin)
 
     def test_positive_profiles_have_complete_artifacts(self):
-        self.assertEqual([self._check_row(index) for index in range(3)], [5158, 66565, 69634])
+        self.assertEqual([self._check_row(index) for index in range(3)],
+                         [int(row["cycles"]) for row in self.rows])
 
     def test_missing_xml_is_rejected(self):
         (self.results / self.rows[0]["case"] / "bambu_results.xml").unlink()
@@ -117,7 +138,9 @@ class CopyBaselineGateTests(unittest.TestCase):
 
     def test_mutated_xml_is_rejected(self):
         xml = self.results / self.rows[0]["case"] / "bambu_results.xml"
-        xml.write_text(xml.read_text().replace("5158", "5159"), encoding="utf-8")
+        cycles = self.rows[0]["cycles"]
+        xml.write_text(xml.read_text().replace(cycles, str(int(cycles) + 1)),
+                         encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "artifact digest mismatch"):
             self._check_row()
 
@@ -148,12 +171,13 @@ class CopyBaselineGateTests(unittest.TestCase):
             self._check_row()
 
     def test_write_engine_wrong_widths_are_rejected(self):
-        rtl = self.results / self.rows[0]["case"] / "kernel.v"
-        rtl.write_text(rtl.read_text().replace(".BITSIZE_m_axi_wdata(32)", ".BITSIZE_m_axi_wdata(16)"),
-                       encoding="utf-8")
-        self._write_manifest(self.results / self.rows[0]["case"])
-        with self.assertRaisesRegex(ValueError, "required B/O/F/width profile"):
-            self._check_row()
+        with self._coalesced_case():
+            rtl = self.results / self.rows[0]["case"] / "kernel.v"
+            rtl.write_text(rtl.read_text().replace(".BITSIZE_m_axi_wdata(32)", ".BITSIZE_m_axi_wdata(16)"),
+                           encoding="utf-8")
+            self._write_manifest(self.results / self.rows[0]["case"])
+            with self.assertRaisesRegex(ValueError, "required B/O/F/width profile"):
+                self._check_row()
 
     def test_copy_maxn_must_match_source_and_testbench(self):
         self.testbench.write_text(self.testbench.read_text().replace(
@@ -195,7 +219,7 @@ class CopyBaselineGateTests(unittest.TestCase):
         original = self.expectations.read_text(encoding="utf-8")
         for invalid in ("PENDING", "0", "-1", ""):
             with self.subTest(cycles=invalid):
-                text = original.replace("\t5158\t", f"\t{invalid}\t")
+                text = original.replace(f"\t{self.rows[0]['cycles']}\t", f"\t{invalid}\t")
                 self.expectations.write_text(text, encoding="utf-8")
                 expected_error = "incomplete expectation" if not invalid else "cycle signature must be a positive integer"
                 with self.assertRaisesRegex(ValueError, expected_error):
@@ -210,14 +234,15 @@ class CopyBaselineGateTests(unittest.TestCase):
 
     def test_case_provenance_must_match_case_directory(self):
         path = self.results / self.rows[0]["case"] / "provenance.txt"
-        path.write_text(path.read_text().replace("case=copy-burst-two-bundles",
+        path.write_text(path.read_text().replace(f"case={self.rows[0]['case']}",
                                                 "case=copy-legacy-two-bundles"), encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "case provenance identity"):
             self._check_row()
 
     def test_wrong_signature_is_rejected(self):
         row = dict(self.rows[0], cycles="101")
-        with self.assertRaisesRegex(ValueError, "expected 101 cycles, observed 5158"):
+        with self.assertRaisesRegex(ValueError,
+                                  f"expected 101 cycles, observed {self.rows[0]['cycles']}"):
             checker.check_case(self.results, row, self.source, self.testbench,
                                self.bambu, self.settings, self.plugin)
 
@@ -235,30 +260,32 @@ class CopyBaselineGateTests(unittest.TestCase):
             checker.read_rows(self.expectations, self.source, self.testbench)
 
     def test_profile_parameters_split_across_instances_are_rejected(self):
-        rtl = self.results / self.rows[0]["case"] / "kernel.v"
-        rtl.write_text(
-            "module kernel(input p_m_axi_input_araddr, input p_m_axi_output_awaddr);\n"
-            "wire burst_araddr; wire burst_awaddr;\n"
-            "assign p_m_axi_input_araddr = burst_araddr; assign p_m_axi_output_awaddr = burst_awaddr;\n"
-            "MinimalAXI4MasterPipelined #(.B_MAX(16), .MAX_OUTSTANDING(1)) read_engine (.m_axi_araddr(burst_araddr));\n"
-            "MinimalAXI4MasterPipelined #(.FIFO_DEPTH(32)) second_read_engine ();\n"
-            "MinimalAXI4MasterPipelinedWrite #(.B_MAX(16), .MAX_OUTSTANDING(1), .FIFO_DEPTH(32)) write_engine (.m_axi_awaddr(burst_awaddr));\n"
-            "wire configure_read; wire burst_read; wire configure_write; wire store_write;\nendmodule\n",
-            encoding="utf-8")
-        self._write_manifest(self.results / self.rows[0]["case"])
-        with self.assertRaisesRegex(ValueError, "expected exactly one MinimalAXI4MasterPipelined instance"):
-            self._check_row()
+        with self._coalesced_case():
+            rtl = self.results / self.rows[0]["case"] / "kernel.v"
+            rtl.write_text(
+                "module kernel(input p_m_axi_input_araddr, input p_m_axi_output_awaddr);\n"
+                "wire burst_araddr; wire burst_awaddr;\n"
+                "assign p_m_axi_input_araddr = burst_araddr; assign p_m_axi_output_awaddr = burst_awaddr;\n"
+                "MinimalAXI4MasterPipelined #(.B_MAX(16), .MAX_OUTSTANDING(1)) read_engine (.m_axi_araddr(burst_araddr));\n"
+                "MinimalAXI4MasterPipelined #(.FIFO_DEPTH(32)) second_read_engine ();\n"
+                "MinimalAXI4MasterPipelinedWrite #(.B_MAX(16), .MAX_OUTSTANDING(1), .FIFO_DEPTH(32)) write_engine (.m_axi_awaddr(burst_awaddr));\n"
+                "wire configure_read; wire burst_read; wire configure_write; wire store_write;\nendmodule\n",
+                encoding="utf-8")
+            self._write_manifest(self.results / self.rows[0]["case"])
+            with self.assertRaisesRegex(ValueError, "expected exactly one MinimalAXI4MasterPipelined instance"):
+                self._check_row()
 
     def test_extra_malformed_write_engine_instance_is_rejected(self):
-        rtl = self.results / self.rows[0]["case"] / "kernel.v"
-        rtl.write_text(rtl.read_text().replace(
-            "wire configure_read;",
-            "MinimalAXI4MasterPipelinedWrite #(.B_MAX(16)) broken_writer ();\nwire configure_read;"),
-            encoding="utf-8")
-        self._write_manifest(self.results / self.rows[0]["case"])
-        with self.assertRaisesRegex(ValueError,
-                                    "expected exactly one MinimalAXI4MasterPipelinedWrite instance"):
-            self._check_row()
+        with self._coalesced_case():
+            rtl = self.results / self.rows[0]["case"] / "kernel.v"
+            rtl.write_text(rtl.read_text().replace(
+                "wire configure_read;",
+                "MinimalAXI4MasterPipelinedWrite #(.B_MAX(16)) broken_writer ();\nwire configure_read;"),
+                encoding="utf-8")
+            self._write_manifest(self.results / self.rows[0]["case"])
+            with self.assertRaisesRegex(ValueError,
+                                        "expected exactly one MinimalAXI4MasterPipelinedWrite instance"):
+                self._check_row()
 
 
 if __name__ == "__main__":

@@ -37,6 +37,9 @@ COMMON_ARGS = (
     "--device-name=xcu250,-2L,figd2104", "--AXI-burst-type=INCREMENTAL",
     "--mem-delay-read=64", "--mem-delay-write=2", "--tb-queue-size=32",
     "--memory-allocation-policy=NO_BRAM", "--distram-threshold=0", "--clock-period=3.33",
+    # The streamed buffers are unbounded pointers in the fixture: the co-simulation image of
+    # the pointed memory must be sized by the gate, sized like the testbench buffers.
+    "--tb-param-size=src:16384", "--tb-param-size=dst:16384",
     "--no-clean", "--simulate", "--simulator=VERILATOR", "--extra-cc-options=-DNDEBUG",
     "--extra-cc-options=-DBAMBU",
 )

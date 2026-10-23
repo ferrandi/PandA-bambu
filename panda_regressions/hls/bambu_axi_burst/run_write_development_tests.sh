@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Manual development-only AXI write-burst tests; deliberately not part of CI.
-# Usage: run_write_development_tests.sh {offline|compiler|g2|all} BAMBU OUTPUT_DIR
+# Usage: run_write_development_tests.sh {offline|compiler|mdpi-extent|g2|all} BAMBU OUTPUT_DIR
 #        run_write_development_tests.sh handoff BAMBU BASELINE_RUN1 BASELINE_RUN2 OUTPUT_DIR
 set -Eeuo pipefail
 
@@ -31,7 +31,7 @@ else
   bambu_arg=$2
   out_arg=$3
 fi
-case "$mode" in offline|compiler|g2|all|handoff) ;; *) echo "invalid mode: $mode" >&2; exit 2 ;; esac
+case "$mode" in offline|compiler|mdpi-extent|g2|all|handoff) ;; *) echo "invalid mode: $mode" >&2; exit 2 ;; esac
 
 if [[ $bambu_arg == */* ]]; then
   bambu=$(realpath "$bambu_arg" 2>/dev/null || true)
@@ -132,6 +132,13 @@ fi
 if [[ $mode == g2 || $mode == all ]]; then
   export BURST_G2_SIM_OUTSIDE_SANDBOX=1
 fi
+if [[ $mode == mdpi-extent ]]; then
+  if [[ ${MDPI_EXTENT_TESTS_OUTSIDE_SANDBOX:-} != 1 ]]; then
+    echo "mdpi-extent requires MDPI_EXTENT_TESTS_OUTSIDE_SANDBOX=1 and must run outside the sandbox" >&2
+    exit 2
+  fi
+  export MDPI_EXTENT_TESTS_OUTSIDE_SANDBOX=1
+fi
 if [[ -e $out_arg || -L $out_arg ]]; then
   echo "output directory must be fresh and not a symlink: $out_arg" >&2
   exit 2
@@ -160,6 +167,13 @@ run_compiler() {
   bash "$script_dir/run_duplex_fast_store_ack_tests.sh" "$bambu" "$compiler_dir/duplex-fast-store-ack"
 }
 
+run_mdpi_extent() {
+  local extent_dir="$out_root/mdpi-extent"
+  mkdir -p "$extent_dir/tmp"
+  export TMPDIR="$extent_dir/tmp" TMP="$extent_dir/tmp" TEMP="$extent_dir/tmp"
+  bash "$script_dir/run_mdpi_extent_tests.sh" "$bambu" "$extent_dir/results"
+}
+
 run_g2() {
   local g2_dir="$out_root/g2"
   mkdir -p "$g2_dir/tmp"
@@ -174,6 +188,7 @@ run_g2() {
 case "$mode" in
   offline) run_offline ;;
   compiler) run_compiler ;;
+  mdpi-extent) run_mdpi_extent ;;
   g2) run_g2 ;;
   all)
     run_offline

@@ -74,6 +74,9 @@ common=(--top-fname=kernel --compiler=I386_CLANG16 --generate-interface=INFER
   --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL
   --mem-delay-read=64 --mem-delay-write=2 --tb-queue-size=32
   --memory-allocation-policy=NO_BRAM --distram-threshold=0 --clock-period=3.33
+  # The fixtures declare the streamed data as unbounded pointers, so the extent of the memory
+  # behind them is not visible to the back-end; size the co-simulation image explicitly.
+  --tb-param-size=src:16384 --tb-param-size=dst:16384
   --no-clean --simulate --simulator=VERILATOR "--generate-tb=$testbench"
   --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU)
 

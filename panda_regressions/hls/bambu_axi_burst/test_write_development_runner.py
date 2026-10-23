@@ -31,6 +31,8 @@ class DevelopmentRunnerTests(unittest.TestCase):
             "run_frontend_compatibility_tests.sh",
             "run_source_restrict_provenance_tests.sh",
             "run_duplex_fast_store_ack_tests.sh",
+            "run_mdpi_extent_tests.sh",
+            "parallel_helpers.sh",
             "test_write_compiler_artifacts.py",
             "check_copy_baseline_results.py",
             "copy_baseline.cpp",
@@ -53,7 +55,7 @@ class DevelopmentRunnerTests(unittest.TestCase):
         self.bin_dir.mkdir()
         self.calls = self.scratch / "calls.log"
         self._stub("python3", "printf 'python3|%s|%s|%s|%s|%s|%s\\n' \"$TMPDIR\" \"$TMP\" \"$TEMP\" \"${BURST_G2_SIM_OUTSIDE_SANDBOX:-}\" \"${BURST_TEST_TMPDIR:-}\" \"$*\" >>\"$CALL_LOG\"\n")
-        self._stub("bash", "printf 'bash|%s|%s|%s|%s|%s|%s\\n' \"$TMPDIR\" \"$TMP\" \"$TEMP\" \"${BURST_G2_SIM_OUTSIDE_SANDBOX:-}\" \"${BURST_TEST_TMPDIR:-}\" \"$*\" >>\"$CALL_LOG\"\nif [[ $* == *run_source_restrict_provenance_tests.sh* ]]; then\n  [[ ${SOURCE_RESTRICT_FAIL:-0} != 1 ]] || exit 23\n  output=${!#}\n  mkdir -p \"$output\"\n  printf 'SOURCE-RESTRICT-PROVENANCE PASS: 4 compiler cases\\nSOURCE_RESTRICT_PROVENANCE OUT=%s\\n' \"$output\" >\"$output/aggregate.log\"\nfi\n")
+        self._stub("bash", "printf 'bash|%s|%s|%s|%s|%s|%s|%s\\n' \"$TMPDIR\" \"$TMP\" \"$TEMP\" \"${BURST_G2_SIM_OUTSIDE_SANDBOX:-}\" \"${MDPI_EXTENT_TESTS_OUTSIDE_SANDBOX:-}\" \"${BURST_TEST_TMPDIR:-}\" \"$*\" >>\"$CALL_LOG\"\nif [[ $* == *run_source_restrict_provenance_tests.sh* ]]; then\n  [[ ${SOURCE_RESTRICT_FAIL:-0} != 1 ]] || exit 23\n  output=${!#}\n  mkdir -p \"$output\"\n  printf 'SOURCE-RESTRICT-PROVENANCE PASS: 4 compiler cases\\nSOURCE_RESTRICT_PROVENANCE OUT=%s\\n' \"$output\" >\"$output/aggregate.log\"\nfi\n")
         self.bambu = self.scratch / "installed/bin/bambu"
         self.bambu.parent.mkdir(parents=True)
         self.bambu.write_text("#!/bin/sh\nexit 0\n")
@@ -79,6 +81,7 @@ class DevelopmentRunnerTests(unittest.TestCase):
         env = self.env.copy()
         if outside_sandbox:
             env["BURST_G2_SIM_OUTSIDE_SANDBOX"] = "1"
+            env["MDPI_EXTENT_TESTS_OUTSIDE_SANDBOX"] = "1"
         return subprocess.run(
             ["/bin/bash", str(self.script_dir / RUNNER.name), mode, str(self.bambu), *map(str, extra_args), str(output)],
             cwd=self.export,
@@ -135,6 +138,25 @@ class DevelopmentRunnerTests(unittest.TestCase):
         self.assertFalse(output.exists())
         self.assertIn("BURST_G2_SIM_OUTSIDE_SANDBOX=1", refused.stderr)
         self.assertEqual(self._calls(), [])
+
+    def test_mdpi_extent_dispatches_the_manual_simulation_runner(self):
+        output = self.scratch / "mdpi-extent-output"
+        refused = self._run("mdpi-extent", output)
+        self.assertNotEqual(refused.returncode, 0)
+        self.assertIn("MDPI_EXTENT_TESTS_OUTSIDE_SANDBOX=1", refused.stderr)
+        self.assertFalse(output.exists())
+        self.assertEqual(self._calls(), [])
+
+        result = self._run("mdpi-extent", output, outside_sandbox=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = self._calls()
+        self.assertEqual(len(calls), 1)
+        self.assertTrue(calls[0].startswith("bash|"))
+        self.assertIn("run_mdpi_extent_tests.sh", calls[0])
+        fields = calls[0].split("|", 6)
+        self.assertTrue(fields[6].endswith(str(output / "mdpi-extent/results")))
+        self.assertEqual(fields[1:4], [str(output / "mdpi-extent/tmp")] * 3)
+        self.assertEqual(fields[5], "1")
 
     def test_all_dispatches_compiler_then_all_three_g2_tops(self):
         output = self.scratch / "all-output"
