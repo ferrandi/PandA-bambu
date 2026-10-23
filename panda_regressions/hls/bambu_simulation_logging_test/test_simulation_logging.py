@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 Politecnico di Milano
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 """Offline integration checks for the shared simulation logging wrapper.
 
 The copier is the record_output tool of the distribution (built from
