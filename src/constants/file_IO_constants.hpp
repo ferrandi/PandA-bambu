@@ -56,4 +56,23 @@ constexpr auto SHELL_CST_record_output =
 }
 )sh";
 
+/// Tail that the generated command scripts append after a command whose
+/// output was piped through record_output: it saves both pipeline statuses
+/// and it never hides the copier failure. The producer status wins when it
+/// is not zero, otherwise the copier status is returned, so a log that
+/// could not be completely written is never judged as a success, exactly
+/// like run_logged does in the simulation and backend scripts. The copier
+/// keeps draining the input, therefore its failure cannot be observed
+/// through a SIGPIPE on the producer anymore and it must be checked.
+constexpr auto SHELL_CST_record_output_status =
+    R"sh(pipeline_status=("${PIPESTATUS[@]}")
+if [ "${pipeline_status[1]}" -ne 0 ]; then
+  echo "ERROR: log writer failed (${pipeline_status[1]}): the log may be incomplete" 1>&2
+fi
+if [ "${pipeline_status[0]}" -ne 0 ]; then
+  exit "${pipeline_status[0]}"
+fi
+exit "${pipeline_status[1]}"
+)sh";
+
 #endif

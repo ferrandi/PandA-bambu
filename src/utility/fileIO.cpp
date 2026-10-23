@@ -213,7 +213,7 @@ int PandaSystem(const ParameterConstRef& Param, const std::string& system_comman
    script_file << "\n";
    if(live_console_copy)
    {
-      script_file << "exit ${PIPESTATUS[0]}\n";
+      script_file << SHELL_CST_record_output_status;
    }
    script_file.close();
    const std::string command = "bash -f " + script_path.string();
