@@ -76,7 +76,7 @@ for case_name in "${cases[@]}"; do
     echo "range-guard probe missing VCD trace for $case_name" >&2; exit 1;
   }
 done
-[[ $(rg -F -c 'DUPLEX_ALIAS_RANGE_GUARD_PASS CASES=1 NO_AXI_HANDSHAKES=1' "$out/probe.log") == ${#cases[@]} ]] || {
+[[ $(grep -F -c 'DUPLEX_ALIAS_RANGE_GUARD_PASS CASES=1 NO_AXI_HANDSHAKES=1' "$out/probe.log") == ${#cases[@]} ]] || {
   echo "range-guard probe did not complete exactly ${#cases[@]} isolated cases" >&2
   cat "$out/probe.log" >&2 || true
   exit 1
@@ -92,7 +92,7 @@ if [[ $address_bits == 64 ]]; then
   expected+=('DUPLEX_ALIAS_RANGE_PASS CASE=high-bit-valid-disjoint ARLEN=15 ARADDR=0000000080001000')
 fi
 for marker in "${expected[@]}"; do
-  rg -F -x -q -- "$marker" "$out/probe.log" || {
+  grep -F -x -q -- "$marker" "$out/probe.log" || {
     echo "range-guard probe missing marker: $marker" >&2
     cat "$out/probe.log" >&2 || true
     exit 1

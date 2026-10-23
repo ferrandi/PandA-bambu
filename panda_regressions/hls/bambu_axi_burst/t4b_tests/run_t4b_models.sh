@@ -138,7 +138,7 @@ run_sim() {
     tail -n 100 "$log" >&2
     return 1
   }
-  rg -q 'T4B_(N1|N1B) PASS' "$log" || {
+  grep -Eq 'T4B_(N1|N1B) PASS' "$log" || {
     echo "missing PASS summary in $log" >&2
     tail -n 100 "$log" >&2
     return 1

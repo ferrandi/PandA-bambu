@@ -17,7 +17,6 @@ if [[ ${BURST_DUPLEX_SIM_OUTSIDE_SANDBOX:-} != 1 ]]; then
     exit 2
 fi
 command -v verilator >/dev/null 2>&1 || { echo "verilator is required" >&2; exit 2; }
-command -v rg >/dev/null 2>&1 || { echo "rg is required" >&2; exit 2; }
 DEFAULT_SIM_JOBS=$(nproc 2>/dev/null || echo 4)
 ((DEFAULT_SIM_JOBS > 16)) && DEFAULT_SIM_JOBS=16
 SIM_JOBS=${SIM_JOBS:-$DEFAULT_SIM_JOBS}
@@ -87,7 +86,7 @@ run_profile_cases() {
             echo "duplex-core scenario failed: $case_name (profile=$profile)" >&2
             exit 1
         }
-        if ! rg -q "^DUPLEX_CORES PASS CASE=$case_name " "$log"; then
+        if ! grep -Eq "^DUPLEX_CORES PASS CASE=$case_name " "$log"; then
             cat "$log" >&2
             echo "missing exact PASS marker for $case_name" >&2
             exit 1

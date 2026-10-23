@@ -157,7 +157,7 @@ PY
 sha256sum "$RTL" "$LIB" >>"$TASK_OUT/provenance.txt"
 printf 'generated_top=%s\n' "$(basename "$RTL" .v)" >>"$TASK_OUT/provenance.txt"
 
-if ! rg -q 'MinimalAXI4MasterPipelinedWrite' "$RTL"; then
+if ! grep -Eq 'MinimalAXI4MasterPipelinedWrite' "$RTL"; then
     echo "writer hierarchy missing; refusing to simulate fallback/legacy path" >&2; exit 2
 fi
 TOP=$(sed -nE "s/^module[[:space:]]+($TOP_ARG|kernel)[[:space:]]*\\(.*/\\1/p" "$RTL" | tail -n 1)
@@ -168,7 +168,7 @@ TB_DEFINES=("+define+GENERATED_TOP=$TOP")
 # (any outstanding value) drives the seed operand instead.
 if [[ "$TOP_ARG" != write_count_seed* ]]; then
     TB_DEFINES+=(+define+UNUSED_BUNDLE_CASE)
-    if rg -q '^\s*input\s+(\[[^]]+\]\s*)?unused\s*;' "$RTL"; then
+    if grep -Eq '^[[:space:]]*input[[:space:]]+(\[[^]]+\][[:space:]]*)?unused[[:space:]]*;' "$RTL"; then
         TB_DEFINES+=(+define+GENERATED_UNUSED_PORT)
     fi
 fi
@@ -180,7 +180,7 @@ if ! verilator --binary -j "$SIM_JOBS" --timing --assert --public-flat-rw -Wno-f
     exit 1
 fi
 timeout 180s "$TASK_OUT/verilator_obj/V$TB_TOP" | tee "$TASK_OUT/simulation.log"
-rg -q "^GENERATED_WRITE_KERNEL_G2_PASS .*outstanding_profile=$WRITE_OUTSTANDING " "$TASK_OUT/simulation.log" || {
+grep -Eq "^GENERATED_WRITE_KERNEL_G2_PASS .*outstanding_profile=$WRITE_OUTSTANDING " "$TASK_OUT/simulation.log" || {
     echo "missing G2 pass marker for WRITE_OUTSTANDING=$WRITE_OUTSTANDING" >&2; exit 1;
 }
 echo "GENERATED_WRITE_KERNEL_G2_PASS: $TASK_OUT"
