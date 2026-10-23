@@ -2275,7 +2275,9 @@ namespace
                            header->list_of_succ.end(),
                    "Runtime duplex loop entry/exit CFG is not canonical");
       const auto preheader_branch = GetPointerS<multi_way_if_stmt>(preheader->CGetStmtList().back());
+#if HAVE_ASSERTS
       const auto header_branch = GetPointerS<const multi_way_if_stmt>(header->CGetStmtList().back());
+#endif
       THROW_ASSERT(std::any_of(preheader_branch->list_of_cond.begin(), preheader_branch->list_of_cond.end(),
                                [&](const auto& edge) { return edge.second == header->number; }),
                    "Runtime duplex preheader terminator does not target its loop header");
@@ -2288,11 +2290,13 @@ namespace
       const auto store = proof.store_statement;
       const auto load_assign = GetPointerS<const assign_stmt>(load);
       const auto store_assign = GetPointerS<const assign_stmt>(store);
+#if HAVE_ASSERTS
       const auto load_position = std::find_if(header->CGetStmtList().begin(), header->CGetStmtList().end(),
                                               [&](const auto& stmt) { return stmt->index == load->index; });
       const auto header_store_position = std::find_if(
           header->CGetStmtList().begin(), header->CGetStmtList().end(),
           [&](const auto& stmt) { return stmt->index == store->index; });
+#endif
       THROW_ASSERT(GetPointerS<const node_stmt>(load)->bb_index == header->number &&
                        GetPointerS<const node_stmt>(store)->bb_index == header->number &&
                        load_position != header->CGetStmtList().end() &&
@@ -2302,6 +2306,7 @@ namespace
                        std::next(header_store_position) != header->CGetStmtList().end() && !header->schedule &&
                        !preheader->schedule,
                    "Runtime duplex accesses are not ordered in the validated shared header");
+#if HAVE_ASSERTS
       for(const auto& phi_node : header->CGetPhiList())
       {
          const auto phi = GetPointerS<const phi_stmt>(phi_node);
@@ -2312,6 +2317,7 @@ namespace
                                       [&](const auto& edge) { return edge.second == header->number; }),
                       "Runtime duplex header PHI must represent both entry and backedge");
       }
+#endif
 
       const auto make_block = [&](const unsigned int loop_id) {
          const auto index = sl->list_of_bloc.rbegin()->first + 1U;
@@ -4185,7 +4191,9 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   THROW_ASSERT(decision.same_base_duplex_candidate && decision.same_base_duplex_proof,
                                "Frozen duplex proof disappeared before IR transformation for bundle " +
                                    bundle_decision.first);
+#if HAVE_ASSERTS
                   const auto& current = *decision.same_base_duplex_proof;
+#endif
                   THROW_ASSERT(current.owner_argument_index == proof.owner_argument_index &&
                                    current.read_owner_argument_index == proof.read_owner_argument_index &&
                                    current.write_owner_argument_index == proof.write_owner_argument_index &&
@@ -4265,6 +4273,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                }
             }
          }
+#ifndef NDEBUG
          for(const auto& bundle_decision : burst_decisions)
          {
             const auto& decision = bundle_decision.second;
@@ -4394,6 +4403,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, proof_record.str());
             }
          }
+#endif
       };
 
       const ir_manipulationRef ir_man(new ir_manipulation(TM, parameters, AppM));
@@ -4946,11 +4956,13 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                if(same_base_duplex_active)
                {
                   const auto& proof = *decision->same_base_duplex_proof;
+#if HAVE_ASSERTS
                   const auto read_regions = decision->read_regions.find(proof.read_owner_argument_index);
                   const auto write_region = decision->write_regions.find(proof.write_owner_argument_index);
                   const auto same_optional_node = [](const ir_nodeRef& lhs, const ir_nodeRef& rhs) {
                      return (!lhs && !rhs) || (lhs && rhs && lhs->index == rhs->index);
                   };
+#endif
                   THROW_ASSERT(read_regions != decision->read_regions.end() && read_regions->second.size() == 1 &&
                                    write_region != decision->write_regions.end() &&
                                    read_regions->second.front().preheader == proof.read_region.preheader &&
@@ -7888,7 +7900,9 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       THROW_ASSERT(fu->CM && fu->CM->get_circ() &&
                        fu->CM->get_circ()->find_member("in5", port_o_K, fu->CM->get_circ()) != nullptr,
                    "Configured m_axi resource for bundle '" + bundle_name + "' is missing its in5 burst-count port.");
+#if HAVE_ASSERTS
       const auto mode = fu->attributes.find(burst_mode_attr);
+#endif
       THROW_ASSERT(mode != fu->attributes.end() && mode->second &&
                        mode->second->get_content_str() == requested_burst_mode,
                    "Configured m_axi resource for bundle '" + bundle_name +
@@ -8091,7 +8105,8 @@ namespace
             private_port("duplex_count", port_o::OUT, 32);
             private_port("duplex_done", port_o::IN, 1);
             private_port("duplex_result", port_o::IN, data_bitsize);
-            const auto assert_port_width = [&](const std::string& name, const unsigned int width) {
+            const auto assert_port_width = [&](const std::string& name,
+                                               const unsigned int ASSERT_PARAMETER(width)) {
                const auto port = top->find_member(name, port_o_K, top);
                THROW_ASSERT(port && GET_TYPE_SIZE(GetPointerS<port_o>(port)) == width,
                             "Unexpected width for duplex m_axi port " + name);
