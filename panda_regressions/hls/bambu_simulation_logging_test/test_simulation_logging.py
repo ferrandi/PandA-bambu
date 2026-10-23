@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-"""Offline integration checks for the shared simulation logging wrapper."""
+"""Offline integration checks for the shared simulation logging wrapper.
+
+The copier is the record_output tool of the distribution (built from
+src/utility/record_output.cpp): the product flow needs neither the system tee
+nor python3. These checks compile the tool with the C++ compiler, and only
+these checks use python3.
+"""
 
 import os
 from pathlib import Path
+import shutil
 import subprocess
 from tempfile import TemporaryDirectory
 import unittest
@@ -10,19 +17,60 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
 WRAPPER = ROOT / "etc/libtech/backend/utils/simulation_wrapper.sh"
+TOOL_SOURCE = ROOT / "src" / "utility" / "record_output.cpp"
+PRODUCT_SOURCES = [
+    WRAPPER,
+    *sorted(ROOT.glob("etc/libtech/backend/simulation/*/setup.sh")),
+    ROOT / "src" / "wrapper" / "BackendWrapper.cpp",
+    ROOT / "src" / "utility" / "fileIO.cpp",
+    ROOT / "src" / "constants" / "file_IO_constants.hpp",
+]
 PAYLOAD = bytes(range(256)) * 4096 + b"\nlast fragment without newline"
 
 
 class SimulationLoggingTest(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         scratch = Path(os.environ.get("BURST_TEST_TMPDIR", ROOT / "documentation/tmp"))
         scratch.mkdir(parents=True, exist_ok=True)
-        self.temporary = TemporaryDirectory(dir=scratch)
+        cls.scratch = scratch
+        cls.build_dir = TemporaryDirectory(dir=scratch)
+        compiler = None
+        for candidate in (os.environ.get("CXX"), "c++", "g++", "clang++"):
+            if candidate and shutil.which(candidate):
+                compiler = candidate
+                break
+        if compiler is None:
+            raise unittest.SkipTest("no C++ compiler to build the record_output tool")
+        cls.tool = Path(cls.build_dir.name) / "record_output"
+        compile_result = subprocess.run(
+            [compiler, str(TOOL_SOURCE), "-o", str(cls.tool)],
+            capture_output=True,
+            timeout=120,
+        )
+        if compile_result.returncode != 0:
+            raise unittest.SkipTest(
+                "cannot build the record_output tool: " + compile_result.stderr.decode(errors="replace")
+            )
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.build_dir.cleanup()
+
+    def setUp(self):
+        self.temporary = TemporaryDirectory(dir=self.scratch)
         self.addCleanup(self.temporary.cleanup)
         self.work = Path(self.temporary.name)
         self.simulation = self.work / "HLS_output/simulation"
         self.simulation.mkdir(parents=True)
         (self.work / "bambu_time_simulation.txt").write_text("0|2\n", encoding="utf-8")
+        # A fake installation tree: the wrapper resolves the copier through
+        # ${BAMBU_HLS}/bin/record_output, exactly as the installed flow does.
+        self.bambu_hls = self.work / "fake install"
+        (self.bambu_hls / "bin").mkdir(parents=True)
+        shutil.copy(self.tool, self.bambu_hls / "bin" / "record_output")
+        self.payload_file = self.work / "payload"
+        self.payload_file.write_bytes(PAYLOAD)
         self.producer = self.work / "producer"
         self.producer.write_text(
             "#!/usr/bin/env python3\n"
@@ -56,8 +104,9 @@ class SimulationLoggingTest(unittest.TestCase):
             encoding="utf-8",
         )
 
-    def run_wrapper(self, producer_status=0, nested=False, invalid_log=False):
-        executable = self.producer
+    def run_wrapper(self, producer_status=0, nested=False, invalid_log=False, bash_producer=False,
+                    extra_path=None):
+        executable = self.bash_producer() if bash_producer else self.producer
         if nested:
             executable = self.work / "driver"
             executable.write_text(
@@ -70,13 +119,16 @@ class SimulationLoggingTest(unittest.TestCase):
             log.mkdir()
             self.producer.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
         environment = dict(os.environ)
+        if extra_path:
+            environment["PATH"] = str(extra_path) + os.pathsep + environment.get("PATH", "")
         environment.update(
-            BAMBU_HLS=str(ROOT),
+            BAMBU_HLS=str(self.bambu_hls),
             OUT_LVL="1",
             TARGET="testbench",
             SYS_ELF=str(executable),
             SWD=str(self.work / "backend with spaces"),
-            RECORD_PRODUCER=str(self.producer),
+            RECORD_PRODUCER=str(executable if bash_producer else self.producer),
+            PAYLOAD_FILE=str(self.payload_file),
             PRODUCER_STATUS=str(producer_status),
             TMPDIR=str(self.work),
             TMP=str(self.work),
@@ -91,6 +143,18 @@ class SimulationLoggingTest(unittest.TestCase):
             timeout=30,
         )
         return result, log
+
+    def bash_producer(self):
+        """A producer that does not need python3, to check the python-free flow."""
+        producer = self.work / "bash_producer"
+        producer.write_text(
+            "#!/usr/bin/env bash\n"
+            'cat "${PAYLOAD_FILE}"\n'
+            'exit "${PRODUCER_STATUS:-0}"\n',
+            encoding="utf-8",
+        )
+        producer.chmod(0o755)
+        return producer
 
     def test_binary_output_survives_large_pipe_and_broken_system_tee(self):
         result, log = self.run_wrapper()
@@ -121,15 +185,57 @@ class SimulationLoggingTest(unittest.TestCase):
                 self.assertIn(PAYLOAD, result.stdout)
                 self.assertNotIn(b"unexpected external tee invocation", result.stderr)
 
+    def test_simulation_flow_needs_no_python3(self):
+        """With a poisoned python3 on PATH the logging flow still runs fine."""
+        poison = self.work / "poison-bin"
+        poison.mkdir()
+        python3 = poison / "python3"
+        python3.write_text("#!/usr/bin/env bash\necho 'unexpected python3 invocation' >&2\nexit 127\n",
+                           encoding="utf-8")
+        python3.chmod(0o755)
+        result, log = self.run_wrapper(bash_producer=True, extra_path=poison)
+        self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
+        self.assertNotIn(b"unexpected python3 invocation", result.stderr)
+        self.assertNotIn(b"unexpected python3 invocation", result.stdout)
+        self.assertEqual(log.read_bytes(), PAYLOAD)
+
     def test_logging_never_relies_on_the_system_tee(self):
-        shell_sources = [WRAPPER] + sorted(ROOT.glob("etc/libtech/backend/simulation/*/setup.sh"))
-        generated_scripts = [ROOT / "src/wrapper/BackendWrapper.cpp", ROOT / "src/utility/fileIO.cpp"]
-        for source in shell_sources + generated_scripts:
+        generated_scripts = [ROOT / "src" / "wrapper" / "BackendWrapper.cpp", ROOT / "src" / "utility" / "fileIO.cpp"]
+        for source in [WRAPPER] + sorted(ROOT.glob("etc/libtech/backend/simulation/*/setup.sh")) + generated_scripts:
             with self.subTest(source=str(source.relative_to(ROOT))):
                 self.assertNotIn("| tee", source.read_text(encoding="utf-8"))
         for source in [WRAPPER] + generated_scripts:
             with self.subTest(copier=str(source.relative_to(ROOT))):
                 self.assertIn("record_output", source.read_text(encoding="utf-8"))
+
+    def test_product_sources_do_not_require_python3(self):
+        """No product source invokes python3: comment mentions are fine."""
+        for source in PRODUCT_SOURCES:
+            with self.subTest(source=str(source.relative_to(ROOT))):
+                for line in source.read_text(encoding="utf-8").splitlines():
+                    if line.strip().startswith(("#", "//", "*")):
+                        continue
+                    self.assertNotIn("python3", line)
+
+    def test_quiet_mode_logs_without_console_copy(self):
+        log = self.work / "quiet.log"
+        with open(self.payload_file, "rb") as payload:
+            result = subprocess.run([str(self.tool), "-q", str(log)], stdin=payload,
+                                    capture_output=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
+        self.assertEqual(result.stdout, b"")
+        self.assertEqual(log.read_bytes(), PAYLOAD)
+
+    def test_console_copy_death_keeps_the_log_complete(self):
+        """A console vanishing mid-stream must not kill the copier nor the log."""
+        log = self.work / "closed-console.log"
+        with open(self.payload_file, "rb") as payload:
+            copier = subprocess.Popen([str(self.tool), str(log)], stdin=payload, stdout=subprocess.PIPE)
+            copier.stdout.read(100)
+            copier.stdout.close()
+            return_code = copier.wait(timeout=30)
+        self.assertEqual(return_code, 0)
+        self.assertEqual(log.read_bytes(), PAYLOAD)
 
 
 if __name__ == "__main__":
