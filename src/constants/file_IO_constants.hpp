@@ -38,25 +38,21 @@
 /// The source code default output file
 #define STR_CST_file_IO_source_code_output_file "output.c"
 
-/// Shell function that copies the output of a command both to a log file and to
-/// the console. The generated scripts use it in place of the system tee: tee is
-/// not part of the tool flow, and a tee dying mid-stream closes the pipe and
-/// kills the command whose output was being logged.
+/// Shell function that copies the output of a command both to a log file and,
+/// live, to the console. The generated scripts use it in place of the system
+/// tee: tee is not part of the tool flow, and a tee dying mid-stream closes
+/// the pipe and kills the command whose output was being logged. The copy is
+/// performed by the record_output tool, installed next to bambu, so the run
+/// depends on the tools of the distribution only: neither the system tee nor
+/// python3 are needed.
 constexpr auto SHELL_CST_record_output =
     R"sh(record_output() {
-  python3 -u -c '
-import sys
-
-with open(sys.argv[1], "wb") as log_file:
-    while True:
-        data = sys.stdin.buffer.read1(65536)
-        if not data:
-            break
-        log_file.write(data)
-        log_file.flush()
-        sys.stdout.buffer.write(data)
-        sys.stdout.buffer.flush()
-' "$1"
+  local bambu_record_output="${BAMBU_HLS}/bin/record_output"
+  if [ ! -x "${bambu_record_output}" ]; then
+    echo "record_output: the Bambu log copier is missing at ${bambu_record_output}: check BAMBU_HLS" 1>&2
+    return 127
+  fi
+  "${bambu_record_output}" "$@"
 }
 )sh";
 

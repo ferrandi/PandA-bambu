@@ -7,6 +7,7 @@ set(PANDA_EXCLUDE_PATTERNS
    "/bambu.cpp"
    "/bambu-cc.cpp"
    "/eucalyptus.cpp"
+   "/utility/record_output.cpp"
    "/algorithms/clique_covering/test_"
    "/HLS/hdl_generators/"
 )
@@ -352,6 +353,16 @@ add_test(NAME vector_mask_hls
    COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/panda_unit/IR/test_vector_mask_hls.py")
 set_tests_properties(vector_mask_type vector_mask_ir vector_mask_hls PROPERTIES LABELS "vector_mask")
 set_tests_properties(vector_allocation PROPERTIES LABELS "vector_allocation")
+
+# The standalone log copier used by the generated scripts and by the simulation
+# flow in place of the system tee (see record_output.cpp). It is a POSIX-only
+# tool, without dependencies on panda_core, on the system tee and on python3;
+# it is installed next to bambu so that the runtime flow only needs the tools
+# of the distribution.
+add_executable(record_output "${CMAKE_CURRENT_SOURCE_DIR}/utility/record_output.cpp")
+install(TARGETS record_output
+   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
 
 if(PANDA_BUILD_BAMBU)
    add_executable(bambu
