@@ -79,6 +79,11 @@ namespace
    // flow must never do.
    constexpr int wait_limit_ms = 15000;
    constexpr int timeout_marker = -9999;
+   // A non-positive pid is never handed to waitpid or to kill: with -1,
+   // waitpid would observe any child, e.g., the hung producer of another
+   // case, and kill(-1, SIGKILL) at the deadline would signal every process
+   // the test can reach, unrelated ones included.
+   constexpr int invalid_pid_marker = -9998;
 
    using Clock = std::chrono::steady_clock;
    using TimePoint = Clock::time_point;
@@ -90,6 +95,10 @@ namespace
 
    int wait_with_deadline(pid_t pid, int limit_ms = wait_limit_ms)
    {
+      if(pid <= 0)
+      {
+         return invalid_pid_marker;
+      }
       const auto start = std::chrono::steady_clock::now();
       while(true)
       {
@@ -298,6 +307,12 @@ namespace
       }
       argv.push_back(nullptr);
       const pid_t pid = ::fork();
+      if(pid < 0)
+      {
+         // Never return an error code as if it were a pid: the callers wait
+         // on and signal the value they receive.
+         BOOST_FAIL("cannot fork the copier: " + std::string(std::strerror(errno)));
+      }
       if(pid == 0)
       {
          if(in_fd >= 0)
@@ -320,6 +335,10 @@ namespace
    pid_t spawn_producer(const std::function<void()>& body, const std::vector<int>& keep_fds)
    {
       const pid_t pid = ::fork();
+      if(pid < 0)
+      {
+         BOOST_FAIL("cannot fork the logged tool: " + std::string(std::strerror(errno)));
+      }
       if(pid == 0)
       {
          close_extra_fds(keep_fds);
@@ -338,8 +357,12 @@ namespace
    {
     public:
       Child() = default;
-      explicit Child(pid_t pid) : pid_(pid)
+      explicit Child(pid_t pid)
       {
+         // A child that was not created must never enter the ownership: the
+         // waits and the kills of the class take the pid_ as they stand.
+         BOOST_REQUIRE(0 < pid);
+         pid_ = pid;
       }
       Child(const Child&) = delete;
       Child& operator=(const Child&) = delete;
@@ -729,6 +752,19 @@ BOOST_AUTO_TEST_CASE(record_output_usage_errors_terminate)
    BOOST_CHECK_EQUAL(2, no_arguments.wait(5000));
    BOOST_CHECK_EQUAL(2, two_logs.wait(5000));
    BOOST_CHECK_EQUAL(0, help.wait(5000));
+}
+
+BOOST_AUTO_TEST_CASE(record_output_non_positive_pids_are_refused)
+{
+   // A failed fork must never reach the waits and the kills: with -1, the
+   // polling waitpid would observe any child instead of the copier, and the
+   // kill at the deadline would signal every process the test can reach.
+   // The refusal is immediate: no deadline is even consumed.
+   const auto start = Clock::now();
+   BOOST_CHECK_EQUAL(invalid_pid_marker, wait_with_deadline(-1));
+   BOOST_CHECK_EQUAL(invalid_pid_marker, wait_with_deadline(0, 100));
+   BOOST_CHECK_EQUAL(invalid_pid_marker, Child{}.wait(100));
+   BOOST_CHECK(Clock::now() < start + std::chrono::milliseconds(100));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
