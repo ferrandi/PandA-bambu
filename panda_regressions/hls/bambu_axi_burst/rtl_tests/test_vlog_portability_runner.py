@@ -61,7 +61,7 @@ class VlogPortabilityRunnerTests(unittest.TestCase):
             "printf '%s|%s|%s\\n' \"$tool\" \"$PWD\" \"$*\" >> \"$VLOG_TRACE\"\n"
             "if [[ $tool == vlib && ${FAIL_VLIB_DIR:-} == \"$(basename \"$(dirname \"$PWD\")\")\" ]]; then echo 'FAKE VLIB DIAGNOSTIC' >&2; exit 9; fi\n"
             "if [[ $tool == vlog && ${FAIL_VLOG_DIR:-} == \"$(basename \"$(dirname \"$PWD\")\")\" ]]; then echo 'FAKE VLOG DIAGNOSTIC' >&2; exit 7; fi\n"
-            "if [[ $tool == vlog ]]; then [[ \"$*\" != *-sv* ]] || exit 8; for arg in \"$@\"; do [[ $arg == /* ]] || continue; [[ -s $arg ]] || exit 6; done; fi\n"
+            "if [[ $tool == vlog ]]; then [[ \"$*\" == *-sv* ]] || exit 8; for arg in \"$@\"; do [[ $arg == /* ]] || continue; [[ -s $arg ]] || exit 6; done; fi\n"
             "exit 0\n",
         )
         (self.tools / "vlib").symlink_to("vco")
@@ -124,7 +124,7 @@ class VlogPortabilityRunnerTests(unittest.TestCase):
         self.assertEqual(len({line.split("|", 2)[1] for line in vlib_calls}), 8)
         self.assertEqual(len({line.split("|", 2)[1] for line in vlog_calls}), 8)
         self.assertTrue(all(line.endswith("|work") for line in vlib_calls))
-        self.assertTrue(all("|-work work " in line and " -sv" not in line for line in vlog_calls))
+        self.assertTrue(all("|-sv -work work " in line for line in vlog_calls))
         self.assertEqual(len(list(output.glob("*.v"))), 8)
 
         for variant in VARIANTS:
@@ -159,8 +159,11 @@ class VlogPortabilityRunnerTests(unittest.TestCase):
         self.assertIn("sha256_vlog_invocation=", provenance)
         self.assertIn("sha256_vlog_resolved=", provenance)
         self.assertEqual(len((output / "extracted_hdl_sha256.txt").read_text().splitlines()), 8)
-        self.assertEqual(len((output / "commands.txt").read_text().splitlines()), 24)
+        commands = (output / "commands.txt").read_text().splitlines()
+        self.assertEqual(len(commands), 24)
+        self.assertEqual(sum(" -sv " in line for line in commands), 8)
         self.assertIn("Fake\\ vlog\\ 1.0", provenance)
+        self.assertIn("vlog_flags=-sv", provenance)
 
     def test_vlib_failure_is_reported_without_success_marker(self) -> None:
         output = self.case_root / "vlib-fails"

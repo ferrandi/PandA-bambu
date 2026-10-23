@@ -91,6 +91,17 @@ run_write_suite() {
   run_accepted write_nonpositive_bound nonpositive-signed-bound '(%?[A-Za-z0-9_.]*n|region\.bound|write_nonpositive_bound)'
   run_accepted copy_distinct_buffers distinct-buffers-copy '(%?[A-Za-z0-9_.]*n|region\.bound)' 1
   run_accepted copy_distinct_buffers_reversed distinct-buffers-copy-reversed '(%?[A-Za-z0-9_.]*n|region\.bound)' 1
+  run_case copy_distinct_with_unused_write_owner distinct-buffers-unused-write-owner accepted
+  python3 "$checker" accepted --output "$OUT/write/distinct-buffers-unused-write-owner" \
+    --count-pattern '(%?[A-Za-z0-9_.]*n|region\.bound)' --copy --single-write-bundle output
+  # Cross-bundle coalescing needs the restrict contract on both owners; without it the write
+  # burst is refused and the scalar interface is kept.
+  run_fallback copy_unrestricted_buffers unrestricted-buffers-copy \
+    'reads through another m_axi bundle without a restrict contract on both owners; cross-bundle write ordering is not proven' \
+    1 output writes
+  run_fallback copy_unrestricted_buffers unrestricted-buffers-read \
+    'writes through another m_axi bundle without a restrict contract on both owners; cross-bundle prefetch ordering is not proven' \
+    1 input accesses
   run_fallback has_break break 'write-burst CFG/SSA/effect recognition failed'
   run_fallback early_return early-return 'write-burst CFG/SSA/effect recognition failed'
   run_fallback conditional_store conditional-store 'write-burst CFG/SSA/effect recognition failed'

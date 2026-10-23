@@ -333,8 +333,10 @@ def main(argv: list[str] | None = None) -> int:
                  "runner job_logs infrastructure must be a real non-symlink directory")
         profiles = sorted(path.name for path in children if path.name in PROFILES and
                           path.is_dir() and not path.is_symlink())
+        # The gate keeps its scratch TMPDIR ("tmp") inside the run directory, so it is part of
+        # the expected inventory.
         unexpected = sorted(path.name for path in children if path.name not in PROFILES and
-                            path.name != "job_logs" and path.is_dir())
+                            path.name not in {"job_logs", "tmp"} and path.is_dir())
         need(not unexpected, f"unexpected run directories: {unexpected}")
         need(profiles == sorted(PROFILES), f"profile inventory mismatch: expected {sorted(PROFILES)}, got {profiles}")
         results = {profile: check_profile(run_dir / profile, profile, args) for profile in PROFILES}

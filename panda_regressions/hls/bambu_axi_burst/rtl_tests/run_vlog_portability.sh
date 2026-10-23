@@ -59,6 +59,7 @@ tool_version() {
     printf 'vlib_version=%q\n' "$(tool_version vlib "$VLIB_CMD" -version | tr '\n' ' ')"
     printf 'vlog_invocation=%q\n' "$VLOG_CMD"
     printf 'vlog_resolved=%q\n' "$VLOG_RESOLVED"
+    printf 'vlog_flags=-sv\n'
     printf 'vlog_version=%q\n' "$(tool_version vlog "$VLOG_CMD" -version | tr '\n' ' ')"
     printf 'timeout=%q\n' "$TIMEOUT"
     printf 'sha256sum=%q\n' "$SHA256SUM"
@@ -96,7 +97,7 @@ for variant in "${variants[@]}"; do
             --reset-mode "$reset_mode" --reset-polarity "$reset_polarity" --out "$hdl"
         printf '\n'
         printf 'cd %q && %q %q\n' "$variant_dir/workdir" "$VLIB_CMD" work
-        printf 'cd %q && %q 60s %q -work work %q\n' "$variant_dir/workdir" \
+        printf 'cd %q && %q 60s %q -sv -work work %q\n' "$variant_dir/workdir" \
             "$TIMEOUT" "$VLOG_CMD" "$hdl"
     } >> "$OUT/commands.txt"
     if ! "$PYTHON" -B "$EXTRACTOR" --xml "$XML" --target "$target" \
@@ -116,7 +117,7 @@ for variant in "${variants[@]}"; do
     }
     (
         cd "$variant_dir/workdir"
-        "$TIMEOUT" 60s "$VLOG_CMD" -work work "$hdl"
+        "$TIMEOUT" 60s "$VLOG_CMD" -sv -work work "$hdl"
     ) > "$variant_dir/vlog.log" 2>&1 || {
         echo "AXI_CORE_VLOG FAIL VARIANT=$name stage=vlog log=$variant_dir/vlog.log" >&2
         print_log_tail "$variant_dir/vlog.log"

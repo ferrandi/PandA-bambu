@@ -3843,6 +3843,62 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             const auto bundle_plan = root_plan->second.find(bundle_name);
             return bundle_plan == root_plan->second.end() ? nullptr : &bundle_plan->second.proof;
          };
+         // Two m_axi bundles with different names and different SSA bases do not prove disjoint
+         // address ranges: with non-restrict pointers two interfaces can address overlapping memory,
+         // and the two burst engines order their channels independently. Coalescing a bundle therefore
+         // requires the caller's restrict contract on both the owner of this bundle and every owner
+         // that performs the opposite direction in another bundle; without that contract the scalar
+         // interface is kept.
+         const auto parm_has_restrict_contract = [&](unsigned int argument_index) {
+            const auto arg = std::find_if(fd->list_of_args.begin(), fd->list_of_args.end(),
+                                          [&](const auto& candidate) { return candidate->index == argument_index; });
+            if(arg == fd->list_of_args.end())
+            {
+               return false;
+            }
+            const auto attrs = func_arch->parms.find(get_decl_name(*arg));
+            if(attrs == func_arch->parms.end())
+            {
+               return false;
+            }
+            const auto attr = attrs->second.find(FunctionArchitecture::parm_source_restrict);
+            return attr != attrs->second.end() && attr->second == "1";
+         };
+          const auto cross_bundle_burst_is_disjoint = [&](const std::string& bundle_name,
+                                                          bool coalescing_reads,
+                                                          unsigned int owner_argument_index) {
+             std::vector<unsigned int> opposite_owners;
+             for(const auto& access : burst_memory_accesses)
+             {
+                if(!access.classified || !access.ordinary || !access.statement || access.bundle == bundle_name)
+                {
+                   continue;
+                }
+                const bool opposite = coalescing_reads ? access.is_write : !access.is_write;
+                if(opposite)
+                {
+                   opposite_owners.push_back(access.owner_argument_index);
+                }
+             }
+             if(opposite_owners.empty())
+             {
+                // No access of the opposite direction lives in another bundle, so the ordering
+                // between two independent m_axi interfaces is not what has to be proven here.
+                return true;
+             }
+             if(!parm_has_restrict_contract(owner_argument_index))
+             {
+                return false;
+             }
+             for(const auto opposite_owner : opposite_owners)
+             {
+                if(!parm_has_restrict_contract(opposite_owner))
+                {
+                   return false;
+                }
+             }
+             return true;
+          };
          const auto sl = GetPointerS<const statement_list_node>(fd->body);
          for(const auto& iface : func_arch->ifaces)
          {
@@ -3926,7 +3982,17 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                       std::find_if(bundle_pointer_args.begin(), bundle_pointer_args.end(), [&](const auto& arg) {
                          return arg->index == frozen_proof->read_owner_argument_index;
                       }) : bundle_pointer_args.begin();
-                  if((bundle_pointer_args.size() == 1 || frozen_proof) &&
+                  bool cross_bundle_read_disjoint = true;
+                  if(read_owner != bundle_pointer_args.end() &&
+                     !cross_bundle_burst_is_disjoint(bundle_name, true, (*read_owner)->index))
+                  {
+                     cross_bundle_read_disjoint = false;
+                     decision.read_fallback_reason =
+                         "writes through another m_axi bundle without a restrict contract on both "
+                         "owners; cross-bundle prefetch ordering is not proven";
+                  }
+                  if(cross_bundle_read_disjoint &&
+                     (bundle_pointer_args.size() == 1 || frozen_proof) &&
                      read_owner != bundle_pointer_args.end())
                   {
                      const auto owner_arg = *read_owner;
@@ -4039,6 +4105,17 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                      return lhs->index == rhs->index;
                                   }),
                                   stores.end());
+                     if(stores.empty())
+                     {
+                        continue;
+                     }
+                     if(!cross_bundle_burst_is_disjoint(bundle_name, false, (*owner_arg)->index))
+                     {
+                        decision.write_fallback_reason =
+                            "reads through another m_axi bundle without a restrict contract on both "
+                            "owners; cross-bundle write ordering is not proven";
+                        continue;
+                     }
                      const auto expected_base_id = AppM->getSSAFromParm(root_id, (*owner_arg)->index);
                      const auto expected_base = TM->GetIRNode(expected_base_id);
                      WriteBurstRegion region{};

@@ -11,7 +11,9 @@ import xml.etree.ElementTree as ET
 FIELDS = ("case", "profile", "cycles", "n", "maxn", "addr_bits", "burst_max", "outstanding",
           "fifo_depth", "read_bundle", "write_bundle")
 CASES = {
-    "copy-burst-two-bundles": ("burst", 1, "input", "output"),
+    # Two distinct m_axi bundles without the __restrict contract: the disjointness of the two
+    # ranges is not proven, so the burst engines stay inactive and the scalar interface is kept.
+    "copy-nonrestrict-two-bundles": ("nonrestrict-two", 1, "input", "output"),
     "copy-legacy-two-bundles": ("legacy-two", 2, "input", "output"),
     "copy-legacy-shared-bundle": ("legacy-shared", 3, "shared", "shared"),
 }
@@ -52,13 +54,17 @@ def read_rows(path, source, testbench):
                 (profile, read_bundle, write_bundle):
             fail(f"{case}: unexpected profile or bundle mapping")
         expected = {"n": "1024", "maxn": "4096", "addr_bits": "32"}
+        # The pragma attributes are a property of the source; the burst columns describe the
+        # hardware that was actually built, which the non-restrict profile refuses to coalesce.
+        coalesced = profile == "burst"
+        attrs = ()
         if macro == 1:
-            expected.update(burst_max="16", outstanding="1", fifo_depth="32")
             attrs = ("max_read_burst_length=16", "num_read_outstanding=1", "read_fifo_depth=32",
                      "max_write_burst_length=16", "write_burst_outstanding=1", "write_fifo_depth=32")
+        if coalesced:
+            expected.update(burst_max="16", outstanding="1", fifo_depth="32")
         else:
             expected.update(burst_max="0", outstanding="0", fifo_depth="0")
-            attrs = ()
         if f"COPY_BASELINE_PROFILE == {macro}" not in text:
             fail(f"{case}: source does not select the expected compile-time profile")
         for bundle in (read_bundle, write_bundle):
@@ -297,14 +303,23 @@ def main(argv=None):
                 fail(f"{name} path missing or symlink: {path}")
         rows = read_rows(args.expectations, args.source, args.testbench)
         check_run_provenance(args.results)
-        cycles = [check_case(args.results, row, args.source, args.testbench, args.bambu,
-                             args.settings, args.plugin) for row in rows]
-        if len(set(cycles)) != len(cycles):
-            fail(f"cycle signatures must be unique across profiles, got {cycles}")
+        cycles = {row["case"]: check_case(args.results, row, args.source, args.testbench,
+                                         args.bambu, args.settings, args.plugin) for row in rows}
+        profile_of = {row["case"]: CASES[row["case"]][0] for row in rows}
+        distinct = [cycles[name] for name in profile_of if profile_of[name] != "nonrestrict-two"]
+        if len(set(distinct)) != len(distinct):
+            fail(f"cycle signatures must be unique across the distinct designs, got {distinct}")
+        # A bundle pair whose disjointness is not proven must cost exactly what the scalar
+        # two-bundle interface costs: the fallback is not a partial optimisation.
+        fallback = [name for name, profile in profile_of.items() if profile == "nonrestrict-two"]
+        scalar = [name for name, profile in profile_of.items() if profile == "legacy-two"]
+        if fallback and scalar and cycles[fallback[0]] != cycles[scalar[0]]:
+            fail(f"the non-restrict fallback must reproduce the scalar two-bundle cycle signature, "
+                 f"got {cycles[fallback[0]]} and {cycles[scalar[0]]}")
     except (OSError, ValueError) as exc:
         print(f"COPY-BASELINE FAIL: {exc}", file=sys.stderr)
         return 1
-    print("COPY_BASELINE_GATE_PASS: three profiles, unique cycle signatures, golden/canary and source immutability")
+    print("COPY_BASELINE_GATE_PASS: distinct cycle signatures, fallback parity, golden/canary and source immutability")
     return 0
 
 
