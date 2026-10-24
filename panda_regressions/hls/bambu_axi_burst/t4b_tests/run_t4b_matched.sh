@@ -3,6 +3,7 @@ set -Eeuo pipefail
 
 usage() {
   echo 'Usage: run_t4b_matched.sh B O D L N Q FRESH_OUT [--fixture sum|independent|mulxor] [--mode burst|legacy|scheduler-off] [--axi-burst-type INCR]' >&2
+  echo 'ModelSim modes honor explicit MODELSIM_ROOT as MODELSIM_ROOT/questasim/bin; otherwise they use Bambu PATH/backend lookup.' >&2
 }
 fail() { echo "T4B_FAIL: $*" >&2; exit 2; }
 is_uint() { [[ $1 =~ ^(0|[1-9][0-9]*)$ ]]; }
@@ -50,11 +51,39 @@ TB="$TESTS/tb_t4b_witness.cpp"
 [[ -r $PROFILE_TOOL && -r $TB ]] || fail 'T4B profile tool or testbench missing'
 if [[ ${T4B_TEST_MODE:-0} == 1 && -n ${T4B_TEST_CHECKER:-} ]]; then CHECKER=$T4B_TEST_CHECKER; fi
 [[ $MODE == scheduler-off || -r $CHECKER ]] || fail "H2 checker missing: $CHECKER"
-MODELSIM_ROOT=${MODELSIM_ROOT:-/opt/mentor}
-VSIM="$MODELSIM_ROOT/questasim/bin/vsim"
+MODELSIM_SOURCE=not-used MODELSIM_BIN= MODELSIM_MENTOR_ROOT= MODELSIM_VSIM=
+VLOG= VLIB= VMAP=
 if [[ $MODE != scheduler-off ]]; then
   [[ ${BURST_MODELSIM_OUTSIDE_SANDBOX:-0} == 1 ]] || fail 'ModelSim modes require BURST_MODELSIM_OUTSIDE_SANDBOX=1'
-  [[ -x $VSIM ]] || fail "ModelSim/Questa executable unavailable: $VSIM"
+  if [[ -n ${MODELSIM_ROOT:-} ]]; then
+    # Preserve the legacy explicit override: MODELSIM_ROOT names the
+    # installation root above questasim/bin.
+    MODELSIM_SOURCE=MODELSIM_ROOT
+    MODELSIM_MENTOR_ROOT=$MODELSIM_ROOT
+    MODELSIM_BIN="$MODELSIM_ROOT/questasim/bin"
+    MODELSIM_VSIM="$MODELSIM_BIN/vsim"
+  else
+    # Resolve before the full build so an unavailable simulator fails before
+    # expensive compiler work. PATH remains preferred by the shared resolver.
+    if ! command -v vsim >/dev/null 2>&1 && [[ -z ${BAMBU_HLS_BACKEND_PATH:-} ]]; then
+      SETTINGS_FOR_LOOKUP="$ROOT/install/settings.sh"
+      [[ -r $SETTINGS_FOR_LOOKUP ]] || fail "cannot resolve ModelSim: BAMBU_HLS_BACKEND_PATH is unset and settings are unavailable: $SETTINGS_FOR_LOOKUP"
+      # shellcheck disable=SC1091
+      source "$SETTINGS_FOR_LOOKUP"
+      IFS=$' \t\n'
+    fi
+    # shellcheck disable=SC1091
+    source "$ROOT/etc/libtech/backend/simulation/modelsim/tool_lookup.sh"
+    bambu_modelsim_resolve || fail "ModelSim vsim could not be resolved from PATH or BAMBU_HLS_BACKEND_PATH=${BAMBU_HLS_BACKEND_PATH:-<unset>}"
+    MODELSIM_SOURCE=$BAMBU_MODELSIM_SOURCE
+    MODELSIM_BIN=$BAMBU_MODELSIM_BIN
+    MODELSIM_MENTOR_ROOT=$BAMBU_MODELSIM_ROOT
+    MODELSIM_VSIM=$BAMBU_MODELSIM_PATH
+  fi
+  VLOG="$MODELSIM_BIN/vlog" VLIB="$MODELSIM_BIN/vlib" VMAP="$MODELSIM_BIN/vmap"
+  for tool in "$MODELSIM_VSIM" "$VLOG" "$VLIB" "$VMAP"; do
+    [[ -x $tool ]] || fail "ModelSim tool unavailable in selected installation (source=$MODELSIM_SOURCE, bin=$MODELSIM_BIN): $tool"
+  done
 fi
 
 # Invalid or unsupported inputs fail before output creation or build activity.
@@ -68,7 +97,7 @@ PROFILE_JSON="$OUT/profile.json"
 python3 -B "$PROFILE_TOOL" --fixture "$FIXTURE" --b "$B" --o "$O" --d "$D" --l "$L" --output "$PROFILE_CPP" --manifest "$PROFILE_JSON" >"$OUT/profile.stdout.log" 2>"$OUT/profile.stderr.log" || fail 'profile generation failed'
 
 # Mandatory complete build and install before any Bambu command.
-if ! cmake --build build --parallel 8 >"$OUT/preflight/build.log" 2>&1; then fail "full build failed; see $OUT/preflight/build.log"; fi
+if ! cmake --build build -j8 >"$OUT/preflight/build.log" 2>&1; then fail "full build failed; see $OUT/preflight/build.log"; fi
 if ! cmake --install build >"$OUT/preflight/install.log" 2>&1; then fail "install failed; see $OUT/preflight/install.log"; fi
 INSTALL_PREFIX="$ROOT/install"
 if [[ ${T4B_TEST_MODE:-0} == 1 && -n ${T4B_TEST_INSTALL_PREFIX:-} ]]; then INSTALL_PREFIX=$T4B_TEST_INSTALL_PREFIX; fi
@@ -80,10 +109,10 @@ IFS=$' \t\n'
 export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp"
 BAMBU="$INSTALL_PREFIX/bin/bambu"
 [[ -x $BAMBU ]] || fail "installed Bambu executable missing: $BAMBU"
-if [[ $MODE != scheduler-off ]]; then export PATH="$(dirname "$VSIM"):$PATH"; fi
+if [[ $MODE != scheduler-off ]]; then export PATH="$MODELSIM_BIN:$PATH"; fi
 BAMBU_VERSION=$($BAMBU --version 2>&1 | head -n 3 || true)
 SIMULATOR_VERSION='not-used'
-if [[ $MODE != scheduler-off ]]; then SIMULATOR_VERSION=$($VSIM -version 2>&1 | head -n 4 || true); fi
+if [[ $MODE != scheduler-off ]]; then SIMULATOR_VERSION=$("$MODELSIM_VSIM" -version 2>&1 | head -n 4 || true); fi
 
 TOP=kernel FIXTURE_DEFINE=-DT4B_FIXTURE_SUM=1
 case $FIXTURE in
@@ -107,7 +136,7 @@ if [[ $MODE == scheduler-off ]]; then
   ARGS+=(--bambu-parameter=experimental-m-axi-burst=1 --bambu-parameter=print-ir-manager=1
     --debug-classes=InterfaceInfer,BuildVirtualPhi,parametric_list_based --print-dot)
 else
-  ARGS+=(--simulate --simulator=MODELSIM "--mentor-root=$MODELSIM_ROOT")
+  ARGS+=(--simulate --simulator=MODELSIM "--mentor-root=$MODELSIM_MENTOR_ROOT")
   if [[ $MODE == burst ]]; then ARGS+=(--bambu-parameter=experimental-m-axi-burst=1)
   else ARGS+=(--bambu-parameter=experimental-m-axi-burst=0); fi
 fi
@@ -125,11 +154,11 @@ READ_DELAY_DERIVED=not-checked
 if [[ $MODE != scheduler-off ]]; then READ_DELAY_DERIVED=$((L - 1)); fi
 # Write an initial result record before inspecting simulator outputs, so even
 # missing VCDs and failed transcripts leave complete provenance beside logs.
-python3 -B - "$OUT" "$ROOT" "$TESTS" "$BAMBU" "$SETTINGS" "$VSIM" "$MODE" \
+python3 -B - "$OUT" "$ROOT" "$TESTS" "$BAMBU" "$SETTINGS" "$MODELSIM_VSIM" "$MODELSIM_MENTOR_ROOT" "$MODELSIM_BIN" "$MODELSIM_SOURCE" "$MODE" \
   "$FIXTURE" "$B" "$O" "$D" "$L" "$N" "$Q" "$AXI_TYPE" "$BAMBU_RC" \
   "$BAMBU_VERSION" "$SIMULATOR_VERSION" "$CHECKER" "$READ_DELAY_DERIVED" "$PROFILE_JSON" "$TB" <<'PY'
 import hashlib, json, pathlib, shlex, subprocess, sys
-(out, root, tests, bambu, settings, vsim, mode, fixture, b, o, d, latency,
+(out, root, tests, bambu, settings, vsim, modelsim_root, modelsim_bin, modelsim_source, mode, fixture, b, o, d, latency,
  n, q, axi_type, bambu_rc, version, simulator_version, checker, read_delay,
  profile_json, tb) = sys.argv[1:]
 def sha(path):
@@ -146,7 +175,11 @@ pathlib.Path(out, "manifest.json").write_text(json.dumps({**p,
   "status": "INCOMPLETE", "mode": mode, "bambu": {"path": bambu, "sha256": sha(bambu), "version": version.strip()},
   "settings": {"path": settings, "sha256": sha(settings), "sourced": True},
   "testbench": {"path": tb, "sha256": sha(tb)},
-  "simulator": {"path": vsim if mode != "scheduler-off" else None, "version": simulator_version.strip(), "sha256": sha(vsim) if mode != "scheduler-off" else None},
+  "simulator": {"source": modelsim_source, "root": modelsim_root or None,
+                 "bin": modelsim_bin or None,
+                 "path": vsim if mode != "scheduler-off" else None,
+                 "resolved_path": pathlib.Path(vsim).resolve().as_posix() if mode != "scheduler-off" else None,
+                 "version": simulator_version.strip(), "sha256": sha(vsim) if mode != "scheduler-off" else None},
   "checker": {"path": checker if mode != "scheduler-off" else None, "sha256": sha(checker) if mode != "scheduler-off" else None},
   "read_delay_derived": int(read_delay) if read_delay.isdecimal() else read_delay,
   "repository": {"root": root, "revision": subprocess.check_output(["git", "-C", root, "rev-parse", "HEAD"], text=True).strip()},
@@ -398,12 +431,12 @@ fi
 
 # Preserve run provenance and every available output, even when Bambu itself
 # returned a failure. The checker report is included when it was produced.
-python3 -B - "$OUT" "$ROOT" "$TESTS" "$BAMBU" "$SETTINGS" "$MODELSIM_ROOT" \
-  "$VSIM" "$CHECKER" "$SIMULATOR_VERSION" "$READ_DELAY_DERIVED" "$MODE" "$FIXTURE" "$B" "$O" "$D" "$L" "$N" "$Q" \
+python3 -B - "$OUT" "$ROOT" "$TESTS" "$BAMBU" "$SETTINGS" "$MODELSIM_MENTOR_ROOT" "$MODELSIM_VSIM" "$MODELSIM_BIN" "$MODELSIM_SOURCE" \
+  "$CHECKER" "$SIMULATOR_VERSION" "$READ_DELAY_DERIVED" "$MODE" "$FIXTURE" "$B" "$O" "$D" "$L" "$N" "$Q" \
   "$AXI_TYPE" "$BAMBU_RC" "$CHECKER_RC" "$BAMBU_VERSION" "$PROFILE_JSON" \
   "$RESULT_JSON" <<'PY'
 import hashlib, json, os, pathlib, shlex, subprocess, sys
-(out, root, tests, bambu, settings, modelsim_root, vsim, checker, simulator_version,
+(out, root, tests, bambu, settings, modelsim_root, vsim, modelsim_bin, modelsim_source, checker, simulator_version,
  read_delay, mode, fixture, b, o, d, latency, n, q, axi_type, bambu_rc, checker_rc,
  bambu_version, profile_json, result_json) = sys.argv[1:]
 def sha(path):
@@ -426,7 +459,9 @@ payload = {
     "mode": mode,
     "bambu": {"path": bambu, "sha256": sha(bambu), "version": bambu_version.strip()},
     "settings": {"path": settings, "sha256": sha(settings), "sourced": True},
-    "simulator": {"root": modelsim_root, "path": vsim if mode != "scheduler-off" else None,
+    "simulator": {"source": modelsim_source, "root": modelsim_root or None,
+                  "bin": modelsim_bin or None, "path": vsim if mode != "scheduler-off" else None,
+                  "resolved_path": os.path.realpath(vsim) if mode != "scheduler-off" else None,
                   "version": simulator_version.strip(),
                   "sha256": sha(vsim) if mode != "scheduler-off" else None},
     "read_delay_derived": int(read_delay) if read_delay.isdecimal() else read_delay,

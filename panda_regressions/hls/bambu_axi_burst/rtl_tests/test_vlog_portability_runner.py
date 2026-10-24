@@ -56,7 +56,7 @@ class VlogPortabilityRunnerTests(unittest.TestCase):
             self.tools / "vco",
             "#!/bin/bash\n"
             "tool=$(basename \"$0\")\n"
-            "case $tool in vlib) expected='Fake vlib 1.0';; vlog) expected='Fake vlog 1.0';; *) echo \"unexpected dispatch name: $tool\" >&2; exit 12;; esac\n"
+            "case $tool in vlib) expected='Fake vlib 1.0';; vlog) expected='Fake vlog 1.0';; vsim) expected='Fake vsim 1.0';; *) echo \"unexpected dispatch name: $tool\" >&2; exit 12;; esac\n"
             "if [[ ${1:-} == -version ]]; then echo \"$expected\"; exit 0; fi\n"
             "printf '%s|%s|%s\\n' \"$tool\" \"$PWD\" \"$*\" >> \"$VLOG_TRACE\"\n"
             "if [[ $tool == vlib && ${FAIL_VLIB_DIR:-} == \"$(basename \"$(dirname \"$PWD\")\")\" ]]; then echo 'FAKE VLIB DIAGNOSTIC' >&2; exit 9; fi\n"
@@ -66,6 +66,22 @@ class VlogPortabilityRunnerTests(unittest.TestCase):
         )
         (self.tools / "vlib").symlink_to("vco")
         (self.tools / "vlog").symlink_to("vco")
+
+    def _isolated_path(self, name: str, *, include_companions: bool = False) -> Path:
+        path_dir = self.case_root / name
+        path_dir.mkdir()
+        utilities = (
+            "python3", "timeout", "sha256sum", "tail", "realpath", "dirname",
+            "basename", "mkdir", "git", "awk", "head", "tr", "tee", "bash", "find",
+        )
+        for utility in utilities:
+            found = shutil.which(utility, path=self.env["PATH"])
+            if found:
+                (path_dir / utility).symlink_to(found)
+        if include_companions:
+            for utility in ("vlib", "vlog"):
+                (path_dir / utility).symlink_to(self.tools / utility)
+        return path_dir
 
     def _run(self, output: Path | None, *, env: dict[str, str] | None = None,
              path: str | None = None, cwd: Path | None = None,
@@ -165,6 +181,46 @@ class VlogPortabilityRunnerTests(unittest.TestCase):
         self.assertIn("Fake\\ vlog\\ 1.0", provenance)
         self.assertIn("vlog_flags=-sv", provenance)
 
+    def test_compile_only_fast_path_needs_no_vsim(self) -> None:
+        path_dir = self._isolated_path("compile-only-path", include_companions=True)
+        output = self.case_root / "compile-only-without-vsim"
+        env = self.env.copy()
+        env.pop("BAMBU_HLS_BACKEND_PATH", None)
+
+        result = self._run(output, env=env, path=str(path_dir))
+
+        self.assertEqual(result.returncode, 0, result.stdout)
+        provenance = (output / "provenance.txt").read_text(encoding="utf-8")
+        self.assertIn("modelsim_lookup_source=PATH_COMPILE_TOOLS", provenance)
+        self.assertIn("modelsim_vsim_invocation=not-used", provenance)
+        self.assertEqual(len(self.trace.read_text(encoding="utf-8").splitlines()), 16)
+
+    def test_backend_path_fallback_supplies_vsim_and_sibling_compile_tools(self) -> None:
+        path_dir = self._isolated_path("backend-only-path")
+        backend_root = self.case_root / "backend root with spaces"
+        backend_bin = backend_root / "questa" / "bin"
+        backend_bin.mkdir(parents=True)
+        (backend_bin / "vsim").symlink_to(self.tools / "vco")
+        (backend_bin / "vlib").symlink_to(self.tools / "vlib")
+        (backend_bin / "vlog").symlink_to(self.tools / "vlog")
+        output = self.case_root / "backend-path-output"
+        env = self.env.copy()
+        env["BAMBU_HLS_BACKEND_PATH"] = str(backend_root)
+
+        result = self._run(output, env=env, path=str(path_dir))
+
+        self.assertEqual(result.returncode, 0, result.stdout)
+        provenance = (output / "provenance.txt").read_text(encoding="utf-8")
+        escaped_bin = str(backend_bin).replace(" ", "\\ ")
+        self.assertIn("modelsim_lookup_source=BAMBU_HLS_BACKEND_PATH", provenance)
+        self.assertIn(f"modelsim_vsim_invocation={escaped_bin}/vsim", provenance)
+        self.assertIn(f"modelsim_selected_bin={escaped_bin}", provenance)
+        self.assertIn(f"vlib_invocation={escaped_bin}/vlib", provenance)
+        self.assertIn(f"vlog_invocation={escaped_bin}/vlog", provenance)
+        calls = self.trace.read_text(encoding="utf-8").splitlines()
+        self.assertEqual(len([line for line in calls if line.startswith("vlib|")]), 8)
+        self.assertEqual(len([line for line in calls if line.startswith("vlog|")]), 8)
+
     def test_vlib_failure_is_reported_without_success_marker(self) -> None:
         output = self.case_root / "vlib-fails"
         env = self.env | {"FAIL_VLIB_DIR": "MinimalAXI4MasterPipelined_sync_active-low"}
@@ -230,8 +286,8 @@ class VlogPortabilityRunnerTests(unittest.TestCase):
                 output = self.case_root / f"missing-{missing}"
                 run_env = self.env.copy()
                 if missing == "vlib":
-                    # A sibling vsim and a complete backend pair are not a
-                    # substitute for the regression's system-PATH contract.
+                    # An incomplete PATH-selected vsim install wins over the
+                    # later backend root, matching Bambu's PATH-first rule.
                     _write_executable(self.tools / "vsim", "#!/bin/sh\nexit 0\n")
                     (bin_dir / "vsim").symlink_to(self.tools / "vsim")
                     backend_bin = self.case_root / "configured backend" / "bin"
@@ -242,6 +298,8 @@ class VlogPortabilityRunnerTests(unittest.TestCase):
                 result = self._run(output, env=run_env, path=str(bin_dir))
                 self.assertEqual(result.returncode, 2, result.stdout)
                 self.assertIn(f"missing required tool: {missing}", result.stdout)
+                if missing == "vlib":
+                    self.assertIn(f"selected ModelSim bin {bin_dir}", result.stdout)
                 self.assertFalse(output.exists())
 
 

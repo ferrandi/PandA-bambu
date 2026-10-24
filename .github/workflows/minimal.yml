@@ -436,11 +436,19 @@ jobs:
         shell: bash
         run: |
           source ${{env.dist-dir}}/settings.sh
+          source etc/libtech/backend/simulation/modelsim/tool_lookup.sh
+          if ! bambu_modelsim_resolve; then
+            echo "::error title=ModelSim not found::vsim is absent from PATH and BAMBU_HLS_BACKEND_PATH"
+            exit 1
+          fi
+          export PATH="$BAMBU_MODELSIM_BIN${PATH:+:$PATH}"
+          printf 'ModelSim lookup source: %s\n' "$BAMBU_MODELSIM_SOURCE"
+          printf 'ModelSim selected bin: %s\n' "$BAMBU_MODELSIM_BIN"
           mkdir -p ${{env.report-dir}}
           for tool in vsim vlib vlog; do
-            tool_path=$(command -v "$tool" || true)
-            if [[ -z "$tool_path" ]]; then
-              echo "::error title=Missing ModelSim tool::$tool is not available in the runner service PATH"
+            tool_path="$BAMBU_MODELSIM_BIN/$tool"
+            if [[ ! -x "$tool_path" ]]; then
+              echo "::error title=Missing ModelSim tool::$tool is not available beside selected vsim at $BAMBU_MODELSIM_BIN"
               exit 1
             fi
             printf 'ModelSim tool %s: %s\n' "$tool" "$tool_path"

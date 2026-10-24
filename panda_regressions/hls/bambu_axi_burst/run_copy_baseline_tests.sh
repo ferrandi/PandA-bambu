@@ -26,8 +26,6 @@ else
   [[ -z $bambu ]] || bambu=$(realpath "$bambu")
 fi
 [[ -n ${bambu:-} && -x $bambu ]] || { echo "Bambu executable not found: $bambu_arg" >&2; exit 2; }
-command -v vsim >/dev/null || { echo "ModelSim vsim is required" >&2; exit 2; }
-command -v vlog >/dev/null || { echo "ModelSim vlog is required" >&2; exit 2; }
 
 prefix=$(dirname "$(dirname "$bambu")")
 settings="$prefix/settings.sh"
@@ -38,6 +36,15 @@ source "$settings"
 [[ $(realpath -m "${BAMBU_HLS:-}") == $(realpath "$prefix") ]] || {
   echo "settings.sh selected an unexpected BAMBU_HLS=${BAMBU_HLS:-<unset>}" >&2; exit 2;
 }
+source "$repo_root/etc/libtech/backend/simulation/modelsim/tool_lookup.sh"
+bambu_modelsim_resolve || { echo "ModelSim vsim could not be resolved using Bambu's search path" >&2; exit 2; }
+export PATH="$BAMBU_MODELSIM_BIN:$PATH"
+for tool in vlog vlib vmap; do
+  [[ -x "$BAMBU_MODELSIM_BIN/$tool" ]] || {
+    echo "ModelSim companion tool missing from selected bin $BAMBU_MODELSIM_BIN: $tool" >&2
+    exit 2
+  }
+done
 
 out_arg=$2
 if [[ -e $out_arg || -L $out_arg ]]; then
@@ -52,20 +59,21 @@ device="$repo_root/etc/libtech/xilinx/xcu250-2Lfigd2104.xml"
 common=(--compiler=I386_CLANG16 --generate-interface=INFER --device-name=xcu250,-2L,figd2104
   --AXI-burst-type=INCREMENTAL --mem-delay-read=64 --mem-delay-write=2 --tb-queue-size=32
   --memory-allocation-policy=NO_BRAM --distram-threshold=0 --clock-period=3.33
-  --no-clean --simulate --simulator=MODELSIM "--generate-tb=$testbench"
+  --no-clean --simulate --simulator=MODELSIM "--mentor-root=$BAMBU_MODELSIM_ROOT" "--generate-tb=$testbench"
   --bambu-parameter=experimental-m-axi-burst=1 --extra-cc-options=-DNDEBUG
   --extra-cc-options=-DBAMBU)
 {
   printf 'repo_root=%s\noutput=%s\nbambu=%s\nprefix=%s\nsettings=%s\nplugin=%s\n' \
     "$repo_root" "$out" "$bambu" "$prefix" "$(realpath "$settings")" "$(realpath "$plugin")"
-  printf 'simulator=%s\nsimulator_version=' "$(realpath "$(command -v vsim)")"
-  vsim -version 2>&1 | sed -n '1p' || true
+  printf 'simulator_source=%s\nsimulator_invocation=%s\nsimulator_resolved=%s\nsimulator_root=%s\nsimulator_version=' \
+    "$BAMBU_MODELSIM_SOURCE" "$BAMBU_MODELSIM_PATH" "$(realpath "$BAMBU_MODELSIM_PATH")" "$BAMBU_MODELSIM_ROOT"
+  "$BAMBU_MODELSIM_PATH" -version 2>&1 | sed -n '1p' || true
   printf 'source=%s\ntestbench=%s\nexpectations=%s\n' "$source_file" "$testbench" "$expectations"
   printf 'argv='; printf '%q ' "$bambu" "$source_file" "${common[@]}"; printf '\n'
   printf 'TMPDIR=%s\nTMP=%s\nTEMP=%s\n' "$TMPDIR" "$TMP" "$TEMP"
   "$bambu" --version 2>&1 | sed -n '1,2p'
   sha256sum "$bambu" "$settings" "$plugin" "$source_file" "$testbench" "$expectations" \
-    "$(command -v vsim)" "$(command -v vlog)"
+    "$BAMBU_MODELSIM_PATH" "$BAMBU_MODELSIM_BIN/vlog"
 } >"$out/provenance.txt"
 
 run_case() {

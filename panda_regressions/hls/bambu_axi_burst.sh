@@ -69,6 +69,21 @@ if [[ $(realpath -m "${BAMBU_HLS:-}") != $(realpath "$bambu_prefix") ]]; then
   echo "settings.sh selected BAMBU_HLS='${BAMBU_HLS:-<unset>}' instead of $bambu_prefix" >&2
   exit 2
 fi
+source "$repo_root/etc/libtech/backend/simulation/modelsim/tool_lookup.sh"
+if ! bambu_modelsim_resolve; then
+  echo "ModelSim vsim could not be resolved through PATH or BAMBU_HLS_BACKEND_PATH" >&2
+  exit 2
+fi
+export PATH="$BAMBU_MODELSIM_BIN${PATH:+:$PATH}"
+for modelsim_tool in vsim vlib vlog; do
+  if [[ ! -x "$BAMBU_MODELSIM_BIN/$modelsim_tool" ]]; then
+    echo "ModelSim $modelsim_tool is missing beside selected vsim: $BAMBU_MODELSIM_BIN/$modelsim_tool" >&2
+    exit 2
+  fi
+done
+printf 'AXI_BURST_MODELSIM source=%s vsim=%s bin=%s mentor_root=%s\n' \
+  "$BAMBU_MODELSIM_SOURCE" "$BAMBU_MODELSIM_PATH" "$BAMBU_MODELSIM_BIN" "$BAMBU_MODELSIM_ROOT"
+modelsim_root_arg=$(python3 -c 'import shlex, sys; print(shlex.quote(sys.argv[1]))' "$BAMBU_MODELSIM_ROOT")
 scratch=$out_root
 # Keep every artifact under the selected output root. Mantis requires its own
 # -o directory to be fresh, so reserve a child for its outputs and use a
@@ -81,7 +96,7 @@ out="$scratch/mantis"
 # Mantis cleanup would remove bambu_results.xml before the cycle gate runs.
 # Retain cases internally, then apply Mantis-style cleanup after validation.
 python3 "$script_dir/../../etc/scripts/mantis.py" --tool=bambu \
-  --args="--configuration-name=AXI-BURST --compiler=I386_CLANG16 --experimental-setup=BAMBU --generate-interface=INFER --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --mem-delay-read=64 --mem-delay-write=2 --tb-queue-size=32 --memory-allocation-policy=NO_BRAM --distram-threshold=0 --clock-period=3.33 --generate-vcd --no-clean --extra-cc-options=-DNOCACHE --simulate --simulator=MODELSIM" \
+  --args="--configuration-name=AXI-BURST --compiler=I386_CLANG16 --experimental-setup=BAMBU --generate-interface=INFER --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --mem-delay-read=64 --mem-delay-write=2 --tb-queue-size=32 --memory-allocation-policy=NO_BRAM --distram-threshold=0 --clock-period=3.33 --generate-vcd --no-clean --extra-cc-options=-DNOCACHE --simulate --simulator=MODELSIM --mentor-root=$modelsim_root_arg" \
   --no-clean --returnfail -l "$script_dir/bambu_axi_burst_list" -o "$out" -b "$script_dir/bambu_axi_burst" "${mantis_args[@]}"
 
 if [[ ! -d $out || -L $out ]]; then
@@ -104,6 +119,7 @@ export TMPDIR="$scratch/tmp" TMP="$scratch/tmp" TEMP="$scratch/tmp"
 python3 -B "$script_dir/bambu_axi_burst/test_check_burst_results.py"
 python3 -B "$script_dir/bambu_axi_burst/test_write_compiler_artifacts.py"
 python3 -B "$script_dir/bambu_axi_burst/test_read_compiler_artifacts.py"
+BURST_TEST_TMPDIR="$scratch/tmp" python3 -B "$script_dir/bambu_axi_burst/test_modelsim_tool_lookup.py"
 python3 -B "$script_dir/bambu_axi_burst/rtl_tests/test_extract_write_engine.py"
 python3 -B "$script_dir/bambu_axi_burst/rtl_tests/test_vlog_portability_runner.py"
 python3 -B "$script_dir/bambu_axi_burst/test_axi_latency_metadata.py"

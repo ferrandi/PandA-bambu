@@ -17,7 +17,38 @@ if [[ -e "$OUT" || -L "$OUT" ]]; then
     exit 2
 fi
 
-for tool in python3 vlib vlog timeout sha256sum tail; do
+for tool in python3 timeout sha256sum tail; do
+    command -v "$tool" >/dev/null 2>&1 || {
+        echo "missing required tool: $tool" >&2
+        exit 2
+    }
+done
+
+MODELSIM_LOOKUP_SOURCE=PATH_COMPILE_TOOLS
+MODELSIM_VSIM=not-used
+MODELSIM_BIN=not-used
+if ! command -v vlib >/dev/null 2>&1 || ! command -v vlog >/dev/null 2>&1; then
+    source "$ROOT/etc/libtech/backend/simulation/modelsim/tool_lookup.sh"
+    if ! bambu_modelsim_resolve; then
+        if ! command -v vlib >/dev/null 2>&1; then
+            echo "missing required tool: vlib; backend vsim lookup also failed" >&2
+        else
+            echo "missing required tool: vlog; backend vsim lookup also failed" >&2
+        fi
+        exit 2
+    fi
+    export PATH="$BAMBU_MODELSIM_BIN${PATH:+:$PATH}"
+    MODELSIM_LOOKUP_SOURCE=$BAMBU_MODELSIM_SOURCE
+    MODELSIM_VSIM=$BAMBU_MODELSIM_PATH
+    MODELSIM_BIN=$BAMBU_MODELSIM_BIN
+    for tool in vlib vlog; do
+        if [[ ! -x "$BAMBU_MODELSIM_BIN/$tool" ]]; then
+            echo "missing required tool: $tool in selected ModelSim bin $BAMBU_MODELSIM_BIN" >&2
+            exit 2
+        fi
+    done
+fi
+for tool in vlib vlog; do
     command -v "$tool" >/dev/null 2>&1 || {
         echo "missing required tool: $tool" >&2
         exit 2
@@ -54,6 +85,10 @@ tool_version() {
     printf 'repo_root=%q\n' "$ROOT"
     printf 'python3=%q\n' "$PYTHON"
     printf 'python3_version=%q\n' "$($PYTHON --version 2>&1)"
+    printf 'modelsim_lookup_source=%q\n' "$MODELSIM_LOOKUP_SOURCE"
+    printf 'modelsim_vsim_invocation=%q\n' "$MODELSIM_VSIM"
+    printf 'modelsim_selected_bin=%q\n' "$MODELSIM_BIN"
+    printf 'sha256_tool_lookup=%s\n' "$(sha256 "$ROOT/etc/libtech/backend/simulation/modelsim/tool_lookup.sh")"
     printf 'vlib_invocation=%q\n' "$VLIB_CMD"
     printf 'vlib_resolved=%q\n' "$VLIB_RESOLVED"
     printf 'vlib_version=%q\n' "$(tool_version vlib "$VLIB_CMD" -version | tr '\n' ' ')"
