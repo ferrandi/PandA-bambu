@@ -369,8 +369,8 @@ add_executable(record_output "${CMAKE_CURRENT_SOURCE_DIR}/utility/record_output.
 # partial build of another target would leave the installation without the
 # artifact to install: build it before installing, like the other executables.
 install(CODE "
-   if(NOT EXISTS \"${CMAKE_BINARY_DIR}/src/record_output\")
-      execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target record_output)
+   if(NOT EXISTS \"$<TARGET_FILE:record_output>\")
+      execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target record_output --config \"\${CMAKE_INSTALL_CONFIG_NAME}\")
    endif()
 " )
 install(TARGETS record_output
