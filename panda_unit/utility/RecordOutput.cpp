@@ -685,6 +685,35 @@ BOOST_AUTO_TEST_CASE(record_output_unwritable_log_exits_fast)
    BOOST_REQUIRE_EQUAL(1, copier.wait(5000));
 }
 
+BOOST_AUTO_TEST_CASE(record_output_unopenable_log_still_drains_the_input)
+{
+   IgnoreSigpipe guard;
+   // The producer must not be killed by SIGPIPE when the log cannot be opened:
+   // the copier drains the whole input, keeps the live console copy, and only
+   // then reports the failure.
+   const auto payload = make_payload(1024 * 1024);
+   TempPath input("unopenable_payload.bin");
+   BOOST_REQUIRE(write_file(input.path(), payload));
+   const int in_fd = ::open(input.path().c_str(), O_RDONLY);
+   BOOST_REQUIRE_LE(0, in_fd);
+   Fd input_fd{in_fd};
+   int console[2];
+   BOOST_REQUIRE_EQUAL(0, ::pipe(console));
+   Fd console_read{console[0]};
+   Fd console_write{console[1]};
+   TempPath log_dir("unopenable_log_dir", /*as_directory=*/true);
+   Child copier{spawn_tool({log_dir.path().string()}, input_fd.get(), console_write.get())};
+   console_write.close();
+   const ReadAll console_data = read_all_fd(console_read.get());
+   if(console_data.timed_out)
+   {
+      copier.wait(1000);
+      BOOST_FAIL("the copier did not drain the input");
+   }
+   BOOST_CHECK_EQUAL(console_data.data, payload);
+   BOOST_REQUIRE_EQUAL(1, copier.wait());
+}
+
 BOOST_AUTO_TEST_CASE(record_output_unwritable_data_and_dead_console_still_terminate)
 {
    IgnoreSigpipe guard;

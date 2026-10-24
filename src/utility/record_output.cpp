@@ -125,14 +125,15 @@ int main(int argc, char** argv)
    // draining the input and keeps writing the log file.
    std::signal(SIGPIPE, SIG_IGN);
 
+   // A log file that cannot be opened is handled as a log that cannot be
+   // written: the input is drained anyway, otherwise the logged command would
+   // be killed by SIGPIPE instead of completing.
    const int log_fd = ::open(log_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-   if(log_fd < 0)
+   bool log_ok = log_fd >= 0;
+   if(!log_ok)
    {
       std::fprintf(stderr, "record_output: cannot open log file \"%s\": %s\n", log_file, std::strerror(errno));
-      return 1;
    }
-
-   bool log_ok = true;
    bool live_copy = console_copy;
    char buffer[65536];
    while(true)
@@ -172,7 +173,7 @@ int main(int argc, char** argv)
    }
 
    // close can report a deferred write error of the buffered writes.
-   if(log_ok && ::close(log_fd) != 0)
+   if(log_fd >= 0 && ::close(log_fd) != 0)
    {
       std::fprintf(stderr, "record_output: error closing the log file \"%s\": %s\n", log_file, std::strerror(errno));
       log_ok = false;

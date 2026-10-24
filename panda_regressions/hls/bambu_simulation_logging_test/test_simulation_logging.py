@@ -173,6 +173,24 @@ class SimulationLoggingTest(unittest.TestCase):
         self.assertIn(PAYLOAD, result.stdout)
         self.assertNotIn(b"unexpected external tee invocation", result.stderr)
 
+    def test_copier_is_found_in_the_cmake_build_tree_layout(self):
+        """Uninstalled build: BAMBU_HLS is the build root, the tool is in <build>/src."""
+        (self.bambu_hls / "src").mkdir()
+        (self.bambu_hls / "bin" / "record_output").rename(self.bambu_hls / "src" / "record_output")
+        result, log = self.run_wrapper()
+        self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
+        self.assertEqual(log.read_bytes(), PAYLOAD)
+
+    def test_unopenable_log_still_drains_the_input(self):
+        """The producer completes and is not killed by SIGPIPE; the failure is reported."""
+        log = self.work / "missing-dir" / "log"
+        with open(self.payload_file, "rb") as payload:
+            result = subprocess.run([str(self.tool), str(log)], stdin=payload,
+                                    capture_output=True, timeout=30)
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, PAYLOAD)
+        self.assertIn(b"cannot open log file", result.stderr)
+
     def test_producer_failure_is_preserved(self):
         result, log = self.run_wrapper(producer_status=7)
         self.assertEqual(result.returncode, 7)
