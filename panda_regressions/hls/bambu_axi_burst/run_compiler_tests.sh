@@ -384,26 +384,35 @@ run_shared_od_conflict_case() {
 }
 run_shared_default_match_case() {
   local tag=$1 tops=$2 define=$3 first=$4 second=$5
+  local rc
   local case_dir="$OUT/compiler/shared-profile/$tag"
   local args=("--top-fname=$tops" --compiler=I386_CLANG16 --generate-interface=INFER
               --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --no-clean
               "--bambu-parameter=${BURST_PARAMETER}=1"
               --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU "--extra-cc-options=-D$define")
   mkdir -p "$case_dir"
+  printf '%q ' "$BAMBU" "$TESTS/compiler_cases/mixed_root_shared_bundle.cpp" "${args[@]}" \
+    >"$case_dir/argv.txt"
+  printf '\n' >>"$case_dir/argv.txt"
   if (cd "$case_dir" && "$BAMBU" "$TESTS/compiler_cases/mixed_root_shared_bundle.cpp" \
       "${args[@]}" >stdout.log 2>stderr.log); then
-    echo "expected the selected multi-root backend guard after profile compatibility; see $case_dir" >&2
-    return 1
+    rc=0
+  else
+    rc=$?
   fi
+  printf '%s\n' "$rc" >"$case_dir/exit-code.txt"
   assert_shared_root_order "$tag" "$first" "$second" "$case_dir/stderr.log"
-  if ! grep -Eq "Expected single top function name" "$case_dir/stdout.log" "$case_dir/stderr.log" || \
-     grep -Eq "Incompatible m_axi burst profile" "$case_dir/stdout.log" "$case_dir/stderr.log"; then
-    echo "omitted and explicit O1/D32 roots did not pass profile compatibility; see $case_dir" >&2
+  if grep -Eq "Incompatible m_axi burst profile" "$case_dir/stdout.log" "$case_dir/stderr.log"; then
+    echo "omitted and explicit O1/D32 roots were rejected for profile incompatibility; see $case_dir" >&2
     return 1
   fi
+  python3 "$CHECKER" shared-profile --output "$case_dir" \
+    --compiler-status "$rc" --stdout-log "$case_dir/stdout.log" --stderr-log "$case_dir/stderr.log" \
+    --shared-root renamed_sum --shared-root configured32 \
+    --expected-burst-max 16 --expected-outstanding 1 --expected-fifo-depth 32
   # The omitted depth derives to next_pow2(max(2,1)*16) = 32, so the explicit
   # side has to name 32 for the two roots to be compatible.
-  echo "SHARED-PROFILE PASS: $tag omitted defaults equal explicit O1/D32 (reached backend multi-top guard)"
+  echo "SHARED-PROFILE PASS: $tag omitted defaults equal explicit O1/D32 (shared RTL profile witnessed)"
 }
 run_burst_type_case() {
   local tag=$1 expected=$2 burst_type=$3 burst_value=$4 device_file=${5:-}
