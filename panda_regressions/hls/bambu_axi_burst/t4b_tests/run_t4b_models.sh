@@ -17,7 +17,8 @@ N in {1024,2048}, two repeats, and O in {1,2,3,4,5,6,8,12,16} for B=16.
 
 FRESH_OUT defaults to ./out_t4b_models and must not already exist.
 ModelSim execution must be launched outside the Codex sandbox with
-BURST_MODELSIM_OUTSIDE_SANDBOX=1. MODELSIM_ROOT defaults to /opt/mentor.
+BURST_MODELSIM_OUTSIDE_SANDBOX=1. An explicit MODELSIM_ROOT selects
+MODELSIM_ROOT/questasim/bin; otherwise the Bambu PATH/backend-root lookup is used.
 --prepare-only extracts and hashes the HDL and writes a run plan without
 invoking ModelSim; it is intended for offline review/tests.
 EOF
@@ -37,25 +38,65 @@ OUT_ARG=${OUT_ARG:-"$PWD/out_t4b_models"}
 [[ ! -L $OUT_ARG ]] || { echo "refusing symlink output path: $OUT_ARG" >&2; exit 2; }
 OUT=$(realpath -m -- "$OUT_ARG")
 [[ ! -e $OUT ]] || { echo "refusing to reuse existing output: $OUT" >&2; exit 2; }
+
+MODELSIM_SOURCE=not-used
+MODELSIM_BIN=
+MODELSIM_MENTOR_ROOT=
+MODELSIM_VSIM=
+if (( ! PREPARE_ONLY )); then
+  [[ ${BURST_MODELSIM_OUTSIDE_SANDBOX:-0} == 1 ]] || {
+    echo "refusing ModelSim execution without BURST_MODELSIM_OUTSIDE_SANDBOX=1; rerun outside the sandbox" >&2
+    exit 2
+  }
+  if [[ -n ${MODELSIM_ROOT:-} ]]; then
+    MODELSIM_SOURCE=MODELSIM_ROOT
+    MODELSIM_BIN="$MODELSIM_ROOT/questasim/bin"
+    MODELSIM_MENTOR_ROOT=$MODELSIM_ROOT
+    MODELSIM_VSIM="$MODELSIM_BIN/vsim"
+  else
+    # PATH is Bambu's first lookup source and does not require a Bambu install.
+    # Load settings only when backend-root fallback is actually needed.
+    if ! command -v vsim >/dev/null 2>&1 && [[ -z ${BAMBU_HLS_BACKEND_PATH:-} ]]; then
+      if [[ -n ${BAMBU_HLS:-} && -r "$BAMBU_HLS/settings.sh" ]]; then
+        # shellcheck disable=SC1090
+        source "$BAMBU_HLS/settings.sh"
+      elif [[ -r "$ROOT/install/settings.sh" ]]; then
+        # shellcheck disable=SC1091
+        source "$ROOT/install/settings.sh"
+      else
+        echo "BAMBU_HLS_BACKEND_PATH is unset and no Bambu settings.sh is available" >&2
+        exit 2
+      fi
+    fi
+    # shellcheck disable=SC1091
+    source "$ROOT/etc/libtech/backend/simulation/modelsim/tool_lookup.sh"
+    bambu_modelsim_resolve || { echo "ModelSim vsim could not be resolved using Bambu's search path" >&2; exit 2; }
+    MODELSIM_SOURCE=$BAMBU_MODELSIM_SOURCE
+    MODELSIM_BIN=$BAMBU_MODELSIM_BIN
+    MODELSIM_MENTOR_ROOT=$BAMBU_MODELSIM_ROOT
+    MODELSIM_VSIM=$BAMBU_MODELSIM_PATH
+  fi
+  VLOG="$MODELSIM_BIN/vlog"
+  VLIB="$MODELSIM_BIN/vlib"
+  VMAP="$MODELSIM_BIN/vmap"
+  for tool in "$MODELSIM_VSIM" "$VLOG" "$VLIB" "$VMAP"; do
+    [[ -x $tool ]] || { echo "ModelSim tool unavailable in selected bin $MODELSIM_BIN: $tool" >&2; exit 2; }
+  done
+  export PATH="$MODELSIM_BIN:$PATH"
+fi
 mkdir "$OUT"
 mkdir -p "$OUT/tmp" "$OUT/hdl" "$OUT/logs"
 export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp"
 
 python3 "$TESTS/extract_t4b_cells.py" --outdir "$OUT/hdl" >"$OUT/extract.log"
 
-MODELSIM_ROOT=${MODELSIM_ROOT:-/opt/mentor}
-VSIM="$MODELSIM_ROOT/questasim/bin/vsim"
-VLOG="$MODELSIM_ROOT/questasim/bin/vlog"
-VLIB="$MODELSIM_ROOT/questasim/bin/vlib"
-VMAP="$MODELSIM_ROOT/questasim/bin/vmap"
-
-python3 - "$ROOT" "$TESTS" "$OUT" "$MODELSIM_ROOT" "$PREPARE_ONLY" <<'PY'
+python3 - "$ROOT" "$TESTS" "$OUT" "$MODELSIM_MENTOR_ROOT" "$MODELSIM_SOURCE" "$MODELSIM_VSIM" "$PREPARE_ONLY" <<'PY'
 import hashlib
 import json
 import sys
 from pathlib import Path
 
-root, tests, out, modelsim_root, prepare_only = map(str, sys.argv[1:])
+root, tests, out, modelsim_root, modelsim_source, vsim, prepare_only = map(str, sys.argv[1:])
 root, tests, out = Path(root), Path(tests), Path(out)
 inputs = [
     root / "etc/libtech/NC_AXI_IPs.xml",
@@ -83,7 +124,9 @@ for n in (1024, 2048):
 
 manifest = {
     "purpose": "T4B H1 N1/N1b ModelSim characterization",
-    "simulator": str(Path(modelsim_root) / "questasim/bin/vsim"),
+    "simulator": None if prepare_only == "1" else vsim,
+    "simulator_source": modelsim_source,
+    "simulator_root": None if prepare_only == "1" else modelsim_root,
     "prepare_only": prepare_only == "1",
     "n1": {"READ_DELAY": 63, "QUEUE_SIZE": 33, "N_REQUESTS": 16,
            "required_ar_before_r_handshake": 16, "measured_latency_cycles": [63, 65]},
@@ -104,17 +147,14 @@ if ((PREPARE_ONLY)); then
   echo "prepared; ModelSim was not invoked: $OUT"
   exit 0
 fi
-
-[[ ${BURST_MODELSIM_OUTSIDE_SANDBOX:-0} == 1 ]] || {
-  echo "refusing ModelSim execution without BURST_MODELSIM_OUTSIDE_SANDBOX=1; rerun outside the sandbox" >&2
-  exit 2
-}
-for tool in "$VSIM" "$VLOG" "$VLIB" "$VMAP"; do
-  [[ -x $tool ]] || { echo "ModelSim tool unavailable: $tool" >&2; exit 2; }
-done
+VSIM=$MODELSIM_VSIM
+VLOG="$MODELSIM_BIN/vlog"
+VLIB="$MODELSIM_BIN/vlib"
+VMAP="$MODELSIM_BIN/vmap"
 
 {
-  printf 'vsim=%s\nvlog=%s\n' "$VSIM" "$VLOG"
+  printf 'simulator_source=%s\nsimulator_root=%s\nsimulator_bin=%s\nvsim=%s\nvlog=%s\n' \
+    "$MODELSIM_SOURCE" "$MODELSIM_MENTOR_ROOT" "$MODELSIM_BIN" "$VSIM" "$VLOG"
   "$VSIM" -version 2>&1 | head -n 4
   sha256sum "$VSIM" "$VLOG" "$VLIB" "$VMAP"
 } > "$OUT/modelsim_provenance.txt"
