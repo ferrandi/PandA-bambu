@@ -435,7 +435,7 @@ class T4BRunnerTests(unittest.TestCase):
         bambu.chmod(0o755)
         return prefix
 
-    def prepare_mocks(self, root: Path, event_log: Path):
+    def prepare_mocks(self, root: Path, event_log: Path, modelsim_dir="modelsim"):
         bin_dir = root / "mock-bin"
         bin_dir.mkdir()
         cmake = bin_dir / "cmake"
@@ -446,11 +446,20 @@ class T4BRunnerTests(unittest.TestCase):
             encoding="utf-8",
         )
         cmake.chmod(0o755)
-        modelsim = root / "modelsim" / "questasim" / "bin"
+        modelsim = root / modelsim_dir / "questasim" / "bin"
         modelsim.mkdir(parents=True)
         vsim = modelsim / "vsim"
-        vsim.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        vsim.write_text(
+            "#!/bin/sh\n"
+            "if [ \"${1:-}\" = '-version' ]; then echo 'mock-vsim 1.0'; fi\n"
+            "exit 0\n",
+            encoding="utf-8",
+        )
         vsim.chmod(0o755)
+        for tool in ("vlog", "vlib", "vmap"):
+            companion = modelsim / tool
+            companion.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            companion.chmod(0o755)
         checker = root / "fake_checker.py"
         checker.write_text(
             "import argparse, json, os\n"
@@ -462,22 +471,30 @@ class T4BRunnerTests(unittest.TestCase):
             "json.dump({'schema_version':1,'mode':a.mode,'scope':'mock','status':'PASS','expected':{},'metrics':m,'errors':[]}, open(a.json_out,'w'))\n",
             encoding="utf-8",
         )
-        return bin_dir, root / "modelsim", checker
+        return bin_dir, root / modelsim_dir, checker
 
     def invoke_mocked(self, output: Path, event_log: Path, prefix: Path, bindir: Path,
                       modelsim_root: Path, checker: Path, missing_vcd=False,
                       fixture="sum", mode="burst", bad_total=False,
                       missing_latency=False, latency="64", mock_vcd=None, total=None, n=1024,
-                      bad_endpoint="", descriptor_count="present", engine_rtl=None):
+                      bad_endpoint="", descriptor_count="present", engine_rtl=None,
+                      backend_lookup=False, no_simulator=False, path_vsim=False,
+                      bambu_hls=None):
         if mock_vcd is None and not missing_vcd:
             mock_vcd = output.parent / f"{output.name}-parameters.vcd"
             mock_vcd.write_text(parameter_vcd(descriptor=descriptor_count), encoding="ascii")
         env = os.environ.copy()
+        path_entries = [str(bindir)]
+        if backend_lookup or no_simulator:
+            path_entries.append("/usr/bin:/bin")
+        elif path_vsim:
+            path_entries.extend((str(modelsim_root / "questasim" / "bin"), "/usr/bin:/bin"))
+        else:
+            path_entries.append(env.get("PATH", ""))
         env.update({
-            "PATH": str(bindir) + os.pathsep + env.get("PATH", ""),
+            "PATH": os.pathsep.join(path_entries),
             "TMPDIR": str(TMP_ROOT), "TMP": str(TMP_ROOT), "TEMP": str(TMP_ROOT),
             "BURST_MODELSIM_OUTSIDE_SANDBOX": "1",
-            "MODELSIM_ROOT": str(modelsim_root),
             "T4B_TEST_MODE": "1", "T4B_TEST_INSTALL_PREFIX": str(prefix),
             "T4B_TEST_CHECKER": str(checker), "T4B_EVENT_LOG": str(event_log),
             "T4B_EXPECTED_TMP": str(output / "tmp"),
@@ -491,6 +508,18 @@ class T4BRunnerTests(unittest.TestCase):
             "T4B_MOCK_DESCRIPTOR_COUNT": descriptor_count,
             "T4B_MOCK_ENGINE_RTL": engine_rtl or "",
         })
+        if backend_lookup:
+            env.pop("MODELSIM_ROOT", None)
+            env["BAMBU_HLS_BACKEND_PATH"] = str(modelsim_root)
+        elif no_simulator:
+            env.pop("MODELSIM_ROOT", None)
+            env.pop("BAMBU_HLS_BACKEND_PATH", None)
+        elif path_vsim:
+            env.pop("MODELSIM_ROOT", None)
+            env.pop("BAMBU_HLS_BACKEND_PATH", None)
+            env["BAMBU_HLS"] = bambu_hls or ""
+        else:
+            env["MODELSIM_ROOT"] = str(modelsim_root)
         return subprocess.run(
             ["bash", str(RUNNER), "16", "4", "256", "64", str(n), "32", str(output),
              "--fixture", fixture, "--mode", mode],
@@ -508,7 +537,7 @@ class T4BRunnerTests(unittest.TestCase):
             result = self.invoke_mocked(output, event_log, prefix, bindir, modelsim_root, checker)
             self.assertEqual(result.returncode, 0, result.stderr)
             events = event_log.read_text(encoding="utf-8").splitlines()
-            build = next(i for i, line in enumerate(events) if line == "cmake:--build build --parallel 8")
+            build = next(i for i, line in enumerate(events) if line == "cmake:--build build -j8")
             install = next(i for i, line in enumerate(events) if line == "cmake:--install build")
             settings = events.index("settings")
             bambu_calls = [i for i, line in enumerate(events) if line.startswith("bambu:")]
@@ -542,6 +571,134 @@ class T4BRunnerTests(unittest.TestCase):
             self.assertIn("--AXI-burst-type=INCREMENTAL", manifest["bambu_argv"])
             self.assertFalse(any("bus-pipelined" in arg for arg in manifest["bambu_argv"]))
             self.assertTrue((output / "profile.cpp.diff").is_file())
+
+    def test_backend_lookup_without_vsim_on_path_passes_matching_mentor_root(self):
+        TMP_ROOT.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="t4b-runner-backend-lookup-", dir=TMP_ROOT) as td:
+            root = Path(td)
+            event_log = root / "events"
+            prefix = self.make_fake_install(root, event_log)
+            bindir, modelsim_root, checker = self.prepare_mocks(root, event_log)
+            output = root / "backend-lookup-out"
+            result = self.invoke_mocked(output, event_log, prefix, bindir, modelsim_root, checker,
+                                        backend_lookup=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+            selected_bin = modelsim_root / "questasim" / "bin"
+            self.assertEqual(manifest["simulator"]["source"], "BAMBU_HLS_BACKEND_PATH")
+            self.assertEqual(manifest["simulator"]["root"], str(selected_bin.parent))
+            self.assertEqual(manifest["simulator"]["bin"], str(selected_bin))
+            self.assertEqual(manifest["simulator"]["path"], str(selected_bin / "vsim"))
+            self.assertIn(f"--mentor-root={selected_bin.parent}", manifest["bambu_argv"])
+
+    def test_path_lookup_needs_no_bambu_settings_and_quotes_space_paths(self):
+        TMP_ROOT.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="t4b-runner-path-lookup-", dir=TMP_ROOT) as td:
+            root = Path(td)
+            event_log = root / "events"
+            prefix = self.make_fake_install(root, event_log)
+            bindir, modelsim_root, checker = self.prepare_mocks(root, event_log, "model sim")
+            poison_settings = root / "bambu settings must not load"
+            poison_settings.mkdir()
+            settings_marker = root / "unexpected-settings-source"
+            (poison_settings / "settings.sh").write_text(
+                f"printf 'early settings sourced\\n' >> '{settings_marker}'\n",
+                encoding="utf-8",
+            )
+            output = root / "path-with-spaces-out"
+            result = self.invoke_mocked(
+                output, event_log, prefix, bindir, modelsim_root, checker,
+                path_vsim=True, bambu_hls=str(poison_settings),
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertFalse(settings_marker.exists(), "PATH-selected ModelSim should not source Bambu settings")
+            manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+            selected_bin = modelsim_root / "questasim" / "bin"
+            self.assertEqual(manifest["simulator"]["source"], "PATH")
+            self.assertEqual(manifest["simulator"]["bin"], str(selected_bin))
+            self.assertEqual(manifest["simulator"]["path"], str(selected_bin / "vsim"))
+            self.assertIn("mock-vsim 1.0", manifest["simulator"]["version"])
+            self.assertIn(f"--mentor-root={selected_bin.parent}", manifest["bambu_argv"])
+
+    def test_rtl_only_models_sim_runners_take_path_before_bambu_settings(self):
+        TMP_ROOT.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="modelsim-path-first-", dir=TMP_ROOT) as td:
+            root = Path(td)
+            modelsim_bin = root / "model sim" / "bin"
+            modelsim_bin.mkdir(parents=True)
+            tool_log = root / "tools.log"
+            for tool in ("vsim", "vlog", "vlib", "vmap"):
+                exit_status = 19 if tool == "vlib" else 0
+                (modelsim_bin / tool).write_text(
+                    "#!/bin/sh\n"
+                    f"printf '%s %s\\n' '{tool}' \"$*\" >> \"$TOOL_LOG\"\n"
+                    f"exit {exit_status}\n",
+                    encoding="utf-8",
+                )
+                (modelsim_bin / tool).chmod(0o755)
+            poison_settings = root / "bambu settings must not load"
+            poison_settings.mkdir()
+            settings_marker = root / "settings-was-sourced"
+            (poison_settings / "settings.sh").write_text(
+                f"printf sourced > '{settings_marker}'\n", encoding="utf-8"
+            )
+            env = os.environ.copy()
+            env.update({
+                "PATH": str(modelsim_bin) + os.pathsep + "/usr/bin:/bin",
+                "BAMBU_HLS": str(poison_settings),
+                "BURST_MODELSIM_OUTSIDE_SANDBOX": "1",
+                "TOOL_LOG": str(tool_log),
+                "TMPDIR": str(TMP_ROOT), "TMP": str(TMP_ROOT), "TEMP": str(TMP_ROOT),
+            })
+            env.pop("BAMBU_HLS_BACKEND_PATH", None)
+            env.pop("MODELSIM_ROOT", None)
+            cases = (
+                (ROOT / "panda_regressions/hls/bambu_axi_burst/rtl_tests/run_testbench_memaxi_model.sh",
+                 ["characterize", str(root / "memaxi-out")], root / "memaxi-out"),
+                (RUNNER.parent / "run_t4b_models.sh", [str(root / "t4b-out")], root / "t4b-out"),
+            )
+            for runner, args, output in cases:
+                with self.subTest(runner=runner.name):
+                    result = subprocess.run(
+                        ["bash", str(runner), *args], cwd=ROOT, env=env,
+                        text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False,
+                    )
+                    self.assertEqual(result.returncode, 19, result.stdout)
+                    self.assertTrue(output.is_dir(), result.stdout)
+                    self.assertIn("vlib work", tool_log.read_text(encoding="utf-8"))
+                    self.assertFalse(settings_marker.exists(), "PATH-selected ModelSim should not load Bambu settings")
+                    tool_log.unlink()
+
+    def test_missing_selected_companion_fails_before_build_or_output_creation(self):
+        TMP_ROOT.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="t4b-runner-missing-tool-", dir=TMP_ROOT) as td:
+            root = Path(td)
+            event_log = root / "events"
+            prefix = self.make_fake_install(root, event_log)
+            bindir, modelsim_root, checker = self.prepare_mocks(root, event_log)
+            (modelsim_root / "questasim" / "bin" / "vlog").unlink()
+            output = root / "missing-tool-out"
+            result = self.invoke_mocked(output, event_log, prefix, bindir, modelsim_root, checker)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("ModelSim tool unavailable", result.stderr)
+            self.assertFalse(output.exists())
+            self.assertFalse(event_log.exists(), "missing simulator companion reached build/install")
+
+    def test_scheduler_off_runs_without_any_models_installation(self):
+        TMP_ROOT.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="t4b-runner-scheduler-off-", dir=TMP_ROOT) as td:
+            root = Path(td)
+            event_log = root / "events"
+            prefix = self.make_fake_install(root, event_log)
+            bindir, modelsim_root, checker = self.prepare_mocks(root, event_log)
+            output = root / "scheduler-off-out"
+            result = self.invoke_mocked(output, event_log, prefix, bindir, modelsim_root, checker,
+                                        mode="scheduler-off", no_simulator=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["status"], "PASS")
+            self.assertEqual(manifest["simulator"]["source"], "not-used")
+            self.assertIsNone(manifest["simulator"]["path"])
 
     def test_top_specific_rtl_and_burst_profile_for_all_witnesses(self):
         TMP_ROOT.mkdir(parents=True, exist_ok=True)
@@ -607,7 +764,7 @@ class T4BRunnerTests(unittest.TestCase):
                                                     checker, fixture=fixture, mode=mode)
                         self.assertEqual(result.returncode, 0, result.stderr)
                         events = event_log.read_text(encoding="utf-8").splitlines()[len(previous_events):]
-                        build = events.index("cmake:--build build --parallel 8")
+                        build = events.index("cmake:--build build -j8")
                         install = events.index("cmake:--install build")
                         settings = events.index("settings")
                         bambu_calls = [i for i, line in enumerate(events) if line.startswith("bambu:")]
