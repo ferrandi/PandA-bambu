@@ -7,6 +7,7 @@ set(PANDA_EXCLUDE_PATTERNS
    "/bambu.cpp"
    "/bambu-cc.cpp"
    "/eucalyptus.cpp"
+   "/utility/record_output.cpp"
    "/algorithms/clique_covering/test_"
    "/HLS/hdl_generators/"
 )
@@ -339,11 +340,16 @@ set(PANDA_UNIT_TEST_SOURCES
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/utility/ConstDivMagic.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/utility/KcmConstMul.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/utility/Range.cpp"
+   "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/utility/RecordOutput.cpp"
 )
 
 add_executable(libbambu_unit ${PANDA_UNIT_TEST_SOURCES})
 target_link_libraries(libbambu_unit PRIVATE panda_core panda_hdl_generators Boost::headers)
 add_test(NAME libbambu_unit COMMAND libbambu_unit)
+# Explicit bound: the record_output copier cases run inside this test too, and
+# an internal deadline failure must not degrade into the ctest fallback
+# timeout (DART_TESTING_TIMEOUT).
+set_tests_properties(libbambu_unit PROPERTIES TIMEOUT 900)
 add_test(NAME vector_mask_type COMMAND libbambu_unit --run_test=vector_mask_*)
 add_test(NAME vector_allocation COMMAND libbambu_unit --run_test=vector_allocation_*)
 add_test(NAME vector_mask_ir
@@ -352,6 +358,32 @@ add_test(NAME vector_mask_hls
    COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/panda_unit/IR/test_vector_mask_hls.py")
 set_tests_properties(vector_mask_type vector_mask_ir vector_mask_hls PROPERTIES LABELS "vector_mask")
 set_tests_properties(vector_allocation PROPERTIES LABELS "vector_allocation")
+
+# The standalone log copier used by the generated scripts and by the simulation
+# flow in place of the system tee (see record_output.cpp). It is a POSIX-only
+# tool, without dependencies on panda_core, on the system tee and on python3;
+# it is installed next to bambu so that the runtime flow only needs the tools
+# of the distribution.
+add_executable(record_output "${CMAKE_CURRENT_SOURCE_DIR}/utility/record_output.cpp")
+# An older build tree updated to this patch may not have the tool yet, and a
+# partial build of another target would leave the installation without the
+# artifact to install: build it before installing, like the other executables.
+install(CODE "
+   if(NOT EXISTS \"$<TARGET_FILE:record_output>\")
+      execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target record_output --config \"\${CMAKE_INSTALL_CONFIG_NAME}\")
+   endif()
+" )
+install(TARGETS record_output
+   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+# The record_output unit tests spawn the real tool and check that a broken
+# simulation or a broken console never blocks the flow forever.
+add_dependencies(libbambu_unit record_output)
+target_compile_definitions(libbambu_unit PRIVATE
+   RECORD_OUTPUT_TOOL="$<TARGET_FILE:record_output>")
+add_test(NAME record_output_tool COMMAND libbambu_unit --run_test=record_output_tool)
+set_tests_properties(record_output_tool PROPERTIES TIMEOUT 300)
 
 if(PANDA_BUILD_BAMBU)
    add_executable(bambu
@@ -368,6 +400,9 @@ if(PANDA_BUILD_BAMBU)
    set_target_properties(bambu PROPERTIES
       INSTALL_RPATH "\$ORIGIN/../${PANDA_LIB_INSTALLDIR_REL}"
    )
+   # bambu dispatches the copier through the scripts it generates, at pedantic
+   # output level: building bambu must also build the tool it runs.
+   add_dependencies(bambu record_output)
    install(CODE "
       if(NOT EXISTS \"${CMAKE_BINARY_DIR}/src/bambu\")
          execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target bambu)

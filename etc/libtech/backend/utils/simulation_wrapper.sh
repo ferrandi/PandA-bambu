@@ -88,20 +88,21 @@ convert_results() {
   END{if(rv=="")rv="A";printf"<application><timing><simulation return_value=\"%s\">",rv;for(i=1;i<=c;i++)printf"<run>%s</run>",r[i];print"</simulation></timing></application>"}' "$1"
 }
 
+# The log copy is done by the record_output tool, distributed and installed
+# with Bambu, and not by the system tee: tee is not part of the tool flow, a
+# tee dying mid-stream closes the pipe and kills the simulator or the system
+# testbench whose output was being logged. The tool also does not need python3.
 record_output() {
-  python3 -u -c '
-import sys
-
-with open(sys.argv[1], "wb") as log_file:
-    while True:
-        data = sys.stdin.buffer.read1(65536)
-        if not data:
-            break
-        log_file.write(data)
-        log_file.flush()
-        sys.stdout.buffer.write(data)
-        sys.stdout.buffer.flush()
-' "$1"
+  local bambu_record_output
+  # bin/ is the installed layout, src/ is where the CMake build tree puts the tool.
+  for bambu_record_output in "${BAMBU_HLS}/bin/record_output" "${BAMBU_HLS}/src/record_output"; do
+    if [ -x "${bambu_record_output}" ]; then
+      "${bambu_record_output}" "$@"
+      return $?
+    fi
+  done
+  echo "record_output: the Bambu log copier is missing in ${BAMBU_HLS}/bin and ${BAMBU_HLS}/src: check BAMBU_HLS" 1>&2
+  return 127
 }
 
 run_logged() {
