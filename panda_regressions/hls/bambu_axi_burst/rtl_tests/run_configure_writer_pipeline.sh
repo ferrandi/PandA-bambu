@@ -7,6 +7,8 @@ ROOT=$(realpath "$SCRIPT_DIR/../../../../")
 EXTRACTOR="$SCRIPT_DIR/extract_write_engine.py"
 TB="$SCRIPT_DIR/tb_configure_writer_pipeline.sv"
 XML="$ROOT/etc/libtech/NC_AXI_IPs.xml"
+WRITER_ROOT=$ROOT
+source "$SCRIPT_DIR/modelsim_writer_helpers.sh"
 
 if (($# > 1)); then
     echo "usage: $0 [fresh-output-directory]" >&2
@@ -16,17 +18,14 @@ if [[ ${BURST_WRITER_SIM_OUTSIDE_SANDBOX:-} != 1 ]]; then
     echo "refusing RTL simulation unless BURST_WRITER_SIM_OUTSIDE_SANDBOX=1 is set" >&2
     exit 2
 fi
-for tool in verilator python3 sha256sum; do
+for tool in python3 sha256sum timeout grep sed tail tr; do
     if ! command -v "$tool" >/dev/null 2>&1; then
         echo "$tool is required" >&2
         exit 2
     fi
 done
-SIM_JOBS=${SIM_JOBS:-4}
-if [[ ! $SIM_JOBS =~ ^[1-9][0-9]*$ ]]; then
-    echo "SIM_JOBS must be a positive integer" >&2
-    exit 2
-fi
+modelsim_writer_resolve
+MODELSIM_WRITER_VERSION=$(modelsim_writer_version) || exit 2
 
 OUT_ARG=${1:-"$PWD/out_configure_writer_pipeline"}
 OUT_PARENT=$(realpath -m -- "$(dirname "$OUT_ARG")")
@@ -51,35 +50,33 @@ python3 -B "$EXTRACTOR" --xml "$XML" --out "$RTL" > "$TASK_OUT/extract.log"
     printf 'testbench='; sha256sum "$TB"
     printf 'runner='; sha256sum "$SCRIPT_DIR/run_configure_writer_pipeline.sh"
     printf 'extractor='; sha256sum "$EXTRACTOR"
-    printf 'verilator='; verilator --version
-    printf 'sim_jobs=%s\n' "$SIM_JOBS"
+    printf 'modelsim_lookup_source=%s\nmodelsim_bin=%s\nvsim=%s\nvlib=%s\nvlog=%s\nvmap=%s\n' \
+        "$MODELSIM_WRITER_SOURCE" "$MODELSIM_WRITER_BIN" "$MODELSIM_WRITER_VSIM" \
+        "$MODELSIM_WRITER_VLIB" "$MODELSIM_WRITER_VLOG" "$MODELSIM_WRITER_VMAP"
+    printf 'modelsim_version=%s\n' "$(printf '%s' "$MODELSIM_WRITER_VERSION" | tr '\n' ' ')"
 } > "$TASK_OUT/provenance.txt"
 
 : > "$TASK_OUT/aggregate.log"
 BUILD="$TASK_OUT/build"
-mkdir -p "$BUILD"
-timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal \
-    -CFLAGS -O0 -Wno-UNUSEDSIGNAL -Wno-BLKSEQ --top-module tb_configure_writer_pipeline \
-    --Mdir "$BUILD/obj" "$RTL" "$TB" > "$BUILD/compile.log" 2>&1 || {
-        tail -n 100 "$BUILD/compile.log" >&2
-        echo "RTL compile failed for writer configure pipeline" >&2
-        exit 1
-    }
+modelsim_writer_compile "$BUILD" tb_configure_writer_pipeline "$RTL" "$TB" 0 || exit $?
 
 for scenario in RESET_E1 PEER_FAULT_E1; do
     log="$BUILD/$scenario.log"
-    timeout 30s "$BUILD/obj/Vtb_configure_writer_pipeline" "+CASE=$scenario" > "$log" 2>&1 || {
+    status=0
+    modelsim_writer_run "$BUILD" tb_configure_writer_pipeline "$log" 30 -- "+CASE=$scenario" || status=$?
+    modelsim_writer_normalize_log "$log" "$log.normalized" || exit $?
+    if (( status != 0 )); then
         cat "$log" >&2
         echo "RTL scenario failed: $scenario" >&2
         exit 1
-    }
-    if ! grep -Eq "^CONFIGURE_WRITER_PIPELINE PASS CASE=$scenario$" "$log"; then
+    fi
+    if ! grep -Eq "^CONFIGURE_WRITER_PIPELINE PASS CASE=$scenario$" "$log.normalized"; then
         cat "$log" >&2
         echo "missing exact PASS marker for $scenario" >&2
         exit 1
     fi
-    cat "$log" >> "$TASK_OUT/aggregate.log"
-    cat "$log"
+    cat "$log.normalized" >> "$TASK_OUT/aggregate.log"
+    cat "$log.normalized"
 done
 
 printf 'CONFIGURE_WRITER_PIPELINE_SUITE_PASS cases=2\n' | tee -a "$TASK_OUT/aggregate.log"

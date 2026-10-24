@@ -121,6 +121,7 @@ python3 -B "$script_dir/bambu_axi_burst/test_write_compiler_artifacts.py"
 python3 -B "$script_dir/bambu_axi_burst/test_read_compiler_artifacts.py"
 BURST_TEST_TMPDIR="$scratch/tmp" python3 -B "$script_dir/bambu_axi_burst/test_modelsim_tool_lookup.py"
 python3 -B "$script_dir/bambu_axi_burst/rtl_tests/test_extract_write_engine.py"
+python3 -B "$script_dir/bambu_axi_burst/rtl_tests/test_write_burst_modelsim_runner.py"
 python3 -B "$script_dir/bambu_axi_burst/rtl_tests/test_vlog_portability_runner.py"
 python3 -B "$script_dir/bambu_axi_burst/test_axi_latency_metadata.py"
 python3 -B "$script_dir/bambu_axi_burst/test_simulation_logging.py"
@@ -149,7 +150,7 @@ run_post_mantis_job() {
         "$scratch/rtl-verilator-$suite" "$suite"
       ;;
     rtl-write-engine)
-      BURST_WRITER_SIM_OUTSIDE_SANDBOX=1 SIM_JOBS="$verilator_jobs" \
+      BURST_WRITER_SIM_OUTSIDE_SANDBOX=1 \
         BURST_WRITER_GROUP_JOBS="$writer_group_jobs" \
         bash "$script_dir/bambu_axi_burst/rtl_tests/run_write_burst_engine.sh" \
           "$scratch/rtl-write-engine"

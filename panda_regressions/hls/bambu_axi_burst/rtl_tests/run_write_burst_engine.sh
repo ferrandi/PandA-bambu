@@ -8,6 +8,8 @@ source "$SCRIPT_DIR/../parallel_helpers.sh"
 EXTRACTOR="$SCRIPT_DIR/extract_write_engine.py"
 TB="$SCRIPT_DIR/tb_write_burst_engine.sv"
 XML="$ROOT/etc/libtech/NC_AXI_IPs.xml"
+WRITER_ROOT=$ROOT
+source "$SCRIPT_DIR/modelsim_writer_helpers.sh"
 
 if (($# > 1)); then
     echo "usage: $0 [fresh-output-directory]" >&2
@@ -18,15 +20,14 @@ if [[ ${BURST_WRITER_SIM_OUTSIDE_SANDBOX:-} != 1 ]]; then
     echo "refusing RTL simulation unless BURST_WRITER_SIM_OUTSIDE_SANDBOX=1 is set" >&2
     exit 2
 fi
-if ! command -v verilator >/dev/null 2>&1; then
-    echo "verilator is required" >&2
-    exit 2
-fi
-SIM_JOBS=${SIM_JOBS:-2}
-if [[ ! $SIM_JOBS =~ ^[1-9][0-9]*$ ]]; then
-    echo "SIM_JOBS must be a positive integer" >&2
-    exit 2
-fi
+for tool in python3 sha256sum timeout grep sed tail tr; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+        echo "$tool is required" >&2
+        exit 2
+    fi
+done
+modelsim_writer_resolve
+MODELSIM_WRITER_VERSION=$(modelsim_writer_version) || exit 2
 WRITER_GROUP_JOBS=${BURST_WRITER_GROUP_JOBS:-12}
 if [[ ! $WRITER_GROUP_JOBS =~ ^[1-9][0-9]*$ ]]; then
     echo "BURST_WRITER_GROUP_JOBS must be a positive integer" >&2
@@ -52,7 +53,11 @@ python3 -B "$EXTRACTOR" --xml "$XML" --out "$TASK_OUT/MinimalAXI4MasterPipelined
     printf 'xml='; sha256sum "$XML"
     printf 'extractor='; sha256sum "$EXTRACTOR"
     printf 'testbench='; sha256sum "$TB"
-    printf 'verilator='; verilator --version
+    printf 'modelsim_lookup_source=%s\nmodelsim_bin=%s\nvsim=%s\nvlib=%s\nvlog=%s\nvmap=%s\n' \
+        "$MODELSIM_WRITER_SOURCE" "$MODELSIM_WRITER_BIN" "$MODELSIM_WRITER_VSIM" \
+        "$MODELSIM_WRITER_VLIB" "$MODELSIM_WRITER_VLOG" "$MODELSIM_WRITER_VMAP"
+    printf 'modelsim_version=%s\n' "$(printf '%s' "$MODELSIM_WRITER_VERSION" | tr '\n' ' ')"
+    printf 'timeout=%s\nwriter_group_jobs=%s\n' "$(command -v timeout)" "$WRITER_GROUP_JOBS"
     printf 'git_head='; git -C "$ROOT" rev-parse HEAD
     printf 'outside_sandbox_flag=%s\n' "$BURST_WRITER_SIM_OUTSIDE_SANDBOX"
 } > "$TASK_OUT/provenance.txt"
@@ -66,45 +71,40 @@ build_run() {
         shift
     fi
     local build="$TASK_OUT/build-$label"
-    mkdir -p "$build"
-    timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal -CFLAGS -O0 \
-        -Wno-UNUSEDSIGNAL -Wno-BLKSEQ -DPLAN_FIFO_PRESENT --top-module tb_write_burst_engine \
-        -GB_MAX="$burst" -GMAX_OUTSTANDING=1 -GFIFO_DEPTH="$depth" -GADDR_BITS="$addr" \
-        -GFAST_STORE_ACK="$fast_store_ack" \
-        --Mdir "$build/obj" "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" "$TB" \
-        > "$build/compile.log" 2>&1 || {
-            tail -n 100 "$build/compile.log" >&2
-            echo "RTL compile failed for $label" >&2
-            return 1
-        }
-    local binary="$build/obj/Vtb_write_burst_engine"
-    local case_name log
+    modelsim_writer_compile "$build" tb_write_burst_engine \
+        "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" "$TB" 1 || return $?
+    local case_name log normalized status
     for case_name in "$test_case" "$@"; do
         log="$build/$case_name.log"
-        timeout 60s "$binary" "+CASE=$case_name" > "$log" 2>&1 || {
+        status=0
+        modelsim_writer_run "$build" tb_write_burst_engine "$log" 60 \
+            -gB_MAX="$burst" -gMAX_OUTSTANDING=1 -gFIFO_DEPTH="$depth" \
+            -gADDR_BITS="$addr" -gFAST_STORE_ACK="$fast_store_ack" -- "+CASE=$case_name" || status=$?
+        modelsim_writer_normalize_log "$log" "$log.normalized" || return $?
+        if (( status != 0 )); then
             cat "$log" >&2
             echo "RTL scenario failed: $label/$case_name" >&2
             return 1
-        }
-        if ! grep -Eq "^WRITE_BURST_ENGINE PASS CASE=$case_name " "$log" &&
-           ! grep -Eq "^WRITE_BURST_ENGINE PARAM PASS " "$log"; then
+        fi
+        if ! grep -Eq "^WRITE_BURST_ENGINE PASS CASE=$case_name " "$log.normalized" &&
+           ! grep -Eq "^WRITE_BURST_ENGINE PARAM PASS " "$log.normalized"; then
             cat "$log" >&2
             echo "missing exact PASS marker for $label/$case_name" >&2
             return 1
         fi
         if [[ $case_name == FAST_STORE_ACK_STREAM ]] &&
-           ! grep -Eq '^WRITE_FAST_STORE_ACK_STREAM beats=64 interval=1$' "$log"; then
+           ! grep -Eq '^WRITE_FAST_STORE_ACK_STREAM beats=64 interval=1$' "$log.normalized"; then
             cat "$log" >&2
             echo "missing fast STORE ACK throughput marker for $label/$case_name" >&2
             return 1
         fi
         if [[ $case_name == FAST_STORE_ACK_BACKPRESSURE ]] &&
-           ! grep -Eq '^WRITE_FAST_STORE_ACK_BACKPRESSURE_PASS ' "$log"; then
+           ! grep -Eq '^WRITE_FAST_STORE_ACK_BACKPRESSURE_PASS ' "$log.normalized"; then
             cat "$log" >&2
             echo "missing fast STORE pending-capture marker for $label/$case_name" >&2
             return 1
         fi
-        cat "$log" >> "$RESULTS_LOG"
+        cat "$log.normalized" >> "$RESULTS_LOG" || return $?
     done
 }
 
@@ -117,130 +117,105 @@ build_run_o() {
         shift
     fi
     local build="$TASK_OUT/build-$label"
-    mkdir -p "$build"
-    timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal -CFLAGS -O0 \
-        -Wno-UNUSEDSIGNAL -Wno-BLKSEQ -DPLAN_FIFO_PRESENT --top-module tb_write_burst_engine \
-        -GB_MAX="$burst" -GMAX_OUTSTANDING="$outstanding" -GFIFO_DEPTH="$depth" -GADDR_BITS="$addr" \
-        -GFAST_STORE_ACK="$fast_store_ack" \
-        --Mdir "$build/obj" "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" "$TB" \
-        > "$build/compile.log" 2>&1 || {
-            tail -n 100 "$build/compile.log" >&2
-            echo "RTL compile failed for $label" >&2
-            return 1
-        }
-    local binary="$build/obj/Vtb_write_burst_engine"
-    local case_name log
+    modelsim_writer_compile "$build" tb_write_burst_engine \
+        "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" "$TB" 1 || return $?
+    local case_name log normalized status
     for case_name in "$test_case" "$@"; do
         log="$build/$case_name.log"
-        timeout 60s "$binary" "+CASE=$case_name" > "$log" 2>&1 || {
+        status=0
+        modelsim_writer_run "$build" tb_write_burst_engine "$log" 60 \
+            -gB_MAX="$burst" -gMAX_OUTSTANDING="$outstanding" -gFIFO_DEPTH="$depth" \
+            -gADDR_BITS="$addr" -gFAST_STORE_ACK="$fast_store_ack" -- "+CASE=$case_name" || status=$?
+        modelsim_writer_normalize_log "$log" "$log.normalized" || return $?
+        if (( status != 0 )); then
             cat "$log" >&2
             echo "RTL scenario failed: $label/$case_name" >&2
             return 1
-        }
-        if ! grep -Eq "^WRITE_BURST_ENGINE PASS CASE=$case_name " "$log"; then
+        fi
+        if ! grep -Eq "^WRITE_BURST_ENGINE PASS CASE=$case_name " "$log.normalized"; then
             cat "$log" >&2
             echo "missing exact PASS marker for $label/$case_name" >&2
             return 1
         fi
         if [[ $case_name == SUSTAINED_B1 ]] &&
-           ! grep -Eq '^WRITE_SUSTAINED_PASS profile=B1-O16-F1 ' "$log"; then
+           ! grep -Eq '^WRITE_SUSTAINED_PASS profile=B1-O16-F1 ' "$log.normalized"; then
             cat "$log" >&2
             echo "missing sustained-throughput marker for $label/$case_name" >&2
             return 1
         fi
         if [[ $case_name == SUSTAINED_B16 ]] &&
-           ! grep -Eq '^WRITE_SUSTAINED_PASS profile=B16-O2-D32 ' "$log"; then
+           ! grep -Eq '^WRITE_SUSTAINED_PASS profile=B16-O2-D32 ' "$log.normalized"; then
             cat "$log" >&2
             echo "missing sustained-throughput marker for $label/$case_name" >&2
             return 1
         fi
         if [[ $case_name == FAST_STORE_ACK_STREAM ]] &&
-           ! grep -Eq '^WRITE_FAST_STORE_ACK_STREAM beats=64 interval=1$' "$log"; then
+           ! grep -Eq '^WRITE_FAST_STORE_ACK_STREAM beats=64 interval=1$' "$log.normalized"; then
             cat "$log" >&2
             echo "missing fast STORE ACK throughput marker for $label/$case_name" >&2
             return 1
         fi
         if [[ $case_name == FAST_STORE_ACK_BACKPRESSURE ]] &&
-           ! grep -Eq '^WRITE_FAST_STORE_ACK_BACKPRESSURE_PASS ' "$log"; then
+           ! grep -Eq '^WRITE_FAST_STORE_ACK_BACKPRESSURE_PASS ' "$log.normalized"; then
             cat "$log" >&2
             echo "missing fast STORE pending-capture marker for $label/$case_name" >&2
             return 1
         fi
-        cat "$log" >> "$RESULTS_LOG"
+        cat "$log.normalized" >> "$RESULTS_LOG" || return $?
     done
 }
 
 build_async_reset_run() {
     local polarity=$1 active_low=$2 fast_store_ack=${3:-0}
-    local label="ASYNC_RESET_${polarity}"
+    local label="ASYNC_RESET_${polarity}_FAST${fast_store_ack}"
     local source="$TASK_OUT/MinimalAXI4MasterPipelinedWrite-$label.sv"
     local build="$TASK_OUT/build-$label"
-    mkdir -p "$build"
+    mkdir -p "$build" || return $?
     python3 -B "$EXTRACTOR" --xml "$XML" --out "$source" \
-        --reset-mode async --reset-polarity "$polarity"
+        --reset-mode async --reset-polarity "$polarity" || return $?
     {
-        printf 'variant=%s reset_mode=async reset_polarity=%s\n' "$label" "$polarity"
+        printf 'variant=%s reset_mode=async reset_polarity=%s fast_store_ack=%s\n' \
+            "$label" "$polarity" "$fast_store_ack"
         printf 'generated_hdl='; sha256sum "$source"
         printf 'xml='; sha256sum "$XML"
         printf 'extractor='; sha256sum "$EXTRACTOR"
         printf 'testbench='; sha256sum "$TB"
-    } > "$build/provenance.txt"
-    timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal -CFLAGS -O0 \
-        -Wno-UNUSEDSIGNAL -Wno-BLKSEQ -DPLAN_FIFO_PRESENT --top-module tb_write_burst_engine \
-        -GB_MAX=16 -GMAX_OUTSTANDING=2 -GFIFO_DEPTH=32 -GADDR_BITS=32 \
-        -GFAST_STORE_ACK="$fast_store_ack" \
-        -GASYNC_RESET=1 -GRESET_ACTIVE_LOW="$active_low" \
-        --Mdir "$build/obj" "$source" "$TB" > "$build/compile.log" 2>&1 || {
-            tail -n 100 "$build/compile.log" >&2
-            echo "RTL compile failed for $label" >&2
-            return 1
-        }
+    } > "$build/provenance.txt" || return $?
+    modelsim_writer_compile "$build" tb_write_burst_engine "$source" "$TB" 1 || return $?
     local log="$build/ASYNC_RESET.log"
-    timeout 60s "$build/obj/Vtb_write_burst_engine" +CASE=ASYNC_RESET > "$log" 2>&1 || {
+    local normalized="$log.normalized" status=0
+    modelsim_writer_run "$build" tb_write_burst_engine "$log" 60 \
+        -gB_MAX=16 -gMAX_OUTSTANDING=2 -gFIFO_DEPTH=32 -gADDR_BITS=32 \
+        -gFAST_STORE_ACK="$fast_store_ack" -gASYNC_RESET=1 \
+        -gRESET_ACTIVE_LOW="$active_low" -- +CASE=ASYNC_RESET || status=$?
+    modelsim_writer_normalize_log "$log" "$normalized" || return $?
+    if (( status != 0 )); then
         cat "$log" >&2
         echo "RTL scenario failed: $label/ASYNC_RESET" >&2
         return 1
-    }
-    if ! grep -Eq '^WRITE_BURST_ENGINE PASS CASE=ASYNC_RESET ' "$log"; then
+    fi
+    if ! grep -Eq '^WRITE_BURST_ENGINE PASS CASE=ASYNC_RESET ' "$normalized"; then
         cat "$log" >&2
         echo "missing exact PASS marker for $label/ASYNC_RESET" >&2
         return 1
     fi
-    cat "$log" >> "$RESULTS_LOG"
+    cat "$normalized" >> "$RESULTS_LOG" || return $?
     printf 'ASYNC_RESET_VARIANT_PASS %s polarity=%s\n' "$label" "$polarity" >> "$RESULTS_LOG"
 }
 
-# Rejection witness for an out-of-range parameter. The engine checks its parameters at
-# elaboration, so the normal outcome is that the build itself refuses: -Werror-USERFATAL turns
-# the elaboration-time message into a Verilator error. A build that succeeds is still accepted
-# as a witness when the simulation aborts with the same message (run-time backstop), but any
-# other failure mode is an error.
+# Constant parameter checks can be rejected by Questa's vopt elaboration or
+# at simulation time. Both require the unique named fatal diagnostic.
 expect_parameter_fatal() {
     local label=$1 burst=$2 outstanding=$3 depth=$4 expected=$5
     local build="$TASK_OUT/negative-$label"
-    mkdir -p "$build"
-    local compiled=0
-    timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wno-fatal -Werror-USERFATAL \
-        -CFLAGS -O0 --top-module tb_write_burst_engine -GB_MAX="$burst" -GMAX_OUTSTANDING="$outstanding" \
-        -GFIFO_DEPTH="$depth" --Mdir "$build/obj" \
-        "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" "$TB" > "$build/compile.log" 2>&1 || compiled=1
-    if (( compiled )); then
-        if grep -Fq "$expected" "$build/compile.log"; then
-            echo "EXPECTED_ELABORATION_REJECTION $label: $expected" >> "$RESULTS_LOG"
-            return 0
-        fi
-        tail -n 80 "$build/compile.log" >&2
-        echo "negative parameter fixture compile failed without the expected message: $label" >&2
-        return 1
-    fi
+    modelsim_writer_compile "$build" tb_write_burst_engine \
+        "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" "$TB" 0 || return $?
     local status=0
-    timeout 20s "$build/obj/Vtb_write_burst_engine" +CASE=PARAM > "$build/run.log" 2>&1 || status=$?
-    if (( status == 0 )) || ! grep -Fq "$expected" "$build/run.log"; then
-        cat "$build/run.log" >&2
-        echo "parameter rejection witness failed: $label" >&2
-        return 1
-    fi
-    echo "EXPECTED_RUN_TIME_FATAL $label: $expected" >> "$RESULTS_LOG"
+    modelsim_writer_run "$build" tb_write_burst_engine "$build/run.log" 20 \
+        -gB_MAX="$burst" -gMAX_OUTSTANDING="$outstanding" -gFIFO_DEPTH="$depth" \
+        -gADDR_BITS=32 -- +CASE=PARAM || status=$?
+    modelsim_writer_expect_fatal "$build/run.log" "$expected" "$label" "$status" 1 || return $?
+    printf 'EXPECTED_PARAMETER_FATAL %s status=%s: %s\n' "$label" "$status" "$expected" >> "$RESULTS_LOG"
 }
 
 expect_mutation_failure() {
@@ -249,7 +224,7 @@ expect_mutation_failure() {
     local mutant="$TASK_OUT/mutant-$label.sv"
     local build="$TASK_OUT/mutation-$label"
     python3 - "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" "$mutant" \
-        "$source_pattern" "$replacement" <<'PY'
+        "$source_pattern" "$replacement" <<'PY' || return $?
 from pathlib import Path
 import sys
 
@@ -259,29 +234,20 @@ if text.count(needle) != 1:
     raise SystemExit(f"expected exactly one mutation target, found {text.count(needle)}")
 Path(target).write_text(text.replace(needle, replacement))
 PY
-    mkdir -p "$build"
-    timeout 180s verilator --binary -j "$SIM_JOBS" --timing --assert -Wno-fatal -CFLAGS -O0 \
-        --top-module tb_write_burst_engine -GB_MAX="$burst" -GMAX_OUTSTANDING="$outstanding" \
-        -GFIFO_DEPTH="$depth" -GADDR_BITS="$addr" -GFAST_STORE_ACK="$fast_store_ack" \
-        --Mdir "$build/obj" "$mutant" "$TB" > "$build/compile.log" 2>&1 || {
-            tail -n 80 "$build/compile.log" >&2
-            echo "mutation fixture compile failed: $label" >&2
-            return 1
-        }
+    mkdir -p "$build" || return $?
+    modelsim_writer_compile "$build" tb_write_burst_engine "$mutant" "$TB" 0 || return $?
     local status=0
-    timeout 60s "$build/obj/Vtb_write_burst_engine" "+CASE=$test_case" > "$build/run.log" 2>&1 || status=$?
-    if (( status == 0 || status == 124 || status == 137 )) || ! grep -Fq "$expected" "$build/run.log"; then
-        cat "$build/run.log" >&2
-        echo "mutation witness failed: $label" >&2
-        return 1
-    fi
-    echo "MUTATION_REJECTED $label: $expected" >> "$RESULTS_LOG"
+    modelsim_writer_run "$build" tb_write_burst_engine "$build/run.log" 60 \
+        -gB_MAX="$burst" -gMAX_OUTSTANDING="$outstanding" -gFIFO_DEPTH="$depth" \
+        -gADDR_BITS="$addr" -gFAST_STORE_ACK="$fast_store_ack" -- "+CASE=$test_case" || status=$?
+    modelsim_writer_expect_fatal "$build/run.log" "$expected" "$label" "$status" || return $?
+    printf 'MUTATION_REJECTED %s status=%s: %s\n' "$label" "$status" "$expected" >> "$RESULTS_LOG"
 }
 
 run_writer_group() {
     local group=$1
     local RESULTS_LOG="$TASK_OUT/group-results/$group.log"
-    : > "$RESULTS_LOG"
+    : > "$RESULTS_LOG" || return $?
     case "$group" in
         core-B16-D16)
             build_run B16-D16 16 16 32 CORE BOUNDARY W_BEFORE_AW AW_BEFORE_W STALLS \
@@ -334,10 +300,7 @@ run_writer_group() {
         address-B16-A64)
             build_run B16-A64 16 32 64 OVERFLOW64 MAX_COUNT CFG_BASE_CHANGE COUNT_MAX_64 \
                 CONFIGURE64_ZERO_FFFC CONFIGURE64_END_2P64 CONFIGURE64_CARRY_NONMAX \
-                CONFIGURE64_HIGH_MAX_NO_CARRY CONFIGURE64_BAD_ALIGN_ZERO
-            ;;
-        address-B16-A64-MSB)
-            build_run B16-A64-MSB 16 32 64 COUNT_MSB
+                CONFIGURE64_HIGH_MAX_NO_CARRY CONFIGURE64_BAD_ALIGN_ZERO COUNT_MSB
             ;;
         limit-B255-D256)
             build_run B255-D256 255 256 32 CORE
@@ -461,7 +424,7 @@ run_writer_group() {
 
 WRITER_GROUPS=(core-B16-D16 core-B16-D32 core-B1-D1 core-B1-O16 core-B3-D4 \
     core-B16-D4096 core-B16-A32-F3 multi-O2-D16 multi-O2-D32 multi-O3-D16 \
-    multi-O16-D16 multi-O2-D32-F3 address-B16-A64 address-B16-A64-MSB \
+    multi-O16-D16 multi-O2-D32-F3 address-B16-A64 \
     limit-B255-D256 limit-B256-O16 limit-B256-D256 maxlen-B256-O2 async-reset-active-low \
     async-reset-active-high invalid-B0 invalid-B257 invalid-O0 invalid-O17 \
     invalid-FIFO-BELOW-B invalid-FIFO-NONPOWER mutation-data-order \
@@ -480,7 +443,7 @@ if [[ -n ${BURST_WRITER_GROUP_FILTER:-} ]]; then
         case "$group" in
             core-B16-D16|core-B16-D32|core-B1-D1|core-B1-O16|core-B3-D4|core-B16-D4096|\
             core-B16-A32-F3|multi-O2-D16|multi-O2-D32|multi-O3-D16|multi-O16-D16|\
-            multi-O2-D32-F3|address-B16-A64|address-B16-A64-MSB|limit-B255-D256|\
+            multi-O2-D32-F3|address-B16-A64|limit-B255-D256|\
             limit-B256-O16|limit-B256-D256|maxlen-B256-O2|async-reset-active-low|async-reset-active-high|\
             invalid-B0|invalid-B257|invalid-O0|invalid-O17|invalid-FIFO-BELOW-B|\
             invalid-FIFO-NONPOWER|mutation-data-order|mutation-last-order|\
