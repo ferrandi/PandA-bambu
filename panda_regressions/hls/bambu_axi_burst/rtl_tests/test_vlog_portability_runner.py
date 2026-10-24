@@ -149,7 +149,7 @@ class VlogPortabilityRunnerTests(unittest.TestCase):
         escaped_tools = str(self.tools).replace(" ", "\\ ")
         vlib_invocation = f"vlib_invocation={escaped_tools}/vlib"
         vlog_invocation = f"vlog_invocation={escaped_tools}/vlog"
-        vco_resolved = f"{escaped_tools}/vco"
+        vco_resolved = str(self.tools.joinpath("vco").resolve()).replace(" ", "\\ ")
         self.assertIn(vlib_invocation, provenance)
         self.assertIn(vlog_invocation, provenance)
         self.assertIn(f"vlib_resolved={vco_resolved}", provenance)
@@ -228,7 +228,18 @@ class VlogPortabilityRunnerTests(unittest.TestCase):
                         if not link.exists():
                             link.symlink_to(found)
                 output = self.case_root / f"missing-{missing}"
-                result = self._run(output, path=str(bin_dir))
+                run_env = self.env.copy()
+                if missing == "vlib":
+                    # A sibling vsim and a complete backend pair are not a
+                    # substitute for the regression's system-PATH contract.
+                    _write_executable(self.tools / "vsim", "#!/bin/sh\nexit 0\n")
+                    (bin_dir / "vsim").symlink_to(self.tools / "vsim")
+                    backend_bin = self.case_root / "configured backend" / "bin"
+                    backend_bin.mkdir(parents=True)
+                    (backend_bin / "vlib").symlink_to(self.tools / "vlib")
+                    (backend_bin / "vlog").symlink_to(self.tools / "vlog")
+                    run_env["BAMBU_HLS_BACKEND_PATH"] = str(backend_bin.parent)
+                result = self._run(output, env=run_env, path=str(bin_dir))
                 self.assertEqual(result.returncode, 2, result.stdout)
                 self.assertIn(f"missing required tool: {missing}", result.stdout)
                 self.assertFalse(output.exists())

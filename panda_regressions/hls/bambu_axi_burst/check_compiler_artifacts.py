@@ -95,9 +95,116 @@ def named_instance_ports(text, module_pattern):
             yield connections
 
 
+def verilog_modules(text):
+    """Return uniquely named module bodies from a generated Verilog file."""
+    matches = list(re.finditer(r"(?m)^[ \t]*module\s+([A-Za-z_]\w*)\b", text))
+    modules = {}
+    duplicates = set()
+    for index, match in enumerate(matches):
+        end = text.find("endmodule", match.end())
+        if end < 0:
+            continue
+        name = match.group(1)
+        if name in modules:
+            duplicates.add(name)
+        modules[name] = text[match.end():end]
+    return modules, duplicates
+
+
+def count_named_instance(body, module_type, instance_name):
+    """Count a bare named Verilog module instance in one module body."""
+    pattern = re.compile(
+        rf"(?m)^\s*{re.escape(module_type)}\s+{re.escape(instance_name)}\s*\("
+    )
+    return len(pattern.findall(body))
+
+
+def check_shared_profile_rtl(text, roots, expected_parameters):
+    """Prove each requested root reaches the one shared read-wrapper definition."""
+    modules, duplicates = verilog_modules(text)
+    if duplicates:
+        return False, f"duplicate module definitions: {', '.join(sorted(duplicates))}"
+    wrapper_type = "data_bambu_artificial_ParmMgr_modgen"
+    wrapper_body = modules.get(wrapper_type)
+    if wrapper_body is None:
+        return False, f"missing shared resource wrapper module {wrapper_type}"
+
+    engines = list(parameterized_instances(wrapper_body, "MinimalAXI4MasterPipelined"))
+    if len(engines) != 1:
+        return False, f"shared wrapper must contain exactly one read engine; found {len(engines)}"
+    engine_parameters, engine_ports = engines[0]
+    if not all(engine_parameters.get(name) == str(value)
+               for name, value in expected_parameters.items()):
+        return False, "shared wrapper read engine does not have the expected profile on one instance"
+    if not all(re.search(rf"\.in{i}\s*\(", engine_ports) for i in range(1, 6)):
+        return False, "shared wrapper read engine is missing required in1..in5 connections"
+
+    required_axi_ports = {
+        "p_m_axi_data_araddr", "p_m_axi_data_arvalid", "p_m_axi_data_rdata",
+        "p_m_axi_data_rvalid", "p_m_axi_data_rready",
+    }
+    for root in roots:
+        root_body = modules.get(root)
+        pbi_type = f"PBI_{root}"
+        pbi_instance = f"{pbi_type}_i0"
+        pbi_body = modules.get(pbi_type)
+        datapath_type = f"datapath_{root}"
+        datapath_body = modules.get(datapath_type)
+        if root_body is None or pbi_body is None or datapath_body is None:
+            return False, f"missing root/PBI/datapath module in path for {root}"
+        if count_named_instance(root_body, pbi_type, pbi_instance) != 1:
+            return False, f"{root} does not instantiate exactly one {pbi_type}.{pbi_instance}"
+        if count_named_instance(pbi_body, datapath_type, "Datapath_i") != 1:
+            return False, f"{pbi_type} does not instantiate exactly one {datapath_type}.Datapath_i"
+
+        wrappers = list(parameterized_instances(datapath_body, wrapper_type))
+        if len(wrappers) != 1:
+            return False, f"{datapath_type} must reach exactly one {wrapper_type}; found {len(wrappers)}"
+        _, wrapper_ports = wrappers[0]
+        connected_axi_ports = dict(re.findall(
+            r"\.(p_m_axi_data_\w+)\s*\(\s*([A-Za-z_]\w*)\s*\)", wrapper_ports))
+        missing = sorted(required_axi_ports - connected_axi_ports.keys())
+        if missing:
+            return False, f"{datapath_type} shared wrapper is missing AXI read wiring: {', '.join(missing)}"
+        miswired = sorted(port for port in required_axi_ports
+                          if connected_axi_ports[port] != port)
+        if miswired:
+            return False, f"{datapath_type} shared wrapper does not preserve the shared AXI bundle: {', '.join(miswired)}"
+    return True, "both roots reach the shared wrapper module definition and its configured read engine"
+
+
+def check_shared_profile_status(status, stdout, stderr):
+    """Accept clean success or the exact known debug-only multi-top assertion."""
+    if re.search(r"(?i)(segmentation fault|stack smashing|core dumped|assertion .* failed)",
+                 stdout + "\n" + stderr):
+        return False, "compiler output contains a crash/fatal marker"
+    errors = re.findall(r"(?m)^error -> .*?$", stdout + "\n" + stderr)
+    if status == 0:
+        if errors:
+            return False, "compiler returned success but emitted an error diagnostic"
+        return True, "compiler exited successfully"
+    expected = "error -> Expected single top function name (top_symbols.size() == 1)"
+    expected_context = re.compile(
+        r"(?m)^error -> Expected single top function name \(top_symbols\.size\(\) == 1\)\n"
+        r"\s*void BackendWrapper::init\(const HLS_managerRef&\)\n"
+        r"\s*[^\n]*BackendWrapper\.cpp:\d+\s*$"
+    )
+    if status != 1 or errors != [expected] or not expected_context.search(stderr):
+        return False, f"compiler status {status} is not the known backend multi-top assertion"
+    diagnostic_tail = [line for line in stderr.splitlines() if line.strip()][-3:]
+    expected_tail = [
+        expected,
+        "\tvoid BackendWrapper::init(const HLS_managerRef&)",
+    ]
+    if (len(diagnostic_tail) != 3 or diagnostic_tail[:2] != expected_tail or
+            not re.search(r"BackendWrapper\.cpp:\d+$", diagnostic_tail[2].strip())):
+        return False, "known backend multi-top assertion is not the compiler's final diagnostic"
+    return True, "compiler reported only the known backend multi-top assertion after RTL generation"
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=("ir", "rtl", "fallback"))
+    parser.add_argument("mode", choices=("ir", "rtl", "fallback", "shared-profile"))
     parser.add_argument("--output", type=pathlib.Path)
     parser.add_argument("--require", action="append", default=[], help="required regex over compiler artifacts")
     parser.add_argument("--forbid", action="append", default=[], help="forbidden regex over compiler artifacts")
@@ -117,9 +224,51 @@ def main():
                              "for a pragma that omits read_fifo_depth)")
     parser.add_argument("--fallback-log", type=pathlib.Path,
                         help="compiler log that must report retaining legacy m_axi reads")
+    parser.add_argument("--compiler-status", type=int,
+                        help="compiler exit status required by shared-profile mode")
+    parser.add_argument("--stdout-log", type=pathlib.Path,
+                        help="compiler stdout log for shared-profile mode")
+    parser.add_argument("--stderr-log", type=pathlib.Path,
+                        help="compiler stderr log for shared-profile mode")
+    parser.add_argument("--shared-root", action="append", default=[],
+                        help="root module to trace through PBI/datapath to the shared wrapper; repeat twice")
     args = parser.parse_args()
     if args.output is None or not args.output.is_dir():
         parser.error("artifact mode requires an existing --output directory")
+    if args.mode == "shared-profile":
+        if (len(args.shared_root) != 2 or len(set(args.shared_root)) != 2 or
+                args.compiler_status is None or args.stdout_log is None or
+                args.stderr_log is None or args.expected_burst_max is None or
+                args.expected_outstanding is None or args.expected_fifo_depth is None):
+            parser.error("shared-profile requires two --shared-root values, --compiler-status, "
+                         "both compiler logs, and all three expected engine parameters")
+        top = args.output / "top.v"
+        try:
+            rtl = top.read_text(encoding="utf-8", errors="replace")
+        except OSError as exc:
+            print(f"SHARED PROFILE CHECK FAILED: cannot read generated top.v: {exc}", file=sys.stderr)
+            return 1
+        structural_ok, structural_reason = check_shared_profile_rtl(
+            rtl, args.shared_root, {
+                "B_MAX": args.expected_burst_max,
+                "MAX_OUTSTANDING": args.expected_outstanding,
+                "FIFO_DEPTH": args.expected_fifo_depth,
+            })
+        if not structural_ok:
+            print(f"SHARED PROFILE CHECK FAILED: {structural_reason}", file=sys.stderr)
+            return 1
+        try:
+            stdout = args.stdout_log.read_text(encoding="utf-8", errors="replace")
+            stderr = args.stderr_log.read_text(encoding="utf-8", errors="replace")
+        except OSError as exc:
+            print(f"SHARED PROFILE CHECK FAILED: cannot read compiler logs: {exc}", file=sys.stderr)
+            return 1
+        status_ok, status_reason = check_shared_profile_status(args.compiler_status, stdout, stderr)
+        if not status_ok:
+            print(f"SHARED PROFILE CHECK FAILED: {status_reason}", file=sys.stderr)
+            return 1
+        print(f"SHARED PROFILE CHECK PASS: {structural_reason}; {status_reason}")
+        return 0
     if args.configured_contract and args.expected_fifo_depth is None:
         if args.expected_burst_max is None:
             parser.error("--configured-contract needs --expected-burst-max to derive FIFO_DEPTH")
