@@ -127,10 +127,6 @@ run_post_mantis_job() {
     compiler-pragma|compiler-burst-profile|compiler-xml-profile|compiler-latency-metadata|compiler-fallback-matrix|compiler-root-reinvocation|compiler-shared-resource)
       run_compiler_suite "${job#compiler-}"
       ;;
-    virtual-dependencies)
-      bash "$script_dir/bambu_axi_burst/run_virtual_dependency_tests.sh" \
-        "$bambu" "$scratch/virtual-dependencies"
-      ;;
     rtl-verilator-transactions|rtl-verilator-credits|rtl-verilator-bounds|rtl-verilator-configure)
       local suite=${job#rtl-verilator-}
       SIM_JOBS="$verilator_jobs" bash "$script_dir/bambu_axi_burst/rtl_tests/run_verilator.sh" \
@@ -162,7 +158,9 @@ run_post_mantis_job() {
 }
 
 # Mantis is a separate first phase and consumes at most the same parallelism
-# internally. The independent helper jobs then share one bounded pool.
+# internally. The independent helper jobs then share one bounded pool. The
+# raw-IR virtual-dependency diagnostic is developer-only: Release builds do not
+# support --debug-classes, so it must not be scheduled here.
 BURST_JOB_LOG_DIR="$scratch/jobs"
 mkdir -p "$BURST_JOB_LOG_DIR"
 if ! run_bounded_jobs "$parallelism" run_post_mantis_job \
@@ -173,7 +171,6 @@ if ! run_bounded_jobs "$parallelism" run_post_mantis_job \
   compiler-fallback-matrix \
   compiler-root-reinvocation \
   compiler-shared-resource \
-  virtual-dependencies \
   rtl-verilator-transactions \
   rtl-verilator-credits \
   rtl-verilator-bounds \
@@ -196,7 +193,7 @@ rm -rf -- \
   "$scratch/compiler-pragma" "$scratch/compiler-burst-profile" \
   "$scratch/compiler-xml-profile" "$scratch/compiler-latency-metadata" \
   "$scratch/compiler-fallback-matrix" "$scratch/compiler-root-reinvocation" \
-  "$scratch/compiler-shared-resource" "$scratch/virtual-dependencies" \
+  "$scratch/compiler-shared-resource" \
   "$scratch/rtl-verilator-transactions" "$scratch/rtl-verilator-credits" \
   "$scratch/rtl-verilator-bounds" "$scratch/rtl-verilator-configure" \
   "$scratch/rtl-write-engine" \

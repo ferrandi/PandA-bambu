@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Developer-only diagnostic: requires a non-Release Bambu build because it
+# requests --debug-classes and validates compiler-generated .raw IR dumps.
+# Keep it out of the Release regression/CI helper pool.
 set -uo pipefail
 
 usage() {
@@ -77,6 +80,7 @@ set +e
     --AXI-burst-type=INCREMENTAL \
     --bambu-parameter=experimental-m-axi-burst=1 \
     --bambu-parameter=print-ir-manager=1 \
+    --bambu-parameter=print-dot-FF=0 \
     --extra-cc-options=-DNDEBUG \
     --extra-cc-options=-DBAMBU \
     --debug-classes=InterfaceInfer,BuildVirtualPhi \
@@ -86,6 +90,10 @@ bambu_status=$?
 set -e
 
 echo "Bambu exit status: $bambu_status (stdout/stderr: $out_dir/bambu.*.log)"
+if [[ $bambu_status -ne 0 ]]; then
+  echo "Bambu failed; compiler stderr follows:" >&2
+  cat "$out_dir/bambu.stderr.log" >&2
+fi
 set +e
 python3 "$script_dir/check_virtual_dependencies.py" "$out_dir"
 check_status=$?

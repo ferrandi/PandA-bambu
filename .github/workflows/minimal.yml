@@ -437,6 +437,14 @@ jobs:
         run: |
           source ${{env.dist-dir}}/settings.sh
           mkdir -p ${{env.report-dir}}
+          for tool in vsim vlib vlog; do
+            tool_path=$(command -v "$tool" || true)
+            if [[ -z "$tool_path" ]]; then
+              echo "::error title=Missing ModelSim tool::$tool is not available in the runner service PATH"
+              exit 1
+            fi
+            printf 'ModelSim tool %s: %s\n' "$tool" "$tool_path"
+          done
           ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" -c=--simulator=MODELSIM
       - name: Collect post-mortem data
         if: ${{ failure() }}
