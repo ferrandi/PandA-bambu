@@ -120,8 +120,6 @@ add_custom_target(libtech_data ALL DEPENDS ${LIBTECH_DATA_OUTPUTS} ${LIBTECH_SPE
 
 set(LIBTECH_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/${PANDA_INSTALL_NAMESPACE}/libtech")
 set(LIBTECH_TARGETS_INSTALL_DIR "${LIBTECH_INSTALL_DIR}/targets")
-# Ensure generated artifacts exist when installing, even if user runs cmake --install directly
-install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target libtech_data --config \"\${CMAKE_INSTALL_CONFIG_NAME}\")")
 foreach(_data_file IN LISTS LIBTECH_DATA_OUTPUTS)
    file(RELATIVE_PATH _data_rel "${CMAKE_CURRENT_BINARY_DIR}" "${_data_file}")
    get_filename_component(_data_dir "${_data_rel}" DIRECTORY)

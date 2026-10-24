@@ -355,6 +355,7 @@ void MdpiWrapperCWriter::InternalWriteFile()
          const auto is_reference_type = arg_typename.back() == '&';
          const auto is_banked =
              arg_interface == "default" && global_use_banked && (is_reference_type || is_pointer_type);
+         bool check_nonzero_memory_extent = false;
 
          top_decl += arg_typename + " " + arg_name + ", ";
          gold_decl += arg_typename + ", ";
@@ -380,9 +381,24 @@ void MdpiWrapperCWriter::InternalWriteFile()
             pp_call += "(" + raw_typename + ")" + arg_name + "_pp, ";
             gold_cmp += "m_argcmp(" + STR(param_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
             iface_type = arg_interface == "default" ? "ptr" : arg_interface;
+            const bool memory_like_interface =
+                arg_interface == "m_axi" || arg_interface == "mem" || arg_interface == "external";
+            check_nonzero_memory_extent = memory_like_interface;
+            const auto source_extent_known = [&]() {
+               const auto* source_attrs = orig_parm_attrs ? orig_parm_attrs : &parm_attrs;
+               const auto extent = source_attrs->find(FunctionArchitecture::parm_extent_known);
+               return extent != source_attrs->end() && extent->second == "1";
+            };
             if(param_size_default.find(param_idx) != param_size_default.end())
             {
+               // Explicit co-simulation sizes take precedence over source-derived array bounds.
                arg_size = param_size_default.at(param_idx);
+            }
+            else if(memory_like_interface && !source_extent_known())
+            {
+               // Keep a size supplied by the C/C++ testbench. If none was supplied, fail at
+               // wrapper entry before the gold function copies data using an invalid extent.
+               arg_size = "0";
             }
             else
             {
@@ -461,6 +477,14 @@ void MdpiWrapperCWriter::InternalWriteFile()
          }
          const auto arg_ptr = (is_pointer_type ? "(void*)" : "(void*)&") + arg_name;
          args_init += "__m_param_alloc(" + std::to_string(param_idx) + ", " + arg_size + ");\n";
+         if(check_nonzero_memory_extent)
+         {
+            args_init += "if(__m_param_size(" + std::to_string(param_idx) + ") == 0)\n{\n";
+            args_init += "fprintf(stderr, \"MDPI parameter extent is zero: pointer parameter '" + parm_name +
+                         "' of function '" + top_fname +
+                         "' must resolve to a positive size from the source extent, --tb-param-size, or m_param_alloc before the top-function call.\\n\");\n";
+            args_init += "fflush(stderr);\n__m_sim_preflight_fail();\n}\n";
+         }
          if(is_banked)
          {
             banked_args_decl += "{" + arg_ptr + ", " + arg_align + ", m_map_" + iface_type + "(" + arg_ptr + ")},\n";

@@ -72,6 +72,7 @@
 #include <regex>
 #include <set>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -1211,6 +1212,18 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
 
    std::list<structural_objectRef> memory_modules;
 
+   struct duplex_endpoint_instance
+   {
+      structural_objectRef module;
+      std::map<std::string, std::string> metadata;
+   };
+   struct duplex_bundle_instances
+   {
+      std::vector<duplex_endpoint_instance> readers;
+      std::vector<duplex_endpoint_instance> writers;
+   };
+   std::map<std::string, duplex_bundle_instances> duplex_bundles;
+
    /// add the MEMCPY_STD component when parameters has to be copied into the local store
    const auto FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
    const auto function_parameters = FB->CGetBehavioralHelper()->get_parameters();
@@ -1684,7 +1697,46 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             }
             kill_proxy_function_units(wrapped_units, curr_gate, fun_call_sites_rel, reverse_function_units);
 
-            bool added_memory_element = manage_module_ports(HLSMgr, HLS, SM, curr_gate, num);
+            const auto fu_technology = GetPointerS<const functional_unit>(allocation_information->get_fu(i));
+            const auto role_it = fu_technology->attributes.find("bambu_axi_duplex_role");
+            bool added_memory_element = false;
+            if(role_it != fu_technology->attributes.end())
+            {
+               const auto get_metadata = [&](const std::string& key) {
+                  const auto it = fu_technology->attributes.find(key);
+                  THROW_ASSERT(it != fu_technology->attributes.end() && it->second,
+                               "Missing duplex endpoint metadata " + key);
+                  return it->second->get_content_str();
+               };
+               const auto bundle = get_metadata("bambu_axi_bundle_name");
+               const auto role = role_it->second->get_content_str();
+               THROW_ASSERT(!bundle.empty(), "Duplex endpoint has an empty bundle name");
+               const std::string expected_role = role == "read_endpoint" ? "read" :
+                                                 role == "write_endpoint" ? "write" : "";
+               THROW_ASSERT(!expected_role.empty(), "Unsupported duplex endpoint role " + role);
+               THROW_ASSERT(get_metadata("bambu_axi_burst_mode") == expected_role,
+                            "Duplex endpoint role and burst mode disagree for bundle " + bundle);
+               const std::map<std::string, std::string> metadata{
+                   {"bambu_axi_bundle_name", bundle},
+                   {"bambu_axi_duplex_aggregator", get_metadata("bambu_axi_duplex_aggregator")},
+                   {"bambu_axi_address_bitsize", get_metadata("bambu_axi_address_bitsize")},
+                   {"bambu_axi_data_bitsize", get_metadata("bambu_axi_data_bitsize")},
+                   {"bambu_axi_latency", get_metadata("bambu_axi_latency")},
+                   {"bambu_max_read_burst_length", get_metadata("bambu_max_read_burst_length")},
+                   {"bambu_num_read_outstanding", get_metadata("bambu_num_read_outstanding")},
+                   {"bambu_read_fifo_depth", get_metadata("bambu_read_fifo_depth")},
+                   {"bambu_max_write_burst_length", get_metadata("bambu_max_write_burst_length")},
+                   {"bambu_write_burst_outstanding", get_metadata("bambu_write_burst_outstanding")},
+                   {"bambu_write_fifo_depth", get_metadata("bambu_write_fifo_depth")}};
+               auto& instances = duplex_bundles[bundle];
+               auto& endpoints = role == "read_endpoint" ? instances.readers : instances.writers;
+               THROW_ASSERT(endpoints.empty(), "Duplicate duplex " + expected_role + " endpoint for bundle " + bundle);
+               endpoints.push_back({curr_gate, metadata});
+            }
+            else
+            {
+               added_memory_element = manage_module_ports(HLSMgr, HLS, SM, curr_gate, num);
+            }
             if(added_memory_element &&
                std::find(memory_modules.begin(), memory_modules.end(), curr_gate) == memory_modules.end())
             {
@@ -1699,6 +1751,313 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Specialized functional units");
+
+   for(const auto& [bundle, endpoints] : duplex_bundles)
+   {
+      THROW_ASSERT(endpoints.readers.size() == 1U && endpoints.writers.size() == 1U,
+                   "Duplex bundle " + bundle + " requires exactly one read and one write endpoint");
+      const auto& reader = endpoints.readers.front();
+      const auto& writer = endpoints.writers.front();
+      THROW_ASSERT(reader.metadata == writer.metadata,
+                   "Duplex endpoint profiles differ for bundle " + bundle);
+      const auto& metadata = reader.metadata;
+      const auto aggregator_name = metadata.at("bambu_axi_duplex_aggregator");
+      const auto aggregator_template = TechM->get_fu(aggregator_name, INTERFACE_LIBRARY);
+      THROW_ASSERT(aggregator_template, "Missing duplex aggregator template " + aggregator_name);
+      const auto aggregator_technology = GetPointerS<const functional_unit>(aggregator_template);
+      THROW_ASSERT(aggregator_technology->CM, "Missing duplex aggregator structural template " + aggregator_name);
+#if HAVE_ASSERTS
+      const auto aggregator_np =
+          GetPointerS<const module_o>(aggregator_technology->CM->get_circ())->get_NP_functionality();
+      THROW_ASSERT(aggregator_np &&
+                       aggregator_np->get_NP_functionality(NP_functionality::VERILOG_GENERATOR) ==
+                           "DuplexMAXIHDLGenerator",
+                   "Missing duplex HDL generator on template " + aggregator_name);
+      for(const auto& item : metadata)
+      {
+         const auto found = aggregator_technology->attributes.find(item.first);
+         THROW_ASSERT(found != aggregator_technology->attributes.end() && found->second &&
+                          found->second->get_content_str() == item.second,
+                      "Duplex aggregator metadata mismatch for bundle " + bundle + " at " + item.first);
+      }
+      const auto aggregator_role = aggregator_technology->attributes.find("bambu_axi_duplex_role");
+      THROW_ASSERT(aggregator_role != aggregator_technology->attributes.end() && aggregator_role->second &&
+                       aggregator_role->second->get_content_str() == "aggregator",
+                   "Invalid duplex aggregator role for bundle " + bundle);
+      const auto aggregator_mode = aggregator_technology->attributes.find("bambu_axi_burst_mode");
+      THROW_ASSERT(aggregator_mode != aggregator_technology->attributes.end() && aggregator_mode->second &&
+                       aggregator_mode->second->get_content_str() == "duplex",
+                   "Invalid duplex aggregator mode for bundle " + bundle);
+#endif
+      const auto address_bits = static_cast<unsigned int>(std::stoul(metadata.at("bambu_axi_address_bitsize")));
+      const auto data_bits = static_cast<unsigned int>(std::stoul(metadata.at("bambu_axi_data_bitsize")));
+
+      const auto validate_port = [&](const structural_objectRef& module, const std::string& name,
+                                     const port_o::port_direction ASSERT_PARAMETER(direction),
+                                     const unsigned int ASSERT_PARAMETER(width),
+                                     const bool ASSERT_PARAMETER(is_extern),
+                                     const port_o::port_interface ASSERT_PARAMETER(interface_tag)) {
+         const auto port = module->find_member(name, port_o_K, module);
+#if HAVE_ASSERTS
+         THROW_ASSERT(port && GetPointerS<const port_o>(port)->get_port_direction() == direction &&
+                          GET_TYPE_SIZE(GetPointerS<const port_o>(port)) == width &&
+                          GetPointerS<const port_o>(port)->get_is_extern() == is_extern &&
+                          GetPointerS<const port_o>(port)->get_port_interface() == interface_tag,
+                      "Invalid duplex port " + name + " on " + module->get_id() + " for bundle " + bundle);
+#endif
+         return port;
+      };
+      const auto connect_command = [&](const structural_objectRef& endpoint, const std::string& endpoint_name,
+                                       const structural_objectRef& aggregator, const std::string& aggregator_port,
+                                       const port_o::port_direction endpoint_direction,
+                                       const port_o::port_direction aggregator_direction,
+                                       const unsigned int width) {
+         const auto source = validate_port(endpoint, endpoint_name, endpoint_direction, width, true,
+                                           port_o::port_interface::PI_DEFAULT);
+         const auto destination = validate_port(aggregator, aggregator_port, aggregator_direction, width, false,
+                                                port_o::port_interface::PI_DEFAULT);
+         THROW_ASSERT(endpoint != aggregator && endpoint->get_owner() == circuit && aggregator->get_owner() == circuit &&
+                          source->get_owner() == endpoint && destination->get_owner() == aggregator,
+                      "Duplex ports must belong to sibling modules for bundle " + bundle);
+         THROW_ASSERT(GetPointerS<const port_o>(source)->get_connected_signal() == nullptr &&
+                          GetPointerS<const port_o>(destination)->get_connected_signal() == nullptr,
+                      "Duplex ports must be initially unconnected for bundle " + bundle);
+
+         structural_objectRef producer;
+         structural_objectRef consumer;
+         if(endpoint_direction == port_o::OUT && aggregator_direction == port_o::IN)
+         {
+            producer = source;
+            consumer = destination;
+         }
+         else
+         {
+            THROW_ASSERT(endpoint_direction == port_o::IN && aggregator_direction == port_o::OUT,
+                         "Invalid duplex producer/consumer directions for bundle " + bundle);
+            producer = destination;
+            consumer = source;
+         }
+
+         const auto signal = SM->add_sign("duplex_" + STR(unique_id++), circuit, producer->get_typeRef());
+         SM->add_connection(signal, producer);
+         SM->add_connection(signal, consumer);
+         THROW_ASSERT(GetPointerS<const port_o>(producer)->get_connected_signal() == signal &&
+                          GetPointerS<const port_o>(consumer)->get_connected_signal() == signal &&
+                          GetPointerS<const port_o>(producer)->find_bounded_object(circuit) == signal &&
+                          GetPointerS<const port_o>(consumer)->find_bounded_object(circuit) == signal,
+                      "Duplex ports do not resolve to the same circuit signal for bundle " + bundle);
+      };
+      const auto HDLGen(new HDLGeneratorManager(HLSMgr, parameters));
+      const auto specialized_name = aggregator_name + "_modgen";
+      if(GetPointerS<const module_o>(aggregator_technology->CM->get_circ())->has_to_be_generated())
+      {
+         HDLGen->create_generic_module(aggregator_name, gc_null_vertex(), FB, INTERFACE_LIBRARY, specialized_name);
+      }
+      const auto specialized_technology = TechM->get_fu(specialized_name, INTERFACE_LIBRARY);
+      THROW_ASSERT(specialized_technology, "Failed to specialize duplex aggregator " + aggregator_name);
+      THROW_ASSERT(GetPointerS<const functional_unit>(specialized_technology)->CM,
+                   "Missing specialized duplex aggregator structure " + specialized_name);
+      const auto specialized_module =
+          GetPointerS<const module_o>(GetPointerS<const functional_unit>(specialized_technology)->CM->get_circ());
+      for(const auto& item : metadata)
+      {
+         const auto& attributes = specialized_module->get_attribute_list();
+         const auto found = std::find(attributes.begin(), attributes.end(), item.first);
+         const auto attribute = found == attributes.end() ? attributeRef() : specialized_module->get_attribute(item.first);
+         THROW_ASSERT(attribute && attribute->get_content_str() == item.second,
+                      "Specialized duplex metadata mismatch for bundle " + bundle + " at " + item.first);
+      }
+      const auto aggregator = SM->add_module_from_technology_library(
+          "duplex_aggregator_" + STR(unique_id++), specialized_name, INTERFACE_LIBRARY, circuit, TechM);
+      const auto clock = validate_port(aggregator, CLOCK_PORT_NAME, port_o::IN, 1, false,
+                                       port_o::port_interface::PI_DEFAULT);
+      const auto reset = validate_port(aggregator, RESET_PORT_NAME, port_o::IN, 1, false,
+                                       port_o::port_interface::PI_DEFAULT);
+      THROW_ASSERT(GetPointerS<const port_o>(clock_port)->get_port_direction() == port_o::IN &&
+                       GetPointerS<const port_o>(reset_port)->get_port_direction() == port_o::IN &&
+                       GET_TYPE_SIZE(GetPointerS<const port_o>(clock_port)) == 1U &&
+                       GET_TYPE_SIZE(GetPointerS<const port_o>(reset_port)) == 1U,
+                   "Invalid duplex clock/reset connection for bundle " + bundle);
+      SM->add_connection(clock, clock_port);
+      SM->add_connection(reset, reset_port);
+
+      const std::vector<std::tuple<std::string, unsigned int>> command_fields{
+          {"start", 1U}, {"opcode", 2U}, {"size", 32U}, {"data", data_bits}, {"address", address_bits},
+          {"count", 32U}};
+      for(const auto& [field, width] : command_fields)
+      {
+         connect_command(reader.module, "duplex_" + field, aggregator, "read_" + field, port_o::OUT, port_o::IN,
+                         width);
+         connect_command(writer.module, "duplex_" + field, aggregator, "write_" + field, port_o::OUT, port_o::IN,
+                         width);
+      }
+      connect_command(reader.module, "duplex_done", aggregator, "read_done", port_o::IN, port_o::OUT, 1U);
+      connect_command(reader.module, "duplex_result", aggregator, "read_result", port_o::IN, port_o::OUT, data_bits);
+      connect_command(writer.module, "duplex_done", aggregator, "write_done", port_o::IN, port_o::OUT, 1U);
+      connect_command(writer.module, "duplex_result", aggregator, "write_result", port_o::IN, port_o::OUT, data_bits);
+
+#if HAVE_ASSERTS
+      unsigned int cache_reset_ports = 0U;
+      for(unsigned int port_index = 0; port_index < GetPointerS<const module_o>(aggregator)->get_in_port_size();
+          ++port_index)
+      {
+         const auto port = GetPointerS<const module_o>(aggregator)->get_in_port(port_index);
+         const auto port_info = GetPointerS<const port_o>(port);
+         if(port_info->get_port_interface() == port_o::port_interface::CACHE_RESET)
+         {
+            ++cache_reset_ports;
+            THROW_ASSERT(port->get_id() == CACHE_RESET_PORT_NAME && port_info->get_port_direction() == port_o::IN &&
+                             GET_TYPE_SIZE(port_info) == 1U && !port_info->get_is_extern(),
+                         "Invalid duplex cache_reset port for bundle " + bundle);
+         }
+      }
+      THROW_ASSERT(cache_reset_ports == 1U,
+                   "Duplex aggregator must expose exactly one cache_reset input for bundle " + bundle);
+
+      std::set<int> physical_interface_tags;
+      for(unsigned int port_index = 0; port_index < GetPointerS<const module_o>(aggregator)->get_in_port_size();
+          ++port_index)
+      {
+         const auto port = GetPointerS<const module_o>(aggregator)->get_in_port(port_index);
+         const auto tag = GetPointerS<const port_o>(port)->get_port_interface();
+         if(tag >= port_o::port_interface::M_AXI_AWVALID && tag <= port_o::port_interface::M_AXI_BUSER)
+         {
+            THROW_ASSERT(physical_interface_tags.insert(static_cast<int>(tag)).second,
+                         "Duplicate physical M_AXI interface tag in duplex aggregator for bundle " + bundle);
+         }
+      }
+      for(unsigned int port_index = 0; port_index < GetPointerS<const module_o>(aggregator)->get_out_port_size();
+          ++port_index)
+      {
+         const auto port = GetPointerS<const module_o>(aggregator)->get_out_port(port_index);
+         const auto tag = GetPointerS<const port_o>(port)->get_port_interface();
+         if(tag >= port_o::port_interface::M_AXI_AWVALID && tag <= port_o::port_interface::M_AXI_BUSER)
+         {
+            THROW_ASSERT(physical_interface_tags.insert(static_cast<int>(tag)).second,
+                         "Duplicate physical M_AXI interface tag in duplex aggregator for bundle " + bundle);
+         }
+      }
+      THROW_ASSERT(!physical_interface_tags.empty(), "Duplex aggregator has no physical M_AXI ports for bundle " + bundle);
+      const std::set<port_o::port_interface> required_physical_tags{
+          port_o::port_interface::M_AXI_ARADDR, port_o::port_interface::M_AXI_ARBURST,
+          port_o::port_interface::M_AXI_ARCACHE, port_o::port_interface::M_AXI_ARID,
+          port_o::port_interface::M_AXI_ARLEN, port_o::port_interface::M_AXI_ARLOCK,
+          port_o::port_interface::M_AXI_ARPROT, port_o::port_interface::M_AXI_ARQOS,
+          port_o::port_interface::M_AXI_ARREADY, port_o::port_interface::M_AXI_ARREGION,
+          port_o::port_interface::M_AXI_ARSIZE, port_o::port_interface::M_AXI_ARUSER,
+          port_o::port_interface::M_AXI_ARVALID, port_o::port_interface::M_AXI_AWADDR,
+          port_o::port_interface::M_AXI_AWBURST, port_o::port_interface::M_AXI_AWCACHE,
+          port_o::port_interface::M_AXI_AWID, port_o::port_interface::M_AXI_AWLEN,
+          port_o::port_interface::M_AXI_AWLOCK, port_o::port_interface::M_AXI_AWPROT,
+          port_o::port_interface::M_AXI_AWQOS, port_o::port_interface::M_AXI_AWREADY,
+          port_o::port_interface::M_AXI_AWREGION, port_o::port_interface::M_AXI_AWSIZE,
+          port_o::port_interface::M_AXI_AWUSER, port_o::port_interface::M_AXI_AWVALID,
+          port_o::port_interface::M_AXI_BID, port_o::port_interface::M_AXI_BREADY,
+          port_o::port_interface::M_AXI_BRESP, port_o::port_interface::M_AXI_BUSER,
+          port_o::port_interface::M_AXI_BVALID, port_o::port_interface::M_AXI_RDATA,
+          port_o::port_interface::M_AXI_RID, port_o::port_interface::M_AXI_RLAST,
+          port_o::port_interface::M_AXI_RREADY, port_o::port_interface::M_AXI_RRESP,
+          port_o::port_interface::M_AXI_RUSER, port_o::port_interface::M_AXI_RVALID,
+          port_o::port_interface::M_AXI_WDATA, port_o::port_interface::M_AXI_WLAST,
+          port_o::port_interface::M_AXI_WREADY, port_o::port_interface::M_AXI_WSTRB,
+          port_o::port_interface::M_AXI_WUSER, port_o::port_interface::M_AXI_WVALID};
+      const std::set<port_o::port_interface> physical_input_tags{
+          port_o::port_interface::M_AXI_AWREADY, port_o::port_interface::M_AXI_WREADY,
+          port_o::port_interface::M_AXI_BVALID, port_o::port_interface::M_AXI_BRESP,
+          port_o::port_interface::M_AXI_BID, port_o::port_interface::M_AXI_BUSER,
+          port_o::port_interface::M_AXI_ARREADY,
+          port_o::port_interface::M_AXI_RVALID, port_o::port_interface::M_AXI_RDATA,
+          port_o::port_interface::M_AXI_RLAST, port_o::port_interface::M_AXI_RID,
+          port_o::port_interface::M_AXI_RUSER, port_o::port_interface::M_AXI_RRESP};
+      const auto expected_physical_width = [&](const port_o::port_interface tag) {
+         using port_interface = port_o::port_interface;
+         if(tag == port_interface::M_AXI_AWADDR || tag == port_interface::M_AXI_ARADDR)
+            return address_bits;
+         if(tag == port_interface::M_AXI_WDATA || tag == port_interface::M_AXI_RDATA)
+            return data_bits;
+         if(tag == port_interface::M_AXI_WSTRB)
+            return data_bits / 8U;
+         if(tag == port_interface::M_AXI_AWLEN || tag == port_interface::M_AXI_ARLEN)
+            return 8U;
+         if(tag == port_interface::M_AXI_AWSIZE || tag == port_interface::M_AXI_ARSIZE ||
+            tag == port_interface::M_AXI_AWPROT || tag == port_interface::M_AXI_ARPROT)
+            return 3U;
+         if(tag == port_interface::M_AXI_AWBURST || tag == port_interface::M_AXI_ARBURST ||
+            tag == port_interface::M_AXI_BRESP || tag == port_interface::M_AXI_RRESP)
+            return 2U;
+         if(tag == port_interface::M_AXI_AWCACHE || tag == port_interface::M_AXI_ARCACHE ||
+            tag == port_interface::M_AXI_AWQOS || tag == port_interface::M_AXI_ARQOS ||
+            tag == port_interface::M_AXI_AWREGION || tag == port_interface::M_AXI_ARREGION)
+            return 4U;
+         if(tag == port_interface::M_AXI_AWVALID || tag == port_interface::M_AXI_AWREADY ||
+            tag == port_interface::M_AXI_WVALID || tag == port_interface::M_AXI_WREADY ||
+            tag == port_interface::M_AXI_WLAST || tag == port_interface::M_AXI_BREADY ||
+            tag == port_interface::M_AXI_BVALID || tag == port_interface::M_AXI_ARVALID ||
+            tag == port_interface::M_AXI_ARREADY || tag == port_interface::M_AXI_RVALID ||
+            tag == port_interface::M_AXI_RREADY || tag == port_interface::M_AXI_RLAST)
+            return 1U;
+         if(tag == port_interface::M_AXI_AWID || tag == port_interface::M_AXI_ARID ||
+            tag == port_interface::M_AXI_BID || tag == port_interface::M_AXI_RID ||
+            tag == port_interface::M_AXI_WID)
+            return 6U;
+         return 1U;
+      };
+      const auto validate_physical_port = [&](const structural_objectRef& port) {
+         const auto port_info = GetPointerS<const port_o>(port);
+         const auto tag = port_info->get_port_interface();
+         const std::set<port_o::port_interface> vector_tags{
+             port_o::port_interface::M_AXI_AWID, port_o::port_interface::M_AXI_AWLOCK,
+             port_o::port_interface::M_AXI_AWUSER, port_o::port_interface::M_AXI_WSTRB,
+             port_o::port_interface::M_AXI_WUSER, port_o::port_interface::M_AXI_BID,
+             port_o::port_interface::M_AXI_BUSER, port_o::port_interface::M_AXI_ARID,
+             port_o::port_interface::M_AXI_ARLOCK, port_o::port_interface::M_AXI_ARUSER,
+             port_o::port_interface::M_AXI_RID, port_o::port_interface::M_AXI_RUSER,
+             port_o::port_interface::M_AXI_WID};
+         const auto expected_kind = vector_tags.count(tag) ? port_vector_o_K : port_o_K;
+         THROW_ASSERT(tag >= port_o::port_interface::M_AXI_AWVALID &&
+                          tag <= port_o::port_interface::M_AXI_BUSER &&
+                          port_info->get_port_direction() ==
+                              (physical_input_tags.count(tag) ? port_o::IN : port_o::OUT) &&
+                          port->get_kind() == expected_kind &&
+                          GET_TYPE_SIZE(port_info) == expected_physical_width(tag) &&
+                          (expected_kind == port_o_K || port_info->get_ports_size() == 1U),
+                      "Invalid physical M_AXI port shape: " + port->get_id() + " for bundle " + bundle);
+      };
+      for(const auto expected_tag : required_physical_tags)
+      {
+         THROW_ASSERT(physical_interface_tags.count(static_cast<int>(expected_tag)) == 1U,
+                      "Missing physical M_AXI interface tag in duplex aggregator for bundle " + bundle);
+      }
+      for(unsigned int port_index = 0; port_index < GetPointerS<const module_o>(aggregator)->get_in_port_size();
+          ++port_index)
+      {
+         const auto port = GetPointerS<const module_o>(aggregator)->get_in_port(port_index);
+         const auto tag = GetPointerS<const port_o>(port)->get_port_interface();
+         if(tag >= port_o::port_interface::M_AXI_AWVALID && tag <= port_o::port_interface::M_AXI_BUSER)
+         {
+            validate_physical_port(port);
+            THROW_ASSERT(!circuit->find_member(port->get_id(), port_o_K, circuit) &&
+                             !circuit->find_member(port->get_id(), port_vector_o_K, circuit),
+                         "Physical M_AXI pin already mapped for duplex bundle " + bundle + ": " + port->get_id());
+         }
+      }
+      for(unsigned int port_index = 0; port_index < GetPointerS<const module_o>(aggregator)->get_out_port_size();
+          ++port_index)
+      {
+         const auto port = GetPointerS<const module_o>(aggregator)->get_out_port(port_index);
+         const auto tag = GetPointerS<const port_o>(port)->get_port_interface();
+         if(tag >= port_o::port_interface::M_AXI_AWVALID && tag <= port_o::port_interface::M_AXI_BUSER)
+         {
+            validate_physical_port(port);
+            THROW_ASSERT(!circuit->find_member(port->get_id(), port_o_K, circuit) &&
+                             !circuit->find_member(port->get_id(), port_vector_o_K, circuit),
+                         "Physical M_AXI pin already mapped for duplex bundle " + bundle + ": " + port->get_id());
+         }
+      }
+#endif
+      manage_module_ports(HLSMgr, HLS, SM, aggregator, 0);
+   }
+
    if(!has_resource_sharing_p)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, HLS->output_level,
