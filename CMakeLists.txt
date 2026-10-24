@@ -317,7 +317,7 @@ add_subdirectory(etc/libbambu)
 add_subdirectory(etc/appimage)
 
 install(CODE [[
-   set(_exes bambu eucalyptus bambu-cc)
+   set(_exes bambu eucalyptus bambu-cc record_output)
    set(_libdir "${CMAKE_INSTALL_LIBDIR}")
    if(NOT _libdir)
       set(_libdir "lib")
