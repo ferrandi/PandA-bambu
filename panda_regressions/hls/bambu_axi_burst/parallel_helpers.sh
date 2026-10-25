@@ -146,6 +146,32 @@ for current, dirs, files in os.walk(root, topdown=False):
 PY
 }
 
+# Terminate callback descendants before their shells, including children started
+# by nested runners. Process-tree inspection is only needed when a caller cancels.
+_burst_cancel_job_tree() {
+  local root pid ppid
+  local -a tree=()
+  local -A children=()
+  ((${#pids[@]})) || return 0
+  while read -r pid ppid; do
+    children[$ppid]="${children[$ppid]-} $pid"
+  done < <(ps -eo pid=,ppid=)
+
+  _burst_collect_cancel_tree() {
+    local parent=$1 nested
+    for nested in ${children[$parent]-}; do
+      _burst_collect_cancel_tree "$nested"
+    done
+    tree+=("$parent")
+  }
+  for root in "${pids[@]}"; do _burst_collect_cancel_tree "$root"; done
+
+  for pid in "${tree[@]}"; do kill -TERM "$pid" 2>/dev/null || true; done
+  sleep 1
+  for pid in "${tree[@]}"; do kill -KILL "$pid" 2>/dev/null || true; done
+  for root in "${pids[@]}"; do wait "$root" 2>/dev/null || true; done
+}
+
 # Run named jobs with a strict upper bound. callback receives each job name;
 # logs are isolated and every started job is waited for, even after a failure.
 run_bounded_jobs() {
@@ -154,6 +180,12 @@ run_bounded_jobs() {
   local -a pending=("$@") pids=()
   local -A labels=() log_paths=()
   local next=0 active=0 failed=0 pid done_pid status label log running_jobs
+  local cancel_status=0 previous_int_trap previous_term_trap
+
+  previous_int_trap=$(trap -p INT)
+  previous_term_trap=$(trap -p TERM)
+  trap 'if (( ! cancel_status )); then cancel_status=130; fi' INT
+  trap 'if (( ! cancel_status )); then cancel_status=143; fi' TERM
 
   if [[ ${BURST_QUIET_JOB_STATUS:-0} != 1 ]]; then
     printf 'Starting %d burst helper jobs (parallel limit %s); details: %s/\n' \
@@ -161,7 +193,7 @@ run_bounded_jobs() {
   fi
 
   while (( next < ${#pending[@]} || active > 0 )); do
-    while (( ! failed && next < ${#pending[@]} && active < limit )); do
+    while (( ! failed && ! cancel_status && next < ${#pending[@]} && active < limit )); do
       label=${pending[next]}
       log="$BURST_JOB_LOG_DIR/$label.log"
       "$callback" "$label" >"$log" 2>&1 &
@@ -172,6 +204,10 @@ run_bounded_jobs() {
       ((next += 1))
       ((active += 1))
     done
+
+    if (( cancel_status )); then
+      break
+    fi
 
     ((${#pids[@]})) || break
     # Bash 5.0 lacks wait's PID-capture option, so find a completed child
@@ -194,7 +230,10 @@ run_bounded_jobs() {
       fi
     done
     if [[ -z $done_pid ]]; then
-      sleep 0.05
+      if ! sleep 0.05; then
+        if (( ! cancel_status )); then failed=1; fi
+      fi
+      (( cancel_status )) && break
       continue
     fi
     if wait "$done_pid"; then
@@ -203,6 +242,7 @@ run_bounded_jobs() {
       status=$?
       failed=1
     fi
+    (( cancel_status )) && break
     label=${labels[$done_pid]}
     log=${log_paths[$done_pid]}
     if (( status != 0 )); then
@@ -219,5 +259,18 @@ run_bounded_jobs() {
     pids=("${remaining[@]}")
     active=$((active - 1))
   done
+
+  if (( cancel_status )); then
+    trap '' INT TERM
+    _burst_cancel_job_tree
+  fi
+  if [[ -n $previous_int_trap ]]; then eval "$previous_int_trap"; else trap - INT; fi
+  if [[ -n $previous_term_trap ]]; then eval "$previous_term_trap"; else trap - TERM; fi
+  if (( cancel_status == 130 )) && [[ -n $previous_int_trap ]]; then
+    kill -INT "$BASHPID"
+  elif (( cancel_status == 143 )) && [[ -n $previous_term_trap ]]; then
+    kill -TERM "$BASHPID"
+  fi
+  (( cancel_status )) && return "$cancel_status"
   return "$failed"
 }

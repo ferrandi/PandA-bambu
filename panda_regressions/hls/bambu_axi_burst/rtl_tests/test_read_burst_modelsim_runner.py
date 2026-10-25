@@ -14,8 +14,8 @@ REPO = Path(__file__).resolve().parents[4]
 RTL_TESTS = Path(__file__).resolve().parent
 RUNNER = RTL_TESTS / "run_read_burst_modelsim.sh"
 TMP_ROOT = Path(os.environ.get(
-    "BURST_TEST_TMPDIR", REPO / "documentation/tmp/out_read_burst_modelsim_runner"
-))
+    "BURST_TEST_TMPDIR", Path.cwd()
+)) / f"out_{Path(__file__).stem}"
 
 
 VSIM = r'''#!/usr/bin/env python3
@@ -124,6 +124,19 @@ class ReadBurstModelSimRunnerTests(unittest.TestCase):
         self.assertEqual(configure.returncode, 0, configure.stderr)
         self.assertIn("READ_CONFIG_PIPELINE PASS CASE=READ_RESET", configure.stdout)
         self.assertIn("READ_CONFIG_PIPELINE PASS CASE=READ_PEER_FAULT", configure.stdout)
+
+    def test_relative_path_tools_survive_runner_build_directory_changes(self) -> None:
+        env = self.env.copy()
+        env["PATH"] = f"bin:{env['PATH']}"
+        output = self.root / "relative-path-run"
+        result = subprocess.run(
+            ["/bin/bash", str(RUNNER), str(output), "credits"],
+            cwd=self.root, env=env, text=True, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, timeout=60, check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        aggregate = (output / "aggregate.log").read_text(encoding="utf-8")
+        self.assertIn("DUPLEX_READ PASS CASE=CREDIT_LIMIT", aggregate)
 
     def test_invalid_parameter_cases_require_named_single_fatal_and_smoke_selector(self) -> None:
         for suffix, mode in (("", ""), ("-final-smoke", "invalid-final-smoke")):

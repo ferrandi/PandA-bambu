@@ -4,23 +4,16 @@
 # Each build directory owns its `work` library and modelsim.ini.
 
 modelsim_resolve() {
-    local selected_vsim
-    if selected_vsim=$(command -v vsim 2>/dev/null) && [[ -n $selected_vsim ]]; then
-        MODELSIM_SOURCE=PATH
-        MODELSIM_VSIM=$selected_vsim
-        MODELSIM_BIN=${selected_vsim%/*}
-    else
-        # Keep backend lookup identical to Bambu's own launcher.
-        # shellcheck disable=SC1091
-        source "$ROOT/etc/libtech/backend/simulation/modelsim/tool_lookup.sh"
-        if ! bambu_modelsim_resolve; then
-            echo "ModelSim vsim could not be resolved using Bambu's search path" >&2
-            return 2
-        fi
-        MODELSIM_SOURCE=$BAMBU_MODELSIM_SOURCE
-        MODELSIM_VSIM=$BAMBU_MODELSIM_PATH
-        MODELSIM_BIN=$BAMBU_MODELSIM_BIN
+    # Keep PATH and backend lookup identical to Bambu's launcher.
+    # shellcheck disable=SC1091
+    source "$ROOT/etc/libtech/backend/simulation/modelsim/tool_lookup.sh"
+    if ! bambu_modelsim_resolve; then
+        echo "ModelSim vsim could not be resolved using Bambu's search path" >&2
+        return 2
     fi
+    MODELSIM_SOURCE=$BAMBU_MODELSIM_SOURCE
+    MODELSIM_VSIM=$BAMBU_MODELSIM_PATH
+    MODELSIM_BIN=$BAMBU_MODELSIM_BIN
 
     MODELSIM_VLIB="$MODELSIM_BIN/vlib"
     MODELSIM_VLOG="$MODELSIM_BIN/vlog"
