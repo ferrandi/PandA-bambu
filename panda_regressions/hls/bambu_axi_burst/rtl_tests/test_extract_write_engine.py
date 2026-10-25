@@ -4,6 +4,7 @@ import copy
 import importlib.util
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -121,6 +122,61 @@ class WriteEngineExtractorTests(unittest.TestCase):
                 self.assertIn(reset_value, generated)
                 self.assertNotIn("1RESET_EDGE", generated)
                 self.assertNotIn("1RESET_VALUE", generated)
+
+    def test_reader_async_reset_conditions_use_reset_placeholder_directly(self):
+        for active_low, value in ((True, "0"), (False, "1")):
+            with self.subTest(active_low=active_low):
+                generated = EXTRACTOR.extract(XML, target="MinimalAXI4MasterPipelined",
+                                              async_reset=True, active_low=active_low)
+                self.assertIn(f"if (reset == 1'b{value}) begin", generated)
+                self.assertIn(f"if (reset == 1'b{value} || activate_configure ||", generated)
+                self.assertEqual(generated.count("wire reset_n ="), 1)
+                self.assertNotIn("if (!reset_n", generated)
+                self.assertIn(f"wire reset_n = !(reset == 1'b{value});", generated)
+
+    @unittest.skipUnless(os.environ.get("BURST_TEST_VIVADO_OOC") == "1",
+                         "set BURST_TEST_VIVADO_OOC=1 to run optional Vivado OOC synthesis")
+    def test_async_reader_vivado_ooc_both_reset_polarities(self):
+        vivado = os.environ.get("VIVADO_BIN") or shutil.which("vivado")
+        self.assertTrue(vivado, "VIVADO_BIN or vivado on PATH is required for OOC synthesis")
+
+        for active_low, polarity in ((True, "active-low"), (False, "active-high")):
+            with self.subTest(polarity=polarity):
+                source = self.scratch / f"reader-{polarity}.sv"
+                source.write_text(EXTRACTOR.extract(XML, target="MinimalAXI4MasterPipelined",
+                                                    async_reset=True, active_low=active_low))
+                marker = f"ASYNC_READ_OOC_PASS polarity={polarity}"
+                tcl = self.scratch / f"reader-{polarity}.tcl"
+                tcl.write_text(
+                    f'if {{[catch {{read_verilog -sv {{{source}}}}} read_error]}} {{\n'
+                    '    puts stderr "ASYNC_READ_OOC_READ_FAILED: $read_error"\n'
+                    "    exit 1\n"
+                    "}\n"
+                    "if {[catch {synth_design -top MinimalAXI4MasterPipelined "
+                    "-part xcu250-figd2104-2L-e -mode out_of_context} synth_error]} {\n"
+                    '    puts stderr "ASYNC_READ_OOC_SYNTH_FAILED: $synth_error"\n'
+                    "    exit 1\n"
+                    "}\n"
+                    f'puts "{marker}"\n'
+                    "exit 0\n")
+                try:
+                    result = subprocess.run(
+                        [vivado, "-mode", "batch", "-nojournal", "-nolog", "-source", str(tcl)],
+                        cwd=self.scratch, text=True, stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE, check=False, timeout=300)
+                except subprocess.TimeoutExpired as error:
+                    stdout = error.stdout or ""
+                    stderr = error.stderr or ""
+                    if isinstance(stdout, bytes):
+                        stdout = stdout.decode(errors="replace")
+                    if isinstance(stderr, bytes):
+                        stderr = stderr.decode(errors="replace")
+                    self.fail(f"Vivado OOC synthesis timed out for {polarity}; "
+                              f"stdout:\n{stdout}\nstderr:\n{stderr}")
+                output = result.stdout + result.stderr
+                self.assertEqual(result.returncode, 0,
+                                 f"Vivado OOC synthesis failed for {polarity}:\n{output}")
+                self.assertRegex(output, rf"(?m)^{re.escape(marker)}$")
 
     def test_missing_library_port_is_rejected_not_inferred(self):
         def remove_port(module):

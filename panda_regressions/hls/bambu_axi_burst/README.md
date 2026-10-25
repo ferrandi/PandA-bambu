@@ -91,3 +91,11 @@ generated-kernel test and its wrapper-RID check remain one serial job because
 the latter consumes the former's RTL. On failure, no more jobs are launched;
 all already-started jobs are awaited and their logs are retained under
 `<out_root>/jobs/`.
+
+`--restart` resumes Mantis in the existing output root and runs the cycle gate
+against its retained results. After that gate passes, helper outputs go to a
+new `<out_root>/out_helpers_restart.*` directory so evidence from earlier
+attempts is preserved. Restart therefore requires a failed run whose outputs
+were retained, or a successful run made with `--no-clean`. A successful
+default-clean run removes generated RTL and needs a fresh output root; the
+wrapper does not cache or reconstruct those artifacts.
