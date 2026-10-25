@@ -445,7 +445,7 @@ jobs:
           printf 'ModelSim lookup source: %s\n' "$BAMBU_MODELSIM_SOURCE"
           printf 'ModelSim selected bin: %s\n' "$BAMBU_MODELSIM_BIN"
           mkdir -p ${{env.report-dir}}
-          for tool in vsim vlib vlog; do
+          for tool in vsim vlib vmap vlog; do
             tool_path="$BAMBU_MODELSIM_BIN/$tool"
             if [[ ! -x "$tool_path" ]]; then
               echo "::error title=Missing ModelSim tool::$tool is not available beside selected vsim at $BAMBU_MODELSIM_BIN"

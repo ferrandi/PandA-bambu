@@ -3,18 +3,18 @@
 Run the complete suite through `../bambu_axi_burst.sh`. The script runs the
 six Mantis cycle-gated sum cases, the boundary and negative compiler cases,
 offline gate/metadata/export/logging checks, focused compiler profile and fallback
-suites, the configure-to-read virtual-SSA check, the Verilator read- and
-write-engine suites, and a generated O=1/D=256/B=16 kernel plus wrapper-RID
-simulation. The read-engine suite is split into four independent output trees
-and dispatched concurrently; the write-engine gate also runs as an independent
-helper job. The wrapper-RID simulation reuses the RTL generated for the kernel
-test.
+suites, the configure-to-read virtual-SSA check, ModelSim read- and write-engine
+suites, and a generated O=1/D=256/B=16 kernel plus wrapper-RID simulation. The
+read-engine suite is split into four independent output trees and dispatched
+concurrently; scenarios within each tree use one private ModelSim work library
+and run serially. The write-engine gate also runs as an independent helper job.
+The wrapper-RID simulation reuses the RTL generated for the kernel test.
 
-`bambu_axi_burst.sh -j N` bounds the outer Mantis/helper pool. In this main
-regression each Verilator process receives `-j 2` by default; set
-`BURST_VERILATOR_JOBS` to change each Verilator build's thread count and
-per-suite scenario concurrency. The writer gate is also included in this pool
-and dispatches independent profiles,
+`bambu_axi_burst.sh -j N` bounds the outer Mantis/helper pool. The four read
+gates, writer gate, generated-kernel gate, and `vlog` portability gate use
+ModelSim/Questa; the generated-kernel and wrapper-RID checks share one serial
+job. Optional duplex/development runners outside this classic regression may
+still use Verilator. The writer gate dispatches independent profiles,
 parameter rejections, and mutation checks through its own bounded pool;
 the main regression defaults `BURST_WRITER_GROUP_JOBS` to 8 and limits it to
 the outer `-j N` value. Direct invocation of
@@ -85,7 +85,7 @@ the maximum parallelism; the default is the `J` environment value or 1. Mantis
 root; repeated output options use the last value.
 Repeated parallelism options use their minimum value, matching Mantis. The
 Mantis regressions run first using that limit internally. Afterwards, the
-independent compiler suites, virtual-SSA check, Verilator engine suite, and
+independent compiler suites, virtual-SSA check, ModelSim engine suites, and
 generated-kernel/wrapper chain share a bounded pool of at most N jobs. The
 generated-kernel test and its wrapper-RID check remain one serial job because
 the latter consumes the former's RTL. On failure, no more jobs are launched;

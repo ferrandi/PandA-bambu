@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Generate the real kernel with Bambu, then adversarially simulate its whole
-# generated top and AXI resource using Verilator (no controller/datapath stub).
+# generated top and AXI resource using ModelSim/Questa (no controller/datapath stub).
 # Usage: run_generated_kernel_tests.sh BAMBU FRESH_OUTPUT_DIR
 set -euo pipefail
 
@@ -14,7 +14,6 @@ else
   [[ -n "$BAMBU" ]] && BAMBU=$(realpath "$BAMBU")
 fi
 [[ -n "$BAMBU" && -x "$BAMBU" ]] || { echo "Bambu executable not found: ${1:-$BAMBU}" >&2; exit 2; }
-command -v verilator >/dev/null || { echo "verilator is required" >&2; exit 2; }
 
 PREFIX=$(dirname "$(dirname "$BAMBU")")
 SETTINGS="$PREFIX/settings.sh"
@@ -26,6 +25,12 @@ source "$SETTINGS"
 }
 PLUGIN="$PREFIX/lib/panda/clang-16/ASTAnalyzer.so"
 [[ -r "$PLUGIN" ]] || { echo "selected ASTAnalyzer plugin is missing: $PLUGIN" >&2; exit 2; }
+source "$TESTS/modelsim_helpers.sh"
+for tool in python3 sha256sum timeout grep tail head tr; do
+  command -v "$tool" >/dev/null || { echo "$tool is required" >&2; exit 2; }
+done
+modelsim_resolve
+MODELSIM_VERSION=$(modelsim_version) || exit 2
 
 if (($# != 2)); then
   echo "usage: $0 BAMBU FRESH_OUTPUT_DIR" >&2
@@ -35,16 +40,11 @@ OUT=$2
 if [[ -e "$OUT" || -L "$OUT" ]]; then
   echo "output directory must not already exist: $OUT" >&2; exit 2
 fi
-# Parallelism is a launcher decision, not a script policy: any positive value is
-# accepted. The default follows the machine, capped at 16.
-DEFAULT_SIM_JOBS=$(nproc 2>/dev/null || echo 4)
-if ((DEFAULT_SIM_JOBS > 16)); then DEFAULT_SIM_JOBS=16; fi
-SIM_JOBS=${SIM_JOBS:-$DEFAULT_SIM_JOBS}
-[[ "$SIM_JOBS" =~ ^[1-9][0-9]*$ ]] || { echo "SIM_JOBS must be a positive integer" >&2; exit 2; }
 OUT=$(realpath -m "$OUT")
 mkdir -p "$OUT"
 mkdir -p "$OUT/tmp" "$OUT/generated"
 export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp"
+: >"$OUT/aggregate.log"
 
 SOURCE="$TESTS/../bambu_axi_burst_sum_o1.cpp"
 TB="$TESTS/tb_generated_kernel.sv"
@@ -61,7 +61,10 @@ ARGS=("$SOURCE" --top-fname=kernel --compiler=I386_CLANG16 --generate-interface=
   printf 'TMPDIR=%s\nTMP=%s\nTEMP=%s\n' "$TMPDIR" "$TMP" "$TEMP"
   printf 'argv='; printf '%q ' "$BAMBU" "${ARGS[@]}"; printf '\n'
   "$BAMBU" --version 2>&1 | head -n 2
-  verilator --version
+  printf 'modelsim_lookup_source=%s\nmodelsim_bin=%s\nvsim=%s\nvlib=%s\nvlog=%s\nvmap=%s\n' \
+    "$MODELSIM_SOURCE" "$MODELSIM_BIN" "$MODELSIM_VSIM" "$MODELSIM_VLIB" \
+    "$MODELSIM_VLOG" "$MODELSIM_VMAP"
+  printf 'modelsim_version=%s\n' "$(printf '%s' "$MODELSIM_VERSION" | tr '\n' ' ')"
   sha256sum "$BAMBU" "$PLUGIN" "$SETTINGS" "$SOURCE" "$TB"
 } >"$OUT/provenance.txt"
 
@@ -111,24 +114,45 @@ grep -Eq 'src_bambu_artificial_ParmMgr_modgen_16_i0 \(' "$RTL" &&
 }
 sha256sum "$RTL" "$LIB" >>"$OUT/provenance.txt"
 
-OBJ="$OUT/verilator_obj"
-if ! verilator --binary -j "$SIM_JOBS" --timing --public-flat-rw --top-module tb_generated_kernel -Wno-fatal \
-    --Mdir "$OBJ" "$RTL" "$LIB" "$TB" >"$OUT/verilator-build.log" 2>&1; then
-  tail -n 120 "$OUT/verilator-build.log" >&2
-  echo "Verilator compile failed; see $OUT/verilator-build.log" >&2
+BUILD="$OUT/modelsim"
+if ! modelsim_compile "$BUILD" tb_generated_kernel "$RTL" "$LIB" "$TB"; then
+  echo "ModelSim compile failed; see $BUILD/compile.log" >&2
   exit 1
 fi
-EXE="$OBJ/Vtb_generated_kernel"
-"$EXE" | tee "$OUT/positive.log"
-if "$EXE" +NEGATIVE_SENSITIVITY >"$OUT/negative-sensitivity.log" 2>&1; then
-  echo "data-order negative-sensitivity run unexpectedly passed" >&2
+positive_log="$OUT/positive.log"
+status=0
+modelsim_run "$BUILD" tb_generated_kernel "$positive_log" 180 || status=$?
+modelsim_normalize_log "$positive_log" "$positive_log.normalized"
+if (( status != 0 )) || grep -Eqi '^\*\* (Error|Fatal):|Segmentation fault|stack smashing|AddressSanitizer|Aborted' "$positive_log.normalized"; then
+  cat "$positive_log" >&2
+  echo "generated kernel positive simulation failed (status=$status)" >&2
   exit 1
 fi
-grep -Eq 'AXI response data order/value mismatch|generated AXI engine FIFO consume/pop data order/value mismatch' \
-  "$OUT/negative-sensitivity.log" || {
-    cat "$OUT/negative-sensitivity.log" >&2
-    echo "negative-sensitivity failed for an unexpected reason" >&2
+for count in 0 1 15 16 17 38 1024 2048 4096; do
+  if [[ $(grep -Ec "^KERNEL_CASE PASS n=$count([[:space:]]|$)" "$positive_log.normalized" || true) != 1 ]]; then
+    cat "$positive_log" >&2
+    echo "generated kernel positive simulation lacks one exact count witness: $count" >&2
     exit 1
-  }
+  fi
+done
+if ! grep -Fxq 'GENERATED_KERNEL_ALL_CASES PASS' "$positive_log.normalized"; then
+  cat "$positive_log" >&2
+  echo "generated kernel positive simulation lacks the aggregate PASS marker" >&2
+  exit 1
+fi
+cat "$positive_log.normalized" | tee -a "$OUT/aggregate.log"
+
+negative_log="$OUT/negative-sensitivity.log"
+status=0
+modelsim_run "$BUILD" tb_generated_kernel "$negative_log" 60 -- +NEGATIVE_SENSITIVITY || status=$?
+modelsim_normalize_log "$negative_log" "$negative_log.normalized"
+if (( status != 1 )) || ! grep -Eq '^\*\* Fatal: (AXI response data order/value mismatch|generated AXI engine FIFO consume/pop data order/value mismatch)$' "$negative_log.normalized" || \
+    [[ $(grep -Ec '^\*\* Fatal:' "$negative_log.normalized" || true) != 1 ]] || \
+    grep -Eqi '^\*\* Error:|Segmentation fault|stack smashing|AddressSanitizer|Aborted|GENERATED_KERNEL_ALL_CASES PASS|KERNEL_CASE PASS' "$negative_log.normalized"; then
+  cat "$negative_log" >&2
+  echo "negative-sensitivity failed without the expected data-order scoreboard fatal (status=$status)" >&2
+  exit 1
+fi
 echo "GENERATED_KERNEL_NEGATIVE_SENSITIVITY PASS (corrupted AXI data rejected by data-order scoreboard)"
+echo "GENERATED_KERNEL_NEGATIVE_SENSITIVITY PASS (corrupted AXI data rejected by data-order scoreboard)" >>"$OUT/aggregate.log"
 echo "GENERATED_KERNEL_TESTS PASS: $OUT"
